@@ -634,6 +634,8 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = NULL;
   if (NMTPreInit::handle_malloc(&rc, size)) {
+    // No need to fill with 0 because DumpSharedSpaces doesn't use these
+    // early allocations.
     return rc;
   }
 
@@ -658,9 +660,13 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
 
-  DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
+  if (DumpSharedSpaces) {
+    // Need to deterministically fill all the alignment gaps in C++ structures.
+    ::memset(inner_ptr, 0, size);
+  } else {
+    DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
+  }
   DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
-
   return inner_ptr;
 }
 
@@ -1167,34 +1173,34 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
 }
 
+bool is_pointer_bad(intptr_t* ptr) {
+  return !is_aligned(ptr, sizeof(uintptr_t)) || !os::is_readable_pointer(ptr);
+}
+
 // Looks like all platforms can use the same function to check if C
 // stack is walkable beyond current frame.
+// Returns true if this is not the case, i.e. the frame is possibly
+// the first C frame on the stack.
 bool os::is_first_C_frame(frame* fr) {
 
 #ifdef _WINDOWS
   return true; // native stack isn't walkable on windows this way.
 #endif
-
   // Load up sp, fp, sender sp and sender fp, check for reasonable values.
   // Check usp first, because if that's bad the other accessors may fault
   // on some architectures.  Ditto ufp second, etc.
-  uintptr_t fp_align_mask = (uintptr_t)(sizeof(address)-1);
-  // sp on amd can be 32 bit aligned.
-  uintptr_t sp_align_mask = (uintptr_t)(sizeof(int)-1);
 
-  uintptr_t usp    = (uintptr_t)fr->sp();
-  if ((usp & sp_align_mask) != 0) return true;
+  if (is_pointer_bad(fr->sp())) return true;
 
   uintptr_t ufp    = (uintptr_t)fr->fp();
-  if ((ufp & fp_align_mask) != 0) return true;
+  if (is_pointer_bad(fr->fp())) return true;
 
   uintptr_t old_sp = (uintptr_t)fr->sender_sp();
-  if ((old_sp & sp_align_mask) != 0) return true;
-  if (old_sp == 0 || old_sp == (uintptr_t)-1) return true;
+  if ((uintptr_t)fr->sender_sp() == (uintptr_t)-1 || is_pointer_bad(fr->sender_sp())) return true;
 
-  uintptr_t old_fp = (uintptr_t)fr->link();
-  if ((old_fp & fp_align_mask) != 0) return true;
-  if (old_fp == 0 || old_fp == (uintptr_t)-1 || old_fp == ufp) return true;
+  uintptr_t old_fp = (uintptr_t)fr->link_or_null();
+  if (old_fp == 0 || old_fp == (uintptr_t)-1 || old_fp == ufp ||
+    is_pointer_bad(fr->link_or_null())) return true;
 
   // stack grows downwards; if old_fp is below current fp or if the stack
   // frame is too large, either the stack is corrupted or fp is not saved
@@ -1205,7 +1211,6 @@ bool os::is_first_C_frame(frame* fr) {
 
   return false;
 }
-
 
 // Set up the boot classpath.
 
@@ -1670,7 +1675,13 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
   return result;
 }
 
+static void assert_nonempty_range(const char* addr, size_t bytes) {
+  assert(addr != nullptr && bytes > 0, "invalid range [" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(addr), p2i(addr) + bytes);
+}
+
 bool os::commit_memory(char* addr, size_t bytes, bool executable) {
+  assert_nonempty_range(addr, bytes);
   bool res = pd_commit_memory(addr, bytes, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
@@ -1680,6 +1691,7 @@ bool os::commit_memory(char* addr, size_t bytes, bool executable) {
 
 bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
                               bool executable) {
+  assert_nonempty_range(addr, size);
   bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
@@ -1689,17 +1701,20 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
 
 void os::commit_memory_or_exit(char* addr, size_t bytes, bool executable,
                                const char* mesg) {
+  assert_nonempty_range(addr, bytes);
   pd_commit_memory_or_exit(addr, bytes, executable, mesg);
   MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
 }
 
 void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
                                bool executable, const char* mesg) {
+  assert_nonempty_range(addr, size);
   os::pd_commit_memory_or_exit(addr, size, alignment_hint, executable, mesg);
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 
 bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
+  assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
     Tracker tkr(Tracker::uncommit);
@@ -1714,6 +1729,7 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
 }
 
 bool os::release_memory(char* addr, size_t bytes) {
+  assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
     // Note: Tracker contains a ThreadCritical.

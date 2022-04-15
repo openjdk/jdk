@@ -91,14 +91,6 @@
   // in the range of [0, lane_cnt), or to false otherwise.
   void sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, int lane_cnt);
 
-  // Generate predicate through whilelo, by comparing ZR with an unsigned
-  // immediate. rscratch1 will be clobbered.
-  inline void sve_whilelo_zr_imm(PRegister pd, SIMD_RegVariant size, uint imm) {
-    assert(UseSVE > 0, "not supported");
-    mov(rscratch1, imm);
-    sve_whilelo(pd, size, zr, rscratch1);
-  }
-
   // Extract a scalar element from an sve vector at position 'idx'.
   // The input elements in src are expected to be of integral type.
   void sve_extract_integral(Register dst, SIMD_RegVariant size, FloatRegister src, int idx,

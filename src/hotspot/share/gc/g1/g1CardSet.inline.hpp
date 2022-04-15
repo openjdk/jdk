@@ -28,55 +28,54 @@
 #include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
-#include "runtime/atomic.hpp"
 #include "logging/log.hpp"
 
 template <class T>
-inline T* G1CardSet::card_set_ptr(CardSetPtr ptr) {
-  return (T*)strip_card_set_type(ptr);
+inline T* G1CardSet::container_ptr(ContainerPtr ptr) {
+  return (T*)strip_container_type(ptr);
 }
 
-inline G1CardSet::CardSetPtr G1CardSet::make_card_set_ptr(void* value, uintptr_t type) {
-  assert(card_set_type(value) == 0, "Given ptr " PTR_FORMAT " already has type bits set", p2i(value));
-  return (CardSetPtr)((uintptr_t)value | type);
+inline G1CardSet::ContainerPtr G1CardSet::make_container_ptr(void* value, uintptr_t type) {
+  assert(container_type(value) == 0, "Given ptr " PTR_FORMAT " already has type bits set", p2i(value));
+  return (ContainerPtr)((uintptr_t)value | type);
 }
 
 template <class CardOrRangeVisitor>
-inline void G1CardSet::iterate_cards_or_ranges_in_container(CardSetPtr const card_set, CardOrRangeVisitor& cl) {
-  switch (card_set_type(card_set)) {
-    case CardSetInlinePtr: {
+inline void G1CardSet::iterate_cards_or_ranges_in_container(ContainerPtr const container, CardOrRangeVisitor& cl) {
+  switch (container_type(container)) {
+    case ContainerInlinePtr: {
       if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedInline)) {
-        G1CardSetInlinePtr ptr(card_set);
+        G1CardSetInlinePtr ptr(container);
         ptr.iterate(cl, _config->inline_ptr_bits_per_card());
       }
       return;
     }
-    case CardSetArrayOfCards : {
+    case ContainerArrayOfCards: {
       if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedArrayOfCards)) {
-        card_set_ptr<G1CardSetArray>(card_set)->iterate(cl);
+        container_ptr<G1CardSetArray>(container)->iterate(cl);
       }
       return;
     }
-    case CardSetBitMap: {
+    case ContainerBitMap: {
       // There is no first-level bitmap spanning the whole area.
       ShouldNotReachHere();
       return;
     }
-    case CardSetHowl: {
-      assert(card_set_type(FullCardSet) == CardSetHowl, "Must be");
-      if (card_set == FullCardSet) {
+    case ContainerHowl: {
+      assert(container_type(FullCardSet) == ContainerHowl, "Must be");
+      if (container == FullCardSet) {
         if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedFull)) {
           cl(0, _config->max_cards_in_region());
         }
         return;
       }
       if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedHowl)) {
-        card_set_ptr<G1CardSetHowl>(card_set)->iterate(cl, _config);
+        container_ptr<G1CardSetHowl>(container)->iterate(cl, _config);
       }
       return;
     }
   }
-  log_error(gc)("Unkown card set type %u", card_set_type(card_set));
+  log_error(gc)("Unkown card set container type %u", container_type(container));
   ShouldNotReachHere();
 }
 

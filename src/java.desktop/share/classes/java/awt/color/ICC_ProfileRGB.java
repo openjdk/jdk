@@ -80,7 +80,7 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * RGB components through the inverse of the above 3x3 matrix, and then
  * converting linear RGB to device RGB through inverses of the TRCs.
  */
-public class ICC_ProfileRGB extends ICC_Profile {
+public final class ICC_ProfileRGB extends ICC_Profile {
 
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.

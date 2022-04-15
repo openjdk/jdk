@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,30 +30,59 @@
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
 
-// Convention: Use Z_R0 and Z_R1 instead of Z_scratch_* in all
-// assembler_s390.* files.
 
-// Local implementation of byte emitters to help inlining.
+inline unsigned int Assembler::emit_instruction(unsigned long x, unsigned int len) {
+  CodeSection*  cs = code_section();
+  address      pos = pc();
+  assert(((intptr_t)pos & 0x01L) == 0, "instruction address alignment error");
+  if (len == 0) {
+    len = instr_len(x);
+  }
+
+  switch (len) {
+    case 2:
+      *(unsigned short*)(pos)     = (unsigned short)x;
+      break;
+    case 4:
+      // May be unaligned store. Only slightly less efficient.
+      *(unsigned int*)(pos)       = (unsigned int)x;
+      break;
+    case 6:
+      // Have to split anyway, so we can arrange for aligned stores.
+      if (((intptr_t)pos & 0x03) == 0) {
+        *(unsigned int*)pos       = (unsigned int)(x>>16);
+        *(unsigned short*)(pos+4) = (unsigned short)x;
+      } else {
+        *(unsigned short*)(pos)   = (unsigned short)(x>>32);
+        *(unsigned int*)(pos+2)   = (unsigned int)x;
+      }
+      break;
+    default:
+      ShouldNotReachHere();
+      break;
+  }
+
+  assert(instr_len(pos) == len, "%d-byte emitter can't handle %d-byte instructions.", len, instr_len(pos));
+  cs->set_end(pos + len);
+  return len;
+}
 inline void Assembler::emit_16(int x) {
-  CodeSection*       cs = code_section();
-  address      code_pos = pc();
-  *(unsigned short*)code_pos = (unsigned short)x;
-  cs->set_end( code_pos + sizeof(unsigned short));
+  emit_instruction((unsigned int)x, 2);
 }
 
 inline void Assembler::emit_32(int x) {
-  CodeSection*       cs = code_section();
-  address      code_pos = pc();
-  *(jint*)code_pos = (jint)x;
-  cs->set_end( code_pos + sizeof( jint));
+  emit_instruction((unsigned int)x, 4);
 }
 
 inline void Assembler::emit_48(long x) {
+  emit_instruction((unsigned long)x, 6);
+}
+
+inline void Assembler::emit_data(int x) {
   CodeSection*       cs = code_section();
   address      code_pos = pc();
-  *(unsigned short*)code_pos = (unsigned short)(x>>32);
-  *(jint*)(code_pos+sizeof(unsigned short)) = (jint)x;
-  cs->set_end( code_pos + sizeof( jint) + sizeof( unsigned short));
+  *(int*)code_pos = x;
+  cs->set_end(code_pos + sizeof(int));
 }
 
 // Support lightweight sync (from z196). Experimental as of now. For explanation see *.hpp file.
@@ -104,26 +133,27 @@ inline void Assembler::z_kimd( Register r1, Register r2) { emit_32( KIMD_ZOPC   
 inline void Assembler::z_klmd( Register r1, Register r2) { emit_32( KLMD_ZOPC   | regt(r1, 24, 32) | regt(r2, 28, 32)); }
 inline void Assembler::z_kmac( Register r1, Register r2) { emit_32( KMAC_ZOPC   | regt(r1, 24, 32) | regt(r2, 28, 32)); }
 
-inline void Assembler::z_exrl(Register r1, int64_t i2)  { emit_48( EXRL_ZOPC   | regt(r1, 8, 48) | simm32(i2, 16, 48)); }                             // z10
-inline void Assembler::z_exrl(Register r1, address a2)  { emit_48( EXRL_ZOPC   | regt(r1, 8, 48) | simm32(RelAddr::pcrel_off32(a2, pc()), 16, 48)); } // z10
+inline void Assembler::z_ex(  Register r1, int64_t d2, Register x2, Register b2) { emit_32( EX_ZOPC | regz(r1, 8, 32) | rxmask_32(d2, x2, b2)); }
+inline void Assembler::z_exrl(Register r1, int64_t i2)   { emit_48( EXRL_ZOPC   | regz(r1,  8, 48) | simm32(i2, 16, 48)); }                             // z10
+inline void Assembler::z_exrl(Register r1, address a2)   { emit_48( EXRL_ZOPC   | regz(r1,  8, 48) | simm32(RelAddr::pcrel_off32(a2, pc()), 16, 48)); } // z10
 
-inline void Assembler::z_ectg(int64_t d1, Register b1, int64_t d2, Register b2, Register r3) { emit_48( ECTG_ZOPC | reg(r3, 8, 48) | uimm12(d1, 20, 48) | reg(b1, 16, 48) | uimm12(d2, 36, 48) | reg(b2, 32, 48)); }
-inline void Assembler::z_ecag(Register r1, Register r3, int64_t d2, Register b2)             { emit_48( ECAG_ZOPC | reg(r1, 8, 48) | reg(r3, 12, 48) | simm20(d2) | reg(b2, 16, 48)); }
+inline void Assembler::z_ectg( int64_t d1, Register b1, int64_t d2, Register b2, Register r3) { emit_48( ECTG_ZOPC | reg(r3, 8, 48) | rsmask_48(d1, b1) | rsmask_SS(  d2, b2)); }
+inline void Assembler::z_ecag(Register r1, Register r3, int64_t d2, Register b2)              { emit_48( ECAG_ZOPC | reg(r1, 8, 48) | reg(r3, 12, 48)   | rsymaskt_48(d2, b2)); }
 
 
 //------------------------------
 // Interlocked-Update
 //------------------------------
-inline void Assembler::z_laa(  Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAA_ZOPC   | regt(r1, 8, 48) | reg(r3, 12, 48) | simm20(d2) | regz(b2, 16, 48)); }
-inline void Assembler::z_laag( Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAAG_ZOPC  | regt(r1, 8, 48) | reg(r3, 12, 48) | simm20(d2) | regz(b2, 16, 48)); }
-inline void Assembler::z_laal( Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAAL_ZOPC  | regt(r1, 8, 48) | reg(r3, 12, 48) | simm20(d2) | regz(b2, 16, 48)); }
-inline void Assembler::z_laalg(Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAALG_ZOPC | regt(r1, 8, 48) | reg(r3, 12, 48) | simm20(d2) | regz(b2, 16, 48)); }
-inline void Assembler::z_lan(  Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAN_ZOPC   | regt(r1, 8, 48) | reg(r3, 12, 48) | simm20(d2) | regz(b2, 16, 48)); }
-inline void Assembler::z_lang( Register r1, Register r3, int64_t d2, Register b2) { emit_48( LANG_ZOPC  | regt(r1, 8, 48) | reg(r3, 12, 48) | simm20(d2) | regz(b2, 16, 48)); }
-inline void Assembler::z_lax(  Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAX_ZOPC   | regt(r1, 8, 48) | reg(r3, 12, 48) | simm20(d2) | regz(b2, 16, 48)); }
-inline void Assembler::z_laxg( Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAXG_ZOPC  | regt(r1, 8, 48) | reg(r3, 12, 48) | simm20(d2) | regz(b2, 16, 48)); }
-inline void Assembler::z_lao(  Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAO_ZOPC   | regt(r1, 8, 48) | reg(r3, 12, 48) | simm20(d2) | regz(b2, 16, 48)); }
-inline void Assembler::z_laog( Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAOG_ZOPC  | regt(r1, 8, 48) | reg(r3, 12, 48) | simm20(d2) | regz(b2, 16, 48)); }
+inline void Assembler::z_laa(  Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAA_ZOPC   | regt(r1, 8, 48) | reg(r3, 12, 48) | rsymask_48(d2, b2)); }
+inline void Assembler::z_laag( Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAAG_ZOPC  | regt(r1, 8, 48) | reg(r3, 12, 48) | rsymask_48(d2, b2)); }
+inline void Assembler::z_laal( Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAAL_ZOPC  | regt(r1, 8, 48) | reg(r3, 12, 48) | rsymask_48(d2, b2)); }
+inline void Assembler::z_laalg(Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAALG_ZOPC | regt(r1, 8, 48) | reg(r3, 12, 48) | rsymask_48(d2, b2)); }
+inline void Assembler::z_lan(  Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAN_ZOPC   | regt(r1, 8, 48) | reg(r3, 12, 48) | rsymask_48(d2, b2)); }
+inline void Assembler::z_lang( Register r1, Register r3, int64_t d2, Register b2) { emit_48( LANG_ZOPC  | regt(r1, 8, 48) | reg(r3, 12, 48) | rsymask_48(d2, b2)); }
+inline void Assembler::z_lax(  Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAX_ZOPC   | regt(r1, 8, 48) | reg(r3, 12, 48) | rsymask_48(d2, b2)); }
+inline void Assembler::z_laxg( Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAXG_ZOPC  | regt(r1, 8, 48) | reg(r3, 12, 48) | rsymask_48(d2, b2)); }
+inline void Assembler::z_lao(  Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAO_ZOPC   | regt(r1, 8, 48) | reg(r3, 12, 48) | rsymask_48(d2, b2)); }
+inline void Assembler::z_laog( Register r1, Register r3, int64_t d2, Register b2) { emit_48( LAOG_ZOPC  | regt(r1, 8, 48) | reg(r3, 12, 48) | rsymask_48(d2, b2)); }
 
 inline void Assembler::z_laa(  Register r1, Register r3, const Address& a) { assert(!a.has_index(), " no index reg allowed"); z_laa(  r1, r3, a.disp12(), a.base()); }
 inline void Assembler::z_laag( Register r1, Register r3, const Address& a) { assert(!a.has_index(), " no index reg allowed"); z_laag( r1, r3, a.disp12(), a.base()); }
@@ -139,33 +169,33 @@ inline void Assembler::z_laog( Register r1, Register r3, const Address& a) { ass
 //--------------------------------
 // Execution Prediction
 //--------------------------------
-inline void Assembler::z_pfd(  int64_t m1, int64_t d2, Register x2, Register b2) { emit_48( PFD_ZOPC   | uimm4(m1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
+inline void Assembler::z_pfd(  int64_t m1, int64_t d2, Register x2, Register b2) { emit_48( PFD_ZOPC   | uimm4(m1, 8, 48) | rxymask_48(d2, x2, b2)); }
 inline void Assembler::z_pfd(  int64_t m1, Address a)                            { z_pfd(m1, a.disp(), a.indexOrR0(), a.base()); }
 inline void Assembler::z_pfdrl(int64_t m1, int64_t i2)                           { emit_48( PFDRL_ZOPC | uimm4(m1, 8, 48) | simm32(i2, 16, 48)); }
-inline void Assembler::z_bpp(  int64_t m1, int64_t i2, int64_t d3, Register b3)  { emit_48( BPP_ZOPC   | uimm4(m1, 8, 48) | uimm12(d3, 20, 48) | reg(b3, 16, 48) | simm16(i2, 32, 48)); }
+inline void Assembler::z_bpp(  int64_t m1, int64_t i2, int64_t d3, Register b3)  { emit_48( BPP_ZOPC   | uimm4(m1, 8, 48) | rsmask_48(d3, b3)  | simm16(i2, 32, 48)); }
 inline void Assembler::z_bprp( int64_t m1, int64_t i2, int64_t i3)               { emit_48( BPRP_ZOPC  | uimm4(m1, 8, 48) | simm12(i2, 12, 48) | simm24(i3, 24, 48)); }
 
 //-------------------------------
 // Transaction Control
 //-------------------------------
-inline void Assembler::z_tbegin( int64_t d1, Register b1, int64_t i2) { emit_48( TBEGIN_ZOPC  | uimm12(d1, 20, 48) | reg(b1, 16, 48) | uimm16(i2, 32, 48)); }
-inline void Assembler::z_tbeginc(int64_t d1, Register b1, int64_t i2) { emit_48( TBEGINC_ZOPC | uimm12(d1, 20, 48) | reg(b1, 16, 48) | uimm16(i2, 32, 48)); }
+inline void Assembler::z_tbegin( int64_t d1, Register b1, int64_t i2) { emit_48( TBEGIN_ZOPC  | rsmask_48(d1, b1) | uimm16(i2, 32, 48)); }
+inline void Assembler::z_tbeginc(int64_t d1, Register b1, int64_t i2) { emit_48( TBEGINC_ZOPC | rsmask_48(d1, b1) | uimm16(i2, 32, 48)); }
 inline void Assembler::z_tend()                                       { emit_32( TEND_ZOPC); }
-inline void Assembler::z_tabort( int64_t d2, Register b2)             { emit_32( TABORT_ZOPC  | uimm12(d2, 20, 32) | reg(b2, 16, 32)); }
+inline void Assembler::z_tabort( int64_t d2, Register b2)             { emit_32( TABORT_ZOPC  | rsmask_32(d2, b2)); }
 inline void Assembler::z_etnd(Register r1)                            { emit_32( ETND_ZOPC    | regt(r1, 24, 32)); }
 inline void Assembler::z_ppa(Register r1, Register r2, int64_t m3)    { emit_32( PPA_ZOPC     | reg(r1, 24, 32) | reg(r2, 28, 32) | uimm4(m3, 16, 32)); }
 
 //---------------------------------
 // Conditional Execution
 //---------------------------------
-inline void Assembler::z_locr(  Register r1, Register r2, branch_condition cc)             { emit_32( LOCR_ZOPC  | regt(r1, 24, 32) | reg(r2, 28, 32) | uimm4(cc, 16, 32)); }               // z196
-inline void Assembler::z_locgr( Register r1, Register r2, branch_condition cc)             { emit_32( LOCGR_ZOPC | regt(r1, 24, 32) | reg(r2, 28, 32) | uimm4(cc, 16, 32)); }               // z196
-inline void Assembler::z_loc(   Register r1, int64_t d2, Register b2, branch_condition cc) { emit_48( LOC_ZOPC   | regt(r1,  8, 48) | simm20(d2) | regz(b2, 16, 48) | uimm4(cc, 12, 48)); } // z196
-inline void Assembler::z_locg(  Register r1, int64_t d2, Register b2, branch_condition cc) { emit_48( LOCG_ZOPC  | regt(r1,  8, 48) | simm20(d2) | regz(b2, 16, 48) | uimm4(cc, 12, 48)); } // z196
-inline void Assembler::z_loc(   Register r1, const Address &a, branch_condition cc)        { z_loc(r1, a.disp(), a.base(), cc); }
+inline void Assembler::z_locr(  Register r1, Register r2, branch_condition cc)             { emit_32( LOCR_ZOPC  | regt(r1, 24, 32) | reg(r2, 28, 32)    | uimm4(cc, 16, 32)); } // z196
+inline void Assembler::z_locgr( Register r1, Register r2, branch_condition cc)             { emit_32( LOCGR_ZOPC | regt(r1, 24, 32) | reg(r2, 28, 32)    | uimm4(cc, 16, 32)); } // z196
+inline void Assembler::z_loc(   Register r1, int64_t d2, Register b2, branch_condition cc) { emit_48( LOC_ZOPC   | regt(r1,  8, 48) | rsymask_48(d2, b2) | uimm4(cc, 12, 48)); } // z196
+inline void Assembler::z_locg(  Register r1, int64_t d2, Register b2, branch_condition cc) { emit_48( LOCG_ZOPC  | regt(r1,  8, 48) | rsymask_48(d2, b2) | uimm4(cc, 12, 48)); } // z196
+inline void Assembler::z_loc(   Register r1, const Address &a, branch_condition cc)        { z_loc(r1,  a.disp(), a.base(), cc); }
 inline void Assembler::z_locg(  Register r1, const Address &a, branch_condition cc)        { z_locg(r1, a.disp(), a.base(), cc); }
-inline void Assembler::z_stoc(  Register r1, int64_t d2, Register b2, branch_condition cc) { emit_48( STOC_ZOPC  | regt(r1,  8, 48) | simm20(d2) | regz(b2, 16, 48) | uimm4(cc, 12, 48)); } // z196
-inline void Assembler::z_stocg( Register r1, int64_t d2, Register b2, branch_condition cc) { emit_48( STOCG_ZOPC | regt(r1,  8, 48) | simm20(d2) | regz(b2, 16, 48) | uimm4(cc, 12, 48)); } // z196
+inline void Assembler::z_stoc(  Register r1, int64_t d2, Register b2, branch_condition cc) { emit_48( STOC_ZOPC  | regt(r1,  8, 48) | rsymask_48(d2, b2) | uimm4(cc, 12, 48)); } // z196
+inline void Assembler::z_stocg( Register r1, int64_t d2, Register b2, branch_condition cc) { emit_48( STOCG_ZOPC | regt(r1,  8, 48) | rsymask_48(d2, b2) | uimm4(cc, 12, 48)); } // z196
 
 inline void Assembler::z_srst( Register r1, Register r2) { emit_32( SRST_ZOPC  | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_srstu(Register r1, Register r2) { emit_32( SRSTU_ZOPC | regt(r1, 24, 32) | reg(r2, 28, 32)); }
@@ -173,26 +203,29 @@ inline void Assembler::z_srstu(Register r1, Register r2) { emit_32( SRSTU_ZOPC |
 //---------------------------------
 // Address calculation
 //---------------------------------
-inline void Assembler::z_layz(Register r1, int64_t d2, Register x2, Register b2) { emit_48( LAY_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | reg(b2, 16, 48)); }
+inline void Assembler::z_layz(Register r1, int64_t d2, Register x2, Register b2) { emit_48( LAY_ZOPC | regt(r1, 8, 48) | rxymaskt_48(d2, x2, b2)); }
+inline void Assembler::z_lay( Register r1, int64_t d2, Register x2, Register b2) { emit_48( LAY_ZOPC | regt(r1, 8, 48) | rxymask_48( d2, x2, b2)); }
+inline void Assembler::z_laz( Register r1, int64_t d2, Register x2, Register b2) { emit_32( LA_ZOPC  | regt(r1, 8, 32) | rxmaskt_32( d2, x2, b2)); }
+inline void Assembler::z_la(  Register r1, int64_t d2, Register x2, Register b2) { emit_32( LA_ZOPC  | regt(r1, 8, 32) | rxmask_32(  d2, x2, b2)); }
 inline void Assembler::z_lay( Register r1, const Address &a)                     { z_layz(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_lay( Register r1, int64_t d2, Register x2, Register b2) { emit_48( LAY_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_laz( Register r1, int64_t d2, Register x2, Register b2) { emit_32( LA_ZOPC  | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | reg(b2, 16, 32)); }
-inline void Assembler::z_la(  Register r1, const Address &a)                     { z_laz(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_la(  Register r1, int64_t d2, Register x2, Register b2) { emit_32( LA_ZOPC  | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32));}
+inline void Assembler::z_la(  Register r1, const Address &a)                     { z_laz( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_larl(Register r1, int64_t i2)    { emit_48( LARL_ZOPC | regt(r1, 8, 48) | simm32(i2, 16, 48)); }
 inline void Assembler::z_larl(Register r1, address a)     { emit_48( LARL_ZOPC | regt(r1, 8, 48) | simm32(RelAddr::pcrel_off32(a, pc()), 16, 48)); }
 
-inline void Assembler::z_lr(Register r1, Register r2)                          { emit_16( LR_ZOPC | regt(r1,8,16) | reg(r2,12,16)); }
-inline void Assembler::z_lgr(Register r1, Register r2)                         { emit_32( LGR_ZOPC | regt(r1, 24, 32) | reg(r2, 28, 32)); }
-inline void Assembler::z_lh(Register r1, int64_t d2, Register x2, Register b2) { emit_32( LH_ZOPC | 0 << 16 | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_lh(Register r1, const Address &a)                     { z_lh(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_l(Register r1, int64_t d2, Register x2, Register b2)  { emit_32( L_ZOPC | 0 << 16 | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_l(Register r1, const Address &a)                      { z_l(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_lg(Register r1, int64_t d2, Register x2, Register b2) { emit_48( LG_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_lg(Register r1, const Address &a)                     { z_lg(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+//---------------------------------
+// Load/Store
+//---------------------------------
+inline void Assembler::z_lr( Register r1, Register r2)                          { emit_16( LR_ZOPC  | regt(r1, 8,  16) | reg(r2, 12, 16)); }
+inline void Assembler::z_lgr(Register r1, Register r2)                          { emit_32( LGR_ZOPC | regt(r1, 24, 32) | reg(r2, 28, 32)); }
+inline void Assembler::z_lh( Register r1, int64_t d2, Register x2, Register b2) { emit_32( LH_ZOPC  | regt(r1, 8,  32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_l(  Register r1, int64_t d2, Register x2, Register b2) { emit_32( L_ZOPC   | regt(r1, 8,  32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_lg( Register r1, int64_t d2, Register x2, Register b2) { emit_48( LG_ZOPC  | regt(r1, 8,  48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_lh( Register r1, const Address &a)                     { z_lh(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_l(  Register r1, const Address &a)                     { z_l( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_lg( Register r1, const Address &a)                     { z_lg(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 
-inline void Assembler::z_lbr(  Register r1, Register r2) { emit_32( LBR_ZOPC   | regt(r1, 24, 32) | reg( r2, 28, 32)); }
-inline void Assembler::z_lhr(  Register r1, Register r2) { emit_32( LHR_ZOPC   | regt(r1, 24, 32) | reg( r2, 28, 32)); }
+inline void Assembler::z_lbr(  Register r1, Register r2) { emit_32( LBR_ZOPC   | regt(r1, 24, 32) | reg(r2, 28, 32)); }
+inline void Assembler::z_lhr(  Register r1, Register r2) { emit_32( LHR_ZOPC   | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_lgbr( Register r1, Register r2) { emit_32( LGBR_ZOPC  | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_lghr( Register r1, Register r2) { emit_32( LGHR_ZOPC  | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_lgfr( Register r1, Register r2) { emit_32( LGFR_ZOPC  | regt(r1, 24, 32) | reg(r2, 28, 32)); }
@@ -201,30 +234,30 @@ inline void Assembler::z_llgcr(Register r1, Register r2) { emit_32( LLGCR_ZOPC |
 inline void Assembler::z_llghr(Register r1, Register r2) { emit_32( LLGHR_ZOPC | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_llgfr(Register r1, Register r2) { emit_32( LLGFR_ZOPC | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 
+inline void Assembler::z_sth(Register r1, int64_t d2, Register x2, Register b2) { emit_32( STH_ZOPC | reg(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_st( Register r1, int64_t d2, Register x2, Register b2) { emit_32( ST_ZOPC  | reg(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_stg(Register r1, int64_t d2, Register x2, Register b2) { emit_48( STG_ZOPC | reg(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
 inline void Assembler::z_sth(Register r1, const Address &a)                     { z_sth(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_sth(Register r1, int64_t d2, Register x2, Register b2) { emit_32( STH_ZOPC | reg(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_st( Register r1, const Address& d)                     { z_st(r1, d.disp(), d.indexOrR0(), d.base()); }
-inline void Assembler::z_st( Register r1, int64_t d2, Register x2, Register b2) { emit_32( ST_ZOPC  | reg(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_stg(Register r1, const Address& d)                     { z_stg(r1, d.disp(), d.indexOrR0(), d.base()); }
-inline void Assembler::z_stg(Register r1, int64_t d2, Register x2, Register b2) { emit_48( STG_ZOPC | reg(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
+inline void Assembler::z_st( Register r1, const Address &a)                     { z_st( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_stg(Register r1, const Address &a)                     { z_stg(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 
-inline void Assembler::z_stcm (Register r1, int64_t m3, int64_t d2, Register b2) { emit_32( STCM_ZOPC  | regt(r1, 8, 32) | uimm4(m3, 12, 32) | uimm12(d2, 20, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_stcmy(Register r1, int64_t m3, int64_t d2, Register b2) { emit_48( STCMY_ZOPC | regt(r1, 8, 48) | uimm4(m3, 12, 48) | simm20(d2)         | regz(b2, 16, 48)); }
-inline void Assembler::z_stcmh(Register r1, int64_t m3, int64_t d2, Register b2) { emit_48( STCMH_ZOPC | regt(r1, 8, 48) | uimm4(m3, 12, 48) | simm20(d2)         | regz(b2, 16, 48)); }
+inline void Assembler::z_stcm (Register r1, int64_t m3, int64_t d2, Register b2) { emit_32( STCM_ZOPC  | regt(r1, 8, 32) | uimm4(m3, 12, 32) | rsmask_32( d2, b2)); }
+inline void Assembler::z_stcmy(Register r1, int64_t m3, int64_t d2, Register b2) { emit_48( STCMY_ZOPC | regt(r1, 8, 48) | uimm4(m3, 12, 48) | rsymask_48(d2, b2)); }
+inline void Assembler::z_stcmh(Register r1, int64_t m3, int64_t d2, Register b2) { emit_48( STCMH_ZOPC | regt(r1, 8, 48) | uimm4(m3, 12, 48) | rsymask_48(d2, b2)); }
 
 // memory-immediate instructions (8-bit immediate)
-inline void Assembler::z_cli( int64_t d1, Register b1, int64_t i2) { emit_32( CLI_ZOPC  | uimm12(d1, 20, 32) | regz(b1, 16, 32) | uimm8(i2, 8, 32)); }
-inline void Assembler::z_mvi( int64_t d1, Register b1, int64_t i2) { emit_32( MVI_ZOPC  | uimm12(d1, 20, 32) | regz(b1, 16, 32) | imm8(i2, 8, 32)); }
-inline void Assembler::z_tm(  int64_t d1, Register b1, int64_t i2) { emit_32( TM_ZOPC   | uimm12(d1, 20, 32) | regz(b1, 16, 32) | imm8(i2, 8, 32)); }
-inline void Assembler::z_ni(  int64_t d1, Register b1, int64_t i2) { emit_32( NI_ZOPC   | uimm12(d1, 20, 32) | regz(b1, 16, 32) | imm8(i2, 8, 32)); }
-inline void Assembler::z_oi(  int64_t d1, Register b1, int64_t i2) { emit_32( OI_ZOPC   | uimm12(d1, 20, 32) | regz(b1, 16, 32) | imm8(i2, 8, 32)); }
-inline void Assembler::z_xi(  int64_t d1, Register b1, int64_t i2) { emit_32( XI_ZOPC   | uimm12(d1, 20, 32) | regz(b1, 16, 32) | imm8(i2, 8, 32)); }
-inline void Assembler::z_cliy(int64_t d1, Register b1, int64_t i2) { emit_48( CLIY_ZOPC | simm20(d1)         | regz(b1, 16, 48) | uimm8(i2, 8, 48)); }
-inline void Assembler::z_mviy(int64_t d1, Register b1, int64_t i2) { emit_48( MVIY_ZOPC | simm20(d1)         | regz(b1, 16, 48) | imm8(i2, 8, 48)); }
-inline void Assembler::z_tmy( int64_t d1, Register b1, int64_t i2) { emit_48( TMY_ZOPC  | simm20(d1)         | regz(b1, 16, 48) | imm8(i2, 8, 48)); }
-inline void Assembler::z_niy( int64_t d1, Register b1, int64_t i2) { emit_48( NIY_ZOPC  | simm20(d1)         | regz(b1, 16, 48) | imm8(i2, 8, 48)); }
-inline void Assembler::z_oiy( int64_t d1, Register b1, int64_t i2) { emit_48( OIY_ZOPC  | simm20(d1)         | regz(b1, 16, 48) | imm8(i2, 8, 48)); }
-inline void Assembler::z_xiy( int64_t d1, Register b1, int64_t i2) { emit_48( XIY_ZOPC  | simm20(d1)         | regz(b1, 16, 48) | imm8(i2, 8, 48)); }
+inline void Assembler::z_cli( int64_t d1, Register b1, int64_t i2) { emit_32( CLI_ZOPC  | rsmask_32( d1, b1) | uimm8(i2, 8, 32)); }
+inline void Assembler::z_mvi( int64_t d1, Register b1, int64_t i2) { emit_32( MVI_ZOPC  | rsmask_32( d1, b1) | imm8(i2, 8, 32)); }
+inline void Assembler::z_tm(  int64_t d1, Register b1, int64_t i2) { emit_32( TM_ZOPC   | rsmask_32( d1, b1) | imm8(i2, 8, 32)); }
+inline void Assembler::z_ni(  int64_t d1, Register b1, int64_t i2) { emit_32( NI_ZOPC   | rsmask_32( d1, b1) | imm8(i2, 8, 32)); }
+inline void Assembler::z_oi(  int64_t d1, Register b1, int64_t i2) { emit_32( OI_ZOPC   | rsmask_32( d1, b1) | imm8(i2, 8, 32)); }
+inline void Assembler::z_xi(  int64_t d1, Register b1, int64_t i2) { emit_32( XI_ZOPC   | rsmask_32( d1, b1) | imm8(i2, 8, 32)); }
+inline void Assembler::z_cliy(int64_t d1, Register b1, int64_t i2) { emit_48( CLIY_ZOPC | rsymask_48(d1, b1) | uimm8(i2, 8, 48)); }
+inline void Assembler::z_mviy(int64_t d1, Register b1, int64_t i2) { emit_48( MVIY_ZOPC | rsymask_48(d1, b1) | imm8(i2, 8, 48)); }
+inline void Assembler::z_tmy( int64_t d1, Register b1, int64_t i2) { emit_48( TMY_ZOPC  | rsymask_48(d1, b1) | imm8(i2, 8, 48)); }
+inline void Assembler::z_niy( int64_t d1, Register b1, int64_t i2) { emit_48( NIY_ZOPC  | rsymask_48(d1, b1) | imm8(i2, 8, 48)); }
+inline void Assembler::z_oiy( int64_t d1, Register b1, int64_t i2) { emit_48( OIY_ZOPC  | rsymask_48(d1, b1) | imm8(i2, 8, 48)); }
+inline void Assembler::z_xiy( int64_t d1, Register b1, int64_t i2) { emit_48( XIY_ZOPC  | rsymask_48(d1, b1) | imm8(i2, 8, 48)); }
 
 inline void Assembler::z_cli( const Address& a, int64_t imm) { assert(!a.has_index(), " no index reg allowed in CLI");  z_cli( a.disp12(), a.base(), imm); }
 inline void Assembler::z_mvi( const Address& a, int64_t imm) { assert(!a.has_index(), " no index reg allowed in CLI");  z_mvi( a.disp12(), a.base(), imm); }
@@ -244,61 +277,58 @@ inline void Assembler::z_mvc(const Address& d, const Address& s, int64_t l) {
   assert(!d.has_index() && !s.has_index(), "Address operand can not be encoded.");
   z_mvc(d.disp(), l-1, d.base(), s.disp(), s.base());
 }
-inline void Assembler::z_mvc(int64_t d1, int64_t l, Register b1, int64_t d2, Register b2) { emit_48( MVC_ZOPC | uimm12(d1, 20, 48) | uimm8(l, 8, 48) | regz(b1, 16, 48) | uimm12(d2, 36, 48) | regz(b2, 32, 48)); }
-inline void Assembler::z_mvcle(Register r1, Register r3, int64_t d2, Register b2) { emit_32( MVCLE_ZOPC | reg(r1, 8, 32) | reg(r3, 12, 32) | uimm12(d2, 20, 32) | reg(b2, 16, 32)); }
+inline void Assembler::z_mvc(int64_t d1, int64_t l, Register b1, int64_t d2, Register b2) { emit_48( MVC_ZOPC | uimm8(l, 8, 48) | rsmask_48(d1, b1) | rsmask_SS(d2, b2)); }
+inline void Assembler::z_mvcle(Register r1, Register r3, int64_t d2, Register b2) { emit_32( MVCLE_ZOPC | reg(r1, 8, 32) | reg(r3, 12, 32) | rsmaskt_32(d2, b2)); }
 
-inline void Assembler::z_mvhhi( int64_t d1, Register b1, int64_t i2) { emit_48( MVHHI_ZOPC | uimm12( d1, 20, 48) | regz(b1, 16, 48) | simm16(i2, 32, 48)); }
-inline void Assembler::z_mvhi ( int64_t d1, Register b1, int64_t i2) { emit_48( MVHI_ZOPC  | uimm12( d1, 20, 48) | regz(b1, 16, 48) | simm16(i2, 32, 48)); }
-inline void Assembler::z_mvghi( int64_t d1, Register b1, int64_t i2) { emit_48( MVGHI_ZOPC | uimm12( d1, 20, 48) | regz(b1, 16, 48) | simm16(i2, 32, 48)); }
+inline void Assembler::z_mvhhi( int64_t d1, Register b1, int64_t i2) { emit_48( MVHHI_ZOPC | rsmask_48( d1, b1) | simm16(i2, 32, 48)); }
+inline void Assembler::z_mvhi ( int64_t d1, Register b1, int64_t i2) { emit_48( MVHI_ZOPC  | rsmask_48( d1, b1) | simm16(i2, 32, 48)); }
+inline void Assembler::z_mvghi( int64_t d1, Register b1, int64_t i2) { emit_48( MVGHI_ZOPC | rsmask_48( d1, b1) | simm16(i2, 32, 48)); }
 inline void Assembler::z_mvhhi( const Address &d, int64_t i2) { assert(!d.has_index(), " no index reg allowed in MVHHI"); z_mvhhi( d.disp(), d.baseOrR0(), i2); }
 inline void Assembler::z_mvhi ( const Address &d, int64_t i2) { assert(!d.has_index(), " no index reg allowed in MVHI");  z_mvhi(  d.disp(), d.baseOrR0(), i2); }
 inline void Assembler::z_mvghi( const Address &d, int64_t i2) { assert(!d.has_index(), " no index reg allowed in MVGHI"); z_mvghi( d.disp(), d.baseOrR0(), i2); }
 
-inline void Assembler::z_ex(Register r1, int64_t d2, Register x2, Register b2) { emit_32( EX_ZOPC | regz(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-
-inline void Assembler::z_ic  (Register r1, int64_t d2, Register x2, Register b2) { emit_32( IC_ZOPC  | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_icy (Register r1, int64_t d2, Register x2, Register b2) { emit_48( ICY_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_icm (Register r1, int64_t m3, int64_t d2, Register b2) { emit_32( ICM_ZOPC  | regt(r1, 8, 32) | uimm4(m3, 12, 32) | uimm12(d2, 20, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_icmy(Register r1, int64_t m3, int64_t d2, Register b2) { emit_48( ICMY_ZOPC | regt(r1, 8, 48) | uimm4(m3, 12, 48) | simm20(d2)         | regz(b2, 16, 48)); }
-inline void Assembler::z_icmh(Register r1, int64_t m3, int64_t d2, Register b2) { emit_48( ICMH_ZOPC | regt(r1, 8, 48) | uimm4(m3, 12, 48) | simm20(d2)         | regz(b2, 16, 48)); }
+inline void Assembler::z_ic  (Register r1, int64_t d2, Register x2, Register b2) { emit_32( IC_ZOPC   | regt(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_icy (Register r1, int64_t d2, Register x2, Register b2) { emit_48( ICY_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_icm (Register r1, int64_t m3, int64_t d2,  Register b2) { emit_32( ICM_ZOPC  | regt(r1, 8, 32) | uimm4(m3, 12, 32) | rsmask_32( d2, b2)); }
+inline void Assembler::z_icmy(Register r1, int64_t m3, int64_t d2,  Register b2) { emit_48( ICMY_ZOPC | regt(r1, 8, 48) | uimm4(m3, 12, 48) | rsymask_48(d2, b2)); }
+inline void Assembler::z_icmh(Register r1, int64_t m3, int64_t d2,  Register b2) { emit_48( ICMH_ZOPC | regt(r1, 8, 48) | uimm4(m3, 12, 48) | rsymask_48(d2, b2)); }
 inline void Assembler::z_iihh(Register r1, int64_t i2) { emit_32( IIHH_ZOPC | regt(r1, 8, 32) | imm16(i2, 16, 32)); }
 inline void Assembler::z_iihl(Register r1, int64_t i2) { emit_32( IIHL_ZOPC | regt(r1, 8, 32) | imm16(i2, 16, 32)); }
 inline void Assembler::z_iilh(Register r1, int64_t i2) { emit_32( IILH_ZOPC | regt(r1, 8, 32) | imm16(i2, 16, 32)); }
 inline void Assembler::z_iill(Register r1, int64_t i2) { emit_32( IILL_ZOPC | regt(r1, 8, 32) | imm16(i2, 16, 32)); }
 inline void Assembler::z_iihf(Register r1, int64_t i2) { emit_48( IIHF_ZOPC | regt(r1, 8, 48) | imm32(i2, 16, 48)); }
 inline void Assembler::z_iilf(Register r1, int64_t i2) { emit_48( IILF_ZOPC | regt(r1, 8, 48) | imm32(i2, 16, 48)); }
-inline void Assembler::z_lgf(Register r1, const Address& a) { z_lgf(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_lgf(Register r1, int64_t d2, Register x2, Register b2)  { emit_48( LGF_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_lhy(Register r1, const Address &a) { z_lhy(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_lhy(Register r1, int64_t d2, Register x2, Register b2)  { emit_48( LHY_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_lgh(Register r1, const Address &a) { z_lgh(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_lgh(Register r1, int64_t d2, Register x2, Register b2)  { emit_48( LGH_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_lt(Register r1, const Address &a) { z_lt(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_lt (Register r1, int64_t d2, Register x2, Register b2)  { emit_48( LT_ZOPC  | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_ltg(Register r1, const Address &a) { z_ltg(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_ltg(Register r1, int64_t d2, Register x2, Register b2)  { emit_48( LTG_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
+inline void Assembler::z_lgf( Register r1, int64_t d2, Register x2, Register b2) { emit_48( LGF_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_lhy( Register r1, int64_t d2, Register x2, Register b2) { emit_48( LHY_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_lgh( Register r1, int64_t d2, Register x2, Register b2) { emit_48( LGH_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_lt ( Register r1, int64_t d2, Register x2, Register b2) { emit_48( LT_ZOPC   | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_ltg( Register r1, int64_t d2, Register x2, Register b2) { emit_48( LTG_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_ltgf(Register r1, int64_t d2, Register x2, Register b2) { emit_48( LTGF_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_lb ( Register r1, int64_t d2, Register x2, Register b2) { emit_48( LB_ZOPC   | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_lgb( Register r1, int64_t d2, Register x2, Register b2) { emit_48( LGB_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_ly(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( LY_ZOPC   | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_llc( Register r1, int64_t d2, Register x2, Register b2) { emit_48( LLC_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_llh( Register r1, int64_t d2, Register x2, Register b2) { emit_48( LLH_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_llgf(Register r1, int64_t d2, Register x2, Register b2) { emit_48( LLGF_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_llgh(Register r1, int64_t d2, Register x2, Register b2) { emit_48( LLGH_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_llgc(Register r1, int64_t d2, Register x2, Register b2) { emit_48( LLGC_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_lgf( Register r1, const Address &a) { z_lgf( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_lhy( Register r1, const Address &a) { z_lhy( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_lgh( Register r1, const Address &a) { z_lgh( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_lt(  Register r1, const Address &a) { z_lt(  r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_ltg( Register r1, const Address &a) { z_ltg( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_ltgf(Register r1, const Address &a) { z_ltgf(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_ltgf(Register r1, int64_t d2, Register x2, Register b2) { emit_48( LTGF_ZOPC| regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_lb(Register r1, const Address &a) { z_lb(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_lb (Register r1, int64_t d2, Register x2, Register b2)  { emit_48( LB_ZOPC  | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_lgb(Register r1, const Address &a) { z_lgb(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_lgb(Register r1, int64_t d2, Register x2, Register b2)  { emit_48( LGB_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_ly(Register r1, const Address &a) { z_ly(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_ly(Register r1, int64_t d2, Register x2, Register b2)   { emit_48( LY_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_llc(Register r1, const Address& a) { z_llc(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_llc(Register r1, int64_t d2, Register x2, Register b2)  { emit_48( LLC_ZOPC  | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_llh(Register r1, const Address &a) { z_llh(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_llh(Register r1, int64_t d2, Register x2, Register b2)  { emit_48( LLH_ZOPC  | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
+inline void Assembler::z_lb(  Register r1, const Address &a) { z_lb(  r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_lgb( Register r1, const Address &a) { z_lgb( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_ly(  Register r1, const Address &a) { z_ly(  r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_llc( Register r1, const Address &a) { z_llc( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_llh( Register r1, const Address &a) { z_llh( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_llgf(Register r1, const Address &a) { z_llgf(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_llgf(Register r1, int64_t d2, Register x2, Register b2) { emit_48( LLGF_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
 inline void Assembler::z_llgh(Register r1, const Address &a) { z_llgh(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_llgh(Register r1, int64_t d2, Register x2, Register b2) { emit_48( LLGH_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
 inline void Assembler::z_llgc(Register r1, const Address &a) { z_llgc(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_llgc(Register r1, int64_t d2, Register x2, Register b2) { emit_48( LLGC_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_llgc(Register r1, int64_t d2, Register b2)              { z_llgc( r1, d2, Z_R0, b2); }
-inline void Assembler::z_lhi(Register r1, int64_t i2) { emit_32( LHI_ZOPC | regt(r1, 8, 32) | simm16(i2, 16, 32)); }
-inline void Assembler::z_lghi(Register r1, int64_t i2) { emit_32( LGHI_ZOPC | regt(r1, 8, 32) | simm16(i2, 16, 32)); }
-inline void Assembler::z_lgfi(Register r1, int64_t i2) { emit_48( LGFI_ZOPC | regt(r1, 8, 48) | simm32(i2, 16, 48)); }
+inline void Assembler::z_lhi(  Register r1, int64_t i2) { emit_32( LHI_ZOPC   | regt(r1, 8, 32) | simm16(i2, 16, 32)); }
+inline void Assembler::z_lghi( Register r1, int64_t i2) { emit_32( LGHI_ZOPC  | regt(r1, 8, 32) | simm16(i2, 16, 32)); }
+inline void Assembler::z_lgfi( Register r1, int64_t i2) { emit_48( LGFI_ZOPC  | regt(r1, 8, 48) | simm32(i2, 16, 48)); }
 inline void Assembler::z_llihf(Register r1, int64_t i2) { emit_48( LLIHF_ZOPC | regt(r1, 8, 48) | imm32(i2, 16, 48)); }
 inline void Assembler::z_llilf(Register r1, int64_t i2) { emit_48( LLILF_ZOPC | regt(r1, 8, 48) | imm32(i2, 16, 48)); }
 inline void Assembler::z_llihh(Register r1, int64_t i2) { emit_32( LLIHH_ZOPC | regt(r1, 8, 32) | imm16(i2, 16, 32)); }
@@ -323,36 +353,37 @@ inline void Assembler::z_lrvgr(Register r1, Register r2) { emit_32( LRVGR_ZOPC |
 inline void Assembler::z_ltr(  Register r1, Register r2) { emit_16( LTR_ZOPC   | regt(r1,  8, 16) | reg(r2, 12, 16)); }
 inline void Assembler::z_ltgr( Register r1, Register r2) { emit_32( LTGR_ZOPC  | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_ltgfr(Register r1, Register r2) { emit_32( LTGFR_ZOPC | regt(r1, 24, 32) | reg(r2, 28, 32)); }
-inline void Assembler::z_stc(  Register r1, const Address &a) { z_stc(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_stc(  Register r1, int64_t d2, Register x2, Register b2) { emit_32( STC_ZOPC | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
+inline void Assembler::z_stc(  Register r1, int64_t d2, Register x2, Register b2) { emit_32( STC_ZOPC  | regt(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_stcy( Register r1, int64_t d2, Register x2, Register b2) { emit_48( STCY_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_sthy( Register r1, int64_t d2, Register x2, Register b2) { emit_48( STHY_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_sty(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( STY_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_stc(  Register r1, const Address &a) { z_stc( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_stcy( Register r1, const Address &a) { z_stcy(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_stcy( Register r1, int64_t d2, Register x2, Register b2) { emit_48( STCY_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
 inline void Assembler::z_sthy( Register r1, const Address &a) { z_sthy(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_sthy( Register r1, int64_t d2, Register x2, Register b2) { emit_48( STHY_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_sty(  Register r1, const Address &a) { z_sty(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_sty(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( STY_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_stfle(int64_t d2, Register b2) { emit_32(STFLE_ZOPC | uimm12(d2,20,32) | regz(b2,16,32)); }
+inline void Assembler::z_sty(  Register r1, const Address &a) { z_sty( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+
+inline void Assembler::z_stfle(int64_t d2, Register b2) { emit_32(STFLE_ZOPC | rsmask_32(d2, b2)); }
 
 
 //-----------------------------------
 // SHIFT/RORATE OPERATIONS
 //-----------------------------------
-inline void Assembler::z_sla( Register r1,              int64_t d2, Register b2) { emit_32( SLA_ZOPC  | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(b2, 16, 32)); }
-inline void Assembler::z_slak(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SLAK_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(b2, 16, 48) | reg(r3, 12, 48)); }
-inline void Assembler::z_slag(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SLAG_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(b2, 16, 48) | reg(r3, 12, 48)); }
-inline void Assembler::z_sra( Register r1,              int64_t d2, Register b2) { emit_32( SRA_ZOPC  | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(b2, 16, 32)); }
-inline void Assembler::z_srak(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SRAK_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(b2, 16, 48) | reg(r3, 12, 48)); }
-inline void Assembler::z_srag(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SRAG_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(b2, 16, 48) | reg(r3, 12, 48)); }
-inline void Assembler::z_sll( Register r1,              int64_t d2, Register b2) { emit_32( SLL_ZOPC  | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(b2, 16, 32)); }
-inline void Assembler::z_sllk(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SLLK_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(b2, 16, 48) | reg(r3, 12, 48)); }
-inline void Assembler::z_sllg(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SLLG_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(b2, 16, 48) | reg(r3, 12, 48)); }
-inline void Assembler::z_srl( Register r1,              int64_t d2, Register b2) { emit_32( SRL_ZOPC  | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(b2, 16, 32)); }
-inline void Assembler::z_srlk(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SRLK_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(b2, 16, 48) | reg(r3, 12, 48)); }
-inline void Assembler::z_srlg(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SRLG_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(b2, 16, 48) | reg(r3, 12, 48)); }
+inline void Assembler::z_sla( Register r1,              int64_t d2, Register b2) { emit_32( SLA_ZOPC  | regt(r1, 8, 32) | rsmaskt_32( d2, b2)); }
+inline void Assembler::z_slak(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SLAK_ZOPC | regt(r1, 8, 48) | rsymaskt_48(d2, b2) | reg(r3, 12, 48)); }
+inline void Assembler::z_slag(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SLAG_ZOPC | regt(r1, 8, 48) | rsymaskt_48(d2, b2) | reg(r3, 12, 48)); }
+inline void Assembler::z_sra( Register r1,              int64_t d2, Register b2) { emit_32( SRA_ZOPC  | regt(r1, 8, 32) | rsmaskt_32( d2, b2)); }
+inline void Assembler::z_srak(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SRAK_ZOPC | regt(r1, 8, 48) | rsymaskt_48(d2, b2) | reg(r3, 12, 48)); }
+inline void Assembler::z_srag(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SRAG_ZOPC | regt(r1, 8, 48) | rsymaskt_48(d2, b2) | reg(r3, 12, 48)); }
+inline void Assembler::z_sll( Register r1,              int64_t d2, Register b2) { emit_32( SLL_ZOPC  | regt(r1, 8, 32) | rsmaskt_32( d2, b2)); }
+inline void Assembler::z_sllk(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SLLK_ZOPC | regt(r1, 8, 48) | rsymaskt_48(d2, b2) | reg(r3, 12, 48)); }
+inline void Assembler::z_sllg(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SLLG_ZOPC | regt(r1, 8, 48) | rsymaskt_48(d2, b2) | reg(r3, 12, 48)); }
+inline void Assembler::z_srl( Register r1,              int64_t d2, Register b2) { emit_32( SRL_ZOPC  | regt(r1, 8, 32) | rsmaskt_32( d2, b2)); }
+inline void Assembler::z_srlk(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SRLK_ZOPC | regt(r1, 8, 48) | rsymaskt_48(d2, b2) | reg(r3, 12, 48)); }
+inline void Assembler::z_srlg(Register r1, Register r3, int64_t d2, Register b2) { emit_48( SRLG_ZOPC | regt(r1, 8, 48) | rsymaskt_48(d2, b2) | reg(r3, 12, 48)); }
 
 // rotate left
-inline void Assembler::z_rll( Register r1, Register r3, int64_t d2, Register b2) { emit_48( RLL_ZOPC  | regt(r1, 8, 48) | reg(r3, 12, 48) | simm20(d2) | reg(b2, 16, 48)); }
-inline void Assembler::z_rllg(Register r1, Register r3, int64_t d2, Register b2) { emit_48( RLLG_ZOPC | regt(r1, 8, 48) | reg(r3, 12, 48) | simm20(d2) | reg(b2, 16, 48)); }
+inline void Assembler::z_rll( Register r1, Register r3, int64_t d2, Register b2) { emit_48( RLL_ZOPC  | regt(r1, 8, 48) | rsymaskt_48(d2, b2) | reg(r3, 12, 48)); }
+inline void Assembler::z_rllg(Register r1, Register r3, int64_t d2, Register b2) { emit_48( RLLG_ZOPC | regt(r1, 8, 48) | rsymaskt_48(d2, b2) | reg(r3, 12, 48)); }
 
 // Rotate the AND/XOR/OR/insert
 inline void Assembler::z_rnsbg( Register r1, Register r2, int64_t spos3, int64_t epos4, int64_t nrot5, bool test_only) { // Rotate then AND selected bits.  -- z196
@@ -388,9 +419,9 @@ inline void Assembler::z_risbg( Register r1, Register r2, int64_t spos3, int64_t
 //------------------------------
 // LOGICAL OPERATIONS
 //------------------------------
-inline void Assembler::z_n(   Register r1, int64_t d2, Register x2, Register b2) { emit_32( N_ZOPC  | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_ny(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( NY_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_ng(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( NG_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
+inline void Assembler::z_n(   Register r1, int64_t d2, Register x2, Register b2) { emit_32( N_ZOPC  | regt(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_ny(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( NY_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_ng(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( NG_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
 inline void Assembler::z_n(   Register r1, const Address& a) { z_n( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_ny(  Register r1, const Address& a) { z_ny(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_ng(  Register r1, const Address& a) { z_ng(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
@@ -407,9 +438,9 @@ inline void Assembler::z_nill(Register r1, int64_t i2) { emit_32( NILL_ZOPC | re
 inline void Assembler::z_nihf(Register r1, int64_t i2) { emit_48( NIHF_ZOPC | regt(r1, 8, 48) | imm32(i2, 16, 48)); }
 inline void Assembler::z_nilf(Register r1, int64_t i2) { emit_48( NILF_ZOPC | regt(r1, 8, 48) | imm32(i2, 16, 48)); }
 
-inline void Assembler::z_o(   Register r1, int64_t d2, Register x2, Register b2) { emit_32( O_ZOPC  | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_oy(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( OY_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_og(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( OG_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
+inline void Assembler::z_o(   Register r1, int64_t d2, Register x2, Register b2) { emit_32( O_ZOPC  | regt(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_oy(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( OY_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_og(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( OG_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
 inline void Assembler::z_o(   Register r1, const Address& a) { z_o( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_oy(  Register r1, const Address& a) { z_oy(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_og(  Register r1, const Address& a) { z_og(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
@@ -426,9 +457,9 @@ inline void Assembler::z_oill(Register r1, int64_t i2) { emit_32( OILL_ZOPC | re
 inline void Assembler::z_oihf(Register r1, int64_t i2) { emit_48( OIHF_ZOPC | regt(r1, 8, 48) | imm32(i2, 16, 48)); }
 inline void Assembler::z_oilf(Register r1, int64_t i2) { emit_48( OILF_ZOPC | regt(r1, 8, 48) | imm32(i2, 16, 48)); }
 
-inline void Assembler::z_x(   Register r1, int64_t d2, Register x2, Register b2) { emit_32( X_ZOPC  | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_xy(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( XY_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_xg(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( XG_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
+inline void Assembler::z_x(   Register r1, int64_t d2, Register x2, Register b2) { emit_32( X_ZOPC  | regt(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_xy(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( XY_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_xg(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( XG_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
 inline void Assembler::z_x(   Register r1, const Address& a) { z_x( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_xy(  Register r1, const Address& a) { z_xy(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_xg(  Register r1, const Address& a) { z_xg(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
@@ -441,9 +472,9 @@ inline void Assembler::z_xgrk(Register r1, Register r2, Register r3) { emit_32( 
 inline void Assembler::z_xihf(Register r1, int64_t i2) { emit_48( XIHF_ZOPC | regt(r1, 8, 48) | imm32(i2, 16, 48)); }
 inline void Assembler::z_xilf(Register r1, int64_t i2) { emit_48( XILF_ZOPC | regt(r1, 8, 48) | imm32(i2, 16, 48)); }
 
-inline void Assembler::z_nc(int64_t d1, int64_t l, Register b1, int64_t d2, Register b2) { emit_48( NC_ZOPC | uimm12(d1, 20, 48) | uimm8(l, 8, 48) | regz(b1, 16, 48) | uimm12(d2, 36, 48) | regz(b2, 32, 48)); }
-inline void Assembler::z_oc(int64_t d1, int64_t l, Register b1, int64_t d2, Register b2) { emit_48( OC_ZOPC | uimm12(d1, 20, 48) | uimm8(l, 8, 48) | regz(b1, 16, 48) | uimm12(d2, 36, 48) | regz(b2, 32, 48)); }
-inline void Assembler::z_xc(int64_t d1, int64_t l, Register b1, int64_t d2, Register b2) { emit_48( XC_ZOPC | uimm12(d1, 20, 48) | uimm8(l, 8, 48) | regz(b1, 16, 48) | uimm12(d2, 36, 48) | regz(b2, 32, 48)); }
+inline void Assembler::z_nc(int64_t d1, int64_t l, Register b1, int64_t d2, Register b2) { emit_48( NC_ZOPC | uimm8(l, 8, 48) | rsmask_48(d1, b1) | rsmask_SS(d2, b2)); }
+inline void Assembler::z_oc(int64_t d1, int64_t l, Register b1, int64_t d2, Register b2) { emit_48( OC_ZOPC | uimm8(l, 8, 48) | rsmask_48(d1, b1) | rsmask_SS(d2, b2)); }
+inline void Assembler::z_xc(int64_t d1, int64_t l, Register b1, int64_t d2, Register b2) { emit_48( XC_ZOPC | uimm8(l, 8, 48) | rsmask_48(d1, b1) | rsmask_SS(d2, b2)); }
 inline void Assembler::z_nc(Address dst, int64_t len, Address src2) { assert(!dst.has_index() && !src2.has_index(), "Cannot encode index"); z_nc(dst.disp12(), len-1, dst.base(), src2.disp12(), src2.base()); }
 inline void Assembler::z_oc(Address dst, int64_t len, Address src2) { assert(!dst.has_index() && !src2.has_index(), "Cannot encode index"); z_oc(dst.disp12(), len-1, dst.base(), src2.disp12(), src2.base()); }
 inline void Assembler::z_xc(Address dst, int64_t len, Address src2) { assert(!dst.has_index() && !src2.has_index(), "Cannot encode index"); z_xc(dst.disp12(), len-1, dst.base(), src2.disp12(), src2.base()); }
@@ -452,14 +483,14 @@ inline void Assembler::z_xc(Address dst, int64_t len, Address src2) { assert(!ds
 //---------------
 // ADD
 //---------------
-inline void Assembler::z_a(   Register r1, int64_t d2, Register x2, Register b2) { emit_32( A_ZOPC    | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_ay(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( AY_ZOPC   | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_al(  Register r1, int64_t d2, Register x2, Register b2) { emit_32( AL_ZOPC   | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_aly( Register r1, int64_t d2, Register x2, Register b2) { emit_48( ALY_ZOPC  | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_ag(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( AG_ZOPC   | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_agf( Register r1, int64_t d2, Register x2, Register b2) { emit_48( AGF_ZOPC  | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_alg( Register r1, int64_t d2, Register x2, Register b2) { emit_48( ALG_ZOPC  | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_algf(Register r1, int64_t d2, Register x2, Register b2) { emit_48( ALGF_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
+inline void Assembler::z_a(   Register r1, int64_t d2, Register x2, Register b2) { emit_32( A_ZOPC    | regt(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_ay(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( AY_ZOPC   | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_al(  Register r1, int64_t d2, Register x2, Register b2) { emit_32( AL_ZOPC   | regt(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_aly( Register r1, int64_t d2, Register x2, Register b2) { emit_48( ALY_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_ag(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( AG_ZOPC   | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_agf( Register r1, int64_t d2, Register x2, Register b2) { emit_48( AGF_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_alg( Register r1, int64_t d2, Register x2, Register b2) { emit_48( ALG_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_algf(Register r1, int64_t d2, Register x2, Register b2) { emit_48( ALGF_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
 inline void Assembler::z_a(   Register r1, const Address& a) { z_a(   r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_ay(  Register r1, const Address& a) { z_ay(  r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_al(  Register r1, const Address& a) { z_al(  r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
@@ -501,10 +532,10 @@ inline void Assembler::z_alhsik( Register r1, Register r3, int64_t i2) { emit_48
 inline void Assembler::z_alghsik(Register r1, Register r3, int64_t i2) { emit_48( ALGHSIK_ZOPC | regt(r1, 8, 48) | reg(r3, 12, 48) | simm16(i2, 16, 48)); }
 
 // In-memory arithmetic (add signed, add logical with signed immediate)
-inline void Assembler::z_asi(  int64_t d1, Register b1, int64_t i2) { emit_48( ASI_ZOPC   | simm8(i2, 8, 48) | simm20(d1) | regz(b1, 16, 48)); }
-inline void Assembler::z_agsi( int64_t d1, Register b1, int64_t i2) { emit_48( AGSI_ZOPC  | simm8(i2, 8, 48) | simm20(d1) | regz(b1, 16, 48)); }
-inline void Assembler::z_alsi( int64_t d1, Register b1, int64_t i2) { emit_48( ALSI_ZOPC  | simm8(i2, 8, 48) | simm20(d1) | regz(b1, 16, 48)); }
-inline void Assembler::z_algsi(int64_t d1, Register b1, int64_t i2) { emit_48( ALGSI_ZOPC | simm8(i2, 8, 48) | simm20(d1) | regz(b1, 16, 48)); }
+inline void Assembler::z_asi(  int64_t d1, Register b1, int64_t i2) { emit_48( ASI_ZOPC   | simm8(i2, 8, 48) | rsymask_48(d1, b1)); }
+inline void Assembler::z_agsi( int64_t d1, Register b1, int64_t i2) { emit_48( AGSI_ZOPC  | simm8(i2, 8, 48) | rsymask_48(d1, b1)); }
+inline void Assembler::z_alsi( int64_t d1, Register b1, int64_t i2) { emit_48( ALSI_ZOPC  | simm8(i2, 8, 48) | rsymask_48(d1, b1)); }
+inline void Assembler::z_algsi(int64_t d1, Register b1, int64_t i2) { emit_48( ALGSI_ZOPC | simm8(i2, 8, 48) | rsymask_48(d1, b1)); }
 inline void Assembler::z_asi(  const Address& d, int64_t i2) { assert(!d.has_index(), "No index in ASI");   z_asi(  d.disp(), d.base(), i2); }
 inline void Assembler::z_agsi( const Address& d, int64_t i2) { assert(!d.has_index(), "No index in AGSI");  z_agsi( d.disp(), d.base(), i2); }
 inline void Assembler::z_alsi( const Address& d, int64_t i2) { assert(!d.has_index(), "No index in ALSI");  z_alsi( d.disp(), d.base(), i2); }
@@ -514,14 +545,18 @@ inline void Assembler::z_algsi(const Address& d, int64_t i2) { assert(!d.has_ind
 //--------------------
 // SUBTRACT
 //--------------------
-inline void Assembler::z_s(   Register r1, int64_t d2, Register x2, Register b2) { emit_32( S_ZOPC    | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_sy(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( SY_ZOPC   | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_sg(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( SG_ZOPC   | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_sgf( Register r1, int64_t d2, Register x2, Register b2) { emit_48( SGF_ZOPC  | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_slg( Register r1, int64_t d2, Register x2, Register b2) { emit_48( SLG_ZOPC  | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_slgf(Register r1, int64_t d2, Register x2, Register b2) { emit_48( SLGF_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
+inline void Assembler::z_s(   Register r1, int64_t d2, Register x2, Register b2) { emit_32( S_ZOPC    | regt(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_sy(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( SY_ZOPC   | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_sl(  Register r1, int64_t d2, Register x2, Register b2) { emit_32( SL_ZOPC   | regt(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_sly( Register r1, int64_t d2, Register x2, Register b2) { emit_48( SLY_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_sg(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( SG_ZOPC   | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_sgf( Register r1, int64_t d2, Register x2, Register b2) { emit_48( SGF_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_slg( Register r1, int64_t d2, Register x2, Register b2) { emit_48( SLG_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_slgf(Register r1, int64_t d2, Register x2, Register b2) { emit_48( SLGF_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
 inline void Assembler::z_s(   Register r1, const Address& a) { z_s(   r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_sy(  Register r1, const Address& a) { z_sy(  r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_sl(  Register r1, const Address& a) { z_sl(  r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_sly( Register r1, const Address& a) { z_sly( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_sg(  Register r1, const Address& a) { z_sg(  r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_sgf( Register r1, const Address& a) { z_sgf( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_slg( Register r1, const Address& a) { z_slg( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
@@ -533,8 +568,8 @@ inline void Assembler::z_sgfr(Register r1, Register r2) { emit_32( SGFR_ZOPC | r
 inline void Assembler::z_srk( Register r1, Register r2, Register r3) { emit_32( SRK_ZOPC  | regt(r1, 24, 32) | reg(r2, 28, 32) | reg(r3, 16, 32)); }
 inline void Assembler::z_sgrk(Register r1, Register r2, Register r3) { emit_32( SGRK_ZOPC | regt(r1, 24, 32) | reg(r2, 28, 32) | reg(r3, 16, 32)); }
 
-inline void Assembler::z_sh(  Register r1, int64_t d2, Register x2, Register b2) { emit_32( SH_ZOPC  | regt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_shy( Register r1, int64_t d2, Register x2, Register b2) { emit_48( SHY_ZOPC | regt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
+inline void Assembler::z_sh(  Register r1, int64_t d2, Register x2, Register b2) { emit_32( SH_ZOPC  | regt(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_shy( Register r1, int64_t d2, Register x2, Register b2) { emit_48( SHY_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
 inline void Assembler::z_sh(  Register r1, const Address &a) { z_sh( r1, a.disp(), a.indexOrR0(), a.base()); }
 inline void Assembler::z_shy( Register r1, const Address &a) { z_shy(r1, a.disp(), a.indexOrR0(), a.base()); }
 
@@ -560,12 +595,12 @@ inline void Assembler::z_msgfr(Register r1, Register r2) { emit_32( MSGFR_ZOPC |
 inline void Assembler::z_mlr(  Register r1, Register r2) { emit_32( MLR_ZOPC   | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_mlgr( Register r1, Register r2) { emit_32( MLGR_ZOPC  | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 
-inline void Assembler::z_mhy( Register r1, int64_t d2, Register x2, Register b2) { emit_48( MHY_ZOPC  | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_msy( Register r1, int64_t d2, Register x2, Register b2) { emit_48( MSY_ZOPC  | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_msg( Register r1, int64_t d2, Register x2, Register b2) { emit_48( MSG_ZOPC  | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_msgf(Register r1, int64_t d2, Register x2, Register b2) { emit_48( MSGF_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_ml(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( ML_ZOPC   | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_mlg( Register r1, int64_t d2, Register x2, Register b2) { emit_48( MLG_ZOPC  | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
+inline void Assembler::z_mhy( Register r1, int64_t d2, Register x2, Register b2) { emit_48( MHY_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_msy( Register r1, int64_t d2, Register x2, Register b2) { emit_48( MSY_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_msg( Register r1, int64_t d2, Register x2, Register b2) { emit_48( MSG_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_msgf(Register r1, int64_t d2, Register x2, Register b2) { emit_48( MSGF_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_ml(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( ML_ZOPC   | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_mlg( Register r1, int64_t d2, Register x2, Register b2) { emit_48( MLG_ZOPC  | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
 
 inline void Assembler::z_mhy( Register r1, const Address& a) { z_mhy( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_msy( Register r1, const Address& a) { z_msy( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
@@ -583,45 +618,44 @@ inline void Assembler::z_mghi( Register r1, int64_t i2) { emit_32( MGHI_ZOPC  | 
 //------------------
 // DIVIDE
 //------------------
-inline void Assembler::z_dsgr( Register r1, Register r2) { emit_32( DSGR_ZOPC | regt(r1, 24, 32) | reg(r2, 28, 32)); }
+inline void Assembler::z_dsgr( Register r1, Register r2) { emit_32( DSGR_ZOPC  | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_dsgfr(Register r1, Register r2) { emit_32( DSGFR_ZOPC | regt(r1, 24, 32) | reg(r2, 28, 32)); }
 
 
 //-------------------
 // COMPARE
 //-------------------
-inline void Assembler::z_cr(  Register r1, Register r2) { emit_16( CR_ZOPC   | reg(r1,  8, 16) | reg(r2,12,16)); }
+inline void Assembler::z_cr(  Register r1, Register r2) { emit_16( CR_ZOPC   | reg(r1,  8, 16) | reg(r2, 12, 16)); }
+inline void Assembler::z_clr( Register r1, Register r2) { emit_16( CLR_ZOPC  | reg(r1,  8, 16) | reg(r2, 12, 16)); }
 inline void Assembler::z_cgr( Register r1, Register r2) { emit_32( CGR_ZOPC  | reg(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_cgfr(Register r1, Register r2) { emit_32( CGFR_ZOPC | reg(r1, 24, 32) | reg(r2, 28, 32)); }
+inline void Assembler::z_clgr(Register r1, Register r2) { emit_32( CLGR_ZOPC | reg(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_chi( Register r1, int64_t i2)  { emit_32( CHI_ZOPC  | reg(r1,  8, 32) | simm16(i2, 16, 32)); }
 inline void Assembler::z_cghi(Register r1, int64_t i2)  { emit_32( CGHI_ZOPC | reg(r1,  8, 32) | simm16(i2, 16, 32)); }
 inline void Assembler::z_cfi( Register r1, int64_t i2)  { emit_48( CFI_ZOPC  | regt(r1, 8, 48) | uimm32(i2, 16, 48)); }
 inline void Assembler::z_cgfi(Register r1, int64_t i2)  { emit_48( CGFI_ZOPC | regt(r1, 8, 48) | uimm32(i2, 16, 48)); }
-inline void Assembler::z_ch(Register r1, const Address &a) { z_ch(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_ch(Register r1, int64_t d2, Register x2, Register b2) { emit_32( CH_ZOPC | reg(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_c(Register r1, const Address &a) { z_c(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_c(Register r1,  int64_t d2, Register x2, Register b2) { emit_32( C_ZOPC  | reg(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_cy(Register r1, const Address &a) { z_cy(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_cy(Register r1, int64_t d2, Register x2, Register b2) { emit_48( CY_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_cy(Register r1, int64_t d2, Register b2) { z_cy(r1, d2, Z_R0, b2); }
-inline void Assembler::z_cg(Register r1, const Address &a) { z_cg(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_cg(Register r1, int64_t d2, Register x2, Register b2) { emit_48( CG_ZOPC | reg(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_clr(Register r1, Register r2) { emit_16( CLR_ZOPC | reg(r1,8,16) | reg(r2,12,16)); }
-inline void Assembler::z_clgr(Register r1, Register r2) { emit_32( CLGR_ZOPC | regt(r1, 24, 32) | reg(r2, 28, 32)); }
+inline void Assembler::z_ch(  Register r1, int64_t d2, Register x2, Register b2) { emit_32( CH_ZOPC | reg(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_c(   Register r1, int64_t d2, Register x2, Register b2) { emit_32( C_ZOPC  | reg(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_cy(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( CY_ZOPC | reg(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_cg(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( CG_ZOPC | reg(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_ch(  Register r1, const Address &a) { z_ch(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_c(   Register r1, const Address &a) { z_c( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_cy(  Register r1, const Address &a) { z_cy(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_cg(  Register r1, const Address &a) { z_cg(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 
 
-inline void Assembler::z_clfi(Register r1, int64_t i2)  { emit_48( CLFI_ZOPC  | regt(r1, 8, 48) | uimm32(i2, 16, 48)); }
+inline void Assembler::z_clfi( Register r1, int64_t i2) { emit_48( CLFI_ZOPC  | regt(r1, 8, 48) | uimm32(i2, 16, 48)); }
 inline void Assembler::z_clgfi(Register r1, int64_t i2) { emit_48( CLGFI_ZOPC | regt(r1, 8, 48) | uimm32(i2, 16, 48)); }
-inline void Assembler::z_cl(Register r1, const Address &a) { z_cl(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_cl(Register r1, int64_t d2, Register x2, Register b2) { emit_32( CL_ZOPC | regt(r1, 8, 32) | uimm12(d2,20,32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_cly(Register r1, const Address &a) { z_cly(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_cly(Register r1, int64_t d2, Register x2, Register b2) { emit_48( CLY_ZOPC | regt(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_cly(Register r1, int64_t d2, Register b2) { z_cly(r1, d2, Z_R0, b2); }
-inline void Assembler::z_clg(Register r1, const Address &a) { z_clg(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_clg(Register r1, int64_t d2, Register x2, Register b2) { emit_48( CLG_ZOPC | reg(r1, 8, 48) | simm20(d2) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_clc(int64_t d1, int64_t l, Register b1, int64_t d2, Register b2) { emit_48( CLC_ZOPC | uimm12(d1, 20, 48) | uimm8(l, 8, 48) | regz(b1, 16, 48) | uimm12(d2, 36, 48) | regz(b2, 32, 48)); }
-inline void Assembler::z_clcle(Register r1, Register r3, int64_t d2, Register b2) { emit_32( CLCLE_ZOPC | reg(r1, 8, 32) | reg(r3, 12, 32) | uimm12(d2, 20, 32) | reg(b2, 16, 32)); }
-inline void Assembler::z_clclu(Register r1, Register r3, int64_t d2, Register b2) { emit_48( CLCLU_ZOPC | reg(r1, 8, 48) | reg(r3, 12, 48) | uimm12(d2, 20, 48) | reg(b2, 16, 48)); }
+inline void Assembler::z_cl(   Register r1, int64_t d2, Register x2, Register b2) { emit_32( CL_ZOPC  | regt(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_cly(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( CLY_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_clg(  Register r1, int64_t d2, Register x2, Register b2) { emit_48( CLG_ZOPC | reg( r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_cl(   Register r1, const Address &a) { z_cl( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_cly(  Register r1, const Address &a) { z_cly(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_clg(  Register r1, const Address &a) { z_clg(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+
+inline void Assembler::z_clc(int64_t d1, int64_t l, Register b1, int64_t d2, Register b2) { emit_48( CLC_ZOPC | uimm8(l, 8, 48) | rsmask_48(d1, b1) | rsmask_SS(d2, b2)); }
+inline void Assembler::z_clcle(Register r1, Register r3, int64_t d2, Register b2) { emit_32( CLCLE_ZOPC | reg(r1, 8, 32) | reg(r3, 12, 32) | rsmaskt_32( d2, b2)); }
+inline void Assembler::z_clclu(Register r1, Register r3, int64_t d2, Register b2) { emit_48( CLCLU_ZOPC | reg(r1, 8, 48) | reg(r3, 12, 48) | rsymaskt_48(d2, b2)); }
 
 inline void Assembler::z_tmll(Register r1, int64_t i2) { emit_32( TMLL_ZOPC | regt(r1, 8, 32) | imm16(i2, 16, 32)); }
 inline void Assembler::z_tmlh(Register r1, int64_t i2) { emit_32( TMLH_ZOPC | regt(r1, 8, 32) | imm16(i2, 16, 32)); }
@@ -634,86 +668,89 @@ inline void Assembler::z_trot(Register r1, Register r2, int64_t m3) { emit_32( T
 inline void Assembler::z_trto(Register r1, Register r2, int64_t m3) { emit_32( TRTO_ZOPC | reg(r1, 24, 32) | reg(r2, 28, 32) | uimm4(m3, 16, 32)); }
 inline void Assembler::z_trtt(Register r1, Register r2, int64_t m3) { emit_32( TRTT_ZOPC | reg(r1, 24, 32) | reg(r2, 28, 32) | uimm4(m3, 16, 32)); }
 
+
+//------------------------
+// COMPARE AND BRANCH/TRAP
+//------------------------
 // signed comparison
-inline void Assembler::z_crb(Register r1,  Register r2, branch_condition m3, int64_t d4, Register b4) { emit_48( CRB_ZOPC  | reg(r1, 8, 48) | reg(r2, 12, 48) | uimm12(d4, 20, 48) | reg(b4, 16, 48) | uimm4(m3, 32, 48)); }
-inline void Assembler::z_cgrb(Register r1, Register r2, branch_condition m3, int64_t d4, Register b4) { emit_48( CGRB_ZOPC | reg(r1, 8, 48) | reg(r2, 12, 48) | uimm12(d4, 20, 48) | reg(b4, 16, 48) | uimm4(m3, 32, 48)); }
-inline void Assembler::z_crj(Register r1,  Register r2, branch_condition m3, address a4)              { emit_48( CRJ_ZOPC  | reg(r1, 8, 48) | reg(r2, 12, 48) | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | uimm4(m3, 32, 48)); }
-inline void Assembler::z_cgrj(Register r1, Register r2, branch_condition m3, address a4)              { emit_48( CGRJ_ZOPC | reg(r1, 8, 48) | reg(r2, 12, 48) | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | uimm4(m3, 32, 48)); }
-inline void Assembler::z_cib(Register r1,  int64_t i2, branch_condition m3, int64_t d4, Register b4)  { emit_48( CIB_ZOPC  | reg(r1, 8, 48) | uimm4(m3, 12, 48) | uimm12(d4, 20, 48) | reg(b4, 16, 48) | simm8(i2, 32, 48)); }
-inline void Assembler::z_cgib(Register r1, int64_t i2, branch_condition m3, int64_t d4, Register b4)  { emit_48( CGIB_ZOPC | reg(r1, 8, 48) | uimm4(m3, 12, 48) | uimm12(d4, 20, 48) | reg(b4, 16, 48) | simm8(i2, 32, 48)); }
-inline void Assembler::z_cij(Register r1,  int64_t i2, branch_condition m3, address a4)               { emit_48( CIJ_ZOPC  | reg(r1, 8, 48) | uimm4(m3, 12, 48) | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | simm8(i2, 32, 48)); }
-inline void Assembler::z_cgij(Register r1, int64_t i2, branch_condition m3, address a4)               { emit_48( CGIJ_ZOPC | reg(r1, 8, 48) | uimm4(m3, 12, 48) | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | simm8(i2, 32, 48)); }
+inline void Assembler::z_crb(Register  r1, Register r2, branch_condition m3, int64_t d4, Register b4) { emit_48( CRB_ZOPC  | reg(r1, 8, 48) | reg(r2, 12, 48)     | rsmask_48(d4, b4) | uimm4(m3, 32, 48)); }
+inline void Assembler::z_cgrb(Register r1, Register r2, branch_condition m3, int64_t d4, Register b4) { emit_48( CGRB_ZOPC | reg(r1, 8, 48) | reg(r2, 12, 48)     | rsmask_48(d4, b4) | uimm4(m3, 32, 48)); }
+inline void Assembler::z_crj(Register  r1, Register r2, branch_condition m3, address a4)              { emit_48( CRJ_ZOPC  | reg(r1, 8, 48) | reg(r2, 12, 48)     | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | uimm4(m3, 32, 48)); }
+inline void Assembler::z_cgrj(Register r1, Register r2, branch_condition m3, address a4)              { emit_48( CGRJ_ZOPC | reg(r1, 8, 48) | reg(r2, 12, 48)     | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | uimm4(m3, 32, 48)); }
+inline void Assembler::z_cib(Register  r1, int64_t i2,  branch_condition m3, int64_t d4, Register b4) { emit_48( CIB_ZOPC  | reg(r1, 8, 48) | uimm4(m3, 12, 48)   | rsmask_48(d4, b4) | simm8(i2, 32, 48)); }
+inline void Assembler::z_cgib(Register r1, int64_t i2,  branch_condition m3, int64_t d4, Register b4) { emit_48( CGIB_ZOPC | reg(r1, 8, 48) | uimm4(m3, 12, 48)   | rsmask_48(d4, b4) | simm8(i2, 32, 48)); }
+inline void Assembler::z_cij(Register  r1, int64_t i2,  branch_condition m3, address a4)              { emit_48( CIJ_ZOPC  | reg(r1, 8, 48) | uimm4(m3, 12, 48)   | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | simm8(i2, 32, 48)); }
+inline void Assembler::z_cgij(Register r1, int64_t i2,  branch_condition m3, address a4)              { emit_48( CGIJ_ZOPC | reg(r1, 8, 48) | uimm4(m3, 12, 48)   | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | simm8(i2, 32, 48)); }
 // unsigned comparison
-inline void Assembler::z_clrb(Register r1,  Register r2, branch_condition m3, int64_t d4, Register b4) { emit_48( CLRB_ZOPC  | reg(r1, 8, 48) | reg(r2, 12, 48) | uimm12(d4, 20, 48) | reg(b4, 16, 48) | uimm4(m3, 32, 48)); }
-inline void Assembler::z_clgrb(Register r1, Register r2, branch_condition m3, int64_t d4, Register b4) { emit_48( CLGRB_ZOPC | reg(r1, 8, 48) | reg(r2, 12, 48) | uimm12(d4, 20, 48) | reg(b4, 16, 48) | uimm4(m3, 32, 48)); }
-inline void Assembler::z_clrj(Register r1,  Register r2, branch_condition m3, address a4)              { emit_48( CLRJ_ZOPC  | reg(r1, 8, 48) | reg(r2, 12, 48) | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | uimm4(m3, 32, 48)); }
-inline void Assembler::z_clgrj(Register r1, Register r2, branch_condition m3, address a4)              { emit_48( CLGRJ_ZOPC | reg(r1, 8, 48) | reg(r2, 12, 48) | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | uimm4(m3, 32, 48)); }
-inline void Assembler::z_clib(Register r1,  int64_t i2, branch_condition m3, int64_t d4, Register b4)  { emit_48( CLIB_ZOPC  | reg(r1, 8, 48) | uimm4(m3, 12, 48) | uimm12(d4, 20, 48) | reg(b4, 16, 48) | uimm8(i2, 32, 48)); }
-inline void Assembler::z_clgib(Register r1, int64_t i2, branch_condition m3, int64_t d4, Register b4)  { emit_48( CLGIB_ZOPC | reg(r1, 8, 48) | uimm4(m3, 12, 48) | uimm12(d4, 20, 48) | reg(b4, 16, 48) | uimm8(i2, 32, 48)); }
-inline void Assembler::z_clij(Register r1,  int64_t i2, branch_condition m3, address a4)               { emit_48( CLIJ_ZOPC  | reg(r1, 8, 48) | uimm4(m3, 12, 48) | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | uimm8(i2, 32, 48)); }
+inline void Assembler::z_clrb(Register  r1, Register r2, branch_condition m3, int64_t d4, Register b4) { emit_48( CLRB_ZOPC  | reg(r1, 8, 48) | reg(r2, 12, 48)   | rsmask_48(d4, b4) | uimm4(m3, 32, 48)); }
+inline void Assembler::z_clgrb(Register r1, Register r2, branch_condition m3, int64_t d4, Register b4) { emit_48( CLGRB_ZOPC | reg(r1, 8, 48) | reg(r2, 12, 48)   | rsmask_48(d4, b4) | uimm4(m3, 32, 48)); }
+inline void Assembler::z_clrj(Register  r1, Register r2, branch_condition m3, address a4)              { emit_48( CLRJ_ZOPC  | reg(r1, 8, 48) | reg(r2, 12, 48)   | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | uimm4(m3, 32, 48)); }
+inline void Assembler::z_clgrj(Register r1, Register r2, branch_condition m3, address a4)              { emit_48( CLGRJ_ZOPC | reg(r1, 8, 48) | reg(r2, 12, 48)   | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | uimm4(m3, 32, 48)); }
+inline void Assembler::z_clib(Register  r1, int64_t i2, branch_condition m3, int64_t d4, Register b4)  { emit_48( CLIB_ZOPC  | reg(r1, 8, 48) | uimm4(m3, 12, 48) | rsmask_48(d4, b4) | uimm8(i2, 32, 48)); }
+inline void Assembler::z_clgib(Register r1, int64_t i2, branch_condition m3, int64_t d4, Register b4)  { emit_48( CLGIB_ZOPC | reg(r1, 8, 48) | uimm4(m3, 12, 48) | rsmask_48(d4, b4) | uimm8(i2, 32, 48)); }
+inline void Assembler::z_clij(Register  r1, int64_t i2, branch_condition m3, address a4)               { emit_48( CLIJ_ZOPC  | reg(r1, 8, 48) | uimm4(m3, 12, 48) | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | uimm8(i2, 32, 48)); }
 inline void Assembler::z_clgij(Register r1, int64_t i2, branch_condition m3, address a4)               { emit_48( CLGIJ_ZOPC | reg(r1, 8, 48) | uimm4(m3, 12, 48) | simm16(RelAddr::pcrel_off16(a4, pc()), 16, 48) | uimm8(i2, 32, 48)); }
 
 // Compare and trap instructions (signed).
-inline void Assembler::z_crt(Register  r1, Register r2, int64_t m3)  { emit_32( CRT_ZOPC   | reg(r1, 24, 32) | reg(r2, 28, 32) | uimm4(m3, 16, 32)); }
-inline void Assembler::z_cgrt(Register r1, Register r2, int64_t m3)  { emit_32( CGRT_ZOPC  | reg(r1, 24, 32) | reg(r2, 28, 32) | uimm4(m3, 16, 32)); }
+inline void Assembler::z_crt(Register  r1, Register r2, int64_t m3)  { emit_32( CRT_ZOPC   | reg(r1, 24, 32) | reg(r2, 28, 32)    | uimm4(m3, 16, 32)); }
+inline void Assembler::z_cgrt(Register r1, Register r2, int64_t m3)  { emit_32( CGRT_ZOPC  | reg(r1, 24, 32) | reg(r2, 28, 32)    | uimm4(m3, 16, 32)); }
 inline void Assembler::z_cit(Register  r1, int64_t i2, int64_t m3)   { emit_48( CIT_ZOPC   | reg(r1,  8, 48) | simm16(i2, 16, 48) | uimm4(m3, 32, 48)); }
 inline void Assembler::z_cgit(Register r1, int64_t i2, int64_t m3)   { emit_48( CGIT_ZOPC  | reg(r1,  8, 48) | simm16(i2, 16, 48) | uimm4(m3, 32, 48)); }
 
 // Compare and trap instructions (unsigned).
-inline void Assembler::z_clrt(Register  r1, Register r2, int64_t m3) { emit_32( CLRT_ZOPC  | reg(r1, 24, 32) | reg(r2, 28, 32) | uimm4(m3, 16, 32)); }
-inline void Assembler::z_clgrt(Register r1, Register r2, int64_t m3) { emit_32( CLGRT_ZOPC | reg(r1, 24, 32) | reg(r2, 28, 32) | uimm4(m3, 16, 32)); }
+inline void Assembler::z_clrt(Register  r1, Register r2, int64_t m3) { emit_32( CLRT_ZOPC  | reg(r1, 24, 32) | reg(r2, 28, 32)    | uimm4(m3, 16, 32)); }
+inline void Assembler::z_clgrt(Register r1, Register r2, int64_t m3) { emit_32( CLGRT_ZOPC | reg(r1, 24, 32) | reg(r2, 28, 32)    | uimm4(m3, 16, 32)); }
 inline void Assembler::z_clfit(Register r1, int64_t i2, int64_t m3)  { emit_48( CLFIT_ZOPC | reg(r1,  8, 48) | uimm16(i2, 16, 48) | uimm4(m3, 32, 48)); }
 inline void Assembler::z_clgit(Register r1, int64_t i2, int64_t m3)  { emit_48( CLGIT_ZOPC | reg(r1,  8, 48) | uimm16(i2, 16, 48) | uimm4(m3, 32, 48)); }
 
-inline void Assembler::z_bc(  branch_condition m1, int64_t d2, Register x2, Register b2) { emit_32( BC_ZOPC | 0 << 16 | uimm4(m1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_bcr( branch_condition m1, Register r2) { emit_16( BCR_ZOPC | uimm4(m1,8,16) | reg(r2,12,16)); }
-inline void Assembler::z_brc( branch_condition i1, int64_t i2)  { emit_32( BRC_ZOPC | uimm4(i1, 8, 32) | simm16(i2, 16, 32)); }
-inline void Assembler::z_brc( branch_condition i1, address a)   { emit_32( BRC_ZOPC | uimm4(i1, 8, 32) | simm16(RelAddr::pcrel_off16(a, pc()), 16, 32)); }
-inline void Assembler::z_brcl(branch_condition i1, address a)   { emit_48( BRCL_ZOPC | uimm4(i1, 8, 48)| simm32(RelAddr::pcrel_off32(a, pc()), 16, 48)); }
+
+//------------------------
+// BRANCH/CALL
+//------------------------
+inline void Assembler::z_bc(  branch_condition m1, int64_t d2, Register x2, Register b2) { emit_32( BC_ZOPC | uimm4(m1, 8, 32) | rxmask_32(d2, x2, b2)); }
+inline void Assembler::z_bcr( branch_condition m1, Register r2) { emit_16( BCR_ZOPC   | uimm4(m1, 8, 16) | reg(r2, 12, 16)); }
+inline void Assembler::z_brc( branch_condition i1, int64_t i2)  { emit_32( BRC_ZOPC   | uimm4(i1, 8, 32) | simm16(i2, 16, 32)); }
+inline void Assembler::z_brc( branch_condition i1, address a)   { emit_32( BRC_ZOPC   | uimm4(i1, 8, 32) | simm16(RelAddr::pcrel_off16(a, pc()), 16, 32)); }
+inline void Assembler::z_brcl(branch_condition i1, address a)   { emit_48( BRCL_ZOPC  | uimm4(i1, 8, 48) | simm32(RelAddr::pcrel_off32(a, pc()), 16, 48)); }
 inline void Assembler::z_bctgr(Register r1, Register r2)        { emit_32( BCTGR_ZOPC | reg( r1, 24, 32) | reg( r2, 28, 32)); };
 
-inline void Assembler::z_basr(Register r1, Register r2) { emit_16( BASR_ZOPC | regt(r1,8,16) | reg(r2,12,16)); }
+inline void Assembler::z_basr( Register r1, Register r2) { emit_16( BASR_ZOPC  | regt(r1, 8, 16) | reg(r2, 12, 16)); }
+inline void Assembler::z_brasl(Register r1, address a)   { emit_48( BRASL_ZOPC | regt(r1, 8, 48) | simm32(RelAddr::pcrel_off32(a, pc()), 16, 48)); }
 
-inline void Assembler::z_brasl(Register r1, address a) { emit_48( BRASL_ZOPC | regt(r1, 8, 48) | simm32(RelAddr::pcrel_off32(a, pc()), 16, 48)); }
-
-inline void Assembler::z_brct(Register r1, address a) { emit_32( BRCT_ZOPC | regt(r1, 8, 32) | simm16(RelAddr::pcrel_off16(a, pc()), 16, 32)); }
-inline void Assembler::z_brct(Register r1, Label& L) {z_brct(r1, target(L)); }
-
-inline void Assembler::z_brxh(Register r1, Register r3, address a) {emit_32( BRXH_ZOPC | reg(r1, 8, 32) | reg(r3, 12, 32)  | simm16(RelAddr::pcrel_off16(a, pc()), 16, 32));}
-inline void Assembler::z_brxh(Register r1, Register r3, Label& L) {z_brxh(r1, r3, target(L)); }
-
+inline void Assembler::z_brct(Register  r1, address a)              {emit_32( BRCT_ZOPC  | reg(r1, 8, 32) | simm16(RelAddr::pcrel_off16(a, pc()), 16, 32)); }
+inline void Assembler::z_brxh(Register  r1, Register r3, address a) {emit_32( BRXH_ZOPC  | reg(r1, 8, 32) | reg(r3, 12, 32) | simm16(RelAddr::pcrel_off16(a, pc()), 16, 32));}
 inline void Assembler::z_brxle(Register r1, Register r3, address a) {emit_32( BRXLE_ZOPC | reg(r1, 8, 32) | reg(r3, 12, 32) | simm16(RelAddr::pcrel_off16(a, pc()), 16, 32));}
-inline void Assembler::z_brxle(Register r1, Register r3, Label& L) {z_brxle(r1, r3, target(L)); }
-
 inline void Assembler::z_brxhg(Register r1, Register r3, address a) {emit_48( BRXHG_ZOPC | reg(r1, 8, 48) | reg(r3, 12, 48) | simm16(RelAddr::pcrel_off16(a, pc()), 16, 48));}
-inline void Assembler::z_brxhg(Register r1, Register r3, Label& L) {z_brxhg(r1, r3, target(L)); }
-
 inline void Assembler::z_brxlg(Register r1, Register r3, address a) {emit_48( BRXLG_ZOPC | reg(r1, 8, 48) | reg(r3, 12, 48) | simm16(RelAddr::pcrel_off16(a, pc()), 16, 48));}
+inline void Assembler::z_brct(Register  r1,              Label& L) {z_brct( r1,     target(L)); }
+inline void Assembler::z_brxh(Register  r1, Register r3, Label& L) {z_brxh( r1, r3, target(L)); }
+inline void Assembler::z_brxle(Register r1, Register r3, Label& L) {z_brxle(r1, r3, target(L)); }
+inline void Assembler::z_brxhg(Register r1, Register r3, Label& L) {z_brxhg(r1, r3, target(L)); }
 inline void Assembler::z_brxlg(Register r1, Register r3, Label& L) {z_brxlg(r1, r3, target(L)); }
 
-inline void Assembler::z_flogr(Register r1, Register r2) { emit_32( FLOGR_ZOPC  | reg(r1, 24, 32) | reg(r2, 28, 32)); }
-inline void Assembler::z_popcnt(Register r1, Register r2) { emit_32( POPCNT_ZOPC  | reg(r1, 24, 32) | reg(r2, 28, 32)); }
-inline void Assembler::z_ahhhr(Register r1, Register r2, Register r3) { emit_32( AHHHR_ZOPC  | reg(r3, 16, 32) | reg(r1, 24, 32) | reg(r2, 28, 32)); }
-inline void Assembler::z_ahhlr(Register r1, Register r2, Register r3) { emit_32( AHHLR_ZOPC  | reg(r3, 16, 32) | reg(r1, 24, 32) | reg(r2, 28, 32)); }
+inline void Assembler::z_flogr( Register r1, Register r2)              { emit_32( FLOGR_ZOPC  | reg(r1, 24, 32) | reg(r2, 28, 32)); }
+inline void Assembler::z_popcnt(Register r1, Register r2)              { emit_32( POPCNT_ZOPC | reg(r1, 24, 32) | reg(r2, 28, 32)); }
+inline void Assembler::z_ahhhr( Register r1, Register r2, Register r3) { emit_32( AHHHR_ZOPC  | reg(r3, 16, 32) | reg(r1, 24, 32) | reg(r2, 28, 32)); }
+inline void Assembler::z_ahhlr( Register r1, Register r2, Register r3) { emit_32( AHHLR_ZOPC  | reg(r3, 16, 32) | reg(r1, 24, 32) | reg(r2, 28, 32)); }
 
 inline void Assembler::z_tam() { emit_16( TAM_ZOPC); }
-inline void Assembler::z_stckf(int64_t d2, Register b2) { emit_32( STCKF_ZOPC | uimm12(d2, 20, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_stm( Register r1, Register r3, int64_t d2, Register b2) { emit_32( STM_ZOPC  | reg(r1, 8, 32) | reg(r3,12,32)| reg(b2,16,32) | uimm12(d2, 20,32)); }
-inline void Assembler::z_stmy(Register r1, Register r3, int64_t d2, Register b2) { emit_48( STMY_ZOPC | reg(r1, 8, 48) | reg(r3,12,48)| reg(b2,16,48) | simm20(d2) ); }
-inline void Assembler::z_stmg(Register r1, Register r3, int64_t d2, Register b2) { emit_48( STMG_ZOPC | reg(r1, 8, 48) | reg(r3,12,48)| reg(b2,16,48) | simm20(d2) ); }
-inline void Assembler::z_lm(  Register r1, Register r3, int64_t d2, Register b2) { emit_32( LM_ZOPC   | reg(r1, 8, 32) | reg(r3,12,32)| reg(b2,16,32) | uimm12(d2, 20,32)); }
-inline void Assembler::z_lmy( Register r1, Register r3, int64_t d2, Register b2) { emit_48( LMY_ZOPC  | reg(r1, 8, 48) | reg(r3,12,48)| reg(b2,16,48) | simm20(d2) ); }
-inline void Assembler::z_lmg( Register r1, Register r3, int64_t d2, Register b2) { emit_48( LMG_ZOPC  | reg(r1, 8, 48) | reg(r3,12,48)| reg(b2,16,48) | simm20(d2) ); }
+inline void Assembler::z_stckf(int64_t d2, Register b2) { emit_32( STCKF_ZOPC | rsmask_32(d2, b2)); }
+inline void Assembler::z_stm( Register r1, Register r3, int64_t d2, Register b2) { emit_32( STM_ZOPC  | reg(r1, 8, 32) | reg(r3,12,32)| rsmask_32( d2, b2)); }
+inline void Assembler::z_stmy(Register r1, Register r3, int64_t d2, Register b2) { emit_48( STMY_ZOPC | reg(r1, 8, 48) | reg(r3,12,48)| rsymask_48(d2, b2)); }
+inline void Assembler::z_stmg(Register r1, Register r3, int64_t d2, Register b2) { emit_48( STMG_ZOPC | reg(r1, 8, 48) | reg(r3,12,48)| rsymask_48(d2, b2)); }
+inline void Assembler::z_lm(  Register r1, Register r3, int64_t d2, Register b2) { emit_32( LM_ZOPC   | reg(r1, 8, 32) | reg(r3,12,32)| rsmask_32( d2, b2)); }
+inline void Assembler::z_lmy( Register r1, Register r3, int64_t d2, Register b2) { emit_48( LMY_ZOPC  | reg(r1, 8, 48) | reg(r3,12,48)| rsymask_48(d2, b2)); }
+inline void Assembler::z_lmg( Register r1, Register r3, int64_t d2, Register b2) { emit_48( LMG_ZOPC  | reg(r1, 8, 48) | reg(r3,12,48)| rsymask_48(d2, b2)); }
 
-inline void Assembler::z_cs( Register r1, Register r3, int64_t d2, Register b2) { emit_32( CS_ZOPC  | regt(r1, 8, 32) | reg(r3, 12, 32) | reg(b2, 16, 32) | uimm12(d2, 20, 32)); }
-inline void Assembler::z_csy(Register r1, Register r3, int64_t d2, Register b2) { emit_48( CSY_ZOPC | regt(r1, 8, 48) | reg(r3, 12, 48) | reg(b2, 16, 48) | simm20(d2)); }
-inline void Assembler::z_csg(Register r1, Register r3, int64_t d2, Register b2) { emit_48( CSG_ZOPC | regt(r1, 8, 48) | reg(r3, 12, 48) | reg(b2, 16, 48) | simm20(d2)); }
+inline void Assembler::z_cs( Register r1, Register r3, int64_t d2, Register b2)  { emit_32( CS_ZOPC  | regt(r1, 8, 32) | reg(r3, 12, 32) | rsmask_32( d2, b2)); }
+inline void Assembler::z_csy(Register r1, Register r3, int64_t d2, Register b2)  { emit_48( CSY_ZOPC | regt(r1, 8, 48) | reg(r3, 12, 48) | rsymask_48(d2, b2)); }
+inline void Assembler::z_csg(Register r1, Register r3, int64_t d2, Register b2)  { emit_48( CSG_ZOPC | regt(r1, 8, 48) | reg(r3, 12, 48) | rsymask_48(d2, b2)); }
 inline void Assembler::z_cs( Register r1, Register r3, const Address& a) { assert(!a.has_index(), "Cannot encode index"); z_cs( r1, r3, a.disp(), a.baseOrR0()); }
 inline void Assembler::z_csy(Register r1, Register r3, const Address& a) { assert(!a.has_index(), "Cannot encode index"); z_csy(r1, r3, a.disp(), a.baseOrR0()); }
 inline void Assembler::z_csg(Register r1, Register r3, const Address& a) { assert(!a.has_index(), "Cannot encode index"); z_csg(r1, r3, a.disp(), a.baseOrR0()); }
 
-inline void Assembler::z_cvd(Register r1, int64_t d2, Register x2, Register b2)  { emit_32( CVD_ZOPC  | regt(r1, 8, 32) | reg(x2, 12, 32) | reg(b2, 16, 32) | uimm12(d2, 20, 32)); }
-inline void Assembler::z_cvdg(Register r1, int64_t d2, Register x2, Register b2) { emit_48( CVDG_ZOPC | regt(r1, 8, 48) | reg(x2, 12, 48) | reg(b2, 16, 48) | simm20(d2)); }
+inline void Assembler::z_cvd( Register r1, int64_t d2, Register x2, Register b2) { emit_32( CVD_ZOPC  | regt(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_cvdg(Register r1, int64_t d2, Register x2, Register b2) { emit_48( CVDG_ZOPC | regt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
 
 
 //---------------------------
@@ -1142,30 +1179,30 @@ inline void Assembler::z_ler(  FloatRegister r1, FloatRegister r2) { emit_16( LE
 inline void Assembler::z_ldr(  FloatRegister r1, FloatRegister r2) { emit_16( LDR_ZOPC   | fregt(r1,8,16)    | freg(r2,12,16));   }
 inline void Assembler::z_ldebr(FloatRegister r1, FloatRegister r2) { emit_32( LDEBR_ZOPC | fregt(r1, 24, 32) | freg(r2, 28, 32)); }
 inline void Assembler::z_ledbr(FloatRegister r1, FloatRegister r2) { emit_32( LEDBR_ZOPC | fregt(r1, 24, 32) | freg(r2, 28, 32)); }
-inline void Assembler::z_le( FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_32( LE_ZOPC  | fregt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_ley(FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_48( LEY_ZOPC | fregt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_ld( FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_32( LD_ZOPC  | fregt(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_ldy(FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_48( LDY_ZOPC | fregt(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_le( FloatRegister r1, const Address &a) { z_le( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_ley(FloatRegister r1, const Address &a) { z_ley(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_ld( FloatRegister r1, const Address &a) { z_ld( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_ldy(FloatRegister r1, const Address &a) { z_ldy(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_le(   FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_32( LE_ZOPC  | fregt(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_ley(  FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_48( LEY_ZOPC | fregt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_ld(   FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_32( LD_ZOPC  | fregt(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_ldy(  FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_48( LDY_ZOPC | fregt(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_le(   FloatRegister r1, const Address &a) { z_le( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_ley(  FloatRegister r1, const Address &a) { z_ley(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_ld(   FloatRegister r1, const Address &a) { z_ld( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_ldy(  FloatRegister r1, const Address &a) { z_ldy(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 
-inline void Assembler::z_lzdr(FloatRegister r1) { emit_32( LZDR_ZOPC | fregt(r1, 24, 32)); }
-inline void Assembler::z_lzer(FloatRegister f1) { emit_32( LZER_ZOPC | fregt(f1, 24, 32)); }
+inline void Assembler::z_lzdr( FloatRegister r1) { emit_32( LZDR_ZOPC | fregt(r1, 24, 32)); }
+inline void Assembler::z_lzer( FloatRegister f1) { emit_32( LZER_ZOPC | fregt(f1, 24, 32)); }
 
 
 //-----------------
 // STORE
 //-----------------
-inline void Assembler::z_ste( FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_32( STE_ZOPC  | freg(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_stey(FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_48( STEY_ZOPC | freg(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_std( FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_32( STD_ZOPC  | freg(r1, 8, 32) | uimm12(d2, 20, 32) | reg(x2, 12, 32) | regz(b2, 16, 32)); }
-inline void Assembler::z_stdy(FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_48( STDY_ZOPC | freg(r1, 8, 48) | simm20(d2)         | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_ste( FloatRegister r1, const Address &a) { z_ste( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_stey(FloatRegister r1, const Address &a) { z_stey(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_std( FloatRegister r1, const Address &a) { z_std( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_stdy(FloatRegister r1, const Address &a) { z_stdy(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_ste(  FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_32( STE_ZOPC  | freg(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_stey( FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_48( STEY_ZOPC | freg(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_std(  FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_32( STD_ZOPC  | freg(r1, 8, 32) | rxmask_32( d2, x2, b2)); }
+inline void Assembler::z_stdy( FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_48( STDY_ZOPC | freg(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
+inline void Assembler::z_ste(  FloatRegister r1, const Address &a) { z_ste( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_stey( FloatRegister r1, const Address &a) { z_stey(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_std(  FloatRegister r1, const Address &a) { z_std( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_stdy( FloatRegister r1, const Address &a) { z_stdy(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 
 
 //---------------
@@ -1173,35 +1210,34 @@ inline void Assembler::z_stdy(FloatRegister r1, const Address &a) { z_stdy(r1, a
 //---------------
 inline void Assembler::z_aebr( FloatRegister f1, FloatRegister f2)                  { emit_32( AEBR_ZOPC | fregt( f1, 24, 32) | freg( f2, 28, 32));}
 inline void Assembler::z_adbr( FloatRegister f1, FloatRegister f2)                  { emit_32( ADBR_ZOPC | fregt( f1, 24, 32) | freg( f2, 28, 32));}
-inline void Assembler::z_aeb(  FloatRegister f1, int64_t d2, Register x2, Register b2 ) { emit_48( AEB_ZOPC | fregt( f1, 8, 48) | uimm12( d2, 20, 48) | reg( x2, 12, 48) | regz( b2, 16, 48));}
-inline void Assembler::z_adb(  FloatRegister f1, int64_t d2, Register x2, Register b2 ) { emit_48( ADB_ZOPC | fregt( f1, 8, 48) | uimm12( d2, 20, 48) | reg( x2, 12, 48) | regz( b2, 16, 48));}
-inline void Assembler::z_aeb(  FloatRegister r1, const Address& a)                   { z_aeb(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_adb(  FloatRegister r1, const Address& a)                   { z_adb(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_aeb(  FloatRegister f1, int64_t d2, Register x2, Register b2) { emit_48( AEB_ZOPC | fregt( f1, 8, 48) | rxmask_48(d2, x2, b2));}
+inline void Assembler::z_adb(  FloatRegister f1, int64_t d2, Register x2, Register b2) { emit_48( ADB_ZOPC | fregt( f1, 8, 48) | rxmask_48(d2, x2, b2));}
+inline void Assembler::z_aeb(  FloatRegister r1, const Address& a)                  { z_aeb(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_adb(  FloatRegister r1, const Address& a)                  { z_adb(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 
 
 //---------------
 // SUB
 //---------------
-inline void Assembler::z_sebr( FloatRegister f1, FloatRegister f2)                  { emit_32( SEBR_ZOPC | fregt( f1, 24, 32) | freg( f2, 28, 32));}
-inline void Assembler::z_sdbr( FloatRegister f1, FloatRegister f2)                  { emit_32( SDBR_ZOPC | fregt( f1, 24, 32) | freg( f2, 28, 32));}
-inline void Assembler::z_seb(  FloatRegister f1, int64_t d2, Register x2, Register b2 ) { emit_48( SEB_ZOPC | fregt( f1, 8, 48) | uimm12( d2, 20, 48) | reg( x2, 12, 48) | regz( b2, 16, 48));}
-inline void Assembler::z_sdb(  FloatRegister f1, int64_t d2, Register x2, Register b2 ) { emit_48( SDB_ZOPC | fregt( f1, 8, 48) | uimm12( d2, 20, 48) | reg( x2, 12, 48) | regz( b2, 16, 48));}
+inline void Assembler::z_sebr( FloatRegister f1, FloatRegister f2)                   { emit_32( SEBR_ZOPC | fregt( f1, 24, 32) | freg( f2, 28, 32));}
+inline void Assembler::z_sdbr( FloatRegister f1, FloatRegister f2)                   { emit_32( SDBR_ZOPC | fregt( f1, 24, 32) | freg( f2, 28, 32));}
+inline void Assembler::z_seb(  FloatRegister f1, int64_t d2, Register x2, Register b2) { emit_48( SEB_ZOPC | fregt( f1, 8, 48) | rxmask_48(d2, x2, b2));}
+inline void Assembler::z_sdb(  FloatRegister f1, int64_t d2, Register x2, Register b2) { emit_48( SDB_ZOPC | fregt( f1, 8, 48) | rxmask_48(d2, x2, b2));}
 inline void Assembler::z_seb(  FloatRegister r1, const Address& a)                   { z_seb(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_sdb(  FloatRegister r1, const Address& a)                   { z_sdb(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 
 inline void Assembler::z_lcebr(FloatRegister r1, FloatRegister r2)                   { emit_32( LCEBR_ZOPC | fregt(r1, 24, 32) | freg(r2, 28, 32)); }
 inline void Assembler::z_lcdbr(FloatRegister r1, FloatRegister r2)                   { emit_32( LCDBR_ZOPC | fregt(r1, 24, 32) | freg(r2, 28, 32)); }
-
-inline void Assembler::z_lpdbr( FloatRegister fr1, FloatRegister fr2) { emit_32( LPDBR_ZOPC | fregt( fr1, 24,32) | freg((fr2 == fnoreg) ? fr1:fr2, 28, 32)); }
+inline void Assembler::z_lpdbr(FloatRegister r1, FloatRegister r2)                   { emit_32( LPDBR_ZOPC | fregt(r1, 24, 32) | freg((r2 == fnoreg) ? r1:r2, 28, 32)); }
 
 
 //---------------
 // MUL
 //---------------
-inline void Assembler::z_meebr(FloatRegister f1, FloatRegister f2)                  { emit_32( MEEBR_ZOPC | fregt( f1, 24, 32) | freg( f2, 28, 32));}
-inline void Assembler::z_mdbr( FloatRegister f1, FloatRegister f2)                  { emit_32( MDBR_ZOPC  | fregt( f1, 24, 32) | freg( f2, 28, 32));}
-inline void Assembler::z_meeb( FloatRegister f1, int64_t d2, Register x2, Register b2 ) { emit_48( MEEB_ZOPC | fregt( f1, 8, 48) | uimm12( d2, 20, 48) | reg( x2, 12, 48) | regz( b2, 16, 48));}
-inline void Assembler::z_mdb(  FloatRegister f1, int64_t d2, Register x2, Register b2 ) { emit_48( MDB_ZOPC  | fregt( f1, 8, 48) | uimm12( d2, 20, 48) | reg( x2, 12, 48) | regz( b2, 16, 48));}
+inline void Assembler::z_meebr(FloatRegister f1, FloatRegister f2)                   { emit_32( MEEBR_ZOPC | fregt( f1, 24, 32) | freg( f2, 28, 32));}
+inline void Assembler::z_mdbr( FloatRegister f1, FloatRegister f2)                   { emit_32( MDBR_ZOPC  | fregt( f1, 24, 32) | freg( f2, 28, 32));}
+inline void Assembler::z_meeb( FloatRegister f1, int64_t d2, Register x2, Register b2) { emit_48( MEEB_ZOPC | fregt( f1, 8, 48) | rxmask_48(d2, x2, b2));}
+inline void Assembler::z_mdb(  FloatRegister f1, int64_t d2, Register x2, Register b2) { emit_48( MDB_ZOPC  | fregt( f1, 8, 48) | rxmask_48(d2, x2, b2));}
 inline void Assembler::z_meeb( FloatRegister r1, const Address& a)                   { z_meeb( r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_mdb(  FloatRegister r1, const Address& a)                   { z_mdb(  r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 
@@ -1213,43 +1249,43 @@ inline void Assembler::z_maebr(FloatRegister f1, FloatRegister f3, FloatRegister
 inline void Assembler::z_madbr(FloatRegister f1, FloatRegister f3, FloatRegister f2) { emit_32( MADBR_ZOPC | fregt(f1, 16, 32) | freg(f3, 24, 32) | freg(f2, 28, 32) );}
 inline void Assembler::z_msebr(FloatRegister f1, FloatRegister f3, FloatRegister f2) { emit_32( MSEBR_ZOPC | fregt(f1, 16, 32) | freg(f3, 24, 32) | freg(f2, 28, 32) );}
 inline void Assembler::z_msdbr(FloatRegister f1, FloatRegister f3, FloatRegister f2) { emit_32( MSDBR_ZOPC | fregt(f1, 16, 32) | freg(f3, 24, 32) | freg(f2, 28, 32) );}
-inline void Assembler::z_maeb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2) { emit_48( MAEB_ZOPC | fregt(f1, 32, 48) | freg(f3, 8, 48) | uimm12(d2, 20, 48) | reg(x2, 12, 48) | regz(b2, 16, 48) );}
-inline void Assembler::z_madb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2) { emit_48( MADB_ZOPC | fregt(f1, 32, 48) | freg(f3, 8, 48) | uimm12(d2, 20, 48) | reg(x2, 12, 48) | regz(b2, 16, 48) );}
-inline void Assembler::z_mseb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2) { emit_48( MSEB_ZOPC | fregt(f1, 32, 48) | freg(f3, 8, 48) | uimm12(d2, 20, 48) | reg(x2, 12, 48) | regz(b2, 16, 48) );}
-inline void Assembler::z_msdb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2) { emit_48( MSDB_ZOPC | fregt(f1, 32, 48) | freg(f3, 8, 48) | uimm12(d2, 20, 48) | reg(x2, 12, 48) | regz(b2, 16, 48) );}
-inline void Assembler::z_maeb(FloatRegister f1, FloatRegister f3, const Address& a) { z_maeb(f1, f3, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_madb(FloatRegister f1, FloatRegister f3, const Address& a) { z_madb(f1, f3, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_mseb(FloatRegister f1, FloatRegister f3, const Address& a) { z_mseb(f1, f3, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_msdb(FloatRegister f1, FloatRegister f3, const Address& a) { z_msdb(f1, f3, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_maeb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2) { emit_48( MAEB_ZOPC | fregt(f1, 32, 48) | freg(f3, 8, 48) | rxmask_48(d2, x2, b2) );}
+inline void Assembler::z_madb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2) { emit_48( MADB_ZOPC | fregt(f1, 32, 48) | freg(f3, 8, 48) | rxmask_48(d2, x2, b2) );}
+inline void Assembler::z_mseb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2) { emit_48( MSEB_ZOPC | fregt(f1, 32, 48) | freg(f3, 8, 48) | rxmask_48(d2, x2, b2) );}
+inline void Assembler::z_msdb(FloatRegister f1, FloatRegister f3, int64_t d2, Register x2, Register b2) { emit_48( MSDB_ZOPC | fregt(f1, 32, 48) | freg(f3, 8, 48) | rxmask_48(d2, x2, b2) );}
+inline void Assembler::z_maeb(FloatRegister f1, FloatRegister f3, const Address& a)  { z_maeb(f1, f3, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_madb(FloatRegister f1, FloatRegister f3, const Address& a)  { z_madb(f1, f3, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_mseb(FloatRegister f1, FloatRegister f3, const Address& a)  { z_mseb(f1, f3, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_msdb(FloatRegister f1, FloatRegister f3, const Address& a)  { z_msdb(f1, f3, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 
 
 //---------------
 // DIV
 //---------------
-inline void Assembler::z_debr( FloatRegister f1, FloatRegister f2)                      { emit_32( DEBR_ZOPC | fregt( f1, 24, 32) | freg( f2, 28, 32));}
-inline void Assembler::z_ddbr( FloatRegister f1, FloatRegister f2)                      { emit_32( DDBR_ZOPC | fregt( f1, 24, 32) | freg( f2, 28, 32));}
-inline void Assembler::z_deb(  FloatRegister f1, int64_t d2, Register x2, Register b2 ) { emit_48( DEB_ZOPC  | fregt( f1, 8, 48)  | uimm12( d2, 20, 48) | reg( x2, 12, 48) | regz( b2, 16, 48));}
-inline void Assembler::z_ddb(  FloatRegister f1, int64_t d2, Register x2, Register b2 ) { emit_48( DDB_ZOPC  | fregt( f1, 8, 48)  | uimm12( d2, 20, 48) | reg( x2, 12, 48) | regz( b2, 16, 48));}
-inline void Assembler::z_deb(  FloatRegister r1, const Address& a)                      { z_deb(  r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
-inline void Assembler::z_ddb(  FloatRegister r1, const Address& a)                      { z_ddb(  r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_debr( FloatRegister f1, FloatRegister f2)                   { emit_32( DEBR_ZOPC | fregt( f1, 24, 32) | freg( f2, 28, 32));}
+inline void Assembler::z_ddbr( FloatRegister f1, FloatRegister f2)                   { emit_32( DDBR_ZOPC | fregt( f1, 24, 32) | freg( f2, 28, 32));}
+inline void Assembler::z_deb(  FloatRegister f1, int64_t d2, Register x2, Register b2) { emit_48( DEB_ZOPC  | fregt( f1, 8, 48)  | rxmask_48(d2, x2, b2));}
+inline void Assembler::z_ddb(  FloatRegister f1, int64_t d2, Register x2, Register b2) { emit_48( DDB_ZOPC  | fregt( f1, 8, 48)  | rxmask_48(d2, x2, b2));}
+inline void Assembler::z_deb(  FloatRegister r1, const Address& a)                   { z_deb(  r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_ddb(  FloatRegister r1, const Address& a)                   { z_ddb(  r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 
 
 //---------------
 // square root
 //---------------
-inline void Assembler::z_sqdbr(FloatRegister f1, FloatRegister f2)                       { emit_32(SQDBR_ZOPC | fregt(f1, 24, 32)  | freg(f2, 28, 32)); }
-inline void Assembler::z_sqdb( FloatRegister fr1, int64_t d2, Register x2, Register b2 ) { emit_48( SQDB_ZOPC | fregt( fr1, 8, 48) | uimm12( d2, 20, 48) | reg( x2, 12, 48) | regz( b2, 16, 48));}
-inline void Assembler::z_sqdb( FloatRegister fr1, int64_t d2, Register b2)               { z_sqdb( fr1, d2, Z_R0, b2);}
+inline void Assembler::z_sqdbr(FloatRegister r1, FloatRegister r2)                   { emit_32(SQDBR_ZOPC | fregt(r1, 24, 32)  | freg(r2, 28, 32)); }
+inline void Assembler::z_sqdb( FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_48( SQDB_ZOPC | fregt( r1, 8, 48) | rxmask_48(d2, x2, b2));}
+inline void Assembler::z_sqdb( FloatRegister r1, int64_t d2, Register b2)            { z_sqdb( r1, d2, Z_R0, b2);}
 
 
 //---------------
 // CMP
 //---------------
 inline void Assembler::z_cebr(FloatRegister r1, FloatRegister r2)                    { emit_32( CEBR_ZOPC | fregt(r1, 24, 32) | freg(r2, 28, 32)); }
-inline void Assembler::z_ceb(FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_48( CEB_ZOPC  | fregt(r1, 8, 48) | uimm12(d2, 20, 48) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
-inline void Assembler::z_ceb(FloatRegister r1, const Address &a)                     { z_ceb(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_cdbr(FloatRegister r1, FloatRegister r2)                    { emit_32( CDBR_ZOPC | fregt(r1, 24, 32) | freg(r2, 28, 32)); }
-inline void Assembler::z_cdb(FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_48( CDB_ZOPC  | fregt(r1, 8, 48) | uimm12(d2, 20, 48) | reg(x2, 12, 48) | regz(b2, 16, 48)); }
+inline void Assembler::z_ceb(FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_48( CEB_ZOPC  | fregt(r1,  8, 48) | rxmask_48(d2, x2, b2)); }
+inline void Assembler::z_cdb(FloatRegister r1, int64_t d2, Register x2, Register b2) { emit_48( CDB_ZOPC  | fregt(r1,  8, 48) | rxmask_48(d2, x2, b2)); }
+inline void Assembler::z_ceb(FloatRegister r1, const Address &a)                     { z_ceb(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 inline void Assembler::z_cdb(FloatRegister r1, const Address &a)                     { z_cdb(r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
 
 
@@ -1280,13 +1316,16 @@ inline void Assembler::z_cgdbr(Register r1, FloatRegister r2, RoundingMode m) { 
   inline void Assembler::z_st(Register r1, int64_t d2, Register b2)        { z_st(  r1, d2, Z_R0, b2); }
   inline void Assembler::z_sty(Register r1, int64_t d2, Register b2)       { z_sty( r1, d2, Z_R0, b2); }
   inline void Assembler::z_stg(Register r1, int64_t d2, Register b2)       { z_stg( r1, d2, Z_R0, b2); }
-  inline void Assembler::z_lgf(Register r1, int64_t d2, Register b2)       { z_lgf( r1, d2, Z_R0, b2); }
+  inline void Assembler::z_lgb(Register r1, int64_t d2, Register b2)       { z_lgb( r1, d2, Z_R0, b2); }
   inline void Assembler::z_lgh(Register r1, int64_t d2, Register b2)       { z_lgh( r1, d2, Z_R0, b2); }
+  inline void Assembler::z_lgf(Register r1, int64_t d2, Register b2)       { z_lgf( r1, d2, Z_R0, b2); }
+  inline void Assembler::z_llgc(Register r1, int64_t d2, Register b2)      { z_llgc(r1, d2, Z_R0, b2); }
   inline void Assembler::z_llgh(Register r1, int64_t d2, Register b2)      { z_llgh(r1, d2, Z_R0, b2); }
   inline void Assembler::z_llgf(Register r1, int64_t d2, Register b2)      { z_llgf(r1, d2, Z_R0, b2); }
-  inline void Assembler::z_lgb(Register r1, int64_t d2, Register b2)       { z_lgb( r1, d2, Z_R0, b2); }
   inline void Assembler::z_cl( Register r1, int64_t d2, Register b2)       { z_cl(  r1, d2, Z_R0, b2); }
-  inline void Assembler::z_c(Register r1, int64_t d2, Register b2)         { z_c(   r1, d2, Z_R0, b2); }
+  inline void Assembler::z_cly(Register r1, int64_t d2, Register b2)       { z_cly( r1, d2, Z_R0, b2); }
+  inline void Assembler::z_c( Register r1, int64_t d2, Register b2)        { z_c(   r1, d2, Z_R0, b2); }
+  inline void Assembler::z_cy(Register r1, int64_t d2, Register b2)        { z_cy(  r1, d2, Z_R0, b2); }
   inline void Assembler::z_cg(Register r1, int64_t d2, Register b2)        { z_cg(  r1, d2, Z_R0, b2); }
   inline void Assembler::z_sh(Register r1, int64_t d2, Register b2)        { z_sh(  r1, d2, Z_R0, b2); }
   inline void Assembler::z_shy(Register r1, int64_t d2, Register b2)       { z_shy( r1, d2, Z_R0, b2); }
@@ -1346,22 +1385,38 @@ inline void Assembler::z_brc( branch_condition m, Label& L) { z_brc(m, target(L)
 inline void Assembler::z_brcl(branch_condition m, Label& L) { z_brcl(m, target(L)); }
 
 
-// Instruction must start at passed address.
-// Extra check for illtraps with ID.
-inline unsigned int Assembler::instr_len(unsigned char *instr) {
-  switch ((*instr) >> 6) {
+// Instruction len bits must be stored right-justified in argument.
+inline unsigned int Assembler::instr_len(unsigned char len_bits) {
+  assert(len_bits < 4, "bad instruction len %d", len_bits);
+  switch (len_bits) {
     case 0: return 2;
     case 1: // fallthru
     case 2: return 4;
     case 3: return 6;
     default:
-      // Control can't reach here.
-      // The switch expression examines just the leftmost two bytes
+      // len_bits contains, right-justified, only the leftmost two bits
       // of the main opcode. So the range of values is just [0..3].
-      // Having a default clause makes the compiler happy.
       ShouldNotReachHere();
       return 0;
   }
+}
+
+// Instruction must start at passed address.
+inline unsigned int Assembler::instr_len(unsigned char *instr) {
+  return instr_len((unsigned char)((*instr) >> 6));
+}
+
+// Instruction must be stored right-justified in argument.
+inline unsigned int Assembler::instr_len(unsigned long instr) {
+  // An instruction is 2, 4, or 6 bytes in length.
+  // The instruction length in encoded in the leftmost two bits of the instruction.
+  //  len = 6: len_bits = [46..47]
+  //  len = 4: len_bits = [30..31]
+  //  len = 2: len_bits = [14..15]
+  unsigned char len_bits = instr >> (48-2);
+  if (len_bits == 0) len_bits = instr >> (32-2);
+  if (len_bits == 0) len_bits = instr >> (16-2);
+  return instr_len(len_bits);
 }
 
 // Move instr at pc right-justified into passed long int.
@@ -1383,9 +1438,7 @@ inline unsigned int Assembler::get_instruction(unsigned char *pc, unsigned long 
       *instr = ((unsigned long)(*(unsigned int*)   pc)) << 16 |
                ((unsigned long)*(unsigned short*) (pc + 4)); break;
     default:
-      // Control can't reach here.
       // The length as returned from instr_len() can only be 2, 4, or 6 bytes.
-      // Having a default clause makes the compiler happy.
       ShouldNotReachHere();
       *instr = 0L; // This assignment is there to make gcc8 happy.
       break;

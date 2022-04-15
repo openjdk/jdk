@@ -573,9 +573,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
             }
             if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
-            } else if (op == NEG) {
-                // FIXME: Support this in the JIT.
-                return broadcast(0).lanewise(SUB, this);
             }
         }
         int opc = opCode(op);
@@ -604,8 +601,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
             }
             if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
-            } else if (op == NEG) {
-                return lanewise(NOT, m).lanewise(ADD, broadcast(1), m);
             }
         }
         int opc = opCode(op);
@@ -4330,12 +4325,12 @@ public abstract class ShortVector extends AbstractVector<Short> {
      */
     static ShortSpecies species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s) {
-            case S_64_BIT: return (ShortSpecies) SPECIES_64;
-            case S_128_BIT: return (ShortSpecies) SPECIES_128;
-            case S_256_BIT: return (ShortSpecies) SPECIES_256;
-            case S_512_BIT: return (ShortSpecies) SPECIES_512;
-            case S_Max_BIT: return (ShortSpecies) SPECIES_MAX;
+        switch (s.switchKey) {
+            case VectorShape.SK_64_BIT: return (ShortSpecies) SPECIES_64;
+            case VectorShape.SK_128_BIT: return (ShortSpecies) SPECIES_128;
+            case VectorShape.SK_256_BIT: return (ShortSpecies) SPECIES_256;
+            case VectorShape.SK_512_BIT: return (ShortSpecies) SPECIES_512;
+            case VectorShape.SK_Max_BIT: return (ShortSpecies) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }

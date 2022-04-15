@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.util;
 
 import java.io.PrintWriter;
@@ -69,6 +70,7 @@ import java.util.Map;
 import java.util.Set;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Attribute;
+import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.ConstantDynamic;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.Label;
@@ -382,7 +384,7 @@ public class CheckMethodAdapter extends MethodVisitor {
       * @param methodvisitor the method visitor to which this adapter must delegate calls.
       */
     public CheckMethodAdapter(final MethodVisitor methodvisitor) {
-        this(methodvisitor, new HashMap<Label, Integer>());
+        this(methodvisitor, new HashMap<>());
     }
 
     /**
@@ -398,7 +400,7 @@ public class CheckMethodAdapter extends MethodVisitor {
       */
     public CheckMethodAdapter(
             final MethodVisitor methodVisitor, final Map<Label, Integer> labelInsnIndices) {
-        this(/* latest api = */ Opcodes.ASM8, methodVisitor, labelInsnIndices);
+        this(/* latest api = */ Opcodes.ASM9, methodVisitor, labelInsnIndices);
         if (getClass() != CheckMethodAdapter.class) {
             throw new IllegalStateException();
         }
@@ -408,9 +410,8 @@ public class CheckMethodAdapter extends MethodVisitor {
       * Constructs a new {@link CheckMethodAdapter} object. This method adapter will not perform any
       * data flow check (see {@link #CheckMethodAdapter(int,String,String,MethodVisitor,Map)}).
       *
-      * @param api the ASM API version implemented by this CheckMethodAdapter. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
-      *     Opcodes#ASM8}.
+      * @param api the ASM API version implemented by this CheckMethodAdapter. Must be one of the
+      *     {@code ASM}<i>x</i> values in {@link Opcodes}.
       * @param methodVisitor the method visitor to which this adapter must delegate calls.
       * @param labelInsnIndices the index of the instruction designated by each visited label so far
       *     (in other methods). This map is updated with the labels from the visited method.
@@ -446,7 +447,7 @@ public class CheckMethodAdapter extends MethodVisitor {
             final MethodVisitor methodVisitor,
             final Map<Label, Integer> labelInsnIndices) {
         this(
-                /* latest api = */ Opcodes.ASM8, access, name, descriptor, methodVisitor, labelInsnIndices);
+                /* latest api = */ Opcodes.ASM9, access, name, descriptor, methodVisitor, labelInsnIndices);
         if (getClass() != CheckMethodAdapter.class) {
             throw new IllegalStateException();
         }
@@ -457,9 +458,8 @@ public class CheckMethodAdapter extends MethodVisitor {
       * flow checks. For instance in a method whose signature is {@code void m ()}, the invalid
       * instruction IRETURN, or the invalid sequence IADD L2I will be detected.
       *
-      * @param api the ASM API version implemented by this CheckMethodAdapter. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
-      *     Opcodes#ASM8}.
+      * @param api the ASM API version implemented by this CheckMethodAdapter. Must be one of the
+      *     {@code ASM}<i>x</i> values in {@link Opcodes}.
       * @param access the method's access flags.
       * @param name the method's name.
       * @param descriptor the method's descriptor (see {@link Type}).
@@ -481,15 +481,20 @@ public class CheckMethodAdapter extends MethodVisitor {
                     public void visitEnd() {
                         Analyzer<BasicValue> analyzer = new Analyzer<>(new BasicVerifier());
                         try {
-                            analyzer.analyze("dummy", this);
-                        } catch (IndexOutOfBoundsException e) {
-                            if (maxLocals == 0 && maxStack == 0) {
-                                throw new IllegalArgumentException(
-                                        "Data flow checking option requires valid, non zero maxLocals and maxStack.",
-                                        e);
+                            // If 'methodVisitor' is a MethodWriter of a ClassWriter with no flags to compute the
+                            // max stack and locals nor the stack map frames, we know that valid max stack and
+                            // locals must be provided. Otherwise we assume they are not needed at this stage.
+                            // TODO(ebruneton): similarly, check that valid stack map frames are provided if the
+                            // class writer has no flags to compute them, and the class version is V1_7 or more.
+                            boolean checkMaxStackAndLocals =
+                                    (methodVisitor instanceof MethodWriterWrapper)
+                                            && !((MethodWriterWrapper) methodVisitor).computesMaxs();
+                            if (checkMaxStackAndLocals) {
+                                analyzer.analyze("dummy", this);
+                            } else {
+                                analyzer.analyzeAndComputeMaxs("dummy", this);
                             }
-                            throwError(analyzer, e);
-                        } catch (AnalyzerException e) {
+                        } catch (IndexOutOfBoundsException | AnalyzerException e) {
                             throwError(analyzer, e);
                         }
                         if (methodVisitor != null) {
@@ -515,7 +520,7 @@ public class CheckMethodAdapter extends MethodVisitor {
             checkUnqualifiedName(version, name, "name");
         }
         CheckClassAdapter.checkAccess(
-                access, Opcodes.ACC_FINAL + Opcodes.ACC_MANDATED + Opcodes.ACC_SYNTHETIC);
+                access, Opcodes.ACC_FINAL | Opcodes.ACC_MANDATED | Opcodes.ACC_SYNTHETIC);
         super.visitParameter(name, access);
     }
 
@@ -706,12 +711,12 @@ public class CheckMethodAdapter extends MethodVisitor {
     }
 
     @Override
-    public void visitVarInsn(final int opcode, final int var) {
+    public void visitVarInsn(final int opcode, final int varIndex) {
         checkVisitCodeCalled();
         checkVisitMaxsNotCalled();
         checkOpcodeMethod(opcode, Method.VISIT_VAR_INSN);
-        checkUnsignedShort(var, INVALID_LOCAL_VARIABLE_INDEX);
-        super.visitVarInsn(opcode, var);
+        checkUnsignedShort(varIndex, INVALID_LOCAL_VARIABLE_INDEX);
+        super.visitVarInsn(opcode, varIndex);
         ++insnCount;
     }
 
@@ -815,7 +820,7 @@ public class CheckMethodAdapter extends MethodVisitor {
         checkVisitMaxsNotCalled();
         checkLabel(label, false, "label");
         if (labelInsnIndices.get(label) != null) {
-            throw new IllegalArgumentException("Already visited label");
+            throw new IllegalStateException("Already visited label");
         }
         labelInsnIndices.put(label, insnCount);
         super.visitLabel(label);
@@ -831,12 +836,12 @@ public class CheckMethodAdapter extends MethodVisitor {
     }
 
     @Override
-    public void visitIincInsn(final int var, final int increment) {
+    public void visitIincInsn(final int varIndex, final int increment) {
         checkVisitCodeCalled();
         checkVisitMaxsNotCalled();
-        checkUnsignedShort(var, INVALID_LOCAL_VARIABLE_INDEX);
+        checkUnsignedShort(varIndex, INVALID_LOCAL_VARIABLE_INDEX);
         checkSignedShort(increment, "Invalid increment");
-        super.visitIincInsn(var, increment);
+        super.visitIincInsn(varIndex, increment);
         ++insnCount;
     }
 
@@ -1472,4 +1477,19 @@ public class CheckMethodAdapter extends MethodVisitor {
             throw new IllegalArgumentException(INVALID + message + " (must be visited first)");
         }
     }
+
+    static class MethodWriterWrapper extends MethodVisitor {
+
+        private final ClassWriter owner;
+
+        MethodWriterWrapper(final int api, final ClassWriter owner, final MethodVisitor methodWriter) {
+            super(api, methodWriter);
+            this.owner = owner;
+        }
+
+        boolean computesMaxs() {
+            return owner.hasFlags(ClassWriter.COMPUTE_MAXS) || owner.hasFlags(ClassWriter.COMPUTE_FRAMES);
+        }
+    }
 }
+
