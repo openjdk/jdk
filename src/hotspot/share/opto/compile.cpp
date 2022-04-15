@@ -3529,14 +3529,14 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
 
-  case Op_NOModI:
+  case Op_NoOvfModI:
     if (UseDivMod) {
       // Check if a%b and a/b both exist
-      Node* d = n->find_similar(Op_NODivI);
+      Node* d = n->find_similar(Op_NoOvfDivI);
       if (d) {
         // Replace them with a fused divmod if supported
-        if (Matcher::has_match_rule(Op_NODivModI)) {
-          NODivModINode* divmod = NODivModINode::make(n);
+        if (Matcher::has_match_rule(Op_NoOvfDivModI)) {
+          NoOvfDivModINode* divmod = NoOvfDivModINode::make(n);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3549,14 +3549,14 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
 
-  case Op_NOModL:
+  case Op_NoOvfModL:
     if (UseDivMod) {
       // Check if a%b and a/b both exist
-      Node* d = n->find_similar(Op_NODivL);
+      Node* d = n->find_similar(Op_NoOvfDivL);
       if (d) {
         // Replace them with a fused divmod if supported
-        if (Matcher::has_match_rule(Op_NODivModL)) {
-          NODivModLNode* divmod = NODivModLNode::make(n);
+        if (Matcher::has_match_rule(Op_NoOvfDivModL)) {
+          NoOvfDivModLNode* divmod = NoOvfDivModLNode::make(n);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {

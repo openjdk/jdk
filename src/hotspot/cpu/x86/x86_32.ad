@@ -7756,7 +7756,7 @@ instruct mulL_eReg_con(eADXRegL dst, immL_127 src, rRegI tmp, eFlagsReg cr) %{
 
 // Integer DIV with Register
 instruct divI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
-  match(Set rax (NODivI rax div));
+  match(Set rax (NoOvfDivI rax div));
   effect(KILL rdx, KILL cr);
   size(3);
   ins_cost(500);
@@ -7771,7 +7771,7 @@ instruct divI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
 
 // Divide Register Long
 instruct divL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
-  match(Set dst (NODivL src1 src2));
+  match(Set dst (NoOvfDivL src1 src2));
   effect(CALL);
   ins_cost(10000);
   format %{ "PUSH   $src1.hi\n\t"
@@ -7786,7 +7786,7 @@ instruct divL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
 
 // Integer DIVMOD with Register, both quotient and mod results
 instruct divModI_eReg_divmod(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
-  match(NODivModI rax div);
+  match(NoOvfDivModI rax div);
   effect(KILL cr);
   size(3);
   ins_cost(500);
@@ -7801,7 +7801,7 @@ instruct divModI_eReg_divmod(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr
 
 // Integer MOD with Register
 instruct modI_eReg(eDXRegI rdx, eAXRegI rax, eCXRegI div, eFlagsReg cr) %{
-  match(Set rdx (NOModI rax div));
+  match(Set rdx (NoOvfModI rax div));
   effect(KILL rax, KILL cr);
 
   size(3);
@@ -7817,7 +7817,7 @@ instruct modI_eReg(eDXRegI rdx, eAXRegI rax, eCXRegI div, eFlagsReg cr) %{
 
 // Remainder Register Long
 instruct modL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
-  match(Set dst (NOModL src1 src2));
+  match(Set dst (NoOvfModL src1 src2));
   effect(CALL);
   ins_cost(10000);
   format %{ "PUSH   $src1.hi\n\t"
@@ -7827,6 +7827,144 @@ instruct modL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
             "CALL   SharedRuntime::lrem\n\t"
             "ADD    ESP,16" %}
   ins_encode( long_mod(src1,src2) );
+  ins_pipe( pipe_slow );
+%}
+
+// Divide Register Long (no special case since divisor != -1)
+instruct divL_eReg_imm32( eADXRegL dst, immL32 imm, rRegI tmp, rRegI tmp2, eFlagsReg cr ) %{
+  match(Set dst (DivL dst imm));
+  effect( TEMP tmp, TEMP tmp2, KILL cr );
+  ins_cost(1000);
+  format %{ "MOV    $tmp,abs($imm) # ldiv EDX:EAX,$imm\n\t"
+            "XOR    $tmp2,$tmp2\n\t"
+            "CMP    $tmp,EDX\n\t"
+            "JA,s   fast\n\t"
+            "MOV    $tmp2,EAX\n\t"
+            "MOV    EAX,EDX\n\t"
+            "MOV    EDX,0\n\t"
+            "JLE,s  pos\n\t"
+            "LNEG   EAX : $tmp2\n\t"
+            "DIV    $tmp # unsigned division\n\t"
+            "XCHG   EAX,$tmp2\n\t"
+            "DIV    $tmp\n\t"
+            "LNEG   $tmp2 : EAX\n\t"
+            "JMP,s  done\n"
+    "pos:\n\t"
+            "DIV    $tmp\n\t"
+            "XCHG   EAX,$tmp2\n"
+    "fast:\n\t"
+            "DIV    $tmp\n"
+    "done:\n\t"
+            "MOV    EDX,$tmp2\n\t"
+            "NEG    EDX:EAX # if $imm < 0" %}
+  ins_encode %{
+    int con = (int)$imm$$constant;
+    assert(con != 0 && con != -1 && con != min_jint, "wrong divisor");
+    int pcon = (con > 0) ? con : -con;
+    Label Lfast, Lpos, Ldone;
+
+    __ movl($tmp$$Register, pcon);
+    __ xorl($tmp2$$Register,$tmp2$$Register);
+    __ cmpl($tmp$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ jccb(Assembler::above, Lfast); // result fits into 32 bit
+
+    __ movl($tmp2$$Register, $dst$$Register); // save
+    __ movl($dst$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ movl(HIGH_FROM_LOW($dst$$Register),0); // preserve flags
+    __ jccb(Assembler::lessEqual, Lpos); // result is positive
+
+    // Negative dividend.
+    // convert value to positive to use unsigned division
+    __ lneg($dst$$Register, $tmp2$$Register);
+    __ divl($tmp$$Register);
+    __ xchgl($dst$$Register, $tmp2$$Register);
+    __ divl($tmp$$Register);
+    // revert result back to negative
+    __ lneg($tmp2$$Register, $dst$$Register);
+    __ jmpb(Ldone);
+
+    __ bind(Lpos);
+    __ divl($tmp$$Register); // Use unsigned division
+    __ xchgl($dst$$Register, $tmp2$$Register);
+    // Fallthrow for final divide, tmp2 has 32 bit hi result
+
+    __ bind(Lfast);
+    // fast path: src is positive
+    __ divl($tmp$$Register); // Use unsigned division
+
+    __ bind(Ldone);
+    __ movl(HIGH_FROM_LOW($dst$$Register),$tmp2$$Register);
+    if (con < 0) {
+      __ lneg(HIGH_FROM_LOW($dst$$Register), $dst$$Register);
+    }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Remainder Register Long (remainder fit into 32 bits)
+instruct modL_eReg_imm32( eADXRegL dst, immL32 imm, rRegI tmp, rRegI tmp2, eFlagsReg cr ) %{
+  match(Set dst (ModL dst imm));
+  effect( TEMP tmp, TEMP tmp2, KILL cr );
+  ins_cost(1000);
+  format %{ "MOV    $tmp,abs($imm) # lrem EDX:EAX,$imm\n\t"
+            "CMP    $tmp,EDX\n\t"
+            "JA,s   fast\n\t"
+            "MOV    $tmp2,EAX\n\t"
+            "MOV    EAX,EDX\n\t"
+            "MOV    EDX,0\n\t"
+            "JLE,s  pos\n\t"
+            "LNEG   EAX : $tmp2\n\t"
+            "DIV    $tmp # unsigned division\n\t"
+            "MOV    EAX,$tmp2\n\t"
+            "DIV    $tmp\n\t"
+            "NEG    EDX\n\t"
+            "JMP,s  done\n"
+    "pos:\n\t"
+            "DIV    $tmp\n\t"
+            "MOV    EAX,$tmp2\n"
+    "fast:\n\t"
+            "DIV    $tmp\n"
+    "done:\n\t"
+            "MOV    EAX,EDX\n\t"
+            "SAR    EDX,31\n\t" %}
+  ins_encode %{
+    int con = (int)$imm$$constant;
+    assert(con != 0 && con != -1 && con != min_jint, "wrong divisor");
+    int pcon = (con > 0) ? con : -con;
+    Label  Lfast, Lpos, Ldone;
+
+    __ movl($tmp$$Register, pcon);
+    __ cmpl($tmp$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ jccb(Assembler::above, Lfast); // src is positive and result fits into 32 bit
+
+    __ movl($tmp2$$Register, $dst$$Register); // save
+    __ movl($dst$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ movl(HIGH_FROM_LOW($dst$$Register),0); // preserve flags
+    __ jccb(Assembler::lessEqual, Lpos); // result is positive
+
+    // Negative dividend.
+    // convert value to positive to use unsigned division
+    __ lneg($dst$$Register, $tmp2$$Register);
+    __ divl($tmp$$Register);
+    __ movl($dst$$Register, $tmp2$$Register);
+    __ divl($tmp$$Register);
+    // revert remainder back to negative
+    __ negl(HIGH_FROM_LOW($dst$$Register));
+    __ jmpb(Ldone);
+
+    __ bind(Lpos);
+    __ divl($tmp$$Register);
+    __ movl($dst$$Register, $tmp2$$Register);
+
+    __ bind(Lfast);
+    // fast path: src is positive
+    __ divl($tmp$$Register);
+
+    __ bind(Ldone);
+    __ movl($dst$$Register, HIGH_FROM_LOW($dst$$Register));
+    __ sarl(HIGH_FROM_LOW($dst$$Register), 31); // result sign
+
+  %}
   ins_pipe( pipe_slow );
 %}
 

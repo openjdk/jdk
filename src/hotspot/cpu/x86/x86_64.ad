@@ -8551,7 +8551,7 @@ instruct umulHiL_rReg(rdx_RegL dst, no_rax_RegL src, rax_RegL rax, rFlagsReg cr)
 instruct divI_rReg(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
                    rFlagsReg cr)
 %{
-  match(Set rax (NODivI rax div));
+  match(Set rax (NoOvfDivI rax div));
   effect(KILL rdx, KILL cr);
 
   ins_cost(500);
@@ -8567,7 +8567,7 @@ instruct divI_rReg(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
 instruct divI_mem(rax_RegI rax, rdx_RegI rdx, memory div,
                    rFlagsReg cr)
 %{
-  match(Set rax (NODivI rax (LoadI div)));
+  match(Set rax (NoOvfDivI rax (LoadI div)));
   effect(KILL rdx, KILL cr);
 
   ins_cost(575);
@@ -8583,7 +8583,7 @@ instruct divI_mem(rax_RegI rax, rdx_RegI rdx, memory div,
 instruct divL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
                    rFlagsReg cr)
 %{
-  match(Set rax (NODivL rax div));
+  match(Set rax (NoOvfDivL rax div));
   effect(KILL rdx, KILL cr);
 
   ins_cost(500);
@@ -8599,7 +8599,7 @@ instruct divL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
 instruct divL_mem(rax_RegL rax, rdx_RegL rdx, memory div,
                    rFlagsReg cr)
 %{
-  match(Set rax (NODivL rax (LoadL div)));
+  match(Set rax (NoOvfDivL rax (LoadL div)));
   effect(KILL rdx, KILL cr);
 
   ins_cost(575);
@@ -8642,7 +8642,7 @@ instruct udivL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div, rFlagsReg c
 instruct divModI_rReg_divmod(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
                              rFlagsReg cr)
 %{
-  match(NODivModI rax div);
+  match(NoOvfDivModI rax div);
   effect(KILL cr);
 
   ins_cost(500);
@@ -8659,7 +8659,7 @@ instruct divModI_rReg_divmod(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
 instruct divModL_rReg_divmod(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
                              rFlagsReg cr)
 %{
-  match(NODivModL rax div);
+  match(NoOvfDivModL rax div);
   effect(KILL cr);
 
   ins_cost(500);
@@ -8709,7 +8709,7 @@ instruct udivModL_rReg_divmod(rax_RegL rax, no_rax_rdx_RegL tmp, rdx_RegL rdx,
 instruct modI_rReg(rdx_RegI rdx, rax_RegI rax, no_rax_rdx_RegI div,
                    rFlagsReg cr)
 %{
-  match(Set rdx (NOModI rax div));
+  match(Set rdx (NoOvfModI rax div));
   effect(KILL rax, KILL cr);
 
   ins_cost(500);
@@ -8725,7 +8725,7 @@ instruct modI_rReg(rdx_RegI rdx, rax_RegI rax, no_rax_rdx_RegI div,
 instruct modI_mem(rdx_RegI rdx, rax_RegI rax, memory div,
                    rFlagsReg cr)
 %{
-  match(Set rdx (NOModI rax (LoadI div)));
+  match(Set rdx (NoOvfModI rax (LoadI div)));
   effect(KILL rax, KILL cr);
 
   ins_cost(575);
@@ -8741,7 +8741,7 @@ instruct modI_mem(rdx_RegI rdx, rax_RegI rax, memory div,
 instruct modL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div,
                    rFlagsReg cr)
 %{
-  match(Set rdx (NOModL rax div));
+  match(Set rdx (NoOvfModL rax div));
   effect(KILL rax, KILL cr);
 
   ins_cost(500);
@@ -8757,7 +8757,7 @@ instruct modL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div,
 instruct modL_mem(rdx_RegL rdx, rax_RegL rax, memory div,
                    rFlagsReg cr)
 %{
-  match(Set rdx (NOModL rax (LoadL div)));
+  match(Set rdx (NoOvfModL rax (LoadL div)));
   effect(KILL rax, KILL cr);
 
   ins_cost(575);

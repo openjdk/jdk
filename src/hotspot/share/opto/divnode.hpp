@@ -103,24 +103,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//-----------------------------NODivINode--------------------------------------
-// Non-overflow integer division, UB when dividend == min_jint and divisor == -1
-// so user has to ensure this combination does not appear
-class NODivINode : public DivINode {
-public:
-  NODivINode( Node *c, Node *dividend, Node *divisor ) : DivINode(c, dividend, divisor ) {}
-  virtual int Opcode() const;
-};
-
-//-----------------------------NODivLNode--------------------------------------
-// Non-overflow long division, UB when dividend == min_jlong and divisor == -1
-// so user has to ensure this combination does not appear
-class NODivLNode : public DivLNode {
-public:
-  NODivLNode( Node *c, Node *dividend, Node *divisor ) : DivLNode(c, dividend, divisor ) {}
-  virtual int Opcode() const;
-};
-
 //------------------------------UDivLNode--------------------------------------
 // Unsigned long division
 class UDivLNode : public Node {
@@ -132,6 +114,24 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+//---------------------------NoOvfDivINode-------------------------------------
+// Non-overflow integer division, UB when dividend == min_jint and divisor == -1
+// so user has to ensure this combination does not appear
+class NoOvfDivINode : public DivINode {
+public:
+  NoOvfDivINode( Node *c, Node *dividend, Node *divisor ) : DivINode(c, dividend, divisor ) {}
+  virtual int Opcode() const;
+};
+
+//---------------------------NoOvfDivLNode-------------------------------------
+// Non-overflow long division, UB when dividend == min_jlong and divisor == -1
+// so user has to ensure this combination does not appear
+class NoOvfDivLNode : public DivLNode {
+public:
+  NoOvfDivLNode( Node *c, Node *dividend, Node *divisor ) : DivLNode(c, dividend, divisor ) {}
+  virtual int Opcode() const;
 };
 
 //------------------------------ModINode---------------------------------------
@@ -202,21 +202,21 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//-----------------------------NOModINode--------------------------------------
+//---------------------------NoOvfModINode-------------------------------------
 // Non-overflow integer modulus, UB when dividend == min_jint and divisor == -1
 // so user has to ensure this combination does not appear
-class NOModINode : public ModINode {
+class NoOvfModINode : public ModINode {
 public:
-  NOModINode( Node *c, Node *dividend, Node *divisor ) : ModINode(c, dividend, divisor ) {}
+  NoOvfModINode( Node *c, Node *dividend, Node *divisor ) : ModINode(c, dividend, divisor ) {}
   virtual int Opcode() const;
 };
 
-//-----------------------------NOModLNode--------------------------------------
+//---------------------------NoOvfModLNode-------------------------------------
 // Non-overflow long modulus, UB when dividend == min_jlong and divisor == -1
 // so user has to ensure this combination does not appear
-class NOModLNode : public ModLNode {
+class NoOvfModLNode : public ModLNode {
 public:
-  NOModLNode( Node *c, Node *dividend, Node *divisor ) : ModLNode(c, dividend, divisor ) {}
+  NoOvfModLNode( Node *c, Node *dividend, Node *divisor ) : ModLNode(c, dividend, divisor ) {}
   virtual int Opcode() const;
 };
 
@@ -295,28 +295,28 @@ public:
   static UDivModLNode* make(Node* div_or_mod);
 };
 
-//----------------------------NODivModINode------------------------------------
+//---------------------------NoOvfDivModINode----------------------------------
 // Non-overflow integer division with remainder result, UB when dividend == min_jint
 // and divisor == -1 so user has to ensure this combination does not appear
-class NODivModINode : public DivModINode {
+class NoOvfDivModINode : public DivModINode {
 public:
-  NODivModINode( Node *c, Node *dividend, Node *divisor ) : DivModINode(c, dividend, divisor) {}
+  NoOvfDivModINode( Node *c, Node *dividend, Node *divisor ) : DivModINode(c, dividend, divisor) {}
   virtual int Opcode() const;
 
   // Make a divmod and associated projections from a div or mod.
-  static NODivModINode* make(Node* div_or_mod);
+  static NoOvfDivModINode* make(Node* div_or_mod);
 };
 
-//----------------------------NODivModLNode------------------------------------
+//---------------------------NoOvfDivModLNode----------------------------------
 // Non-overflow long division with remainder result, UB when dividend == min_jlong
 // and divisor == -1 so user has to ensure this combination does not appear
-class NODivModLNode : public DivModLNode {
+class NoOvfDivModLNode : public DivModLNode {
 public:
-  NODivModLNode( Node *c, Node *dividend, Node *divisor ) : DivModLNode(c, dividend, divisor) {}
+  NoOvfDivModLNode( Node *c, Node *dividend, Node *divisor ) : DivModLNode(c, dividend, divisor) {}
   virtual int Opcode() const;
 
   // Make a divmod and associated projections from a div or mod.
-  static NODivModLNode* make(Node* div_or_mod);
+  static NoOvfDivModLNode* make(Node* div_or_mod);
 };
 
 #endif // SHARE_OPTO_DIVNODE_HPP
