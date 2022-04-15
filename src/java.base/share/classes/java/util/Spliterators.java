@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -945,6 +945,7 @@ public final class Spliterators {
         private int index;        // current index, modified on advance/split
         private final int fence;  // one past last index
         private final int characteristics;
+        private long estimatedSize; // estimated size, to help to split evenly
 
         /**
          * Creates a spliterator covering all of the given array.
@@ -971,14 +972,27 @@ public final class Spliterators {
             this.index = origin;
             this.fence = fence;
             this.characteristics = additionalCharacteristics | Spliterator.SIZED | Spliterator.SUBSIZED;
+            this.estimatedSize = -1;
+        }
+
+        private ArraySpliterator(Object[] array, int origin, int fence, int characteristics, long estimatedSize) {
+            this.array = array;
+            this.index = origin;
+            this.fence = fence;
+            this.characteristics = characteristics & ~(Spliterator.SIZED | Spliterator.SUBSIZED);
+            this.estimatedSize = estimatedSize;
         }
 
         @Override
         public Spliterator<T> trySplit() {
             int lo = index, mid = (lo + fence) >>> 1;
-            return (lo >= mid)
-                   ? null
-                   : new ArraySpliterator<>(array, lo, index = mid, characteristics);
+            if (lo >= mid) return null;
+            if (estimatedSize == -1) {
+                return new ArraySpliterator<>(array, lo, index = mid, characteristics);
+            }
+            long prefixEstimatedSize = estimatedSize >>> 1;
+            estimatedSize -= prefixEstimatedSize;
+            return new ArraySpliterator<>(array, lo, index = mid, characteristics, prefixEstimatedSize);
         }
 
         @SuppressWarnings("unchecked")
@@ -1006,7 +1020,9 @@ public final class Spliterators {
         }
 
         @Override
-        public long estimateSize() { return (long)(fence - index); }
+        public long estimateSize() {
+            return estimatedSize >= 0 ? estimatedSize : (long)(fence - index);
+        }
 
         @Override
         public int characteristics() {
@@ -1030,6 +1046,7 @@ public final class Spliterators {
         private int index;        // current index, modified on advance/split
         private final int fence;  // one past last index
         private final int characteristics;
+        private long estimatedSize; // estimated size, to help to split evenly
 
         /**
          * Creates a spliterator covering all of the given array.
@@ -1056,14 +1073,27 @@ public final class Spliterators {
             this.index = origin;
             this.fence = fence;
             this.characteristics = additionalCharacteristics | Spliterator.SIZED | Spliterator.SUBSIZED;
+            this.estimatedSize = -1;
+        }
+
+        private IntArraySpliterator(int[] array, int origin, int fence, int characteristics, long estimatedSize) {
+            this.array = array;
+            this.index = origin;
+            this.fence = fence;
+            this.characteristics = characteristics & ~(Spliterator.SIZED | Spliterator.SUBSIZED);
+            this.estimatedSize = estimatedSize;
         }
 
         @Override
         public OfInt trySplit() {
             int lo = index, mid = (lo + fence) >>> 1;
-            return (lo >= mid)
-                   ? null
-                   : new IntArraySpliterator(array, lo, index = mid, characteristics);
+            if (lo >= mid) return null;
+            if (estimatedSize == -1) {
+                return new IntArraySpliterator(array, lo, index = mid, characteristics);
+            }
+            long prefixEstimatedSize = estimatedSize >>> 1;
+            estimatedSize -= prefixEstimatedSize;
+            return new IntArraySpliterator(array, lo, index = mid, characteristics, prefixEstimatedSize);
         }
 
         @Override
@@ -1089,7 +1119,9 @@ public final class Spliterators {
         }
 
         @Override
-        public long estimateSize() { return (long)(fence - index); }
+        public long estimateSize() {
+            return estimatedSize >= 0 ? estimatedSize : (long)(fence - index);
+        }
 
         @Override
         public int characteristics() {
@@ -1113,6 +1145,7 @@ public final class Spliterators {
         private int index;        // current index, modified on advance/split
         private final int fence;  // one past last index
         private final int characteristics;
+        private long estimatedSize; // estimated size, to help to split evenly
 
         /**
          * Creates a spliterator covering all of the given array.
@@ -1139,14 +1172,27 @@ public final class Spliterators {
             this.index = origin;
             this.fence = fence;
             this.characteristics = additionalCharacteristics | Spliterator.SIZED | Spliterator.SUBSIZED;
+            this.estimatedSize = -1;
+        }
+
+        private LongArraySpliterator(long[] array, int origin, int fence, int characteristics, long estimatedSize) {
+            this.array = array;
+            this.index = origin;
+            this.fence = fence;
+            this.characteristics = characteristics & ~(Spliterator.SIZED | Spliterator.SUBSIZED);
+            this.estimatedSize = estimatedSize;
         }
 
         @Override
         public OfLong trySplit() {
             int lo = index, mid = (lo + fence) >>> 1;
-            return (lo >= mid)
-                   ? null
-                   : new LongArraySpliterator(array, lo, index = mid, characteristics);
+            if (lo >= mid) return null;
+            if (estimatedSize == -1) {
+                return new LongArraySpliterator(array, lo, index = mid, characteristics);
+            }
+            long prefixEstimatedSize = estimatedSize >>> 1;
+            estimatedSize -= prefixEstimatedSize;
+            return new LongArraySpliterator(array, lo, index = mid, characteristics, prefixEstimatedSize);
         }
 
         @Override
@@ -1172,7 +1218,9 @@ public final class Spliterators {
         }
 
         @Override
-        public long estimateSize() { return (long)(fence - index); }
+        public long estimateSize() {
+            return estimatedSize >= 0 ? estimatedSize : (long)(fence - index);
+        }
 
         @Override
         public int characteristics() {
@@ -1196,6 +1244,7 @@ public final class Spliterators {
         private int index;        // current index, modified on advance/split
         private final int fence;  // one past last index
         private final int characteristics;
+        private long estimatedSize; // estimated size, to help to split evenly
 
         /**
          * Creates a spliterator covering all of the given array.
@@ -1222,14 +1271,27 @@ public final class Spliterators {
             this.index = origin;
             this.fence = fence;
             this.characteristics = additionalCharacteristics | Spliterator.SIZED | Spliterator.SUBSIZED;
+            this.estimatedSize = -1;
+        }
+
+        private DoubleArraySpliterator(double[] array, int origin, int fence, int characteristics, long estimatedSize) {
+            this.array = array;
+            this.index = origin;
+            this.fence = fence;
+            this.characteristics = characteristics & ~(Spliterator.SIZED | Spliterator.SUBSIZED);
+            this.estimatedSize = estimatedSize;
         }
 
         @Override
         public OfDouble trySplit() {
             int lo = index, mid = (lo + fence) >>> 1;
-            return (lo >= mid)
-                   ? null
-                   : new DoubleArraySpliterator(array, lo, index = mid, characteristics);
+            if (lo >= mid) return null;
+            if (estimatedSize == -1) {
+                return new DoubleArraySpliterator(array, lo, index = mid, characteristics);
+            }
+            long prefixEstimatedSize = estimatedSize >>> 1;
+            estimatedSize -= prefixEstimatedSize;
+            return new DoubleArraySpliterator(array, lo, index = mid, characteristics, prefixEstimatedSize);
         }
 
         @Override
@@ -1255,7 +1317,9 @@ public final class Spliterators {
         }
 
         @Override
-        public long estimateSize() { return (long)(fence - index); }
+        public long estimateSize() {
+            return estimatedSize >= 0 ? estimatedSize : (long)(fence - index);
+        }
 
         @Override
         public int characteristics() {
@@ -1362,9 +1426,11 @@ public final class Spliterators {
                 int j = 0;
                 do { a[j] = holder.value; } while (++j < n && tryAdvance(holder));
                 batch = j;
-                if (est != Long.MAX_VALUE)
+                if (est != Long.MAX_VALUE) {
                     est -= j;
-                return new ArraySpliterator<>(a, 0, j, characteristics());
+                    return new ArraySpliterator<>(a, 0, j, characteristics);
+                }
+                return new ArraySpliterator<>(a, 0, j, characteristics, Long.MAX_VALUE / 2);
             }
             return null;
         }
@@ -1472,9 +1538,11 @@ public final class Spliterators {
                 int j = 0;
                 do { a[j] = holder.value; } while (++j < n && tryAdvance(holder));
                 batch = j;
-                if (est != Long.MAX_VALUE)
+                if (est != Long.MAX_VALUE) {
                     est -= j;
-                return new IntArraySpliterator(a, 0, j, characteristics());
+                    return new IntArraySpliterator(a, 0, j, characteristics);
+                }
+                return new IntArraySpliterator(a, 0, j, characteristics, Long.MAX_VALUE / 2);
             }
             return null;
         }
@@ -1582,9 +1650,11 @@ public final class Spliterators {
                 int j = 0;
                 do { a[j] = holder.value; } while (++j < n && tryAdvance(holder));
                 batch = j;
-                if (est != Long.MAX_VALUE)
+                if (est != Long.MAX_VALUE) {
                     est -= j;
-                return new LongArraySpliterator(a, 0, j, characteristics());
+                    return new LongArraySpliterator(a, 0, j, characteristics);
+                }
+                return new LongArraySpliterator(a, 0, j, characteristics, Long.MAX_VALUE / 2);
             }
             return null;
         }
@@ -1692,9 +1762,11 @@ public final class Spliterators {
                 int j = 0;
                 do { a[j] = holder.value; } while (++j < n && tryAdvance(holder));
                 batch = j;
-                if (est != Long.MAX_VALUE)
+                if (est != Long.MAX_VALUE) {
                     est -= j;
-                return new DoubleArraySpliterator(a, 0, j, characteristics());
+                    return new DoubleArraySpliterator(a, 0, j, characteristics);
+                }
+                return new DoubleArraySpliterator(a, 0, j, characteristics, Long.MAX_VALUE / 2);
             }
             return null;
         }
@@ -1827,9 +1899,11 @@ public final class Spliterators {
                 int j = 0;
                 do { a[j] = i.next(); } while (++j < n && i.hasNext());
                 batch = j;
-                if (est != Long.MAX_VALUE)
+                if (est != Long.MAX_VALUE) {
                     est -= j;
-                return new ArraySpliterator<>(a, 0, j, characteristics);
+                    return new ArraySpliterator<>(a, 0, j, characteristics);
+                }
+                return new ArraySpliterator<>(a, 0, j, characteristics, Long.MAX_VALUE / 2);
             }
             return null;
         }
@@ -1939,9 +2013,11 @@ public final class Spliterators {
                 int j = 0;
                 do { a[j] = i.nextInt(); } while (++j < n && i.hasNext());
                 batch = j;
-                if (est != Long.MAX_VALUE)
+                if (est != Long.MAX_VALUE) {
                     est -= j;
-                return new IntArraySpliterator(a, 0, j, characteristics);
+                    return new IntArraySpliterator(a, 0, j, characteristics);
+                }
+                return new IntArraySpliterator(a, 0, j, characteristics, Long.MAX_VALUE / 2);
             }
             return null;
         }
@@ -2033,9 +2109,11 @@ public final class Spliterators {
                 int j = 0;
                 do { a[j] = i.nextLong(); } while (++j < n && i.hasNext());
                 batch = j;
-                if (est != Long.MAX_VALUE)
+                if (est != Long.MAX_VALUE) {
                     est -= j;
-                return new LongArraySpliterator(a, 0, j, characteristics);
+                    return new LongArraySpliterator(a, 0, j, characteristics);
+                }
+                return new LongArraySpliterator(a, 0, j, characteristics, Long.MAX_VALUE / 2);
             }
             return null;
         }
@@ -2127,9 +2205,11 @@ public final class Spliterators {
                 int j = 0;
                 do { a[j] = i.nextDouble(); } while (++j < n && i.hasNext());
                 batch = j;
-                if (est != Long.MAX_VALUE)
+                if (est != Long.MAX_VALUE) {
                     est -= j;
-                return new DoubleArraySpliterator(a, 0, j, characteristics);
+                    return new DoubleArraySpliterator(a, 0, j, characteristics);
+                }
+                return new DoubleArraySpliterator(a, 0, j, characteristics, Long.MAX_VALUE / 2);
             }
             return null;
         }
