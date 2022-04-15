@@ -113,6 +113,7 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case degen_gc_purge_class_unload:
     case degen_gc_purge_weak_par:
     case heap_iteration_roots:
+    case conc_mark:
     case conc_mark_roots:
     case conc_thread_roots:
     case conc_weak_roots_work:
