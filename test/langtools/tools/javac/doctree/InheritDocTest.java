@@ -76,7 +76,7 @@ DocComment[DOC_COMMENT, pos:0
 DocComment[DOC_COMMENT, pos:0
   firstSentence: 2
     Text[TEXT, pos:0, abc_]
-    Erroneous[ERRONEOUS, pos:4
+    Erroneous[ERRONEOUS, pos:4, prefPos:17
       code: compiler.err.dc.unexpected.content
       body: {@inheritDoc_junk}
     ]

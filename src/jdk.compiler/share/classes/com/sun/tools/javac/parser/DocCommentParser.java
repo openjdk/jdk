@@ -1199,9 +1199,10 @@ public class DocCommentParser {
                         nextChar();
                         return m.at(pos).newDocRootTree();
                     }
+                    final int savedPos = bp;
                     inlineText(WhitespaceRetentionPolicy.REMOVE_ALL); // skip unexpected content
                     nextChar();
-                    throw new ParseException(pos, "dc.unexpected.content");
+                    throw new ParseException(savedPos, "dc.unexpected.content");
                 }
             },
 
@@ -1256,9 +1257,10 @@ public class DocCommentParser {
                         nextChar();
                         return m.at(pos).newInheritDocTree();
                     }
+                    final int errorPos = bp;
                     inlineText(WhitespaceRetentionPolicy.REMOVE_ALL); // skip unexpected content
                     nextChar();
-                    throw new ParseException(pos, "dc.unexpected.content");
+                    throw new ParseException(errorPos, "dc.unexpected.content");
                 }
             },
 
@@ -1308,7 +1310,7 @@ public class DocCommentParser {
 
                     if (typaram) {
                         if (ch != '>')
-                            throw new ParseException("dc.gt.expected");
+                            throw new ParseException(bp, "dc.gt.expected");
                         nextChar();
                     }
 
