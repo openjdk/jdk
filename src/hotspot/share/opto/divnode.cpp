@@ -1466,3 +1466,27 @@ Node* UDivModLNode::match( const ProjNode *proj, const Matcher *match ) {
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
+
+//------------------------------make------------------------------------------
+NODivModINode* NODivModINode::make(Node* div_or_mod) {
+  Node* n = div_or_mod;
+  assert(n->Opcode() == Op_NODivI || n->Opcode() == Op_NOModI,
+         "only div or mod input pattern accepted");
+
+  NODivModINode* divmod = new NODivModINode(n->in(0), n->in(1), n->in(2));
+  Node*        dproj  = new ProjNode(divmod, DivModNode::div_proj_num);
+  Node*        mproj  = new ProjNode(divmod, DivModNode::mod_proj_num);
+  return divmod;
+}
+
+//------------------------------make------------------------------------------
+NODivModLNode* NODivModLNode::make(Node* div_or_mod) {
+  Node* n = div_or_mod;
+  assert(n->Opcode() == Op_NODivL || n->Opcode() == Op_NOModL,
+         "only div or mod input pattern accepted");
+
+  NODivModLNode* divmod = new NODivModLNode(n->in(0), n->in(1), n->in(2));
+  Node*        dproj  = new ProjNode(divmod, DivModNode::div_proj_num);
+  Node*        mproj  = new ProjNode(divmod, DivModNode::mod_proj_num);
+  return divmod;
+}

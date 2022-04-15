@@ -457,10 +457,10 @@ void Parse::do_divmod_fixup() {
   auto generate_division = [](PhaseGVN& gvn, Node* control, Node* in1, Node* in2,
                               Bytecodes::Code bc) {
     switch (bc) {
-      case Bytecodes::_idiv: return gvn.transform(new DivINode(control, in1, in2));
-      case Bytecodes::_ldiv: return gvn.transform(new DivLNode(control, in1, in2));
-      case Bytecodes::_irem: return gvn.transform(new ModINode(control, in1, in2));
-      case Bytecodes::_lrem: return gvn.transform(new ModLNode(control, in1, in2));
+      case Bytecodes::_idiv: return gvn.transform(new NODivINode(control, in1, in2));
+      case Bytecodes::_ldiv: return gvn.transform(new NODivLNode(control, in1, in2));
+      case Bytecodes::_irem: return gvn.transform(new NOModINode(control, in1, in2));
+      case Bytecodes::_lrem: return gvn.transform(new NOModLNode(control, in1, in2));
       default:
         ShouldNotReachHere();
         return static_cast<Node*>(nullptr);

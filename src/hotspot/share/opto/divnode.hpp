@@ -103,7 +103,25 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------UDivLNode---------------------------------------
+//-----------------------------NODivINode--------------------------------------
+// Non-overflow integer division, UB when dividend == min_jint and divisor == -1
+// so user has to ensure this combination does not appear
+class NODivINode : public DivINode {
+public:
+  NODivINode( Node *c, Node *dividend, Node *divisor ) : DivINode(c, dividend, divisor ) {}
+  virtual int Opcode() const;
+};
+
+//-----------------------------NODivLNode--------------------------------------
+// Non-overflow long division, UB when dividend == min_jlong and divisor == -1
+// so user has to ensure this combination does not appear
+class NODivLNode : public DivLNode {
+public:
+  NODivLNode( Node *c, Node *dividend, Node *divisor ) : DivLNode(c, dividend, divisor ) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------UDivLNode--------------------------------------
 // Unsigned long division
 class UDivLNode : public Node {
 public:
@@ -162,7 +180,7 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
-//------------------------------UModINode---------------------------------------
+//------------------------------UModINode--------------------------------------
 // Unsigned integer modulus
 class UModINode : public Node {
 public:
@@ -173,7 +191,7 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
-//------------------------------UModLNode---------------------------------------
+//------------------------------UModLNode--------------------------------------
 // Unsigned long modulus
 class UModLNode : public Node {
 public:
@@ -184,7 +202,25 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------DivModNode---------------------------------------
+//-----------------------------NOModINode--------------------------------------
+// Non-overflow integer modulus, UB when dividend == min_jint and divisor == -1
+// so user has to ensure this combination does not appear
+class NOModINode : public ModINode {
+public:
+  NOModINode( Node *c, Node *dividend, Node *divisor ) : ModINode(c, dividend, divisor ) {}
+  virtual int Opcode() const;
+};
+
+//-----------------------------NOModLNode--------------------------------------
+// Non-overflow long modulus, UB when dividend == min_jlong and divisor == -1
+// so user has to ensure this combination does not appear
+class NOModLNode : public ModLNode {
+public:
+  NOModLNode( Node *c, Node *dividend, Node *divisor ) : ModLNode(c, dividend, divisor ) {}
+  virtual int Opcode() const;
+};
+
+//-----------------------------DivModNode--------------------------------------
 // Division with remainder result.
 class DivModNode : public MultiNode {
 protected:
@@ -206,7 +242,7 @@ public:
   ProjNode* mod_proj() { return proj_out_or_null(mod_proj_num); }
 };
 
-//------------------------------DivModINode---------------------------------------
+//-----------------------------DivModINode-------------------------------------
 // Integer division with remainder result.
 class DivModINode : public DivModNode {
 public:
@@ -219,7 +255,7 @@ public:
   static DivModINode* make(Node* div_or_mod);
 };
 
-//------------------------------DivModLNode---------------------------------------
+//-----------------------------DivModLNode-------------------------------------
 // Long division with remainder result.
 class DivModLNode : public DivModNode {
 public:
@@ -233,7 +269,7 @@ public:
 };
 
 
-//------------------------------UDivModINode---------------------------------------
+//----------------------------UDivModINode-------------------------------------
 // Unsigend integer division with remainder result.
 class UDivModINode : public DivModNode {
 public:
@@ -246,7 +282,7 @@ public:
   static UDivModINode* make(Node* div_or_mod);
 };
 
-//------------------------------UDivModLNode---------------------------------------
+//----------------------------UDivModLNode-------------------------------------
 // Unsigned long division with remainder result.
 class UDivModLNode : public DivModNode {
 public:
@@ -257,6 +293,30 @@ public:
 
   // Make a divmod and associated projections from a div or mod.
   static UDivModLNode* make(Node* div_or_mod);
+};
+
+//----------------------------NODivModINode------------------------------------
+// Non-overflow integer division with remainder result, UB when dividend == min_jint
+// and divisor == -1 so user has to ensure this combination does not appear
+class NODivModINode : public DivModINode {
+public:
+  NODivModINode( Node *c, Node *dividend, Node *divisor ) : DivModINode(c, dividend, divisor) {}
+  virtual int Opcode() const;
+
+  // Make a divmod and associated projections from a div or mod.
+  static NODivModINode* make(Node* div_or_mod);
+};
+
+//----------------------------NODivModLNode------------------------------------
+// Non-overflow long division with remainder result, UB when dividend == min_jlong
+// and divisor == -1 so user has to ensure this combination does not appear
+class NODivModLNode : public DivModLNode {
+public:
+  NODivModLNode( Node *c, Node *dividend, Node *divisor ) : DivModLNode(c, dividend, divisor) {}
+  virtual int Opcode() const;
+
+  // Make a divmod and associated projections from a div or mod.
+  static NODivModLNode* make(Node* div_or_mod);
 };
 
 #endif // SHARE_OPTO_DIVNODE_HPP
