@@ -44,7 +44,7 @@
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/thread.inline.hpp"
@@ -101,7 +101,8 @@ static const char* env_list[] = {
   // Env variables that are defined on Linux/BSD
   "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY",
   "HOSTTYPE", "OSTYPE", "ARCH", "MACHTYPE",
-  "LANG", "LC_ALL", "LC_CTYPE", "TZ",
+  "LANG", "LC_ALL", "LC_CTYPE", "LC_NUMERIC", "LC_TIME",
+  "TERM", "TMPDIR", "TZ",
 
   // defined on AIX
   "LIBPATH", "LDR_PRELOAD", "LDR_PRELOAD64",
@@ -543,21 +544,31 @@ void VMError::report(outputStream* st, bool _verbose) {
 
 #ifdef ASSERT
   // Error handler self tests
+  // Meaning of codes passed through in the tests.
+#define TEST_SECONDARY_CRASH 14
+#define TEST_RESOURCE_MARK_CRASH 2
 
   // test secondary error handling. Test it twice, to test that resetting
   // error handler after a secondary crash works.
   STEP("test secondary crash 1")
-    if (_verbose && TestCrashInErrorHandler != 0) {
+    if (_verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH) {
       st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
 
   STEP("test secondary crash 2")
-    if (_verbose && TestCrashInErrorHandler != 0) {
+    if (_verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH) {
       st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
+    }
+
+  STEP("test missing ResourceMark does not crash")
+    if (_verbose && TestCrashInErrorHandler == TEST_RESOURCE_MARK_CRASH) {
+      stringStream message;
+      message.print("This is a message with no ResourceMark");
+      tty->print_cr("%s", message.as_string());
     }
 
   // TestUnresponsiveErrorHandler: We want to test both step timeouts and global timeout.
@@ -586,18 +597,14 @@ void VMError::report(outputStream* st, bool _verbose) {
     // to test that resetting the signal handler works correctly.
     if (_verbose && TestSafeFetchInErrorHandler) {
       st->print_cr("Will test SafeFetch...");
-      if (CanUseSafeFetch32()) {
-        int* const invalid_pointer = (int*)segfault_address;
-        const int x = 0x76543210;
-        int i1 = SafeFetch32(invalid_pointer, x);
-        int i2 = SafeFetch32(invalid_pointer, x);
-        if (i1 == x && i2 == x) {
-          st->print_cr("SafeFetch OK."); // Correctly deflected and returned default pattern
-        } else {
-          st->print_cr("??");
-        }
+      int* const invalid_pointer = (int*)segfault_address;
+      const int x = 0x76543210;
+      int i1 = SafeFetch32(invalid_pointer, x);
+      int i2 = SafeFetch32(invalid_pointer, x);
+      if (i1 == x && i2 == x) {
+        st->print_cr("SafeFetch OK."); // Correctly deflected and returned default pattern
       } else {
-        st->print_cr("not possible; skipped.");
+        st->print_cr("??");
       }
     }
 #endif // ASSERT

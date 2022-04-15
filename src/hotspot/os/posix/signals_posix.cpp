@@ -32,19 +32,13 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/semaphore.inline.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "signals_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
-
-#ifdef ZERO
-// See stubGenerator_zero.cpp
-#include <setjmp.h>
-extern sigjmp_buf* get_jmp_buf_for_continuation();
-#endif
 
 #include <signal.h>
 
@@ -599,25 +593,26 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   }
 #endif
 
+  // Extract pc from context. Note that for certain signals and certain
+  // architectures the pc in ucontext_t will point *after* the offending
+  // instruction. In those cases, use siginfo si_addr instead.
+  address pc = NULL;
+  if (uc != NULL) {
+    if (S390_ONLY(sig == SIGILL || sig == SIGFPE) NOT_S390(false)) {
+      pc = (address)info->si_addr;
+    } else if (ZERO_ONLY(true) NOT_ZERO(false)) {
+      // Non-arch-specific Zero code does not really know the pc.
+      // This can be alleviated by making arch-specific os::Posix::ucontext_get_pc
+      // available for Zero for known architectures. But for generic Zero
+      // code, it would still remain unknown.
+      pc = NULL;
+    } else {
+      pc = os::Posix::ucontext_get_pc(uc);
+    }
+  }
+
   if (!signal_was_handled) {
-    // Handle SafeFetch access.
-#ifndef ZERO
-    if (uc != NULL) {
-      address pc = os::Posix::ucontext_get_pc(uc);
-      if (StubRoutines::is_safefetch_fault(pc)) {
-        os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-        signal_was_handled = true;
-      }
-    }
-#else
-    // See JDK-8076185
-    if (sig == SIGSEGV || sig == SIGBUS) {
-      sigjmp_buf* const pjb = get_jmp_buf_for_continuation();
-      if (pjb) {
-        siglongjmp(*pjb, 1);
-      }
-    }
-#endif // ZERO
+    signal_was_handled = handle_safefetch(sig, pc, uc);
   }
 
   // Ignore SIGPIPE and SIGXFSZ (4229104, 6499219).
@@ -642,22 +637,6 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 
   // Invoke fatal error handling.
   if (!signal_was_handled && abort_if_unrecognized) {
-    // Extract pc from context for the error handler to display.
-    address pc = NULL;
-    if (uc != NULL) {
-      // prepare fault pc address for error reporting.
-      if (S390_ONLY(sig == SIGILL || sig == SIGFPE) NOT_S390(false)) {
-        pc = (address)info->si_addr;
-      } else if (ZERO_ONLY(true) NOT_ZERO(false)) {
-        // Non-arch-specific Zero code does not really know the pc.
-        // This can be alleviated by making arch-specific os::Posix::ucontext_get_pc
-        // available for Zero for known architectures. But for generic Zero
-        // code, it would still remain unknown.
-        pc = NULL;
-      } else {
-        pc = os::Posix::ucontext_get_pc(uc);
-      }
-    }
     // For Zero, we ignore the crash context, because:
     //  a) The crash would be in C++ interpreter code, so context is not really relevant;
     //  b) Generic Zero code would not be able to parse it, so when generic error
@@ -1244,8 +1223,10 @@ void set_signal_handler(int sig, bool do_check = true) {
   }
 #endif
 
-  // Save handler setup for later checking
-  vm_handlers.set(sig, &sigAct);
+  // Save handler setup for possible later checking
+  if (do_check) {
+    vm_handlers.set(sig, &sigAct);
+  }
   do_check_signal_periodically[sig] = do_check;
 
   int ret = sigaction(sig, &sigAct, &oldAct);

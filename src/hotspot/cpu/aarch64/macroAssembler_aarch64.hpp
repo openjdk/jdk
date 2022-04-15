@@ -508,7 +508,7 @@ public:
 
   void movptr(Register r, uintptr_t imm64);
 
-  void mov(FloatRegister Vd, SIMD_Arrangement T, uint32_t imm32);
+  void mov(FloatRegister Vd, SIMD_Arrangement T, uint64_t imm64);
 
   void mov(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {
     orr(Vd, T, Vn, Vn);
@@ -1072,13 +1072,18 @@ public:
     return ReservedCodeCacheSize > branch_range;
   }
 
+  // Check if branches to the the non nmethod section require a far jump
+  static bool codestub_branch_needs_far_jump() {
+    return CodeCache::max_distance_to_non_nmethod() > branch_range;
+  }
+
   // Jumps that can reach anywhere in the code cache.
   // Trashes tmp.
   void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
-  void far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
+  int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
 
-  static int far_branch_size() {
-    if (far_branches()) {
+  static int far_codestub_branch_size() {
+    if (codestub_branch_needs_far_jump()) {
       return 3 * 4;  // adrp, add, br
     } else {
       return 4;

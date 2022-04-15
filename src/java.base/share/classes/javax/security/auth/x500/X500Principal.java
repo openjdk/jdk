@@ -41,13 +41,13 @@ import sun.security.util.*;
  * of the distinguished name, or by using the ASN.1 DER encoded byte
  * representation of the distinguished name.  The current specification
  * for the string representation of a distinguished name is defined in
- * <a href="http://tools.ietf.org/html/rfc2253">RFC 2253: Lightweight
+ * <a href="https://tools.ietf.org/html/rfc2253">RFC 2253: Lightweight
  * Directory Access Protocol (v3): UTF-8 String Representation of
  * Distinguished Names</a>. This class, however, accepts string formats from
- * both RFC 2253 and <a href="http://tools.ietf.org/html/rfc1779">RFC 1779:
+ * both RFC 2253 and <a href="https://tools.ietf.org/html/rfc1779">RFC 1779:
  * A String Representation of Distinguished Names</a>, and also recognizes
  * attribute type keywords whose OIDs (Object Identifiers) are defined in
- * <a href="http://tools.ietf.org/html/rfc5280">RFC 5280: Internet X.509
+ * <a href="https://tools.ietf.org/html/rfc5280">RFC 5280: Internet X.509
  * Public Key Infrastructure Certificate and CRL Profile</a>.
  *
  * <p> The string representation for this {@code X500Principal}

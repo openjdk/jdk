@@ -47,6 +47,7 @@
 
 package sun.security.pkcs11.wrapper;
 
+import java.lang.ref.Cleaner;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -161,6 +162,9 @@ public class PKCS11 {
                 // give up; just use what is returned by connect()
             }
         }
+
+        // Calls disconnect() to cleanup the native part of the wrapper.
+        Cleaner.create().register(this, this::disconnect);
     }
 
     public CK_VERSION getVersion() {
@@ -1655,18 +1659,6 @@ public class PKCS11 {
      */
     public String toString() {
         return "Module name: " + pkcs11ModulePath;
-    }
-
-    /**
-     * Calls disconnect() to cleanup the native part of the wrapper. Once this
-     * method is called, this object cannot be used any longer. Any subsequent
-     * call to a C_* method will result in a runtime exception.
-     *
-     * @exception Throwable If finalization fails.
-     */
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        disconnect();
     }
 
 // PKCS11 subclass that has all methods synchronized and delegating to the
