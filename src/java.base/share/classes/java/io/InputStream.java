@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -59,6 +60,19 @@ public abstract class InputStream implements Closeable {
 
     /** Skip buffer, null until allocated */
     private byte[] skipBuffer = null;
+
+    private SoftReference<byte[]> skipBufferReference;
+
+    private byte[] skipBufferReference(long remaining) {
+        int size = (int) Math.min(MAX_SKIP_BUFFER_SIZE, remaining);
+        SoftReference<byte[]> ref = this.skipBufferReference;
+        byte[] buffer;
+        if (ref == null || (buffer = ref.get()) == null || buffer.length < size) {
+            buffer = new byte[size];
+            this.skipBufferReference = new SoftReference<>(buffer);
+        }
+        return buffer;
+    }
 
     /**
      * Constructor for subclasses to call.
@@ -545,15 +559,12 @@ public abstract class InputStream implements Closeable {
             return 0;
         }
 
-        int size = (int)Math.min(MAX_SKIP_BUFFER_SIZE, remaining);
+        int size = (int) Math.min(MAX_SKIP_BUFFER_SIZE, remaining);
 
-        byte[] skipBuffer = this.skipBuffer;
-        if ((skipBuffer == null) || (skipBuffer.length < size)) {
-            this.skipBuffer = skipBuffer = new byte[size < MIN_SKIP_BUFFER_SIZE ? MIN_SKIP_BUFFER_SIZE : MAX_SKIP_BUFFER_SIZE];
-        }
+        byte[] skipBuffer = this.skipBufferReference(size);
 
         while (remaining > 0) {
-            int nr = read(skipBuffer, 0, (int)Math.min(size, remaining));
+            int nr = read(skipBuffer, 0, (int) Math.min(size, remaining));
             if (nr < 0) {
                 break;
             }

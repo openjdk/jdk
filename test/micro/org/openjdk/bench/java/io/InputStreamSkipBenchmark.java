@@ -242,8 +242,6 @@ public class InputStreamSkipBenchmark {
             super(length);
         }
 
-        private static final int MIN_SKIP_BUFFER_SIZE = 128;
-
         private SoftReference<byte[]> skipBufferReference;
 
         private byte[] skipBufferReference(long remaining) {
