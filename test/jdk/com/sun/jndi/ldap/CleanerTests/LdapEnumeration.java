@@ -27,9 +27,9 @@
  * @summary Verify capability to add a new entry to the directory using the
  *          ADD operation.
  * @modules java.naming/com.sun.jndi.ldap
- * @library /test/lib ../../lib/ /javax/naming/module/src/test/test/
+ * @library /test/lib ../lib/ /javax/naming/module/src/test/test/
  * @build LDAPServer LDAPTestUtils
- * @run main/othervm AddNewEntry
+ * @run main/othervm LdapEnumeration
  */
 
 import javax.naming.NamingEnumeration;
@@ -48,7 +48,7 @@ import java.net.SocketAddress;
 import java.util.Hashtable;
 import jdk.test.lib.net.URIBuilder;
 
-public class AddNewEntry {
+public class LdapEnumeration {
 
     public static void main(String[] args) throws Exception {
         // Create unbound server socket
@@ -70,7 +70,7 @@ public class AddNewEntry {
 
         // initialize test
         env = LDAPTestUtils.initEnv(serverSocket, providerURL,
-                         AddNewEntry.class.getName(), args, true);
+                         LdapEnumeration.class.getName(), args, true);
 
         /* Build attribute set */
         String[] ids = { "objectClass", "sn", "cn", "telephoneNumber", "mail",
