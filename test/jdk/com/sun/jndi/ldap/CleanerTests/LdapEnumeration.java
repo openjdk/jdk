@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8196770
- * @summary Verify capability to add a new entry to the directory using the
- *          ADD operation.
+ * @bug 8283660
+ * @summary Verify the AbstractLdapNamingEnumeration Cleaner doesn't keep the
+ *          enumeration reachable
  * @modules java.naming/com.sun.jndi.ldap
  * @library /test/lib ../lib/ /javax/naming/module/src/test/test/
  * @build LDAPServer LDAPTestUtils
@@ -46,9 +46,17 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
 import java.util.Hashtable;
+import java.util.WeakHashMap;
+
 import jdk.test.lib.net.URIBuilder;
 
+/*
+ * This test is a copy of com/sun/jndi/ldap/blits/AddTests/AddNewEntry.java,
+ * altered to confirm that the NamingEnumeration<SearchResult> is not prevented
+ * from being collected by the Cleaner code in AbstractLdapNamingEnumeration.
+ */
 public class LdapEnumeration {
+    static WeakHashMap whm = new WeakHashMap();
 
     public static void main(String[] args) throws Exception {
         // Create unbound server socket
@@ -120,12 +128,20 @@ public class LdapEnumeration {
             NamingEnumeration<SearchResult> results = ctx
                     .search(entryDN, "(objectclass=*)", constraints);
 
-            int found = LDAPTestUtils.checkResult(results, expect);
+            if (!"LdapSearchEnumeration".equals(results.getClass().getSimpleName())) {
+                throw new RuntimeException("Unexpected results class: " + results.getClass());
+            }
 
-            if (found != 1) {
-                throw new RuntimeException(
-                        "Check result failed, expect found 1 but actual is "
-                                + found);
+            whm.put(results, null);
+            results = null;
+            // Run GC to run the Cleaner and collect 'results'
+            for (int i = 0; i < 100; i++) {
+                System.gc();
+                Thread.sleep(1);
+            }
+            // If the Cleaner holds a reference to 'results', it won't be cleared from the map
+            if (whm.size() > 0) {
+                throw new RuntimeException("NamingEnumeration is still strongly reachable");
             }
 
         } finally {
