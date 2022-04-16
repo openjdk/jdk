@@ -46,6 +46,12 @@
 #define PASTE_TOKENS_AUX(x, y) PASTE_TOKENS_AUX2(x, y)
 #define PASTE_TOKENS_AUX2(x, y) x ## y
 
+// Convenience macro that produces a string literal with the filename
+// and linenumber of the location where the macro was used.
+#ifndef FILE_AND_LINE
+#define FILE_AND_LINE __FILE__ ":" XSTR(__LINE__)
+#endif
+
 // -DINCLUDE_<something>=0 | 1 can be specified on the command line to include
 // or exclude functionality.
 

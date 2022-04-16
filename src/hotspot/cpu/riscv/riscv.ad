@@ -1814,7 +1814,7 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_CountLeadingZerosL:
     case Op_CountTrailingZerosI:
     case Op_CountTrailingZerosL:
-      return UseRVB;
+      return UseZbb;
   }
 
   return true; // Per default match rules are supported.

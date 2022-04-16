@@ -61,13 +61,6 @@ G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
   _dirty_card_queue_set(&_dirty_card_queue_buffer_allocator)
 {}
 
-void G1BarrierSet::enqueue(oop pre_val) {
-  // Nulls should have been already filtered.
-  assert(oopDesc::is_oop(pre_val, true), "Error");
-  SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(Thread::current());
-  G1BarrierSet::satb_mark_queue_set().enqueue(queue, pre_val);
-}
-
 template <class T> void
 G1BarrierSet::write_ref_array_pre_work(T* dst, size_t count) {
   G1SATBMarkQueueSet& queue_set = G1BarrierSet::satb_mark_queue_set();

@@ -25,11 +25,11 @@
 
 // RISCV Bit-Manipulation Extension Architecture Description File
 
-instruct rorI_imm_rvb(iRegINoSp dst, iRegI src, immI shift) %{
-  predicate(UseRVB);
+instruct rorI_imm_b(iRegINoSp dst, iRegI src, immI shift) %{
+  predicate(UseZbb);
   match(Set dst (RotateRight src shift));
 
-  format %{ "roriw  $dst, $src, ($shift & 0x1f)\t#@rorI_imm_rvb" %}
+  format %{ "roriw  $dst, $src, ($shift & 0x1f)\t#@rorI_imm_b" %}
 
   ins_cost(ALU_COST);
   ins_encode %{
@@ -39,11 +39,11 @@ instruct rorI_imm_rvb(iRegINoSp dst, iRegI src, immI shift) %{
   ins_pipe(ialu_reg_shift);
 %}
 
-instruct rorL_imm_rvb(iRegLNoSp dst, iRegL src, immI shift) %{
-  predicate(UseRVB);
+instruct rorL_imm_b(iRegLNoSp dst, iRegL src, immI shift) %{
+  predicate(UseZbb);
   match(Set dst (RotateRight src shift));
 
-  format %{ "rori  $dst, $src, ($shift & 0x3f)\t#@rorL_imm_rvb" %}
+  format %{ "rori  $dst, $src, ($shift & 0x3f)\t#@rorL_imm_b" %}
 
   ins_cost(ALU_COST);
   ins_encode %{
@@ -53,11 +53,11 @@ instruct rorL_imm_rvb(iRegLNoSp dst, iRegL src, immI shift) %{
   ins_pipe(ialu_reg_shift);
 %}
 
-instruct rorI_reg_rvb(iRegINoSp dst, iRegI src, iRegI shift) %{
-  predicate(UseRVB);
+instruct rorI_reg_b(iRegINoSp dst, iRegI src, iRegI shift) %{
+  predicate(UseZbb);
   match(Set dst (RotateRight src shift));
 
-  format %{ "rorw  $dst, $src, $shift\t#@rorI_reg_rvb" %}
+  format %{ "rorw  $dst, $src, $shift\t#@rorI_reg_b" %}
   ins_cost(ALU_COST);
   ins_encode %{
     __ rorw(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
@@ -65,11 +65,11 @@ instruct rorI_reg_rvb(iRegINoSp dst, iRegI src, iRegI shift) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct rorL_reg_rvb(iRegLNoSp dst, iRegL src, iRegI shift) %{
-  predicate(UseRVB);
+instruct rorL_reg_b(iRegLNoSp dst, iRegL src, iRegI shift) %{
+  predicate(UseZbb);
   match(Set dst (RotateRight src shift));
 
-  format %{ "ror  $dst, $src, $shift\t#@rorL_reg_rvb" %}
+  format %{ "ror  $dst, $src, $shift\t#@rorL_reg_b" %}
   ins_cost(ALU_COST);
   ins_encode %{
     __ ror(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
@@ -77,11 +77,11 @@ instruct rorL_reg_rvb(iRegLNoSp dst, iRegL src, iRegI shift) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct rolI_reg_rvb(iRegINoSp dst, iRegI src, iRegI shift) %{
-  predicate(UseRVB);
+instruct rolI_reg_b(iRegINoSp dst, iRegI src, iRegI shift) %{
+  predicate(UseZbb);
   match(Set dst (RotateLeft src shift));
 
-  format %{ "rolw  $dst, $src, $shift\t#@rolI_reg_rvb" %}
+  format %{ "rolw  $dst, $src, $shift\t#@rolI_reg_b" %}
   ins_cost(ALU_COST);
   ins_encode %{
     __ rolw(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
@@ -89,11 +89,11 @@ instruct rolI_reg_rvb(iRegINoSp dst, iRegI src, iRegI shift) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct rolL_reg_rvb(iRegLNoSp dst, iRegL src, iRegI shift) %{
-  predicate(UseRVB);
+instruct rolL_reg_b(iRegLNoSp dst, iRegL src, iRegI shift) %{
+  predicate(UseZbb);
   match(Set dst (RotateLeft src shift));
 
-  format %{ "rol  $dst, $src, $shift\t#@rolL_reg_rvb" %}
+  format %{ "rol  $dst, $src, $shift\t#@rolL_reg_b" %}
   ins_cost(ALU_COST);
   ins_encode %{
     __ rol(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
@@ -102,11 +102,11 @@ instruct rolL_reg_rvb(iRegLNoSp dst, iRegL src, iRegI shift) %{
 %}
 
 // Convert oop into int for vectors alignment masking
-instruct convP2I_rvb(iRegINoSp dst, iRegP src) %{
-  predicate(UseRVB);
+instruct convP2I_b(iRegINoSp dst, iRegP src) %{
+  predicate(UseZba);
   match(Set dst (ConvL2I (CastP2X src)));
 
-  format %{ "zext.w  $dst, $src\t# ptr -> int @convP2I_rvb" %}
+  format %{ "zext.w  $dst, $src\t# ptr -> int @convP2I_b" %}
 
   ins_cost(ALU_COST);
   ins_encode %{
@@ -117,11 +117,11 @@ instruct convP2I_rvb(iRegINoSp dst, iRegP src) %{
 %}
 
 // byte to int
-instruct convB2I_reg_reg_rvb(iRegINoSp dst, iRegIorL2I src, immI_24 lshift, immI_24 rshift) %{
-  predicate(UseRVB);
+instruct convB2I_reg_reg_b(iRegINoSp dst, iRegIorL2I src, immI_24 lshift, immI_24 rshift) %{
+  predicate(UseZbb);
   match(Set dst (RShiftI (LShiftI src lshift) rshift));
 
-  format %{ "sext.b  $dst, $src\t# b2i, #@convB2I_reg_reg_rvb" %}
+  format %{ "sext.b  $dst, $src\t# b2i, #@convB2I_reg_reg_b" %}
 
   ins_cost(ALU_COST);
   ins_encode %{
@@ -132,11 +132,11 @@ instruct convB2I_reg_reg_rvb(iRegINoSp dst, iRegIorL2I src, immI_24 lshift, immI
 %}
 
 // int to short
-instruct convI2S_reg_reg_rvb(iRegINoSp dst, iRegIorL2I src, immI_16 lshift, immI_16 rshift) %{
-  predicate(UseRVB);
+instruct convI2S_reg_reg_b(iRegINoSp dst, iRegIorL2I src, immI_16 lshift, immI_16 rshift) %{
+  predicate(UseZbb);
   match(Set dst (RShiftI (LShiftI src lshift) rshift));
 
-  format %{ "sext.h  $dst, $src\t# i2s, #@convI2S_reg_reg_rvb" %}
+  format %{ "sext.h  $dst, $src\t# i2s, #@convI2S_reg_reg_b" %}
 
   ins_cost(ALU_COST);
   ins_encode %{
@@ -147,11 +147,11 @@ instruct convI2S_reg_reg_rvb(iRegINoSp dst, iRegIorL2I src, immI_16 lshift, immI
 %}
 
 // short to unsigned int
-instruct convS2UI_reg_reg_rvb(iRegINoSp dst, iRegIorL2I src, immI_16bits mask) %{
-  predicate(UseRVB);
+instruct convS2UI_reg_reg_b(iRegINoSp dst, iRegIorL2I src, immI_16bits mask) %{
+  predicate(UseZbb);
   match(Set dst (AndI src mask));
 
-  format %{ "zext.h  $dst, $src\t# s2ui, #@convS2UI_reg_reg_rvb" %}
+  format %{ "zext.h  $dst, $src\t# s2ui, #@convS2UI_reg_reg_b" %}
 
   ins_cost(ALU_COST);
   ins_encode %{
@@ -162,11 +162,11 @@ instruct convS2UI_reg_reg_rvb(iRegINoSp dst, iRegIorL2I src, immI_16bits mask) %
 %}
 
 // int to unsigned long (zero extend)
-instruct convI2UL_reg_reg_rvb(iRegLNoSp dst, iRegIorL2I src, immL_32bits mask) %{
-  predicate(UseRVB);
+instruct convI2UL_reg_reg_b(iRegLNoSp dst, iRegIorL2I src, immL_32bits mask) %{
+  predicate(UseZba);
   match(Set dst (AndL (ConvI2L src) mask));
 
-  format %{ "zext.w  $dst, $src\t# i2ul, #@convI2UL_reg_reg_rvb" %}
+  format %{ "zext.w  $dst, $src\t# i2ul, #@convI2UL_reg_reg_b" %}
 
   ins_cost(ALU_COST);
   ins_encode %{
@@ -177,12 +177,12 @@ instruct convI2UL_reg_reg_rvb(iRegLNoSp dst, iRegIorL2I src, immL_32bits mask) %
 %}
 
 // BSWAP instructions
-instruct bytes_reverse_int_rvb(iRegINoSp dst, iRegIorL2I src) %{
-  predicate(UseRVB);
+instruct bytes_reverse_int_b(iRegINoSp dst, iRegIorL2I src) %{
+  predicate(UseZbb);
   match(Set dst (ReverseBytesI src));
 
   ins_cost(ALU_COST * 2);
-  format %{ "revb_w_w  $dst, $src\t#@bytes_reverse_int_rvb" %}
+  format %{ "revb_w_w  $dst, $src\t#@bytes_reverse_int_b" %}
 
   ins_encode %{
     __ revb_w_w(as_Register($dst$$reg), as_Register($src$$reg));
@@ -191,12 +191,12 @@ instruct bytes_reverse_int_rvb(iRegINoSp dst, iRegIorL2I src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct bytes_reverse_long_rvb(iRegLNoSp dst, iRegL src) %{
-  predicate(UseRVB);
+instruct bytes_reverse_long_b(iRegLNoSp dst, iRegL src) %{
+  predicate(UseZbb);
   match(Set dst (ReverseBytesL src));
 
   ins_cost(ALU_COST);
-  format %{ "rev8  $dst, $src\t#@bytes_reverse_long_rvb" %}
+  format %{ "rev8  $dst, $src\t#@bytes_reverse_long_b" %}
 
   ins_encode %{
     __ rev8(as_Register($dst$$reg), as_Register($src$$reg));
@@ -205,12 +205,12 @@ instruct bytes_reverse_long_rvb(iRegLNoSp dst, iRegL src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct bytes_reverse_unsigned_short_rvb(iRegINoSp dst, iRegIorL2I src) %{
-  predicate(UseRVB);
+instruct bytes_reverse_unsigned_short_b(iRegINoSp dst, iRegIorL2I src) %{
+  predicate(UseZbb);
   match(Set dst (ReverseBytesUS src));
 
   ins_cost(ALU_COST * 2);
-  format %{ "revb_h_h_u  $dst, $src\t#@bytes_reverse_unsigned_short_rvb" %}
+  format %{ "revb_h_h_u  $dst, $src\t#@bytes_reverse_unsigned_short_b" %}
 
   ins_encode %{
     __ revb_h_h_u(as_Register($dst$$reg), as_Register($src$$reg));
@@ -219,12 +219,12 @@ instruct bytes_reverse_unsigned_short_rvb(iRegINoSp dst, iRegIorL2I src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct bytes_reverse_short_rvb(iRegINoSp dst, iRegIorL2I src) %{
-  predicate(UseRVB);
+instruct bytes_reverse_short_b(iRegINoSp dst, iRegIorL2I src) %{
+  predicate(UseZbb);
   match(Set dst (ReverseBytesS src));
 
   ins_cost(ALU_COST * 2);
-  format %{ "revb_h_h  $dst, $src\t#@bytes_reverse_short_rvb" %}
+  format %{ "revb_h_h  $dst, $src\t#@bytes_reverse_short_b" %}
 
   ins_encode %{
     __ revb_h_h(as_Register($dst$$reg), as_Register($src$$reg));
@@ -234,12 +234,12 @@ instruct bytes_reverse_short_rvb(iRegINoSp dst, iRegIorL2I src) %{
 %}
 
 // Shift Add Pointer
-instruct shaddP_reg_reg_rvb(iRegPNoSp dst, iRegP src1, iRegL src2, immIScale imm) %{
-  predicate(UseRVB);
+instruct shaddP_reg_reg_b(iRegPNoSp dst, iRegP src1, iRegL src2, immIScale imm) %{
+  predicate(UseZba);
   match(Set dst (AddP src1 (LShiftL src2 imm)));
 
   ins_cost(ALU_COST);
-  format %{ "shadd  $dst, $src2, $src1, $imm\t# ptr, #@shaddP_reg_reg_rvb" %}
+  format %{ "shadd  $dst, $src2, $src1, $imm\t# ptr, #@shaddP_reg_reg_b" %}
 
   ins_encode %{
     __ shadd(as_Register($dst$$reg),
@@ -252,12 +252,12 @@ instruct shaddP_reg_reg_rvb(iRegPNoSp dst, iRegP src1, iRegL src2, immIScale imm
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct shaddP_reg_reg_ext_rvb(iRegPNoSp dst, iRegP src1, iRegI src2, immIScale imm) %{
-  predicate(UseRVB);
+instruct shaddP_reg_reg_ext_b(iRegPNoSp dst, iRegP src1, iRegI src2, immIScale imm) %{
+  predicate(UseZba);
   match(Set dst (AddP src1 (LShiftL (ConvI2L src2) imm)));
 
   ins_cost(ALU_COST);
-  format %{ "shadd  $dst, $src2, $src1, $imm\t# ptr, #@shaddP_reg_reg_ext_rvb" %}
+  format %{ "shadd  $dst, $src2, $src1, $imm\t# ptr, #@shaddP_reg_reg_ext_b" %}
 
   ins_encode %{
     __ shadd(as_Register($dst$$reg),
@@ -271,12 +271,12 @@ instruct shaddP_reg_reg_ext_rvb(iRegPNoSp dst, iRegP src1, iRegI src2, immIScale
 %}
 
 // Shift Add Long
-instruct shaddL_reg_reg_rvb(iRegLNoSp dst, iRegL src1, iRegL src2, immIScale imm) %{
-  predicate(UseRVB);
+instruct shaddL_reg_reg_b(iRegLNoSp dst, iRegL src1, iRegL src2, immIScale imm) %{
+  predicate(UseZba);
   match(Set dst (AddL src1 (LShiftL src2 imm)));
 
   ins_cost(ALU_COST);
-  format %{ "shadd  $dst, $src2, $src1, $imm\t#@shaddL_reg_reg_rvb" %}
+  format %{ "shadd  $dst, $src2, $src1, $imm\t#@shaddL_reg_reg_b" %}
 
   ins_encode %{
     __ shadd(as_Register($dst$$reg),
@@ -289,12 +289,12 @@ instruct shaddL_reg_reg_rvb(iRegLNoSp dst, iRegL src1, iRegL src2, immIScale imm
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct shaddL_reg_reg_ext_rvb(iRegLNoSp dst, iRegL src1, iRegI src2, immIScale imm) %{
-  predicate(UseRVB);
+instruct shaddL_reg_reg_ext_b(iRegLNoSp dst, iRegL src1, iRegI src2, immIScale imm) %{
+  predicate(UseZba);
   match(Set dst (AddL src1 (LShiftL (ConvI2L src2) imm)));
 
   ins_cost(ALU_COST);
-  format %{ "shadd  $dst, $src2, $src1, $imm\t#@shaddL_reg_reg_ext_rvb" %}
+  format %{ "shadd  $dst, $src2, $src1, $imm\t#@shaddL_reg_reg_ext_b" %}
 
   ins_encode %{
     __ shadd(as_Register($dst$$reg),
@@ -308,12 +308,12 @@ instruct shaddL_reg_reg_ext_rvb(iRegLNoSp dst, iRegL src1, iRegI src2, immIScale
 %}
 
 // Zeros Count instructions
-instruct countLeadingZerosI_rvb(iRegINoSp dst, iRegIorL2I src) %{
-  predicate(UseRVB);
+instruct countLeadingZerosI_b(iRegINoSp dst, iRegIorL2I src) %{
+  predicate(UseZbb);
   match(Set dst (CountLeadingZerosI src));
 
   ins_cost(ALU_COST);
-  format %{ "clzw  $dst, $src\t#@countLeadingZerosI_rvb" %}
+  format %{ "clzw  $dst, $src\t#@countLeadingZerosI_b" %}
 
   ins_encode %{
     __ clzw(as_Register($dst$$reg), as_Register($src$$reg));
@@ -322,12 +322,12 @@ instruct countLeadingZerosI_rvb(iRegINoSp dst, iRegIorL2I src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countLeadingZerosL_rvb(iRegINoSp dst, iRegL src) %{
-  predicate(UseRVB);
+instruct countLeadingZerosL_b(iRegINoSp dst, iRegL src) %{
+  predicate(UseZbb);
   match(Set dst (CountLeadingZerosL src));
 
   ins_cost(ALU_COST);
-  format %{ "clz  $dst, $src\t#@countLeadingZerosL_rvb" %}
+  format %{ "clz  $dst, $src\t#@countLeadingZerosL_b" %}
 
   ins_encode %{
     __ clz(as_Register($dst$$reg), as_Register($src$$reg));
@@ -336,12 +336,12 @@ instruct countLeadingZerosL_rvb(iRegINoSp dst, iRegL src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countTrailingZerosI_rvb(iRegINoSp dst, iRegIorL2I src) %{
-  predicate(UseRVB);
+instruct countTrailingZerosI_b(iRegINoSp dst, iRegIorL2I src) %{
+  predicate(UseZbb);
   match(Set dst (CountTrailingZerosI src));
 
   ins_cost(ALU_COST);
-  format %{ "ctzw  $dst, $src\t#@countTrailingZerosI_rvb" %}
+  format %{ "ctzw  $dst, $src\t#@countTrailingZerosI_b" %}
 
   ins_encode %{
     __ ctzw(as_Register($dst$$reg), as_Register($src$$reg));
@@ -350,12 +350,12 @@ instruct countTrailingZerosI_rvb(iRegINoSp dst, iRegIorL2I src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countTrailingZerosL_rvb(iRegINoSp dst, iRegL src) %{
-  predicate(UseRVB);
+instruct countTrailingZerosL_b(iRegINoSp dst, iRegL src) %{
+  predicate(UseZbb);
   match(Set dst (CountTrailingZerosL src));
 
   ins_cost(ALU_COST);
-  format %{ "ctz  $dst, $src\t#@countTrailingZerosL_rvb" %}
+  format %{ "ctz  $dst, $src\t#@countTrailingZerosL_b" %}
 
   ins_encode %{
     __ ctz(as_Register($dst$$reg), as_Register($src$$reg));
@@ -365,12 +365,12 @@ instruct countTrailingZerosL_rvb(iRegINoSp dst, iRegL src) %{
 %}
 
 // Population Count instructions
-instruct popCountI_rvb(iRegINoSp dst, iRegIorL2I src) %{
+instruct popCountI_b(iRegINoSp dst, iRegIorL2I src) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountI src));
 
   ins_cost(ALU_COST);
-  format %{ "cpopw  $dst, $src\t#@popCountI_rvb" %}
+  format %{ "cpopw  $dst, $src\t#@popCountI_b" %}
 
   ins_encode %{
     __ cpopw(as_Register($dst$$reg), as_Register($src$$reg));
@@ -380,12 +380,12 @@ instruct popCountI_rvb(iRegINoSp dst, iRegIorL2I src) %{
 %}
 
 // Note: Long/bitCount(long) returns an int.
-instruct popCountL_rvb(iRegINoSp dst, iRegL src) %{
+instruct popCountL_b(iRegINoSp dst, iRegL src) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountL src));
 
   ins_cost(ALU_COST);
-  format %{ "cpop  $dst, $src\t#@popCountL_rvb" %}
+  format %{ "cpop  $dst, $src\t#@popCountL_b" %}
 
   ins_encode %{
     __ cpop(as_Register($dst$$reg), as_Register($src$$reg));
@@ -395,12 +395,12 @@ instruct popCountL_rvb(iRegINoSp dst, iRegL src) %{
 %}
 
 // Max and Min
-instruct minI_reg_rvb(iRegINoSp dst, iRegI src1, iRegI src2) %{
-  predicate(UseRVB);
+instruct minI_reg_b(iRegINoSp dst, iRegI src1, iRegI src2) %{
+  predicate(UseZbb);
   match(Set dst (MinI src1 src2));
 
   ins_cost(ALU_COST);
-  format %{ "min  $dst, $src1, $src2\t#@minI_reg_rvb" %}
+  format %{ "min  $dst, $src1, $src2\t#@minI_reg_b" %}
 
   ins_encode %{
     __ min(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
@@ -409,12 +409,12 @@ instruct minI_reg_rvb(iRegINoSp dst, iRegI src1, iRegI src2) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct maxI_reg_rvb(iRegINoSp dst, iRegI src1, iRegI src2) %{
-  predicate(UseRVB);
+instruct maxI_reg_b(iRegINoSp dst, iRegI src1, iRegI src2) %{
+  predicate(UseZbb);
   match(Set dst (MaxI src1 src2));
 
   ins_cost(ALU_COST);
-  format %{ "max  $dst, $src1, $src2\t#@maxI_reg_rvb" %}
+  format %{ "max  $dst, $src1, $src2\t#@maxI_reg_b" %}
 
   ins_encode %{
     __ max(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
@@ -424,14 +424,14 @@ instruct maxI_reg_rvb(iRegINoSp dst, iRegI src1, iRegI src2) %{
 %}
 
 // Abs
-instruct absI_reg_rvb(iRegINoSp dst, iRegI src) %{
-  predicate(UseRVB);
+instruct absI_reg_b(iRegINoSp dst, iRegI src) %{
+  predicate(UseZbb);
   match(Set dst (AbsI src));
 
   ins_cost(ALU_COST * 2);
   format %{
     "negw  t0, $src\n\t"
-    "max  $dst, $src, t0\t#@absI_reg_rvb"
+    "max  $dst, $src, t0\t#@absI_reg_b"
   %}
 
   ins_encode %{
@@ -442,14 +442,14 @@ instruct absI_reg_rvb(iRegINoSp dst, iRegI src) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct absL_reg_rvb(iRegLNoSp dst, iRegL src) %{
-  predicate(UseRVB);
+instruct absL_reg_b(iRegLNoSp dst, iRegL src) %{
+  predicate(UseZbb);
   match(Set dst (AbsL src));
 
   ins_cost(ALU_COST * 2);
   format %{
     "neg  t0, $src\n\t"
-    "max $dst, $src, t0\t#@absL_reg_rvb"
+    "max  $dst, $src, t0\t#@absL_reg_b"
   %}
 
   ins_encode %{
@@ -461,12 +461,12 @@ instruct absL_reg_rvb(iRegLNoSp dst, iRegL src) %{
 %}
 
 // And Not
-instruct andnI_reg_reg_rvb(iRegINoSp dst, iRegI src1, iRegI src2, immI_M1 m1) %{
-  predicate(UseRVB);
+instruct andnI_reg_reg_b(iRegINoSp dst, iRegI src1, iRegI src2, immI_M1 m1) %{
+  predicate(UseZbb);
   match(Set dst (AndI src1 (XorI src2 m1)));
 
   ins_cost(ALU_COST);
-  format %{ "andn  $dst, $src1, $src2\t#@andnI_reg_reg_rvb" %}
+  format %{ "andn  $dst, $src1, $src2\t#@andnI_reg_reg_b" %}
 
   ins_encode %{
     __ andn(as_Register($dst$$reg),
@@ -477,12 +477,12 @@ instruct andnI_reg_reg_rvb(iRegINoSp dst, iRegI src1, iRegI src2, immI_M1 m1) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct andnL_reg_reg_rvb(iRegLNoSp dst, iRegL src1, iRegL src2, immL_M1 m1) %{
-  predicate(UseRVB);
+instruct andnL_reg_reg_b(iRegLNoSp dst, iRegL src1, iRegL src2, immL_M1 m1) %{
+  predicate(UseZbb);
   match(Set dst (AndL src1 (XorL src2 m1)));
 
   ins_cost(ALU_COST);
-  format %{ "andn  $dst, $src1, $src2\t#@andnL_reg_reg_rvb" %}
+  format %{ "andn  $dst, $src1, $src2\t#@andnL_reg_reg_b" %}
 
   ins_encode %{
     __ andn(as_Register($dst$$reg),
@@ -494,12 +494,12 @@ instruct andnL_reg_reg_rvb(iRegLNoSp dst, iRegL src1, iRegL src2, immL_M1 m1) %{
 %}
 
 // Or Not
-instruct ornI_reg_reg_rvb(iRegINoSp dst, iRegI src1, iRegI src2, immI_M1 m1) %{
-  predicate(UseRVB);
+instruct ornI_reg_reg_b(iRegINoSp dst, iRegI src1, iRegI src2, immI_M1 m1) %{
+  predicate(UseZbb);
   match(Set dst (OrI src1 (XorI src2 m1)));
 
   ins_cost(ALU_COST);
-  format %{ "orn  $dst, $src1, $src2\t#@ornI_reg_reg_rvb" %}
+  format %{ "orn  $dst, $src1, $src2\t#@ornI_reg_reg_b" %}
 
   ins_encode %{
     __ orn(as_Register($dst$$reg),
@@ -510,12 +510,12 @@ instruct ornI_reg_reg_rvb(iRegINoSp dst, iRegI src1, iRegI src2, immI_M1 m1) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct ornL_reg_reg_rvb(iRegLNoSp dst, iRegL src1, iRegL src2, immL_M1 m1) %{
-  predicate(UseRVB);
+instruct ornL_reg_reg_b(iRegLNoSp dst, iRegL src1, iRegL src2, immL_M1 m1) %{
+  predicate(UseZbb);
   match(Set dst (OrL src1 (XorL src2 m1)));
 
   ins_cost(ALU_COST);
-  format %{ "orn  $dst, $src1, $src2\t#@ornL_reg_reg_rvb" %}
+  format %{ "orn  $dst, $src1, $src2\t#@ornL_reg_reg_b" %}
 
   ins_encode %{
     __ orn(as_Register($dst$$reg),

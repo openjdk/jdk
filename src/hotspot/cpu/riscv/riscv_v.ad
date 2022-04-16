@@ -1993,11 +1993,12 @@ instruct vstring_compress(iRegP_R12 src, iRegP_R11 dst, iRegI_R13 len, iRegI_R10
   ins_pipe( pipe_slow );
 %}
 
-instruct vcount_positives(iRegP_R11 ary, iRegI_R12 len, iRegI_R10 result, iRegL tmp)
+instruct vcount_positives(iRegP_R11 ary, iRegI_R12 len, iRegI_R10 result,
+                          vReg_V1 v1, vReg_V2 v2, vReg_V3 v3, iRegL tmp)
 %{
   predicate(UseRVV);
   match(Set result (CountPositives ary len));
-  effect(USE_KILL ary, USE_KILL len, TEMP tmp);
+  effect(TEMP_DEF result, USE_KILL ary, USE_KILL len, TEMP v1, TEMP v2, TEMP v3, TEMP tmp);
 
   format %{ "count positives byte[] $ary, $len -> $result" %}
   ins_encode %{

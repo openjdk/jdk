@@ -59,11 +59,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
  * attributes for the element. See:
  * <a href="https://en.wikipedia.org/wiki/HTML_element">HTML element</a>.
  *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- *
  * @see <a href="https://html.spec.whatwg.org/multipage/syntax.html#normal-elements">WhatWG: Normal Elements</a>
  * @see <a href="https://www.w3.org/TR/html51/syntax.html#writing-html-documents-elements">HTML 5.1: Elements</a>
  */
@@ -83,7 +78,7 @@ public class HtmlTree extends Content {
 
     /**
      * The enclosed content ("inner HTML") for this HTML element.
-     * The items in this list are never null.
+     * The items in this list are never {@code null}.
      */
     private List<Content> content = List.of();
 
@@ -320,7 +315,7 @@ public class HtmlTree extends Content {
      * Creates an HTML {@code A} element.
      * The {@code ref} argument will be URL-encoded for use as the attribute value.
      *
-     * @param ref the value for the {@code href} attribute}
+     * @param ref the value for the {@code href} attribute
      * @param body the content for element
      * @return the element
      */
@@ -336,7 +331,7 @@ public class HtmlTree extends Content {
      * and will <i>not</i> be additionally URL-encoded, but will be
      * {@link URI#toASCIIString() converted} to ASCII for use as the attribute value.
      *
-     * @param ref the value for the {@code href} attribute}
+     * @param ref the value for the {@code href} attribute
      * @param body the content for element
      * @return the element
      */
@@ -905,7 +900,7 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree TITLE(String body) {
         return new HtmlTree(TagName.TITLE)
-            .add(body);
+                .add(body);
     }
 
     /**
@@ -928,18 +923,18 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree UL(HtmlStyle style, Content first, Content... more) {
-        HtmlTree htmlTree = new HtmlTree(TagName.UL)
+        var ul = new HtmlTree(TagName.UL)
                 .setStyle(style);
-        htmlTree.add(first);
+        ul.add(first);
         for (Content c : more) {
-            htmlTree.add(c);
+            ul.add(c);
         }
-        return htmlTree;
+        return ul;
     }
 
     /**
      * Creates an HTML {@code UL} element with the given style and content generated
-     * from a collection of items..
+     * from a collection of items.
      *
      * @param style the style
      * @param items the items to be added to the list
@@ -1022,7 +1017,7 @@ public class HtmlTree extends Content {
     /**
      * Returns true if the element is a normal element that is <em>phrasing content</em>.
      *
-     * @return true if the HTML tag is an inline element
+     * @return true if this is an inline element
      *
      * @see <a href="https://www.w3.org/TR/html51/dom.html#kinds-of-content-phrasing-content">Phrasing Content</a>
      */
@@ -1088,7 +1083,7 @@ public class HtmlTree extends Content {
 
     /**
      * Given a Content node, strips all html characters and
-     * return the result.
+     * returns the result.
      *
      * @param body The content node to check.
      * @return the plain text from the content node
