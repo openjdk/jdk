@@ -5,7 +5,7 @@
   <title>The AWT Focus Subsystem</title>
 </head>
 <!--
- Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -180,8 +180,8 @@
       descendants.
 
      <p>
-     Here is an example:<br> <img src="FocusCycle.gif"
-     alt="Three groups as described below: ABCF BDE and DGH. "><br>
+     Here is an example:<br> <img src="FocusCycle.svg"
+     alt="Three groups as described below: ABCF, BDE and DGH.">
 
      <p>Assume the following:
       <ul>
@@ -626,9 +626,15 @@ InternalFrameFocusTraversalPolicy.
         that have or inherit empty InputMaps.
   </ol>
 <p>
-The figure below shows an implicit focus transfer:
-<br><img src="ImplicitFocusTransfer.gif" alt="Implicit focus transfer."><br>
+The figures below show an implicit focus transfer:
+<p id="containerFocus1"><img src="ImplicitFocusTransfer1.svg"
+         alt="Implicit focus transfer for traversable container."><br>
+pic.1
+<p id="containerFocus2"><img src="ImplicitFocusTransfer2.svg"
+         alt="Implicit focus transfer for non-traversable container."><br>
+pic.2
 
+<p>
 Assume the following:
  <ul>
    <li><b>A</b>, <b>B</b> and <b>C</b> are components in some window (a container)
@@ -639,8 +645,8 @@ Assume the following:
        Container in the pic.2.
    <li>In such a case a forward traversal will look as follows:
    <ul>
-     <li> pic.1 : <b>A</b> -> <b>R</b> -> <b>B</b> -> <b>C</b>
-     <li> pic.2 : <b>A</b> -> <b>B</b> -> <b>C</b>
+     <li> pic.1 : <b>A</b> &rarr; <b>R</b> &rarr; <b>B</b> &rarr; <b>C</b>
+     <li> pic.2 : <b>A</b> &rarr; <b>B</b> &rarr; <b>C</b>
    </ul>
  </ul>
 

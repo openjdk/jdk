@@ -56,9 +56,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.tree.analysis;
 
 import java.util.List;
+import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.tree.AbstractInsnNode;
 import jdk.internal.org.objectweb.asm.tree.TryCatchBlockNode;
@@ -76,18 +78,16 @@ import jdk.internal.org.objectweb.asm.tree.TryCatchBlockNode;
 public abstract class Interpreter<V extends Value> {
 
     /**
-      * The ASM API version supported by this interpreter. The value of this field must be one of
-      * {@link jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5}, {@link
-      * jdk.internal.org.objectweb.asm.Opcodes#ASM6} or {@link jdk.internal.org.objectweb.asm.Opcodes#ASM7}.
+      * The ASM API version supported by this interpreter. The value of this field must be one of the
+      * {@code ASM}<i>x</i> values in {@link Opcodes}.
       */
     protected final int api;
 
     /**
       * Constructs a new {@link Interpreter}.
       *
-      * @param api the ASM API version supported by this interpreter. Must be one of {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5}, {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6} or {@link jdk.internal.org.objectweb.asm.Opcodes#ASM7}.
+      * @param api the ASM API version supported by this interpreter. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       */
     protected Interpreter(final int api) {
         this.api = api;
@@ -297,3 +297,4 @@ public abstract class Interpreter<V extends Value> {
       */
     public abstract V merge(V value1, V value2);
 }
+

@@ -50,7 +50,7 @@ import sun.security.util.Debug;
  * Therefore any seed material passed to a {@code SecureRandom} object must be
  * unpredictable, and all {@code SecureRandom} output sequences must be
  * cryptographically strong, as described in
- * <a href="http://tools.ietf.org/html/rfc4086">
+ * <a href="https://tools.ietf.org/html/rfc4086">
  * <i>RFC 4086: Randomness Requirements for Security</i></a>.
  *
  * <p> Many {@code SecureRandom} implementations are in the form of a

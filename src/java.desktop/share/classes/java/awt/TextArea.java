@@ -55,7 +55,7 @@ import javax.accessibility.AccessibleStateSet;
  * @author      Sami Shaio
  * @since       1.0
  */
-public class TextArea extends TextComponent {
+public non-sealed class TextArea extends TextComponent {
 
     /**
      * The number of rows in the {@code TextArea}.

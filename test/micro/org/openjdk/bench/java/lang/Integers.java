@@ -110,6 +110,22 @@ public class Integers {
         }
     }
 
+    /** Performs expand on small values */
+    @Benchmark
+    public void expand(Blackhole bh) {
+        for (int i : intsSmall) {
+            bh.consume(Integer.expand(i, 0xFF00F0F0));
+        }
+    }
+
+    /** Performs compress on large values */
+    @Benchmark
+    public void compress(Blackhole bh) {
+        for (int i : intsBig) {
+            bh.consume(Integer.compress(i, 0x000F0F1F));
+        }
+    }
+
     @Benchmark
     public void shiftRight(Blackhole bh) {
         for (int i = 0; i < size; i++) {

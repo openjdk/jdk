@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1240,11 +1240,11 @@ void LinearScan::add_register_hints(LIR_Op* op) {
       break;
     }
     case lir_cmove: {
-      assert(op->as_Op2() != NULL, "lir_cmove must be LIR_Op2");
-      LIR_Op2* cmove = (LIR_Op2*)op;
+      assert(op->as_Op4() != NULL, "lir_cmove must be LIR_Op4");
+      LIR_Op4* cmove = (LIR_Op4*)op;
 
       LIR_Opr move_from = cmove->in_opr1();
-      LIR_Opr move_to = cmove->result_opr();
+      LIR_Opr move_to   = cmove->result_opr();
 
       if (move_to->is_register() && move_from->is_register()) {
         Interval* from = interval_at(reg_num(move_from));
@@ -3131,6 +3131,9 @@ void LinearScan::do_linear_scan() {
     }
   }
 
+#ifndef RISCV
+  // Disable these optimizations on riscv temporarily, because it does not
+  // work when the comparison operands are bound to branches or cmoves.
   { TIME_LINEAR_SCAN(timer_optimize_lir);
 
     EdgeMoveOptimizer::optimize(ir()->code());
@@ -3138,6 +3141,7 @@ void LinearScan::do_linear_scan() {
     // check that cfg is still correct after optimizations
     ir()->verify();
   }
+#endif
 
   NOT_PRODUCT(print_lir(1, "Before Code Generation", false));
   NOT_PRODUCT(LinearScanStatistic::compute(this, _stat_final));
@@ -6361,14 +6365,14 @@ void ControlFlowOptimizer::delete_unnecessary_jumps(BlockList* code) {
               // There might be a cmove inserted for profiling which depends on the same
               // compare. If we change the condition of the respective compare, we have
               // to take care of this cmove as well.
-              LIR_Op2* prev_cmove = NULL;
+              LIR_Op4* prev_cmove = NULL;
 
               for(int j = instructions->length() - 3; j >= 0 && prev_cmp == NULL; j--) {
                 prev_op = instructions->at(j);
                 // check for the cmove
                 if (prev_op->code() == lir_cmove) {
-                  assert(prev_op->as_Op2() != NULL, "cmove must be of type LIR_Op2");
-                  prev_cmove = (LIR_Op2*)prev_op;
+                  assert(prev_op->as_Op4() != NULL, "cmove must be of type LIR_Op4");
+                  prev_cmove = (LIR_Op4*)prev_op;
                   assert(prev_branch->cond() == prev_cmove->condition(), "should be the same");
                 }
                 if (prev_op->code() == lir_cmp) {

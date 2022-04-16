@@ -940,7 +940,7 @@ public class PKCS7 {
 
     /**
      * Examine the certificate for a Subject Information Access extension
-     * (<a href="http://tools.ietf.org/html/rfc5280">RFC 5280</a>).
+     * (<a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>).
      * The extension's {@code accessMethod} field should contain the object
      * identifier defined for timestamping: 1.3.6.1.5.5.7.48.3 and its
      * {@code accessLocation} field should contain an HTTP or HTTPS URL.

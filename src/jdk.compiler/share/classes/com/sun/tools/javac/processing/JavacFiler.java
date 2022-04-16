@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ import static javax.tools.StandardLocation.CLASS_OUTPUT;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
-import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.model.JavacElements;
@@ -63,10 +62,8 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
 import static com.sun.tools.javac.code.Lint.LintCategory.PROCESSING;
-import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.main.Option;
-import java.util.stream.Collectors;
 
 /**
  * The FilerImplementation class must maintain a number of
@@ -547,12 +544,11 @@ public class JavacFiler implements Filer, Closeable {
 
         locationCheck(location);
 
-        String strPkg = pkg.toString();
-        if (strPkg.length() > 0)
-            checkName(strPkg);
+        if (pkg.length() > 0)
+            checkName(pkg);
 
         FileObject fileObject =
-            fileManager.getFileForOutputForOriginatingFiles(location, strPkg,
+            fileManager.getFileForOutputForOriginatingFiles(location, pkg,
                                                             relativeName.toString(), originatingFiles(originatingElements));
         checkFileReopening(fileObject, true);
 
