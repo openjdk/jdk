@@ -153,8 +153,8 @@ public class AsyncExecutorShutdown implements HttpServerAdapters {
         }
         if (accepted != null) {
             out.println(what + ": Didn't find expected RejectedExecutionException, " +
-                    "but accepting " + t.getClass().getSimpleName()
-                    + " as a valid cause: " + t);
+                    "but accepting " + accepted.getClass().getSimpleName()
+                    + " as a valid cause: " + accepted);
             return;
         }
         throw new AssertionError(what + ": Unexpected exception: " + cause, cause);
