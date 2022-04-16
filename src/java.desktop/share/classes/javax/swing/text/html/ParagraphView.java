@@ -37,7 +37,7 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.View;
 
 /**
- * Displays the paragraph, and uses CSS attributes for its
+ * Displays the paragraph and uses CSS attributes for its
  * configuration.
  *
  * @author  Timothy Prinzing
