@@ -307,7 +307,7 @@ public class PassFailJFrame {
     }
 
     /**
-     *  Forcibly pass the test.
+     *  Forcibly fail the test.
      */
     public static void forceFail() {
         latch.countDown();
