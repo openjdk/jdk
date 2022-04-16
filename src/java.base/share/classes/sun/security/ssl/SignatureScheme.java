@@ -472,6 +472,11 @@ enum SignatureScheme {
             ProtocolVersion version) {
 
         PrivateKey signingKey = x509Possession.popPrivateKey;
+
+        ECParameterSpec params = x509Possession.getECParameterSpec();
+        NamedGroup namedGroup = params != null
+                ? NamedGroup.valueOf(params) : null;
+
         String keyAlgorithm = signingKey.getAlgorithm();
         int keySize;
         // Only need to check RSA algorithm at present.
@@ -488,10 +493,7 @@ enum SignatureScheme {
                     ss.isPermitted(constraints)) {
                 if ((ss.namedGroup != null) && (ss.namedGroup.spec ==
                         NamedGroupSpec.NAMED_GROUP_ECDHE)) {
-                    ECParameterSpec params =
-                            x509Possession.getECParameterSpec();
-                    if (params != null &&
-                            ss.namedGroup == NamedGroup.valueOf(params)) {
+                    if (namedGroup == ss.namedGroup) {
                         Signature signer = ss.getSigner(signingKey);
                         if (signer != null) {
                             return new SimpleImmutableEntry<>(ss, signer);
@@ -514,16 +516,11 @@ enum SignatureScheme {
                     // against the local supported named groups.  The risk
                     // should be minimal as applications should not use
                     // unsupported named groups for its certificates.
-                    ECParameterSpec params =
-                            x509Possession.getECParameterSpec();
-                    if (params != null) {
-                        NamedGroup keyGroup = NamedGroup.valueOf(params);
-                        if (keyGroup != null &&
-                                SupportedGroups.isSupported(keyGroup)) {
-                            Signature signer = ss.getSigner(signingKey);
-                            if (signer != null) {
-                                return new SimpleImmutableEntry<>(ss, signer);
-                            }
+                    if (namedGroup != null &&
+                            SupportedGroups.isSupported(namedGroup)) {
+                        Signature signer = ss.getSigner(signingKey);
+                        if (signer != null) {
+                            return new SimpleImmutableEntry<>(ss, signer);
                         }
                     }
 
