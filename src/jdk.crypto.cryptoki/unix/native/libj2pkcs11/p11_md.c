@@ -262,7 +262,7 @@ cleanup:
 /*
  * Class:     sun_security_pkcs11_wrapper_PKCS11
  * Method:    disconnect
- * Signature: ()V
+ * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_disconnect(
         JNIEnv *env, jclass thisClass, jlong ckpNativeData) {
@@ -271,7 +271,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_disconnect(
     if (ckpNativeData != 0L) {
         ModuleData *moduleData = jlong_to_ptr(ckpNativeData);
 
-        if (moduleData != NULL) {
+        if (moduleData != NULL && moduleData->hModule != NULL) {
             dlclose(moduleData->hModule);
         }
 
