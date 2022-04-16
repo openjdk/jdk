@@ -27,6 +27,7 @@
 
 private:
   void pd_initialize() {}
+  bool pd_finalize_stubs();
 
 public:
   void flush_bundle(bool start_new_bundle) {}

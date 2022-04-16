@@ -2028,6 +2028,9 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TraceOptimizedUpcallStubs, false,                              \
                 "Trace optimized upcall stub generation")                      \
+  product(bool, UseSharedStubs, true, DIAGNOSTIC,                          \
+                "Allow sharing stubs whether it is possible")               \
+                                                                            \
 
 // end of RUNTIME_FLAGS
 

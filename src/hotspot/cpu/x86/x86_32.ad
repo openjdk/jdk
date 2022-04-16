@@ -1813,11 +1813,19 @@ encode %{
                                                   : static_call_Relocation::spec(method_index);
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      rspec, RELOC_DISP32);
-      // Emit stubs for static call.
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
-      if (stub == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
+      address mark = cbuf.insts_mark();
+      if (UseSharedStubs && _method->is_loaded() &&
+          (!_optimized_virtual || _method->is_final_method())) {
+        // Postpone creating a stub to the interpreter because
+        // it might be shared among calls of the same Java method.
+        cbuf.shared_stub_to_interp_for(_method->get_Method(), mark);
+      } else {
+        // Emit stubs for static call.
+        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
+        if (stub == NULL) {
+          ciEnv::current()->record_failure("CodeCache is full");
+          return;
+        }
       }
     }
   %}

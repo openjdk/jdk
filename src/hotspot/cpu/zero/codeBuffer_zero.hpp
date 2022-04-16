@@ -28,5 +28,6 @@
 
  private:
   void pd_initialize() {}
+  bool pd_finalize_stubs() { return true; }
 
 #endif // CPU_ZERO_CODEBUFFER_ZERO_HPP
