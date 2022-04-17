@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -409,7 +410,12 @@ public final class ObjectStreamClass implements Serializable {
                     } else if (externalizable) {
                         cons = getExternalizableConstructor(cl);
                     } else {
-                        cons = getSerializableConstructor(cl);
+                        if (isProxy) {
+                            // proxies are hidden and cannot use bytecode-generated serial constructors
+                            cons = proxyConstructor(cl);
+                        } else {
+                            cons = getSerializableConstructor(cl);
+                        }
                         writeObjectMethod = getPrivateMethod(cl, "writeObject",
                             new Class<?>[] { ObjectOutputStream.class },
                             Void.TYPE);
@@ -1013,14 +1019,17 @@ public final class ObjectStreamClass implements Serializable {
     {
         requireInitialized();
         if (cons != null) {
+            Object[] args = isProxy ? new Object[] {(InvocationHandler) (proxy, mth, params) -> {
+                throw new IllegalStateException("Pending proxy read by serialization");
+            }} : new Object[0];
             try {
                 if (domains == null || domains.length == 0) {
-                    return cons.newInstance();
+                    return cons.newInstance(args);
                 } else {
                     JavaSecurityAccess jsa = SharedSecrets.getJavaSecurityAccess();
                     PrivilegedAction<?> pea = () -> {
                         try {
-                            return cons.newInstance();
+                            return cons.newInstance(args);
                         } catch (InstantiationException
                                  | InvocationTargetException
                                  | IllegalAccessException x) {
@@ -1442,6 +1451,27 @@ public final class ObjectStreamClass implements Serializable {
      */
     private static Constructor<?> getSerializableConstructor(Class<?> cl) {
         return reflFactory.newConstructorForSerialization(cl);
+    }
+
+    /**
+     * Returns the single-arg (invocation handler) constructor of a dynamic proxy class.
+     *
+     * @param cls the dynamic proxy class
+     * @return the constructor
+     */
+    @SuppressWarnings("removal")
+    private static Constructor<?> proxyConstructor(Class<?> cls) {
+        assert Proxy.isProxyClass(cls) : "Expected proxy, got: " + cls;
+        PrivilegedAction<Constructor<?>> pa = () -> {
+            try {
+                Constructor<?> constructor = cls.getDeclaredConstructor(InvocationHandler.class);
+                constructor.setAccessible(true);
+                return constructor;
+            } catch (NoSuchMethodException ex) {
+                return null;
+            }
+        };
+        return AccessController.doPrivileged(pa);
     }
 
     /**
