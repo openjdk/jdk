@@ -411,7 +411,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   // For short elements, unsigned right shift is equal to signed right shift if the shift_cnt <= 16.
   // To support unsigned right shift of negative byte/short elements, we replace the unsigned right
   // shift operation with the signed right shift operation. This is fine because for vector api, the
-  // shift count will be masked to shift_cnt<= 7 for bytes and shift_cnt <= 15 for shorts.
+  // shift count will be masked to shift_cnt <= 7 for bytes and shift_cnt <= 15 for shorts.
   if (opc == Op_URShiftB || opc == Op_URShiftS) {
     opc = Op_RShiftI;
   }
@@ -2260,7 +2260,7 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   // For short elements, unsigned right shift is equal to signed right shift if the shift_cnt <= 16.
   // To support unsigned right shift of negative byte/short elements, we replace the unsigned right
   // shift operation with the signed right shift operation. This is fine because for vector api, the
-  // shift count will be masked to shift_cnt<= 7 for bytes and shift_cnt <= 15 for shorts.
+  // shift count will be masked to shift_cnt <= 7 for bytes and shift_cnt <= 15 for shorts.
   if (opc == Op_URShiftB || opc == Op_URShiftS) {
     opc = Op_RShiftI;
   }
