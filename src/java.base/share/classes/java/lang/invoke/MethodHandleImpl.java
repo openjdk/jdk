@@ -1671,6 +1671,15 @@ abstract class MethodHandleImpl {
             public Class<?>[] exceptionTypes(MethodHandle handle) {
                 return VarHandles.exceptionTypes(handle);
             }
+
+            @Override
+            public Lookup injectLookup(Class<?> clazz) {
+                try {
+                    return MethodHandles.privateLookupIn(clazz, IMPL_LOOKUP);
+                } catch (IllegalAccessException ex) {
+                    throw new InternalError(ex);
+                }
+            }
         });
     }
 
