@@ -612,7 +612,6 @@ public class Proxy implements java.io.Serializable {
         private final List<Class<?>> interfaces;
         private final ProxyContext context;
 
-        private enum ProxyKind { PACKAGE, NON_EXPORTED, EXPORTED }
         private record ProxyContext(Module module, String pkg, boolean packagePrivate, MethodHandles.Lookup lookup) {}
 
         ProxyBuilder(ClassLoader loader, List<Class<?>> interfaces) {
@@ -770,8 +769,8 @@ public class Proxy implements java.io.Serializable {
          * Reads edge and qualified exports are added for dynamic module to access.
          */
         private static ProxyContext determineContext(ClassLoader loader,
-                                               List<Class<?>> interfaces,
-                                               Set<Class<?>> refTypes) {
+                                                     List<Class<?>> interfaces,
+                                                     Set<Class<?>> refTypes) {
             Map<Class<?>, Module> packagePrivateTypes = new HashMap<>();
             boolean nonExported = false;
             for (Class<?> intf : interfaces) {
