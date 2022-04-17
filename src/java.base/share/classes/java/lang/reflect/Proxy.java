@@ -531,10 +531,11 @@ public class Proxy implements java.io.Serializable {
              * Generate the specified proxy class.
              */
             int accessFlags = (context.packagePrivate ? 0 : Modifier.PUBLIC) | Modifier.FINAL;
-            byte[] proxyClassFile = ProxyGenerator.generateProxyClass(loader, proxyName, interfaces, accessFlags);
+            var proxyClassFile = ProxyGenerator.generateProxyClass(loader, proxyName, interfaces, accessFlags);
             try {
-                Class<?> pc = JLA.defineClass(loader, proxyName, proxyClassFile,
-                                              null, "__dynamic_proxy__");
+                Class<?> pc = context.lookup.defineHiddenClassWithClassData(proxyClassFile.bytecode(),
+                        proxyClassFile.classData(), true,
+                        MethodHandles.Lookup.ClassOption.STRONG).lookupClass();
                 reverseProxyCache.sub(pc).putIfAbsent(loader, Boolean.TRUE);
                 return pc;
             } catch (ClassFormatError e) {
@@ -546,6 +547,8 @@ public class Proxy implements java.io.Serializable {
                  * exceeded).
                  */
                 throw new IllegalArgumentException(e.toString());
+            } catch (IllegalAccessException e) {
+                throw new InternalError(e); // The lookup should be powerful enough
             }
         }
 

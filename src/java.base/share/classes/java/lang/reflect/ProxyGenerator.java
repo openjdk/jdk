@@ -27,12 +27,15 @@ package java.lang.reflect;
 
 import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.ConstantDynamic;
+import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import sun.security.action.GetBooleanAction;
 
 import java.io.IOException;
+import java.lang.constant.ConstantDescs;
 import java.lang.invoke.MethodType;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,12 +61,6 @@ final class ProxyGenerator extends ClassWriter {
     private static final String JL_CLASS = "java/lang/Class";
     private static final String JL_OBJECT = "java/lang/Object";
     private static final String JL_THROWABLE = "java/lang/Throwable";
-    private static final String JL_CLASS_NOT_FOUND_EX = "java/lang/ClassNotFoundException";
-    private static final String JL_ILLEGAL_ACCESS_EX = "java/lang/IllegalAccessException";
-
-    private static final String JL_NO_CLASS_DEF_FOUND_ERROR = "java/lang/NoClassDefFoundError";
-    private static final String JL_NO_SUCH_METHOD_EX = "java/lang/NoSuchMethodException";
-    private static final String JL_NO_SUCH_METHOD_ERROR = "java/lang/NoSuchMethodError";
     private static final String JLI_LOOKUP = "java/lang/invoke/MethodHandles$Lookup";
     private static final String JLI_METHODHANDLES = "java/lang/invoke/MethodHandles";
 
@@ -78,7 +75,9 @@ final class ProxyGenerator extends ClassWriter {
     private static final String MJLR_INVOCATIONHANDLER = "(Ljava/lang/reflect/InvocationHandler;)V";
 
     private static final String NAME_CTOR = "<init>";
-    private static final String NAME_CLINIT = "<clinit>";
+
+    private static final Handle BSM_CLASS_DATA_AT = new Handle(H_INVOKESTATIC, JLI_METHODHANDLES, "classDataAt",
+            "(L" + JLI_LOOKUP + ";Ljava/lang/String;" + LJL_CLASS + "I)L" + JL_OBJECT + ";", false);
 
     private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
 
@@ -103,9 +102,9 @@ final class ProxyGenerator extends ClassWriter {
 
     static {
         try {
-            hashCodeMethod = new ProxyMethod(Object.class.getMethod("hashCode"), "m0");
-            equalsMethod = new ProxyMethod(Object.class.getMethod("equals", Object.class), "m1");
-            toStringMethod = new ProxyMethod(Object.class.getMethod("toString"), "m2");
+            hashCodeMethod = new ProxyMethod(Object.class.getMethod("hashCode"));
+            equalsMethod = new ProxyMethod(Object.class.getMethod("equals", Object.class));
+            toStringMethod = new ProxyMethod(Object.class.getMethod("toString"));
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodError(e.getMessage());
         }
@@ -139,12 +138,6 @@ final class ProxyGenerator extends ClassWriter {
     private final Map<String, List<ProxyMethod>> proxyMethods = new LinkedHashMap<>();
 
     /**
-     * Ordinal of next ProxyMethod object added to proxyMethods.
-     * Indexes are reserved for hashcode(0), equals(1), toString(2).
-     */
-    private int proxyMethodCount = 3;
-
-    /**
      * Construct a ProxyGenerator to generate a proxy class with the
      * specified name and for the given interfaces.
      * <p>
@@ -175,6 +168,11 @@ final class ProxyGenerator extends ClassWriter {
     }
 
     /**
+     * The class bytecode and class data for hidden class definition.
+     */
+    record ClassWithData(byte[] bytecode, Object classData) {}
+
+    /**
      * Generate a proxy class given a name and a list of proxy interfaces.
      *
      * @param name        the class name of the proxy class
@@ -182,12 +180,13 @@ final class ProxyGenerator extends ClassWriter {
      * @param accessFlags access flags of the proxy class
      */
     @SuppressWarnings("removal")
-    static byte[] generateProxyClass(ClassLoader loader,
-                                     final String name,
-                                     List<Class<?>> interfaces,
-                                     int accessFlags) {
+    static ClassWithData generateProxyClass(ClassLoader loader,
+                                            final String name,
+                                            List<Class<?>> interfaces,
+                                            int accessFlags) {
         ProxyGenerator gen = new ProxyGenerator(loader, name, interfaces, accessFlags);
-        final byte[] classFile = gen.generateClassFile();
+        final ClassWithData classDefinition = gen.generateClassFile();
+        final byte[] classFile = classDefinition.bytecode;
 
         if (saveGeneratedFiles) {
             java.security.AccessController.doPrivileged(
@@ -213,7 +212,7 @@ final class ProxyGenerator extends ClassWriter {
                     });
         }
 
-        return classFile;
+        return classDefinition;
     }
 
     /**
@@ -466,9 +465,11 @@ final class ProxyGenerator extends ClassWriter {
      * Generate a class file for the proxy class.  This method drives the
      * class file generation process.
      */
-    private byte[] generateClassFile() {
+    private ClassWithData generateClassFile() {
         visit(CLASSFILE_VERSION, accessFlags, dotToSlash(className), null,
                 JLR_PROXY, typeNames(interfaces));
+
+        visitSource("__dynamic_proxy__", null);
 
         /*
          * Add proxy methods for the hashCode, equals,
@@ -477,9 +478,9 @@ final class ProxyGenerator extends ClassWriter {
          * java.lang.Object take precedence over duplicate methods in the
          * proxy interfaces.
          */
-        addProxyMethod(hashCodeMethod);
-        addProxyMethod(equalsMethod);
-        addProxyMethod(toStringMethod);
+        addObjectProxyMethod(hashCodeMethod);
+        addObjectProxyMethod(equalsMethod);
+        addObjectProxyMethod(toStringMethod);
 
         /*
          * Accumulate all of the methods from the proxy interfaces.
@@ -487,7 +488,7 @@ final class ProxyGenerator extends ClassWriter {
         for (Class<?> intf : interfaces) {
             for (Method m : intf.getMethods()) {
                 if (!Modifier.isStatic(m.getModifiers())) {
-                    addProxyMethod(m, intf);
+                    addProxyMethod(m);
                 }
             }
         }
@@ -496,25 +497,30 @@ final class ProxyGenerator extends ClassWriter {
          * For each set of proxy methods with the same signature,
          * verify that the methods' return types are compatible.
          */
+        int methodListSize = 0;
         for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
+            methodListSize += sigmethods.size();
             checkReturnTypes(sigmethods);
         }
 
         generateConstructor();
 
+        int index = 0;
+        Method[] methods = new Method[methodListSize];
         for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
             for (ProxyMethod pm : sigmethods) {
-                // add static field for the Method object
-                visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL, pm.methodFieldName,
-                        LJLR_METHOD, null, null);
+                // Make condy for the method and add it to the list
+                ConstantDynamic condy = new ConstantDynamic(ConstantDescs.DEFAULT_NAME,
+                        LJLR_METHOD, BSM_CLASS_DATA_AT, index);
+                methods[index] = pm.method;
+                index++;
 
                 // Generate code for proxy method
-                pm.generateMethod(this, className);
+                pm.generateMethod(this, condy);
             }
         }
 
-        generateStaticInitializer();
-        return toByteArray();
+        return new ClassWithData(toByteArray(), List.of(methods));
     }
 
     /**
@@ -530,7 +536,7 @@ final class ProxyGenerator extends ClassWriter {
      * passed to the invocation handler's "invoke" method for a given
      * set of duplicate methods.
      */
-    private void addProxyMethod(Method m, Class<?> fromClass) {
+    private void addProxyMethod(Method m) {
         Class<?> returnType = m.getReturnType();
         Class<?>[] exceptionTypes = m.getExceptionTypes();
 
@@ -555,8 +561,7 @@ final class ProxyGenerator extends ClassWriter {
             }
         }
         sigmethods.add(new ProxyMethod(m, sig, m.getParameterTypes(), returnType,
-                exceptionTypes, fromClass,
-                "m" + proxyMethodCount++));
+                exceptionTypes));
     }
 
     /**
@@ -564,7 +569,7 @@ final class ProxyGenerator extends ClassWriter {
      *
      * @param pm an existing ProxyMethod
      */
-    private void addProxyMethod(ProxyMethod pm) {
+    private void addObjectProxyMethod(ProxyMethod pm) {
         String sig = pm.shortSignature;
         List<ProxyMethod> sigmethods = proxyMethods.computeIfAbsent(sig,
                 (f) -> new ArrayList<>(3));
@@ -591,61 +596,6 @@ final class ProxyGenerator extends ClassWriter {
     }
 
     /**
-     * Generate the static initializer method for the proxy class.
-     */
-    private void generateStaticInitializer() {
-
-        MethodVisitor mv = visitMethod(Modifier.STATIC, NAME_CLINIT,
-                "()V", null, null);
-        mv.visitCode();
-        Label L_startBlock = new Label();
-        Label L_endBlock = new Label();
-        Label L_NoMethodHandler = new Label();
-        Label L_NoClassHandler = new Label();
-
-        mv.visitTryCatchBlock(L_startBlock, L_endBlock, L_NoMethodHandler,
-                JL_NO_SUCH_METHOD_EX);
-        mv.visitTryCatchBlock(L_startBlock, L_endBlock, L_NoClassHandler,
-                JL_CLASS_NOT_FOUND_EX);
-
-        mv.visitLabel(L_startBlock);
-        for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
-            for (ProxyMethod pm : sigmethods) {
-                pm.codeFieldInitialization(mv, className);
-            }
-        }
-        mv.visitInsn(RETURN);
-        mv.visitLabel(L_endBlock);
-        // Generate exception handler
-
-        mv.visitLabel(L_NoMethodHandler);
-        mv.visitVarInsn(ASTORE, 1);
-        mv.visitTypeInsn(Opcodes.NEW, JL_NO_SUCH_METHOD_ERROR);
-        mv.visitInsn(DUP);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitMethodInsn(INVOKEVIRTUAL, JL_THROWABLE,
-                "getMessage", "()Ljava/lang/String;", false);
-        mv.visitMethodInsn(INVOKESPECIAL, JL_NO_SUCH_METHOD_ERROR,
-                "<init>", "(Ljava/lang/String;)V", false);
-        mv.visitInsn(ATHROW);
-
-        mv.visitLabel(L_NoClassHandler);
-        mv.visitVarInsn(ASTORE, 1);
-        mv.visitTypeInsn(Opcodes.NEW, JL_NO_CLASS_DEF_FOUND_ERROR);
-        mv.visitInsn(DUP);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitMethodInsn(INVOKEVIRTUAL, JL_THROWABLE,
-                "getMessage", "()Ljava/lang/String;", false);
-        mv.visitMethodInsn(INVOKESPECIAL, JL_NO_CLASS_DEF_FOUND_ERROR,
-                "<init>", "(Ljava/lang/String;)V", false);
-        mv.visitInsn(ATHROW);
-
-        // Maxs computed by ClassWriter.COMPUTE_FRAMES, these arguments ignored
-        mv.visitMaxs(-1, -1);
-        mv.visitEnd();
-    }
-
-    /**
      * A ProxyMethod object represents a proxy method in the proxy class
      * being generated: a method whose implementation will encode and
      * dispatch invocations to the proxy instance's invocation handler.
@@ -654,40 +604,34 @@ final class ProxyGenerator extends ClassWriter {
 
         private final Method method;
         private final String shortSignature;
-        private final Class<?> fromClass;
         private final Class<?>[] parameterTypes;
         private final Class<?> returnType;
-        private final String methodFieldName;
         private Class<?>[] exceptionTypes;
 
         private ProxyMethod(Method method, String sig, Class<?>[] parameterTypes,
-                            Class<?> returnType, Class<?>[] exceptionTypes,
-                            Class<?> fromClass, String methodFieldName) {
+                            Class<?> returnType, Class<?>[] exceptionTypes) {
             this.method = method;
             this.shortSignature = sig;
             this.parameterTypes = parameterTypes;
             this.returnType = returnType;
             this.exceptionTypes = exceptionTypes;
-            this.fromClass = fromClass;
-            this.methodFieldName = methodFieldName;
         }
 
         /**
          * Create a new specific ProxyMethod with a specific field name
          *
          * @param method          The method for which to create a proxy
-         * @param methodFieldName the fieldName to generate
          */
-        private ProxyMethod(Method method, String methodFieldName) {
+        private ProxyMethod(Method method) {
             this(method, method.toShortSignature(),
                     method.getParameterTypes(), method.getReturnType(),
-                    method.getExceptionTypes(), method.getDeclaringClass(), methodFieldName);
+                    method.getExceptionTypes());
         }
 
         /**
          * Generate this method, including the code and exception table entry.
          */
-        private void generateMethod(ClassWriter cw, String className) {
+        private void generateMethod(ClassWriter cw, ConstantDynamic methodCondy) {
             MethodType mt = MethodType.methodType(returnType, parameterTypes);
             String desc = mt.toMethodDescriptorString();
             int accessFlags = ACC_PUBLIC | ACC_FINAL;
@@ -726,8 +670,7 @@ final class ProxyGenerator extends ClassWriter {
             mv.visitFieldInsn(GETFIELD, JLR_PROXY, handlerFieldName,
                     LJLR_INVOCATION_HANDLER);
             mv.visitVarInsn(ALOAD, 0);
-            mv.visitFieldInsn(GETSTATIC, dotToSlash(className), methodFieldName,
-                    LJLR_METHOD);
+            mv.visitLdcInsn(methodCondy);
 
             if (parameterTypes.length > 0) {
                 // Create an array and fill with the parameters converting primitives to wrappers
@@ -841,62 +784,9 @@ final class ProxyGenerator extends ClassWriter {
             }
         }
 
-        /**
-         * Generate code for initializing the static field that stores
-         * the Method object for this proxy method.
-         */
-        private void codeFieldInitialization(MethodVisitor mv, String className) {
-            codeClassForName(mv, fromClass);
-
-            mv.visitLdcInsn(method.getName());
-
-            emitIconstInsn(mv, parameterTypes.length);
-
-            mv.visitTypeInsn(Opcodes.ANEWARRAY, JL_CLASS);
-
-            // Construct an array with the parameter types mapping primitives to Wrapper types
-            for (int i = 0; i < parameterTypes.length; i++) {
-                mv.visitInsn(DUP);
-                emitIconstInsn(mv, i);
-
-                if (parameterTypes[i].isPrimitive()) {
-                    PrimitiveTypeInfo prim =
-                            PrimitiveTypeInfo.get(parameterTypes[i]);
-                    mv.visitFieldInsn(GETSTATIC,
-                            prim.wrapperClassName, "TYPE", LJL_CLASS);
-                } else {
-                    codeClassForName(mv, parameterTypes[i]);
-                }
-                mv.visitInsn(Opcodes.AASTORE);
-            }
-            // lookup the method
-            mv.visitMethodInsn(INVOKEVIRTUAL,
-                    JL_CLASS,
-                    "getMethod",
-                    "(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;",
-                    false);
-
-            mv.visitFieldInsn(PUTSTATIC,
-                    dotToSlash(className),
-                    methodFieldName, LJLR_METHOD);
-        }
-
         /*
          * =============== Code Generation Utility Methods ===============
          */
-
-        /**
-         * Generate code to invoke the Class.forName with the name of the given
-         * class to get its Class object at runtime.  The code is written to
-         * the supplied stream.  Note that the code generated by this method
-         * may cause the checked ClassNotFoundException to be thrown.
-         */
-        private void codeClassForName(MethodVisitor mv, Class<?> cl) {
-            mv.visitLdcInsn(cl.getName());
-            mv.visitMethodInsn(INVOKESTATIC,
-                    JL_CLASS,
-                    "forName", "(Ljava/lang/String;)Ljava/lang/Class;", false);
-        }
 
         /**
          * Visit a bytecode for a constant.
