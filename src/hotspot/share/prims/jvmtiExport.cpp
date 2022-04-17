@@ -380,7 +380,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
       }
   }
   if (Continuations::enabled()) {
-    // Virtual threads support. There is a performance impact of VTMT transitions enabled.
+    // Virtual threads support. There is a performance impact when VTMT transitions are enabled.
     java_lang_VirtualThread::set_notify_jvmti_events(true);
   }
 

@@ -36,13 +36,9 @@ import static org.testng.Assert.*;
 
 public class PreviewFeaturesNotEnabled {
 
-    @Test
-    public void testOfPlatform() throws Exception {
-        Method ofPlatform = Thread.class.getDeclaredMethod("ofPlatform");
-        var exc = expectThrows(InvocationTargetException.class, () -> ofPlatform.invoke(null));
-        assertTrue(exc.getCause() instanceof UnsupportedOperationException);
-    }
-
+    /**
+     * Thread.ofVirtual should fail with UOE.
+     */
     @Test
     public void testOfVirtual() throws Exception {
         Method ofVirtual = Thread.class.getDeclaredMethod("ofVirtual");
@@ -50,6 +46,9 @@ public class PreviewFeaturesNotEnabled {
         assertTrue(exc.getCause() instanceof UnsupportedOperationException);
     }
 
+    /**
+     * Thread.startVirtualThread should fail with UOE.
+     */
     @Test
     public void testStartVirutalThread() throws Exception {
         Method startVirtualThread = Thread.class.getMethod("startVirtualThread", Runnable.class);
@@ -59,6 +58,9 @@ public class PreviewFeaturesNotEnabled {
         assertTrue(exc.getCause() instanceof UnsupportedOperationException);
     }
 
+    /**
+     * Executors.newVirtualThreadPerTaskExecutor should fail with UOE.
+     */
     @Test
     public void testNewVirtualThreadPerTaskExecutor() throws Exception {
         Method newVirtualThreadPerTaskExecutor = Executors.class.getMethod("newVirtualThreadPerTaskExecutor");
@@ -67,6 +69,9 @@ public class PreviewFeaturesNotEnabled {
         assertTrue(exc.getCause() instanceof UnsupportedOperationException);
     }
 
+    /**
+     * Directly accessing internal Continuation class should fail with UOE.
+     */
     @Test
     public void testContinuationInitializer() throws Exception {
         var exc = expectThrows(ExceptionInInitializerError.class,
@@ -74,4 +79,34 @@ public class PreviewFeaturesNotEnabled {
         assertTrue(exc.getCause() instanceof UnsupportedOperationException);
     }
 
+    /**
+     * Thread.isVirtual should not fail.
+     */
+    @Test
+    public void testIsVirtual() throws Exception {
+        boolean isVirtual = isVirtual(Thread.currentThread());
+        assertFalse(isVirtual);
+    }
+
+    /**
+     * Thread.ofPlatform should not fail.
+     */
+    @Test
+    public void testOfPlatform() throws Exception {
+        Method ofPlatform = Thread.class.getDeclaredMethod("ofPlatform");
+        Object builder = ofPlatform.invoke(null);
+        Method startMethod = Class.forName("java.lang.Thread$Builder")
+                .getMethod("start", Runnable.class);
+        Runnable task = () -> { };
+        Thread thread = (Thread) startMethod.invoke(builder, task);
+    }
+
+    /**
+     * Invokes Thread::isVirtual reflectively to test if the given thread is a
+     * virtual thread.
+     */
+    private static boolean isVirtual(Thread thread) throws Exception {
+        Method isVirtualMethod = Thread.class.getDeclaredMethod("isVirtual");
+        return (boolean) isVirtualMethod.invoke(thread);
+    }
 }

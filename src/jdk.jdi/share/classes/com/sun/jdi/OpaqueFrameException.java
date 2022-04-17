@@ -44,7 +44,7 @@ public sealed class OpaqueFrameException
     /**
      * Constructs a OpaqueFrameException with the given detail message.
      *
-     * @param message the detail messag, can be {@code null}
+     * @param message the detail message, can be {@code null}
      */
     public OpaqueFrameException(String message) {
         super(message);

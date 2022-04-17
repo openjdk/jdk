@@ -2044,7 +2044,6 @@ public class ThreadAPI {
                 .anyMatch(s -> s.contains(expected));
     }
 
-
     /**
      * Test Thread::getThreadGroup on virtual thread created by platform thread.
      */
@@ -2125,7 +2124,6 @@ public class ThreadAPI {
             vgroup.setMaxPriority(Thread.MIN_PRIORITY);
             assertTrue(vgroup.getMaxPriority() == Thread.MAX_PRIORITY);
             assertTrue(group.getMaxPriority() == Thread.MIN_PRIORITY);
-
         });
     }
 

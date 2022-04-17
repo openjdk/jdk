@@ -1000,14 +1000,17 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
 
 jvmtiError
 JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list) {
+  if (!JvmtiExport::can_support_virtual_threads()) {
+    return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
+  }
+  if (!Continuations::enabled()) {
+    return JVMTI_ERROR_NONE; // Nothing to do when there are no virtual threads;
+  }
   JavaThread* current = JavaThread::current();
   ThreadsListHandle tlh(current);
   jvmtiError err = JvmtiEnvBase::check_thread_list(except_count, except_list);
   if (err != JVMTI_ERROR_NONE) {
     return err;
-  }
-  if (!JvmtiExport::can_support_virtual_threads()) {
-    return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
   }
   HandleMark hm(current);
   Handle self_tobj = Handle(current, NULL);
@@ -1110,12 +1113,15 @@ JvmtiEnv::ResumeThreadList(jint request_count, const jthread* request_list, jvmt
 
 jvmtiError
 JvmtiEnv::ResumeAllVirtualThreads(jint except_count, const jthread* except_list) {
+  if (!JvmtiExport::can_support_virtual_threads()) {
+    return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
+  }
+  if (!Continuations::enabled()) {
+    return JVMTI_ERROR_NONE; // Nothing to do when there are no virtual threads;
+  }
   jvmtiError err = JvmtiEnvBase::check_thread_list(except_count, except_list);
   if (err != JVMTI_ERROR_NONE) {
     return err;
-  }
-  if (!JvmtiExport::can_support_virtual_threads()) {
-    return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
   }
   ResourceMark rm;
   JvmtiVTMTDisabler vtmt_disabler(true);

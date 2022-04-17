@@ -156,7 +156,7 @@ standardHandlers_defaultHandler(EventIndex ei)
         /* These events should have been converted to THREAD_START and THREAD_END already. */
         case EI_VIRTUAL_THREAD_START:
         case EI_VIRTUAL_THREAD_END:
-            /* This NULL will trigger a AGENT_ERROR_INVALID_EVENT_TYPE */
+            /* This NULL will trigger an AGENT_ERROR_INVALID_EVENT_TYPE */
             return NULL;
 
         case EI_CLASS_PREPARE:

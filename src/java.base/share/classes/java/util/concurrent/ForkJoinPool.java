@@ -51,6 +51,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.Condition;
+import jdk.internal.access.JavaUtilConcurrentFJPAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.SharedThreadContainer;
 
@@ -3663,13 +3665,9 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
-     * Invoked reflectively by jdk.internal.misc.Blocker to mark the beginning
-     * of a possibly blocking operation on a virtual thread that pins the
-     * underlying carrier thread in this pool.
-     *
-     * This method works like managedBlock and invokes tryCompensate to create
-     * or re-activate a spare thread to compensate for the blocked thread. When
-     * the blocking operation is done then endCompensatedBlock must be invoked
+     * Invokes tryCompensate to create or re-activate a spare thread to
+     * compensate for a thread that performs a blocking operation. When the
+     * blocking operation is done then endCompensatedBlock must be invoked
      * with the value returned by this method to re-adjust the parallelism.
      */
     private long beginCompensatedBlock() {
@@ -3684,9 +3682,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
-     * Invoked reflectively by jdk.internal.misc.Blocker to mark the end of
-     * a blocking operation on a virtual thread that pinned the underlying
-     * carrier thread in this pool.
+     * Re-adjusts parallelism after a blocking operation completes.
      */
     void endCompensatedBlock(long post) {
         if (post > 0) {
@@ -3736,6 +3732,17 @@ public class ForkJoinPool extends AbstractExecutorService {
             AccessController.doPrivileged(new PrivilegedAction<>() {
                     public ForkJoinPool run() {
                         return new ForkJoinPool((byte)0); }});
+        // allow access to non-public methods
+        SharedSecrets.setJavaUtilConcurrentFJPAccess(
+            new JavaUtilConcurrentFJPAccess() {
+                @Override
+                public long beginCompensatedBlock(ForkJoinPool pool) {
+                    return pool.beginCompensatedBlock();
+                }
+                public void endCompensatedBlock(ForkJoinPool pool, long post) {
+                    pool.endCompensatedBlock(post);
+                }
+            });
         Class<?> dep = LockSupport.class; // ensure loaded
     }
 }

@@ -136,9 +136,13 @@ public class BufferedWriter extends Writer {
      * Grow char array to fit an additional len characters if needed.
      * If possible, it grows by len+1 to avoid flushing when len chars
      * are added.
+     *
+     * This method should only be called while holding the lock.
      */
     private void growIfNeeded(int len) {
         int neededSize = nextChar + len + 1;
+        if (neededSize < 0)
+            neededSize = Integer.MAX_VALUE;
         if (neededSize > nChars && nChars < maxChars) {
             int newSize = min(neededSize, maxChars);
             cb = Arrays.copyOf(cb, newSize);

@@ -85,13 +85,12 @@ public class Continuation {
     }
 
     private static Pinned pinnedReason(int reason) {
-        switch (reason) {
-            case 2: return Pinned.CRITICAL_SECTION;
-            case 3: return Pinned.NATIVE;
-            case 4: return Pinned.MONITOR;
-            default:
-                throw new AssertionError("Unknown pinned reason: " + reason);
-        }
+        return switch (reason) {
+            case 2 -> Pinned.CRITICAL_SECTION;
+            case 3 -> Pinned.NATIVE;
+            case 4 -> Pinned.MONITOR;
+            default -> throw new AssertionError("Unknown pinned reason: " + reason);
+        };
     }
 
     private static Thread currentCarrierThread() {
@@ -307,7 +306,7 @@ public class Continuation {
     }
 
     @IntrinsicCandidate
-    private static int doYield() { throw new Error("Intrinsic not installed"); };
+    private static int doYield() { throw new Error("Intrinsic not installed"); }
 
     @IntrinsicCandidate
     private native static void enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread);

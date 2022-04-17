@@ -32,6 +32,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.module.ModuleDescriptor;
 import java.security.spec.EncodedKeySpec;
 import java.util.ResourceBundle;
+import java.util.concurrent.ForkJoinPool;
 import java.util.jar.JarFile;
 import java.io.Console;
 import java.io.FileDescriptor;
@@ -77,6 +78,7 @@ public class SharedSecrets {
     private static JavaNioAccess javaNioAccess;
     private static JavaUtilCollectionAccess javaUtilCollectionAccess;
     private static JavaUtilConcurrentTLRAccess javaUtilConcurrentTLRAccess;
+    private static JavaUtilConcurrentFJPAccess javaUtilConcurrentFJPAccess;
     private static JavaUtilJarAccess javaUtilJarAccess;
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
@@ -112,6 +114,17 @@ public class SharedSecrets {
             } catch (ClassNotFoundException e) {}
         }
         return javaUtilConcurrentTLRAccess;
+    }
+
+    public static void setJavaUtilConcurrentFJPAccess(JavaUtilConcurrentFJPAccess access) {
+        javaUtilConcurrentFJPAccess = access;
+    }
+
+    public static JavaUtilConcurrentFJPAccess getJavaUtilConcurrentFJPAccess() {
+        if (javaUtilConcurrentFJPAccess == null) {
+            ensureClassInitialized(ForkJoinPool.class);
+        }
+        return javaUtilConcurrentFJPAccess;
     }
 
     public static JavaUtilJarAccess javaUtilJarAccess() {

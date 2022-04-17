@@ -904,7 +904,6 @@ cbVThreadStart(jvmtiEnv *jvmti_env, JNIEnv *env, jthread vthread)
     EventInfo info;
 
     LOG_CB(("cbVThreadStart: vthread=%p", vthread));
-    /*tty_message("cbVThreadStart: vthread=%p", vthread);*/
     JDI_ASSERT(gdata->vthreadsSupported);
 
     BEGIN_CALLBACK() {
@@ -926,7 +925,6 @@ cbVThreadEnd(jvmtiEnv *jvmti_env, JNIEnv *env, jthread vthread)
     EventInfo info;
 
     LOG_CB(("cbVThreadEnd: vthread=%p", vthread));
-    /*tty_message("cbVThreadEnd: vthread=%p", vthread);*/
     JDI_ASSERT(gdata->vthreadsSupported);
 
     BEGIN_CALLBACK() {

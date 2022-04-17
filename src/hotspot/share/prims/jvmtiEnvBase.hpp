@@ -873,7 +873,7 @@ public:
   jvmtiError result() { return _result; }
 };
 
-// HandshakeClosure to set frame pop for a virtual thread..
+// HandshakeClosure to set frame pop for a virtual thread.
 class VirtualThreadSetFramePopClosure : public JvmtiHandshakeClosure {
 private:
   JvmtiEnv *_env;

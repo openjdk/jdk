@@ -135,7 +135,14 @@
     entry_frame_call_wrapper_offset                  = -10,
 
     // we don't need a save area
-    arg_reg_save_area_bytes                          =  0
+    arg_reg_save_area_bytes                          =  0,
+
+    // size, in words, of frame metadata (e.g. pc and link)
+    metadata_words                                   = sender_sp_offset,
+    // in bytes
+    frame_alignment                                  = 16,
+    // size, in words, of maximum shift in frame position due to alignment
+    align_wiggle                                     =  1
   };
 
   intptr_t ptr_at(int offset) const {
@@ -168,6 +175,8 @@
   static void verify_deopt_original_pc(   CompiledMethod* nm, intptr_t* unextended_sp);
 #endif
 
+  const ImmutableOopMap* get_oop_map() const;
+
  public:
   // Constructors
 
@@ -181,15 +190,15 @@
 
   // accessors for the instance variables
   // Note: not necessarily the real 'frame pointer' (see real_fp)
-  intptr_t*   fp() const { return _fp; }
+  intptr_t* fp() const { return _fp; }
 
   inline address* sender_pc_addr() const;
 
   // expression stack tos if we are nested in a java call
   intptr_t* interpreter_frame_last_sp() const;
 
-  // helper to update a map with callee-saved RBP
-  static void update_map_with_saved_link(RegisterMap* map, intptr_t** link_addr);
+  template <typename RegisterMapT>
+  static void update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr);
 
   // deoptimization support
   void interpreter_frame_set_last_sp(intptr_t* last_sp);
@@ -197,6 +206,6 @@
   static jint interpreter_frame_expression_stack_direction() { return -1; }
 
   // returns the sending frame, without applying any barriers
-  frame sender_raw(RegisterMap* map) const;
+  inline frame sender_raw(RegisterMap* map) const;
 
 #endif // CPU_RISCV_FRAME_RISCV_HPP

@@ -150,10 +150,10 @@ public class monitor001 extends JdbTest {
 
         grep = new Paragrep(reply);
 
-        // check 'threads', searching for java.lang.Thread main or old-m-a-i-n
+        // check 'threads', searching for "java.lang.Thread" followed by the main thread name.
         v.add("java.lang.Thread");
         if (System.getProperty("main.wrapper") != null) {
-            v.add("old-m-a-i-n");
+            v.add(nsk.share.MainWrapper.OLD_MAIN_THREAD_NAME);
         } else {
             v.add("main");
         }

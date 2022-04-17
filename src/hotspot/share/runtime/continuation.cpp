@@ -367,7 +367,7 @@ void Continuation::debug_verify_continuation(oop contOop) {
   ContinuationWrapper cont(contOop);
 
   assert(oopDesc::is_oop_or_null(cont.tail()), "");
-  assert(cont.chunk_invariant(tty), "");
+  assert(cont.chunk_invariant(), "");
 
   bool nonempty_chunk = false;
   size_t max_size = 0;

@@ -130,9 +130,7 @@ jvmtiCapabilities JvmtiManageCapabilities::init_onload_capabilities() {
   jc.can_get_current_contended_monitor = 1;
   jc.can_generate_early_vmstart = 1;
   jc.can_generate_early_class_hook_events = 1;
-  if (java_lang_VirtualThread::notify_jvmti_events()) {
-    jc.can_support_virtual_threads = 1;
-  }
+  jc.can_support_virtual_threads = 1;
   return jc;
 }
 

@@ -129,13 +129,12 @@ public:
   bool is_empty() const { return last_nonempty_chunk() == nullptr; }
   const frame last_frame();
 
-  stackChunkOop last_nonempty_chunk() const { return nonempty_chunk(_tail); }
-  inline stackChunkOop nonempty_chunk(stackChunkOop chunk) const;
+  inline stackChunkOop last_nonempty_chunk() const;
   stackChunkOop find_chunk_by_address(void* p) const;
 
 #ifdef ASSERT
   bool is_entry_frame(const frame& f);
-  bool chunk_invariant(outputStream* st);
+  bool chunk_invariant() const;
 #endif
 };
 
@@ -181,10 +180,13 @@ inline void ContinuationWrapper::write() {
   jdk_internal_vm_Continuation::set_tail(_continuation, _tail);
 }
 
-inline stackChunkOop ContinuationWrapper::nonempty_chunk(stackChunkOop chunk) const {
-  while (chunk != nullptr && chunk->is_empty()) {
+inline stackChunkOop ContinuationWrapper::last_nonempty_chunk() const {
+  assert(chunk_invariant(), "");
+  stackChunkOop chunk = _tail;
+  if (chunk != nullptr && chunk->is_empty()) {
     chunk = chunk->parent();
   }
+  assert(chunk == nullptr || !chunk->is_empty(), "");
   return chunk;
 }
 

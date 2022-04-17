@@ -410,7 +410,7 @@ insertThread(JNIEnv *env, ThreadList *list, jthread thread)
             jint vthread_state = 0;
             jvmtiError error = threadState(node->thread, &vthread_state);
             if (error != JVMTI_ERROR_NONE) {
-                EXIT_ERROR(error, "getting thread state");
+                EXIT_ERROR(error, "getting vthread state");
             }
             if (suspendAllCount > 0) {
                 // Assume the suspendAllCount, just like the regular thread case above.
@@ -1596,7 +1596,7 @@ threadControl_suspendCount(jthread thread, jint *count)
             jint vthread_state = 0;
             jvmtiError error = threadState(thread, &vthread_state);
             if (error != JVMTI_ERROR_NONE) {
-                EXIT_ERROR(error, "getting thread state");
+                EXIT_ERROR(error, "getting vthread state");
             }
             if (vthread_state == 0) {
                 // If state == 0, then this is a new vthread that has not been started yet.
@@ -1693,7 +1693,7 @@ threadControl_suspendAll(void)
 
             /*
              * Increment suspendCount of each virtual thread that we are tracking. Note the
-             * compliment to this that happens during the resumeAll() is handled by
+             * complement to this that happens during the resumeAll() is handled by
              * commonResumeList(), so it's a bit orthogonal to how we handle incrementing
              * the suspendCount.
              */
@@ -2530,11 +2530,6 @@ threadControl_applicationThreadStatus(jthread thread,
             *pstatus = JDWP_THREAD_STATUS(RUNNING);
         }
     }
-#if 0
-    tty_message("status %s: node(%p) suspendCount(%d) %d %d %s",
-                isVThread(thread) ? "vthread" : "thread",
-                node, node->suspendCount, *pstatus, *statusFlags, node->name);
-#endif
 
     debugMonitorExit(threadLock);
 

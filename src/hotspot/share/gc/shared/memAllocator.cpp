@@ -269,13 +269,17 @@ HeapWord* MemAllocator::allocate_inside_tlab(Allocation& allocation) const {
   assert(UseTLAB, "should use UseTLAB");
 
   // Try allocating from an existing TLAB.
-  HeapWord* mem = _thread->tlab().allocate(_word_size);
+  HeapWord* mem = allocate_inside_tlab_fast();
   if (mem != NULL) {
     return mem;
   }
 
   // Try refilling the TLAB and allocating the object in it.
   return allocate_inside_tlab_slow(allocation);
+}
+
+HeapWord* MemAllocator::allocate_inside_tlab_fast() const {
+  return _thread->tlab().allocate(_word_size);
 }
 
 HeapWord* MemAllocator::allocate_inside_tlab_slow(Allocation& allocation) const {
@@ -361,6 +365,21 @@ oop MemAllocator::allocate() const {
   {
     Allocation allocation(*this, &obj);
     HeapWord* mem = mem_allocate(allocation);
+    if (mem != NULL) {
+      obj = initialize(mem);
+    } else {
+      // The unhandled oop detector will poison local variable obj,
+      // so reset it to NULL if mem is NULL.
+      obj = NULL;
+    }
+  }
+  return obj;
+}
+
+oop MemAllocator::try_allocate_in_existing_tlab() {
+  oop obj = NULL;
+  {
+    HeapWord* mem = allocate_inside_tlab_fast();
     if (mem != NULL) {
       obj = initialize(mem);
     } else {

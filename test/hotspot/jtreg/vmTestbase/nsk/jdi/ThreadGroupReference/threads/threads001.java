@@ -247,10 +247,10 @@ public class threads001 {
 
                 /*
                  * This test initially expected group1 to have 2 Threads: "main" and "Thread2".
-                 * With the added wrapper support, it will also contain "old-m-a-i-n". However,
-                 * when run with vthread wrapper, it will only have "Thread2" since "main" and
-                 * "old-m-a-i-n" will be vthreads, which are always considered to be in the
-                 * "VirtualThreads" ThreadGroup, and threfore do not show up in group1.
+                 * With the added wrapper support, it will also contain the original main thread.
+                 * However, when run with vthread wrapper, it will only have "Thread2" since "main"
+                 * and original main thread will be vthreads, which are always considered to be in
+                 * the "VirtualThreads" ThreadGroup, and threfore do not show up in group1.
                  */
                 int expectedNumThreads;
                 if (usingVThreadWrapper) {
@@ -272,7 +272,7 @@ public class threads001 {
                     String s1 = ( (ThreadReference) li.next()).name();
                     if (s1.equals("main"))
                         nMain += 1;
-                    if (s1.equals("old-m-a-i-n"))
+                    if (s1.equals(nsk.share.MainWrapper.OLD_MAIN_THREAD_NAME))
                         nOldMain += 1;
                     if (s1.equals("Thread2"))
                         nThread2 += 1;
@@ -283,12 +283,14 @@ public class threads001 {
                 }
                 if (expectedNumThreads == 3) {
                     if (nOldMain != 1) {
-                        log3("ERROR: # of 'old-m-a-i-n' threads != 1  : " + nOldMain);
+                        log3("ERROR: # of '" + nsk.share.MainWrapper.OLD_MAIN_THREAD_NAME +
+                             "' threads != 1  : " + nOldMain);
                         expresult = 1;
                     }
                 } else {
                     if (nOldMain != 0) {
-                        log3("ERROR: # of 'old-m-a-i-n' threads != 0  : " + nOldMain);
+                        log3("ERROR: # of '" + nsk.share.MainWrapper.OLD_MAIN_THREAD_NAME +
+                             "n' threads != 0  : " + nOldMain);
                         expresult = 1;
                     }
                 }

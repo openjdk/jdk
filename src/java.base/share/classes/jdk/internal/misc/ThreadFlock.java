@@ -259,10 +259,11 @@ public class ThreadFlock implements AutoCloseable {
      * @param thread the unstarted thread
      * @return the thread, started
      * @throws IllegalStateException if this flock is shutdown or closed
+     * @throws IllegalThreadStateException if the given thread was already started
+     * @throws WrongThreadException if the current thread is not the owner or a thread
+     * contained in the flock
      * @throws jdk.incubator.concurrent.StructureViolationException if the current
-     * cope-local bindings are not the same as when the flock was created
-     * @throws IllegalThreadStateException if the thread has already started,
-     * or the current thread is not the owner or a thread contained in the flock
+      * scope-local bindings are not the same as when the flock was created
      */
     public Thread start(Thread thread) {
         ensureOwnerOrContainsThread();

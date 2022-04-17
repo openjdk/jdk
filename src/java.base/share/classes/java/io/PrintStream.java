@@ -1417,7 +1417,7 @@ public class PrintStream extends FilterOutputStream
                 }
             } else {
                 synchronized (this) {
-                    implFormat(format, args);
+                    implFormat(l, format, args);
                 }
             }
         } catch (InterruptedIOException x) {

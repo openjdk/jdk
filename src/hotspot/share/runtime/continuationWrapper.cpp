@@ -79,7 +79,7 @@ bool ContinuationWrapper::is_entry_frame(const frame& f) {
   return f.sp() == entrySP();
 }
 
-bool ContinuationWrapper::chunk_invariant(outputStream* st) {
+bool ContinuationWrapper::chunk_invariant() const {
   // only the topmost chunk can be empty
   if (_tail == nullptr) {
     return true;
@@ -89,8 +89,6 @@ bool ContinuationWrapper::chunk_invariant(outputStream* st) {
   for (stackChunkOop chunk = _tail->parent(); chunk != nullptr; chunk = chunk->parent()) {
     if (chunk->is_empty()) {
       assert(chunk != _tail, "");
-      st->print_cr("i: %d", i);
-      chunk->print_on(true, st);
       return false;
     }
     i++;

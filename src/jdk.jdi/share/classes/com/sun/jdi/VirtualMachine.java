@@ -43,8 +43,8 @@ import com.sun.jdi.request.MonitorContendedEnterRequest;
 import com.sun.jdi.request.MonitorContendedEnteredRequest;
 import com.sun.jdi.request.MonitorWaitRequest;
 import com.sun.jdi.request.MonitorWaitedRequest;
-import com.sun.jdi.request.ThreadStartRequest;
 import com.sun.jdi.request.ThreadDeathRequest;
+import com.sun.jdi.request.ThreadStartRequest;
 import com.sun.jdi.request.VMDeathRequest;
 
 /**

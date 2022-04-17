@@ -119,7 +119,7 @@ public class kill001 extends JdbTest {
         // indicating that an exception was thrown.
         for (int i = 0; i < threads.length; i++) {
             // kill (ThreadReference.stop) is not supproted for vthreads, so we expect an error.
-            String msg = (vthreadMode ? "Illegal thread state" : "killed");
+            String msg = (vthreadMode ? "Operation is not supported" : "killed");
             reply = jdb.receiveReplyForWithMessageWait(JdbCommand.kill + threads[i] + " " +
                                                        DEBUGGEE_EXCEPTIONS + "[" + i + "]",
                                                        msg);

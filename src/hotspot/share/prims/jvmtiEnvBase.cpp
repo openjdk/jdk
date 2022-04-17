@@ -568,6 +568,9 @@ JvmtiEnvBase::vframe_for_no_process(JavaThread* java_thread, jint depth, bool fo
   RegisterMap reg_map(java_thread, true /* update_map */, false /* process_frames */, true /* walk_cont */);
   vframe *vf = for_cont ? get_cthread_last_java_vframe(java_thread, &reg_map)
                         : java_thread->last_java_vframe(&reg_map);
+  if (!for_cont) {
+    vf = JvmtiEnvBase::check_and_skip_hidden_frames(java_thread, (javaVFrame*)vf);
+  }
   int d = 0;
   while ((vf != NULL) && (d < depth)) {
     vf = vf->java_sender();
@@ -1164,7 +1167,6 @@ JvmtiEnvBase::get_frame_count(javaVFrame *jvf) {
   int count = 0;
 
   while (jvf != NULL) {
-    Method* method = jvf->method();
     jvf = jvf->java_sender();
     count++;
   }
@@ -1275,19 +1277,17 @@ JvmtiEnvBase::get_frame_location(oop vthread_oop, jint depth,
 
 jvmtiError
 JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth) {
-  vframe* vf = jvf;
-  for (int d = 0; vf != NULL && d < depth; d++) {
-    vf = vf->java_sender();
+  for (int d = 0; jvf != NULL && d < depth; d++) {
+    jvf = jvf->java_sender();
   }
-  if (vf == NULL) {
+  if (jvf == NULL) {
     return JVMTI_ERROR_NO_MORE_FRAMES;
   }
-  if (!vf->is_java_frame() || ((javaVFrame*)vf)->method()->is_native()) {
+  if (jvf->method()->is_native()) {
     return JVMTI_ERROR_OPAQUE_FRAME;
   }
-  assert(vf->frame_pointer() != NULL, "frame pointer mustn't be NULL");
-
-  int frame_number = (int)get_frame_count(jvf) - depth;
+  assert(jvf->frame_pointer() != NULL, "frame pointer mustn't be NULL");
+  int frame_number = (int)get_frame_count(jvf);
   state->env_thread_state((JvmtiEnvBase*)this)->set_frame_pop(frame_number);
   return JVMTI_ERROR_NONE;
 }
@@ -2196,21 +2196,13 @@ SetFramePopClosure::doit(Thread *target, bool self) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return;
   }
-  vframe *vf = JvmtiEnvBase::vframe_for_no_process(java_thread, _depth);
-  if (vf == NULL) {
+  if (!java_thread->has_last_Java_frame()) {
     _result = JVMTI_ERROR_NO_MORE_FRAMES;
     return;
   }
-  vf = JvmtiEnvBase::check_and_skip_hidden_frames(java_thread, (javaVFrame*)vf);
-  if (!vf->is_java_frame() || ((javaVFrame*) vf)->method()->is_native()) {
-    _result = JVMTI_ERROR_OPAQUE_FRAME;
-    return;
-  }
-
-  assert(vf->frame_pointer() != NULL, "frame pointer mustn't be NULL");
-  int frame_number = _state->count_frames() - _depth;
-  _state->env_thread_state((JvmtiEnvBase*)_env)->set_frame_pop(frame_number);
-  _result = JVMTI_ERROR_NONE;
+  RegisterMap reg_map(java_thread, true /* update_map */, false /* process_frames */, true /* walk_cont */);
+  javaVFrame* jvf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
+  _result = ((JvmtiEnvBase*)_env)->set_frame_pop(_state, jvf, _depth);
 }
 
 void

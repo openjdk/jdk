@@ -562,10 +562,10 @@ getAllThreads(PacketInputStream *in, PacketOutputStream *out)
             for (i = 0; i < threadCount; i++) {
                 (void)outStream_writeObjectRef(env, out, theThreads[i]);
             }
-
-            jvmtiDeallocate(theThreads);
-            jvmtiDeallocate(theVThreads);
         }
+
+        jvmtiDeallocate(theThreads);
+        jvmtiDeallocate(theVThreads);
 
     } END_WITH_LOCAL_REFS(env);
 

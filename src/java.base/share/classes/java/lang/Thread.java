@@ -206,7 +206,8 @@ public class Thread implements Runnable {
     @SuppressWarnings("removal")
     private AccessControlContext inheritedAccessControlContext;
 
-    // Additional fields for platform threads
+    // Additional fields for platform threads.
+    // All fields, except task, are accessed directly by the VM.
     private static class FieldHolder {
         final ThreadGroup group;
         final Runnable task;
@@ -598,7 +599,7 @@ public class Thread implements Runnable {
         if (sm == null || isCCLOverridden(parent.getClass())) {
             return parent.getContextClassLoader();
         } else {
-            // getContextClassLoader not trusted
+            // skip call to getContextClassLoader
             ClassLoader cl = parent.contextClassLoader;
             return (isSupportedClassLoader(cl)) ? cl : ClassLoader.getSystemClassLoader();
         }
@@ -745,6 +746,18 @@ public class Thread implements Runnable {
      * Returns a builder for creating a platform {@code Thread} or {@code ThreadFactory}
      * that creates platform threads.
      *
+     * <p> <a id="ofplatform-security"><b>Interaction with security manager when
+     * creating platform threads</b></a>
+     * <p> Creating a platform thread when there is a security manager set will
+     * invoke the security manager's {@link SecurityManager#checkAccess(ThreadGroup)
+     * checkAccess(ThreadGroup)} method with the thread's thread group.
+     * If the thread group has not been set with the {@link
+     * Builder.OfPlatform#group(ThreadGroup) OfPlatform.group} method then the
+     * security manager's {@link SecurityManager#getThreadGroup() getThreadGroup}
+     * method will be invoked first to select the thread group. If the security
+     * manager {@code getThreadGroup} method returns {@code null} then the thread
+     * group of the constructing thread is used.
+     *
      * @apiNote The following are examples using the builder:
      * {@snippet :
      *   // Start a daemon thread to run a task
@@ -759,12 +772,10 @@ public class Thread implements Runnable {
      * }
      *
      * @return A builder for creating {@code Thread} or {@code ThreadFactory} objects.
-     * @throws UnsupportedOperationException if preview features are not enabled
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
     public static Builder.OfPlatform ofPlatform() {
-        PreviewFeatures.ensureEnabled();
         return new ThreadBuilders.PlatformThreadBuilder();
     }
 
@@ -907,8 +918,13 @@ public class Thread implements Runnable {
          * Creates a new {@code Thread} from the current state of the builder to
          * run the given task. The {@code Thread}'s {@link Thread#start() start}
          * method must be invoked to schedule the thread to execute.
+         *
          * @param task the object to run when the thread executes
          * @return a new unstarted Thread
+         * @throws SecurityException if denied by the security manager
+         *         (See <a href="Thread.html#ofplatform-security">Interaction with
+         *         security manager when creating platform threads</a>)
+         *
          * @see <a href="Thread.html#inheritance">Inheritance when creating threads</a>
          */
         Thread unstarted(Runnable task);
@@ -919,6 +935,10 @@ public class Thread implements Runnable {
          *
          * @param task the object to run when the thread executes
          * @return a new started Thread
+         * @throws SecurityException if denied by the security manager
+         *         (See <a href="Thread.html#ofplatform-security">Interaction with
+         *         security manager when creating platform threads</a>)
+         *
          * @see <a href="Thread.html#inheritance">Inheritance when creating threads</a>
          */
         Thread start(Runnable task);
@@ -956,18 +976,6 @@ public class Thread implements Runnable {
             @Override OfPlatform allowSetThreadLocals(boolean allow);
             @Override OfPlatform inheritInheritableThreadLocals(boolean inherit);
             @Override OfPlatform uncaughtExceptionHandler(UncaughtExceptionHandler ueh);
-
-            /**
-             * @throws SecurityException if a thread group has been set and the current
-             *         thread cannot create a thread in that thread group
-             */
-            @Override Thread unstarted(Runnable task);
-
-            /**
-             * @throws SecurityException if a thread group has been set and the current
-             *         thread cannot create a thread in that thread group
-             */
-            @Override Thread start(Runnable task);
 
             /**
              * Sets the thread group.
@@ -1549,7 +1557,7 @@ public class Thread implements Runnable {
     }
 
     /**
-     * Null out reference after Thread termination (JDK-4006245)
+     * Null out reference after Thread termination.
      */
     void clearReferences() {
         threadLocals = null;

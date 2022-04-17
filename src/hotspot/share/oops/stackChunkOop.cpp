@@ -391,6 +391,7 @@ void stackChunkOopDesc::do_barriers0(const StackChunkFrameStream<frame_kind>& f,
   if (f.is_done()) {
     return;
   }
+  assert (!f.is_done(), "");
 
   if (f.is_interpreted()) {
     Method* m = f.to_frame().interpreter_frame_method();
@@ -476,7 +477,8 @@ void stackChunkOopDesc::fix_thawed_frame(const frame& f, const RegisterMapT* map
     }
   }
 
-  if (f.is_compiled_frame() && f.oop_map()->has_derived_oops()) {
+  if ((is_gc_mode() || UseZGC) && f.is_compiled_frame() && f.oop_map()->has_derived_oops()) {
+    OrderAccess::loadload();
     DerelativizeDerivedOopClosure derived_closure;
     OopMapDo<OopClosure, DerelativizeDerivedOopClosure, SkipNullValue> visitor(nullptr, &derived_closure);
     visitor.oops_do(&f, map, f.oop_map());

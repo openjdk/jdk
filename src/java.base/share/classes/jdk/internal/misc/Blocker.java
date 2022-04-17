@@ -25,13 +25,9 @@
 
 package jdk.internal.misc;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.ForkJoinPool;
 import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.JavaUtilConcurrentFJPAccess;
 import jdk.internal.access.SharedSecrets;
 
 /**
@@ -66,22 +62,30 @@ public class Blocker {
     }
 
     /**
-     * Marks the beginning of possibly blocking operation.
+     * Marks the beginning of a possibly blocking operation.
      * @return the return value from the attempt to compensate
      */
     public static long begin() {
         if (VM.isBooted()
                 && currentCarrierThread() instanceof CarrierThread ct && !ct.inBlocking()) {
             ct.beginBlocking();
-            long comp = ForkJoinPools.beginCompensatedBlock(ct.getPool());
-            assert currentCarrierThread() == ct;
-            return comp;
+            boolean completed = false;
+            try {
+                long comp = ForkJoinPools.beginCompensatedBlock(ct.getPool());
+                assert currentCarrierThread() == ct;
+                completed = true;
+                return comp;
+            } finally {
+                if (!completed) {
+                    ct.endBlocking();
+                }
+            }
         }
         return 0;
     }
 
     /**
-     * Marks the beginning of possibly blocking operation.
+     * Marks the beginning of a possibly blocking operation.
      * @param blocking true if the operation may block, otherwise false
      * @return the return value from the attempt to compensate when blocking is true,
      * another value when blocking is false
@@ -91,7 +95,7 @@ public class Blocker {
     }
 
     /**
-     * Marks the end an operation that may have blocked.
+     * Marks the end of an operation that may have blocked.
      * @param compensateReturn the value returned by the begin method
      */
     public static void end(long compensateReturn) {
@@ -104,40 +108,18 @@ public class Blocker {
     }
 
     /**
-     * Defines static methods to invoke non-public ForkJoinPool methods.
+     * Defines static methods to invoke non-public ForkJoinPool methods via the
+     * shared secret support.
      */
     private static class ForkJoinPools {
-        private static final Unsafe U = Unsafe.getUnsafe();
-        private static final MethodHandle beginCompensatedBlock, endCompensatedBlock;
-        static {
-            try {
-                PrivilegedExceptionAction<MethodHandles.Lookup> pa = () ->
-                    MethodHandles.privateLookupIn(ForkJoinPool.class, MethodHandles.lookup());
-                @SuppressWarnings("removal")
-                MethodHandles.Lookup l = AccessController.doPrivileged(pa);
-                MethodType methodType = MethodType.methodType(long.class);
-                beginCompensatedBlock = l.findVirtual(ForkJoinPool.class, "beginCompensatedBlock", methodType);
-                methodType = MethodType.methodType(void.class, long.class);
-                endCompensatedBlock = l.findVirtual(ForkJoinPool.class, "endCompensatedBlock", methodType);
-
-            } catch (Exception e) {
-                throw new InternalError(e);
-            }
-        }
+        private static final JavaUtilConcurrentFJPAccess FJP_ACCESS =
+                SharedSecrets.getJavaUtilConcurrentFJPAccess();
         static long beginCompensatedBlock(ForkJoinPool pool) {
-            try {
-                return (long) beginCompensatedBlock.invoke(pool);
-            } catch (Throwable e) {
-                U.throwException(e);
-            }
-            return 0;
+            return FJP_ACCESS.beginCompensatedBlock(pool);
         }
         static void endCompensatedBlock(ForkJoinPool pool, long post) {
-            try {
-                endCompensatedBlock.invoke(pool, post);
-            } catch (Throwable e) {
-                U.throwException(e);
-            }
+            FJP_ACCESS.endCompensatedBlock(pool, post);
         }
     }
+
 }

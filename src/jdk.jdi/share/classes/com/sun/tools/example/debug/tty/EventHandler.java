@@ -48,7 +48,7 @@ public class EventHandler implements Runnable {
     boolean completed = false;
     String shutdownMessageKey;
     boolean stopOnVMStart;
-    boolean trackVthreads;
+    private final boolean trackVthreads;
 
     EventHandler(EventNotifier notifier, boolean stopOnVMStart, boolean trackVthreads) {
         this.notifier = notifier;
@@ -119,8 +119,8 @@ public class EventHandler implements Runnable {
             }
             // If we added it, we need to make sure it eventually gets removed. Usually
             // this happens when the ThreadDeathEvent comes in, but if !trackVthreads,
-            // then the ThreadDeathReqest was setup to filter out vthreads. So we'll need
-            // to create a special ThreadDeathReqest just to detect when this vthread dies.
+            // then the ThreadDeathRequest was setup to filter out vthreads. So we'll need
+            // to create a special ThreadDeathRequest just to detect when this vthread dies.
             if (added && !trackVthreads) {
                 EventRequestManager erm = Env.vm().eventRequestManager();
                 ThreadDeathRequest tdr = erm.createThreadDeathRequest();

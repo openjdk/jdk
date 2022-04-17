@@ -246,9 +246,9 @@ public class thread001 {
                                   if (checkedThreads[i][1].equals("0")) {
                                       checkedThreads[i][1] = "1";
                                   } else {
-                                      // When using the jtreg wrapper, the main thread is renamed to old-m-a-i-n,
-                                      // and a new "main" vthread is created. However, the rename happens after
-                                      // the debug agent has already generated the THREAD_START event for the
+                                      // When using the jtreg wrapper, the main thread is renamed, and a new
+                                      // "main" vthread is created. However, the rename happens after the
+                                      // debug agent has already generated the THREAD_START event for the
                                       // original "main", so we end up with two THREAD_START events for "main".
                                       // We need to allow for this.
                                       if ((System.getProperty("main.wrapper") != null) &&

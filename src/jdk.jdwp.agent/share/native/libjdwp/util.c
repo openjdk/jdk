@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2276,6 +2276,8 @@ map2jdwpError(jvmtiError error)
             return JDWP_ERROR(METHOD_MODIFIERS_CHANGE_NOT_IMPLEMENTED);
         case JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED:
             return JDWP_ERROR(CLASS_ATTRIBUTE_CHANGE_NOT_IMPLEMENTED);
+        case JVMTI_ERROR_UNSUPPORTED_OPERATION:
+            return JDWP_ERROR(NOT_IMPLEMENTED);
         case AGENT_ERROR_NOT_CURRENT_FRAME:
             return JDWP_ERROR(NOT_CURRENT_FRAME);
         case AGENT_ERROR_INVALID_TAG:

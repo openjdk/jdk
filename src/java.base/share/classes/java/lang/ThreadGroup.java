@@ -54,13 +54,15 @@ import jdk.internal.misc.VM;
  * <p> Unless otherwise specified, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be thrown.
  *
- * <h2><a id="virtualthreadgroup">The ThreadGroup for virtual threads</a></h2>
- * <a href="Thread.html#virtual-threads">Virtual threads</a> are considered members
- * of a special thread group that is created by the Java runtime. The thread group
- * differs to other thread groups in that its maximum priority is fixed and cannot
- * be changed with the {@link #setMaxPriority(int) setMaxPriority} method.
- * Virtual threads are not included in the estimated thread count returned by
- * the {@link #activeCount() activeCount} method, are not enumerated by the {@link
+ * <h2><a id="virtualthreadgroup">Thread groups and virtual threads</a></h2>
+ * The Java runtime creates a special thread group for
+ * <a href="Thread.html#virtual-threads">virtual threads</a>. This group is
+ * returned by the {@link Thread#getThreadGroup() Thread.getThreadGroup} method
+ * when invoked on a virtual thread. The thread group differs to other thread
+ * groups in that its maximum priority is fixed and cannot be changed with the
+ * {@link #setMaxPriority(int) setMaxPriority} method.
+ * Virtual threads are not included in the estimated thread count returned by the
+ * {@link #activeCount() activeCount} method, are not enumerated by the {@link
  * #enumerate(Thread[]) enumerate} method, and are not interrupted by the {@link
  * #interrupt() interrupt} method.
  *

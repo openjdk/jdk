@@ -125,9 +125,10 @@ public interface ThreadReference extends ObjectReference {
      * @param throwable the asynchronous exception to throw
      * @throws InvalidTypeException if <code>throwable</code> is not
      * an instance of java.lang.Throwable in the target VM
-     * @throws IllegalThreadStateException if the thread has terminated,
-     * or the thread is a virtual thread that cannot be stopped with an
-     * asynchronous exception at this time
+     * @throws IllegalThreadStateException if the thread has terminated
+     * @throws UnsupportedOperationException if the thread is a virtual
+     * thread and the target VM does not support this operation on
+     * virtual threads
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
      * @see VirtualMachine#canBeModified()
      */

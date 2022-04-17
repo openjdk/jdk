@@ -797,6 +797,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
 // End of helpers
 
+address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
+  Unimplemented();
+  return NULL;
+}
+
 // Various method entries
 //------------------------------------------------------------------------------------------------------------------------
 //

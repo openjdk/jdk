@@ -720,6 +720,8 @@ class Commands {
                 MessageOutput.println("Invalid exception object");
             } catch (IllegalThreadStateException its) {
                 MessageOutput.println("Illegal thread state");
+            } catch (UnsupportedOperationException uoe) {
+                MessageOutput.println("Operation is not supported on the target VM");
             }
         } else {
             MessageOutput.println("Expression must evaluate to an object");

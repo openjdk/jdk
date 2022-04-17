@@ -39,14 +39,7 @@ public class ThreadTracker {
      * The hashCode/equals methods do not invoke the Thread hashCode/equals method
      * as they may run arbitrary code and/or leak references to Thread objects.
      */
-    private static class ThreadRef {
-        private final Thread thread;
-        ThreadRef(Thread thread) {
-            this.thread = thread;
-        }
-        Thread thread() {
-            return thread;
-        }
+    private record ThreadRef(Thread thread) {
         @Override
         public int hashCode() {
             return Long.hashCode(thread.threadId());

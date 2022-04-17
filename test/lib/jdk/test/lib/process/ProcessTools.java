@@ -308,6 +308,7 @@ public final class ProcessTools {
         for (String cmd: command) {
             if (cmd.equals("-m")) {
                 noModule = false;
+                break;
             }
         }
 
@@ -338,25 +339,10 @@ public final class ProcessTools {
                     if (cmd.equals(dWArg)) {
                         skipNext = true;
                         args.add(cmd);
-                        continue;
+                        break;
                     }
                 }
                 if (skipNext) {
-                    continue;
-                }
-                if (cmd.startsWith("-cp")) {
-                    skipNext = true;
-                    args.add(cmd);
-                    continue;
-                }
-                if (cmd.startsWith("--add-exports")) {
-                    skipNext = true;
-                    args.add(cmd);
-                    continue;
-                }
-                if (cmd.startsWith("--patch-module")) {
-                    skipNext = true;
-                    args.add(cmd);
                     continue;
                 }
                 if (cmd.startsWith("-")) {

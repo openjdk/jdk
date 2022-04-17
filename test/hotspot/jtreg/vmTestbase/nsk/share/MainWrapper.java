@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 
 public final class MainWrapper {
+    public static final String OLD_MAIN_THREAD_NAME = "old-m-a-i-n";
 
     static AtomicReference<Throwable> ue = new AtomicReference<>();
     public MainWrapper() {
@@ -68,7 +69,7 @@ public final class MainWrapper {
             t = new Thread(task);
         }
         t.setName("main");
-        Thread.currentThread().setName("old-m-a-i-n");
+        Thread.currentThread().setName(OLD_MAIN_THREAD_NAME);
         t.start();
         t.join();
         if (ue.get() != null) {

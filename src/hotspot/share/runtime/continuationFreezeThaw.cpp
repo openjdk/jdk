@@ -62,39 +62,6 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
-#define CONT_JFR false // emit low-level JFR events that count slow/fast path for continuation peformance debugging only
-#if CONT_JFR
-  #define CONT_JFR_ONLY(code) code
-#else
-  #define CONT_JFR_ONLY(code)
-#endif
-
-#if CONT_JFR
-class FreezeThawJfrInfo : public StackObj {
-  short _e_size;
-  short _e_num_interpreted_frames;
- public:
-
-  FreezeThawJfrInfo() : _e_size(0), _e_num_interpreted_frames(0) {}
-  inline void record_interpreted_frame() { _e_num_interpreted_frames++; }
-  inline void record_size_copied(int size) { _e_size += size << LogBytesPerWord; }
-  template<typename Event> void post_jfr_event(Event *e, oop continuation, JavaThread* jt);
-};
-
-template<typename Event> void FreezeThawJfrInfo::post_jfr_event(Event* e, oop continuation, JavaThread* jt) {
-  if (e->should_commit()) {
-    log_develop_trace(continuations)("JFR event: iframes: %d size: %d", _e_num_interpreted_frames, _e_size);
-    e->set_carrierThread(JFR_JVM_THREAD_ID(jt));
-    e->set_contClass(continuation->klass());
-    e->set_numIFrames(_e_num_interpreted_frames);
-    e->set_size(_e_size);
-    e->commit();
-  }
-}
-#endif // CONT_JFR
-
-static const bool TEST_THAW_ONE_CHUNK_FRAME = false; // force thawing frames one-at-a-time for testing
-
 /*
  * This file contains the implementation of continuation freezing (yield) and thawing (run).
  *
@@ -174,6 +141,15 @@ Address |   |                            |    |   Caller is still in the chunk.
 
 ************************************************/
 
+static const bool TEST_THAW_ONE_CHUNK_FRAME = false; // force thawing frames one-at-a-time for testing
+
+#define CONT_JFR false // emit low-level JFR events that count slow/fast path for continuation peformance debugging only
+#if CONT_JFR
+  #define CONT_JFR_ONLY(code) code
+#else
+  #define CONT_JFR_ONLY(code)
+#endif
+
 // TODO: See AbstractAssembler::generate_stack_overflow_check,
 // Compile::bang_size_in_bytes(), m->as_SafePoint()->jvms()->interpreter_frame_size()
 // when we stack-bang, we need to update a thread field with the lowest (farthest) bang point.
@@ -191,7 +167,7 @@ extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue); // address p is r
 static void verify_continuation(oop continuation) { Continuation::debug_verify_continuation(continuation); }
 
 static void do_deopt_after_thaw(JavaThread* thread);
-static bool do_verify_after_thaw(JavaThread* thread, bool barriers, stackChunkOop chunk, outputStream* st);
+static bool do_verify_after_thaw(JavaThread* thread, stackChunkOop chunk, outputStream* st);
 static void log_frames(JavaThread* thread);
 static void print_frame_layout(const frame& f, bool callee_complete, outputStream* st = tty);
 
@@ -327,6 +303,30 @@ static void set_anchor_to_entry(JavaThread* thread, ContinuationEntry* entry) {
   assert(thread->last_frame().cb() != nullptr, "");
 }
 
+#if CONT_JFR
+class FreezeThawJfrInfo : public StackObj {
+  short _e_size;
+  short _e_num_interpreted_frames;
+ public:
+
+  FreezeThawJfrInfo() : _e_size(0), _e_num_interpreted_frames(0) {}
+  inline void record_interpreted_frame() { _e_num_interpreted_frames++; }
+  inline void record_size_copied(int size) { _e_size += size << LogBytesPerWord; }
+  template<typename Event> void post_jfr_event(Event *e, oop continuation, JavaThread* jt);
+};
+
+template<typename Event> void FreezeThawJfrInfo::post_jfr_event(Event* e, oop continuation, JavaThread* jt) {
+  if (e->should_commit()) {
+    log_develop_trace(continuations)("JFR event: iframes: %d size: %d", _e_num_interpreted_frames, _e_size);
+    e->set_carrierThread(JFR_JVM_THREAD_ID(jt));
+    e->set_contClass(continuation->klass());
+    e->set_numIFrames(_e_num_interpreted_frames);
+    e->set_size(_e_size);
+    e->commit();
+  }
+}
+#endif // CONT_JFR
+
 /////////////// FREEZE ////
 
 class FreezeBase : public StackObj {
@@ -362,8 +362,10 @@ protected:
   // fast path
   inline void copy_to_chunk(intptr_t* from, intptr_t* to, int size);
   inline void unwind_frames();
-
   inline void patch_stack_pd(intptr_t* frame_sp, intptr_t* heap_sp);
+
+  // slow path
+  virtual stackChunkOop allocate_chunk_slow(size_t stack_size) = 0;
 
 private:
   // slow path
@@ -392,9 +394,6 @@ private:
   inline void patch_pd(frame& callee, const frame& caller);
   void adjust_interpreted_frame_unextended_sp(frame& f);
   static inline void relativize_interpreted_frame_metadata(const frame& f, const frame& hf);
-
-protected:
-  virtual stackChunkOop allocate_chunk_slow(size_t stack_size) = 0;
 };
 
 template <typename ConfigT>
@@ -406,7 +405,7 @@ public:
   inline Freeze(JavaThread* thread, ContinuationWrapper& cont, bool preempt)
     : FreezeBase(thread, cont, preempt) {}
 
-  inline bool is_chunk_available(intptr_t* frame_sp
+  inline bool is_chunk_available_for_fast_freeze(intptr_t* frame_sp
 #ifdef ASSERT
     , int* out_size = nullptr
 #endif
@@ -495,14 +494,14 @@ freeze_result Freeze<ConfigT>::try_freeze_fast(intptr_t* sp) {
 
 // returns true iff there's room in the chunk for a fast, compiled-frame-only freeze
 template <typename ConfigT>
-bool Freeze<ConfigT>::is_chunk_available(intptr_t* frame_sp
+bool Freeze<ConfigT>::is_chunk_available_for_fast_freeze(intptr_t* frame_sp
 #ifdef ASSERT
     , int* out_size
 #endif
   ) {
   stackChunkOop chunk = _cont.tail();
   if (chunk == nullptr || chunk->is_gc_mode() || chunk->requires_barriers() || chunk->has_mixed_frames()) {
-    log_develop_trace(continuations)("is_chunk_available %s", chunk == nullptr ? "no chunk" : "chunk requires barriers");
+    log_develop_trace(continuations)("chunk available %s", chunk == nullptr ? "no chunk" : "chunk requires barriers");
     return false;
   }
 
@@ -520,7 +519,7 @@ bool Freeze<ConfigT>::is_chunk_available(intptr_t* frame_sp
   assert(size > 0, "");
 
   bool available = chunk_sp - frame::metadata_words >= size;
-  log_develop_trace(continuations)("is_chunk_available: %d size: %d argsize: %d top: " INTPTR_FORMAT " bottom: " INTPTR_FORMAT,
+  log_develop_trace(continuations)("chunk available: %d size: %d argsize: %d top: " INTPTR_FORMAT " bottom: " INTPTR_FORMAT,
     available, _cont.argsize(), size, p2i(stack_top), p2i(stack_bottom));
   DEBUG_ONLY(if (out_size != nullptr) *out_size = size;)
   return available;
@@ -529,7 +528,7 @@ bool Freeze<ConfigT>::is_chunk_available(intptr_t* frame_sp
 template <typename ConfigT>
 template <bool chunk_available>
 bool Freeze<ConfigT>::freeze_fast(intptr_t* frame_sp) {
-  assert(_cont.chunk_invariant(tty), "");
+  assert(_cont.chunk_invariant(), "");
   assert(!Interpreter::contains(_cont.entryPC()), "");
   assert(StubRoutines::cont_doYield_stub()->frame_size() == frame::metadata_words, "");
 
@@ -546,7 +545,7 @@ bool Freeze<ConfigT>::freeze_fast(intptr_t* frame_sp) {
 #ifdef ASSERT
   bool empty = true;
   int is_chunk_available_size;
-  bool is_chunk_available0 = is_chunk_available(frame_sp, &is_chunk_available_size);
+  bool is_chunk_available0 = is_chunk_available_for_fast_freeze(frame_sp, &is_chunk_available_size);
   intptr_t* orig_chunk_sp = nullptr;
   CONT_JFR_ONLY(bool chunk_is_allocated = false;)
 #endif
@@ -589,7 +588,7 @@ bool Freeze<ConfigT>::freeze_fast(intptr_t* frame_sp) {
     }
   } else { // no chunk; allocate
     assert(_thread->thread_state() == _thread_in_vm, "");
-    assert(!is_chunk_available(frame_sp), "");
+    assert(!is_chunk_available_for_fast_freeze(frame_sp), "");
     assert(_thread->cont_fastpath(), "");
 
     chunk = allocate_chunk(cont_size + frame::metadata_words);
@@ -660,7 +659,7 @@ bool Freeze<ConfigT>::freeze_fast(intptr_t* frame_sp) {
   }
 
   // Verification
-  assert(_cont.chunk_invariant(tty), "");
+  assert(_cont.chunk_invariant(), "");
   chunk->verify();
 
 #if CONT_JFR
@@ -1167,7 +1166,7 @@ NOINLINE void FreezeBase::finish_freeze(const frame& f, const frame& top) {
     _cont.last_frame().print_on(&ls);
   }
 
-  assert(_cont.chunk_invariant(tty), "");
+  assert(_cont.chunk_invariant(), "");
 }
 
 inline bool FreezeBase::stack_overflow() { // detect stack overflow in recursive native code
@@ -1200,23 +1199,20 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   JavaThread* current = _preempt ? JavaThread::current() : _thread;
   assert(current == JavaThread::current(), "should be current");
 
-  stackChunkOop chunk;
   StackChunkAllocator allocator(klass, size_in_words, stack_size, current);
-  HeapWord* start = current->tlab().allocate(size_in_words);
-  if (start != nullptr) {
-    chunk = stackChunkOopDesc::cast(allocator.StackChunkAllocator::initialize(start));
-  } else {
+  oop fast_oop = allocator.try_allocate_in_existing_tlab();
+  oop chunk_oop = fast_oop;
+  if (chunk_oop == nullptr) {
     ContinuationWrapper::SafepointOp so(current, _cont);
     assert(_jvmti_event_collector != nullptr, "");
-    _jvmti_event_collector->start(); // can safepoint
-
-    chunk = stackChunkOopDesc::cast(allocator.allocate()); // can safepoint
-
-    if (chunk == nullptr) { // OOME
-      return nullptr;
+    _jvmti_event_collector->start();  // can safepoint
+    chunk_oop = allocator.allocate(); // can safepoint
+    if (chunk_oop == nullptr) {
+      return nullptr; // OOME
     }
   }
 
+  stackChunkOop chunk = stackChunkOopDesc::cast(chunk_oop);
   // assert that chunk is properly initialized
   assert(chunk->stack_size() == (int)stack_size, "");
   assert(chunk->size() >= stack_size, "chunk->size(): %zu size: %zu", chunk->size(), stack_size);
@@ -1228,20 +1224,13 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   assert(chunk->flags() == 0, "");
   assert(chunk->is_gc_mode() == false, "");
 
-  chunk->set_mark(chunk->mark().set_age(15)); // Promote young chunks quickly
-
-  stackChunkOop chunk0 = _cont.tail();
-  if (chunk0 != nullptr && chunk0->is_empty()) {
-    chunk0 = chunk0->parent();
-    assert(chunk0 == nullptr || !chunk0->is_empty(), "");
-  }
   // fields are uninitialized
-  chunk->set_parent_raw<typename ConfigT::OopT>(chunk0);
+  chunk->set_parent_raw<typename ConfigT::OopT>(_cont.last_nonempty_chunk());
   chunk->set_cont_raw<typename ConfigT::OopT>(_cont.continuation());
 
   assert(chunk->parent() == nullptr || chunk->parent()->is_stackChunk(), "");
 
-  if (start != nullptr) {
+  if (fast_oop != nullptr) {
     assert(!chunk->requires_barriers(), "Unfamiliar GC requires barriers on TLAB allocation");
   } else {
     assert(!UseZGC || !chunk->requires_barriers(), "Allocated ZGC object requires barriers");
@@ -1400,7 +1389,7 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
   Freeze<ConfigT> fr(current, cont, false);
 
   bool fast = can_freeze_fast(current);
-  if (fast && fr.is_chunk_available(sp)) {
+  if (fast && fr.is_chunk_available_for_fast_freeze(sp)) {
     freeze_result res = fr.template try_freeze_fast<true>(sp);
     assert(res == freeze_ok, "");
     CONT_JFR_ONLY(fr.jfr_info().post_jfr_event(&event, oopCont, current);)
@@ -1547,12 +1536,6 @@ protected:
 
   NOT_PRODUCT(int _frames;)
 
-#ifdef ASSERT
-  public:
-    bool barriers() { return _barriers; }
-  protected:
-#endif
-
 protected:
   ThawBase(JavaThread* thread, ContinuationWrapper& cont) :
       _thread(thread), _cont(cont),
@@ -1576,6 +1559,8 @@ private:
   void thaw_one_frame(const frame& heap_frame, frame& caller, int num_frames, bool top);
   template<typename FKind> bool recurse_thaw_java_frame(frame& caller, int num_frames);
   void finalize_thaw(frame& entry, int argsize);
+
+  inline bool seen_by_gc();
 
   inline void before_thaw_java_frame(const frame& hf, const frame& caller, bool bottom, int num_frame);
   inline void after_thaw_java_frame(const frame& f, bool bottom);
@@ -1737,7 +1722,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_fast(stackChunkOop chunk) {
   assert(is_last ? CodeCache::find_blob(pc)->as_compiled_method()->method()->is_continuation_enter_intrinsic()
                   : pc == StubRoutines::cont_returnBarrier(), "is_last: %d", is_last);
   assert(is_last == _cont.is_empty(), "");
-  assert(_cont.chunk_invariant(tty), "");
+  assert(_cont.chunk_invariant(), "");
 
 #if CONT_JFR
   EventContinuationThawYoung e;
@@ -1777,6 +1762,10 @@ void ThawBase::patch_return(intptr_t* sp, bool is_last) {
   // patch_chunk_pd(sp); -- TODO: If not needed - remove method; it's not used elsewhere
 }
 
+inline bool ThawBase::seen_by_gc() {
+  return _barriers | _cont.tail()->is_gc_mode();
+}
+
 NOINLINE intptr_t* ThawBase::thaw_slow(stackChunkOop chunk, bool return_barrier) {
   LogTarget(Trace, continuations) lt;
   if (lt.develop_is_enabled()) {
@@ -1813,7 +1802,7 @@ NOINLINE intptr_t* ThawBase::thaw_slow(stackChunkOop chunk, bool return_barrier)
   finish_thaw(caller); // caller is now the topmost thawed frame
   _cont.write();
 
-  assert(_cont.chunk_invariant(tty), "");
+  assert(_cont.chunk_invariant(), "");
 
   JVMTI_ONLY(if (!return_barrier) invalidate_jvmti_stack(_thread));
 
@@ -1941,7 +1930,7 @@ void ThawBase::clear_bitmap_bits(intptr_t* start, int range) {
 NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames) {
   assert(hf.is_interpreted_frame(), "");
 
-  if (UNLIKELY(_barriers)) {
+  if (UNLIKELY(seen_by_gc())) {
     _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance);
   }
 
@@ -2001,7 +1990,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   assert(!hf.is_interpreted_frame(), "");
   assert(_cont.is_preempted() || !stub_caller, "stub caller not at preemption");
 
-  if (!stub_caller && UNLIKELY(_barriers)) { // recurse_thaw_stub_frame already invoked our barriers with a full regmap
+  if (!stub_caller && UNLIKELY(seen_by_gc())) { // recurse_thaw_stub_frame already invoked our barriers with a full regmap
     _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance);
   }
 
@@ -2056,8 +2045,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   }
 
   if (!bottom) {
-    // can only fix caller once this frame is thawed (due to callee saved regs)
-    // This happens on the stack
+    // can only fix caller once this frame is thawed (due to callee saved regs); this happens on the stack
     _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance);
   } else if (_cont.tail()->has_bitmap() && added_argsize > 0) {
     clear_bitmap_bits(heap_sp + ContinuationHelper::CompiledFrame::size(hf), added_argsize);
@@ -2075,7 +2063,7 @@ void ThawBase::recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_f
     map.set_include_argument_oops(false);
     _stream.next(&map);
     assert(!_stream.is_done(), "");
-    if (UNLIKELY(_barriers)) { // we're now doing this on the stub's caller
+    if (UNLIKELY(seen_by_gc())) { // we're now doing this on the stub's caller
       _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, &map);
     }
     assert(!_stream.is_done(), "");
@@ -2115,7 +2103,7 @@ void ThawBase::finish_thaw(frame& f) {
 
   if (chunk->is_empty()) {
     // Only remove chunk from list if it can't be reused for another freeze
-    if (_barriers) {
+    if (seen_by_gc()) {
       _cont.set_tail(chunk->parent());
     } else {
       chunk->set_has_mixed_frames(false);
@@ -2208,7 +2196,7 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const thaw_kind kind) 
   set_anchor(thread, sp0);
   log_frames(thread);
   if (LoomVerifyAfterThaw) {
-    assert(do_verify_after_thaw(thread, thw.barriers(), cont.tail(), tty), "");
+    assert(do_verify_after_thaw(thread, cont.tail(), tty), "");
   }
   assert(ContinuationEntry::assert_entry_frame_laid_out(thread), "");
   clear_anchor(thread);
@@ -2274,7 +2262,7 @@ public:
   }
 };
 
-static bool do_verify_after_thaw(JavaThread* thread, bool barriers, stackChunkOop chunk, outputStream* st) {
+static bool do_verify_after_thaw(JavaThread* thread, stackChunkOop chunk, outputStream* st) {
   assert(thread->has_last_Java_frame(), "");
 
   ResourceMark rm;
@@ -2294,7 +2282,7 @@ static bool do_verify_after_thaw(JavaThread* thread, bool barriers, stackChunkOo
     fst.current()->oops_do(&cl, &cf, fst.register_map());
     if (cl.p() != nullptr) {
       frame fr = *fst.current();
-      st->print_cr("Failed for frame barriers: %d %d", barriers, chunk->requires_barriers());
+      st->print_cr("Failed for frame barriers: %d",chunk->requires_barriers());
       fr.print_on(st);
       if (!fr.is_interpreted_frame()) {
         st->print_cr("size: %d argsize: %d",

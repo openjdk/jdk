@@ -53,7 +53,7 @@ class VMConnection {
     private final Connector connector;
     private final Map<String, com.sun.jdi.connect.Connector.Argument> connectorArgs;
     private int traceFlags;
-    private boolean trackVthreads;
+    private final boolean trackVthreads;
 
     synchronized void notifyOutputComplete() {
         outputCompleteCount++;

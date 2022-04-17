@@ -84,8 +84,8 @@ typedef struct {
     volatile jboolean vmDead; /* Once VM is dead it stays that way - don't put in init */
     jboolean assertOn;
     jboolean assertFatal;
-    jboolean vthreadsSupported; /* If true, debugging support for vthreads is enabled.*/
-    jboolean enumerateVThreads; /* If true, JDWP APIs returns vthreads in thread lists. */
+    jboolean vthreadsSupported; /* If true, debugging support for vthreads is enabled. */
+    jboolean enumerateVThreads; /* If true, JDWP APIs return vthreads in thread lists. */
     jboolean doerrorexit;
     jboolean modifiedUtf8;
     jboolean quiet;

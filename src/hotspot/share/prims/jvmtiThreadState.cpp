@@ -290,13 +290,17 @@ JvmtiVTMTDisabler::disable_VTMT() {
     }
     assert(!thread->is_VTMT_disabler(), "VTMT sanity check");
 #ifdef ASSERT
+    if (attempts > 0) {
+      thread->set_is_VTMT_disabler(true);
+    }
+#endif
+  }
+#ifdef ASSERT
     if (attempts == 0) {
       print_info();
       fatal("stuck in JvmtiVTMTDisabler::disable_VTMT");
     }
-    thread->set_is_VTMT_disabler(true);
 #endif
-  }
 }
 
 void
@@ -324,7 +328,7 @@ JvmtiVTMTDisabler::start_VTMT(jthread vthread, bool is_mount) {
   JavaThread* thread = JavaThread::current();
   HandleMark hm(thread);
   Handle vth = Handle(thread, JNIHandles::resolve_external_guard(vthread));
-  int attempts = 10000;
+  int attempts = 50000;
 
   // Avoid using MonitorLocker on performance critical path, use
   // two-level synchronization with lock-free operations on counters.
