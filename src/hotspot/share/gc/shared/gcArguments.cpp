@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +30,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "osContainer_linux.hpp"
 #include "utilities/macros.hpp"
 
 size_t HeapAlignment = 0;
@@ -127,8 +128,9 @@ void GCArguments::initialize_heap_flags_and_sizes() {
     }
   }
 
-  if (FLAG_IS_CMDLINE(InitialHeapSize) && InitialHeapSize >= os::physical_memory()) {
-    vm_exit_during_initialization("Initial heap size set to a larger value than the os or container memory");
+  if (OSContainer::is_containerized() && (OSContainer::memory_and_swap_limit_in_bytes() > 0) &&
+      FLAG_IS_CMDLINE(InitialHeapSize) && (InitialHeapSize >= (julong) OSContainer::memory_and_swap_limit_in_bytes())) {
+    vm_exit_during_initialization("Initial heap size set to a larger value than the container memory & swap limit");
   }
 
   // Check heap parameter properties
