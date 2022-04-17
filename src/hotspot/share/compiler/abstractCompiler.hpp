@@ -165,9 +165,9 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
     ShouldNotReachHere();
   }
 
-  // Notifies this compiler that the current thread (`thread`) is about to stop.
+  // Notifies this compiler that the current thread (`current`) is about to stop.
   // The current thread currently holds the CompileThread_lock.
-  virtual void stopping_compiler_thread(CompilerThread* thread) {
+  virtual void stopping_compiler_thread(CompilerThread* current) {
     // Do nothing
   }
 

@@ -153,12 +153,12 @@ void JVMCICompiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, 
   ShouldNotReachHere();
 }
 
-void JVMCICompiler::stopping_compiler_thread(CompilerThread* thread) {
+void JVMCICompiler::stopping_compiler_thread(CompilerThread* current) {
   if (UseJVMCINativeLibrary) {
-    JVMCIRuntime* runtime = JVMCI::compiler_runtime(thread, false);
-    if (runtime != NULL) {
+    JVMCIRuntime* runtime = JVMCI::compiler_runtime(current, false);
+    if (runtime != nullptr) {
       MutexUnlocker unlock(CompileThread_lock);
-      runtime->detach_thread(thread, "stopping idle compiler thread");
+      runtime->detach_thread(current, "stopping idle compiler thread");
     }
   }
 }
