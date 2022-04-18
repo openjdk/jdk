@@ -97,7 +97,7 @@ public class OAEPParameterSpec implements AlgorithmParameterSpec {
      * @deprecated This field uses the default values defined in the PKCS #1
      *         standard. Some of these defaults are no longer recommended due
      *         to advances in cryptanalysis -- see the
-     *         <a href="https://www.rfc-editor.org/rfc/rfc8017#appendix-B.1">Appendix B.1</a>
+     *         <a href="https://www.rfc-editor.org/rfc/rfc8017#appendix-B.1">Appendix B.1 of PKCS #1</a>
      *         for more details. Thus, it is recommended to create
      *         a new {@code OAEPParameterSpec} with the desired parameter values
      *         using the
@@ -108,11 +108,6 @@ public class OAEPParameterSpec implements AlgorithmParameterSpec {
     public static final OAEPParameterSpec DEFAULT = new OAEPParameterSpec(
             "SHA-1", "MGF1", MGF1ParameterSpec.SHA1,
             PSource.PSpecified.DEFAULT);
-
-    // disallowed
-    private OAEPParameterSpec() {
-        throw new RuntimeException("default constructor not allowed");
-    }
 
     /**
      * Constructs a parameter set for OAEP padding as defined in
