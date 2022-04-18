@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,10 @@ import java.util.Set;
  * to be validated to the {@link CertPathValidator#validate validate} method
  * of a PKIX {@code CertPathValidator}. When supplying a revocation checker in
  * this manner, it will be used to check revocation irrespective of the setting
- * of the {@link PKIXParameters#isRevocationEnabled RevocationEnabled} flag.
- * Similarly, a {@code PKIXRevocationChecker} may be added to a
- * {@code PKIXBuilderParameters} object for use with a PKIX
+ * of the {@link PKIXParameters#isRevocationEnabled RevocationEnabled} flag,
+ * and will override the default revocation checking mechanism of the PKIX
+ * service provider. Similarly, a {@code PKIXRevocationChecker} may be added
+ * to a {@code PKIXBuilderParameters} object for use with a PKIX
  * {@code CertPathBuilder}.
  *
  * <p>Note that when a {@code PKIXRevocationChecker} is added to
