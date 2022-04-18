@@ -174,8 +174,8 @@ public class Attr extends JCTree.Visitor {
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowPatternSwitch = (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH)) &&
                              Feature.PATTERN_SWITCH.allowedInSource(source);
-        allowTotalPatternsInstance = (preview.isEnabled() || !preview.isPreview(Feature.TOTAL_PATTERN_IN_INSTACEOF)) &&
-                                     Feature.TOTAL_PATTERN_IN_INSTACEOF.allowedInSource(source);
+        allowUnconditionalPatternsInstance = (preview.isEnabled() || !preview.isPreview(Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF)) &&
+                                     Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.allowedInSource(source);
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
 
@@ -222,7 +222,7 @@ public class Attr extends JCTree.Visitor {
 
     /** Are total patterns in instanceof allowed
      */
-    private final boolean allowTotalPatternsInstance;
+    private final boolean allowUnconditionalPatternsInstance;
 
     /**
      * Switch: warn about use of variable before declaration?
@@ -1794,7 +1794,7 @@ public class Attr extends JCTree.Visitor {
                             }
                             matchBindings = matchBindingsComputer.caseGuard(c, afterPattern, matchBindings);
                         }
-                        boolean unconditional = TreeInfo.unconditionalCaseLabel(pat);
+                        boolean unconditional = TreeInfo.unrefinedCaseLabel(pat);
                         boolean isTotal = unconditional &&
                                           !patternType.isErroneous() &&
                                           types.isSubtype(types.erasure(seltype), patternType);
@@ -4109,10 +4109,10 @@ public class Attr extends JCTree.Visitor {
             clazztype = tree.pattern.type;
             if (types.isSubtype(exprtype, clazztype) &&
                 !exprtype.isErroneous() && !clazztype.isErroneous()) {
-                if (!allowTotalPatternsInstance) {
+                if (!allowUnconditionalPatternsInstance) {
                     log.error(tree.pos(), Errors.InstanceofPatternNoSubtype(exprtype, clazztype));
-                } else if (preview.isPreview(Feature.TOTAL_PATTERN_IN_INSTACEOF)) {
-                    preview.warnPreview(tree.pattern.pos(), Feature.TOTAL_PATTERN_IN_INSTACEOF);
+                } else if (preview.isPreview(Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF)) {
+                    preview.warnPreview(tree.pattern.pos(), Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF);
                 }
             }
             typeTree = TreeInfo.primaryPatternTree((JCPattern) tree.pattern).var.vartype;

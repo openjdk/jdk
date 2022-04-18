@@ -30,16 +30,17 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * Thrown to indicate an unexpected failure in pattern matching.
  *
- * MatchException may be thrown when an exhaustive pattern matching language construct
- * (such as a switch expression) encounters a match target that does not match any of the provided
- * patterns at runtime.  This can currently arise from the following case:
- * <ul>
- *     <li>Separate compilation anomalies, where a sealed interface has a different
- *         set of permitted subtypes at runtime than it had at compilation time,
- *         an enum has a different set of constants at runtime than it had at compilation time,
- *         or the type hierarchy has changed in incompatible ways between compile time and run time.
- *     </li>
- * </ul>
+ * {@code MatchException} may be thrown when an exhaustive pattern matching language construct
+ * (such as a switch expression) encounters a value that does not match any of the provided
+ * patterns at runtime. This can currently arise for separate compilation anomalies,
+ * where a sealed interface has a different set of permitted subtypes at runtime than
+ * it had at compilation time, an enum has a different set of constants at runtime than
+ * it had at compilation time, or the type hierarchy has changed in incompatible ways between
+ * compile time and run time.
+ *
+ * @jls 14.11.3 Execution of a switch Statement
+ * @jls 14.30.2 Pattern Matching
+ * @jls 15.28.2 Run-Time Evaluation of switch Expressions
  *
  * @since   19
  */
@@ -49,7 +50,7 @@ public class MatchException extends RuntimeException {
     private static final long serialVersionUID = 0L;
 
     /**
-     * Constructs an {@code MatchException} with no detail  message.
+     * Constructs an {@code MatchException} with no detail message.
      */
     public MatchException() {
         super();
@@ -70,7 +71,7 @@ public class MatchException extends RuntimeException {
      * Constructs an {@code MatchException} with the specified cause.
      *
      * @param  cause the cause (which is saved for later retrieval by the
-     *         {@link #getCause()} method).  (A {@code null} value is
+     *         {@link #getCause()} method). (A {@code null} value is
      *         permitted, and indicates that the cause is nonexistent or
      *         unknown.)
      */
@@ -85,7 +86,7 @@ public class MatchException extends RuntimeException {
      * @param  message the detail message (which is saved for later retrieval
      *         by the {@link #getMessage()} method).
      * @param  cause the cause (which is saved for later retrieval by the
-     *         {@link #getCause()} method).  (A {@code null} value is
+     *         {@link #getCause()} method). (A {@code null} value is
      *         permitted, and indicates that the cause is nonexistent or
      *         unknown.)
      */

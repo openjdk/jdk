@@ -1346,7 +1346,7 @@ public class TreeInfo {
 
     public static PatternPrimaryType primaryPatternType(JCTree pat) {
         return switch (pat.getTag()) {
-            case BINDINGPATTERN -> new PatternPrimaryType(((JCBindingPattern) pat).type);
+            case BINDINGPATTERN -> new PatternPrimaryType(pat.type);
             case PARENTHESIZEDPATTERN -> primaryPatternType(((JCParenthesizedPattern) pat).pattern);
             default -> throw new AssertionError();
         };
@@ -1369,7 +1369,7 @@ public class TreeInfo {
                          .anyMatch(l -> TreeInfo.isNull(l));
     }
 
-    public static boolean unconditionalCaseLabel(JCCaseLabel cse) {
+    public static boolean unrefinedCaseLabel(JCCaseLabel cse) {
         if (!cse.isPattern()) {
             return true;
         }

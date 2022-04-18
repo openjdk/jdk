@@ -671,7 +671,7 @@ public class Flow {
                 JCCase c = l.head;
                 for (JCCaseLabel pat : c.labels) {
                     scan(pat);
-                    if (TreeInfo.unconditionalCaseLabel(pat)) {
+                    if (TreeInfo.unrefinedCaseLabel(pat)) {
                         handleConstantCaseLabel(constants, pat);
                     }
                 }
@@ -714,7 +714,7 @@ public class Flow {
                 JCCase c = l.head;
                 for (JCCaseLabel pat : c.labels) {
                     scan(pat);
-                    if (TreeInfo.unconditionalCaseLabel(pat)) {
+                    if (TreeInfo.unrefinedCaseLabel(pat)) {
                         handleConstantCaseLabel(constants, pat);
                     }
                 }
