@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import sun.security.jca.GetInstance.Instance;
  * versa.
  * Secret key factories operate only on secret (symmetric) keys.
  *
- * <P> Key factories are bi-directional, i.e., they allow to build an opaque
+ * <P> Key factories are bidirectional, i.e., they allow to build an opaque
  * key object from a given key specification (key material), or to retrieve
  * the underlying key material of a key object in a suitable format.
  *
@@ -138,7 +138,7 @@ public class SecretKeyFactory {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the standard name of the requested secret-key
@@ -280,7 +280,7 @@ public class SecretKeyFactory {
 
     /**
      * Update the active spi of this class and return the next
-     * implementation for failover. If no more implemenations are
+     * implementation for failover. If no more implementations are
      * available, this method returns null. However, the active spi of
      * this class is never set to null.
      */
@@ -296,15 +296,14 @@ public class SecretKeyFactory {
             }
             while (serviceIterator.hasNext()) {
                 Service s = serviceIterator.next();
-                if (JceSecurity.canUseProvider(s.getProvider()) == false) {
+                if (!JceSecurity.canUseProvider(s.getProvider())) {
                     continue;
                 }
                 try {
                     Object obj = s.newInstance(null);
-                    if (obj instanceof SecretKeyFactorySpi == false) {
+                    if (!(obj instanceof SecretKeyFactorySpi spi)) {
                         continue;
                     }
-                    SecretKeyFactorySpi spi = (SecretKeyFactorySpi)obj;
                     provider = s.getProvider();
                     this.spi = spi;
                     return spi;
