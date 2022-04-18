@@ -833,49 +833,50 @@ static OopStorage* object_handles() {
   return Universe::vm_global();
 }
 
-jobject JVMCIRuntime::make_global(const Handle& obj) {
+jlong JVMCIRuntime::make_oop_handle(const Handle& obj) {
   assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
   assert(oopDesc::is_oop(obj()), "not an oop");
   oop* ptr = object_handles()->allocate();
-  jobject res = NULL;
-  if (ptr != NULL) {
-    assert(*ptr == NULL, "invariant");
+  jlong res = 0;
+  if (ptr != nullptr) {
+    assert(*ptr == nullptr, "invariant");
     NativeAccess<>::oop_store(ptr, obj());
-    res = reinterpret_cast<jobject>(ptr);
+    res = (jlong) ptr;
   } else {
     vm_exit_out_of_memory(sizeof(oop), OOM_MALLOC_ERROR,
                           "Cannot create JVMCI oop handle");
   }
   MutexLocker ml(_lock);
-  _jobjects.append(res);
+  _oop_handles.append(ptr);
   return res;
 }
 
-bool JVMCIRuntime::probe_jobject(const jobject& key, int index) {
-  if (_jobjects.at(index) == key) {
-    _last_found_jobject_index = index;
+bool JVMCIRuntime::probe_oop_handle(jlong handle, int index) {
+  oop* key = (oop*) handle;
+  if (key == _oop_handles.at(index)) {
+    _last_found_oop_handle_index = index;
     return true;
   }
   return false;
 }
 
-int JVMCIRuntime::find_jobject(const jobject& key) {
-  int len = _jobjects.length();
-  int next = _last_found_jobject_index + 1;
-  int prev = MAX2(_last_found_jobject_index, 0) - 1;
+int JVMCIRuntime::find_oop_handle(jlong handle) {
+  int len = _oop_handles.length();
+  int next = _last_found_oop_handle_index + 1;
+  int prev = MAX2(_last_found_oop_handle_index, 0) - 1;
 
   // Search "outwards" from the index of the last found
   // entry. Experimentation shows that this significantly
   // reduces the amount of searching performed.
   do {
     if (next < len) {
-      if (probe_jobject(key, next)) {
+      if (probe_oop_handle(handle, next)) {
         return next;
       }
       next++;
     }
     if (prev >= 0) {
-      if (probe_jobject(key, prev)) {
+      if (probe_oop_handle(handle, prev)) {
         return prev;
       }
       prev--;
@@ -886,15 +887,14 @@ int JVMCIRuntime::find_jobject(const jobject& key) {
 
 int JVMCIRuntime::release_and_clear_globals() {
   int released = 0;
-  if (_jobjects.length() != 0) {
+  if (_oop_handles.length() != 0) {
     // Collect non-null JNI handles into an array for
     // the bulk release operation
     ResourceMark rm;
-    oop** ptrs = NEW_RESOURCE_ARRAY(oop*, _jobjects.length());
-    for (int i = 0; i < _jobjects.length(); i++) {
-      jobject obj = _jobjects.at(i);
-      if (obj != nullptr) {
-        oop* oop_ptr = reinterpret_cast<oop*>(obj);
+    oop** ptrs = NEW_RESOURCE_ARRAY(oop*, _oop_handles.length());
+    for (int i = 0; i < _oop_handles.length(); i++) {
+      oop* oop_ptr = _oop_handles.at(i);
+      if (oop_ptr != nullptr) {
         ptrs[released++] = oop_ptr;
         NativeAccess<>::oop_store(oop_ptr, (oop) nullptr);
       }
@@ -902,26 +902,26 @@ int JVMCIRuntime::release_and_clear_globals() {
     // Do the bulk release
     object_handles()->release(ptrs, released);
   }
-  _jobjects.clear();
-  _last_found_jobject_index = -1;
+  _oop_handles.clear();
+  _last_found_oop_handle_index = -1;
   return released;
 }
 
-void JVMCIRuntime::destroy_global(jobject handle) {
+void JVMCIRuntime::destroy_oop_handle(jlong handle) {
   // Assert before nulling out, for better debugging.
-  assert(is_global_handle(handle), "precondition");
-  oop* oop_ptr = reinterpret_cast<oop*>(handle);
-  NativeAccess<>::oop_store(oop_ptr, (oop)nullptr);
+  assert(is_oop_handle(handle), "precondition");
+  oop* oop_ptr = (oop*) handle;
+  NativeAccess<>::oop_store(oop_ptr, (oop) nullptr);
   object_handles()->release(oop_ptr);
 
   MutexLocker ml(_lock);
-  int index = find_jobject(handle);
-  guarantee(index != -1, "global not allocated in JVMCI runtime %d: " INTPTR_FORMAT, id(), p2i(handle));
-  _jobjects.at_put(index, nullptr);
+  int index = find_oop_handle(handle);
+  guarantee(index != -1, "global not allocated in JVMCI runtime %d: " INTPTR_FORMAT, id(), handle);
+  _oop_handles.at_put(index, nullptr);
 }
 
-bool JVMCIRuntime::is_global_handle(jobject handle) {
-  const oop* ptr = reinterpret_cast<oop*>(handle);
+bool JVMCIRuntime::is_oop_handle(jlong handle) {
+  const oop* ptr = (oop*) handle;
   return object_handles()->allocation_status(ptr) == OopStorage::ALLOCATED_ENTRY;
 }
 
@@ -978,10 +978,10 @@ JVMCIRuntime::JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker) 
   _id(id),
   _next(next),
   _metadata_handles(new MetadataHandles()),
-  _jobjects(100, mtJVMCI),
+  _oop_handles(100, mtJVMCI),
   _num_attached_threads(0),
   _for_compile_broker(for_compile_broker),
-  _last_found_jobject_index(-1)
+  _last_found_oop_handle_index(-1)
 {
   if (id == -1) {
     _lock = JVMCIRuntime_lock;

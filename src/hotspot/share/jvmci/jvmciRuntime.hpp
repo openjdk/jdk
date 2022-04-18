@@ -162,10 +162,10 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Handles to Metadata objects.
   MetadataHandles* _metadata_handles;
 
-  // List of jobjects allocated via make_global. This is to support
-  // destroying remaining JNI handles when the JavaVM associated
+  // List of oop handles allocated via make_oop_handle. This is to support
+  // destroying remaining oop handles when the JavaVM associated
   // with this runtime is shutdown.
-  GrowableArray<jobject> _jobjects;
+  GrowableArray<oop*> _oop_handles;
 
   // Number of threads attached or about to be attached to this runtime.
   // Must only be mutated under JVMCI_lock to facilitate safely moving
@@ -226,12 +226,12 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // JVMCI_lock must be held by current thread
   static JVMCIRuntime* select_runtime_in_shutdown(JavaThread* thread);
 
-  // Helpers for destroy_global
-  int _last_found_jobject_index;
-  bool probe_jobject(const jobject& obj, int index);
-  int find_jobject(const jobject& obj);
+  // Helpers for destroy_oop_handle
+  int _last_found_oop_handle_index;
+  bool probe_oop_handle(jlong handle, int index);
+  int find_oop_handle(jlong handle);
 
-  // Releases all the non-null entries in _jobjects and then clears
+  // Releases all the non-null entries in _oop_handles and then clears
   // the list. Returns the number of non-null entries prior to clearing.
   int release_and_clear_globals();
 
@@ -273,15 +273,17 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Compute offsets and construct any state required before executing JVMCI code.
   void initialize(JVMCIEnv* jvmciEnv);
 
-  // Allocation and management of JNI global object handles
-  // whose lifetime is scoped by this JVMCIRuntime. The lifetime
+  // Allocation and management of handles to HotSpot heap objects
+  // whose lifetime is scoped by this JVMCIRuntime. The max lifetime
   // of these handles is the same as the JVMCI shared library JavaVM
   // associated with this JVMCIRuntime. These JNI handles are
-  // used when creating a IndirectHotSpotObjectConstantImpl in the
+  // used when creating an IndirectHotSpotObjectConstantImpl in the
   // shared library JavaVM.
-  jobject make_global(const Handle& obj);
-  void destroy_global(jobject handle);
-  bool is_global_handle(jobject handle);
+  jlong make_oop_handle(const Handle& obj);
+  bool is_oop_handle(jlong handle);
+
+  // Called from IndirectHotSpotObjectConstantImpl.clear(Object)
+  void destroy_oop_handle(jlong handle);
 
   // Allocation and management of metadata handles.
   jmetadata allocate_handle(const methodHandle& handle);

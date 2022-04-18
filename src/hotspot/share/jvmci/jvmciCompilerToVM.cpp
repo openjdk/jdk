@@ -2070,7 +2070,7 @@ C2V_VMENTRY_0(jboolean, equals, (JNIEnv* env, jobject, jobject x, jlong xHandle,
   if (x == NULL || y == NULL) {
     JVMCI_THROW_0(NullPointerException);
   }
-  return JVMCIENV->resolve_handle(xHandle) == JVMCIENV->resolve_handle(yHandle);
+  return JVMCIENV->resolve_oop_handle(xHandle) == JVMCIENV->resolve_oop_handle(yHandle);
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, getJavaMirror, (JNIEnv* env, jobject, jobject object))
@@ -2160,10 +2160,9 @@ C2V_VMENTRY_0(jint, arrayIndexScale, (JNIEnv* env, jobject, jobject kind))
   return type2aelembytes(type);
 C2V_END
 
-C2V_VMENTRY(void, deleteGlobalHandle, (JNIEnv* env, jobject, jlong h))
-  jobject handle = (jobject)(address)h;
-  if (handle != NULL) {
-    JVMCIENV->runtime()->destroy_global(handle);
+C2V_VMENTRY(void, deleteGlobalHandle, (JNIEnv* env, jobject, jlong handle))
+  if (handle != 0) {
+    JVMCIENV->runtime()->destroy_oop_handle(handle);
   }
 }
 
@@ -2525,7 +2524,7 @@ C2V_VMENTRY_NULL(jobject, unhand, (JNIEnv* env, jobject, jlong obj_handle))
     return NULL;
   }
   jobject global_handle = (jobject) obj_handle;
-  JVMCIObject global_handle_obj = JVMCIENV->wrap((jobject) obj_handle);
+  JVMCIObject global_handle_obj = JVMCIENV->wrap(global_handle);
   jobject result = JVMCIENV->make_local(global_handle_obj).as_jobject();
 
   JVMCIENV->destroy_global(global_handle_obj);
