@@ -847,12 +847,12 @@ jobject JVMCIRuntime::make_global(const Handle& obj) {
                           "Cannot create JVMCI oop handle");
   }
   MutexLocker ml(_lock);
-  _jobjects->append(res);
+  _jobjects.append(res);
   return res;
 }
 
 bool JVMCIRuntime::probe_jobject(const jobject& key, int index) {
-  if (_jobjects->at(index) == key) {
+  if (_jobjects.at(index) == key) {
     _last_found_jobject_index = index;
     return true;
   }
@@ -860,7 +860,7 @@ bool JVMCIRuntime::probe_jobject(const jobject& key, int index) {
 }
 
 int JVMCIRuntime::find_jobject(const jobject& key) {
-  int len = _jobjects->length();
+  int len = _jobjects.length();
   int next = _last_found_jobject_index + 1;
   int prev = MAX2(_last_found_jobject_index, 0) - 1;
 
@@ -886,13 +886,13 @@ int JVMCIRuntime::find_jobject(const jobject& key) {
 
 int JVMCIRuntime::release_and_clear_globals() {
   int released = 0;
-  if (_jobjects->length() != 0) {
+  if (_jobjects.length() != 0) {
     // Collect non-null JNI handles into an array for
     // the bulk release operation
     ResourceMark rm;
-    oop** ptrs = NEW_RESOURCE_ARRAY(oop*, _jobjects->length());
-    for (int i = 0; i < _jobjects->length(); i++) {
-      jobject obj = _jobjects->at(i);
+    oop** ptrs = NEW_RESOURCE_ARRAY(oop*, _jobjects.length());
+    for (int i = 0; i < _jobjects.length(); i++) {
+      jobject obj = _jobjects.at(i);
       if (obj != nullptr) {
         oop* oop_ptr = reinterpret_cast<oop*>(obj);
         ptrs[released++] = oop_ptr;
@@ -902,7 +902,7 @@ int JVMCIRuntime::release_and_clear_globals() {
     // Do the bulk release
     object_handles()->release(ptrs, released);
   }
-  _jobjects->clear();
+  _jobjects.clear();
   _last_found_jobject_index = -1;
   return released;
 }
@@ -917,7 +917,7 @@ void JVMCIRuntime::destroy_global(jobject handle) {
   MutexLocker ml(_lock);
   int index = find_jobject(handle);
   guarantee(index != -1, "global not allocated in JVMCI runtime %d: " INTPTR_FORMAT, id(), p2i(handle));
-  _jobjects->at_put(index, nullptr);
+  _jobjects.at_put(index, nullptr);
 }
 
 bool JVMCIRuntime::is_global_handle(jobject handle) {
@@ -971,17 +971,18 @@ static void _fatal() {
   fatal("thread " INTX_FORMAT ": Fatal error in JVMCI shared library", current_thread_id);
 }
 
-JVMCIRuntime::JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker) {
-  _init_state = uninitialized;
-  _shared_library_javavm = nullptr;
-  _shared_library_javavm_id = 0;
-  _id = id;
-  _for_compile_broker = for_compile_broker;
-  _next = next;
-  _metadata_handles = new MetadataHandles();
-  _jobjects = new (ResourceObj::C_HEAP, mtJVMCI) GrowableArray<jobject>(100, mtJVMCI);
-  _last_found_jobject_index = -1;
-
+JVMCIRuntime::JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker) :
+  _init_state(uninitialized),
+  _shared_library_javavm(nullptr),
+  _shared_library_javavm_id(0),
+  _id(id),
+  _next(next),
+  _metadata_handles(new MetadataHandles()),
+  _jobjects(100, mtJVMCI),
+  _num_attached_threads(0),
+  _for_compile_broker(for_compile_broker),
+  _last_found_jobject_index(-1)
+{
   if (id == -1) {
     _lock = JVMCIRuntime_lock;
   } else {
@@ -990,7 +991,6 @@ JVMCIRuntime::JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker) 
     Mutex::Rank lock_rank = DEBUG_ONLY(JVMCIRuntime_lock->rank()) NOT_DEBUG(Mutex::safepoint);
     _lock = new PaddedMonitor(lock_rank, lock_name.as_string(/*c_heap*/true));
   }
-  _num_attached_threads = 0;
   JVMCI_event_1("created new %s JVMCI runtime %d (" PTR_FORMAT ")",
       id == -1 ? "Java" : for_compile_broker ? "CompileBroker" : "Compiler", id, p2i(this));
 }

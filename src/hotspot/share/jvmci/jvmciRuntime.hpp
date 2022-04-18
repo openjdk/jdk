@@ -165,7 +165,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // List of jobjects allocated via make_global. This is to support
   // destroying remaining JNI handles when the JavaVM associated
   // with this runtime is shutdown.
-  GrowableArray<jobject>* _jobjects;
+  GrowableArray<jobject> _jobjects;
 
   // Number of threads attached or about to be attached to this runtime.
   // Must only be mutated under JVMCI_lock to facilitate safely moving
