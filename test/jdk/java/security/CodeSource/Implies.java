@@ -26,6 +26,7 @@
  * @bug 4866847 7152564 7155693
  * @summary various CodeSource.implies tests
  */
+
 import java.security.CodeSource;
 import java.net.URL;
 
@@ -57,10 +58,11 @@ public class Implies {
         CodeSource thatCs
                 = new CodeSource(thatURL, (java.security.cert.Certificate[]) null);
         if (thisCs.implies(thatCs) != result) {
-            throw new SecurityException("test failed");
+            throw new SecurityException("CodeSource.implies() returned "
+                    + !result + " instead of " + result);
         }
         if (thisCs.getCodeSigners() != null && thatCs.getCodeSigners() != null) {
-            throw new RuntimeException("Both getCodeSigners should be null");
+            throw new SecurityException("Both getCodeSigners should be null");
         }
     }
 }
