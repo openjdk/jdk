@@ -982,10 +982,17 @@ JVMCIRuntime::JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker) 
   _jobjects = new (ResourceObj::C_HEAP, mtJVMCI) GrowableArray<jobject>(100, mtJVMCI);
   _last_found_jobject_index = -1;
 
-  _lock = new Monitor(Mutex::JVMCIRuntime_lock_rank, "JVMCIRuntimeLock");
+  if (id == -1) {
+    _lock = JVMCIRuntime_lock;
+  } else {
+    stringStream lock_name;
+    lock_name.print("%s@%d", JVMCIRuntime_lock->name(), id);
+    Mutex::Rank lock_rank = DEBUG_ONLY(JVMCIRuntime_lock->rank()) NOT_DEBUG(Mutex::safepoint);
+    _lock = new PaddedMonitor(lock_rank, lock_name.as_string(/*c_heap*/true));
+  }
   _num_attached_threads = 0;
   JVMCI_event_1("created new %s JVMCI runtime %d (" PTR_FORMAT ")",
-      id == -1 ? "Java" : for_compile_broker ? "CompilerBroker" : "Compiler", id, p2i(this));
+      id == -1 ? "Java" : for_compile_broker ? "CompileBroker" : "Compiler", id, p2i(this));
 }
 
 JVMCIRuntime* JVMCIRuntime::select_runtime_in_shutdown(JavaThread* thread) {
