@@ -1227,7 +1227,7 @@ class JavaThread: public Thread {
 
   JVMCIRuntime* libjvmci_runtime() const          { return _libjvmci_runtime; }
   void set_libjvmci_runtime(JVMCIRuntime* rt) {
-    assert((_libjvmci_runtime == NULL && rt != NULL) || (_libjvmci_runtime != NULL && rt == NULL), "must be");
+    assert((_libjvmci_runtime == nullptr && rt != nullptr) || (_libjvmci_runtime != nullptr && rt == nullptr), "must be");
     _libjvmci_runtime = rt;
   }
 #endif // INCLUDE_JVMCI

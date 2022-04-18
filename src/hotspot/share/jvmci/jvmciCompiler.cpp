@@ -169,7 +169,7 @@ void JVMCICompiler::on_empty_queue(CompileQueue* queue, CompilerThread* thread) 
     JVMCIRuntime* runtime = JVMCI::compiler_runtime(thread, false);
     // Don't detach JVMCI compiler threads from their JVMCI
     // runtime during the VM startup grace period
-    if (runtime != NULL && delay > 0 && tty->time_stamp().milliseconds() > DEFAULT_COMPILER_IDLE_DELAY) {
+    if (runtime != nullptr && delay > 0 && tty->time_stamp().milliseconds() > DEFAULT_COMPILER_IDLE_DELAY) {
       bool timeout = MethodCompileQueue_lock->wait(delay);
       // Unlock as detaching or repacking can result in a JNI call to shutdown a JavaVM
       // and locks cannot be held when making a VM to native transition.

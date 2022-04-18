@@ -58,7 +58,7 @@ class JVMCI : public AllStatic {
   // Special libjvmci based JVMCIRuntime reserved for
   // threads trying to attach when in JVMCI shutdown.
   // This preserves the invariant that JVMCIRuntime::for_thread()
-  // never returns NULL.
+  // never returns nullptr.
   static JVMCIRuntime* _shutdown_compiler_runtime;
 
   // True when at least one JVMCIRuntime::initialize_HotSpotJVMCIRuntime()

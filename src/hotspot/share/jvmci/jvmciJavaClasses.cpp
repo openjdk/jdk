@@ -129,7 +129,7 @@ jmethodID JNIJVMCI::_HotSpotResolvedPrimitiveType_fromMetaspace_method;
   Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::fullClassName(), true, CHECK); \
   InstanceKlass* current = className::_klass;                                            \
   if (current != InstanceKlass::cast(k)) {                                               \
-    if (current != NULL) {                                                               \
+    if (current != nullptr) {                                                            \
       fatal("klass for %s re-initialized: " PTR_FORMAT " -> " PTR_FORMAT,                \
           k->external_name(), p2i(current), p2i(k));                                     \
     }                                                                                    \
@@ -315,7 +315,7 @@ void JNIJVMCI::initialize_field_id(JNIEnv* env, jfieldID &fieldid, jclass clazz,
   // SVM guarantees that jfieldIDs for fields in the native image are also
   // in the image and thus always have the same address.
   if (current != fieldid) {
-    if (current != NULL) {
+    if (current != nullptr) {
       fatal("jfieldID for %s %s.%s re-initialized: " PTR_FORMAT " -> " PTR_FORMAT,
          signature, class_name, name, p2i(current), p2i(fieldid));
     }
@@ -333,13 +333,13 @@ void JNIJVMCI::initialize_field_id(JNIEnv* env, jfieldID &fieldid, jclass clazz,
 
 #define START_CLASS(className, fullClassName) {                                             \
   current_class_name = vmSymbols::fullClassName()->as_C_string();                           \
-  if (JVMCILibDumpJNIConfig != NULL) {                                                      \
+  if (JVMCILibDumpJNIConfig != nullptr) {                                                   \
     fileStream* st = JVMCIGlobals::get_jni_config_file();                                   \
     st->print_cr("class %s", current_class_name);                                           \
   } else {                                                                                  \
     jclass k = env->FindClass(current_class_name);                                          \
     JVMCI_EXCEPTION_CHECK(env, "FindClass(%s)", current_class_name);                        \
-    assert(k != NULL, #fullClassName " not initialized");                                   \
+    assert(k != nullptr, #fullClassName " not initialized");                                \
     k = (jclass) env->NewGlobalRef(k);                                                      \
     jclass current = className::_class;                                                     \
     if (current != k) {                                                                     \
@@ -347,7 +347,7 @@ void JNIJVMCI::initialize_field_id(JNIEnv* env, jfieldID &fieldid, jclass clazz,
       /* SVM guarantees that jclass handles to classes in a native image are also */        \
       /* in the image. Further calling NewGlobalRef on such a handle returns a stable */    \
       /* values across all JavaVMs executing on the same native image. */                   \
-      if (current != NULL) {                                                                \
+      if (current != nullptr) {                                                             \
            fatal("jclass for %s re-initialized: " PTR_FORMAT " -> " PTR_FORMAT,             \
            current_class_name, p2i(current), p2i(k));                                       \
       }                                                                                     \
@@ -369,19 +369,19 @@ void JNIJVMCI::initialize_field_id(JNIEnv* env, jfieldID &fieldid, jclass clazz,
 #define STATIC_BOOLEAN_FIELD(className, name) FIELD(className, name, "Z", true)
 
 #define GET_JNI_METHOD(jniGetMethod, dst, clazz, methodName, signature)                        \
-    if (JVMCILibDumpJNIConfig != NULL) {                                                       \
+    if (JVMCILibDumpJNIConfig != nullptr) {                                                    \
       fileStream* st = JVMCIGlobals::get_jni_config_file();                                    \
       st->print_cr("method %s %s %s", current_class_name, methodName, signature);              \
     } else {                                                                                   \
       jmethodID current = dst;                                                                 \
       dst = env->jniGetMethod(clazz, methodName, signature);                                   \
-      assert(dst != NULL, "uninitialized");                                                    \
+      assert(dst != nullptr, "uninitialized");                                                 \
       if (current != dst) {                                                                    \
         JVMCI_event_2("   jmethodID for %s.%s%s = " PTR_FORMAT,                                \
                     current_class_name, methodName, signature, p2i(dst));                      \
         /* SVM guarantees that jmethodIDs for methods in the native image are also */          \
         /* in the image and thus always have the same address. */                              \
-        if (current != NULL) {                                                                 \
+        if (current != nullptr) {                                                              \
           fatal("jmethod for %s.%s%s re-initialized: " PTR_FORMAT " -> " PTR_FORMAT,           \
                         current_class_name, methodName, signature, p2i(current), p2i(dst));    \
         }                                                                                      \

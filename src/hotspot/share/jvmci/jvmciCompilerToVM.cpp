@@ -2259,7 +2259,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
 }
 
 C2V_VMENTRY_PREFIX(jboolean, isCurrentThreadAttached, (JNIEnv* env, jobject c2vm))
-  if (thread == NULL || thread->libjvmci_runtime() == NULL) {
+  if (thread == nullptr || thread->libjvmci_runtime() == nullptr) {
     // Called from unattached JVMCI shared library thread
     return false;
   }
@@ -2268,7 +2268,7 @@ C2V_VMENTRY_PREFIX(jboolean, isCurrentThreadAttached, (JNIEnv* env, jobject c2vm
     C2V_BLOCK(jboolean, isCurrentThreadAttached, (JNIEnv* env, jobject))
     requireJVMCINativeLibrary(JVMCI_CHECK_0);
     JVMCIRuntime *runtime = thread->libjvmci_runtime();
-    if (runtime == NULL || !runtime->has_shared_library_javavm()) {
+    if (runtime == nullptr || !runtime->has_shared_library_javavm()) {
       JVMCI_THROW_MSG_0(IllegalStateException, "Require JVMCI shared library JavaVM to be initialized in isCurrentThreadAttached");
     }
     JNIEnv* peerEnv;
@@ -2288,7 +2288,7 @@ C2V_END
 
 // Attaches a thread started in a JVMCI shared library to a JavaThread and JVMCI runtime.
 static void attachSharedLibraryThread(JNIEnv* env, jbyteArray name, jboolean as_daemon) {
-  JavaVM* javaVM = NULL;
+  JavaVM* javaVM = nullptr;
   jint res = env->GetJavaVM(&javaVM);
   if (res != JNI_OK) {
     JNI_THROW("attachSharedLibraryThread", InternalError, err_msg("Error getting shared library JavaVM from shared library JNIEnv: %d", res));
@@ -2304,7 +2304,7 @@ static void attachSharedLibraryThread(JNIEnv* env, jbyteArray name, jboolean as_
   JavaVMAttachArgs attach_args;
   attach_args.version = JNI_VERSION_1_2;
   attach_args.name = name_buf;
-  attach_args.group = NULL;
+  attach_args.group = nullptr;
   res = as_daemon ? main_vm.AttachCurrentThreadAsDaemon((void**)&hotspotEnv, &attach_args) :
                     main_vm.AttachCurrentThread((void**)&hotspotEnv, &attach_args);
   if (res != JNI_OK) {
@@ -2318,13 +2318,13 @@ static void attachSharedLibraryThread(JNIEnv* env, jbyteArray name, jboolean as_
     attach_error = JVMCIRuntime::attach_shared_library_thread(thread, javaVM);
     // Transition back to Native
   }
-  if (attach_error != NULL) {
+  if (attach_error != nullptr) {
     JNI_THROW("attachCurrentThread", InternalError, attach_error);
   }
 }
 
 C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jbyteArray name, jboolean as_daemon, jlongArray javaVM_info))
-  if (thread == NULL) {
+  if (thread == nullptr) {
     attachSharedLibraryThread(env, name, as_daemon);
     return true;
   }
@@ -2354,7 +2354,7 @@ C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jb
         peerJVMCIEnv->describe_pending_exception(true);
       }
       char* sl_path;
-      if (JVMCI::get_shared_library(sl_path, false) == NULL) {
+      if (JVMCI::get_shared_library(sl_path, false) == nullptr) {
         JVMCI_THROW_MSG_0(InternalError, "Error initializing JVMCI runtime");
       }
     }
@@ -2362,12 +2362,12 @@ C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jb
     JavaVMAttachArgs attach_args;
     attach_args.version = JNI_VERSION_1_2;
     attach_args.name = const_cast<char*>(thread->name());
-    attach_args.group = NULL;
+    attach_args.group = nullptr;
     jint res = as_daemon ? runtime->AttachCurrentThreadAsDaemon(thread, (void**) &peerJNIEnv, &attach_args) :
                            runtime->AttachCurrentThread(thread, (void**) &peerJNIEnv, &attach_args);
 
     if (res == JNI_OK) {
-      guarantee(peerJNIEnv != NULL, "must be");
+      guarantee(peerJNIEnv != nullptr, "must be");
       runtime->init_JavaVM_info(javaVM_info, JVMCI_CHECK_0);
       JVMCI_event_1("attached to JavaVM[%d] for JVMCI runtime %d", runtime->get_shared_library_javavm_id(), runtime->id());
       return true;
@@ -2379,7 +2379,7 @@ C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jb
 C2V_END
 
 C2V_VMENTRY_PREFIX(jboolean, detachCurrentThread, (JNIEnv* env, jobject c2vm, jboolean release))
-  if (thread == NULL) {
+  if (thread == nullptr) {
     // Called from unattached JVMCI shared library thread
     JNI_THROW_("detachCurrentThread", IllegalStateException, "Cannot detach non-attached thread", false);
   }
@@ -2390,7 +2390,7 @@ C2V_VMENTRY_PREFIX(jboolean, detachCurrentThread, (JNIEnv* env, jobject c2vm, jb
     requireJVMCINativeLibrary(JVMCI_CHECK_0);
     requireInHotSpot("detachCurrentThread", JVMCI_CHECK_0);
     JVMCIRuntime *runtime = thread->libjvmci_runtime();
-    if (runtime == NULL || !runtime->has_shared_library_javavm()) {
+    if (runtime == nullptr || !runtime->has_shared_library_javavm()) {
       JVMCI_THROW_MSG_0(IllegalStateException, "Require JVMCI shared library JavaVM to be initialized in detachCurrentThread");
     }
     JNIEnv* peerEnv;
@@ -2413,7 +2413,7 @@ C2V_VMENTRY_PREFIX(jboolean, detachCurrentThread, (JNIEnv* env, jobject c2vm, jb
       JNI_THROW_("detachCurrentThread", InternalError, "JVMCI shared library thread cannot release JVMCI shared library JavaVM", false);
     }
     JVMCIRuntime *runtime = thread->libjvmci_runtime();
-    if (runtime == NULL) {
+    if (runtime == nullptr) {
       JNI_THROW_("detachCurrentThread", InternalError, "JVMCI shared library thread should have a JVMCI runtime", false);
     }
     {

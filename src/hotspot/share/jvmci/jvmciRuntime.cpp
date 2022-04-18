@@ -893,10 +893,10 @@ int JVMCIRuntime::release_and_clear_globals() {
     oop** ptrs = NEW_RESOURCE_ARRAY(oop*, _jobjects->length());
     for (int i = 0; i < _jobjects->length(); i++) {
       jobject obj = _jobjects->at(i);
-      if (obj != NULL) {
+      if (obj != nullptr) {
         oop* oop_ptr = reinterpret_cast<oop*>(obj);
         ptrs[released++] = oop_ptr;
-        NativeAccess<>::oop_store(oop_ptr, (oop) NULL);
+        NativeAccess<>::oop_store(oop_ptr, (oop) nullptr);
       }
     }
     // Do the bulk release
@@ -911,13 +911,13 @@ void JVMCIRuntime::destroy_global(jobject handle) {
   // Assert before nulling out, for better debugging.
   assert(is_global_handle(handle), "precondition");
   oop* oop_ptr = reinterpret_cast<oop*>(handle);
-  NativeAccess<>::oop_store(oop_ptr, (oop)NULL);
+  NativeAccess<>::oop_store(oop_ptr, (oop)nullptr);
   object_handles()->release(oop_ptr);
 
   MutexLocker ml(_lock);
   int index = find_jobject(handle);
   guarantee(index != -1, "global not allocated in JVMCI runtime %d: " INTPTR_FORMAT, id(), p2i(handle));
-  _jobjects->at_put(index, NULL);
+  _jobjects->at_put(index, nullptr);
 }
 
 bool JVMCIRuntime::is_global_handle(jobject handle) {
@@ -959,10 +959,10 @@ static void _flush_log() {
 // Function for shared library JavaVM to exit HotSpot on a fatal error
 static void _fatal() {
   Thread* thread = Thread::current_or_null_safe();
-  if (thread != NULL && thread->is_Java_thread()) {
+  if (thread != nullptr && thread->is_Java_thread()) {
     JavaThread* jthread = (JavaThread*) thread;
     JVMCIRuntime* runtime = jthread->libjvmci_runtime();
-    if (runtime != NULL) {
+    if (runtime != nullptr) {
       int javaVM_id = runtime->get_shared_library_javavm_id();
       fatal("Fatal error in JVMCI shared library JavaVM[%d] owned by JVMCI runtime %d", javaVM_id, runtime->id());
     }
@@ -973,7 +973,7 @@ static void _fatal() {
 
 JVMCIRuntime::JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker) {
   _init_state = uninitialized;
-  _shared_library_javavm = NULL;
+  _shared_library_javavm = nullptr;
   _shared_library_javavm_id = 0;
   _id = id;
   _for_compile_broker = for_compile_broker;
@@ -998,7 +998,7 @@ JVMCIRuntime::JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker) 
 JVMCIRuntime* JVMCIRuntime::select_runtime_in_shutdown(JavaThread* thread) {
   assert(JVMCI_lock->owner() == thread, "must be");
   // When shutting down, use the first available runtime.
-  for (JVMCIRuntime* runtime = JVMCI::_compiler_runtimes; runtime != NULL; runtime = runtime->_next) {
+  for (JVMCIRuntime* runtime = JVMCI::_compiler_runtimes; runtime != nullptr; runtime = runtime->_next) {
     if (runtime->_num_attached_threads != cannot_be_attached) {
       runtime->pre_attach_thread(thread);
       JVMCI_event_1("using pre-existing JVMCI runtime %d in shutdown", runtime->id());
@@ -1007,8 +1007,8 @@ JVMCIRuntime* JVMCIRuntime::select_runtime_in_shutdown(JavaThread* thread) {
   }
   // Lazily initialize JVMCI::_shutdown_compiler_runtime. Safe to
   // do here since JVMCI_lock is locked.
-  if (JVMCI::_shutdown_compiler_runtime == NULL) {
-    JVMCI::_shutdown_compiler_runtime = new JVMCIRuntime(NULL, -2, true);
+  if (JVMCI::_shutdown_compiler_runtime == nullptr) {
+    JVMCI::_shutdown_compiler_runtime = new JVMCIRuntime(nullptr, -2, true);
   }
   JVMCIRuntime* runtime = JVMCI::_shutdown_compiler_runtime;
   JVMCI_event_1("using reserved shutdown JVMCI runtime %d", runtime->id());
@@ -1018,8 +1018,8 @@ JVMCIRuntime* JVMCIRuntime::select_runtime_in_shutdown(JavaThread* thread) {
 JVMCIRuntime* JVMCIRuntime::select_runtime(JavaThread* thread, JVMCIRuntime* skip, int* count) {
   assert(JVMCI_lock->owner() == thread, "must be");
   bool for_compile_broker = thread->is_Compiler_thread();
-  for (JVMCIRuntime* runtime = JVMCI::_compiler_runtimes; runtime != NULL; runtime = runtime->_next) {
-    if (count != NULL) {
+  for (JVMCIRuntime* runtime = JVMCI::_compiler_runtimes; runtime != nullptr; runtime = runtime->_next) {
+    if (count != nullptr) {
       (*count)++;
     }
     if (for_compile_broker == runtime->_for_compile_broker) {
@@ -1029,7 +1029,7 @@ JVMCIRuntime* JVMCIRuntime::select_runtime(JavaThread* thread, JVMCIRuntime* ski
         continue;
       }
       // If selecting for repacking, ignore a runtime without an existing JavaVM
-      if (skip != NULL && !runtime->has_shared_library_javavm()) {
+      if (skip != nullptr && !runtime->has_shared_library_javavm()) {
         continue;
       }
 
@@ -1040,7 +1040,7 @@ JVMCIRuntime* JVMCIRuntime::select_runtime(JavaThread* thread, JVMCIRuntime* ski
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 JVMCIRuntime* JVMCIRuntime::select_or_create_runtime(JavaThread* thread) {
@@ -1049,7 +1049,7 @@ JVMCIRuntime* JVMCIRuntime::select_or_create_runtime(JavaThread* thread) {
   JVMCIRuntime* runtime;
   if (JVMCI::using_singleton_shared_library_runtime()) {
     runtime = JVMCI::_compiler_runtimes;
-    guarantee(runtime != NULL, "must be");
+    guarantee(runtime != nullptr, "must be");
     while (runtime->_num_attached_threads == cannot_be_attached) {
       // Since there is only a singleton JVMCIRuntime, we
       // need to wait for it to be available for attaching.
@@ -1057,9 +1057,9 @@ JVMCIRuntime* JVMCIRuntime::select_or_create_runtime(JavaThread* thread) {
     }
     runtime->pre_attach_thread(thread);
   } else {
-    runtime = select_runtime(thread, NULL, &id);
+    runtime = select_runtime(thread, nullptr, &id);
   }
-  if (runtime == NULL) {
+  if (runtime == nullptr) {
     runtime = new JVMCIRuntime(JVMCI::_compiler_runtimes, id, thread->is_Compiler_thread());
     JVMCI::_compiler_runtimes = runtime;
     runtime->pre_attach_thread(thread);
@@ -1068,9 +1068,9 @@ JVMCIRuntime* JVMCIRuntime::select_or_create_runtime(JavaThread* thread) {
 }
 
 JVMCIRuntime* JVMCIRuntime::for_thread(JavaThread* thread) {
-  assert(thread->libjvmci_runtime() == NULL, "must be");
+  assert(thread->libjvmci_runtime() == nullptr, "must be");
   // Find the runtime with fewest attached threads
-  JVMCIRuntime* runtime = NULL;
+  JVMCIRuntime* runtime = nullptr;
   {
     MutexLocker locker(JVMCI_lock);
     runtime = JVMCI::in_shutdown() ? select_runtime_in_shutdown(thread) : select_or_create_runtime(thread);
@@ -1081,14 +1081,14 @@ JVMCIRuntime* JVMCIRuntime::for_thread(JavaThread* thread) {
 
 const char* JVMCIRuntime::attach_shared_library_thread(JavaThread* thread, JavaVM* javaVM) {
   MutexLocker locker(JVMCI_lock);
-  for (JVMCIRuntime* runtime = JVMCI::_compiler_runtimes; runtime != NULL; runtime = runtime->_next) {
+  for (JVMCIRuntime* runtime = JVMCI::_compiler_runtimes; runtime != nullptr; runtime = runtime->_next) {
     if (runtime->_shared_library_javavm == javaVM) {
       if (runtime->_num_attached_threads == cannot_be_attached) {
         return "Cannot attach to JVMCI runtime that is shutting down";
       }
       runtime->pre_attach_thread(thread);
       runtime->attach_thread(thread);
-      return NULL;
+      return nullptr;
     }
   }
   return "Cannot find JVMCI runtime";
@@ -1100,7 +1100,7 @@ void JVMCIRuntime::pre_attach_thread(JavaThread* thread) {
 }
 
 void JVMCIRuntime::attach_thread(JavaThread* thread) {
-  assert(thread->libjvmci_runtime() == NULL, "must be");
+  assert(thread->libjvmci_runtime() == nullptr, "must be");
   thread->set_libjvmci_runtime(this);
   guarantee(this == JVMCI::_shutdown_compiler_runtime ||
             _num_attached_threads > 0,
@@ -1109,15 +1109,15 @@ void JVMCIRuntime::attach_thread(JavaThread* thread) {
 }
 
 void JVMCIRuntime::repack(JavaThread* thread) {
-  JVMCIRuntime* new_runtime = NULL;
+  JVMCIRuntime* new_runtime = nullptr;
   {
     MutexLocker locker(JVMCI_lock);
     if (JVMCI::using_singleton_shared_library_runtime() || _num_attached_threads != 1 || JVMCI::in_shutdown()) {
       return;
     }
-    new_runtime = select_runtime(thread, this, NULL);
+    new_runtime = select_runtime(thread, this, nullptr);
   }
-  if (new_runtime != NULL) {
+  if (new_runtime != nullptr) {
     JVMCI_event_1("Moving thread from JVMCI runtime %d to JVMCI runtime %d (%d attached)", _id, new_runtime->_id, new_runtime->_num_attached_threads - 1);
     detach_thread(thread, "moving thread to another JVMCI runtime");
     new_runtime->attach_thread(thread);
@@ -1127,7 +1127,7 @@ void JVMCIRuntime::repack(JavaThread* thread) {
 bool JVMCIRuntime::detach_thread(JavaThread* thread, const char* reason, bool can_destroy_javavm) {
   if (this == JVMCI::_shutdown_compiler_runtime || JVMCI::in_shutdown()) {
     // Do minimal work when shutting down JVMCI
-    thread->set_libjvmci_runtime(NULL);
+    thread->set_libjvmci_runtime(nullptr);
     return false;
   }
   bool should_shutdown;
@@ -1182,7 +1182,7 @@ bool JVMCIRuntime::detach_thread(JavaThread* thread, const char* reason, bool ca
       JVMCI_lock->notify();
     }
   }
-  thread->set_libjvmci_runtime(NULL);
+  thread->set_libjvmci_runtime(nullptr);
   JVMCI_event_1("detached from JVMCI runtime %d", _id);
   return destroyed_javavm;
 }
@@ -1190,7 +1190,7 @@ bool JVMCIRuntime::detach_thread(JavaThread* thread, const char* reason, bool ca
 JNIEnv* JVMCIRuntime::init_shared_library_javavm() {
   MutexLocker locker(_lock);
   JavaVM* javaVM = (JavaVM*) _shared_library_javavm;
-  if (javaVM == NULL) {
+  if (javaVM == nullptr) {
     char* sl_path;
     void* sl_handle = JVMCI::get_shared_library(sl_path, true);
 
@@ -1198,7 +1198,7 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm() {
     typedef jint (*JNI_CreateJavaVM_t)(JavaVM **pvm, void **penv, void *args);
 
     JNI_CreateJavaVM = CAST_TO_FN_PTR(JNI_CreateJavaVM_t, os::dll_lookup(sl_handle, "JNI_CreateJavaVM"));
-    if (JNI_CreateJavaVM == NULL) {
+    if (JNI_CreateJavaVM == nullptr) {
       fatal("Unable to find JNI_CreateJavaVM in %s", sl_path);
     }
 
@@ -1228,10 +1228,10 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm() {
     vm_args.options = options;
     vm_args.nOptions = sizeof(options) / sizeof(JavaVMOption);
 
-    JNIEnv* env = NULL;
+    JNIEnv* env = nullptr;
     int result = (*JNI_CreateJavaVM)(&javaVM, (void**) &env, &vm_args);
     if (result == JNI_OK) {
-      guarantee(env != NULL, "missing env");
+      guarantee(env != nullptr, "missing env");
       _shared_library_javavm_id = javaVM_id;
       _shared_library_javavm = javaVM;
       JVMCI_event_1("created JavaVM[%ld]@" PTR_FORMAT " for JVMCI runtime %d", javaVM_id, p2i(javaVM), _id);
@@ -1240,11 +1240,11 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm() {
       fatal("JNI_CreateJavaVM failed with return value %d", result);
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 void JVMCIRuntime::init_JavaVM_info(jlongArray info, JVMCI_TRAPS) {
-  if (info != NULL) {
+  if (info != nullptr) {
     typeArrayOop info_oop = (typeArrayOop) JNIHandles::resolve(info);
     if (info_oop->length() < 4) {
       JVMCI_THROW_MSG(ArrayIndexOutOfBoundsException, err_msg("%d < 4", info_oop->length()));
@@ -1258,7 +1258,7 @@ void JVMCIRuntime::init_JavaVM_info(jlongArray info, JVMCI_TRAPS) {
 }
 
 #define JAVAVM_CALL_BLOCK                                             \
-  guarantee(thread != NULL && _shared_library_javavm != NULL, "npe"); \
+  guarantee(thread != nullptr && _shared_library_javavm != nullptr, "npe"); \
   ThreadToNativeFromVM ttnfv(thread);                                 \
   JavaVM* javavm = (JavaVM*) _shared_library_javavm;
 
@@ -1523,12 +1523,12 @@ bool JVMCIRuntime::destroy_shared_library_javavm() {
     // and release the handle to it.
     MutexLocker only_one(_lock);
     javaVM = (JavaVM*) _shared_library_javavm;
-    if (javaVM != NULL) {
-      _shared_library_javavm = NULL;
+    if (javaVM != nullptr) {
+      _shared_library_javavm = nullptr;
       _shared_library_javavm_id = 0;
     }
   }
-  if (javaVM != NULL) {
+  if (javaVM != nullptr) {
     int result;
     {
       // Must transition into native before calling into libjvmci
@@ -1958,7 +1958,7 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
   if (JVMCI::in_shutdown()) {
     if (UseJVMCINativeLibrary) {
       JVMCIRuntime *runtime = JVMCI::compiler_runtime(thread, false);
-      if (runtime != NULL) {
+      if (runtime != nullptr) {
         runtime->detach_thread(thread, "JVMCI shutdown pre-empted compilation");
       }
     }
@@ -1991,7 +1991,7 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
         bool retryable = JVMCIENV->get_HotSpotCompilationRequestResult_retry(result_object) != 0;
         compile_state->set_failure(retryable, failure_reason, true);
       } else {
-        if (compile_state->task()->code() == NULL) {
+        if (compile_state->task()->code() == nullptr) {
           compile_state->set_failure(true, "no nmethod produced");
         } else {
           compile_state->task()->set_num_inlined_bytecodes(JVMCIENV->get_HotSpotCompilationRequestResult_inlinedBytecodes(result_object));
@@ -2217,7 +2217,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
 
 void JVMCIRuntime::post_compile(JavaThread* thread) {
   if (UseJVMCINativeLibrary && JVMCI::one_shared_library_javavm_per_compilation()) {
-    if (thread->libjvmci_runtime() != NULL) {
+    if (thread->libjvmci_runtime() != nullptr) {
       detach_thread(thread, "single use JavaVM");
     } else {
       // JVMCI shutdown may have already detached the thread

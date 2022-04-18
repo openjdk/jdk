@@ -213,7 +213,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // If such a runtime exists, its _num_attached_threads is incremented
   // and the caller must subsequently attach `thread` to it.
   // JVMCI_lock must be held by current thread.
-  // If NULL is returned, then `*count` contains the number of JVMCIRuntimes
+  // If nullptr is returned, then `*count` contains the number of JVMCIRuntimes
   // currently allocated.
   static JVMCIRuntime* select_runtime(JavaThread* thread, JVMCIRuntime* skip, int* count);
 
@@ -243,11 +243,11 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // Ensures that a JVMCI shared library JavaVM exists for this runtime.
   // If the JavaVM was created by this call, then the thread-local JNI
-  // interface pointer for the JavaVM is returned otherwise NULL is returned.
+  // interface pointer for the JavaVM is returned otherwise nullptr is returned.
   JNIEnv* init_shared_library_javavm();
 
   // Determines if the JVMCI shared library JavaVM exists for this runtime.
-  bool has_shared_library_javavm() { return _shared_library_javavm != NULL; }
+  bool has_shared_library_javavm() { return _shared_library_javavm != nullptr; }
 
   // Gets an ID for the JVMCI shared library JavaVM associated with this runtime.
   int get_shared_library_javavm_id() { return _shared_library_javavm_id; }
@@ -342,7 +342,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // Shuts down this runtime by calling HotSpotJVMCIRuntime.shutdown().
   // If this is the last thread attached to this runtime, then
-  // `_HotSpotJVMCIRuntime_instance` is set to NULL and `_init_state`
+  // `_HotSpotJVMCIRuntime_instance` is set to nullptr and `_init_state`
   // to uninitialized.
   void shutdown();
 

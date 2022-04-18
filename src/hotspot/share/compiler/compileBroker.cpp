@@ -441,7 +441,7 @@ CompileTask* CompileQueue::get(CompilerThread* thread) {
     }
 
     AbstractCompiler *compiler = thread->compiler();
-    guarantee(compiler != NULL, "Compiler object must exist");
+    guarantee(compiler != nullptr, "Compiler object must exist");
     compiler->on_empty_queue(this, thread);
 
     // If there are no compilation tasks and we can compile new jobs
@@ -2258,7 +2258,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       post_compilation_event(event, task);
     }
 
-    if (runtime != NULL) {
+    if (runtime != nullptr) {
       runtime->post_compile(thread);
     }
   } else
