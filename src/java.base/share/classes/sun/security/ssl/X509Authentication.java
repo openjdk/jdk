@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,13 +122,39 @@ enum X509Authentication implements SSLAuthentication {
         final X509Certificate[]   popCerts;
         final PrivateKey          popPrivateKey;
 
+        private final ECParameterSpec     ecParams;
+        private final NamedGroup          ecNamedGroup;
+
+        private final NamedParameterSpec  xecParams;
+        private final NamedGroup          xecNamedGroup;
+
         X509Possession(PrivateKey popPrivateKey,
                 X509Certificate[] popCerts) {
             this.popCerts = popCerts;
             this.popPrivateKey = popPrivateKey;
+
+            ecParams = getECParams();
+
+            if (ecParams != null) {
+                ecNamedGroup = NamedGroup.valueOf(ecParams);
+
+                xecParams = null;
+                xecNamedGroup = null;
+            } else {
+                ecNamedGroup = null;
+
+                // Wasn't EC, try XEC.
+                xecParams = getXECParams();
+                xecNamedGroup = xecParams != null
+                        ? NamedGroup.nameOf(xecParams.getName()) : null;
+            }
         }
 
         ECParameterSpec getECParameterSpec() {
+            return ecParams;
+        }
+
+        private ECParameterSpec getECParams() {
             if (popPrivateKey == null ||
                     !"EC".equals(popPrivateKey.getAlgorithm())) {
                 return null;
@@ -148,8 +174,12 @@ enum X509Authentication implements SSLAuthentication {
             return null;
         }
 
-        // Similar to above, but for XEC.
         NamedParameterSpec getXECParameterSpec() {
+            return xecParams;
+        }
+
+        // Similar to above, but for XEC.
+        private NamedParameterSpec getXECParams() {
             if (popPrivateKey == null ||
                     !"XEC".equals(popPrivateKey.getAlgorithm())) {
                 return null;
@@ -175,6 +205,14 @@ enum X509Authentication implements SSLAuthentication {
             }
 
             return null;
+        }
+
+        NamedGroup getNamedGroup() {
+            return ecNamedGroup != null ? ecNamedGroup : xecNamedGroup;
+        }
+
+        NamedGroup getECNamedGroup() {
+            return ecNamedGroup;
         }
     }
 

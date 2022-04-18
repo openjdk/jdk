@@ -474,8 +474,7 @@ enum SignatureScheme {
         PrivateKey signingKey = x509Possession.popPrivateKey;
 
         ECParameterSpec params = x509Possession.getECParameterSpec();
-        NamedGroup namedGroup = params != null
-                ? NamedGroup.valueOf(params) : null;
+        NamedGroup namedGroup = x509Possession.getECNamedGroup();
 
         String keyAlgorithm = signingKey.getAlgorithm();
         int keySize;

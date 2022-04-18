@@ -297,7 +297,7 @@ final class ECDHKeyExchange {
                     continue;
                 }
 
-                NamedGroup ng = NamedGroup.valueOf(params);
+                NamedGroup ng = ((X509Possession)poss).getECNamedGroup();
                 if (ng == null) {
                     // unlikely, have been checked during cipher suite
                     // negotiation.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,22 +269,9 @@ final class ECDHClientKeyExchange {
                     "No expected EC server cert for ECDH client key exchange");
             }
 
-            // Determine which NamedGroup we'll be using, then use
-            // the creator functions.
-            NamedGroup namedGroup = null;
-
             // Iteratively determine the X509Possession type's ParameterSpec.
             ECParameterSpec ecParams = x509Possession.getECParameterSpec();
-            NamedParameterSpec namedParams = null;
-            if (ecParams != null) {
-                namedGroup = NamedGroup.valueOf(ecParams);
-            }
-
-            // Wasn't EC, try XEC.
-            if (ecParams == null) {
-                namedParams = x509Possession.getXECParameterSpec();
-                namedGroup = NamedGroup.nameOf(namedParams.getName());
-            }
+            NamedParameterSpec namedParams = x509Possession.getXECParameterSpec();
 
             // Can't figure this out, bail.
             if ((ecParams == null) && (namedParams == null)) {
@@ -292,6 +279,10 @@ final class ECDHClientKeyExchange {
                 throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Not EC/XDH server cert for ECDH client key exchange");
             }
+
+            // Determine which NamedGroup we'll be using, then use
+            // the creator functions.
+            NamedGroup namedGroup = x509Possession.getNamedGroup();
 
             // unlikely, have been checked during cipher suite negotiation.
             if (namedGroup == null) {
