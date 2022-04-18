@@ -168,16 +168,6 @@ source %{
       return false;
     }
 
-    // These nodes generate lower cost NEON instructions when vector length is
-    // 64 or 128 bits.
-    if (opcode == Op_AddReductionVI || opcode == Op_AddReductionVL) {
-      assert(is_integral_type(bt), "should be");
-      return length_in_bytes > 16;
-    }
-    if ((opcode == Op_MinReductionV || opcode == Op_MaxReductionV) &&
-        (bt == T_BYTE || bt == T_SHORT || bt == T_INT)) {
-      return length_in_bytes > 16;
-    }
     return op_sve_supported(opcode, vlen, bt);
   }
 
