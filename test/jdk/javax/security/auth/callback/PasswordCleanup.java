@@ -31,26 +31,57 @@ import javax.security.auth.callback.PasswordCallback;
 import java.util.WeakHashMap;
 
 public final class PasswordCleanup {
-    private final static WeakHashMap<PasswordCallback, ?> whm =
-        new WeakHashMap<>();
+    private final static WeakHashMap<PasswordCallback, ?> weakHashMap =
+            new WeakHashMap<>();
 
     public static void main(String[] args) throws Exception {
+        // Test password clearing at finalization.
+        clearAtCollection();
+
+        // Test password clearing with the specific method.
+        clearWithMethod();
+    }
+
+    private static void clearAtCollection() throws Exception {
         // Create an object
         PasswordCallback passwordCallback =
                 new PasswordCallback("Password: ", false);
         passwordCallback.setPassword("ThisIsAPassword".toCharArray());
-        whm.put(passwordCallback, null);
+        passwordCallback.clearPassword();
+        weakHashMap.put(passwordCallback, null);
         passwordCallback = null;
 
+        // Check the clearing
+        checkClearing();
+    }
+
+    private static void clearWithMethod() throws Exception {
+        // Create an object
+        PasswordCallback passwordCallback =
+                new PasswordCallback("Password: ", false);
+        passwordCallback.setPassword("ThisIsAPassword".toCharArray());
+
+        // Use password clear method.
+        passwordCallback.clearPassword();
+
+        weakHashMap.put(passwordCallback, null);
+        passwordCallback = null;
+
+        // Check the clearing
+        checkClearing();
+    }
+
+    private static void checkClearing() throws Exception {
         // Wait to trigger the cleanup.
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10 && weakHashMap.size() != 0; i++) {
             System.gc();
             Thread.sleep(100);
         }
 
         // Check if the object has been collected.
-        if (whm.size() > 0) {
+        if (weakHashMap.size() > 0) {
             throw new RuntimeException("GSSName object is not released");
         }
     }
 }
+
