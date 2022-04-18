@@ -21,7 +21,7 @@
  * questions.
  */
 
- /*
+/*
  * @test
  * @bug 4866847 7152564 7155693
  * @summary various CodeSource.implies tests
