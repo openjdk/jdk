@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@ import static java.util.GregorianCalendar.*;
 
 public class NarrowNamesTest {
     private static final Locale US = Locale.US;
-    private static final Locale JAJPJP = new Locale("ja", "JP", "JP");
-    private static final Locale THTH = new Locale("th", "TH");
+    private static final Locale JAJPJP = Locale.of("ja", "JP", "JP");
+    private static final Locale THTH = Locale.of("th", "TH");
 
     private static final String RESET_INDEX = "RESET_INDEX";
 

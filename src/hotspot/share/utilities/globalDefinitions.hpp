@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -813,6 +813,9 @@ extern int type2aelembytes(BasicType t, bool allow_address = false); // asserts
 inline int type2aelembytes(BasicType t, bool allow_address = false) { return _type2aelembytes[t]; }
 #endif
 
+inline bool same_type_or_subword_size(BasicType t1, BasicType t2) {
+  return (t1 == t2) || (is_subword_type(t1) && type2aelembytes(t1) == type2aelembytes(t2));
+}
 
 // JavaValue serves as a container for arbitrary Java values.
 

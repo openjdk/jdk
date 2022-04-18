@@ -51,11 +51,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * The base class for member writers.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public abstract class AbstractMemberWriter implements MemberSummaryWriter, MemberWriter {
 
@@ -237,9 +232,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             target.add(resources.getText("doclet.Package_private"));
             target.add(" ");
         }
-        boolean isAnnotatedTypeElement = utils.isAnnotationType(member.getEnclosingElement());
-        if (!isAnnotatedTypeElement && utils.isMethod(member)) {
-            if (!utils.isInterface(member.getEnclosingElement()) && utils.isAbstract(member)) {
+        if (!utils.isAnnotationInterface(member.getEnclosingElement()) && utils.isMethod(member)) {
+            if (!utils.isPlainInterface(member.getEnclosingElement()) && utils.isAbstract(member)) {
                 target.add("abstract ");
             }
             if (utils.isDefault(member)) {
@@ -322,15 +316,13 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             Content typeContent = new ContentBuilder();
             if (te != null
                     && !utils.isConstructor(element)
-                    && !utils.isClass(element)
-                    && !utils.isInterface(element)
-                    && !utils.isAnnotationType(element)) {
+                    && !utils.isTypeElement(element)) {
                 var name = new HtmlTree(TagName.SPAN);
                 name.setStyle(HtmlStyle.typeNameLabel);
                 name.add(name(te) + ".");
                 typeContent.add(name);
             }
-            addSummaryLink(utils.isClass(element) || utils.isInterface(element)
+            addSummaryLink(utils.isClass(element) || utils.isPlainInterface(element)
                     ? HtmlLinkInfo.Kind.CLASS_USE
                     : HtmlLinkInfo.Kind.MEMBER,
                     te, element, typeContent);

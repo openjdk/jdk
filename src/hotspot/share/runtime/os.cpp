@@ -54,7 +54,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -1045,11 +1045,7 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
 // Check if pointer can be read from (4-byte read access).
 // Helps to prove validity of a not-NULL pointer.
 // Returns true in very early stages of VM life when stub is not yet generated.
-#define SAFEFETCH_DEFAULT true
 bool os::is_readable_pointer(const void* p) {
-  if (!CanUseSafeFetch32()) {
-    return SAFEFETCH_DEFAULT;
-  }
   int* const aligned = (int*) align_down((intptr_t)p, 4);
   int cafebabe = 0xcafebabe;  // tester value 1
   int deadbeef = 0xdeadbeef;  // tester value 2
@@ -1675,7 +1671,13 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
   return result;
 }
 
+static void assert_nonempty_range(const char* addr, size_t bytes) {
+  assert(addr != nullptr && bytes > 0, "invalid range [" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(addr), p2i(addr) + bytes);
+}
+
 bool os::commit_memory(char* addr, size_t bytes, bool executable) {
+  assert_nonempty_range(addr, bytes);
   bool res = pd_commit_memory(addr, bytes, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
@@ -1685,6 +1687,7 @@ bool os::commit_memory(char* addr, size_t bytes, bool executable) {
 
 bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
                               bool executable) {
+  assert_nonempty_range(addr, size);
   bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
@@ -1694,17 +1697,20 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
 
 void os::commit_memory_or_exit(char* addr, size_t bytes, bool executable,
                                const char* mesg) {
+  assert_nonempty_range(addr, bytes);
   pd_commit_memory_or_exit(addr, bytes, executable, mesg);
   MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
 }
 
 void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
                                bool executable, const char* mesg) {
+  assert_nonempty_range(addr, size);
   os::pd_commit_memory_or_exit(addr, size, alignment_hint, executable, mesg);
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 
 bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
+  assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
     Tracker tkr(Tracker::uncommit);
@@ -1719,6 +1725,7 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
 }
 
 bool os::release_memory(char* addr, size_t bytes) {
+  assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
     // Note: Tracker contains a ThreadCritical.

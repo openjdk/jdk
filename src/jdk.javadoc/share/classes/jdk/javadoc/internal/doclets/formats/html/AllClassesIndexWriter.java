@@ -116,12 +116,12 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                 .setId(HtmlIds.ALL_CLASSES_TABLE)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
-                .addTab(contents.interfaces, utils::isInterface)
-                .addTab(contents.classes, e -> utils.isOrdinaryClass((TypeElement)e))
+                .addTab(contents.interfaces, utils::isPlainInterface)
+                .addTab(contents.classes, e -> utils.isNonThrowableClass((TypeElement)e))
                 .addTab(contents.enums, utils::isEnum)
                 .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
                 .addTab(contents.exceptionClasses, e -> utils.isThrowable((TypeElement)e))
-                .addTab(contents.annotationTypes, utils::isAnnotationType);
+                .addTab(contents.annotationTypes, utils::isAnnotationInterface);
         for (Character unicode : indexBuilder.getFirstCharacters()) {
             for (IndexItem indexItem : indexBuilder.getItems(unicode)) {
                 TypeElement typeElement = (TypeElement) indexItem.getElement();
