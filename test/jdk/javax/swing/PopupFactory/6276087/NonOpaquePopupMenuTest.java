@@ -30,7 +30,7 @@
 import java.awt.Point;
 import java.awt.Dimension;
 import java.awt.Robot;
-import java.awt.event.*;
+import java.awt.event.InputEvent;
 
 import javax.swing.JFrame;
 import javax.swing.JMenu;
