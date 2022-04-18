@@ -978,7 +978,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm == null)
-                return new ForkJoinWorkerThread(null, pool, true);
+                return new ForkJoinWorkerThread(null, pool, true, false);
             else if (isCommon)
                 return newCommonWithACC(pool);
             else
@@ -1010,7 +1010,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             return AccessController.doPrivileged(
                 new PrivilegedAction<>() {
                     public ForkJoinWorkerThread run() {
-                        return new ForkJoinWorkerThread(null, pool, true);
+                        return new ForkJoinWorkerThread(null, pool, true, false);
                     }}, acc);
         }
 

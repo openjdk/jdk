@@ -33,7 +33,6 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-
 package java.util.concurrent;
 
 import java.security.AccessController;
@@ -73,8 +72,8 @@ public class ForkJoinWorkerThread extends Thread {
      * Full nonpublic constructor.
      */
     ForkJoinWorkerThread(ThreadGroup group, ForkJoinPool pool,
-                         boolean useSystemClassLoader) {
-        super(group, null, pool.nextWorkerThreadName(), 0L);
+                         boolean useSystemClassLoader, boolean isInnocuous) {
+        super(group, null, pool.nextWorkerThreadName(), 0L, !isInnocuous);
         UncaughtExceptionHandler handler = (this.pool = pool).ueh;
         this.workQueue = new ForkJoinPool.WorkQueue(this, 0);
         super.setDaemon(true);
@@ -92,8 +91,8 @@ public class ForkJoinWorkerThread extends Thread {
      * @param pool the pool this thread works in
      * @throws NullPointerException if pool is null
      */
-    ForkJoinWorkerThread(ThreadGroup group, ForkJoinPool pool) {
-        this(group, pool, false);
+    protected ForkJoinWorkerThread(ThreadGroup group, ForkJoinPool pool) {
+        this(group, pool, false, false);
     }
 
     /**
@@ -103,7 +102,7 @@ public class ForkJoinWorkerThread extends Thread {
      * @throws NullPointerException if pool is null
      */
     protected ForkJoinWorkerThread(ForkJoinPool pool) {
-        this(null, pool, false);
+        this(null, pool, false, false);
     }
 
     /**
@@ -193,7 +192,7 @@ public class ForkJoinWorkerThread extends Thread {
         @SuppressWarnings("removal")
         private static final AccessControlContext innocuousACC;
         InnocuousForkJoinWorkerThread(ForkJoinPool pool) {
-            super(innocuousThreadGroup, pool, true);
+            super(innocuousThreadGroup, pool, true, true);
         }
 
         @Override @SuppressWarnings("removal")
@@ -203,7 +202,6 @@ public class ForkJoinWorkerThread extends Thread {
                 w.setInnocuous();
             Thread t = Thread.currentThread();
             ThreadLocalRandom.setInheritedAccessControlContext(t, innocuousACC);
-            ThreadLocalRandom.eraseThreadLocals(t);
         }
 
         @Override // to silently fail
