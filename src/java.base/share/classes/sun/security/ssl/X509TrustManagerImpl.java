@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -389,7 +389,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
      * in server_name extension or the peer host of the connection.  Peer host
      * is not always a reliable fully qualified domain name. The HostName in
      * server_name extension is more reliable than peer host. So we prefer
-     * the identity checking aginst the server_name extension if present, and
+     * the identity checking against the server_name extension if present, and
      * may failove to peer host checking.
      */
     static void checkIdentity(SSLSession session,

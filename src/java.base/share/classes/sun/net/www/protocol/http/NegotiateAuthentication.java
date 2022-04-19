@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private final HttpCallerInfo hci;
 
-    // These maps are used to manage the GSS availability for diffrent
+    // These maps are used to manage the GSS availability for different
     // hosts. The key for both maps is the host name.
     // <code>supported</code> is set when isSupported is checked,
     // if it's true, a cached Negotiator is put into <code>cache</code>.
@@ -97,7 +97,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
     /**
      * Find out if the HttpCallerInfo supports Negotiate protocol. In order to
      * find out yes or no, an initialization of a Negotiator object against it
-     * is tried. The generated object will be cached under the name of ths
+     * is tried. The generated object will be cached under the name of the
      * hostname at a success try.<br>
      *
      * If this method is called for the second time on an HttpCallerInfo with

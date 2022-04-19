@@ -771,7 +771,7 @@ public class KeyStore {
         }
 
         /**
-         * Gets the trusted {@code Certficate} from this entry.
+         * Gets the trusted {@code Certificate} from this entry.
          *
          * @return the trusted {@code Certificate} from this entry
          */

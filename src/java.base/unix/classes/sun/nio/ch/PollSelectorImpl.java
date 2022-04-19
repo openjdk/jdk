@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,7 +255,7 @@ class PollSelectorImpl extends SelectorImpl {
     }
 
     /**
-     * Sets the first pollfd enty in the poll array to the given fd
+     * Sets the first pollfd entry in the poll array to the given fd
      */
     private void setFirst(int fd, int ops) {
         assert pollArraySize == 0;
