@@ -1057,7 +1057,7 @@ public class CheckMethodAdapter extends MethodVisitor {
                 throw new IllegalStateException("Undefined try catch block labels");
             }
             if (endInsnIndex.intValue() <= startInsnIndex.intValue()) {
-                throw new IllegalStateException("Empty try catch block handler range");
+                throw new IllegalStateException("Emty try catch block handler range");
             }
         }
         checkUnsignedShort(maxStack, "Invalid max stack");

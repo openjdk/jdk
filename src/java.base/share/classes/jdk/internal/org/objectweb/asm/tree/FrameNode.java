@@ -68,7 +68,7 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 /**
  * A node that represents a stack map frame. These nodes are pseudo instruction nodes in order to be
  * inserted in an instruction list. In fact these nodes must(*) be inserted <i>just before</i> any
- * instruction node <b>i</b> that follows an unconditional branch instruction such as GOTO or
+ * instruction node <b>i</b> that follows an unconditionnal branch instruction such as GOTO or
  * THROW, that is the target of a jump instruction, or that starts an exception handler block. The
  * stack map frame types must describe the values of the local variables and of the operand stack
  * elements <i>just before</i> <b>i</b> is executed. <br>
