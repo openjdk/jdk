@@ -54,8 +54,7 @@ public class PrintGlyphVectorTest extends Component implements Printable {
 
     private static final String INSTRUCTIONS = """
             Note: You must have a printer installed for this test.
-            If printer is not available, then 'PRINT' button will
-            be in disabled state then press 'Pass' button.
+            If printer is not available, the test passes automatically.
 
             Press the PRINT button on the 'Test PrintGlyphVector' frame
             and press OK/print button on the print dialog.
@@ -122,18 +121,18 @@ public class PrintGlyphVectorTest extends Component implements Printable {
     }
 
     private static void createTestUI() {
-        Frame f = new Frame("Test PrintGlyphVector");
-        PrintGlyphVectorTest pvt = new PrintGlyphVectorTest();
-        f.add(pvt, BorderLayout.CENTER);
-
-        Button printButton = new Button("PRINT");
         PrinterJob pj = PrinterJob.getPrinterJob();
-        if (pj == null || pj.getPrintService() == null) {
+        if (pj.getPrintService() == null) {
             System.out.println("Printer not configured or available."
                     + " Test cannot continue.");
             PassFailJFrame.forcePass();
         }
 
+        Frame f = new Frame("Test PrintGlyphVector");
+        PrintGlyphVectorTest pvt = new PrintGlyphVectorTest();
+        f.add(pvt, BorderLayout.CENTER);
+
+        Button printButton = new Button("PRINT");
         printButton.addActionListener((e) -> {
             pj.setPrintable(new PrintGlyphVectorTest());
             if (pj.printDialog()) {
