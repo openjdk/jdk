@@ -1872,6 +1872,11 @@ public final class Main {
             System.err.println(form.format(source));
         }
 
+        CertPathConstraintsParameters cpcp =
+                new CertPathConstraintsParameters(secKey, null, null, null);
+        checkWeakConstraint(rb.getString("the.generated.secretkey"),
+                keyAlgName, cpcp);
+
         if (keyPass == null) {
             keyPass = promptForKeyPass(alias, null, storePass);
         }
@@ -2185,6 +2190,15 @@ public final class Main {
             } else {
                 out.println("SecretKeyEntry, ");
             }
+
+            try {
+                SecretKey secKey = (SecretKey) keyStore.getKey(alias, storePass);
+                String secKeyAlg = secKey.getAlgorithm();
+                cpcp = new CertPathConstraintsParameters(secKey, null, null, null);
+                checkWeakConstraint(label, secKeyAlg, cpcp);
+            } catch (UnrecoverableKeyException e) {
+                // skip
+            }
         } else if (keyStore.entryInstanceOf(alias, KeyStore.PrivateKeyEntry.class)) {
             if (verbose || rfc || debug) {
                 Object[] source = {"PrivateKeyEntry"};
@@ -2492,8 +2506,19 @@ public final class Main {
                 CertPathConstraintsParameters cpcp =
                         buildCertPathConstraint((X509Certificate)c, null);
                 checkWeakConstraint("<" + newAlias + ">", c, cpcp);
+                keyStore.setEntry(newAlias, entry, pp);
+            } else {
+                keyStore.setEntry(newAlias, entry, pp);
+                try {
+                    Key key = keyStore.getKey(newAlias, newPass);
+                    CertPathConstraintsParameters cpcp =
+                            new CertPathConstraintsParameters(key, null, null, null);
+                    checkWeakConstraint("<" + newAlias + ">", key.getAlgorithm(), cpcp);
+                } catch (UnrecoverableKeyException e) {
+                    // skip
+                }
             }
-            keyStore.setEntry(newAlias, entry, pp);
+
             // Place the check so that only successful imports are blocked.
             // For example, we don't block a failed SecretEntry import.
             if (P12KEYSTORE.equalsIgnoreCase(storetype) && !isPasswordlessKeyStore) {
@@ -5004,6 +5029,17 @@ public final class Main {
             // No need to check the sigalg of a trust anchor
             String sigAlg = isTrustedCert(cert) ? null : xc.getSigAlgName();
             checkWeakConstraint(label, sigAlg, xc.getPublicKey(), cpcp);
+        }
+    }
+
+    private void checkWeakConstraint(String label, String algName,
+            CertPathConstraintsParameters cpcp) {
+        // Do not check disabled algorithms for symmetric key based algorithms for now
+        try {
+            LEGACY_CHECK.permits(algName, cpcp, false);
+        } catch (CertPathValidatorException e) {
+            weakWarnings.add(String.format(
+                    rb.getString("key.algorithm.weak"), label, algName));
         }
     }
 
