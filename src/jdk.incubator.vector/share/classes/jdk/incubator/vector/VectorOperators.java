@@ -548,7 +548,7 @@ public abstract class VectorOperators {
     public static final /*bitwise*/ Binary LSHL = binary("LSHL", "<<", VectorSupport.VECTOR_OP_LSHIFT, VO_SHIFT);
     /** Produce {@code a>>(n&(ESIZE*8-1))}.  Integral only. */
     public static final /*bitwise*/ Binary ASHR = binary("ASHR", ">>", VectorSupport.VECTOR_OP_RSHIFT, VO_SHIFT);
-    /** Produce {@code a>>>(n&(ESIZE*8-1))}.  Integral only. */
+    /** Produce zero-extended right shift of {@code a} by {@code (n&(ESIZE*8-1))} bits.  Integral only. */
     public static final /*bitwise*/ Binary LSHR = binary("LSHR", ">>>", VectorSupport.VECTOR_OP_URSHIFT, VO_SHIFT);
     /** Produce {@code rotateLeft(a,n)}.  Integral only. */
     public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT);
