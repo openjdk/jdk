@@ -24,7 +24,9 @@
 import java.awt.EventQueue;
 import java.lang.reflect.InvocationTargetException;
 
-import javax.swing.*;
+import javax.swing.JApplet;
+import javax.swing.JLabel;
+import javax.swing.JTabbedPane;
 
 /**
  * @test
@@ -34,6 +36,7 @@ import javax.swing.*;
  * not always fit within the tab.
  * @run applet/manual=yesno bug4209065.html
  */
+
 public final class bug4209065 extends JApplet {
 
     @Override
