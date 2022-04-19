@@ -1361,7 +1361,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     val_phi->init_req(_heap_stable, val);
 
     // Test for in-cset, unless it's a native-LRB. Native LRBs need to return NULL
-    // even for non-cset objects to prevent ressurrection of such objects.
+    // even for non-cset objects to prevent resurrection of such objects.
     // Wires !in_cset(obj) to slot 2 of region and phis
     Node* not_cset_ctrl = NULL;
     if (ShenandoahBarrierSet::is_strong_access(lrb->decorators())) {

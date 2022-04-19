@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -549,7 +549,7 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-// CatchProjNode controls which exception handler is targetted after a call.
+// CatchProjNode controls which exception handler is targeted after a call.
 // It is passed in the bci of the target handler, or no_handler_bci in case
 // the projection doesn't lead to an exception handler.
 class CatchProjNode : public CProjNode {

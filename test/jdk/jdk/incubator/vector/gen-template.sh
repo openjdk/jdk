@@ -70,6 +70,8 @@ bool_reduction_template="BoolReduction-op"
 with_op_template="With-Op"
 shift_template="Shift-op"
 shift_masked_template="Shift-Masked-op"
+shift_const_template="Shift-Const-op"
+shift_masked_const_template="Shift-Masked-Const-op"
 get_template="Get-op"
 rearrange_template="Rearrange"
 broadcast_template="Broadcast"
@@ -264,10 +266,16 @@ function gen_binary_alu_bcst_long_op {
   gen_op_tmpl $binary_broadcast_masked_long "$@"
 }
 
-function gen_shift_cst_op {
+function gen_shift_op {
   echo "Generating Shift constant op $1 ($2)..."
   gen_op_tmpl $shift_template "$@"
   gen_op_tmpl $shift_masked_template "$@"
+}
+
+function gen_shift_cst_op {
+  echo "Generating Shift constant op $1 ($2)..."
+  gen_op_tmpl $shift_const_template "$@"
+  gen_op_tmpl $shift_masked_const_template "$@"
 }
 
 function gen_unary_alu_op {
@@ -424,19 +432,28 @@ gen_binary_alu_op "ASHR" "(a >> (b \& 0xF))" "short"
 gen_binary_alu_op "LSHR" "(a >>> b)" "intOrLong"
 gen_binary_alu_op "LSHR" "((a \& 0xFF) >>> (b \& 0x7))" "byte"
 gen_binary_alu_op "LSHR" "((a \& 0xFFFF) >>> (b \& 0xF))" "short"
-gen_shift_cst_op  "LSHL" "(a << b)" "intOrLong"
-gen_shift_cst_op  "LSHL" "(a << (b \& 7))" "byte"
-gen_shift_cst_op  "LSHL" "(a << (b \& 15))" "short"
-gen_shift_cst_op  "LSHR" "(a >>> b)" "intOrLong"
-gen_shift_cst_op  "LSHR" "((a \& 0xFF) >>> (b \& 7))" "byte"
-gen_shift_cst_op  "LSHR" "((a \& 0xFFFF) >>> (b \& 15))" "short"
-gen_shift_cst_op  "ASHR" "(a >> b)" "intOrLong"
-gen_shift_cst_op  "ASHR" "(a >> (b \& 7))" "byte"
-gen_shift_cst_op  "ASHR" "(a >> (b \& 15))" "short"
+gen_shift_op  "LSHL" "(a << b)" "intOrLong"
+gen_shift_op  "LSHL" "(a << (b \& 7))" "byte"
+gen_shift_op  "LSHL" "(a << (b \& 15))" "short"
+gen_shift_op  "LSHR" "(a >>> b)" "intOrLong"
+gen_shift_op  "LSHR" "((a \& 0xFF) >>> (b \& 7))" "byte"
+gen_shift_op  "LSHR" "((a \& 0xFFFF) >>> (b \& 15))" "short"
+gen_shift_op  "ASHR" "(a >> b)" "intOrLong"
+gen_shift_op  "ASHR" "(a >> (b \& 7))" "byte"
+gen_shift_op  "ASHR" "(a >> (b \& 15))" "short"
 gen_binary_alu_op "ROR" "ROR_scalar(a,b)" "BITWISE"
 gen_binary_alu_op "ROL" "ROL_scalar(a,b)" "BITWISE"
-gen_shift_cst_op  "ROR" "ROR_scalar(a,b)" "BITWISE"
-gen_shift_cst_op  "ROL" "ROL_scalar(a,b)" "BITWISE"
+gen_shift_op  "ROR" "ROR_scalar(a, b)" "BITWISE"
+gen_shift_op  "ROL" "ROL_scalar(a, b)" "BITWISE"
+
+# Constant Shifts
+gen_shift_cst_op  "LSHR" "(a >>> CONST_SHIFT)" "intOrLong"
+gen_shift_cst_op  "LSHR" "((a \& 0xFF) >>> CONST_SHIFT)" "byte"
+gen_shift_cst_op  "LSHR" "((a \& 0xFFFF) >>> CONST_SHIFT)" "short"
+gen_shift_cst_op  "LSHL" "(a << CONST_SHIFT)" "BITWISE"
+gen_shift_cst_op  "ASHR" "(a >> CONST_SHIFT)" "BITWISE"
+gen_shift_cst_op  "ROR" "ROR_scalar(a, CONST_SHIFT)" "BITWISE"
+gen_shift_cst_op  "ROL" "ROL_scalar(a, CONST_SHIFT)" "BITWISE"
 
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "Math.min(a, b)"

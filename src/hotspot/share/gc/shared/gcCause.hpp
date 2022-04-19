@@ -125,7 +125,7 @@ class GCCause : public AllStatic {
   // Causes for collection of the young generation
   inline static bool is_allocation_failure_gc(GCCause::Cause cause) {
     // _allocation_failure is the generic cause a collection for allocation failure
-    // _adaptive_size_policy is for a collecton done before a full GC
+    // _adaptive_size_policy is for a collection done before a full GC
     return (cause == GCCause::_allocation_failure ||
             cause == GCCause::_adaptive_size_policy ||
             cause == GCCause::_shenandoah_allocation_failure_evac);

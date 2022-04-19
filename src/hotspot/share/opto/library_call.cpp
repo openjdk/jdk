@@ -752,7 +752,7 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
     }
 #endif
     Node* slow_ctl = control();
-    set_control(top()); // No fast path instrinsic
+    set_control(top()); // No fast path intrinsic
     return slow_ctl;
   }
 }
@@ -1065,7 +1065,7 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
     return true;
   }
 
-  // length is now known postive, add a cast node to make this explicit
+  // length is now known positive, add a cast node to make this explicit
   jlong upper_bound = _gvn.type(length)->is_integer(bt)->hi_as_long();
   Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
   casted_length = _gvn.transform(casted_length);
@@ -2194,32 +2194,49 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
 }
 
 //--------------------------inline_unsigned_divmod_methods-----------------------------
-// inline int Integer.divideUnsigned(init, int)
+// inline int Integer.divideUnsigned(int, int)
 // inline int Integer.remainderUnsigned(int, int)
+// inline long Long.divideUnsigned(long, long)
+// inline long Long.remainderUnsigned(long, long)
 bool LibraryCallKit::inline_divmod_methods(vmIntrinsics::ID id) {
   Node* n = NULL;
-  switch(id) {
-    case vmIntrinsics::_divideUnsigned_i:
+  switch (id) {
+    case vmIntrinsics::_divideUnsigned_i: {
       zero_check_int(argument(1));
-      // Compile-time detect of null-exception?
-      if (stopped()) return false;
+      // Compile-time detect of null-exception
+      if (stopped()) {
+        return true; // keep the graph constructed so far
+      }
       n = new UDivINode(control(), argument(0), argument(1));
       break;
-    case vmIntrinsics::_divideUnsigned_l:
+    }
+    case vmIntrinsics::_divideUnsigned_l: {
       zero_check_long(argument(2));
-      // Compile-time detect of null-exception?
-      if (stopped()) return false;
-      n = new UDivLNode(control(), argument(0), argument(2));  break;
-    case vmIntrinsics::_remainderUnsigned_i:
+      // Compile-time detect of null-exception
+      if (stopped()) {
+        return true; // keep the graph constructed so far
+      }
+      n = new UDivLNode(control(), argument(0), argument(2));
+      break;
+    }
+    case vmIntrinsics::_remainderUnsigned_i: {
       zero_check_int(argument(1));
-      // Compile-time detect of null-exception?
-      if (stopped()) return false;
-      n = new UModINode(control(), argument(0), argument(1));  break;
-    case vmIntrinsics::_remainderUnsigned_l:
+      // Compile-time detect of null-exception
+      if (stopped()) {
+        return true; // keep the graph constructed so far
+      }
+      n = new UModINode(control(), argument(0), argument(1));
+      break;
+    }
+    case vmIntrinsics::_remainderUnsigned_l: {
       zero_check_long(argument(2));
-      // Compile-time detect of null-exception?
-      if (stopped()) return false;
-      n = new UModLNode(control(), argument(0), argument(2));  break;
+      // Compile-time detect of null-exception
+      if (stopped()) {
+        return true; // keep the graph constructed so far
+      }
+      n = new UModLNode(control(), argument(0), argument(2));
+      break;
+    }
     default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
@@ -2250,7 +2267,7 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
   }
 
   // The sharpened class might be unloaded if there is no class loader
-  // contraint in place.
+  // constraint in place.
   if (sharpened_klass != NULL && sharpened_klass->is_loaded()) {
     const TypeOopPtr* tjp = TypeOopPtr::make_from_klass(sharpened_klass);
 
@@ -4458,7 +4475,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
 // If we have a tightly coupled allocation, the arraycopy may take care
 // of the array initialization. If one of the guards we insert between
 // the allocation and the arraycopy causes a deoptimization, an
-// unitialized array will escape the compiled method. To prevent that
+// uninitialized array will escape the compiled method. To prevent that
 // we set the JVM state for uncommon traps between the allocation and
 // the arraycopy to the state before the allocation so, in case of
 // deoptimization, we'll reexecute the allocation and the
@@ -5732,7 +5749,7 @@ bool LibraryCallKit::inline_updateDirectByteBufferCRC32C() {
 // int java.util.zip.Adler32.updateBytes(int crc, byte[] buf, int off, int len)
 //
 bool LibraryCallKit::inline_updateBytesAdler32() {
-  assert(UseAdler32Intrinsics, "Adler32 Instrinsic support need"); // check if we actually need to check this flag or check a different one
+  assert(UseAdler32Intrinsics, "Adler32 Intrinsic support need"); // check if we actually need to check this flag or check a different one
   assert(callee()->signature()->size() == 4, "updateBytes has 4 parameters");
   assert(callee()->holder()->is_loaded(), "Adler32 class must be loaded");
   // no receiver since it is static method
@@ -5778,7 +5795,7 @@ bool LibraryCallKit::inline_updateBytesAdler32() {
 // int java.util.zip.Adler32.updateByteBuffer(int crc, long buf, int off, int len)
 //
 bool LibraryCallKit::inline_updateByteBufferAdler32() {
-  assert(UseAdler32Intrinsics, "Adler32 Instrinsic support need"); // check if we actually need to check this flag or check a different one
+  assert(UseAdler32Intrinsics, "Adler32 Intrinsic support need"); // check if we actually need to check this flag or check a different one
   assert(callee()->signature()->size() == 5, "updateByteBuffer has 4 parameters and one is long");
   assert(callee()->holder()->is_loaded(), "Adler32 class must be loaded");
   // no receiver since it is static method
@@ -6268,7 +6285,7 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
 Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object) {
 #if defined(PPC64) || defined(S390)
   // MixColumns for decryption can be reduced by preprocessing MixColumns with round keys.
-  // Intel's extention is based on this optimization and AESCrypt generates round keys by preprocessing MixColumns.
+  // Intel's extension is based on this optimization and AESCrypt generates round keys by preprocessing MixColumns.
   // However, ppc64 vncipher processes MixColumns and requires the same round keys with encryption.
   // The ppc64 stubs of encryption and decryption use the same round keys (sessionK[0]).
   Node* objSessionK = load_field_from_object(aescrypt_object, "sessionK", "[[I");
@@ -6601,31 +6618,31 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   switch(id) {
   case vmIntrinsics::_md5_implCompress:
     assert(UseMD5Intrinsics, "need MD5 instruction support");
-    state = get_state_from_digest_object(digestBase_obj, "[I");
+    state = get_state_from_digest_object(digestBase_obj, T_INT);
     stubAddr = StubRoutines::md5_implCompress();
     stubName = "md5_implCompress";
     break;
   case vmIntrinsics::_sha_implCompress:
     assert(UseSHA1Intrinsics, "need SHA1 instruction support");
-    state = get_state_from_digest_object(digestBase_obj, "[I");
+    state = get_state_from_digest_object(digestBase_obj, T_INT);
     stubAddr = StubRoutines::sha1_implCompress();
     stubName = "sha1_implCompress";
     break;
   case vmIntrinsics::_sha2_implCompress:
     assert(UseSHA256Intrinsics, "need SHA256 instruction support");
-    state = get_state_from_digest_object(digestBase_obj, "[I");
+    state = get_state_from_digest_object(digestBase_obj, T_INT);
     stubAddr = StubRoutines::sha256_implCompress();
     stubName = "sha256_implCompress";
     break;
   case vmIntrinsics::_sha5_implCompress:
     assert(UseSHA512Intrinsics, "need SHA512 instruction support");
-    state = get_state_from_digest_object(digestBase_obj, "[J");
+    state = get_state_from_digest_object(digestBase_obj, T_LONG);
     stubAddr = StubRoutines::sha512_implCompress();
     stubName = "sha512_implCompress";
     break;
   case vmIntrinsics::_sha3_implCompress:
     assert(UseSHA3Intrinsics, "need SHA3 instruction support");
-    state = get_state_from_digest_object(digestBase_obj, "[B");
+    state = get_state_from_digest_object(digestBase_obj, T_BYTE);
     stubAddr = StubRoutines::sha3_implCompress();
     stubName = "sha3_implCompress";
     digest_length = get_digest_length_from_digest_object(digestBase_obj);
@@ -6689,7 +6706,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
   const char* klass_digestBase_name = NULL;
   const char* stub_name = NULL;
   address     stub_addr = NULL;
-  const char* state_type = "[I";
+  BasicType elem_type = T_INT;
 
   switch (predicate) {
   case 0:
@@ -6718,7 +6735,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
       klass_digestBase_name = "sun/security/provider/SHA5";
       stub_name = "sha512_implCompressMB";
       stub_addr = StubRoutines::sha512_implCompressMB();
-      state_type = "[J";
+      elem_type = T_LONG;
     }
     break;
   case 4:
@@ -6726,7 +6743,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
       klass_digestBase_name = "sun/security/provider/SHA3";
       stub_name = "sha3_implCompressMB";
       stub_addr = StubRoutines::sha3_implCompressMB();
-      state_type = "[B";
+      elem_type = T_BYTE;
     }
     break;
   default:
@@ -6744,21 +6761,21 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
     ciKlass* klass_digestBase = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make(klass_digestBase_name));
     assert(klass_digestBase->is_loaded(), "predicate checks that this class is loaded");
     ciInstanceKlass* instklass_digestBase = klass_digestBase->as_instance_klass();
-    return inline_digestBase_implCompressMB(digestBase_obj, instklass_digestBase, state_type, stub_addr, stub_name, src_start, ofs, limit);
+    return inline_digestBase_implCompressMB(digestBase_obj, instklass_digestBase, elem_type, stub_addr, stub_name, src_start, ofs, limit);
   }
   return false;
 }
 
 //------------------------------inline_digestBase_implCompressMB-----------------------
 bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciInstanceKlass* instklass_digestBase,
-                                                      const char* state_type, address stubAddr, const char *stubName,
+                                                      BasicType elem_type, address stubAddr, const char *stubName,
                                                       Node* src_start, Node* ofs, Node* limit) {
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_digestBase);
   const TypeOopPtr* xtype = aklass->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
   Node* digest_obj = new CheckCastPPNode(control(), digestBase_obj, xtype);
   digest_obj = _gvn.transform(digest_obj);
 
-  Node* state = get_state_from_digest_object(digest_obj, state_type);
+  Node* state = get_state_from_digest_object(digest_obj, elem_type);
   if (state == NULL) return false;
 
   Node* digest_length = NULL;
@@ -6918,13 +6935,20 @@ Node* LibraryCallKit::inline_galoisCounterMode_AESCrypt_predicate() {
 }
 
 //------------------------------get_state_from_digest_object-----------------------
-Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object, const char *state_type) {
+Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object, BasicType elem_type) {
+  const char* state_type;
+  switch (elem_type) {
+    case T_BYTE: state_type = "[B"; break;
+    case T_INT:  state_type = "[I"; break;
+    case T_LONG: state_type = "[J"; break;
+    default: ShouldNotReachHere();
+  }
   Node* digest_state = load_field_from_object(digest_object, "state", state_type);
   assert (digest_state != NULL, "wrong version of sun.security.provider.MD5/SHA/SHA2/SHA5/SHA3");
   if (digest_state == NULL) return (Node *) NULL;
 
   // now have the array, need to get the start address of the state array
-  Node* state = array_element_address(digest_state, intcon(0), T_INT);
+  Node* state = array_element_address(digest_state, intcon(0), elem_type);
   return state;
 }
 

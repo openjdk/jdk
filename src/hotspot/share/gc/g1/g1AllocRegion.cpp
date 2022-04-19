@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region) {
 
   // Other threads might still be trying to allocate using a CAS out
   // of the region we are trying to retire, as they can do so without
-  // holding the lock. So, we first have to make sure that noone else
+  // holding the lock. So, we first have to make sure that no one else
   // can allocate out of it by doing a maximal allocation. Even if our
   // CAS attempt fails a few times, we'll succeed sooner or later
   // given that failed CAS attempts mean that the region is getting
@@ -65,7 +65,7 @@ size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region) {
   size_t free_word_size = alloc_region->free() / HeapWordSize;
 
   // This is the minimum free chunk we can turn into a dummy
-  // object. If the free space falls below this, then noone can
+  // object. If the free space falls below this, then no one can
   // allocate in this region anyway (all allocation requests will be
   // of a size larger than this) so we won't have to perform the dummy
   // allocation.
