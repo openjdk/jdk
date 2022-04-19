@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,7 +197,7 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
         if (responses == null) {
             this.ocspResponses = Collections.<X509Certificate, byte[]>emptyMap();
         } else {
-            Map<X509Certificate, byte[]> copy = new HashMap<>(responses.size());
+            Map<X509Certificate, byte[]> copy = HashMap.newHashMap(responses.size());
             for (Map.Entry<X509Certificate, byte[]> e : responses.entrySet()) {
                 copy.put(e.getKey(), e.getValue().clone());
             }
@@ -216,7 +216,7 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
      *        Returns an empty map if no responses have been specified.
      */
     public Map<X509Certificate, byte[]> getOcspResponses() {
-        Map<X509Certificate, byte[]> copy = new HashMap<>(ocspResponses.size());
+        Map<X509Certificate, byte[]> copy = HashMap.newHashMap(ocspResponses.size());
         for (Map.Entry<X509Certificate, byte[]> e : ocspResponses.entrySet()) {
             copy.put(e.getKey(), e.getValue().clone());
         }

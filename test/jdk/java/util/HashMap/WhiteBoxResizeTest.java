@@ -48,7 +48,7 @@ import static org.testng.Assert.assertNull;
 
 /*
  * @test
- * @bug 8210280 8281631
+ * @bug 8186958 8210280 8281631
  * @modules java.base/java.util:open
  * @summary White box tests for HashMap-related internals around table sizing
  * @run testng WhiteBoxResizeTest
@@ -201,7 +201,7 @@ public class WhiteBoxResizeTest {
     @DataProvider(name = "requestedCapacity")
     public Iterator<Object[]> requestedCapacityCases() {
         ArrayList<Object[]> cases = new ArrayList<>();
-        for (int i = 2; i < 128; i++) {
+        for (int i = 2; i < 64; i++) {
             int cap = i;
             cases.add(new Object[]{"rhm1", cap, (Supplier<Map<String, String>>) () -> new HashMap<>(cap)});
             cases.add(new Object[]{"rhm2", cap, (Supplier<Map<String, String>>) () -> new HashMap<>(cap, 0.75f)});
@@ -280,7 +280,7 @@ public class WhiteBoxResizeTest {
                 pcc("flm2pa", size, cap, () -> new LinkedHashMap<>(cap, 0.75f),    map -> { map.putAll(fakeMap(size)); }),
 
                 pcc("fwmcpy", size, cap, () -> new WeakHashMap<>(fakeMap(size)),   map -> { }),
-                // pcc("fwm0pa", size, cap, () -> new WeakHashMap<>(),                map -> { map.putAll(fakeMap(size)); }), // see note
+             // pcc("fwm0pa", size, cap, () -> new WeakHashMap<>(),                map -> { map.putAll(fakeMap(size)); }), // see note
                 pcc("fwm1pa", size, cap, () -> new WeakHashMap<>(cap),             map -> { map.putAll(fakeMap(size)); }),
                 pcc("fwm2pa", size, cap, () -> new WeakHashMap<>(cap, 0.75f),      map -> { map.putAll(fakeMap(size)); })
         );
@@ -292,16 +292,19 @@ public class WhiteBoxResizeTest {
     @DataProvider(name = "populatedCapacity")
     public Iterator<Object[]> populatedCapacityCases() {
         ArrayList<Object[]> cases = new ArrayList<>();
-        cases.addAll(genPopulatedCapacityCases(11,  16));
         cases.addAll(genPopulatedCapacityCases(12,  16));
         cases.addAll(genPopulatedCapacityCases(13,  32));
-        cases.addAll(genPopulatedCapacityCases(64, 128));
+        cases.addAll(genPopulatedCapacityCases(24,  32));
+        cases.addAll(genPopulatedCapacityCases(25,  64));
+        cases.addAll(genPopulatedCapacityCases(48,  64));
+        cases.addAll(genPopulatedCapacityCases(49, 128));
 
         // numbers in this range are truncated by a float computation with 0.75f
         // but can get an exact result with a double computation with 0.75d
-        cases.addAll(genFakePopulatedCapacityCases(25165824, 33554432));
-        cases.addAll(genFakePopulatedCapacityCases(25165825, 67108864));
-        cases.addAll(genFakePopulatedCapacityCases(25165826, 67108864));
+        cases.addAll(genFakePopulatedCapacityCases(25165824,  33554432));
+        cases.addAll(genFakePopulatedCapacityCases(25165825,  67108864));
+        cases.addAll(genFakePopulatedCapacityCases(50331648,  67108864));
+        cases.addAll(genFakePopulatedCapacityCases(50331649, 134217728));
 
         return cases.iterator();
     }
@@ -317,4 +320,53 @@ public class WhiteBoxResizeTest {
         assertEquals(capacity(map), expectedCapacity);
     }
 
+    /*
+     * tests for requested size (static factory methods)
+     */
+
+    // helper method for one requested size case, to provide target types for lambda
+    Object[] rsc(String label,
+                 int size,
+                 int expectedCapacity,
+                 Supplier<Map<String, String>> supplier) {
+        return new Object[]{label, size, expectedCapacity, supplier};
+    }
+
+    List<Object[]> genRequestedSizeCases(int size, int cap) {
+        return Arrays.asList(
+                rsc("rshm", size, cap, () -> HashMap.newHashMap(size)),
+                rsc("rslm", size, cap, () -> LinkedHashMap.newLinkedHashMap(size)),
+                rsc("rswm", size, cap, () -> WeakHashMap.newWeakHashMap(size))
+        );
+    }
+
+    @DataProvider(name = "requestedSize")
+    public Iterator<Object[]> requestedSizeCases() {
+        ArrayList<Object[]> cases = new ArrayList<>();
+        cases.addAll(genRequestedSizeCases(12,  16));
+        cases.addAll(genRequestedSizeCases(13,  32));
+        cases.addAll(genRequestedSizeCases(24,  32));
+        cases.addAll(genRequestedSizeCases(25,  64));
+        cases.addAll(genRequestedSizeCases(48,  64));
+        cases.addAll(genRequestedSizeCases(49, 128));
+
+        // numbers in this range are truncated by a float computation with 0.75f
+        // but can get an exact result with a double computation with 0.75d
+        cases.addAll(genRequestedSizeCases(25165824,  33554432));
+        cases.addAll(genRequestedSizeCases(25165825,  67108864));
+        cases.addAll(genRequestedSizeCases(50331648,  67108864));
+        cases.addAll(genRequestedSizeCases(50331649, 134217728));
+
+        return cases.iterator();
+    }
+
+    @Test(dataProvider = "requestedSize")
+    public void requestedSize(String label,  // unused, included for diagnostics
+                              int size,      // unused, included for diagnostics
+                              int expectedCapacity,
+                              Supplier<Map<String, String>> s) {
+        Map<String, String> map = s.get();
+        map.put("", "");
+        assertEquals(capacity(map), expectedCapacity);
+    }
 }
