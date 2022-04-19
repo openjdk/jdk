@@ -569,7 +569,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
              * java.lang.annotation.Annotation."
              *
              * The methods in Object or Annotation meeting the other
-             * criteria (no arguments, contrained return type, etc.)
+             * criteria (no arguments, constrained return type, etc.)
              * above are:
              *
              * String toString()

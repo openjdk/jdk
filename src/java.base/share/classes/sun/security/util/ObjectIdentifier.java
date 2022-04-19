@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public final class ObjectIdentifier implements Serializable {
      *    Otherwise, old object cannot recognize the form (component not int[])
      *    and throw a ClassNotFoundException at deserialization time.
      *
-     * Therfore, for the first 3 cases, exact compatibility is preserved. In
+     * Therefore, for the first 3 cases, exact compatibility is preserved. In
      * the 4th case, non-huge OID is still supportable in old versions, while
      * huge OID is not.
      */
