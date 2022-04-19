@@ -861,7 +861,7 @@ kern_return_t catch_mach_exception_raise(
               "task port %d exc type = %d num_codes %d\n",
               exception_port, thread_port, task_port, exception_type, num_codes);
 
-  // Uncommon traps in the JVM can result in a "crash. We just ignore them.
+  // Uncommon traps in the JVM can result in a "crash". We just ignore them.
   // Returning a result other than KERN_SUCCESS means it will be passed on to the
   // next handler, which should be in the JVM so it can do the right thing with it.
   if (exception_type == EXC_BAD_INSTRUCTION || exception_type == EXC_BAD_ACCESS) {
