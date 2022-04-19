@@ -147,7 +147,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // Result of calling JNI_CreateJavaVM in the JVMCI shared library.
   // Must only be mutated under _lock.
-  volatile JavaVM* _shared_library_javavm;
+  JavaVM* _shared_library_javavm;
 
   // Id for _shared_library_javavm.
   int _shared_library_javavm_id;

@@ -1189,7 +1189,7 @@ bool JVMCIRuntime::detach_thread(JavaThread* thread, const char* reason, bool ca
 
 JNIEnv* JVMCIRuntime::init_shared_library_javavm() {
   MutexLocker locker(_lock);
-  JavaVM* javaVM = (JavaVM*) _shared_library_javavm;
+  JavaVM* javaVM = _shared_library_javavm;
   if (javaVM == nullptr) {
     char* sl_path;
     void* sl_handle = JVMCI::get_shared_library(sl_path, true);
@@ -1249,7 +1249,7 @@ void JVMCIRuntime::init_JavaVM_info(jlongArray info, JVMCI_TRAPS) {
     if (info_oop->length() < 4) {
       JVMCI_THROW_MSG(ArrayIndexOutOfBoundsException, err_msg("%d < 4", info_oop->length()));
     }
-    JavaVM* javaVM = (JavaVM*) _shared_library_javavm;
+    JavaVM* javaVM = _shared_library_javavm;
     info_oop->long_at_put(0, (jlong) (address) javaVM);
     info_oop->long_at_put(1, (jlong) (address) javaVM->functions->reserved0);
     info_oop->long_at_put(2, (jlong) (address) javaVM->functions->reserved1);
@@ -1260,7 +1260,7 @@ void JVMCIRuntime::init_JavaVM_info(jlongArray info, JVMCI_TRAPS) {
 #define JAVAVM_CALL_BLOCK                                             \
   guarantee(thread != nullptr && _shared_library_javavm != nullptr, "npe"); \
   ThreadToNativeFromVM ttnfv(thread);                                 \
-  JavaVM* javavm = (JavaVM*) _shared_library_javavm;
+  JavaVM* javavm = _shared_library_javavm;
 
 jint JVMCIRuntime::AttachCurrentThread(JavaThread* thread, void **penv, void *args) {
   JAVAVM_CALL_BLOCK
@@ -1522,7 +1522,7 @@ bool JVMCIRuntime::destroy_shared_library_javavm() {
     // Exactly one thread can destroy the JavaVM
     // and release the handle to it.
     MutexLocker only_one(_lock);
-    javaVM = (JavaVM*) _shared_library_javavm;
+    javaVM = _shared_library_javavm;
     if (javaVM != nullptr) {
       _shared_library_javavm = nullptr;
       _shared_library_javavm_id = 0;
