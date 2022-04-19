@@ -166,7 +166,7 @@ public class LinkedHashSet<E>
      * @throws NullPointerException if the specified collection is null
      */
     public LinkedHashSet(Collection<? extends E> c) {
-        super(Math.max(2*c.size(), 11), .75f, true);
+        super(HashMap.calculateHashMapCapacity(Math.max(c.size(), 12)), .75f, true);
         addAll(c);
     }
 
