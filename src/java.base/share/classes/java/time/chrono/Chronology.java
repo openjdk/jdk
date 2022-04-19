@@ -775,15 +775,18 @@ public interface Chronology extends Comparable<Chronology> {
     /**
      * Checks if this chronology is ISO based.
      * <p>
-     * An ISO based chronology has the same basic structure of days and
-     * months as the ISO chronology, with month lengths generally aligned
-     * with those in the ISO January to December definitions.
-     * For example, the Minguo, ThaiBuddhist and Japanese chronologies.
+     * An ISO based chronology has the same basic structure as the {@link IsoChronology
+     * ISO chronology}, i.e., the chronology has the same number of months, the number
+     * of days in each month, and day-of-year and leap years are the same as ISO chronology.
+     * It also supports the concept of week-based-year of ISO chronology.
+     * For example, the {@link MinguoChronology Minguo}, {@link ThaiBuddhistChronology
+     * ThaiThaiBuddhist} and {@link JapaneseChronology Japanese} chronologies are ISO based.
      *
      * @implSpec
      * The default implementation returns {@code false}.
      *
-     * @return true if the chronology is ISO based
+     * @return {@code true} only if all the fields of {@link IsoFields} are supported by
+     *          this chronology. Otherwise, returns {@code false}.
      * @see IsoChronology
      * @see JapaneseChronology
      * @see MinguoChronology

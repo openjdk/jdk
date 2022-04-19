@@ -69,6 +69,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
+import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.ValueRange;
@@ -337,9 +338,10 @@ public final class ThaiBuddhistChronology extends AbstractChronology implements 
 
     //-----------------------------------------------------------------------
     /**
-     * {@code ThaiBuddhistChronology} is an ISO based chronology, which supports fields,
-     * such as {@code DAY_OF_QUARTER} and {@code QUARTER_OF_YEAR}.
-     * @implSpec The implementation always returns {@code true}.
+     * {@code ThaiBuddhistChronology} is an ISO based chronology, which supports fields
+     * in {@link IsoFields}, such as {@link IsoFields#DAY_OF_QUARTER DAY_OF_QUARTER}
+     * and {@link IsoFields#QUARTER_OF_YEAR QUARTER_OF_YEAR}.
+     * @see IsoFields
      * @return {@code true}
      * @since 19
      */
