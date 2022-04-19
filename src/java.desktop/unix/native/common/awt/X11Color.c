@@ -299,7 +299,7 @@ awt_fill_imgcv(ImgConvertFcn **array, int mask, int value, ImgConvertFcn fcn)
 }
 
 #ifndef HEADLESS
-void free_graphics_config_data_internal(AwtGraphicsConfigDataPtr awt_data) {
+void cleanup_graphics_config_data(AwtGraphicsConfigDataPtr awt_data) {
     if (awt_data->awtImage != NULL) {
         free(awt_data->awtImage);
         awt_data->awtImage = NULL;
@@ -342,7 +342,7 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
     char *forcegray;
 
     // Clean up awt_data for reuse, avoid memory leak
-    free_graphics_config_data_internal(awt_data);
+    cleanup_graphics_config_data(awt_data);
 
     make_uns_ordered_dither_array(img_oda_alpha, 256);
 
@@ -360,7 +360,7 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
     depth = awt_data->awt_depth;
     pVI = &awt_data->awt_visInfo;
     awt_data->awt_num_colors = awt_data->awt_visInfo.colormap_size;
-    awt_data->awtImage = (awtImageData *) calloc(1, sizeof(awtImageData));
+    awt_data->awtImage = (awtImageData *) calloc (1, sizeof (awtImageData));
     if (awt_data->awtImage == NULL) {
         return 0;
     }
@@ -519,7 +519,7 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
                        OrdColorDcmOpqUnsImageConvert);
 #endif /* NEED_IMAGE_CONVERT */
     } else {
-        free_graphics_config_data_internal(awt_data);
+        cleanup_graphics_config_data(awt_data);
         return 0;
     }
 
@@ -534,14 +534,14 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
     }
 
     if (awt_data->awt_num_colors > paletteSize) {
-        free_graphics_config_data_internal(awt_data);
+        cleanup_graphics_config_data(awt_data);
         return 0;
     }
 
     /* Allocate ColorData structure */
     awt_data->color_data = ZALLOC (_ColorData);
     if (awt_data->color_data == NULL) {
-        free_graphics_config_data_internal(awt_data);
+        cleanup_graphics_config_data(awt_data);
         return 0;
     }
 
@@ -562,7 +562,7 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
     awt_data->color_data->awt_Colors =
         (ColorEntry *)calloc(paletteSize, sizeof (ColorEntry));
     if (awt_data->color_data->awt_Colors == NULL) {
-        free_graphics_config_data_internal(awt_data);
+        cleanup_graphics_config_data(awt_data);
         return 0;
     }
 
@@ -639,7 +639,7 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
         awt_data->color_data->img_grays =
             (unsigned char *)calloc(256, sizeof(unsigned char));
         if ( awt_data->color_data->img_grays == NULL) {
-            free_graphics_config_data_internal(awt_data);
+            cleanup_graphics_config_data(awt_data);
             return 0;
         }
         for (g = 0; g < 256; g++) {
@@ -783,10 +783,10 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
         k = getVirtCubeSize();
     }
     awt_data->color_data->img_clr_tbl =
-            (unsigned char *) calloc(LOOKUPSIZE * LOOKUPSIZE * LOOKUPSIZE,
-                                     sizeof(unsigned char));
+        (unsigned char *)calloc(LOOKUPSIZE * LOOKUPSIZE * LOOKUPSIZE,
+                                sizeof(unsigned char));
     if (awt_data->color_data->img_clr_tbl == NULL) {
-        free_graphics_config_data_internal(awt_data);
+        cleanup_graphics_config_data(awt_data);
         return 0;
     }
 
@@ -835,14 +835,11 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
 
     /* Fill in the ICM lut and lut2cmap mapping */
     awt_data->color_data->awt_numICMcolors = 0;
-    if (awt_data->color_data->awt_icmLUT2Colors != NULL) {
-        free(awt_data->color_data->awt_icmLUT2Colors);
-    }
     awt_data->color_data->awt_icmLUT2Colors =
         (unsigned char *)calloc(paletteSize, sizeof (unsigned char));
     awt_data->color_data->awt_icmLUT = (int *)calloc(paletteSize, sizeof(int));
     if (awt_data->color_data->awt_icmLUT2Colors == NULL || awt_data->color_data->awt_icmLUT == NULL) {
-        free_graphics_config_data_internal(awt_data);
+        cleanup_graphics_config_data(awt_data);
         return 0;
     }
 
