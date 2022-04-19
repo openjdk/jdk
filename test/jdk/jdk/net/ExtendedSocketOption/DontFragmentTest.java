@@ -44,11 +44,11 @@ public class DontFragmentTest {
         testDatagramChannel(args, fam);
         try (DatagramSocket c = new DatagramSocket()) {
             testDatagramSocket(c);
-	}
+        }
         try (DatagramChannel dc = DatagramChannel.open(fam)) {
             var c = dc.socket();
             testDatagramSocket(c);
-	}
+        }
         testMulticastSocket();
     }
 
