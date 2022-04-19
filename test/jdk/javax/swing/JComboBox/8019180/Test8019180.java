@@ -60,7 +60,7 @@ public class Test8019180 implements Runnable {
             this.test.setSelectedIndex(1 + index);
             if (0 > this.test.getSelectedIndex()) {
                 System.err.println("ERROR: no selection");
-                System.exit(8019180);
+                throw new RuntimeException("Combobox not selected");
             }
             SwingUtilities.getWindowAncestor(this.test).dispose();
             LATCH.countDown();
