@@ -104,6 +104,7 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_WindowsSocketOptions_getIpDontFragment0
     if (family == AF_INET) {
         rv = getsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, (char *)&optval, &sz);
         if (rv == SOCKET_ERROR && WSAGetLastError() == WSAENOPROTOOPT) {
+            sz = sizeof(optval);
             rv = getsockopt(fd, IPPROTO_IP, IP_DONTFRAGMENT, (char *)&optval, &sz);
             handleError(env, rv, "get option IP_DONTFRAGMENT failed");
             return optval;
