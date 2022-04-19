@@ -239,7 +239,7 @@ $(window).on("load", function() {
             resultSection.hide();
         } else {
             notify.html(messages.searching);
-            doSearch({ term: term }, renderResults);
+            doSearch({ term: term, maxResults: 1200 }, renderResults);
         }
     }
     function setSearchUrl() {

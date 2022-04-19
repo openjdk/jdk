@@ -41,7 +41,7 @@ const categories = {
 };
 const highlight = "<span class='result-highlight'>$&</span>";
 const NO_MATCH = {};
-const MAX_RESULTS = 1200;
+const MAX_RESULTS = 500;
 function checkUnnamed(name, separator) {
     return name === "<Unnamed>" || !name ? "" : name + separator;
 }
@@ -235,6 +235,7 @@ function rateNoise(str) {
 }
 function doSearch(request, response) {
     var term = request.term.trim();
+    var maxResults = request.maxResults || MAX_RESULTS;
     if (term.length === 0) {
         return this.close();
     }
@@ -297,7 +298,7 @@ function doSearch(request, response) {
                 }
                 matches.push(m);
             }
-            return matches.length < MAX_RESULTS;
+            return matches.length < maxResults;
         });
         return matches.sort(function(e1, e2) {
             return e2.score - e1.score;
