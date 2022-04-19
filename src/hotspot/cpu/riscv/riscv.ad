@@ -2148,42 +2148,42 @@ encode %{
     }
   %}
 
-  enc_class riscv_enc_cmpxchgw(iRegINoSp res, memory mem, iRegINoSp oldval, iRegINoSp newval) %{
+  enc_class riscv_enc_cmpxchgw(iRegINoSp res, memory mem, iRegI oldval, iRegI newval) %{
     C2_MacroAssembler _masm(&cbuf);
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
                /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
                /*result as bool*/ true);
   %}
 
-  enc_class riscv_enc_cmpxchgn(iRegINoSp res, memory mem, iRegINoSp oldval, iRegINoSp newval) %{
+  enc_class riscv_enc_cmpxchgn(iRegINoSp res, memory mem, iRegI oldval, iRegI newval) %{
     C2_MacroAssembler _masm(&cbuf);
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
                /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
                /*result as bool*/ true);
   %}
 
-  enc_class riscv_enc_cmpxchg(iRegINoSp res, memory mem, iRegLNoSp oldval, iRegLNoSp newval) %{
+  enc_class riscv_enc_cmpxchg(iRegINoSp res, memory mem, iRegL oldval, iRegL newval) %{
     C2_MacroAssembler _masm(&cbuf);
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
                /*result as bool*/ true);
   %}
 
-  enc_class riscv_enc_cmpxchgw_acq(iRegINoSp res, memory mem, iRegINoSp oldval, iRegINoSp newval) %{
+  enc_class riscv_enc_cmpxchgw_acq(iRegINoSp res, memory mem, iRegI oldval, iRegI newval) %{
     C2_MacroAssembler _masm(&cbuf);
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
                /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
                /*result as bool*/ true);
   %}
 
-  enc_class riscv_enc_cmpxchgn_acq(iRegINoSp res, memory mem, iRegINoSp oldval, iRegINoSp newval) %{
+  enc_class riscv_enc_cmpxchgn_acq(iRegINoSp res, memory mem, iRegI oldval, iRegI newval) %{
     C2_MacroAssembler _masm(&cbuf);
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
                /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
                /*result as bool*/ true);
   %}
 
-  enc_class riscv_enc_cmpxchg_acq(iRegINoSp res, memory mem, iRegLNoSp oldval, iRegLNoSp newval) %{
+  enc_class riscv_enc_cmpxchg_acq(iRegINoSp res, memory mem, iRegL oldval, iRegL newval) %{
     C2_MacroAssembler _masm(&cbuf);
     __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register,
@@ -2320,7 +2320,7 @@ encode %{
   %}
 
   // using the cr register as the bool result: 0 for success; others failed.
-  enc_class riscv_enc_fast_lock(iRegP object, iRegP box, iRegP tmp1, iRegP tmp2) %{
+  enc_class riscv_enc_fast_lock(iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2) %{
     C2_MacroAssembler _masm(&cbuf);
     Register flag = t1;
     Register oop = as_Register($object$$reg);
@@ -2414,7 +2414,7 @@ encode %{
   %}
 
   // using cr flag to indicate the fast_unlock result: 0 for success; others failed.
-  enc_class riscv_enc_fast_unlock(iRegP object, iRegP box, iRegP tmp1, iRegP tmp2) %{
+  enc_class riscv_enc_fast_unlock(iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2) %{
     C2_MacroAssembler _masm(&cbuf);
     Register flag = t1;
     Register oop = as_Register($object$$reg);
@@ -5192,7 +5192,7 @@ instruct storePConditional(memory heap_top_ptr, iRegP oldval, iRegP newval, rFla
   ins_pipe(pipe_serial);
 %}
 
-instruct storeLConditional(indirect mem, iRegLNoSp oldval, iRegLNoSp newval, rFlagsReg cr)
+instruct storeLConditional(indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr)
 %{
   match(Set cr (StoreLConditional mem (Binary oldval newval)));
 
@@ -5214,7 +5214,7 @@ instruct storeLConditional(indirect mem, iRegLNoSp oldval, iRegLNoSp newval, rFl
 
 // storeIConditional also has acquire semantics, for no better reason
 // than matching storeLConditional.
-instruct storeIConditional(indirect mem, iRegINoSp oldval, iRegINoSp newval, rFlagsReg cr)
+instruct storeIConditional(indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr)
 %{
   match(Set cr (StoreIConditional mem (Binary oldval newval)));
 
@@ -5237,7 +5237,7 @@ instruct storeIConditional(indirect mem, iRegINoSp oldval, iRegINoSp newval, rFl
 // standard CompareAndSwapX when we are using barriers
 // these have higher priority than the rules selected by a predicate
 instruct compareAndSwapB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                         iRegI tmp1, iRegI tmp2, iRegI tmp3, rFlagsReg cr)
+                         iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   match(Set res (CompareAndSwapB mem (Binary oldval newval)));
 
@@ -5260,7 +5260,7 @@ instruct compareAndSwapB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R1
 %}
 
 instruct compareAndSwapS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                         iRegI tmp1, iRegI tmp2, iRegI tmp3, rFlagsReg cr)
+                         iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   match(Set res (CompareAndSwapS mem (Binary oldval newval)));
 
@@ -5282,7 +5282,7 @@ instruct compareAndSwapS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R1
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapI(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoSp newval)
+instruct compareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
   match(Set res (CompareAndSwapI mem (Binary oldval newval)));
 
@@ -5298,7 +5298,7 @@ instruct compareAndSwapI(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoS
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapL(iRegINoSp res, indirect mem, iRegLNoSp oldval, iRegLNoSp newval)
+instruct compareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval)
 %{
   match(Set res (CompareAndSwapL mem (Binary oldval newval)));
 
@@ -5332,7 +5332,7 @@ instruct compareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegNNoSp newval)
+instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
 
@@ -5350,7 +5350,7 @@ instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegNNoS
 
 // alternative CompareAndSwapX when we are eliding barriers
 instruct compareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                            iRegI tmp1, iRegI tmp2, iRegI tmp3, rFlagsReg cr)
+                            iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate(needs_acquiring_load_reserved(n));
 
@@ -5375,7 +5375,7 @@ instruct compareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI
 %}
 
 instruct compareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                            iRegI tmp1, iRegI tmp2, iRegI tmp3, rFlagsReg cr)
+                            iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate(needs_acquiring_load_reserved(n));
 
@@ -5399,7 +5399,7 @@ instruct compareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapIAcq(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegINoSp newval)
+instruct compareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
   predicate(needs_acquiring_load_reserved(n));
 
@@ -5417,7 +5417,7 @@ instruct compareAndSwapIAcq(iRegINoSp res, indirect mem, iRegINoSp oldval, iRegI
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapLAcq(iRegINoSp res, indirect mem, iRegLNoSp oldval, iRegLNoSp newval)
+instruct compareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval)
 %{
   predicate(needs_acquiring_load_reserved(n));
 
@@ -5453,7 +5453,7 @@ instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP new
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegNNoSp newval)
+instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
   predicate(needs_acquiring_load_reserved(n));
 
@@ -5478,7 +5478,7 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN
 // can't check the type of memory ordering here, so we always emit a
 // sc_d(w) with rl bit set.
 instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                             iRegI tmp1, iRegI tmp2, iRegI tmp3, rFlagsReg cr)
+                             iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
 
@@ -5500,7 +5500,7 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
 %}
 
 instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                             iRegI tmp1, iRegI tmp2, iRegI tmp3, rFlagsReg cr)
+                             iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
 
@@ -5603,7 +5603,7 @@ instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP ne
 %}
 
 instruct compareAndExchangeBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                                iRegI tmp1, iRegI tmp2, iRegI tmp3, rFlagsReg cr)
+                                iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate(needs_acquiring_load_reserved(n));
 
@@ -5627,7 +5627,7 @@ instruct compareAndExchangeBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
 %}
 
 instruct compareAndExchangeSAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                                iRegI tmp1, iRegI tmp2, iRegI tmp3, rFlagsReg cr)
+                                iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate(needs_acquiring_load_reserved(n));
 
@@ -5739,7 +5739,7 @@ instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP
 %}
 
 instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                             iRegI tmp1, iRegI tmp2, iRegI tmp3, rFlagsReg cr)
+                             iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
 
@@ -5763,7 +5763,7 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
 %}
 
 instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                             iRegI tmp1, iRegI tmp2, iRegI tmp3, rFlagsReg cr)
+                             iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
 
@@ -5868,7 +5868,7 @@ instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
 %}
 
 instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                                iRegI tmp1, iRegI tmp2, iRegI tmp3, rFlagsReg cr)
+                                iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate(needs_acquiring_load_reserved(n));
 
@@ -5894,7 +5894,7 @@ instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
 %}
 
 instruct weakCompareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                                iRegI tmp1, iRegI tmp2, iRegI tmp3, rFlagsReg cr)
+                                iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
   predicate(needs_acquiring_load_reserved(n));
 

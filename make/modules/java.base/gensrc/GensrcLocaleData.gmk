@@ -75,7 +75,7 @@ SED_BASEARGS += -e 's/$(HASH)Lang$(HASH)/Base/' \
 SED_NONBASEARGS += -e 's/$(HASH)Lang$(HASH)/NonBase/' \
     -e 's/$(HASH)Package$(HASH)/sun.util.resources.provider/'
 
-# This macro creates a sed expression that substitues for example:
+# This macro creates a sed expression that substitutes for example:
 # #FormatData_Locales# with: en-US locales.
 define CaptureLocale
   $1_LOCALES := $$(subst _,-,$$(filter-out $1, $$(subst $1_,,$$(filter $1_%, $(LOCALE_RESOURCES)))))
@@ -89,7 +89,7 @@ define CaptureLocale
   $1_NON_BASE_LOCALES := $$(subst zh-MO,zh-MO$$(SPACE)zh-Hant-MO, $$($1_NON_BASE_LOCALES))
   $1_NON_BASE_LOCALES := $$(subst zh-TW,zh-TW$$(SPACE)zh-Hant-TW, $$($1_NON_BASE_LOCALES))
 
-# Adding implict locales nb nn-NO and nb-NO
+# Adding implicit locales nb nn-NO and nb-NO
   $1_NON_BASE_LOCALES += nb  nn-NO  nb-NO
   $1_NON_BASE_LOCALES := $$(sort $$($1_NON_BASE_LOCALES))
 

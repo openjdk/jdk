@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,8 +110,8 @@ public class Bug4429024 {
 
         static int getLanguage(String inLang, String localizedName){
 
-            Locale fiLocale = new Locale("fi", "FI");
-            Locale inLocale = new Locale (inLang, "");
+            Locale fiLocale = Locale.of("fi", "FI");
+            Locale inLocale = Locale.of(inLang);
 
             if (!inLocale.getDisplayLanguage(fiLocale).equals(localizedName)){
                 System.out.println("Language " + inLang +" should be \"" + localizedName  + "\", not \"" + inLocale.getDisplayLanguage(fiLocale) + "\"");
@@ -124,8 +124,8 @@ public class Bug4429024 {
 
     static int getCountry(String inCountry, String localizedName){
 
-            Locale fiLocale = new Locale("fi", "FI");
-            Locale inLocale = new Locale ("", inCountry);
+            Locale fiLocale = Locale.of("fi", "FI");
+            Locale inLocale = Locale.of("", inCountry);
 
             if (!inLocale.getDisplayCountry(fiLocale).equals(localizedName)){
                 System.out.println("Country " + inCountry + " should be \"" + localizedName + "\", not \"" + inLocale.getDisplayCountry(fiLocale) + "\"");

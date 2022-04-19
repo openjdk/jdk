@@ -80,7 +80,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @since 1.4
  */
 
-public class GSSNameImpl implements GSSName {
+public final class GSSNameImpl implements GSSName {
 
     /**
      * The old Oid used in RFC 2853. Now supported as

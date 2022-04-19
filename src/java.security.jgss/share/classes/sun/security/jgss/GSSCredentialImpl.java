@@ -90,9 +90,11 @@ public class GSSCredentialImpl implements GSSCredential {
             } catch (GSSException e) {
                 if (defaultList) {
                     // Try the next mechanism
-                    GSSUtil.debug("Ignore " + e + " while acquiring cred for "
-                        + mechs[i]);
-                    //e.printStackTrace();
+                    if (GSSUtil.DEBUG) {
+                        GSSUtil.debug("Ignore " + e + " while acquiring cred for "
+                                + mechs[i]);
+                        // e.printStackTrace();
+                    }
                 } else throw e; // else try the next mechanism
             }
         }

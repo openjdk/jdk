@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +22,32 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
-#include "jfr/leakprofiler/chains/bitset.inline.hpp"
 
-BitSet::BitMapFragment::BitMapFragment(uintptr_t granule, BitMapFragment* next) :
-    _bits(_bitmap_granularity_size >> LogMinObjAlignmentInBytes, mtTracing, true /* clear */),
-    _next(next) {
-}
+#ifndef OS_WINDOWS_SAFEFETCH_WINDOWS_HPP
+#define OS_WINDOWS_SAFEFETCH_WINDOWS_HPP
 
-BitSet::BitSet() :
-    _bitmap_fragments(32),
-    _fragment_list(NULL),
-    _last_fragment_bits(NULL),
-    _last_fragment_granule(UINTPTR_MAX) {
-}
+#include "utilities/globalDefinitions.hpp"
 
-BitSet::~BitSet() {
-  BitMapFragment* current = _fragment_list;
-  while (current != NULL) {
-    BitMapFragment* next = current->next();
-    delete current;
-    current = next;
+// On windows, we use structured exception handling to implement SafeFetch
+
+template <class T>
+inline T SafeFetchXX(const T* adr, T errValue) {
+  T v = 0;
+  __try {
+    v = *adr;
   }
+  __except(EXCEPTION_EXECUTE_HANDLER) {
+    v = errValue;
+  }
+  return v;
 }
+
+inline int SafeFetch32_impl(const int* adr, int errValue) {
+  return SafeFetchXX<int>(adr, errValue);
+}
+
+inline intptr_t SafeFetchN_impl(const intptr_t* adr, intptr_t errValue) {
+  return SafeFetchXX<intptr_t>(adr, errValue);
+}
+
+#endif

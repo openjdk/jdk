@@ -30,7 +30,8 @@ package sun.security.jgss;
  * into the mechanism level so that special actions can be performed for
  * different callers.
  */
-public class GSSCaller {
+public sealed class GSSCaller permits HttpCaller {
+
     public static final GSSCaller CALLER_UNKNOWN = new GSSCaller("UNKNOWN");
     public static final GSSCaller CALLER_INITIATE = new GSSCaller("INITIATE");
     public static final GSSCaller CALLER_ACCEPT = new GSSCaller("ACCEPT");

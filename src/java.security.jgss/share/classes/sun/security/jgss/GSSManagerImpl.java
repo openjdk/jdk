@@ -88,8 +88,10 @@ public class GSSManagerImpl extends GSSManager {
                 }
             } catch (GSSException e) {
                 // Squelch it and just skip over this mechanism
-                GSSUtil.debug("Skip " + mech +
-                              ": error retrieving supported name types");
+                if (GSSUtil.DEBUG) {
+                    GSSUtil.debug("Skip " + mech +
+                            ": error retrieving supported name types");
+                }
             }
         }
 
