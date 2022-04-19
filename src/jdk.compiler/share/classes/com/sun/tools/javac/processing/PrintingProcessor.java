@@ -458,8 +458,7 @@ public class PrintingProcessor extends AbstractProcessor {
             if (kind == ENUM_CONSTANT || kind == RECORD_COMPONENT)
                 return;
 
-            Set<Modifier> modifiers = new LinkedHashSet<>();
-            modifiers.addAll(e.getModifiers());
+            Set<Modifier> modifiers = new LinkedHashSet<>(e.getModifiers());
 
             switch (kind) {
             case ANNOTATION_TYPE:
