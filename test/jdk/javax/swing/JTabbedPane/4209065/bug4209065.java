@@ -24,14 +24,14 @@
 import java.awt.EventQueue;
 import java.lang.reflect.InvocationTargetException;
 
-import javax.swing.JApplet;
-import javax.swing.JLabel;
-import javax.swing.JTabbedPane;
+import javax.swing.*;
 
 /**
  * @test
  * @bug 4209065
  * @author Georges Saab
+ * @summary To test the style of the text on the tab matches. The tab title may
+ * not always fit within the tab.
  * @run applet/manual=yesno bug4209065.html
  */
 public final class bug4209065 extends JApplet {
@@ -49,9 +49,14 @@ public final class bug4209065 extends JApplet {
         JTabbedPane tp = new JTabbedPane();
         getContentPane().add(tp);
         String text = "<html><center>If the style of the text on the tabs matches"
-                      + "<br>the descriptions, press <em><b>PASS</b></em></center></html>";
-        tp.addTab("<html><center><font size=+3>big</font></center></html>", new JLabel(text));
-        tp.addTab("<html><center><font color=red>red</font></center></html>", new JLabel(text));
-        tp.addTab("<html><center><em><b>Bold Italic!</b></em></center></html>", new JLabel(text));
+                      + "<br>the descriptions, press <em><b>PASS</b></em><br>"
+                      + "<br> NOTE: the text (tab title) may not always "
+                      + "fit the tab.</center></html>";
+        tp.addTab("<html><center><font size=+2>big</font></center></html>",
+                new JLabel(text));
+        tp.addTab("<html><center><font color=red>red</font></center></html>",
+                new JLabel(text));
+        tp.addTab("<html><center><em><b>Bold Italic!</b></em></center></html>",
+                new JLabel(text));
     }
 }
