@@ -584,7 +584,7 @@ AC_DEFUN([UTIL_CHECK_TYPE_features],
 #     --with-FOO=. Check the ENABLED_RESULT variable for the enabled/disabled
 #     state.
 #   RESULT: The name of the variable to set to the result. Defaults to
-#     <NAME in uppercase>_VALUE. Set to empty if ENABLED_RESULT is false.
+#     <NAME in uppercase>. Set to empty if ENABLED_RESULT is false.
 #   ENABLED_DEFAULT: If the value is enabled by default. Defaults to false. Only
 #     relevant if OPTIONAL is true.
 #   ENABLED_RESULT: The name of the variable to set to the enabled/disabled
@@ -636,8 +636,8 @@ UTIL_DEFUN_NAMED([UTIL_ARG_WITH],
   # If DEFAULT_DESC is not specified, calculate it from DEFAULT.
   m4_define([ARG_DEFAULT_DESC], m4_if(ARG_DEFAULT_DESC, , m4_if(ARG_DEFAULT, , <none>, ARG_DEFAULT), ARG_DEFAULT_DESC))
 
-  # If RESULT is not specified, set it to 'ARG_NAME[_VALUE]'.
-  m4_define([ARG_RESULT], m4_if(ARG_RESULT, , m4_translit(ARG_NAME, [a-z-], [A-Z_])[_VALUE], ARG_RESULT))
+  # If RESULT is not specified, set it to 'ARG_NAME'.
+  m4_define([ARG_RESULT], m4_if(ARG_RESULT, , m4_translit(ARG_NAME, [a-z-], [A-Z_]), ARG_RESULT))
 
   # If ENABLED_RESULT is not specified, set it to 'ARG_NAME[_ENABLED]'.
   m4_define([ARG_ENABLED_RESULT], m4_if(ARG_ENABLED_RESULT, , m4_translit(ARG_NAME, [a-z-], [A-Z_])[_ENABLED], ARG_ENABLED_RESULT))
