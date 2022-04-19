@@ -47,6 +47,12 @@ public final class KerberosPrincipal
     //name types
 
     /**
+     * unknown name type.
+     */
+
+    public static final int KRB_NT_UNKNOWN =   0;
+
+    /**
      * user principal name type.
      */
 
@@ -62,6 +68,25 @@ public final class KerberosPrincipal
      */
 
     public static final int KRB_NT_SRV_HST =   3;
+
+    /**
+     * service with host as remaining components name type.
+     */
+
+    public static final int KRB_NT_SRV_XHST =  4;
+
+    /**
+     * unique ID name type.
+     */
+
+    public static final int KRB_NT_UID = 5;
+
+    /**
+     * Enterprise name (alias)
+     *
+     * @since 13
+     */
+    public static final int KRB_NT_ENTERPRISE = 10;
 
     private transient String fullName;
 

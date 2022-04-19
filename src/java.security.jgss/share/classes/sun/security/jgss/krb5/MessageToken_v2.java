@@ -504,7 +504,7 @@ abstract class MessageToken_v2 extends Krb5Token {
         private final byte[] bytes = new byte[TOKEN_HEADER_SIZE];
 
         // Writes a new token header
-        public MessageTokenHeader(int tokenId, boolean conf) {
+        public MessageTokenHeader(int tokenId, boolean conf) throws GSSException {
 
             this.tokenId = tokenId;
 

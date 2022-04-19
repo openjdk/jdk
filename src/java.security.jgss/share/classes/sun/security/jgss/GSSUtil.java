@@ -334,33 +334,33 @@ public class GSSUtil {
                             (GSSCredentialImpl.class).iterator();
                         while (iterator.hasNext()) {
                             GSSCredentialImpl cred = iterator.next();
-                                if (DEBUG) {
-                                    debug("...Found cred" + cred);
-                                }
+                            if (DEBUG) {
+                                debug("...Found cred" + cred);
+                            }
                             try {
                                 GSSCredentialSpi ce =
                                     cred.getElement(mech, initiate);
-                                    if (DEBUG) {
-                                        debug("......Found element: " + ce);
-                                    }
+                                if (DEBUG) {
+                                    debug("......Found element: " + ce);
+                                }
                                 if (ce.getClass().equals(credCls) &&
                                     (name == null ||
                                      name.equals((Object) ce.getName()))) {
                                     result.add(credCls.cast(ce));
                                 } else {
-                                        if (DEBUG) {
-                                            debug("......Discard element");
-                                        }
-                                    }
-                            } catch (GSSException ge) {
                                     if (DEBUG) {
-                                        debug("...Discard cred (" + ge + ")");
+                                        debug("......Discard element");
                                     }
                                 }
+                            } catch (GSSException ge) {
+                                if (DEBUG) {
+                                    debug("...Discard cred (" + ge + ")");
+                                }
                             }
-                        } else if (DEBUG) {
-                            debug("No Subject");
                         }
+                    } else if (DEBUG) {
+                        debug("No Subject");
+                    }
                     return result;
                 });
             return creds;

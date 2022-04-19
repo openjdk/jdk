@@ -327,7 +327,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
      * When data is unparseable, this method makes sure the correct number of
      * bytes are consumed, so it's safe to start reading the next element.
      */
-    Object readCred(int version) throws IOException, KrbApErrException, Asn1Exception {
+    Object readCred(int version) throws IOException, RealmException, KrbApErrException, Asn1Exception {
         PrincipalName cpname = null;
         try {
             cpname = readPrincipal(version);
