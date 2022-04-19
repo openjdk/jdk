@@ -87,10 +87,6 @@ final class Config {
 
     private static final boolean DEBUG = false;
 
-    private static void debug(Object o) {
-        System.out.println(o);
-    }
-
     // file name containing this configuration
     private String filename;
 
@@ -547,7 +543,7 @@ final class Config {
     private int nextToken() throws IOException {
         int token = st.nextToken();
         if (DEBUG)  {
-            debug(st);
+            System.out.println(st);
         }
         return token;
     }
@@ -596,7 +592,7 @@ final class Config {
         String value = st.sval;
 
         if (DEBUG) {
-            debug(keyword + ": " + value);
+            System.out.println(keyword + ": " + value);
         }
         return value;
     }
@@ -606,7 +602,7 @@ final class Config {
         parseEquals();
         boolean value = parseBoolean();
         if (DEBUG) {
-            debug(keyword + ": " + value);
+            System.out.println(keyword + ": " + value);
         }
         return value;
     }
@@ -616,7 +612,7 @@ final class Config {
         parseEquals();
         int value = decodeNumber(parseWord());
         if (DEBUG) {
-            debug(keyword + ": " + value);
+            System.out.println(keyword + ": " + value);
         }
         return value;
     }
@@ -723,7 +719,7 @@ final class Config {
             lib = prefix + suffix;
         }
         if (DEBUG) {
-            debug(keyword + ": " + lib);
+            System.out.println(keyword + ": " + lib);
         }
 
         // Check to see if full path is specified to prevent the DLL
@@ -740,7 +736,7 @@ final class Config {
         parseEquals();
         description = parseLine();
         if (DEBUG) {
-            debug("description: " + description);
+            System.out.println("description: " + description);
         }
     }
 
@@ -756,7 +752,7 @@ final class Config {
         String slotString = parseWord();
         slotID = decodeNumber(slotString);
         if (DEBUG) {
-            debug("slot: " + slotID);
+            System.out.println("slot: " + slotID);
         }
     }
 
@@ -772,7 +768,7 @@ final class Config {
         String slotString = parseWord();
         slotListIndex = decodeNumber(slotString);
         if (DEBUG) {
-            debug("slotListIndex: " + slotListIndex);
+            System.out.println("slotListIndex: " + slotListIndex);
         }
     }
 
@@ -1036,7 +1032,7 @@ final class Config {
         }
         nssArgs = expand(st.sval);
         if (DEBUG) {
-            debug("nssArgs: " + nssArgs);
+            System.out.println("nssArgs: " + nssArgs);
         }
     }
 
@@ -1054,7 +1050,7 @@ final class Config {
             throw excToken("Invalid value for handleStartupErrors:");
         }
         if (DEBUG) {
-            debug("handleStartupErrors: " + handleStartupErrors);
+            System.out.println("handleStartupErrors: " + handleStartupErrors);
         }
     }
 
