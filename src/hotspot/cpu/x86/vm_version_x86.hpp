@@ -1044,7 +1044,7 @@ public:
   static bool supports_clflushopt() { return ((_features & CPU_FLUSHOPT) != 0); }
   static bool supports_clwb() { return ((_features & CPU_CLWB) != 0); }
 
-  // Old CPUs perform lea on AGU which causes additional latency transfering the
+  // Old CPUs perform lea on AGU which causes additional latency transferring the
   // value from/to ALU for other operations
   static bool supports_fast_2op_lea() {
     return (is_intel() && supports_avx()) || // Sandy Bridge and above

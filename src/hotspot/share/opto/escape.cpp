@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,7 @@ bool ConnectionGraph::compute_escape() {
         oop_fields_worklist.append(ptn->as_Field());
       }
     }
-    // Collect some interesting nodes for futher use.
+    // Collect some interesting nodes for further use.
     switch (n->Opcode()) {
       case Op_MergeMem:
         // Collect all MergeMem nodes to add memory slices for
@@ -1554,7 +1554,7 @@ void ConnectionGraph::add_field_uses_to_worklist(FieldNode* field) {
     add_fields_to_worklist(field, base);
     // Check if the base was source object of arraycopy and go over arraycopy's
     // destination objects since values stored to a field of source object are
-    // accessable by uses (loads) of fields of destination objects.
+    // accessible by uses (loads) of fields of destination objects.
     if (base->arraycopy_src()) {
       for (UseIterator j(base); j.has_next(); j.next()) {
         PointsToNode* arycp = j.get();

@@ -60,6 +60,8 @@ public class Short512VectorTests extends AbstractVectorTest {
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
 
+    private static final short CONST_SHIFT = Short.SIZE / 2;
+
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 512);
 
     interface FUnOp {
@@ -457,6 +459,50 @@ public class Short512VectorTests extends AbstractVectorTest {
             }
         } catch (AssertionError err) {
             Assert.assertEquals(r[i+j], f.apply(a[i+j], b[j], mask[i]), "at index #" + i + ", input1 = " + a[i+j] + ", input2 = " + b[j] + ", mask = " + mask[i]);
+        }
+    }
+
+    interface FBinConstOp {
+        short apply(short a);
+    }
+
+    interface FBinConstMaskOp {
+        short apply(short a, boolean m);
+
+        static FBinConstMaskOp lift(FBinConstOp f) {
+            return (a, m) -> m ? f.apply(a) : a;
+        }
+    }
+
+    static void assertShiftConstEquals(short[] r, short[] a, FBinConstOp f) {
+        int i = 0;
+        int j = 0;
+        try {
+            for (; j < a.length; j += SPECIES.length()) {
+                for (i = 0; i < SPECIES.length(); i++) {
+                    Assert.assertEquals(r[i+j], f.apply(a[i+j]));
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i+j], f.apply(a[i+j]), "at index #" + i + ", " + j);
+        }
+    }
+
+    static void assertShiftConstEquals(short[] r, short[] a, boolean[] mask, FBinConstOp f) {
+        assertShiftConstEquals(r, a, mask, FBinConstMaskOp.lift(f));
+    }
+
+    static void assertShiftConstEquals(short[] r, short[] a, boolean[] mask, FBinConstMaskOp f) {
+        int i = 0;
+        int j = 0;
+        try {
+            for (; j < a.length; j += SPECIES.length()) {
+                for (i = 0; i < SPECIES.length(); i++) {
+                    Assert.assertEquals(r[i+j], f.apply(a[i+j], mask[i]));
+                }
+            }
+        } catch (AssertionError err) {
+            Assert.assertEquals(r[i+j], f.apply(a[i+j], mask[i]), "at index #" + i + ", input1 = " + a[i+j] + ", mask = " + mask[i]);
         }
     }
 
@@ -2544,7 +2590,7 @@ public class Short512VectorTests extends AbstractVectorTest {
 
 
     static short ROR_unary(short a, short b) {
-        return (short)(ROR_scalar(a,b));
+        return (short)(ROR_scalar(a, b));
     }
 
     @Test(dataProvider = "shortBinaryOpProvider")
@@ -2586,7 +2632,7 @@ public class Short512VectorTests extends AbstractVectorTest {
 
 
     static short ROL_unary(short a, short b) {
-        return (short)(ROL_scalar(a,b));
+        return (short)(ROL_scalar(a, b));
     }
 
     @Test(dataProvider = "shortBinaryOpProvider")
@@ -2625,6 +2671,215 @@ public class Short512VectorTests extends AbstractVectorTest {
 
         assertShiftArraysEquals(r, a, b, mask, Short512VectorTests::ROL_unary);
     }
+
+
+
+
+
+
+    static short LSHR_binary_const(short a) {
+        return (short)(((a & 0xFFFF) >>> CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void LSHRShort512VectorTestsScalarShiftConst(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.LSHR, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Short512VectorTests::LSHR_binary_const);
+    }
+
+
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void LSHRShort512VectorTestsScalarShiftMaskedConst(IntFunction<short[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.LSHR, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Short512VectorTests::LSHR_binary_const);
+    }
+
+
+
+    static short LSHL_binary_const(short a) {
+        return (short)((a << CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void LSHLShort512VectorTestsScalarShiftConst(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.LSHL, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Short512VectorTests::LSHL_binary_const);
+    }
+
+
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void LSHLShort512VectorTestsScalarShiftMaskedConst(IntFunction<short[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.LSHL, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Short512VectorTests::LSHL_binary_const);
+    }
+
+
+
+    static short ASHR_binary_const(short a) {
+        return (short)((a >> CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void ASHRShort512VectorTestsScalarShiftConst(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ASHR, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Short512VectorTests::ASHR_binary_const);
+    }
+
+
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void ASHRShort512VectorTestsScalarShiftMaskedConst(IntFunction<short[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ASHR, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Short512VectorTests::ASHR_binary_const);
+    }
+
+
+
+    static short ROR_binary_const(short a) {
+        return (short)(ROR_scalar(a, CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void RORShort512VectorTestsScalarShiftConst(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROR, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Short512VectorTests::ROR_binary_const);
+    }
+
+
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void RORShort512VectorTestsScalarShiftMaskedConst(IntFunction<short[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROR, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Short512VectorTests::ROR_binary_const);
+    }
+
+
+
+    static short ROL_binary_const(short a) {
+        return (short)(ROL_scalar(a, CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "shortUnaryOpProvider")
+    static void ROLShort512VectorTestsScalarShiftConst(IntFunction<short[]> fa) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROL, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Short512VectorTests::ROL_binary_const);
+    }
+
+
+
+    @Test(dataProvider = "shortUnaryOpMaskProvider")
+    static void ROLShort512VectorTestsScalarShiftMaskedConst(IntFunction<short[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Short> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROL, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Short512VectorTests::ROL_binary_const);
+    }
+
 
     static short MIN(short a, short b) {
         return (short)(Math.min(a, b));

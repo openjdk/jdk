@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -379,7 +379,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   Node* old_mem = mem;
 
   // The code which unhooks non-raw memories from complete (macro-expanded)
-  // initializations was removed. After macro-expansion all stores catched
+  // initializations was removed. After macro-expansion all stores caught
   // by Initialize node became raw stores and there is no information
   // which memory slices they modify. So it is unsafe to move any memory
   // operation above these stores. Also in most cases hooked non-raw memories
@@ -1509,7 +1509,7 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
 
   assert((t_oop != NULL) &&
          (t_oop->is_known_instance_field() ||
-          t_oop->is_ptr_to_boxed_value()), "invalide conditions");
+          t_oop->is_ptr_to_boxed_value()), "invalid conditions");
 
   Compile* C = phase->C;
   intptr_t ignore = 0;
