@@ -96,7 +96,7 @@ public class OAEPParameterSpec implements AlgorithmParameterSpec {
      *
      * @deprecated This field uses the default values defined in the PKCS #1
      *         standard. Some of these defaults are no longer recommended due
-     *         to advances in cryptanalysis -- see the
+     *         to advances in cryptanalysis -- see
      *         <a href="https://www.rfc-editor.org/rfc/rfc8017#appendix-B.1">Appendix B.1 of PKCS #1</a>
      *         for more details. Thus, it is recommended to create
      *         a new {@code OAEPParameterSpec} with the desired parameter values
@@ -123,7 +123,7 @@ public class OAEPParameterSpec implements AlgorithmParameterSpec {
      * if {@code null} is specified, {@code null} will be returned by
      * {@link #getMGFParameters()}
      * @param pSrc the source of the encoding input P
-     * @exception NullPointerException if {@code mdName},
+     * @throws NullPointerException if {@code mdName},
      * {@code mgfName}, or {@code pSrc} is {@code null}
      */
     public OAEPParameterSpec(String mdName, String mgfName,
