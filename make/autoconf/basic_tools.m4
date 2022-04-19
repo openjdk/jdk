@@ -163,7 +163,7 @@ AC_DEFUN([BASIC_CHECK_MAKE_OUTPUT_SYNC],
   UTIL_ARG_WITH(NAME: output-sync, TYPE: literal,
       VALID_VALUES: [none recurse line target], DEFAULT: recurse,
       OPTIONAL: true, ENABLED_DEFAULT: true,
-      RESULT: OUTPUT_SYNC, ENABLED_RESULT: OUTPUT_SYNC_SUPPORTED,
+      ENABLED_RESULT: OUTPUT_SYNC_SUPPORTED,
       CHECKING_MSG: [for make --output-sync value],
       DESC: [set make --output-sync type if supported by make],
       CHECK_AVAILABLE:
@@ -374,10 +374,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 
     # Check for user provided code signing identity.
     UTIL_ARG_WITH(NAME: macosx-codesign-identity, TYPE: string,
-        DEFAULT: openjdk_codesign, RESULT: MACOSX_CODESIGN_IDENTITY,
+        DEFAULT: openjdk_codesign, CHECK_VALUE: UTIL_CHECK_STRING_NON_EMPTY,
         DESC: [specify the macosx code signing identity],
-        CHECKING_MSG: [for macosx code signing identity],
-        CHECK_VALUE: UTIL_CHECK_STRING_NON_EMPTY
+        CHECKING_MSG: [for macosx code signing identity]
     )
     AC_SUBST(MACOSX_CODESIGN_IDENTITY)
 
