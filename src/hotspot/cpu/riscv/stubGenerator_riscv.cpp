@@ -2196,46 +2196,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
   }
 
-  // Safefetch stubs.
-  void generate_safefetch(const char* name, int size, address* entry,
-                          address* fault_pc, address* continuation_pc) {
-    // safefetch signatures:
-    //   int      SafeFetch32(int*      adr, int      errValue)
-    //   intptr_t SafeFetchN (intptr_t* adr, intptr_t errValue)
-    //
-    // arguments:
-    //   c_rarg0 = adr
-    //   c_rarg1 = errValue
-    //
-    // result:
-    //   PPC_RET  = *adr or errValue
-    assert_cond(entry != NULL && fault_pc != NULL && continuation_pc != NULL);
-    StubCodeMark mark(this, "StubRoutines", name);
-
-    // Entry point, pc or function descriptor.
-    *entry = __ pc();
-
-    // Load *adr into c_rarg1, may fault.
-    *fault_pc = __ pc();
-    switch (size) {
-      case 4:
-        // int32_t
-        __ lw(c_rarg1, Address(c_rarg0, 0));
-        break;
-      case 8:
-        // int64_t
-        __ ld(c_rarg1, Address(c_rarg0, 0));
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-
-    // return errValue or *adr
-    *continuation_pc = __ pc();
-    __ mv(x10, c_rarg1);
-    __ ret();
-  }
-
   // code for comparing 16 bytes of strings with same encoding
   void compare_string_16_bytes_same(Label &DIFF1, Label &DIFF2) {
     const Register result = x10, str1 = x11, cnt1 = x12, str2 = x13, tmp1 = x28, tmp2 = x29, tmp4 = x7, tmp5 = x31;
@@ -3767,13 +3727,6 @@ class StubGenerator: public StubCodeGenerator {
       generate_throw_exception("delayed StackOverflowError throw_exception",
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::throw_delayed_StackOverflowError));
-    // Safefetch stubs.
-    generate_safefetch("SafeFetch32", sizeof(int),     &StubRoutines::_safefetch32_entry,
-                                                       &StubRoutines::_safefetch32_fault_pc,
-                                                       &StubRoutines::_safefetch32_continuation_pc);
-    generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
-                                                       &StubRoutines::_safefetchN_fault_pc,
-                                                       &StubRoutines::_safefetchN_continuation_pc);
   }
 
   void generate_all() {

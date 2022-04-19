@@ -61,7 +61,7 @@
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/thread.inline.hpp"
@@ -2005,36 +2005,33 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   //
   if (!os::Aix::xpg_sus_mode()) {
 
-    if (CanUseSafeFetch32()) {
+    const bool read_protected =
+      (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
+       SafeFetch32((int*)addr, 0x76543210) == 0x76543210) ? true : false;
 
-      const bool read_protected =
-        (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
-         SafeFetch32((int*)addr, 0x76543210) == 0x76543210) ? true : false;
+    if (prot & PROT_READ) {
+      rc = !read_protected;
+    } else {
+      rc = read_protected;
+    }
 
-      if (prot & PROT_READ) {
-        rc = !read_protected;
-      } else {
-        rc = read_protected;
-      }
+    if (!rc) {
+      if (os::Aix::on_pase()) {
+        // There is an issue on older PASE systems where mprotect() will return success but the
+        // memory will not be protected.
+        // This has nothing to do with the problem of using mproect() on SPEC1170 incompatible
+        // machines; we only see it rarely, when using mprotect() to protect the guard page of
+        // a stack. It is an OS error.
+        //
+        // A valid strategy is just to try again. This usually works. :-/
 
-      if (!rc) {
-        if (os::Aix::on_pase()) {
-          // There is an issue on older PASE systems where mprotect() will return success but the
-          // memory will not be protected.
-          // This has nothing to do with the problem of using mproect() on SPEC1170 incompatible
-          // machines; we only see it rarely, when using mprotect() to protect the guard page of
-          // a stack. It is an OS error.
-          //
-          // A valid strategy is just to try again. This usually works. :-/
-
-          ::usleep(1000);
-          Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
-          if (::mprotect(addr, size, prot) == 0) {
-            const bool read_protected_2 =
-              (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
-              SafeFetch32((int*)addr, 0x76543210) == 0x76543210) ? true : false;
-            rc = true;
-          }
+        ::usleep(1000);
+        Events::log(NULL, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
+        if (::mprotect(addr, size, prot) == 0) {
+          const bool read_protected_2 =
+            (SafeFetch32((int*)addr, 0x12345678) == 0x12345678 &&
+            SafeFetch32((int*)addr, 0x76543210) == 0x76543210) ? true : false;
+          rc = true;
         }
       }
     }

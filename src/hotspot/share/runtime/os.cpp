@@ -54,7 +54,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -1045,11 +1045,7 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
 // Check if pointer can be read from (4-byte read access).
 // Helps to prove validity of a not-NULL pointer.
 // Returns true in very early stages of VM life when stub is not yet generated.
-#define SAFEFETCH_DEFAULT true
 bool os::is_readable_pointer(const void* p) {
-  if (!CanUseSafeFetch32()) {
-    return SAFEFETCH_DEFAULT;
-  }
   int* const aligned = (int*) align_down((intptr_t)p, 4);
   int cafebabe = 0xcafebabe;  // tester value 1
   int deadbeef = 0xdeadbeef;  // tester value 2
