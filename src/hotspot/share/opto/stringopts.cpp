@@ -425,7 +425,7 @@ Node_List PhaseStringOpts::collect_toString_calls() {
 //   sb.append("foo");
 //   sb.toString();
 //
-// The receiver of toString method is the result of Allocation Node(CheckedCastPP).
+// The receiver of toString method is the result of Allocation Node(CheckCastPP).
 // The append method is overlooked. It will fail at validate_control_flow() test.
 //
 StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
