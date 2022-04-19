@@ -352,7 +352,8 @@ dnl
 define(`VECTOR_JAVA_FROUND', `
 instruct vround$7$2to$5$3($7 dst, $7 src, $7 tmp1, $7 tmp2, $7 tmp3)
 %{
-  predicate(n->as_Vector()->length() == $5 && n->bottom_type()->is_vect()->element_basic_type() == T_$6);
+  predicate(UseSVE == 0 &&
+            n->as_Vector()->length() == $5 && n->bottom_type()->is_vect()->element_basic_type() == T_$6);
   match(Set dst (RoundV$1 src));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3);
   format %{ "vround  $dst, $4, $src\t# round $7 $2 to $5$3 vector" %}
@@ -366,11 +367,6 @@ instruct vround$7$2to$5$3($7 dst, $7 src, $7 tmp1, $7 tmp2, $7 tmp3)
 VECTOR_JAVA_FROUND(F, 2F,  I, T2S, 2,  INT, vecD)
 VECTOR_JAVA_FROUND(F, 4F,  I, T4S, 4,  INT, vecX)
 VECTOR_JAVA_FROUND(D, 2D,  L, T2D, 2, LONG, vecX)
-
-// Versions of vector_round for UseSVE > 0
-VECTOR_JAVA_FROUND(F, 2F,  I, T2S, 2,  INT, vReg)
-VECTOR_JAVA_FROUND(F, 4F,  I, T4S, 4,  INT, vReg)
-VECTOR_JAVA_FROUND(D, 2D,  L, T2D, 2, LONG, vReg)
 
 // ------------------------------ Reduction -------------------------------
 dnl

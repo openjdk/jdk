@@ -162,7 +162,6 @@ source %{
     }
     return op_sve_supported(opcode, vlen, bt);
   }
-
 %}
 
 definitions %{
@@ -3852,32 +3851,50 @@ instruct vroundD(vReg dst, vReg src, immI rmode) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vround8Fto8I(vReg dst, vReg src, vReg tmp1, vReg tmp2, pRegGov ptmp)
+instruct vroundFtoI(vReg dst, vReg src, vReg tmp1, vReg tmp2, vReg tmp3, pRegGov ptmp)
 %{
-  predicate(UseSVE > 0 &&
-            n->as_Vector()->length() == 8);
+  predicate(UseSVE > 0);
   match(Set dst (RoundVF src));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP ptmp);
-  format %{ "sve_vround  $dst, S, $src\t# round 8F to 8I vector" %}
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP ptmp);
+  format %{ "sve_vround  $dst, S, $src\t# round F to I vector" %}
   ins_encode %{
-    __ vector_round_sve(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
-                        as_FloatRegister($tmp1$$reg), as_FloatRegister($tmp2$$reg),
-                        as_PRegister($ptmp$$reg), __ S);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int vlen = Matcher::vector_length_in_bytes(this);
+    if (vlen > 16) {
+      __ vector_round_sve(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                          as_FloatRegister($tmp1$$reg), as_FloatRegister($tmp2$$reg),
+                          as_PRegister($ptmp$$reg), __ S);
+    } else {
+      __ vector_round_neon(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                           as_FloatRegister($tmp1$$reg), as_FloatRegister($tmp2$$reg),
+                           as_FloatRegister($tmp3$$reg),
+                           __ esize2arrangement(type2aelembytes(bt),
+                              /*isQ*/ vlen == 16));
+    }
   %}
   ins_pipe(pipe_class_default);
 %}
 
-instruct vround4Dto4L(vReg dst, vReg src, vReg tmp1, vReg tmp2, pRegGov ptmp)
+instruct vroundDtoL(vReg dst, vReg src, vReg tmp1, vReg tmp2, vReg tmp3, pRegGov ptmp)
 %{
-  predicate(UseSVE > 0 &&
-            n->as_Vector()->length() == 4);
+  predicate(UseSVE > 0);
   match(Set dst (RoundVD src));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP ptmp);
-  format %{ "sve_vround  $dst, D, $src\t# round 4D to 4L vector" %}
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP ptmp);
+  format %{ "sve_vround  $dst, D, $src\t# round D to L vector" %}
   ins_encode %{
-    __ vector_round_sve(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
-                        as_FloatRegister($tmp1$$reg), as_FloatRegister($tmp2$$reg),
-                        as_PRegister($ptmp$$reg), __ D);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int vlen = Matcher::vector_length_in_bytes(this);
+    if (vlen > 16) {
+      __ vector_round_sve(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                          as_FloatRegister($tmp1$$reg), as_FloatRegister($tmp2$$reg),
+                          as_PRegister($ptmp$$reg), __ D);
+    } else {
+      __ vector_round_neon(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                           as_FloatRegister($tmp1$$reg), as_FloatRegister($tmp2$$reg),
+                           as_FloatRegister($tmp3$$reg),
+                           __ esize2arrangement(type2aelembytes(bt),
+                              /*isQ*/ vlen == 16));
+    }
   %}
   ins_pipe(pipe_class_default);
 %}

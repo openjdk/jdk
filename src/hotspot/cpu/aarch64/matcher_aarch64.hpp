@@ -164,7 +164,7 @@
   static const bool supports_encode_ascii_array = true;
 
   // Returns pre-selection estimated size of a vector operation.
-  static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
+  static int op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
     switch(vopc) {
       default: return 0;
       case Op_RoundF: // fall through
