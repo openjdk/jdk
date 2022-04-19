@@ -30,10 +30,10 @@
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/macros.hpp"
 #if defined(LINUX)
 #include "osContainer_linux.hpp"
 #endif
-#include "utilities/macros.hpp"
 
 size_t HeapAlignment = 0;
 size_t SpaceAlignment = 0;
@@ -129,14 +129,7 @@ void GCArguments::initialize_heap_flags_and_sizes() {
       vm_exit_during_initialization("Incompatible minimum and maximum heap sizes specified");
     }
   }
-#if defined(LINUX)
-  if (OSContainer::is_containerized() && FLAG_IS_CMDLINE(InitialHeapSize)) {
-    jlong memswBytes = OSContainer::memory_and_swap_limit_in_bytes();
-    if ((memswBytes > 0) && (InitialHeapSize >= (julong) memswBytes)) {
-      vm_exit_during_initialization("Initial heap size set to a larger value than the container memory & swap limit");
-    }
-  }
-#endif
+
   // Check heap parameter properties
   if (MaxHeapSize < 2 * M) {
     vm_exit_during_initialization("Too small maximum heap");
@@ -147,6 +140,15 @@ void GCArguments::initialize_heap_flags_and_sizes() {
   if (MinHeapSize < M) {
     vm_exit_during_initialization("Too small minimum heap");
   }
+
+#if defined(LINUX)
+  if (OSContainer::is_containerized() && FLAG_IS_CMDLINE(InitialHeapSize)) {
+    jlong memswBytes = OSContainer::memory_and_swap_limit_in_bytes();
+    if ((memswBytes > 0) && (InitialHeapSize >= (julong) memswBytes)) {
+      vm_exit_during_initialization("Initial heap size set to a larger value than the container memory & swap limit");
+    }
+  }
+#endif
 
   // User inputs from -Xmx and -Xms must be aligned
   // Write back to flags if the values changed
