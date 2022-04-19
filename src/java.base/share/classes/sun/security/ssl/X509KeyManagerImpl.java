@@ -199,7 +199,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                             extSession.getPeerSupportedSignatureAlgorithms();
                     }
 
-                    return new SSLAlgorithmConstraints(
+                    return SSLAlgorithmConstraints.forSocket(
                         sslSocket, peerSupportedSignAlgs, true);
                 }
             }
@@ -225,7 +225,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                             extSession.getPeerSupportedSignatureAlgorithms();
                     }
 
-                    return new SSLAlgorithmConstraints(
+                    return SSLAlgorithmConstraints.forEngine(
                         engine, peerSupportedSignAlgs, true);
                 }
             }

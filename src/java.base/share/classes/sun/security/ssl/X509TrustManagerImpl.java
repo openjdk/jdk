@@ -216,7 +216,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 String[] localSupportedSignAlgs =
                         extSession.getLocalSupportedSignatureAlgorithms();
 
-                constraints = new SSLAlgorithmConstraints(
+                constraints = SSLAlgorithmConstraints.forSocket(
                                 sslSocket, localSupportedSignAlgs, false);
             } else {
                 constraints = SSLAlgorithmConstraints.forSocket(sslSocket, false);
@@ -270,7 +270,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 String[] localSupportedSignAlgs =
                         extSession.getLocalSupportedSignatureAlgorithms();
 
-                constraints = new SSLAlgorithmConstraints(
+                constraints = SSLAlgorithmConstraints.forEngine(
                                 engine, localSupportedSignAlgs, false);
             } else {
                 constraints = SSLAlgorithmConstraints.forEngine(engine, false);

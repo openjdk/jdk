@@ -1485,7 +1485,7 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
                     String[] peerSupportedSignAlgs =
                             extSession.getLocalSupportedSignatureAlgorithms();
 
-                    constraints = new SSLAlgorithmConstraints(
+                    constraints = SSLAlgorithmConstraints.forSocket(
                                     sslSocket, peerSupportedSignAlgs, true);
                 } else {
                     constraints =
@@ -1525,7 +1525,7 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
                     String[] peerSupportedSignAlgs =
                             extSession.getLocalSupportedSignatureAlgorithms();
 
-                    constraints = new SSLAlgorithmConstraints(
+                    constraints = SSLAlgorithmConstraints.forEngine(
                                     engine, peerSupportedSignAlgs, true);
                 } else {
                     constraints =
