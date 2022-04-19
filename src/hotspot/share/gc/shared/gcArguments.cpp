@@ -130,9 +130,11 @@ void GCArguments::initialize_heap_flags_and_sizes() {
     }
   }
   #if defined(LINUX)
-  if (OSContainer::is_containerized() && (OSContainer::memory_and_swap_limit_in_bytes() > 0) &&
-      FLAG_IS_CMDLINE(InitialHeapSize) && (InitialHeapSize >= (julong) OSContainer::memory_and_swap_limit_in_bytes())) {
-    vm_exit_during_initialization("Initial heap size set to a larger value than the container memory & swap limit");
+  if (OSContainer::is_containerized()) {
+    jlong memswBytes = OSContainer::memory_and_swap_limit_in_bytes();
+    if ((memswBytes > 0) && FLAG_IS_CMDLINE(InitialHeapSize) && (InitialHeapSize >= (julong) memswBytes)) {
+      vm_exit_during_initialization("Initial heap size set to a larger value than the container memory & swap limit");
+    }
   }
   #endif
   // Check heap parameter properties
