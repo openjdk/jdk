@@ -315,7 +315,7 @@ public class HtmlDoclet extends AbstractDoclet {
                 DocPaths.JQUERY_JS.getPath(),
                 DocPaths.JQUERY_UI_JS.getPath(),
                 DocPaths.JQUERY_UI_CSS.getPath(),
-                "jquery-ui.structure.min.css",
+                DocPaths.JQUERY_UI_STRUCTURE_CSS.getPath(),
                 "images/ui-bg_glass_65_dadada_1x400.png",
                 "images/ui-icons_454545_256x240.png",
                 "images/ui-bg_glass_95_fef1ec_1x400.png",

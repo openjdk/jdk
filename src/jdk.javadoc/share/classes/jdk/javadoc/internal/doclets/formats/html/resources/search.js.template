@@ -29,6 +29,7 @@ const messages = {
     oneResult: "##REPLACE:doclet.search.one_result##",
     manyResults: "##REPLACE:doclet.search.many_results##",
     loading: "##REPLACE:doclet.search.loading##",
+    searching: "##REPLACE:doclet.search.searching##",
     redirecting: "##REPLACE:doclet.search.redirecting##",
 }
 const categories = {

@@ -40,27 +40,21 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
 /**
- *  Generate the search landing page for the generated API documentation.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * Generates the search landing page for the generated API documentation.
  */
 public class SearchWriter extends HtmlDocletWriter {
 
     /**
      * Constructor to construct SearchWriter object.
      * @param configuration the configuration
-     * @param filename File to be generated.
+     * @param filename file to be generated
      */
-    public SearchWriter(HtmlConfiguration configuration,
-                        DocPath filename) {
+    public SearchWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
     }
 
     /**
-     * Construct the SearchWriter object and then use it to generate the search
+     * Constructs the SearchWriter object and then use it to generate the search
      * file. The name of the generated file is "search.html". The search file
      * will get generated if and only if "-noindex" is not used on the command line.
      *
@@ -74,7 +68,7 @@ public class SearchWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Generate the search file contents.
+     * Generates the search file contents.
      *
      * @throws DocFileIOException if there is a problem while generating the documentation
      */

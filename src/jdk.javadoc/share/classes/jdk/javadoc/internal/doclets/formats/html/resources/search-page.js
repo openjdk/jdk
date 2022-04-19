@@ -238,7 +238,7 @@ $(window).on("load", function() {
             resultContainer.empty();
             resultSection.hide();
         } else {
-            notify.html("Searching...");
+            notify.html(messages.searching);
             doSearch({ term: term }, renderResults);
         }
     }
