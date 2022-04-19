@@ -372,4 +372,21 @@ public class HashSet<E>
     public <T> T[] toArray(T[] a) {
         return map.keysToArray(map.prepareArray(a));
     }
+
+    /**
+     * Creates a new, empty HashSet suitable for the expected number of items.
+     * The returned set uses the default load factor of 0.75, and its initial capacity is
+     * generally large enough so that the expected number of items can be added
+     * without resizing the set.
+     *
+     * @param numItems    the expected number of items
+     * @param <E>         the type of keys maintained by this set
+     * @return the newly created set
+     * @throws IllegalArgumentException if numItems is negative
+     * @since 19
+     */
+    public static <E> HashSet<E> newHashSet(int numItems) {
+        return new HashSet<>(HashMap.calculateHashMapCapacity(numItems));
+    }
+
 }

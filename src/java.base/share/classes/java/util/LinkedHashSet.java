@@ -193,4 +193,21 @@ public class LinkedHashSet<E>
     public Spliterator<E> spliterator() {
         return Spliterators.spliterator(this, Spliterator.DISTINCT | Spliterator.ORDERED);
     }
+
+    /**
+     * Creates a new, empty, insertion-ordered LinkedHashSet suitable for the expected number of items.
+     * The returned set uses the default load factor of 0.75, and its initial capacity is
+     * generally large enough so that the expected number of items can be added
+     * without resizing the set.
+     *
+     * @param numItems    the expected number of items
+     * @param <E>         the type of keys maintained by this set
+     * @return the newly created set
+     * @throws IllegalArgumentException if numItems is negative
+     * @since 19
+     */
+    public static <E> LinkedHashSet<E> newLinkedHashSet(int numItems) {
+        return new LinkedHashSet<>(HashMap.calculateHashMapCapacity(numItems));
+    }
+
 }
