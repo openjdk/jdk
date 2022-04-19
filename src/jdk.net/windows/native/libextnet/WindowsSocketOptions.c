@@ -109,9 +109,8 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_WindowsSocketOptions_getIpDontFragment0
             handleError(env, rv, "get option IP_DONTFRAGMENT failed");
             return optval;
         }
-            handleError(env, rv, "get option IP_DONTFRAGMENT failed");
+        handleError(env, rv, "get option IP_DONTFRAGMENT failed");
         return optval == IP_PMTUDISC_DO ? JNI_TRUE : JNI_FALSE;
-        return optval;
     } else {
         rv = getsockopt(fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER, (char *)&optval, &sz);
         if (rv == SOCKET_ERROR && WSAGetLastError() == WSAENOPROTOOPT) {
