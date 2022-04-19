@@ -104,7 +104,7 @@ class methodHandle;
 // When adding an intrinsic for a method, please make sure to appropriately
 // annotate the method in the source code. The list below contains all
 // library intrinsics followed by bytecode intrinsics. Please also make sure to
-// add the declaration of the intrinsic to the approriate section of the list.
+// add the declaration of the intrinsic to the appropriate section of the list.
 #define VM_INTRINSICS_DO(do_intrinsic, do_class, do_name, do_signature, do_alias)                                       \
   /* (1) Library intrinsics                                                                        */                   \
   do_intrinsic(_hashCode,                 java_lang_Object,       hashCode_name, void_int_signature,             F_RN)  \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -277,7 +277,7 @@ void NativeFarCall::set_destination(address dest, int toc_offset) {
     // Here, we have a pc-relative call (brasl).
     // Be aware: dest may have moved in this case, so really patch the displacement,
     // when necessary!
-    // This while loop will also consume the nop which always preceeds a call_far_pcrelative.
+    // This while loop will also consume the nop which always precedes a call_far_pcrelative.
     // We need to revert this after the loop. Pc-relative calls are always assumed to have a leading nop.
     unsigned int nop_sz    = MacroAssembler::nop_size();
     unsigned int nop_bytes = 0;
@@ -306,7 +306,7 @@ void NativeFarCall::set_destination(address dest, int toc_offset) {
 void NativeMovConstReg::verify() {
   address   loc = addr_at(0);
 
-  // This while loop will also consume the nop which always preceeds a
+  // This while loop will also consume the nop which always precedes a
   // call_far_pcrelative.  We need to revert this after the
   // loop. Pc-relative calls are always assumed to have a leading nop.
   unsigned int nop_sz    = MacroAssembler::nop_size();

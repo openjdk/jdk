@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,7 +351,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
       // case and aborts the compile if addresses are live into an OSR
       // entry point.  Because of that we can assume that any address
       // locals at the OSR entry point are dead.  Method liveness
-      // isn't precise enought to figure out that they are dead in all
+      // isn't precise enough to figure out that they are dead in all
       // cases so simply skip checking address locals all
       // together. Any type check is guaranteed to fail since the
       // interpreter type is the result of a load which might have any
@@ -1444,7 +1444,7 @@ void Parse::BytecodeParseHistogram::print(float cutoff) {
   tty->print_cr("relative:  percentage contribution to compiled nodes");
   tty->print_cr("nodes   :  Average number of nodes constructed per bytecode");
   tty->print_cr("rnodes  :  Significance towards total nodes constructed, (nodes*relative)");
-  tty->print_cr("transforms: Average amount of tranform progress per bytecode compiled");
+  tty->print_cr("transforms: Average amount of transform progress per bytecode compiled");
   tty->print_cr("values  :  Average number of node values improved per bytecode");
   tty->print_cr("name    :  Bytecode name");
   tty->cr();

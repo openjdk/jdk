@@ -129,8 +129,8 @@
 #endif
 
   // Are floats converted to double when stored to stack during deoptimization?
-  // On x64 it is stored without convertion so we can use normal access.
-  // On x32 it is stored with convertion only when FPU is used for floats.
+  // On x64 it is stored without conversion so we can use normal access.
+  // On x32 it is stored with conversion only when FPU is used for floats.
 #ifdef _LP64
   static constexpr bool float_in_double() {
     return false;
@@ -174,7 +174,7 @@
     return VM_Version::supports_evex();
   }
 
-  // true means we have fast l2f convers
+  // true means we have fast l2f conversion
   // false means that conversion is done by runtime call
   static constexpr bool convL2FSupported(void) {
       return true;

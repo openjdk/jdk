@@ -451,7 +451,7 @@ void os::init_system_properties_values() {
   // Where to look for native libraries.
   //
   // Note: Due to a legacy implementation, most of the library path
-  // is set in the launcher. This was to accomodate linking restrictions
+  // is set in the launcher. This was to accommodate linking restrictions
   // on legacy Linux implementations (which are no longer supported).
   // Eventually, all the library path setting will be done here.
   //
@@ -811,7 +811,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // is not implemented properly. The posix standard requires adding
   // the size of the guard pages to the stack size, instead Linux
   // takes the space out of 'stacksize'. Thus we adapt the requested
-  // stack_size by the size of the guard pages to mimick proper
+  // stack_size by the size of the guard pages to mimic proper
   // behaviour. However, be careful not to end up with a size
   // of zero due to overflow. Don't add the guard page in that case.
   size_t guard_size = os::Linux::default_guard_size(thr_type);
@@ -4032,7 +4032,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
 
   // We only end up here when at least 1 large page can be used.
   // If the size is not a multiple of the large page size, we
-  // will mix the type of pages used, but in a decending order.
+  // will mix the type of pages used, but in a descending order.
   // Start off by reserving a range of the given size that is
   // properly aligned. At this point no pages are committed. If
   // a requested address is given it will be used and it must be

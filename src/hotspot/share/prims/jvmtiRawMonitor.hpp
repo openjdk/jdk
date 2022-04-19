@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
   QNode* volatile _wait_set;    // Threads wait()ing on the monitor
   int _magic;
   char* _name;
-  // JVMTI_RM_MAGIC is set in contructor and unset in destructor.
+  // JVMTI_RM_MAGIC is set in constructor and unset in destructor.
   enum { JVMTI_RM_MAGIC = (int)(('T' << 24) | ('I' << 16) | ('R' << 8) | 'M') };
 
   // Helpers for queue management isolation
