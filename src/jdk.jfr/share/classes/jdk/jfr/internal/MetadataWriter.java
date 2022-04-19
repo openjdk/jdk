@@ -80,7 +80,7 @@ final class MetadataWriter {
         // Possible improvement, sort string by how often they occur.
         // and assign low number to the most frequently used.
         buildStringPool(root, stringPool);
-        HashMap<String, Integer> lookup = new LinkedHashMap<>(stringPool.size());
+        HashMap<String, Integer> lookup = LinkedHashMap.newLinkedHashMap(stringPool.size());
         int index = 0;
         int poolSize = stringPool.size();
         writeInt(output, poolSize);

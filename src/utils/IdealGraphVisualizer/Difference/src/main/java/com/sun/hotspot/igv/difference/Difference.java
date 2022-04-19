@@ -55,7 +55,7 @@ public class Difference {
     }
 
     private static InputGraph createDiffSameGroup(InputGraph a, InputGraph b) {
-        Map<Integer, InputNode> keyMapB = new HashMap<>(b.getNodes().size());
+        Map<Integer, InputNode> keyMapB = HashMap.newHashMap(b.getNodes().size());
         for (InputNode n : b.getNodes()) {
             Integer key = n.getId();
             assert !keyMapB.containsKey(key);
@@ -108,7 +108,7 @@ public class Difference {
         InputGraph graph = new InputGraph(a.getName() + ", " + b.getName());
         g.addElement(graph);
 
-        Map<InputBlock, InputBlock> blocksMap = new HashMap<>();
+        Map<InputBlock, InputBlock> blocksMap = HashMap.newHashMap(a.getBlocks().size());
         for (InputBlock blk : a.getBlocks()) {
             InputBlock diffblk = graph.addBlock(blk.getName());
             blocksMap.put(blk, diffblk);
@@ -151,7 +151,7 @@ public class Difference {
         Set<InputNode> nodesA = new HashSet<>(a.getNodes());
         Set<InputNode> nodesB = new HashSet<>(b.getNodes());
 
-        Map<InputNode, InputNode> inputNodeMap = new HashMap<>(pairs.size());
+        Map<InputNode, InputNode> inputNodeMap = HashMap.newHashMap(pairs.size());
         for (NodePair p : pairs) {
             InputNode n = p.getLeft();
             assert nodesA.contains(n);

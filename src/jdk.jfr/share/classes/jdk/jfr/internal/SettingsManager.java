@@ -172,7 +172,7 @@ final class SettingsManager {
     }
 
     private Map<String, InternalSetting> createSettingsMap(List<Map<String,String>> activeSettings) {
-        Map<String, InternalSetting> map = new LinkedHashMap<>(activeSettings.size());
+        Map<String, InternalSetting> map = LinkedHashMap.newLinkedHashMap(activeSettings.size());
         for (Map<String, String> rec : activeSettings) {
             for (InternalSetting internal : makeInternalSettings(rec)) {
                 InternalSetting is = map.get(internal.getSettingsId());
