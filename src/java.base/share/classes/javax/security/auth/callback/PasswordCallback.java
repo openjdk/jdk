@@ -115,6 +115,12 @@ public class PasswordCallback implements Callback, java.io.Serializable {
      * @see #getPassword
      */
     public void setPassword(char[] password) {
+        // Cleanup the last buffered password copy.
+        if (cleanable != null) {
+            cleanable.clean();
+        }
+
+        // Set the retrieved password.
         this.inputPassword = (password == null ? null : password.clone());
 
         if (this.inputPassword != null) {
