@@ -2127,7 +2127,7 @@ define(`VECTOR_JAVA_FROUND', `
 instruct vround$2to$5$3($7 dst, $7 src, $7 tmp1, $7 tmp2, pRegGov ptmp)
 %{
   predicate(UseSVE > 0 &&
-            n->as_Vector()->length() == $5);
+            n->as_Vector()->length() >= $5);
   match(Set dst (RoundV$1 src));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP ptmp);
   format %{ "sve_vround  $dst, $4, $src\t# round $2 to $5$3 vector" %}

@@ -189,6 +189,12 @@
       default: return 0;
       case Op_PopCountVI: return VM_Version::supports_avx512_vpopcntdq() ? 0 : 50;
       case Op_PopCountVL: return VM_Version::supports_avx512_vpopcntdq() ? 0 : 40;
+      case Op_RoundF: // fall through
+      case Op_RoundD: // fall through
+      case Op_RoundVF: // fall through
+      case Op_RoundVD: {
+        return 30;
+      }
     }
   }
 
