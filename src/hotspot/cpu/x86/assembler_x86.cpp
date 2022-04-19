@@ -359,7 +359,7 @@ bool Assembler::query_compressed_disp_byte(int disp, bool is_evex_inst, int vect
                                            int cur_tuple_type, int in_size_in_bits, int cur_encoding) {
   int mod_idx = 0;
   // We will test if the displacement fits the compressed format and if so
-  // apply the compression to the displacment iff the result is8bit.
+  // apply the compression to the displacement iff the result is8bit.
   if (VM_Version::supports_evex() && is_evex_inst) {
     switch (cur_tuple_type) {
     case EVEX_FV:
@@ -444,7 +444,7 @@ bool Assembler::query_compressed_disp_byte(int disp, bool is_evex_inst, int vect
 bool Assembler::emit_compressed_disp_byte(int &disp) {
   int mod_idx = 0;
   // We will test if the displacement fits the compressed format and if so
-  // apply the compression to the displacment iff the result is8bit.
+  // apply the compression to the displacement iff the result is8bit.
   if (VM_Version::supports_evex() && _attributes && _attributes->is_evex_instruction()) {
     int evex_encoding = _attributes->get_evex_encoding();
     int tuple_type = _attributes->get_tuple_type();
@@ -1047,7 +1047,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     assert(ip == inst+1, "no prefixes allowed");
     // no EVEX collisions, all instructions that have 0x62 opcodes
     // have EVEX versions and are subopcodes of 0x66
-    ip++; // skip P0 and exmaine W in P1
+    ip++; // skip P0 and examine W in P1
     is_64bit = ((VEX_W & *ip) == VEX_W);
     ip++; // move to P2
     ip++; // skip P2, move to opcode
@@ -1765,7 +1765,7 @@ void Assembler::cmpxchgb(Register reg, Address adr) { // cmpxchg
 
 void Assembler::comisd(XMMRegister dst, Address src) {
   // NOTE: dbx seems to decode this as comiss even though the
-  // 0x66 is there. Strangly ucomisd comes out correct
+  // 0x66 is there. Strangely ucomisd comes out correct
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* rex_w */ VM_Version::supports_evex(), /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);;
@@ -3592,7 +3592,7 @@ void Assembler::nop(int i) {
     // 15: 0x66 0x66 0x66 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00 0x66 0x66 0x66 0x90
 
     while(i >= 15) {
-      // For Intel don't generate consecutive addess nops (mix with regular nops)
+      // For Intel don't generate consecutive address nops (mix with regular nops)
       i -= 15;
       emit_int24(0x66, 0x66, 0x66);
       addr_nop_8();
@@ -3762,7 +3762,7 @@ void Assembler::nop(int i) {
     // 15: 0x66 0x66 0x66 0x0F 0x1F 0x84 0x00 0x00 0x00 0x00 0x00 0x66 0x66 0x66 0x90
 
     while (i >= 15) {
-      // For ZX don't generate consecutive addess nops (mix with regular nops)
+      // For ZX don't generate consecutive address nops (mix with regular nops)
       i -= 15;
       emit_int24(0x66, 0x66, 0x66);
       addr_nop_8();
@@ -5298,7 +5298,7 @@ void Assembler::rep_stos() {
   NOT_LP64( emit_int16((unsigned char)0xF3,        (unsigned char)0xAB);)
 }
 
-// scans rcx pointer sized words at [edi] for occurance of rax,
+// scans rcx pointer sized words at [edi] for occurrence of rax,
 // generic
 void Assembler::repne_scan() { // repne_scan
   // SCASQ
@@ -5307,7 +5307,7 @@ void Assembler::repne_scan() { // repne_scan
 }
 
 #ifdef _LP64
-// scans rcx 4 byte words at [edi] for occurance of rax,
+// scans rcx 4 byte words at [edi] for occurrence of rax,
 // generic
 void Assembler::repne_scanl() { // repne_scan
   // SCASL

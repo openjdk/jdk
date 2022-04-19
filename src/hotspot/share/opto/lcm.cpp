@@ -276,7 +276,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
         // Give up if offset is not a compile-time constant.
         if (offset == Type::OffsetBot || tptr->_offset == Type::OffsetBot)
           continue;
-        offset += tptr->_offset; // correct if base is offseted
+        offset += tptr->_offset; // correct if base is offsetted
         // Give up if reference is beyond page size.
         if (MacroAssembler::needs_explicit_null_check(offset))
           continue;
@@ -628,7 +628,7 @@ Node* PhaseCFG::select(
         _regalloc->_scratch_float_pressure.init(_regalloc->_sched_float_pressure.high_pressure_limit());
         // simulate the notion that we just picked this node to schedule
         n->add_flag(Node::Flag_is_scheduled);
-        // now caculate its effect upon the graph if we did
+        // now calculate its effect upon the graph if we did
         adjust_register_pressure(n, block, recalc_pressure_nodes, false);
         // return its state for finalize in case somebody else wins
         n->remove_flag(Node::Flag_is_scheduled);
@@ -970,7 +970,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
   bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
 
   // We track the uses of local definitions as input dependences so that
-  // we know when a given instruction is avialable to be scheduled.
+  // we know when a given instruction is available to be scheduled.
   uint i;
   if (OptoRegScheduling && block_size_threshold_ok) {
     for (i = 1; i < block->number_of_nodes(); i++) { // setup nodes for pressure calc

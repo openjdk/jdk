@@ -576,12 +576,12 @@ void AbstractDumpWriter::start_sub_record(u1 tag, u4 len) {
     // Will be fixed up later if we add more sub-records.  If this is a huge sub-record,
     // this is already the correct length, since we don't add more sub-records.
     write_u4(len);
-    assert(Bytes::get_Java_u4((address)(buffer() + 5)) == len, "Inconsitent size!");
+    assert(Bytes::get_Java_u4((address)(buffer() + 5)) == len, "Inconsistent size!");
     _in_dump_segment = true;
     _is_huge_sub_record = len > buffer_size() - dump_segment_header_size;
   } else if (_is_huge_sub_record || (len > buffer_size() - position())) {
     // This object will not fit in completely or the last sub-record was huge.
-    // Finish the current segement and try again.
+    // Finish the current segment and try again.
     finish_dump_segment();
     start_sub_record(tag, len);
 
@@ -664,7 +664,7 @@ class ParWriterBufferQueue : public CHeapObj<mtInternal> {
       _tail = entry;
     }
     _length++;
-    assert(_tail->_next == NULL, "Bufer queue is polluted");
+    assert(_tail->_next == NULL, "Buffer queue is polluted");
   }
 
   ParWriterBufferQueueElem* dequeue() {

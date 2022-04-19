@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,9 +143,9 @@ static void save_memory_to_file(char* addr, size_t size) {
 // user specific directory and the backing store file be stored in either a
 // RAM based file system or a local disk based file system. Network based
 // file systems are not recommended for performance reasons. In addition,
-// use of SMB network based file systems may result in unsuccesful cleanup
+// use of SMB network based file systems may result in unsuccessful cleanup
 // of the disk based resource on exit of the VM. The Windows TMP and TEMP
-// environement variables, as used by the GetTempPath() Win32 API (see
+// environment variables, as used by the GetTempPath() Win32 API (see
 // os::get_temp_directory() in os_win32.cpp), control the location of the
 // user specific directory and the shared memory backing store file.
 
@@ -1546,7 +1546,7 @@ static size_t sharedmem_filesize(const char* filename, TRAPS) {
   //
   // on win95/98/me, _stat returns a file size of 0 bytes, but on
   // winnt/2k the appropriate file size is returned. support for
-  // the sharable aspects of performance counters was abandonded
+  // the shareable aspects of performance counters was abandoned
   // on the non-nt win32 platforms due to this and other api
   // inconsistencies
   //

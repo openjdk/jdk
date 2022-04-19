@@ -1339,7 +1339,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        const methodHandle& hot_method, int hot_count,
                                        CompileTask::CompileReason compile_reason,
                                        TRAPS) {
-  // Do nothing if compilebroker is not initalized or compiles are submitted on level none
+  // Do nothing if compilebroker is not initialized or compiles are submitted on level none
   if (!_initialized || comp_level == CompLevel_none) {
     return NULL;
   }
@@ -1348,7 +1348,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   assert(comp != NULL, "Ensure we have a compiler");
 
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
-  // CompileBroker::compile_method can trap and can have pending aysnc exception.
+  // CompileBroker::compile_method can trap and can have pending async exception.
   nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
   DirectivesStack::release(directive);
   return nm;

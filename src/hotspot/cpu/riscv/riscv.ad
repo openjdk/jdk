@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
 // Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -29,7 +29,7 @@
 //----------REGISTER DEFINITION BLOCK------------------------------------------
 // This information is used by the matcher and the register allocator to
 // describe individual registers and classes of registers within the target
-// archtecture.
+// architecture.
 
 register %{
 //----------Architecture Description Register Definitions----------------------
@@ -2591,10 +2591,10 @@ encode %{
 //         Region 6-7 is determined per call site.
 // Note 2: If the calling convention leaves holes in the incoming argument
 //         area, those holes are owned by SELF.  Holes in the outgoing area
-//         are owned by the CALLEE.  Holes should not be nessecary in the
+//         are owned by the CALLEE.  Holes should not be necessary in the
 //         incoming area, as the Java calling convention is completely under
 //         the control of the AD file.  Doubles can be sorted and packed to
-//         avoid holes.  Holes in the outgoing arguments may be nessecary for
+//         avoid holes.  Holes in the outgoing arguments may be necessary for
 //         varargs C calling conventions.
 // Note 3: Region 0-3 is even aligned, with pad2 as needed.  Region 3-5 is
 //         even aligned with pad0 as needed.

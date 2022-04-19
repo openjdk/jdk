@@ -1025,7 +1025,7 @@ public:
 
   // Return a node which is more "ideal" than the current node.
   // The invariants on this call are subtle.  If in doubt, read the
-  // treatise in node.cpp above the default implemention AND TEST WITH
+  // treatise in node.cpp above the default implementation AND TEST WITH
   // +VerifyIterativeGVN!
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 

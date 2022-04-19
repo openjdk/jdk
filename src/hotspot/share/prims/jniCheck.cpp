@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@
 
 // Execute the given block of source code with the thread in VM state.
 // To do this, transition from the NATIVE state to the VM state, execute
-// the code, and transtition back.  The ThreadInVMfromNative constructor
+// the code, and transition back.  The ThreadInVMfromNative constructor
 // performs the transition to VM state, its destructor restores the
 // NATIVE state.
 

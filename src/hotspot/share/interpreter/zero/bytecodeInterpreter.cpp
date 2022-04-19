@@ -308,7 +308,7 @@ JRT_END
 /*
  * Macros for caching and flushing the interpreter state. Some local
  * variables need to be flushed out to the frame before we do certain
- * things (like pushing frames or becomming gc safe) and some need to
+ * things (like pushing frames or becoming gc safe) and some need to
  * be recached later (like after popping a frame). We could use one
  * macro to cache or decache everything, but this would be less then
  * optimal because we don't always need to cache or decache everything
@@ -755,7 +755,7 @@ run:
       // need at entry to the loop.
       // DEBUGGER_SINGLE_STEP_NOTIFY();
       /* Using this labels avoids double breakpoints when quickening and
-       * when returing from transition frames.
+       * when returning from transition frames.
        */
   opcode_switch:
       assert(istate == orig, "Corrupted istate");
@@ -1564,7 +1564,7 @@ run:
             Klass* rhsKlass = rhsObject->klass(); // EBX (subclass)
             Klass* elemKlass = ObjArrayKlass::cast(arrObj->klass())->element_klass(); // superklass EAX
             //
-            // Check for compatibilty. This check must not GC!!
+            // Check for compatibility. This check must not GC!!
             // Seems way more expensive now that we must dispatch
             //
             if (rhsKlass != elemKlass && !rhsKlass->is_subtype_of(elemKlass)) { // ebx->is...
@@ -2009,7 +2009,7 @@ run:
             Klass* klassOf = (Klass*) METHOD->constants()->resolved_klass_at(index);
             Klass* objKlass = STACK_OBJECT(-1)->klass(); // ebx
             //
-            // Check for compatibilty. This check must not GC!!
+            // Check for compatibility. This check must not GC!!
             // Seems way more expensive now that we must dispatch.
             //
             if (objKlass != klassOf && !objKlass->is_subtype_of(klassOf)) {
@@ -2035,7 +2035,7 @@ run:
             Klass* klassOf = (Klass*) METHOD->constants()->resolved_klass_at(index);
             Klass* objKlass = STACK_OBJECT(-1)->klass();
             //
-            // Check for compatibilty. This check must not GC!!
+            // Check for compatibility. This check must not GC!!
             // Seems way more expensive now that we must dispatch.
             //
             if ( objKlass == klassOf || objKlass->is_subtype_of(klassOf)) {
@@ -3021,7 +3021,7 @@ run:
     // We'd like a HandleMark here to prevent any subsequent HandleMarkCleaner
     // in any following VM entries from freeing our live handles, but illegal_state_oop
     // isn't really allocated yet and so doesn't become live until later and
-    // in unpredicatable places. Instead we must protect the places where we enter the
+    // in unpredictable places. Instead we must protect the places where we enter the
     // VM. It would be much simpler (and safer) if we could allocate a real handle with
     // a NULL oop in it and then overwrite the oop later as needed. This isn't
     // unfortunately isn't possible.
@@ -3242,7 +3242,7 @@ finish:
   return;
 }
 
-// This constructor should only be used to contruct the object to signal
+// This constructor should only be used to construct the object to signal
 // interpreter initialization. All other instances should be created by
 // the frame manager.
 BytecodeInterpreter::BytecodeInterpreter(messages msg) {

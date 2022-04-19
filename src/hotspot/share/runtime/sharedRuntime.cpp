@@ -2085,7 +2085,7 @@ char* SharedRuntime::generate_class_cast_message(
     klass_separator = (target_klass != NULL) ? "; " : "";
   }
 
-  // add 3 for parenthesis and preceeding space
+  // add 3 for parenthesis and preceding space
   msglen += strlen(caster_klass_description) + strlen(target_klass_description) + strlen(klass_separator) + 3;
 
   char* message = NEW_RESOURCE_ARRAY_RETURN_NULL(char, msglen);
@@ -2918,7 +2918,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
   }
   entry->relocate(new_adapter->content_begin());
 #ifndef PRODUCT
-  // debugging suppport
+  // debugging support
   if (PrintAdapterHandlers || PrintStubCode) {
     ttyLocker ttyl;
     entry->print_adapter_on(tty);

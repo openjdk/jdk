@@ -695,7 +695,7 @@ void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
     char comma[2] = {0,0};
 
     // Leave default values on Agent.class side and pass only
-    // agruments explicitly set by user. All arguments passed
+    // arguments explicitly set by user. All arguments passed
     // to jcmd override properties with the same name set by
     // command line with -D or by managmenent.properties
     // file.

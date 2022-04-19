@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2247,7 +2247,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   // Side Effects:
   //   disjoint_int_copy_entry is set to the no-overlap entry point
@@ -2361,7 +2361,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   address generate_conjoint_int_oop_copy(bool aligned, bool is_oop, address nooverlap_target,
                                          address *entry, const char *name,
@@ -3947,7 +3947,7 @@ class StubGenerator: public StubCodeGenerator {
       } else if (k == 2) {
         __ subptr(rsp, 10 * wordSize);
         __ movdqu(Address(rsp, 0), xmm15); //save last_key from xmm15
-        load_key(xmm15, key, 0xd0); // 0xd0; 256-bit key goes upto 0xe0
+        load_key(xmm15, key, 0xd0); // 0xd0; 256-bit key goes up to 0xe0
         __ movdqu(Address(rsp, 6 * wordSize), xmm15);
         load_key(xmm1, key, 0xe0);  // 0xe0;
         __ movdqu(Address(rsp, 8 * wordSize), xmm1);
@@ -4039,11 +4039,11 @@ class StubGenerator: public StubCodeGenerator {
       __ jcc(Assembler::equal, L_exit);
       __ BIND(L_singleBlock_loopTopHead2[k]);
       if (k == 1) {
-        load_key(xmm_key11, key, 0xb0); // 0xb0; 192-bit key goes upto 0xc0
-        load_key(xmm_key12, key, 0xc0); // 0xc0; 192-bit key goes upto 0xc0
+        load_key(xmm_key11, key, 0xb0); // 0xb0; 192-bit key goes up to 0xc0
+        load_key(xmm_key12, key, 0xc0); // 0xc0; 192-bit key goes up to 0xc0
       }
       if (k == 2) {
-        load_key(xmm_key11, key, 0xb0); // 0xb0; 256-bit key goes upto 0xe0
+        load_key(xmm_key11, key, 0xb0); // 0xb0; 256-bit key goes up to 0xe0
       }
       __ align(OptoLoopAlignment);
       __ BIND(L_singleBlock_loopTop[k]);
@@ -5605,7 +5605,7 @@ address generate_avx_ghash_processBlocks() {
       // operation (vpmulhuw) which effectively shifts c right by 6
       // bits and a right by 10 bits.  We similarly mask bits 10-15
       // (d5..d0) and 22-27 (b5..b0) and shift them left by 8 and 4
-      // bits respecively.  This is done using vpmullw.  We end up
+      // bits respectively.  This is done using vpmullw.  We end up
       // with 4 6-bit values, thus splitting the 3 input bytes,
       // ready for encoding:
       //    0 0 d5..d0 0 0 c5..c0 0 0 b5..b0 0 0 a5..a0
@@ -6482,7 +6482,7 @@ address generate_avx_ghash_processBlocks() {
    *   c_rarg1   - byte* buf
    *   c_rarg2   - int length
    *
-   * Ouput:
+   * Output:
    *       rax   - int crc result
    */
   address generate_updateBytesCRC32() {
@@ -6538,7 +6538,7 @@ address generate_avx_ghash_processBlocks() {
   *   c_rarg3   - table_start - optional (present only when doing a library_call,
   *              not used by x86 algorithm)
   *
-  * Ouput:
+  * Output:
   *       rax   - int crc result
   */
   address generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
@@ -6758,7 +6758,7 @@ address generate_avx_ghash_processBlocks() {
   //    c_rarg0   - x address
   //    c_rarg1   - x length
   //    c_rarg2   - z address
-  //    c_rarg3   - z lenth
+  //    c_rarg3   - z length
    *
    */
   address generate_squareToLen() {

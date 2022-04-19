@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,7 +368,7 @@ public:
 
     void overwrite_local_double_long(int index) {
       // Invalidate the previous local if it contains first half of
-      // a double or long value since it's seconf half is being overwritten.
+      // a double or long value since its second half is being overwritten.
       int prev_index = index - 1;
       if (prev_index >= 0 &&
           (is_double(type_at(local(prev_index))) ||

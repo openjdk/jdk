@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1241,7 +1241,7 @@ bool MacroAssembler::is_compare_immediate_narrow_klass(address pos) {
 //  patch the load_constant
 //-----------------------------------
 
-// CPU-version dependend patching of load_const.
+// CPU-version dependent patching of load_const.
 void MacroAssembler::patch_const(address a, long x) {
   assert(is_load_const(a), "not a load of a constant");
   // Note: Right shift is only cleanly defined for unsigned types
@@ -1427,7 +1427,7 @@ int MacroAssembler::store_const(const Address &dest, long imm,
 //===       N O T   P A T CH A B L E   C O N S T A N T S          ===
 //===================================================================
 
-// Load constant x into register t with a fast instrcution sequence
+// Load constant x into register t with a fast instruction sequence
 // depending on the bits in x. Preserves CC under all circumstances.
 int MacroAssembler::load_const_optimized_rtn_len(Register t, long x, bool emit) {
   if (x == 0) {
@@ -2423,7 +2423,7 @@ bool MacroAssembler::is_call_far_patchable_variant2_at(address instruction_addr)
 //
 // A call_far_patchable comes in different flavors:
 //  - LARL(CP) / LG(CP) / BR (address in constant pool, access via CP register)
-//  - LGRL(CP) / BR          (address in constant pool, pc-relative accesss)
+//  - LGRL(CP) / BR          (address in constant pool, pc-relative access)
 //  - BRASL                  (relative address of call target coded in instruction)
 // All flavors occupy the same amount of space. Length differences are compensated
 // by leading nops, such that the instruction sequence always ends at the same
@@ -2844,7 +2844,7 @@ void MacroAssembler::lookup_virtual_method(Register           recv_klass,
 //   trapMarker   - Marking byte for the generated illtrap instructions (if any).
 //                  Any value except 0x00 is supported.
 //                  = 0x00 - do not generate illtrap instructions.
-//                         use nops to fill ununsed space.
+//                         use nops to fill unused space.
 //   requiredSize - required size of the generated code. If the actually
 //                  generated code is smaller, use padding instructions to fill up.
 //                  = 0 - no size requirement, no padding.
@@ -3009,7 +3009,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register Rsubklass,
                                                    Label* L_success,
                                                    Label* L_failure) {
   // Input registers must not overlap.
-  // Also check for R1 which is explicitely used here.
+  // Also check for R1 which is explicitly used here.
   assert_different_registers(Z_R1, Rsubklass, Rsuperklass, Rarray_ptr, Rlength);
   NearLabel L_fallthrough;
   int label_nulls = 0;
@@ -3417,7 +3417,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   z_tmll(current, KlassAlignmentInBytes-1); // Check alignment.
   z_brc(Assembler::bcondAllZero, ok);
   // The plain disassembler does not recognize illtrap. It instead displays
-  // a 32-bit value. Issueing two illtraps assures the disassembler finds
+  // a 32-bit value. Issuing two illtraps assures the disassembler finds
   // the proper beginning of the next instruction.
   z_illtrap(0xee);
   z_illtrap(0xee);
@@ -3561,7 +3561,7 @@ void MacroAssembler::decode_klass_not_null(Register dst) {
   z_tmll(dst, KlassAlignmentInBytes-1); // Check alignment.
   z_brc(Assembler::bcondAllZero, ok);
   // The plain disassembler does not recognize illtrap. It instead displays
-  // a 32-bit value. Issueing two illtraps assures the disassembler finds
+  // a 32-bit value. Issuing two illtraps assures the disassembler finds
   // the proper beginning of the next instruction.
   z_illtrap(0xd1);
   z_illtrap(0xd1);
@@ -3608,7 +3608,7 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   z_tmll(dst, KlassAlignmentInBytes-1); // Check alignment.
   z_brc(Assembler::bcondAllZero, ok);
   // The plain disassembler does not recognize illtrap. It instead displays
-  // a 32-bit value. Issueing two illtraps assures the disassembler finds
+  // a 32-bit value. Issuing two illtraps assures the disassembler finds
   // the proper beginning of the next instruction.
   z_illtrap(0xd2);
   z_illtrap(0xd2);
@@ -5493,7 +5493,7 @@ void MacroAssembler::stop(int type, const char* msg, int id) {
   push_frame_abi160(0);
   call_VM_leaf(CAST_FROM_FN_PTR(address, stop_on_request), Z_ARG1, Z_ARG2);
   // The plain disassembler does not recognize illtrap. It instead displays
-  // a 32-bit value. Issueing two illtraps assures the disassembler finds
+  // a 32-bit value. Issuing two illtraps assures the disassembler finds
   // the proper beginning of the next instruction.
   z_illtrap(); // Illegal instruction.
   z_illtrap(); // Illegal instruction.

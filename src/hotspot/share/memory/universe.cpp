@@ -1221,7 +1221,7 @@ void LatestMethodCache::init(Klass* k, Method* m) {
   }
 #ifndef PRODUCT
   else {
-    // sharing initilization should have already set up _klass
+    // sharing initialization should have already set up _klass
     assert(_klass != NULL, "just checking");
   }
 #endif

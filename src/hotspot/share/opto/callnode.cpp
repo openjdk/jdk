@@ -1363,7 +1363,7 @@ void SafePointNode::set_local(JVMState* jvms, uint idx, Node *c) {
   if (in(loc)->is_top() && idx > 0 && !c->is_top() ) {
     // If current local idx is top then local idx - 1 could
     // be a long/double that needs to be killed since top could
-    // represent the 2nd half ofthe long/double.
+    // represent the 2nd half of the long/double.
     uint ideal = in(loc -1)->ideal_reg();
     if (ideal == Op_RegD || ideal == Op_RegL) {
       // set other (low index) half to top
@@ -1752,7 +1752,7 @@ uint LockNode::size_of() const { return sizeof(*this); }
 //
 // Either of these cases subsumes the simple case of sequential control flow
 //
-// Addtionally we can eliminate versions without the else case:
+// Additionally we can eliminate versions without the else case:
 //
 //   s();
 //   if (p)

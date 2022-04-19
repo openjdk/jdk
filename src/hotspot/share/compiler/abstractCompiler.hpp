@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // Usually, the compilation context is the caller of the method 'method'.
   // The only case when for a non-recursive method 'method' the compilation context
   // is not the caller of the 'method' (but it is the method itself) is
-  // java.lang.ref.Referene::get.
+  // java.lang.ref.Reference::get.
   // For java.lang.ref.Reference::get, the intrinsic version is used
   // instead of the compiled version so that the value in the referent
   // field can be registered by the G1 pre-barrier code. The intrinsified

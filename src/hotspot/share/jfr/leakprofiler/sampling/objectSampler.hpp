@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ class ObjectSample;
 class SampleList;
 class SamplePriorityQueue;
 
-// Class reponsible for holding samples and
+// Class responsible for holding samples and
 // making sure the samples are evenly distributed as
 // new entries are added and removed.
 class ObjectSampler : public CHeapObj<mtTracing> {

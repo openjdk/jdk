@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3320,7 +3320,7 @@ class StubGenerator: public StubCodeGenerator {
    *   rsp(8)   - byte* buf
    *   rsp(12)  - int length
    *
-   * Ouput:
+   * Output:
    *       rax   - int crc result
    */
   address generate_updateBytesCRC32() {
@@ -3376,7 +3376,7 @@ class StubGenerator: public StubCodeGenerator {
   *   rsp(16)  - table_start - optional (present only when doing a library_calll,
   *              not used by x86 algorithm)
   *
-  * Ouput:
+  * Output:
   *       rax  - int crc result
   */
   address generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {

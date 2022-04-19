@@ -178,7 +178,7 @@ InterpreterOopMap::InterpreterOopMap() {
 }
 
 InterpreterOopMap::~InterpreterOopMap() {
-  // The expection is that the bit mask was allocated
+  // The expectation is that the bit mask was allocated
   // last in this resource area.  That would make the free of the
   // bit_mask effective (see how FREE_RESOURCE_ARRAY does a free).
   // If it was not allocated last, there is not a correctness problem

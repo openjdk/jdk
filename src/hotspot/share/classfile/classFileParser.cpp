@@ -1646,7 +1646,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
                                    CHECK);
   // Sometimes injected fields already exist in the Java source so
   // the fields array could be too long.  In that case the
-  // fields array is trimed. Also unused slots that were reserved
+  // fields array is trimmed. Also unused slots that were reserved
   // for generic signature indexes are discarded.
   {
     int i = 0;
@@ -2033,7 +2033,7 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
     }
     case VM_SYMBOL_ENUM_NAME(jdk_internal_ValueBased_signature): {
       if (_location != _in_class)   break;  // only allow for classes
-      if (!privileged)              break;  // only allow in priviledged code
+      if (!privileged)              break;  // only allow in privileged code
       return _jdk_internal_ValueBased;
     }
     default: {
@@ -3944,7 +3944,7 @@ void ClassFileParser::create_combined_annotations(TRAPS) {
     // assigned to InstanceKlass being constructed.
     _combined_annotations = annotations;
 
-    // The annotations arrays below has been transfered the
+    // The annotations arrays below has been transferred the
     // _combined_annotations so these fields can now be cleared.
     _class_annotations       = NULL;
     _class_type_annotations  = NULL;
@@ -4101,7 +4101,7 @@ void OopMapBlocksBuilder::compact() {
     return;
   }
   /*
-   * Since field layout sneeks in oops before values, we will be able to condense
+   * Since field layout sneaks in oops before values, we will be able to condense
    * blocks. There is potential to compact between super, own refs and values
    * containing refs.
    *

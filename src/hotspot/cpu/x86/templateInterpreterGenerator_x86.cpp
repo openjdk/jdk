@@ -1047,7 +1047,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // It is safe to do this push because state is _thread_in_native and return address will be found
   // via _last_native_pc and not via _last_jave_sp
 
-  // NOTE: the order of theses push(es) is known to frame::interpreter_frame_result.
+  // NOTE: the order of these push(es) is known to frame::interpreter_frame_result.
   // If the order changes or anything else is added to the stack the code in
   // interpreter_frame_result will have to be changed.
 

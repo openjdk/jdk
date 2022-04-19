@@ -516,7 +516,7 @@ bool Method::register_native(Klass* k, Symbol* name, Symbol* signature, address 
 bool Method::was_executed_more_than(int n) {
   // Invocation counter is reset when the Method* is compiled.
   // If the method has compiled code we therefore assume it has
-  // be excuted more than n times.
+  // be executed more than n times.
   if (is_accessor() || is_empty_method() || (code() != NULL)) {
     // interpreter doesn't bump invocation counter of trivial methods
     // compiler does not bump invocation counter of compiled methods
@@ -1000,7 +1000,7 @@ void Method::set_native_function(address function, bool post_event_flag) {
     // be passed when post_event_flag is false.
     assert(function !=
       SharedRuntime::native_method_throw_unsatisfied_link_error_entry(),
-      "post_event_flag mis-match");
+      "post_event_flag mismatch");
 
     // post the bind event, and possible change the bind function
     JvmtiExport::post_native_method_bind(this, &function);
@@ -1372,7 +1372,7 @@ bool Method::is_ignored_by_security_stack_walk() const {
     return true;
   }
   if (method_holder()->is_subclass_of(vmClasses::reflect_MethodAccessorImpl_klass())) {
-    // This is an auxilary frame -- ignore it
+    // This is an auxiliary frame -- ignore it
     return true;
   }
   if (is_method_handle_intrinsic() || is_compiled_lambda_form()) {

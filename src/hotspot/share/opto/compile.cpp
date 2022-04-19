@@ -3913,7 +3913,7 @@ bool Compile::final_graph_reshaping() {
 
 #ifdef IA32
   // If original bytecodes contained a mixture of floats and doubles
-  // check if the optimizer has made it homogenous, item (3).
+  // check if the optimizer has made it homogeneous, item (3).
   if (UseSSE == 0 &&
       frc.get_float_count() > 32 &&
       frc.get_double_count() == 0 &&
@@ -4280,7 +4280,7 @@ void Compile::print_inlining_stream_free() {
 }
 
 // The message about the current inlining is accumulated in
-// _print_inlining_stream and transfered into the _print_inlining_list
+// _print_inlining_stream and transferred into the _print_inlining_list
 // once we know whether inlining succeeds or not. For regular
 // inlining, messages are appended to the buffer pointed by
 // _print_inlining_idx in the _print_inlining_list. For late inlining,
@@ -4371,7 +4371,7 @@ void Compile::print_inlining_update_delayed(CallGenerator* cg) {
 }
 
 void Compile::print_inlining_assert_ready() {
-  assert(!_print_inlining || _print_inlining_stream->size() == 0, "loosing data");
+  assert(!_print_inlining || _print_inlining_stream->size() == 0, "losing data");
 }
 
 void Compile::process_print_inlining() {

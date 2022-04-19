@@ -1783,7 +1783,7 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
 //  GVN transformations. For now it is Con, Proj, Phi, CastPP, CheckCastPP.
 //  I mark Phi nodes as safe node not only because they can reference itself
 //  but also to prevent mistaking the fallthrough case inside an outer loop
-//  as dead loop when the phi references itselfs through an other phi.
+//  as dead loop when the phi references itself through an other phi.
 PhiNode::LoopSafety PhiNode::simple_data_loop_check(Node *in) const {
   // It is unsafe loop if the phi node references itself directly.
   if (in == (Node*)this)

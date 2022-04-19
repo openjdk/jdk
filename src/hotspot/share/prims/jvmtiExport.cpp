@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1031,7 +1031,7 @@ bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
 
 void JvmtiExport::report_unsupported(bool on) {
   // If any JVMTI service is turned on, we need to exit before native code
-  // tries to access nonexistant services.
+  // tries to access nonexistent services.
   if (on) {
     vm_exit_during_initialization("Java Kernel does not support JVMTI.");
   }
@@ -2609,7 +2609,7 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
   const char *on_attach_symbols[] = AGENT_ONATTACH_SYMBOLS;
   size_t num_symbol_entries = ARRAY_SIZE(on_attach_symbols);
 
-  // The abs paramter should be "true" or "false"
+  // The abs parameter should be "true" or "false"
   bool is_absolute_path = (absParam != NULL) && (strcmp(absParam,"true")==0);
 
   // Initially marked as invalid. It will be set to valid if we can find the agent

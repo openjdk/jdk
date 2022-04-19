@@ -246,7 +246,7 @@ class os: AllStatic {
     // which being declared MP when in fact not, is a problem - then
     // the bootstrap routine for the stub generator needs to check
     // the processor count directly and leave the bootstrap routine
-    // in place until called after initialization has ocurred.
+    // in place until called after initialization has occurred.
     return (_processor_count != 1);
   }
 

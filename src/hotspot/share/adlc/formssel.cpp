@@ -1354,7 +1354,7 @@ void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
   }
 }
 
-// Seach through operands to determine parameters unique positions.
+// Search through operands to determine parameters unique positions.
 void InstructForm::set_unique_opnds() {
   uint* uniq_idx = NULL;
   uint  nopnds = num_opnds();

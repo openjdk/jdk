@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -205,7 +205,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
   if (!(UseTLAB && ZeroTLAB && is_tlab_allocated)) {
     // clear rest of allocated space
     const Register index = tmp2;
-    // 16: multipler for threshold
+    // 16: multiplier for threshold
     const int threshold = 16 * BytesPerWord;    // approximate break even point for code size (see comments below)
     if (var_size_in_bytes != noreg) {
       mv(index, var_size_in_bytes);
@@ -213,7 +213,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
     } else if (con_size_in_bytes <= threshold) {
       // use explicit null stores
       int i = hdr_size_in_bytes;
-      if (i < con_size_in_bytes && (con_size_in_bytes % (2 * BytesPerWord))) { // 2: multipler for BytesPerWord
+      if (i < con_size_in_bytes && (con_size_in_bytes % (2 * BytesPerWord))) { // 2: multiplier for BytesPerWord
         sd(zr, Address(obj, i));
         i += BytesPerWord;
       }

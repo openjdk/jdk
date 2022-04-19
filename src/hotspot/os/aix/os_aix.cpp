@@ -1982,7 +1982,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   // Little problem here: if SPEC1170 behaviour is off, mprotect() on AIX will
   // not tell me if protection failed when trying to protect an un-protectable range.
   //
-  // This means if the memory was allocated using shmget/shmat, protection wont work
+  // This means if the memory was allocated using shmget/shmat, protection won't work
   // but mprotect will still return 0:
   //
   // See http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.basetechref/doc/basetrf1/mprotect.htm
@@ -2338,7 +2338,7 @@ void os::init(void) {
     libperfstat::perfstat_reset();
   }
 
-  // Now initialze basic system properties. Note that for some of the values we
+  // Now initialize basic system properties. Note that for some of the values we
   // need libperfstat etc.
   os::Aix::initialize_system_info();
 
@@ -2924,7 +2924,7 @@ void os::Aix::scan_environment() {
   char* p;
   int rc;
 
-  // Warn explicity if EXTSHM=ON is used. That switch changes how
+  // Warn explicitly if EXTSHM=ON is used. That switch changes how
   // System V shared memory behaves. One effect is that page size of
   // shared memory cannot be change dynamically, effectivly preventing
   // large pages from working.

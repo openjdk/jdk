@@ -401,7 +401,7 @@ static bool call_chained_handler(struct sigaction *actp, int sig,
     return false;
   } else if (actp->sa_handler != SIG_IGN) {
     if ((actp->sa_flags & SA_NODEFER) == 0) {
-      // automaticlly block the signal
+      // automatically block the signal
       sigaddset(&(actp->sa_mask), sig);
     }
 

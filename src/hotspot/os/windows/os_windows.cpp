@@ -4306,7 +4306,7 @@ jint os::init_2(void) {
 
   JavaThread::set_stack_size_at_create(stack_commit_size);
 
-  // Calculate theoretical max. size of Threads to guard gainst artifical
+  // Calculate theoretical max. size of Threads to guard gainst artificial
   // out-of-memory situations, where all available address-space has been
   // reserved by thread stacks.
   assert(actual_reserve_size != 0, "Must have a stack");
@@ -4655,7 +4655,7 @@ jlong os::current_thread_cpu_time(bool user_sys_cpu_time) {
 }
 
 jlong os::thread_cpu_time(Thread* thread, bool user_sys_cpu_time) {
-  // This code is copy from clasic VM -> hpi::sysThreadCPUTime
+  // This code is copy from classic VM -> hpi::sysThreadCPUTime
   // If this function changes, os::is_thread_cpu_time_supported() should too
   FILETIME CreationTime;
   FILETIME ExitTime;
@@ -4701,7 +4701,7 @@ bool os::is_thread_cpu_time_supported() {
   }
 }
 
-// Windows does't provide a loadavg primitive so this is stubbed out for now.
+// Windows doesn't provide a loadavg primitive so this is stubbed out for now.
 // It does have primitives (PDH API) to get CPU usage and run queue length.
 // "\\Processor(_Total)\\% Processor Time", "\\System\\Processor Queue Length"
 // If we wanted to implement loadavg on Windows, we have a few options:
@@ -5267,7 +5267,7 @@ bool os::pd_unmap_memory(char* addr, size_t bytes) {
   // Instead, executable region was allocated using VirtualAlloc(). See
   // pd_map_memory() above.
   //
-  // The following flags should match the 'exec_access' flages used for
+  // The following flags should match the 'exec_access' flags used for
   // VirtualProtect() in pd_map_memory().
   if (mem_info.Protect == PAGE_EXECUTE_READ ||
       mem_info.Protect == PAGE_EXECUTE_READWRITE) {
@@ -5487,7 +5487,7 @@ int os::PlatformEvent::park(jlong Millis) {
   _Event = 0;
   // see comment at end of os::PlatformEvent::park() below:
   OrderAccess::fence();
-  // If we encounter a nearly simultanous timeout expiry and unpark()
+  // If we encounter a nearly simultaneous timeout expiry and unpark()
   // we return OS_OK indicating we awoke via unpark().
   // Implementor's license -- returning OS_TIMEOUT would be equally valid, however.
   return (v >= 0) ? OS_OK : OS_TIMEOUT;

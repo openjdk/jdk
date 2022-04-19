@@ -3510,7 +3510,7 @@ class StubGenerator: public StubCodeGenerator {
    * scratch:
    *   R2, R6-R12
    *
-   * Ouput:
+   * Output:
    *   R3_RET     - int   crc result
    */
   // Compute CRC32 function.
@@ -3958,7 +3958,7 @@ class StubGenerator: public StubCodeGenerator {
 
       // Each element of non_match correspond to one each of the 16 input
       // characters.  Those elements that become 0x00 after the xxland
-      // instuction are invalid Base64 characters.
+      // instruction are invalid Base64 characters.
       __ xxland(non_match->to_vsr(), M, bit);
 
       // Compare each element to zero

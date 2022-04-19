@@ -2230,7 +2230,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
           n->outcnt() == 1 )            // Not already shared
         set_shared(n);                  // Force it to be a root
       break;
-    case Op_BoxLock:         // Cant match until we get stack-regs in ADLC
+    case Op_BoxLock:         // Can't match until we get stack-regs in ADLC
     case Op_IfFalse:
     case Op_IfTrue:
     case Op_MachProj:

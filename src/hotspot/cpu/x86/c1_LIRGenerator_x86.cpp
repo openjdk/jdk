@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,6 @@ LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
 // i486 instructions can inline constants
 bool LIRGenerator::can_store_as_constant(Value v, BasicType type) const {
   if (type == T_SHORT || type == T_CHAR) {
-    // there is no immediate move of word values in asembler_i486.?pp
     return false;
   }
   Constant* c = v->as_Constant();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -373,7 +373,7 @@ void PhaseChaitin::Register_Allocate() {
   de_ssa();
 
 #ifdef ASSERT
-  // Veify the graph before RA.
+  // Verify the graph before RA.
   verify(&live_arena);
 #endif
 
@@ -593,7 +593,7 @@ void PhaseChaitin::Register_Allocate() {
   merge_multidefs();
 
 #ifdef ASSERT
-  // Veify the graph after RA.
+  // Verify the graph after RA.
   verify(&live_arena);
 #endif
 

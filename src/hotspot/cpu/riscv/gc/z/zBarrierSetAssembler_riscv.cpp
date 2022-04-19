@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -382,7 +382,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
   assert_different_registers(ref, ref_addr, noreg);
 
   // Save x10 unless it is the result or tmp register
-  // Set up SP to accomodate parameters and maybe x10.
+  // Set up SP to accommodate parameters and maybe x10.
   if (ref != x10 && tmp != x10) {
     __ sub(sp, sp, 32);
     __ sd(x10, Address(sp, 16));

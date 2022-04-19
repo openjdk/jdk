@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -756,7 +756,7 @@ void PhaseStringOpts::remove_dead_nodes() {
       }
       case Op_AddP:
       case Op_CreateEx: {
-        // Recurisvely clean up references to CreateEx so EA doesn't
+        // Recursively clean up references to CreateEx so EA doesn't
         // get unhappy about the partially collapsed graph.
         for (SimpleDUIterator i(use); i.has_next(); i.next()) {
           Node* m = i.get();
@@ -1762,7 +1762,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   SafePointNode* map = new SafePointNode(size, jvms);
 
   // copy the control and memory state from the final call into our
-  // new starting state.  This allows any preceeding tests to feed
+  // new starting state.  This allows any preceding tests to feed
   // into the new section of code.
   for (uint i1 = 0; i1 < TypeFunc::Parms; i1++) {
     map->init_req(i1, sc->end()->in(i1));

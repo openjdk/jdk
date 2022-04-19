@@ -125,7 +125,7 @@ class MemTracker : AllStatic {
   }
 
   // Record arena size change. Arena size is the size of all arena
-  // chuncks that backing up the arena.
+  // chunks that are backing up the arena.
   static inline void record_arena_size_change(ssize_t diff, MEMFLAGS flag) {
     if (!enabled()) return;
     MallocTracker::record_arena_size_change(diff, flag);

@@ -641,7 +641,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   DEBUG_ONLY(check_crash_protection());
 
-  // On malloc(0), implementators of malloc(3) have the choice to return either
+  // On malloc(0), implementations of malloc(3) have the choice to return either
   // NULL or a unique non-NULL pointer. To unify libc behavior across our platforms
   // we chose the latter.
   size = MAX2((size_t)1, size);
@@ -688,7 +688,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
   DEBUG_ONLY(check_crash_protection());
 
-  // On realloc(p, 0), implementators of realloc(3) have the choice to return either
+  // On realloc(p, 0), implementers of realloc(3) have the choice to return either
   // NULL or a unique non-NULL pointer. To unify libc behavior across our platforms
   // we chose the latter.
   size = MAX2((size_t)1, size);

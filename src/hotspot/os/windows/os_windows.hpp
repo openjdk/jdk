@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ class win32 {
   static bool find_mapping(address p, mapping_info_t* mapping_info);
 
 #ifndef _WIN64
-  // A wrapper to install a structured exception handler for fast JNI accesors.
+  // A wrapper to install a structured exception handler for fast JNI accessors.
   static address fast_jni_accessor_wrapper(BasicType);
 #endif
 

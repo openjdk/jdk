@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -976,7 +976,7 @@ void IterateOverHeapObjectClosure::do_object(oop o) {
   CallbackWrapper wrapper(tag_map(), o);
 
   // if the object is tagged and we're only interested in untagged objects
-  // then don't invoke the callback. Similiarly, if the object is untagged
+  // then don't invoke the callback. Similarly, if the object is untagged
   // and we're only interested in tagged objects we skip the callback.
   if (wrapper.obj_tag() != 0) {
     if (object_filter() == JVMTI_HEAP_OBJECT_UNTAGGED) return;

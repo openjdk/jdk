@@ -1092,7 +1092,7 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
         }
       }
 #endif // ARM
-      // Throw a stack overflow exception.  Guard pages will be reenabled
+      // Throw a stack overflow exception.  Guard pages will be re-enabled
       // while unwinding the stack.
       overflow_state->disable_stack_yellow_reserved_zone();
       *stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -787,7 +787,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
   stack->overflow_check(
     extra_locals + header_words + monitor_words + stack_words, CHECK_NULL);
 
-  // Adjust the caller's stack frame to accomodate any additional
+  // Adjust the caller's stack frame to accommodate any additional
   // local variables we have contiguously with our parameters.
   for (int i = 0; i < extra_locals; i++)
     stack->push(0);

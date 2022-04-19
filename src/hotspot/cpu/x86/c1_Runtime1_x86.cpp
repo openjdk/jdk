@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1069,7 +1069,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           const Register thread = NOT_LP64(rdi) LP64_ONLY(r15_thread);
           NOT_LP64(__ get_thread(thread));
 
-          // get the instance size (size is postive so movl is fine for 64bit)
+          // get the instance size (size is positive so movl is fine for 64bit)
           __ movl(obj_size, Address(klass, Klass::layout_helper_offset()));
 
           __ eden_allocate(thread, obj, obj_size, 0, t1, slow_path);
@@ -1161,7 +1161,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           // get the allocation size: round_up(hdr + length << (layout_helper & 0x1F))
           // since size is positive movl does right thing on 64bit
           __ movl(t1, Address(klass, Klass::layout_helper_offset()));
-          // since size is postive movl does right thing on 64bit
+          // since size is positive movl does right thing on 64bit
           __ movl(arr_size, length);
           assert(t1 == rcx, "fixed register usage");
           __ shlptr(arr_size /* by t1=rcx, mod 32 */);

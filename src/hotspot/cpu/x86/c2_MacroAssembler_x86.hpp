@@ -31,7 +31,7 @@ public:
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
-  // See full desription in macroAssembler_x86.cpp.
+  // See full description in macroAssembler_x86.cpp.
   void fast_lock(Register obj, Register box, Register tmp,
                  Register scr, Register cx1, Register cx2,
                  RTMLockingCounters* rtm_counters,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -219,8 +219,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       // "Instruction Storage Interrupt" is generated and 'pc' (NIP) already
       // contains the invalid address. Otherwise, the SIGSEGV is caused due to
       // load/store instruction trying to load/store from/to an invalid address
-      // and causing a "Data Storage Interrupt", so we inspect the intruction
-      // in order to extract the faulty data addresss.
+      // and causing a "Data Storage Interrupt", so we inspect the instruction
+      // in order to extract the faulty data address.
       address addr;
       if ((ucontext_get_trap(uc) & 0x0F00 /* no IRQ reply bits */) == 0x0400) {
         // Instruction Storage Interrupt (ISI)

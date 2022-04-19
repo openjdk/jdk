@@ -395,7 +395,7 @@ public:
   jlong make_handle(const Handle& obj);
   oop resolve_handle(jlong objectHandle);
 
-  // These are analagous to the JNI routines
+  // These are analogous to the JNI routines
   JVMCIObject make_local(JVMCIObject object);
   void destroy_local(JVMCIObject object);
 
