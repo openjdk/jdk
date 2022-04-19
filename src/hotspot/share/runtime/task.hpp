@@ -69,7 +69,7 @@ class PeriodicTask: public CHeapObj<mtInternal> {
   // between T and T + interval_time.
   void enroll();
 
-  // Make the task deactivate
+  // Make the task inactivate
   void disenroll();
 
   void execute_if_pending(int delay_time) {
