@@ -898,7 +898,7 @@ sealed class DirectMethodHandle extends MethodHandle {
                 case NF_UNSAFE:
                     MemberName member = new MemberName(MethodHandleStatics.class, "UNSAFE", Unsafe.class, REF_getStatic);
                     return new NamedFunction(
-                            MemberName.getFactory().resolveOrFail(REF_getField, member,
+                            MemberName.getFactory().resolveOrFail(REF_getStatic, member,
                                                                   DirectMethodHandle.class, LM_TRUSTED,
                                                                   NoSuchFieldException.class));
                 case NF_checkReceiver:
