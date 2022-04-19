@@ -96,7 +96,7 @@ Changes in 1.2.7.1 (24 Mar 2013)
 - Fix types in contrib/minizip to match result of get_crc_table()
 - Simplify contrib/vstudio/vc10 with 'd' suffix
 - Add TOP support to win32/Makefile.msc
-- Support i686 and amd64 assembler builds in CMakeLists.txt
+- Suport i686 and amd64 assembler builds in CMakeLists.txt
 - Fix typos in the use of _LARGEFILE64_SOURCE in zconf.h
 - Add vc11 and vc12 build files to contrib/vstudio
 - Add gzvprintf() as an undocumented function in zlib

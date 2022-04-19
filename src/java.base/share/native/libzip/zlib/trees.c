@@ -336,7 +336,7 @@ local void tr_static_init()
 }
 
 /* ===========================================================================
- * Generate the file trees.h describing the static trees.
+ * Genererate the file trees.h describing the static trees.
  */
 #ifdef GEN_TREES_H
 #  ifndef ZLIB_DEBUG

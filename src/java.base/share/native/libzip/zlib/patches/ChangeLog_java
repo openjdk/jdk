@@ -85,7 +85,7 @@
       s->pending = 0;
       s->pending_out = s->pending_buf;
   
-+     s->high_water = 0;      /* reset to its initial value 0 */
++     s->high_water = 0;      /* reset to its inital value 0 */
 + 
       if (s->wrap < 0) {
           s->wrap = -s->wrap; /* was made negative by deflate(..., Z_FINISH); */
@@ -93,6 +93,6 @@
       s->status =
   #ifdef GZIP
 
-(7) deflate.c undo (6), replaced with the official zlib repo fix see#305/#f969409
+(7) deflate.c undo (6), replaced withe the official zlib repo fix see#305/#f969409
 
   

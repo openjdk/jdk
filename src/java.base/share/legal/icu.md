@@ -307,7 +307,7 @@ property of their respective owners.
  #  Redistributions of source code must retain the above copyright notice, this
  #  list of conditions and the following disclaimer. Redistributions in binary
  #  form must reproduce the above copyright notice, this list of conditions and
- #  the following disclaimer in the documentation and/or the materials
+ #  the following disclaimer in the documentation and/or ther materials
  #  provided with the distribution.
  #
  # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
