@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
                                    _partial_objarray_chunk_size);
 
   // Push any needed partial scan tasks.  Pushed before processing the
-  // intitial chunk to allow other workers to steal while we're processing.
+  // initial chunk to allow other workers to steal while we're processing.
   for (uint i = 0; i < step._ncreate; ++i) {
     push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
   }
