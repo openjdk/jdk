@@ -80,8 +80,20 @@ header extends java/lang/Object implements java/lang/annotation/Annotation flags
 class name java/lang/IllegalCallerException
 header extends java/lang/RuntimeException flags 21
 
+class name java/lang/Integer
+-method name divideUnsigned descriptor (II)I
+-method name remainderUnsigned descriptor (II)I
+method name divideUnsigned descriptor (II)I flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
+method name remainderUnsigned descriptor (II)I flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
+
 class name java/lang/LayerInstantiationException
 header extends java/lang/RuntimeException flags 21
+
+class name java/lang/Long
+-method name divideUnsigned descriptor (JJ)J
+-method name remainderUnsigned descriptor (JJ)J
+method name divideUnsigned descriptor (JJ)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
+method name remainderUnsigned descriptor (JJ)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 
 class name java/lang/Math
 -method name round descriptor (F)I
@@ -396,6 +408,11 @@ header extends java/lang/Object flags 21 deprecated true runtimeAnnotations @Lja
 class name java/util/Observer
 header extends java/lang/Object flags 601 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 
+class name java/util/Properties
+header extends java/util/Hashtable flags 21 signature Ljava/util/Hashtable<Ljava/lang/Object;Ljava/lang/Object;>;
+innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
+innerclass innerClass java/util/concurrent/ConcurrentHashMap$KeySetView outerClass java/util/concurrent/ConcurrentHashMap innerClassName KeySetView flags 19
+
 class name java/util/TimeZone
 header extends java/lang/Object implements java/io/Serializable,java/lang/Cloneable flags 421
 innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
@@ -403,6 +420,24 @@ innerclass innerClass java/util/Locale$Category outerClass java/util/Locale inne
 class name java/util/TreeSet
 header extends java/util/AbstractSet implements java/util/NavigableSet,java/lang/Cloneable,java/io/Serializable flags 21 signature <E:Ljava/lang/Object;>Ljava/util/AbstractSet<TE;>;Ljava/util/NavigableSet<TE;>;Ljava/lang/Cloneable;Ljava/io/Serializable;
 innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
+
+class name java/util/concurrent/ConcurrentHashMap
+header extends java/util/AbstractMap implements java/util/concurrent/ConcurrentMap,java/io/Serializable nestMembers java/util/concurrent/ConcurrentHashMap$KeySetView,java/util/concurrent/ConcurrentHashMap$CollectionView flags 21 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/util/AbstractMap<TK;TV;>;Ljava/util/concurrent/ConcurrentMap<TK;TV;>;Ljava/io/Serializable;
+innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
+innerclass innerClass java/util/concurrent/ConcurrentHashMap$KeySetView outerClass java/util/concurrent/ConcurrentHashMap innerClassName KeySetView flags 19
+innerclass innerClass java/io/ObjectOutputStream$PutField outerClass java/io/ObjectOutputStream innerClassName PutField flags 409
+innerclass innerClass java/util/AbstractMap$SimpleImmutableEntry outerClass java/util/AbstractMap innerClassName SimpleImmutableEntry flags 9
+innerclass innerClass java/util/concurrent/ConcurrentHashMap$CollectionView outerClass java/util/concurrent/ConcurrentHashMap innerClassName CollectionView flags 408
+
+class name java/util/concurrent/ConcurrentHashMap$CollectionView
+header extends java/lang/Object implements java/util/Collection,java/io/Serializable nestHost java/util/concurrent/ConcurrentHashMap sealed true flags 420 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;E:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/Collection<TE;>;Ljava/io/Serializable;
+innerclass innerClass java/util/concurrent/ConcurrentHashMap$CollectionView outerClass java/util/concurrent/ConcurrentHashMap innerClassName CollectionView flags 408
+innerclass innerClass java/util/concurrent/ConcurrentHashMap$KeySetView outerClass java/util/concurrent/ConcurrentHashMap innerClassName KeySetView flags 19
+
+class name java/util/concurrent/ConcurrentHashMap$KeySetView
+header extends java/util/concurrent/ConcurrentHashMap$CollectionView implements java/util/Set,java/io/Serializable nestHost java/util/concurrent/ConcurrentHashMap flags 31 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/util/concurrent/ConcurrentHashMap$CollectionView<TK;TV;TK;>;Ljava/util/Set<TK;>;Ljava/io/Serializable;
+innerclass innerClass java/util/concurrent/ConcurrentHashMap$CollectionView outerClass java/util/concurrent/ConcurrentHashMap innerClassName CollectionView flags 408
+innerclass innerClass java/util/concurrent/ConcurrentHashMap$KeySetView outerClass java/util/concurrent/ConcurrentHashMap innerClassName KeySetView flags 19
 
 class name java/util/concurrent/ConcurrentMap
 header extends java/lang/Object implements java/util/Map flags 601 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/Map<TK;TV;>;
