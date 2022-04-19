@@ -125,7 +125,7 @@ public class AdjacencyList {
 
         // Each time this method is called, we're examining a new list
         // from the global list. So, we have to start by getting the list
-        // that contains the set of Vertices we're considering.
+        // that contains the set of vertices we're considering.
         List<Vertex> l = theList.get(index);
 
         // we're interested in the case where all indexes are -1...
