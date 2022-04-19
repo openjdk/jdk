@@ -173,9 +173,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // not available to be attached to another thread because it is in the
   // process of shutting down and destroying its JavaVM.
   int _num_attached_threads;
-  enum {
-    cannot_be_attached = -1 // See _num_attached_threads
-  };
+  static const int cannot_be_attached = -1;
 
   // Is this runtime for threads managed by the CompileBroker?
   // Examples of non-CompileBroker threads are CompileTheWorld threads
