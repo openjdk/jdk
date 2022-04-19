@@ -27,7 +27,7 @@
 //----------REGISTER DEFINITION BLOCK------------------------------------------
 // This information is used by the matcher and the register allocator to
 // describe individual registers and classes of registers within the target
-// archtecture.
+// architecture.
 
 register %{
 //----------Architecture Description Register Definitions----------------------
@@ -2790,10 +2790,10 @@ encode %{
 //         Region 6-7 is determined per call site.
 // Note 2: If the calling convention leaves holes in the incoming argument
 //         area, those holes are owned by SELF.  Holes in the outgoing area
-//         are owned by the CALLEE.  Holes should not be nessecary in the
+//         are owned by the CALLEE.  Holes should not be necessary in the
 //         incoming area, as the Java calling convention is completely under
 //         the control of the AD file.  Doubles can be sorted and packed to
-//         avoid holes.  Holes in the outgoing arguments may be nessecary for
+//         avoid holes.  Holes in the outgoing arguments may be necessary for
 //         varargs C calling conventions.
 // Note 3: Region 0-3 is even aligned, with pad2 as needed.  Region 3-5 is
 //         even aligned with pad0 as needed.
@@ -3243,7 +3243,7 @@ operand immL_32bits()
   interface(CONST_INTER);
 %}
 
-// Int Immediate: 2^n-1, postive
+// Int Immediate: 2^n-1, positive
 operand immI_Pow2M1()
 %{
   predicate((n->get_int() > 0)
@@ -4272,7 +4272,7 @@ operand stackSlotL(sRegL reg)
 // the flags (produced by the Cmp) specifies the coding of the comparison op
 // by matching a specific subtype of Bool operand below, such as cmpOpU.
 
-// Comparision Code
+// Comparison Code
 operand cmpOp()
 %{
   match(Bool);
@@ -13416,7 +13416,7 @@ instruct tlsLoadP(r15_RegP dst) %{
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch ( incI_rReg movI );
 //   // require that the destination register of the increment
 //   // match the destination register of the move

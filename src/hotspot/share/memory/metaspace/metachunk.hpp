@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -101,7 +101,7 @@ class VirtualSpaceNode;
 //  at the base of the payload (since that's where we allocate).
 //
 // The Metachunk keeps track of how much space is committed starting
-//  at the base of the payload - which is a performace optimization -
+//  at the base of the payload - which is a performance optimization -
 //  while underlying layers (VirtualSpaceNode->commitmask) keep track
 //  of the "real" commit state, aka which granules are committed,
 //  independent on what chunks reside above those granules.
@@ -347,7 +347,7 @@ public:
     return base() <= p && p < top();
   }
 
-  // Returns true if given pointer points into the commmitted payload area of this chunk.
+  // Returns true if given pointer points into the committed payload area of this chunk.
   bool is_valid_committed_pointer(const MetaWord* p) const {
     return base() <= p && p < committed_top();
   }
