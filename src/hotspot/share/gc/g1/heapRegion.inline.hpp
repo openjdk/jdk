@@ -242,7 +242,11 @@ inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size)
 
 inline void HeapRegion::note_start_of_marking() {
   _next_marked_bytes = 0;
-  _next_top_at_mark_start = top();
+  if (!is_closed_archive()) {
+    _next_top_at_mark_start = top();
+  } else {
+    assert(next_top_at_mark_start() == bottom(), "CA region's nTAMS must alawys be at bottom");
+  }
   _gc_efficiency = -1.0;
 }
 
