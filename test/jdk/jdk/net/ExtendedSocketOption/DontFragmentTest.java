@@ -41,7 +41,49 @@ public class DontFragmentTest {
     public static void main(String[] args) throws IOException {
         StandardProtocolFamily fam = args[0].equals("ipv4") ? INET : INET6;
         System.out.println("Family = " + fam);
+        testDatagramChannel(args, fam);
+        DatagramSocket c = new DatagramSocket();
+        testDatagramSocket(c);
+        DatagramChannel dc = DatagramChannel.open(fam);
+        c = dc.socket();
+        testDatagramSocket(c);
+        testMulticastSocket();
+    }
+
+    public static void testDatagramChannel(String[] args, ProtocolFamily fam) throws IOException {
         DatagramChannel c1 = DatagramChannel.open(fam);
+
+        if (c1.getOption(IP_DONTFRAGMENT)) {
+            throw new RuntimeException("IP_DONTFRAGMENT should not be set");
+        }
+        c1.setOption(IP_DONTFRAGMENT, true);
+        if (!c1.getOption(IP_DONTFRAGMENT)) {
+            throw new RuntimeException("IP_DONTFRAGMENT should be set");
+        }
+        c1.setOption(IP_DONTFRAGMENT, false);
+        if (c1.getOption(IP_DONTFRAGMENT)) {
+            throw new RuntimeException("IP_DONTFRAGMENT should not be set");
+        }
+        c1.close();
+    }
+
+    public static void testDatagramSocket(DatagramSocket c1) throws IOException {
+        if (c1.getOption(IP_DONTFRAGMENT)) {
+            throw new RuntimeException("IP_DONTFRAGMENT should not be set");
+        }
+        c1.setOption(IP_DONTFRAGMENT, true);
+        if (!c1.getOption(IP_DONTFRAGMENT)) {
+            throw new RuntimeException("IP_DONTFRAGMENT should be set");
+        }
+        c1.setOption(IP_DONTFRAGMENT, false);
+        if (c1.getOption(IP_DONTFRAGMENT)) {
+            throw new RuntimeException("IP_DONTFRAGMENT should not be set");
+        }
+        c1.close();
+    }
+
+    public static void testMulticastSocket() throws IOException {
+        MulticastSocket c1 = new MulticastSocket();
 
         if (c1.getOption(IP_DONTFRAGMENT)) {
             throw new RuntimeException("IP_DONTFRAGMENT should not be set");
