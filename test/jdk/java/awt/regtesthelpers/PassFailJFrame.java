@@ -194,7 +194,7 @@ public class PassFailJFrame {
      * @throws InterruptedException      exception thrown when thread is
      *                                   interrupted
      * @throws InvocationTargetException if an exception is thrown while
-     *                                   dispose frames on EDT
+     *                                   disposing of frames on EDT
      */
     public void awaitAndCheck() throws InterruptedException, InvocationTargetException {
         if (isEventDispatchThread()) {
