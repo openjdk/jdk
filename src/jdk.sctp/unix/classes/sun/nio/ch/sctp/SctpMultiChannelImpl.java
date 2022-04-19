@@ -440,7 +440,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         static final Set<SctpSocketOption<?>> defaultOptions = defaultOptions();
 
         private static Set<SctpSocketOption<?>> defaultOptions() {
-            HashSet<SctpSocketOption<?>> set = new HashSet<SctpSocketOption<?>>(10);
+            HashSet<SctpSocketOption<?>> set = HashSet.newHashSet(10);
             set.add(SCTP_DISABLE_FRAGMENTS);
             set.add(SCTP_EXPLICIT_COMPLETE);
             set.add(SCTP_FRAGMENT_INTERLEAVE);

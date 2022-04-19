@@ -410,8 +410,8 @@ public abstract class DataTransferer {
      */
     public Map<DataFlavor, Long> getFlavorsForFormats(long[] formats, FlavorTable map) {
         Map<DataFlavor, Long> flavorMap = new HashMap<>(formats.length);
-        Set<AbstractMap.SimpleEntry<Long, DataFlavor>> mappingSet = new HashSet<>(formats.length);
-        Set<DataFlavor> flavorSet = new HashSet<>(formats.length);
+        Set<AbstractMap.SimpleEntry<Long, DataFlavor>> mappingSet = HashSet.newHashSet(formats.length);
+        Set<DataFlavor> flavorSet = HashSet.newHashSet(formats.length);
 
         // First step: build flavorSet, mappingSet and initial flavorMap
         // flavorSet  - the set of all the DataFlavors into which
@@ -482,7 +482,7 @@ public abstract class DataTransferer {
      * @throws NullPointerException if formats or map is {@code null}
      */
     public Set<DataFlavor> getFlavorsForFormatsAsSet(long[] formats, FlavorTable map) {
-        Set<DataFlavor> flavorSet = new HashSet<>(formats.length);
+        Set<DataFlavor> flavorSet = HashSet.newHashSet(formats.length);
 
         for (long format : formats) {
             List<DataFlavor> flavors = map.getFlavorsForNative(getNativeForFormat(format));

@@ -93,7 +93,7 @@ class CAccessibility implements PropertyChangeListener {
         sAccessibility = new CAccessibility();
 
         if (roles != null) {
-            ignoredRoles = new HashSet<String>(roles.length);
+            ignoredRoles = HashSet.newHashSet(roles.length);
             for (final String role : roles) ignoredRoles.add(role);
         } else {
             ignoredRoles = new HashSet<String>();

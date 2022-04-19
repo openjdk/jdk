@@ -43,8 +43,7 @@ public class ExtendedKeyCodes {
      // for characters appearing on the primary layer of at least one
      // known keyboard layout. For instance, sterling sign is on the primary layer
      // of the Mac Italian layout.
-     private static final HashSet<Integer> extendedKeyCodesSet =
-                                                  new HashSet<Integer>(496, 1.0f);
+     private static final HashSet<Integer> extendedKeyCodesSet = HashSet.newHashSet(496);
      public static final int getExtendedKeyCodeForChar( int c ) {
          int uc = Character.toUpperCase( c );
          int lc = Character.toLowerCase( c );

@@ -618,7 +618,7 @@ public class GSSCredentialImpl implements GSSCredential {
 
     Set<GSSCredentialSpi> getElements() {
         HashSet<GSSCredentialSpi> retVal =
-                        new HashSet<GSSCredentialSpi>(hashtable.size());
+                        HashSet.newHashSet(hashtable.size());
         Enumeration<GSSCredentialSpi> values = hashtable.elements();
         while (values.hasMoreElements()) {
             GSSCredentialSpi o = values.nextElement();

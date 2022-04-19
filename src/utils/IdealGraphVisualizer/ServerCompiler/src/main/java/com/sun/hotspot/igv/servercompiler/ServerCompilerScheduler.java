@@ -301,7 +301,7 @@ public class ServerCompilerScheduler implements Scheduler {
                     }
                 }
                 n.preds = localPreds;
-                Set<Node> localSuccs = new HashSet<>(n.succs.size());
+                Set<Node> localSuccs = HashSet.newHashSet(n.succs.size());
                 for (Node s : n.succs) {
                     if (s.block == b && s != n && !excludePredecessors.test(s)) {
                         localSuccs.add(s);
@@ -344,7 +344,7 @@ public class ServerCompilerScheduler implements Scheduler {
         // Initialize ready priority queue with nodes without predecessors.
         Queue<Node> ready = new PriorityQueue<Node>(schedulePriority);
         // Set of nodes that have been enqueued.
-        Set<Node> visited = new HashSet<Node>(nodes.size());
+        Set<Node> visited = HashSet.newHashSet(nodes.size());
         for (Node n : nodes) {
             if (n.preds.isEmpty()) {
                 ready.add(n);

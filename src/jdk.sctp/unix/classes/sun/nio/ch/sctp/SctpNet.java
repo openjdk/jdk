@@ -106,7 +106,7 @@ public class SctpNet {
     {
          @SuppressWarnings("removal")
          SecurityManager sm = System.getSecurityManager();
-         Set<SocketAddress> set = new HashSet<>(saa.length);
+         Set<SocketAddress> set = HashSet.newHashSet(saa.length);
          for (SocketAddress sa : saa) {
              set.add(getRevealedLocalAddress(sa, sm));
          }
@@ -136,7 +136,7 @@ public class SctpNet {
         SocketAddress[] saa = getRemoteAddresses0(fd, assocId);
 
         if (saa != null) {
-            set = new HashSet<SocketAddress>(saa.length);
+            set = HashSet.newHashSet(saa.length);
             for (SocketAddress sa : saa)
                 set.add(sa);
         }

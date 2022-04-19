@@ -535,7 +535,7 @@ public final class XMLUtils {
         }
 
         int length = xpathNodeSet.getLength();
-        Set<Node> set = new HashSet<>(length);
+        Set<Node> set = HashSet.newHashSet(length);
 
         for (int i = 0; i < length; i++) {
             set.add(xpathNodeSet.item(i));

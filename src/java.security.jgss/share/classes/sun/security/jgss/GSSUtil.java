@@ -146,7 +146,7 @@ public class GSSUtil {
 
         if (creds instanceof GSSCredentialImpl) {
             gssCredentials = ((GSSCredentialImpl) creds).getElements();
-            privCredentials = new HashSet<Object>(gssCredentials.size());
+            privCredentials = HashSet.newHashSet(gssCredentials.size());
             populateCredentials(privCredentials, gssCredentials);
         } else {
             privCredentials = new HashSet<Object>(); // empty Set

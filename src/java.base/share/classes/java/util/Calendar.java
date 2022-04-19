@@ -2642,7 +2642,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     private static class AvailableCalendarTypes {
         private static final Set<String> SET;
         static {
-            Set<String> set = new HashSet<>(3);
+            Set<String> set = HashSet.newHashSet(3);
             set.add("gregory");
             set.add("buddhist");
             set.add("japanese");

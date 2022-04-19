@@ -304,7 +304,7 @@ public final class MetadataRepository {
         if (this.lastUnloaded != unloaded) {
             this.lastUnloaded = unloaded;
             List<Class<? extends jdk.internal.event.Event>> eventClasses = jvm.getAllEventClasses();
-            HashSet<Long> knownIds = new HashSet<>(eventClasses.size());
+            HashSet<Long> knownIds = HashSet.newHashSet(eventClasses.size());
             for (Class<? extends jdk.internal.event.Event>  ec: eventClasses) {
                 knownIds.add(Type.getTypeId(ec));
             }

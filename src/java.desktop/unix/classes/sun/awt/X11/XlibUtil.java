@@ -268,7 +268,7 @@ public class XlibUtil
 
                 int childrenCount = xqt.get_nchildren();
 
-                Set<Long> childrenSet = new HashSet<Long>(childrenCount);
+                Set<Long> childrenSet = HashSet.newHashSet(childrenCount);
                 for (int i = 0; i < childrenCount; i++)
                 {
                     childrenSet.add(Native.getWindow(children, i));
