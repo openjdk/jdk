@@ -56,22 +56,25 @@ public class Test8019180 implements Runnable {
 
     @Override
     public void run() {
-        if (this.test == null) {
-            this.test = new JComboBox<>(ITEMS);
-            this.test.addActionListener(this.test);
-            frame = new JFrame();
-            frame.add(test);
-            frame.setLocationRelativeTo(null);
-            frame.pack();
-            frame.setVisible(true);
-            SwingUtilities.invokeLater(this);
-        } else {
-            int index = this.test.getSelectedIndex();
-            this.test.setSelectedIndex(1 + index);
-            if (0 > this.test.getSelectedIndex()) {
-                System.err.println("ERROR: no selection");
-                throw new RuntimeException("Combobox not selected");
+        try {
+            if (this.test == null) {
+                this.test = new JComboBox<>(ITEMS);
+                this.test.addActionListener(this.test);
+                frame = new JFrame();
+                frame.add(test);
+                frame.setLocationRelativeTo(null);
+                frame.pack();
+                frame.setVisible(true);
+                SwingUtilities.invokeLater(this);
+            } else {
+                int index = this.test.getSelectedIndex();
+                this.test.setSelectedIndex(1 + index);
+                if (0 > this.test.getSelectedIndex()) {
+                    System.err.println("ERROR: no selection");
+                    throw new RuntimeException("Combobox not selected");
+                }
             }
+        } finally {
             LATCH.countDown();
         }
     }
