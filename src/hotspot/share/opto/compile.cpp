@@ -248,6 +248,7 @@ void Compile::print_statistics() {
   { ttyLocker ttyl;
     if (xtty != NULL)  xtty->head("statistics type='opto'");
     Parse::print_statistics();
+    PhaseStringOpts::print_statistics();
     PhaseCCP::print_statistics();
     PhaseRegAlloc::print_statistics();
     PhaseOutput::print_statistics();
@@ -1836,7 +1837,7 @@ void Compile::inline_string_calls(bool parse_time) {
   {
     ResourceMark rm;
     print_method(PHASE_BEFORE_STRINGOPTS, 3);
-    PhaseStringOpts pso(initial_gvn(), for_igvn());
+    PhaseStringOpts pso(initial_gvn());
     print_method(PHASE_AFTER_STRINGOPTS, 3);
   }
 
