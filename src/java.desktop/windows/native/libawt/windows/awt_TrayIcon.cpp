@@ -411,7 +411,7 @@ MsgRouting AwtTrayIcon::WmMouseMove(UINT flags, int x, int y)
 
 MsgRouting AwtTrayIcon::WmBalloonUserClick(UINT flags, int x, int y)
 {
-    // The windows api GetKeyState() when read would provide the key state of the requrested key
+    // The windows api GetKeyState() when read would provide the key state of the requested key
     // but it is not guaranteed to receive the same as it is stored in the thread message queue and
     // unless the thread runs faster.
     // Event NIN_BALLOONUSERCLICK is received only upon left mouse click. Hence the additional check

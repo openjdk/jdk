@@ -51,7 +51,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
     // (endPaint) the region that was painted is flushed to the screen
     // (using BufferStrategy.show).
     //
-    // PaintManager.show is overriden to show directly from the
+    // PaintManager.show is overridden to show directly from the
     // BufferStrategy (when using blit), if successful true is
     // returned and a paint event will not be generated.  To avoid
     // showing from the buffer while painting a locking scheme is
@@ -150,7 +150,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
      */
     protected void dispose() {
         // dipose can be invoked at any random time. To avoid
-        // threading dependancies we do the actual diposing via an
+        // threading dependencies we do the actual diposing via an
         // invokeLater.
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {

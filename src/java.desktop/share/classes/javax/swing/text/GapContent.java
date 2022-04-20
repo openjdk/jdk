@@ -368,7 +368,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
     }
 
     /**
-     * Overridden to make growth policy less agressive for large
+     * Overridden to make growth policy less aggressive for large
      * text amount.
      */
     int getNewArraySize(int reqSize) {

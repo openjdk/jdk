@@ -111,7 +111,7 @@ public class ShortInterleavedRaster extends ShortComponentRaster {
      * SampleModel must be of type PixelInterleavedSampleModel or
      * SinglePixelPackedSampleModel.  When translated into the base Raster's
      * coordinate system, aRegion must be contained by the base Raster.
-     * Origin is the coodinate in the new Raster's coordinate system of
+     * Origin is the coordinate in the new Raster's coordinate system of
      * the origin of the base Raster.  (The base Raster is the Raster's
      * ancestor which has no parent.)
      *

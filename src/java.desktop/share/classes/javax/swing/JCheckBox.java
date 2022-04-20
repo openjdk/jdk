@@ -246,7 +246,7 @@ public class JCheckBox extends JToggleButton implements Accessible {
 
     /**
      * The icon for checkboxs comes from the look and feel,
-     * not the Action; this is overriden to do nothing.
+     * not the Action; this is overridden to do nothing.
      */
     void setIconFromAction(Action a) {
     }

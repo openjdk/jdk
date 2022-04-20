@@ -123,7 +123,7 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         if (globalFocusedWindow == this) {
             // see bug 8010925
             // we can't put this to handleWindowFocusEvent because
-            // it won't be invoced if focuse is moved to a html element
+            // it won't be invoced if focus is moved to a html element
             // on the same page.
             CClipboard clipboard = (CClipboard) Toolkit.getDefaultToolkit().getSystemClipboard();
             clipboard.checkPasteboardAndNotify();
@@ -175,7 +175,7 @@ public class CEmbeddedFrame extends EmbeddedFrame {
     }
 
     private boolean isParentWindowChanged() {
-        // If globalFocusedWindow is located at inactive parent window or null, we have swithed to
+        // If globalFocusedWindow is located at inactive parent window or null, we have switched to
         // another window.
         return globalFocusedWindow != null ? !globalFocusedWindow.isParentWindowActive() : true;
     }

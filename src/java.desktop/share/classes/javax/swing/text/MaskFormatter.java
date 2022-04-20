@@ -695,7 +695,7 @@ public class MaskFormatter extends DefaultFormatter {
      * result in a legal edit.  This may set the <code>value</code>
      * field of <code>rh</code>.
      * <p>
-     * This is overriden to return true for a partial match.
+     * This is overridden to return true for a partial match.
      */
     boolean isValidEdit(ReplaceHolder rh) {
         if (!getAllowsInvalid()) {
@@ -844,7 +844,7 @@ public class MaskFormatter extends DefaultFormatter {
         }
 
         /**
-         * Returns true if <code>aChar</code> is a valid reprensentation of
+         * Returns true if <code>aChar</code> is a valid representation of
          * the receiver. The default implementation returns true if the
          * receiver represents a literal character and <code>getChar</code>
          * == aChar. Otherwise, this will return true is <code>aChar</code>

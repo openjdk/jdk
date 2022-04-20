@@ -335,7 +335,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * Returns an point which has been adjusted to take into account of the
      * desktop bounds, taskbar and multi-monitor configuration.
      * <p>
-     * This adustment may be cancelled by invoking the application with
+     * This adjustment may be cancelled by invoking the application with
      * -Djavax.swing.adjustPopupLocationToFit=false
      */
     Point adjustPopupLocationToFitScreen(int xPosition, int yPosition) {

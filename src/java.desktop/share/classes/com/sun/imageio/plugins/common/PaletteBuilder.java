@@ -198,7 +198,7 @@ public class PaletteBuilder {
         if (transparency != Transparency.OPAQUE &&
             aColor.getAlpha() != 0xff)
         {
-            return 0; // default transparnt pixel
+            return 0; // default transparent pixel
         }
 
         if (aNode.isLeaf) {

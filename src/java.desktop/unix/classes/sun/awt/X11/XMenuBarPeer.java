@@ -108,7 +108,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
 
     /************************************************
      *
-     * Implementaion of interface methods
+     * Implementation of interface methods
      *
      ************************************************/
 
@@ -132,7 +132,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * We can not get index of particular item in
      * MenuBar.menus array, because MenuBar firstly
      * performs array operations and then calls peer.
-     * So we need to synchronize indicies in 'items'
+     * So we need to synchronize indices in 'items'
      * array with MenuBar.menus. We have to follow
      * these rules:
      * 1. Menus are always added to the end of array,
@@ -190,7 +190,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
     }
 
     /**
-     * Overriden initialization
+     * Overridden initialization
      */
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
@@ -359,7 +359,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
 
     /************************************************
      *
-     * Overriden XBaseMenuWindow functions
+     * Overridden XBaseMenuWindow functions
      *
      ************************************************/
 
@@ -373,7 +373,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
 
     /************************************************
      *
-     * Overriden XWindow general-purpose functions
+     * Overridden XWindow general-purpose functions
      *
      ************************************************/
 
@@ -400,7 +400,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
 
     /************************************************
      *
-     * Overriden XWindow painting & printing
+     * Overridden XWindow painting & printing
      *
      ************************************************/
     public void paintPeer(Graphics g) {
@@ -450,7 +450,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
 
     /************************************************
      *
-     * Overriden XBaseMenuWindow event handling
+     * Overridden XBaseMenuWindow event handling
      *
      ************************************************/
     protected void handleEvent(AWTEvent event) {
@@ -495,7 +495,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
 
     /************************************************
      *
-     * Overriden XWindow keyboard processing
+     * Overridden XWindow keyboard processing
      *
      ************************************************/
 

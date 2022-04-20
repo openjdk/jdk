@@ -62,7 +62,7 @@ public class StringElementHandler extends ElementHandler {
     @Override
     public final void addCharacter(char ch) {
         if (this.sb == null) {
-            throw new IllegalStateException("Could not add chararcter to evaluated string element");
+            throw new IllegalStateException("Could not add character to evaluated string element");
         }
         this.sb.append(ch);
     }

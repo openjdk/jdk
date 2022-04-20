@@ -93,7 +93,7 @@ typedef struct
 /* This is structure also describes the SERVER_OVERLAY_VISUAL property, but
  * should be more useful than the one actually returned by the X server
  * because it actually points to the visual's XVisualInfo struct rather than
- * refering to the visual's ID.
+ * referring to the visual's ID.
  */
 typedef struct
 {
@@ -158,7 +158,7 @@ typedef struct
  * the array of the screen's visuals, determining whether the visual is an
  * overlay or image visual.
  *
- * If the routine sucessfully obtained the visual information, it returns zero.
+ * If the routine successfully obtained the visual information, it returns zero.
  * If the routine didn't obtain the visual information, it returns non-zero.
  *
  ******************************************************************************/
@@ -295,7 +295,7 @@ extern int FindOverlayPlanesVisual(
  * upon the information passed in to the routine.  While "created," the window
  * has not been mapped.
  *
- * If the routine suceeds, it returns zero and the return parameters
+ * If the routine succeeds, it returns zero and the return parameters
  * "imageWindow", "imageColormap" and "mustFreeImageColormap" are valid.
  * Otherwise, the routine returns non-zero and the return parameters are
  * NOT valid.
@@ -336,7 +336,7 @@ extern int CreateImagePlanesWindow(
  * upon the information passed in to the routine.  While "created," the window
  * has not been mapped.
  *
- * If the routine suceeds, it returns zero and the return parameters
+ * If the routine succeeds, it returns zero and the return parameters
  * "overlayWindow", "overlayColormap" and "mustFreeOverlayColormap" are valid.
  * Otherwise, the routine returns non-zero and the return parameters are
  * NOT valid.

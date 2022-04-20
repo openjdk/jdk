@@ -293,7 +293,7 @@ public class ImageView extends View {
 
     /**
      * For images the tooltip text comes from text specified with the
-     * <code>ALT</code> attribute. This is overriden to return
+     * <code>ALT</code> attribute. This is overridden to return
      * <code>getAltText</code>.
      *
      * @see JTextComponent#getToolTipText
@@ -973,7 +973,7 @@ public class ImageView extends View {
                 synchronized(ImageView.this) {
                     if (image == img) {
                         // Be sure image hasn't changed since we don't
-                        // initialy synchronize
+                        // initially synchronize
                         image = null;
                         if ((state & WIDTH_FLAG) != WIDTH_FLAG) {
                             width = DEFAULT_WIDTH;
@@ -1053,7 +1053,7 @@ public class ImageView extends View {
 
     /**
      * ImageLabelView is used if the image can't be loaded, and
-     * the attribute specified an alt attribute. It overriden a handle of
+     * the attribute specified an alt attribute. It overridden a handle of
      * methods as the text is hardcoded and does not come from the document.
      */
     private static class ImageLabelView extends InlineView {

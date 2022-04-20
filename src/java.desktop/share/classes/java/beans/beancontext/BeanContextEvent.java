@@ -55,7 +55,7 @@ public abstract class BeanContextEvent extends EventObject {
     private static final long serialVersionUID = 7267998073569045052L;
 
     /**
-     * Contruct a BeanContextEvent
+     * Construct a BeanContextEvent
      *
      * @param bc        The BeanContext source
      */

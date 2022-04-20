@@ -32,7 +32,7 @@ import java.awt.event.KeyEvent;
 public class ExtendedKeyCodes {
     /**
      * ATTN: These are the readonly hashes with load factor == 1;
-     * adding a value, please set the inital capacity to exact number of items
+     * adding a value, please set the initial capacity to exact number of items
      * or higher.
      */
      // Keycodes declared in KeyEvent.java with corresponding Unicode values.

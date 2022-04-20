@@ -617,7 +617,7 @@ FT_BEGIN_HEADER
    *     corresponding (1,0) Apple entry.
    *
    * @return:
-   *   1 if there is either a win or apple entry (or both), 0 otheriwse.
+   *   1 if there is either a win or apple entry (or both), 0 otherwise.
    */
   typedef FT_Bool
   (*TT_Get_Name_ID_Func)( TT_Face    face,

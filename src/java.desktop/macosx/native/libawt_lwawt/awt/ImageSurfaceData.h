@@ -90,12 +90,12 @@ struct _ImageSDOps
     UInt32*                    lutData;
     UInt32                    lutDataSize;
 
-    // Used as a cached image ref created from the isdo.dataprovider. This is only a chached image, and it might become invalid
+    // Used as a cached image ref created from the isdo.dataprovider. This is only a cached image, and it might become invalid
     // if somebody draws on the bitmap context, or the pixels are changed in java. In that case, we need to NULL out
     // this image and recreate it from the data provider.
     CGImageRef                imgRef;
 
-    // Cached instance of CGDataProvider. dataProvider is alloced the first time a bitmap context is created, providing the
+    // Cached instance of CGDataProvider. dataProvider is allocated the first time a bitmap context is created, providing the
     // native pixels as a source of the data. The dataProviders life cycle is the same as ISDO. The reference gets
     // released when we are done with the ISDO.
     CGDataProviderRef        dataProvider;

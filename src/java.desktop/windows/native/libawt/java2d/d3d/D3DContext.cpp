@@ -1068,7 +1068,7 @@ D3DContext::EndShapeClip()
     pd3dDevice->SetRenderState(D3DRS_SRCBLEND, dwSrcBlendSt);
     pd3dDevice->SetRenderState(D3DRS_DESTBLEND, dwDestBlendSt);
 
-    // resore the transform
+    // restore the transform
     pd3dDevice->SetTransform(D3DTS_WORLD, &tx);
 
     // Enable the depth buffer.

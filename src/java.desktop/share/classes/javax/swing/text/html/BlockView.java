@@ -225,7 +225,7 @@ public class BlockView extends BoxView  {
      *
      * @param targetSpan the total span given to the view, which
      *  would be used to layout the children.
-     * @param axis the axis being layed out
+     * @param axis the axis being laid out
      * @param offsets the offsets from the origin of the view for
      *  each of the child views; this is a return value and is
      *  filled in by the implementation of this method

@@ -135,7 +135,7 @@ public class Beans {
      * a classname the applet's "init" method is called.  (If the bean was
      * deserialized this step is skipped.)
      * <p>
-     * Note that for beans which are applets, it is the caller's responsiblity
+     * Note that for beans which are applets, it is the caller's responsibility
      * to call "start" on the applet.  For correct behaviour, this should be done
      * after the applet has been added into a visible AWT container.
      * <p>
@@ -285,7 +285,7 @@ public class Beans {
                     URL codeBase  = null;
                     URL docBase   = null;
 
-                    // Now get the URL correponding to the resource name.
+                    // Now get the URL corresponding to the resource name.
                     if (cls == null) {
                         objectUrl = ClassLoader.getSystemResource(resourceName);
                     } else

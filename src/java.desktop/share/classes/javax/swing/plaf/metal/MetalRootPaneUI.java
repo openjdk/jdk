@@ -315,7 +315,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
         // We have to revalidate/repaint root if the style is JRootPane.NONE
         // only. When we needs to call revalidate/repaint with other styles
         // the installClientDecorations is always called after this method
-        // imediatly and it will cause the revalidate/repaint at the proper
+        // immediately and it will cause the revalidate/repaint at the proper
         // time.
         int style = root.getWindowDecorationStyle();
         if (style == JRootPane.NONE) {

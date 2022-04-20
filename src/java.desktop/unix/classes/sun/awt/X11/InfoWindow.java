@@ -267,7 +267,7 @@ public abstract class InfoWindow extends Window {
     public static class Balloon extends InfoWindow {
 
         public interface LiveArguments extends InfoWindow.LiveArguments {
-            /** The action to be performed upon clicking the baloon. */
+            /** The action to be performed upon clicking the balloon. */
             String getActionCommand();
         }
 

@@ -59,7 +59,7 @@ class awt_toolkit_shutdown {};
 #endif
 
 #ifdef CATCH_BAD_ALLOC_RET
-#error Multiple defintions of CATCH_BAD_ALLOC_RET
+#error Multiple definitions of CATCH_BAD_ALLOC_RET
 #endif
 
 #ifdef TRY_NO_JNI
@@ -75,7 +75,7 @@ class awt_toolkit_shutdown {};
 #endif
 
 #ifdef CATCH_BAD_ALLOC_RET_NO_JNI
-#error Multiple defintions of CATCH_BAD_ALLOC_RET_NO_JNI
+#error Multiple definitions of CATCH_BAD_ALLOC_RET_NO_JNI
 #endif
 
 // The unsafe versions of malloc, calloc, and realloc should not be used

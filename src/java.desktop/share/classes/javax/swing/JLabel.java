@@ -1233,7 +1233,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
         }
 
         /**
-         * Return the number of characters (valid indicies)
+         * Return the number of characters (valid indices)
          *
          * @return the number of characters
          * @since 1.3

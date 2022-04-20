@@ -181,7 +181,7 @@ AwtScrollbar::MouseFilter(int nCode, WPARAM wParam, LPARAM lParam)
             // Peek the message to get wParam containing the message's flags.
             // <::PeekMessage> will call this hook again. To prevent recursive
             // processing the <ms_isInsideMouseFilter> flag is used.
-            // Calling <::PeekMessage> is not so good desision but is the only one
+            // Calling <::PeekMessage> is not so good decision but is the only one
             // found to get those flags (used further in Java event creation).
             // WARNING! If you are about to add new hook of WM_MOUSE type make
             // it ready for recursive call, otherwise modify this one.
@@ -354,7 +354,7 @@ AwtScrollbar::WmVScroll(UINT scrollCode, UINT pos, HWND hScrollbar)
     minPos = minVal = si.nMin;
 
     // Upper bound of the range.  Note that adding 1 here is safe
-    // and won't cause a wrap, since we have substracted 1 in the
+    // and won't cause a wrap, since we have subtracted 1 in the
     // SetValues above.
     maxVal = si.nMax + 1;
 

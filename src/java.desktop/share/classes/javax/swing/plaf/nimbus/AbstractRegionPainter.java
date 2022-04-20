@@ -457,7 +457,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
                     color = (Color) MethodUtil.invoke(method, c, null);
                 } catch (Exception e) {
                     //don't do anything, it just didn't work, that's all.
-                    //This could be a normal occurance if you use a property
+                    //This could be a normal occurrence if you use a property
                     //name referring to a key in clientProperties instead of
                     //a real property
                 }
@@ -645,7 +645,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
             VolatileImage img = getImage(g.getDeviceConfiguration(), c, canvas.width, canvas.height, extendedCacheKeys);
             if (img != null) {
                 // calculate dst inserts
-                // todo: destination inserts need to take into acount scale factor for high dpi. Note: You can use f for this, I think
+                // todo: destination inserts need to take into account scale factor for high dpi. Note: You can use f for this, I think
                 Insets dstInsets;
                 if (ctx.inverted){
                     int leftRight = (w-(canvas.width-(insets.left+insets.right)))/2;

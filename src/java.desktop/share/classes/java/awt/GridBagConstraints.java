@@ -33,7 +33,7 @@ import java.io.Serial;
  * {@code GridBagLayout} class.
  *
  * @author Doug Stein
- * @author Bill Spitzak (orignial NeWS &amp; OLIT implementation)
+ * @author Bill Spitzak (original NeWS &amp; OLIT implementation)
  * @see java.awt.GridBagLayout
  * @since 1.0
  */

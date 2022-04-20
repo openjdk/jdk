@@ -348,7 +348,7 @@ public final class GlyphLayout {
      * @param count the length of the text to lay out
      * @param flags bidi and context flags {@see #java.awt.Font}
      * @param result a StandardGlyphVector to modify, can be null
-     * @return the layed out glyphvector, if result was passed in, it is returned
+     * @return the laid out glyphvector, if result was passed in, it is returned
      */
     public StandardGlyphVector layout(Font font, FontRenderContext frc,
                                       char[] text, int offset, int count,

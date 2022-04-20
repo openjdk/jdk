@@ -296,7 +296,7 @@ public class BasicTableUI extends TableUI
             } else {
                 totalCount = 0;
                 // A bogus assignment to stop javac from complaining
-                // about unitialized values. In this case, these
+                // about uninitialized values. In this case, these
                 // won't even be used.
                 minX = maxX = minY = maxY = 0;
             }
@@ -1444,9 +1444,9 @@ public class BasicTableUI extends TableUI
         // JTable's original row height is 16.  To correctly display the
         // contents on Linux we should have set it to 18, Windows 19 and
         // Solaris 20.  As these values vary so much it's too hard to
-        // be backward compatable and try to update the row height, we're
-        // therefor NOT going to adjust the row height based on font.  If the
-        // developer changes the font, it's there responsability to update
+        // be backward compatible and try to update the row height, we're
+        // therefore NOT going to adjust the row height based on font.  If the
+        // developer changes the font, it's their responsibility to update
         // the row height.
 
         LookAndFeel.installProperty(table, "opaque", Boolean.TRUE);
@@ -2207,10 +2207,10 @@ public class BasicTableUI extends TableUI
         /**
          * Create a Transferable to use as the source for a data transfer.
          *
-         * @param c  The component holding the data to be transfered.  This
+         * @param c  The component holding the data to be transferred.  This
          *  argument is provided to enable sharing of TransferHandlers by
          *  multiple components.
-         * @return  The representation of the data to be transfered.
+         * @return  The representation of the data to be transferred.
          *
          */
         protected Transferable createTransferable(JComponent c) {

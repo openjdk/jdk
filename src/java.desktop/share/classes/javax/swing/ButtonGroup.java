@@ -172,7 +172,7 @@ public class ButtonGroup implements Serializable {
     /**
      * Returns whether a {@code ButtonModel} is selected.
      *
-     * @param m an isntance of {@code ButtonModel}
+     * @param m an instance of {@code ButtonModel}
      * @return {@code true} if the button is selected,
      *   otherwise returns {@code false}
      */

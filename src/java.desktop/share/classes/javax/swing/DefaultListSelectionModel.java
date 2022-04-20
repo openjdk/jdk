@@ -366,7 +366,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
            and therefore that the minIndex and maxIndex had 'real' values.
 
            If we have cleared the whole selection, set the minIndex and maxIndex
-           to their cannonical values so that the next set command always works
+           to their canonical values so that the next set command always works
            just by using Math.min and Math.max.
         */
         if (isSelectionEmpty()) {

@@ -89,7 +89,7 @@ public abstract class VolatileSurfaceManager
     protected SurfaceData sdPrevious;
 
     /**
-     * Tracks loss of surface contents; queriable by user to see whether
+     * Tracks loss of surface contents; queryable by user to see whether
      * contents need to be restored.
      */
     protected boolean lostSurface;

@@ -1106,7 +1106,7 @@ public class UIDefaults extends Hashtable<Object,Object>
          * @param c    a <code>String</code> specifying the classname
          *              of the instance to be created on demand
          * @param o    an array of <code>Objects</code> to be passed as
-         *              paramaters to the constructor in class c
+         *              parameters to the constructor in class c
          */
         public ProxyLazyValue(String c, Object[] o) {
             this(c, null, o);
@@ -1122,7 +1122,7 @@ public class UIDefaults extends Hashtable<Object,Object>
          * @param m    a <code>String</code> specifying the static method
          *              to be called on class c
          * @param o    an array of <code>Objects</code> to be passed as
-         *              paramaters to the static method in class c
+         *              parameters to the static method in class c
          */
         @SuppressWarnings("removal")
         public ProxyLazyValue(String c, String m, Object[] o) {

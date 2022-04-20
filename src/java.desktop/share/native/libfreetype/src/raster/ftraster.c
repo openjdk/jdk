@@ -460,7 +460,7 @@
           (Bool)( x - FLOOR( x ) >= ras.precision_half )
 
   /* Smart dropout rounding to find which pixel is closer to span ends. */
-  /* To mimick Windows, symmetric cases break down indepenently of the  */
+  /* To mimic Windows, symmetric cases break down independently of the  */
   /* precision.                                                         */
 #define SMART( p, q )  FLOOR( ( (p) + (q) + ras.precision * 63 / 64 ) >> 1 )
 

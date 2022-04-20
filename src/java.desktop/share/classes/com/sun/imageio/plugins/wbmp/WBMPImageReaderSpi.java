@@ -43,7 +43,7 @@ public class WBMPImageReaderSpi extends ImageReaderSpi {
     private static String [] writerSpiNames =
         {"com.sun.imageio.plugins.wbmp.WBMPImageWriterSpi"};
     private static String[] formatNames = {"wbmp", "WBMP"};
-    private static String[] entensions = {"wbmp"};
+    private static String[] extensions = {"wbmp"};
     private static String[] mimeType = {"image/vnd.wap.wbmp"};
 
     private boolean registered = false;
@@ -52,7 +52,7 @@ public class WBMPImageReaderSpi extends ImageReaderSpi {
         super("Oracle Corporation",
               "1.0",
               formatNames,
-              entensions,
+              extensions,
               mimeType,
               "com.sun.imageio.plugins.wbmp.WBMPImageReader",
               new Class<?>[] { ImageInputStream.class },

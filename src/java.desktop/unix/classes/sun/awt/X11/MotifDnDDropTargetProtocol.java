@@ -87,7 +87,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
     public void registerEmbedderDropSite(long embedder) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
-        boolean overriden = false;
+        boolean overridden = false;
         int version = 0;
         long proxy = 0;
         long newProxy = XDropTargetRegistry.getDnDProxyWindow();
@@ -123,7 +123,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
                 wpg.getNumberOfItems() >=
                 MotifDnDConstants.MOTIF_RECEIVER_INFO_SIZE) {
 
-                overriden = true;
+                overridden = true;
                 data = wpg.getData();
                 dataSize = wpg.getNumberOfItems();
 
@@ -175,14 +175,14 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
                 throw new XException("Cannot write Motif receiver info property");
             }
         } finally {
-            if (!overriden) {
+            if (!overridden) {
                 unsafe.freeMemory(data);
                 data = 0;
             }
             wpg.dispose();
         }
 
-        putEmbedderRegistryEntry(embedder, overriden, version, proxy);
+        putEmbedderRegistryEntry(embedder, overridden, version, proxy);
     }
 
     public void unregisterEmbedderDropSite(long embedder) {
@@ -264,7 +264,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
     public void registerEmbeddedDropSite(long embedded) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
-        boolean overriden = false;
+        boolean overridden = false;
         int version = 0;
         long proxy = 0;
         int status = 0;
@@ -297,7 +297,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
                 wpg.getNumberOfItems() >=
                 MotifDnDConstants.MOTIF_RECEIVER_INFO_SIZE) {
 
-                overriden = true;
+                overridden = true;
                 long data = wpg.getData();
 
                 byte byteOrderByte = unsafe.getByte(data);
@@ -314,7 +314,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
             wpg.dispose();
         }
 
-        putEmbedderRegistryEntry(embedded, overriden, version, proxy);
+        putEmbedderRegistryEntry(embedded, overridden, version, proxy);
     }
 
     public boolean isProtocolSupported(long window) {
@@ -567,7 +567,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
 
         /*
          * Postpone upcall to java, so that we can abort it in case
-         * if drop immediatelly follows (see BugTraq ID 4395290).
+         * if drop immediately follows (see BugTraq ID 4395290).
          * Send a dummy ClientMessage event to guarantee that a postponed java
          * upcall will be processed.
          */

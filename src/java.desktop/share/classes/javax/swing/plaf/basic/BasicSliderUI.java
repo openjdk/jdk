@@ -139,7 +139,7 @@ public class BasicSliderUI extends SliderUI{
     private Color focusColor;
 
     /**
-     * Whther or not sameLabelBaselines is up to date.
+     * Whether or not sameLabelBaselines is up to date.
      */
     private boolean checkedLabelBaselines;
     /**

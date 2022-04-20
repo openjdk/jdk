@@ -117,7 +117,7 @@ import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
  * A collection of utility methods for Swing.
  * <p>
  * <b>WARNING:</b> While this class is public, it should not be treated as
- * public API and its API may change in incompatable ways between dot dot
+ * public API and its API may change in incompatible ways between dot dot
  * releases and even patch releases. You should not rely on this class even
  * existing.
  *
@@ -1564,7 +1564,7 @@ public class SwingUtilities2 {
         if (EventQueue.isDispatchThread()) {
             /*
              * Checking event permissions makes sense only for event
-             * dispathing thread
+             * dispatching thread
              */
             if (e instanceof InputEvent
                 && (! checkGesture || isAccessClipboardGesture((InputEvent)e))) {
@@ -2206,7 +2206,7 @@ public class SwingUtilities2 {
      * Returns the {@link TreePath} that identifies the changed nodes.
      *
      * @param event  changes in a tree model
-     * @param model  corresponing tree model
+     * @param model  corresponding tree model
      * @return  the path to the changed nodes
      */
     public static TreePath getTreePath(TreeModelEvent event, TreeModel model) {

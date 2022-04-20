@@ -336,7 +336,7 @@ static final class java_sql_Timestamp_PersistenceDelegate extends java_util_Date
 /*
 The Hashtable and AbstractMap classes have no common ancestor yet may
 be handled with a single persistence delegate: one which uses the methods
-of the Map insterface exclusively. Attatching the persistence delegates
+of the Map interface exclusively. Attaching the persistence delegates
 to the interfaces themselves is fraught however since, in the case of
 the Map, both the AbstractMap and HashMap classes are declared to
 implement the Map interface, leaving the obvious implementation prone
@@ -1149,7 +1149,7 @@ static final class javax_swing_border_MatteBorder_PersistenceDelegate extends Pe
     }
 }
 
-/* XXX - doens't seem to work. Debug later.
+/* XXX - doesn't seem to work. Debug later.
 static final class javax_swing_JMenu_PersistenceDelegate extends DefaultPersistenceDelegate {
     protected void initialize(Class<?> type, Object oldInstance, Object newInstance, Encoder out) {
         super.initialize(type, oldInstance, newInstance, out);

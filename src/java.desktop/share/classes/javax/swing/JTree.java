@@ -3394,7 +3394,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param paths the paths to select; this is ignored
@@ -3402,7 +3402,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         public void setSelectionPaths(TreePath[] paths) {}
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param paths the paths to add to the selection; this is ignored
@@ -3410,7 +3410,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         public void addSelectionPaths(TreePath[] paths) {}
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param paths the paths to remove; this is ignored
@@ -3418,7 +3418,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         public void removeSelectionPaths(TreePath[] paths) {}
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param mode the selection mode; this is ignored
@@ -3428,7 +3428,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param mapper the {@code RowMapper} instance; this is ignored
@@ -3438,7 +3438,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param listener the listener to add; this is ignored
@@ -3448,7 +3448,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param listener the listener to remove; this is ignored
@@ -3459,7 +3459,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param listener the listener to add; this is ignored
@@ -3470,7 +3470,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param listener the listener to remove; this is ignored

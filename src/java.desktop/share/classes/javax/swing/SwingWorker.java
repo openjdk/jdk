@@ -259,7 +259,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
     private final PropertyChangeSupport propertyChangeSupport;
 
     /**
-     * handler for {@code process} mehtod.
+     * handler for {@code process} method.
      */
     private AccumulativeRunnable<V> doProcess;
 
@@ -475,7 +475,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
      * invocation argument only.
      *
      * <p>
-     * For example, the following invokations:
+     * For example, the following invocations:
      *
      * <pre>
      * setProgress(1);

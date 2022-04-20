@@ -80,11 +80,11 @@ import sun.security.action.GetPropertyAction;
 public class BasicOptionPaneUI extends OptionPaneUI {
 
     /**
-     * The mininum width of {@code JOptionPane}.
+     * The minimum width of {@code JOptionPane}.
      */
     public static final int MinimumWidth = 262;
     /**
-     * The mininum height of {@code JOptionPane}.
+     * The minimum height of {@code JOptionPane}.
      */
     public static final int MinimumHeight = 90;
 

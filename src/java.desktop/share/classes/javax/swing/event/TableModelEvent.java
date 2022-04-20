@@ -31,7 +31,7 @@ import javax.swing.table.*;
 /**
  * TableModelEvent is used to notify listeners that a table model
  * has changed. The model event describes changes to a TableModel
- * and all references to rows and columns are in the co-ordinate
+ * and all references to rows and columns are in the coordinate
  * system of the model.
  * Depending on the parameters used in the constructors, the TableModelevent
  * can be used to specify the following types of changes:
@@ -167,7 +167,7 @@ public class TableModelEvent extends java.util.EventObject
     /**
      * The cells from (firstRow, column) to (lastRow, column) have been changed.
      * The <I>column</I> refers to the column index of the cell in the model's
-     * co-ordinate system. When <I>column</I> is ALL_COLUMNS, all cells in the
+     * coordinate system. When <I>column</I> is ALL_COLUMNS, all cells in the
      * specified range of rows are considered changed.
      * <p>
      * The <I>type</I> should be one of: INSERT, UPDATE and DELETE.

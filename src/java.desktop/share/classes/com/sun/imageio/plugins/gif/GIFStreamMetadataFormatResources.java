@@ -49,7 +49,7 @@ public class GIFStreamMetadataFormatResources extends ListResourceBundle {
         { "LogicalScreenDescriptor/logicalScreenHeight",
           "The height in pixels of the whole picture" },
         { "LogicalScreenDescriptor/colorResolution",
-          "The number of bits of color resolution, beteen 1 and 8" },
+          "The number of bits of color resolution, between 1 and 8" },
         { "LogicalScreenDescriptor/pixelAspectRatio",
           "If 0, indicates square pixels, else W/H = (value + 15)/64" },
         { "GlobalColorTable/sizeOfGlobalColorTable",

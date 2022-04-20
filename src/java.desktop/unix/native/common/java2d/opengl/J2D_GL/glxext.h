@@ -986,7 +986,7 @@ int glXWaitVideoSyncSGI (int divisor, int remainder, unsigned int *count);
 /*
  * JDK modification
  * REMIND: This is a Sun-private constant used to get the gamma value for
- *         a GLXFBConfig.  This was never publically documented as part of
+ *         a GLXFBConfig.  This was never publicly documented as part of
  *         a Sun extension, and therefore never ended up in the official SGI
  *         glxext.h header file, so we've copied it here from the Sun OpenGL
  *         headers (glxtokens.h).

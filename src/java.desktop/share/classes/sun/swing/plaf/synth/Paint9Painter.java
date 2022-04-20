@@ -100,7 +100,7 @@ public class Paint9Painter extends CachedPainter {
     }
 
     /**
-     * Paints using the algorightm specified by <code>paintType</code>.
+     * Paints using the algorithm specified by <code>paintType</code>.
      * NOTE that this just invokes super.paint(...) with the same
      * argument ordering as this method.
      *

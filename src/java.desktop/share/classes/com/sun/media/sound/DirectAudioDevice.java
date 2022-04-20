@@ -1019,7 +1019,7 @@ final class DirectAudioDevice extends AbstractMixer {
             synchronized (mixer) {
                 if (isOpen()) {
                     throw new IllegalStateException("Clip is already open with format " + getFormat() +
-                                                    " and frame lengh of " + getFrameLength());
+                                                    " and frame length of " + getFrameLength());
                 } else {
                     // if the line is not currently open, try to open it with this format and buffer size
                     this.audioData = data;
@@ -1044,7 +1044,7 @@ final class DirectAudioDevice extends AbstractMixer {
                         throw iae;
                     }
 
-                    // if we got this far, we can instanciate the thread
+                    // if we got this far, we can instantiate the thread
                     int priority = Thread.NORM_PRIORITY
                         + (Thread.MAX_PRIORITY - Thread.NORM_PRIORITY) / 3;
                     thread = JSSecurityManager.createThread(this,
@@ -1074,7 +1074,7 @@ final class DirectAudioDevice extends AbstractMixer {
 
                 if (isOpen()) {
                     throw new IllegalStateException("Clip is already open with format " + getFormat() +
-                                                    " and frame lengh of " + getFrameLength());
+                                                    " and frame length of " + getFrameLength());
                 }
                 int lengthInFrames = (int)stream.getFrameLength();
                 int bytesRead = 0;

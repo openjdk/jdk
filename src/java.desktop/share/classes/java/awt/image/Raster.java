@@ -291,7 +291,7 @@ public class Raster {
         if (scanlineStride < 0) {
             throw new IllegalArgumentException("scanlineStride is < 0");
         }
-        int size = scanlineStride * (h - 1) + // fisrt (h - 1) scans
+        int size = scanlineStride * (h - 1) + // first (h - 1) scans
             pixelStride * w; // last scan
 
         if (location == null) {

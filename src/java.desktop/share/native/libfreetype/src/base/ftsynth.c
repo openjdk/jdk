@@ -123,7 +123,7 @@
       /*
        * XXX: overflow check for 16-bit system, for compatibility
        *      with FT_GlyphSlot_Embolden() since FreeType 2.1.10.
-       *      unfortunately, this function return no informations
+       *      unfortunately, this function return no information
        *      about the cause of error.
        */
       if ( ( ystr >> 6 ) > FT_INT_MAX || ( ystr >> 6 ) < FT_INT_MIN )

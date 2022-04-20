@@ -158,7 +158,7 @@ class MetalSplitPaneDivider extends BasicSplitPaneDivider
                     }
                     else {
                             // Draw the image for a horizontal split
-                            // by simply swaping the i and j axis.
+                            // by simply swapping the i and j axis.
                             // Except the drawLine() call this code is
                             // identical to the code block above. This was done
                             // in order to remove the additional orientation
@@ -268,7 +268,7 @@ class MetalSplitPaneDivider extends BasicSplitPaneDivider
                     }
                     else {
                             // Draw the image for a horizontal split
-                            // by simply swaping the i and j axis.
+                            // by simply swapping the i and j axis.
                             // Except the drawLine() call this code is
                             // identical to the code block above. This was done
                             // in order to remove the additional orientation

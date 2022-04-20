@@ -192,7 +192,7 @@ class IIOAttr extends IIOMetadataNode implements Attr {
      * to always return false. One reason for this, is we have no good
      * way to document this exception, since this class, IIOAttr,
      * is not a public class. The rest of the methods that throw
-     * DOMException are publically documented as such on IIOMetadataNode.
+     * DOMException are publicly documented as such on IIOMetadataNode.
      * @return false
      */
     public boolean isId() {

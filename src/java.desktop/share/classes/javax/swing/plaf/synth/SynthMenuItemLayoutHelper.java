@@ -227,7 +227,7 @@ class SynthMenuItemLayoutHelper extends MenuItemLayoutHelper {
             calcMaxWidth(getLabelSize(), MAX_LABEL_WIDTH);
             // If maxLabelWidth is wider
             // than the widest icon + the widest text + gap,
-            // we should update the maximal text witdh
+            // we should update the maximal text width
             int candidateTextWidth = getLabelSize().getMaxWidth() -
                     getIconSize().getMaxWidth();
             if (getIconSize().getMaxWidth() > 0) {

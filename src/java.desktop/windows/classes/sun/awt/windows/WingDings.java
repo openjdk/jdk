@@ -40,7 +40,7 @@ public final class WingDings extends Charset {
     }
 
     /* Seems like supporting a decoder is required, but we aren't going
-     * to be publically exposing this class, so no need to waste work
+     * to be publicly exposing this class, so no need to waste work
      */
     @Override
     public CharsetDecoder newDecoder() {

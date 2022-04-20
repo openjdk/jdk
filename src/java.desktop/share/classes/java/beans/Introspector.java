@@ -1155,7 +1155,7 @@ public class Introspector {
      */
     private static Method internalFindMethod(Class<?> start, String methodName,
                                                  int argCount, Class<?>[] args) {
-        // For overriden methods we need to find the most derived version.
+        // For overridden methods we need to find the most derived version.
         // So we start with the given class and walk up the superclass chain.
         for (Class<?> cl = start; cl != null; cl = cl.getSuperclass()) {
             for (Method method : ClassInfo.get(cl).getMethods()) {
@@ -1208,7 +1208,7 @@ public class Introspector {
     /**
      * Find a target methodName with specific parameter list on a given class.
      * <p>
-     * Used in the contructors of the EventSetDescriptor,
+     * Used in the constructors of the EventSetDescriptor,
      * PropertyDescriptor and the IndexedPropertyDescriptor.
      * <p>
      * @param cls The Class object on which to retrieve the method.
@@ -1233,7 +1233,7 @@ public class Introspector {
      */
     static  boolean isSubclass(Class<?> a, Class<?> b) {
         // We rely on the fact that for any given java class or
-        // primtitive type there is a unqiue Class object, so
+        // primtitive type there is a unique Class object, so
         // we can use object equivalence in the comparisons.
         if (a == b) {
             return true;

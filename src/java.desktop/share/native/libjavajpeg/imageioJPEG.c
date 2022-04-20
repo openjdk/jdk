@@ -516,7 +516,7 @@ static int GET_ARRAYS(JNIEnv *env, imageIODataPtr data, const JOCTET **next_byte
 /*
  * Set up error handling to use setjmp/longjmp.  This is the third such
  * setup, as both the AWT jpeg decoder and the com.sun... JPEG classes
- * setup thier own.  Ultimately these should be integrated, as they all
+ * setup their own.  Ultimately these should be integrated, as they all
  * do pretty much the same thing.
  */
 
@@ -1198,7 +1198,7 @@ imageio_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
  * data for an image has been read.  In our case pushes back any
  * remaining data, as it will be for another image and must be available
  * for java to find out that there is another image.  Also called if
- * reseting state after reading a tables-only image.
+ * resetting state after reading a tables-only image.
  */
 
 GLOBAL(void)
@@ -1709,7 +1709,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
 
             /*
              * There are several possibilities:
-             *  - we got image with embeded colorspace
+             *  - we got image with embedded colorspace
              *     Use it. User knows what he is doing.
              *  - we got JFIF image
              *     Must be YCbCr (see http://www.w3.org/Graphics/JPEG/jfif3.pdf, page 2)
@@ -2434,7 +2434,7 @@ imageio_term_destination (j_compress_ptr cinfo)
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(the_jvm, JNI_VERSION_1_2);
 
     /* find out how much needs to be written */
-    /* this conversion from size_t to jint is safe, because the lenght of the buffer is limited by jint */
+    /* this conversion from size_t to jint is safe, because the length of the buffer is limited by jint */
     jint datacount = (jint)(sb->bufferLength - dest->free_in_buffer);
 
     if (datacount != 0) {

@@ -481,7 +481,7 @@ public abstract class XBaseMenuWindow extends XWindow {
     }
 
     /**
-     * returns item thats mapped coordinates contain
+     * returns item which mapped coordinates contain
      * specified point, null of none.
      * @param pt the point in this window's coordinate system
      */
@@ -887,7 +887,7 @@ public abstract class XBaseMenuWindow extends XWindow {
 
     /************************************************
      *
-     * Overriden utility functions of XWindow
+     * Overridden utility functions of XWindow
      *
      ************************************************/
 
@@ -939,9 +939,9 @@ public abstract class XBaseMenuWindow extends XWindow {
 
     /**
      * Invokes event processing on eventHandlerThread
-     * This function needs to be overriden since
+     * This function needs to be overridden since
      * XBaseMenuWindow has no corresponding component
-     * so events can not be processed using standart means
+     * so events can not be processed using standard means
      */
     void postEvent(final AWTEvent event) {
         InvocationEvent ev = new InvocationEvent(event.getSource(), new Runnable() {

@@ -257,7 +257,7 @@ public class StandardGlyphVector extends GlyphVector {
      * because a GV caches a strike and glyph images suitable for its FRC.
      * LCD text isn't currently supported on all surfaces, in which case
      * standard AA must be used. This is most likely to occur when LCD text
-     * is requested and the surface is some non-standard type or hardward
+     * is requested and the surface is some non-standard type or hardware
      * surface for which there are no accelerated loops.
      * We can detect this as being AA=="ON" in the FontInfo and AA!="ON"
      * and AA!="GASP" in the FRC - since this only occurs for LCD text we don't

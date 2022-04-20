@@ -664,7 +664,7 @@ public class JTextArea extends JTextComponent {
                              "true" : "false");
 
         return super.paramString() +
-        ",colums=" + columns +
+        ",columns=" + columns +
         ",columWidth=" + columnWidth +
         ",rows=" + rows +
         ",rowHeight=" + rowHeight +

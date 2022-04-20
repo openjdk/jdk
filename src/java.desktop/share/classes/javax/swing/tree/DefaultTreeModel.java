@@ -266,7 +266,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
      * preferred way to remove a node as it handles the event creation
      * for you.
      *
-     * @param node the node to be removed from it's parrent
+     * @param node the node to be removed from its parent
      */
     public void removeNodeFromParent(MutableTreeNode node) {
         MutableTreeNode         parent = (MutableTreeNode)node.getParent();

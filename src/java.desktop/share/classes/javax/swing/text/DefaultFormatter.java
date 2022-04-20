@@ -660,7 +660,7 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
         /** Position the cursor should be adjusted from.  If this is -1
          * the cursor position will be adjusted based on the direction of
          * the replace (-1: offset, 1: offset + text.length()), otherwise
-         * the cursor position is adusted from this position.
+         * the cursor position is adjusted from this position.
          */
         int cursorPosition;
 

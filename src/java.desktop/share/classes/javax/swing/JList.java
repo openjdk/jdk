@@ -971,8 +971,8 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
 
 
     /**
-     * Defines the way list cells are layed out. Consider a {@code JList}
-     * with five cells. Cells can be layed out in one of the following ways:
+     * Defines the way list cells are laid out. Consider a {@code JList}
+     * with five cells. Cells can be laid out in one of the following ways:
      *
      * <pre>
      * VERTICAL:          0
@@ -1002,17 +1002,17 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * <tbody>
      *   <tr>
      *     <th scope="row">{@code VERTICAL}
-     *     <td>Cells are layed out vertically in a single column.
+     *     <td>Cells are laid out vertically in a single column.
      *   <tr>
      *     <th scope="row">{@code HORIZONTAL_WRAP}
-     *     <td>Cells are layed out horizontally, wrapping to a new row as
+     *     <td>Cells are laid out horizontally, wrapping to a new row as
      *     necessary. If the {@code visibleRowCount} property is less than or
      *     equal to zero, wrapping is determined by the width of the list;
      *     otherwise wrapping is done in such a way as to ensure
      *     {@code visibleRowCount} rows in the list.
      *   <tr>
      *     <th scope="row">{@code VERTICAL_WRAP}
-     *     <td>Cells are layed out vertically, wrapping to a new column as
+     *     <td>Cells are laid out vertically, wrapping to a new column as
      *     necessary. If the {@code visibleRowCount} property is less than or
      *     equal to zero, wrapping is determined by the height of the list;
      *     otherwise wrapping is done at {@code visibleRowCount} rows.
@@ -1035,7 +1035,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
             "JList.VERTICAL",
             "JList.HORIZONTAL_WRAP",
             "JList.VERTICAL_WRAP"}, description
-            = "Defines the way list cells are layed out.")
+            = "Defines the way list cells are laid out.")
     public void setLayoutOrientation(int layoutOrientation) {
         int oldValue = this.layoutOrientation;
         switch (layoutOrientation) {
@@ -3634,7 +3634,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                     try {
                         listLocation = parent.getLocationOnScreen();
                     } catch (IllegalComponentStateException e) {
-                        // This can happen if the component isn't visisble
+                        // This can happen if the component isn't visible
                         return null;
                     }
                     Point componentLocation = parent.indexToLocation(indexInParent);

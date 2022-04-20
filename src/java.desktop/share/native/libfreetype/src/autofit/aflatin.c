@@ -2586,7 +2586,7 @@
   }
 
 
-  /* Initalize hinting engine. */
+  /* Initialize hinting engine. */
 
   static FT_Error
   af_latin_hints_init( AF_GlyphHints    hints,

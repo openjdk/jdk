@@ -339,7 +339,7 @@ public class PSPrinterJob extends RasterPrinterJob {
 
     @SuppressWarnings("removal")
     private static void initStatic() {
-       //enable priviledges so initProps can access system properties,
+       //enable privileges so initProps can access system properties,
         // open the property file, etc.
         java.security.AccessController.doPrivileged(
                             new java.security.PrivilegedAction<Object>() {

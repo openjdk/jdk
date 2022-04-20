@@ -803,7 +803,7 @@ public class HTMLWriter extends AbstractWriter {
                 write(t.toString());
                 write('>');
             }
-            // Have to output any tags after firstIndex that still remaing,
+            // Have to output any tags after firstIndex that still remaining,
             // as we closed them out, but they should remain open.
             size = tags.size();
             for (int i = firstIndex; i < size; i++) {
@@ -1183,7 +1183,7 @@ public class HTMLWriter extends AbstractWriter {
     //
 
     /**
-     * Writes the line separator. This is overriden to make sure we don't
+     * Writes the line separator. This is overridden to make sure we don't
      * replace the newline content in case it is outside normal ascii.
      * @since 1.3
      */
@@ -1196,7 +1196,7 @@ public class HTMLWriter extends AbstractWriter {
     }
 
     /**
-     * This method is overriden to map any character entities, such as
+     * This method is overridden to map any character entities, such as
      * &lt; to &amp;lt;. <code>super.output</code> will be invoked to
      * write the content.
      * @since 1.3
