@@ -21,6 +21,8 @@
  * questions.
  */
 
+// module to test access to both open and closed resources using
+// Module::getResourceAsStream with no caller frame
 module n {
     opens open;
 }

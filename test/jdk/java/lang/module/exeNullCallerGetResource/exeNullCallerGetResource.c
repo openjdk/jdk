@@ -89,25 +89,18 @@ int main(int argc, char** args) {
     mid_InputStream_close = (*env)->GetMethodID(env, class_InputStream, "close", "()V" );
     assert(mid_InputStream_close != NULL);
 
-    // Class c = OpenResources.fetchClass();
+    // the open and closed classes
     jclass class_OpenResources = (*env)->FindClass(env, "open/OpenResources");
     assert(class_OpenResources != NULL);
-    jmethodID mid_OpenResources_fetchClass = (*env)->GetStaticMethodID(env, class_OpenResources, "fetchClass", "()Ljava/lang/Class;" );
-    assert(mid_OpenResources_fetchClass != NULL);
-    jobject c =(*env)->CallStaticObjectMethod(env, class_OpenResources, mid_OpenResources_fetchClass);
-    if ((*env)->ExceptionOccurred(env) != NULL) {
-        printf("ERROR: Exception was thrown calling OpenResources::fetchClass.\n");
-        (*env)->ExceptionDescribe(env);
-        exit(-1);
-    }
-    assert(c != NULL);
+    jclass class_ClosedResources = (*env)->FindClass(env, "closed/ClosedResources");
+    assert(class_ClosedResources != NULL);
 
-    // Module n = c.getModule();
+    // Fetch the Module from one of the classes in the module
     jclass class_Class = (*env)->FindClass(env, "java/lang/Class");
     assert(class_Class != NULL);
     jmethodID mid_Class_getModule = (*env)->GetMethodID(env, class_Class, "getModule", "()Ljava/lang/Module;" );
     assert(mid_Class_getModule != NULL);
-    jobject n =(*env)->CallObjectMethod(env, c, mid_Class_getModule);
+    jobject n =(*env)->CallObjectMethod(env, class_OpenResources, mid_Class_getModule);
     if ((*env)->ExceptionOccurred(env) != NULL) {
         printf("ERROR: Exception was thrown calling Class::getModule.\n");
         (*env)->ExceptionDescribe(env);
@@ -115,6 +108,7 @@ int main(int argc, char** args) {
     }
     assert(n != NULL);
 
+    // Attempt to fetch an open resource from the module.  It should return a valid stream.
     // InputStream in = n.getResourceAsStream("open/test.txt");
     jclass class_Module = (*env)->FindClass(env, "java/lang/Module");
     assert(class_Module != NULL);
@@ -128,11 +122,15 @@ int main(int argc, char** args) {
         (*env)->ExceptionDescribe(env);
         exit(-1);
     }
-    assert(in != NULL);
+    if (in == NULL) {
+        printf("ERROR: Module::getResourceAsStream, expected valid stream for open resource\n");
+        exit(-1);
+    }
 
     // in.close();
     closeInputStream(env, in);
 
+    // Attempt to fetch closed resource from the module.  It should return null.
     // in = n.getResourceAsStream("closed/test.txt");
     in =  (*env)->CallObjectMethod(env, n, mid_Module_getResourceAsStream,
         (*env)->NewStringUTF(env, "closed/test.txt"));
@@ -141,46 +139,44 @@ int main(int argc, char** args) {
         (*env)->ExceptionDescribe(env);
         exit(-1);
     }
-    assert(in == NULL);
+    if (in != NULL) {
+        printf("ERROR: Module::getResourceAsStream, expected null value for closed resource\n");
+        exit(-1);
+    }
 
-    // in = c.getResourceAsStream("test.txt");
+    // Attempt to fetch open resource from the class.  It should return a valid stream.
+    // in = open.OpenReosurces.class.getResourceAsStream("test.txt");
     jmethodID mid_Class_getResourceAsStream =
         (*env)->GetMethodID(env, class_Class, "getResourceAsStream", "(Ljava/lang/String;)Ljava/io/InputStream;" );
     assert(mid_Class_getResourceAsStream != NULL);
-    in =  (*env)->CallObjectMethod(env, c, mid_Class_getResourceAsStream,
+    in =  (*env)->CallObjectMethod(env, class_OpenResources, mid_Class_getResourceAsStream,
         (*env)->NewStringUTF(env, "test.txt"));
     if ((*env)->ExceptionOccurred(env) != NULL) {
         printf("ERROR: Exception was thrown calling Class::getResourceAsStream on 'test.txt'.\n");
         (*env)->ExceptionDescribe(env);
         exit(-1);
     }
-    assert(in != NULL);
+    if (in == NULL) {
+        printf("ERROR: Class::getResourceAsStream, expected valid stream for open resource\n");
+        exit(-1);
+    }
 
     // in.close();
     closeInputStream(env, in);
 
-    // Class closed = closed.ClosedResources.fetchClass();
-    jclass class_ClosedResources = (*env)->FindClass(env, "closed/ClosedResources");
-    assert(class_ClosedResources != NULL);
-    jmethodID mid_ClosedResources_fetchClass = (*env)->GetStaticMethodID(env, class_ClosedResources, "fetchClass", "()Ljava/lang/Class;" );
-    assert(mid_ClosedResources_fetchClass != NULL);
-    jobject closed =(*env)->CallStaticObjectMethod(env, class_ClosedResources, mid_ClosedResources_fetchClass);
-    if ((*env)->ExceptionOccurred(env) != NULL) {
-        printf("ERROR: Exception was thrown calling ClosedResources::fetchClass.\n");
-        (*env)->ExceptionDescribe(env);
-        exit(-1);
-    }
-    assert(closed != NULL);
-
-    // in = closed.getResourceAsStream("test.txt");
-    in =  (*env)->CallObjectMethod(env, closed, mid_Class_getResourceAsStream,
+    // Attempt to fetch closed resource from the class.  It should return null.
+    // in = closed.ClosedResources.class.getResourceAsStream("test.txt");
+    in =  (*env)->CallObjectMethod(env, class_ClosedResources, mid_Class_getResourceAsStream,
         (*env)->NewStringUTF(env, "test.txt"));
     if ((*env)->ExceptionOccurred(env) != NULL) {
         printf("ERROR: Exception was thrown calling Class::getResourceAsStream on closed 'test.txt'.\n");
         (*env)->ExceptionDescribe(env);
         exit(-1);
     }
-    assert(in == NULL);
+    if (in != NULL) {
+        printf("ERROR: Class::getResourceAsStream, expected null value for closed resource\n");
+        exit(-1);
+    }
 
     (*jvm)->DestroyJavaVM(jvm);
     return 0;

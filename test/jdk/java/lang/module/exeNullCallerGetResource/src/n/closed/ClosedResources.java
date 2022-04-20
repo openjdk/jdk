@@ -23,9 +23,7 @@
 
 package closed;
 
+// class to test relative access to a closed resource
+// with Class::getResourceAsStream with no caller frame
 public class ClosedResources {
-
-    public static Class fetchClass() {
-        return ClosedResources.class;
-    }
 }

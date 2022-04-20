@@ -23,9 +23,7 @@
 
 package open;
 
+// class used to test relative access to an open resource
+// with Class::getResourceAsStream with no caller frame
 public class OpenResources {
-
-    public static Class fetchClass() {
-        return OpenResources.class;
-    }
 }
