@@ -125,6 +125,10 @@ public class HashSet<E>
      * Constructs a new, empty set; the backing {@code HashMap} instance has
      * the specified initial capacity and the specified load factor.
      *
+     * @apiNote
+     * To create a {@code HashSet} with an initial capacity that accommodates
+     * an expected number of items, use {@link #newHashSet(int) newHashSet}.
+     *
      * @param      initialCapacity   the initial capacity of the hash map
      * @param      loadFactor        the load factor of the hash map
      * @throws     IllegalArgumentException if the initial capacity is less
@@ -137,6 +141,10 @@ public class HashSet<E>
     /**
      * Constructs a new, empty set; the backing {@code HashMap} instance has
      * the specified initial capacity and default load factor (0.75).
+     *
+     * @apiNote
+     * To create a {@code HashSet} with an initial capacity that accommodates
+     * an expected number of items, use {@link #newHashSet(int) newHashSet}.
      *
      * @param      initialCapacity   the initial capacity of the hash table
      * @throws     IllegalArgumentException if the initial capacity is less

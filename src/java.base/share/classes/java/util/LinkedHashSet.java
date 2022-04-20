@@ -126,6 +126,10 @@ public class LinkedHashSet<E>
      * Constructs a new, empty linked hash set with the specified initial
      * capacity and load factor.
      *
+     * @apiNote
+     * To create a {@code LinkedHashSet} with an initial capacity that accommodates
+     * an expected number of items, use {@link #newLinkedHashSet(int) newLinkedHashSet}.
+     *
      * @param      initialCapacity the initial capacity of the linked hash set
      * @param      loadFactor      the load factor of the linked hash set
      * @throws     IllegalArgumentException  if the initial capacity is less
@@ -138,6 +142,10 @@ public class LinkedHashSet<E>
     /**
      * Constructs a new, empty linked hash set with the specified initial
      * capacity and the default load factor (0.75).
+     *
+     * @apiNote
+     * To create a {@code LinkedHashSet} with an initial capacity that accommodates
+     * an expected number of items, use {@link #newLinkedHashSet(int) newLinkedHashSet}.
      *
      * @param   initialCapacity   the initial capacity of the LinkedHashSet
      * @throws  IllegalArgumentException if the initial capacity is less
