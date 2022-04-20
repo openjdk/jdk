@@ -50,7 +50,9 @@ public class DontFragmentTest {
             var c = dc.socket();
             testDatagramSocket(c);
         }
-        testMulticastSocket();
+        try (MulticastSocket mc = new MulticastSocket()) {
+            testDatagramSocket(mc);
+        }
     }
 
     public static void testDatagramChannel() throws IOException {
@@ -100,22 +102,5 @@ public class DontFragmentTest {
             throw new RuntimeException("IP_DONTFRAGMENT should not be set");
         }
         c1.close();
-    }
-
-    public static void testMulticastSocket() throws IOException {
-        try (MulticastSocket c1 = new MulticastSocket()) {
-
-            if (c1.getOption(IP_DONTFRAGMENT)) {
-                throw new RuntimeException("IP_DONTFRAGMENT should not be set");
-            }
-            c1.setOption(IP_DONTFRAGMENT, true);
-            if (!c1.getOption(IP_DONTFRAGMENT)) {
-                throw new RuntimeException("IP_DONTFRAGMENT should be set");
-            }
-            c1.setOption(IP_DONTFRAGMENT, false);
-            if (c1.getOption(IP_DONTFRAGMENT)) {
-                throw new RuntimeException("IP_DONTFRAGMENT should not be set");
-            }
-        }
     }
 }
