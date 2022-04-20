@@ -43,7 +43,7 @@ public class Test8019180 implements Runnable {
         try {
             SwingUtilities.invokeLater(new Test8019180());
             LATCH.await();
-	} finally {
+        } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
