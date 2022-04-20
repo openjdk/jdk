@@ -52,7 +52,7 @@ public class NewRMIClientFilterTest {
 
         JMXServiceURL url = new JMXServiceURL("rmi", null, 0);
         JMXServiceURL serverUrl = null;
-        Map<String, Object> env = new HashMap<>(1);
+        Map<String, Object> env = HashMap.newHashMap(1);
         JMXConnectorServer server = null;
 
         System.out.println("\n---NewRMIClientFilterTest-main: testing types = null");
@@ -103,7 +103,7 @@ public class NewRMIClientFilterTest {
         System.out.println("---NewRMIClientFilterTest-test:\n\tserver address: "
                 + serverAddr + "\n\tcredentials: " + credentials);
 
-        Map<String, Object> env = new HashMap<>(1);
+        Map<String, Object> env = HashMap.newHashMap(1);
         env.put("jmx.remote.credentials", credentials);
         JMXConnector client = null;
         try {

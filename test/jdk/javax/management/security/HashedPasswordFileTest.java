@@ -502,7 +502,7 @@ class TestApp {
         try {
             Map<String, String> propsMap = ConnectorAddressLink.importRemoteFrom(0);
             String jmxServiceUrl = propsMap.get("sun.management.JMXConnectorServer.0.remoteAddress");
-            Map<String, Object> env = new HashMap<>(1);
+            Map<String, Object> env = HashMap.newHashMap(1);
             // any dummy credentials will do. We just have to trigger password hashing
             env.put("jmx.remote.credentials", new String[]{"a", "a"});
             try (JMXConnector cc = JMXConnectorFactory.connect(new JMXServiceURL(jmxServiceUrl), env)) {

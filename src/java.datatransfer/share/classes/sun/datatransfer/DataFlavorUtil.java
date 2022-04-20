@@ -322,7 +322,7 @@ public class DataFlavorUtil {
         private static final String UNSUPPORTED_CHARSET = "UNSUPPORTED";
 
         static {
-            Map<String, Integer> charsetsMap = new HashMap<>(8, 1.0f);
+            Map<String, Integer> charsetsMap = HashMap.newHashMap(8);
 
             // we prefer Unicode charsets
             charsetsMap.put(UTF_16LE.name(), 4);
@@ -436,7 +436,7 @@ public class DataFlavorUtil {
 
         static {
             {
-                Map<String, Integer> exactTypesMap = new HashMap<>(4, 1.0f);
+                Map<String, Integer> exactTypesMap = HashMap.newHashMap(4);
 
                 // application/x-java-* MIME types
                 exactTypesMap.put("application/x-java-file-list", 0);
@@ -448,7 +448,7 @@ public class DataFlavorUtil {
             }
 
             {
-                Map<String, Integer> primaryTypesMap = new HashMap<>(1, 1.0f);
+                Map<String, Integer> primaryTypesMap = HashMap.newHashMap(1);
 
                 primaryTypesMap.put("application", 0);
 
@@ -456,7 +456,7 @@ public class DataFlavorUtil {
             }
 
             {
-                Map<Class<?>, Integer> nonTextRepresentationsMap = new HashMap<>(3, 1.0f);
+                Map<Class<?>, Integer> nonTextRepresentationsMap = HashMap.newHashMap(3);
 
                 nonTextRepresentationsMap.put(java.io.InputStream.class, 0);
                 nonTextRepresentationsMap.put(java.io.Serializable.class, 1);
@@ -467,7 +467,7 @@ public class DataFlavorUtil {
             }
 
             {
-                Map<String, Integer> textTypesMap = new HashMap<>(16, 1.0f);
+                Map<String, Integer> textTypesMap = HashMap.newHashMap(16);
 
                 // plain text
                 textTypesMap.put("text/plain", 0);
@@ -499,7 +499,7 @@ public class DataFlavorUtil {
             }
 
             {
-                Map<Class<?>, Integer> decodedTextRepresentationsMap = new HashMap<>(4, 1.0f);
+                Map<Class<?>, Integer> decodedTextRepresentationsMap = HashMap.newHashMap(4);
 
                 decodedTextRepresentationsMap.put(char[].class, 0);
                 decodedTextRepresentationsMap.put(CharBuffer.class, 1);
@@ -511,7 +511,7 @@ public class DataFlavorUtil {
             }
 
             {
-                Map<Class<?>, Integer> encodedTextRepresentationsMap = new HashMap<>(3, 1.0f);
+                Map<Class<?>, Integer> encodedTextRepresentationsMap = HashMap.newHashMap(3);
 
                 encodedTextRepresentationsMap.put(byte[].class, 0);
                 encodedTextRepresentationsMap.put(ByteBuffer.class, 1);

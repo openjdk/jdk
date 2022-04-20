@@ -300,7 +300,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
             BeanContextServiceProvider          delegateProvider; // proxy
             int                                 delegateRefs;
 
-            HashMap<Object, BeanContextServiceRevokedListener> requestors = new HashMap<>(1);
+            HashMap<Object, BeanContextServiceRevokedListener> requestors = HashMap.newHashMap(1);
         }
 
         /*

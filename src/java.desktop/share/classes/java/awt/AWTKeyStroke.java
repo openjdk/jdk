@@ -443,7 +443,7 @@ public class AWTKeyStroke implements Serializable {
 
         synchronized (AWTKeyStroke.class) {
             if (modifierKeywords == null) {
-                Map<String, Integer> uninitializedMap = new HashMap<>(8, 1.0f);
+                Map<String, Integer> uninitializedMap = HashMap.newHashMap(9);
                 uninitializedMap.put("shift",
                                      Integer.valueOf(InputEvent.SHIFT_DOWN_MASK
                                                      |InputEvent.SHIFT_MASK));

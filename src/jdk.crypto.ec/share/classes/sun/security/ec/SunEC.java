@@ -330,7 +330,7 @@ public final class SunEC extends Provider {
 
     private void putXDHEntries() {
 
-        HashMap<String, String> ATTRS = new HashMap<>(1);
+        HashMap<String, String> ATTRS = HashMap.newHashMap(1);
         ATTRS.put("ImplementedIn", "Software");
 
         putService(new ProviderService(this, "KeyFactory",
@@ -363,7 +363,7 @@ public final class SunEC extends Provider {
 
     private void putEdDSAEntries() {
 
-        HashMap<String, String> ATTRS = new HashMap<>(1);
+        HashMap<String, String> ATTRS = HashMap.newHashMap(1);
         ATTRS.put("ImplementedIn", "Software");
 
         putService(new ProviderService(this, "KeyFactory",

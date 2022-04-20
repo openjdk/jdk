@@ -286,7 +286,7 @@ public class DefaultAgentFilterTest {
     }
 
     private static void testMBeanOperations(JMXServiceURL serverUrl) throws Exception {
-        Map<String, Object> clientEnv = new HashMap<>(1);
+        Map<String, Object> clientEnv = HashMap.newHashMap(1);
         ObjectName name = new ObjectName("jtreg:type=Test");
         try (JMXConnector client = JMXConnectorFactory.connect(serverUrl, clientEnv)) {
             MBeanServerConnection conn = client.getMBeanServerConnection();

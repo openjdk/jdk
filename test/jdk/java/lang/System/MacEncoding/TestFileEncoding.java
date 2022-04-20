@@ -136,7 +136,7 @@ public class TestFileEncoding {
      * in langVar.
      */
     private void runWithEnvVar(String envVarName, String[] cmdArray) {
-        Map<String, String> envToAdd = new HashMap<>(1);
+        Map<String, String> envToAdd = HashMap.newHashMap(1);
         TestHelper.TestResult tr = null;
 
         System.out.println("TestFileEncoding: Running with " + envVarName + "=" + langVar);

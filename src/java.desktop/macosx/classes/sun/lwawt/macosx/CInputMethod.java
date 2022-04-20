@@ -59,25 +59,25 @@ public class CInputMethod extends InputMethodAdapter {
         HashMap<TextAttribute, Integer> map;
 
         // UNSELECTED_RAW_TEXT_HIGHLIGHT
-        map = new HashMap<TextAttribute, Integer>(1);
+        map = HashMap.newHashMap(1);
         map.put(TextAttribute.INPUT_METHOD_UNDERLINE,
                 TextAttribute.UNDERLINE_LOW_GRAY);
         styles[0] = Collections.unmodifiableMap(map);
 
         // SELECTED_RAW_TEXT_HIGHLIGHT
-        map = new HashMap<TextAttribute, Integer>(1);
+        map = HashMap.newHashMap(1);
         map.put(TextAttribute.INPUT_METHOD_UNDERLINE,
                 TextAttribute.UNDERLINE_LOW_GRAY);
         styles[1] = Collections.unmodifiableMap(map);
 
         // UNSELECTED_CONVERTED_TEXT_HIGHLIGHT
-        map = new HashMap<TextAttribute, Integer>(1);
+        map = HashMap.newHashMap(1);
         map.put(TextAttribute.INPUT_METHOD_UNDERLINE,
                 TextAttribute.UNDERLINE_LOW_ONE_PIXEL);
         styles[2] = Collections.unmodifiableMap(map);
 
         // SELECTED_CONVERTED_TEXT_HIGHLIGHT
-        map = new HashMap<TextAttribute, Integer>(1);
+        map = HashMap.newHashMap(1);
         map.put(TextAttribute.INPUT_METHOD_UNDERLINE,
                 TextAttribute.UNDERLINE_LOW_TWO_PIXEL);
         styles[3] = Collections.unmodifiableMap(map);

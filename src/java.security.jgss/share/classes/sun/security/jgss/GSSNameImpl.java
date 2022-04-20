@@ -141,7 +141,7 @@ public final class GSSNameImpl implements GSSName {
         appNameStr = printableName = mechElement.toString();
         appNameType = printableNameType = mechElement.getStringNameType();
         this.mechElement = mechElement;
-        elements = new HashMap<Oid, GSSNameSpi>(1);
+        elements = HashMap.newHashMap(1);
         elements.put(mechElement.getMechanism(), this.mechElement);
     }
 

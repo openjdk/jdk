@@ -161,7 +161,7 @@ public final class XClipboard extends SunClipboard implements OwnershipListener
         try {
             synchronized (XClipboard.classLock) {
                 if (targetsAtom2Clipboard == null) {
-                    targetsAtom2Clipboard = new HashMap<Long, XClipboard>(2);
+                    targetsAtom2Clipboard = HashMap.newHashMap(1);
                 }
                 mustSchedule = targetsAtom2Clipboard.isEmpty();
                 targetsAtom2Clipboard.put(getTargetsPropertyAtom().getAtom(), this);
