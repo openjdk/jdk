@@ -316,7 +316,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
     public Map<String, String> getRecordingOptions(long recording) throws IllegalArgumentException {
         MBeanUtils.checkMonitor();
         Recording r = getExistingRecording(recording);
-        Map<String, String> options = new HashMap<>(10);
+        Map<String, String> options = HashMap.newHashMap(7);
         options.put(OPTION_DUMP_ON_EXIT, String.valueOf(r.getDumpOnExit()));
         options.put(OPTION_DISK, String.valueOf(r.isToDisk()));
         options.put(OPTION_NAME, String.valueOf(r.getName()));

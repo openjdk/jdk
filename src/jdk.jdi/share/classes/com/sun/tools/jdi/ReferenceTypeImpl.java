@@ -670,7 +670,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
                                          field.ref());
         }
 
-        Map<Field, Value> map = new HashMap<Field, Value>(size);
+        Map<Field, Value> map = HashMap.newHashMap(size);
 
         ValueImpl[] values;
         try {

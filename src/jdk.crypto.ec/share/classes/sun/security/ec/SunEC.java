@@ -198,7 +198,7 @@ public final class SunEC extends Provider {
     }
 
     void putEntries() {
-        HashMap<String, String> ATTRS = new HashMap<>(3);
+        HashMap<String, String> ATTRS = HashMap.newHashMap(3);
         ATTRS.put("ImplementedIn", "Software");
         String ecKeyClasses = "java.security.interfaces.ECPublicKey" +
                  "|java.security.interfaces.ECPrivateKey";

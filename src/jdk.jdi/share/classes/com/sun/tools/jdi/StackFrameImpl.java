@@ -167,7 +167,7 @@ public class StackFrameImpl extends MirrorImpl
     private void createVisibleVariables() throws AbsentInformationException {
         if (visibleVariables == null) {
             List<LocalVariable> allVariables = location.method().variables();
-            Map<String, LocalVariable> map = new HashMap<>(allVariables.size());
+            Map<String, LocalVariable> map = HashMap.newHashMap(allVariables.size());
 
             for (LocalVariable variable : allVariables) {
                 String name = variable.name();
@@ -256,7 +256,7 @@ public class StackFrameImpl extends MirrorImpl
             throw new InternalException(
                       "Wrong number of values returned from target VM");
         }
-        Map<LocalVariable, Value> map = new HashMap<>(count);
+        Map<LocalVariable, Value> map = HashMap.newHashMap(count);
         for (int i = 0; i < count; ++i) {
             LocalVariableImpl variable = (LocalVariableImpl)variables.get(i);
             map.put(variable, values[i]);

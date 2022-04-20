@@ -288,7 +288,7 @@ public abstract class TextTests extends Test {
     }
 
 
-    static HashMap strcache = new HashMap(tscripts.length);
+    static HashMap strcache = HashMap.newHashMap(tscripts.length);
     private static String getSimpleString(Object key) {
         String s = (String)strcache.get(key);
         if (s == null) {

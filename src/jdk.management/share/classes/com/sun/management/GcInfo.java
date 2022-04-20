@@ -83,8 +83,8 @@ public class GcInfo implements CompositeData, CompositeDataView {
         this.startTime     = startTime;
         this.endTime       = endTime;
         String[] poolNames = builder.getPoolNames();
-        this.usageBeforeGc = new HashMap<String, MemoryUsage>(poolNames.length);
-        this.usageAfterGc = new HashMap<String, MemoryUsage>(poolNames.length);
+        this.usageBeforeGc = HashMap.newHashMap(poolNames.length);
+        this.usageAfterGc = HashMap.newHashMap(poolNames.length);
         for (int i = 0; i < poolNames.length; i++) {
             this.usageBeforeGc.put(poolNames[i],  muBeforeGc[i]);
             this.usageAfterGc.put(poolNames[i],  muAfterGc[i]);

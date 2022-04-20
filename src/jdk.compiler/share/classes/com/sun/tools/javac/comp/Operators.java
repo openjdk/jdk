@@ -74,10 +74,10 @@ public class Operators {
     private final Types types;
 
     /** Unary operators map. */
-    private Map<Name, List<UnaryOperatorHelper>> unaryOperators = new HashMap<>(Tag.getNumberOfOperators());
+    private Map<Name, List<UnaryOperatorHelper>> unaryOperators = HashMap.newHashMap(Tag.getNumberOfOperators());
 
     /** Binary operators map. */
-    private Map<Name, List<BinaryOperatorHelper>> binaryOperators = new HashMap<>(Tag.getNumberOfOperators());
+    private Map<Name, List<BinaryOperatorHelper>> binaryOperators = HashMap.newHashMap(Tag.getNumberOfOperators());
 
     /** The names of all operators. */
     private Name[] opname = new Name[Tag.getNumberOfOperators()];

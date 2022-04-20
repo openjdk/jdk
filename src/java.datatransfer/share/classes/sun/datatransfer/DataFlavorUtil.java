@@ -95,7 +95,7 @@ public class DataFlavorUtil {
     private static final Map<String, Boolean> textMIMESubtypeCharsetSupport;
 
     static {
-        Map<String, Boolean> tempMap = new HashMap<>(17);
+        Map<String, Boolean> tempMap = HashMap.newHashMap(15);
         tempMap.put("sgml", Boolean.TRUE);
         tempMap.put("xml", Boolean.TRUE);
         tempMap.put("html", Boolean.TRUE);

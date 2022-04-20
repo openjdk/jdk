@@ -180,7 +180,7 @@ class GTKEngine {
         Toolkit.getDefaultToolkit();
 
         // Initialize regionToWidgetTypeMap
-        regionToWidgetTypeMap = new HashMap<Region, Object>(50);
+        regionToWidgetTypeMap = HashMap.newHashMap(59);
         regionToWidgetTypeMap.put(Region.ARROW_BUTTON, new WidgetType[] {
             WidgetType.SPINNER_ARROW_BUTTON,
             WidgetType.COMBO_BOX_ARROW_BUTTON,

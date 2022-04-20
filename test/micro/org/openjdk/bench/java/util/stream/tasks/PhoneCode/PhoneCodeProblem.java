@@ -50,7 +50,7 @@ public class PhoneCodeProblem {
     private static final Map<String, List<String>> WORD_CODES;
 
     static {
-        HashMap<String, String> mnemonics = new HashMap<>(8);
+        HashMap<String, String> mnemonics = HashMap.newHashMap(8);
         mnemonics.put("2", "ABC");
         mnemonics.put("3", "DEF");
         mnemonics.put("4", "GHI");

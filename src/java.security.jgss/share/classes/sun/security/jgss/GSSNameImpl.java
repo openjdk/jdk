@@ -179,7 +179,7 @@ public final class GSSNameImpl implements GSSName {
 
         this.gssManager = gssManager;
         this.elements =
-                new HashMap<Oid, GSSNameSpi>(gssManager.getMechs().length);
+                HashMap.newHashMap(gssManager.getMechs().length);
 
         if (appName instanceof String) {
             this.appNameStr = (String) appName;

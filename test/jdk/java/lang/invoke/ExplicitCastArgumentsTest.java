@@ -52,7 +52,7 @@ public class ExplicitCastArgumentsTest {
     private static final boolean VERBOSE = Helper.IS_VERBOSE;
     private static final Class<?> THIS_CLASS = ExplicitCastArgumentsTest.class;
     private static final Random RNG = Helper.RNG;
-    private static final Map<Wrapper, Object> RANDOM_VALUES = new HashMap<>(9);
+    private static final Map<Wrapper, Object> RANDOM_VALUES = HashMap.newHashMap(9);
 
     static {
         RANDOM_VALUES.put(Wrapper.BOOLEAN, RNG.nextBoolean());

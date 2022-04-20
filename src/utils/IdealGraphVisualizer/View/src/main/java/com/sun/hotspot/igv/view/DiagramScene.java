@@ -691,7 +691,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         // needed, this could be cached as long as it is computed for all the
         // figures in the model, not just the visible ones.
         Map<Figure, Integer> figureRank =
-            new HashMap<Figure, Integer>(figures.size());
+            HashMap.newHashMap(figures.size());
         int r = 0;
         for (InputBlock b : getModel().getGraphToView().getBlocks()) {
             for (InputNode n : b.getNodes()) {

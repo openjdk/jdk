@@ -211,7 +211,7 @@ public class ObjectReferenceImpl extends ValueImpl
         if (staticFields.size() > 0) {
             map = referenceType().getValues(staticFields);
         } else {
-            map = new HashMap<Field, Value>(size);
+            map = HashMap.newHashMap(size);
         }
 
         size = instanceFields.size();
