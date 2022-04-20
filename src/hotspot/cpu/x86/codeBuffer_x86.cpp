@@ -27,5 +27,6 @@
 #include "asm/macroAssembler.hpp"
 
 bool CodeBuffer::pd_finalize_stubs() {
+  assert(_shared_stub_to_runtime_call_requests == nullptr, "unexpected runtime call requests");
   return emit_shared_stubs_to_interp<MacroAssembler, Assembler::imm_operand>(this, _shared_stub_to_interp_requests);
 }
