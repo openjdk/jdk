@@ -5190,7 +5190,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
 void MacroAssembler::java_round_double(Register dst, FloatRegister src,
                                        FloatRegister ftmp) {
   Label DONE;
-  BLOCK_COMMENT("java_round_float: { ");
+  BLOCK_COMMENT("java_round_double: { ");
   fmovd(rscratch1, src);
   // Use RoundToNearestTiesAway unless src small and -ve.
   fcvtasd(dst, src);

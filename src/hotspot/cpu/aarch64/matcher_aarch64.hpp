@@ -163,14 +163,22 @@
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = true;
 
-  // Returns pre-selection estimated size of a vector operation.
-  static int op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
+  // Returns pre-selection estimated cost of a vector operation.
+  static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
+    switch(vopc) {
+      default: return 0;
+      case Op_RoundVF: // fall through
+      case Op_RoundVD: {
+        return 15;
+      }
+    }
+  }
+  // Returns pre-selection estimated cost of a scalar operation.
+  static int scalar_op_pre_select_sz_estimate(int vopc, BasicType ety) {
     switch(vopc) {
       default: return 0;
       case Op_RoundF: // fall through
-      case Op_RoundD: // fall through
-      case Op_RoundVF: // fall through
-      case Op_RoundVD: {
+      case Op_RoundD: {
         return 15;
       }
     }
