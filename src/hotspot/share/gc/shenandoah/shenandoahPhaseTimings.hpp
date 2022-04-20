@@ -259,7 +259,8 @@ private:
   double _start_time;
   EventGCPhaseParallel _event;
 public:
-  ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase, uint worker_id);
+  ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::Phase phase, ShenandoahPhaseTimings::ParPhase par_phase,
+                                 uint worker_id, bool cumulative = false);
   ~ShenandoahWorkerTimingsTracker();
 };
 

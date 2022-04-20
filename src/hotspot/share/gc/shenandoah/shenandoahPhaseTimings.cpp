@@ -310,17 +310,17 @@ void ShenandoahPhaseTimings::print_global_on(outputStream* out) const {
 }
 
 ShenandoahWorkerTimingsTracker::ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::Phase phase,
-        ShenandoahPhaseTimings::ParPhase par_phase, uint worker_id) :
+        ShenandoahPhaseTimings::ParPhase par_phase, uint worker_id, bool cumulative) :
         _timings(ShenandoahHeap::heap()->phase_timings()),
         _phase(phase), _par_phase(par_phase), _worker_id(worker_id) {
 
-  assert(_timings->worker_data(_phase, _par_phase)->get(_worker_id) == ShenandoahWorkerData::uninitialized(),
+  assert(_timings->worker_data(_phase, _par_phase)->get(_worker_id) == ShenandoahWorkerData::uninitialized() || cumulative,
          "Should not be set yet: %s", ShenandoahPhaseTimings::phase_name(_timings->worker_par_phase(_phase, _par_phase)));
   _start_time = os::elapsedTime();
 }
 
 ShenandoahWorkerTimingsTracker::~ShenandoahWorkerTimingsTracker() {
-  _timings->worker_data(_phase, _par_phase)->set(_worker_id, os::elapsedTime() - _start_time);
+  _timings->worker_data(_phase, _par_phase)->set_or_add(_worker_id, os::elapsedTime() - _start_time);
 
   if (ShenandoahPhaseTimings::is_root_work_phase(_phase)) {
     ShenandoahPhaseTimings::Phase root_phase = _phase;
