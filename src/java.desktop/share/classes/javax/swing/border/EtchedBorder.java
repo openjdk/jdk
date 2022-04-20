@@ -133,7 +133,7 @@ public class EtchedBorder extends AbstractBorder
         g.drawLine((3*stkWidth/2), h-(3*stkWidth/2), (3*stkWidth/2), (3*stkWidth/2)); // left line
         g.drawLine((3*stkWidth/2), (3*stkWidth/2), w-(3*stkWidth/2), (3*stkWidth/2)); // top line
 
-        g.drawLine(0, h-(stkWidth-stkWidth/2),
+        g.drawLine((3*stkWidth/2), h-(stkWidth-stkWidth/2),
                 w-(stkWidth-stkWidth/2), h-(stkWidth-stkWidth/2)); // bottom line
         g.drawLine(w-(stkWidth-stkWidth/2), h-(stkWidth-stkWidth/2),
                 w-(stkWidth-stkWidth/2), stkWidth/2); // right line
