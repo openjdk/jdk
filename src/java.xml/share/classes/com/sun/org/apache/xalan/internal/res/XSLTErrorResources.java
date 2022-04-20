@@ -1333,7 +1333,6 @@ public class XSLTErrorResources extends ListResourceBundle
   // for the Xalan Process command line.  "Process" is the name of a Java class,
   // and should not be translated.
   { "xslProc_option", "Xalan-J command line Process class options:"},
-  { "xslProc_option", "Xalan-J command line Process class options\u003a"},
   { "xslProc_invalid_xsltc_option", "The option {0} is not supported in XSLTC mode."},
   { "xslProc_invalid_xalan_option", "The option {0} can only be used with -XSLTC."},
   { "xslProc_no_input", "Error: No stylesheet or input xml is specified. Run this command without any option for usage instructions."},

@@ -595,7 +595,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { ER_RTF_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
        "rtf() not supported by XRTreeFragSelectWrapper"},
 
-  { ER_RTF_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
+  { ER_ASNODEITERATOR_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
        "asNodeIterator() not supported by XRTreeFragSelectWrapper"},
 
         /**  detach() not supported by XRTreeFragSelectWrapper   */
@@ -784,11 +784,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_UNSUPPORTED_RETURN_TYPE,
        "UnSupported Return Type : {0}"},
-
-  /** Field ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL                       */
-
-  { ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL,
-       "Source and/or Return Type can not be null"},
 
   /** Field ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL                       */
 
