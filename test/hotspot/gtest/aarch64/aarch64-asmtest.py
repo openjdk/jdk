@@ -462,6 +462,29 @@ class SVEBinaryImmOp(Instruction):
         return (formatStr
                 % tuple([Instruction.astr(self)] + Regs + [self.immed]))
 
+class SVEComparisonWithZero(Instruction):
+     def __init__(self, arg):
+          Instruction.__init__(self, "fcm")
+          self.condition = arg
+          self.dest = OperandFactory.create('p').generate()
+          self.reg = SVEVectorRegister().generate()
+          self._width = RegVariant(2, 3)
+          self.preg = OperandFactory.create('P').generate()
+
+     def generate(self):
+          return Instruction.generate(self)
+
+     def cstr(self):
+          return ("%s(%s, %s, %s, %s, %s, 0.0);"
+                  % ("__ sve_" + self._name, "Assembler::" + self.condition,
+                     str(self.dest), self._width.cstr(), str(self.preg), str(self.reg)))
+
+     def astr(self):
+          val = ("%s%s\t%s%s, %s/z, %s%s, #0.0"
+                 % (self._name, self.condition.lower(), str(self.dest), self._width.astr(),
+                    str(self.preg), str(self.reg), self._width.astr()))
+          return val
+
 class MultiOp():
 
     def multipleForms(self):
@@ -1592,6 +1615,8 @@ generate(ThreeRegNEONOp,
           ["fcmge", "fcmge", "2D"],
           ])
 
+generate(SVEComparisonWithZero, ["EQ", "GT", "GE", "LT", "LE", "NE"])
+
 generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",                "ccmn\txzr, xzr, #3, LE"],
                         ["ccmnw",  "__ ccmnw(zr, zr, 5u, Assembler::EQ);",               "ccmn\twzr, wzr, #5, EQ"],
                         ["ccmp",   "__ ccmp(zr, 1, 4u, Assembler::NE);",                 "ccmp\txzr, 1, #4, NE"],
@@ -1721,7 +1746,6 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["fcmne",   "__ sve_fcm(Assembler::NE, p1, __ D, p0, z2, z3);",   "fcmne\tp1.d, p0/z, z2.d, z3.d"],
                         ["fcmgt",   "__ sve_fcm(Assembler::GT, p1, __ S, p2, z4, z5);",   "fcmgt\tp1.s, p2/z, z4.s, z5.s"],
                         ["fcmge",   "__ sve_fcm(Assembler::GE, p1, __ D, p3, z6, z7);",   "fcmge\tp1.d, p3/z, z6.d, z7.d"],
-                        ["fcmge",   "__ sve_fcm(Assembler::GE, p1, __ D, p3, z6, 0.0);",  "fcmge\tp1.d, p3/z, z6.d, 0.0"],
                         ["uunpkhi", "__ sve_uunpkhi(z0, __ H, z1);",                      "uunpkhi\tz0.h, z1.b"],
                         ["uunpklo", "__ sve_uunpklo(z4, __ S, z5);",                      "uunpklo\tz4.s, z5.h"],
                         ["sunpkhi", "__ sve_sunpkhi(z6, __ D, z7);",                      "sunpkhi\tz6.d, z7.s"],
