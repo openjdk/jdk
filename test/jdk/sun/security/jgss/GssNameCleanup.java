@@ -48,7 +48,7 @@ public final class GssNameCleanup {
         name = null;
 
         // Wait to trigger the cleanup.
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10 && whm.size() > 0; i++) {
             System.gc();
             Thread.sleep(100);
         }

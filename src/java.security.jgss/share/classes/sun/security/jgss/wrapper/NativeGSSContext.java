@@ -47,7 +47,7 @@ import java.io.*;
  * @since 1.6
  */
 class NativeGSSContext implements GSSContextSpi {
-    private final Cleaner.Cleanable cleanable;
+    private Cleaner.Cleanable cleanable;
 
     private static final int GSS_C_DELEG_FLAG = 1;
     private static final int GSS_C_MUTUAL_FLAG = 2;
@@ -214,8 +214,6 @@ class NativeGSSContext implements GSSContextSpi {
             }
             srcName = cred.getName();
         }
-
-        this.cleanable = null;
     }
 
     // Constructor for context acceptor
@@ -236,16 +234,14 @@ class NativeGSSContext implements GSSContextSpi {
 
         // srcName and potentially targetName (when myCred is null)
         // will be set in GSSLibStub.acceptContext(...)
-
-        this.cleanable = null;
     }
 
     // Constructor for imported context
     // Warning: called by NativeUtil.c
     NativeGSSContext(long pCtxt, GSSLibStub stub) throws GSSException {
         assert(pContext != 0);
-        pContext = pCtxt;
         cStub = stub;
+        setContext(pCtxt);
 
         // Set everything except cred, cb, delegatedCred
         long[] info = cStub.inquireContext(pContext);
@@ -265,8 +261,6 @@ class NativeGSSContext implements GSSContextSpi {
         if (GSSUtil.isSpNegoMech(mech) || GSSUtil.isKerberosMech(mech)) {
             doServicePermCheck();
         }
-
-        cleanable = Krb5Util.cleaner.register(this, disposerFor(stub, pCtxt));
     }
 
     public Provider getProvider() {
@@ -385,11 +379,26 @@ class NativeGSSContext implements GSSContextSpi {
         }
     }
 
+    // Note: this method is also used in native code.
+    private void setContext(long pContext) {
+        // Dispose the existing context.
+        if (this.pContext != 0L && cleanable != null) {
+            cleanable.clean();
+        }
+
+        // Reset the context
+        this.pContext = pContext;
+
+        // Register the cleaner.
+        if (pContext != 0L) {
+            cleanable = Krb5Util.cleaner.register(this,
+                    disposerFor(cStub, pContext));
+        }
+    }
+
     private static Runnable disposerFor(GSSLibStub stub, long pContext) {
         return () -> {
-            if (stub != null && pContext != 0) {
-                stub.deleteContext(pContext);
-            }
+            stub.deleteContext(pContext);
         };
     }
 
