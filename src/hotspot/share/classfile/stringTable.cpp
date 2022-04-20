@@ -654,7 +654,7 @@ size_t StringTable::verify_and_compare_entries() {
   return vcs._errors;
 }
 
-static void print_string(Thread* thr, outputStream* st, oop s) {
+static void print_string(Thread* current, outputStream* st, oop s) {
   typeArrayOop value     = java_lang_String::value_no_keepalive(s);
   int          length    = java_lang_String::length(s);
   bool         is_latin1 = java_lang_String::is_latin1(s);
@@ -662,7 +662,7 @@ static void print_string(Thread* thr, outputStream* st, oop s) {
   if (length <= 0) {
     st->print("%d: ", length);
   } else {
-    ResourceMark rm(thr);
+    ResourceMark rm(current);
     int utf8_length = length;
     char* utf8_string;
 
