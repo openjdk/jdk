@@ -968,16 +968,29 @@ class Http2Connection  {
         }
     }
 
+    // This method is called when the HTTP/2 client is being
+    // stopped. Do not call it from anywhere else.
+    void closeAllStreams() {
+        for (var streamId : streams.keySet()) {
+            // safe to call without locking - see Stream::deRegister
+            decrementStreamsCount(streamId);
+            closeStream(streamId);
+        }
+    }
+
     void closeStream(int streamid) {
         if (debug.on()) debug.log("Closed stream %d", streamid);
-        boolean isClient = (streamid % 2) == 1;
-        Stream<?> s = streams.remove(streamid);
-        if (s != null) {
-            // decrement the reference count on the HttpClientImpl
-            // to allow the SelectorManager thread to exit if no
-            // other operation is pending and the facade is no
-            // longer referenced.
-            client().streamUnreference();
+
+        Stream<?> s;
+        synchronized (this) {
+            s = streams.remove(streamid);
+            if (s != null) {
+                // decrement the reference count on the HttpClientImpl
+                // to allow the SelectorManager thread to exit if no
+                // other operation is pending and the facade is no
+                // longer referenced.
+                client().streamUnreference();
+            }
         }
         // ## Remove s != null. It is a hack for delayed cancellation,reset
         if (s != null && !(s instanceof Stream.PushedStream)) {
@@ -1153,8 +1166,19 @@ class Http2Connection  {
         // increment the reference count on the HttpClientImpl
         // to prevent the SelectorManager thread from exiting until
         // the stream is closed.
-        client().streamReference();
-        streams.put(streamid, stream);
+        synchronized (this) {
+            if (!closed) {
+                if (debug.on()) {
+                    debug.log("Opened stream %d", streamid);
+                }
+                client().streamReference();
+                streams.put(streamid, stream);
+                return;
+            }
+        }
+        if (debug.on()) debug.log("connection closed: closing stream %d", stream);
+        stream.cancel();
+
     }
 
     /**
