@@ -36,7 +36,7 @@ public class Source {
 
     public Source() {
         sourceNodes = new ArrayList<>(1);
-        set = new LinkedHashSet<>(1);
+        set = LinkedHashSet.newHashSet(1);
     }
 
     public List<InputNode> getSourceNodes() {

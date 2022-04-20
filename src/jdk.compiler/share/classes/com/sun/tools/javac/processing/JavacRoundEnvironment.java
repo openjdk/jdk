@@ -136,7 +136,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
         // Don't bother to special-case annotations.length == 1 as
         // return getElementsAnnotatedWith(annotations[0]);
 
-        Set<TypeElement> annotationSet = new LinkedHashSet<>(annotations.length);
+        Set<TypeElement> annotationSet = LinkedHashSet.newHashSet(annotations.length);
         for (TypeElement annotation : annotations) {
             throwIfNotAnnotation(annotation);
             annotationSet.add(annotation);

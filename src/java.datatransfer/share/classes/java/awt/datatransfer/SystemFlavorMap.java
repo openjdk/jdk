@@ -360,7 +360,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
     private <H, L> void store(H hashed, L listed, Map<H, LinkedHashSet<L>> map) {
         LinkedHashSet<L> list = map.get(hashed);
         if (list == null) {
-            list = new LinkedHashSet<>(1);
+            list = LinkedHashSet.newLinkedHashSet(1);
             map.put(hashed, list);
         }
         if (!list.contains(listed)) {
@@ -409,14 +409,14 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
             }
 
             if (flavor != null) {
-                flavors = new LinkedHashSet<>(1);
+                flavors = LinkedHashSet.newLinkedHashSet(1);
                 getNativeToFlavor().put(nat, flavors);
                 flavors.add(flavor);
                 flavorsForNativeCache.remove(nat);
 
                 LinkedHashSet<String> natives = getFlavorToNative().get(flavor);
                 if (natives == null) {
-                    natives = new LinkedHashSet<>(1);
+                    natives = LinkedHashSet.newLinkedHashSet(1);
                     getFlavorToNative().put(flavor, natives);
                 }
                 natives.add(nat);
@@ -461,13 +461,13 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
         if (natives == null) {
             if (synthesize) {
                 String encoded = encodeDataFlavor(flav);
-                natives = new LinkedHashSet<>(1);
+                natives = LinkedHashSet.newLinkedHashSet(1);
                 getFlavorToNative().put(flav, natives);
                 natives.add(encoded);
 
                 LinkedHashSet<DataFlavor> flavors = getNativeToFlavor().get(encoded);
                 if (flavors == null) {
-                    flavors = new LinkedHashSet<>(1);
+                    flavors = LinkedHashSet.newLinkedHashSet(1);
                     getNativeToFlavor().put(encoded, flavors);
                 }
                 flavors.add(flav);
@@ -845,7 +845,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
 
         LinkedHashSet<String> natives = getFlavorToNative().get(flav);
         if (natives == null) {
-            natives = new LinkedHashSet<>(1);
+            natives = LinkedHashSet.newLinkedHashSet(1);
             getFlavorToNative().put(flav, natives);
         }
         natives.add(nat);
@@ -914,7 +914,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
 
         LinkedHashSet<DataFlavor> flavors = getNativeToFlavor().get(nat);
         if (flavors == null) {
-            flavors = new LinkedHashSet<>(1);
+            flavors = LinkedHashSet.newLinkedHashSet(1);
             getNativeToFlavor().put(nat, flavors);
         }
         flavors.add(flav);

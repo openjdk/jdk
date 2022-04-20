@@ -380,7 +380,7 @@ public class XDataTransferer extends DataTransferer {
      */
     @Override
     public LinkedHashSet<String> getPlatformMappingsForFlavor(DataFlavor df) {
-        LinkedHashSet<String> natives = new LinkedHashSet<>(1);
+        LinkedHashSet<String> natives = LinkedHashSet.newLinkedHashSet(1);
 
         if (df == null) {
             return natives;

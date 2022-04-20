@@ -3843,7 +3843,7 @@ public class Lower extends TreeTranslator {
 
                         Set<String> stringSet = hashToString.get(hashCode);
                         if (stringSet == null) {
-                            stringSet = new LinkedHashSet<>(1, 1.0f);
+                            stringSet = LinkedHashSet.newLinkedHashSet(1);
                             stringSet.add(labelExpr);
                             hashToString.put(hashCode, stringSet);
                         } else {
