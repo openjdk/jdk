@@ -374,8 +374,8 @@ class NativeGSSContext implements GSSContextSpi {
         delegatedCred = null;
 
         if (pContext != 0 && cleanable != null) {
-            cleanable.clean();
             pContext = 0;
+            cleanable.clean();
         }
     }
 
