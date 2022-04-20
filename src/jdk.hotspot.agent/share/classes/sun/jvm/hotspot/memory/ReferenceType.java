@@ -28,7 +28,7 @@ package sun.jvm.hotspot.memory;
 
 public enum ReferenceType {
   REF_NONE ("None reference"),       // Regular class
-  REF_OTHER ("Other reference"),     // Subclass of java/lang/ref/Reference, but not subclass of one of the classes below
+  REF_REFERENCE ("j.l.r.Reference"), // java/lang/ref/Reference, super class of the following
   REF_SOFT ("Soft reference"),       // Subclass of java/lang/ref/SoftReference
   REF_WEAK ("Weak reference"),       // Subclass of java/lang/ref/WeakReference
   REF_FINAL ("Final reference"),     // Subclass of java/lang/ref/FinalReference
