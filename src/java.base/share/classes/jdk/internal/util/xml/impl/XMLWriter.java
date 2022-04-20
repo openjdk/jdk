@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ public class XMLWriter {
      * @param output The output stream
      * @param encoding The encoding
      * @return A suitable writer
-     * @throws UnsupportedEncodingException There is no convertor to support
+     * @throws UnsupportedEncodingException There is no converter to support
      * this encoding
      */
     private Writer getWriter(OutputStream output, String encoding, Charset cs)
