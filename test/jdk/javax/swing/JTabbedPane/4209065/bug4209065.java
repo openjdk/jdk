@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public final class bug4209065 extends JApplet {
                       + "<br>the descriptions, press <em><b>PASS</b></em><br>"
                       + "<br> NOTE: the text (tab title) may not always "
                       + "fit the tab.</center></html>";
-        tp.addTab("<html><center><font size=+2>big</font></center></html>",
+        tp.addTab("<html><center><font size=+3>big</font></center></html>",
                 new JLabel(text));
         tp.addTab("<html><center><font color=red>red</font></center></html>",
                 new JLabel(text));
