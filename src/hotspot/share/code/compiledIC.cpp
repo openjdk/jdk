@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -421,7 +421,7 @@ bool CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
   // callsites. In addition ic_miss code will update a site to monomorphic if it determines
   // that an monomorphic call to the interpreter can now be monomorphic to compiled code.
   //
-  // In both of these cases the only thing being modifed is the jump/call target and these
+  // In both of these cases the only thing being modified is the jump/call target and these
   // transitions are mt_safe
 
   Thread *thread = Thread::current();

@@ -1266,7 +1266,7 @@ static void move32_64(MacroAssembler *masm,
   if (src.first()->is_stack()) {
     Address memaddr(Z_SP, reg2offset(src.first()) + frame_offset);
     if (dst.first()->is_stack()) {
-      // stack -> stack. MVC not posible due to sign extension.
+      // stack -> stack. MVC not possible due to sign extension.
       Address firstaddr(Z_SP, reg2offset(dst.first()));
       __ mem2reg_signed_opt(Z_R0_scratch, memaddr);
       __ reg2mem_opt(Z_R0_scratch, firstaddr);
@@ -2881,7 +2881,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   // The following is basically a call_VM. However, we need the precise
   // address of the call in order to generate an oopmap. Hence, we do all the
-  // work outselves.
+  // work ourselves.
   __ set_last_Java_frame(Z_SP, noreg);
 
   // call into the runtime to handle the safepoint poll

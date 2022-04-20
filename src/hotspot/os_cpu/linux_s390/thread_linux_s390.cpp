@@ -34,7 +34,7 @@ frame JavaThread::pd_last_frame() {
   intptr_t* sp = last_Java_sp();
   address pc = _anchor.last_Java_pc();
 
-  // Last_Java_pc ist not set if we come here from compiled code.
+  // Last_Java_pc is not set if we come here from compiled code.
   // Assume spill slot for Z_R14 (return register) contains a suitable pc.
   // Should have been filled by method entry code.
   if (pc == NULL) {

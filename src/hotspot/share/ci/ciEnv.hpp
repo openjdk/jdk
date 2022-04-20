@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,7 +334,7 @@ public:
   // Reason this compilation is failing, such as "too many basic blocks".
   const char* failure_reason() { return _failure_reason; }
 
-  // Return state of appropriate compilability
+  // Return state of appropriate compatibility
   int compilable() { return _compilable; }
 
   const char* retry_message() const {
