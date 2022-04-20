@@ -51,7 +51,6 @@ javax.security.auth.callback
 javax.security.auth.login
 javax.security.auth.spi
 javax.security.auth.x500
-javax.security.cert
 module:java.compiler
 javax.annotation.processing
 javax.lang.model

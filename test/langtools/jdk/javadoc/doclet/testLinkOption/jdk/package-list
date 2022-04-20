@@ -70,7 +70,6 @@ javax.security.auth.kerberos
 javax.security.auth.login
 javax.security.auth.spi
 javax.security.auth.x500
-javax.security.cert
 javax.sound.midi
 javax.sound.midi.spi
 javax.sound.sampled
