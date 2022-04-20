@@ -9009,9 +9009,28 @@ instruct modL_reg_reg_Ex(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   %}
 %}
 
-// Implementation of UDivI and UModI didn't improve performance.
-// C2 can handle them better without intrinsification.
-// However, UDivL and UModL are beneficial.
+instruct udivI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+  match(Set dst (UDivI src1 src2));
+  format %{ "DIVWU   $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ divwu($dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct umodI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+  match(Set dst (UModI src1 src2));
+  expand %{
+    iRegIdst tmp1;
+    iRegIdst tmp2;
+    udivI_reg_reg(tmp1, src1, src2);
+    // Compute lower 32 bit result using signed instructions as suggested by ISA.
+    // Upper 32 bit will contain garbage.
+    mulI_reg_reg(tmp2, src2, tmp1);
+    subI_reg_reg(dst, src1, tmp2);
+  %}
+%}
 
 instruct udivL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   match(Set dst (UDivL src1 src2));
