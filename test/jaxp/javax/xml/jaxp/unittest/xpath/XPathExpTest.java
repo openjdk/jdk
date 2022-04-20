@@ -70,7 +70,7 @@ public class XPathExpTest {
     public Object[][] getXPathExpression() throws Exception {
 
         return new Object[][]{
-            // verifies various form of the parent axis
+            // verifies various forms of the parent axis
             {"/root/child[@id='2']", PARENT_CHILD},
             {"//grandchild[@id='3']/parent::child", PARENT_CHILD},
             {"//grandchild[@id='3']/parent::node()", PARENT_CHILD},
@@ -79,6 +79,17 @@ public class XPathExpTest {
             {"//grandchild[@id='3']/..", PARENT_CHILD},
             {"//grandchild[@id='3']/../grandchild[@id='4']/..", PARENT_CHILD},
             {"//grandchild[@id='3']/parent::node()/grandchild[@id='4']/..", PARENT_CHILD},
+
+            // verifies various forms of the self axis
+            {"/root/child[@id='2']/self::child", PARENT_CHILD},
+            {"/root/child[@id='2']/self::node()", PARENT_CHILD},
+            {"/root/child[@id='2']/self::*", PARENT_CHILD},
+            {"self::node()/root/child[@id='2']", PARENT_CHILD},
+            {"/root/child[@id='2']/.", PARENT_CHILD},
+            {"./root/child[@id='2']", PARENT_CHILD},
+            {".//child[@id='2']", PARENT_CHILD},
+            {"//grandchild[@id='3']/./../grandchild[@id='4']/..", PARENT_CHILD},
+            {"//grandchild[@id='3']/./parent::node()/grandchild[@id='4']/..", PARENT_CHILD},
         };
     }
 
