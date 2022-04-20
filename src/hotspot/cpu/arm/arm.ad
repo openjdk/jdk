@@ -1159,6 +1159,10 @@ bool maybe_far_call(const MachCallNode *n) {
   return !MacroAssembler::_reachable_from_cache(n->as_MachCall()->entry_point());
 }
 
+bool Parse::do_one_bytecode_targeted() {
+  return false;
+}
+
 %}
 
 //----------ENCODING BLOCK-----------------------------------------------------

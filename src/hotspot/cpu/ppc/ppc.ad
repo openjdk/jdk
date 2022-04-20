@@ -2407,6 +2407,10 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return RegMask();
 }
 
+bool Parse::do_one_bytecode_targeted() {
+  return false;
+}
+
 %}
 
 //----------ENCODING BLOCK-----------------------------------------------------

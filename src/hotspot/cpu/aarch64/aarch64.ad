@@ -2796,6 +2796,10 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
   return false;
 }
 
+bool Parse::do_one_bytecode_targeted() {
+  return false;
+}
+
 #define MOV_VOLATILE(REG, BASE, INDEX, SCALE, DISP, SCRATCH, INSN)      \
   C2_MacroAssembler _masm(&cbuf);                                       \
   {                                                                     \

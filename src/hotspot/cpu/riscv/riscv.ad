@@ -2044,6 +2044,10 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
   return clone_base_plus_offset_address(m, mstack, address_visited);
 }
 
+bool Parse::do_one_bytecode_targeted() {
+  return false;
+}
+
 %}
 
 
