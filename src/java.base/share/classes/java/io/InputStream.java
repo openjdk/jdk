@@ -65,8 +65,7 @@ public abstract class InputStream implements Closeable {
      */
     private SoftReference<byte[]> skipBufferReference;
 
-    private byte[] skipBufferReference(long remaining) {
-        int size = (int) Math.min(MAX_SKIP_BUFFER_SIZE, remaining);
+    private byte[] skipBufferReference(int size) {
         SoftReference<byte[]> ref = this.skipBufferReference;
         byte[] buffer;
         if (ref == null || (buffer = ref.get()) == null || buffer.length < size) {
