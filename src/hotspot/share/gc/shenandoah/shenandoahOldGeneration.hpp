@@ -48,7 +48,7 @@ class ShenandoahOldGeneration : public ShenandoahGeneration {
 
   virtual void cancel_marking() override;
 
-  bool prepare_regions_and_collection_set(bool concurrent) override;
+  void prepare_regions_and_collection_set(bool concurrent) override;
 
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
 

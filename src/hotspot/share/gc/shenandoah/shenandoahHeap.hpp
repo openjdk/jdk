@@ -151,10 +151,7 @@ private:
   ShenandoahHeapLock _lock;
   ShenandoahGeneration* _gc_generation;
 
-  bool _mixed_evac;                      // true iff most recent evac included at least one old-gen HeapRegion
   bool _prep_for_mixed_evac_in_progress; // true iff we are concurrently coalescing and filling old-gen HeapRegions
-
-  size_t _evacuation_allowance;          // amount by which young-gen usage may temporarily exceed young-gen capacity
 
 public:
   ShenandoahHeapLock* lock() {
@@ -168,10 +165,6 @@ public:
 
   void set_gc_generation(ShenandoahGeneration* generation) {
     _gc_generation = generation;
-  }
-
-  void set_mixed_evac(bool mixed_evac) {
-    _mixed_evac = mixed_evac;
   }
 
   ShenandoahOldHeuristics* old_heuristics();

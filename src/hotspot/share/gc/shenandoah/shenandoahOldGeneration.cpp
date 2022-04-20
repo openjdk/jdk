@@ -181,7 +181,7 @@ bool ShenandoahOldGeneration::contains(oop obj) const {
   return ShenandoahHeap::heap()->is_in_old(obj);
 }
 
-bool ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent) {
+void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(!heap->is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
 
@@ -204,7 +204,6 @@ bool ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     ShenandoahHeapLocker locker(heap->lock());
     heap->free_set()->rebuild();
   }
-  return false;
 }
 
 ShenandoahHeuristics* ShenandoahOldGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {

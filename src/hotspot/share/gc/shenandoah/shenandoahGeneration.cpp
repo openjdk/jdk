@@ -221,9 +221,8 @@ void ShenandoahGeneration::prepare_gc(bool do_old_gc_bootstrap) {
   }
 }
 
-// Returns true iff the chosen collection set includes a mix of young-gen and old-gen regions.
-bool ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
-  bool result;
+void  ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
+
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(!heap->is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
   assert(generation_mode() != OLD, "Only YOUNG and GLOBAL GC perform evacuations");
@@ -333,7 +332,7 @@ bool ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
 
     // The heuristics may consult and/or change the values of PromotionReserved, OldEvacuationReserved, and
     // YoungEvacuationReserved, all of which are represented in the shared ShenandoahHeap data structure.
-    result = _heuristics->choose_collection_set(heap->collection_set(), heap->old_heuristics());
+    _heuristics->choose_collection_set(heap->collection_set(), heap->old_heuristics());
 
     //  EvacuationAllocationSupplement: This represents memory that can be allocated in excess of young_gen->available()
     //     during evacuation and update-refs.  This memory can be temporarily borrowed from old-gen allotment, then
@@ -359,7 +358,6 @@ bool ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     ShenandoahHeapLocker locker(heap->lock());
     heap->free_set()->rebuild();
   }
-  return result;
 }
 
 bool ShenandoahGeneration::is_bitmap_clear() {

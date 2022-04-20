@@ -497,9 +497,7 @@ void ShenandoahHeap::initialize_heuristics() {
 ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   CollectedHeap(),
   _gc_generation(NULL),
-  _mixed_evac(false),
   _prep_for_mixed_evac_in_progress(false),
-  _evacuation_allowance(0),
   _initial_size(0),
   _used(0),
   _committed(0),
@@ -2405,14 +2403,12 @@ class ShenandoahUpdateHeapRefsTask : public WorkerTask {
 private:
   ShenandoahHeap* _heap;
   ShenandoahRegionIterator* _regions;
-  bool _mixed_evac;             // true iff most recent evacuation includes old-gen HeapRegions
 
 public:
-  ShenandoahUpdateHeapRefsTask(ShenandoahRegionIterator* regions, bool mixed_evac) :
+  explicit ShenandoahUpdateHeapRefsTask(ShenandoahRegionIterator* regions) :
     WorkerTask("Shenandoah Update References"),
     _heap(ShenandoahHeap::heap()),
-    _regions(regions),
-    _mixed_evac(mixed_evac)
+    _regions(regions)
   {
   }
 
@@ -2450,7 +2446,7 @@ private:
             _heap->marked_object_oop_iterate(r, &cl, update_watermark);
           } else {
             // Old region in a young cycle or mixed cycle.
-            if (!_mixed_evac) {
+            if (!is_mixed) {
               // This is a young evac..
               _heap->card_scan()->process_region(r, &cl, true);
             } else {
@@ -2526,10 +2522,10 @@ void ShenandoahHeap::update_heap_references(bool concurrent) {
   assert(!is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
 
   if (concurrent) {
-    ShenandoahUpdateHeapRefsTask<true> task(&_update_refs_iterator, _mixed_evac);
+    ShenandoahUpdateHeapRefsTask<true> task(&_update_refs_iterator);
     workers()->run_task(&task);
   } else {
-    ShenandoahUpdateHeapRefsTask<false> task(&_update_refs_iterator, _mixed_evac);
+    ShenandoahUpdateHeapRefsTask<false> task(&_update_refs_iterator);
     workers()->run_task(&task);
   }
 }

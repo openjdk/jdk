@@ -79,8 +79,7 @@ private:
 public:
   ShenandoahOldHeuristics(ShenandoahGeneration* generation, ShenandoahHeuristics* trigger_heuristic);
 
-  // Return true iff chosen collection set includes at least one old-gen HeapRegion.
-  virtual bool choose_collection_set(ShenandoahCollectionSet* collection_set, ShenandoahOldHeuristics* old_heuristics) override;
+  virtual void choose_collection_set(ShenandoahCollectionSet* collection_set, ShenandoahOldHeuristics* old_heuristics) override;
 
   // Return true iff the collection set is primed with at least one old-gen region.
   bool prime_collection_set(ShenandoahCollectionSet* set);

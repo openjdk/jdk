@@ -694,7 +694,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
     // are negligible negative impacts from delaying completion of old-gen evacuation) and when young-gen collections
     // are "under duress" (as signalled by very low availability of memory within young-gen, indicating that/ young-gen
     // collections are not triggering frequently enough).
-    bool mixed_evac = _generation->prepare_regions_and_collection_set(true /*concurrent*/);
+    _generation->prepare_regions_and_collection_set(true /*concurrent*/);
 
     // Upon return from prepare_regions_and_collection_set(), certain parameters have been established to govern the
     // evacuation efforts that are about to begin.  In particular:
@@ -715,8 +715,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
     //
     // heap->get_alloc_supplement_reserve() represents the amount of old-gen memory that can be allocated during evacuation
     // and update-refs phases of gc.  The young evacuation reserve has already been removed from this quantity.
-
-    heap->set_mixed_evac(mixed_evac);
 
     // Has to be done after cset selection
     heap->prepare_concurrent_roots();
