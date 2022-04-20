@@ -78,9 +78,6 @@ public class JFileChooserSetLocationTest {
         robot = new Robot();
         robot.setAutoWaitForIdle(true);
         robot.setAutoDelay(200);
-        robot = new Robot();
-        robot.setAutoWaitForIdle(true);
-        robot.setAutoDelay(100);
 
         List<String> lafs = Arrays.stream(getInstalledLookAndFeels())
                                   .map(LookAndFeelInfo::getClassName)
