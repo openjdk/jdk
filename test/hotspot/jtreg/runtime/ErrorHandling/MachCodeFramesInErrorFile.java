@@ -161,6 +161,8 @@ public class MachCodeFramesInErrorFile {
         if (machCodeHeaders.size() < minExpectedMachCodeSections) {
             Asserts.fail(machCodeHeaders.size() + " < " + minExpectedMachCodeSections);
         }
+
+        throw new RuntimeException("sample error");
     }
 
     /**
@@ -182,6 +184,6 @@ public class MachCodeFramesInErrorFile {
                 frames.add(line);
             }
         }
-        throw new RuntimeException("\"" + marker + "\" line missing in hs_err_pid file:\n");
+        throw new RuntimeException("\"" + marker + "\" line missing in hs_err_pid file");
     }
 }
