@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,12 +124,112 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
   if (!InlineIntrinsics) return NULL; // Generate a vanilla entry
 
-  // TODO: ARM
-  return NULL;
+  address entry_point = NULL;
+  Register continuation = LR;
+  bool use_runtime_call = false;
+  switch (kind) {
+  case Interpreter::java_lang_math_abs:
+    entry_point = __ pc();
+#ifdef __SOFTFP__
+    use_runtime_call = true;
+    __ ldrd(R0, Address(SP));
+#else // !__SOFTFP__
+    __ ldr_double(D0, Address(SP));
+    __ abs_double(D0, D0);
+#endif // __SOFTFP__
+    break;
+  case Interpreter::java_lang_math_sqrt:
+    entry_point = __ pc();
+#ifdef __SOFTFP__
+    use_runtime_call = true;
+    __ ldrd(R0, Address(SP));
+#else // !__SOFTFP__
+    __ ldr_double(D0, Address(SP));
+    __ sqrt_double(D0, D0);
+#endif // __SOFTFP__
+    break;
+  case Interpreter::java_lang_math_sin:
+  case Interpreter::java_lang_math_cos:
+  case Interpreter::java_lang_math_tan:
+  case Interpreter::java_lang_math_log:
+  case Interpreter::java_lang_math_log10:
+  case Interpreter::java_lang_math_exp:
+    entry_point = __ pc();
+    use_runtime_call = true;
+#ifdef __SOFTFP__
+    __ ldrd(R0, Address(SP));
+#else // !__SOFTFP__
+    __ ldr_double(D0, Address(SP));
+#endif // __SOFTFP__
+    break;
+  case Interpreter::java_lang_math_pow:
+    entry_point = __ pc();
+    use_runtime_call = true;
+#ifdef __SOFTFP__
+    __ ldrd(R0, Address(SP, 2 * Interpreter::stackElementSize));
+    __ ldrd(R2, Address(SP));
+#else // !__SOFTFP__
+    __ ldr_double(D0, Address(SP, 2 * Interpreter::stackElementSize));
+    __ ldr_double(D1, Address(SP));
+#endif // __SOFTFP__
+    break;
+  case Interpreter::java_lang_math_fmaD:
+  case Interpreter::java_lang_math_fmaF:
+    // TODO: Implement intrinsic
+    break;
+  default:
+    ShouldNotReachHere();
+  }
 
-  address entry_point = __ pc();
-  STOP("generate_math_entry");
+  if (entry_point != NULL) {
+    __ mov(SP, Rsender_sp);
+    if (use_runtime_call) {
+      __ mov(Rtmp_save0, LR);
+      continuation = Rtmp_save0;
+      generate_math_runtime_call(kind);
+    }
+    __ ret(continuation);
+  }
   return entry_point;
+}
+
+void TemplateInterpreterGenerator::generate_math_runtime_call(AbstractInterpreter::MethodKind kind) {
+  address fn;
+  switch (kind) {
+#ifdef __SOFTFP__
+  case Interpreter::java_lang_math_abs:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dabs);
+    break;
+  case Interpreter::java_lang_math_sqrt:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);
+    break;
+#endif // __SOFTFP__
+  case Interpreter::java_lang_math_sin:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);
+    break;
+  case Interpreter::java_lang_math_cos:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);
+    break;
+  case Interpreter::java_lang_math_tan:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);
+    break;
+  case Interpreter::java_lang_math_log:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);
+    break;
+  case Interpreter::java_lang_math_log10:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10);
+    break;
+  case Interpreter::java_lang_math_exp:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);
+    break;
+  case Interpreter::java_lang_math_pow:
+    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
+    break;
+  default:
+    ShouldNotReachHere();
+    fn = NULL; // silence "maybe uninitialized" compiler warnings
+  }
+  __ call_VM_leaf(fn);
 }
 
 address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
@@ -829,7 +929,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ sub(SP, SP, AsmOperand(Rsize_of_params, lsl, LogBytesPerLong));
 
 #ifdef __ABI_HARD__
-  // Allocate more stack space to accomodate all GP as well as FP registers:
+  // Allocate more stack space to accommodate all GP as well as FP registers:
   // 4 * wordSize
   // 8 * BytesPerLong
   int reg_arguments = align_up((4*wordSize) + (8*BytesPerLong), StackAlignmentInBytes);
@@ -1356,7 +1456,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // restore exception
   __ get_vm_result(Rexception_obj, Rtemp);
 
-  // Inbetween activations - previous activation type unknown yet
+  // In between activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects
   // the following registers set up:
   //

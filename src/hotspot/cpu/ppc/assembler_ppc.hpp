@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,6 +45,9 @@ class Address {
   }
 
   Address(Register b, address d = 0)
+    : _base(b), _index(noreg), _disp((intptr_t)d) {}
+
+  Address(Register b, ByteSize d)
     : _base(b), _index(noreg), _disp((intptr_t)d) {}
 
   Address(Register b, intptr_t d)
@@ -576,6 +579,7 @@ class Assembler : public AbstractAssembler {
     XVNMSUBASP_OPCODE=(60u<< OPCODE_SHIFT |  209u << 3),
     XVNMSUBADP_OPCODE=(60u<< OPCODE_SHIFT |  241u << 3),
     XVRDPI_OPCODE  = (60u << OPCODE_SHIFT |  201u << 2),
+    XVRDPIC_OPCODE = (60u << OPCODE_SHIFT |  235u << 2),
     XVRDPIM_OPCODE = (60u << OPCODE_SHIFT |  249u << 2),
     XVRDPIP_OPCODE = (60u << OPCODE_SHIFT |  233u << 2),
 
@@ -823,6 +827,10 @@ class Assembler : public AbstractAssembler {
     // Prefixed addi/li
     PADDI_PREFIX_OPCODE   = PREFIX_PRIMARY_OPCODE | (2u << PRE_TYPE_SHIFT),
     PADDI_SUFFIX_OPCODE   = ADDI_OPCODE,
+
+    // xxpermx
+    XXPERMX_PREFIX_OPCODE = PREFIX_PRIMARY_OPCODE | (1u << PRE_TYPE_SHIFT),
+    XXPERMX_SUFFIX_OPCODE = (34u << OPCODE_SHIFT),
   };
 
   // Trap instructions TO bits
@@ -1577,7 +1585,7 @@ class Assembler : public AbstractAssembler {
   inline void xoris(  Register a, Register s, int ui16);
   inline void andr(   Register a, Register s, Register b);  // suffixed by 'r' as 'and' is C++ keyword
   inline void and_(   Register a, Register s, Register b);
-  // Turn or0(rx,rx,rx) into a nop and avoid that we accidently emit a
+  // Turn or0(rx,rx,rx) into a nop and avoid that we accidentally emit a
   // SMT-priority change instruction (see SMT instructions below).
   inline void or_unchecked(Register a, Register s, Register b);
   inline void orr(    Register a, Register s, Register b);  // suffixed by 'r' as 'or' is C++ keyword
@@ -2347,6 +2355,7 @@ class Assembler : public AbstractAssembler {
   inline void mtvrd(    VectorRegister  d, Register a);
   inline void mfvrd(    Register        a, VectorRegister d);
   inline void xxperm(   VectorSRegister d, VectorSRegister a, VectorSRegister b);
+  inline void xxpermx(  VectorSRegister d, VectorSRegister a, VectorSRegister b, VectorSRegister c, int ui3);
   inline void xxpermdi( VectorSRegister d, VectorSRegister a, VectorSRegister b, int dm);
   inline void xxmrghw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xxmrglw(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
@@ -2384,6 +2393,7 @@ class Assembler : public AbstractAssembler {
   inline void xvnmsubasp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvnmsubadp(VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvrdpi(   VectorSRegister d, VectorSRegister b);
+  inline void xvrdpic(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpim(  VectorSRegister d, VectorSRegister b);
   inline void xvrdpip(  VectorSRegister d, VectorSRegister b);
 
@@ -2521,7 +2531,7 @@ class Assembler : public AbstractAssembler {
   inline void lvsl(  VectorRegister d, Register s2);
   inline void lvsr(  VectorRegister d, Register s2);
 
-  // Endianess specific concatenation of 2 loaded vectors.
+  // Endianness specific concatenation of 2 loaded vectors.
   inline void load_perm(VectorRegister perm, Register addr);
   inline void vec_perm(VectorRegister first_dest, VectorRegister second, VectorRegister perm);
   inline void vec_perm(VectorRegister dest, VectorRegister first, VectorRegister second, VectorRegister perm);
@@ -2560,7 +2570,7 @@ class Assembler : public AbstractAssembler {
   inline void load_const(Register d, AddressLiteral& a, Register tmp = noreg);
   inline void load_const32(Register d, int i); // load signed int (patchable)
 
-  // Load a 64 bit constant, optimized, not identifyable.
+  // Load a 64 bit constant, optimized, not identifiable.
   // Tmp can be used to increase ILP. Set return_simm16_rest = true to get a
   // 16 bit immediate offset. This is useful if the offset can be encoded in
   // a succeeding instruction.

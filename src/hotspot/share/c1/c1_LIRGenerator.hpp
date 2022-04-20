@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,6 +239,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void  move_to_phi(PhiResolver* resolver, Value cur_val, Value sux_val);
   void  move_to_phi(ValueStack* cur_state);
 
+  void load_klass(LIR_Opr obj, LIR_Opr klass, CodeEmitInfo* null_check_info);
+
   // platform dependent
   LIR_Opr getThreadPointer();
 
@@ -309,7 +311,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr atomic_add(BasicType type, LIR_Opr addr, LIRItem& new_value);
 
 #ifdef CARDTABLEBARRIERSET_POST_BARRIER_HELPER
-  virtual void CardTableBarrierSet_post_barrier_helper(LIR_OprDesc* addr, LIR_Const* card_table_base);
+  virtual void CardTableBarrierSet_post_barrier_helper(LIR_Opr addr, LIR_Const* card_table_base);
 #endif
 
   // specific implementations
@@ -397,18 +399,18 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
                                     int bci, bool backedge, bool notify);
   void increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int bci, bool backedge);
   void increment_invocation_counter(CodeEmitInfo *info) {
-    if (compilation()->count_invocations()) {
+    if (compilation()->is_profiling()) {
       increment_event_counter(info, LIR_OprFact::intConst(InvocationCounter::count_increment), InvocationEntryBci, false);
     }
   }
   void increment_backedge_counter(CodeEmitInfo* info, int bci) {
-    if (compilation()->count_backedges()) {
+    if (compilation()->is_profiling()) {
       increment_event_counter(info, LIR_OprFact::intConst(InvocationCounter::count_increment), bci, true);
     }
   }
   void increment_backedge_counter_conditionally(LIR_Condition cond, LIR_Opr left, LIR_Opr right, CodeEmitInfo* info, int left_bci, int right_bci, int bci);
   void increment_backedge_counter(CodeEmitInfo* info, LIR_Opr step, int bci) {
-    if (compilation()->count_backedges()) {
+    if (compilation()->is_profiling()) {
       increment_event_counter(info, step, bci, true);
     }
   }
@@ -427,9 +429,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void do_root (Instruction* instr);
   void walk    (Instruction* instr);
-
-  void bind_block_entry(BlockBegin* block);
-  void start_block(BlockBegin* block);
 
   LIR_Opr new_register(BasicType type);
   LIR_Opr new_register(Value value)              { return new_register(as_BasicType(value->type())); }
@@ -469,7 +468,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_SwitchRanges(SwitchRangeArray* x, LIR_Opr value, BlockBegin* default_sux);
 
 #ifdef JFR_HAVE_INTRINSICS
-  void do_ClassIDIntrinsic(Intrinsic* x);
   void do_getEventWriter(Intrinsic* x);
 #endif
 
@@ -482,7 +480,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void profile_parameters(Base* x);
   void profile_parameters_at_call(ProfileCall* x);
   LIR_Opr mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info);
-  LIR_Opr maybe_mask_boolean(StoreIndexed* x, LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info);
 
  public:
   Compilation*  compilation() const              { return _compilation; }
@@ -507,7 +504,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIRGenerator(Compilation* compilation, ciMethod* method)
     : _compilation(compilation)
     , _method(method)
-    , _virtual_register_number(LIR_OprDesc::vreg_base)
+    , _virtual_register_number(LIR_Opr::vreg_base)
     , _vreg_flags(num_vreg_flags)
     , _barrier_set(BarrierSet::barrier_set()->barrier_set_c1()) {
   }
@@ -581,11 +578,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_OsrEntry       (OsrEntry*        x);
   virtual void do_ExceptionObject(ExceptionObject* x);
   virtual void do_RoundFP        (RoundFP*         x);
-  virtual void do_UnsafeGetRaw   (UnsafeGetRaw*    x);
-  virtual void do_UnsafePutRaw   (UnsafePutRaw*    x);
-  virtual void do_UnsafeGetObject(UnsafeGetObject* x);
-  virtual void do_UnsafePutObject(UnsafePutObject* x);
-  virtual void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x);
+  virtual void do_UnsafeGet      (UnsafeGet*       x);
+  virtual void do_UnsafePut      (UnsafePut*       x);
+  virtual void do_UnsafeGetAndSet(UnsafeGetAndSet* x);
   virtual void do_ProfileCall    (ProfileCall*     x);
   virtual void do_ProfileReturnType (ProfileReturnType* x);
   virtual void do_ProfileInvoke  (ProfileInvoke*   x);
@@ -640,7 +635,7 @@ class LIRItem: public CompilationResourceObj {
   ValueType* type() const      { return value()->type(); }
   LIR_Opr result()             {
     assert(!_destroys_register || (!_result->is_register() || _result->is_virtual()),
-           "shouldn't use set_destroys_register with physical regsiters");
+           "shouldn't use set_destroys_register with physical registers");
     if (_destroys_register && _result->is_register()) {
       if (_new_result->is_illegal()) {
         _new_result = _gen->new_register(type());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,6 +41,7 @@ inline frame::frame() {
   _fp = NULL;
   _cb = NULL;
   _deopt_state = unknown;
+  _sp_is_trusted = false;
 }
 
 static int spin;
@@ -64,6 +65,7 @@ inline void frame::init(intptr_t* sp, intptr_t* fp, address pc) {
   } else {
     _deopt_state = not_deoptimized;
   }
+  _sp_is_trusted = false;
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* fp, address pc) {
@@ -91,6 +93,7 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
   } else {
     _deopt_state = not_deoptimized;
   }
+  _sp_is_trusted = false;
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* fp) {
@@ -122,6 +125,7 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   } else {
     _deopt_state = not_deoptimized;
   }
+  _sp_is_trusted = false;
 }
 
 // Accessors
@@ -144,10 +148,12 @@ inline intptr_t* frame::id(void) const { return unextended_sp(); }
 inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != NULL && id != NULL, "NULL frame id");
                                                     return this->id() > id ; }
 
-
-
 inline intptr_t* frame::link() const              { return (intptr_t*) *(intptr_t **)addr_at(link_offset); }
 
+inline intptr_t* frame::link_or_null() const {
+  intptr_t** ptr = (intptr_t **)addr_at(link_offset);
+  return os::is_readable_pointer(ptr) ? *ptr : NULL;
+}
 
 inline intptr_t* frame::unextended_sp() const     { return _unextended_sp; }
 
@@ -236,14 +242,20 @@ inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
 // Compiled frames
 
 inline oop frame::saved_oop_result(RegisterMap* map) const {
+  PRAGMA_DIAG_PUSH
+  PRAGMA_NONNULL_IGNORED
   oop* result_adr = (oop *)map->location(r0->as_VMReg());
+  PRAGMA_DIAG_POP
   guarantee(result_adr != NULL, "bad register save location");
 
   return (*result_adr);
 }
 
 inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
+  PRAGMA_DIAG_PUSH
+  PRAGMA_NONNULL_IGNORED
   oop* result_adr = (oop *)map->location(r0->as_VMReg());
+  PRAGMA_DIAG_POP
   guarantee(result_adr != NULL, "bad register save location");
 
   *result_adr = obj;

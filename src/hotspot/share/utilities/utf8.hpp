@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,9 @@
 #ifndef SHARE_UTILITIES_UTF8_HPP
 #define SHARE_UTILITIES_UTF8_HPP
 
-#include "memory/allocation.hpp"
+#include "jni.h"
+#include "memory/allStatic.hpp"
+#include "utilities/debug.hpp"
 
 // Low-level interface for UTF8 strings
 
@@ -61,12 +63,12 @@ class UTF8 : AllStatic {
 #endif
 
   // decodes the current utf8 character, stores the result in value,
-  // and returns the end of the current utf8 chararacter.
+  // and returns the end of the current utf8 character.
   template<typename T> static char* next(const char* str, T* value);
 
   // decodes the current utf8 character, gets the supplementary character instead of
   // the surrogate pair when seeing a supplementary character in string,
-  // stores the result in value, and returns the end of the current utf8 chararacter.
+  // stores the result in value, and returns the end of the current utf8 character.
   static char* next_character(const char* str, jint* value);
 
   // Utility methods

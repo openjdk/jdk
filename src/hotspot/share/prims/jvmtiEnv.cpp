@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
+#include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
@@ -1072,7 +1073,7 @@ JvmtiEnv::StopThread(JavaThread* java_thread, jobject exception) {
   oop e = JNIHandles::resolve_external_guard(exception);
   NULL_CHECK(e, JVMTI_ERROR_NULL_POINTER);
 
-  JavaThread::send_async_exception(java_thread->threadObj(), e);
+  JavaThread::send_async_exception(java_thread, e);
 
   return JVMTI_ERROR_NONE;
 
@@ -1326,28 +1327,19 @@ JvmtiEnv::RunAgentThread(jthread thread, jvmtiStartFunction proc, const void* ar
   }
 
   Handle thread_hndl(current_thread, thread_oop);
-  {
-    MutexLocker mu(current_thread, Threads_lock); // grab Threads_lock
 
-    JvmtiAgentThread *new_thread = new JvmtiAgentThread(this, proc, arg);
+  JvmtiAgentThread* new_thread = new JvmtiAgentThread(this, proc, arg);
 
-    // At this point it may be possible that no osthread was created for the
-    // JavaThread due to lack of memory.
-    if (new_thread == NULL || new_thread->osthread() == NULL) {
-      if (new_thread != NULL) {
-        new_thread->smr_delete();
-      }
-      return JVMTI_ERROR_OUT_OF_MEMORY;
-    }
+  // At this point it may be possible that no osthread was created for the
+  // JavaThread due to lack of resources.
+  if (new_thread->osthread() == NULL) {
+    // The new thread is not known to Thread-SMR yet so we can just delete.
+    delete new_thread;
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
 
-    java_lang_Thread::set_thread(thread_hndl(), new_thread);
-    java_lang_Thread::set_priority(thread_hndl(), (ThreadPriority)priority);
-    java_lang_Thread::set_daemon(thread_hndl());
-
-    new_thread->set_threadObj(thread_hndl());
-    Threads::add(new_thread);
-    Thread::start(new_thread);
-  } // unlock Threads_lock
+  JavaThread::start_internal_daemon(current_thread, new_thread, thread_hndl,
+                                    (ThreadPriority)priority);
 
   return JVMTI_ERROR_NONE;
 } /* end RunAgentThread */
@@ -1569,7 +1561,7 @@ JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list
     }
 
     GetSingleStackTraceClosure op(this, current_thread, *thread_list, max_frame_count);
-    Handshake::execute(&op, java_thread);
+    Handshake::execute(&op, &tlh, java_thread);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
       *stack_info_ptr = op.stack_info();
@@ -3144,7 +3136,10 @@ JvmtiEnv::RawMonitorEnter(JvmtiRawMonitor * rmonitor) {
     // in thread.cpp.
     JvmtiPendingMonitors::enter(rmonitor);
   } else {
-    rmonitor->raw_enter(Thread::current());
+    Thread* thread = Thread::current();
+    // 8266889: raw_enter changes Java thread state, needs WXWrite
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));
+    rmonitor->raw_enter(thread);
   }
   return JVMTI_ERROR_NONE;
 } /* end RawMonitorEnter */
@@ -3176,6 +3171,8 @@ JvmtiEnv::RawMonitorExit(JvmtiRawMonitor * rmonitor) {
 jvmtiError
 JvmtiEnv::RawMonitorWait(JvmtiRawMonitor * rmonitor, jlong millis) {
   Thread* thread = Thread::current();
+  // 8266889: raw_wait changes Java thread state, needs WXWrite
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));
   int r = rmonitor->raw_wait(millis, thread);
 
   switch (r) {
@@ -3384,7 +3381,7 @@ JvmtiEnv::GetSystemProperties(jint* count_ptr, char*** property_ptr) {
   int readable_count = 0;
   // Loop through the system properties until all the readable properties are found.
   for (SystemProperty* p = Arguments::system_properties(); p != NULL && readable_count < *count_ptr; p = p->next()) {
-    if (p->is_readable()) {
+    if (p->readable()) {
       const char *key = p->key();
       char **tmp_value = *property_ptr+readable_count;
       readable_count++;
@@ -3431,14 +3428,21 @@ JvmtiEnv::GetSystemProperty(const char* property, char** value_ptr) {
 // value - NULL is a valid value, must be checked
 jvmtiError
 JvmtiEnv::SetSystemProperty(const char* property, const char* value_ptr) {
-  jvmtiError err =JVMTI_ERROR_NOT_AVAILABLE;
-
   for (SystemProperty* p = Arguments::system_properties(); p != NULL; p = p->next()) {
     if (strcmp(property, p->key()) == 0) {
-      if (p->set_writeable_value(value_ptr)) {
-        err =  JVMTI_ERROR_NONE;
+      if (p->writeable()) {
+        if (p->set_value(value_ptr, AllocFailStrategy::RETURN_NULL)) {
+          return JVMTI_ERROR_NONE;
+        } else {
+          return JVMTI_ERROR_OUT_OF_MEMORY;
+        }
+      } else {
+        // We found a property, but it's not writeable
+        return JVMTI_ERROR_NOT_AVAILABLE;
       }
     }
   }
-  return err;
+
+  // We cannot find a property of the given name
+  return JVMTI_ERROR_NOT_AVAILABLE;
 } /* end SetSystemProperty */

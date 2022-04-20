@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package lib.jdb;
 
+import jdk.test.lib.JDWP;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 
@@ -32,8 +33,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -124,24 +123,17 @@ public class Debuggee implements Closeable {
 
     // starts the process, waits for "Listening for transport" output and detects transport/address
     private Debuggee(ProcessBuilder pb, String name) {
-        // debuggeeListen[0] - transport, debuggeeListen[1] - address
-        String[] debuggeeListen = new String[2];
-        Pattern listenRegexp = Pattern.compile("Listening for transport \\b(.+)\\b at address: \\b(.+)\\b");
+        JDWP.ListenAddress[] listenAddress = new JDWP.ListenAddress[1];
         try {
             p = ProcessTools.startProcess(name, pb,
                     s -> output.add(s),  // output consumer
                     s -> {  // warm-up predicate
-                        Matcher m = listenRegexp.matcher(s);
-                        if (!m.matches()) {
-                            return false;
-                        }
-                        debuggeeListen[0] = m.group(1);
-                        debuggeeListen[1] = m.group(2);
-                        return true;
+                        listenAddress[0] = JDWP.parseListenAddress(s);
+                        return listenAddress[0] != null;
                     },
                     30, TimeUnit.SECONDS);
-            transport = debuggeeListen[0];
-            address = debuggeeListen[1];
+            transport = listenAddress[0].transport();
+            address = listenAddress[0].address();
         } catch (IOException | InterruptedException | TimeoutException ex) {
             throw new RuntimeException("failed to launch debuggee", ex);
         }

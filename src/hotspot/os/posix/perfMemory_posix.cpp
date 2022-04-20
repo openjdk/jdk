@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +31,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_posix.inline.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
@@ -97,21 +98,20 @@ static void save_memory_to_file(char* addr, size_t size) {
   const char* destfile = PerfMemory::get_perfdata_file_path();
   assert(destfile[0] != '\0', "invalid PerfData file path");
 
-  int result;
+  int fd;
 
-  RESTARTABLE(os::open(destfile, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR),
-              result);
-  if (result == OS_ERR) {
+  RESTARTABLE(os::open(destfile, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR), fd);
+  if (fd == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
       warning("Could not create Perfdata save file: %s: %s\n",
               destfile, os::strerror(errno));
     }
   } else {
-    int fd = result;
+    ssize_t result;
 
     for (size_t remaining = size; remaining > 0;) {
 
-      RESTARTABLE(::write(fd, addr, remaining), result);
+      result = os::write(fd, addr, remaining);
       if (result == OS_ERR) {
         if (PrintMiscellaneous && Verbose) {
           warning("Could not write Perfdata save file: %s: %s\n",
@@ -330,7 +330,7 @@ static DIR *open_directory_secure(const char* dirname) {
   // Determine if the open directory is secure.
   if (!is_dirfd_secure(fd)) {
     // The directory is not a secure directory.
-    os::close(fd);
+    ::close(fd);
     return dirp;
   }
 
@@ -338,21 +338,21 @@ static DIR *open_directory_secure(const char* dirname) {
   dirp = ::opendir(dirname);
   if (dirp == NULL) {
     // The directory doesn't exist, close fd and return.
-    os::close(fd);
+    ::close(fd);
     return dirp;
   }
 
   // Check to make sure fd and dirp are referencing the same file system object.
   if (!is_same_fsobject(fd, AIX_ONLY(dirp->dd_fd) NOT_AIX(dirfd(dirp)))) {
     // The directory is not secure.
-    os::close(fd);
+    ::close(fd);
     os::closedir(dirp);
     dirp = NULL;
     return dirp;
   }
 
   // Close initial open now that we know directory is secure
-  os::close(fd);
+  ::close(fd);
 
   return dirp;
 }
@@ -695,7 +695,7 @@ static void remove_file(const char* path) {
 
   // if the file is a directory, the following unlink will fail. since
   // we don't expect to find directories in the user temp directory, we
-  // won't try to handle this situation. even if accidentially or
+  // won't try to handle this situation. even if accidentally or
   // maliciously planted, the directory's presence won't hurt anything.
   //
   RESTARTABLE(::unlink(path), result);
@@ -841,9 +841,9 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   // Open the filename in the current directory.
   // Cannot use O_TRUNC here; truncation of an existing file has to happen
   // after the is_file_secure() check below.
-  int result;
-  RESTARTABLE(os::open(filename, O_RDWR|O_CREAT|O_NOFOLLOW, S_IRUSR|S_IWUSR), result);
-  if (result == OS_ERR) {
+  int fd;
+  RESTARTABLE(os::open(filename, O_RDWR|O_CREAT|O_NOFOLLOW, S_IRUSR|S_IWUSR), fd);
+  if (fd == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
       if (errno == ELOOP) {
         warning("file %s is a symlink and is not secure\n", filename);
@@ -859,14 +859,13 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   // close the directory and reset the current working directory
   close_directory_secure_cwd(dirp, saved_cwd_fd);
 
-  // save the file descriptor
-  int fd = result;
-
   // check to see if the file is secure
   if (!is_file_secure(fd, filename)) {
     ::close(fd);
     return -1;
   }
+
+  ssize_t result;
 
   // truncate the file to get rid of any existing data
   RESTARTABLE(::ftruncate(fd, (off_t)0), result);
@@ -894,7 +893,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
     int zero_int = 0;
     result = (int)os::seek_to_file_offset(fd, (jlong)(seekpos));
     if (result == -1 ) break;
-    RESTARTABLE(::write(fd, &zero_int, 1), result);
+    result = os::write(fd, &zero_int, 1);
     if (result != 1) {
       if (errno == ENOSPC) {
         warning("Insufficient space for shared memory file:\n   %s\nTry using the -Djava.io.tmpdir= option to select an alternate temp location.\n", filename);
@@ -1023,18 +1022,23 @@ static char* mmap_create_shared(size_t size) {
   return mapAddress;
 }
 
-// release a named shared memory region
+// release a named shared memory region that was mmap-ed.
 //
 static void unmap_shared(char* addr, size_t bytes) {
-#if defined(_AIX)
-  // Do not rely on os::reserve_memory/os::release_memory to use mmap.
-  // Use os::reserve_memory/os::release_memory for PerfDisableSharedMem=1, mmap/munmap for PerfDisableSharedMem=0
-  if (::munmap(addr, bytes) == -1) {
-    warning("perfmemory: munmap failed (%d)\n", errno);
+  int res;
+  if (MemTracker::enabled()) {
+    // Note: Tracker contains a ThreadCritical.
+    Tracker tkr(Tracker::release);
+    res = ::munmap(addr, bytes);
+    if (res == 0) {
+      tkr.record((address)addr, bytes);
+    }
+  } else {
+    res = ::munmap(addr, bytes);
   }
-#else
-  os::release_memory(addr, bytes);
-#endif
+  if (res != 0) {
+    log_info(os)("os::release_memory failed (" PTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), bytes);
+  }
 }
 
 // create the PerfData memory region in shared memory.
@@ -1234,7 +1238,7 @@ void PerfMemory::create_memory_region(size_t size) {
       if (PrintMiscellaneous && Verbose) {
         warning("Reverting to non-shared PerfMemory region.\n");
       }
-      PerfDisableSharedMem = true;
+      FLAG_SET_ERGO(PerfDisableSharedMem, true);
       _start = create_standard_memory(size);
     }
   }

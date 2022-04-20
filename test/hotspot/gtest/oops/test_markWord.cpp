@@ -28,7 +28,6 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
@@ -49,12 +48,6 @@ static void assert_test_pattern(Handle object, const char* pattern) {
   stringStream st;
   object->print_on(&st);
   ASSERT_TRUE(test_pattern(&st, pattern)) << pattern << " not in " << st.as_string();
-}
-
-static void assert_not_test_pattern(Handle object, const char* pattern) {
-  stringStream st;
-  object->print_on(&st);
-  ASSERT_FALSE(test_pattern(&st, pattern)) << pattern << " found in " << st.as_string();
 }
 
 class LockerThread : public JavaTestThread {
@@ -93,33 +86,11 @@ TEST_VM(markWord, printing) {
   HandleMark hm(THREAD);
   Handle h_obj(THREAD, obj);
 
-  if (UseBiasedLocking && BiasedLocking::enabled()) {
-    // Can't test this with biased locking disabled.
-    // Biased locking is initially enabled for this java.lang.Byte object.
-    assert_test_pattern(h_obj, "is_biased");
-
-    // Lock using biased locking.
-    BasicObjectLock lock;
-    lock.set_obj(obj);
-    markWord prototype_header = obj->klass()->prototype_header();
-    markWord mark = obj->mark();
-    markWord biased_mark = markWord::encode((JavaThread*) THREAD, mark.age(), prototype_header.bias_epoch());
-    obj->set_mark(biased_mark);
-    // Look for the biased_locker in markWord, not prototype_header.
-#ifdef _LP64
-    assert_not_test_pattern(h_obj, "mark(is_biased biased_locker=0x0000000000000000");
-#else
-    assert_not_test_pattern(h_obj, "mark(is_biased biased_locker=0x00000000");
-#endif
-  }
-
-  // Same thread tries to lock it again.
+  // Thread tries to lock it.
   {
     ObjectLocker ol(h_obj, THREAD);
     assert_test_pattern(h_obj, "locked");
   }
-
-  // This is no longer biased, because ObjectLocker revokes the bias.
   assert_test_pattern(h_obj, "is_neutral no_hash");
 
   // Hash the object then print it.

@@ -29,7 +29,6 @@ import java.util.*;
 import sun.jvm.hotspot.classfile.ClassLoaderData;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.memory.*;
-import sun.jvm.hotspot.memory.Dictionary;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;

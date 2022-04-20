@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,10 +96,6 @@ private:
   // Free list for pinch nodes.
   Node_List _pinch_free_list;
 
-  // Latency from the beginning of the containing basic block (base 1)
-  // for each node.
-  unsigned short *_node_latency;
-
   // Number of uses of this node within the containing basic block.
   short *_uses;
 
@@ -161,10 +157,6 @@ public:
 
   // Do the scheduling
   void DoScheduling();
-
-  // Compute the local latencies walking forward over the list of
-  // nodes for a basic block
-  void ComputeLocalLatenciesForward(const Block *bb);
 
   // Compute the register antidependencies within a basic block
   void ComputeRegisterAntidependencies(Block *bb);
@@ -332,6 +324,8 @@ void PhaseOutput::perform_mach_node_analysis() {
   bs->late_barrier_analysis();
 
   pd_perform_mach_node_analysis();
+
+  C->print_method(CompilerPhaseType::PHASE_MACHANALYSIS, 4);
 }
 
 // Convert Nodes to instruction bits and pass off to the VM
@@ -825,9 +819,8 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       ciKlass* cik = t->is_oopptr()->klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
-      ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
-      sv = spobj->is_auto_box() ? new AutoBoxObjectValue(spobj->_idx, klass_sv)
-                                    : new ObjectValue(spobj->_idx, klass_sv);
+      sv = new ObjectValue(spobj->_idx,
+                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
       set_sv_for_object_node(objs, sv);
 
       uint first_ind = spobj->first_index(sfpt->jvms());
@@ -1099,9 +1092,8 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
           ciKlass* cik = t->is_oopptr()->klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
-          ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
-          ObjectValue* sv = spobj->is_auto_box() ? new AutoBoxObjectValue(spobj->_idx, klass_sv)
-                                        : new ObjectValue(spobj->_idx, klass_sv);
+          ObjectValue* sv = new ObjectValue(spobj->_idx,
+                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
           PhaseOutput::set_sv_for_object_node(objs, sv);
 
           uint first_ind = spobj->first_index(youngest_jvms);
@@ -2027,7 +2019,6 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
   _node_bundling_base = NEW_ARENA_ARRAY(compile.comp_arena(), Bundle, node_max);
 
   // Allocate space for fixed-size arrays
-  _node_latency    = NEW_ARENA_ARRAY(arena, unsigned short, node_max);
   _uses            = NEW_ARENA_ARRAY(arena, short,          node_max);
   _current_latency = NEW_ARENA_ARRAY(arena, unsigned short, node_max);
 
@@ -2035,7 +2026,6 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
   for (uint i = 0; i < node_max; i++) {
     ::new (&_node_bundling_base[i]) Bundle();
   }
-  memset(_node_latency,       0, node_max * sizeof(unsigned short));
   memset(_uses,               0, node_max * sizeof(short));
   memset(_current_latency,    0, node_max * sizeof(unsigned short));
 
@@ -2108,8 +2098,12 @@ void PhaseOutput::ScheduleAndBundle() {
     return;
 
   // Scheduling code works only with pairs (8 bytes) maximum.
-  if (C->max_vector_size() > 8)
+  // And when the scalable vector register is used, we may spill/unspill
+  // the whole reg regardless of the max vector size.
+  if (C->max_vector_size() > 8 ||
+      (C->max_vector_size() > 0 && Matcher::supports_scalable_vector())) {
     return;
+  }
 
   Compile::TracePhase tp("isched", &timers[_t_instrSched]);
 
@@ -2123,67 +2117,26 @@ void PhaseOutput::ScheduleAndBundle() {
 #ifndef PRODUCT
   if (C->trace_opto_output()) {
     tty->print("\n---- After ScheduleAndBundle ----\n");
-    for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
-      tty->print("\nBB#%03d:\n", i);
-      Block* block = C->cfg()->get_block(i);
-      for (uint j = 0; j < block->number_of_nodes(); j++) {
-        Node* n = block->get_node(j);
-        OptoReg::Name reg = C->regalloc()->get_reg_first(n);
-        tty->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
-        n->dump();
-      }
-    }
+    print_scheduling();
   }
 #endif
 }
 
-// Compute the latency of all the instructions.  This is fairly simple,
-// because we already have a legal ordering.  Walk over the instructions
-// from first to last, and compute the latency of the instruction based
-// on the latency of the preceding instruction(s).
-void Scheduling::ComputeLocalLatenciesForward(const Block *bb) {
 #ifndef PRODUCT
-  if (_cfg->C->trace_opto_output())
-    tty->print("# -> ComputeLocalLatenciesForward\n");
-#endif
-
-  // Walk over all the schedulable instructions
-  for( uint j=_bb_start; j < _bb_end; j++ ) {
-
-    // This is a kludge, forcing all latency calculations to start at 1.
-    // Used to allow latency 0 to force an instruction to the beginning
-    // of the bb
-    uint latency = 1;
-    Node *use = bb->get_node(j);
-    uint nlen = use->len();
-
-    // Walk over all the inputs
-    for ( uint k=0; k < nlen; k++ ) {
-      Node *def = use->in(k);
-      if (!def)
-        continue;
-
-      uint l = _node_latency[def->_idx] + use->latency(k);
-      if (latency < l)
-        latency = l;
+// Separated out so that it can be called directly from debugger
+void PhaseOutput::print_scheduling() {
+  for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
+    tty->print("\nBB#%03d:\n", i);
+    Block* block = C->cfg()->get_block(i);
+    for (uint j = 0; j < block->number_of_nodes(); j++) {
+      Node* n = block->get_node(j);
+      OptoReg::Name reg = C->regalloc()->get_reg_first(n);
+      tty->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
+      n->dump();
     }
-
-    _node_latency[use->_idx] = latency;
-
-#ifndef PRODUCT
-    if (_cfg->C->trace_opto_output()) {
-      tty->print("# latency %4d: ", latency);
-      use->dump();
-    }
-#endif
   }
-
-#ifndef PRODUCT
-  if (_cfg->C->trace_opto_output())
-    tty->print("# <- ComputeLocalLatenciesForward\n");
+}
 #endif
-
-} // end ComputeLocalLatenciesForward
 
 // See if this node fits into the present instruction bundle
 bool Scheduling::NodeFitsInBundle(Node *n) {
@@ -2760,9 +2713,6 @@ void Scheduling::DoScheduling() {
     ComputeRegisterAntidependencies(bb);
     if (C->failing())  return;  // too many D-U pinch points
 
-    // Compute intra-bb latencies for the nodes
-    ComputeLocalLatenciesForward(bb);
-
     // Compute the usage within the block, and set the list of all nodes
     // in the block that have no uses within the block.
     ComputeUseCount(bb);
@@ -2910,6 +2860,16 @@ static void add_prec_edge_from_to( Node *from, Node *to ) {
 void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is_def ) {
   if( !OptoReg::is_valid(def_reg) ) // Ignore stores & control flow
     return;
+
+  if (OptoReg::is_reg(def_reg)) {
+    VMReg vmreg = OptoReg::as_VMReg(def_reg);
+    if (vmreg->is_reg() && !vmreg->is_concrete() && !vmreg->prev()->is_concrete()) {
+      // This is one of the high slots of a vector register.
+      // ScheduleAndBundle already checked there are no live wide
+      // vectors in this method so it can be safely ignored.
+      return;
+    }
+  }
 
   Node *pinch = _reg_node[def_reg]; // Get pinch point
   if ((pinch == NULL) || _cfg->get_block_for_node(pinch) != b || // No pinch-point yet?

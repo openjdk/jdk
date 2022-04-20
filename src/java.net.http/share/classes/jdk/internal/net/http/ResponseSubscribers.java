@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.HttpClientImpl.DelegatingExecutor;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ResponseSubscribers {
@@ -362,7 +363,7 @@ public class ResponseSubscribers {
             result.completeExceptionally(throwable);
         }
 
-        static private byte[] join(List<ByteBuffer> bytes) {
+        private static byte[] join(List<ByteBuffer> bytes) {
             int size = Utils.remaining(bytes, Integer.MAX_VALUE);
             byte[] res = new byte[size];
             int from = 0;
@@ -396,7 +397,7 @@ public class ResponseSubscribers {
     public static class HttpResponseInputStream extends InputStream
         implements TrustedSubscriber<InputStream>
     {
-        final static int MAX_BUFFERS_IN_QUEUE = 1;  // lock-step with the producer
+        static final int MAX_BUFFERS_IN_QUEUE = 1;  // lock-step with the producer
 
         // An immutable ByteBuffer sentinel to mark that the last byte was received.
         private static final ByteBuffer LAST_BUFFER = ByteBuffer.wrap(new byte[0]);
@@ -882,7 +883,7 @@ public class ResponseSubscribers {
         // A subscription that wraps an upstream subscription and
         // holds a reference to a subscriber. The subscriber reference
         // is cleared when the subscription is cancelled
-        final static class SubscriptionRef implements Flow.Subscription {
+        static final class SubscriptionRef implements Flow.Subscription {
             final Flow.Subscription subscription;
             final SubscriberRef subscriberRef;
             SubscriptionRef(Flow.Subscription subscription,
@@ -1086,7 +1087,7 @@ public class ResponseSubscribers {
      * Invokes bs::getBody using the provided executor.
      * If invoking bs::getBody requires an executor, and the given executor
      * is a {@link HttpClientImpl.DelegatingExecutor}, then the executor's
-     * delegate is used. If an error occurs anywhere then the given {code cf}
+     * delegate is used. If an error occurs anywhere then the given {@code cf}
      * is completed exceptionally (this method does not throw).
      * @param e   The executor that should be used to call bs::getBody
      * @param bs  The BodySubscriber
@@ -1141,8 +1142,8 @@ public class ResponseSubscribers {
             assert cf != null;
 
             if (TrustedSubscriber.needsExecutor(bs)) {
-                e = (e instanceof HttpClientImpl.DelegatingExecutor)
-                        ? ((HttpClientImpl.DelegatingExecutor) e).delegate() : e;
+                e = (e instanceof DelegatingExecutor exec)
+                        ? exec::ensureExecutedAsync : e;
             }
 
             e.execute(() -> {
@@ -1155,12 +1156,14 @@ public class ResponseSubscribers {
                         }
                     });
                 } catch (Throwable t) {
+                    // the errorHandler will complete the CF
                     errorHandler.accept(t);
                 }
             });
             return cf;
 
         } catch (Throwable t) {
+            // the errorHandler will complete the CF
             errorHandler.accept(t);
         }
         return cf;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
@@ -280,7 +279,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(exception);
 
-  // Check the stack guard pages and reenable them if necessary and there is
+  // Check the stack guard pages and re-enable them if necessary and there is
   // enough space on the stack to do so.  Use fast exceptions only if the guard
   // pages are enabled.
   bool guard_pages_enabled = current->stack_overflow_state()->reguard_stack_if_needed();
@@ -892,6 +891,12 @@ static void _log(const char* buf, size_t count) {
   tty->write((char*) buf, count);
 }
 
+// Function for redirecting shared library JavaVM fatal error data to a log file.
+// The log file is opened on first call to this function.
+static void _fatal_log(const char* buf, size_t count) {
+  JVMCI::fatal_log(buf, count);
+}
+
 // Function for shared library JavaVM to flush tty
 static void _flush_log() {
   tty->flush();
@@ -899,7 +904,8 @@ static void _flush_log() {
 
 // Function for shared library JavaVM to exit HotSpot on a fatal error
 static void _fatal() {
-  fatal("Fatal error in JVMCI shared library");
+  intx current_thread_id = os::current_thread_id();
+  fatal("thread " INTX_FORMAT ": Fatal error in JVMCI shared library", current_thread_id);
 }
 
 JNIEnv* JVMCIRuntime::init_shared_library_javavm() {
@@ -926,7 +932,7 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm() {
     JavaVMInitArgs vm_args;
     vm_args.version = JNI_VERSION_1_2;
     vm_args.ignoreUnrecognized = JNI_TRUE;
-    JavaVMOption options[4];
+    JavaVMOption options[5];
     jlong javaVM_id = 0;
 
     // Protocol: JVMCI shared library JavaVM should support a non-standard "_javavm_id"
@@ -941,6 +947,8 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm() {
     options[2].extraInfo = (void*) _flush_log;
     options[3].optionString = (char*) "_fatal";
     options[3].extraInfo = (void*) _fatal;
+    options[4].optionString = (char*) "_fatal_log";
+    options[4].extraInfo = (void*) _fatal_log;
 
     vm_args.version = JNI_VERSION_1_2;
     vm_args.options = options;

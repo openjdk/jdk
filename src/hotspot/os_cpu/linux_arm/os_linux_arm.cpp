@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
           overflow_state->disable_stack_yellow_reserved_zone();
           if (thread->thread_state() == _thread_in_Java) {
-            // Throw a stack overflow exception.  Guard pages will be reenabled
+            // Throw a stack overflow exception.  Guard pages will be re-enabled
             // while unwinding the stack.
             stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
           } else {
@@ -468,9 +468,8 @@ void os::print_register_info(outputStream *st, const void *context) {
   st->print_cr("Register to memory mapping:");
   st->cr();
   for (int r = 0; r < ARM_REGS_IN_CONTEXT; r++) {
-    st->print_cr("  %-3s = " INTPTR_FORMAT, as_Register(r)->name(), reg_area[r]);
+    st->print("  %-3s = ", as_Register(r)->name());
     print_location(st, reg_area[r]);
-    st->cr();
   }
   st->cr();
 }

@@ -548,8 +548,13 @@ public class TreeInfo {
             }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
-                if (node.errs != null && node.errs.nonEmpty())
-                    return getStartPos(node.errs.head);
+                if (node.errs != null && node.errs.nonEmpty()) {
+                    int pos = getStartPos(node.errs.head);
+                    if (pos != Position.NOPOS) {
+                        return pos;
+                    }
+                }
+                break;
             }
         }
         return tree.pos;
@@ -800,6 +805,7 @@ public class TreeInfo {
     public static List<JCTree> pathFor(final JCTree node, final JCCompilationUnit unit) {
         class Result extends Error {
             static final long serialVersionUID = -5942088234594905625L;
+            @SuppressWarnings("serial") // List not statically Serilizable
             List<JCTree> path;
             Result(List<JCTree> path) {
                 this.path = path;
@@ -1367,6 +1373,21 @@ public class TreeInfo {
         };
     }
 
+    public static JCBindingPattern primaryPatternTree(JCPattern pat) {
+        return switch (pat.getTag()) {
+            case BINDINGPATTERN -> (JCBindingPattern) pat;
+            case GUARDPATTERN -> primaryPatternTree(((JCGuardPattern) pat).patt);
+            case PARENTHESIZEDPATTERN -> primaryPatternTree(((JCParenthesizedPattern) pat).pattern);
+            default -> throw new AssertionError();
+        };
+    }
+
     public record PatternPrimaryType(Type type, boolean unconditional) {}
 
+    public static boolean expectedExhaustive(JCSwitch tree) {
+        return tree.patternSwitch ||
+               tree.cases.stream()
+                         .flatMap(c -> c.labels.stream())
+                         .anyMatch(l -> TreeInfo.isNull(l));
+    }
 }

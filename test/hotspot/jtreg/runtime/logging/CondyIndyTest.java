@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Test -Xlog:methodhandles with a test that contains both a condy and indy.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile CondyIndyMathOperation.jasm
@@ -42,6 +43,7 @@ public class CondyIndyTest {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:methodhandles",
                                                                   "CondyIndy");
         OutputAnalyzer o = new OutputAnalyzer(pb.start());
+        o.shouldHaveExitValue(0);
         o.shouldContain("[info][methodhandles");
         o.shouldNotContain("[debug][methodhandles,indy");
         o.shouldNotContain("[debug][methodhandles,condy");
@@ -50,6 +52,7 @@ public class CondyIndyTest {
         pb = ProcessTools.createJavaProcessBuilder("-Xlog:methodhandles+condy=debug",
                                                    "CondyIndy");
         o = new OutputAnalyzer(pb.start());
+        o.shouldHaveExitValue(0);
         o.shouldNotContain("[info ][methodhandles");
         o.shouldNotContain("[debug][methodhandles,indy");
         o.shouldContain("[debug][methodhandles,condy");
@@ -58,6 +61,7 @@ public class CondyIndyTest {
         pb = ProcessTools.createJavaProcessBuilder("-Xlog:methodhandles+indy=debug",
                                                    "CondyIndy");
         o = new OutputAnalyzer(pb.start());
+        o.shouldHaveExitValue(0);
         o.shouldNotContain("[info ][methodhandles");
         o.shouldContain("[debug][methodhandles,indy");
         o.shouldNotContain("[debug][methodhandles,condy");
@@ -68,6 +72,7 @@ public class CondyIndyTest {
                                                    "-Xlog:methodhandles+indy=debug",
                                                    "CondyIndy");
         o = new OutputAnalyzer(pb.start());
+        o.shouldHaveExitValue(0);
         o.shouldContain("[info ][methodhandles");
         o.shouldContain("[debug][methodhandles,indy");
         o.shouldContain("[debug][methodhandles,condy");

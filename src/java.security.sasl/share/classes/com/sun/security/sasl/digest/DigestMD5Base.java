@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,8 @@ import java.security.spec.KeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.InvalidAlgorithmParameterException;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -157,7 +158,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
     protected String authzid;       // authzid or canonicalized authzid
 
     /**
-     * Constucts an instance of DigestMD5Base. Calls super constructor
+     * Constructs an instance of DigestMD5Base. Calls super constructor
      * to parse properties for mechanism.
      *
      * @param props A map of property/value pairs
@@ -432,9 +433,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
 
                 logger.log(Level.FINE, "DIGEST01:Platform supports {0}", JCE_CIPHER_NAME[i]);
                 ciphers[i] |= CIPHER_MASKS[i];
-            } catch (NoSuchAlgorithmException e) {
-                // no implementation found for requested algorithm.
-            } catch (NoSuchPaddingException e) {
+            } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
                 // no implementation found for requested algorithm.
             }
         }

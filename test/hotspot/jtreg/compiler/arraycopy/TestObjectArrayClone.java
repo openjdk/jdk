@@ -23,19 +23,32 @@
 
 /*
  * @test
- * @bug 8155643
- * @summary Test Object.clone() intrinsic if ReduceInitialCardMarks is disabled.
+ * @bug 8155643 8268125 8270461 8270098
+ * @summary Test Object.clone() intrinsic.
+ * @modules java.base/java.lang:+open
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-ReduceInitialCardMarks
  *                   -XX:CompileCommand=compileonly,compiler.arraycopy.TestObjectArrayClone::testClone*
+ *                   -XX:CompileCommand=compileonly,jdk.internal.reflect.GeneratedMethodAccessor*::invoke
  *                   compiler.arraycopy.TestObjectArrayClone
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.arraycopy.TestObjectArrayClone::testClone*
+ *                   -XX:CompileCommand=compileonly,jdk.internal.reflect.GeneratedMethodAccessor*::invoke
+ *                   compiler.arraycopy.TestObjectArrayClone
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedClassPointers -Xmx128m
  *                   -XX:CompileCommand=compileonly,compiler.arraycopy.TestObjectArrayClone::testClone*
+ *                   -XX:CompileCommand=compileonly,jdk.internal.reflect.GeneratedMethodAccessor*::invoke
+ *                   compiler.arraycopy.TestObjectArrayClone
+ * @run main/othervm -Xbatch -XX:-UseTypeProfile
+ *                   -XX:CompileCommand=compileonly,compiler.arraycopy.TestObjectArrayClone::testClone*
+ *                   -XX:CompileCommand=compileonly,jdk.internal.reflect.GeneratedMethodAccessor*::invoke
  *                   compiler.arraycopy.TestObjectArrayClone
  */
 
 package compiler.arraycopy;
+
+import java.lang.invoke.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 class Payload implements Cloneable {
     boolean b;
@@ -58,7 +71,7 @@ class Payload implements Cloneable {
     public Payload clonep() {
         try {
             return (Payload) super.clone();
-        } catch(CloneNotSupportedException e) {
+        } catch (CloneNotSupportedException e) {
             return null;
         }
     }
@@ -135,6 +148,17 @@ public class TestObjectArrayClone {
         return arr.clone();
     }
 
+    public static String[] testCloneShortObjectArray2(Method clone) throws Exception {
+        String[] arr = new String[5];
+        arr[0] = str1;
+        arr[1] = str2;
+        arr[2] = str3;
+        arr[3] = str4;
+        arr[4] = str5;
+        escape_arr = arr;
+        return (String[]) testCloneObject(clone, arr);
+    }
+
     public static String[] testCloneShortObjectArrayCopy() {
         String[] arr = new String[5];
         arr[0] = str1;
@@ -160,7 +184,14 @@ public class TestObjectArrayClone {
         return p.clonep();
     }
 
-    public static void main(String[] args) {
+    public static Object testCloneObject(Method clone, Object obj) throws Exception {
+        return clone.invoke(obj);
+    }
+
+    public static void main(String[] args) throws Exception {
+        Method clone = Object.class.getDeclaredMethod("clone");
+        clone.setAccessible(true);
+
         String[] arr1 = new String[42];
         for (int j = 0; j < arr1.length; j++) {
             arr1[j] = new String(Integer.toString(j));
@@ -178,12 +209,29 @@ public class TestObjectArrayClone {
         }
 
         for (int i = 0; i < 50_000; i++) {
+            for (int j = 0; j < arr1.length; j++) {
+                arr1[j] = new String(Integer.toString(j));
+            }
+            String[] arr2 = (String[]) testCloneObject(clone, arr1);
+            verifyStr(arr1, arr2);
+            String[] arr3 = (String[]) testCloneObject(clone, arr1);
+            verifyStr(arr1, arr3);
+            String[] arr4 = (String[]) testCloneObject(clone, arr1);
+            verifyStr(arr1, arr4);
+            verifyStr(arr1, arr3);
+            verifyStr(arr1, arr2);
+        }
+
+        for (int i = 0; i < 50_000; i++) {
             String[] value = testCloneShortObjectArray();
             verifyStr(value, escape_arr);
             String[] value2 = testCloneShortObjectArray();
             verifyStr(value2, escape_arr);
             String[] value3 = testCloneShortObjectArray();
             verifyStr(value3, escape_arr);
+            String[] value4 = testCloneShortObjectArray2(clone);
+            verifyStr(value4, escape_arr);
+            verifyStr(value, value4);
             verifyStr(value, value3);
             verifyStr(value, value2);
         }
@@ -210,8 +258,21 @@ public class TestObjectArrayClone {
             verifyStr(value, value2);
         }
 
+        int[] arr2 = new int[42];
+        for (int i = 0; i < arr2.length; i++) {
+            arr2[i] = i;
+        }
         for (int i = 0; i < 50_000; i++) {
-            testClonePrimitiveArray(new int[42]);
+            int[] res1 = testClonePrimitiveArray(arr2);
+            int[] res2 = (int[])testCloneObject(clone, arr2);
+            for (int j = 0; j < arr2.length; j++) {
+                if (res1[j] != j) {
+                    throw new RuntimeException("Unexpected result: " + res1[j] + " != " + j);
+                }
+                if (res2[j] != j) {
+                    throw new RuntimeException("Unexpected result: " + res2[j] + " != " + j);
+                }
+            }
         }
 
         Payload ref = new Payload(false, -1, 'c', str1, (short) 5, -1);
@@ -226,6 +287,17 @@ public class TestObjectArrayClone {
             verifyPayload(p1, p3);
         }
 
+        for (int i = 0; i < 50_000; i++) {
+            Payload p1 = (Payload) testCloneObject(clone, ref);
+            verifyPayload(ref, p1);
+            Payload p2 = (Payload) testCloneObject(clone, ref);
+            verifyPayload(ref, p2);
+            Payload p3 = (Payload) testCloneObject(clone, ref);
+            verifyPayload(ref, p3);
+            verifyPayload(p2, p3);
+            verifyPayload(p1, p3);
+        }
+
         Payload2 ref2 = new Payload2(false, -1, 'c', str1, (short) 5, -1, false, 0, 'k', str2, (short)-1, 0);
         for (int i = 0; i < 50_000; i++) {
             Payload2 p1 = (Payload2) testCloneOop2(ref2);
@@ -233,6 +305,17 @@ public class TestObjectArrayClone {
             Payload2 p2 = (Payload2) testCloneOop2(ref2);
             verifyPayload2(ref2, p2);
             Payload2 p3 = (Payload2) testCloneOop2(ref2);
+            verifyPayload2(ref2, p3);
+            verifyPayload2(p2, p3);
+            verifyPayload2(p1, p3);
+        }
+
+        for (int i = 0; i < 50_000; i++) {
+            Payload2 p1 = (Payload2) testCloneObject(clone, ref2);
+            verifyPayload2(ref2, p1);
+            Payload2 p2 = (Payload2) testCloneObject(clone, ref2);
+            verifyPayload2(ref2, p2);
+            Payload2 p3 = (Payload2) testCloneObject(clone, ref2);
             verifyPayload2(ref2, p3);
             verifyPayload2(p2, p3);
             verifyPayload2(p1, p3);
@@ -322,7 +405,6 @@ public class TestObjectArrayClone {
             if (!arr1[i].equals(arr2[i])) {
                 throw new RuntimeException("Fail cloned element content not the same");
             }
-
         }
     }
 }

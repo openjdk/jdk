@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.Arrays;
 import java.util.Collection;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
@@ -569,9 +568,9 @@ final class PreSharedKeyExtension {
         SecretKey binderKey = deriveBinderKey(shc, psk, session);
         byte[] computedBinder =
                 computeBinder(shc, binderKey, session, pskBinderHash);
-        if (!Arrays.equals(binder, computedBinder)) {
+        if (!MessageDigest.isEqual(binder, computedBinder)) {
             throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Incorect PSK binder value");
+                    "Incorrect PSK binder value");
         }
     }
 

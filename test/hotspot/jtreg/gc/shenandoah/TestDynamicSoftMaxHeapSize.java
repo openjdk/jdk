@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestDynamicSoftMaxHeapSize
+ * @test id=passive
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
@@ -41,7 +41,7 @@
  */
 
 /*
- * @test TestDynamicSoftMaxHeapSize
+ * @test id=aggressive
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
@@ -52,7 +52,7 @@
  */
 
 /*
- * @test TestDynamicSoftMaxHeapSize
+ * @test id=adaptive
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
@@ -63,7 +63,7 @@
  */
 
 /*
- * @test TestDynamicSoftMaxHeapSize
+ * @test id=static
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
@@ -74,7 +74,7 @@
  */
 
 /*
- * @test TestDynamicSoftMaxHeapSize
+ * @test id=compact
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
@@ -85,7 +85,7 @@
  */
 
 /*
- * @test TestDynamicSoftMaxHeapSize
+ * @test id=iu-aggressive
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
@@ -96,7 +96,7 @@
  */
 
 /*
- * @test TestDynamicSoftMaxHeapSize
+ * @test id=iu
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *

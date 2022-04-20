@@ -129,9 +129,6 @@ public class MatchBindingsComputer extends TreeScanner {
     public MatchBindings switchCase(JCTree tree, MatchBindings prevBindings, MatchBindings currentBindings) {
         if (prevBindings == null)
             return currentBindings;
-        if (!prevBindings.bindingsWhenTrue.isEmpty() && !currentBindings.bindingsWhenTrue.isEmpty()) {
-            log.error(tree.pos(), Errors.FlowsThroughToPattern);
-        }
         if (prevBindings.nullPattern) {
             return currentBindings;
         }

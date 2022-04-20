@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ class JfrJavaSupport : public AllStatic {
 
   static void set_field(JfrJavaArguments* args, TRAPS);
   static void get_field(JfrJavaArguments* args, TRAPS);
+  static void get_field(JfrJavaArguments* args, Thread* thread);
   static void new_object(JfrJavaArguments* args, TRAPS);
 
   // global jni handle result
@@ -75,8 +76,8 @@ class JfrJavaSupport : public AllStatic {
 
   // misc
   static Klass* klass(const jobject handle);
-  static const char* c_str(jstring string, JavaThread* jt, bool c_heap = false);
-  static const char* c_str(oop string, JavaThread* jt, bool c_heap = false);
+  static const char* c_str(jstring string, Thread* thread, bool c_heap = false);
+  static const char* c_str(oop string, Thread* thread, bool c_heap = false);
 
   // exceptions
   static void throw_illegal_state_exception(const char* message, TRAPS);
@@ -100,6 +101,7 @@ class JfrJavaSupport : public AllStatic {
 
   // critical
   static void abort(jstring errorMsg, TRAPS);
+  static void abort(const char* error_msg, bool dump_core = true);
   static void uncaught_exception(jthrowable throwable, JavaThread* t);
 
   // asserts

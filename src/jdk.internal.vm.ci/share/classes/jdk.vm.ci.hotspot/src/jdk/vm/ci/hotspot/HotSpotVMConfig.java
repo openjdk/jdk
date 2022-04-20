@@ -75,7 +75,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final int hubOffset = getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
 
-    final int prototypeMarkWordOffset = getFieldOffset("Klass::_prototype_header", Integer.class, "markWord");
     final int subklassOffset = getFieldOffset("Klass::_subklass", Integer.class, "Klass*");
     final int superOffset = getFieldOffset("Klass::_super", Integer.class, "Klass*");
     final int nextSiblingOffset = getFieldOffset("Klass::_next_sibling", Integer.class, "Klass*");
@@ -152,7 +151,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     /**
      * See {@code markWord::prototype()}.
      */
-    long arrayPrototypeMarkWord() {
+    long prototypeMarkWord() {
         return markWordNoHashInPlace | markWordNoLockInPlace;
     }
 
@@ -337,7 +336,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int deoptReasonLoopLimitCheck = getConstant("Deoptimization::Reason_loop_limit_check", Integer.class);
     final int deoptReasonAliasing = getConstant("Deoptimization::Reason_aliasing", Integer.class);
     final int deoptReasonTransferToInterpreter = getConstant("Deoptimization::Reason_transfer_to_interpreter", Integer.class);
-    final int deoptReasonOSROffset = getConstant("Deoptimization::Reason_LIMIT", Integer.class);
+    final int deoptReasonOSROffset = getConstant("Deoptimization::Reason_TRAP_HISTORY_LENGTH", Integer.class);
 
     final int deoptActionNone = getConstant("Deoptimization::Action_none", Integer.class);
     final int deoptActionMaybeRecompile = getConstant("Deoptimization::Action_maybe_recompile", Integer.class);

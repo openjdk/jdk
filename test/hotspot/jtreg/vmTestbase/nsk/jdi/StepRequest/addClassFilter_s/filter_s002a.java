@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.StepRequest.addClassFilter_s;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class filter_s002a {
 
     //====================================================== test program
 
-    static Thread1filter_s002a thread1 = null;
+    static Thread thread1 = null;
 
     static TestClass objTC = new TestClass();
 
@@ -98,7 +97,7 @@ public class filter_s002a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Thread1filter_s002a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Thread1filter_s002a("thread1"));
 
                             synchronized (lockObj) {
                                 threadStart(thread1);
@@ -146,21 +145,19 @@ public class filter_s002a {
     static Object lockingObj[] = new Object[2];
     static volatile int number = 0;
 
-    static class Thread1filter_s002a extends Thread {
+    static class Thread1filter_s002a extends NamedTask {
 
-        String tName = null;
         int tNumber;
 
         public Thread1filter_s002a(String threadName) {
             super(threadName);
-            tName = threadName;
             tNumber = number;
             number++;
             lockingObj[tNumber] = threadName;
         }
 
         public void run() {
-            log1("  'run': enter  :: threadName == " + tName);
+            log1("  'run': enter  :: threadName == " + getName());
             synchronized(lockingObj[tNumber]) {
                 synchronized (waitnotifyObj) {
                     waitnotifyObj.notify();
@@ -171,7 +168,7 @@ public class filter_s002a {
 //                    objTC[tNumber].method();
                 }
             }
-            log1("  'run': exit   :: threadName == " + tName);
+            log1("  'run': exit   :: threadName == " + getName());
             return;
         }
     }

@@ -78,10 +78,6 @@ public final class CutoffSetting extends JDKSettingControl {
         return value;
     }
 
-    public static boolean isType(long typeId) {
-        return CutoffSetting.typeId == typeId;
-    }
-
     public static long parseValueSafe(String value) {
         if (value == null) {
             return 0L;

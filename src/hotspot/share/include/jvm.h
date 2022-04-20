@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,10 @@ JNIEXPORT jboolean JNICALL
 JVM_IsUseContainerSupport(void);
 
 JNIEXPORT void * JNICALL
-JVM_LoadLibrary(const char *name);
+JVM_LoadZipLibrary();
+
+JNIEXPORT void * JNICALL
+JVM_LoadLibrary(const char *name, jboolean throwException);
 
 JNIEXPORT void JNICALL
 JVM_UnloadLibrary(void * handle);
@@ -446,7 +449,7 @@ JVM_LookupDefineClass(JNIEnv *env, jclass lookup, const char *name, const jbyte 
                       jsize len, jobject pd, jboolean init, int flags, jobject classData);
 
 /*
- * Module support funcions
+ * Module support functions
  */
 
 /*
@@ -752,6 +755,15 @@ JVM_AssertionStatusDirectives(JNIEnv *env, jclass unused);
  */
 JNIEXPORT jboolean JNICALL
 JVM_SupportsCX8(void);
+
+/*
+ * java.lang.ref.Finalizer
+ */
+JNIEXPORT void JNICALL
+JVM_ReportFinalizationComplete(JNIEnv *env, jobject finalizee);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsFinalizationEnabled(JNIEnv *env);
 
 /*************************************************************************
  PART 2: Support for the Verifier and Class File Format Checker

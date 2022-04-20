@@ -1405,9 +1405,9 @@ public class TestModules extends JavadocTester {
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab2', 2)" class="table-tab">Cl\
                     asses</button>\
-                    <button id="all-classes-table-tab7" role="tab" aria-selected="false" aria-contro\
+                    <button id="all-classes-table-tab6" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
-                    ck="show('all-classes-table', 'all-classes-table-tab7', 2)" class="table-tab">An\
+                    ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
                     notation Interfaces</button></div>
                     """,
                 """

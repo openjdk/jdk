@@ -22,12 +22,13 @@
  */
 
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 /*
  * @test
- * @bug 8262891 8268333
+ * @bug 8262891 8268333 8268896 8269802 8269808 8270151 8269113 8277864
  * @summary Check behavior of pattern switches.
  * @compile --enable-preview -source ${jdk.version} Switches.java
  * @run main/othervm --enable-preview Switches
@@ -52,18 +53,41 @@ public class Switches {
         runEnumTest(this::testEnumExpression2);
         runEnumTest(this::testEnumWithGuards1);
         runEnumTest(this::testEnumWithGuards2);
+        runEnumTest(this::testEnumWithGuards3);
+        runEnumTest(this::testEnumWithGuards4);
         runEnumTest(this::testEnumWithGuardsExpression1);
         runEnumTest(this::testEnumWithGuardsExpression2);
+        runEnumTest(this::testEnumWithGuardsExpression3);
+        runEnumTest(this::testEnumWithGuardsExpression4);
         runEnumTest(this::testStringWithGuards1);
         runEnumTest(this::testStringWithGuardsExpression1);
         runEnumTest(this::testIntegerWithGuards1);
         runEnumTest(this::testIntegerWithGuardsExpression1);
         runStringWithConstant(this::testStringWithConstant);
         runStringWithConstant(this::testStringWithConstantExpression);
+        runFallThrough(this::testFallThroughStatement);
+        runFallThrough(this::testFallThroughExpression);
+        runFallThrough(this::testFallThrough2Statement);
+        runFallThrough(this::testFallThrough2Expression);
         npeTest(this::npeTestStatement);
         npeTest(this::npeTestExpression);
+        npeTest(this::switchOverNullNPE);
         exhaustiveStatementSane("");
         exhaustiveStatementSane(null);
+        exhaustiveStatementSane2(null);
+        exhaustiveStatementSane2(new A());
+        exhaustiveStatementSane2(new B());
+        switchNestingTest(this::switchNestingStatementStatement);
+        switchNestingTest(this::switchNestingStatementExpression);
+        switchNestingTest(this::switchNestingExpressionStatement);
+        switchNestingTest(this::switchNestingExpressionExpression);
+        switchNestingTest(this::switchNestingIfSwitch);
+        assertEquals(2, switchOverNull1());
+        assertEquals(2, switchOverNull2());
+        assertEquals(2, switchOverNull3());
+        assertEquals(5, switchOverPrimitiveInt(0));
+        assertEquals(7, switchOverPrimitiveInt(1));
+        assertEquals(9, switchOverPrimitiveInt(2));
     }
 
     void run(Function<Object, Integer> mapper) {
@@ -104,6 +128,10 @@ public class Switches {
         assertEquals(-1, mapper.apply(null));
     }
 
+    void runFallThrough(Function<Integer, Integer> mapper) {
+        assertEquals(2, mapper.apply(1));
+    }
+
     void npeTest(Consumer<I> testCase) {
         try {
             testCase.accept(null);
@@ -111,6 +139,13 @@ public class Switches {
         } catch (NullPointerException ex) {
             //OK
         }
+    }
+
+    void switchNestingTest(BiFunction<Object, Object, String> testCase) {
+        assertEquals("string, string", testCase.apply("", ""));
+        assertEquals("string, other", testCase.apply("", 1));
+        assertEquals("other, string", testCase.apply(1, ""));
+        assertEquals("other, other", testCase.apply(1, 1));
     }
 
     int typeTestPatternSwitchTest(Object o) {
@@ -233,8 +268,8 @@ public class Switches {
         switch (e) {
             case A: return "a";
             case B: return "b";
-            case E x && "A".equals(x.name()): return "broken";
             case C: return String.valueOf(e);
+            case E x && "A".equals(x.name()): return "broken";
             case null, E x: return String.valueOf(x);
         }
     }
@@ -243,8 +278,8 @@ public class Switches {
         return switch (e) {
             case A -> "a";
             case B -> "b";
-            case E x && "A".equals(x.name()) -> "broken";
             case C -> String.valueOf(e);
+            case E x && "A".equals(x.name()) -> "broken";
             case null, E x -> String.valueOf(x);
         };
     }
@@ -254,8 +289,7 @@ public class Switches {
             case A: return "a";
             case B: return "b";
             case E x && "C".equals(x.name()): return "C";
-            case C: return "broken";
-            case null, E x: return String.valueOf(x);
+            case null, E x: return e == E.C ? "broken" : String.valueOf(x);
         }
     }
 
@@ -264,28 +298,61 @@ public class Switches {
             case A -> "a";
             case B -> "b";
             case E x && "C".equals(x.name()) -> "C";
-            case C -> "broken";
-            case null, E x -> String.valueOf(x);
+            case null, E x -> e == E.C ? "broken" : String.valueOf(x);
+        };
+    }
+
+    String testEnumWithGuards3(E e) {
+        switch (e) {
+            case A: return "a";
+            case B: return "b";
+            case Object x && "C".equals(x.toString()): return "C";
+            case null, E x: return e == E.C ? "broken" : String.valueOf(x);
+        }
+    }
+
+    String testEnumWithGuardsExpression3(E e) {
+        return switch (e) {
+            case A -> "a";
+            case B -> "b";
+            case Object x && "C".equals(x.toString()) -> "C";
+            case null, E x -> e == E.C ? "broken" : String.valueOf(x);
+        };
+    }
+
+    String testEnumWithGuards4(E e) {
+        switch (e) {
+            case A: return "a";
+            case B: return "b";
+            case Runnable x && "C".equals(x.toString()): return "C";
+            case null, E x: return e == E.C ? "broken" : String.valueOf(x);
+        }
+    }
+
+    String testEnumWithGuardsExpression4(E e) {
+        return switch (e) {
+            case A -> "a";
+            case B -> "b";
+            case Runnable x && "C".equals(x.toString()) -> "C";
+            case null, E x -> e == E.C ? "broken" : String.valueOf(x);
         };
     }
 
     String testStringWithGuards1(E e) {
         switch (e != null ? e.name() : null) {
             case "A": return "a";
-            case "B": return "b";
+            case Switches.ConstantClassClash: return "b";
             case String x && "C".equals(x): return "C";
-            case "C": return "broken";
-            case null, String x: return String.valueOf(x);
+            case null, String x: return "C".equals(x) ? "broken" : String.valueOf(x);
         }
     }
 
     String testStringWithGuardsExpression1(E e) {
         return switch (e != null ? e.name() : null) {
             case "A" -> "a";
-            case "B" -> "b";
+            case ConstantClassClash -> "b";
             case String x && "C".equals(x) -> "C";
-            case "C" -> "broken";
-            case null, String x -> String.valueOf(x);
+            case null, String x -> e == E.C ? "broken" : String.valueOf(x);
         };
     }
 
@@ -294,8 +361,7 @@ public class Switches {
             case 0: return "a";
             case 1: return "b";
             case Integer x && x.equals(2): return "C";
-            case 2: return "broken";
-            case null, Integer x: return String.valueOf(x);
+            case null, Integer x: return Objects.equals(x, 2) ? "broken" : String.valueOf(x);
         }
     }
 
@@ -304,9 +370,58 @@ public class Switches {
             case 0 -> "a";
             case 1 -> "b";
             case Integer x && x.equals(2) -> "C";
-            case 2 -> "broken";
-            case null, Integer x -> String.valueOf(x);
+            case null, Integer x -> Objects.equals(x, 2) ? "broken" : String.valueOf(x);
         };
+    }
+
+    Integer testFallThroughStatement(Integer i) {
+        int r = 0;
+
+        switch (i) {
+            case Integer o && o != null:
+                r = 1;
+            default:
+                r = 2;
+        }
+
+        return r;
+    }
+
+    Integer testFallThroughExpression(Integer i) {
+        int r = switch (i) {
+            case Integer o && o != null:
+                r = 1;
+            default:
+                r = 2;
+                yield r;
+        };
+
+        return r;
+    }
+
+    Integer testFallThrough2Statement(Integer i) {
+        int r = 0;
+
+        switch (i) {
+            case Integer o && o != null:
+                r = 1;
+            case null, default:
+                r = 2;
+        }
+
+        return r;
+    }
+
+    Integer testFallThrough2Expression(Integer i) {
+        int r = switch (i) {
+            case Integer o && o != null:
+                r = 1;
+            case null, default:
+                r = 2;
+                yield r;
+        };
+
+        return r;
     }
 
     void npeTestStatement(I i) {
@@ -334,6 +449,164 @@ public class Switches {
             case Object obj, null:; //no break intentionally - should not fall through to any possible default
         }
     }
+
+    void exhaustiveStatementSane2(I i) {
+        switch (i) {
+            case A a: break;
+            case null, B b:; //no break intentionally - should not fall through to any possible default
+        }
+        switch (i) {
+            case A a -> {}
+            case null, B b -> {}
+        }
+    }
+
+    String switchNestingStatementStatement(Object o1, Object o2) {
+        switch (o1) {
+            case String s1 -> {
+                switch (o2) {
+                    case String s2 -> {
+                        return "string, string";
+                    }
+                    default -> {
+                        return "string, other";
+                    }
+                }
+            }
+            default -> {
+                switch (o2) {
+                    case String s2 -> {
+                        return "other, string";
+                    }
+                    default -> {
+                        return "other, other";
+                    }
+                }
+            }
+        }
+    }
+
+    String switchNestingStatementExpression(Object o1, Object o2) {
+        switch (o1) {
+            case String s1 -> {
+                return switch (o2) {
+                    case String s2 -> "string, string";
+                    default -> "string, other";
+                };
+            }
+            default -> {
+                return switch (o2) {
+                    case String s2 -> "other, string";
+                    default -> "other, other";
+                };
+            }
+        }
+    }
+
+    String switchNestingExpressionStatement(Object o1, Object o2) {
+        return switch (o1) {
+            case String s1 -> {
+                switch (o2) {
+                    case String s2 -> {
+                        yield "string, string";
+                    }
+                    default -> {
+                        yield "string, other";
+                    }
+                }
+            }
+            default -> {
+                switch (o2) {
+                    case String s2 -> {
+                        yield "other, string";
+                    }
+                    default -> {
+                        yield "other, other";
+                    }
+                }
+            }
+        };
+    }
+
+    String switchNestingExpressionExpression(Object o1, Object o2) {
+        return switch (o1) {
+            case String s1 ->
+                switch (o2) {
+                    case String s2 -> "string, string";
+                    default -> "string, other";
+                };
+            default ->
+                switch (o2) {
+                    case String s2 -> "other, string";
+                    default -> "other, other";
+                };
+        };
+    }
+
+    String switchNestingIfSwitch(Object o1, Object o2) {
+        BiFunction<Object, Object, String> f = (n1, n2) -> {
+            if (o1 instanceof CharSequence cs) {
+                return switch (cs) {
+                    case String s1 ->
+                        switch (o2) {
+                            case String s2 -> "string, string";
+                            default -> "string, other";
+                        };
+                    default ->
+                        switch (o2) {
+                            case String s2 -> "other, string";
+                            default -> "other, other";
+                        };
+                };
+            } else {
+                return switch (o2) {
+                            case String s2 -> "other, string";
+                            default -> "other, other";
+                        };
+            }
+        };
+        return f.apply(o1, o2);
+    }
+
+    private void switchOverNullNPE(I i) {
+        int r = switch (null) {
+            default -> 1;
+        };
+    }
+
+    private int  switchOverNull1() {
+        return switch (null) {
+            case Object o -> 2;
+        };
+    }
+
+    private int  switchOverNull2() {
+        return switch (null) {
+            case null -> 2;
+            default -> 1;
+        };
+    }
+
+    private int  switchOverNull3() {
+        return switch (null) {
+            case null -> 2;
+            case Object o -> 1;
+        };
+    }
+
+    private int switchOverPrimitiveInt(Integer i) {
+        return switch (i) {
+            case 0 -> 5 + 0;
+            case Integer j && j == 1 -> 6 + j;
+            case Integer j -> 7 + j;
+        };
+    }
+
+    //verify that for cases like:
+    //case ConstantClassClash ->
+    //ConstantClassClash is interpreted as a field, not as a class
+    private static final String ConstantClassClash = "B";
+    private static class ConstantClassClash {}
 
     sealed interface I {}
     final class A implements I {}
@@ -363,7 +636,9 @@ public class Switches {
         }
     }
 
-    public enum E {
+    public enum E implements Runnable {
         A, B, C;
+
+        @Override public void run() {}
     }
 }

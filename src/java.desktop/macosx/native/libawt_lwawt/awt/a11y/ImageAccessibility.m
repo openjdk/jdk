@@ -36,7 +36,17 @@
 
 - (NSString * _Nullable)accessibilityLabel
 {
-    return [self accessibilityTitleAttribute];
+    return [super accessibilityLabel];
+}
+
+- (NSRect)accessibilityFrame
+{
+    return [super accessibilityFrame];
+}
+
+- (id)accessibilityParent
+{
+    return [super accessibilityParent];
 }
 
 @end

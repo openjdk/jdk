@@ -53,7 +53,6 @@ private:
   bool             _failures;
 public:
   // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   VerifyRootsClosure(VerifyOption vo) :
     _g1h(G1CollectedHeap::heap()),
@@ -114,9 +113,9 @@ class G1VerifyCodeRootOopClosure: public OopClosure {
       // Now fetch the region containing the object
       HeapRegion* hr = _g1h->heap_region_containing(obj);
       HeapRegionRemSet* hrrs = hr->rem_set();
-      // Verify that the strong code root list for this region
+      // Verify that the code root list for this region
       // contains the nmethod
-      if (!hrrs->strong_code_roots_list_contains(_nm)) {
+      if (!hrrs->code_roots_list_contains(_nm)) {
         log_error(gc, verify)("Code root location " PTR_FORMAT " "
                               "from nmethod " PTR_FORMAT " not in strong "
                               "code roots for region [" PTR_FORMAT "," PTR_FORMAT ")",
@@ -206,7 +205,6 @@ private:
   VerifyOption _vo;
 public:
   // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS.
   VerifyObjsInRegionClosure(HeapRegion *hr, VerifyOption vo)
     : _live_bytes(0), _hr(hr), _vo(vo) {
@@ -359,7 +357,6 @@ private:
   bool             _failures;
 public:
   // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   VerifyRegionClosure(bool par, VerifyOption vo)
     : _par(par),
@@ -407,16 +404,10 @@ public:
       } else if (!r->is_starts_humongous()) {
         VerifyObjsInRegionClosure not_dead_yet_cl(r, _vo);
         r->object_iterate(&not_dead_yet_cl);
-        if (_vo != VerifyOption_G1UseNextMarking) {
-          if (r->max_live_bytes() < not_dead_yet_cl.live_bytes()) {
-            log_error(gc, verify)("[" PTR_FORMAT "," PTR_FORMAT "] max_live_bytes " SIZE_FORMAT " < calculated " SIZE_FORMAT,
+        if (r->max_live_bytes() < not_dead_yet_cl.live_bytes()) {
+          log_error(gc, verify)("[" PTR_FORMAT "," PTR_FORMAT "] max_live_bytes " SIZE_FORMAT " < calculated " SIZE_FORMAT,
                                   p2i(r->bottom()), p2i(r->end()), r->max_live_bytes(), not_dead_yet_cl.live_bytes());
-            _failures = true;
-          }
-        } else {
-          // When vo == UseNextMarking we cannot currently do a sanity
-          // check on the live bytes as the calculation has not been
-          // finalized yet.
+          _failures = true;
         }
       }
     }
@@ -426,7 +417,7 @@ public:
 
 // This is the task used for parallel verification of the heap regions
 
-class G1ParVerifyTask: public AbstractGangTask {
+class G1ParVerifyTask: public WorkerTask {
 private:
   G1CollectedHeap*  _g1h;
   VerifyOption      _vo;
@@ -435,10 +426,9 @@ private:
 
 public:
   // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   G1ParVerifyTask(G1CollectedHeap* g1h, VerifyOption vo) :
-      AbstractGangTask("Parallel verify task"),
+      WorkerTask("Parallel verify task"),
       _g1h(g1h),
       _vo(vo),
       _failures(false),
@@ -604,31 +594,19 @@ void G1HeapVerifier::prepare_for_verify() {
   }
 }
 
-double G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* msg) {
-  double verify_time_ms = 0.0;
-
+void G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* msg) {
   if (should_verify(type) && _g1h->total_collections() >= VerifyGCStartAt) {
-    double verify_start = os::elapsedTime();
     prepare_for_verify();
     Universe::verify(vo, msg);
-    verify_time_ms = (os::elapsedTime() - verify_start) * 1000;
   }
-
-  return verify_time_ms;
 }
 
 void G1HeapVerifier::verify_before_gc(G1VerifyType type) {
-  if (VerifyBeforeGC) {
-    double verify_time_ms = verify(type, VerifyOption_G1UsePrevMarking, "Before GC");
-    _g1h->phase_times()->record_verify_before_time_ms(verify_time_ms);
-  }
+  verify(type, VerifyOption_G1UsePrevMarking, "Before GC");
 }
 
 void G1HeapVerifier::verify_after_gc(G1VerifyType type) {
-  if (VerifyAfterGC) {
-    double verify_time_ms = verify(type, VerifyOption_G1UsePrevMarking, "After GC");
-    _g1h->phase_times()->record_verify_after_time_ms(verify_time_ms);
-  }
+  verify(type, VerifyOption_G1UsePrevMarking, "After GC");
 }
 
 

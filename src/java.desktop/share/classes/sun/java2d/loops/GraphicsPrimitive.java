@@ -39,7 +39,6 @@ import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -441,12 +440,9 @@ public abstract class GraphicsPrimitive {
 
         public void run() {
             PrintStream ps = getTraceOutputFile();
-            Iterator<Map.Entry<Object, int[]>> iterator =
-                traceMap.entrySet().iterator();
             long total = 0;
             int numprims = 0;
-            while (iterator.hasNext()) {
-                Map.Entry<Object, int[]> me = iterator.next();
+            for (Map.Entry<Object, int[]> me : traceMap.entrySet()) {
                 Object prim = me.getKey();
                 int[] count = me.getValue();
                 if (count[0] == 1) {

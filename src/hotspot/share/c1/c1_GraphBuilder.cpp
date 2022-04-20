@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "ci/ciMemberName.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
@@ -53,11 +54,12 @@ class BlockListBuilder {
 
   BlockList    _blocks;                // internal list of all blocks
   BlockList*   _bci2block;             // mapping from bci to blocks for GraphBuilder
+  GrowableArray<BlockList> _bci2block_successors; // Mapping bcis to their blocks successors while we dont have a blockend
 
   // fields used by mark_loops
   ResourceBitMap _active;              // for iteration of control flow graph
   ResourceBitMap _visited;             // for iteration of control flow graph
-  intArray       _loop_map;            // caches the information if a block is contained in a loop
+  GrowableArray<ResourceBitMap> _loop_map; // caches the information if a block is contained in a loop
   int            _next_loop_index;     // next free loop number
   int            _next_block_number;   // for reverse postorder numbering of blocks
 
@@ -82,12 +84,17 @@ class BlockListBuilder {
 
   void make_loop_header(BlockBegin* block);
   void mark_loops();
-  int  mark_loops(BlockBegin* b, bool in_subroutine);
+  BitMap& mark_loops(BlockBegin* b, bool in_subroutine);
 
   // debugging
 #ifndef PRODUCT
   void print();
 #endif
+
+  int number_of_successors(BlockBegin* block);
+  BlockBegin* successor_at(BlockBegin* block, int i);
+  void add_successor(BlockBegin* block, BlockBegin* sux);
+  bool is_successor(BlockBegin* block, BlockBegin* sux);
 
  public:
   // creation
@@ -105,6 +112,7 @@ BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int
  , _scope(scope)
  , _blocks(16)
  , _bci2block(new BlockList(scope->method()->code_size(), NULL))
+ , _bci2block_successors(scope->method()->code_size())
  , _active()         // size not known yet
  , _visited()        // size not known yet
  , _loop_map() // size not known yet
@@ -117,6 +125,8 @@ BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int
 
   mark_loops();
   NOT_PRODUCT(if (PrintInitialBlockList) print());
+
+  // _bci2block still contains blocks with _end == null and > 0 sux in _bci2block_successors.
 
 #ifndef PRODUCT
   if (PrintCFGToFile) {
@@ -160,6 +170,7 @@ BlockBegin* BlockListBuilder::make_block_at(int cur_bci, BlockBegin* predecessor
     block = new BlockBegin(cur_bci);
     block->init_stores_to_locals(method()->max_locals());
     _bci2block->at_put(cur_bci, block);
+    _bci2block_successors.at_put_grow(cur_bci, BlockList());
     _blocks.append(block);
 
     assert(predecessor == NULL || predecessor->bci() < cur_bci, "targets for backward branches must already exist");
@@ -170,7 +181,7 @@ BlockBegin* BlockListBuilder::make_block_at(int cur_bci, BlockBegin* predecessor
       BAILOUT_("Exception handler can be reached by both normal and exceptional control flow", block);
     }
 
-    predecessor->add_successor(block);
+    add_successor(predecessor, block);
     block->increment_total_preds();
   }
 
@@ -201,8 +212,8 @@ void BlockListBuilder::handle_exceptions(BlockBegin* current, int cur_bci) {
       assert(entry->is_set(BlockBegin::exception_entry_flag), "flag must be set");
 
       // add each exception handler only once
-      if (!current->is_successor(entry)) {
-        current->add_successor(entry);
+      if(!is_successor(current, entry)) {
+        add_successor(current, entry);
         entry->increment_total_preds();
       }
 
@@ -365,17 +376,36 @@ void BlockListBuilder::mark_loops() {
 
   _active.initialize(BlockBegin::number_of_blocks());
   _visited.initialize(BlockBegin::number_of_blocks());
-  _loop_map = intArray(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), 0);
+  _loop_map = GrowableArray<ResourceBitMap>(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), ResourceBitMap());
+  for (int i = 0; i < BlockBegin::number_of_blocks(); i++) {
+    _loop_map.at(i).initialize(BlockBegin::number_of_blocks());
+  }
   _next_loop_index = 0;
   _next_block_number = _blocks.length();
 
-  // recursively iterate the control flow graph
-  mark_loops(_bci2block->at(0), false);
+  // The loop detection algorithm works as follows:
+  // - We maintain the _loop_map, where for each block we have a bitmap indicating which loops contain this block.
+  // - The CFG is recursively traversed (depth-first) and if we detect a loop, we assign the loop a unique number that is stored
+  // in the bitmap associated with the loop header block. Until we return back through that loop header the bitmap contains
+  // only a single bit corresponding to the loop number.
+  // -  The bit is then propagated for all the blocks in the loop after we exit them (post-order). There could be multiple bits
+  // of course in case of nested loops.
+  // -  When we exit the loop header we remove that single bit and assign the real loop state for it.
+  // -  Now, the tricky part here is how we detect irriducible loops. In the algorithm above the loop state bits
+  // are propagated to the predecessors. If we encounter an irreducible loop (a loop with multiple heads) we would see
+  // a node with some loop bit set that would then propagate back and be never cleared because we would
+  // never go back through the original loop header. Therefore if there are any irreducible loops the bits in the states
+  // for these loops are going to propagate back to the root.
+  BitMap& loop_state = mark_loops(_bci2block->at(0), false);
+  if (!loop_state.is_empty()) {
+    compilation()->set_has_irreducible_loops(true);
+  }
   assert(_next_block_number >= 0, "invalid block numbers");
 
   // Remove dangling Resource pointers before the ResourceMark goes out-of-scope.
   _active.resize(0);
   _visited.resize(0);
+  _loop_map.clear();
 }
 
 void BlockListBuilder::make_loop_header(BlockBegin* block) {
@@ -387,19 +417,17 @@ void BlockListBuilder::make_loop_header(BlockBegin* block) {
   if (!block->is_set(BlockBegin::parser_loop_header_flag)) {
     block->set(BlockBegin::parser_loop_header_flag);
 
-    assert(_loop_map.at(block->block_id()) == 0, "must not be set yet");
-    assert(0 <= _next_loop_index && _next_loop_index < BitsPerInt, "_next_loop_index is used as a bit-index in integer");
-    _loop_map.at_put(block->block_id(), 1 << _next_loop_index);
-    if (_next_loop_index < 31) _next_loop_index++;
+    assert(_loop_map.at(block->block_id()).is_empty(), "must not be set yet");
+    assert(0 <= _next_loop_index && _next_loop_index < BlockBegin::number_of_blocks(), "_next_loop_index is too large");
+    _loop_map.at(block->block_id()).set_bit(_next_loop_index++);
   } else {
     // block already marked as loop header
-    assert(is_power_of_2((unsigned int)_loop_map.at(block->block_id())), "exactly one bit must be set");
+    assert(_loop_map.at(block->block_id()).count_one_bits() == 1, "exactly one bit must be set");
   }
 }
 
-int BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
+BitMap& BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   int block_id = block->block_id();
-
   if (_visited.at(block_id)) {
     if (_active.at(block_id)) {
       // reached block via backward branch
@@ -417,10 +445,11 @@ int BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   _visited.set_bit(block_id);
   _active.set_bit(block_id);
 
-  intptr_t loop_state = 0;
-  for (int i = block->number_of_sux() - 1; i >= 0; i--) {
+  ResourceMark rm;
+  ResourceBitMap loop_state(BlockBegin::number_of_blocks());
+  for (int i = number_of_successors(block) - 1; i >= 0; i--) {
     // recursively process all successors
-    loop_state |= mark_loops(block->sux_at(i), in_subroutine);
+    loop_state.set_union(mark_loops(successor_at(block, i), in_subroutine));
   }
 
   // clear active-bit after all successors are processed
@@ -430,28 +459,46 @@ int BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   block->set_depth_first_number(_next_block_number);
   _next_block_number--;
 
-  if (loop_state != 0 || in_subroutine ) {
+  if (!loop_state.is_empty() || in_subroutine ) {
     // block is contained at least in one loop, so phi functions are necessary
     // phi functions are also necessary for all locals stored in a subroutine
     scope()->requires_phi_function().set_union(block->stores_to_locals());
   }
 
   if (block->is_set(BlockBegin::parser_loop_header_flag)) {
-    int header_loop_state = _loop_map.at(block_id);
-    assert(is_power_of_2((unsigned)header_loop_state), "exactly one bit must be set");
-
-    // If the highest bit is set (i.e. when integer value is negative), the method
-    // has 32 or more loops. This bit is never cleared because it is used for multiple loops
-    if (header_loop_state >= 0) {
-      clear_bits(loop_state, header_loop_state);
-    }
+    BitMap& header_loop_state = _loop_map.at(block_id);
+    assert(header_loop_state.count_one_bits() == 1, "exactly one bit must be set");
+    // remove the bit with the loop number for the state (header is outside of the loop)
+    loop_state.set_difference(header_loop_state);
   }
 
   // cache and return loop information for this block
-  _loop_map.at_put(block_id, loop_state);
-  return loop_state;
+  _loop_map.at(block_id).set_from(loop_state);
+  return _loop_map.at(block_id);
 }
 
+inline int BlockListBuilder::number_of_successors(BlockBegin* block)
+{
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  return _bci2block_successors.at(block->bci()).length();
+}
+
+inline BlockBegin* BlockListBuilder::successor_at(BlockBegin* block, int i)
+{
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  return _bci2block_successors.at(block->bci()).at(i);
+}
+
+inline void BlockListBuilder::add_successor(BlockBegin* block, BlockBegin* sux)
+{
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  _bci2block_successors.at(block->bci()).append(sux);
+}
+
+inline bool BlockListBuilder::is_successor(BlockBegin* block, BlockBegin* sux) {
+  assert(_bci2block_successors.length() > block->bci(), "sux must exist");
+  return _bci2block_successors.at(block->bci()).contains(sux);
+}
 
 #ifndef PRODUCT
 
@@ -477,10 +524,10 @@ void BlockListBuilder::print() {
     tty->print(cur->is_set(BlockBegin::subroutine_entry_flag)        ? " sr" : "   ");
     tty->print(cur->is_set(BlockBegin::parser_loop_header_flag)      ? " lh" : "   ");
 
-    if (cur->number_of_sux() > 0) {
+    if (number_of_successors(cur) > 0) {
       tty->print("    sux: ");
-      for (int j = 0; j < cur->number_of_sux(); j++) {
-        BlockBegin* sux = cur->sux_at(j);
+      for (int j = 0; j < number_of_successors(cur); j++) {
+        BlockBegin* sux = successor_at(cur, j);
         tty->print("B%d ", sux->block_id());
       }
     }
@@ -884,53 +931,68 @@ void GraphBuilder::ScopeData::incr_num_returns() {
 
 void GraphBuilder::load_constant() {
   ciConstant con = stream()->get_constant();
-  if (con.basic_type() == T_ILLEGAL) {
-    // FIXME: an unresolved Dynamic constant can get here,
-    // and that should not terminate the whole compilation.
-    BAILOUT("could not resolve a constant");
-  } else {
+  if (con.is_valid()) {
     ValueType* t = illegalType;
     ValueStack* patch_state = NULL;
     switch (con.basic_type()) {
-      case T_BOOLEAN: t = new IntConstant     (con.as_boolean()); break;
-      case T_BYTE   : t = new IntConstant     (con.as_byte   ()); break;
-      case T_CHAR   : t = new IntConstant     (con.as_char   ()); break;
-      case T_SHORT  : t = new IntConstant     (con.as_short  ()); break;
-      case T_INT    : t = new IntConstant     (con.as_int    ()); break;
-      case T_LONG   : t = new LongConstant    (con.as_long   ()); break;
-      case T_FLOAT  : t = new FloatConstant   (con.as_float  ()); break;
-      case T_DOUBLE : t = new DoubleConstant  (con.as_double ()); break;
-      case T_ARRAY  : t = new ArrayConstant   (con.as_object ()->as_array   ()); break;
-      case T_OBJECT :
-       {
+      case T_BOOLEAN: t = new IntConstant   (con.as_boolean()); break;
+      case T_BYTE   : t = new IntConstant   (con.as_byte   ()); break;
+      case T_CHAR   : t = new IntConstant   (con.as_char   ()); break;
+      case T_SHORT  : t = new IntConstant   (con.as_short  ()); break;
+      case T_INT    : t = new IntConstant   (con.as_int    ()); break;
+      case T_LONG   : t = new LongConstant  (con.as_long   ()); break;
+      case T_FLOAT  : t = new FloatConstant (con.as_float  ()); break;
+      case T_DOUBLE : t = new DoubleConstant(con.as_double ()); break;
+      case T_ARRAY  : // fall-through
+      case T_OBJECT : {
         ciObject* obj = con.as_object();
-        if (!obj->is_loaded()
-            || (PatchALot && obj->klass() != ciEnv::current()->String_klass())) {
-          // A Class, MethodType, MethodHandle, or String.
-          // Unloaded condy nodes show up as T_ILLEGAL, above.
+        if (!obj->is_loaded() || (PatchALot && (obj->is_null_object() || obj->klass() != ciEnv::current()->String_klass()))) {
+          // A Class, MethodType, MethodHandle, Dynamic, or String.
           patch_state = copy_state_before();
           t = new ObjectConstant(obj);
         } else {
           // Might be a Class, MethodType, MethodHandle, or Dynamic constant
           // result, which might turn out to be an array.
-          if (obj->is_null_object())
+          if (obj->is_null_object()) {
             t = objectNull;
-          else if (obj->is_array())
+          } else if (obj->is_array()) {
             t = new ArrayConstant(obj->as_array());
-          else
+          } else {
             t = new InstanceConstant(obj->as_instance());
+          }
         }
         break;
-       }
-      default       : ShouldNotReachHere();
+      }
+      default: ShouldNotReachHere();
     }
     Value x;
     if (patch_state != NULL) {
-      x = new Constant(t, patch_state);
+      bool kills_memory = stream()->is_dynamic_constant(); // arbitrary memory effects from running BSM during linkage
+      x = new Constant(t, patch_state, kills_memory);
     } else {
       x = new Constant(t);
     }
+
+    // Unbox the value at runtime, if needed.
+    // ConstantDynamic entry can be of a primitive type, but it is cached in boxed form.
+    if (patch_state != NULL) {
+      int index = stream()->get_constant_pool_index();
+      BasicType type = stream()->get_basic_type_for_constant_at(index);
+      if (is_java_primitive(type)) {
+        ciInstanceKlass* box_klass = ciEnv::current()->get_box_klass_for_primitive_type(type);
+        assert(box_klass->is_loaded(), "sanity");
+        int offset = java_lang_boxing_object::value_offset(type);
+        ciField* value_field = box_klass->get_field_by_offset(offset, false /*is_static*/);
+        x = new LoadField(append(x), offset, value_field, false /*is_static*/, patch_state, false /*needs_patching*/);
+        t = as_ValueType(type);
+      } else {
+        assert(is_reference_type(type), "not a reference: %s", type2name(type));
+      }
+    }
+
     push(t, append(x));
+  } else {
+    BAILOUT("could not resolve a constant");
   }
 }
 
@@ -1865,22 +1927,17 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
                 log->identify(target),
                 Bytecodes::name(code));
 
-  // invoke-special-super
-  if (bc_raw == Bytecodes::_invokespecial && !target->is_object_initializer()) {
-    ciInstanceKlass* sender_klass = calling_klass;
-    if (sender_klass->is_interface()) {
-      int index = state()->stack_size() - (target->arg_size_no_receiver() + 1);
-      Value receiver = state()->stack_at(index);
-      CheckCast* c = new CheckCast(sender_klass, receiver, copy_state_before());
-      c->set_invokespecial_receiver_check();
-      state()->stack_at_put(index, append_split(c));
-    }
-  }
-
   // Some methods are obviously bindable without any type checks so
   // convert them directly to an invokespecial or invokestatic.
   if (target->is_loaded() && !target->is_abstract() && target->can_be_statically_bound()) {
     switch (bc_raw) {
+    case Bytecodes::_invokeinterface:
+      // convert to invokespecial if the target is the private interface method.
+      if (target->is_private()) {
+        assert(holder->is_interface(), "How did we get a non-interface method here!");
+        code = Bytecodes::_invokespecial;
+      }
+      break;
     case Bytecodes::_invokevirtual:
       code = Bytecodes::_invokespecial;
       break;
@@ -1894,6 +1951,26 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     if (bc_raw == Bytecodes::_invokehandle) {
       assert(!will_link, "should come here only for unlinked call");
       code = Bytecodes::_invokespecial;
+    }
+  }
+
+  if (code == Bytecodes::_invokespecial) {
+    // Additional receiver subtype checks for interface calls via invokespecial or invokeinterface.
+    ciKlass* receiver_constraint = nullptr;
+
+    if (bc_raw == Bytecodes::_invokeinterface) {
+      receiver_constraint = holder;
+    } else if (bc_raw == Bytecodes::_invokespecial && !target->is_object_initializer() && calling_klass->is_interface()) {
+      receiver_constraint = calling_klass;
+    }
+
+    if (receiver_constraint != nullptr) {
+      int index = state()->stack_size() - (target->arg_size_no_receiver() + 1);
+      Value receiver = state()->stack_at(index);
+      CheckCast* c = new CheckCast(receiver_constraint, receiver, copy_state_before());
+      // go to uncommon_trap when checkcast fails
+      c->set_invokespecial_receiver_check();
+      state()->stack_at_put(index, append_split(c));
     }
   }
 
@@ -1989,19 +2066,19 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         cha_monomorphic_target = target->find_monomorphic_target(calling_klass, declared_interface, singleton);
         if (cha_monomorphic_target != NULL) {
           if (cha_monomorphic_target->holder() != compilation()->env()->Object_klass()) {
-            // If CHA is able to bind this invoke then update the class
-            // to match that class, otherwise klass will refer to the
-            // interface.
-            klass = cha_monomorphic_target->holder();
+            ciInstanceKlass* holder = cha_monomorphic_target->holder();
+            ciInstanceKlass* constraint = (holder->is_subtype_of(singleton) ? holder : singleton); // avoid upcasts
             actual_recv = declared_interface;
 
             // insert a check it's really the expected class.
-            CheckCast* c = new CheckCast(klass, receiver, copy_state_for_exception());
+            CheckCast* c = new CheckCast(constraint, receiver, copy_state_for_exception());
             c->set_incompatible_class_change_check();
-            c->set_direct_compare(klass->is_final());
+            c->set_direct_compare(constraint->is_final());
             // pass the result of the checkcast so that the compiler has
             // more accurate type info in the inlinee
             better_receiver = append_split(c);
+
+            dependency_recorder()->assert_unique_implementor(declared_interface, singleton);
           } else {
             cha_monomorphic_target = NULL; // subtype check against Object is useless
           }
@@ -2025,9 +2102,11 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 
   // check if we could do inlining
-  if (!PatchALot && Inline && target->is_loaded() && callee_holder->is_linked() && !patch_for_appendix) {
+  if (!PatchALot && Inline && target->is_loaded() && !patch_for_appendix &&
+      callee_holder->is_loaded()) { // the effect of symbolic reference resolution
+
     // callee is known => check if we have static binding
-    if ((code == Bytecodes::_invokestatic && callee_holder->is_initialized()) || // invokestatic involves an initialization barrier on resolved klass
+    if ((code == Bytecodes::_invokestatic && klass->is_initialized()) || // invokestatic involves an initialization barrier on declaring class
         code == Bytecodes::_invokespecial ||
         (code == Bytecodes::_invokevirtual && target->is_final_method()) ||
         code == Bytecodes::_invokedynamic) {
@@ -2431,7 +2510,7 @@ XHandlers* GraphBuilder::handle_exception(Instruction* instruction) {
         // The only test case we've seen so far which exhibits this
         // problem is caught by the infinite recursion test in
         // GraphBuilder::jsr() if the join doesn't work.
-        if (!entry->try_merge(cur_state)) {
+        if (!entry->try_merge(cur_state, compilation()->has_irreducible_loops())) {
           BAILOUT_("error while joining with exception handler, prob. due to complicated jsr/rets", exception_handlers);
         }
 
@@ -2572,7 +2651,7 @@ Value PhiSimplifier::simplify(Value v) {
       }
     }
 
-    // sucessfully simplified phi function
+    // successfully simplified phi function
     assert(subst != NULL, "illegal phi function");
     _has_substitutions = true;
     phi->clear(Phi::visited);
@@ -2917,7 +2996,7 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
     BlockBegin* sux = end->sux_at(i);
     assert(sux->is_predecessor(block()), "predecessor missing");
     // be careful, bailout if bytecodes are strange
-    if (!sux->try_merge(end->state())) BAILOUT_("block join failed", NULL);
+    if (!sux->try_merge(end->state(), compilation()->has_irreducible_loops())) BAILOUT_("block join failed", NULL);
     scope_data()->add_to_work_list(end->sux_at(i));
   }
 
@@ -3044,14 +3123,14 @@ BlockBegin* GraphBuilder::setup_start_block(int osr_bci, BlockBegin* std_entry, 
   // each method.  Previously, each method started with the
   // start-block created below, and this block was followed by the
   // header block that was always empty.  This header block is only
-  // necesary if std_entry is also a backward branch target because
+  // necessary if std_entry is also a backward branch target because
   // then phi functions may be necessary in the header block.  It's
   // also necessary when profiling so that there's a single block that
   // can increment the the counters.
   // In addition, with range check elimination, we may need a valid block
   // that dominates all the rest to insert range predicates.
   BlockBegin* new_header_block;
-  if (std_entry->number_of_preds() > 0 || count_invocations() || count_backedges() || RangeCheckElimination) {
+  if (std_entry->number_of_preds() > 0 || is_profiling() || RangeCheckElimination) {
     new_header_block = header_block(std_entry, BlockBegin::std_entry_flag, state);
   } else {
     new_header_block = std_entry;
@@ -3071,7 +3150,7 @@ BlockBegin* GraphBuilder::setup_start_block(int osr_bci, BlockBegin* std_entry, 
 
   if (base->std_entry()->state() == NULL) {
     // setup states for header blocks
-    base->std_entry()->merge(state);
+    base->std_entry()->merge(state, compilation()->has_irreducible_loops());
   }
 
   assert(base->std_entry()->state() != NULL, "");
@@ -3138,10 +3217,11 @@ void GraphBuilder::setup_osr_entry_block() {
       // doesn't so pretend that the interpreter passed in null.
       get = append(new Constant(objectNull));
     } else {
-      get = append(new UnsafeGetRaw(as_BasicType(local->type()), e,
-                                    append(new Constant(new IntConstant(offset))),
-                                    0,
-                                    true /*unaligned*/, true /*wide*/));
+      Value off_val = append(new Constant(new IntConstant(offset)));
+      get = append(new UnsafeGet(as_BasicType(local->type()), e,
+                                 off_val,
+                                 false/*is_volatile*/,
+                                 true/*is_raw*/));
     }
     _state->store_local(index, get);
   }
@@ -3153,7 +3233,7 @@ void GraphBuilder::setup_osr_entry_block() {
   Goto* g = new Goto(target, false);
   append(g);
   _osr_entry->set_end(g);
-  target->merge(_osr_entry->end()->state());
+  target->merge(_osr_entry->end()->state(), compilation()->has_irreducible_loops());
 
   scope_data()->set_stream(NULL);
 }
@@ -3212,13 +3292,16 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
 
   // setup state for std entry
   _initial_state = state_at_entry();
-  start_block->merge(_initial_state);
+  start_block->merge(_initial_state, compilation->has_irreducible_loops());
+
+  // End nulls still exist here
 
   // complete graph
   _vmap        = new ValueMap();
   switch (scope->method()->intrinsic_id()) {
   case vmIntrinsics::_dabs          : // fall through
   case vmIntrinsics::_dsqrt         : // fall through
+  case vmIntrinsics::_dsqrt_strict  : // fall through
   case vmIntrinsics::_dsin          : // fall through
   case vmIntrinsics::_dcos          : // fall through
   case vmIntrinsics::_dtan          : // fall through
@@ -3315,6 +3398,27 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
     break;
   }
   CHECK_BAILOUT();
+
+# ifdef ASSERT
+  //All blocks reachable from start_block have _end != NULL
+  {
+    BlockList processed;
+    BlockList to_go;
+    to_go.append(start_block);
+    while(to_go.length() > 0) {
+      BlockBegin* current = to_go.pop();
+      assert(current != NULL, "Should not happen.");
+      assert(current->end() != NULL, "All blocks reachable from start_block should have end() != NULL.");
+      processed.append(current);
+      for(int i = 0; i < current->number_of_sux(); i++) {
+        BlockBegin* s = current->sux_at(i);
+        if (!processed.contains(s)) {
+          to_go.append(s);
+        }
+      }
+    }
+  }
+#endif // ASSERT
 
   _start = setup_start_block(osr_bci, start_block, _osr_entry, _initial_state);
 
@@ -3468,60 +3572,60 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
 
   // Some intrinsics need special IR nodes.
   switch(id) {
-  case vmIntrinsics::_getReference       : append_unsafe_get_obj(callee, T_OBJECT,  false); return;
-  case vmIntrinsics::_getBoolean         : append_unsafe_get_obj(callee, T_BOOLEAN, false); return;
-  case vmIntrinsics::_getByte            : append_unsafe_get_obj(callee, T_BYTE,    false); return;
-  case vmIntrinsics::_getShort           : append_unsafe_get_obj(callee, T_SHORT,   false); return;
-  case vmIntrinsics::_getChar            : append_unsafe_get_obj(callee, T_CHAR,    false); return;
-  case vmIntrinsics::_getInt             : append_unsafe_get_obj(callee, T_INT,     false); return;
-  case vmIntrinsics::_getLong            : append_unsafe_get_obj(callee, T_LONG,    false); return;
-  case vmIntrinsics::_getFloat           : append_unsafe_get_obj(callee, T_FLOAT,   false); return;
-  case vmIntrinsics::_getDouble          : append_unsafe_get_obj(callee, T_DOUBLE,  false); return;
-  case vmIntrinsics::_putReference       : append_unsafe_put_obj(callee, T_OBJECT,  false); return;
-  case vmIntrinsics::_putBoolean         : append_unsafe_put_obj(callee, T_BOOLEAN, false); return;
-  case vmIntrinsics::_putByte            : append_unsafe_put_obj(callee, T_BYTE,    false); return;
-  case vmIntrinsics::_putShort           : append_unsafe_put_obj(callee, T_SHORT,   false); return;
-  case vmIntrinsics::_putChar            : append_unsafe_put_obj(callee, T_CHAR,    false); return;
-  case vmIntrinsics::_putInt             : append_unsafe_put_obj(callee, T_INT,     false); return;
-  case vmIntrinsics::_putLong            : append_unsafe_put_obj(callee, T_LONG,    false); return;
-  case vmIntrinsics::_putFloat           : append_unsafe_put_obj(callee, T_FLOAT,   false); return;
-  case vmIntrinsics::_putDouble          : append_unsafe_put_obj(callee, T_DOUBLE,  false); return;
-  case vmIntrinsics::_getShortUnaligned  : append_unsafe_get_obj(callee, T_SHORT,   false); return;
-  case vmIntrinsics::_getCharUnaligned   : append_unsafe_get_obj(callee, T_CHAR,    false); return;
-  case vmIntrinsics::_getIntUnaligned    : append_unsafe_get_obj(callee, T_INT,     false); return;
-  case vmIntrinsics::_getLongUnaligned   : append_unsafe_get_obj(callee, T_LONG,    false); return;
-  case vmIntrinsics::_putShortUnaligned  : append_unsafe_put_obj(callee, T_SHORT,   false); return;
-  case vmIntrinsics::_putCharUnaligned   : append_unsafe_put_obj(callee, T_CHAR,    false); return;
-  case vmIntrinsics::_putIntUnaligned    : append_unsafe_put_obj(callee, T_INT,     false); return;
-  case vmIntrinsics::_putLongUnaligned   : append_unsafe_put_obj(callee, T_LONG,    false); return;
-  case vmIntrinsics::_getReferenceVolatile  : append_unsafe_get_obj(callee, T_OBJECT,  true); return;
-  case vmIntrinsics::_getBooleanVolatile : append_unsafe_get_obj(callee, T_BOOLEAN, true); return;
-  case vmIntrinsics::_getByteVolatile    : append_unsafe_get_obj(callee, T_BYTE,    true); return;
-  case vmIntrinsics::_getShortVolatile   : append_unsafe_get_obj(callee, T_SHORT,   true); return;
-  case vmIntrinsics::_getCharVolatile    : append_unsafe_get_obj(callee, T_CHAR,    true); return;
-  case vmIntrinsics::_getIntVolatile     : append_unsafe_get_obj(callee, T_INT,     true); return;
-  case vmIntrinsics::_getLongVolatile    : append_unsafe_get_obj(callee, T_LONG,    true); return;
-  case vmIntrinsics::_getFloatVolatile   : append_unsafe_get_obj(callee, T_FLOAT,   true); return;
-  case vmIntrinsics::_getDoubleVolatile  : append_unsafe_get_obj(callee, T_DOUBLE,  true); return;
-  case vmIntrinsics::_putReferenceVolatile : append_unsafe_put_obj(callee, T_OBJECT,  true); return;
-  case vmIntrinsics::_putBooleanVolatile : append_unsafe_put_obj(callee, T_BOOLEAN, true); return;
-  case vmIntrinsics::_putByteVolatile    : append_unsafe_put_obj(callee, T_BYTE,    true); return;
-  case vmIntrinsics::_putShortVolatile   : append_unsafe_put_obj(callee, T_SHORT,   true); return;
-  case vmIntrinsics::_putCharVolatile    : append_unsafe_put_obj(callee, T_CHAR,    true); return;
-  case vmIntrinsics::_putIntVolatile     : append_unsafe_put_obj(callee, T_INT,     true); return;
-  case vmIntrinsics::_putLongVolatile    : append_unsafe_put_obj(callee, T_LONG,    true); return;
-  case vmIntrinsics::_putFloatVolatile   : append_unsafe_put_obj(callee, T_FLOAT,   true); return;
-  case vmIntrinsics::_putDoubleVolatile  : append_unsafe_put_obj(callee, T_DOUBLE,  true); return;
+  case vmIntrinsics::_getReference           : append_unsafe_get(callee, T_OBJECT,  false); return;
+  case vmIntrinsics::_getBoolean             : append_unsafe_get(callee, T_BOOLEAN, false); return;
+  case vmIntrinsics::_getByte                : append_unsafe_get(callee, T_BYTE,    false); return;
+  case vmIntrinsics::_getShort               : append_unsafe_get(callee, T_SHORT,   false); return;
+  case vmIntrinsics::_getChar                : append_unsafe_get(callee, T_CHAR,    false); return;
+  case vmIntrinsics::_getInt                 : append_unsafe_get(callee, T_INT,     false); return;
+  case vmIntrinsics::_getLong                : append_unsafe_get(callee, T_LONG,    false); return;
+  case vmIntrinsics::_getFloat               : append_unsafe_get(callee, T_FLOAT,   false); return;
+  case vmIntrinsics::_getDouble              : append_unsafe_get(callee, T_DOUBLE,  false); return;
+  case vmIntrinsics::_putReference           : append_unsafe_put(callee, T_OBJECT,  false); return;
+  case vmIntrinsics::_putBoolean             : append_unsafe_put(callee, T_BOOLEAN, false); return;
+  case vmIntrinsics::_putByte                : append_unsafe_put(callee, T_BYTE,    false); return;
+  case vmIntrinsics::_putShort               : append_unsafe_put(callee, T_SHORT,   false); return;
+  case vmIntrinsics::_putChar                : append_unsafe_put(callee, T_CHAR,    false); return;
+  case vmIntrinsics::_putInt                 : append_unsafe_put(callee, T_INT,     false); return;
+  case vmIntrinsics::_putLong                : append_unsafe_put(callee, T_LONG,    false); return;
+  case vmIntrinsics::_putFloat               : append_unsafe_put(callee, T_FLOAT,   false); return;
+  case vmIntrinsics::_putDouble              : append_unsafe_put(callee, T_DOUBLE,  false); return;
+  case vmIntrinsics::_getShortUnaligned      : append_unsafe_get(callee, T_SHORT,   false); return;
+  case vmIntrinsics::_getCharUnaligned       : append_unsafe_get(callee, T_CHAR,    false); return;
+  case vmIntrinsics::_getIntUnaligned        : append_unsafe_get(callee, T_INT,     false); return;
+  case vmIntrinsics::_getLongUnaligned       : append_unsafe_get(callee, T_LONG,    false); return;
+  case vmIntrinsics::_putShortUnaligned      : append_unsafe_put(callee, T_SHORT,   false); return;
+  case vmIntrinsics::_putCharUnaligned       : append_unsafe_put(callee, T_CHAR,    false); return;
+  case vmIntrinsics::_putIntUnaligned        : append_unsafe_put(callee, T_INT,     false); return;
+  case vmIntrinsics::_putLongUnaligned       : append_unsafe_put(callee, T_LONG,    false); return;
+  case vmIntrinsics::_getReferenceVolatile   : append_unsafe_get(callee, T_OBJECT,  true); return;
+  case vmIntrinsics::_getBooleanVolatile     : append_unsafe_get(callee, T_BOOLEAN, true); return;
+  case vmIntrinsics::_getByteVolatile        : append_unsafe_get(callee, T_BYTE,    true); return;
+  case vmIntrinsics::_getShortVolatile       : append_unsafe_get(callee, T_SHORT,   true); return;
+  case vmIntrinsics::_getCharVolatile        : append_unsafe_get(callee, T_CHAR,    true); return;
+  case vmIntrinsics::_getIntVolatile         : append_unsafe_get(callee, T_INT,     true); return;
+  case vmIntrinsics::_getLongVolatile        : append_unsafe_get(callee, T_LONG,    true); return;
+  case vmIntrinsics::_getFloatVolatile       : append_unsafe_get(callee, T_FLOAT,   true); return;
+  case vmIntrinsics::_getDoubleVolatile      : append_unsafe_get(callee, T_DOUBLE,  true); return;
+  case vmIntrinsics::_putReferenceVolatile   : append_unsafe_put(callee, T_OBJECT,  true); return;
+  case vmIntrinsics::_putBooleanVolatile     : append_unsafe_put(callee, T_BOOLEAN, true); return;
+  case vmIntrinsics::_putByteVolatile        : append_unsafe_put(callee, T_BYTE,    true); return;
+  case vmIntrinsics::_putShortVolatile       : append_unsafe_put(callee, T_SHORT,   true); return;
+  case vmIntrinsics::_putCharVolatile        : append_unsafe_put(callee, T_CHAR,    true); return;
+  case vmIntrinsics::_putIntVolatile         : append_unsafe_put(callee, T_INT,     true); return;
+  case vmIntrinsics::_putLongVolatile        : append_unsafe_put(callee, T_LONG,    true); return;
+  case vmIntrinsics::_putFloatVolatile       : append_unsafe_put(callee, T_FLOAT,   true); return;
+  case vmIntrinsics::_putDoubleVolatile      : append_unsafe_put(callee, T_DOUBLE,  true); return;
   case vmIntrinsics::_compareAndSetLong:
   case vmIntrinsics::_compareAndSetInt:
   case vmIntrinsics::_compareAndSetReference : append_unsafe_CAS(callee); return;
   case vmIntrinsics::_getAndAddInt:
-  case vmIntrinsics::_getAndAddLong      : append_unsafe_get_and_set_obj(callee, true); return;
-  case vmIntrinsics::_getAndSetInt       :
-  case vmIntrinsics::_getAndSetLong      :
-  case vmIntrinsics::_getAndSetReference : append_unsafe_get_and_set_obj(callee, false); return;
-  case vmIntrinsics::_getCharStringU     : append_char_access(callee, false); return;
-  case vmIntrinsics::_putCharStringU     : append_char_access(callee, true); return;
+  case vmIntrinsics::_getAndAddLong          : append_unsafe_get_and_set(callee, true); return;
+  case vmIntrinsics::_getAndSetInt           :
+  case vmIntrinsics::_getAndSetLong          :
+  case vmIntrinsics::_getAndSetReference     : append_unsafe_get_and_set(callee, false); return;
+  case vmIntrinsics::_getCharStringU         : append_char_access(callee, false); return;
+  case vmIntrinsics::_putCharStringU         : append_char_access(callee, true); return;
   default:
     break;
   }
@@ -3939,7 +4043,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
     // the entry bci for the callee instead of the call site bci.
     append_with_bci(goto_callee, 0);
     _block->set_end(goto_callee);
-    callee_start_block->merge(callee_state);
+    callee_start_block->merge(callee_state, compilation()->has_irreducible_loops());
 
     _last = _block = callee_start_block;
 
@@ -4199,20 +4303,20 @@ void GraphBuilder::pop_scope_for_jsr() {
   _scope_data = scope_data()->parent();
 }
 
-void GraphBuilder::append_unsafe_get_obj(ciMethod* callee, BasicType t, bool is_volatile) {
+void GraphBuilder::append_unsafe_get(ciMethod* callee, BasicType t, bool is_volatile) {
   Values* args = state()->pop_arguments(callee->arg_size());
   null_check(args->at(0));
   Instruction* offset = args->at(2);
 #ifndef _LP64
   offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
 #endif
-  Instruction* op = append(new UnsafeGetObject(t, args->at(1), offset, is_volatile));
+  Instruction* op = append(new UnsafeGet(t, args->at(1), offset, is_volatile));
   push(op->type(), op);
   compilation()->set_has_unsafe_access(true);
 }
 
 
-void GraphBuilder::append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_volatile) {
+void GraphBuilder::append_unsafe_put(ciMethod* callee, BasicType t, bool is_volatile) {
   Values* args = state()->pop_arguments(callee->arg_size());
   null_check(args->at(0));
   Instruction* offset = args->at(2);
@@ -4224,28 +4328,10 @@ void GraphBuilder::append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_
     Value mask = append(new Constant(new IntConstant(1)));
     val = append(new LogicOp(Bytecodes::_iand, val, mask));
   }
-  Instruction* op = append(new UnsafePutObject(t, args->at(1), offset, val, is_volatile));
+  Instruction* op = append(new UnsafePut(t, args->at(1), offset, val, is_volatile));
   compilation()->set_has_unsafe_access(true);
   kill_all();
 }
-
-
-void GraphBuilder::append_unsafe_get_raw(ciMethod* callee, BasicType t) {
-  Values* args = state()->pop_arguments(callee->arg_size());
-  null_check(args->at(0));
-  Instruction* op = append(new UnsafeGetRaw(t, args->at(1), false));
-  push(op->type(), op);
-  compilation()->set_has_unsafe_access(true);
-}
-
-
-void GraphBuilder::append_unsafe_put_raw(ciMethod* callee, BasicType t) {
-  Values* args = state()->pop_arguments(callee->arg_size());
-  null_check(args->at(0));
-  Instruction* op = append(new UnsafePutRaw(t, args->at(1), args->at(2)));
-  compilation()->set_has_unsafe_access(true);
-}
-
 
 void GraphBuilder::append_unsafe_CAS(ciMethod* callee) {
   ValueStack* state_before = copy_state_for_exception();
@@ -4334,7 +4420,7 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
   }
 }
 
-void GraphBuilder::append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add) {
+void GraphBuilder::append_unsafe_get_and_set(ciMethod* callee, bool is_add) {
   Values* args = state()->pop_arguments(callee->arg_size());
   BasicType t = callee->return_type()->basic_type();
   null_check(args->at(0));
@@ -4342,7 +4428,7 @@ void GraphBuilder::append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add) 
 #ifndef _LP64
   offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
 #endif
-  Instruction* op = append(new UnsafeGetAndSetObject(t, args->at(1), offset, args->at(3), is_add));
+  Instruction* op = append(new UnsafeGetAndSet(t, args->at(1), offset, args->at(3), is_add));
   compilation()->set_has_unsafe_access(true);
   kill_all();
   push(op->type(), op);

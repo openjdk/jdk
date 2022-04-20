@@ -56,14 +56,18 @@ inline void OrderAccess::fence() {
 }
 
 inline void OrderAccess::cross_modify_fence_impl() {
-  int idx = 0;
+  if (VM_Version::supports_serialize()) {
+    __asm__ volatile (".byte 0x0f, 0x01, 0xe8\n\t" : : :); //serialize
+  } else {
+    int idx = 0;
 #ifdef AMD64
-  __asm__ volatile ("cpuid " : "+a" (idx) : : "ebx", "ecx", "edx", "memory");
+    __asm__ volatile ("cpuid " : "+a" (idx) : : "ebx", "ecx", "edx", "memory");
 #else
-  // On some x86 systems EBX is a reserved register that cannot be
-  // clobbered, so we must protect it around the CPUID.
-  __asm__ volatile ("xchg %%esi, %%ebx; cpuid; xchg %%esi, %%ebx " : "+a" (idx) : : "esi", "ecx", "edx", "memory");
+    // On some x86 systems EBX is a reserved register that cannot be
+    // clobbered, so we must protect it around the CPUID.
+    __asm__ volatile ("xchg %%esi, %%ebx; cpuid; xchg %%esi, %%ebx " : "+a" (idx) : : "esi", "ecx", "edx", "memory");
 #endif
+  }
 }
 
 #endif // OS_CPU_LINUX_X86_ORDERACCESS_LINUX_X86_HPP

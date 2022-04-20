@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
+ * @modules jdk.incubator.foreign jdk.incubator.vector java.base/jdk.internal.vm.annotation
  * @run testng/othervm -XX:-TieredCompilation Float64VectorLoadStoreTests
  *
  */
@@ -43,12 +43,11 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.ByteOrder;
 import java.nio.ReadOnlyBufferException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.*;
 
 @Test
-public class Float64VectorLoadStoreTests extends AbstractVectorTest {
+public class Float64VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     static final VectorSpecies<Float> SPECIES =
                 FloatVector.SPECIES_64;
 

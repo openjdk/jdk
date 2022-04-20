@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,8 +115,8 @@ public class Arguments {
         String unitString = null;
         String valueString = s;
 
-        for (int i = 0; i < unitStrings.length; i++) {
-            int index = s.indexOf(unitStrings[i]);
+        for (String unit : unitStrings) {
+            int index = s.indexOf(unit);
             if (index > 0) {
                 unitString = s.substring(index);
                 valueString = s.substring(0, index);
@@ -127,9 +127,9 @@ public class Arguments {
         try {
             int value = Integer.parseInt(valueString);
 
-            if (unitString == null || unitString.compareTo("ms") == 0) {
+            if (unitString == null || unitString.equals("ms")) {
                 return value;
-            } else if (unitString.compareTo("s") == 0) {
+            } else if (unitString.equals("s")) {
                 return value * 1000;
             } else {
                 throw new IllegalArgumentException(
@@ -149,17 +149,17 @@ public class Arguments {
             return;
         }
 
-        if ((args[0].compareTo("-?") == 0)
-                || (args[0].compareTo("-h") == 0)
-                || (args[0].compareTo("--help") == 0)
+        if ((args[0].equals("-?"))
+                || (args[0].equals("-h"))
+                || (args[0].equals("--help"))
                 // -help: legacy.
-                || (args[0].compareTo("-help") == 0)) {
+                || (args[0].equals("-help"))) {
             help = true;
             return;
-        } else if (args[0].compareTo("-options") == 0) {
+        } else if (args[0].equals("-options")) {
             options = true;
             return;
-        } else if (args[0].compareTo("-list") == 0) {
+        } else if (args[0].equals("-list")) {
             list = true;
             if (args.length > 2) {
               throw new IllegalArgumentException("invalid argument count");
@@ -171,23 +171,23 @@ public class Arguments {
         for ( ; (argc < args.length) && (args[argc].startsWith("-")); argc++) {
             String arg = args[argc];
 
-            if (arg.compareTo("-a") == 0) {
+            if (arg.equals("-a")) {
                 comparator = new AscendingMonitorComparator();
-            } else if (arg.compareTo("-d") == 0) {
+            } else if (arg.equals("-d")) {
                 comparator =  new DescendingMonitorComparator();
-            } else if (arg.compareTo("-t") == 0) {
+            } else if (arg.equals("-t")) {
                 timestamp = true;
-            } else if (arg.compareTo("-v") == 0) {
+            } else if (arg.equals("-v")) {
                 verbose = true;
-            } else if ((arg.compareTo("-constants") == 0)
-                       || (arg.compareTo("-c") == 0)) {
+            } else if ((arg.equals("-constants"))
+                       || (arg.equals("-c"))) {
                 constants = true;
-            } else if ((arg.compareTo("-strings") == 0)
-                       || (arg.compareTo("-s") == 0)) {
+            } else if ((arg.equals("-strings"))
+                       || (arg.equals("-s"))) {
                 strings = true;
             } else if (arg.startsWith("-h")) {
                 String value;
-                if (arg.compareTo("-h") != 0) {
+                if (!arg.equals("-h")) {
                     value = arg.substring(2);
                 } else {
                     argc++;
@@ -245,7 +245,7 @@ public class Arguments {
                 } catch (NumberFormatException nfe) {
                     // it didn't parse. check for the -snap or jstat_options
                     // file options.
-                    if ((argc == 0) && (args[argc].compareTo("-snap") == 0)) {
+                    if ((argc == 0) && (args[argc].equals("-snap"))) {
                         snap = true;
                     } else if (argc == 0) {
                         specialOption = args[argc].substring(1);

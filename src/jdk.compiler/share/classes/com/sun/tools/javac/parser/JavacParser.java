@@ -764,26 +764,26 @@ public class JavacParser implements Parser {
      */
 
     public JCPattern parsePattern(int pos, JCModifiers mods, JCExpression parsedType, boolean inInstanceOf) {
+        JCPattern pattern;
         if (token.kind == LPAREN && parsedType == null) {
             int startPos = token.pos;
             accept(LPAREN);
             JCPattern p = parsePattern(token.pos, null, null, false);
             accept(RPAREN);
-            return toP(F.at(startPos).ParenthesizedPattern(p));
+            pattern = toP(F.at(startPos).ParenthesizedPattern(p));
         } else {
-            JCPattern pattern;
-            JCExpression e = parsedType == null ? term(EXPR | TYPE | NOLAMBDA) : parsedType;
-            mods = mods != null ? mods : F.at(token.pos).Modifiers(0);
+            mods = mods != null ? mods : optFinal(0);
+            JCExpression e = parsedType == null ? term(TYPE | NOLAMBDA) : parsedType;
             JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), e, null));
             pattern = toP(F.at(pos).BindingPattern(var));
-            if (!inInstanceOf && token.kind == AMPAMP) {
-                checkSourceLevel(Feature.PATTERN_SWITCH);
-                nextToken();
-                JCExpression guard = term(EXPR | NOLAMBDA);
-                pattern = F.at(pos).GuardPattern(pattern, guard);
-            }
-            return pattern;
         }
+        if (!inInstanceOf && token.kind == AMPAMP) {
+            checkSourceLevel(Feature.PATTERN_SWITCH);
+            nextToken();
+            JCExpression guard = term(EXPR | NOLAMBDA);
+            pattern = F.at(pos).GuardPattern(pattern, guard);
+        }
+        return pattern;
     }
 
     /**
@@ -1776,31 +1776,7 @@ public class JavacParser implements Parser {
                     return ParensResult.EXPLICIT_LAMBDA;
                 case MONKEYS_AT:
                     type = true;
-                    lookahead += 1; //skip '@'
-                    while (peekToken(lookahead, DOT)) {
-                        lookahead += 2;
-                    }
-                    if (peekToken(lookahead, LPAREN)) {
-                        lookahead++;
-                        //skip annotation values
-                        int nesting = 0;
-                        for (; ; lookahead++) {
-                            TokenKind tk2 = S.token(lookahead).kind;
-                            switch (tk2) {
-                                case EOF:
-                                    return ParensResult.PARENS;
-                                case LPAREN:
-                                    nesting++;
-                                    break;
-                                case RPAREN:
-                                    nesting--;
-                                    if (nesting == 0) {
-                                        continue outer;
-                                    }
-                                break;
-                            }
-                        }
-                    }
+                    lookahead = skipAnnotation(lookahead);
                     break;
                 case LBRACKET:
                     if (peekToken(lookahead, RBRACKET, LAX_IDENTIFIER)) {
@@ -1855,6 +1831,35 @@ public class JavacParser implements Parser {
                     return defaultResult;
             }
         }
+    }
+
+    private int skipAnnotation(int lookahead) {
+        lookahead += 1; //skip '@'
+        while (peekToken(lookahead, DOT)) {
+            lookahead += 2;
+        }
+        if (peekToken(lookahead, LPAREN)) {
+            lookahead++;
+            //skip annotation values
+            int nesting = 0;
+            for (; ; lookahead++) {
+                TokenKind tk2 = S.token(lookahead).kind;
+                switch (tk2) {
+                    case EOF:
+                        return lookahead;
+                    case LPAREN:
+                        nesting++;
+                        break;
+                    case RPAREN:
+                        nesting--;
+                        if (nesting == 0) {
+                            return lookahead;
+                        }
+                    break;
+                }
+            }
+        }
+        return lookahead;
     }
 
     /** Accepts all identifier-like tokens */
@@ -2030,7 +2035,7 @@ public class JavacParser implements Parser {
                     args.append(parseExpression());
                 }
             }
-            accept(RPAREN);
+            accept(RPAREN, tk -> Errors.Expected2(RPAREN, COMMA));
         } else {
             syntaxError(token.pos, Errors.Expected(LPAREN));
         }
@@ -2118,7 +2123,7 @@ public class JavacParser implements Parser {
                     nextToken();
                     break;
                 default:
-                    args.append(syntaxError(token.pos, Errors.Expected(GT)));
+                    args.append(syntaxError(token.pos, Errors.Expected2(GT, COMMA)));
                     break;
                 }
                 return args.toList();
@@ -3026,9 +3031,9 @@ public class JavacParser implements Parser {
         }
         case DEFAULT: {
             nextToken();
+            JCCaseLabel defaultPattern = toP(F.at(pos).DefaultCaseLabel());
             CaseTree.CaseKind caseKind;
             JCTree body = null;
-            int patternPos = token.pos;
             if (token.kind == ARROW) {
                 checkSourceLevel(Feature.SWITCH_RULE);
                 accept(ARROW);
@@ -3044,7 +3049,6 @@ public class JavacParser implements Parser {
                 caseKind = JCCase.STATEMENT;
                 stats = blockStatements();
             }
-            JCCaseLabel defaultPattern = toP(F.at(patternPos).DefaultCaseLabel());
             c = F.at(pos).Case(caseKind, List.of(defaultPattern), stats, body);
             if (stats.isEmpty())
                 storeEnd(c, S.prevToken().endPos);
@@ -3063,35 +3067,67 @@ public class JavacParser implements Parser {
             nextToken();
             label = toP(F.at(patternPos).DefaultCaseLabel());
         } else {
-            if (token.kind == LPAREN) {
-                int lookahead = 0;
-                Token ahead;
-                while ((ahead = S.token(lookahead)).kind != EOF && ahead.kind != RPAREN && ahead.kind != AMPAMP) {
-                    lookahead++;
-                }
-                Token twoBack;
-                boolean pattern = S.token(lookahead - 1).kind == IDENTIFIER &&
-                                  ((twoBack = S.token(lookahead - 2)).kind == IDENTIFIER ||
-                                   twoBack.kind == GT || twoBack.kind == GTGT || twoBack.kind == GTGTGT);
-                if (pattern) {
-                    return parsePattern(token.pos, null, null, false);
-                } else {
-                    return term(EXPR | TYPE | NOLAMBDA);
-                }
+            int lookahead = 0;
+            while (S.token(lookahead).kind == LPAREN) {
+                lookahead++;
+            }
+            JCModifiers mods = optFinal(0);
+            boolean pattern = mods.flags != 0 || mods.annotations.nonEmpty() ||
+                              analyzePattern(lookahead) == PatternResult.PATTERN;
+            if (pattern) {
+                checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
+                return parsePattern(patternPos, mods, null, false);
             } else {
-                JCModifiers mods = optFinal(0);
-                JCExpression e = term(EXPR | TYPE | NOLAMBDA);
-
-                if (token.kind == IDENTIFIER || mods.flags != 0 || mods.annotations.nonEmpty()) {
-                    checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
-                    return parsePattern(patternPos, null, e, false);
-                } else {
-                    return e;
-                }
+                return term(EXPR | NOLAMBDA);
             }
         }
 
         return label;
+    }
+
+    @SuppressWarnings("fallthrough")
+    PatternResult analyzePattern(int lookahead) {
+        int depth = 0;
+        while (true) {
+            TokenKind token = S.token(lookahead).kind;
+            switch (token) {
+                case BYTE: case SHORT: case INT: case LONG: case FLOAT:
+                case DOUBLE: case BOOLEAN: case CHAR: case VOID:
+                case ASSERT, ENUM, IDENTIFIER, UNDERSCORE:
+                    if (depth == 0 && peekToken(lookahead, LAX_IDENTIFIER)) return PatternResult.PATTERN;
+                    break;
+                case DOT, QUES, EXTENDS, SUPER, COMMA: break;
+                case LT: depth++; break;
+                case GTGTGT: depth--;
+                case GTGT: depth--;
+                case GT:
+                    depth--;
+                    if (depth == 0) {
+                         return peekToken(lookahead, LAX_IDENTIFIER) ? PatternResult.PATTERN
+                                                          : PatternResult.EXPRESSION;
+                    } else if (depth < 0) return PatternResult.EXPRESSION;
+                    break;
+                case MONKEYS_AT:
+                    lookahead = skipAnnotation(lookahead);
+                    break;
+                case LBRACKET:
+                    if (peekToken(lookahead, RBRACKET, LAX_IDENTIFIER)) {
+                        return PatternResult.PATTERN;
+                    } else if (peekToken(lookahead, RBRACKET)) {
+                        lookahead++;
+                        break;
+                    } else {
+                        return PatternResult.EXPRESSION;
+                    }
+                default: return PatternResult.EXPRESSION;
+            }
+            lookahead++;
+        }
+    }
+
+    private enum PatternResult {
+        EXPRESSION,
+        PATTERN;
     }
 
     /** MoreStatementExpressions = { COMMA StatementExpression }
@@ -3343,7 +3379,7 @@ public class JavacParser implements Parser {
                     buf.append(annotationValue());
                 }
             }
-            accept(RBRACE);
+            accept(RBRACE, tk -> Errors.AnnotationMissingElementValue);
             return toP(F.at(pos).NewArray(null, List.nil(), buf.toList()));
         default:
             selectExprMode();
@@ -4951,7 +4987,7 @@ public class JavacParser implements Parser {
 
     }
 
-    protected static abstract class AbstractEndPosTable implements EndPosTable {
+    protected abstract static class AbstractEndPosTable implements EndPosTable {
         /**
          * The current parser.
          */

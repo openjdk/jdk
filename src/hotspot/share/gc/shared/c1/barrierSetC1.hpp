@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ class LIRAddressOpr: public StackObj {
   LIRItem* _item;
   LIR_Opr  _opr;
 public:
-  LIRAddressOpr(LIRItem& item) : _item(&item), _opr(NULL) {}
+  LIRAddressOpr(LIRItem& item) : _item(&item), _opr() {}
   LIRAddressOpr(LIR_Opr opr) : _item(NULL), _opr(opr) {}
   LIRAddressOpr(const LIRAddressOpr& other) : _item(other._item), _opr(other._opr) {}
 
@@ -80,7 +80,7 @@ public:
     _base(base),
     _offset(offset),
     _type(type),
-    _resolved_addr(NULL),
+    _resolved_addr(),
     _patch_emit_info(patch_emit_info),
     _access_emit_info(access_emit_info) {}
 
@@ -107,7 +107,7 @@ public:
 };
 
 // The BarrierSetC1 class is the main entry point for the GC backend of the Access API in C1.
-// It is called by the LIRGenerator::access_* functions, which is the main entry poing for
+// It is called by the LIRGenerator::access_* functions, which is the main entry point for
 // access calls in C1.
 
 class BarrierSetC1: public CHeapObj<mtGC> {

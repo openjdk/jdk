@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,9 @@
 /**
  * @test
  * @bug 8237858
- * @summary PlainSocketImpl.socketAccept() handles EINTR incorrectly
+ * @summary SocketImpl.socketAccept() handles EINTR incorrectly
  * @requires (os.family != "windows")
  * @compile NativeThread.java
- * @run main/othervm/native -Djdk.net.usePlainSocketImpl=true SocketAcceptInterruptTest 0
- * @run main/othervm/native -Djdk.net.usePlainSocketImpl=true SocketAcceptInterruptTest 5000
  * @run main/othervm/native SocketAcceptInterruptTest 0
  * @run main/othervm/native SocketAcceptInterruptTest 5000
  */

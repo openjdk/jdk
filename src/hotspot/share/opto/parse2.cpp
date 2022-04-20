@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
         // If we have already recompiled with the range-check-widening
         // heroic optimization turned off, then we must really be throwing
         // range check exceptions.
-        builtin_throw(Deoptimization::Reason_range_check, idx);
+        builtin_throw(Deoptimization::Reason_range_check);
       }
     }
   }
@@ -410,8 +410,8 @@ static void merge_ranges(SwitchRange* ranges, int& rp) {
 void Parse::do_tableswitch() {
   // Get information about tableswitch
   int default_dest = iter().get_dest_table(0);
-  int lo_index     = iter().get_int_table(1);
-  int hi_index     = iter().get_int_table(2);
+  jint lo_index    = iter().get_int_table(1);
+  jint hi_index    = iter().get_int_table(2);
   int len          = hi_index - lo_index + 1;
 
   if (len < 1) {
@@ -438,9 +438,9 @@ void Parse::do_tableswitch() {
   SwitchRange* ranges = NEW_RESOURCE_ARRAY(SwitchRange, rnum);
   int rp = -1;
   if (lo_index != min_jint) {
-    uint cnt = 1;
+    float cnt = 1.0F;
     if (profile != NULL) {
-      cnt = profile->default_count() / (hi_index != max_jint ? 2 : 1);
+      cnt = (float)profile->default_count() / (hi_index != max_jint ? 2.0F : 1.0F);
     }
     ranges[++rp].setRange(min_jint, lo_index-1, default_dest, cnt);
   }
@@ -448,9 +448,9 @@ void Parse::do_tableswitch() {
     jint match_int = lo_index+j;
     int  dest      = iter().get_dest_table(j+3);
     makes_backward_branch |= (dest <= bci());
-    uint cnt = 1;
+    float cnt = 1.0F;
     if (profile != NULL) {
-      cnt = profile->count_at(j);
+      cnt = (float)profile->count_at(j);
     }
     if (rp < 0 || !ranges[rp].adjoin(match_int, dest, cnt, trim_ranges)) {
       ranges[++rp].set(match_int, dest, cnt);
@@ -459,9 +459,9 @@ void Parse::do_tableswitch() {
   jint highest = lo_index+(len-1);
   assert(ranges[rp].hi() == highest, "");
   if (highest != max_jint) {
-    uint cnt = 1;
+    float cnt = 1.0F;
     if (profile != NULL) {
-      cnt = profile->default_count() / (lo_index != min_jint ? 2 : 1);
+      cnt = (float)profile->default_count() / (lo_index != min_jint ? 2.0F : 1.0F);
     }
     if (!ranges[rp].adjoinRange(highest+1, max_jint, default_dest, cnt, trim_ranges)) {
       ranges[++rp].setRange(highest+1, max_jint, default_dest, cnt);
@@ -487,7 +487,7 @@ void Parse::do_tableswitch() {
 void Parse::do_lookupswitch() {
   // Get information about lookupswitch
   int default_dest = iter().get_dest_table(0);
-  int len          = iter().get_int_table(1);
+  jint len          = iter().get_int_table(1);
 
   if (len < 1) {    // If this is a backward branch, add safepoint
     maybe_add_safepoint(default_dest);
@@ -513,26 +513,15 @@ void Parse::do_lookupswitch() {
       table[3*j+0] = iter().get_int_table(2+2*j);
       table[3*j+1] = iter().get_dest_table(2+2*j+1);
       // Handle overflow when converting from uint to jint
-      table[3*j+2] = (profile == NULL) ? 1 : MIN2<uint>(max_jint, profile->count_at(j));
+      table[3*j+2] = (profile == NULL) ? 1 : (jint)MIN2<uint>((uint)max_jint, profile->count_at(j));
     }
     qsort(table, len, 3*sizeof(table[0]), jint_cmp);
   }
 
-  float defaults = 0;
-  jint prev = min_jint;
-  for (int j = 0; j < len; j++) {
-    jint match_int = table[3*j+0];
-    if (match_int != prev) {
-      defaults += (float)match_int - prev;
-    }
-    prev = match_int+1;
-  }
-  if (prev != min_jint) {
-    defaults += (float)max_jint - prev + 1;
-  }
-  float default_cnt = 1;
+  float default_cnt = 1.0F;
   if (profile != NULL) {
-    default_cnt = profile->default_count()/defaults;
+    juint defaults = max_juint - len;
+    default_cnt = (float)profile->default_count()/(float)defaults;
   }
 
   int rnum = len*2+1;
@@ -541,25 +530,25 @@ void Parse::do_lookupswitch() {
   int rp = -1;
   for (int j = 0; j < len; j++) {
     jint match_int   = table[3*j+0];
-    int  dest        = table[3*j+1];
-    int  cnt         = table[3*j+2];
-    int  next_lo     = rp < 0 ? min_jint : ranges[rp].hi()+1;
+    jint  dest        = table[3*j+1];
+    jint  cnt         = table[3*j+2];
+    jint  next_lo     = rp < 0 ? min_jint : ranges[rp].hi()+1;
     makes_backward_branch |= (dest <= bci());
-    float c = default_cnt * ((float)match_int - next_lo);
+    float c = default_cnt * ((float)match_int - (float)next_lo);
     if (match_int != next_lo && (rp < 0 || !ranges[rp].adjoinRange(next_lo, match_int-1, default_dest, c, trim_ranges))) {
       assert(default_dest != never_reached, "sentinel value for dead destinations");
       ranges[++rp].setRange(next_lo, match_int-1, default_dest, c);
     }
-    if (rp < 0 || !ranges[rp].adjoin(match_int, dest, cnt, trim_ranges)) {
+    if (rp < 0 || !ranges[rp].adjoin(match_int, dest, (float)cnt, trim_ranges)) {
       assert(dest != never_reached, "sentinel value for dead destinations");
-      ranges[++rp].set(match_int, dest, cnt);
+      ranges[++rp].set(match_int, dest,  (float)cnt);
     }
   }
   jint highest = table[3*(len-1)];
   assert(ranges[rp].hi() == highest, "");
   if (highest != max_jint &&
-      !ranges[rp].adjoinRange(highest+1, max_jint, default_dest, default_cnt * ((float)max_jint - highest), trim_ranges)) {
-    ranges[++rp].setRange(highest+1, max_jint, default_dest, default_cnt * ((float)max_jint - highest));
+      !ranges[rp].adjoinRange(highest+1, max_jint, default_dest, default_cnt * ((float)max_jint - (float)highest), trim_ranges)) {
+    ranges[++rp].setRange(highest+1, max_jint, default_dest, default_cnt * ((float)max_jint - (float)highest));
   }
   assert(rp < rnum, "not too many ranges");
 
@@ -1343,7 +1332,7 @@ bool Parse::seems_never_taken(float prob) const {
 // True if the comparison seems to be the kind that will not change its
 // statistics from true to false.  See comments in adjust_map_after_if.
 // This question is only asked along paths which are already
-// classifed as untaken (by seems_never_taken), so really,
+// classified as untaken (by seems_never_taken), so really,
 // if a path is never taken, its controlling comparison is
 // already acting in a stable fashion.  If the comparison
 // seems stable, we will put an expensive uncommon trap
@@ -1876,33 +1865,33 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_bipush:   push(intcon(iter().get_constant_u1())); break;
   case Bytecodes::_sipush:   push(intcon(iter().get_constant_u2())); break;
   case Bytecodes::_aconst_null: push(null());  break;
+
   case Bytecodes::_ldc:
   case Bytecodes::_ldc_w:
-  case Bytecodes::_ldc2_w:
-    // If the constant is unresolved, run this BC once in the interpreter.
-    {
-      ciConstant constant = iter().get_constant();
-      if (!constant.is_valid() ||
-          (constant.basic_type() == T_OBJECT &&
-           !constant.as_object()->is_loaded())) {
-        int index = iter().get_constant_pool_index();
-        constantTag tag = iter().get_constant_pool_tag(index);
-        uncommon_trap(Deoptimization::make_trap_request
-                      (Deoptimization::Reason_unloaded,
-                       Deoptimization::Action_reinterpret,
-                       index),
-                      NULL, tag.internal_name());
-        break;
-      }
-      assert(constant.basic_type() != T_OBJECT || constant.as_object()->is_instance(),
-             "must be java_mirror of klass");
+  case Bytecodes::_ldc2_w: {
+    ciConstant constant = iter().get_constant();
+    if (constant.is_loaded()) {
       const Type* con_type = Type::make_from_constant(constant);
       if (con_type != NULL) {
         push_node(con_type->basic_type(), makecon(con_type));
       }
-    }
+    } else {
+      // If the constant is unresolved or in error state, run this BC in the interpreter.
+      if (iter().is_in_error()) {
+        uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
+                                                        Deoptimization::Action_none),
+                      NULL, "constant in error state", true /* must_throw */);
 
+      } else {
+        int index = iter().get_constant_pool_index();
+        uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unloaded,
+                                                        Deoptimization::Action_reinterpret,
+                                                        index),
+                      NULL, "unresolved constant", false /* must_throw */);
+      }
+    }
     break;
+  }
 
   case Bytecodes::_aload_0:
     push( local(0) );
@@ -2015,19 +2004,19 @@ void Parse::do_one_bytecode() {
 
   // double stores
   case Bytecodes::_dstore_0:
-    set_pair_local( 0, dstore_rounding(pop_pair()) );
+    set_pair_local( 0, dprecision_rounding(pop_pair()) );
     break;
   case Bytecodes::_dstore_1:
-    set_pair_local( 1, dstore_rounding(pop_pair()) );
+    set_pair_local( 1, dprecision_rounding(pop_pair()) );
     break;
   case Bytecodes::_dstore_2:
-    set_pair_local( 2, dstore_rounding(pop_pair()) );
+    set_pair_local( 2, dprecision_rounding(pop_pair()) );
     break;
   case Bytecodes::_dstore_3:
-    set_pair_local( 3, dstore_rounding(pop_pair()) );
+    set_pair_local( 3, dprecision_rounding(pop_pair()) );
     break;
   case Bytecodes::_dstore:
-    set_pair_local( iter().get_index(), dstore_rounding(pop_pair()) );
+    set_pair_local( iter().get_index(), dprecision_rounding(pop_pair()) );
     break;
 
   case Bytecodes::_pop:  dec_sp(1);   break;
@@ -2306,8 +2295,7 @@ void Parse::do_one_bytecode() {
       // out to memory to round, the machine instruction that implements
       // ConvL2D is responsible for rounding.
       // c = precision_rounding(b);
-      c = _gvn.transform(b);
-      push(c);
+      push(b);
     } else {
       l2f();
     }
@@ -2318,8 +2306,7 @@ void Parse::do_one_bytecode() {
     b = _gvn.transform( new ConvL2DNode(a));
     // For x86_32.ad, rounding is always necessary (see _l2f above).
     // c = dprecision_rounding(b);
-    c = _gvn.transform(b);
-    push_pair(c);
+    push_pair(b);
     break;
 
   case Bytecodes::_f2l:
@@ -2765,8 +2752,8 @@ void Parse::do_one_bytecode() {
   }
 
 #ifndef PRODUCT
-  if (C->should_print(1)) {
-    IdealGraphPrinter* printer = C->printer();
+  if (C->should_print_igv(1)) {
+    IdealGraphPrinter* printer = C->igv_printer();
     char buffer[256];
     jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();

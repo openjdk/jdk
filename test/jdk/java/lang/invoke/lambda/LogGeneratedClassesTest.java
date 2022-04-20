@@ -147,9 +147,8 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-Djdk.internal.lambda.dumpProxyClasses=notExist",
                                "com.example.TestLambda");
         assertEquals(tr.testOutput.stream()
-                                  .filter(s -> !s.contains("setSecurityManager is deprecated"))
                                   .filter(s -> s.startsWith("WARNING"))
-                                  .peek(s -> assertTrue(s.contains("does not exist")))
+                                  .filter(s -> s.contains("does not exist"))
                                   .count(),
                      1, "only show error once");
         tr.assertZero("Should still return 0");
@@ -164,9 +163,8 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-Djdk.internal.lambda.dumpProxyClasses=file",
                                "com.example.TestLambda");
         assertEquals(tr.testOutput.stream()
-                                  .filter(s -> !s.contains("setSecurityManager is deprecated"))
                                   .filter(s -> s.startsWith("WARNING"))
-                                  .peek(s -> assertTrue(s.contains("not a directory")))
+                                  .filter(s -> s.contains("not a directory"))
                                   .count(),
                      1, "only show error once");
         tr.assertZero("Should still return 0");
@@ -224,9 +222,8 @@ public class LogGeneratedClassesTest extends LUtils {
                                    "-Djdk.internal.lambda.dumpProxyClasses=readOnly",
                                    "com.example.TestLambda");
             assertEquals(tr.testOutput.stream()
-                                      .filter(s -> !s.contains("setSecurityManager is deprecated"))
                                       .filter(s -> s.startsWith("WARNING"))
-                                      .peek(s -> assertTrue(s.contains("not writable")))
+                                      .filter(s -> s.contains("not writable"))
                                       .count(),
                          1, "only show error once");
             tr.assertZero("Should still return 0");

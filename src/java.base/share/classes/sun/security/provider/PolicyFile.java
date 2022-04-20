@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.access.JavaSecurityAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
+import sun.nio.fs.DefaultFileSystemProvider;
 import sun.security.util.*;
 import sun.net.www.ParseUtil;
 
@@ -277,6 +278,13 @@ public class PolicyFile extends java.security.Policy {
         Collections.newSetFromMap(new ConcurrentHashMap<URL,Boolean>());
 
     /**
+     * Use the platform's default file system to avoid recursive initialization
+     * issues when the VM is configured to use a custom file system provider.
+     */
+    private static final java.nio.file.FileSystem builtInFS =
+        DefaultFileSystemProvider.theFileSystem();
+
+    /**
      * Initializes the Policy object and reads the default policy
      * configuration file(s) into the Policy object.
      */
@@ -475,7 +483,7 @@ public class PolicyFile extends java.security.Policy {
     }
 
     private void initDefaultPolicy(PolicyInfo newInfo) {
-        Path defaultPolicy = Path.of(StaticProperty.javaHome(),
+        Path defaultPolicy = builtInFS.getPath(StaticProperty.javaHome(),
                                      "lib",
                                      "security",
                                      "default.policy");
@@ -628,7 +636,7 @@ public class PolicyFile extends java.security.Policy {
                 pe.add(new PropertyPermission("java.vm.name",
                     SecurityConstants.PROPERTY_READ_ACTION));
 
-                // No need to sync because noone has access to newInfo yet
+                // No need to sync because no one has access to newInfo yet
                 newInfo.policyEntries.add(pe);
 
                 return null;
@@ -715,7 +723,7 @@ public class PolicyFile extends java.security.Policy {
                                 + SELF;
                     }
                     // check for self
-                    if (pe.name != null && pe.name.indexOf(SELF) != -1) {
+                    if (pe.name != null && pe.name.contains(SELF)) {
                         // Create a "SelfPermission" , it could be an
                         // an unresolved permission which will be resolved
                         // when implies is called
@@ -781,7 +789,7 @@ public class PolicyFile extends java.security.Policy {
                 }
             }
 
-            // No need to sync because noone has access to newInfo yet
+            // No need to sync because no one has access to newInfo yet
             newInfo.policyEntries.add(entry);
         } catch (Exception e) {
             Object[] source = {e.toString()};

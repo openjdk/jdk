@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.StepRequest.depth;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,7 +53,7 @@ public class depth003a {
 
     //====================================================== test program
 
-    static Thread1depth003a thread1 = null;
+    static Thread thread1 = null;
 
     static depth003aTestClass10 obj = new depth003aTestClass10();
 
@@ -98,7 +97,7 @@ public class depth003a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread1 = new Thread1depth003a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Thread1depth003a("thread1"));
 
                             synchronized (lockObj) {
                                 threadStart(thread1);
@@ -156,24 +155,21 @@ class depth003aTestClass11 extends depth003aTestClass10{
     }
 }
 
-class Thread1depth003a extends Thread {
-
-    String tName = null;
+class Thread1depth003a extends NamedTask {
 
     public Thread1depth003a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        depth003a.log1("  'run': enter  :: threadName == " + tName);
+        depth003a.log1("  'run': enter  :: threadName == " + getName());
         synchronized(depth003a.waitnotifyObj) {
             depth003a.waitnotifyObj.notify();
         }
         synchronized(depth003a.lockObj) {
             depth003aTestClass11.m11();
         }
-        depth003a.log1("  'run': exit   :: threadName == " + tName);
+        depth003a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

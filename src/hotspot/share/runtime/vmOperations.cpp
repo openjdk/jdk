@@ -153,7 +153,7 @@ void VM_DeoptimizeAll::doit() {
 
 
 void VM_ZombieAll::doit() {
-  calling_thread()->as_Java_thread()->make_zombies();
+  JavaThread::cast(calling_thread())->make_zombies();
 }
 
 #endif // !PRODUCT
@@ -279,6 +279,18 @@ void VM_ThreadDump::doit() {
     concurrent_locks.dump_at_safepoint();
   }
 
+  ObjectMonitorsHashtable table;
+  ObjectMonitorsHashtable* tablep = nullptr;
+  if (_with_locked_monitors) {
+    // The caller wants locked monitor information and that's expensive to gather
+    // when there are a lot of inflated monitors. So we deflate idle monitors and
+    // gather information about owned monitors at the same time.
+    tablep = &table;
+    while (ObjectSynchronizer::deflate_idle_monitors(tablep) >= (size_t)MonitorDeflationMax) {
+      ; /* empty */
+    }
+  }
+
   if (_num_threads == 0) {
     // Snapshot all live threads
 
@@ -293,7 +305,7 @@ void VM_ThreadDump::doit() {
       if (_with_locked_synchronizers) {
         tcl = concurrent_locks.thread_concurrent_locks(jt);
       }
-      snapshot_thread(jt, tcl);
+      snapshot_thread(jt, tcl, tablep);
     }
   } else {
     // Snapshot threads in the given _threads array
@@ -328,14 +340,15 @@ void VM_ThreadDump::doit() {
       if (_with_locked_synchronizers) {
         tcl = concurrent_locks.thread_concurrent_locks(jt);
       }
-      snapshot_thread(jt, tcl);
+      snapshot_thread(jt, tcl, tablep);
     }
   }
 }
 
-void VM_ThreadDump::snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl) {
+void VM_ThreadDump::snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl,
+                                    ObjectMonitorsHashtable* table) {
   ThreadSnapshot* snapshot = _result->add_thread_snapshot(java_thread);
-  snapshot->dump_stack_at_safepoint(_max_depth, _with_locked_monitors);
+  snapshot->dump_stack_at_safepoint(_max_depth, _with_locked_monitors, table);
   snapshot->set_concurrent_locks(tcl);
 }
 
@@ -368,8 +381,7 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint already");
 
   Thread * thr_cur = Thread::current();
-  Monitor timer(Mutex::leaf, "VM_Exit timer", true,
-                Monitor::_safepoint_check_never);
+  Monitor timer(Mutex::nosafepoint, "VM_ExitTimer_lock");
 
   // Compiler threads need longer wait because they can access VM data directly
   // while in native. If they are active and some structures being used are

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,14 @@ import javax.tools.ForwardingFileObject;
 import javax.tools.JavaFileObject;
 
 import jdk.javadoc.doclet.Reporter;
+
+import com.sun.source.doctree.CommentTree;
+import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.DocTypeTree;
+import com.sun.source.doctree.ReferenceTree;
+import com.sun.source.doctree.TextTree;
+import com.sun.tools.javac.tree.DCTree.DCDocComment;
+import com.sun.tools.javac.tree.DCTree;
 
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.util.Context.Factory;
@@ -113,12 +121,6 @@ import com.sun.tools.javac.util.Log;
  * the use of streams, and provides no support for identifying or specifying streams. JDK-8267204.
  * The current implementation/workaround is to write errors and warnings to the "error"
  * stream and notes to the "output" stream.
- *
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  *
  * @see java.util.ResourceBundle
  * @see java.text.MessageFormat
@@ -244,6 +246,43 @@ public class JavadocLog extends Log implements Reporter {
         Set<DiagnosticFlag> flags = getDiagnosticFlags(kind);
         DiagnosticSource ds = getDiagnosticSource(path);
         DiagnosticPosition dp = getDiagnosticPosition(path);
+        report(dt, flags, ds, dp, message);
+    }
+
+    @Override // Reporter
+    public void print(Diagnostic.Kind kind, DocTreePath path, int start, int pos, int end, String message) {
+        if (!(start <= pos && pos <= end)) {
+            throw new IllegalArgumentException("start:" + start + ",pos:" + pos + ",end:" + end);
+        }
+
+        DocTree t = path.getLeaf();
+        String s = switch (t.getKind()) {
+            case COMMENT -> ((CommentTree) t).getBody();
+            case DOC_TYPE -> ((DocTypeTree) t).getText();
+            case REFERENCE -> ((ReferenceTree) t).getSignature();
+            case TEXT -> ((TextTree) t).getBody();
+            default -> throw new IllegalArgumentException(t.getKind().toString());
+        };
+
+        if (start < 0 || end > s.length()) {
+            throw new StringIndexOutOfBoundsException("start:" + start + ",pos:" + pos + ",end:" + end
+                    + "; string length " + s.length());
+        }
+
+        DiagnosticType dt = getDiagnosticType(kind);
+        Set<DiagnosticFlag> flags = getDiagnosticFlags(kind);
+        DiagnosticSource ds = getDiagnosticSource(path);
+
+        DCTree.DCDocComment docComment = (DCTree.DCDocComment) path.getDocComment();
+        DCTree docTree = (DCTree) path.getLeaf();
+        // note: it is important to evaluate the offsets in the context of the position
+        // within the comment text, and not in the context of the overall source text
+        int dtStart = docTree.getStartPosition();
+        int sStart = docComment.getSourcePosition(dtStart + start);
+        int sPos = docComment.getSourcePosition(dtStart + pos);
+        int sEnd = docComment.getSourcePosition(dtStart + end);
+        DiagnosticPosition dp = createDiagnosticPosition(null, sStart, sPos, sEnd);
+
         report(dt, flags, ds, dp, message);
     }
 
@@ -399,22 +438,27 @@ public class JavadocLog extends Log implements Reporter {
     }
 
     /**
-     * Prints a "notice" message to the standard writer.
-     *
-     * @param key  the resource key for the message
-     * @param args the arguments for the message
-     */
-    public void noticeUsingKey(String key, Object... args) {
-        printRawLines(getStandardWriter(), getText(key, args));
-    }
-
-    /**
-     * Prints a "notice" message to the standard writer.
+     * Prints a "notice" message.
      *
      * @param message the message
      */
-    public void notice(String message) {
-        printRawLines(getStandardWriter(), message);
+    public void printNote(String message) {
+        // Ideally, for consistency with errors and warnings, we would use the following:
+        //      report(Kind.NOTE, null, null, message);
+        // but the default formatting in Log for Kind.NOTE is to prefix the line with "Note:"
+        // which is undesirable and inconsistent with existing javadoc output.
+        // For now, to avoid the prefix, we write directly to the underlying stream.
+        printRawLines(WriterKind.NOTICE, message);
+    }
+
+    /**
+     * Prints a "notice" message.
+     *
+     * @param key the resource key for the message
+     * @param args the arguments for the message
+     */
+    public void printNoteUsingKey(String key, Object... args) {
+        printNote(getText(key, args));
     }
 
     /**
@@ -518,11 +562,9 @@ public class JavadocLog extends Log implements Reporter {
      * @return the diagnostic position
      */
     private DiagnosticPosition getDiagnosticPosition(DocTreePath path) {
-        DocSourcePositions posns = getSourcePositions();
-        CompilationUnitTree compUnit = path.getTreePath().getCompilationUnit();
-        int start = (int) posns.getStartPosition(compUnit, path.getDocComment(), path.getLeaf());
-        int end = (int) posns.getEndPosition(compUnit, path.getDocComment(), path.getLeaf());
-        return createDiagnosticPosition(null, start, start, end);
+        DCDocComment dc = (DCDocComment) path.getDocComment();
+        DCTree dcTree = (DCTree) path.getLeaf();
+        return dcTree.pos(dc);
     }
 
     /**
@@ -609,7 +651,7 @@ public class JavadocLog extends Log implements Reporter {
     }
 
     /**
-     * Returns the diagnostic source for an documentation tree node.
+     * Returns the diagnostic source for a documentation tree node.
      *
      * @param path the path for the documentation tree node
      * @return the diagnostic source

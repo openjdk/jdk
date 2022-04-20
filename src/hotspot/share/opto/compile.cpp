@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  *
  */
-
 #include "precompiled.hpp"
 #include "jvm_io.h"
 #include "asm/macroAssembler.hpp"
@@ -475,6 +474,9 @@ CompileWrapper::CompileWrapper(Compile* compile) : _compile(compile) {
   _compile->clone_map().set_debug(_compile->has_method() && _compile->directive()->CloneMapDebugOption);
 }
 CompileWrapper::~CompileWrapper() {
+  // simulate crash during compilation
+  assert(CICrashAt < 0 || _compile->compile_id() != CICrashAt, "just as planned");
+
   _compile->end_method();
   _compile->env()->set_compiler_data(NULL);
 }
@@ -484,25 +486,31 @@ CompileWrapper::~CompileWrapper() {
 void Compile::print_compile_messages() {
 #ifndef PRODUCT
   // Check if recompiling
-  if (_subsume_loads == false && PrintOpto) {
+  if (!subsume_loads() && PrintOpto) {
     // Recompiling without allowing machine instructions to subsume loads
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without subsuming loads          **");
     tty->print_cr("*********************************************************");
   }
-  if (_do_escape_analysis != DoEscapeAnalysis && PrintOpto) {
+  if ((do_escape_analysis() != DoEscapeAnalysis) && PrintOpto) {
     // Recompiling without escape analysis
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without escape analysis          **");
     tty->print_cr("*********************************************************");
   }
-  if (_eliminate_boxing != EliminateAutoBox && PrintOpto) {
+  if (do_iterative_escape_analysis() != DoEscapeAnalysis && PrintOpto) {
+    // Recompiling without iterative escape analysis
+    tty->print_cr("*********************************************************");
+    tty->print_cr("** Bailout: Recompile without iterative escape analysis**");
+    tty->print_cr("*********************************************************");
+  }
+  if ((eliminate_boxing() != EliminateAutoBox) && PrintOpto) {
     // Recompiling without boxing elimination
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without boxing elimination       **");
     tty->print_cr("*********************************************************");
   }
-  if ((_do_locks_coarsening != EliminateLocks) && PrintOpto) {
+  if ((do_locks_coarsening() != EliminateLocks) && PrintOpto) {
     // Recompiling without locks coarsening
     tty->print_cr("*********************************************************");
     tty->print_cr("** Bailout: Recompile without locks coarsening         **");
@@ -526,6 +534,32 @@ void Compile::print_compile_messages() {
 #endif
 }
 
+#ifndef PRODUCT
+void Compile::print_ideal_ir(const char* phase_name) {
+  ttyLocker ttyl;
+  // keep the following output all in one block
+  // This output goes directly to the tty, not the compiler log.
+  // To enable tools to match it up with the compilation activity,
+  // be sure to tag this tty output with the compile ID.
+  if (xtty != NULL) {
+    xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
+               compile_id(),
+               is_osr_compilation() ? " compile_kind='osr'" : "",
+               phase_name);
+  }
+  if (_output == nullptr) {
+    root()->dump(9999);
+  } else {
+    // Dump the node blockwise if we have a scheduling
+    _output->print_scheduling();
+  }
+
+  if (xtty != NULL) {
+    xtty->tail("ideal");
+  }
+}
+#endif
+
 // ============================================================================
 //------------------------------Compile standard-------------------------------
 debug_only( int Compile::_debug_idx = 100000; )
@@ -535,17 +569,13 @@ debug_only( int Compile::_debug_idx = 100000; )
 
 
 Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
-                  bool subsume_loads, bool do_escape_analysis, bool eliminate_boxing,
-                  bool do_locks_coarsening, bool install_code, DirectiveSet* directive)
+                  Options options, DirectiveSet* directive)
                 : Phase(Compiler),
                   _compile_id(ci_env->compile_id()),
-                  _subsume_loads(subsume_loads),
-                  _do_escape_analysis(do_escape_analysis),
-                  _install_code(install_code),
-                  _eliminate_boxing(eliminate_boxing),
-                  _do_locks_coarsening(do_locks_coarsening),
+                  _options(options),
                   _method(target),
                   _entry_bci(osr_bci),
+                  _ilt(NULL),
                   _stub_function(NULL),
                   _stub_name(NULL),
                   _stub_entry_point(NULL),
@@ -558,7 +588,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 #ifndef PRODUCT
                   _igv_idx(0),
                   _trace_opto_output(directive->TraceOptoOutputOption),
-                  _print_ideal(directive->PrintIdealOption),
 #endif
                   _has_method_handle_invokes(false),
                   _clinit_barrier_on_entry(false),
@@ -577,7 +606,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _for_post_loop_igvn(comp_arena(), 8, 0, NULL),
                   _coarsened_locks   (comp_arena(), 8, 0, NULL),
                   _congraph(NULL),
-                  NOT_PRODUCT(_printer(NULL) COMMA)
+                  NOT_PRODUCT(_igv_printer(NULL) COMMA)
                   _dead_node_list(comp_arena()),
                   _dead_node_count(0),
                   _node_arena(mtCompiler),
@@ -600,7 +629,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _replay_inline_data(NULL),
                   _java_calls(0),
                   _inner_loops(0),
-                  _interpreter_frame_size(0)
+                  _interpreter_frame_size(0),
+                  _output(NULL)
 #ifndef PRODUCT
                   , _in_dump_cnt(0)
 #endif
@@ -759,8 +789,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_default_node_notes(NULL);
 
 #ifndef PRODUCT
-  if (should_print(1)) {
-    _printer->print_inlining();
+  if (should_print_igv(1)) {
+    _igv_printer->print_inlining();
   }
 #endif
 
@@ -770,8 +800,12 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   // If any phase is randomized for stress testing, seed random number
   // generation and log the seed for repeatability.
   if (StressLCM || StressGCM || StressIGVN || StressCCP) {
-    _stress_seed = FLAG_IS_DEFAULT(StressSeed) ?
-      static_cast<uint>(Ticks::now().nanoseconds()) : StressSeed;
+    if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && RepeatCompilation)) {
+      _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
+      FLAG_SET_ERGO(StressSeed, _stress_seed);
+    } else {
+      _stress_seed = StressSeed;
+    }
     if (_log != NULL) {
       _log->elem("stress_test seed='%u'", _stress_seed);
     }
@@ -783,20 +817,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   NOT_PRODUCT( verify_graph_edges(); )
 
 #ifndef PRODUCT
-  if (print_ideal()) {
-    ttyLocker ttyl;  // keep the following output all in one block
-    // This output goes directly to the tty, not the compiler log.
-    // To enable tools to match it up with the compilation activity,
-    // be sure to tag this tty output with the compile ID.
-    if (xtty != NULL) {
-      xtty->head("ideal compile_id='%d'%s", compile_id(),
-                 is_osr_compilation()    ? " compile_kind='osr'" :
-                 "");
-    }
-    root()->dump(9999);
-    if (xtty != NULL) {
-      xtty->tail("ideal");
-    }
+  if (should_print_ideal()) {
+    print_ideal_ir("print_ideal");
   }
 #endif
 
@@ -838,11 +860,7 @@ Compile::Compile( ciEnv* ci_env,
                   DirectiveSet* directive)
   : Phase(Compiler),
     _compile_id(0),
-    _subsume_loads(true),
-    _do_escape_analysis(false),
-    _install_code(true),
-    _eliminate_boxing(false),
-    _do_locks_coarsening(false),
+    _options(Options::for_runtime_stub()),
     _method(NULL),
     _entry_bci(InvocationEntryBci),
     _stub_function(stub_function),
@@ -856,7 +874,6 @@ Compile::Compile( ciEnv* ci_env,
 #ifndef PRODUCT
     _igv_idx(0),
     _trace_opto_output(directive->TraceOptoOutputOption),
-    _print_ideal(directive->PrintIdealOption),
 #endif
     _has_method_handle_invokes(false),
     _clinit_barrier_on_entry(false),
@@ -868,7 +885,7 @@ Compile::Compile( ciEnv* ci_env,
     _log(ci_env->log()),
     _failure_reason(NULL),
     _congraph(NULL),
-    NOT_PRODUCT(_printer(NULL) COMMA)
+    NOT_PRODUCT(_igv_printer(NULL) COMMA)
     _dead_node_list(comp_arena()),
     _dead_node_count(0),
     _node_arena(mtCompiler),
@@ -887,6 +904,7 @@ Compile::Compile( ciEnv* ci_env,
     _java_calls(0),
     _inner_loops(0),
     _interpreter_frame_size(0),
+    _output(NULL),
 #ifndef PRODUCT
     _in_dump_cnt(0),
 #endif
@@ -1026,8 +1044,9 @@ void Compile::Init(int aliaslevel) {
   //   Type::update_loaded_types(_method, _method->constants());
 
   // Init alias_type map.
-  if (!_do_escape_analysis && aliaslevel == 3)
+  if (!do_escape_analysis() && aliaslevel == 3) {
     aliaslevel = 2;  // No unique types without escape analysis
+  }
   _AliasLevel = aliaslevel;
   const int grow_ats = 16;
   _max_alias_types = grow_ats;
@@ -1352,7 +1371,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     ciInstanceKlass *k = to->klass()->as_instance_klass();
     if( ptr == TypePtr::Constant ) {
       if (to->klass() != ciEnv::current()->Class_klass() ||
-          offset < k->size_helper() * wordSize) {
+          offset < k->layout_helper_size_in_bytes()) {
         // No constant oop pointers (such as Strings); they alias with
         // unknown strings.
         assert(!is_known_inst, "not scalarizable allocation");
@@ -1376,7 +1395,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       if (!is_known_inst) { // Do it only for non-instance types
         tj = to = TypeInstPtr::make(TypePtr::BotPTR, env()->Object_klass(), false, NULL, offset);
       }
-    } else if (offset < 0 || offset >= k->size_helper() * wordSize) {
+    } else if (offset < 0 || offset >= k->layout_helper_size_in_bytes()) {
       // Static fields are in the space above the normal instance
       // fields in the java.lang.Class instance.
       if (to->klass() != ciEnv::current()->Class_klass()) {
@@ -1386,6 +1405,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       }
     } else {
       ciInstanceKlass *canonical_holder = k->get_canonical_holder(offset);
+      assert(offset < canonical_holder->layout_helper_size_in_bytes(), "");
       if (!k->equals(canonical_holder) || tj->offset() != offset) {
         if( is_known_inst ) {
           tj = to = TypeInstPtr::make(to->ptr(), canonical_holder, true, NULL, offset, to->instance_id());
@@ -1406,7 +1426,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     if ( offset == Type::OffsetBot || (offset >= 0 && (size_t)offset < sizeof(Klass)) ) {
 
       tj = tk = TypeKlassPtr::make(TypePtr::NotNull,
-                                   TypeKlassPtr::OBJECT->klass(),
+                                   TypeInstKlassPtr::OBJECT->klass(),
                                    offset);
     }
 
@@ -1453,7 +1473,9 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     case Type::RawPtr:   tj = TypeRawPtr::BOTTOM;   break;
     case Type::AryPtr:   // do not distinguish arrays at all
     case Type::InstPtr:  tj = TypeInstPtr::BOTTOM;  break;
-    case Type::KlassPtr: tj = TypeKlassPtr::OBJECT; break;
+    case Type::KlassPtr:
+    case Type::AryKlassPtr:
+    case Type::InstKlassPtr: tj = TypeInstKlassPtr::OBJECT; break;
     case Type::AnyPtr:   tj = TypePtr::BOTTOM;      break;  // caller checks it
     default: ShouldNotReachHere();
     }
@@ -1658,7 +1680,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
       ciField* field;
       if (tinst->const_oop() != NULL &&
           tinst->klass() == ciEnv::current()->Class_klass() &&
-          tinst->offset() >= (tinst->klass()->as_instance_klass()->size_helper() * wordSize)) {
+          tinst->offset() >= (tinst->klass()->as_instance_klass()->layout_helper_size_in_bytes())) {
         // static field
         ciInstanceKlass* k = tinst->const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
         field = k->get_field_by_offset(tinst->offset(), true);
@@ -1877,7 +1899,7 @@ bool Compile::inline_incrementally_one() {
         return false;
       } else if (inlining_progress()) {
         _late_inlines_pos = i+1; // restore the position in case new elements were inserted
-        print_method(PHASE_INCREMENTAL_INLINE_STEP, cg->call_node(), 3);
+        print_method(PHASE_INCREMENTAL_INLINE_STEP, 3, cg->call_node());
         break; // process one call site at a time
       }
     } else {
@@ -2071,7 +2093,7 @@ void Compile::Optimize() {
 
   NOT_PRODUCT( verify_graph_edges(); )
 
-  print_method(PHASE_AFTER_PARSING);
+  print_method(PHASE_AFTER_PARSING, 1);
 
  {
   // Iterative Global Value Numbering, including ideal transforms
@@ -2108,10 +2130,6 @@ void Compile::Optimize() {
     if (failing())  return;
   }
 
-  // Now that all inlining is over, cut edge from root to loop
-  // safepoints
-  remove_root_to_sfpts_edges(igvn);
-
   // Remove the speculative part of types and clean up the graph from
   // the extra CastPP nodes whose only purpose is to carry them. Do
   // that early so that optimizations are not disrupted by the extra
@@ -2135,7 +2153,8 @@ void Compile::Optimize() {
   if (!failing() && RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
     Compile::TracePhase tp("", &timers[_t_renumberLive]);
     initial_gvn()->replace_with(&igvn);
-    for_igvn()->clear();
+    Unique_Node_List* old_worklist = for_igvn();
+    old_worklist->clear();
     Unique_Node_List new_worklist(C->comp_arena());
     {
       ResourceMark rm;
@@ -2145,11 +2164,15 @@ void Compile::Optimize() {
     set_for_igvn(&new_worklist);
     igvn = PhaseIterGVN(initial_gvn());
     igvn.optimize();
-    set_for_igvn(save_for_igvn);
+    set_for_igvn(old_worklist); // new_worklist is dead beyond this point
   }
 
+  // Now that all inlining is over and no PhaseRemoveUseless will run, cut edge from root to loop
+  // safepoints
+  remove_root_to_sfpts_edges(igvn);
+
   // Perform escape analysis
-  if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
+  if (do_escape_analysis() && ConnectionGraph::has_candidates(this)) {
     if (has_loops()) {
       // Cleanup graph (remove dead nodes).
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
@@ -2157,27 +2180,37 @@ void Compile::Optimize() {
       if (major_progress()) print_method(PHASE_PHASEIDEAL_BEFORE_EA, 2);
       if (failing())  return;
     }
-    ConnectionGraph::do_analysis(this, &igvn);
-
-    if (failing())  return;
-
-    // Optimize out fields loads from scalar replaceable allocations.
-    igvn.optimize();
-    print_method(PHASE_ITER_GVN_AFTER_EA, 2);
-
-    if (failing())  return;
-
-    if (congraph() != NULL && macro_count() > 0) {
-      TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
-      PhaseMacroExpand mexp(igvn);
-      mexp.eliminate_macro_nodes();
-      igvn.set_delay_transform(false);
-
-      igvn.optimize();
-      print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
+    bool progress;
+    do {
+      ConnectionGraph::do_analysis(this, &igvn);
 
       if (failing())  return;
-    }
+
+      int mcount = macro_count(); // Record number of allocations and locks before IGVN
+
+      // Optimize out fields loads from scalar replaceable allocations.
+      igvn.optimize();
+      print_method(PHASE_ITER_GVN_AFTER_EA, 2);
+
+      if (failing())  return;
+
+      if (congraph() != NULL && macro_count() > 0) {
+        TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
+        PhaseMacroExpand mexp(igvn);
+        mexp.eliminate_macro_nodes();
+        igvn.set_delay_transform(false);
+
+        igvn.optimize();
+        print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
+
+        if (failing())  return;
+      }
+      progress = do_iterative_escape_analysis() &&
+                 (macro_count() < mcount) &&
+                 ConnectionGraph::has_candidates(this);
+      // Try again if candidates exist and made progress
+      // by removing some allocations and/or locks.
+    } while (progress);
   }
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
@@ -2221,7 +2254,7 @@ void Compile::Optimize() {
     TracePhase tp("ccp", &timers[_t_ccp]);
     ccp.do_transform();
   }
-  print_method(PHASE_CPP1, 2);
+  print_method(PHASE_CCP1, 2);
 
   assert( true, "Break here to ccp.dump_old2new_map()");
 
@@ -2331,7 +2364,7 @@ void Compile::inline_vector_reboxing_calls() {
       CallGenerator* cg = _vector_reboxing_late_inlines.pop();
       cg->do_late_inline();
       if (failing())  return;
-      print_method(PHASE_INLINE_VECTOR_REBOX, cg->call_node());
+      print_method(PHASE_INLINE_VECTOR_REBOX, 3, cg->call_node());
     }
     _vector_reboxing_late_inlines.trunc_to(0);
   }
@@ -2394,11 +2427,12 @@ static bool is_vector_bitwise_cone_root(Node* n) {
   return true;
 }
 
-static uint collect_unique_inputs(Node* n, Unique_Node_List& partition, Unique_Node_List& inputs) {
+static uint collect_unique_inputs(Node* n, Unique_Node_List& inputs) {
   uint cnt = 0;
   if (is_vector_bitwise_op(n)) {
+    uint inp_cnt = n->is_predicated_vector() ? n->req()-1 : n->req();
     if (VectorNode::is_vector_bitwise_not_pattern(n)) {
-      for (uint i = 1; i < n->req(); i++) {
+      for (uint i = 1; i < inp_cnt; i++) {
         Node* in = n->in(i);
         bool skip = VectorNode::is_all_ones_vector(in);
         if (!skip && !inputs.member(in)) {
@@ -2408,9 +2442,9 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& partition, Unique_N
       }
       assert(cnt <= 1, "not unary");
     } else {
-      uint last_req = n->req();
+      uint last_req = inp_cnt;
       if (is_vector_ternary_bitwise_op(n)) {
-        last_req = n->req() - 1; // skip last input
+        last_req = inp_cnt - 1; // skip last input
       }
       for (uint i = 1; i < last_req; i++) {
         Node* def = n->in(i);
@@ -2420,7 +2454,6 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& partition, Unique_N
         }
       }
     }
-    partition.push(n);
   } else { // not a bitwise operations
     if (!inputs.member(n)) {
       inputs.push(n);
@@ -2455,7 +2488,10 @@ Node* Compile::xform_to_MacroLogicV(PhaseIterGVN& igvn,
   Node* in3 = (inputs.size() == 3 ? inputs.at(2) : in2);
 
   uint func = compute_truth_table(partition, inputs);
-  return igvn.transform(MacroLogicVNode::make(igvn, in3, in2, in1, func, vt));
+
+  Node* pn = partition.at(partition.size() - 1);
+  Node* mask = pn->is_predicated_vector() ? pn->in(pn->req()-1) : NULL;
+  return igvn.transform(MacroLogicVNode::make(igvn, in1, in2, in3, mask, func, vt));
 }
 
 static uint extract_bit(uint func, uint pos) {
@@ -2535,11 +2571,11 @@ uint Compile::compute_truth_table(Unique_Node_List& partition, Unique_Node_List&
 
   // Populate precomputed functions for inputs.
   // Each input corresponds to one column of 3 input truth-table.
-  uint input_funcs[] = { 0xAA,   // (_, _, a) -> a
+  uint input_funcs[] = { 0xAA,   // (_, _, c) -> c
                          0xCC,   // (_, b, _) -> b
-                         0xF0 }; // (c, _, _) -> c
+                         0xF0 }; // (a, _, _) -> a
   for (uint i = 0; i < inputs.size(); i++) {
-    eval_map.put(inputs.at(i), input_funcs[i]);
+    eval_map.put(inputs.at(i), input_funcs[2-i]);
   }
 
   for (uint i = 0; i < partition.size(); i++) {
@@ -2582,6 +2618,14 @@ uint Compile::compute_truth_table(Unique_Node_List& partition, Unique_Node_List&
   return res;
 }
 
+// Criteria under which nodes gets packed into a macro logic node:-
+//  1) Parent and both child nodes are all unmasked or masked with
+//     same predicates.
+//  2) Masked parent can be packed with left child if it is predicated
+//     and both have same predicates.
+//  3) Masked parent can be packed with right child if its un-predicated
+//     or has matching predication condition.
+//  4) An unmasked parent can be packed with an unmasked child.
 bool Compile::compute_logic_cone(Node* n, Unique_Node_List& partition, Unique_Node_List& inputs) {
   assert(partition.size() == 0, "not empty");
   assert(inputs.size() == 0, "not empty");
@@ -2591,44 +2635,71 @@ bool Compile::compute_logic_cone(Node* n, Unique_Node_List& partition, Unique_No
 
   bool is_unary_op = is_vector_unary_bitwise_op(n);
   if (is_unary_op) {
-    assert(collect_unique_inputs(n, partition, inputs) == 1, "not unary");
+    assert(collect_unique_inputs(n, inputs) == 1, "not unary");
     return false; // too few inputs
   }
 
-  assert(is_vector_binary_bitwise_op(n), "not binary");
-  Node* in1 = n->in(1);
-  Node* in2 = n->in(2);
+  bool pack_left_child = true;
+  bool pack_right_child = true;
 
-  int in1_unique_inputs_cnt = collect_unique_inputs(in1, partition, inputs);
-  int in2_unique_inputs_cnt = collect_unique_inputs(in2, partition, inputs);
-  partition.push(n);
+  bool left_child_LOP = is_vector_bitwise_op(n->in(1));
+  bool right_child_LOP = is_vector_bitwise_op(n->in(2));
 
-  // Too many inputs?
-  if (inputs.size() > 3) {
-    partition.clear();
-    inputs.clear();
-    { // Recompute in2 inputs
-      Unique_Node_List not_used;
-      in2_unique_inputs_cnt = collect_unique_inputs(in2, not_used, not_used);
+  int left_child_input_cnt = 0;
+  int right_child_input_cnt = 0;
+
+  bool parent_is_predicated = n->is_predicated_vector();
+  bool left_child_predicated = n->in(1)->is_predicated_vector();
+  bool right_child_predicated = n->in(2)->is_predicated_vector();
+
+  Node* parent_pred = parent_is_predicated ? n->in(n->req()-1) : NULL;
+  Node* left_child_pred = left_child_predicated ? n->in(1)->in(n->in(1)->req()-1) : NULL;
+  Node* right_child_pred = right_child_predicated ? n->in(1)->in(n->in(1)->req()-1) : NULL;
+
+  do {
+    if (pack_left_child && left_child_LOP &&
+        ((!parent_is_predicated && !left_child_predicated) ||
+        ((parent_is_predicated && left_child_predicated &&
+          parent_pred == left_child_pred)))) {
+       partition.push(n->in(1));
+       left_child_input_cnt = collect_unique_inputs(n->in(1), inputs);
+    } else {
+       inputs.push(n->in(1));
+       left_child_input_cnt = 1;
     }
-    // Pick the node with minimum number of inputs.
-    if (in1_unique_inputs_cnt >= 3 && in2_unique_inputs_cnt >= 3) {
-      return false; // still too many inputs
+
+    if (pack_right_child && right_child_LOP &&
+        (!right_child_predicated ||
+         (right_child_predicated && parent_is_predicated &&
+          parent_pred == right_child_pred))) {
+       partition.push(n->in(2));
+       right_child_input_cnt = collect_unique_inputs(n->in(2), inputs);
+    } else {
+       inputs.push(n->in(2));
+       right_child_input_cnt = 1;
     }
-    // Recompute partition & inputs.
-    Node* child       = (in1_unique_inputs_cnt < in2_unique_inputs_cnt ? in1 : in2);
-    collect_unique_inputs(child, partition, inputs);
 
-    Node* other_input = (in1_unique_inputs_cnt < in2_unique_inputs_cnt ? in2 : in1);
-    inputs.push(other_input);
+    if (inputs.size() > 3) {
+      assert(partition.size() > 0, "");
+      inputs.clear();
+      partition.clear();
+      if (left_child_input_cnt > right_child_input_cnt) {
+        pack_left_child = false;
+      } else {
+        pack_right_child = false;
+      }
+    } else {
+      break;
+    }
+  } while(true);
 
+  if(partition.size()) {
     partition.push(n);
   }
 
   return (partition.size() == 2 || partition.size() == 3) &&
          (inputs.size()    == 2 || inputs.size()    == 3);
 }
-
 
 void Compile::process_logic_cone_root(PhaseIterGVN &igvn, Node *n, VectorSet &visited) {
   assert(is_vector_bitwise_op(n), "not a root");
@@ -2649,8 +2720,19 @@ void Compile::process_logic_cone_root(PhaseIterGVN &igvn, Node *n, VectorSet &vi
   Unique_Node_List inputs;
   if (compute_logic_cone(n, partition, inputs)) {
     const TypeVect* vt = n->bottom_type()->is_vect();
-    Node* macro_logic = xform_to_MacroLogicV(igvn, vt, partition, inputs);
-    igvn.replace_node(n, macro_logic);
+    Node* pn = partition.at(partition.size() - 1);
+    Node* mask = pn->is_predicated_vector() ? pn->in(pn->req()-1) : NULL;
+    if (mask == NULL ||
+        Matcher::match_rule_supported_vector_masked(Op_MacroLogicV, vt->length(), vt->element_basic_type())) {
+      Node* macro_logic = xform_to_MacroLogicV(igvn, vt, partition, inputs);
+#ifdef ASSERT
+      if (TraceNewVectors) {
+        tty->print("new Vector node: ");
+        macro_logic->dump();
+      }
+#endif
+      igvn.replace_node(n, macro_logic);
+    }
   }
 }
 
@@ -2777,7 +2859,7 @@ void Compile::Code_Gen() {
     output.install();
   }
 
-  print_method(PHASE_FINAL_CODE);
+  print_method(PHASE_FINAL_CODE, 1);
 
   // He's dead, Jim.
   _cfg     = (PhaseCFG*)((intptr_t)0xdeadbeef);
@@ -3417,10 +3499,42 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
 
+  case Op_UModI:
+    if (UseDivMod) {
+      // Check if a%b and a/b both exist
+      Node* d = n->find_similar(Op_UDivI);
+      if (d) {
+        // Replace them with a fused unsigned divmod if supported
+        if (Matcher::has_match_rule(Op_UDivModI)) {
+          UDivModINode* divmod = UDivModINode::make(n);
+          d->subsume_by(divmod->div_proj(), this);
+          n->subsume_by(divmod->mod_proj(), this);
+        }
+      }
+    }
+    break;
+
+  case Op_UModL:
+    if (UseDivMod) {
+      // Check if a%b and a/b both exist
+      Node* d = n->find_similar(Op_UDivL);
+      if (d) {
+        // Replace them with a fused unsigned divmod if supported
+        if (Matcher::has_match_rule(Op_UDivModL)) {
+          UDivModLNode* divmod = UDivModLNode::make(n);
+          d->subsume_by(divmod->div_proj(), this);
+          n->subsume_by(divmod->mod_proj(), this);
+        }
+      }
+    }
+    break;
+
   case Op_LoadVector:
   case Op_StoreVector:
   case Op_LoadVectorGather:
   case Op_StoreVectorScatter:
+  case Op_LoadVectorGatherMasked:
+  case Op_StoreVectorScatterMasked:
   case Op_VectorCmpMasked:
   case Op_VectorMaskGen:
   case Op_LoadVectorMasked:
@@ -3456,7 +3570,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   case Op_Loop:
-    assert(!n->as_Loop()->is_transformed_long_inner_loop() || _loop_opts_cnt == 0, "should have been turned into a counted loop");
+    assert(!n->as_Loop()->is_loop_nest_inner_loop() || _loop_opts_cnt == 0, "should have been turned into a counted loop");
   case Op_CountedLoop:
   case Op_LongCountedLoop:
   case Op_OuterStripMinedLoop:
@@ -3735,7 +3849,7 @@ bool Compile::final_graph_reshaping() {
       // 'fall-thru' path, so expected kids is 1 less.
       if (n->is_PCTable() && n->in(0) && n->in(0)->in(0)) {
         if (n->in(0)->in(0)->is_Call()) {
-          CallNode *call = n->in(0)->in(0)->as_Call();
+          CallNode* call = n->in(0)->in(0)->as_Call();
           if (call->entry_point() == OptoRuntime::rethrow_stub()) {
             required_outcnt--;      // Rethrow always has 1 less kid
           } else if (call->req() > TypeFunc::Parms &&
@@ -3744,22 +3858,25 @@ bool Compile::final_graph_reshaping() {
             // detected that the virtual call will always result in a null
             // pointer exception. The fall-through projection of this CatchNode
             // will not be populated.
-            Node *arg0 = call->in(TypeFunc::Parms);
+            Node* arg0 = call->in(TypeFunc::Parms);
             if (arg0->is_Type() &&
                 arg0->as_Type()->type()->higher_equal(TypePtr::NULL_PTR)) {
               required_outcnt--;
             }
-          } else if (call->entry_point() == OptoRuntime::new_array_Java() &&
-                     call->req() > TypeFunc::Parms+1 &&
-                     call->is_CallStaticJava()) {
-            // Check for negative array length. In such case, the optimizer has
+          } else if (call->entry_point() == OptoRuntime::new_array_Java() ||
+                     call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
+            // Check for illegal array length. In such case, the optimizer has
             // detected that the allocation attempt will always result in an
             // exception. There is no fall-through projection of this CatchNode .
-            Node *arg1 = call->in(TypeFunc::Parms+1);
-            if (arg1->is_Type() &&
-                arg1->as_Type()->type()->join(TypeInt::POS)->empty()) {
+            assert(call->is_CallStaticJava(), "static call expected");
+            assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
+            Node* valid_length_test = call->in(call->req()-1);
+            call->del_req(call->req()-1);
+            if (valid_length_test->find_int_con(1) == 0) {
               required_outcnt--;
             }
+            assert(n->outcnt() == required_outcnt, "malformed control flow");
+            continue;
           }
         }
       }
@@ -3767,6 +3884,14 @@ bool Compile::final_graph_reshaping() {
       if (n->outcnt() != required_outcnt) {
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
+      }
+    } else if (n->is_PCTable() && n->in(0) && n->in(0)->in(0) && n->in(0)->in(0)->is_Call()) {
+      CallNode* call = n->in(0)->in(0)->as_Call();
+      if (call->entry_point() == OptoRuntime::new_array_Java() ||
+          call->entry_point() == OptoRuntime::new_array_nozero_Java()) {
+        assert(call->is_CallStaticJava(), "static call expected");
+        assert(call->req() == call->jvms()->endoff() + 1, "missing extra input");
+        call->del_req(call->req()-1); // valid length test useless now
       }
     }
     // Check that I actually visited all kids.  Unreached kids
@@ -3788,7 +3913,7 @@ bool Compile::final_graph_reshaping() {
 
 #ifdef IA32
   // If original bytecodes contained a mixture of floats and doubles
-  // check if the optimizer has made it homogenous, item (3).
+  // check if the optimizer has made it homogeneous, item (3).
   if (UseSSE == 0 &&
       frc.get_float_count() > 32 &&
       frc.get_double_count() == 0 &&
@@ -4007,7 +4132,7 @@ void Compile::record_failure(const char* reason) {
   }
 
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
-    C->print_method(PHASE_FAILURE);
+    C->print_method(PHASE_FAILURE, 1);
   }
   _root = NULL;  // flush the graph, too
 }
@@ -4155,7 +4280,7 @@ void Compile::print_inlining_stream_free() {
 }
 
 // The message about the current inlining is accumulated in
-// _print_inlining_stream and transfered into the _print_inlining_list
+// _print_inlining_stream and transferred into the _print_inlining_list
 // once we know whether inlining succeeds or not. For regular
 // inlining, messages are appended to the buffer pointed by
 // _print_inlining_idx in the _print_inlining_list. For late inlining,
@@ -4246,7 +4371,7 @@ void Compile::print_inlining_update_delayed(CallGenerator* cg) {
 }
 
 void Compile::print_inlining_assert_ready() {
-  assert(!_print_inlining || _print_inlining_stream->size() == 0, "loosing data");
+  assert(!_print_inlining || _print_inlining_stream->size() == 0, "losing data");
 }
 
 void Compile::process_print_inlining() {
@@ -4514,7 +4639,9 @@ bool Compile::coarsened_locks_consistent() {
     bool modified = false; // track locks kind modifications
     Lock_List* locks_list = (Lock_List*)_coarsened_locks.at(i);
     uint size = locks_list->size();
-    if (size != locks_list->origin_cnt()) {
+    if (size == 0) {
+      unbalanced = false; // All locks were eliminated - good
+    } else if (size != locks_list->origin_cnt()) {
       unbalanced = true; // Some locks were removed from list
     } else {
       for (uint j = 0; j < size; j++) {
@@ -4579,10 +4706,12 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
           modified++;
         }
       }
-      uint max = n->len();
-      for( uint i = 0; i < max; ++i ) {
-        Node *m = n->in(i);
-        if (not_a_node(m))  continue;
+      // Iterate over outs - endless loops is unreachable from below
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node *m = n->fast_out(i);
+        if (not_a_node(m)) {
+          continue;
+        }
         worklist.push(m);
       }
     }
@@ -4603,10 +4732,12 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
         t = n->as_Type()->type();
         assert(t == t->remove_speculative(), "no more speculative types");
       }
-      uint max = n->len();
-      for( uint i = 0; i < max; ++i ) {
-        Node *m = n->in(i);
-        if (not_a_node(m))  continue;
+      // Iterate over outs - endless loops is unreachable from below
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node *m = n->fast_out(i);
+        if (not_a_node(m)) {
+          continue;
+        }
         worklist.push(m);
       }
     }
@@ -4731,56 +4862,79 @@ void Compile::sort_macro_nodes() {
   }
 }
 
-void Compile::print_method(CompilerPhaseType cpt, const char *name, int level) {
+void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   EventCompilerPhase event;
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);
   }
 #ifndef PRODUCT
-  if (should_print(level)) {
-    _printer->print_method(name, level);
+  ResourceMark rm;
+  stringStream ss;
+  ss.print_raw(CompilerPhaseTypeHelper::to_description(cpt));
+  if (n != nullptr) {
+    ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
+  }
+
+  const char* name = ss.as_string();
+  if (should_print_igv(level)) {
+    _igv_printer->print_method(name, level);
+  }
+  if (should_print_phase(cpt)) {
+    print_ideal_ir(CompilerPhaseTypeHelper::to_name(cpt));
   }
 #endif
   C->_latest_stage_start_counter.stamp();
 }
 
-void Compile::print_method(CompilerPhaseType cpt, int level, int idx) {
-  char output[1024];
+// Only used from CompileWrapper
+void Compile::begin_method() {
 #ifndef PRODUCT
-  if (idx != 0) {
-    jio_snprintf(output, sizeof(output), "%s:%d", CompilerPhaseTypeHelper::to_string(cpt), idx);
-  } else {
-    jio_snprintf(output, sizeof(output), "%s", CompilerPhaseTypeHelper::to_string(cpt));
+  if (_method != NULL && should_print_igv(1)) {
+    _igv_printer->begin_method();
   }
 #endif
-  print_method(cpt, output, level);
+  C->_latest_stage_start_counter.stamp();
 }
 
-void Compile::print_method(CompilerPhaseType cpt, Node* n, int level) {
-  ResourceMark rm;
-  stringStream ss;
-  ss.print_raw(CompilerPhaseTypeHelper::to_string(cpt));
-  if (n != NULL) {
-    ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
-  } else {
-    ss.print_raw(": NULL");
-  }
-  C->print_method(cpt, ss.as_string(), level);
-}
-
-void Compile::end_method(int level) {
+// Only used from CompileWrapper
+void Compile::end_method() {
   EventCompilerPhase event;
   if (event.should_commit()) {
-    CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, PHASE_END, C->_compile_id, level);
+    CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, PHASE_END, C->_compile_id, 1);
   }
 
 #ifndef PRODUCT
-  if (_method != NULL && should_print(level)) {
-    _printer->end_method();
+  if (_method != NULL && should_print_igv(1)) {
+    _igv_printer->end_method();
   }
 #endif
 }
 
+bool Compile::should_print_phase(CompilerPhaseType cpt) {
+#ifndef PRODUCT
+  if ((_directive->ideal_phase_mask() & CompilerPhaseTypeHelper::to_bitmask(cpt)) != 0) {
+    return true;
+  }
+#endif
+  return false;
+}
+
+bool Compile::should_print_igv(int level) {
+#ifndef PRODUCT
+  if (PrintIdealGraphLevel < 0) { // disabled by the user
+    return false;
+  }
+
+  bool need = directive()->IGVPrintLevelOption >= level;
+  if (need && !_igv_printer) {
+    _igv_printer = IdealGraphPrinter::printer();
+    _igv_printer->set_compile(this);
+  }
+  return need;
+#else
+  return false;
+#endif
+}
 
 #ifndef PRODUCT
 IdealGraphPrinter* Compile::_debug_file_printer = NULL;

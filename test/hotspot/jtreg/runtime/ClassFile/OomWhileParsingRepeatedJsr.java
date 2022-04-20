@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
  * @bug 7037122
  * @bug 7123945
  * @bug 8016029
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.desktop
@@ -73,6 +74,7 @@ public class OomWhileParsingRepeatedJsr {
             className );
 
         output = new OutputAnalyzer(pb.start());
+        output.shouldNotHaveExitValue(0);
         output.shouldContain("Cannot reserve enough memory");
     }
 }

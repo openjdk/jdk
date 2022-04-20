@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #define CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -104,20 +105,6 @@ class MacroAssembler: public Assembler {
  virtual void check_and_handle_earlyret(Register java_thread);
 
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
-
-  // Biased locking support
-  // lock_reg and obj_reg must be loaded up with the appropriate values.
-  // swap_reg is killed.
-  // tmp_reg must be supplied and must not be rscratch1 or rscratch2
-  // Optional slow case is for implementations (interpreter and C1) which branch to
-  // slow case directly. Leaves condition codes set for C2's Fast_Lock node.
-  void biased_locking_enter(Register lock_reg, Register obj_reg,
-                            Register swap_reg, Register tmp_reg,
-                            bool swap_reg_contains_mark,
-                            Label& done, Label* slow_case = NULL,
-                            BiasedLockingCounters* counters = NULL);
-  void biased_locking_exit (Register obj_reg, Register temp_reg, Label& done);
-
 
   // Helper functions for statistics gathering.
   // Unconditional atomic increment.
@@ -445,7 +432,7 @@ class MacroAssembler: public Assembler {
 
 #define WRAP(INSN)                                                            \
   void INSN(Register Rd, Register Rn, Register Rm, Register Ra) {             \
-    if ((VM_Version::features() & VM_Version::CPU_A53MAC) && Ra != zr)        \
+    if (VM_Version::supports_a53mac() && Ra != zr)                            \
       nop();                                                                  \
     Assembler::INSN(Rd, Rn, Rm, Ra);                                          \
   }
@@ -469,6 +456,9 @@ private:
   int push_fp(unsigned int bitset, Register stack);
   int pop_fp(unsigned int bitset, Register stack);
 
+  int push_p(unsigned int bitset, Register stack);
+  int pop_p(unsigned int bitset, Register stack);
+
   void mov(Register dst, Address a);
 
 public:
@@ -478,12 +468,15 @@ public:
   void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
   void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
 
-  static RegSet call_clobbered_registers();
+  static RegSet call_clobbered_gp_registers();
+
+  void push_p(PRegSet regs, Register stack) { if (regs.bits()) push_p(regs.bits(), stack); }
+  void pop_p(PRegSet regs, Register stack) { if (regs.bits()) pop_p(regs.bits(), stack); }
 
   // Push and pop everything that might be clobbered by a native
   // runtime call except rscratch1 and rscratch2.  (They are always
   // scratch, so we don't have to protect them.)  Only save the lower
-  // 64 bits of each vector register. Additonal registers can be excluded
+  // 64 bits of each vector register. Additional registers can be excluded
   // in a passed RegSet.
   void push_call_clobbered_registers_except(RegSet exclude);
   void pop_call_clobbered_registers_except(RegSet exclude);
@@ -501,17 +494,10 @@ public:
 
   inline void mov(Register dst, address addr)             { mov_immediate64(dst, (uint64_t)addr); }
 
-  inline void mov(Register dst, int imm64)                { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, long imm64)               { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, long long imm64)          { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, unsigned int imm64)       { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, unsigned long imm64)      { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, unsigned long long imm64) { mov_immediate64(dst, (uint64_t)imm64); }
+  template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+  inline void mov(Register dst, T o)                      { mov_immediate64(dst, (uint64_t)o); }
 
-  inline void movw(Register dst, uint32_t imm32)
-  {
-    mov_immediate32(dst, imm32);
-  }
+  inline void movw(Register dst, uint32_t imm32)          { mov_immediate32(dst, imm32); }
 
   void mov(Register dst, RegisterOrConstant src) {
     if (src.is_register())
@@ -522,7 +508,7 @@ public:
 
   void movptr(Register r, uintptr_t imm64);
 
-  void mov(FloatRegister Vd, SIMD_Arrangement T, uint32_t imm32);
+  void mov(FloatRegister Vd, SIMD_Arrangement T, uint64_t imm64);
 
   void mov(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {
     orr(Vd, T, Vn, Vn);
@@ -614,9 +600,14 @@ public:
   static bool uses_implicit_null_check(void* address);
 
   static address target_addr_for_insn(address insn_addr, unsigned insn);
+  static address target_addr_for_insn_or_null(address insn_addr, unsigned insn);
   static address target_addr_for_insn(address insn_addr) {
     unsigned insn = *(unsigned*)insn_addr;
     return target_addr_for_insn(insn_addr, insn);
+  }
+  static address target_addr_for_insn_or_null(address insn_addr) {
+    unsigned insn = *(unsigned*)insn_addr;
+    return target_addr_for_insn_or_null(insn_addr, insn);
   }
 
   // Required platform-specific helpers for Label::patch_instructions.
@@ -666,7 +657,7 @@ public:
   // incrementl/decrementl
 
   // for aarch64 the proper convention would be to use
-  // increment/decrement for 64 bit operatons and
+  // increment/decrement for 64 bit operations and
   // incrementw/decrementw for 32 bit operations. so when porting
   // x86_64 code we can leave calls to increment/decrement as is,
   // replace incrementq/decrementq with increment/decrement and
@@ -697,16 +688,16 @@ public:
   void align(int modulus);
 
   // Stack frame creation/removal
-  void enter()
-  {
-    stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
-    mov(rfp, sp);
-  }
-  void leave()
-  {
-    mov(sp, rfp);
-    ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
-  }
+  void enter(bool strip_ret_addr = false);
+  void leave();
+
+  // ROP Protection
+  void protect_return_address();
+  void protect_return_address(Register return_reg, Register temp_reg);
+  void authenticate_return_address(Register return_reg = lr);
+  void authenticate_return_address(Register return_reg, Register temp_reg);
+  void strip_return_address();
+  void check_return_address(Register return_reg=lr) PRODUCT_RETURN;
 
   // Support for getting the JavaThread pointer (i.e.; a reference to thread-local information)
   // The pointer will be loaded into the thread register.
@@ -847,8 +838,6 @@ public:
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
 
-  void load_prototype_header(Register dst, Register src);
-
   void store_klass_gap(Register dst, Register src);
 
   // This dummy is to prevent a call to store_heap_oop from
@@ -881,9 +870,9 @@ public:
   DEBUG_ONLY(void verify_heapbase(const char* msg);)
 
   void push_CPU_state(bool save_vectors = false, bool use_sve = false,
-                      int sve_vector_size_in_bytes = 0);
+                      int sve_vector_size_in_bytes = 0, int total_predicate_in_bytes = 0);
   void pop_CPU_state(bool restore_vectors = false, bool use_sve = false,
-                      int sve_vector_size_in_bytes = 0);
+                     int sve_vector_size_in_bytes = 0, int total_predicate_in_bytes = 0);
 
   // Round up to a power of two
   void round_to(Register reg, int modulus);
@@ -904,7 +893,6 @@ public:
     Register t2,                       // temp register
     Label&   slow_case                 // continuation point if fast allocation fails
   );
-  void zero_memory(Register addr, Register len, Register t1);
   void verify_tlab();
 
   // interface method calling
@@ -1023,12 +1011,12 @@ public:
   // Various forms of CAS
 
   void cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
-                          Label &suceed, Label *fail);
+                          Label &succeed, Label *fail);
   void cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
-                  Label &suceed, Label *fail);
+                  Label &succeed, Label *fail);
 
   void cmpxchgw(Register oldv, Register newv, Register addr, Register tmp,
-                  Label &suceed, Label *fail);
+                  Label &succeed, Label *fail);
 
   void atomic_add(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addw(Register prev, RegisterOrConstant incr, Register addr);
@@ -1084,13 +1072,18 @@ public:
     return ReservedCodeCacheSize > branch_range;
   }
 
+  // Check if branches to the the non nmethod section require a far jump
+  static bool codestub_branch_needs_far_jump() {
+    return CodeCache::max_distance_to_non_nmethod() > branch_range;
+  }
+
   // Jumps that can reach anywhere in the code cache.
   // Trashes tmp.
   void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
-  void far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
+  int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
 
-  static int far_branch_size() {
-    if (far_branches()) {
+  static int far_codestub_branch_size() {
+    if (codestub_branch_needs_far_jump()) {
       return 3 * 4;  // adrp, add, br
     } else {
       return 4;
@@ -1110,11 +1103,11 @@ public:
 
   void movoop(Register dst, jobject obj, bool immediate = false);
 
-  // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.
+  // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
   void kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp, Register tmp2, Register tmp3);
-  // CRC32 code for java.util.zip.CRC32C::updateBytes() instrinsic.
+  // CRC32 code for java.util.zip.CRC32C::updateBytes() intrinsic.
   void kernel_crc32c(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp, Register tmp2, Register tmp3);
@@ -1122,10 +1115,6 @@ public:
   // Stack push and pop individual 64 bit registers
   void push(Register src);
   void pop(Register dst);
-
-  // push all registers onto the stack
-  void pusha();
-  void popa();
 
   void repne_scan(Register addr, Register value, Register count,
                   Register scratch);
@@ -1140,7 +1129,7 @@ public:
   void wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned imm,
                              add_sub_imm_insn insn1,
                              add_sub_reg_insn insn2);
-  // Seperate vsn which sets the flags
+  // Separate vsn which sets the flags
   void wrap_adds_subs_imm_insn(Register Rd, Register Rn, unsigned imm,
                              add_sub_imm_insn insn1,
                              add_sub_reg_insn insn2);
@@ -1244,13 +1233,13 @@ public:
   address read_polling_page(Register r, relocInfo::relocType rtype);
   void get_polling_page(Register dest, relocInfo::relocType rtype);
 
-  // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.
+  // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
   void update_byte_crc32(Register crc, Register val, Register table);
   void update_word_crc32(Register crc, Register v, Register tmp,
         Register table0, Register table1, Register table2, Register table3,
         bool upper = false);
 
-  address has_negatives(Register ary1, Register len, Register result);
+  address count_positives(Register ary1, Register len, Register result);
 
   address arrays_equals(Register a1, Register a2, Register result, Register cnt1,
                         Register tmp1, Register tmp2, Register tmp3, int elem_size);
@@ -1270,14 +1259,15 @@ public:
                              FloatRegister vtmp3, Register tmp4);
 
   void char_array_compress(Register src, Register dst, Register len,
-                           FloatRegister tmp1Reg, FloatRegister tmp2Reg,
-                           FloatRegister tmp3Reg, FloatRegister tmp4Reg,
-                           Register result);
+                           Register res,
+                           FloatRegister vtmp0, FloatRegister vtmp1,
+                           FloatRegister vtmp2, FloatRegister vtmp3);
 
   void encode_iso_array(Register src, Register dst,
-                        Register len, Register result,
-                        FloatRegister Vtmp1, FloatRegister Vtmp2,
-                        FloatRegister Vtmp3, FloatRegister Vtmp4);
+                        Register len, Register res, bool ascii,
+                        FloatRegister vtmp0, FloatRegister vtmp1,
+                        FloatRegister vtmp2, FloatRegister vtmp3);
+
   void fast_log(FloatRegister vtmp0, FloatRegister vtmp1, FloatRegister vtmp2,
                 FloatRegister vtmp3, FloatRegister vtmp4, FloatRegister vtmp5,
                 FloatRegister tmpC1, FloatRegister tmpC2, FloatRegister tmpC3,
@@ -1313,11 +1303,37 @@ public:
   void kernel_crc32c_using_crc32c(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3);
+
+  void ghash_modmul (FloatRegister result,
+                     FloatRegister result_lo, FloatRegister result_hi, FloatRegister b,
+                     FloatRegister a, FloatRegister vzr, FloatRegister a1_xor_a0, FloatRegister p,
+                     FloatRegister t1, FloatRegister t2, FloatRegister t3);
+  void ghash_load_wide(int index, Register data, FloatRegister result, FloatRegister state);
 public:
   void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z,
                        Register zlen, Register tmp1, Register tmp2, Register tmp3,
                        Register tmp4, Register tmp5, Register tmp6, Register tmp7);
   void mul_add(Register out, Register in, Register offs, Register len, Register k);
+  void ghash_multiply(FloatRegister result_lo, FloatRegister result_hi,
+                      FloatRegister a, FloatRegister b, FloatRegister a1_xor_a0,
+                      FloatRegister tmp1, FloatRegister tmp2, FloatRegister tmp3);
+  void ghash_multiply_wide(int index,
+                           FloatRegister result_lo, FloatRegister result_hi,
+                           FloatRegister a, FloatRegister b, FloatRegister a1_xor_a0,
+                           FloatRegister tmp1, FloatRegister tmp2, FloatRegister tmp3);
+  void ghash_reduce(FloatRegister result, FloatRegister lo, FloatRegister hi,
+                    FloatRegister p, FloatRegister z, FloatRegister t1);
+  void ghash_reduce_wide(int index, FloatRegister result, FloatRegister lo, FloatRegister hi,
+                    FloatRegister p, FloatRegister z, FloatRegister t1);
+  void ghash_processBlocks_wide(address p, Register state, Register subkeyH,
+                                Register data, Register blocks, int unrolls);
+
+
+  void aesenc_loadkeys(Register key, Register keylen);
+  void aesecb_encrypt(Register from, Register to, Register keylen,
+                      FloatRegister data = v0, int unrolls = 1);
+  void aesecb_decrypt(Register from, Register to, Register key, Register keylen);
+  void aes_round(FloatRegister input, FloatRegister subkey);
 
   // Place an ISB after code may have been modified due to a safepoint.
   void safepoint_isb();
@@ -1356,9 +1372,14 @@ public:
   void spill(FloatRegister Vx, SIMD_RegVariant T, int offset) {
     str(Vx, T, spill_address(1 << (int)T, offset));
   }
+
   void spill_sve_vector(FloatRegister Zx, int offset, int vector_reg_size_in_bytes) {
     sve_str(Zx, sve_spill_address(vector_reg_size_in_bytes, offset));
   }
+  void spill_sve_predicate(PRegister pr, int offset, int predicate_reg_size_in_bytes) {
+    sve_str(pr, sve_spill_address(predicate_reg_size_in_bytes, offset));
+  }
+
   void unspill(Register Rx, bool is64, int offset) {
     if (is64) {
       ldr(Rx, spill_address(8, offset));
@@ -1369,9 +1390,14 @@ public:
   void unspill(FloatRegister Vx, SIMD_RegVariant T, int offset) {
     ldr(Vx, T, spill_address(1 << (int)T, offset));
   }
+
   void unspill_sve_vector(FloatRegister Zx, int offset, int vector_reg_size_in_bytes) {
     sve_ldr(Zx, sve_spill_address(vector_reg_size_in_bytes, offset));
   }
+  void unspill_sve_predicate(PRegister pr, int offset, int predicate_reg_size_in_bytes) {
+    sve_ldr(pr, sve_spill_address(predicate_reg_size_in_bytes, offset));
+  }
+
   void spill_copy128(int src_offset, int dst_offset,
                      Register tmp1=rscratch1, Register tmp2=rscratch2) {
     if (src_offset < 512 && (src_offset & 7) == 0 &&
@@ -1394,8 +1420,17 @@ public:
       dst_offset += 16;
     }
   }
+  void spill_copy_sve_predicate_stack_to_stack(int src_offset, int dst_offset,
+                                               int sve_predicate_reg_size_in_bytes) {
+    sve_ldr(ptrue, sve_spill_address(sve_predicate_reg_size_in_bytes, src_offset));
+    sve_str(ptrue, sve_spill_address(sve_predicate_reg_size_in_bytes, dst_offset));
+    reinitialize_ptrue();
+  }
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
+
+  // Code for java.lang.Thread::onSpinWait() intrinsic.
+  void spin_wait();
 
 private:
   // Check the current thread doesn't need a cross modify fence.

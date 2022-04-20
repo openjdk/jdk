@@ -26,8 +26,6 @@
 package sun.awt.X11;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 @SuppressWarnings("serial") // JDK-implementation class
 public class XCreateWindowParams extends HashMap<Object, Object> {
@@ -82,9 +80,7 @@ public class XCreateWindowParams extends HashMap<Object, Object> {
     }
     public String toString() {
         StringBuilder buf = new StringBuilder();
-        Iterator<Map.Entry<Object, Object>> eIter = entrySet().iterator();
-        while (eIter.hasNext()) {
-            Map.Entry<Object, Object> entry = eIter.next();
+        for (Entry<Object, Object> entry : entrySet()) {
             buf.append(entry.getKey())
                .append(": ")
                .append(entry.getValue())

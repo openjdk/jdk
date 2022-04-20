@@ -33,7 +33,7 @@
                           Register limit, Register result,
                           Register chr1, Register chr2, Label& Ldone);
 
-  void fast_lock(Register obj, Register box, Register scratch, Register scratch2, Register scratch3 = noreg);
+  void fast_lock(Register obj, Register box, Register scratch, Register scratch2);
   void fast_unlock(Register obj, Register box, Register scratch, Register scratch2);
 
 #endif // CPU_ARM_C2_MACROASSEMBLER_ARM_HPP

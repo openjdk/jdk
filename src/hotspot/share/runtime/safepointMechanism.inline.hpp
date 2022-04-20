@@ -28,7 +28,9 @@
 #include "runtime/safepointMechanism.hpp"
 
 #include "runtime/atomic.hpp"
+#include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/thread.inline.hpp"
 
 // Caller is responsible for using a memory barrier if needed.
@@ -61,30 +63,42 @@ bool SafepointMechanism::global_poll() {
   return (SafepointSynchronize::_state != SafepointSynchronize::_not_synchronized);
 }
 
-bool SafepointMechanism::should_process(JavaThread* thread) {
-  return local_poll_armed(thread);
+bool SafepointMechanism::should_process(JavaThread* thread, bool allow_suspend) {
+  if (!local_poll_armed(thread)) {
+    return false;
+  }
+
+  if (global_poll() || // Safepoint
+      thread->handshake_state()->has_operation(allow_suspend, false /* check_async_exception */) || // Handshake
+      !StackWatermarkSet::processing_started(thread)) { // StackWatermark processing is not started
+    return true;
+  }
+
+  // It has boiled down to two possibilities:
+  // 1: We have nothing to process, this just a disarm poll.
+  // 2: We have a suspend or async exception handshake, which cannot be processed.
+  // We update the poll value in case of a disarm, to reduce false positives.
+  update_poll_values(thread);
+
+  // We are now about to avoid processing and thus no cross modify fence will be executed.
+  // In case a safepoint happened, while being blocked, we execute it here.
+  OrderAccess::cross_modify_fence();
+  return false;
 }
 
-void SafepointMechanism::process_if_requested(JavaThread* thread) {
-
-  // Macos/aarch64 should be in the right state for safepoint (e.g.
-  // deoptimization needs WXWrite).  Crashes caused by the wrong state rarely
-  // happens in practice, making such issues hard to find and reproduce.
-#if defined(ASSERT) && defined(__APPLE__) && defined(AARCH64)
-  if (AssertWXAtThreadSync) {
-    thread->assert_wx_state(WXWrite);
-  }
-#endif
+void SafepointMechanism::process_if_requested(JavaThread* thread, bool allow_suspend, bool check_async_exception) {
+  // Check NoSafepointVerifier. This also clears unhandled oops if CheckUnhandledOops is used.
+  thread->check_possible_safepoint();
 
   if (local_poll_armed(thread)) {
-    process_if_requested_slow(thread);
+    process(thread, allow_suspend, check_async_exception);
   }
 }
 
-void SafepointMechanism::process_if_requested_with_exit_check(JavaThread* thread, bool check_asyncs) {
-  process_if_requested(thread);
+void SafepointMechanism::process_if_requested_with_exit_check(JavaThread* thread, bool check_async_exception) {
+  process_if_requested(thread, true /* allow_suspend */, check_async_exception);
   if (thread->has_special_runtime_exit_condition()) {
-    thread->handle_special_runtime_exit_condition(check_asyncs);
+    thread->handle_special_runtime_exit_condition();
   }
 }
 

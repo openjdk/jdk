@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,8 +214,8 @@ void NativeCall::insert(address code_pos, address entry) {
 }
 
 // MT-safe patching of a call instruction.
-// First patches first word of instruction to two jmp's that jmps to them
-// selfs (spinlock). Then patches the last byte, and then atomicly replaces
+// First patches first word of instruction to two jmp's that jmps to themselves
+// (spinlock). Then patches the last byte, and then atomically replaces
 // the jmp's with the first 4 byte of the new instruction.
 void NativeCall::replace_mt_safe(address instr_addr, address code_buffer) {
   assert(Patching_lock->is_locked() ||
@@ -260,6 +260,9 @@ void NativeCall::replace_mt_safe(address instr_addr, address code_buffer) {
 
 }
 
+bool NativeCall::is_displacement_aligned() {
+  return (uintptr_t) displacement_address() % 4 == 0;
+}
 
 // Similar to replace_mt_safe, but just changes the destination.  The
 // important thing is that free-running threads are able to execute this
@@ -282,8 +285,7 @@ void NativeCall::set_destination_mt_safe(address dest) {
          CompiledICLocker::is_safe(instruction_address()), "concurrent code patching");
   // Both C1 and C2 should now be generating code which aligns the patched address
   // to be within a single cache line.
-  bool is_aligned = ((uintptr_t)displacement_address() + 0) / cache_line_size ==
-                    ((uintptr_t)displacement_address() + 3) / cache_line_size;
+  bool is_aligned = is_displacement_aligned();
 
   guarantee(is_aligned, "destination must be aligned");
 
@@ -494,7 +496,7 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
 
 
 // MT safe inserting of a jump over an unknown instruction sequence (used by nmethod::makeZombie)
-// The problem: jmp <dest> is a 5-byte instruction. Atomical write can be only with 4 bytes.
+// The problem: jmp <dest> is a 5-byte instruction. Atomic write can be only with 4 bytes.
 // First patches the first word atomically to be a jump to itself.
 // Then patches the last byte  and then atomically patches the first word (4-bytes),
 // thus inserting the desired jump
@@ -594,8 +596,8 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 
 
 // MT-safe patching of a long jump instruction.
-// First patches first word of instruction to two jmp's that jmps to them
-// selfs (spinlock). Then patches the last byte, and then atomicly replaces
+// First patches first word of instruction to two jmp's that jmps to themselves
+// (spinlock). Then patches the last byte, and then atomically replaces
 // the jmp's with the first 4 byte of the new instruction.
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {
    assert (instr_addr != NULL, "illegal address for code patching (4)");

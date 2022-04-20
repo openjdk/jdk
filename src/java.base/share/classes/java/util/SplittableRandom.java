@@ -26,6 +26,8 @@ package java.util;
 
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.random.RandomGenerator;
+import java.util.random.RandomGenerator.SplittableGenerator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -86,13 +88,12 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * @author  Doug Lea
  * @since   1.8
  */
-@SuppressWarnings("exports")
 @RandomGeneratorProperties(
         name = "SplittableRandom",
         i = 64, j = 0, k = 0,
         equidistribution = 1
 )
-public final class SplittableRandom extends AbstractSplittableGenerator {
+public final class SplittableRandom implements RandomGenerator, SplittableGenerator {
 
     /*
      * Implementation Overview.
@@ -182,6 +183,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
     private SplittableRandom(long seed, long gamma) {
         this.seed = seed;
         this.gamma = gamma;
+        this.proxy = new AbstractSplittableGeneratorProxy();
     }
 
     /**
@@ -215,6 +217,31 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
         int n = Long.bitCount(z ^ (z >>> 1));       // ensure enough transitions
         return (n < 24) ? z ^ 0xaaaaaaaaaaaaaaaaL : z;
     }
+
+    /**
+     * Proxy class to non-public RandomSupportAbstractSplittableGenerator.
+     */
+    private class AbstractSplittableGeneratorProxy extends AbstractSplittableGenerator {
+        @Override
+        public int nextInt() {
+            return SplittableRandom.this.nextInt();
+        }
+
+        @Override
+        public long nextLong() {
+            return SplittableRandom.this.nextLong();
+        }
+
+        @Override
+        public java.util.SplittableRandom split(SplittableGenerator source) {
+            return new SplittableRandom(source.nextLong(), mixGamma(source.nextLong()));
+        }
+    }
+
+    /**
+     * Proxy object to non-public RandomSupportAbstractSplittableGenerator.
+     */
+    private AbstractSplittableGeneratorProxy proxy;
 
     /**
      * Adds gamma to seed.
@@ -251,6 +278,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
         long s = defaultGen.getAndAdd(2 * GOLDEN_GAMMA);
         this.seed = mix64(s);
         this.gamma = mixGamma(s + GOLDEN_GAMMA);
+        this.proxy = new AbstractSplittableGeneratorProxy();
     }
 
     /**
@@ -297,7 +325,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public void nextBytes(byte[] bytes) {
-        super.nextBytes(bytes);
+        proxy.nextBytes(bytes);
     }
 
     /**
@@ -307,7 +335,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public Stream<SplittableGenerator> splits() {
-        return super.splits();
+        return proxy.splits();
     }
 
     /**
@@ -318,7 +346,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public Stream<SplittableGenerator> splits(long streamSize) {
-        return super.splits(streamSize, this);
+        return proxy.splits(streamSize, this);
     }
 
     /**
@@ -329,7 +357,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public Stream<SplittableGenerator> splits(SplittableGenerator source) {
-        return super.splits(Long.MAX_VALUE, source);
+        return proxy.splits(Long.MAX_VALUE, source);
     }
 
     /**
@@ -341,7 +369,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public Stream<SplittableGenerator> splits(long streamSize, SplittableGenerator source) {
-        return super.splits(streamSize, source);
+        return proxy.splits(streamSize, source);
     }
 
     /**
@@ -356,7 +384,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public IntStream ints(long streamSize) {
-        return super.ints(streamSize);
+        return proxy.ints(streamSize);
     }
 
     /**
@@ -370,7 +398,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public IntStream ints() {
-        return super.ints();
+        return proxy.ints();
     }
 
     /**
@@ -390,7 +418,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
-        return super.ints(streamSize, randomNumberOrigin, randomNumberBound);
+        return proxy.ints(streamSize, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -410,7 +438,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
-        return super.ints(randomNumberOrigin, randomNumberBound);
+        return proxy.ints(randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -425,7 +453,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public LongStream longs(long streamSize) {
-        return super.longs(streamSize);
+        return proxy.longs(streamSize);
     }
 
     /**
@@ -439,7 +467,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public LongStream longs() {
-        return super.longs();
+        return proxy.longs();
     }
 
     /**
@@ -459,7 +487,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public LongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
-        return super.longs(streamSize, randomNumberOrigin, randomNumberBound);
+        return proxy.longs(streamSize, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -479,7 +507,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
-        return super.longs(randomNumberOrigin, randomNumberBound);
+        return proxy.longs(randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -494,7 +522,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public DoubleStream doubles(long streamSize) {
-        return super.doubles(streamSize);
+        return proxy.doubles(streamSize);
     }
 
     /**
@@ -509,7 +537,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public DoubleStream doubles() {
-        return super.doubles();
+        return proxy.doubles();
     }
 
     /**
@@ -529,7 +557,7 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
-        return super.doubles(streamSize, randomNumberOrigin, randomNumberBound);
+        return proxy.doubles(streamSize, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -549,6 +577,6 @@ public final class SplittableRandom extends AbstractSplittableGenerator {
      */
     @Override
     public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
-        return super.doubles(randomNumberOrigin, randomNumberBound);
+        return proxy.doubles(randomNumberOrigin, randomNumberBound);
     }
 }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8262891
+ * @bug 8262891 8269354
  * @summary Test parenthesized pattern
  * @compile --enable-preview -source ${jdk.version} Parenthesized.java
  * @run main/othervm --enable-preview Parenthesized
@@ -46,6 +46,8 @@ public class Parenthesized {
         if (o instanceof (String s && s.isEmpty())) {
             System.err.println("OK: " + s);
         }
+        boolean b1 = o instanceof (String s && s.isEmpty());
+        boolean b2 = o instanceof String s && s.isEmpty();
     }
 
 }

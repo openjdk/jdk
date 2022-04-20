@@ -117,7 +117,7 @@ inline void ZBarrier::self_heal(volatile oop* p, uintptr_t addr, uintptr_t heal_
 
   for (;;) {
     // Heal
-    const uintptr_t prev_addr = Atomic::cmpxchg((volatile uintptr_t*)p, addr, heal_addr);
+    const uintptr_t prev_addr = Atomic::cmpxchg((volatile uintptr_t*)p, addr, heal_addr, memory_order_relaxed);
     if (prev_addr == addr) {
       // Success
       return;
@@ -287,11 +287,6 @@ inline oop ZBarrier::weak_load_barrier_on_weak_oop(oop o) {
   return weak_load_barrier_on_weak_oop_field_preloaded((oop*)NULL, o);
 }
 
-inline oop ZBarrier::weak_load_barrier_on_weak_oop_field(volatile oop* p) {
-  const oop o = Atomic::load(p);
-  return weak_load_barrier_on_weak_oop_field_preloaded(p, o);
-}
-
 inline oop ZBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile oop* p, oop o) {
   verify_on_weak(p);
 
@@ -304,11 +299,6 @@ inline oop ZBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile oop*
 
 inline oop ZBarrier::weak_load_barrier_on_phantom_oop(oop o) {
   return weak_load_barrier_on_phantom_oop_field_preloaded((oop*)NULL, o);
-}
-
-inline oop ZBarrier::weak_load_barrier_on_phantom_oop_field(volatile oop* p) {
-  const oop o = Atomic::load(p);
-  return weak_load_barrier_on_phantom_oop_field_preloaded(p, o);
 }
 
 inline oop ZBarrier::weak_load_barrier_on_phantom_oop_field_preloaded(volatile oop* p, oop o) {

@@ -31,23 +31,23 @@ class JfrJavaArguments;
 class JfrDCmd : public DCmd {
  private:
   const char* _args;
+  const int _num_arguments;
   char _delimiter;
+ protected:
+  JfrDCmd(outputStream* output, bool heap, int num_arguments);
+  virtual const char* javaClass() const = 0;
+  void invoke(JfrJavaArguments& method, TRAPS) const;
  public:
-  JfrDCmd(outputStream* output, bool heap) : DCmd(output,heap), _args(NULL), _delimiter('\0')  {}
-
   virtual void execute(DCmdSource source, TRAPS);
   virtual void print_help(const char* name) const;
   virtual GrowableArray<const char*>* argument_name_array() const;
   virtual GrowableArray<DCmdArgumentInfo*>* argument_info_array() const;
   virtual void parse(CmdLine* line, char delim, TRAPS);
- protected:
-  virtual const char* javaClass() const = 0;
-  void invoke(JfrJavaArguments& method, TRAPS) const;
 };
 
 class JfrStartFlightRecordingDCmd : public JfrDCmd {
  public:
-  JfrStartFlightRecordingDCmd(outputStream* output, bool heap) : JfrDCmd(output, heap) {}
+  JfrStartFlightRecordingDCmd(outputStream* output, bool heap) : JfrDCmd(output, heap, num_arguments()) {}
 
   static const char* name() {
     return "JFR.start";
@@ -72,7 +72,7 @@ class JfrStartFlightRecordingDCmd : public JfrDCmd {
 
 class JfrDumpFlightRecordingDCmd : public JfrDCmd {
  public:
-  JfrDumpFlightRecordingDCmd(outputStream* output, bool heap) : JfrDCmd(output, heap) {}
+  JfrDumpFlightRecordingDCmd(outputStream* output, bool heap) : JfrDCmd(output, heap, num_arguments()) {}
 
   static const char* name() {
     return "JFR.dump";
@@ -97,7 +97,7 @@ class JfrDumpFlightRecordingDCmd : public JfrDCmd {
 
 class JfrCheckFlightRecordingDCmd : public JfrDCmd {
  public:
-  JfrCheckFlightRecordingDCmd(outputStream* output, bool heap) : JfrDCmd(output, heap) {}
+  JfrCheckFlightRecordingDCmd(outputStream* output, bool heap) : JfrDCmd(output, heap, num_arguments()) {}
 
   static const char* name() {
     return "JFR.check";
@@ -122,7 +122,7 @@ class JfrCheckFlightRecordingDCmd : public JfrDCmd {
 
 class JfrStopFlightRecordingDCmd : public JfrDCmd {
  public:
-  JfrStopFlightRecordingDCmd(outputStream* output, bool heap) : JfrDCmd(output, heap) {}
+  JfrStopFlightRecordingDCmd(outputStream* output, bool heap) : JfrDCmd(output, heap, num_arguments()) {}
 
   static const char* name() {
     return "JFR.stop";

@@ -534,15 +534,6 @@ abstract class HandshakeContext implements ConnectionContext {
         return activeProtocols.contains(protocolVersion);
     }
 
-    /**
-     * Set the active protocol version and propagate it to the SSLSocket
-     * and our handshake streams. Called from ClientHandshaker
-     * and ServerHandshaker with the negotiated protocol version.
-     */
-    void setVersion(ProtocolVersion protocolVersion) {
-        this.conContext.protocolVersion = protocolVersion;
-    }
-
     private static boolean isActivatable(CipherSuite suite,
             AlgorithmConstraints algorithmConstraints,
             Map<NamedGroupSpec, Boolean> cachedStatus) {

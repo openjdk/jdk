@@ -621,7 +621,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
             final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
             final int NOT_ACC_PUBLIC = 0;  // not ACC_PUBLIC
-            cw.visit(V1_6, NOT_ACC_PUBLIC + ACC_FINAL + ACC_SUPER, className, null, superClassName, null);
+            cw.visit(CLASSFILE_VERSION, NOT_ACC_PUBLIC + ACC_FINAL + ACC_SUPER, className, null, superClassName, null);
 
             final String sourceFile = className.substring(className.lastIndexOf('.')+1);
             cw.visitSource(sourceFile, null);

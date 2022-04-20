@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * </tr>
  * <tr>
  * <th scope="row"> {@link PlatformLoggingMXBean} </th>
- * <td> {@link java.util.logging.LogManager#LOGGING_MXBEAN_NAME
+ * <td> {@link java.logging/java.util.logging.LogManager#LOGGING_MXBEAN_NAME
  *             java.util.logging:type=Logging}</td>
  * </tr>
  * </tbody>
@@ -246,7 +246,8 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * @author  Mandy Chung
  * @since   1.5
  */
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal",
+                   "doclint:reference"}) // cross-module links
 public class ManagementFactory {
     // A class with only static fields and methods.
     private ManagementFactory() {};
@@ -474,6 +475,7 @@ public class ManagementFactory {
      * @see javax.management.MBeanServerFactory#createMBeanServer
      */
     public static synchronized MBeanServer getPlatformMBeanServer() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             Permission perm = new MBeanServerPermission("createMBeanServer");
@@ -598,6 +600,7 @@ public class ManagementFactory {
         // Only allow MXBean interfaces from the platform modules loaded by the
         // bootstrap or platform class loader
         final Class<?> cls = mxbeanInterface;
+        @SuppressWarnings("removal")
         ClassLoader loader =
             AccessController.doPrivileged(
                 (PrivilegedAction<ClassLoader>) () -> cls.getClassLoader());
@@ -885,6 +888,7 @@ public class ManagementFactory {
     private static final String NOTIF_EMITTER =
         "javax.management.NotificationEmitter";
 
+    @SuppressWarnings("removal")
     private static void addMXBean(final MBeanServer mbs, String name, final Object pmo)
     {
         try {
@@ -920,6 +924,7 @@ public class ManagementFactory {
 
         static {
             // get all providers
+            @SuppressWarnings("removal")
             List<PlatformMBeanProvider> providers = AccessController.doPrivileged(
                 new PrivilegedAction<List<PlatformMBeanProvider>>() {
                     @Override
@@ -931,8 +936,7 @@ public class ManagementFactory {
                         all.add(new DefaultPlatformMBeanProvider());
                         return all;
                     }
-                }, null, new FilePermission("<<ALL FILES>>", "read"),
-                new RuntimePermission("sun.management.spi.PlatformMBeanProvider.subclass"));
+                }, null, new FilePermission("<<ALL FILES>>", "read"));
 
             // load all platform components into a map
             var map = new HashMap<String, PlatformComponent<?>>();
@@ -1012,6 +1016,11 @@ public class ManagementFactory {
     }
 
     static {
+        loadNativeLib();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadNativeLib() {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             System.loadLibrary("management");
             return null;

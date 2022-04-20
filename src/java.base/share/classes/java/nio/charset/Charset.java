@@ -210,9 +210,8 @@ import java.util.TreeMap;
  * <small>ZERO-WIDTH NON-BREAKING SPACE</small>.
  *
  * <p> Every instance of the Java virtual machine has a default charset, which
- * may or may not be one of the standard charsets.  The default charset is
- * determined during virtual-machine startup and typically depends upon the
- * locale and charset being used by the underlying operating system. </p>
+ * is {@code UTF-8} unless changed in an implementation specific manner. Refer to
+ * {@link #defaultCharset()} for more detail.
  *
  * <p> The {@link StandardCharsets} class defines constants for each of the
  * standard charsets.
@@ -528,6 +527,39 @@ public abstract class Charset
         throw new UnsupportedCharsetException(charsetName);
     }
 
+    /**
+     * Returns a charset object for the named charset. If the charset object
+     * for the named charset is not available or {@code charsetName} is not a
+     * legal charset name, then {@code fallback} is returned.
+     *
+     * @param  charsetName
+     *         The name of the requested charset; may be either
+     *         a canonical name or an alias
+     *
+     * @param  fallback
+     *         fallback charset in case the charset object for the named
+     *         charset is not available or {@code charsetName} is not a legal
+     *         charset name. May be {@code null}
+     *
+     * @return  A charset object for the named charset, or {@code fallback}
+     *          in case the charset object for the named charset is not
+     *          available or {@code charsetName} is not a legal charset name
+     *
+     * @throws  IllegalArgumentException
+     *          If the given {@code charsetName} is {@code null}
+     *
+     * @since 18
+     */
+    public static Charset forName(String charsetName,
+                                  Charset fallback) {
+        try {
+            Charset cs = lookup(charsetName);
+            return cs != null ? cs : fallback;
+        } catch (IllegalCharsetNameException icne) {
+            return fallback;
+        }
+    }
+
     // Fold charsets from the given iterator into the given map, ignoring
     // charsets whose names already have entries in the map.
     //
@@ -592,11 +624,18 @@ public abstract class Charset
     /**
      * Returns the default charset of this Java virtual machine.
      *
-     * <p> The default charset is determined during virtual-machine startup and
-     * typically depends upon the locale and charset of the underlying
-     * operating system.
+     * <p> The default charset is {@code UTF-8}, unless changed in an
+     * implementation specific manner.
+     *
+     * @implNote An implementation may override the default charset with
+     * the system property {@code file.encoding} on the command line. If the
+     * value is {@code COMPAT}, the default charset is derived from
+     * the {@code native.encoding} system property, which typically depends
+     * upon the locale and charset of the underlying operating system.
      *
      * @return  A charset object for the default charset
+     * @see <a href="../../lang/System.html#file.encoding">file.encoding</a>
+     * @see <a href="../../lang/System.html#native.encoding">native.encoding</a>
      *
      * @since 1.5
      */

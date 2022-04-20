@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,12 @@ import java.util.Objects;
  * Immutable, arbitrary-precision signed decimal numbers.  A {@code
  * BigDecimal} consists of an arbitrary precision integer
  * <i>{@linkplain unscaledValue() unscaled value}</i> and a 32-bit
- * integer <i>{@linkplain scale() scale}</i>.  If zero or positive,
- * the scale is the number of digits to the right of the decimal
- * point.  If negative, the unscaled value of the number is multiplied
- * by ten to the power of the negation of the scale.  The value of the
- * number represented by the {@code BigDecimal} is therefore
+ * integer <i>{@linkplain scale() scale}</i>.  If the
+ * scale is zero or positive, the scale is the number of digits to
+ * the right of the decimal point.  If the scale is negative, the
+ * unscaled value of the number is multiplied by ten to the power of
+ * the negation of the scale.  The value of the number represented by
+ * the {@code BigDecimal} is therefore
  * <code>(unscaledValue &times; 10<sup>-scale</sup>)</code>.
  *
  * <p>The {@code BigDecimal} class provides operations for
@@ -1790,7 +1791,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws ArithmeticException if the result is inexact but the
      *         rounding mode is {@code UNNECESSARY} or
      *         {@code mc.precision == 0} and the quotient has a
-     *         non-terminating decimal expansion,including dividing by zero
+     *         non-terminating decimal expansion, including dividing by zero
      * @since  1.5
      */
     public BigDecimal divide(BigDecimal divisor, MathContext mc) {
@@ -2156,7 +2157,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             //
             // unscaledValue * 10^(-scale)
             //
-            // where unscaledValue is an integer with the mimimum
+            // where unscaledValue is an integer with the minimum
             // precision for the cohort of the numerical value. To
             // allow binary floating-point hardware to be used to get
             // approximately a 15 digit approximation to the square
@@ -4310,7 +4311,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * digits.
      *
      * @param x the {@code long}
-     * @return the length of the unscaled value, in deciaml digits.
+     * @return the length of the unscaled value, in decimal digits.
      */
     static int longDigitLength(long x) {
         /*
@@ -4404,7 +4405,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             x = -x;
         if (y < 0)
             y = -y;
-        return (x < y) ? -1 : ((x == y) ? 0 : 1);
+        return Long.compare(x, y);
     }
 
     private static int saturateLong(long s) {
@@ -4943,7 +4944,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /*
-     * returns INFLATED if oveflow
+     * returns INFLATED if overflow
      */
     private static long add(long xs, long ys){
         long sum = xs + ys;

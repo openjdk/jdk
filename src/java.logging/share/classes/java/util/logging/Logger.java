@@ -40,6 +40,7 @@ import java.util.function.Supplier;
 import jdk.internal.access.JavaUtilResourceBundleAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import static jdk.internal.logger.DefaultLoggerFinder.isSystem;
 
@@ -714,6 +715,7 @@ public class Logger {
      *                          #getLogger(java.lang.String)}.
      * @return a suitable Logger for {@code callerClass}.
      */
+    @CallerSensitiveAdapter
     private static Logger getLogger(String name, Class<?> callerClass) {
         return demandLogger(name, null, callerClass);
     }
@@ -788,6 +790,7 @@ public class Logger {
      *                          not {@code null}.
      * @return a suitable Logger for {@code callerClass}.
      */
+    @CallerSensitiveAdapter
     private static Logger getLogger(String name, String resourceBundleName,
                                     Class<?> callerClass) {
         Logger result = demandLogger(name, resourceBundleName, callerClass);

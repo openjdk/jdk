@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,7 +368,7 @@ public:
 
     void overwrite_local_double_long(int index) {
       // Invalidate the previous local if it contains first half of
-      // a double or long value since it's seconf half is being overwritten.
+      // a double or long value since its second half is being overwritten.
       int prev_index = index - 1;
       if (prev_index >= 0 &&
           (is_double(type_at(local(prev_index))) ||
@@ -717,6 +717,9 @@ public:
     bool   _irreducible;
     LocalSet _def_locals;
 
+    ciTypeFlow* outer() const { return head()->outer(); }
+    bool at_insertion_point(Loop* lp, Loop* current);
+
   public:
     Loop(Block* head, Block* tail) :
       _parent(NULL), _sibling(NULL), _child(NULL),
@@ -795,7 +798,7 @@ private:
   bool can_trap(ciBytecodeStream& str);
 
   // Clone the loop heads. Returns true if any cloning occurred.
-  bool clone_loop_heads(Loop* lp, StateVector* temp_vector, JsrSet* temp_set);
+  bool clone_loop_heads(StateVector* temp_vector, JsrSet* temp_set);
 
   // Clone lp's head and replace tail's successors with clone.
   Block* clone_loop_head(Loop* lp, StateVector* temp_vector, JsrSet* temp_set);
@@ -912,6 +915,8 @@ private:
 
   // Create the block map, which indexes blocks in pre_order.
   void map_blocks();
+
+  int profiled_count(ciTypeFlow::Loop* loop);
 
 public:
   // Perform type inference flow analysis.

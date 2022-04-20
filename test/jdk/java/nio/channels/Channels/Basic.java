@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4417152 4481572 6248930 6725399 6884800 8220477
+ * @bug 4417152 4481572 6248930 6725399 6884800 8220477 8275149
  * @summary Test Channels basic functionality
  */
 
@@ -295,6 +295,13 @@ public class Basic {
         int messageSize = message.length() * ITERATIONS * 3;
         byte data[] = new byte[messageSize+1];
         ByteBuffer bb = ByteBuffer.wrap(data);
+
+        try {
+            rbc.read(bb.asReadOnlyBuffer());
+            throw new RuntimeException("IllegalArgumentException not thrown");
+        } catch (IllegalArgumentException expected) {
+            // ignore it
+        }
 
         int bytesRead = 0;
         int totalRead = 0;

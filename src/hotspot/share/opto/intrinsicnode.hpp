@@ -157,21 +157,25 @@ class AryEqNode: public StrIntrinsicNode {
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 };
 
-//------------------------------HasNegatives---------------------------------
-class HasNegativesNode: public StrIntrinsicNode {
+//------------------------------CountPositives------------------------------
+class CountPositivesNode: public StrIntrinsicNode {
  public:
-  HasNegativesNode(Node* control, Node* char_array_mem, Node* s1, Node* c1):
+  CountPositivesNode(Node* control, Node* char_array_mem, Node* s1, Node* c1):
   StrIntrinsicNode(control, char_array_mem, s1, c1, none) {};
   virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual const Type* bottom_type() const { return TypeInt::POS; }
 };
 
 
 //------------------------------EncodeISOArray--------------------------------
-// encode char[] to byte[] in ISO_8859_1
+// encode char[] to byte[] in ISO_8859_1 or ASCII
 class EncodeISOArrayNode: public Node {
+  bool ascii;
  public:
-  EncodeISOArrayNode(Node* control, Node* arymem, Node* s1, Node* s2, Node* c): Node(control, arymem, s1, s2, c) {};
+  EncodeISOArrayNode(Node* control, Node* arymem, Node* s1, Node* s2, Node* c, bool ascii)
+    : Node(control, arymem, s1, s2, c), ascii(ascii) {}
+
+  bool is_ascii() { return ascii; }
   virtual int Opcode() const;
   virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::INT; }

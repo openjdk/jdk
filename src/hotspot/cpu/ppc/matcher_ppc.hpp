@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,11 @@
     return false;
   }
 
+  // Does the CPU supports vector constant rotate instructions?
+  static constexpr bool supports_vector_constant_rotates(int shift) {
+    return false;
+  }
+
   // Does the CPU supports vector unsigned comparison instructions?
   static constexpr bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
     return false;
@@ -148,12 +153,20 @@
     return false;
   }
 
-  // true means we have fast l2f convers
+  // true means we have fast l2f conversion
   // false means that conversion is done by runtime call
   static const bool convL2FSupported(void) {
     // fcfids can do the conversion (>= Power7).
     // fcfid + frsp showed rounding problem when result should be 0x3f800001.
     return VM_Version::has_fcfids();
+  }
+
+  // Implements a variant of EncodeISOArrayNode that encode ASCII only
+  static const bool supports_encode_ascii_array = true;
+
+  // Returns pre-selection estimated cost of a vector operation.
+  static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
+    return 0;
   }
 
 

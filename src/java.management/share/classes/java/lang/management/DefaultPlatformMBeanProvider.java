@@ -416,8 +416,7 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
                     map = Collections.<String, BufferPoolMXBean>emptyMap();
                 } else {
                     map = new HashMap<>(list.size());
-                    list.stream()
-                        .forEach(mbean -> map.put(mbean.getObjectName().getCanonicalName(),mbean));
+                    list.forEach(mbean -> map.put(mbean.getObjectName().getCanonicalName(),mbean));
                 }
                 return map;
             }

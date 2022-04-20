@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,9 @@
 
 
 class DynamicArchiveBuilder : public ArchiveBuilder {
+  const char* _archive_name;
 public:
+  DynamicArchiveBuilder(const char* archive_name) : _archive_name(archive_name) {}
   void mark_pointer(address* ptr_loc) {
     ArchivePtrMarker::mark_pointer(ptr_loc);
   }
@@ -83,6 +85,7 @@ public:
 
   void init_header();
   void release_header();
+  void post_dump();
   void sort_methods();
   void sort_methods(InstanceKlass* ik) const;
   void remark_pointers_for_instance_klass(InstanceKlass* k, bool should_mark) const;
@@ -111,6 +114,15 @@ public:
     // Block concurrent class unloading from changing the _dumptime_table
     MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
     SystemDictionaryShared::check_excluded_classes();
+
+    if (SystemDictionaryShared::is_dumptime_table_empty()) {
+      log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
+      SystemDictionaryShared::stop_dumping();
+      return;
+    }
+
+    // save dumptime tables
+    SystemDictionaryShared::clone_dumptime_tables();
 
     init_header();
     gather_source_objs();
@@ -158,8 +170,14 @@ public:
     write_archive(serialized_data);
     release_header();
 
+    post_dump();
+
+    // Restore dumptime tables
+    SystemDictionaryShared::restore_dumptime_tables();
+
     assert(_num_dump_regions_used == _total_dump_regions, "must be");
     verify_universe("After CDS dynamic dump");
+    SystemDictionaryShared::stop_dumping();
   }
 
   virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) {
@@ -169,16 +187,17 @@ public:
 };
 
 void DynamicArchiveBuilder::init_header() {
-  FileMapInfo* mapinfo = new FileMapInfo(false);
+  FileMapInfo* mapinfo = new FileMapInfo(_archive_name, false);
   assert(FileMapInfo::dynamic_info() == mapinfo, "must be");
+  FileMapInfo* base_info = FileMapInfo::current_info();
+  // header only be available after populate_header
+  mapinfo->populate_header(base_info->core_region_alignment());
   _header = mapinfo->dynamic_header();
 
-  FileMapInfo* base_info = FileMapInfo::current_info();
   _header->set_base_header_crc(base_info->crc());
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     _header->set_base_region_crc(i, base_info->space_crc(i));
   }
-  _header->populate(base_info, base_info->core_region_alignment());
 }
 
 void DynamicArchiveBuilder::release_header() {
@@ -192,6 +211,10 @@ void DynamicArchiveBuilder::release_header() {
   delete mapinfo;
   assert(!DynamicArchive::is_mapped(), "must be");
   _header = NULL;
+}
+
+void DynamicArchiveBuilder::post_dump() {
+  ArchivePtrMarker::reset_map_and_vs();
 }
 
 void DynamicArchiveBuilder::sort_methods() {
@@ -257,8 +280,14 @@ void DynamicArchiveBuilder::sort_methods(InstanceKlass* ik) const {
   if (ik->default_methods() != NULL) {
     Method::sort_methods(ik->default_methods(), /*set_idnums=*/false, dynamic_dump_method_comparator);
   }
-  ik->vtable().initialize_vtable();
-  ik->itable().initialize_itable();
+  if (ik->is_linked()) {
+    // If the class has already been linked, we must relayout the i/v tables, whose order depends
+    // on the method sorting order.
+    // If the class is unlinked, we cannot layout the i/v tables yet. This is OK, as the
+    // i/v tables will be initialized at runtime after bytecode verification.
+    ik->vtable().initialize_vtable();
+    ik->itable().initialize_itable();
+  }
 
   // Set all the pointer marking bits after sorting.
   remark_pointers_for_instance_klass(ik, true);
@@ -298,7 +327,7 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   FileMapInfo* dynamic_info = FileMapInfo::dynamic_info();
   assert(dynamic_info != NULL, "Sanity");
 
-  dynamic_info->open_for_write(Arguments::GetSharedDynamicArchivePath());
+  dynamic_info->open_for_write();
   ArchiveBuilder::write_archive(dynamic_info, NULL, NULL, NULL, NULL);
 
   address base = _requested_dynamic_archive_bottom;
@@ -306,39 +335,59 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   size_t file_size = pointer_delta(top, base, sizeof(char));
 
   log_info(cds, dynamic)("Written dynamic archive " PTR_FORMAT " - " PTR_FORMAT
-                         " [" SIZE_FORMAT " bytes header, " SIZE_FORMAT " bytes total]",
+                         " [" UINT32_FORMAT " bytes header, " SIZE_FORMAT " bytes total]",
                          p2i(base), p2i(top), _header->header_size(), file_size);
 
   log_info(cds, dynamic)("%d klasses; %d symbols", klasses()->length(), symbols()->length());
 }
 
 class VM_PopulateDynamicDumpSharedSpace: public VM_GC_Sync_Operation {
-  DynamicArchiveBuilder builder;
+  DynamicArchiveBuilder _builder;
 public:
-  VM_PopulateDynamicDumpSharedSpace() : VM_GC_Sync_Operation() {}
+  VM_PopulateDynamicDumpSharedSpace(const char* archive_name)
+  : VM_GC_Sync_Operation(), _builder(archive_name) {}
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit() {
     ResourceMark rm;
-    if (SystemDictionaryShared::empty_dumptime_table()) {
-      log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
-      return;
-    }
     if (AllowArchivingWithJavaAgent) {
       warning("This archive was created with AllowArchivingWithJavaAgent. It should be used "
               "for testing purposes only and should not be used in a production environment");
     }
     FileMapInfo::check_nonempty_dir_in_shared_path_table();
 
-    builder.doit();
+    _builder.doit();
+  }
+  ~VM_PopulateDynamicDumpSharedSpace() {
+    LambdaFormInvokers::cleanup_regenerated_classes();
   }
 };
 
-void DynamicArchive::prepare_for_dynamic_dumping_at_exit() {
+void DynamicArchive::check_for_dynamic_dump() {
+  if (DynamicDumpSharedSpaces && !UseSharedSpaces) {
+    // This could happen if SharedArchiveFile has failed to load:
+    // - -Xshare:off was specified
+    // - SharedArchiveFile points to an non-existent file.
+    // - SharedArchiveFile points to an archive that has failed CRC check
+    // - SharedArchiveFile is not specified and the VM doesn't have a compatible default archive
+
+#define __THEMSG " is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info."
+    if (RecordDynamicDumpInfo) {
+      vm_exit_during_initialization("-XX:+RecordDynamicDumpInfo" __THEMSG, NULL);
+    } else {
+      assert(ArchiveClassesAtExit != nullptr, "sanity");
+      warning("-XX:ArchiveClassesAtExit" __THEMSG);
+    }
+#undef __THEMSG
+    DynamicDumpSharedSpaces = false;
+  }
+}
+
+void DynamicArchive::prepare_for_dump_at_exit() {
   EXCEPTION_MARK;
   ResourceMark rm(THREAD);
-  MetaspaceShared::link_and_cleanup_shared_classes(THREAD);
+  MetaspaceShared::link_shared_classes(false/*not from jcmd*/, THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    log_error(cds)("ArchiveClassesAtExit has failed");
+    log_error(cds)("Dynamic dump has failed");
     log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                    java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
     // We cannot continue to dump the archive anymore.
@@ -347,44 +396,25 @@ void DynamicArchive::prepare_for_dynamic_dumping_at_exit() {
   }
 }
 
-bool DynamicArchive::_has_been_dumped_once = false;
-
-void DynamicArchive::dump(const char* archive_name, TRAPS) {
-  assert(UseSharedSpaces && RecordDynamicDumpInfo, "already checked in arguments.cpp?");
-  assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp?");
-  // During dynamic archive dumping, some of the data structures are overwritten so
-  // we cannot dump the dynamic archive again. TODO: this should be fixed.
-  if (has_been_dumped_once()) {
-    THROW_MSG(vmSymbols::java_lang_RuntimeException(),
-        "Dynamic dump has been done, and should only be done once");
-  } else {
-    // prevent multiple dumps.
-    set_has_been_dumped_once();
-    ArchiveClassesAtExit = archive_name;
-    if (Arguments::init_shared_archive_paths()) {
-      dump();
-    } else {
-      ArchiveClassesAtExit = nullptr;
-      THROW_MSG(vmSymbols::java_lang_RuntimeException(),
-              "Could not setup SharedDynamicArchivePath");
-    }
-    // prevent do dynamic dump at exit.
-    ArchiveClassesAtExit = nullptr;
-    if (!Arguments::init_shared_archive_paths()) {
-      THROW_MSG(vmSymbols::java_lang_RuntimeException(),
-             "Could not restore SharedDynamicArchivePath");
-    }
-  }
+// This is called by "jcmd VM.cds dynamic_dump"
+void DynamicArchive::dump_for_jcmd(const char* archive_name, TRAPS) {
+  assert(UseSharedSpaces && RecordDynamicDumpInfo, "already checked in arguments.cpp");
+  assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp");
+  assert(DynamicDumpSharedSpaces, "already checked by check_for_dynamic_dump() during VM startup");
+  MetaspaceShared::link_shared_classes(true/*from jcmd*/, CHECK);
+  dump(archive_name, THREAD);
 }
 
-void DynamicArchive::dump() {
-  if (Arguments::GetSharedDynamicArchivePath() == NULL) {
-    log_warning(cds, dynamic)("SharedDynamicArchivePath is not specified");
-    return;
-  }
+void DynamicArchive::dump(const char* archive_name, TRAPS) {
+  // copy shared path table to saved.
+  FileMapInfo::clone_shared_path_table(CHECK);
 
-  VM_PopulateDynamicDumpSharedSpace op;
+  VM_PopulateDynamicDumpSharedSpace op(archive_name);
   VMThread::execute(&op);
+}
+
+bool DynamicArchive::should_dump_at_vm_exit() {
+  return DynamicDumpSharedSpaces && (ArchiveClassesAtExit != nullptr);
 }
 
 bool DynamicArchive::validate(FileMapInfo* dynamic_info) {

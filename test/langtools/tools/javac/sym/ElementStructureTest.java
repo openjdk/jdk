@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ import toolbox.ToolBox;
 
 /**To generate the hash values for version N, invoke this class like:
  *
- *     java ElementStructureTest generate-hashes $LANGTOOLS_DIR/make/data/symbols/include.list (<classes-for-N> N)+
+ *     java ElementStructureTest generate-hashes $LANGTOOLS_DIR/src/jdk.compiler/share/data/symbols/include.list (<classes-for-N> N)+
  *
  * Where <classes-for-N> is the file produced by make/src/classes/build/tools/symbolgenerator/Probe.java.
  * So, to produce hashes for 6, 7 and 8, this command can be used:
@@ -113,11 +113,11 @@ import toolbox.ToolBox;
  *
  * To inspect differences between the actual and expected output for version N, invoke this class like:
  *
- *     java ElementStructureTest generate-output $LANGTOOLS_DIR/make/data/symbols/include.list (<classes-for-N> N <actual-output-file> <expected-output-file>)+
+ *     java ElementStructureTest generate-output $LANGTOOLS_DIR/src/jdk.compiler/share/data/symbols/include.list (<classes-for-N> N <actual-output-file> <expected-output-file>)+
  *
  * For example, to get the actual and expected output for 6 in /tmp/actual and /tmp/expected, respectively:
  *
- *     java ElementStructureTest generate-output $LANGTOOLS_DIR/make/data/symbols/include.list classes-6 6 /tmp/actual /tmp/expected
+ *     java ElementStructureTest generate-output $LANGTOOLS_DIR/src/jdk.compiler/share/data/symbols/include.list classes-6 6 /tmp/actual /tmp/expected
  */
 public class ElementStructureTest {
 
@@ -128,16 +128,16 @@ public class ElementStructureTest {
         (byte) 0xB7, (byte) 0x52, (byte) 0x0F, (byte) 0x68
     };
     static final byte[] hash7 = new byte[] {
-        (byte) 0x3C, (byte) 0x03, (byte) 0xEA, (byte) 0x4A,
-        (byte) 0x62, (byte) 0xD2, (byte) 0x18, (byte) 0xE5,
-        (byte) 0xA5, (byte) 0xC2, (byte) 0xB7, (byte) 0x85,
-        (byte) 0x90, (byte) 0xFA, (byte) 0x98, (byte) 0xCD
+        (byte) 0x45, (byte) 0xCA, (byte) 0x83, (byte) 0xCD,
+        (byte) 0x1A, (byte) 0x68, (byte) 0x57, (byte) 0x9C,
+        (byte) 0x6F, (byte) 0x2D, (byte) 0xEB, (byte) 0x28,
+        (byte) 0xAB, (byte) 0x05, (byte) 0x53, (byte) 0x6E
     };
     static final byte[] hash8 = new byte[] {
-        (byte) 0x24, (byte) 0x38, (byte) 0x52, (byte) 0x1C,
-        (byte) 0x5E, (byte) 0x83, (byte) 0x82, (byte) 0xE6,
-        (byte) 0x41, (byte) 0xC2, (byte) 0xDD, (byte) 0x2A,
-        (byte) 0xFD, (byte) 0xFF, (byte) 0x5E, (byte) 0x2F
+        (byte) 0x26, (byte) 0x8C, (byte) 0xFD, (byte) 0x61,
+        (byte) 0x53, (byte) 0x00, (byte) 0x57, (byte) 0x10,
+        (byte) 0x36, (byte) 0x2B, (byte) 0x92, (byte) 0x0B,
+        (byte) 0xE1, (byte) 0x6A, (byte) 0xB5, (byte) 0xFD
     };
 
     final static Map<String, byte[]> version2Hash = new HashMap<>();

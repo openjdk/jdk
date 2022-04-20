@@ -71,10 +71,9 @@ class XAtomList {
      */
     public XAtom[] getAtoms() {
         XAtom[] res = new XAtom[size()];
-        Iterator<XAtom> iter = atoms.iterator();
         int i = 0;
-        while (iter.hasNext()) {
-            res[i++] = iter.next();
+        for (XAtom atom : atoms) {
+            res[i++] = atom;
         }
         return res;
     }
@@ -124,10 +123,8 @@ class XAtomList {
      */
     public XAtomList subset(int mask, Map<Integer, XAtom> mapping) {
         XAtomList res = new XAtomList();
-        Iterator<Integer> iter = mapping.keySet().iterator();
-        while (iter.hasNext()) {
-            Integer bits = iter.next();
-            if ( (mask & bits.intValue()) == bits.intValue() ) {
+        for (int bits : mapping.keySet()) {
+            if ((mask & bits) == bits) {
                 XAtom atom = mapping.get(bits);
                 if (contains(atom)) {
                     res.add(atom);

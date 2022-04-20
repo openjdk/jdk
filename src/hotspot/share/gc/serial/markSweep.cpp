@@ -49,14 +49,15 @@ uint                    MarkSweep::_total_invocations = 0;
 Stack<oop, mtGC>              MarkSweep::_marking_stack;
 Stack<ObjArrayTask, mtGC>     MarkSweep::_objarray_stack;
 
-Stack<oop, mtGC>              MarkSweep::_preserved_oop_stack;
-Stack<markWord, mtGC>         MarkSweep::_preserved_mark_stack;
+Stack<PreservedMark, mtGC>    MarkSweep::_preserved_overflow_stack;
 size_t                  MarkSweep::_preserved_count = 0;
 size_t                  MarkSweep::_preserved_count_max = 0;
 PreservedMark*          MarkSweep::_preserved_marks = NULL;
 ReferenceProcessor*     MarkSweep::_ref_processor   = NULL;
 STWGCTimer*             MarkSweep::_gc_timer        = NULL;
 SerialOldTracer*        MarkSweep::_gc_tracer       = NULL;
+
+StringDedup::Requests*  MarkSweep::_string_dedup_requests = NULL;
 
 MarkSweep::FollowRootClosure  MarkSweep::follow_root_closure;
 
@@ -161,10 +162,9 @@ void MarkSweep::preserve_mark(oop obj, markWord mark) {
   // sufficient space for the marks we need to preserve but if it isn't we fall
   // back to using Stacks to keep track of the overflow.
   if (_preserved_count < _preserved_count_max) {
-    _preserved_marks[_preserved_count++].init(obj, mark);
+    _preserved_marks[_preserved_count++] = PreservedMark(obj, mark);
   } else {
-    _preserved_mark_stack.push(mark);
-    _preserved_oop_stack.push(obj);
+    _preserved_overflow_stack.push(PreservedMark(obj, mark));
   }
 }
 
@@ -176,26 +176,21 @@ void MarkSweep::set_ref_processor(ReferenceProcessor* rp) {
 AdjustPointerClosure MarkSweep::adjust_pointer_closure;
 
 void MarkSweep::adjust_marks() {
-  assert( _preserved_oop_stack.size() == _preserved_mark_stack.size(),
-         "inconsistent preserved oop stacks");
-
   // adjust the oops we saved earlier
   for (size_t i = 0; i < _preserved_count; i++) {
     _preserved_marks[i].adjust_pointer();
   }
 
   // deal with the overflow stack
-  StackIterator<oop, mtGC> iter(_preserved_oop_stack);
+  StackIterator<PreservedMark, mtGC> iter(_preserved_overflow_stack);
   while (!iter.is_empty()) {
-    oop* p = iter.next_addr();
-    adjust_pointer(p);
+    PreservedMark* p = iter.next_addr();
+    p->adjust_pointer();
   }
 }
 
 void MarkSweep::restore_marks() {
-  assert(_preserved_oop_stack.size() == _preserved_mark_stack.size(),
-         "inconsistent preserved oop stacks");
-  log_trace(gc)("Restoring " SIZE_FORMAT " marks", _preserved_count + _preserved_oop_stack.size());
+  log_trace(gc)("Restoring " SIZE_FORMAT " marks", _preserved_count + _preserved_overflow_stack.size());
 
   // restore the marks we saved earlier
   for (size_t i = 0; i < _preserved_count; i++) {
@@ -203,10 +198,9 @@ void MarkSweep::restore_marks() {
   }
 
   // deal with the overflow
-  while (!_preserved_oop_stack.is_empty()) {
-    oop obj       = _preserved_oop_stack.pop();
-    markWord mark = _preserved_mark_stack.pop();
-    obj->set_mark(mark);
+  while (!_preserved_overflow_stack.is_empty()) {
+    PreservedMark p = _preserved_overflow_stack.pop();
+    p.restore();
   }
 }
 
@@ -222,4 +216,5 @@ void MarkSweep::KeepAliveClosure::do_oop(narrowOop* p) { MarkSweep::KeepAliveClo
 void MarkSweep::initialize() {
   MarkSweep::_gc_timer = new (ResourceObj::C_HEAP, mtGC) STWGCTimer();
   MarkSweep::_gc_tracer = new (ResourceObj::C_HEAP, mtGC) SerialOldTracer();
+  MarkSweep::_string_dedup_requests = new StringDedup::Requests();
 }

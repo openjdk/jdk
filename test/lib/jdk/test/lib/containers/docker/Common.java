@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import jdk.test.lib.containers.docker.DockerRunOptions;
-import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -55,6 +53,10 @@ public class Common {
     public static DockerRunOptions newOpts(String imageNameAndTag) {
         return new DockerRunOptions(imageNameAndTag, "/jdk/bin/java", "-version")
             .addJavaOpts("-Xlog:os+container=trace");
+    }
+
+    public static DockerRunOptions newOptsShowSettings(String imageNameAndTag) {
+        return new DockerRunOptions(imageNameAndTag, "/jdk/bin/java", "-version", "-XshowSettings:system");
     }
 
 

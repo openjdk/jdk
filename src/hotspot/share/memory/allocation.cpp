@@ -110,12 +110,6 @@ void* ResourceObj::operator new(size_t size, Arena *arena) throw() {
   return res;
 }
 
-void* ResourceObj::operator new [](size_t size, Arena *arena) throw() {
-  address res = (address)arena->Amalloc(size);
-  DEBUG_ONLY(set_allocation_type(res, ARENA);)
-  return res;
-}
-
 void* ResourceObj::operator new(size_t size, allocation_type type, MEMFLAGS flags) throw() {
   address res = NULL;
   switch (type) {
@@ -131,10 +125,6 @@ void* ResourceObj::operator new(size_t size, allocation_type type, MEMFLAGS flag
     ShouldNotReachHere();
   }
   return res;
-}
-
-void* ResourceObj::operator new [](size_t size, allocation_type type, MEMFLAGS flags) throw() {
-  return (address) operator new(size, type, flags);
 }
 
 void* ResourceObj::operator new(size_t size, const std::nothrow_t&  nothrow_constant,
@@ -156,20 +146,14 @@ void* ResourceObj::operator new(size_t size, const std::nothrow_t&  nothrow_cons
   return res;
 }
 
-void* ResourceObj::operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
-    allocation_type type, MEMFLAGS flags) throw() {
-  return (address)operator new(size, nothrow_constant, type, flags);
-}
-
 void ResourceObj::operator delete(void* p) {
+  if (p == nullptr) {
+    return;
+  }
   assert(((ResourceObj *)p)->allocated_on_C_heap(),
          "delete only allowed for C_HEAP objects");
   DEBUG_ONLY(((ResourceObj *)p)->_allocation_t[0] = (uintptr_t)badHeapOopVal;)
   FreeHeap(p);
-}
-
-void ResourceObj::operator delete [](void* p) {
-  operator delete(p);
 }
 
 #ifdef ASSERT
@@ -207,7 +191,7 @@ void ResourceObj::initialize_allocation_info() {
     // Operator new() is not called for allocations
     // on stack and for embedded objects.
     set_allocation_type((address)this, STACK_OR_EMBEDDED);
-  } else if (allocated_on_stack()) { // STACK_OR_EMBEDDED
+  } else if (allocated_on_stack_or_embedded()) { // STACK_OR_EMBEDDED
     // For some reason we got a value which resembles
     // an embedded or stack object (operator new() does not
     // set such type). Keep it since it is valid value
@@ -215,7 +199,7 @@ void ResourceObj::initialize_allocation_info() {
     // Ignore garbage in other fields.
   } else if (is_type_set()) {
     // Operator new() was called and type was set.
-    assert(!allocated_on_stack(),
+    assert(!allocated_on_stack_or_embedded(),
            "not embedded or stack, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
            p2i(this), get_allocation_type(), _allocation_t[0], _allocation_t[1]);
   } else {
@@ -236,7 +220,7 @@ ResourceObj::ResourceObj(const ResourceObj&) {
 }
 
 ResourceObj& ResourceObj::operator=(const ResourceObj& r) {
-  assert(allocated_on_stack(),
+  assert(allocated_on_stack_or_embedded(),
          "copy only into local, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
          p2i(this), get_allocation_type(), _allocation_t[0], _allocation_t[1]);
   // Keep current _allocation_t value;

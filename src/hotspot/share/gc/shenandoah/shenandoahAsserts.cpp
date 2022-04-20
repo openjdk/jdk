@@ -316,6 +316,28 @@ void ShenandoahAsserts::assert_marked(void *interior_loc, oop obj, const char *f
   }
 }
 
+void ShenandoahAsserts::assert_marked_weak(void *interior_loc, oop obj, const char *file, int line) {
+  assert_correct(interior_loc, obj, file, line);
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->marking_context()->is_marked_weak(obj)) {
+    print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_marked_weak failed",
+                  "Object should be marked weakly",
+                  file, line);
+  }
+}
+
+void ShenandoahAsserts::assert_marked_strong(void *interior_loc, oop obj, const char *file, int line) {
+  assert_correct(interior_loc, obj, file, line);
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->marking_context()->is_marked_strong(obj)) {
+    print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_marked_strong failed",
+                  "Object should be marked strongly",
+                  file, line);
+  }
+}
+
 void ShenandoahAsserts::assert_in_cset(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
 

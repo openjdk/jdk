@@ -26,16 +26,15 @@
 package sun.awt.shell;
 
 import java.awt.Image;
-import java.awt.Toolkit;
 import java.awt.image.AbstractMultiResolutionImage;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
+import java.awt.image.MultiResolutionImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serial;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -86,7 +85,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     static final int LARGE_ICON_SIZE = 32;
     static final int MIN_QUALITY_ICON = 16;
     static final int MAX_QUALITY_ICON = 256;
-    private final static int[] ICON_RESOLUTIONS
+    private static final int[] ICON_RESOLUTIONS
             = {16, 24, 32, 48, 64, 72, 96, 128, 256};
 
     static final int FILE_ICON_ID = 1;
@@ -541,14 +540,13 @@ final class Win32ShellFolder2 extends ShellFolder {
      * Check to see if two ShellFolder objects are the same
      */
     public boolean equals(Object o) {
-        if (o == null || !(o instanceof Win32ShellFolder2)) {
+        if (!(o instanceof Win32ShellFolder2 rhs)) {
             // Short-circuit circuitous delegation path
             if (!(o instanceof File)) {
                 return super.equals(o);
             }
             return pathsEqual(getPath(), ((File) o).getPath());
         }
-        Win32ShellFolder2 rhs = (Win32ShellFolder2) o;
         if ((parent == null && rhs.parent != null) ||
             (parent != null && rhs.parent == null)) {
             return false;
@@ -1160,10 +1158,17 @@ final class Win32ShellFolder2 extends ShellFolder {
                                 getRelativePIDL(), s, true);
                         if (hIcon <= 0) {
                             if (isDirectory()) {
-                                return getShell32Icon(FOLDER_ICON_ID, size);
+                                newIcon = getShell32Icon(FOLDER_ICON_ID, size);
                             } else {
-                                return getShell32Icon(FILE_ICON_ID, size);
+                                newIcon = getShell32Icon(FILE_ICON_ID, size);
                             }
+                            if (newIcon == null) {
+                                return null;
+                            }
+                            if (!(newIcon instanceof MultiResolutionImage)) {
+                                newIcon = new MultiResolutionIconImage(size, newIcon);
+                            }
+                            return newIcon;
                         }
                     }
                     newIcon = makeIcon(hIcon);
@@ -1325,7 +1330,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         // synchronize the whole code of the sort method once
         invoke(new Callable<Void>() {
             public Void call() {
-                Collections.sort(files, new ColumnComparator(Win32ShellFolder2.this, 0));
+                files.sort(new ColumnComparator(Win32ShellFolder2.this, 0));
 
                 return null;
             }

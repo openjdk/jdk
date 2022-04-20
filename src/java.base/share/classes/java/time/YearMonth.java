@@ -486,14 +486,14 @@ public final class YearMonth
     @Override
     public long getLong(TemporalField field) {
         if (field instanceof ChronoField chronoField) {
-            switch (chronoField) {
-                case MONTH_OF_YEAR: return month;
-                case PROLEPTIC_MONTH: return getProlepticMonth();
-                case YEAR_OF_ERA: return (year < 1 ? 1 - year : year);
-                case YEAR: return year;
-                case ERA: return (year < 1 ? 0 : 1);
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            return switch (chronoField) {
+                case MONTH_OF_YEAR   -> month;
+                case PROLEPTIC_MONTH -> getProlepticMonth();
+                case YEAR_OF_ERA     -> (year < 1 ? 1 - year : year);
+                case YEAR            -> year;
+                case ERA             -> (year < 1 ? 0 : 1);
+                default -> throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            };
         }
         return field.getFrom(this);
     }
@@ -684,14 +684,14 @@ public final class YearMonth
     public YearMonth with(TemporalField field, long newValue) {
         if (field instanceof ChronoField chronoField) {
             chronoField.checkValidValue(newValue);
-            switch (chronoField) {
-                case MONTH_OF_YEAR: return withMonth((int) newValue);
-                case PROLEPTIC_MONTH: return plusMonths(newValue - getProlepticMonth());
-                case YEAR_OF_ERA: return withYear((int) (year < 1 ? 1 - newValue : newValue));
-                case YEAR: return withYear((int) newValue);
-                case ERA: return (getLong(ERA) == newValue ? this : withYear(1 - year));
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            return switch (chronoField) {
+                case MONTH_OF_YEAR   -> withMonth((int) newValue);
+                case PROLEPTIC_MONTH -> plusMonths(newValue - getProlepticMonth());
+                case YEAR_OF_ERA     -> withYear((int) (year < 1 ? 1 - newValue : newValue));
+                case YEAR            -> withYear((int) newValue);
+                case ERA             -> (getLong(ERA) == newValue ? this : withYear(1 - year));
+                default -> throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            };
         }
         return field.adjustInto(this, newValue);
     }
@@ -805,15 +805,15 @@ public final class YearMonth
     @Override
     public YearMonth plus(long amountToAdd, TemporalUnit unit) {
         if (unit instanceof ChronoUnit chronoUnit) {
-            switch (chronoUnit) {
-                case MONTHS: return plusMonths(amountToAdd);
-                case YEARS: return plusYears(amountToAdd);
-                case DECADES: return plusYears(Math.multiplyExact(amountToAdd, 10));
-                case CENTURIES: return plusYears(Math.multiplyExact(amountToAdd, 100));
-                case MILLENNIA: return plusYears(Math.multiplyExact(amountToAdd, 1000));
-                case ERAS: return with(ERA, Math.addExact(getLong(ERA), amountToAdd));
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            return switch (chronoUnit) {
+                case MONTHS    -> plusMonths(amountToAdd);
+                case YEARS     -> plusYears(amountToAdd);
+                case DECADES   -> plusYears(Math.multiplyExact(amountToAdd, 10));
+                case CENTURIES -> plusYears(Math.multiplyExact(amountToAdd, 100));
+                case MILLENNIA -> plusYears(Math.multiplyExact(amountToAdd, 1000));
+                case ERAS      -> with(ERA, Math.addExact(getLong(ERA), amountToAdd));
+                default -> throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            };
         }
         return unit.addTo(this, amountToAdd);
     }
@@ -1047,15 +1047,15 @@ public final class YearMonth
         YearMonth end = YearMonth.from(endExclusive);
         if (unit instanceof ChronoUnit chronoUnit) {
             long monthsUntil = end.getProlepticMonth() - getProlepticMonth();  // no overflow
-            switch (chronoUnit) {
-                case MONTHS: return monthsUntil;
-                case YEARS: return monthsUntil / 12;
-                case DECADES: return monthsUntil / 120;
-                case CENTURIES: return monthsUntil / 1200;
-                case MILLENNIA: return monthsUntil / 12000;
-                case ERAS: return end.getLong(ERA) - getLong(ERA);
-            }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            return switch (chronoUnit) {
+                case MONTHS    -> monthsUntil;
+                case YEARS     -> monthsUntil / 12;
+                case DECADES   -> monthsUntil / 120;
+                case CENTURIES -> monthsUntil / 1200;
+                case MILLENNIA -> monthsUntil / 12000;
+                case ERAS      -> end.getLong(ERA) - getLong(ERA);
+                default -> throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+            };
         }
         return unit.between(this, end);
     }

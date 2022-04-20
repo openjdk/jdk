@@ -25,6 +25,7 @@
  * @test
  * @bug 8267118
  * @summary Test catching Throwable doesn't trigger OOME
+ * @requires vm.flagless
  * @library /test/lib
  * @run driver TestCatchThrowableOOM
  */

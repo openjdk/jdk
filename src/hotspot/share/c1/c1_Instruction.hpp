@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ class ciField;
 class ValueStack;
 class InstructionPrinter;
 class IRScope;
-class LIR_OprDesc;
-typedef LIR_OprDesc* LIR_Opr;
 
 
 // Instruction class hierarchy
@@ -95,13 +93,9 @@ class       Throw;
 class       Base;
 class   RoundFP;
 class   UnsafeOp;
-class     UnsafeRawOp;
-class       UnsafeGetRaw;
-class       UnsafePutRaw;
-class     UnsafeObjectOp;
-class       UnsafeGetObject;
-class       UnsafePutObject;
-class         UnsafeGetAndSetObject;
+class     UnsafeGet;
+class     UnsafePut;
+class     UnsafeGetAndSet;
 class   ProfileCall;
 class   ProfileReturnType;
 class   ProfileInvoke;
@@ -143,7 +137,6 @@ class BlockList: public GrowableArray<BlockBegin*> {
 
   void iterate_forward(BlockClosure* closure);
   void iterate_backward(BlockClosure* closure);
-  void blocks_do(void f(BlockBegin*));
   void values_do(ValueVisitor* f);
   void print(bool cfg_only = false, bool live_only = false) PRODUCT_RETURN;
 };
@@ -195,11 +188,9 @@ class InstructionVisitor: public StackObj {
   virtual void do_OsrEntry       (OsrEntry*        x) = 0;
   virtual void do_ExceptionObject(ExceptionObject* x) = 0;
   virtual void do_RoundFP        (RoundFP*         x) = 0;
-  virtual void do_UnsafeGetRaw   (UnsafeGetRaw*    x) = 0;
-  virtual void do_UnsafePutRaw   (UnsafePutRaw*    x) = 0;
-  virtual void do_UnsafeGetObject(UnsafeGetObject* x) = 0;
-  virtual void do_UnsafePutObject(UnsafePutObject* x) = 0;
-  virtual void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) = 0;
+  virtual void do_UnsafeGet      (UnsafeGet*       x) = 0;
+  virtual void do_UnsafePut      (UnsafePut*       x) = 0;
+  virtual void do_UnsafeGetAndSet(UnsafeGetAndSet* x) = 0;
   virtual void do_ProfileCall    (ProfileCall*     x) = 0;
   virtual void do_ProfileReturnType (ProfileReturnType*  x) = 0;
   virtual void do_ProfileInvoke  (ProfileInvoke*   x) = 0;
@@ -288,7 +279,7 @@ class Instruction: public CompilationResourceObj {
 #ifndef PRODUCT
   int          _printable_bci;                   // the bci of the instruction for printing
 #endif
-  int          _use_count;                       // the number of instructions refering to this value (w/o prev/next); only roots can have use count = 0 or > 1
+  int          _use_count;                       // the number of instructions referring to this value (w/o prev/next); only roots can have use count = 0 or > 1
   int          _pin_state;                       // set of PinReason describing the reason for pinning
   ValueType*   _type;                            // the instruction value type
   Instruction* _next;                            // the next instruction if any (NULL for BlockEnd instructions)
@@ -372,6 +363,7 @@ class Instruction: public CompilationResourceObj {
     NeedsRangeCheckFlag,
     InWorkListFlag,
     DeoptimizeOnException,
+    KillsMemoryFlag,
     InstructionLastFlag
   };
 
@@ -727,13 +719,13 @@ LEAF(Constant, Instruction)
     assert(type->is_constant(), "must be a constant");
   }
 
-  Constant(ValueType* type, ValueStack* state_before):
+  Constant(ValueType* type, ValueStack* state_before, bool kills_memory = false):
     Instruction(type, state_before, /*type_is_constant*/ true)
   {
     assert(state_before != NULL, "only used for constants which need patching");
     assert(type->is_constant(), "must be a constant");
-    // since it's patching it needs to be pinned
-    pin();
+    set_flag(KillsMemoryFlag, kills_memory);
+    pin(); // since it's patching it needs to be pinned
   }
 
   // generic
@@ -744,6 +736,8 @@ LEAF(Constant, Instruction)
   virtual bool is_equal(Value v) const;
 
   virtual ciType* exact_type() const;
+
+  bool kills_memory() const { return check_flag(KillsMemoryFlag); }
 
   enum CompareResult { not_comparable = -1, cond_false, cond_true };
 
@@ -1603,7 +1597,6 @@ LEAF(BlockBegin, StateSplit)
   ResourceBitMap _stores_to_locals;              // bit is set when a local variable is stored in the block
 
   // SSA specific fields: (factor out later)
-  BlockList   _successors;                       // the successors of this block
   BlockList   _predecessors;                     // the predecessors of this block
   BlockList   _dominates;                        // list of blocks that are dominated by this block
   BlockBegin* _dominator;                        // the dominator of this block
@@ -1657,7 +1650,6 @@ LEAF(BlockBegin, StateSplit)
   , _flags(0)
   , _total_preds(0)
   , _stores_to_locals()
-  , _successors(2)
   , _predecessors(2)
   , _dominates(2)
   , _dominator(NULL)
@@ -1684,7 +1676,6 @@ LEAF(BlockBegin, StateSplit)
   // accessors
   int block_id() const                           { return _block_id; }
   int bci() const                                { return _bci; }
-  BlockList* successors()                        { return &_successors; }
   BlockList* dominates()                         { return &_dominates; }
   BlockBegin* dominator() const                  { return _dominator; }
   int loop_depth() const                         { return _loop_depth; }
@@ -1712,9 +1703,7 @@ LEAF(BlockBegin, StateSplit)
   void set_dominator_depth(int d)                { _dominator_depth = d; }
   void set_depth_first_number(int dfn)           { _depth_first_number = dfn; }
   void set_linear_scan_number(int lsn)           { _linear_scan_number = lsn; }
-  void set_end(BlockEnd* end);
-  void clear_end();
-  void disconnect_from_graph();
+  void set_end(BlockEnd* new_end);
   static void disconnect_edge(BlockBegin* from, BlockBegin* to);
   BlockBegin* insert_block_between(BlockBegin* sux);
   void substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux);
@@ -1737,10 +1726,6 @@ LEAF(BlockBegin, StateSplit)
   // successors and predecessors
   int number_of_sux() const;
   BlockBegin* sux_at(int i) const;
-  void add_successor(BlockBegin* sux);
-  void remove_successor(BlockBegin* pred);
-  bool is_successor(BlockBegin* sux) const       { return _successors.contains(sux); }
-
   void add_predecessor(BlockBegin* pred);
   void remove_predecessor(BlockBegin* pred);
   bool is_predecessor(BlockBegin* pred) const    { return _predecessors.contains(pred); }
@@ -1794,12 +1779,16 @@ LEAF(BlockBegin, StateSplit)
   int  loop_index() const                        { return _loop_index;      }
 
   // merging
-  bool try_merge(ValueStack* state);             // try to merge states at block begin
-  void merge(ValueStack* state)                  { bool b = try_merge(state); assert(b, "merge failed"); }
+  bool try_merge(ValueStack* state, bool has_irreducible_loops);  // try to merge states at block begin
+  void merge(ValueStack* state, bool has_irreducible_loops) {
+    bool b = try_merge(state, has_irreducible_loops);
+    assert(b, "merge failed");
+  }
 
   // debugging
   void print_block()                             PRODUCT_RETURN;
   void print_block(InstructionPrinter& ip, bool live_only = false) PRODUCT_RETURN;
+
 };
 
 
@@ -1833,14 +1822,14 @@ BASE(BlockEnd, StateSplit)
   BlockBegin* begin() const                      { return _block; }
 
   // manipulation
-  void set_begin(BlockBegin* begin);
+  inline void remove_sux_at(int i) { _sux->remove_at(i);}
+  inline int find_sux(BlockBegin* sux) {return _sux->find(sux);}
 
   // successors
   int number_of_sux() const                      { return _sux != NULL ? _sux->length() : 0; }
   BlockBegin* sux_at(int i) const                { return _sux->at(i); }
+  bool is_sux(BlockBegin* sux) const             { return _sux == NULL ? false : _sux->contains(sux); }
   BlockBegin* default_sux() const                { return sux_at(number_of_sux() - 1); }
-  BlockBegin** addr_sux_at(int i) const          { return _sux->adr_at(i); }
-  int sux_index(BlockBegin* sux) const           { return _sux->find(sux); }
   void substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux);
 };
 
@@ -2004,14 +1993,6 @@ LEAF(If, BlockEnd)
   void swap_operands() {
     Value t = _x; _x = _y; _y = t;
     _cond = mirror(_cond);
-  }
-
-  void swap_sux() {
-    assert(number_of_sux() == 2, "wrong number of successors");
-    BlockList* s = sux();
-    BlockBegin* t = s->at(0); s->at_put(0, s->at(1)); s->at_put(1, t);
-    _cond = negate(_cond);
-    set_flag(UnorderedIsTrueFlag, !check_flag(UnorderedIsTrueFlag));
   }
 
   void set_should_profile(bool value)             { set_flag(ProfileMDOFlag, value); }
@@ -2193,13 +2174,16 @@ LEAF(RoundFP, Instruction)
 
 BASE(UnsafeOp, Instruction)
  private:
-  BasicType _basic_type;    // ValueType can not express byte-sized integers
+  Value _object;                                 // Object to be fetched from or mutated
+  Value _offset;                                 // Offset within object
+  bool  _is_volatile;                            // true if volatile - dl/JSR166
+  BasicType _basic_type;                         // ValueType can not express byte-sized integers
 
  protected:
   // creation
-  UnsafeOp(BasicType basic_type, bool is_put)
-  : Instruction(is_put ? voidType : as_ValueType(basic_type))
-  , _basic_type(basic_type)
+  UnsafeOp(BasicType basic_type, Value object, Value offset, bool is_put, bool is_volatile)
+    : Instruction(is_put ? voidType : as_ValueType(basic_type)),
+    _object(object), _offset(offset), _is_volatile(is_volatile), _basic_type(basic_type)
   {
     //Note:  Unsafe ops are not not guaranteed to throw NPE.
     // Convservatively, Unsafe operations must be pinned though we could be
@@ -2210,148 +2194,42 @@ BASE(UnsafeOp, Instruction)
  public:
   // accessors
   BasicType basic_type()                         { return _basic_type; }
-
-  // generic
-  virtual void input_values_do(ValueVisitor* f)   { }
-};
-
-
-BASE(UnsafeRawOp, UnsafeOp)
- private:
-  Value _base;                                   // Base address (a Java long)
-  Value _index;                                  // Index if computed by optimizer; initialized to NULL
-  int   _log2_scale;                             // Scale factor: 0, 1, 2, or 3.
-                                                 // Indicates log2 of number of bytes (1, 2, 4, or 8)
-                                                 // to scale index by.
-
- protected:
-  UnsafeRawOp(BasicType basic_type, Value addr, bool is_put)
-  : UnsafeOp(basic_type, is_put)
-  , _base(addr)
-  , _index(NULL)
-  , _log2_scale(0)
-  {
-    // Can not use ASSERT_VALUES because index may be NULL
-    assert(addr != NULL && addr->type()->is_long(), "just checking");
-  }
-
-  UnsafeRawOp(BasicType basic_type, Value base, Value index, int log2_scale, bool is_put)
-  : UnsafeOp(basic_type, is_put)
-  , _base(base)
-  , _index(index)
-  , _log2_scale(log2_scale)
-  {
-  }
-
- public:
-  // accessors
-  Value base()                                   { return _base; }
-  Value index()                                  { return _index; }
-  bool  has_index()                              { return (_index != NULL); }
-  int   log2_scale()                             { return _log2_scale; }
-
-  // setters
-  void set_base (Value base)                     { _base  = base; }
-  void set_index(Value index)                    { _index = index; }
-  void set_log2_scale(int log2_scale)            { _log2_scale = log2_scale; }
-
-  // generic
-  virtual void input_values_do(ValueVisitor* f)   { UnsafeOp::input_values_do(f);
-                                                   f->visit(&_base);
-                                                   if (has_index()) f->visit(&_index); }
-};
-
-
-LEAF(UnsafeGetRaw, UnsafeRawOp)
- private:
- bool _may_be_unaligned, _is_wide;  // For OSREntry
-
- public:
- UnsafeGetRaw(BasicType basic_type, Value addr, bool may_be_unaligned, bool is_wide = false)
-  : UnsafeRawOp(basic_type, addr, false) {
-    _may_be_unaligned = may_be_unaligned;
-    _is_wide = is_wide;
-  }
-
- UnsafeGetRaw(BasicType basic_type, Value base, Value index, int log2_scale, bool may_be_unaligned, bool is_wide = false)
-  : UnsafeRawOp(basic_type, base, index, log2_scale, false) {
-    _may_be_unaligned = may_be_unaligned;
-    _is_wide = is_wide;
-  }
-
-  bool may_be_unaligned()                         { return _may_be_unaligned; }
-  bool is_wide()                                  { return _is_wide; }
-};
-
-
-LEAF(UnsafePutRaw, UnsafeRawOp)
- private:
-  Value _value;                                  // Value to be stored
-
- public:
-  UnsafePutRaw(BasicType basic_type, Value addr, Value value)
-  : UnsafeRawOp(basic_type, addr, true)
-  , _value(value)
-  {
-    assert(value != NULL, "just checking");
-    ASSERT_VALUES
-  }
-
-  UnsafePutRaw(BasicType basic_type, Value base, Value index, int log2_scale, Value value)
-  : UnsafeRawOp(basic_type, base, index, log2_scale, true)
-  , _value(value)
-  {
-    assert(value != NULL, "just checking");
-    ASSERT_VALUES
-  }
-
-  // accessors
-  Value value()                                  { return _value; }
-
-  // generic
-  virtual void input_values_do(ValueVisitor* f)   { UnsafeRawOp::input_values_do(f);
-                                                   f->visit(&_value); }
-};
-
-
-BASE(UnsafeObjectOp, UnsafeOp)
- private:
-  Value _object;                                 // Object to be fetched from or mutated
-  Value _offset;                                 // Offset within object
-  bool  _is_volatile;                            // true if volatile - dl/JSR166
- public:
-  UnsafeObjectOp(BasicType basic_type, Value object, Value offset, bool is_put, bool is_volatile)
-    : UnsafeOp(basic_type, is_put), _object(object), _offset(offset), _is_volatile(is_volatile)
-  {
-  }
-
-  // accessors
   Value object()                                 { return _object; }
   Value offset()                                 { return _offset; }
   bool  is_volatile()                            { return _is_volatile; }
+
   // generic
-  virtual void input_values_do(ValueVisitor* f)   { UnsafeOp::input_values_do(f);
-                                                   f->visit(&_object);
-                                                   f->visit(&_offset); }
+  virtual void input_values_do(ValueVisitor* f)   { f->visit(&_object);
+                                                    f->visit(&_offset); }
 };
 
-
-LEAF(UnsafeGetObject, UnsafeObjectOp)
+LEAF(UnsafeGet, UnsafeOp)
+ private:
+  bool _is_raw;
  public:
-  UnsafeGetObject(BasicType basic_type, Value object, Value offset, bool is_volatile)
-  : UnsafeObjectOp(basic_type, object, offset, false, is_volatile)
+  UnsafeGet(BasicType basic_type, Value object, Value offset, bool is_volatile)
+  : UnsafeOp(basic_type, object, offset, false, is_volatile)
+  {
+    ASSERT_VALUES
+    _is_raw = false;
+  }
+  UnsafeGet(BasicType basic_type, Value object, Value offset, bool is_volatile, bool is_raw)
+  : UnsafeOp(basic_type, object, offset, false, is_volatile), _is_raw(is_raw)
   {
     ASSERT_VALUES
   }
+
+  // accessors
+  bool is_raw()                             { return _is_raw; }
 };
 
 
-LEAF(UnsafePutObject, UnsafeObjectOp)
+LEAF(UnsafePut, UnsafeOp)
  private:
   Value _value;                                  // Value to be stored
  public:
-  UnsafePutObject(BasicType basic_type, Value object, Value offset, Value value, bool is_volatile)
-  : UnsafeObjectOp(basic_type, object, offset, true, is_volatile)
+  UnsafePut(BasicType basic_type, Value object, Value offset, Value value, bool is_volatile)
+  : UnsafeOp(basic_type, object, offset, true, is_volatile)
     , _value(value)
   {
     ASSERT_VALUES
@@ -2361,17 +2239,17 @@ LEAF(UnsafePutObject, UnsafeObjectOp)
   Value value()                                  { return _value; }
 
   // generic
-  virtual void input_values_do(ValueVisitor* f)   { UnsafeObjectOp::input_values_do(f);
+  virtual void input_values_do(ValueVisitor* f)   { UnsafeOp::input_values_do(f);
                                                    f->visit(&_value); }
 };
 
-LEAF(UnsafeGetAndSetObject, UnsafeObjectOp)
+LEAF(UnsafeGetAndSet, UnsafeOp)
  private:
   Value _value;                                  // Value to be stored
   bool  _is_add;
  public:
-  UnsafeGetAndSetObject(BasicType basic_type, Value object, Value offset, Value value, bool is_add)
-  : UnsafeObjectOp(basic_type, object, offset, false, false)
+  UnsafeGetAndSet(BasicType basic_type, Value object, Value offset, Value value, bool is_add)
+  : UnsafeOp(basic_type, object, offset, false, false)
     , _value(value)
     , _is_add(is_add)
   {
@@ -2383,7 +2261,7 @@ LEAF(UnsafeGetAndSetObject, UnsafeObjectOp)
   Value value()                                  { return _value; }
 
   // generic
-  virtual void input_values_do(ValueVisitor* f)   { UnsafeObjectOp::input_values_do(f);
+  virtual void input_values_do(ValueVisitor* f)   { UnsafeOp::input_values_do(f);
                                                    f->visit(&_value); }
 };
 
@@ -2558,9 +2436,8 @@ class BlockPair: public CompilationResourceObj {
 
 typedef GrowableArray<BlockPair*> BlockPairList;
 
-inline int         BlockBegin::number_of_sux() const            { assert(_end == NULL || _end->number_of_sux() == _successors.length(), "mismatch"); return _successors.length(); }
-inline BlockBegin* BlockBegin::sux_at(int i) const              { assert(_end == NULL || _end->sux_at(i) == _successors.at(i), "mismatch");          return _successors.at(i); }
-inline void        BlockBegin::add_successor(BlockBegin* sux)   { assert(_end == NULL, "Would create mismatch with successors of BlockEnd");         _successors.append(sux); }
+inline int         BlockBegin::number_of_sux() const            { assert(_end != NULL, "need end"); return _end->number_of_sux(); }
+inline BlockBegin* BlockBegin::sux_at(int i) const              { assert(_end != NULL , "need end"); return _end->sux_at(i); }
 
 #undef ASSERT_VALUES
 

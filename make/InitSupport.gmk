@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -310,9 +310,10 @@ else # $(HAS_SPEC)=true
   # level of reproducible builds
   define SetupReproducibleBuild
     ifeq ($$(SOURCE_DATE), updated)
-      SOURCE_DATE := $$(shell $$(DATE) +"%s")
+      # For static values of SOURCE_DATE (not "updated"), these are set in spec.gmk
+      export SOURCE_DATE_EPOCH := $$(shell $$(DATE) +"%s")
+      export SOURCE_DATE_ISO_8601 := $$(call EpochToISO8601, $$(SOURCE_DATE_EPOCH))
     endif
-    export SOURCE_DATE_EPOCH := $$(SOURCE_DATE)
   endef
 
   # Parse COMPARE_BUILD into COMPARE_BUILD_*
@@ -460,10 +461,10 @@ else # $(HAS_SPEC)=true
 	    $(PRINTF) "\n=== Make failed targets repeated here ===\n" ; \
 	    $(GREP) "recipe for target .* failed" $(BUILD_LOG) ; \
 	    $(PRINTF) "=== End of repeated output ===\n" ; \
-	    $(PRINTF) "\nHint: Try searching the build log for the name of the first failed target.\n" ; \
+	    $(PRINTF) "\nHELP: Try searching the build log for the name of the first failed target.\n" ; \
 	  else \
 	    $(PRINTF) "\nNo indication of failed target found.\n" ; \
-	    $(PRINTF) "Hint: Try searching the build log for '] Error'.\n" ; \
+	    $(PRINTF) "HELP: Try searching the build log for '] Error'.\n" ; \
 	  fi \
 	)
   endef

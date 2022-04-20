@@ -525,11 +525,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return UNSAFE.getInt(getMetaspaceKlass() + config.klassLayoutHelperOffset);
     }
 
-    @Override
-    public long getFingerprint() {
-        return compilerToVM().getFingerprint(getMetaspaceKlass());
-    }
-
     synchronized HotSpotResolvedJavaMethod createMethod(long metaspaceHandle) {
         long metaspaceMethod = UNSAFE.getLong(metaspaceHandle);
         // Maintain cache as array.
@@ -923,11 +918,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     @Override
     public long prototypeMarkWord() {
         HotSpotVMConfig config = config();
-        if (isArray()) {
-            return config.arrayPrototypeMarkWord();
-        } else {
-            return UNSAFE.getAddress(getMetaspaceKlass() + config.prototypeMarkWordOffset);
-        }
+        return config.prototypeMarkWord();
     }
 
     @Override

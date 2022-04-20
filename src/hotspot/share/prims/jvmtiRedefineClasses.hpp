@@ -493,7 +493,6 @@ class VM_RedefineClasses: public VM_Operation {
          constantPoolHandle scratch_cp, int scratch_cp_length, TRAPS);
 
   void flush_dependent_code();
-  void mark_dependent_code(InstanceKlass* ik);
 
   // lock classes to redefine since constant pool merging isn't thread safe.
   void lock_classes();

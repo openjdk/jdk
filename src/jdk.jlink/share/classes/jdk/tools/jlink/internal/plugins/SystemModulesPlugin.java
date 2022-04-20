@@ -477,7 +477,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             return bais;
         }
 
-        class ModuleInfoRewriter extends ByteArrayOutputStream {
+        static class ModuleInfoRewriter extends ByteArrayOutputStream {
             final ModuleInfoExtender extender;
             ModuleInfoRewriter(InputStream in) {
                 this.extender = ModuleInfoExtender.newExtender(in);
@@ -625,7 +625,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         }
 
         /**
-         * Generate byteccode for no-arg constructor
+         * Generate bytecode for no-arg constructor
          */
         private void genConstructor(ClassWriter cw) {
             MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);

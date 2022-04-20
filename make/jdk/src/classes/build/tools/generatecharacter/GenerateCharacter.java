@@ -340,7 +340,7 @@ public class GenerateCharacter {
                 ++codePoint;
             }
             else {
-                System.out.println("An error has occured during spec mapping.");
+                System.out.println("An error has occurred during spec mapping.");
                 System.exit(0);
             }
         }

@@ -57,7 +57,7 @@ public class bug7154030 {
 
     private static JButton button = null;
     private static JFrame frame;
-    private static int locx, locy, frw, frh;
+    private static volatile int locx, locy, frw, frh;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -76,6 +76,7 @@ public class bug7154030 {
                     JDesktopPane desktop = new JDesktopPane();
                     button = new JButton("button");
                     frame = new JFrame();
+                    frame.setUndecorated(true);
 
                     button.setSize(200, 200);
                     button.setLocation(100, 100);
@@ -102,12 +103,14 @@ public class bug7154030 {
 
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             Rectangle screen = new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
-            Rectangle bounds = frame.getBounds();
-            Insets insets = frame.getInsets();
-            locx = bounds.x + insets.left;
-            locy = bounds.y + insets.top;
-            frw = bounds.width - insets.left - insets.right;
-            frh = bounds.height - insets.top - insets.bottom;
+            SwingUtilities.invokeAndWait(() -> {
+                        Rectangle bounds = frame.getBounds();
+                        Insets insets = frame.getInsets();
+                        locx = bounds.x + insets.left;
+                        locy = bounds.y + insets.top;
+                        frw = bounds.width - insets.left - insets.right;
+                        frh = bounds.height - insets.top - insets.bottom;
+                    });
 
             BufferedImage fullScreen = robot.createScreenCapture(screen);
             Graphics g = fullScreen.getGraphics();

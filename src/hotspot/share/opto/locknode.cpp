@@ -158,15 +158,6 @@ bool FastUnlockNode::cmp( const Node &n ) const {
   return (&n == this);                // Always fail except on self
 }
 
-//
-// Create a counter which counts the number of times this lock is acquired
-//
-void FastLockNode::create_lock_counter(JVMState* state) {
-  BiasedLockingNamedCounter* blnc = (BiasedLockingNamedCounter*)
-           OptoRuntime::new_named_counter(state, NamedCounter::BiasedLockingCounter);
-  _counters = blnc->counters();
-}
-
 void FastLockNode::create_rtm_lock_counter(JVMState* state) {
 #if INCLUDE_RTM_OPT
   Compile* C = Compile::current();

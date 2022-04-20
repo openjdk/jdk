@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,11 @@
 package pkg;
 
 /**
- * Here is a relative link in a class:
- * <a href="relative-class-link.html">relative class link</a>.
+ * Here are two relative links in a class:
+ * <a href="relative-class-link.html">relative class link</a>,
+ * <a href="#class-fragment">fragment class link</a>.
+ *
+ * <a id="class-fragment">Class fragment</a>.
  */
 public class C {
 
@@ -36,8 +39,9 @@ public class C {
     public C field = null;
 
     /**
-     * Here is a relative link in a method:
-     * <a href="relative-method-link.html">relative method link</a>.
+     * Here are two relative links in a method:
+     * <a href="relative-method-link.html">relative method link</a>,
+     * <a href="#method-fragment">fragment method link</a>.
      */
     public C method() { return null;}
 
@@ -45,11 +49,13 @@ public class C {
      * Here is a relative link in a method:
      * <a
      * href="relative-multi-line-link.html">relative-multi-line-link</a>.
+     *
+     * <a id="method-fragment">Method fragment</a>.
      */
     public C multipleLineTest() { return null;}
 
     /**
-     * <a name="masters"></a>
+     * <a id="masters"></a>
      * Something that goes holy cow. Second line.
      */
     public static class WithAnAnchor{}

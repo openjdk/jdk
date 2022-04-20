@@ -56,20 +56,22 @@ class ICStub: public Stub {
  protected:
   friend class ICStubInterface;
   // This will be called only by ICStubInterface
-  void    initialize(int size,
-                     CodeStrings strings)        { _size = size; _ic_site = NULL; }
+  void    initialize(int size)                   { _size = size; _ic_site = NULL; }
   void    finalize(); // called when a method is removed
 
   // General info
   int     size() const                           { return _size; }
-  static  int code_size_to_size(int code_size)   { return align_up((int)sizeof(ICStub), CodeEntryAlignment) + code_size; }
+
+  // ICStub_from_destination_address looks up Stub* address from code entry address,
+  // which unfortunately means the stub head should be at the same alignment as the code.
+  static  int alignment()                        { return CodeEntryAlignment; }
 
  public:
   // Creation
   void set_stub(CompiledIC *ic, void* cached_value, address dest_addr);
 
   // Code info
-  address code_begin() const                     { return (address)this + align_up(sizeof(ICStub), CodeEntryAlignment); }
+  address code_begin() const                     { return align_up((address)this + sizeof(ICStub), CodeEntryAlignment); }
   address code_end() const                       { return (address)this + size(); }
 
   // Call site info

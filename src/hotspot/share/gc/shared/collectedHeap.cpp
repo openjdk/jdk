@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,18 @@ void GCHeapLog::log_heap(CollectedHeap* heap, bool before) {
 
   heap->print_on(&st);
   st.print_cr("}");
+}
+
+ParallelObjectIterator::ParallelObjectIterator(uint thread_num) :
+  _impl(Universe::heap()->parallel_object_iterator(thread_num))
+{}
+
+ParallelObjectIterator::~ParallelObjectIterator() {
+  delete _impl;
+}
+
+void ParallelObjectIterator::object_iterate(ObjectClosure* cl, uint worker_id) {
+  _impl->object_iterate(cl, worker_id);
 }
 
 size_t CollectedHeap::unused() const {
@@ -405,6 +417,11 @@ size_t CollectedHeap::filler_array_min_size() {
   return align_object_size(filler_array_hdr_size()); // align to MinObjAlignment
 }
 
+void CollectedHeap::zap_filler_array_with(HeapWord* start, size_t words, juint value) {
+  Copy::fill_to_words(start + filler_array_hdr_size(),
+                      words - filler_array_hdr_size(), value);
+}
+
 #ifdef ASSERT
 void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
 {
@@ -415,8 +432,7 @@ void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
 void CollectedHeap::zap_filler_array(HeapWord* start, size_t words, bool zap)
 {
   if (ZapFillerObjects && zap) {
-    Copy::fill_to_words(start + filler_array_hdr_size(),
-                        words - filler_array_hdr_size(), 0XDEAFBABE);
+    zap_filler_array_with(start, words, 0XDEAFBABE);
   }
 }
 #endif // ASSERT
@@ -433,7 +449,13 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
 
   ObjArrayAllocator allocator(Universe::intArrayKlassObj(), words, (int)len, /* do_zero */ false);
   allocator.initialize(start);
-  DEBUG_ONLY(zap_filler_array(start, words, zap);)
+  if (DumpSharedSpaces) {
+    // This array is written into the CDS archive. Make sure it
+    // has deterministic contents.
+    zap_filler_array_with(start, words, 0);
+  } else {
+    DEBUG_ONLY(zap_filler_array(start, words, zap);)
+  }
 }
 
 void
@@ -479,10 +501,6 @@ void CollectedHeap::fill_with_objects(HeapWord* start, size_t words, bool zap)
 
 void CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) {
   CollectedHeap::fill_with_object(start, end, zap);
-}
-
-size_t CollectedHeap::min_dummy_object_size() const {
-  return oopDesc::header_size();
 }
 
 size_t CollectedHeap::tlab_alloc_reserve() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -442,16 +442,13 @@ void frame::print_value_on(outputStream* st, JavaThread *thread) const {
   if (sp() != NULL)
     st->print(", fp=" INTPTR_FORMAT ", real_fp=" INTPTR_FORMAT ", pc=" INTPTR_FORMAT,
               p2i(fp()), p2i(real_fp()), p2i(pc()));
+  st->print_cr(")");
 
   if (StubRoutines::contains(pc())) {
-    st->print_cr(")");
-    st->print("(");
     StubCodeDesc* desc = StubCodeDesc::desc_for(pc());
     st->print("~Stub::%s", desc->name());
     NOT_PRODUCT(begin = desc->begin(); end = desc->end();)
   } else if (Interpreter::contains(pc())) {
-    st->print_cr(")");
-    st->print("(");
     InterpreterCodelet* desc = Interpreter::codelet_containing(pc());
     if (desc != NULL) {
       st->print("~");
@@ -461,20 +458,18 @@ void frame::print_value_on(outputStream* st, JavaThread *thread) const {
       st->print("~interpreter");
     }
   }
-  st->print_cr(")");
 
+#ifndef PRODUCT
   if (_cb != NULL) {
     st->print("     ");
     _cb->print_value_on(st);
-    st->cr();
-#ifndef PRODUCT
     if (end == NULL) {
       begin = _cb->code_begin();
       end   = _cb->code_end();
     }
-#endif
   }
-  NOT_PRODUCT(if (WizardMode && Verbose) Disassembler::decode(begin, end);)
+  if (WizardMode && Verbose) Disassembler::decode(begin, end);
+#endif
 }
 
 
@@ -1068,9 +1063,7 @@ void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterM
   } else if (is_entry_frame()) {
     oops_entry_do(f, map);
   } else if (is_optimized_entry_frame()) {
-   // Nothing to do
-   // receiver is a global ref
-   // handle block is for JNI
+    _cb->as_optimized_entry_blob()->oops_do(f, *this);
   } else if (CodeCache::contains(pc())) {
     oops_code_blob_do(f, cf, map, derived_mode);
   } else {
@@ -1117,6 +1110,11 @@ void frame::verify(const RegisterMap* map) const {
 
 #ifdef ASSERT
 bool frame::verify_return_pc(address x) {
+#ifdef TARGET_ARCH_aarch64
+  if (!pauth_ptr_is_raw(x)) {
+    return false;
+  }
+#endif
   if (StubRoutines::returns_to_call_stub(x)) {
     return true;
   }

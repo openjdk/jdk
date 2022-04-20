@@ -41,8 +41,7 @@
 //
 // Generation                      - abstract base class
 // - DefNewGeneration              - allocation area (copy collected)
-// - CardGeneration                 - abstract class adding offset array behavior
-//   - TenuredGeneration             - tenured (old object) space (markSweepCompact)
+// - TenuredGeneration             - tenured (old object) space (markSweepCompact)
 //
 // The system configuration currently allowed is:
 //
@@ -118,18 +117,13 @@ class Generation: public CHeapObj<mtGC> {
   };
 
   // allocate and initialize ("weak") refs processing support
-  virtual void ref_processor_init();
+  void ref_processor_init();
   void set_ref_processor(ReferenceProcessor* rp) {
     assert(_ref_processor == NULL, "clobbering existing _ref_processor");
     _ref_processor = rp;
   }
 
   virtual Generation::Name kind() { return Generation::Other; }
-
-  // This properly belongs in the collector, but for now this
-  // will do.
-  virtual bool refs_discovery_is_atomic() const { return true;  }
-  virtual bool refs_discovery_is_mt()     const { return false; }
 
   // Space inquiries (results in bytes)
   size_t initial_size();
@@ -369,10 +363,6 @@ class Generation: public CHeapObj<mtGC> {
   virtual void post_compact() { ShouldNotReachHere(); }
 #endif
 
-  // Some generations may require some cleanup actions before allowing
-  // a verification.
-  virtual void prepare_for_verify() {}
-
   // Accessing "marks".
 
   // This function gives a generation a chance to note a point between
@@ -426,11 +416,6 @@ class Generation: public CHeapObj<mtGC> {
   // Iterate over all objects in the generation, calling "cl.do_object" on
   // each.
   virtual void object_iterate(ObjectClosure* cl);
-
-  // Inform a generation that it longer contains references to objects
-  // in any younger generation.    [e.g. Because younger gens are empty,
-  // clear the card table.]
-  virtual void clear_remembered_set() { }
 
   // Inform a generation that some of its objects have moved.  [e.g. The
   // generation's spaces were compacted, invalidating the card table.]

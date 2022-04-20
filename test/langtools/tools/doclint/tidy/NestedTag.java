@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -ref NestedTag.out NestedTag.java
+ * @run main DocLintTester -Xmsgs:all,-missing -ref NestedTag.out NestedTag.java
  */
 
 // tidy: Warning: nested emphasis <.*>

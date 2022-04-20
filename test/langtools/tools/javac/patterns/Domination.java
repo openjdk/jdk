@@ -68,9 +68,37 @@ public class Domination {
         }
     }
 
+    int testDominatesStringConstant2(String str) {
+        switch (str) {
+            case (String s && s.isEmpty()): return 1;
+            case "": return -1;
+        }
+    }
+
+    int testDominatesStringConstant3(String str) {
+        switch (str) {
+            case (String s && !s.isEmpty()): return 1;
+            case "": return -1;
+        }
+    }
+
     int testDominatesIntegerConstant(Integer i) {
         switch (i) {
             case Integer j: return 1;
+            case 0: return -1;
+        }
+    }
+
+    int testDominatesIntegerConstant2(Integer i) {
+        switch (i) {
+            case (Integer j && j == 0): return 1;
+            case 0: return -1;
+        }
+    }
+
+    int testDominatesIntegerConstant3(Integer i) {
+        switch (i) {
+            case (Integer j && j == 1): return 1;
             case 0: return -1;
         }
     }
@@ -82,6 +110,28 @@ public class Domination {
         E e = E.A;
         switch (e) {
             case E d: return 1;
+            case A: return -1;
+        }
+    }
+
+    int testDominatesEnumConstant2() {
+        enum E {
+            A, B;
+        }
+        E e = E.A;
+        switch (e) {
+            case (E d && d == E.A): return 1;
+            case A: return -1;
+        }
+    }
+
+    int testDominatesEnumConstant3() {
+        enum E {
+            A, B;
+        }
+        E e = E.A;
+        switch (e) {
+            case (E d && d == E.B): return 1;
             case A: return -1;
         }
     }

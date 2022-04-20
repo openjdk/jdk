@@ -314,6 +314,7 @@ protected:
   DCmdArgument<char*> _filename;
   DCmdArgument<bool>  _all;
   DCmdArgument<jlong> _gzip;
+  DCmdArgument<bool> _overwrite;
 public:
   HeapDumpDCmd(outputStream* output, bool heap);
   static const char* name() {
@@ -370,7 +371,7 @@ public:
     return "VM.class_hierarchy";
   }
   static const char* description() {
-    return "Print a list of all loaded classes, indented to show the class hiearchy. "
+    return "Print a list of all loaded classes, indented to show the class hierarchy. "
            "The name of each class is followed by the ClassLoaderData* of its ClassLoader, "
            "or \"null\" if loaded by the bootstrap class loader.";
   }
@@ -848,6 +849,28 @@ public:
   }
   static const char* impact() {
       return "Medium: Depends on Java content.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class ClassesDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _verbose;
+public:
+  ClassesDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.classes";
+  }
+  static const char* description() {
+    return "Print all loaded classes";
+  }
+  static const char* impact() {
+      return "Medium: Depends on number of loaded classes.";
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",

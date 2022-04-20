@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,8 +236,8 @@ final class Float64Vector extends FloatVector {
 
     @ForceInline
     final @Override
-    float rOp(float v, FBinOp f) {
-        return super.rOpTemplate(v, f);  // specialize
+    float rOp(float v, VectorMask<Float> m, FBinOp f) {
+        return super.rOpTemplate(v, m, f);  // specialize
     }
 
     @Override
@@ -275,8 +275,20 @@ final class Float64Vector extends FloatVector {
 
     @Override
     @ForceInline
+    public Float64Vector lanewise(Unary op, VectorMask<Float> m) {
+        return (Float64Vector) super.lanewiseTemplate(op, Float64Mask.class, (Float64Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Float64Vector lanewise(Binary op, Vector<Float> v) {
         return (Float64Vector) super.lanewiseTemplate(op, v);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Float64Vector lanewise(Binary op, Vector<Float> v, VectorMask<Float> m) {
+        return (Float64Vector) super.lanewiseTemplate(op, Float64Mask.class, v, (Float64Mask) m);  // specialize
     }
 
 
@@ -285,8 +297,16 @@ final class Float64Vector extends FloatVector {
     @ForceInline
     public final
     Float64Vector
-    lanewise(VectorOperators.Ternary op, Vector<Float> v1, Vector<Float> v2) {
+    lanewise(Ternary op, Vector<Float> v1, Vector<Float> v2) {
         return (Float64Vector) super.lanewiseTemplate(op, v1, v2);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final
+    Float64Vector
+    lanewise(Ternary op, Vector<Float> v1, Vector<Float> v2, VectorMask<Float> m) {
+        return (Float64Vector) super.lanewiseTemplate(op, Float64Mask.class, v1, v2, (Float64Mask) m);  // specialize
     }
 
     @Override
@@ -308,7 +328,7 @@ final class Float64Vector extends FloatVector {
     @ForceInline
     public final float reduceLanes(VectorOperators.Associative op,
                                     VectorMask<Float> m) {
-        return super.reduceLanesTemplate(op, m);  // specialized
+        return super.reduceLanesTemplate(op, Float64Mask.class, (Float64Mask) m);  // specialized
     }
 
     @Override
@@ -321,7 +341,7 @@ final class Float64Vector extends FloatVector {
     @ForceInline
     public final long reduceLanesToLong(VectorOperators.Associative op,
                                         VectorMask<Float> m) {
-        return (long) super.reduceLanesTemplate(op, m);  // specialized
+        return (long) super.reduceLanesTemplate(op, Float64Mask.class, (Float64Mask) m);  // specialized
     }
 
     @ForceInline
@@ -335,6 +355,12 @@ final class Float64Vector extends FloatVector {
     @ForceInline
     public final Float64Mask test(Test op) {
         return super.testTemplate(Float64Mask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final Float64Mask test(Test op, VectorMask<Float> m) {
+        return super.testTemplate(Float64Mask.class, op, (Float64Mask) m);  // specialize
     }
 
     // Specialized comparisons
@@ -356,6 +382,13 @@ final class Float64Vector extends FloatVector {
     public final Float64Mask compare(Comparison op, long s) {
         return super.compareTemplate(Float64Mask.class, op, s);  // specialize
     }
+
+    @Override
+    @ForceInline
+    public final Float64Mask compare(Comparison op, Vector<Float> v, VectorMask<Float> m) {
+        return super.compareTemplate(Float64Mask.class, op, v, (Float64Mask) m);
+    }
+
 
     @Override
     @ForceInline
@@ -413,6 +446,7 @@ final class Float64Vector extends FloatVector {
                                   VectorMask<Float> m) {
         return (Float64Vector)
             super.rearrangeTemplate(Float64Shuffle.class,
+                                    Float64Mask.class,
                                     (Float64Shuffle) shuffle,
                                     (Float64Mask) m);  // specialize
     }
@@ -568,18 +602,10 @@ final class Float64Vector extends FloatVector {
         @ForceInline
         private final <E>
         VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
-            assert(length() == dsp.laneCount());
+            if (length() != dsp.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            return switch (dsp.laneType.switchKey) {
-                     case LaneType.SK_BYTE   -> new Byte64Vector.Byte64Mask(maskArray).check(dsp);
-                     case LaneType.SK_SHORT  -> new Short64Vector.Short64Mask(maskArray).check(dsp);
-                     case LaneType.SK_INT    -> new Int64Vector.Int64Mask(maskArray).check(dsp);
-                     case LaneType.SK_LONG   -> new Long64Vector.Long64Mask(maskArray).check(dsp);
-                     case LaneType.SK_FLOAT  -> new Float64Vector.Float64Mask(maskArray).check(dsp);
-                     case LaneType.SK_DOUBLE -> new Double64Vector.Double64Mask(maskArray).check(dsp);
-                     default                 -> throw new AssertionError(dsp);
-            };
+            return  dsp.maskFactory(maskArray).check(dsp);
         }
 
         @Override
@@ -588,16 +614,12 @@ final class Float64Vector extends FloatVector {
             AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorMask length and species length differ");
-            if (VSIZE == species.vectorBitSize()) {
-                Class<?> dtype = species.elementType();
-                Class<?> dmtype = species.maskType();
-                return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    this.getClass(), ETYPE, VLENGTH,
-                    dmtype, dtype, VLENGTH,
-                    this, species,
-                    Float64Mask::defaultMaskCast);
-            }
-            return this.defaultMaskCast(species);
+
+            return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                this.getClass(), ETYPE, VLENGTH,
+                species.maskType(), species.elementType(), VLENGTH,
+                this, species,
+                (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
 
         @Override
@@ -623,9 +645,9 @@ final class Float64Vector extends FloatVector {
         public Float64Mask and(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             Float64Mask m = (Float64Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, Float64Mask.class, int.class, VLENGTH,
-                                             this, m,
-                                             (m1, m2) -> m1.bOp(m2, (i, a, b) -> a & b));
+            return VectorSupport.binaryOp(VECTOR_OP_AND, Float64Mask.class, null, int.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
 
         @Override
@@ -633,9 +655,9 @@ final class Float64Vector extends FloatVector {
         public Float64Mask or(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             Float64Mask m = (Float64Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, Float64Mask.class, int.class, VLENGTH,
-                                             this, m,
-                                             (m1, m2) -> m1.bOp(m2, (i, a, b) -> a | b));
+            return VectorSupport.binaryOp(VECTOR_OP_OR, Float64Mask.class, null, int.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
         @ForceInline
@@ -643,9 +665,9 @@ final class Float64Vector extends FloatVector {
         Float64Mask xor(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             Float64Mask m = (Float64Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, Float64Mask.class, int.class, VLENGTH,
-                                          this, m,
-                                          (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, Float64Mask.class, null, int.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
 
         // Mask Query operations
@@ -653,22 +675,32 @@ final class Float64Vector extends FloatVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Float64Mask.class, int.class, VLENGTH, this,
-                                                      (m) -> trueCountHelper(((Float64Mask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Float64Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Float64Mask.class, int.class, VLENGTH, this,
-                                                      (m) -> firstTrueHelper(((Float64Mask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Float64Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Float64Mask.class, int.class, VLENGTH, this,
-                                                      (m) -> lastTrueHelper(((Float64Mask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Float64Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(m.getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public long toLong() {
+            if (length() > Long.SIZE) {
+                throw new UnsupportedOperationException("too many lanes for one long");
+            }
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Float64Mask.class, int.class, VLENGTH, this,
+                                                      (m) -> toLongHelper(m.getBits()));
         }
 
         // Reductions
@@ -692,9 +724,9 @@ final class Float64Vector extends FloatVector {
         @ForceInline
         /*package-private*/
         static Float64Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Float64Mask.class, int.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Float64Mask.class, int.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Float64Mask  TRUE_MASK = new Float64Mask(true);
         private static final Float64Mask FALSE_MASK = new Float64Mask(false);
@@ -750,24 +782,7 @@ final class Float64Vector extends FloatVector {
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte64Vector.Byte64Shuffle(shuffleArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short64Vector.Short64Shuffle(shuffleArray).check(species);
-            case LaneType.SK_INT:
-                return new Int64Vector.Int64Shuffle(shuffleArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long64Vector.Long64Shuffle(shuffleArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float64Vector.Float64Shuffle(shuffleArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double64Vector.Double64Shuffle(shuffleArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
         @ForceInline
@@ -796,6 +811,20 @@ final class Float64Vector extends FloatVector {
         return super.fromArray0Template(a, offset);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    FloatVector fromArray0(float[] a, int offset, VectorMask<Float> m) {
+        return super.fromArray0Template(Float64Mask.class, a, offset, (Float64Mask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    FloatVector fromArray0(float[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Float> m) {
+        return super.fromArray0Template(Float64Mask.class, a, offset, indexMap, mapOffset, (Float64Mask) m);
+    }
+
 
 
     @ForceInline
@@ -808,8 +837,22 @@ final class Float64Vector extends FloatVector {
     @ForceInline
     @Override
     final
+    FloatVector fromByteArray0(byte[] a, int offset, VectorMask<Float> m) {
+        return super.fromByteArray0Template(Float64Mask.class, a, offset, (Float64Mask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
     FloatVector fromByteBuffer0(ByteBuffer bb, int offset) {
         return super.fromByteBuffer0Template(bb, offset);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    FloatVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Float> m) {
+        return super.fromByteBuffer0Template(Float64Mask.class, bb, offset, (Float64Mask) m);  // specialize
     }
 
     @ForceInline
@@ -822,9 +865,39 @@ final class Float64Vector extends FloatVector {
     @ForceInline
     @Override
     final
+    void intoArray0(float[] a, int offset, VectorMask<Float> m) {
+        super.intoArray0Template(Float64Mask.class, a, offset, (Float64Mask) m);
+    }
+
+    @ForceInline
+    @Override
+    final
+    void intoArray0(float[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Float> m) {
+        super.intoArray0Template(Float64Mask.class, a, offset, indexMap, mapOffset, (Float64Mask) m);
+    }
+
+
+    @ForceInline
+    @Override
+    final
     void intoByteArray0(byte[] a, int offset) {
         super.intoByteArray0Template(a, offset);  // specialize
     }
+
+    @ForceInline
+    @Override
+    final
+    void intoByteArray0(byte[] a, int offset, VectorMask<Float> m) {
+        super.intoByteArray0Template(Float64Mask.class, a, offset, (Float64Mask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Float> m) {
+        super.intoByteBuffer0Template(Float64Mask.class, bb, offset, (Float64Mask) m);
+    }
+
 
     // End of specialized low-level memory operations.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ class ImmutableCollections {
     static UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }
 
     @jdk.internal.ValueBased
-    static abstract class AbstractImmutableCollection<E> extends AbstractCollection<E> {
+    abstract static class AbstractImmutableCollection<E> extends AbstractCollection<E> {
         // all mutating methods throw UnsupportedOperationException
         @Override public boolean add(E e) { throw uoe(); }
         @Override public boolean addAll(Collection<? extends E> c) { throw uoe(); }
@@ -249,7 +249,7 @@ class ImmutableCollections {
     // ---------- List Implementations ----------
 
     @jdk.internal.ValueBased
-    static abstract class AbstractImmutableList<E> extends AbstractImmutableCollection<E>
+    abstract static class AbstractImmutableList<E> extends AbstractImmutableCollection<E>
             implements List<E>, RandomAccess {
 
         // all mutating methods throw UnsupportedOperationException
@@ -742,7 +742,7 @@ class ImmutableCollections {
     // ---------- Set Implementations ----------
 
     @jdk.internal.ValueBased
-    static abstract class AbstractImmutableSet<E> extends AbstractImmutableCollection<E>
+    abstract static class AbstractImmutableSet<E> extends AbstractImmutableCollection<E>
             implements Set<E> {
 
         @Override
@@ -1062,7 +1062,7 @@ class ImmutableCollections {
 
     // ---------- Map Implementations ----------
 
-    @jdk.internal.ValueBased
+    // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
     abstract static class AbstractImmutableMap<K,V> extends AbstractMap<K,V> implements Serializable {
         @Override public void clear() { throw uoe(); }
         @Override public V compute(K key, BiFunction<? super K,? super V,? extends V> rf) { throw uoe(); }
@@ -1093,7 +1093,7 @@ class ImmutableCollections {
         }
     }
 
-    @jdk.internal.ValueBased
+    // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
     static final class Map1<K,V> extends AbstractImmutableMap<K,V> {
         @Stable
         private final K k0;
@@ -1160,7 +1160,7 @@ class ImmutableCollections {
      * @param <K> the key type
      * @param <V> the value type
      */
-    @jdk.internal.ValueBased
+    // Not a jdk.internal.ValueBased class; disqualified by fields in superclass AbstractMap
     static final class MapN<K,V> extends AbstractImmutableMap<K,V> {
 
         @Stable

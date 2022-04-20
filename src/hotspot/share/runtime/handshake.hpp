@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_HANDSHAKE_HPP
 #define SHARE_RUNTIME_HANDSHAKE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutex.hpp"
@@ -33,9 +33,12 @@
 #include "utilities/filterQueue.hpp"
 
 class HandshakeOperation;
+class AsyncHandshakeOperation;
 class JavaThread;
 class SuspendThreadHandshake;
 class ThreadSelfSuspensionHandshake;
+class UnsafeAccessErrorHandshake;
+class ThreadsListHandle;
 
 // A handshake closure is a callback that is executed for a JavaThread
 // while it is in a safepoint/handshake-safe state. Depending on the
@@ -49,6 +52,9 @@ class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   virtual ~HandshakeClosure()                      {}
   const char* name() const                         { return _name; }
   virtual bool is_async()                          { return false; }
+  virtual bool is_suspend()                        { return false; }
+  virtual bool is_async_exception()                { return false; }
+  virtual bool is_ThreadDeath()                    { return false; }
   virtual void do_thread(Thread* thread) = 0;
 };
 
@@ -63,7 +69,16 @@ class Handshake : public AllStatic {
  public:
   // Execution of handshake operation
   static void execute(HandshakeClosure*       hs_cl);
+  // This version of execute() relies on a ThreadListHandle somewhere in
+  // the caller's context to protect target (and we sanity check for that).
   static void execute(HandshakeClosure*       hs_cl, JavaThread* target);
+  // This version of execute() is used when you have a ThreadListHandle in
+  // hand and are using it to protect target. If tlh == nullptr, then we
+  // sanity check for a ThreadListHandle somewhere in the caller's context
+  // to verify that target is protected.
+  static void execute(HandshakeClosure*       hs_cl, ThreadsListHandle* tlh, JavaThread* target);
+  // This version of execute() relies on a ThreadListHandle somewhere in
+  // the caller's context to protect target (and we sanity check for that).
   static void execute(AsyncHandshakeClosure*  hs_cl, JavaThread* target);
 };
 
@@ -76,6 +91,7 @@ class JvmtiRawMonitor;
 class HandshakeState {
   friend ThreadSelfSuspensionHandshake;
   friend SuspendThreadHandshake;
+  friend UnsafeAccessErrorHandshake;
   friend JavaThread;
   // This a back reference to the JavaThread,
   // the target for all operation in the queue.
@@ -92,15 +108,8 @@ class HandshakeState {
   bool possibly_can_process_handshake();
   bool can_process_handshake();
 
-  // Returns false if the JavaThread finished all its handshake operations.
-  // If the method returns true there is still potential work to be done,
-  // but we need to check for a safepoint before.
-  // (This is due to a suspension handshake which put the JavaThread in blocked
-  // state so a safepoint may be in-progress.)
-  bool process_self_inner();
-
   bool have_non_self_executable_operation();
-  HandshakeOperation* get_op_for_self();
+  HandshakeOperation* get_op_for_self(bool allow_suspend, bool check_async_exception);
   HandshakeOperation* get_op();
   void remove_op(HandshakeOperation* op);
 
@@ -120,13 +129,16 @@ class HandshakeState {
 
   void add_operation(HandshakeOperation* op);
 
-  bool has_operation() {
-    return !_queue.is_empty();
-  }
+  bool has_operation() { return !_queue.is_empty(); }
+  bool has_operation(bool allow_suspend, bool check_async_exception);
+  bool has_async_exception_operation(bool ThreadDeath_only);
 
   bool operation_pending(HandshakeOperation* op);
 
-  bool process_by_self();
+  // If the method returns true we need to check for a possible safepoint.
+  // This is due to a suspension handshake which put the JavaThread in blocked
+  // state so a safepoint may be in-progress.
+  bool process_by_self(bool allow_suspend, bool check_async_exception);
 
   enum ProcessResult {
     _no_operation = 0,
@@ -139,6 +151,14 @@ class HandshakeState {
   ProcessResult try_process(HandshakeOperation* match_op);
 
   Thread* active_handshaker() const { return Atomic::load(&_active_handshaker); }
+
+  // Support for asynchronous exceptions
+ private:
+  bool _async_exceptions_blocked;
+
+  bool async_exceptions_blocked() { return _async_exceptions_blocked; }
+  void set_async_exceptions_blocked(bool b) { _async_exceptions_blocked = b; }
+  void handle_unsafe_access_error();
 
   // Suspend/resume support
  private:

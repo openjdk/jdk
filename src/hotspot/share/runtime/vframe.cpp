@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,7 +328,7 @@ static StackValue* create_stack_value_from_oop_map(const InterpreterOopMap& oop_
 static bool is_in_expression_stack(const frame& fr, const intptr_t* const addr) {
   assert(addr != NULL, "invariant");
 
-  // Ensure to be 'inside' the expresion stack (i.e., addr >= sp for Intel).
+  // Ensure to be 'inside' the expression stack (i.e., addr >= sp for Intel).
   // In case of exceptions, the expression stack is invalid and the sp
   // will be reset to express this condition.
   if (frame::interpreter_frame_expression_stack_direction() > 0) {
@@ -574,40 +574,44 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
 javaVFrame* vframeStreamCommon::asJavaVFrame() {
   javaVFrame* result = NULL;
   if (_mode == compiled_mode) {
-    guarantee(_frame.is_compiled_frame(), "expected compiled Java frame");
+    compiledVFrame* cvf;
+    if (_frame.is_native_frame()) {
+      cvf = compiledVFrame::cast(vframe::new_vframe(&_frame, &_reg_map, _thread));
+      assert(cvf->cb() == cb(), "wrong code blob");
+    } else {
+      assert(_frame.is_compiled_frame(), "expected compiled Java frame");
 
-    // lazy update to register map
-    bool update_map = true;
-    RegisterMap map(_thread, update_map);
-    frame f = _prev_frame.sender(&map);
+      // lazy update to register map
+      bool update_map = true;
+      RegisterMap map(_thread, update_map);
+      frame f = _prev_frame.sender(&map);
 
-    guarantee(f.is_compiled_frame(), "expected compiled Java frame");
+      assert(f.is_compiled_frame(), "expected compiled Java frame");
 
-    compiledVFrame* cvf = compiledVFrame::cast(vframe::new_vframe(&f, &map, _thread));
+      cvf = compiledVFrame::cast(vframe::new_vframe(&f, &map, _thread));
 
-    guarantee(cvf->cb() == cb(), "wrong code blob");
+      assert(cvf->cb() == cb(), "wrong code blob");
 
-    // get the same scope as this stream
-    cvf = cvf->at_scope(_decode_offset, _vframe_id);
+      // get the same scope as this stream
+      cvf = cvf->at_scope(_decode_offset, _vframe_id);
 
-    guarantee(cvf->scope()->decode_offset() == _decode_offset, "wrong scope");
-    guarantee(cvf->scope()->sender_decode_offset() == _sender_decode_offset, "wrong scope");
-    guarantee(cvf->vframe_id() == _vframe_id, "wrong vframe");
+      assert(cvf->scope()->decode_offset() == _decode_offset, "wrong scope");
+      assert(cvf->scope()->sender_decode_offset() == _sender_decode_offset, "wrong scope");
+    }
+    assert(cvf->vframe_id() == _vframe_id, "wrong vframe");
 
     result = cvf;
   } else {
     result = javaVFrame::cast(vframe::new_vframe(&_frame, &_reg_map, _thread));
   }
-  guarantee(result->method() == method(), "wrong method");
+  assert(result->method() == method(), "wrong method");
   return result;
 }
-
 
 #ifndef PRODUCT
 void vframe::print() {
   if (WizardMode) _fr.print_value_on(tty,NULL);
 }
-
 
 void vframe::print_value() const {
   ((vframe*)this)->print();
@@ -620,7 +624,7 @@ void entryVFrame::print_value() const {
 
 void entryVFrame::print() {
   vframe::print();
-  tty->print_cr("C Chunk inbetween Java");
+  tty->print_cr("C Chunk in between Java");
   tty->print_cr("C     link " INTPTR_FORMAT, p2i(_fr.link()));
 }
 

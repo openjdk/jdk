@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7180907
+ * @bug 7180907 8277224
  * @summary Jarsigner -verify fails if rsa file used sha-256 with authenticated attributes
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.tools.keytool
@@ -60,7 +60,12 @@ public class NonStandardNames {
         PKCS9Attributes authed = new PKCS9Attributes(new PKCS9Attribute[]{
             new PKCS9Attribute(PKCS9Attribute.CONTENT_TYPE_OID, ContentInfo.DATA_OID),
             new PKCS9Attribute(PKCS9Attribute.MESSAGE_DIGEST_OID, md.digest(data)),
+            new PKCS9Attribute(PKCS9Attribute.SIGNATURE_TIMESTAMP_TOKEN_OID, "test".getBytes())
         });
+
+        // test PKCS9Attributes.toString(), PKCS9Attributes.getAttributes()
+        System.out.println(authed);
+        authed.getAttributes();
 
         Signature s = Signature.getInstance("SHA256withRSA");
         s.initSign(cakg.getPrivateKey());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ AsmCondition convNegCond(TemplateTable::Condition cc) {
 }
 
 //----------------------------------------------------------------------------------------------------
-// Miscelaneous helper routines
+// Miscellaneous helper routines
 
 // Store an oop (or NULL) at the address described by obj.
 // Blows all volatile registers R0-R3, Rtemp, LR).
@@ -490,29 +490,30 @@ void TemplateTable::ldc2_w() {
   __ add(Rtemp, Rtags, tags_offset);
   __ ldrb(Rtemp, Address(Rtemp, Rindex));
 
-  Label Condy, exit;
-#ifdef __ABI_HARD__
-  Label NotDouble;
+  Label Done, NotLong, NotDouble;
   __ cmp(Rtemp, JVM_CONSTANT_Double);
   __ b(NotDouble, ne);
+#ifdef __SOFTFP__
+  __ ldr(R0_tos_lo, Address(Rbase, base_offset + 0 * wordSize));
+  __ ldr(R1_tos_hi, Address(Rbase, base_offset + 1 * wordSize));
+#else // !__SOFTFP__
   __ ldr_double(D0_tos, Address(Rbase, base_offset));
-
+#endif // __SOFTFP__
   __ push(dtos);
-  __ b(exit);
+  __ b(Done);
   __ bind(NotDouble);
-#endif
 
   __ cmp(Rtemp, JVM_CONSTANT_Long);
-  __ b(Condy, ne);
+  __ b(NotLong, ne);
   __ ldr(R0_tos_lo, Address(Rbase, base_offset + 0 * wordSize));
   __ ldr(R1_tos_hi, Address(Rbase, base_offset + 1 * wordSize));
   __ push(ltos);
-  __ b(exit);
+  __ b(Done);
+  __ bind(NotLong);
 
-  __ bind(Condy);
-  condy_helper(exit);
+  condy_helper(Done);
 
-  __ bind(exit);
+  __ bind(Done);
 }
 
 
@@ -2040,7 +2041,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // Handle all the JSR stuff here, then exit.
   // It's much shorter and cleaner than intermingling with the
-  // non-JSR normal-branch stuff occuring below.
+  // non-JSR normal-branch stuff occurring below.
   if (is_jsr) {
     // compute return address as bci in R1
     const Register Rret_addr = R1_tmp;
@@ -2524,7 +2525,7 @@ void TemplateTable::_return(TosState state) {
 //
 // According to the new Java Memory Model (JMM):
 // (1) All volatiles are serialized wrt to each other.
-// ALSO reads & writes act as aquire & release, so:
+// ALSO reads & writes act as acquire & release, so:
 // (2) A read cannot let unrelated NON-volatile memory refs that happen after
 // the read float up to before the read.  It's OK for non-volatile memory refs
 // that happen before the volatile read to float down below it.
@@ -3967,11 +3968,7 @@ void TemplateTable::_new() {
 
     // initialize object header only.
     __ bind(initialize_header);
-    if (UseBiasedLocking) {
-      __ ldr(Rtemp, Address(Rklass, Klass::prototype_header_offset()));
-    } else {
-      __ mov_slow(Rtemp, (intptr_t)markWord::prototype().value());
-    }
+    __ mov_slow(Rtemp, (intptr_t)markWord::prototype().value());
     // mark
     __ str(Rtemp, Address(Robj, oopDesc::mark_offset_in_bytes()));
 
@@ -3988,7 +3985,7 @@ void TemplateTable::_new() {
       __ cbz(Rtemp, Lcontinue);
 
       __ push(atos);
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc), Robj);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), Robj);
       __ pop(atos);
 
       __ bind(Lcontinue);
@@ -4333,7 +4330,7 @@ void TemplateTable::monitorenter() {
   __ bind(allocated);
 
   // Increment bcp to point to the next bytecode, so exception handling for async. exceptions work correctly.
-  // The object has already been poped from the stack, so the expression stack looks correct.
+  // The object has already been popped from the stack, so the expression stack looks correct.
   __ add(Rbcp, Rbcp, 1);
 
   __ str(Robj, Address(Rentry, BasicObjectLock::obj_offset_in_bytes()));     // store object

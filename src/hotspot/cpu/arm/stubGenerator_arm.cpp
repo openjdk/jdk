@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ static arraycopy_platform_config arraycopy_configurations[] = {
     // - prefetch after gives 40% gain on backward copies on tegra2-4,
     //   resulting in better number than the operating system
     //   copy. However, this can lead to a 300% loss on nv-tegra and has
-    //   more impact on the cache (fetches futher than what is
+    //   more impact on the cache (fetches further than what is
     //   copied). Use this configuration with care, in case it improves
     //   reference benchmarks.
     {-256, true,  true  }, // forward aligned
@@ -635,17 +635,17 @@ class StubGenerator: public StubCodeGenerator {
     Register result_hi = R1;
     Register src       = R0;
 
-    if (!os::is_MP()) {
-      __ ldmia(src, RegisterSet(result_lo, result_hi));
-      __ bx(LR);
-    } else if (VM_Version::supports_ldrexd()) {
+    if (VM_Version::supports_ldrexd()) {
       __ ldrexd(result_lo, Address(src));
       __ clrex(); // FIXME: safe to remove?
-      __ bx(LR);
+    } else if (!os::is_MP()) {
+      // Last-ditch attempt: we are allegedly running on uni-processor.
+      // Load the thing non-atomically and hope for the best.
+      __ ldmia(src, RegisterSet(result_lo, result_hi));
     } else {
       __ stop("Atomic load(jlong) unsupported on this platform");
-      __ bx(LR);
     }
+    __ bx(LR);
 
     return start;
   }
@@ -662,10 +662,7 @@ class StubGenerator: public StubCodeGenerator {
     Register scratch_hi    = R3;  /* After load from stack */
     Register result    = R3;
 
-    if (!os::is_MP()) {
-      __ stmia(dest, RegisterSet(newval_lo, newval_hi));
-      __ bx(LR);
-    } else if (VM_Version::supports_ldrexd()) {
+    if (VM_Version::supports_ldrexd()) {
       __ mov(Rtemp, dest);  // get dest to Rtemp
       Label retry;
       __ bind(retry);
@@ -673,11 +670,14 @@ class StubGenerator: public StubCodeGenerator {
       __ strexd(result, R0, Address(Rtemp));
       __ rsbs(result, result, 1);
       __ b(retry, eq);
-      __ bx(LR);
+    } else if (!os::is_MP()) {
+      // Last-ditch attempt: we are allegedly running on uni-processor.
+      // Store the thing non-atomically and hope for the best.
+      __ stmia(dest, RegisterSet(newval_lo, newval_hi));
     } else {
       __ stop("Atomic store(jlong) unsupported on this platform");
-      __ bx(LR);
     }
+    __ bx(LR);
 
     return start;
   }
@@ -1773,7 +1773,7 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  // Aligns 'to' by reading one word from 'from' and writting its part to 'to'.
+  // Aligns 'to' by reading one word from 'from' and writing its part to 'to'.
   //
   // Arguments:
   //     to:                beginning (if forward) or upper bound (if !forward) of the region to be written
@@ -2837,46 +2837,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Safefetch stubs.
-  void generate_safefetch(const char* name, int size, address* entry, address* fault_pc, address* continuation_pc) {
-    // safefetch signatures:
-    //   int      SafeFetch32(int*      adr, int      errValue);
-    //   intptr_t SafeFetchN (intptr_t* adr, intptr_t errValue);
-    //
-    // arguments:
-    //   R0 = adr
-    //   R1 = errValue
-    //
-    // result:
-    //   R0  = *adr or errValue
-
-    StubCodeMark mark(this, "StubRoutines", name);
-
-    // Entry point, pc or function descriptor.
-    *entry = __ pc();
-
-    // Load *adr into c_rarg2, may fault.
-    *fault_pc = __ pc();
-
-    switch (size) {
-      case 4: // int32_t
-        __ ldr_s32(R1, Address(R0));
-        break;
-
-      case 8: // int64_t
-        Unimplemented();
-        break;
-
-      default:
-        ShouldNotReachHere();
-    }
-
-    // return errValue or *adr
-    *continuation_pc = __ pc();
-    __ mov(R0, R1);
-    __ ret();
-  }
-
   void generate_arraycopy_stubs() {
 
     // Note:  the disjoint stubs must be generated first, some of
@@ -3029,15 +2989,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_load_long_entry = generate_atomic_load_long();
     StubRoutines::_atomic_store_long_entry = generate_atomic_store_long();
 
-    // Safefetch stubs.
-    generate_safefetch("SafeFetch32", sizeof(int), &StubRoutines::_safefetch32_entry,
-                                                   &StubRoutines::_safefetch32_fault_pc,
-                                                   &StubRoutines::_safefetch32_continuation_pc);
-    assert (sizeof(int) == wordSize, "32-bit architecture");
-    StubRoutines::_safefetchN_entry           = StubRoutines::_safefetch32_entry;
-    StubRoutines::_safefetchN_fault_pc        = StubRoutines::_safefetch32_fault_pc;
-    StubRoutines::_safefetchN_continuation_pc = StubRoutines::_safefetch32_continuation_pc;
   }
+
 
   void generate_all() {
     // Generates all stubs and initializes the entry points

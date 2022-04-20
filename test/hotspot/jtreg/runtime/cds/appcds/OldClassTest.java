@@ -62,7 +62,7 @@ public class OldClassTest implements Opcodes {
     OutputAnalyzer output = TestCommon.dump(jar, appClasses, "-Xlog:class+load,cds=debug");
     TestCommon.checkExecReturn(output, 0,
                                dynamicMode ? true : false,
-                               "Pre JDK 6 class not supported by CDS");
+                               "Skipping Hello: Old class has been linked");
 
     TestCommon.run(
         "-cp", jar,
@@ -83,7 +83,7 @@ public class OldClassTest implements Opcodes {
     output = TestCommon.dump(classpath, appClasses);
     TestCommon.checkExecReturn(output, 0,
                                dynamicMode ? true : false,
-                               "Pre JDK 6 class not supported by CDS");
+                               "Skipping Hello: Old class has been linked");
 
     TestCommon.run(
         "-cp", classpath,

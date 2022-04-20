@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "cds/archiveUtils.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/symbolTable.hpp"
@@ -40,6 +41,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
@@ -115,20 +117,16 @@ public:
     _builder(builder), _dumped_obj(dumped_obj), _start_idx(start_idx) {}
 
   bool do_bit(BitMap::idx_t bit_offset) {
-    uintx FLAG_MASK = 0x03; // See comments around MetaspaceClosure::FLAG_MASK
     size_t field_offset = size_t(bit_offset - _start_idx) * sizeof(address);
     address* ptr_loc = (address*)(_dumped_obj + field_offset);
 
-    uintx old_p_and_bits = (uintx)(*ptr_loc);
-    uintx flag_bits = (old_p_and_bits & FLAG_MASK);
-    address old_p = (address)(old_p_and_bits & (~FLAG_MASK));
+    address old_p = *ptr_loc;
     address new_p = _builder->get_dumped_addr(old_p);
-    uintx new_p_and_bits = ((uintx)new_p) | flag_bits;
 
     log_trace(cds)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT,
                    p2i(ptr_loc), p2i(old_p), p2i(new_p));
 
-    ArchivePtrMarker::set_and_mark_pointer(ptr_loc, (address)(new_p_and_bits));
+    ArchivePtrMarker::set_and_mark_pointer(ptr_loc, new_p);
     return true; // keep iterating the bitmap
   }
 };
@@ -160,10 +158,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _ro_region("ro", MAX_SHARED_DELTA),
   _rw_src_objs(),
   _ro_src_objs(),
-  _src_obj_table(INITIAL_TABLE_SIZE),
-  _num_instance_klasses(0),
-  _num_obj_array_klasses(0),
-  _num_type_array_klasses(0),
+  _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
   _total_closed_heap_region_size(0),
   _total_open_heap_region_size(0),
   _estimated_metaspaceobj_bytes(0),
@@ -190,6 +185,9 @@ ArchiveBuilder::~ArchiveBuilder() {
   delete _klasses;
   delete _symbols;
   delete _special_refs;
+  if (_shared_rs.is_reserved()) {
+    _shared_rs.release();
+  }
 }
 
 bool ArchiveBuilder::is_dumping_full_module_graph() {
@@ -219,16 +217,8 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
     assert(klass->is_klass(), "must be");
     if (!is_excluded(klass)) {
       _klasses->append(klass);
-      if (klass->is_instance_klass()) {
-        _num_instance_klasses ++;
-      } else if (klass->is_objArray_klass()) {
-        _num_obj_array_klasses ++;
-      } else {
-        assert(klass->is_typeArray_klass(), "sanity");
-        _num_type_array_klasses ++;
-      }
     }
-    // See RunTimeSharedClassInfo::get_for()
+    // See RunTimeClassInfo::get_for()
     _estimated_metaspaceobj_bytes += align_up(BytesPerWord, SharedSpaceObjectAlignment);
   } else if (ref->msotype() == MetaspaceObj::SymbolType) {
     // Make sure the symbol won't be GC'ed while we are dumping the archive.
@@ -254,12 +244,6 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
   }
 #endif
   doit.finish();
-
-  log_info(cds)("Number of classes %d", _num_instance_klasses + _num_obj_array_klasses + _num_type_array_klasses);
-  log_info(cds)("    instance classes   = %5d", _num_instance_klasses);
-  log_info(cds)("    obj array classes  = %5d", _num_obj_array_klasses);
-  log_info(cds)("    type array classes = %5d", _num_type_array_klasses);
-  log_info(cds)("               symbols = %5d", _symbols->length());
 
   if (DumpSharedSpaces) {
     // To ensure deterministic contents in the static archive, we need to ensure that
@@ -319,7 +303,7 @@ void ArchiveBuilder::sort_klasses() {
 }
 
 size_t ArchiveBuilder::estimate_archive_size() {
-  // size of the symbol table and two dictionaries, plus the RunTimeSharedClassInfo's
+  // size of the symbol table and two dictionaries, plus the RunTimeClassInfo's
   size_t symbol_table_est = SymbolTable::estimate_size_for_archive();
   size_t dictionary_est = SystemDictionaryShared::estimate_size_for_archive();
   _estimated_hashtable_bytes = symbol_table_est + dictionary_est;
@@ -463,9 +447,9 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* enclosing_ref,
   FollowMode follow_mode = get_follow_mode(ref);
   SourceObjInfo src_info(ref, read_only, follow_mode);
   bool created;
-  SourceObjInfo* p = _src_obj_table.add_if_absent(src_obj, src_info, &created);
+  SourceObjInfo* p = _src_obj_table.put_if_absent(src_obj, src_info, &created);
   if (created) {
-    if (_src_obj_table.maybe_grow(MAX_TABLE_SIZE)) {
+    if (_src_obj_table.maybe_grow()) {
       log_info(cds, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
     }
   }
@@ -540,7 +524,8 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
   if (MetaspaceShared::is_in_shared_metaspace(obj)) {
     // Don't dump existing shared metadata again.
     return point_to_it;
-  } else if (ref->msotype() == MetaspaceObj::MethodDataType) {
+  } else if (ref->msotype() == MetaspaceObj::MethodDataType ||
+             ref->msotype() == MetaspaceObj::MethodCountersType) {
     return set_to_null;
   } else {
     if (ref->msotype() == MetaspaceObj::ClassType) {
@@ -632,8 +617,8 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   oldtop = dump_region->top();
   if (ref->msotype() == MetaspaceObj::ClassType) {
     // Save a pointer immediate in front of an InstanceKlass, so
-    // we can do a quick lookup from InstanceKlass* -> RunTimeSharedClassInfo*
-    // without building another hashtable. See RunTimeSharedClassInfo::get_for()
+    // we can do a quick lookup from InstanceKlass* -> RunTimeClassInfo*
+    // without building another hashtable. See RunTimeClassInfo::get_for()
     // in systemDictionaryShared.cpp.
     Klass* klass = (Klass*)src;
     if (klass->is_instance_klass()) {
@@ -659,7 +644,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 }
 
 address ArchiveBuilder::get_dumped_addr(address src_obj) const {
-  SourceObjInfo* p = _src_obj_table.lookup(src_obj);
+  SourceObjInfo* p = _src_obj_table.get(src_obj);
   assert(p != NULL, "must be");
 
   return p->dumped_addr();
@@ -728,31 +713,85 @@ void ArchiveBuilder::relocate_vm_classes() {
 }
 
 void ArchiveBuilder::make_klasses_shareable() {
+  int num_instance_klasses = 0;
+  int num_boot_klasses = 0;
+  int num_platform_klasses = 0;
+  int num_app_klasses = 0;
+  int num_hidden_klasses = 0;
+  int num_unlinked_klasses = 0;
+  int num_unregistered_klasses = 0;
+  int num_obj_array_klasses = 0;
+  int num_type_array_klasses = 0;
+
   for (int i = 0; i < klasses()->length(); i++) {
+    const char* type;
+    const char* unlinked = "";
+    const char* hidden = "";
     Klass* k = klasses()->at(i);
     k->remove_java_mirror();
     if (k->is_objArray_klass()) {
       // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
       // on their array classes.
+      num_obj_array_klasses ++;
+      type = "array";
     } else if (k->is_typeArray_klass()) {
+      num_type_array_klasses ++;
+      type = "array";
       k->remove_unshareable_info();
     } else {
       assert(k->is_instance_klass(), " must be");
+      num_instance_klasses ++;
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (DynamicDumpSharedSpaces) {
         // For static dump, class loader type are already set.
         ik->assign_class_loader_type();
       }
+      if (ik->is_shared_boot_class()) {
+        type = "boot";
+        num_boot_klasses ++;
+      } else if (ik->is_shared_platform_class()) {
+        type = "plat";
+        num_platform_klasses ++;
+      } else if (ik->is_shared_app_class()) {
+        type = "app";
+        num_app_klasses ++;
+      } else {
+        assert(ik->is_shared_unregistered_class(), "must be");
+        type = "unreg";
+        num_unregistered_klasses ++;
+      }
+
+      if (!ik->is_linked()) {
+        num_unlinked_klasses ++;
+        unlinked = " ** unlinked";
+      }
+
+      if (ik->is_hidden()) {
+        num_hidden_klasses ++;
+        hidden = " ** hidden";
+      }
 
       MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
       ik->remove_unshareable_info();
+    }
 
-      if (log_is_enabled(Debug, cds, class)) {
-        ResourceMark rm;
-        log_debug(cds, class)("klasses[%4d] = " PTR_FORMAT " %s", i, p2i(to_requested(ik)), ik->external_name());
-      }
+    if (log_is_enabled(Debug, cds, class)) {
+      ResourceMark rm;
+      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s", i, p2i(to_requested(k)), type, k->external_name(), hidden, unlinked);
     }
   }
+
+  log_info(cds)("Number of classes %d", num_instance_klasses + num_obj_array_klasses + num_type_array_klasses);
+  log_info(cds)("    instance classes   = %5d", num_instance_klasses);
+  log_info(cds)("      boot             = %5d", num_boot_klasses);
+  log_info(cds)("      app              = %5d", num_app_klasses);
+  log_info(cds)("      platform         = %5d", num_platform_klasses);
+  log_info(cds)("      unregistered     = %5d", num_unregistered_klasses);
+  log_info(cds)("      (hidden)         = %5d", num_hidden_klasses);
+  log_info(cds)("      (unlinked)       = %5d", num_unlinked_klasses);
+  log_info(cds)("    obj array classes  = %5d", num_obj_array_klasses);
+  log_info(cds)("    type array classes = %5d", num_type_array_klasses);
+  log_info(cds)("               symbols = %5d", _symbols->length());
 }
 
 uintx ArchiveBuilder::buffer_to_offset(address p) const {
@@ -892,27 +931,29 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   }
 
   // rw/ro regions only
-  static void write_dump_region(const char* name, DumpRegion* region) {
+  static void log_metaspace_region(const char* name, DumpRegion* region,
+                                   const ArchiveBuilder::SourceObjList* src_objs) {
     address region_base = address(region->base());
     address region_top  = address(region->top());
-    write_region(name, region_base, region_top, region_base + buffer_to_runtime_delta());
+    log_region(name, region_base, region_top, region_base + buffer_to_runtime_delta());
+    log_metaspace_objects(region, src_objs);
   }
 
 #define _LOG_PREFIX PTR_FORMAT ": @@ %-17s %d"
 
-  static void write_klass(Klass* k, address runtime_dest, const char* type_name, int bytes, Thread* current) {
+  static void log_klass(Klass* k, address runtime_dest, const char* type_name, int bytes, Thread* current) {
     ResourceMark rm(current);
     log_debug(cds, map)(_LOG_PREFIX " %s",
                         p2i(runtime_dest), type_name, bytes, k->external_name());
   }
-  static void write_method(Method* m, address runtime_dest, const char* type_name, int bytes, Thread* current) {
+  static void log_method(Method* m, address runtime_dest, const char* type_name, int bytes, Thread* current) {
     ResourceMark rm(current);
     log_debug(cds, map)(_LOG_PREFIX " %s",
                         p2i(runtime_dest), type_name, bytes,  m->external_name());
   }
 
   // rw/ro regions only
-  static void write_objects(DumpRegion* region, const ArchiveBuilder::SourceObjList* src_objs) {
+  static void log_metaspace_objects(DumpRegion* region, const ArchiveBuilder::SourceObjList* src_objs) {
     address last_obj_base = address(region->base());
     address last_obj_end  = address(region->base());
     address region_end    = address(region->end());
@@ -921,7 +962,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
       SourceObjInfo* src_info = src_objs->at(i);
       address src = src_info->orig_obj();
       address dest = src_info->dumped_addr();
-      write_data(last_obj_base, dest, last_obj_base + buffer_to_runtime_delta());
+      log_data(last_obj_base, dest, last_obj_base + buffer_to_runtime_delta());
       address runtime_dest = dest + buffer_to_runtime_delta();
       int bytes = src_info->size_in_bytes();
 
@@ -930,21 +971,21 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
       switch (type) {
       case MetaspaceObj::ClassType:
-        write_klass((Klass*)src, runtime_dest, type_name, bytes, current);
+        log_klass((Klass*)src, runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::ConstantPoolType:
-        write_klass(((ConstantPool*)src)->pool_holder(),
+        log_klass(((ConstantPool*)src)->pool_holder(),
                     runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::ConstantPoolCacheType:
-        write_klass(((ConstantPoolCache*)src)->constant_pool()->pool_holder(),
+        log_klass(((ConstantPoolCache*)src)->constant_pool()->pool_holder(),
                     runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::MethodType:
-        write_method((Method*)src, runtime_dest, type_name, bytes, current);
+        log_method((Method*)src, runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::ConstMethodType:
-        write_method(((ConstMethod*)src)->method(), runtime_dest, type_name, bytes, current);
+        log_method(((ConstMethod*)src)->method(), runtime_dest, type_name, bytes, current);
         break;
       case MetaspaceObj::SymbolType:
         {
@@ -963,22 +1004,22 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
       last_obj_end  = dest + bytes;
     }
 
-    write_data(last_obj_base, last_obj_end, last_obj_base + buffer_to_runtime_delta());
+    log_data(last_obj_base, last_obj_end, last_obj_base + buffer_to_runtime_delta());
     if (last_obj_end < region_end) {
       log_debug(cds, map)(PTR_FORMAT ": @@ Misc data " SIZE_FORMAT " bytes",
                           p2i(last_obj_end + buffer_to_runtime_delta()),
                           size_t(region_end - last_obj_end));
-      write_data(last_obj_end, region_end, last_obj_end + buffer_to_runtime_delta());
+      log_data(last_obj_end, region_end, last_obj_end + buffer_to_runtime_delta());
     }
   }
 
 #undef _LOG_PREFIX
 
-  // Write information about a region, whose address at dump time is [base .. top). At
+  // Log information about a region, whose address at dump time is [base .. top). At
   // runtime, this region will be mapped to runtime_base.  runtime_base is 0 if this
   // region will be mapped at os-selected addresses (such as the bitmap region), or will
   // be accessed with os::read (the header).
-  static void write_region(const char* name, address base, address top, address runtime_base) {
+  static void log_region(const char* name, address base, address top, address runtime_base) {
     size_t size = top - base;
     base = runtime_base;
     top = runtime_base + size;
@@ -987,27 +1028,63 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   }
 
   // open and closed archive regions
-  static void write_heap_region(const char* which, GrowableArray<MemRegion> *regions) {
+  static void log_heap_regions(const char* which, GrowableArray<MemRegion> *regions) {
+#if INCLUDE_CDS_JAVA_HEAP
     for (int i = 0; i < regions->length(); i++) {
       address start = address(regions->at(i).start());
       address end = address(regions->at(i).end());
-      write_region(which, start, end, start);
-      write_data(start, end, start);
+      log_region(which, start, end, start);
+
+      while (start < end) {
+        size_t byte_size;
+        oop archived_oop = cast_to_oop(start);
+        oop original_oop = HeapShared::get_original_object(archived_oop);
+        if (original_oop != NULL) {
+          ResourceMark rm;
+          log_info(cds, map)(PTR_FORMAT ": @@ Object %s",
+                             p2i(start), original_oop->klass()->external_name());
+          byte_size = original_oop->size() * BytesPerWord;
+        } else if (archived_oop == HeapShared::roots()) {
+          // HeapShared::roots() is copied specially so it doesn't exist in
+          // HeapShared::OriginalObjectTable. See HeapShared::copy_roots().
+          log_info(cds, map)(PTR_FORMAT ": @@ Object HeapShared:roots (ObjArray)",
+                             p2i(start));
+          byte_size = objArrayOopDesc::object_size(HeapShared::roots()->length()) * BytesPerWord;
+        } else {
+          // We have reached the end of the region
+          break;
+        }
+        address oop_end = start + byte_size;
+        log_data(start, oop_end, start, /*is_heap=*/true);
+        start = oop_end;
+      }
+      if (start < end) {
+        log_info(cds, map)(PTR_FORMAT ": @@ Unused heap space " SIZE_FORMAT " bytes",
+                           p2i(start), size_t(end - start));
+        log_data(start, end, start, /*is_heap=*/true);
+      }
     }
+#endif
   }
 
-  // Dump all the data [base...top). Pretend that the base address
+  // Log all the data [base...top). Pretend that the base address
   // will be mapped to runtime_base at run-time.
-  static void write_data(address base, address top, address runtime_base) {
+  static void log_data(address base, address top, address runtime_base, bool is_heap = false) {
     assert(top >= base, "must be");
 
     LogStreamHandle(Trace, cds, map) lsh;
     if (lsh.is_enabled()) {
-      os::print_hex_dump(&lsh, base, top, sizeof(address), 32, runtime_base);
+      int unitsize = sizeof(address);
+      if (is_heap && UseCompressedOops) {
+        // This makes the compressed oop pointers easier to read, but
+        // longs and doubles will be split into two words.
+        unitsize = sizeof(narrowOop);
+      }
+      os::print_hex_dump(&lsh, base, top, unitsize, 32, runtime_base);
     }
   }
 
-  static void write_header(FileMapInfo* mapinfo) {
+  static void log_header(FileMapInfo* mapinfo) {
     LogStreamHandle(Info, cds, map) lsh;
     if (lsh.is_enabled()) {
       mapinfo->print(&lsh);
@@ -1015,41 +1092,38 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   }
 
 public:
-  static void write(ArchiveBuilder* builder, FileMapInfo* mapinfo,
-             GrowableArray<MemRegion> *closed_heap_regions,
-             GrowableArray<MemRegion> *open_heap_regions,
-             char* bitmap, size_t bitmap_size_in_bytes) {
+  static void log(ArchiveBuilder* builder, FileMapInfo* mapinfo,
+                  GrowableArray<MemRegion> *closed_heap_regions,
+                  GrowableArray<MemRegion> *open_heap_regions,
+                  char* bitmap, size_t bitmap_size_in_bytes) {
     log_info(cds, map)("%s CDS archive map for %s", DumpSharedSpaces ? "Static" : "Dynamic", mapinfo->full_path());
 
     address header = address(mapinfo->header());
     address header_end = header + mapinfo->header()->header_size();
-    write_region("header", header, header_end, 0);
-    write_header(mapinfo);
-    write_data(header, header_end, 0);
+    log_region("header", header, header_end, 0);
+    log_header(mapinfo);
+    log_data(header, header_end, 0);
 
     DumpRegion* rw_region = &builder->_rw_region;
     DumpRegion* ro_region = &builder->_ro_region;
 
-    write_dump_region("rw region", rw_region);
-    write_objects(rw_region, &builder->_rw_src_objs);
-
-    write_dump_region("ro region", ro_region);
-    write_objects(ro_region, &builder->_ro_src_objs);
+    log_metaspace_region("rw region", rw_region, &builder->_rw_src_objs);
+    log_metaspace_region("ro region", ro_region, &builder->_ro_src_objs);
 
     address bitmap_end = address(bitmap + bitmap_size_in_bytes);
-    write_region("bitmap", address(bitmap), bitmap_end, 0);
-    write_data(header, header_end, 0);
+    log_region("bitmap", address(bitmap), bitmap_end, 0);
+    log_data((address)bitmap, bitmap_end, 0);
 
     if (closed_heap_regions != NULL) {
-      write_heap_region("closed heap region", closed_heap_regions);
+      log_heap_regions("closed heap region", closed_heap_regions);
     }
     if (open_heap_regions != NULL) {
-      write_heap_region("open heap region", open_heap_regions);
+      log_heap_regions("open heap region", open_heap_regions);
     }
 
     log_info(cds, map)("[End of CDS archive map]");
   }
-};
+}; // end ArchiveBuilder::CDSMapLogger
 
 void ArchiveBuilder::print_stats() {
   _alloc_stats.print_stats(int(_ro_region.used()), int(_rw_region.used()));
@@ -1077,25 +1151,21 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
                                               bitmap_size_in_bytes);
 
   if (closed_heap_regions != NULL) {
-    _total_closed_heap_region_size = mapinfo->write_archive_heap_regions(
+    _total_closed_heap_region_size = mapinfo->write_heap_regions(
                                         closed_heap_regions,
                                         closed_heap_oopmaps,
-                                        MetaspaceShared::first_closed_archive_heap_region,
-                                        MetaspaceShared::max_closed_archive_heap_region);
-    _total_open_heap_region_size = mapinfo->write_archive_heap_regions(
+                                        MetaspaceShared::first_closed_heap_region,
+                                        MetaspaceShared::max_num_closed_heap_regions);
+    _total_open_heap_region_size = mapinfo->write_heap_regions(
                                         open_heap_regions,
                                         open_heap_oopmaps,
-                                        MetaspaceShared::first_open_archive_heap_region,
-                                        MetaspaceShared::max_open_archive_heap_region);
+                                        MetaspaceShared::first_open_heap_region,
+                                        MetaspaceShared::max_num_open_heap_regions);
   }
 
   print_region_stats(mapinfo, closed_heap_regions, open_heap_regions);
 
   mapinfo->set_requested_base((char*)MetaspaceShared::requested_base_address());
-  if (mapinfo->header()->magic() == CDS_DYNAMIC_ARCHIVE_MAGIC) {
-    mapinfo->set_header_base_archive_name_size(strlen(Arguments::GetSharedArchivePath()) + 1);
-    mapinfo->set_header_base_archive_is_default(FLAG_IS_DEFAULT(SharedArchiveFile));
-  }
   mapinfo->set_header_crc(mapinfo->compute_header_crc());
   // After this point, we should not write any data into mapinfo->header() since this
   // would corrupt its checksum we have calculated before.
@@ -1107,9 +1177,10 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo,
   }
 
   if (log_is_enabled(Info, cds, map)) {
-    CDSMapLogger::write(this, mapinfo, closed_heap_regions, open_heap_regions,
-                        bitmap, bitmap_size_in_bytes);
+    CDSMapLogger::log(this, mapinfo, closed_heap_regions, open_heap_regions,
+                      bitmap, bitmap_size_in_bytes);
   }
+  CDS_JAVA_HEAP_ONLY(HeapShared::destroy_archived_object_cache());
   FREE_C_HEAP_ARRAY(char, bitmap);
 }
 
@@ -1152,12 +1223,12 @@ void ArchiveBuilder::print_bitmap_region_stats(size_t size, size_t total_size) {
                  size, size/double(total_size)*100.0, size);
 }
 
-void ArchiveBuilder::print_heap_region_stats(GrowableArray<MemRegion> *heap_mem,
+void ArchiveBuilder::print_heap_region_stats(GrowableArray<MemRegion>* regions,
                                              const char *name, size_t total_size) {
-  int arr_len = heap_mem == NULL ? 0 : heap_mem->length();
+  int arr_len = regions == NULL ? 0 : regions->length();
   for (int i = 0; i < arr_len; i++) {
-      char* start = (char*)heap_mem->at(i).start();
-      size_t size = heap_mem->at(i).byte_size();
+      char* start = (char*)regions->at(i).start();
+      size_t size = regions->at(i).byte_size();
       char* top = start + size;
       log_debug(cds)("%s%d space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
                      name, i, size, size/double(total_size)*100.0, size, p2i(start));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -36,6 +37,7 @@
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
@@ -58,7 +60,9 @@
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
-
+#ifdef LINUX
+#include "trimCHeapDCmd.hpp"
+#endif
 
 static void loadAgentModule(TRAPS) {
   ResourceMark rm(THREAD);
@@ -99,6 +103,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDictionaryDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHierarchyDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassesDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SymboltableDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<StringtableDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<metaspace::MetaspaceDCmd>(full_export, true, false));
@@ -118,6 +123,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeCacheDCmd>(full_export, true, false));
 #ifdef LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
 #endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TouchedMethodsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
@@ -352,7 +358,7 @@ void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
 
-  Symbol* signature = vmSymbols::serializePropertiesToByteArray_signature();
+  Symbol* signature = vmSymbols::void_byte_array_signature();
   JavaCalls::call_static(&result,
                          ik,
                          vmSymbols::serializePropertiesToByteArray_name(),
@@ -416,6 +422,11 @@ void HeapInfoDCmd::execute(DCmdSource source, TRAPS) {
 void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
   ResourceMark rm(THREAD);
 
+  if (!InstanceKlass::is_finalization_enabled()) {
+    output()->print_cr("Finalization is disabled");
+    return;
+  }
+
   Klass* k = SystemDictionary::resolve_or_fail(
     vmSymbols::finalizer_histogram_klass(), true, CHECK);
 
@@ -468,10 +479,13 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
        "BOOLEAN", false, "false"),
   _gzip("-gz", "If specified, the heap dump is written in gzipped format "
                "using the given compression level. 1 (recommended) is the fastest, "
-               "9 the strongest compression.", "INT", false, "1") {
+               "9 the strongest compression.", "INT", false, "1"),
+  _overwrite("-overwrite", "If specified, the dump file will be overwritten if it exists",
+           "BOOLEAN", false, "false") {
   _dcmdparser.add_dcmd_option(&_all);
   _dcmdparser.add_dcmd_argument(&_filename);
   _dcmdparser.add_dcmd_option(&_gzip);
+  _dcmdparser.add_dcmd_option(&_overwrite);
 }
 
 void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
@@ -490,7 +504,7 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
   HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value(), output(), (int) level);
+  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value());
 }
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
@@ -681,7 +695,7 @@ void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
     char comma[2] = {0,0};
 
     // Leave default values on Agent.class side and pass only
-    // agruments explicitly set by user. All arguments passed
+    // arguments explicitly set by user. All arguments passed
     // to jcmd override properties with the same name set by
     // command line with -D or by managmenent.properties
     // file.
@@ -900,8 +914,9 @@ void CompilerDirectivesClearDCmd::execute(DCmdSource source, TRAPS) {
 ClassHierarchyDCmd::ClassHierarchyDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
   _print_interfaces("-i", "Inherited interfaces should be printed.", "BOOLEAN", false, "false"),
-  _print_subclasses("-s", "If a classname is specified, print its subclasses. "
-                    "Otherwise only its superclasses are printed.", "BOOLEAN", false, "false"),
+  _print_subclasses("-s", "If a classname is specified, print its subclasses "
+                    "in addition to its superclasses. Without this option only the "
+                    "superclasses will be printed.", "BOOLEAN", false, "false"),
   _classname("classname", "Name of class whose hierarchy should be printed. "
              "If not specified, all class hierarchies are printed.",
              "STRING", false) {
@@ -941,6 +956,41 @@ void TouchedMethodsDCmd::execute(DCmdSource source, TRAPS) {
   VMThread::execute(&dumper);
 }
 
+ClassesDCmd::ClassesDCmd(outputStream* output, bool heap) :
+                                     DCmdWithParser(output, heap),
+  _verbose("-verbose",
+           "Dump the detailed content of a Java class. "
+           "Some classes are annotated with flags: "
+           "F = has, or inherits, a non-empty finalize method, "
+           "f = has final method, "
+           "W = methods rewritten, "
+           "C = marked with @Contended annotation, "
+           "R = has been redefined, "
+           "S = is shared class",
+           "BOOLEAN", false, "false") {
+  _dcmdparser.add_dcmd_option(&_verbose);
+}
+
+class VM_PrintClasses : public VM_Operation {
+private:
+  outputStream* _out;
+  bool _verbose;
+public:
+  VM_PrintClasses(outputStream* out, bool verbose) : _out(out), _verbose(verbose) {}
+
+  virtual VMOp_Type type() const { return VMOp_PrintClasses; }
+
+  virtual void doit() {
+    PrintClassClosure closure(_out, _verbose);
+    ClassLoaderDataGraph::classes_do(&closure);
+  }
+};
+
+void ClassesDCmd::execute(DCmdSource source, TRAPS) {
+  VM_PrintClasses vmop(output(), _verbose.is_set());
+  VMThread::execute(&vmop);
+}
+
 #if INCLUDE_CDS
 DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
@@ -958,10 +1008,10 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
 
   if (strcmp(scmd, "static_dump") == 0) {
     is_static = JNI_TRUE;
-    output()->print_cr("Static dump:");
+    output()->print("Static dump: ");
   } else if (strcmp(scmd, "dynamic_dump") == 0) {
     is_static = JNI_FALSE;
-    output()->print_cr("Dynamic dump:");
+    output()->print("Dynamic dump: ");
     if (!UseSharedSpaces) {
       output()->print_cr("Dynamic dump is unsupported when base CDS archive is not loaded");
       return;
@@ -982,7 +1032,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   }
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
   Klass*  cds_klass = SystemDictionary::resolve_or_fail(cds_name, true /*throw error*/,  CHECK);
-  JavaValue result(T_VOID);
+  JavaValue result(T_OBJECT);
   JavaCallArguments args;
   args.push_int(is_static);
   args.push_oop(fileh);
@@ -991,6 +1041,12 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
                          vmSymbols::dumpSharedArchive(),
                          vmSymbols::dumpSharedArchive_signature(),
                          &args, CHECK);
+  if (!HAS_PENDING_EXCEPTION) {
+    assert(result.get_type() == T_OBJECT, "Sanity check");
+    // result contains the archive name
+    char* archive_name = java_lang_String::as_utf8_string(result.get_oop());
+    output()->print_cr("%s", archive_name);
+  }
 }
 #endif // INCLUDE_CDS
 

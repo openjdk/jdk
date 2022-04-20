@@ -557,9 +557,11 @@ class CompletenessAnalyzer {
                         break;
                 }
                 // Detect an error if we are at starting position and the last
-                // token wasn't a terminating one.  Special case: within braces,
-                // comma can proceed semicolon, e.g. the values list in enum
-                if (ct.kind.isStart() && !prevTK.isOkToTerminate() && prevTK != COMMA) {
+                // token wasn't a terminating one.  Special cases:
+                // -within braces, comma can procede semicolon, e.g. the values list in enum
+                // -arrow can be followed by a throw, e.g. in a switch/switch expression
+                if (ct.kind.isStart() && !prevTK.isOkToTerminate() && prevTK != COMMA &&
+                    !(prevTK == ARROW && ct.kind == THROW)) {
                     return new CT(ERROR, current, "No '" + prevTK + "' before '" + ct.kind + "'");
                 }
                 if (stack.isEmpty() || ct.kind.isError()) {

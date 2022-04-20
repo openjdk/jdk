@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -498,7 +497,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
       return SharedRuntime::deopt_blob()->unpack_with_exception();
     } else {
       // The deferred StackWatermarkSet::after_unwind check will be performed in
-      // * OptoRuntime::rethrow_C for C2 code
+      // * OptoRuntime::handle_exception_C_helper for C2 code
       // * exception_handler_for_pc_helper via Runtime1::handle_exception_from_callee_id for C1 code
       return nm->exception_begin();
     }
@@ -990,7 +989,7 @@ JRT_END
 jlong SharedRuntime::get_java_tid(Thread* thread) {
   if (thread != NULL) {
     if (thread->is_Java_thread()) {
-      oop obj = thread->as_Java_thread()->threadObj();
+      oop obj = JavaThread::cast(thread)->threadObj();
       return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
     }
   }
@@ -1002,11 +1001,15 @@ jlong SharedRuntime::get_java_tid(Thread* thread) {
  * it gets turned into a tail-call on sparc, which runs into dtrace bug
  * 6254741.  Once that is fixed we can remove the dummy return value.
  */
-int SharedRuntime::dtrace_object_alloc(oopDesc* o, int size) {
-  return dtrace_object_alloc_base(Thread::current(), o, size);
+int SharedRuntime::dtrace_object_alloc(oopDesc* o) {
+  return dtrace_object_alloc(Thread::current(), o, o->size());
 }
 
-int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o, int size) {
+int SharedRuntime::dtrace_object_alloc(Thread* thread, oopDesc* o) {
+  return dtrace_object_alloc(thread, o, o->size());
+}
+
+int SharedRuntime::dtrace_object_alloc(Thread* thread, oopDesc* o, size_t size) {
   assert(DTraceAllocProbes, "wrong call");
   Klass* klass = o->klass();
   Symbol* name = klass->name();
@@ -1944,6 +1947,8 @@ bool SharedRuntime::should_fixup_call_destination(address destination, address e
 JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address caller_pc))
   Method* moop(method);
 
+  AARCH64_PORT_ONLY(assert(pauth_ptr_is_raw(caller_pc), "should be raw"));
+
   address entry_point = moop->from_compiled_entry_no_trampoline();
 
   // It's possible that deoptimization can occur at a call site which hasn't
@@ -2080,7 +2085,7 @@ char* SharedRuntime::generate_class_cast_message(
     klass_separator = (target_klass != NULL) ? "; " : "";
   }
 
-  // add 3 for parenthesis and preceeding space
+  // add 3 for parenthesis and preceding space
   msglen += strlen(caster_klass_description) + strlen(target_klass_description) + strlen(klass_separator) + 3;
 
   char* message = NEW_RESOURCE_ARRAY_RETURN_NULL(char, msglen);
@@ -2116,9 +2121,6 @@ void SharedRuntime::monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThre
   // The normal monitorenter NullPointerException is thrown without acquiring a lock
   // and the model is that an exception implies the method failed.
   JRT_BLOCK_NO_ASYNC
-  if (PrintBiasedLockingStatistics) {
-    Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
-  }
   Handle h_obj(THREAD, obj);
   ObjectSynchronizer::enter(h_obj, lock, current);
   assert(!HAS_PENDING_EXCEPTION, "Should have no exception here");
@@ -2916,7 +2918,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
   }
   entry->relocate(new_adapter->content_begin());
 #ifndef PRODUCT
-  // debugging suppport
+  // debugging support
   if (PrintAdapterHandlers || PrintStubCode) {
     ttyLocker ttyl;
     entry->print_adapter_on(tty);
@@ -2927,7 +2929,8 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
     if (Verbose || PrintStubCode) {
       address first_pc = entry->base_address();
       if (first_pc != NULL) {
-        Disassembler::decode(first_pc, first_pc + insts_size);
+        Disassembler::decode(first_pc, first_pc + insts_size, tty
+                             NOT_PRODUCT(COMMA &new_adapter->asm_remarks()));
         tty->cr();
       }
     }
@@ -3007,16 +3010,10 @@ bool AdapterHandlerEntry::compare_code(AdapterHandlerEntry* other) {
 void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   ResourceMark rm;
   nmethod* nm = NULL;
-  address critical_entry = NULL;
 
   assert(method->is_native(), "must be native");
   assert(method->is_method_handle_intrinsic() ||
          method->has_native_function(), "must have something valid to call!");
-
-  if (CriticalJNINatives && !method->is_method_handle_intrinsic()) {
-    // We perform the I/O with transition to native before acquiring AdapterHandlerLibrary_lock.
-    critical_entry = NativeLookup::lookup_critical_entry(method);
-  }
 
   {
     // Perform the work while holding the lock, but perform any printing outside the lock
@@ -3060,7 +3057,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
 
       // Generate the compiled-to-native wrapper code
-      nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type, critical_entry);
+      nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
 
       if (nm != NULL) {
         {

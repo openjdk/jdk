@@ -34,6 +34,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/task.hpp"
+#include "utilities/vmError.hpp"
 
 //----------------------------------------------------------------------
 // Build flagLimitTable[]

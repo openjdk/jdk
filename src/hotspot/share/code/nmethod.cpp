@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/sweeper.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -1193,7 +1194,9 @@ void nmethod::make_unloaded() {
   // recorded in instanceKlasses get flushed.
   // Since this work is being done during a GC, defer deleting dependencies from the
   // InstanceKlass.
-  assert(Universe::heap()->is_gc_active() || Thread::current()->is_ConcurrentGC_thread(),
+  assert(Universe::heap()->is_gc_active() ||
+         Thread::current()->is_ConcurrentGC_thread() ||
+         Thread::current()->is_Worker_thread(),
          "should only be called during gc");
   flush_dependencies(/*delete_immediately*/false);
 
@@ -1233,7 +1236,9 @@ void nmethod::make_unloaded() {
   }
 
   // Make the class unloaded - i.e., change state and notify sweeper
-  assert(SafepointSynchronize::is_at_safepoint() || Thread::current()->is_ConcurrentGC_thread(),
+  assert(SafepointSynchronize::is_at_safepoint() ||
+         Thread::current()->is_ConcurrentGC_thread() ||
+         Thread::current()->is_Worker_thread(),
          "must be at safepoint");
 
   {
@@ -1554,7 +1559,9 @@ oop nmethod::oop_at_phantom(int index) const {
 // notifies instanceKlasses that are reachable
 
 void nmethod::flush_dependencies(bool delete_immediately) {
-  DEBUG_ONLY(bool called_by_gc = Universe::heap()->is_gc_active() || Thread::current()->is_ConcurrentGC_thread();)
+  DEBUG_ONLY(bool called_by_gc = Universe::heap()->is_gc_active() ||
+                                 Thread::current()->is_ConcurrentGC_thread() ||
+                                 Thread::current()->is_Worker_thread();)
   assert(called_by_gc != delete_immediately,
   "delete_immediately is false if and only if we are called during GC");
   if (!has_flushed_dependencies()) {
@@ -1596,8 +1603,20 @@ void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
 
   // Don't post this nmethod load event if it is already dying
   // because the sweeper might already be deleting this nmethod.
-  if (is_not_entrant() && can_convert_to_zombie()) {
-    return;
+  {
+    MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+    // When the nmethod is acquired from the CodeCache iterator, it can racingly become zombie
+    // before this code is called. Filter them out here under the CompiledMethod_lock.
+    if (!is_alive()) {
+      return;
+    }
+    // As for is_alive() nmethods, we also don't want them to racingly become zombie once we
+    // release this lock, so we check that this is not going to be the case.
+    if (is_not_entrant() && can_convert_to_zombie()) {
+      return;
+    }
+    // Ensure the sweeper can't collect this nmethod until it become "active" with JvmtiThreadState::nmethods_do.
+    mark_as_seen_on_stack();
   }
 
   // This is a bad time for a safepoint.  We don't want
@@ -2215,8 +2234,10 @@ void nmethod::check_all_dependencies(DepChange& changes) {
   // Turn off dependency tracing while actually testing dependencies.
   NOT_PRODUCT( FlagSetting fs(TraceDependencies, false) );
 
-  typedef ResourceHashtable<DependencySignature, int, &DependencySignature::hash,
-                            &DependencySignature::equals, 11027> DepTable;
+  typedef ResourceHashtable<DependencySignature, int, 11027,
+                            ResourceObj::RESOURCE_AREA, mtInternal,
+                            &DependencySignature::hash,
+                            &DependencySignature::equals> DepTable;
 
   DepTable* table = new DepTable();
 
@@ -2508,7 +2529,7 @@ void nmethod::print(outputStream* st) const {
     st->print("(n/a) ");
   }
 
-  print_on(tty, NULL);
+  print_on(st, NULL);
 
   if (WizardMode) {
     st->print("((nmethod*) " INTPTR_FORMAT ") ", p2i(this));
@@ -2859,6 +2880,9 @@ void nmethod::decode2(outputStream* ost) const {
                                                                   AbstractDisassembler::show_block_comment());
 #endif
 
+  // Decoding an nmethod can write to a PcDescCache (see PcDescCache::add_pc_desc)
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
+
   st->cr();
   this->print(st);
   st->cr();
@@ -2868,7 +2892,10 @@ void nmethod::decode2(outputStream* ost) const {
   //---<  Print real disassembly  >---
   //----------------------------------
   if (! use_compressed_format) {
+    st->print_cr("[Disassembly]");
     Disassembler::decode(const_cast<nmethod*>(this), st);
+    st->bol();
+    st->print_cr("[/Disassembly]");
     return;
   }
 #endif
@@ -2876,7 +2903,7 @@ void nmethod::decode2(outputStream* ost) const {
 #if defined(SUPPORT_ABSTRACT_ASSEMBLY)
 
   // Compressed undisassembled disassembly format.
-  // The following stati are defined/supported:
+  // The following status values are defined/supported:
   //   = 0 - currently at bol() position, nothing printed yet on current line.
   //   = 1 - currently at position after print_location().
   //   > 1 - in the midst of printing instruction stream bytes.

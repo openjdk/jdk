@@ -55,17 +55,13 @@ compare_template="Compare"
 compare_masked_template="Compare-Masked"
 compare_broadcast_template="Compare-Broadcast"
 reduction_scalar="Reduction-Scalar-op"
-reduction_scalar_min="Reduction-Scalar-Min-op"
-reduction_scalar_max="Reduction-Scalar-Max-op"
+reduction_scalar_func="Reduction-Scalar-op-func"
 reduction_scalar_masked="Reduction-Scalar-Masked-op"
-reduction_scalar_min_masked="Reduction-Scalar-Masked-Min-op"
-reduction_scalar_max_masked="Reduction-Scalar-Masked-Max-op"
+reduction_scalar_masked_func="Reduction-Scalar-Masked-op-func"
 reduction_op="Reduction-op"
-reduction_op_min="Reduction-Min-op"
-reduction_op_max="Reduction-Max-op"
+reduction_op_func="Reduction-op-func"
 reduction_op_masked="Reduction-Masked-op"
-reduction_op_min_masked="Reduction-Masked-Min-op"
-reduction_op_max_masked="Reduction-Masked-Max-op"
+reduction_op_masked_func="Reduction-Masked-op-func"
 unary_math_template="Unary-op-math"
 binary_math_template="Binary-op-math"
 binary_math_broadcast_template="Binary-Broadcast-op-math"
@@ -74,6 +70,8 @@ bool_reduction_template="BoolReduction-op"
 with_op_template="With-Op"
 shift_template="Shift-op"
 shift_masked_template="Shift-Masked-op"
+shift_const_template="Shift-Const-op"
+shift_masked_const_template="Shift-Masked-Const-op"
 get_template="Get-op"
 rearrange_template="Rearrange"
 broadcast_template="Broadcast"
@@ -99,9 +97,9 @@ function replace_variables {
   local kernel_smoke=${10}
 
   if [ "x${kernel}" != "x" ]; then
-    local kernel_escaped=$(echo -e "$kernel" | tr '\n' '|')
+    local kernel_escaped=$(echo -e "$kernel" | tr '\n' '`')
     sed "s/\[\[KERNEL\]\]/${kernel_escaped}/g" $filename > ${filename}.current1
-    cat ${filename}.current1 | tr '|' "\n" > ${filename}.current
+    cat ${filename}.current1 | tr '`' "\n" > ${filename}.current
     rm -f "${filename}.current1"
   else
     cp $filename ${filename}.current
@@ -156,9 +154,9 @@ function replace_variables {
   if [[ "$filename" == *"Unit"* ]] && [ "$test_func" != "" ]; then
     if [ "$masked" == "" ] || [ "$withMask" != "" ]; then
       if [ ! -z "$kernel_smoke" ]; then
-        local kernel_smoke_escaped=$(echo -e "$kernel_smoke" | tr '\n' '|')
+        local kernel_smoke_escaped=$(echo -e "$kernel_smoke" | tr '\n' '`')
         sed "s/\[\[KERNEL\]\]/${kernel_smoke_escaped}/g" $filename > ${filename}.scurrent1
-        cat ${filename}.scurrent1 | tr '|' "\n" > ${filename}.scurrent
+        cat ${filename}.scurrent1 | tr '`' "\n" > ${filename}.scurrent
         rm -f "${filename}.scurrent1"
       else
         cp $filename.current ${filename}.scurrent
@@ -268,10 +266,16 @@ function gen_binary_alu_bcst_long_op {
   gen_op_tmpl $binary_broadcast_masked_long "$@"
 }
 
-function gen_shift_cst_op {
+function gen_shift_op {
   echo "Generating Shift constant op $1 ($2)..."
   gen_op_tmpl $shift_template "$@"
   gen_op_tmpl $shift_masked_template "$@"
+}
+
+function gen_shift_cst_op {
+  echo "Generating Shift constant op $1 ($2)..."
+  gen_op_tmpl $shift_const_template "$@"
+  gen_op_tmpl $shift_masked_const_template "$@"
 }
 
 function gen_unary_alu_op {
@@ -337,20 +341,12 @@ function gen_reduction_op {
   gen_op_tmpl $reduction_op_masked "$@"
 }
 
-function gen_reduction_op_min {
+function gen_reduction_op_func {
   echo "Generating reduction op $1 ($2)..."
-  gen_op_tmpl $reduction_scalar_min "$@"
-  gen_op_tmpl $reduction_op_min "$@"
-  gen_op_tmpl $reduction_scalar_min_masked "$@"
-  gen_op_tmpl $reduction_op_min_masked "$@"
-}
-
-function gen_reduction_op_max {
-  echo "Generating reduction op $1 ($2)..."
-  gen_op_tmpl $reduction_scalar_max "$@"
-  gen_op_tmpl $reduction_op_max "$@"
-  gen_op_tmpl $reduction_scalar_max_masked "$@"
-  gen_op_tmpl $reduction_op_max_masked "$@"
+  gen_op_tmpl $reduction_scalar_func "$@"
+  gen_op_tmpl $reduction_op_func "$@"
+  gen_op_tmpl $reduction_scalar_masked_func "$@"
+  gen_op_tmpl $reduction_op_masked_func "$@"
 }
 
 function gen_bool_reduction_op {
@@ -436,15 +432,28 @@ gen_binary_alu_op "ASHR" "(a >> (b \& 0xF))" "short"
 gen_binary_alu_op "LSHR" "(a >>> b)" "intOrLong"
 gen_binary_alu_op "LSHR" "((a \& 0xFF) >>> (b \& 0x7))" "byte"
 gen_binary_alu_op "LSHR" "((a \& 0xFFFF) >>> (b \& 0xF))" "short"
-gen_shift_cst_op  "LSHL" "(a << b)" "intOrLong"
-gen_shift_cst_op  "LSHL" "(a << (b \& 7))" "byte"
-gen_shift_cst_op  "LSHL" "(a << (b \& 15))" "short"
-gen_shift_cst_op  "LSHR" "(a >>> b)" "intOrLong"
-gen_shift_cst_op  "LSHR" "((a \& 0xFF) >>> (b \& 7))" "byte"
-gen_shift_cst_op  "LSHR" "((a \& 0xFFFF) >>> (b \& 15))" "short"
-gen_shift_cst_op  "ASHR" "(a >> b)" "intOrLong"
-gen_shift_cst_op  "ASHR" "(a >> (b \& 7))" "byte"
-gen_shift_cst_op  "ASHR" "(a >> (b \& 15))" "short"
+gen_shift_op  "LSHL" "(a << b)" "intOrLong"
+gen_shift_op  "LSHL" "(a << (b \& 7))" "byte"
+gen_shift_op  "LSHL" "(a << (b \& 15))" "short"
+gen_shift_op  "LSHR" "(a >>> b)" "intOrLong"
+gen_shift_op  "LSHR" "((a \& 0xFF) >>> (b \& 7))" "byte"
+gen_shift_op  "LSHR" "((a \& 0xFFFF) >>> (b \& 15))" "short"
+gen_shift_op  "ASHR" "(a >> b)" "intOrLong"
+gen_shift_op  "ASHR" "(a >> (b \& 7))" "byte"
+gen_shift_op  "ASHR" "(a >> (b \& 15))" "short"
+gen_binary_alu_op "ROR" "ROR_scalar(a,b)" "BITWISE"
+gen_binary_alu_op "ROL" "ROL_scalar(a,b)" "BITWISE"
+gen_shift_op  "ROR" "ROR_scalar(a, b)" "BITWISE"
+gen_shift_op  "ROL" "ROL_scalar(a, b)" "BITWISE"
+
+# Constant Shifts
+gen_shift_cst_op  "LSHR" "(a >>> CONST_SHIFT)" "intOrLong"
+gen_shift_cst_op  "LSHR" "((a \& 0xFF) >>> CONST_SHIFT)" "byte"
+gen_shift_cst_op  "LSHR" "((a \& 0xFFFF) >>> CONST_SHIFT)" "short"
+gen_shift_cst_op  "LSHL" "(a << CONST_SHIFT)" "BITWISE"
+gen_shift_cst_op  "ASHR" "(a >> CONST_SHIFT)" "BITWISE"
+gen_shift_cst_op  "ROR" "ROR_scalar(a, CONST_SHIFT)" "BITWISE"
+gen_shift_cst_op  "ROL" "ROL_scalar(a, CONST_SHIFT)" "BITWISE"
 
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "Math.min(a, b)"
@@ -458,9 +467,9 @@ gen_reduction_op "OR" "|" "BITWISE" "0"
 gen_reduction_op "XOR" "^" "BITWISE" "0"
 gen_reduction_op "ADD" "+" "" "0"
 gen_reduction_op "MUL" "*" "" "1"
-gen_reduction_op_min "MIN" "" "" "\$Wideboxtype\$.\$MaxValue\$"
-gen_reduction_op_max "MAX" "" "" "\$Wideboxtype\$.\$MinValue\$"
-#gen_reduction_op "reduce_FIRST_NONZERO" "lanewise_FIRST_NONZERO" "{#if[FP]?Double.doubleToLongBits}(a)=0?a:b" "" "1"
+gen_reduction_op_func "MIN" "(\$type\$) Math.min" "" "\$Wideboxtype\$.\$MaxValue\$"
+gen_reduction_op_func "MAX" "(\$type\$) Math.max" "" "\$Wideboxtype\$.\$MinValue\$"
+gen_reduction_op_func "FIRST_NONZERO" "firstNonZero" "" "(\$type\$) 0"
 
 # Boolean reductions.
 gen_bool_reduction_op "anyTrue" "|" "BITWISE" "false"

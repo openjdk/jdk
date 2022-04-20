@@ -311,7 +311,12 @@ public class Flags {
     /**
      * Flag to indicate the given ModuleSymbol is a system module.
      */
-    public static final long SYSTEM_MODULE = 1L<<53;
+    public static final long SYSTEM_MODULE = 1L<<53; //ModuleSymbols only
+
+    /**
+     * Flag to indicate the given ClassSymbol is a value based.
+     */
+    public static final long VALUE_BASED = 1L<<53; //ClassSymbols only
 
     /**
      * Flag to indicate the given symbol has a @Deprecated annotation.

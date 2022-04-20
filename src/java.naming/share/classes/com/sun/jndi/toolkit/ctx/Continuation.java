@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ public class Continuation extends ResolveResult {
     /**
      * Fills in an exception's fields using data from this Continuation.
      * The resolved name is set by subtracting remainingName from starter.
-     * %%% This might not not always produce the correct answer wrt trailing "/".
+     * %%% This might not always produce the correct answer wrt trailing "/".
      * If the exception is a CannotProceedException, its environment,
      * altName, and altNameCtx fields are set using this continuation's
      * environment, relativeResolvedName, and resolvedContext.
@@ -296,8 +296,6 @@ public class Continuation extends ResolveResult {
      * @param currCtx The non-null context from which relResName is to be resolved.
      */
     public void setContinueNNS(Object resObj, Name relResName, Context currCtx) {
-        CompositeName rname = new CompositeName();
-
         setContinue(resObj, relResName, currCtx, PartialCompositeContext._NNS_NAME);
     }
 

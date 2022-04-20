@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.FilePermission;
 import java.util.*;
 
+import jdk.internal.util.StaticProperty;
 import sun.nio.ch.ThreadPool;
 import sun.security.util.SecurityConstants;
 import static sun.nio.fs.UnixNativeDispatcher.*;
@@ -47,13 +48,11 @@ import static sun.nio.fs.UnixConstants.*;
 public abstract class UnixFileSystemProvider
     extends AbstractFileSystemProvider
 {
-    private static final String USER_DIR = "user.dir";
     private static final byte[] EMPTY_PATH = new byte[0];
     private final UnixFileSystem theFileSystem;
 
     public UnixFileSystemProvider() {
-        String userDir = System.getProperty(USER_DIR);
-        theFileSystem = newFileSystem(userDir);
+        theFileSystem = newFileSystem(StaticProperty.userDir());
     }
 
     UnixFileSystem theFileSystem() {
@@ -432,13 +431,14 @@ public abstract class UnixFileSystemProvider
             dfd2 = dup(dfd1);
             dp = fdopendir(dfd1);
         } catch (UnixException x) {
+            IOException ioe = x.errno() == UnixConstants.ENOTDIR ?
+                new NotDirectoryException(dir.getPathForExceptionMessage()) :
+                x.asIOException(dir);
             if (dfd1 != -1)
-                UnixNativeDispatcher.close(dfd1);
+                UnixNativeDispatcher.close(dfd1, e -> null);
             if (dfd2 != -1)
-                UnixNativeDispatcher.close(dfd2);
-            if (x.errno() == UnixConstants.ENOTDIR)
-                throw new NotDirectoryException(dir.getPathForExceptionMessage());
-            x.rethrowAsIOException(dir);
+                UnixNativeDispatcher.close(dfd2, e -> null);
+            throw ioe;
         }
         return new UnixSecureDirectoryStream(dir, dp, dfd2, filter);
     }

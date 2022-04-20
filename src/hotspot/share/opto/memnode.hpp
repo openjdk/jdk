@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public:
          Memory,                // Chunk of memory is being loaded from
          Address,               // Actually address, derived from base
          ValueIn,               // Value to store
-         OopStore               // Preceeding oop store, only in StoreCM
+         OopStore               // Preceding oop store, only in StoreCM
   };
   typedef enum { unordered = 0,
                  acquire,       // Load has to acquire or be succeeded by MemBarAcquire.
@@ -285,7 +285,6 @@ public:
   bool  has_reinterpret_variant(const Type* rt);
   Node* convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt);
 
-  void pin() { _control_dependency = Pinned; }
   bool has_unknown_control_dependency() const { return _control_dependency == UnknownControl; }
 
 #ifndef PRODUCT
@@ -529,7 +528,7 @@ public:
 
   // Polymorphic factory method:
   static Node* make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* at,
-                    const TypeKlassPtr* tk = TypeKlassPtr::OBJECT);
+                    const TypeKlassPtr* tk = TypeInstKlassPtr::OBJECT);
 };
 
 //------------------------------LoadNKlassNode---------------------------------
@@ -771,7 +770,7 @@ public:
 //------------------------------StoreCMNode-----------------------------------
 // Store card-mark byte to memory for CM
 // The last StoreCM before a SafePoint must be preserved and occur after its "oop" store
-// Preceeding equivalent StoreCMs may be eliminated.
+// Preceding equivalent StoreCMs may be eliminated.
 class StoreCMNode : public StoreNode {
  private:
   virtual uint hash() const { return StoreNode::hash() + _oop_alias_idx; }
@@ -1170,7 +1169,7 @@ public:
 
 //------------------------------MemBar-----------------------------------------
 // There are different flavors of Memory Barriers to match the Java Memory
-// Model.  Monitor-enter and volatile-load act as Aquires: no following ref
+// Model.  Monitor-enter and volatile-load act as Acquires: no following ref
 // can be moved to before them.  We insert a MemBar-Acquire after a FastLock or
 // volatile-load.  Monitor-exit and volatile-store act as Release: no
 // preceding ref can be moved to after them.  We insert a MemBar-Release
@@ -1251,7 +1250,7 @@ public:
 
 // "Acquire" - no following ref can move before (but earlier refs can
 // follow, like an early Load stalled in cache).  Requires multi-cpu
-// visibility.  Inserted independ of any load, as required
+// visibility.  Inserted independent of any load, as required
 // for intrinsic Unsafe.loadFence().
 class LoadFenceNode: public MemBarNode {
 public:
@@ -1307,6 +1306,13 @@ public:
     : MemBarNode(C, alias_idx, precedent) {
     init_class_id(Class_MemBarStoreStore);
   }
+  virtual int Opcode() const;
+};
+
+class StoreStoreFenceNode: public MemBarNode {
+public:
+  StoreStoreFenceNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
   virtual int Opcode() const;
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Writer;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -60,11 +58,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
 /**
  * The class with "start" method, calls individual Writers.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class HtmlDoclet extends AbstractDoclet {
 
@@ -215,7 +208,7 @@ public class HtmlDoclet extends AbstractDoclet {
         super.generateOtherFiles(classtree);
         HtmlOptions options = configuration.getOptions();
         if (options.linkSource()) {
-            SourceToHTMLConverter.convertRoot(configuration,DocPaths.SOURCE_OUTPUT);
+            SourceToHTMLConverter.convertRoot(configuration, DocPaths.SOURCE_OUTPUT);
         }
         // Modules with no documented classes may be specified on the
         // command line to specify a service provider, allow these.
@@ -225,10 +218,13 @@ public class HtmlDoclet extends AbstractDoclet {
             return;
         }
         boolean nodeprecated = options.noDeprecated();
-        performCopy(options.helpFile());
-        performCopy(options.stylesheetFile());
+        performCopy(options.helpFile(), DocPath.empty);
+        performCopy(options.stylesheetFile(), DocPath.empty);
         for (String stylesheet : options.additionalStylesheets()) {
-            performCopy(stylesheet);
+            performCopy(stylesheet, DocPath.empty);
+        }
+        for (String script : options.additionalScripts()) {
+            performCopy(script, DocPaths.SCRIPT_DIR);
         }
         // do early to reduce memory footprint
         if (options.classUse()) {
@@ -290,6 +286,8 @@ public class HtmlDoclet extends AbstractDoclet {
         }
         f = DocFile.createFileForOutput(configuration, DocPaths.JAVASCRIPT);
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.JAVASCRIPT), true, true);
+        f = DocFile.createFileForOutput(configuration, DocPaths.CLIPBOARD_SVG);
+        f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.CLIPBOARD_SVG), true, true);
         if (options.createIndex()) {
             f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_JS);
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_JS_TEMPLATE), configuration.docResources);
@@ -310,7 +308,7 @@ public class HtmlDoclet extends AbstractDoclet {
 
     private void copyJqueryFiles() throws DocletException {
         List<String> files = Arrays.asList(
-                "jquery-3.5.1.min.js",
+                "jquery-3.6.0.min.js",
                 "jquery-ui.min.js",
                 "jquery-ui.min.css",
                 "jquery-ui.structure.min.css",
@@ -327,7 +325,7 @@ public class HtmlDoclet extends AbstractDoclet {
                 "images/ui-bg_glass_75_e6e6e6_1x400.png");
         DocFile f;
         for (String file : files) {
-            DocPath filePath = DocPaths.JQUERY_FILES.resolve(file);
+            DocPath filePath = DocPaths.SCRIPT_DIR.resolve(file);
             f = DocFile.createFileForOutput(configuration, filePath);
             f.copyResource(DOCLET_RESOURCES.resolve(filePath), true, false);
         }
@@ -426,18 +424,20 @@ public class HtmlDoclet extends AbstractDoclet {
         return configuration.getOptions().getSupportedOptions();
     }
 
-    private void performCopy(String filename) throws DocFileIOException {
-        if (filename.isEmpty())
+    private void performCopy(String filename, DocPath targetPath) throws DocFileIOException {
+        if (filename.isEmpty()) {
             return;
+        }
 
         DocFile fromfile = DocFile.createFileForInput(configuration, filename);
-        DocPath path = DocPath.create(fromfile.getName());
+        DocPath path = targetPath.resolve(fromfile.getName());
         DocFile toFile = DocFile.createFileForOutput(configuration, path);
-        if (toFile.isSameFile(fromfile))
+        if (toFile.isSameFile(fromfile)) {
             return;
+        }
 
         messages.notice("doclet.Copying_File_0_To_File_1",
-                fromfile.toString(), path.getPath());
+                fromfile.getPath(), path.getPath());
         toFile.copyFile(fromfile);
     }
 }

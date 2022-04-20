@@ -238,11 +238,11 @@ public:
 
 // Scope object for java.lang.management support.
 class G1MonitoringScope : public StackObj {
-  G1MonitoringSupport* _g1mm;
+  G1MonitoringSupport* _monitoring_support;
   TraceCollectorStats _tcs;
   TraceMemoryManagerStats _tms;
 public:
-  G1MonitoringScope(G1MonitoringSupport* g1mm, bool full_gc, bool all_memory_pools_affected);
+  G1MonitoringScope(G1MonitoringSupport* monitoring_support, bool full_gc, bool all_memory_pools_affected);
   ~G1MonitoringScope();
 };
 

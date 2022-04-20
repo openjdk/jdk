@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -6861,7 +6861,7 @@ class C2 extends C1 implements I2 {
         <ul>
         <li>By loading and deriving a class from a <code>class</code> file representation
             using a class loader (see <vmspec chapter="5.3"/>).</li>
-        <li>By invoking <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>
+        <li>By invoking <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte%5B%5D,boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>
             that creates a hidden class or interface from a <code>class</code> file representation.</li>
         <li>By invoking methods in certain Java SE Platform APIs such as reflection.</li>
          </ul>
@@ -6923,7 +6923,7 @@ class C2 extends C1 implements I2 {
         <code>class_count_ptr</code>, and the array itself via
         <code>classes_ptr</code>.
         <p/>
-        See <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>.
+        See <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte%5B%5D,boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6973,7 +6973,7 @@ class C2 extends C1 implements I2 {
           <code>"L" + N + "." +  S + ";"</code>
           where <code>N</code> is the binary name encoded in internal form (JVMS 4.2.1)
           indicated by the <code>class</code> file passed to
-          <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>,
+          <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte%5B%5D,boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>,
           and <code>S</code> is an unqualified name.
           The returned name is not a type descriptor and does not conform to JVMS 4.3.2.
           For example, com.foo.Foo/AnySuffix is "Lcom/foo/Foo.AnySuffix;"
@@ -14378,7 +14378,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Remove frame arg from events.
   </change>
   <change date="9 Apr 2003" version="v55">
-      Remove GetObjectWithAnnotation since tests show bufferred approach more efficient.
+      Remove GetObjectWithAnnotation since tests show buffered approach more efficient.
       Add missing annotation_count to GetObjectsWithAnnotations
   </change>
   <change date="10 Apr 2003" version="v56">
@@ -14659,30 +14659,30 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Clarified definition of class_tag and referrer_index
       parameters to heap callbacks.
   </change>
-  <change date="16 Febuary 2004" version="0.2.103">
+  <change date="16 February 2004" version="0.2.103">
       Document JAVA_TOOL_OPTIONS.
   </change>
-  <change date="17 Febuary 2004" version="0.2.105">
+  <change date="17 February 2004" version="0.2.105">
       Divide start phase into primordial and start.
       Add VMStart event
       Change phase associations of functions and events.
   </change>
-  <change date="18 Febuary 2004" version="0.3.6">
+  <change date="18 February 2004" version="0.3.6">
       Elide deprecated GetThreadStatus.
       Bump minor version, subtract 100 from micro version
   </change>
-  <change date="18 Febuary 2004" version="0.3.7">
+  <change date="18 February 2004" version="0.3.7">
       Document that timer nanosecond values are unsigned.
       Clarify text having to do with native methods.
   </change>
-  <change date="19 Febuary 2004" version="0.3.8">
+  <change date="19 February 2004" version="0.3.8">
       Fix typos.
       Remove elided deprecated GetThreadStatus.
   </change>
-  <change date="23 Febuary 2004" version="0.3.9">
+  <change date="23 February 2004" version="0.3.9">
       Require NotifyFramePop to act on suspended threads.
   </change>
-  <change date="24 Febuary 2004" version="0.3.10">
+  <change date="24 February 2004" version="0.3.10">
       Add capabilities
         (<internallink id="jvmtiCapabilities.can_redefine_any_class"
          ><code>can_redefine_any_class</code></internallink>
@@ -14692,7 +14692,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
       and an error (<errorlink id="JVMTI_ERROR_UNMODIFIABLE_CLASS"></errorlink>)
       which allow some classes to be unmodifiable.
   </change>
-  <change date="28 Febuary 2004" version="0.3.11">
+  <change date="28 February 2004" version="0.3.11">
       Add JVMTI_ERROR_MUST_POSSESS_CAPABILITY to SetEventNotificationMode.
   </change>
   <change date="8 March 2004" version="0.3.12">
@@ -15035,6 +15035,11 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Minor update for new class file PermittedSubclasses attribute:
         - Specify that RedefineClasses and RetransformClasses are not allowed
           to change the class file PermittedSubclasses attribute.
+  </change>
+  <change date="15 January 2021" version="17.0.0">
+      Minor clarification in the section "Agent Shutdown" that says the
+      implementation may choose to not call the Agent_OnUnload function
+      if the Agent_OnAttach/Agent_OnAttach_L function reported an error. 
   </change>
   <change date="8 June 2021" version="17.0.0">
       Minor update to deprecate Heap functions 1.0.

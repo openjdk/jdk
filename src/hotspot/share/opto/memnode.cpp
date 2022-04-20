@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -379,7 +379,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   Node* old_mem = mem;
 
   // The code which unhooks non-raw memories from complete (macro-expanded)
-  // initializations was removed. After macro-expansion all stores catched
+  // initializations was removed. After macro-expansion all stores caught
   // by Initialize node became raw stores and there is no information
   // which memory slices they modify. So it is unsafe to move any memory
   // operation above these stores. Also in most cases hooked non-raw memories
@@ -596,7 +596,7 @@ Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, N
 
 ArrayCopyNode* MemNode::find_array_copy_clone(PhaseTransform* phase, Node* ld_alloc, Node* mem) const {
   if (mem->is_Proj() && mem->in(0) != NULL && (mem->in(0)->Opcode() == Op_MemBarStoreStore ||
-                                                 mem->in(0)->Opcode() == Op_MemBarCPUOrder)) {
+                                               mem->in(0)->Opcode() == Op_MemBarCPUOrder)) {
     if (ld_alloc != NULL) {
       // Check if there is an array copy for a clone
       Node* mb = mem->in(0);
@@ -1061,7 +1061,6 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
   // This is more general than load from boxing objects.
   if (skip_through_membars(atp, tp, phase->C->eliminate_boxing())) {
     uint alias_idx = atp->index();
-    bool final = !atp->is_rewritable();
     Node* result = NULL;
     Node* current = st;
     // Skip through chains of MemBarNodes checking the MergeMems for
@@ -1069,17 +1068,20 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
     // kind of node is encountered.  Loads from final memory can skip
     // through any kind of MemBar but normal loads shouldn't skip
     // through MemBarAcquire since the could allow them to move out of
-    // a synchronized region.
+    // a synchronized region. It is not safe to step over MemBarCPUOrder,
+    // because alias info above them may be inaccurate (e.g., due to
+    // mixed/mismatched unsafe accesses).
+    bool is_final_mem = !atp->is_rewritable();
     while (current->is_Proj()) {
       int opc = current->in(0)->Opcode();
-      if ((final && (opc == Op_MemBarAcquire ||
-                     opc == Op_MemBarAcquireLock ||
-                     opc == Op_LoadFence)) ||
+      if ((is_final_mem && (opc == Op_MemBarAcquire ||
+                            opc == Op_MemBarAcquireLock ||
+                            opc == Op_LoadFence)) ||
           opc == Op_MemBarRelease ||
           opc == Op_StoreFence ||
           opc == Op_MemBarReleaseLock ||
           opc == Op_MemBarStoreStore ||
-          opc == Op_MemBarCPUOrder) {
+          opc == Op_StoreStoreFence) {
         Node* mem = current->in(0)->in(TypeFunc::Memory);
         if (mem->is_MergeMem()) {
           MergeMemNode* merge = mem->as_MergeMem();
@@ -1134,7 +1136,7 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
         return NULL;
       }
       // LoadVector/StoreVector needs additional check to ensure the types match.
-      if (store_Opcode() == Op_StoreVector) {
+      if (st->is_StoreVector()) {
         const TypeVect*  in_vt = st->as_StoreVector()->vect_type();
         const TypeVect* out_vt = as_LoadVector()->vect_type();
         if (in_vt != out_vt) {
@@ -1507,7 +1509,7 @@ Node *LoadNode::split_through_phi(PhaseGVN *phase) {
 
   assert((t_oop != NULL) &&
          (t_oop->is_known_instance_field() ||
-          t_oop->is_ptr_to_boxed_value()), "invalide conditions");
+          t_oop->is_ptr_to_boxed_value()), "invalid conditions");
 
   Compile* C = phase->C;
   intptr_t ignore = 0;
@@ -1834,13 +1836,6 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  AllocateNode* alloc = is_new_object_mark_load(phase);
-  if (alloc != NULL && alloc->Opcode() == Op_Allocate && UseBiasedLocking) {
-    InitializeNode* init = alloc->initialization();
-    Node* control = init->proj_out(0);
-    return alloc->make_ideal_mark(phase, address, control, mem);
-  }
-
   return progress ? this : NULL;
 }
 
@@ -1978,7 +1973,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         return con_type;
       }
     }
-  } else if (tp->base() == Type::KlassPtr) {
+  } else if (tp->base() == Type::KlassPtr || tp->base() == Type::InstKlassPtr || tp->base() == Type::AryKlassPtr) {
     assert( off != Type::OffsetBot ||
             // arrays can be cast to Objects
             tp->is_klassptr()->klass()->is_java_lang_Object() ||
@@ -2103,7 +2098,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   }
 
   Node* alloc = is_new_object_mark_load(phase);
-  if (alloc != NULL && !(alloc->Opcode() == Op_Allocate && UseBiasedLocking)) {
+  if (alloc != NULL) {
     return TypeX::make(markWord::prototype().value());
   }
 
@@ -3299,13 +3294,14 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   case Op_LoadFence:         return new LoadFenceNode(C, atp, pn);
   case Op_MemBarRelease:     return new MemBarReleaseNode(C, atp, pn);
   case Op_StoreFence:        return new StoreFenceNode(C, atp, pn);
+  case Op_MemBarStoreStore:  return new MemBarStoreStoreNode(C, atp, pn);
+  case Op_StoreStoreFence:   return new StoreStoreFenceNode(C, atp, pn);
   case Op_MemBarAcquireLock: return new MemBarAcquireLockNode(C, atp, pn);
   case Op_MemBarReleaseLock: return new MemBarReleaseLockNode(C, atp, pn);
   case Op_MemBarVolatile:    return new MemBarVolatileNode(C, atp, pn);
   case Op_MemBarCPUOrder:    return new MemBarCPUOrderNode(C, atp, pn);
   case Op_OnSpinWait:        return new OnSpinWaitNode(C, atp, pn);
   case Op_Initialize:        return new InitializeNode(C, atp, pn);
-  case Op_MemBarStoreStore:  return new MemBarStoreStoreNode(C, atp, pn);
   case Op_Blackhole:         return new BlackholeNode(C, atp, pn);
   default: ShouldNotReachHere(); return NULL;
   }
@@ -3313,7 +3309,8 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
 
 void MemBarNode::remove(PhaseIterGVN *igvn) {
   if (outcnt() != 2) {
-    return;
+    assert(Opcode() == Op_Initialize, "Only seen when there are no use of init memory");
+    assert(outcnt() == 1, "Only control then");
   }
   if (trailing_store() || trailing_load_store()) {
     MemBarNode* leading = leading_membar();
@@ -3322,8 +3319,12 @@ void MemBarNode::remove(PhaseIterGVN *igvn) {
       leading->remove(igvn);
     }
   }
-  igvn->replace_node(proj_out(TypeFunc::Memory), in(TypeFunc::Memory));
-  igvn->replace_node(proj_out(TypeFunc::Control), in(TypeFunc::Control));
+  if (proj_out_or_null(TypeFunc::Memory) != NULL) {
+    igvn->replace_node(proj_out(TypeFunc::Memory), in(TypeFunc::Memory));
+  }
+  if (proj_out_or_null(TypeFunc::Control) != NULL) {
+    igvn->replace_node(proj_out(TypeFunc::Control), in(TypeFunc::Control));
+  }
 }
 
 //------------------------------Ideal------------------------------------------
@@ -4751,29 +4752,6 @@ Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // the base memory might contribute new slices beyond my req()
   if (old_mbase)  grow_to_match(old_mbase);
 
-  // Look carefully at the base node if it is a phi.
-  PhiNode* phi_base;
-  if (new_base != NULL && new_base->is_Phi())
-    phi_base = new_base->as_Phi();
-  else
-    phi_base = NULL;
-
-  Node*    phi_reg = NULL;
-  uint     phi_len = (uint)-1;
-  if (phi_base != NULL) {
-    phi_reg = phi_base->region();
-    phi_len = phi_base->req();
-    // see if the phi is unfinished
-    for (uint i = 1; i < phi_len; i++) {
-      if (phi_base->in(i) == NULL) {
-        // incomplete phi; do not look at it yet!
-        phi_reg = NULL;
-        phi_len = (uint)-1;
-        break;
-      }
-    }
-  }
-
   // Note:  We do not call verify_sparse on entry, because inputs
   // can normalize to the base_memory via subsume_node or similar
   // mechanisms.  This method repairs that damage.
@@ -4974,7 +4952,6 @@ Node* MergeMemNode::memory_at(uint alias_idx) const {
 
   // Otherwise, it is a narrow slice.
   Node* n = alias_idx < req() ? in(alias_idx) : empty_memory();
-  Compile *C = Compile::current();
   if (is_empty_memory(n)) {
     // the array is sparse; empty slots are the "top" node
     n = base_memory();

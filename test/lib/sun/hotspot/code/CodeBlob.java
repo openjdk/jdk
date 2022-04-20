@@ -25,6 +25,7 @@ package sun.hotspot.code;
 
 import sun.hotspot.WhiteBox;
 
+@Deprecated
 public class CodeBlob {
   private static final WhiteBox WB = WhiteBox.getWhiteBox();
   public static CodeBlob[] getCodeBlobs(BlobType type) {

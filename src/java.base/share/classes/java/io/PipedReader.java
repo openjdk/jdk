@@ -202,7 +202,7 @@ public class PipedReader extends Reader {
      * Receives data into an array of characters.  This method will
      * block until some input is available.
      */
-    synchronized void receive(char c[], int off, int len)  throws IOException {
+    synchronized void receive(char[] c, int off, int len)  throws IOException {
         while (--len >= 0) {
             receive(c[off++]);
         }
@@ -288,7 +288,7 @@ public class PipedReader extends Reader {
      *             {@link #connect(java.io.PipedWriter) unconnected}, closed,
      *             or an I/O error occurs.
      */
-    public synchronized int read(char cbuf[], int off, int len)  throws IOException {
+    public synchronized int read(char[] cbuf, int off, int len)  throws IOException {
         if (!connected) {
             throw new IOException("Pipe not connected");
         } else if (closedByReader) {

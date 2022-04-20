@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +106,11 @@ public final class SSLSocketImpl
      */
     private static final boolean trustNameService =
             Utilities.getBooleanProperty("jdk.tls.trustNameService", false);
+
+    /*
+     * Default timeout to skip bytes from the open socket
+     */
+    private static final int DEFAULT_SKIP_TIMEOUT = 1;
 
     /**
      * Package-private constructor used to instantiate an unconnected
@@ -833,9 +838,10 @@ public final class SSLSocketImpl
         // No need to throw exception if the initial handshake is not started.
         try {
             if (checkCloseNotify && !conContext.isInputCloseNotified &&
-                (conContext.isNegotiated || conContext.handshakeContext != null)) {
-            throw new SSLException(
-                    "closing inbound before receiving peer's close_notify");
+                    (conContext.isNegotiated ||
+                            conContext.handshakeContext != null)) {
+                throw new SSLException(
+                        "closing inbound before receiving peer's close_notify");
             }
         } finally {
             conContext.closeInbound();
@@ -1704,19 +1710,13 @@ public final class SSLSocketImpl
 
     private Plaintext handleEOF(EOFException eofe) throws IOException {
         if (requireCloseNotify || conContext.handshakeContext != null) {
-            SSLException ssle;
             if (conContext.handshakeContext != null) {
-                ssle = new SSLHandshakeException(
-                        "Remote host terminated the handshake");
+                throw new SSLHandshakeException(
+                        "Remote host terminated the handshake",  eofe);
             } else {
-                ssle = new SSLProtocolException(
-                        "Remote host terminated the connection");
+                throw new SSLProtocolException(
+                        "Remote host terminated the connection", eofe);
             }
-
-            if (eofe != null) {
-                ssle.initCause(eofe);
-            }
-            throw ssle;
         } else {
             // treat as if we had received a close_notify
             conContext.isInputCloseNotified = true;
@@ -1777,6 +1777,30 @@ public final class SSLSocketImpl
         }
 
         if (autoClose || !isLayered()) {
+            // Try to clear the kernel buffer to avoid TCP connection resets.
+            if (conContext.inputRecord instanceof
+                    SSLSocketInputRecord inputRecord && isConnected) {
+                if (appInput.readLock.tryLock()) {
+                    int soTimeout = getSoTimeout();
+                    try {
+                        // deplete could hang on the skip operation
+                        // in case of infinite socket read timeout.
+                        // Change read timeout to avoid deadlock.
+                        // This workaround could be replaced later
+                        // with the right synchronization
+                        if (soTimeout == 0)
+                            setSoTimeout(DEFAULT_SKIP_TIMEOUT);
+                        inputRecord.deplete(false);
+                    } catch (java.net.SocketTimeoutException stEx) {
+                        // skip timeout exception during deplete
+                    } finally {
+                        if (soTimeout == 0)
+                            setSoTimeout(soTimeout);
+                        appInput.readLock.unlock();
+                    }
+                }
+            }
+
             super.close();
         } else if (selfInitiated) {
             if (!conContext.isInboundClosed() && !isInputShutdown()) {

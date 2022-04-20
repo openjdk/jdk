@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,6 @@ import java.text.Normalizer;
 import jdk.internal.access.JavaNetUriAccess;
 import jdk.internal.access.SharedSecrets;
 import sun.nio.cs.UTF_8;
-
-import java.lang.Character;             // for javadoc
-import java.lang.NullPointerException;  // for javadoc
 
 /**
  * Represents a Uniform Resource Identifier (URI) reference.
@@ -2207,7 +2204,6 @@ public final class URI
             ru.authority = child.authority;
             ru.host = child.host;
             ru.userInfo = child.userInfo;
-            ru.host = child.host;
             ru.port = child.port;
             ru.path = child.path;
         }
@@ -3452,9 +3448,7 @@ public final class URI
 
             try {
                 p = scanIPv4Address(start, n, false);
-            } catch (URISyntaxException x) {
-                return -1;
-            } catch (NumberFormatException nfe) {
+            } catch (URISyntaxException | NumberFormatException x) {
                 return -1;
             }
 
@@ -3490,14 +3484,12 @@ public final class URI
                 if (q <= p)
                     break;
                 l = p;
+                p = q;
+                q = scan(p, n, L_ALPHANUM | L_DASH, H_ALPHANUM | H_DASH);
                 if (q > p) {
+                    if (input.charAt(q - 1) == '-')
+                        fail("Illegal character in hostname", q - 1);
                     p = q;
-                    q = scan(p, n, L_ALPHANUM | L_DASH, H_ALPHANUM | H_DASH);
-                    if (q > p) {
-                        if (input.charAt(q - 1) == '-')
-                            fail("Illegal character in hostname", q - 1);
-                        p = q;
-                    }
                 }
                 q = scan(p, n, '.');
                 if (q <= p)

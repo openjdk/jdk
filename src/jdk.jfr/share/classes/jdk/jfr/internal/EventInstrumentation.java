@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,6 +213,7 @@ public final class EventInstrumentation {
         Set<String> methodSet = new HashSet<>();
         List<SettingInfo> settingInfos = new ArrayList<>();
         String settingDescriptor = Type.getType(SettingDefinition.class).getDescriptor();
+        String nameDescriptor = Type.getType(Name.class).getDescriptor();
         for (MethodNode m : classNode.methods) {
             if (m.visibleAnnotations != null) {
                 for (AnnotationNode an : m.visibleAnnotations) {
@@ -220,6 +221,15 @@ public final class EventInstrumentation {
                     // stage. We would need to check that the parameter
                     // is an instance of SettingControl.
                     if (settingDescriptor.equals(an.desc)) {
+                        String name = m.name;
+                        for (AnnotationNode nameCandidate : m.visibleAnnotations) {
+                            if (nameDescriptor.equals(nameCandidate.desc)) {
+                                List<Object> values = nameCandidate.values;
+                                if (values.size() == 1 && values.get(0) instanceof String s) {
+                                    name = Utils.validJavaIdentifier(s, name);
+                                }
+                            }
+                        }
                         Type returnType = Type.getReturnType(m.desc);
                         if (returnType.equals(Type.getType(Boolean.TYPE))) {
                             Type[] args = Type.getArgumentTypes(m.desc);

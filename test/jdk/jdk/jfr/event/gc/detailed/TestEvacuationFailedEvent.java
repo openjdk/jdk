@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,43 +23,59 @@
 
 package jdk.jfr.event.gc.detailed;
 
-import java.io.File;
-import java.nio.file.Paths;
+import java.lang.ref.Reference;
 import java.util.List;
 
+import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
+
+import sun.hotspot.WhiteBox;
 
 /**
  * @test
  * @key jfr
+ * @bug 8263461
  * @requires vm.hasJFR
  *
  * @library /test/lib /test/jdk
  * @requires vm.gc == "G1" | vm.gc == null
+ * @requires vm.debug
  *
- * @run main jdk.jfr.event.gc.detailed.TestEvacuationFailedEvent
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *          -Xmx32m -Xms32m -XX:+UnlockExperimentalVMOptions -XX:+G1EvacuationFailureALot
+ *          -XX:G1EvacuationFailureALotCount=100 -XX:G1EvacuationFailureALotInterval=1
+ *          -Xlog:gc=debug -XX:+UseG1GC jdk.jfr.event.gc.detailed.TestEvacuationFailedEvent
  */
+
 public class TestEvacuationFailedEvent {
 
-    private final static String EVENT_SETTINGS_FILE = System.getProperty("test.src", ".") + File.separator + "evacuationfailed-testsettings.jfc";
-    private final static String JFR_FILE = "TestEvacuationFailedEvent.jfr";
-    private final static int BYTES_TO_ALLOCATE = 1024 * 512;
+    private final static String EVENT_NAME = EventNames.EvacuationFailed;
 
     public static void main(String[] args) throws Exception {
-        String[] vmFlags = {"-XX:+UnlockExperimentalVMOptions", "-XX:-UseFastUnorderedTimeStamps",
-            "-Xmx64m", "-Xmn60m", "-XX:-UseDynamicNumberOfGCThreads", "-XX:ParallelGCThreads=3",
-            "-XX:MaxTenuringThreshold=0", "-Xlog:gc*=debug", "-XX:+UseG1GC"};
+        Recording recording = new Recording();
+        // activate the event we are interested in and start recording
+        recording.enable(EVENT_NAME);
+        recording.start();
 
-        if (!ExecuteOOMApp.execute(EVENT_SETTINGS_FILE, JFR_FILE, vmFlags, BYTES_TO_ALLOCATE)) {
-            System.out.println("OOM happened in the other thread(not test thread). Skip test.");
-            // Skip test, process terminates due to the OOME error in the different thread
-            return;
+        Object[] data = new Object[1024];
+
+        for (int i = 0; i < data.length; i++) {
+            data[i] = new byte[5 * 1024];
         }
+        // Guarantee one young gc.
+        WhiteBox.getWhiteBox().youngGC();
+        // Keep alive data.
+        Reference.reachabilityFence(data);
 
-        List<RecordedEvent> events = RecordingFile.readAllEvents(Paths.get(JFR_FILE));
+        recording.stop();
+
+        // Verify recording
+        List<RecordedEvent> events = Events.fromRecording(recording);
 
         Events.hasEvents(events);
         for (RecordedEvent event : events) {
@@ -69,5 +85,6 @@ public class TestEvacuationFailedEvent {
             long totalSize = Events.assertField(event, "evacuationFailed.totalSize").atLeast(firstSize).getValue();
             Asserts.assertLessThanOrEqual(smallestSize * objectCount, totalSize, "smallestSize * objectCount <= totalSize");
         }
+        recording.close();
     }
 }
