@@ -35,7 +35,7 @@ import jdk.xml.internal.XMLSecurityManager;
  * Tokenizes and parses XPath expressions. This should really be named
  * XPathParserImpl, and may be renamed in the future.
  * @xsl.usage general
- * @LastModified: Jan 2022
+ * @LastModified: Apr 2022
  */
 public class XPathParser
 {
@@ -1661,7 +1661,7 @@ public class XPathParser
       opPos = m_ops.getOp(OpMap.MAPINDEX_LENGTH);
     }
 
-    if (tokenIs(Token.DOT))
+    if (tokenIs(Token.DOT_STR))
     {
       nextToken();
 
