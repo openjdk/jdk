@@ -88,14 +88,7 @@ import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
  * This table generates all the data structures it needs for each
  * type, as its own view, and will present some form of this to the
  * doclet as and when required to.
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own risk.
- * This code and its internal interfaces are subject to change or
- * deletion without notice.</b>
- *
  */
-
 public class VisibleMemberTable {
 
     public enum Kind {
@@ -209,7 +202,7 @@ public class VisibleMemberTable {
      * a. The list may or may not contain simple overridden methods.
      * A simple overridden method is one that overrides a super method
      * with no specification changes as indicated by the existence of a
-     * sole {@code @inheritDoc} or devoid of any API comments.
+     * sole {@code {@inheritDoc}} or devoid of any API comments.
      * <p>
      * b.The list may contain (extra) members, inherited by inaccessible
      * super types, primarily package private types. These members are
@@ -221,7 +214,7 @@ public class VisibleMemberTable {
      */
     public List<Element> getAllVisibleMembers(Kind kind) {
         ensureInitialized();
-        return visibleMembers.getOrDefault(kind, Collections.emptyList());
+        return visibleMembers.getOrDefault(kind, List.of());
     }
 
     /**
@@ -234,7 +227,7 @@ public class VisibleMemberTable {
     public List<Element> getVisibleMembers(Kind kind, Predicate<Element> p) {
         ensureInitialized();
 
-        return visibleMembers.getOrDefault(kind, Collections.emptyList()).stream()
+        return visibleMembers.getOrDefault(kind, List.of()).stream()
                 .filter(p)
                 .toList();
     }
@@ -407,8 +400,8 @@ public class VisibleMemberTable {
     }
 
     private void computeParents() {
-        // suppress parents of annotation types
-        if (utils.isAnnotationType(te)) {
+        // suppress parents of annotation interfaces
+        if (utils.isAnnotationInterface(te)) {
             return;
         }
 
@@ -577,7 +570,7 @@ public class VisibleMemberTable {
 
     boolean isEnclosureInterface(Element e) {
         TypeElement enclosing = utils.getEnclosingTypeElement(e);
-        return utils.isInterface(enclosing);
+        return utils.isPlainInterface(enclosing);
     }
 
     boolean allowInheritedMethod(ExecutableElement inheritedMethod,
@@ -777,7 +770,7 @@ public class VisibleMemberTable {
                         addMember(e, Kind.FIELDS);
                         break;
                     case METHOD:
-                        if (utils.isAnnotationType(te)) {
+                        if (utils.isAnnotationInterface(te)) {
                             ExecutableElement ee = (ExecutableElement) e;
                             addMember(e, Kind.ANNOTATION_TYPE_MEMBER);
                             addMember(e, ee.getDefaultValue() == null
@@ -799,10 +792,10 @@ public class VisibleMemberTable {
             // Freeze the data structures
             for (Kind kind : Kind.values()) {
                 orderedMembers.computeIfPresent(kind, (k, v) -> Collections.unmodifiableList(v));
-                orderedMembers.computeIfAbsent(kind, t -> Collections.emptyList());
+                orderedMembers.computeIfAbsent(kind, t -> List.of());
 
                 memberMap.computeIfPresent(kind, (k, v) -> Collections.unmodifiableMap(v));
-                memberMap.computeIfAbsent(kind, t -> Collections.emptyMap());
+                memberMap.computeIfAbsent(kind, t -> Map.of());
             }
         }
 
@@ -840,12 +833,12 @@ public class VisibleMemberTable {
 
         List<Element> getMembers(String key, Kind kind) {
             Map<String, List<Element>> map = memberMap.get(kind);
-            return map.getOrDefault(key, Collections.emptyList());
+            return map.getOrDefault(key, List.of());
         }
 
         <T extends Element> List<T> getMembers(String key, Kind kind, Class<T> clazz) {
             Map<String, List<Element>> map = memberMap.get(kind);
-            return map.getOrDefault(key, Collections.emptyList())
+            return map.getOrDefault(key, List.of())
                     .stream()
                     .map(clazz::cast)
                     .toList();
@@ -901,7 +894,7 @@ public class VisibleMemberTable {
             return;
 
         PropertyUtils pUtils = config.propertyUtils;
-        List<Element> list = visibleMembers.getOrDefault(Kind.METHODS, Collections.emptyList())
+        List<Element> list = visibleMembers.getOrDefault(Kind.METHODS, List.of())
                 .stream()
                 .filter(e -> pUtils.isPropertyMethod((ExecutableElement) e))
                 .toList();

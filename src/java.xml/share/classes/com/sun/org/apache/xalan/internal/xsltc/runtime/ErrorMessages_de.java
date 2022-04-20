@@ -149,7 +149,7 @@ public class ErrorMessages_de extends ListResourceBundle {
          * iterator.  (See definition of iterator above.)
          */
         {BasisLibrary.ITERATOR_CLONE_ERR,
-        "Iterator \"{0}\" kann nicht geclont werden."},
+        "Iterator \"{0}\" kann nicht geklont werden."},
 
         /*
          * Note to translators:  The following represents an internal error

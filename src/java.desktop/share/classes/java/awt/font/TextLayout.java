@@ -789,7 +789,7 @@ public final class TextLayout implements Cloneable {
      * For best results, it should not be too different from the current
      * advance of the line.
      * @return a {@code TextLayout} justified to the specified width.
-     * @exception Error if this layout has already been justified, an Error is
+     * @throws Error if this layout has already been justified, an Error is
      * thrown.
      */
     public TextLayout getJustifiedLayout(float justificationWidth) {

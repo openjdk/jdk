@@ -138,7 +138,7 @@ inline void G1FullGCMarker::follow_object(oop obj) {
   } else {
     obj->oop_iterate(mark_closure());
     if (VerifyDuringGC) {
-      if (obj->is_instance() && InstanceKlass::cast(obj->klass())->is_reference_instance_klass()) {
+      if (obj->is_instanceRef()) {
         return;
       }
       _verify_closure.set_containing_obj(obj);

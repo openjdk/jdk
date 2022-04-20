@@ -115,8 +115,6 @@ class VM_DeoptimizeFrame: public VM_Operation {
 
 #ifndef PRODUCT
 class VM_DeoptimizeAll: public VM_Operation {
- private:
-  Klass* _dependee;
  public:
   VM_DeoptimizeAll() {}
   VMOp_Type type() const                         { return VMOp_DeoptimizeAll; }

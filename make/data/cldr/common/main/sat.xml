@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -15,6 +15,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
+			<language type="ar" draft="unconfirmed">ᱚᱨᱵᱤ</language>
+			<language type="ar_001" draft="unconfirmed">ᱟᱫᱷᱩᱱᱤᱠ ᱢᱟᱱᱚᱠ ᱚᱨᱵᱤ</language>
+			<language type="bn" draft="unconfirmed">ᱵᱟᱹᱝᱞᱟ</language>
 			<language type="de">ᱡᱟᱨᱢᱟᱱ</language>
 			<language type="de_AT">ᱚᱥᱴᱨᱤᱭᱟ ᱡᱟᱨᱢᱟᱱ</language>
 			<language type="de_CH">ᱥᱩᱣᱤᱥ ᱦᱟᱤ ᱡᱟᱨᱢᱟᱱ</language>
@@ -32,13 +35,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fr">ᱯᱷᱨᱮᱧᱪ</language>
 			<language type="fr_CA">ᱠᱟᱱᱟᱰᱤᱭᱟᱱ ᱯᱷᱨᱮᱧᱪ</language>
 			<language type="fr_CH">ᱥᱩᱣᱤᱥ ᱯᱷᱨᱮᱧᱪ</language>
+			<language type="hi" draft="unconfirmed">ᱦᱤᱱᱫᱤ</language>
+			<language type="id" draft="unconfirmed">ᱤᱱᱰᱚᱱᱮᱥᱤᱭᱟᱹᱱ</language>
 			<language type="it">ᱤᱴᱟᱞᱤᱟᱱ</language>
 			<language type="ja">ᱡᱟᱯᱟᱱᱤ</language>
+			<language type="ko" draft="unconfirmed">ᱠᱚᱨᱤᱭᱟᱹᱱ</language>
+			<language type="nl" draft="unconfirmed">ᱰᱚᱪ</language>
+			<language type="nl_BE" draft="unconfirmed">ᱯᱷᱞᱮᱢᱤᱥ</language>
+			<language type="pl" draft="unconfirmed">ᱯᱚᱞᱤᱥ</language>
 			<language type="pt">ᱯᱩᱨᱛᱜᱟᱞᱤ</language>
 			<language type="pt_BR">ᱵᱨᱟᱡᱤᱞᱤᱭᱟᱱ ᱯᱩᱨᱛᱜᱟᱞᱤ</language>
 			<language type="pt_PT">ᱭᱩᱨᱚᱯᱤᱭᱟᱱ ᱯᱩᱨᱛᱜᱟᱞᱤ</language>
 			<language type="ru">ᱨᱩᱥᱤᱭᱟᱱ</language>
 			<language type="sat">ᱥᱟᱱᱛᱟᱲᱤ</language>
+			<language type="th" draft="unconfirmed">ᱛᱷᱟᱭ</language>
+			<language type="tr" draft="unconfirmed">ᱛᱩᱨᱠᱤᱥ</language>
 			<language type="und">ᱵᱟᱝ ᱩᱨᱩᱢ ᱯᱟᱹᱨᱥᱤ</language>
 			<language type="zh">ᱪᱟᱭᱱᱤᱡᱽ</language>
 			<language type="zh" alt="menu">ᱪᱟᱭᱱᱤᱡᱽ, ᱢᱟᱱᱰᱟᱨᱤᱱ</language>
@@ -55,26 +66,323 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hans" alt="stand-alone">ᱥᱤᱢᱯᱞᱤᱯᱟᱭᱤᱰ ᱦᱟᱱ</script>
 			<script type="Hant">ᱴᱨᱮᱰᱤᱥᱚᱱ</script>
 			<script type="Hant" alt="stand-alone">ᱴᱨᱮᱰᱤᱥᱚᱱ ᱦᱟᱱ</script>
+			<script type="Jpan" draft="unconfirmed">ᱡᱟᱯᱟᱱᱤᱡᱽ</script>
+			<script type="Kore" draft="unconfirmed">ᱠᱚᱨᱤᱭᱟᱹᱱ</script>
 			<script type="Latn">ᱞᱮᱴᱤᱱ</script>
 			<script type="Olck">ᱚᱞ ᱪᱤᱠᱤ</script>
 			<script type="Zxxx">ᱵᱟᱝ ᱚᱞ ᱟᱠᱟᱱ</script>
 			<script type="Zzzz">ᱵᱟᱝ ᱩᱨᱩᱢ ᱪᱤᱠᱤ</script>
 		</scripts>
 		<territories>
+			<territory type="001" draft="unconfirmed">ᱡᱮᱜᱮᱛ</territory>
+			<territory type="002" draft="unconfirmed">ᱟᱯᱷᱨᱤᱠᱟ</territory>
+			<territory type="003" draft="unconfirmed">ᱮᱛᱚᱢ ᱟᱢᱮᱨᱤᱠᱟ</territory>
+			<territory type="005" draft="unconfirmed">ᱠᱚᱸᱭᱮ ᱟᱢᱮᱨᱤᱠᱟ</territory>
+			<territory type="009" draft="unconfirmed">ᱚᱥᱮᱱᱤᱭᱟ</territory>
+			<territory type="011" draft="unconfirmed">ᱯᱟᱪᱮ ᱟᱯᱷᱨᱤᱠᱟ</territory>
+			<territory type="013" draft="unconfirmed">ᱛᱟᱞᱟ ᱟᱢᱮᱨᱤᱠᱟ</territory>
+			<territory type="014" draft="unconfirmed">ᱥᱟᱢᱟᱝ ᱟᱯᱷᱨᱤᱠᱟ</territory>
+			<territory type="015" draft="unconfirmed">ᱮᱛᱚᱢᱤᱭᱟᱹ ᱟᱯᱷᱨᱤᱠᱟ</territory>
+			<territory type="017" draft="unconfirmed">ᱛᱟᱞᱟ ᱟᱯᱷᱨᱤᱠᱟ</territory>
+			<territory type="018" draft="unconfirmed">ᱠᱚᱸᱭᱮᱤᱭᱟᱹ ᱟᱯᱷᱨᱤᱠᱟ</territory>
+			<territory type="019" draft="unconfirmed">ᱟᱹᱢᱮᱨᱤᱠᱟᱱᱥ</territory>
+			<territory type="021" draft="unconfirmed">ᱮᱛᱚᱢᱤᱭᱟᱹ ᱟᱢᱮᱨᱤᱠᱟ</territory>
+			<territory type="029" draft="unconfirmed">ᱠᱟᱹᱨᱮᱵᱤᱭᱟᱹᱱ</territory>
+			<territory type="030" draft="unconfirmed">ᱥᱟᱢᱟᱝ ᱮᱥᱤᱭᱟ</territory>
+			<territory type="034" draft="unconfirmed">ᱠᱚᱸᱭᱮᱤᱭᱟᱹ ᱮᱥᱤᱭᱟ</territory>
+			<territory type="035" draft="unconfirmed">ᱠᱚᱸᱭᱮᱥᱟᱢᱟᱝ ᱮᱥᱤᱭᱟ</territory>
+			<territory type="039" draft="unconfirmed">ᱠᱚᱸᱭᱮᱤᱭᱟᱹ ᱭᱩᱨᱚᱯ</territory>
+			<territory type="053" draft="unconfirmed">ᱚᱣᱥᱴᱨᱟᱞᱮᱥᱤᱭᱟ</territory>
+			<territory type="054" draft="unconfirmed">ᱢᱮᱞᱟᱱᱮᱥᱤᱟ</territory>
+			<territory type="057" draft="unconfirmed">ᱢᱟᱭᱠᱨᱚᱱᱮᱥᱤᱭᱟᱱ ᱡᱟᱭᱜᱟ</territory>
+			<territory type="061" draft="unconfirmed">ᱯᱚᱞᱭᱱᱮᱥᱤᱟ</territory>
+			<territory type="142" draft="unconfirmed">ᱮᱥᱤᱭᱟ</territory>
+			<territory type="143" draft="unconfirmed">ᱛᱟᱞᱟ ᱮᱥᱤᱭᱟ</territory>
+			<territory type="145" draft="unconfirmed">ᱯᱟᱪᱮᱤᱭᱟᱹ ᱮᱥᱤᱭᱟ</territory>
+			<territory type="150" draft="unconfirmed">ᱭᱩᱨᱚᱯ</territory>
+			<territory type="151" draft="unconfirmed">ᱥᱟᱢᱟᱝᱤᱭᱟ. ᱭᱩᱨᱚᱯ</territory>
+			<territory type="154" draft="unconfirmed">ᱮᱛᱚᱢᱤᱭᱟᱹ ᱭᱩᱨᱚᱯ</territory>
+			<territory type="155" draft="unconfirmed">ᱯᱟᱪᱮᱤᱭᱟ. ᱭᱩᱨᱚᱯ</territory>
+			<territory type="202" draft="unconfirmed">ᱦᱟᱹᱴᱤᱧᱼᱥᱟᱦᱟᱨᱟᱱ ᱟᱯᱷᱨᱤᱠᱟ</territory>
+			<territory type="419" draft="unconfirmed">ᱞᱟᱴᱤᱱ ᱟᱢᱮᱨᱤᱠᱟ</territory>
+			<territory type="AC" draft="unconfirmed">ᱟᱥᱮᱱᱥᱤᱭᱟᱹᱱ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="AD" draft="unconfirmed">ᱟᱱᱰᱚᱨᱟ</territory>
+			<territory type="AE" draft="unconfirmed">ᱡᱩᱢᱤᱫ ᱟᱨᱟᱹᱵ ᱮᱢᱤᱨᱮᱴᱥ</territory>
+			<territory type="AF" draft="unconfirmed">ᱟᱯᱷᱜᱟᱱᱤᱥᱛᱟᱱ</territory>
+			<territory type="AG" draft="unconfirmed">ᱟᱱᱴᱤᱜᱩᱣᱟ ᱟᱨ ᱵᱟᱹᱨᱢᱩᱱᱰᱟ</territory>
+			<territory type="AI" draft="unconfirmed">ᱟᱹᱱᱜᱩᱭᱞᱟ</territory>
+			<territory type="AL" draft="unconfirmed">ᱟᱞᱵᱟᱱᱤᱭᱟ</territory>
+			<territory type="AM" draft="unconfirmed">ᱟᱨᱢᱮᱱᱤᱭᱟ</territory>
+			<territory type="AO" draft="unconfirmed">ᱟᱹᱱᱜᱚᱞᱟ</territory>
+			<territory type="AQ" draft="unconfirmed">ᱟᱱᱴᱟᱨᱠᱴᱤᱠᱟ</territory>
+			<territory type="AR" draft="unconfirmed">ᱟᱨᱡᱮᱱᱴᱤᱱᱟ</territory>
+			<territory type="AS" draft="unconfirmed">ᱟᱢᱮᱨᱤᱠᱟᱹᱱ ᱥᱟᱢᱚᱣᱟ</territory>
+			<territory type="AT" draft="unconfirmed">ᱟᱥᱴᱨᱮᱞᱤᱭᱟ</territory>
+			<territory type="AU" draft="unconfirmed">ᱚᱥᱴᱨᱮᱞᱤᱭᱟ</territory>
+			<territory type="AW" draft="unconfirmed">ᱟᱹᱨᱩᱵᱟ</territory>
+			<territory type="AX" draft="unconfirmed">ᱮᱞᱮᱸᱰ ᱫᱣᱤᱯᱫᱳᱞ</territory>
+			<territory type="AZ" draft="unconfirmed">ᱟᱹᱡᱟᱹᱨᱵᱮᱭᱡᱟᱱ</territory>
+			<territory type="BA" draft="unconfirmed">ᱵᱚᱥᱱᱤᱭᱟ ᱟᱨ ᱦᱟᱹᱨᱡᱮᱜᱚᱣᱤᱭᱟ</territory>
+			<territory type="BB" draft="unconfirmed">ᱵᱟᱨᱵᱟᱰᱚᱥ</territory>
+			<territory type="BD" draft="unconfirmed">ᱵᱟᱝᱞᱟᱫᱮᱥ</territory>
+			<territory type="BE" draft="unconfirmed">ᱵᱮᱞᱡᱤᱭᱟᱹᱢ</territory>
+			<territory type="BF" draft="unconfirmed">ᱵᱩᱨᱠᱤᱱᱟ ᱯᱷᱟᱥᱚ</territory>
+			<territory type="BG" draft="unconfirmed">ᱵᱩᱞᱜᱟᱨᱤᱭᱟ</territory>
+			<territory type="BH" draft="unconfirmed">ᱵᱟᱦᱨᱮᱱ</territory>
+			<territory type="BI" draft="unconfirmed">ᱵᱩᱨᱩᱱᱰᱤ</territory>
+			<territory type="BJ" draft="unconfirmed">ᱵᱮᱱᱤᱱ</territory>
+			<territory type="BL" draft="unconfirmed">ᱮᱥ ᱴᱤ ᱵᱟᱨᱛᱷᱮᱞᱮᱢᱤ</territory>
+			<territory type="BM" draft="unconfirmed">ᱵᱟᱹᱨᱢᱩᱱᱰᱟ</territory>
+			<territory type="BN" draft="unconfirmed">ᱵᱽᱨᱩᱱᱮᱭ</territory>
+			<territory type="BO" draft="unconfirmed">ᱵᱚᱞᱤᱣᱤᱭᱟ</territory>
+			<territory type="BQ" draft="unconfirmed">ᱠᱟᱹᱨᱮᱱᱤᱭᱟᱹᱱ ᱱᱮᱫᱚᱨᱞᱮᱸᱰ</territory>
 			<territory type="BR">ᱵᱨᱟᱡᱤᱞ</territory>
+			<territory type="BS" draft="unconfirmed">ᱵᱟᱦᱟᱢᱟᱥ</territory>
+			<territory type="BT" draft="unconfirmed">ᱵᱷᱩᱴᱟᱱ</territory>
+			<territory type="BV" draft="unconfirmed">ᱵᱚᱣᱮᱴ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="BW" draft="unconfirmed">ᱵᱚᱴᱥᱣᱟᱱᱟ</territory>
+			<territory type="BY" draft="unconfirmed">ᱵᱮᱞᱟᱨᱩᱥ</territory>
+			<territory type="BZ" draft="unconfirmed">ᱵᱮᱞᱤᱡᱽ</territory>
+			<territory type="CA" draft="unconfirmed">ᱠᱟᱱᱟᱰᱟ</territory>
+			<territory type="CC" draft="unconfirmed">ᱠᱚᱠᱚᱥ (ᱠᱤᱞᱤᱝ) ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="CD" draft="unconfirmed">ᱠᱚᱝᱜᱚ ᱼ ᱠᱤᱱᱥᱟᱥᱟ</territory>
+			<territory type="CD" alt="variant" draft="unconfirmed">ᱠᱚᱝᱜᱚ (ᱰᱤᱟᱨᱥᱤ)</territory>
+			<territory type="CF" draft="unconfirmed">ᱛᱟᱞᱟ ᱟᱯᱷᱨᱤᱠᱟ ᱟᱹᱯᱱᱟᱹᱛ</territory>
+			<territory type="CG" draft="unconfirmed">ᱠᱚᱝᱜᱚ ᱼ ᱵᱽᱨᱟᱡᱟᱣᱤᱞ</territory>
+			<territory type="CG" alt="variant" draft="unconfirmed">ᱠᱚᱝᱜᱚ (ᱟᱹᱯᱱᱟᱹᱛ)</territory>
+			<territory type="CH" draft="unconfirmed">ᱥᱮᱤᱡᱟᱹᱨᱞᱮᱸᱰ</territory>
+			<territory type="CI" draft="unconfirmed">ᱠᱚᱛᱮ ᱫᱤᱣᱚᱭᱮᱨ</territory>
+			<territory type="CI" alt="variant" draft="unconfirmed">ᱟᱭᱣᱚᱨᱤ ᱠᱚᱥᱴ</territory>
+			<territory type="CK" draft="unconfirmed">ᱠᱩᱠ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="CL" draft="unconfirmed">ᱪᱟᱭᱤᱞ</territory>
+			<territory type="CM" draft="unconfirmed">ᱠᱟᱢᱮᱨᱩᱱ</territory>
 			<territory type="CN">ᱪᱤᱱ</territory>
+			<territory type="CO" draft="unconfirmed">ᱠᱚᱞᱚᱢᱵᱤᱭᱟ</territory>
+			<territory type="CP" draft="unconfirmed">ᱠᱞᱤᱯᱮᱴᱨᱚᱱ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="CR" draft="unconfirmed">ᱠᱚᱥᱴᱟ ᱨᱤᱠᱟ</territory>
+			<territory type="CU" draft="unconfirmed">ᱠᱭᱩᱵᱟ</territory>
+			<territory type="CV" draft="unconfirmed">ᱠᱮᱯ ᱣᱟᱹᱨᱰᱮ</territory>
+			<territory type="CW" draft="unconfirmed">ᱠᱩᱨᱟᱠᱟᱣ</territory>
+			<territory type="CX" draft="unconfirmed">ᱠᱨᱤᱥᱢᱟᱹᱥ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="CY" draft="unconfirmed">ᱥᱟᱭᱯᱨᱟᱹᱥ</territory>
+			<territory type="CZ" draft="unconfirmed">ᱪᱮᱠᱤᱭᱟ</territory>
+			<territory type="CZ" alt="variant" draft="unconfirmed">ᱪᱮᱠ ᱨᱤᱯᱟᱹᱵᱞᱤᱠ</territory>
 			<territory type="DE">ᱡᱟᱨᱢᱟᱱᱤ</territory>
+			<territory type="DG" draft="unconfirmed">ᱰᱤᱭᱮᱜᱚ ᱜᱟᱨᱥᱤᱭᱟ</territory>
+			<territory type="DJ" draft="unconfirmed">ᱡᱤᱵᱩᱛᱤ</territory>
+			<territory type="DK" draft="unconfirmed">ᱰᱮᱱᱢᱟᱨᱠ</territory>
+			<territory type="DM" draft="unconfirmed">ᱰᱚᱢᱤᱱᱤᱠᱟ</territory>
+			<territory type="DO" draft="unconfirmed">ᱰᱚᱢᱤᱱᱤᱠᱟᱱ ᱨᱤᱯᱚᱵᱞᱤᱠ</territory>
+			<territory type="DZ" draft="unconfirmed">ᱟᱞᱡᱮᱨᱤᱭᱟ</territory>
+			<territory type="EA" draft="unconfirmed">ᱥᱮᱣᱴᱟ ᱟᱨ ᱢᱮᱞᱤᱞᱟ</territory>
+			<territory type="EC" draft="unconfirmed">ᱤᱠᱣᱟᱰᱚᱨ</territory>
+			<territory type="EE" draft="unconfirmed">ᱮᱥᱴᱚᱱᱤᱭᱟ</territory>
+			<territory type="EG" draft="unconfirmed">ᱤᱡᱤᱯᱴ</territory>
+			<territory type="EH" draft="unconfirmed">ᱯᱟᱪᱮ ᱥᱟᱦᱟᱨᱟ</territory>
+			<territory type="ER" draft="unconfirmed">ᱤᱨᱤᱴᱨᱤᱭᱟ</territory>
+			<territory type="ES" draft="unconfirmed">ᱥᱯᱮᱱ</territory>
+			<territory type="ET" draft="unconfirmed">ᱤᱛᱷᱤᱭᱚᱯᱤᱭᱟ</territory>
+			<territory type="EU" draft="unconfirmed">ᱭᱩᱨᱚᱯᱤᱭᱟᱹᱱ ᱡᱩᱢᱤᱫ</territory>
+			<territory type="EZ" draft="unconfirmed">ᱭᱩᱨᱚᱡᱚᱱ</territory>
+			<territory type="FI" draft="unconfirmed">ᱯᱷᱤᱱᱞᱮᱸᱰ</territory>
+			<territory type="FJ" draft="unconfirmed">ᱯᱷᱤᱡᱤ</territory>
+			<territory type="FK" draft="unconfirmed">ᱯᱷᱟᱞᱠᱞᱮᱸᱰ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="FM" draft="unconfirmed">ᱢᱟᱭᱠᱨᱚᱱᱮᱥᱤᱭᱟ</territory>
+			<territory type="FO" draft="unconfirmed">ᱯᱷᱮᱨᱚ ᱫᱣᱤᱯᱫᱳᱞ</territory>
 			<territory type="FR">ᱯᱷᱨᱟᱱᱥ</territory>
+			<territory type="GA" draft="unconfirmed">ᱜᱟᱵᱚᱱ</territory>
 			<territory type="GB">ᱭᱩᱱᱤᱭᱴᱮᱰ ᱠᱤᱝᱰᱚᱢ</territory>
+			<territory type="GB" alt="short" draft="unconfirmed">ᱭᱩ ᱠᱮ</territory>
+			<territory type="GD" draft="unconfirmed">ᱜᱽᱨᱮᱱᱟᱰᱟ</territory>
+			<territory type="GE" draft="unconfirmed">ᱡᱭᱚᱨᱡᱤᱭᱟ</territory>
+			<territory type="GF" draft="unconfirmed">ᱯᱷᱨᱮᱧᱪ ᱜᱩᱭᱟᱱᱟ</territory>
+			<territory type="GG" draft="unconfirmed">ᱜᱣᱮᱨᱱᱮᱥᱭ</territory>
+			<territory type="GH" draft="unconfirmed">ᱜᱷᱟᱱᱟ</territory>
+			<territory type="GI" draft="unconfirmed">ᱜᱤᱵᱽᱨᱟᱞᱴᱟᱹᱨ</territory>
+			<territory type="GL" draft="unconfirmed">ᱜᱽᱨᱤᱱᱞᱮᱸᱰ</territory>
+			<territory type="GM" draft="unconfirmed">ᱜᱟᱢᱵᱤᱭᱟ</territory>
+			<territory type="GN" draft="unconfirmed">ᱜᱩᱭᱱᱤᱭᱟ</territory>
+			<territory type="GP" draft="unconfirmed">ᱜᱩᱟᱰᱮᱞᱚᱣᱯ</territory>
+			<territory type="GQ" draft="unconfirmed">ᱤᱠᱣᱤᱴᱚᱨᱤᱭᱟᱹᱞ ᱜᱤᱱᱤ</territory>
+			<territory type="GR" draft="unconfirmed">ᱜᱽᱨᱤᱥ</territory>
+			<territory type="GS" draft="unconfirmed">ᱠᱚᱸᱭᱮ ᱡᱤᱭᱚᱨᱡᱤᱭᱟ ᱟᱨ ᱠᱚᱸᱭᱮ ᱥᱮᱸᱰᱣᱤᱪ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="GT" draft="unconfirmed">ᱜᱩᱣᱟᱴᱮᱢᱟᱞᱟ</territory>
+			<territory type="GU" draft="unconfirmed">ᱜᱩᱣᱟᱢ</territory>
+			<territory type="GW" draft="unconfirmed">ᱜᱩᱭᱱᱤᱭᱟᱼᱵᱤᱥᱟᱣ</territory>
+			<territory type="GY" draft="unconfirmed">ᱜᱩᱭᱟᱱᱟ</territory>
+			<territory type="HK" draft="unconfirmed">ᱦᱚᱝ ᱠᱚᱝ ᱥᱟᱨ ᱪᱟᱭᱱᱟ</territory>
+			<territory type="HK" alt="short" draft="unconfirmed">ᱦᱚᱝ ᱠᱚᱝ</territory>
+			<territory type="HM" draft="unconfirmed">ᱦᱟᱹᱰ ᱟᱨ ᱢᱮᱠᱰᱚᱱᱟᱹᱞᱰ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="HN" draft="unconfirmed">ᱦᱚᱱᱰᱩᱨᱟᱥ</territory>
+			<territory type="HR" draft="unconfirmed">ᱠᱨᱚᱮᱥᱤᱭᱟ</territory>
+			<territory type="HT" draft="unconfirmed">ᱦᱟᱭᱴᱤ</territory>
+			<territory type="HU" draft="unconfirmed">ᱦᱟᱹᱝᱜᱟᱨᱤ</territory>
+			<territory type="IC" draft="unconfirmed">ᱠᱟᱱᱟᱨᱭ ᱟᱭᱞᱮᱸᱰᱥ</territory>
+			<territory type="ID" draft="unconfirmed">ᱤᱱᱰᱚᱱᱮᱥᱤᱭᱟ</territory>
+			<territory type="IE" draft="unconfirmed">ᱟᱭᱟᱹᱨᱞᱮᱸᱰ</territory>
+			<territory type="IL" draft="unconfirmed">ᱤᱥᱨᱟᱭᱮᱞ</territory>
+			<territory type="IM" draft="unconfirmed">ᱟᱭᱞ ᱚᱯᱷ ᱢᱮᱱ</territory>
 			<territory type="IN">ᱤᱱᱰᱤᱭᱟ</territory>
+			<territory type="IO" draft="unconfirmed">ᱵᱽᱨᱤᱴᱤᱥ ᱵᱷᱟᱨᱚᱛ ᱢᱟᱦᱟᱥᱟᱜᱚᱨ ᱡᱟᱭᱜᱟ</territory>
+			<territory type="IQ" draft="unconfirmed">ᱤᱨᱟᱠ</territory>
+			<territory type="IR" draft="unconfirmed">ᱤᱨᱟᱱ</territory>
+			<territory type="IS" draft="unconfirmed">ᱟᱭᱥᱞᱮᱸᱰ</territory>
 			<territory type="IT">ᱤᱴᱞᱤ</territory>
+			<territory type="JE" draft="unconfirmed">ᱡᱟᱹᱨᱥᱤ</territory>
+			<territory type="JM" draft="unconfirmed">ᱡᱟᱢᱟᱭᱠᱟ</territory>
+			<territory type="JO" draft="unconfirmed">ᱡᱚᱨᱰᱟᱱ</territory>
 			<territory type="JP">ᱡᱟᱯᱟᱱ</territory>
+			<territory type="KE" draft="unconfirmed">ᱠᱮᱱᱭᱟ</territory>
+			<territory type="KG" draft="unconfirmed">ᱠᱤᱨᱜᱤᱥᱛᱟᱱ</territory>
+			<territory type="KH" draft="unconfirmed">ᱠᱟᱹᱢᱵᱚᱰᱤᱭᱟ</territory>
+			<territory type="KI" draft="unconfirmed">ᱠᱤᱨᱤᱵᱚᱛᱤ</territory>
+			<territory type="KM" draft="unconfirmed">ᱠᱚᱢᱚᱨᱚᱥ</territory>
+			<territory type="KN" draft="unconfirmed">ᱮᱥ ᱴᱤ ᱠᱤᱴᱥ ᱟᱨ ᱱᱮᱣᱤᱥ</territory>
+			<territory type="KP" draft="unconfirmed">ᱮᱛᱚᱢ ᱠᱚᱨᱤᱭᱟ</territory>
+			<territory type="KR" draft="unconfirmed">ᱠᱚᱧᱮ ᱠᱚᱨᱤᱭᱟ</territory>
+			<territory type="KW" draft="unconfirmed">ᱠᱩᱣᱟᱹᱭᱛ</territory>
+			<territory type="KY" draft="unconfirmed">ᱠᱮᱢᱮᱱ ᱟᱭᱞᱮᱸᱰᱥ</territory>
+			<territory type="KZ" draft="unconfirmed">ᱠᱟᱡᱟᱠᱷᱟᱥᱛᱷᱟᱱ</territory>
+			<territory type="LA" draft="unconfirmed">ᱞᱟᱣᱚᱥ</territory>
+			<territory type="LB" draft="unconfirmed">ᱞᱮᱵᱟᱱᱟᱱ</territory>
+			<territory type="LC" draft="unconfirmed">ᱮᱥ ᱴᱤ ᱞᱩᱥᱤᱭᱟ</territory>
+			<territory type="LI" draft="unconfirmed">ᱞᱤᱪᱮᱥᱴᱤᱱ</territory>
+			<territory type="LK" draft="unconfirmed">ᱥᱨᱤ ᱞᱚᱝᱟ</territory>
+			<territory type="LR" draft="unconfirmed">ᱞᱟᱭᱵᱮᱨᱤᱭᱟ</territory>
+			<territory type="LS" draft="unconfirmed">ᱞᱮᱥᱚᱛᱷᱚ</territory>
+			<territory type="LT" draft="unconfirmed">ᱞᱤᱛᱷᱩᱣᱟᱱᱤᱭᱟ</territory>
+			<territory type="LU" draft="unconfirmed">ᱞᱤᱠᱡᱟᱹᱢᱵᱟᱹᱨᱜᱽ</territory>
+			<territory type="LV" draft="unconfirmed">ᱞᱟᱛᱣᱤᱭᱟ</territory>
+			<territory type="LY" draft="unconfirmed">ᱞᱤᱵᱭᱟ</territory>
+			<territory type="MA" draft="unconfirmed">ᱢᱚᱨᱚᱠᱚ</territory>
+			<territory type="MC" draft="unconfirmed">ᱢᱚᱱᱟᱠᱚ</territory>
+			<territory type="MD" draft="unconfirmed">ᱢᱚᱞᱰᱚᱣᱟ</territory>
+			<territory type="ME" draft="unconfirmed">ᱢᱚᱱᱴᱮᱱᱜᱽᱨᱚ</territory>
+			<territory type="MF" draft="unconfirmed">ᱮᱥ ᱴᱤ ᱢᱟᱨᱴᱤᱱ</territory>
+			<territory type="MG" draft="unconfirmed">ᱢᱟᱰᱟᱜᱟᱥᱠᱚᱨ</territory>
+			<territory type="MH" draft="unconfirmed">ᱢᱟᱨᱥᱟᱞ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="MK" draft="unconfirmed">ᱮᱛᱚᱢ ᱢᱟᱥᱮᱰᱚᱱᱤᱭᱟ</territory>
+			<territory type="ML" draft="unconfirmed">ᱢᱟᱞᱤ</territory>
+			<territory type="MM" draft="unconfirmed">ᱢᱭᱟᱱᱢᱟᱨ (ᱵᱟᱹᱨᱢᱟ)</territory>
+			<territory type="MN" draft="unconfirmed">ᱢᱚᱝᱜᱚᱞᱤᱭᱟ</territory>
+			<territory type="MO" draft="unconfirmed">ᱢᱟᱠᱟᱣ ᱥᱟᱨ ᱪᱟᱭᱱᱟ</territory>
+			<territory type="MO" alt="short" draft="unconfirmed">ᱢᱟᱠᱟᱣ</territory>
+			<territory type="MP" draft="unconfirmed">ᱮᱛᱚᱢ ᱢᱟᱨᱤᱭᱟᱱᱟ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="MQ" draft="unconfirmed">ᱢᱟᱨᱴᱤᱱᱠᱤᱣ</territory>
+			<territory type="MR" draft="unconfirmed">ᱢᱟᱣᱨᱤᱴᱟᱱᱤᱭᱟ</territory>
+			<territory type="MS" draft="unconfirmed">ᱢᱚᱱᱴᱥᱮᱨᱟᱴ</territory>
+			<territory type="MT" draft="unconfirmed">ᱢᱟᱞᱴᱟ</territory>
+			<territory type="MU" draft="unconfirmed">ᱢᱚᱨᱤᱥᱟᱹᱥ</territory>
+			<territory type="MV" draft="unconfirmed">ᱢᱟᱞᱰᱤᱵᱷᱥ</territory>
+			<territory type="MW" draft="unconfirmed">ᱢᱟᱹᱞᱟᱣᱤ</territory>
+			<territory type="MX" draft="unconfirmed">ᱢᱮᱠᱥᱤᱠᱚ</territory>
+			<territory type="MY" draft="unconfirmed">ᱢᱟᱹᱞᱮᱥᱤᱭᱟ</territory>
+			<territory type="MZ" draft="unconfirmed">ᱢᱚᱡᱟᱢᱵᱤᱠ</territory>
+			<territory type="NA" draft="unconfirmed">ᱱᱟᱢᱤᱵᱤᱭᱟ</territory>
+			<territory type="NC" draft="unconfirmed">ᱱᱟᱶᱟ ᱠᱟᱞᱮᱰᱚᱱᱤᱭᱟ</territory>
+			<territory type="NE" draft="unconfirmed">ᱱᱟᱭᱡᱟᱹᱨ</territory>
+			<territory type="NF" draft="unconfirmed">ᱱᱚᱨᱯᱷᱚᱞᱠ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="NG" draft="unconfirmed">ᱱᱟᱭᱡᱮᱨᱤᱭᱟ</territory>
+			<territory type="NI" draft="unconfirmed">ᱱᱤᱠᱟᱨᱟᱜᱩᱣᱟ</territory>
+			<territory type="NL" draft="unconfirmed">ᱱᱮᱫᱚᱨᱞᱮᱸᱰ</territory>
+			<territory type="NO" draft="unconfirmed">ᱱᱚᱨᱣᱮ</territory>
+			<territory type="NP" draft="unconfirmed">ᱱᱮᱯᱟᱞ</territory>
+			<territory type="NR" draft="unconfirmed">ᱱᱟᱶᱨᱩ</territory>
+			<territory type="NU" draft="unconfirmed">ᱱᱟᱭᱩ</territory>
+			<territory type="NZ" draft="unconfirmed">ᱱᱤᱭᱩ ᱡᱤᱞᱮᱸᱰ</territory>
+			<territory type="OM" draft="unconfirmed">ᱳᱢᱟᱱ</territory>
+			<territory type="PA" draft="unconfirmed">ᱯᱟᱱᱟᱢᱟ</territory>
+			<territory type="PE" draft="unconfirmed">ᱯᱮᱨᱩ</territory>
+			<territory type="PF" draft="unconfirmed">ᱯᱷᱨᱮᱧᱪ ᱯᱚᱞᱤᱱᱮᱥᱤᱭᱟ</territory>
+			<territory type="PG" draft="unconfirmed">ᱯᱟᱹᱯᱩᱣᱟ ᱱᱟᱶᱟ ᱡᱤᱱᱤᱭᱟ</territory>
+			<territory type="PH" draft="unconfirmed">ᱯᱷᱤᱞᱤᱯᱤᱱᱥ</territory>
+			<territory type="PK" draft="unconfirmed">ᱯᱟᱠᱮᱥᱛᱟᱱ</territory>
+			<territory type="PL" draft="unconfirmed">ᱯᱚᱞᱮᱸᱰ</territory>
+			<territory type="PM" draft="unconfirmed">ᱮᱥ ᱴᱤ ᱯᱟᱭᱨᱮ ᱟᱨ ᱢᱤᱠᱣᱮᱞᱮᱱ</territory>
+			<territory type="PN" draft="unconfirmed">ᱯᱤᱴᱠᱮᱨᱱ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="PR" draft="unconfirmed">ᱯᱩᱣᱮᱨᱴᱚ ᱨᱤᱠᱚ</territory>
+			<territory type="PS" draft="unconfirmed">ᱯᱟᱞᱮᱥᱴᱤᱱᱤᱭᱟᱹᱱ ᱡᱟᱭᱜᱟ</territory>
+			<territory type="PS" alt="short" draft="unconfirmed">ᱯᱟᱞᱮᱥᱴᱤᱱ</territory>
+			<territory type="PT" draft="unconfirmed">ᱯᱚᱨᱛᱩᱜᱟᱞ</territory>
+			<territory type="PW" draft="unconfirmed">ᱯᱟᱞᱟᱣ</territory>
+			<territory type="PY" draft="unconfirmed">ᱯᱟᱨᱟᱜᱩᱣᱮ</territory>
+			<territory type="QA" draft="unconfirmed">ᱠᱚᱛᱚᱨ</territory>
+			<territory type="QO" draft="unconfirmed">ᱟᱩᱴᱞᱟᱭᱤᱱᱤᱜ ᱚᱥᱮᱱᱤᱟ</territory>
+			<territory type="RE" draft="unconfirmed">ᱨᱤᱭᱩᱱᱤᱭᱟᱹᱱ</territory>
+			<territory type="RO" draft="unconfirmed">ᱨᱚᱢᱟᱱᱤᱭᱟ</territory>
+			<territory type="RS" draft="unconfirmed">ᱥᱟᱹᱨᱵᱤᱭᱟ</territory>
 			<territory type="RU">ᱨᱩᱥ</territory>
+			<territory type="RW" draft="unconfirmed">ᱨᱟᱹᱣᱟᱹᱱᱰᱟ</territory>
+			<territory type="SA" draft="unconfirmed">ᱥᱟᱹᱣᱫᱤ ᱚᱨᱚᱵ</territory>
+			<territory type="SB" draft="unconfirmed">ᱥᱚᱞᱚᱢᱚᱱ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="SC" draft="unconfirmed">ᱥᱮᱥᱮᱞᱥ</territory>
+			<territory type="SD" draft="unconfirmed">ᱥᱩᱫᱟᱱ</territory>
+			<territory type="SE" draft="unconfirmed">ᱥᱣᱤᱰᱮᱱ</territory>
+			<territory type="SG" draft="unconfirmed">ᱥᱤᱝᱜᱟᱯᱩᱨ</territory>
+			<territory type="SH" draft="unconfirmed">ᱮᱥ ᱴᱤ ᱦᱮᱞᱮᱱᱟ</territory>
+			<territory type="SI" draft="unconfirmed">ᱥᱞᱚᱣᱮᱱᱤᱭᱟ</territory>
+			<territory type="SJ" draft="unconfirmed">ᱥᱣᱟᱞᱵᱟᱰ ᱟᱨ ᱡᱟᱱ ᱢᱟᱭᱮᱱ</territory>
+			<territory type="SK" draft="unconfirmed">ᱥᱞᱚᱣᱮᱠᱤᱭᱟ</territory>
+			<territory type="SL" draft="unconfirmed">ᱥᱟᱭᱨᱟ ᱞᱮᱭᱚᱱᱤ</territory>
+			<territory type="SM" draft="unconfirmed">ᱥᱟᱱ ᱢᱟᱨᱤᱱᱚ</territory>
+			<territory type="SN" draft="unconfirmed">ᱥᱮᱱᱮᱜᱚᱞ</territory>
+			<territory type="SO" draft="unconfirmed">ᱥᱚᱢᱟᱞᱤᱭᱟ</territory>
+			<territory type="SR" draft="unconfirmed">ᱥᱩᱨᱤᱱᱟᱢ</territory>
+			<territory type="SS" draft="unconfirmed">ᱠᱚᱧᱮ ᱥᱩᱫᱟᱱ</territory>
+			<territory type="ST" draft="unconfirmed">ᱥᱟᱣ ᱴᱚᱢ ᱟᱨ ᱯᱨᱤᱱᱥᱤᱯᱮ</territory>
+			<territory type="SV" draft="unconfirmed">ᱮᱞ ᱥᱟᱞᱣᱟᱰᱚᱨ</territory>
+			<territory type="SX" draft="unconfirmed">ᱥᱤᱱᱴ ᱢᱟᱨᱴᱮᱱ</territory>
+			<territory type="SY" draft="unconfirmed">ᱥᱤᱨᱤᱭᱟ</territory>
+			<territory type="SZ" draft="unconfirmed">ᱮᱥᱣᱟᱴᱤᱱᱟ</territory>
+			<territory type="SZ" alt="variant" draft="unconfirmed">ᱥᱣᱟᱡᱤᱞᱮᱸᱰ</territory>
+			<territory type="TA" draft="unconfirmed">ᱛᱨᱤᱥᱛᱟᱱ ᱰᱟ ᱠᱩᱱᱦᱟ</territory>
+			<territory type="TC" draft="unconfirmed">ᱛᱩᱨᱠᱥ ᱟᱨ ᱠᱟᱭᱠᱚᱥ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="TD" draft="unconfirmed">ᱪᱟᱰ</territory>
+			<territory type="TF" draft="unconfirmed">ᱯᱷᱨᱟᱱᱥᱤᱥ ᱠᱚᱧᱮ ᱡᱟᱭᱜᱟ</territory>
+			<territory type="TG" draft="unconfirmed">ᱴᱚᱜᱚ</territory>
+			<territory type="TH" draft="unconfirmed">ᱛᱷᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="TJ" draft="unconfirmed">ᱛᱟᱡᱤᱠᱤᱥᱛᱟᱱ</territory>
+			<territory type="TK" draft="unconfirmed">ᱴᱚᱠᱮᱞᱟᱣ</territory>
+			<territory type="TL" draft="unconfirmed">ᱴᱤᱢᱚᱨᱼᱞᱮᱥᱴᱮ</territory>
+			<territory type="TL" alt="variant" draft="unconfirmed">ᱥᱟᱢᱟᱝ ᱴᱤᱢᱚᱨ</territory>
+			<territory type="TM" draft="unconfirmed">ᱛᱩᱨᱠᱢᱮᱱᱤᱥᱛᱟᱱ</territory>
+			<territory type="TN" draft="unconfirmed">ᱴᱩᱱᱤᱥᱤᱭᱟ</territory>
+			<territory type="TO" draft="unconfirmed">ᱴᱚᱝᱜᱟ</territory>
+			<territory type="TR" draft="unconfirmed">ᱛᱟᱹᱨᱠᱤ</territory>
+			<territory type="TT" draft="unconfirmed">ᱴᱨᱤᱱᱤᱰᱟᱰ ᱟᱨ ᱴᱚᱵᱟᱜᱚ</territory>
+			<territory type="TV" draft="unconfirmed">ᱴᱩᱣᱟᱞᱩ</territory>
+			<territory type="TW" draft="unconfirmed">ᱛᱟᱭᱣᱟᱱ</territory>
+			<territory type="TZ" draft="unconfirmed">ᱛᱟᱹᱱᱡᱟᱱᱤᱭᱟ</territory>
+			<territory type="UA" draft="unconfirmed">ᱭᱩᱠᱨᱮᱱ</territory>
+			<territory type="UG" draft="unconfirmed">ᱩᱜᱟᱱᱰᱟ</territory>
+			<territory type="UM" draft="unconfirmed">ᱭᱩ ᱮᱥ ᱵᱟᱷᱨᱮ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="UN" draft="unconfirmed">ᱡᱩᱢᱤᱫ ᱫᱤᱥᱚᱢ</territory>
 			<territory type="US">ᱭᱩᱱᱟᱭᱴᱮᱰ ᱮᱥᱴᱮᱴ</territory>
+			<territory type="US" alt="short" draft="unconfirmed">ᱭᱩ ᱮᱥ</territory>
+			<territory type="UY" draft="unconfirmed">ᱩᱨᱩᱜᱩᱣᱮ</territory>
+			<territory type="UZ" draft="unconfirmed">ᱩᱡᱽᱵᱮᱠᱤᱥᱛᱟᱱ</territory>
+			<territory type="VA" draft="unconfirmed">ᱣᱟᱴᱤᱠᱟᱱ ᱥᱚᱦᱚᱨ</territory>
+			<territory type="VC" draft="unconfirmed">ᱮᱥ ᱴᱤ ᱵᱷᱤᱱᱥᱮᱴ ᱟᱨ ᱜᱽᱨᱮᱱᱟᱰᱤᱱᱥ</territory>
+			<territory type="VE" draft="unconfirmed">ᱣᱮᱱᱮᱡᱣᱮᱞᱟ</territory>
+			<territory type="VG" draft="unconfirmed">ᱵᱽᱨᱤᱴᱤᱥ ᱣᱟᱹᱨᱡᱤᱱ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="VI" draft="unconfirmed">ᱭᱩ ᱮᱥ ᱣᱟᱹᱨᱡᱤᱱ ᱟᱭᱞᱮᱸᱰ</territory>
+			<territory type="VN" draft="unconfirmed">ᱣᱤᱭᱮᱛᱱᱟᱢ</territory>
+			<territory type="VU" draft="unconfirmed">ᱵᱷᱟᱱᱩᱟᱴᱩ</territory>
+			<territory type="WF" draft="unconfirmed">ᱣᱟᱞᱤᱥ ᱟᱨ ᱯᱷᱩᱴᱩᱱᱟ</territory>
+			<territory type="WS" draft="unconfirmed">ᱥᱟᱢᱚᱣᱟ</territory>
+			<territory type="XA" draft="unconfirmed">ᱥᱤᱰᱚᱼᱟᱥᱮᱱᱴᱥ</territory>
+			<territory type="XB" draft="unconfirmed">ᱥᱤᱰᱚᱼᱵᱤᱰᱤ</territory>
+			<territory type="XK" draft="unconfirmed">ᱠᱚᱥᱚᱣᱚ</territory>
+			<territory type="YE" draft="unconfirmed">ᱭᱮᱢᱮᱱ</territory>
+			<territory type="YT" draft="unconfirmed">ᱢᱟᱭᱚᱴᱮ</territory>
+			<territory type="ZA" draft="unconfirmed">ᱠᱚᱧᱮ ᱟᱯᱷᱨᱤᱠᱟ</territory>
+			<territory type="ZM" draft="unconfirmed">ᱡᱟᱢᱵᱤᱭᱟ</territory>
+			<territory type="ZW" draft="unconfirmed">ᱡᱤᱢᱵᱟᱣᱮ</territory>
 			<territory type="ZZ">ᱵᱟᱝᱩᱨᱩᱢ ᱴᱚᱴᱷᱟ</territory>
 		</territories>
 		<types>
 			<type key="calendar" type="gregorian">ᱜᱨᱮᱜᱚᱨᱤᱭᱟᱱ ᱠᱟᱞᱮᱱᱰᱟᱨ</type>
+			<type key="calendar" type="iso8601" draft="unconfirmed">ᱟᱭᱮᱥᱚᱼ8601 ᱠᱮᱞᱮᱱᱰᱚᱨ</type>
 			<type key="collation" type="standard">ᱮᱥᱴᱮᱱᱰᱟᱨᱰ ᱛᱷᱟᱨ ᱟᱸᱫᱮ</type>
 			<type key="numbers" type="latn">ᱣᱮᱥᱴᱟᱨᱱ ᱮᱞ</type>
 		</types>
@@ -329,21 +637,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/M/yy</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -351,21 +663,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>h:mm a</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -399,6 +715,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year">
 				<displayName>ᱥᱮᱨᱢᱟ/ᱵᱚᱪᱷᱚᱞᱨ</displayName>
+				<relative type="-1" draft="unconfirmed">ᱢᱟᱲᱟᱝ ᱥᱮᱨᱢᱟ</relative>
+				<relative type="0" draft="unconfirmed">ᱱᱚᱶᱟ ᱥᱮᱨᱢᱟ</relative>
+				<relative type="1" draft="unconfirmed">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ ᱥᱮᱨᱢᱟ</relative>
+			</field>
+			<field type="year-short">
+				<displayName>ᱥᱮᱨᱢᱟ</displayName>
+				<relative type="-1" draft="unconfirmed">ᱢᱟᱲᱟᱝ ᱥᱮᱨᱢᱟ</relative>
+				<relative type="0" draft="unconfirmed">ᱱᱚᱶᱟ ᱥᱮᱨᱢᱟ</relative>
+				<relative type="1" draft="unconfirmed">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ ᱥᱮᱨᱢᱟ</relative>
+			</field>
+			<field type="year-narrow">
+				<relative type="-1" draft="unconfirmed">ᱢᱟᱲᱟᱝ ᱥᱮᱨᱢᱟ</relative>
+				<relative type="0" draft="unconfirmed">ᱱᱚᱶᱟ ᱥᱮᱨᱢᱟ</relative>
+				<relative type="1" draft="unconfirmed">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ ᱥᱮᱨᱢᱟ</relative>
 			</field>
 			<field type="quarter">
 				<displayName>ᱯᱮᱪᱟᱸᱫᱚ</displayName>
@@ -411,21 +741,42 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month">
 				<displayName>ᱪᱟᱸᱫᱚ</displayName>
+				<relative type="-1" draft="unconfirmed">ᱢᱟᱲᱟᱝ ᱪᱟᱸᱫᱚ</relative>
+				<relative type="0" draft="unconfirmed">ᱱᱚᱶᱟ ᱪᱟᱸᱫᱚ</relative>
+				<relative type="1" draft="unconfirmed">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ ᱪᱟᱸᱫᱚ</relative>
 			</field>
 			<field type="month-short">
 				<displayName>ᱪᱟᱸᱫᱚ</displayName>
+				<relative type="-1" draft="unconfirmed">ᱢᱟᱲᱟᱝ ᱪᱟᱸᱫᱚ</relative>
+				<relative type="0" draft="unconfirmed">ᱱᱚᱶᱟ ᱪᱟᱸᱫᱚ</relative>
+				<relative type="1" draft="unconfirmed">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ ᱪᱟᱸᱫᱚ</relative>
 			</field>
 			<field type="month-narrow">
 				<displayName>ᱪᱟᱸᱫᱚ</displayName>
+				<relative type="-1" draft="unconfirmed">ᱢᱟᱲᱟᱝ ᱪᱟᱸᱫᱚ</relative>
+				<relative type="0" draft="unconfirmed">ᱱᱚᱶᱟ ᱪᱟᱸᱫᱚ</relative>
+				<relative type="1" draft="unconfirmed">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ ᱪᱟᱸᱫᱚ</relative>
 			</field>
 			<field type="week">
 				<displayName>ᱦᱟᱯᱛᱟ/ᱮᱢᱦᱟ</displayName>
+				<relative type="-1" draft="unconfirmed">ᱢᱟᱲᱟᱝ ᱦᱟᱯᱛᱟ</relative>
+				<relative type="0" draft="unconfirmed">ᱱᱤᱭᱟᱹ ᱦᱟᱯᱛᱟ</relative>
+				<relative type="1" draft="unconfirmed">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ ᱦᱟᱯᱛᱟ</relative>
+				<relativePeriod draft="unconfirmed">{0} ᱨᱮᱭᱟᱜ ᱦᱟᱯᱛᱟ</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>ᱦᱟᱯᱛᱟ/ᱮᱢᱦᱟ</displayName>
+				<relative type="-1" draft="unconfirmed">ᱢᱟᱲᱟᱝ ᱦᱟᱯᱛᱟ</relative>
+				<relative type="0" draft="unconfirmed">ᱱᱤᱭᱟᱹ ᱦᱟᱯᱛᱟ</relative>
+				<relative type="1" draft="unconfirmed">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ ᱦᱟᱯᱛᱟ</relative>
+				<relativePeriod draft="unconfirmed">{0} ᱨᱮᱭᱟᱜ ᱦᱟᱯᱛᱟ</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>ᱦᱟᱯᱛᱟ/ᱮᱢᱦᱟ</displayName>
+				<relative type="-1" draft="unconfirmed">ᱢᱟᱲᱟᱝ ᱦᱟᱯᱛᱟ</relative>
+				<relative type="0" draft="unconfirmed">ᱱᱤᱭᱟᱹ ᱦᱟᱯᱛᱟ</relative>
+				<relative type="1" draft="unconfirmed">ᱦᱟᱹᱡᱩᱜ ᱠᱟᱱ ᱦᱟᱯᱛᱟ</relative>
+				<relativePeriod draft="unconfirmed">{0} ᱨᱮᱭᱟᱜ ᱦᱟᱯᱛᱟ</relativePeriod>
 			</field>
 			<field type="day">
 				<displayName>ᱢᱟᱦᱟ</displayName>
@@ -452,7 +803,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ᱴᱤᱯᱤᱡ</displayName>
 			</field>
 			<field type="second">
-				<displayName>ᱴᱤᱡ</displayName>
+				<displayName>ᱴᱤᱨᱤᱡ</displayName>
+			</field>
+			<field type="second-short">
+				<displayName>ᱴᱤᱨᱤᱡ</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName>ᱴᱤᱨᱤᱡ</displayName>
 			</field>
 			<field type="zone">
 				<displayName>ᱴᱚᱴᱷᱟ</displayName>
@@ -597,7 +954,49 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">ᱵᱟᱝᱩᱨᱩᱢ ᱠᱟᱨᱮᱱᱥᱤ</displayName>
 			</currency>
 		</currencies>
+		<minimalPairs>
+			<ordinalMinimalPairs ordinal="other" draft="unconfirmed">{0} ᱛᱮ ᱡᱚᱡᱚᱢ ᱤᱫᱤ ᱢᱮ ᱾</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
+	<units>
+		<unitLength type="narrow">
+			<unit type="volume-dessert-spoon-imperial">
+				<unitPattern count="one">{0}dsp-Imp</unitPattern>
+				<unitPattern count="two">{0} dstspn Imp</unitPattern>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
+			</unit>
+		</unitLength>
+		<durationUnit type="hm">
+			<durationUnitPattern>h:mm</durationUnitPattern>
+		</durationUnit>
+		<durationUnit type="hms">
+			<durationUnitPattern>h:mm:ss</durationUnitPattern>
+		</durationUnit>
+		<durationUnit type="ms">
+			<durationUnitPattern>m:ss</durationUnitPattern>
+		</durationUnit>
+	</units>
+	<listPatterns>
+		<listPattern type="or">
+			<listPatternPart type="end" draft="unconfirmed">{0} ᱟᱨ ᱵᱟᱝ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨ ᱵᱟᱝ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="end" draft="unconfirmed">{0} ᱟᱨ ᱵᱟᱝ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨ ᱵᱟᱝ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="end" draft="unconfirmed">{0} ᱟᱨ ᱵᱟᱝ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨ ᱵᱟᱝ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="end" draft="unconfirmed">{0} ᱟᱨ {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} ᱟᱨ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="end" draft="unconfirmed">{0} {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
 	<posix>
 		<messages>
 			<yesstr>ᱦᱚᱸᱺᱦ</yesstr>

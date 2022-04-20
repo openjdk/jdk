@@ -250,12 +250,6 @@ void Exceptions::throw_stack_overflow_exception(JavaThread* THREAD, const char* 
   _throw(THREAD, file, line, exception);
 }
 
-void Exceptions::throw_unsafe_access_internal_error(JavaThread* thread, const char* file, int line, const char* message) {
-  Handle h_exception = new_exception(thread, vmSymbols::java_lang_InternalError(), message);
-  java_lang_InternalError::set_during_unsafe_access(h_exception());
-  _throw(thread, file, line, h_exception, message);
-}
-
 void Exceptions::fthrow(JavaThread* thread, const char* file, int line, Symbol* h_name, const char* format, ...) {
   const int max_msg_size = 1024;
   va_list ap;
