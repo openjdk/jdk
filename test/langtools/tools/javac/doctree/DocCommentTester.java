@@ -729,7 +729,7 @@ public class DocCommentTester {
                 indent();
                 var n = (DCTree) node;
                 out.println(simpleClassName(node) + "[" + node.getKind() + ", pos:" + n.pos +
-                        (n.getPreferredPosition() > n.pos ? ", prefPos:" + n.getPreferredPosition() : ""));
+                        (n.getPreferredPosition() != n.pos ? ", prefPos:" + n.getPreferredPosition() : ""));
             }
 
             /*
