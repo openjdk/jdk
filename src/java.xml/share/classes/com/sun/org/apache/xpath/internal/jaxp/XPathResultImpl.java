@@ -171,7 +171,11 @@ class XPathResultImpl<T> implements XPathEvaluationResult<T> {
             case XObject.CLASS_RTREEFRAG:  //NODE
                 NodeIterator ni = resultObject.nodeset();
                 //Return the first node, or null
-                return type.cast(ni.nextNode());
+                try {
+                    return type.cast(ni.nextNode());
+                } catch (RuntimeException e) {
+                    throw new TransformerException(e.getMessage(), e.getCause());
+                }
         }
 
         return null;

@@ -205,7 +205,7 @@ private:
   uint              _monoff;    // Offset to monitors in input edge mapping
   uint              _scloff;    // Offset to fields of scalar objs in input edge mapping
   uint              _endoff;    // Offset to end of input edge mapping
-  uint              _sp;        // Jave Expression Stack Pointer for this state
+  uint              _sp;        // Java Expression Stack Pointer for this state
   int               _bci;       // Byte Code Index of this JVM point
   ReexecuteState    _reexecute; // Whether this bytecode need to be re-executed
   ciMethod*         _method;    // Method Pointer

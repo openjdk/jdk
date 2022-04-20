@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -31,7 +31,7 @@
 #include "interpreter/invocationCounter.hpp"
 #include "runtime/frame.hpp"
 
-// This file specializes the assember with interpreter-specific macros
+// This file specializes the assembler with interpreter-specific macros
 
 typedef ByteSize (*OffsetFunction)(uint);
 
