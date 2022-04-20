@@ -37,10 +37,19 @@ import javax.swing.SwingUtilities;
 public class Test8019180 implements Runnable {
     private static final CountDownLatch LATCH = new CountDownLatch(1);
     private static final String[] ITEMS = {"First", "Second", "Third", "Fourth"};
+    private static JFrame frame;
 
-    public static void main(String[] args) throws InterruptedException {
-        SwingUtilities.invokeLater(new Test8019180());
-        LATCH.await();
+    public static void main(String[] args) throws Exception {
+        try {
+            SwingUtilities.invokeLater(new Test8019180());
+            LATCH.await();
+	} finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
     }
 
     private JComboBox<String> test;
@@ -50,8 +59,9 @@ public class Test8019180 implements Runnable {
         if (this.test == null) {
             this.test = new JComboBox<>(ITEMS);
             this.test.addActionListener(this.test);
-            JFrame frame = new JFrame();
+            frame = new JFrame();
             frame.add(test);
+            frame.setLocationRelativeTo(null);
             frame.pack();
             frame.setVisible(true);
             SwingUtilities.invokeLater(this);
@@ -62,7 +72,6 @@ public class Test8019180 implements Runnable {
                 System.err.println("ERROR: no selection");
                 throw new RuntimeException("Combobox not selected");
             }
-            SwingUtilities.getWindowAncestor(this.test).dispose();
             LATCH.countDown();
         }
     }
