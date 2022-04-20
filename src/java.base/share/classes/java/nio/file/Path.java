@@ -31,6 +31,8 @@ import java.net.URI;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * An object that may be used to locate a file in a file system. It will
@@ -296,6 +298,101 @@ public interface Path
         }
 
         return defaultExtension;
+    }
+
+    /**
+     * Returns whether the string representation of this path has an
+     * extension among the one or more extensions given as parameters.
+     * The extension of this path will be compared against the given
+     * parameters in the order in which they are supplied.
+     *
+     * @param   ext
+     *          the first extension for which to check
+     *
+     * @param   extensions
+     *          zero or more subsequent extensions for which to check
+     *
+     * @return  an {@code Optional} which either contains the found extension
+     *          or is empty if this path either does not have an extension or
+     *          its extension is not among those given
+     *
+     * @since 19
+     */
+    default Optional<String> hasExtension(String ext, String... extensions) {
+        String thisExtension = getExtension(null);
+        if (thisExtension == null)
+            return Optional.empty();
+
+        Objects.requireNonNull(ext);
+        if (ext.equals(thisExtension))
+            return Optional.of(ext);
+
+        for (String e : extensions) {
+            Objects.requireNonNull(e);
+            if (e.equals(thisExtension))
+                return Optional.of(e);
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Returns a new {@code Path} which is equal to this path aside from its
+     * extension which is replaced by the provided extension. If the provided
+     * extension is {@link String#isEmpty() empty}, then the current extension
+     * and the dot ('.') preceding it are removed. If this path does not have
+     * an extension then the provided extension is appended.
+     *
+     * @implNote
+     * This default implementation works with the string representation of this
+     * path. Paths which have a native representation should override this
+     * implementation in order to preserve that representation.
+     *
+     * @param  extension
+     *         the extension to replace this path's current extension;
+     *         leading and trailing space is ignored; may contain at most
+     *         one dot ('.') which if present must be the first character
+     *         that is not a space
+     *
+     * @return a new path equal to this path but with extension replaced by
+     *         that provided
+     *
+     * @throws IllegalArgumentException if the provided extension contains a dot
+     *         ('.') which is not the first non-space character of the parameter
+     *
+     * @since 19
+     */
+    default Path replaceExtension(String extension) {
+        Objects.requireNonNull(extension, "extension");
+
+        // trim the extension and verify that at most a leading dot is present
+        extension = extension.trim();
+        int dotIndex = extension.lastIndexOf('.');
+        if (dotIndex > 0)
+            throw new IllegalArgumentException();
+
+        // dispense with the leading dot if present
+        if (dotIndex == 0)
+            extension = extension.substring(1);
+
+        String path = toString();
+        String thisExtension = getExtension(null);
+
+        // if this path has no extension, append that provided
+        if (thisExtension == null)
+            return extension.isEmpty() ?
+                this : Path.of(path + "." + extension);
+
+        // if the provided extension is empty, strip this path's extension
+        dotIndex = path.lastIndexOf('.');
+        assert dotIndex != -1;
+        if (extension.isEmpty())
+            return Path.of(path.substring(0, dotIndex));
+
+        // replace the path's extension with that provided
+        StringBuilder sb = new StringBuilder(path.substring(0, dotIndex + 1));
+        sb.append(extension);
+        return Path.of(sb.toString());
     }
 
     /**

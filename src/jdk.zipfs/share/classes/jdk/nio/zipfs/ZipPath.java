@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,52 @@ final class ZipPath implements Path {
         byte[] result = new byte[path.length - off];
         System.arraycopy(path, off, result, 0, result.length);
         return new ZipPath(getFileSystem(), result, true);
+    }
+
+    @Override
+    public Path replaceExtension(String extension) {
+        Objects.requireNonNull(extension, "extension");
+
+        // trim the extension and verify that at most a leading dot is present
+        extension = extension.trim();
+        int dotIndex = extension.lastIndexOf('.');
+        if (dotIndex > 0)
+            throw new IllegalArgumentException();
+
+        // dispense with the leading dot if present
+        if (dotIndex == 0)
+            extension = extension.substring(1);
+
+        String thisExtension = getExtension(null);
+
+        // if this path has no extension, append that provided
+        if (thisExtension == null) {
+            if (extension.isEmpty()) {
+                return this;
+            } else {
+                byte[] ext = encode(this.fs, extension);
+                byte[] result = new byte[path.length + 1 + ext.length];
+                System.arraycopy(path, 0, result, 0, path.length);
+                result[path.length] = '.';
+                System.arraycopy(ext, 0, result, path.length + 1, ext.length);
+                return new UnixPath(this.fs, result);
+            }
+        }
+
+        // if the provided extension is empty, strip this path's extension
+        dotIndex = getLastDotIndex(path);
+        if (extension.isEmpty()) {
+            byte[] result = new byte[dotIndex];
+            System.arraycopy(path, 0, result, 0, dotIndex);
+            return new UnixPath(this.fs, result);
+        }
+
+        // replace the path's extension with that provided
+        byte[] ext = encode(this.fs, extension);
+        byte[] result = new byte[dotIndex + 1 + ext.length];
+        System.arraycopy(path, 0, result, 0, dotIndex + 1);
+        System.arraycopy(ext, 0, result, dotIndex + 1, ext.length);
+        return new UnixPath(this.fs, result);
     }
 
     @Override
