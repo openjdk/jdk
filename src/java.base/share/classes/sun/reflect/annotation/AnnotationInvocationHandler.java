@@ -666,7 +666,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 if (!(memberType.isInstance(value) ||
                       value instanceof ExceptionProxy)) {
                     value = new AnnotationTypeMismatchExceptionProxy(
-                                objectToString(value))
+                                Objects.toIdentityString(value))
                         .setMember(annotationType.members().get(name));
                 }
             }
@@ -675,15 +675,6 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
         UnsafeAccessor.setType(this, t);
         UnsafeAccessor.setMemberValues(this, mv);
-    }
-
-    /*
-     * Create a textual representation of the argument without calling
-     * any overridable methods of the argument.
-     */
-    private static String objectToString(Object value) {
-        return value.getClass().getName() + "@" +
-            Integer.toHexString(System.identityHashCode(value));
     }
 
     private static class UnsafeAccessor {
