@@ -145,6 +145,11 @@ jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
     }
     return (jlong)-1;
   } else {
+    GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.swappiness",
+                       "Swappiness is: " JULONG_FORMAT, JULONG_FORMAT, swappiness);
+    if(swappiness == 0) {
+      return read_memory_limit_in_bytes();
+    }
     return (jlong)memswlimit;
   }
 }
