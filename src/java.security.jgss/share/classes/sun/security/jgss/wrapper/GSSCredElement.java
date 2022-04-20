@@ -103,9 +103,7 @@ public class GSSCredElement implements GSSCredentialSpi {
 
     private static Runnable disposerFor(GSSLibStub stub, long pCredentials) {
         return () -> {
-            if (stub != null && pCredentials != 0) {
-                stub.releaseCred(pCredentials);
-            }
+            stub.releaseCred(pCredentials);
         };
     }
 
