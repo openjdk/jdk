@@ -157,6 +157,8 @@ public class GSSNameElement implements GSSNameSpi {
             }
         }
         pName = cStub.importName(name, nameType);
+        cleanable = Krb5Util.cleaner.register(this, disposerFor(stub, pName));
+
         setPrintables();
 
         @SuppressWarnings("removal")
@@ -184,8 +186,6 @@ public class GSSNameElement implements GSSNameSpi {
 
         SunNativeProvider.debug("Imported " + printableName + " w/ type " +
                                 printableType);
-
-        cleanable = Krb5Util.cleaner.register(this, disposerFor(stub, pName));
     }
 
     private void setPrintables() throws GSSException {
@@ -300,9 +300,7 @@ public class GSSNameElement implements GSSNameSpi {
 
     private static Runnable disposerFor(GSSLibStub stub, long pName) {
         return () -> {
-            if (stub != null && pName != 0) {
-                stub.releaseName(pName);
-            }
+            stub.releaseName(pName);
         };
     }
 }
