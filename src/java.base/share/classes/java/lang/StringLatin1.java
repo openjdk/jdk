@@ -417,7 +417,7 @@ final class StringLatin1 {
             if (u1 == u2) {
                 continue;
             }
-            if (((u1 == c1) ? CharacterDataLatin1.instance.toLowerCase(c1) : c1) == Character.toLowerCase(u2)) {
+            if (CharacterDataLatin1.instance.toLowerCase(u1) == Character.toLowerCase(u2)) {
                 continue;
             }
             return false;
