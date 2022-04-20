@@ -94,7 +94,8 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         if (nullIfDefault(userSpecifiedConstraints) == null) {
             return withDefaultCertPathConstraints ? DEFAULT : DEFAULT_SSL_ONLY;
         }
-        return new SSLAlgorithmConstraints(userSpecifiedConstraints, withDefaultCertPathConstraints);
+        return new SSLAlgorithmConstraints(userSpecifiedConstraints,
+                withDefaultCertPathConstraints);
     }
 
     /**
@@ -105,7 +106,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
      * @return a SSLAlgorithmConstraints instance
      */
     static AlgorithmConstraints forSocket(SSLSocket socket,
-                                             boolean withDefaultCertPathConstraints) {
+                                          boolean withDefaultCertPathConstraints) {
         AlgorithmConstraints userSpecifiedConstraints =
                 getUserSpecifiedConstraints(socket);
         return wrap(userSpecifiedConstraints, withDefaultCertPathConstraints);
@@ -129,7 +130,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
      * @return a SSLAlgorithmConstraints instance
      */
     static AlgorithmConstraints forEngine(SSLEngine engine,
-                                             boolean withDefaultCertPathConstraints) {
+                                          boolean withDefaultCertPathConstraints) {
         AlgorithmConstraints userSpecifiedConstraints =
                 getUserSpecifiedConstraints(engine);
         return wrap(userSpecifiedConstraints, withDefaultCertPathConstraints);
