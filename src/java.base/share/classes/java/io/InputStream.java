@@ -58,9 +58,6 @@ public abstract class InputStream implements Closeable {
 
     private static final int DEFAULT_BUFFER_SIZE = 8192;
 
-    /** Skip buffer, null until allocated */
-    private byte[] skipBuffer = null;
-
     private SoftReference<byte[]> skipBufferReference;
 
     private byte[] skipBufferReference(long remaining) {
