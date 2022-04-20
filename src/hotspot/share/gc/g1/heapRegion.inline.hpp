@@ -244,9 +244,8 @@ inline void HeapRegion::note_start_of_marking() {
   _next_marked_bytes = 0;
   if (!is_closed_archive()) {
     _next_top_at_mark_start = top();
-  } else {
-    assert(next_top_at_mark_start() == bottom(), "CA region's nTAMS must alawys be at bottom");
   }
+  assert(!is_closed_archive() || next_top_at_mark_start() == bottom(), "CA region's nTAMS must always be at bottom");
   _gc_efficiency = -1.0;
 }
 
