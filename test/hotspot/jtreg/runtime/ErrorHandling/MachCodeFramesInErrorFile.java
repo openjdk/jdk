@@ -161,8 +161,6 @@ public class MachCodeFramesInErrorFile {
         if (machCodeHeaders.size() < minExpectedMachCodeSections) {
             Asserts.fail(machCodeHeaders.size() + " < " + minExpectedMachCodeSections);
         }
-
-        throw new RuntimeException("sample error");
     }
 
     /**
