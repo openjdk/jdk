@@ -49,7 +49,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
     private Vector<LdapEntry> entries = null;
     private int limit = 0;
     private int posn = 0;
-    
+
     private LdapReferralException refEx = null;
     private NamingException errEx = null;
 
@@ -60,13 +60,13 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         private LdapCtx homeCtx;
         private LdapResult res;
         private LdapClient enumClnt;
-        
+
         private CleaningAction(LdapCtx homeCtx, LdapResult answer, LdapClient client) {
             this.homeCtx = homeCtx;
             this.res = answer;
             this.enumClnt = client;
         }
-        
+
         @Override
         public void run() {
             if (enumClnt != null) {
@@ -79,14 +79,14 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             }
         }
     }
-    
+
     private CleaningAction state;
     private Cleanable cleanable;
 
     // Subclasses interact directly with the LdapCtx. This method provides
     // access to the LdapCtx in the CleaningAction.
     protected final LdapCtx homeCtx() { return state.homeCtx; }
-    
+
     /*
      * Record the next set of entries and/or referrals.
      */
