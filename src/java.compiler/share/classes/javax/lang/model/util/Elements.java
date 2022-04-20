@@ -124,7 +124,7 @@ public interface Elements {
                 Collections.singleton(packageElt):
                 Collections.emptySet();
         } else {
-            Set<PackageElement> result = LinkedHashSet.newHashSet(1); // Usually expect at most 1 result
+            Set<PackageElement> result = new LinkedHashSet<>(2); // Usually expect at most 1 result
             for (ModuleElement module: modules) {
                 PackageElement packageElt = getPackageElement(module, name);
                 if (packageElt != null)
@@ -209,7 +209,7 @@ public interface Elements {
                 Collections.singleton(typeElt):
                 Collections.emptySet();
         } else {
-            Set<TypeElement> result = LinkedHashSet.newHashSet(1); // Usually expect at most 1 result
+            Set<TypeElement> result = new LinkedHashSet<>(2); // Usually expect at most 1 result
             for (ModuleElement module: modules) {
                 TypeElement typeElt = getTypeElement(module, name);
                 if (typeElt != null)
