@@ -60,6 +60,7 @@
 package jdk.internal.org.objectweb.asm.tree.analysis;
 
 import java.util.List;
+import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.tree.AbstractInsnNode;
 import jdk.internal.org.objectweb.asm.tree.FieldInsnNode;
@@ -88,10 +89,8 @@ public class BasicVerifier extends BasicInterpreter {
     /**
       * Constructs a new {@link BasicVerifier}.
       *
-      * @param api the ASM API version supported by this interpreter. Must be one of {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5}, {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM7}, {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM8} or or {@link jdk.internal.org.objectweb.asm.Opcodes#ASM9}.
+      * @param api the ASM API version supported by this interpreter. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       */
     protected BasicVerifier(final int api) {
         super(api);

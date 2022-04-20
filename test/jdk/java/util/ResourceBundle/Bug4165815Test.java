@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class Bug4165815Test extends RBTestFmwk {
     private static final String bundleName = "/Bug4165815Bundle";
     public void testIt() throws Exception {
         try {
-            ResourceBundle bundle = ResourceBundle.getBundle(bundleName, new Locale("en", "US"));
+            ResourceBundle bundle = ResourceBundle.getBundle(bundleName, Locale.US);
             errln("ResourceBundle returned a bundle when it should not have.");
         } catch (IllegalArgumentException e) {
             //This is what we should get when the base name contains a "/" character.
