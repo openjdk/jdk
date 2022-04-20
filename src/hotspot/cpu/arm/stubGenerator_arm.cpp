@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ static arraycopy_platform_config arraycopy_configurations[] = {
     // - prefetch after gives 40% gain on backward copies on tegra2-4,
     //   resulting in better number than the operating system
     //   copy. However, this can lead to a 300% loss on nv-tegra and has
-    //   more impact on the cache (fetches futher than what is
+    //   more impact on the cache (fetches further than what is
     //   copied). Use this configuration with care, in case it improves
     //   reference benchmarks.
     {-256, true,  true  }, // forward aligned
@@ -1773,7 +1773,7 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  // Aligns 'to' by reading one word from 'from' and writting its part to 'to'.
+  // Aligns 'to' by reading one word from 'from' and writing its part to 'to'.
   //
   // Arguments:
   //     to:                beginning (if forward) or upper bound (if !forward) of the region to be written

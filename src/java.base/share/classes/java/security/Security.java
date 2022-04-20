@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,7 +225,7 @@ public final class Security {
      * Looks up providers, and returns the property (and its associated
      * provider) mapping the key, if any.
      * The order in which the providers are looked up is the
-     * provider-preference order, as specificed in the security
+     * provider-preference order, as specified in the security
      * properties file.
      */
     private static ProviderProperty getProviderProperty(String key) {

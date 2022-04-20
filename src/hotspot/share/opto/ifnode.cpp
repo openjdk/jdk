@@ -186,7 +186,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
         } else if( v->Opcode() == Op_CastII ) {
           tty->print_cr("Phi has CastII use");
         } else {
-          tty->print_cr("Phi has use I cant be bothered with");
+          tty->print_cr("Phi has use I can't be bothered with");
         }
         */
       }
@@ -1786,7 +1786,7 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
   Node* old_if_f = iff->proj_out(false);
   Node* old_if_t = iff->proj_out(true);
 
-  // CountedLoopEnds want the back-control test to be TRUE, irregardless of
+  // CountedLoopEnds want the back-control test to be TRUE, regardless of
   // whether they are testing a 'gt' or 'lt' condition.  The 'gt' condition
   // happens in count-down loops
   if (iff->is_BaseCountedLoopEnd())  return NULL;

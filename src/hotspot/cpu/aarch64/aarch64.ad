@@ -28,7 +28,7 @@
 //----------REGISTER DEFINITION BLOCK------------------------------------------
 // This information is used by the matcher and the register allocator to
 // describe individual registers and classes of registers within the target
-// archtecture.
+// architecture.
 
 register %{
 //----------Architecture Description Register Definitions----------------------
@@ -488,7 +488,7 @@ reg_def R31_H   (  NS,  NS, Op_RegI, 31, r31_sp->as_VMReg()->next());
 // Special Registers
 // ----------------------------
 
-// the AArch64 CSPR status flag register is not directly acessible as
+// the AArch64 CSPR status flag register is not directly accessible as
 // instruction operand. the FPSR status flag register is a system
 // register which can be written/read using MSR/MRS but again does not
 // appear as an operand (a code identifying the FSPR occurs as an
@@ -1508,7 +1508,7 @@ source %{
   // node sequence to a normal volatile get because of the
   // introduction of some CPUOrder memory barriers to bracket the
   // Load. However, but the same basic skeleton of a LoadX feeding a
-  // MemBarAcquire, possibly thorugh an optional DecodeN, is still
+  // MemBarAcquire, possibly through an optional DecodeN, is still
   // present
   //
   //   MemBarCPUOrder
@@ -4117,10 +4117,10 @@ encode %{
 //         Region 6-7 is determined per call site.
 // Note 2: If the calling convention leaves holes in the incoming argument
 //         area, those holes are owned by SELF.  Holes in the outgoing area
-//         are owned by the CALLEE.  Holes should not be nessecary in the
+//         are owned by the CALLEE.  Holes should not be necessary in the
 //         incoming area, as the Java calling convention is completely under
 //         the control of the AD file.  Doubles can be sorted and packed to
-//         avoid holes.  Holes in the outgoing arguments may be nessecary for
+//         avoid holes.  Holes in the outgoing arguments may be necessary for
 //         varargs C calling conventions.
 // Note 3: Region 0-3 is even aligned, with pad2 as needed.  Region 3-5 is
 //         even aligned with pad0 as needed.
@@ -17344,7 +17344,7 @@ instruct tlsLoadP(thread_RegP dst)
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch ( incI_iReg movI );
 //   // require that the destination register of the increment
 //   // match the destination register of the move
