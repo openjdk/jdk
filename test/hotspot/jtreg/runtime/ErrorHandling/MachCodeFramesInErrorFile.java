@@ -72,7 +72,7 @@ public class MachCodeFramesInErrorFile {
             } else {
                 assert args[0].equals("crashInVM");
                 // AIX does not prohibit low address reads
-                crashInNative1( Platform.isPPC() ? -1 : 10 );
+                crashInNative1(Platform.isPPC() ? -1 : 10);
             }
         }
 
@@ -169,12 +169,8 @@ public class MachCodeFramesInErrorFile {
      * and adds them to {@code frames}.
      */
     private static void extractFrames(String hsErr, Set<String> frames, boolean nativeStack) {
-        String marker;
-        if (Platform.isAix()) {
-            marker = nativeStack ? "------ current frame:" : "Java frames: ";
-        } else {
-            marker = (nativeStack ? "Native" : "Java") + " frames: ";
-        }
+        String marker = (nativeStack ? "Native" : "Java") + " frame";
+
         boolean seenMarker = false;
         for (String line : hsErr.split(System.lineSeparator())) {
             if (line.startsWith(marker)) {
