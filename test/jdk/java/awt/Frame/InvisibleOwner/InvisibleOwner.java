@@ -60,14 +60,14 @@ public class InvisibleOwner {
         /* A background frame to compare a pixel color against
          * It should be centered in the same location as the invisible
          * frame but extend beyond its bounds.
-         */ 
+         */
         helperFrame = new Frame("Background frame");
         helperFrame.setBackground(helperFrameBgColor);
         helperFrame.setLocation(H_X, H_Y);
         helperFrame.setSize(H_W, H_H);
         System.out.println("Helper requested bounds : x=" +
                            H_X + " y="+ H_Y +" w="+ H_W +" h="+ H_H);
-        helperFrame.addMouseListener(new MouseAdapter() {        
+        helperFrame.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent ev) {
                 System.out.println("Background helper frame clicked");
@@ -91,7 +91,7 @@ public class InvisibleOwner {
             }
         });
 
-        /* An owned window of the invisible frame that is located 
+        /* An owned window of the invisible frame that is located
          * such that it does not overlap either the helper or
          * the invisisible frame.
          */
@@ -100,17 +100,17 @@ public class InvisibleOwner {
         ownedWindow.setLocation(H_X+H_W+100, H_Y+H_W+100);
         ownedWindow.setSize(100, 100);
         ownedWindow.setVisible(true);
- 
+
         Toolkit.getDefaultToolkit().sync();
     }
 
     static void captureScreen() throws Exception {
         System.out.println("Writing screen capture");
-        Rectangle screenRect = helperFrame.getGraphicsConfiguration().getBounds(); 
+        Rectangle screenRect = helperFrame.getGraphicsConfiguration().getBounds();
         java.awt.image.BufferedImage bi = robot.createScreenCapture(screenRect);
         javax.imageio.ImageIO.write(bi, "png", new java.io.File("screen_IO.png"));
     }
-        
+
     public static void main(String[] args) throws Exception {
 
         try {
@@ -134,7 +134,7 @@ public class InvisibleOwner {
             robot.mousePress(InputEvent.BUTTON1_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_MASK);
             robot.delay(1000);
-             
+
             // 1. Check the color at the center of the invisible & helper frame location
             Color c = robot.getPixelColor(C_X, C_Y);
             System.out.println("Sampled pixel at " + C_X +"," + C_Y);
