@@ -39,6 +39,7 @@ import static jdk.net.ExtendedSocketOptions.IP_DONTFRAGMENT;
 public class DontFragmentTest {
 
     public static void main(String[] args) throws IOException {
+        testDatagramChannel();
         StandardProtocolFamily fam = args[0].equals("ipv4") ? INET : INET6;
         System.out.println("Family = " + fam);
         testDatagramChannel(args, fam);
@@ -50,6 +51,23 @@ public class DontFragmentTest {
             testDatagramSocket(c);
         }
         testMulticastSocket();
+    }
+
+    public static void testDatagramChannel() throws IOException {
+        try (DatagramChannel c1 = DatagramChannel.open()) {
+
+            if (c1.getOption(IP_DONTFRAGMENT)) {
+                throw new RuntimeException("IP_DONTFRAGMENT should not be set");
+            }
+            c1.setOption(IP_DONTFRAGMENT, true);
+            if (!c1.getOption(IP_DONTFRAGMENT)) {
+                throw new RuntimeException("IP_DONTFRAGMENT should be set");
+            }
+            c1.setOption(IP_DONTFRAGMENT, false);
+            if (c1.getOption(IP_DONTFRAGMENT)) {
+                throw new RuntimeException("IP_DONTFRAGMENT should not be set");
+            }
+        }
     }
 
     public static void testDatagramChannel(String[] args, ProtocolFamily fam) throws IOException {
