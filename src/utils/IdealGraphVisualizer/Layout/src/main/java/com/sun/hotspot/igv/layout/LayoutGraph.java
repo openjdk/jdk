@@ -61,7 +61,7 @@ public class LayoutGraph {
 
             if (!vertices.contains(v1)) {
 
-                outputPorts.put(v1, new HashSet<Port>(1));
+                outputPorts.put(v1, new HashSet<Port>(2));
                 inputPorts.put(v1, new HashSet<Port>(3));
                 vertices.add(v1);
                 assert vertices.contains(v1);
@@ -70,7 +70,7 @@ public class LayoutGraph {
             if (!vertices.contains(v2)) {
                 vertices.add(v2);
                 assert vertices.contains(v2);
-                outputPorts.put(v2, new HashSet<Port>(1));
+                outputPorts.put(v2, new HashSet<Port>(2));
                 inputPorts.put(v2, new HashSet<Port>(3));
             }
 
@@ -92,7 +92,7 @@ public class LayoutGraph {
 
         for (Vertex v : additionalVertices) {
             if (!vertices.contains(v)) {
-                outputPorts.put(v, new HashSet<Port>(1));
+                outputPorts.put(v, new HashSet<Port>(2));
                 inputPorts.put(v, new HashSet<Port>(3));
                 vertices.add(v);
                 vertices.contains(v);

@@ -119,7 +119,7 @@ final class ClassLoaderObjectOutputStream extends ObjectOutputStream {
                 }
             });
 
-        Set<String> s = new HashSet<String>(1);
+        Set<String> s = HashSet.newHashSet(1);
         s.add(cl.getName());
 
         map.put(s, classLoader);
@@ -164,7 +164,7 @@ final class ClassLoaderObjectInputStream extends ObjectInputStream {
       throws IOException, ClassNotFoundException {
         String className = classDesc.getName();
 
-        Set<String> s = new HashSet<String>(1);
+        Set<String> s = HashSet.newHashSet(1);
         s.add(className);
 
         ClassLoader classLoader = map.get(s);

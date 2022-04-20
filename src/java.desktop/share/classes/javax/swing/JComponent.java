@@ -485,7 +485,7 @@ public abstract class JComponent extends Container implements Serializable,
     static Set<KeyStroke> getManagingFocusForwardTraversalKeys() {
         synchronized(JComponent.class) {
             if (managingFocusForwardTraversalKeys == null) {
-                managingFocusForwardTraversalKeys = new HashSet<KeyStroke>(1);
+                managingFocusForwardTraversalKeys = HashSet.newHashSet(1);
                 managingFocusForwardTraversalKeys.add(
                     KeyStroke.getKeyStroke(KeyEvent.VK_TAB,
                                            InputEvent.CTRL_MASK));
@@ -502,7 +502,7 @@ public abstract class JComponent extends Container implements Serializable,
     static Set<KeyStroke> getManagingFocusBackwardTraversalKeys() {
         synchronized(JComponent.class) {
             if (managingFocusBackwardTraversalKeys == null) {
-                managingFocusBackwardTraversalKeys = new HashSet<KeyStroke>(1);
+                managingFocusBackwardTraversalKeys = HashSet.newHashSet(1);
                 managingFocusBackwardTraversalKeys.add(
                     KeyStroke.getKeyStroke(KeyEvent.VK_TAB,
                                            InputEvent.SHIFT_MASK |

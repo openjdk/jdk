@@ -117,7 +117,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
     private static final
         HashMap<MBeanServer,ArrayNotificationBuffer> mbsToBuffer =
         new HashMap<MBeanServer,ArrayNotificationBuffer>(1);
-    private final Collection<ShareBuffer> sharers = new HashSet<ShareBuffer>(1);
+    private final Collection<ShareBuffer> sharers = HashSet.newHashSet(1);
 
     public static NotificationBuffer getNotificationBuffer(
             MBeanServer mbs, Map<String, ?> env) {

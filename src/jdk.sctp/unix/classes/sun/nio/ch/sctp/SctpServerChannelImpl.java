@@ -393,7 +393,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
         static final Set<SctpSocketOption<?>> defaultOptions = defaultOptions();
 
         private static Set<SctpSocketOption<?>> defaultOptions() {
-            HashSet<SctpSocketOption<?>> set = new HashSet<SctpSocketOption<?>>(1);
+            HashSet<SctpSocketOption<?>> set = HashSet.newHashSet(1);
             set.add(SctpStandardSocketOptions.SCTP_INIT_MAXSTREAMS);
             return Collections.unmodifiableSet(set);
         }
