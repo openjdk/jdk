@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8282633
+ * @bug 8282633 8283665
  * @summary jarsigner should display the named curve to better explain why
  *          an EC key is disabled or will be disabled.
  * @library /test/lib
@@ -42,7 +42,7 @@ public class DisableCurveTest {
 
     public static void main(String[] args) throws Exception{
         SecurityTools.keytool("-keystore ks -storepass changeit " +
-                "-genkeypair -keyalg EC -alias ca -dname CN=CA " +
+                "-genkeypair -keyalg EC -keysize 256 -alias ca -dname CN=CA " +
                 "-ext bc:c")
                 .shouldHaveExitValue(0);
 
@@ -58,7 +58,7 @@ public class DisableCurveTest {
                 JAVA_SECURITY_FILE +
                 " a.jar ca")
                 .shouldContain(">>> Signer")
-                .shouldContain("Signature algorithm: SHA256withECDSA, 256-bit EC (secp256r1) key (disabled)")
+                .shouldContain("Signature algorithm: SHA384withECDSA, 256-bit EC (secp256r1) key (disabled)")
                 .shouldContain("Warning:")
                 .shouldContain("The EC (secp256r1) signing key has a keysize of 256 which is considered a security risk and is disabled")
                 .shouldHaveExitValue(0);
@@ -68,7 +68,7 @@ public class DisableCurveTest {
                 JAVA_SECURITY_FILE +
                 " -keystore ks -storepass changeit -verbose -debug")
                 .shouldContain("- Signed by")
-                .shouldContain("Signature algorithm: SHA256withECDSA, 256-bit EC (secp256r1) key (disabled)")
+                .shouldContain("Signature algorithm: SHA384withECDSA, 256-bit EC (secp256r1) key (disabled)")
                 .shouldContain("WARNING: The jar will be treated as unsigned")
                 .shouldHaveExitValue(0);
 
@@ -82,7 +82,7 @@ public class DisableCurveTest {
                 JAVA_SECURITY_FILE +
                 " a.jar ca")
                 .shouldContain(">>> Signer")
-                .shouldContain("Signature algorithm: SHA256withECDSA, 256-bit EC (secp256r1) key (weak)")
+                .shouldContain("Signature algorithm: SHA384withECDSA, 256-bit EC (secp256r1) key (weak)")
                 .shouldContain("Warning:")
                 .shouldContain("The EC (secp256r1) signing key has a keysize of 256 which is considered a security risk. This key size will be disabled in a future update")
                 .shouldHaveExitValue(0);
@@ -92,7 +92,7 @@ public class DisableCurveTest {
                 JAVA_SECURITY_FILE +
                 " -keystore ks -storepass changeit -verbose -debug")
                 .shouldContain("- Signed by")
-                .shouldContain("Signature algorithm: SHA256withECDSA, 256-bit EC (secp256r1) key (weak)")
+                .shouldContain("Signature algorithm: SHA384withECDSA, 256-bit EC (secp256r1) key (weak)")
                 .shouldContain("jar verified")
                 .shouldContain("The EC (secp256r1) signing key has a keysize of 256 which is considered a security risk. This key size will be disabled in a future update")
                 .shouldHaveExitValue(0);

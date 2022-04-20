@@ -2837,46 +2837,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Safefetch stubs.
-  void generate_safefetch(const char* name, int size, address* entry, address* fault_pc, address* continuation_pc) {
-    // safefetch signatures:
-    //   int      SafeFetch32(int*      adr, int      errValue);
-    //   intptr_t SafeFetchN (intptr_t* adr, intptr_t errValue);
-    //
-    // arguments:
-    //   R0 = adr
-    //   R1 = errValue
-    //
-    // result:
-    //   R0  = *adr or errValue
-
-    StubCodeMark mark(this, "StubRoutines", name);
-
-    // Entry point, pc or function descriptor.
-    *entry = __ pc();
-
-    // Load *adr into c_rarg2, may fault.
-    *fault_pc = __ pc();
-
-    switch (size) {
-      case 4: // int32_t
-        __ ldr_s32(R1, Address(R0));
-        break;
-
-      case 8: // int64_t
-        Unimplemented();
-        break;
-
-      default:
-        ShouldNotReachHere();
-    }
-
-    // return errValue or *adr
-    *continuation_pc = __ pc();
-    __ mov(R0, R1);
-    __ ret();
-  }
-
   void generate_arraycopy_stubs() {
 
     // Note:  the disjoint stubs must be generated first, some of
@@ -3029,15 +2989,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_load_long_entry = generate_atomic_load_long();
     StubRoutines::_atomic_store_long_entry = generate_atomic_store_long();
 
-    // Safefetch stubs.
-    generate_safefetch("SafeFetch32", sizeof(int), &StubRoutines::_safefetch32_entry,
-                                                   &StubRoutines::_safefetch32_fault_pc,
-                                                   &StubRoutines::_safefetch32_continuation_pc);
-    assert (sizeof(int) == wordSize, "32-bit architecture");
-    StubRoutines::_safefetchN_entry           = StubRoutines::_safefetch32_entry;
-    StubRoutines::_safefetchN_fault_pc        = StubRoutines::_safefetch32_fault_pc;
-    StubRoutines::_safefetchN_continuation_pc = StubRoutines::_safefetch32_continuation_pc;
   }
+
 
   void generate_all() {
     // Generates all stubs and initializes the entry points

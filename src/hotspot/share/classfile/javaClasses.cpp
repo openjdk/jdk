@@ -454,16 +454,18 @@ char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
   }
 
   char *native_platform_string;
-  { JavaThread* thread = THREAD;
-    jstring js = (jstring) JNIHandles::make_local(thread, java_string());
-    bool is_copy;
+  JavaThread* thread = THREAD;
+  jstring js = (jstring) JNIHandles::make_local(thread, java_string());
+  {
     HandleMark hm(thread);
     ThreadToNativeFromVM ttn(thread);
     JNIEnv *env = thread->jni_environment();
+    bool is_copy;
     native_platform_string = (_to_platform_string_fn)(env, js, &is_copy);
     assert(is_copy == JNI_TRUE, "is_copy value changed");
-    JNIHandles::destroy_local(js);
   }
+  JNIHandles::destroy_local(js);
+
   return native_platform_string;
 }
 
@@ -4989,7 +4991,10 @@ bool JavaClasses::is_supported_for_archiving(oop obj) {
       // constant pool entries, so excluding them shouldn't affect the archiving of static fields.
       klass == vmClasses::ResolvedMethodName_klass() ||
       klass == vmClasses::MemberName_klass() ||
-      klass == vmClasses::Context_klass()) {
+      klass == vmClasses::Context_klass() ||
+      // It's problematic to archive Reference objects. One of the reasons is that
+      // Reference::discovered may pull in unwanted objects (see JDK-8284336)
+      klass->is_subclass_of(vmClasses::Reference_klass())) {
     return false;
   }
 
