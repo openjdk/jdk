@@ -56,6 +56,13 @@ public abstract class InputStream implements Closeable {
 
     private static final int DEFAULT_BUFFER_SIZE = 8192;
 
+    /**
+     * Only used in {@link #skip(long)}, for avoiding multiple times byte array allocation for a same InputStream Object.
+     *
+     * Making this static would increase performance,
+     * but would make it possible to build a malicious subclass of InputStream to steal data from other InputStream Objects.
+     * So DO NOT try to make it static, for the sake of security.
+     */
     private SoftReference<byte[]> skipBufferReference;
 
     private byte[] skipBufferReference(long remaining) {
