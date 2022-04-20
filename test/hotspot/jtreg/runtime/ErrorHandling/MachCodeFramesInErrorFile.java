@@ -128,9 +128,9 @@ public class MachCodeFramesInErrorFile {
         // Extract hs_err_pid file.
         String hs_err_file = output.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
         if (hs_err_file == null) {
-            throw new RuntimeException("Did not find hs_err_pid file in output.\n" +
-                                       "stderr:\n" + output.getStderr() + "\n" +
-                                       "stdout:\n" + output.getStdout());
+            System.out.println("stdout:\n" + output.getStdout());
+            System.err.println("stderr:\n" + output.getStderr());
+            throw new RuntimeException("Did not find hs_err_pid file in output");
         }
         Path hsErrPath = Paths.get(hs_err_file);
         if (!Files.exists(hsErrPath)) {
@@ -184,6 +184,7 @@ public class MachCodeFramesInErrorFile {
                 frames.add(line);
             }
         }
+        System.err.println(hsErr);
         throw new RuntimeException("\"" + marker + "\" line missing in hs_err_pid file");
     }
 }
