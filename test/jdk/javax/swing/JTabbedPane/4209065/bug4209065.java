@@ -31,9 +31,7 @@ import javax.swing.JTabbedPane;
 /**
  * @test
  * @bug 4209065
- * @author Georges Saab
- * @summary To test the style of the text on the tab matches. The tab title may
- * not always fit within the tab.
+ * @summary To test if the style of the text on the tab matches the description.
  * @run applet/manual=yesno bug4209065.html
  */
 
