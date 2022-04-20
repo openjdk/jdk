@@ -180,8 +180,6 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that unsigned shift right on subword signed integer types can
-    // not be vectorized since the sign extension bit would be lost.
     public byte[] vectorUnsignedShiftRight() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {

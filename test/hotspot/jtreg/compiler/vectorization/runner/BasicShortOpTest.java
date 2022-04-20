@@ -180,8 +180,6 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that unsigned shift right on subword signed integer types can
-    // not be vectorized since the sign extension bits would be lost.
     public short[] vectorUnsignedShiftRight() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {

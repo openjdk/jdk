@@ -33,7 +33,7 @@ import jdk.test.lib.Utils;
  * @bug 8283307
  * @key randomness
  * @summary Auto-vectorization enhancement for unsigned shift right on signed subword types
- * @requires vm.cpu.features ~= ".*simd.*"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestVectorizeURShiftSubword
  */
@@ -42,7 +42,7 @@ public class TestVectorizeURShiftSubword {
 
     private static final Random RANDOM = Utils.getRandomInstance();
 
-    final private static int NUM = 300;
+    final private static int NUM = 2345;
 
     private short[] shorta = new short[NUM];
     private short[] shortb = new short[NUM];
