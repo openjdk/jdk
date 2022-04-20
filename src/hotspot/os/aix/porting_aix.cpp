@@ -62,7 +62,7 @@ typedef unsigned long stackslot_t;
 typedef stackslot_t* stackptr_t;
 typedef unsigned int* codeptr_t;
 
-// Unfortunately, the interface of dladdr makes the implementator
+// Unfortunately, the interface of dladdr makes the implementer
 // responsible for maintaining memory for function name/library
 // name. I guess this is because most OS's keep those values as part
 // of the mapped executable image ready to use. On AIX, this doesn't
@@ -324,7 +324,7 @@ int dladdr(void* addr, Dl_info* info) {
   trcVerbose("dladdr(%p)...", p);
 
   // Note: input address may be a function. I accept both a pointer to
-  // the entry of a function and a pointer to the function decriptor.
+  // the entry of a function and a pointer to the function descriptor.
   // (see ppc64 ABI)
   found = LoadedLibraries::find_for_text_address(p, &lm);
   if (found) {
@@ -677,7 +677,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   //      |            |
   //      |------------|   <-- cur_sp, current stack ptr
   //      |            |
-  //      |  unsused   |
+  //      |  unused    |
   //      |    stack   |
   //      |            |
   //      .            .

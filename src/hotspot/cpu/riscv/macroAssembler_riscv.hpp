@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -225,7 +225,7 @@ class MacroAssembler: public Assembler {
   void store_heap_oop_null(Address dst);
 
   // This dummy is to prevent a call to store_heap_oop from
-  // converting a zero (linke NULL) into a Register by giving
+  // converting a zero (linked NULL) into a Register by giving
   // the compiler two choices it can't resolve
 
   void store_heap_oop(Address dst, void* dummy);
@@ -262,9 +262,9 @@ class MacroAssembler: public Assembler {
                              RegisterOrConstant vtable_index,
                              Register method_result);
 
-  // Form an addres from base + offset in Rd. Rd my or may not
+  // Form an address from base + offset in Rd. Rd my or may not
   // actually be used: you must use the Address that is returned. It
-  // is up to you to ensure that the shift provided mathces the size
+  // is up to you to ensure that the shift provided matches the size
   // of your data.
   Address form_address(Register Rd, Register base, long byte_offset);
 
@@ -302,9 +302,9 @@ class MacroAssembler: public Assembler {
                                      Label* L_slow_path,
                                      Register super_check_offset = noreg);
 
-  // The reset of the type cehck; must be wired to a corresponding fast path.
+  // The reset of the type check; must be wired to a corresponding fast path.
   // It does not repeat the fast path logic, so don't use it standalone.
-  // The tmp1_reg and tmp2_reg can be noreg, if no temps are avaliable.
+  // The tmp1_reg and tmp2_reg can be noreg, if no temps are available.
   // Updates the sub's secondary super cache as necessary.
   void check_klass_subtype_slow_path(Register sub_klass,
                                      Register super_klass,
