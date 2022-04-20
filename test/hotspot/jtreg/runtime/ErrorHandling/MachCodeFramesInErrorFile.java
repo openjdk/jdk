@@ -165,7 +165,7 @@ public class MachCodeFramesInErrorFile {
 
     /**
      * Extracts the lines in {@code hsErr} below the line starting with
-     * "Native frames:" ("current frame:" on AIX) or "Java frames:" up to the next blank line
+     * "Native frame" or "Java frame" up to the next blank line
      * and adds them to {@code frames}.
      */
     private static void extractFrames(String hsErr, Set<String> frames, boolean nativeStack) {
