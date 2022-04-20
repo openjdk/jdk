@@ -245,7 +245,7 @@ public class CertificateRevokedException extends CertificateException {
         } else if (size < 0) {
             throw new IOException("size cannot be negative");
         } else {
-            extensions = new HashMap<>(Math.min(size, 20));
+            extensions = HashMap.newHashMap(Math.min(size, 20));
         }
 
         // Read in the extensions and put the mappings in the extensions map

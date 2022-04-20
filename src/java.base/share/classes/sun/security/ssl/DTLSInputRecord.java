@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         byte contentType = packet.get();                   // pos: 0
         byte majorVersion = packet.get();                  // pos: 1
         byte minorVersion = packet.get();                  // pos: 2
-        byte[] recordEnS = new byte[8];                    // epoch + seqence
+        byte[] recordEnS = new byte[8];                    // epoch + sequence
         packet.get(recordEnS);
         int recordEpoch = ((recordEnS[0] & 0xFF) << 8) |
                            (recordEnS[1] & 0xFF);          // pos: 3, 4
@@ -1416,7 +1416,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             //
             // Note: need to consider more messages in this flight if
             //       ht_supplemental_data and ht_certificate_url are
-            //       suppported in the future.
+            //       supported in the future.
             //
             if ((flightType == SSLHandshake.CERTIFICATE.id) ||
                 (flightType == SSLHandshake.CLIENT_KEY_EXCHANGE.id)) {

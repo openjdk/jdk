@@ -341,7 +341,7 @@ bool VectorNode::is_vector_rotate_supported(int vopc, uint vlen, BasicType bt) {
 
   // If target does not support variable shift operations then no point
   // in creating a rotate vector node since it will not be disintegratable.
-  // Adding a pessimistic check to avoid complex pattern mathing which
+  // Adding a pessimistic check to avoid complex pattern matching which
   // may not be full proof.
   if (!Matcher::supports_vector_variable_shifts()) {
      return false;

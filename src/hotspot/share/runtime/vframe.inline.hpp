@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ inline bool vframeStreamCommon::fill_from_frame() {
 
   if (cb() != NULL && cb()->is_compiled()) {
     if (nm()->is_native_method()) {
-      // Do not rely on scopeDesc since the pc might be unprecise due to the _last_native_pc trick.
+      // Do not rely on scopeDesc since the pc might be imprecise due to the _last_native_pc trick.
       fill_from_compiled_native_frame();
     } else {
       PcDesc* pc_desc = nm()->pc_desc_at(_frame.pc());
@@ -227,7 +227,7 @@ inline void vframeStreamCommon::fill_from_interpreter_frame() {
   // 6379830 AsyncGetCallTrace sometimes feeds us wild frames.
   // AsyncGetCallTrace interrupts the VM asynchronously. As a result
   // it is possible to access an interpreter frame for which
-  // no Java-level information is yet available (e.g., becasue
+  // no Java-level information is yet available (e.g., because
   // the frame was being created when the VM interrupted it).
   // In this scenario, pretend that the interpreter is at the point
   // of entering the method.
