@@ -54,8 +54,6 @@ public abstract class InputStream implements Closeable {
     // use when skipping.
     private static final int MAX_SKIP_BUFFER_SIZE = 2048;
 
-    private static final int MIN_SKIP_BUFFER_SIZE = 128;
-
     private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     private SoftReference<byte[]> skipBufferReference;
