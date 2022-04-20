@@ -57,7 +57,7 @@ public abstract class InputStream implements Closeable {
     private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     /**
-     * Only used in {@link #skip(long)}, for avoiding multiple times byte array allocation for a same InputStream Object.
+     * Only used in {@link #skip(long) skip}, for avoiding multiple times byte array allocation for a same InputStream Object.
      *
      * Making this static would increase performance,
      * but would make it possible to build a malicious subclass of InputStream to steal data from other InputStream Objects.
@@ -65,6 +65,13 @@ public abstract class InputStream implements Closeable {
      */
     private SoftReference<byte[]> skipBufferReference;
 
+    /**
+     * Get or create a byte array for {@link #skip(long) skip}.
+     *
+     * @param size minimum length that the skip byte array must have.
+     *             notice that this param input MUST be equal or less than {@link #MAX_SKIP_BUFFER_SIZE MAX_SKIP_BUFFER_SIZE}.
+     * @return the byte array.
+     */
     private byte[] skipBufferReference(int size) {
         SoftReference<byte[]> ref = this.skipBufferReference;
         byte[] buffer;
