@@ -177,7 +177,7 @@ public class NameSpaceSymbTable {
     /**
      * Gets a definition without mark it as render.
      * For render in exclusive c14n the namespaces in the include prefixes.
-     * @param prefix The prefix whose definition is neaded.
+     * @param prefix The prefix whose definition is needed.
      * @return the attr to render, null if there is no need to render
      **/
     public Attr getMappingWithoutRendered(String prefix) {

@@ -696,7 +696,7 @@ public class SpNegoContext implements GSSContextSpi {
     }
 
     /**
-     * get ther DER encoded MechList
+     * get the DER encoded MechList
      */
     private byte[] getEncodedMechs(Oid[] mechSet)
         throws IOException, GSSException {
