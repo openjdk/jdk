@@ -45,7 +45,7 @@ import jdk.internal.javac.PreviewFeature;
  * @since   19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING)
-public class MatchException extends RuntimeException {
+public final class MatchException extends RuntimeException {
     @java.io.Serial
     private static final long serialVersionUID = 0L;
 

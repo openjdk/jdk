@@ -21,13 +21,13 @@
  * questions.
  */
 
-// key: compiler.misc.feature.total.patterns.in.instanceof
+// key: compiler.misc.feature.unconditional.patterns.in.instanceof
 // key: compiler.warn.preview.feature.use.plural
 // options: --enable-preview -source ${jdk.version} -Xlint:-options,preview
 
 import java.util.*;
 
-class FeatureReifiableTypesInstanceof {
+class FeatureUnconditionalTypesInstanceof {
     String s;
     boolean b = (s instanceof String str);
 }
