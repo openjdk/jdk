@@ -67,6 +67,7 @@ public class DocTreePath implements Iterable<DocTree> {
             @SuppressWarnings("serial") // Type of field is not Serializable
             DocTreePath path;
             Result(DocTreePath path) {
+                super(null, null, true, false);
                 this.path = path;
             }
         }

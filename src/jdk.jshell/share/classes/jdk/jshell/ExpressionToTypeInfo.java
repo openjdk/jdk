@@ -147,13 +147,14 @@ class ExpressionToTypeInfo {
     }
 
     // return mechanism and other general structure from TreePath.getPath()
-    private static class Result extends Error {
+    private static final class Result extends Error {
 
         static final long serialVersionUID = -5942088234594905629L;
         @SuppressWarnings("serial") // Not statically typed as Serializable
         final TreePath expressionPath;
 
         Result(TreePath path) {
+            super(null, null, true, false);
             this.expressionPath = path;
         }
     }

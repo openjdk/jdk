@@ -805,9 +805,10 @@ public class TreeInfo {
     public static List<JCTree> pathFor(final JCTree node, final JCCompilationUnit unit) {
         class Result extends Error {
             static final long serialVersionUID = -5942088234594905625L;
-            @SuppressWarnings("serial") // List not statically Serilizable
+            @SuppressWarnings("serial") // List not statically Serializable
             List<JCTree> path;
             Result(List<JCTree> path) {
+                super(null, null, true, false);
                 this.path = path;
             }
         }

@@ -66,6 +66,7 @@ public class TreePath implements Iterable<Tree> {
             @SuppressWarnings("serial") // Type of field is not Serializable
             TreePath path;
             Result(TreePath path) {
+                super(null, null, true, false);
                 this.path = path;
             }
         }

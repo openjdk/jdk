@@ -171,10 +171,10 @@ public class Pretty extends JCTree.Visitor {
      *************************************************************************/
 
     /** Exception to propagate IOException through visitXYZ methods */
-    private static class UncheckedIOException extends Error {
+    private static final class UncheckedIOException extends Error {
         static final long serialVersionUID = -4032692679158424751L;
         UncheckedIOException(IOException e) {
-            super(e.getMessage(), e);
+            super(e.getMessage(), e, true, false);
         }
     }
 
