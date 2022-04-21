@@ -1556,47 +1556,6 @@ encode %{
     emit_d32   ( cbuf, 0x0  );             //                         imm32==0x0
   %}
 
-  enc_class cdq_enc %{
-    // Full implementation of Java idiv and irem; checks for
-    // special case as described in JVM spec., p.243 & p.271.
-    //
-    //         normal case                           special case
-    //
-    // input : rax,: dividend                         min_int
-    //         reg: divisor                          -1
-    //
-    // output: rax,: quotient  (= rax, idiv reg)       min_int
-    //         rdx: remainder (= rax, irem reg)       0
-    //
-    //  Code sequnce:
-    //
-    //  81 F8 00 00 00 80    cmp         rax,80000000h
-    //  0F 85 0B 00 00 00    jne         normal_case
-    //  33 D2                xor         rdx,edx
-    //  83 F9 FF             cmp         rcx,0FFh
-    //  0F 84 03 00 00 00    je          done
-    //                  normal_case:
-    //  99                   cdq
-    //  F7 F9                idiv        rax,ecx
-    //                  done:
-    //
-    emit_opcode(cbuf,0x81); emit_d8(cbuf,0xF8);
-    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x00);
-    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x80);                     // cmp rax,80000000h
-    emit_opcode(cbuf,0x0F); emit_d8(cbuf,0x85);
-    emit_opcode(cbuf,0x0B); emit_d8(cbuf,0x00);
-    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x00);                     // jne normal_case
-    emit_opcode(cbuf,0x33); emit_d8(cbuf,0xD2);                     // xor rdx,edx
-    emit_opcode(cbuf,0x83); emit_d8(cbuf,0xF9); emit_d8(cbuf,0xFF); // cmp rcx,0FFh
-    emit_opcode(cbuf,0x0F); emit_d8(cbuf,0x84);
-    emit_opcode(cbuf,0x03); emit_d8(cbuf,0x00);
-    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x00);                     // je done
-    // normal_case:
-    emit_opcode(cbuf,0x99);                                         // cdq
-    // idiv (note: must be emitted by the user of this rule)
-    // normal:
-  %}
-
   // Dense encoding for older common ops
   enc_class Opc_plus(immI opcode, rRegI reg) %{
     emit_opcode(cbuf, $opcode$$constant + $reg$$reg);
@@ -7797,21 +7756,17 @@ instruct mulL_eReg_con(eADXRegL dst, immL_127 src, rRegI tmp, eFlagsReg cr) %{
 
 // Integer DIV with Register
 instruct divI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
-  match(Set rax (DivI rax div));
+  match(Set rax (NoOvfDivI rax div));
   effect(KILL rdx, KILL cr);
-  size(26);
-  ins_cost(30*100+10*100);
-  format %{ "CMP    EAX,0x80000000\n\t"
-            "JNE,s  normal\n\t"
-            "XOR    EDX,EDX\n\t"
-            "CMP    ECX,-1\n\t"
-            "JE,s   done\n"
-    "normal: CDQ\n\t"
-            "IDIV   $div\n\t"
-    "done:"        %}
-  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
-  ins_encode( cdq_enc, OpcP, RegOpc(div) );
-  ins_pipe( ialu_reg_reg_alu0 );
+  size(3);
+  ins_cost(500);
+  format %{ "CDQ\n\t"
+            "IDIV   $div" %}
+  ins_encode %{
+    __ cdql();
+    __ idivl($div$$Register);
+  %}
+  ins_pipe( pipe_slow );
 %}
 
 // Divide Register Long
@@ -7831,35 +7786,33 @@ instruct divL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
 
 // Integer DIVMOD with Register, both quotient and mod results
 instruct divModI_eReg_divmod(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
-  match(DivModI rax div);
+  match(NoOvfDivModI rax div);
   effect(KILL cr);
-  size(26);
-  ins_cost(30*100+10*100);
-  format %{ "CMP    EAX,0x80000000\n\t"
-            "JNE,s  normal\n\t"
-            "XOR    EDX,EDX\n\t"
-            "CMP    ECX,-1\n\t"
-            "JE,s   done\n"
-    "normal: CDQ\n\t"
-            "IDIV   $div\n\t"
-    "done:"        %}
-  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
-  ins_encode( cdq_enc, OpcP, RegOpc(div) );
+  size(3);
+  ins_cost(500);
+  format %{ "CDQ\n\t"
+            "IDIV   $div" %}
+  ins_encode %{
+    __ cdql();
+    __ idivl($div$$Register);
+  %}
   ins_pipe( pipe_slow );
 %}
 
 // Integer MOD with Register
 instruct modI_eReg(eDXRegI rdx, eAXRegI rax, eCXRegI div, eFlagsReg cr) %{
-  match(Set rdx (ModI rax div));
+  match(Set rdx (NoOvfModI rax div));
   effect(KILL rax, KILL cr);
 
-  size(26);
-  ins_cost(300);
+  size(3);
+  ins_cost(500);
   format %{ "CDQ\n\t"
             "IDIV   $div" %}
-  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
-  ins_encode( cdq_enc, OpcP, RegOpc(div) );
-  ins_pipe( ialu_reg_reg_alu0 );
+  ins_encode %{
+    __ cdql();
+    __ idivl($div$$Register);
+  %}
+  ins_pipe( pipe_slow );
 %}
 
 // Remainder Register Long
