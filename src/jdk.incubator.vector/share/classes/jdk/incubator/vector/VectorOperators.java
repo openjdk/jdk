@@ -548,7 +548,12 @@ public abstract class VectorOperators {
     public static final /*bitwise*/ Binary LSHL = binary("LSHL", "<<", VectorSupport.VECTOR_OP_LSHIFT, VO_SHIFT);
     /** Produce {@code a>>(n&(ESIZE*8-1))}.  Integral only. */
     public static final /*bitwise*/ Binary ASHR = binary("ASHR", ">>", VectorSupport.VECTOR_OP_RSHIFT, VO_SHIFT);
-    /** Produce zero-extended right shift of {@code a} by {@code (n&(ESIZE*8-1))} bits.  Integral only. */
+    /** Produce {@code a>>>(n&(ESIZE*8-1))}  (see details for attention).  Integral only.
+     * <p>
+     * For operand types {@code byte} and {@code short} the operation behaves as if the operand is first implicitly widened
+     * to an {@code int} value with {@code (a & ((1 << ESIZE) - 1))} the result of which is then applied as the operand to this
+     * operation, the result of the operation is then narrowed from {@code int} to the operand type using an explicit cast.
+     */
     public static final /*bitwise*/ Binary LSHR = binary("LSHR", ">>>", VectorSupport.VECTOR_OP_URSHIFT, VO_SHIFT);
     /** Produce {@code rotateLeft(a,n)}.  Integral only. */
     public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT);
