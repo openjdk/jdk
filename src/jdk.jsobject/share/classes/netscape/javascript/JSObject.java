@@ -88,7 +88,7 @@ public abstract class JSObject {
      * "this.name" in JavaScript.
      *
      * @param name The name of the JavaScript property to be accessed.
-     * @return The value of the propery.
+     * @return The value of the property.
      * @throws JSException when an error is reported from the browser or
      * JavaScript engine.
      */
@@ -99,7 +99,7 @@ public abstract class JSObject {
      * "this.name = value" in JavaScript.
      *
      * @param name The name of the JavaScript property to be accessed.
-     * @param value The value of the propery.
+     * @param value The value of the property.
      * @throws JSException when an error is reported from the browser or
      * JavaScript engine.
      */

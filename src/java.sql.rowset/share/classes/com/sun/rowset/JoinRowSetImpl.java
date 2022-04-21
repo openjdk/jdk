@@ -4050,7 +4050,7 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
      *           connection to the datasource
      * @throws SQLException if an invalid <code>Connection</code> is supplied
      *           or an error occurs in establishing the connection to the
-     *           data soure
+     *           data source
      * @see java.sql.Connection
      */
     public void execute(Connection conn) throws SQLException {

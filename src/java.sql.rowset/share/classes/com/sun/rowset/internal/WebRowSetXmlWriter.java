@@ -625,7 +625,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
 
     /**
      * This function has been added for the processing of special characters
-     * lik <,>,'," and & in the data to be serialized. These have to be taken
+     * like <,>,'," and & in the data to be serialized. These have to be taken
      * of specifically or else there will be parsing error while trying to read
      * the contents of the XML file.
      **/
