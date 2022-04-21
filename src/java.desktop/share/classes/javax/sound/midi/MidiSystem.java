@@ -1478,7 +1478,7 @@ public class MidiSystem {
                   ! (device instanceof Synthesizer) ) ||
                  ((device instanceof Sequencer) && allowSequencer) ||
                  ((device instanceof Synthesizer) && allowSynthesizer)) {
-                // And of cource, the device has to be able to provide
+                // And of course, the device has to be able to provide
                 // Receivers or Transmitters.
                 if ((deviceClass == Receiver.class &&
                      device.getMaxReceivers() != 0) ||

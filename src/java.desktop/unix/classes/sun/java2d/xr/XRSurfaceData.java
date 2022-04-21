@@ -393,7 +393,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
     }
 
     /**
-     * Returns the XRender SurfaceType which is able to fullfill the specified
+     * Returns the XRender SurfaceType which is able to fulfill the specified
      * transparency requirement.
      */
     public static SurfaceType getPixmapSurfaceType(int transparency) {

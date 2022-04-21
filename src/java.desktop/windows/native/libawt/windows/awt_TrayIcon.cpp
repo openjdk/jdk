@@ -601,7 +601,7 @@ AwtTrayIcon* AwtTrayIcon::SearchTrayIconItem(UINT id) {
     }
     /*
      * DASSERT(FALSE);
-     * This should not be happend if all tray icons are recorded
+     * This should not be happening if all tray icons are recorded
      */
     return NULL;
 }

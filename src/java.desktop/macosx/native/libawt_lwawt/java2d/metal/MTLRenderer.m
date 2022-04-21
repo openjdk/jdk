@@ -446,7 +446,7 @@ void MTLRenderer_FillSpans(MTLContext *mtlc, BMTLSDOps * dstOps, jint spanCount,
     // MTLRenderCommandEncoder setVertexBytes usage is recommended if the data is of 4KB.
 
     // We use a buffer that closely matches the 4KB limit size
-    // This buffer is resued multiple times to encode draw calls of a triangle list
+    // This buffer is reused multiple times to encode draw calls of a triangle list
     // NOTE : Due to nature of *spans data - it is not possible to use triangle strip.
     // We use triangle list to draw spans
 

@@ -645,7 +645,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "Button.dashedRectGapHeight", new XPValue(Integer.valueOf(6), Integer.valueOf(8)),
             "Button.textShiftOffset", new XPValue(Integer.valueOf(0),
                                                   Integer.valueOf(1)),
-            // W2K keyboard navigation hidding.
+            // W2K keyboard navigation hiding.
             "Button.showMnemonics", showMnemonics,
             "Button.focusInputMap",
                new UIDefaults.LazyInputMap(new Object[] {

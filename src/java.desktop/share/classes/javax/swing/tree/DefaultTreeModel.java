@@ -349,7 +349,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
       * the array of the children objects that were removed.
       *
       * @param node             parent node which childred were removed
-      * @param childIndices     indexes of removed childs
+      * @param childIndices     indexes of removed children
       * @param removedChildren  array of the children objects that were removed
       */
     public void nodesWereRemoved(TreeNode node, int[] childIndices,

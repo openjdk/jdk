@@ -417,7 +417,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
                 Object            changedValue = changedNode.getValue();
 
                 /* Update the size of the changed node, as well as all the
-                   child indexs that are passed in. */
+                   child indices that are passed in. */
                 changedNode.updatePreferredSize();
                 if(changedNode.hasBeenExpanded() && changedIndexs != null) {
                     for(int index : changedIndexs) {

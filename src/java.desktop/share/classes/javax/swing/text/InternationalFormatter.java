@@ -777,7 +777,7 @@ public class InternationalFormatter extends DefaultFormatter {
     }
 
     /**
-     * Updates the interal bitset from <code>iterator</code>. This will
+     * Updates the internal bitset from <code>iterator</code>. This will
      * set <code>validMask</code> to true if <code>iterator</code> is
      * non-null.
      */

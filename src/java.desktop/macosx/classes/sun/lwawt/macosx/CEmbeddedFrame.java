@@ -111,7 +111,7 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         responder.handleInputEvent(text);
     }
 
-    // handleFocusEvent is called when the applet becames focused/unfocused.
+    // handleFocusEvent is called when the applet becomes focused/unfocused.
     // This method can be called from different threads.
     public void handleFocusEvent(boolean focused) {
         synchronized (classLock) {

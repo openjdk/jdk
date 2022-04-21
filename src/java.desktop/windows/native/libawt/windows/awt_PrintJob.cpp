@@ -3700,7 +3700,7 @@ static void getPaperValues(JNIEnv *env, jobject paper, RectDouble *paperSize,
  * the units are 1000ths of an inch (MM_HIENGLISH)
  * or 100ths of a millimeter (MM_HIMETRIC),
  * convert the margins to 72nds of an inch
- * and set them into the PageFormat insance provided.
+ * and set them into the PageFormat instance provided.
  */
 static void setPaperValues(JNIEnv *env, jobject paper, const POINT *paperSize,
                                          const RECT *margins, int units) {

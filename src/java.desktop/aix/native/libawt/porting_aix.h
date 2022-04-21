@@ -50,7 +50,7 @@
 
 typedef struct {
   const char *dli_fname; /* file path of loaded library */
-  void *dli_fbase;       /* doesn't make sence on AIX */
+  void *dli_fbase;       /* doesn't make sense on AIX */
   const char *dli_sname; /* symbol name; "" if not known */
   void *dli_saddr;       /* address of *entry* of function; not function descriptor; */
 } Dl_info;

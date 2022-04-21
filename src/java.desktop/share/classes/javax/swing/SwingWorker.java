@@ -720,7 +720,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
      */
     public final StateValue getState() {
         /*
-         * DONE is a speacial case
+         * DONE is a special case
          * to keep getState and isDone is sync
          */
         if (isDone()) {

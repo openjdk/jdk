@@ -1229,7 +1229,7 @@ public class Introspector {
      * Return true if class a is either equivalent to class b, or
      * if class a is a subclass of class b, i.e. if a either "extends"
      * or "implements" b.
-     * Note tht either or both "Class" objects may represent interfaces.
+     * Note that either or both "Class" objects may represent interfaces.
      */
     static  boolean isSubclass(Class<?> a, Class<?> b) {
         // We rely on the fact that for any given java class or

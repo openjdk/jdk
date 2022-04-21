@@ -96,7 +96,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeExitFullScreenMode(long nsWindowPtr);
     static native CPlatformWindow nativeGetTopmostPlatformWindowUnderMouse();
 
-    // Loger to report issues happened during execution but that do not affect functionality
+    // Logger to report issues happened during execution but that do not affect functionality
     private static final PlatformLogger logger = PlatformLogger.getLogger("sun.lwawt.macosx.CPlatformWindow");
     private static final PlatformLogger focusLogger = PlatformLogger.getLogger("sun.lwawt.macosx.focus.CPlatformWindow");
 

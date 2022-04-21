@@ -47,7 +47,7 @@ public class XRGlyphCacheEntry {
     public XRGlyphCacheEntry(long glyphInfoPtr, GlyphList gl) {
         this.glyphInfoPtr = glyphInfoPtr;
 
-        /* TODO: Does it make sence to cache results? */
+        /* TODO: Does it make sense to cache results? */
         xOff = Math.round(getXAdvance());
         yOff = Math.round(getYAdvance());
     }

@@ -1884,7 +1884,7 @@ CCombinedSegTable* CCombinedSegTableManager::GetTable(LPCWSTR lpszFontName)
 
 
 /************************************************************************
- * WDefaultFontCharset native methos
+ * WDefaultFontCharset native methods
  */
 
 extern "C" {

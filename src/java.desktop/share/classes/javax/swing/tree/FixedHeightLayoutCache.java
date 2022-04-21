@@ -1090,7 +1090,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
         // This can be rather expensive, but is needed for the collapse
         // case this is resulting from a remove (although I could fix
         // that by having instances of FHTreeStateNode hold a ref to
-        // the number of children). I prefer this though, making determing
+        // the number of children). I prefer this though, making determining
         // the row of a particular node fast is very nice!
         protected void resetChildrenRowsFrom(int newRow, int childIndex,
                                             int modelIndex) {
@@ -1273,7 +1273,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
         }
 
         /**
-         * Adjusts the child indexs of the receivers children by
+         * Adjusts the child indices of the receivers children by
          * <code>amount</code>, starting at <code>index</code>.
          */
         protected void adjustChildIndexs(int index, int amount) {

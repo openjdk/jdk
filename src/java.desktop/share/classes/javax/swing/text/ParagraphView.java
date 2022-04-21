@@ -88,7 +88,7 @@ public class ParagraphView extends FlowView implements TabExpander {
     /**
      * Sets the line spacing.
      *
-     * @param ls the value is a factor of the line hight
+     * @param ls the value is a factor of the line height
      */
     protected void setLineSpacing(float ls) {
         lineSpacing = ls;

@@ -1538,7 +1538,7 @@ final class XWM
      * fact moved us to our final position relative to the reParented WM window.
      * We have noted a timing window which our shell has not been moved so we
      * screw up the insets thinking they are 0,0.  Wait (for a limited period of
-     * time to let the WM hava a chance to move us.
+     * time to let the WM have a chance to move us.
      * @param window window ID of the shell, assuming it is the window
      * which will NOT have zero coordinates after the complete
      * reparenting

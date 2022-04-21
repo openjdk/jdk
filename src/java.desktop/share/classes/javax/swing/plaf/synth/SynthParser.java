@@ -672,7 +672,7 @@ class SynthParser extends DefaultHandler {
             }
         }
         if (color == null) {
-            throw new SAXException("color: you must specificy a value");
+            throw new SAXException("color: you must specify a value");
         }
         register(id, color);
         if (_stateInfo != null && _colorTypes.size() > 0) {

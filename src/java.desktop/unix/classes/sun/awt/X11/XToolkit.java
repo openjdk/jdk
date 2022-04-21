@@ -1911,7 +1911,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * @param task a Runnable which {@code run} method will be called
      *        on the toolkit thread when {@code interval} milliseconds
      *        elapse
-     * @param interval an interal in milliseconds
+     * @param interval an interval in milliseconds
      *
      * @throws NullPointerException if {@code task} is {@code null}
      * @throws IllegalArgumentException if {@code interval} is not positive

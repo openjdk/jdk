@@ -332,13 +332,13 @@ public class PNGImageReader extends ImageReader {
         if (metadata.PLTE_present) {
             processWarningOccurred(
 "A PNG image may not contain more than one PLTE chunk.\n" +
-"The chunk wil be ignored.");
+"The chunk will be ignored.");
             return;
         } else if (metadata.IHDR_colorType == PNG_COLOR_GRAY ||
                    metadata.IHDR_colorType == PNG_COLOR_GRAY_ALPHA) {
             processWarningOccurred(
 "A PNG gray or gray alpha image cannot have a PLTE chunk.\n" +
-"The chunk wil be ignored.");
+"The chunk will be ignored.");
             return;
         }
 

@@ -1516,7 +1516,7 @@ public class SwingUtilities2 {
     }
 
     /**
-     * Returns true if the given event is corrent gesture for
+     * Returns true if the given event is current gesture for
      * accessing clipboard
      *
      * @param ie InputEvent to check
@@ -1779,7 +1779,7 @@ public class SwingUtilities2 {
 
     /**
      * Returns an integer from the defaults table. If {@code key} does
-     * not map to a valid {@code Integer}, or can not be convered from
+     * not map to a valid {@code Integer}, or can not be converted from
      * a {@code String} to an integer, the value 0 is returned.
      *
      * @param key  an {@code Object} specifying the int.
@@ -1792,7 +1792,7 @@ public class SwingUtilities2 {
     /**
      * Returns an integer from the defaults table that is appropriate
      * for the given locale. If {@code key} does not map to a valid
-     * {@code Integer}, or can not be convered from a {@code String}
+     * {@code Integer}, or can not be converted from a {@code String}
      * to an integer, the value 0 is returned.
      *
      * @param key  an {@code Object} specifying the int. Returned value
@@ -1806,7 +1806,7 @@ public class SwingUtilities2 {
 
     /**
      * Returns an integer from the defaults table. If {@code key} does
-     * not map to a valid {@code Integer}, or can not be convered from
+     * not map to a valid {@code Integer}, or can not be converted from
      * a {@code String} to an integer, {@code default} is
      * returned.
      *
@@ -1823,7 +1823,7 @@ public class SwingUtilities2 {
     /**
      * Returns an integer from the defaults table that is appropriate
      * for the given locale. If {@code key} does not map to a valid
-     * {@code Integer}, or can not be convered from a {@code String}
+     * {@code Integer}, or can not be converted from a {@code String}
      * to an integer, {@code default} is returned.
      *
      * @param key  an {@code Object} specifying the int. Returned value

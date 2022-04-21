@@ -1176,7 +1176,7 @@ public class BasicTreeUI extends TreeUI
     }
 
     /**
-     * Invoked before unstallation of UI.
+     * Invoked before uninstallation of UI.
      */
     protected void prepareForUIUninstall() {
     }

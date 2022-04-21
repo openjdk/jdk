@@ -623,7 +623,7 @@ final class Renderer implements DPathConsumer2D, MarlinConst {
         blkFlags  = blkFlags_ref.putArray(blkFlags, 0, 0); // already zero filled
 
         if (edgeMinY != Integer.MAX_VALUE) {
-            // if context is maked as DIRTY:
+            // if context is marked as DIRTY:
             if (rdrCtx.dirty) {
                 // may happen if an exception if thrown in the pipeline processing:
                 // clear completely buckets arrays:

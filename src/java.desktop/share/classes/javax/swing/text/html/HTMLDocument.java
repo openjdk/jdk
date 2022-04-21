@@ -4339,7 +4339,7 @@ public class HTMLDocument extends DefaultStyledDocument {
         /** True if inside the head tag. */
         boolean inHead = false;
         /** Set to true if the style language is text/css. Since this is
-         * used alot, it is cached. */
+         * used a lot, it is cached. */
         boolean isStyleCSS;
         /** True if inserting into an empty document. */
         boolean emptyDocument;

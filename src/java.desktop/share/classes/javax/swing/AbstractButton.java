@@ -1268,7 +1268,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
     }
 
     /**
-     * Sets the seleted state of the button from the action.  This is defined
+     * Sets the selected state of the button from the action.  This is defined
      * here, but not wired up.  Subclasses like JToggleButton and
      * JCheckBoxMenuItem make use of it.
      *

@@ -128,7 +128,7 @@ public class BasicSliderUI extends SliderUI{
     protected FocusListener focusListener;
     /** Scroll listener */
     protected ScrollListener scrollListener;
-    /** Property chane listener */
+    /** Property change listener */
     protected PropertyChangeListener propertyChangeListener;
     private Handler handler;
     private int lastValue;

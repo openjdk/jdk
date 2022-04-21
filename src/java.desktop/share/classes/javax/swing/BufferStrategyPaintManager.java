@@ -149,8 +149,8 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
      * Cleans up any created BufferStrategies.
      */
     protected void dispose() {
-        // dipose can be invoked at any random time. To avoid
-        // threading dependencies we do the actual diposing via an
+        // dispose can be invoked at any random time. To avoid
+        // threading dependencies we do the actual disposing via an
         // invokeLater.
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {

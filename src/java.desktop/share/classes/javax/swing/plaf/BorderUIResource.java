@@ -362,7 +362,7 @@ public class BorderUIResource implements Border, UIResource, Serializable
          * Constructs a {@code TitledBorderUIResource}.
          * @param border the border
          * @param title the title the border should display
-         * @param titleJustification the justification fro the title
+         * @param titleJustification the justification for the title
          * @param titlePosition the position for the title
          */
         public TitledBorderUIResource(Border border,
@@ -376,7 +376,7 @@ public class BorderUIResource implements Border, UIResource, Serializable
          * Constructs a {@code TitledBorderUIResource}.
          * @param border the border
          * @param title the title the border should display
-         * @param titleJustification the justification fro the title
+         * @param titleJustification the justification for the title
          * @param titlePosition the position for the title
          * @param titleFont the font for rendering the title
          */
@@ -392,7 +392,7 @@ public class BorderUIResource implements Border, UIResource, Serializable
          * Constructs a {@code TitledBorderUIResource}.
          * @param border the border
          * @param title the title the border should display
-         * @param titleJustification the justification fro the title
+         * @param titleJustification the justification for the title
          * @param titlePosition the position for the title
          * @param titleFont the font for rendering the title
          * @param titleColor the color of the title

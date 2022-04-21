@@ -4960,7 +4960,7 @@ AwtComponent* AwtComponent::SearchChild(UINT id) {
     }
     /*
      * DASSERT(FALSE);
-     * This should not be happend if all children are recorded
+     * This should not be happening if all children are recorded
      */
     return NULL;        /* make compiler happy */
 }

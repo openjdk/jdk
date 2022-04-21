@@ -1215,7 +1215,7 @@ final class DirectAudioDevice extends AbstractMixer {
 
             // if the end position is less than the start position, throw IllegalArgumentException
             if (end < start) {
-                throw new IllegalArgumentException("End position " + end + "  preceeds start position " + start);
+                throw new IllegalArgumentException("End position " + end + "  precedes start position " + start);
             }
 
             // slight race condition with the run() method, but not a big problem

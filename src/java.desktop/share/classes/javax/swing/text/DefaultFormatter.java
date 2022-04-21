@@ -346,7 +346,7 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
      * Subclasses should override this if they want cursor navigation
      * to skip certain characters. A return value of false indicates
      * the character at <code>offset</code> should be skipped when
-     * navigating throught the field.
+     * navigating through the field.
      */
     boolean isNavigatable(int offset) {
         return true;
