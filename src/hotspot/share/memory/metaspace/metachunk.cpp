@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -214,7 +214,7 @@ void Metachunk::verify_neighborhood() const {
 
     // One of the neighbors must be the buddy. It can be whole or splintered.
 
-    // The chunk following us or preceeding us may be our buddy or a splintered part of it.
+    // The chunk following us or preceding us may be our buddy or a splintered part of it.
     Metachunk* buddy = is_leader() ? next_in_vs() : prev_in_vs();
     assert(buddy != NULL, "Missing neighbor.");
     assert(!buddy->is_dead(), "Invalid buddy state.");

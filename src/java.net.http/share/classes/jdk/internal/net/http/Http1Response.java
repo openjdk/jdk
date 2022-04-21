@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,10 @@ package jdk.internal.net.http;
 
 import java.io.EOFException;
 import java.lang.System.Logger.Level;
+import java.net.http.HttpResponse.BodySubscriber;
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Flow;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -41,7 +38,6 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 import jdk.internal.net.http.ResponseContent.BodyParser;
 import jdk.internal.net.http.ResponseContent.UnknownLengthBodyParser;
-import jdk.internal.net.http.ResponseSubscribers.TrustedSubscriber;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
@@ -74,7 +70,7 @@ class Http1Response<T> {
     private static final int MAX_IGNORE = 1024;
 
     // Revisit: can we get rid of this?
-    static enum State {INITIAL, READING_HEADERS, READING_BODY, DONE}
+    enum State {INITIAL, READING_HEADERS, READING_BODY, DONE}
     private volatile State readProgress = State.INITIAL;
 
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
@@ -123,7 +119,7 @@ class Http1Response<T> {
         // state & 0x02 != 0 => tryRelease called
         byte state;
 
-        public synchronized void acquire() {
+        public synchronized boolean acquire() {
             if (state == 0) {
                 // increment the reference count on the HttpClientImpl
                 // to prevent the SelectorManager thread from exiting
@@ -132,11 +128,13 @@ class Http1Response<T> {
                     debug.log("Operation started: incrementing ref count for %s", client);
                 client.reference();
                 state = 0x01;
+                return true;
             } else {
                 if (debug.on())
                     debug.log("Operation ref count for %s is already %s",
                               client, ((state & 0x2) == 0x2) ? "released." : "incremented!" );
                 assert (state & 0x01) == 0 : "reference count already incremented";
+                return false;
             }
         }
 
@@ -277,119 +275,6 @@ class Http1Response<T> {
         }
     }
 
-    static final Flow.Subscription NOP = new Flow.Subscription() {
-        @Override
-        public void request(long n) { }
-        public void cancel() { }
-    };
-
-    /**
-     * The Http1AsyncReceiver ensures that all calls to
-     * the subscriber, including onSubscribe, occur sequentially.
-     * There could however be some race conditions that could happen
-     * in case of unexpected errors thrown at unexpected places, which
-     * may cause onError to be called multiple times.
-     * The Http1BodySubscriber will ensure that the user subscriber
-     * is actually completed only once - and only after it is
-     * subscribed.
-     * @param <U> The type of response.
-     */
-    static final class Http1BodySubscriber<U> implements TrustedSubscriber<U> {
-        final HttpResponse.BodySubscriber<U> userSubscriber;
-        final AtomicBoolean completed = new AtomicBoolean();
-        volatile Throwable withError;
-        volatile boolean subscribed;
-        Http1BodySubscriber(HttpResponse.BodySubscriber<U> userSubscriber) {
-            this.userSubscriber = userSubscriber;
-        }
-
-        @Override
-        public boolean needsExecutor() {
-            return TrustedSubscriber.needsExecutor(userSubscriber);
-        }
-
-        // propagate the error to the user subscriber, even if not
-        // subscribed yet.
-        private void propagateError(Throwable t) {
-            assert t != null;
-            try {
-                // if unsubscribed at this point, it will not
-                // get subscribed later - so do it now and
-                // propagate the error
-                if (subscribed == false) {
-                    subscribed = true;
-                    userSubscriber.onSubscribe(NOP);
-                }
-            } finally  {
-                // if onError throws then there is nothing to do
-                // here: let the caller deal with it by logging
-                // and closing the connection.
-                userSubscriber.onError(t);
-            }
-        }
-
-        // complete the subscriber, either normally or exceptionally
-        // ensure that the subscriber is completed only once.
-        private void complete(Throwable t) {
-            if (completed.compareAndSet(false, true)) {
-                t  = withError = Utils.getCompletionCause(t);
-                if (t == null) {
-                    assert subscribed;
-                    try {
-                        userSubscriber.onComplete();
-                    } catch (Throwable x) {
-                        // Simply propagate the error by calling
-                        // onError on the user subscriber, and let the
-                        // connection be reused since we should have received
-                        // and parsed all the bytes when we reach here.
-                        // If onError throws in turn, then we will simply
-                        // let that new exception flow up to the caller
-                        // and let it deal with it.
-                        // (i.e: log and close the connection)
-                        // Note that rethrowing here could introduce a
-                        // race that might cause the next send() operation to
-                        // fail as the connection has already been put back
-                        // into the cache when we reach here.
-                        propagateError(t = withError = Utils.getCompletionCause(x));
-                    }
-                } else {
-                    propagateError(t);
-                }
-            }
-        }
-
-        @Override
-        public CompletionStage<U> getBody() {
-            return userSubscriber.getBody();
-        }
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            if (!subscribed) {
-                subscribed = true;
-                userSubscriber.onSubscribe(subscription);
-            } else {
-                // could be already subscribed and completed
-                // if an unexpected error occurred before the actual
-                // subscription - though that's not supposed
-                // happen.
-                assert completed.get();
-            }
-        }
-        @Override
-        public void onNext(List<ByteBuffer> item) {
-            assert !completed.get();
-            userSubscriber.onNext(item);
-        }
-        @Override
-        public void onError(Throwable throwable) {
-            complete(throwable);
-        }
-        @Override
-        public void onComplete() {
-            complete(null);
-        }
-    }
 
     public <U> CompletableFuture<U> readBody(HttpResponse.BodySubscriber<U> p,
                                          boolean return2Cache,
@@ -398,12 +283,13 @@ class Http1Response<T> {
             debug.log("readBody: return2Cache: " + return2Cache);
             if (request.isWebSocket() && return2Cache && connection != null) {
                 debug.log("websocket connection will be returned to cache: "
-                        + connection.getClass() + "/" + connection );
+                        + connection.getClass() + "/" + connection);
             }
         }
         assert !return2Cache || !request.isWebSocket();
         this.return2Cache = return2Cache;
-        final Http1BodySubscriber<U> subscriber = new Http1BodySubscriber<>(p);
+        final BodySubscriber<U> subscriber = p;
+
 
         final CompletableFuture<U> cf = new MinimalFuture<>();
 
@@ -420,6 +306,7 @@ class Http1Response<T> {
         // tracker has been incremented.
         connection.client().reference();
         executor.execute(() -> {
+            boolean acquired = false;
             try {
                 content = new ResponseContent(
                         connection, clen, headers, subscriber,
@@ -433,7 +320,8 @@ class Http1Response<T> {
                 // increment the reference count on the HttpClientImpl
                 // to prevent the SelectorManager thread from exiting until
                 // the body is fully read.
-                refCountTracker.acquire();
+                acquired = refCountTracker.acquire();
+                assert acquired == true;
                 bodyParser = content.getBodyParser(
                     (t) -> {
                         try {
@@ -457,7 +345,7 @@ class Http1Response<T> {
                 assert bodyReaderCF != null : "parsing not started";
                 // Make sure to keep a reference to asyncReceiver from
                 // within this
-                CompletableFuture<?> trailingOp = bodyReaderCF.whenComplete((s,t) ->  {
+                CompletableFuture<?> trailingOp = bodyReaderCF.whenComplete((s, t) -> {
                     t = Utils.getCompletionCause(t);
                     try {
                         if (t == null) {
@@ -479,11 +367,12 @@ class Http1Response<T> {
                 });
                 connection.addTrailingOperation(trailingOp);
             } catch (Throwable t) {
-               if (debug.on()) debug.log("Failed reading body: " + t);
+                if (debug.on()) debug.log("Failed reading body: " + t);
                 try {
                     subscriber.onError(t);
                     cf.completeExceptionally(t);
                 } finally {
+                    if (acquired) refCountTracker.tryRelease();
                     asyncReceiver.onReadError(t);
                 }
             } finally {
@@ -492,6 +381,7 @@ class Http1Response<T> {
         });
 
         ResponseSubscribers.getBodyAsync(executor, p, cf, (t) -> {
+            subscriber.onError(t);
             cf.completeExceptionally(t);
             asyncReceiver.setRetryOnError(false);
             asyncReceiver.onReadError(t);
@@ -752,12 +642,14 @@ class Http1Response<T> {
 
         @Override
         public final void onReadError(Throwable t) {
-            if (t instanceof EOFException && bodyParser != null &&
-                    bodyParser instanceof UnknownLengthBodyParser) {
-                ((UnknownLengthBodyParser)bodyParser).complete();
+            BodyParser parser = bodyParser;
+            if (t instanceof EOFException && parser != null &&
+                    parser instanceof UnknownLengthBodyParser ulBodyParser) {
+                ulBodyParser.complete();
                 return;
             }
             t = wrapWithExtraDetail(t, parser::currentStateMessage);
+            parser.onError(t);
             Http1Response.this.onReadError(t);
         }
 
@@ -822,6 +714,20 @@ class Http1Response<T> {
                     if (debug.on())
                         debug.log("close: completing body parser CF");
                     cf.complete(State.READING_BODY);
+                }
+            }
+            if (error != null) {
+                // makes sure the parser gets the error
+                BodyParser parser = this.parser;
+                if (parser != null) {
+                    if (debug.on()) {
+                        debug.log("propagating error to parser: " + error);
+                    }
+                    parser.onError(error);
+                } else {
+                    if (debug.on()) {
+                        debug.log("no parser - error not propagated: " + error);
+                    }
                 }
             }
         }

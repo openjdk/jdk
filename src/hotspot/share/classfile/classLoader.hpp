@@ -64,7 +64,7 @@ public:
   // Constructor
   ClassPathEntry() : _next(NULL) {}
   // Attempt to locate file_name through this class path entry.
-  // Returns a class file parsing stream if successfull.
+  // Returns a class file parsing stream if successful.
   virtual ClassFileStream* open_stream(JavaThread* current, const char* name) = 0;
   // Open the stream for a specific class loader
   virtual ClassFileStream* open_stream_for_loader(JavaThread* current, const char* name, ClassLoaderData* loader_data) {

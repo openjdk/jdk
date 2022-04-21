@@ -695,7 +695,7 @@ static void remove_file(const char* path) {
 
   // if the file is a directory, the following unlink will fail. since
   // we don't expect to find directories in the user temp directory, we
-  // won't try to handle this situation. even if accidentially or
+  // won't try to handle this situation. even if accidentally or
   // maliciously planted, the directory's presence won't hurt anything.
   //
   RESTARTABLE(::unlink(path), result);
