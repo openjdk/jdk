@@ -61,7 +61,7 @@ public abstract class FontConfiguration {
     //static global runtime env
     protected static String osVersion;
     protected static String osName;
-    protected static String encoding; // canonical name of default nio charset
+    protected static String encoding; // canonical name of native nio charset
     protected static Locale startupLocale = null;
     protected static Hashtable<String, String> localeMap = null;
     private static FontConfiguration fontConfig;
@@ -136,7 +136,10 @@ public abstract class FontConfiguration {
     }
 
     private void setEncoding() {
-        encoding = Charset.defaultCharset().name();
+        String nativeEncoding = System.getProperty("native.encoding");
+        Charset cs = (nativeEncoding != null) ?
+                     Charset.forName(nativeEncoding) : Charset.defaultCharset();
+        encoding = cs.name();
         startupLocale = SunToolkit.getStartupLocale();
     }
 
