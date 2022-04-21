@@ -2995,7 +2995,7 @@ run:
         MORE_STACK(1);
         break;
       default:
-        ;
+        ShouldNotReachHere();
     }
 
     ts->clr_earlyret_value();
