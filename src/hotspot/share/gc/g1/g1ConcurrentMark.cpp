@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1780,7 +1780,7 @@ class G1RemarkThreadsClosure : public ThreadClosure {
       // Transfer any partial buffer to the qset for completed buffer processing.
       _qset.flush_queue(G1ThreadLocalData::satb_mark_queue(thread));
       if (thread->is_Java_thread()) {
-        // In theory it should not be neccessary to explicitly walk the nmethods to find roots for concurrent marking
+        // In theory it should not be necessary to explicitly walk the nmethods to find roots for concurrent marking
         // however the liveness of oops reachable from nmethods have very complex lifecycles:
         // * Alive if on the stack of an executing method
         // * Weakly reachable otherwise
@@ -2016,7 +2016,7 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   // shared marking bitmap that must be cleaned up.
   // If there are multiple full gcs during shutdown we do this work repeatedly for
   // nothing, but this situation should be extremely rare (a full gc after shutdown
-  // has been signalled is alredy rare), and this work should be negligible compared
+  // has been signalled is already rare), and this work should be negligible compared
   // to actual full gc work.
   if (!cm_thread()->in_progress() && !_g1h->concurrent_mark_is_terminating()) {
     return;

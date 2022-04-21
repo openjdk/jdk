@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -462,7 +462,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
   // Do collection work
   {
     // Note on ref discovery: For what appear to be historical reasons,
-    // GCH enables and disabled (by enqueing) refs discovery.
+    // GCH enables and disabled (by enqueuing) refs discovery.
     // In the future this should be moved into the generation's
     // collect method so that ref discovery and enqueueing concerns
     // are local to a generation. The collect method could return
