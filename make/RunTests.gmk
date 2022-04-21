@@ -139,7 +139,7 @@ endif
 ################################################################################
 
 # Each factor variable comes in 3 variants. The first one is reserved for users
-# to use on command line. The other two are for predifined configurations in JDL
+# to use on command line. The other two are for predefined configurations in JDL
 # and for machine specific configurations respectively.
 TEST_JOBS_FACTOR ?= 1
 TEST_JOBS_FACTOR_JDL ?= 1

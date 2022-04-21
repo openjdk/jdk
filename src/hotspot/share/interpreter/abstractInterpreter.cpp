@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,7 +319,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       methodHandle mh(thread, method);
       type = Bytecode_invoke(mh, bci).result_type();
       // since the cache entry might not be initialized:
-      // (NOT needed for the old calling convension)
+      // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u2(bcp+1);
         method->constants()->cache()->entry_at(index)->set_parameter_size(callee_parameters);
@@ -333,7 +333,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       methodHandle mh(thread, method);
       type = Bytecode_invoke(mh, bci).result_type();
       // since the cache entry might not be initialized:
-      // (NOT needed for the old calling convension)
+      // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u4(bcp+1);
         method->constants()->invokedynamic_cp_cache_entry_at(index)->set_parameter_size(callee_parameters);
@@ -387,7 +387,7 @@ bool AbstractInterpreter::bytecode_should_reexecute(Bytecodes::Code code) {
     case Bytecodes::_tableswitch:
     case Bytecodes::_fast_binaryswitch:
     case Bytecodes::_fast_linearswitch:
-    // recompute condtional expression folded into _if<cond>
+    // recompute conditional expression folded into _if<cond>
     case Bytecodes::_lcmp      :
     case Bytecodes::_fcmpl     :
     case Bytecodes::_fcmpg     :

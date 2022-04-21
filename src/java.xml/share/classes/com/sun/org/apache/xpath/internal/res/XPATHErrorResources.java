@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
- * @LastModified: Nov 2021
+ * @LastModified: Jan 2022
  */
 public class XPATHErrorResources extends ListResourceBundle
 {
@@ -326,6 +326,9 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   public static final String ER_PROPERTY_UNKNOWN = "ER_PROPERTY_UNKNOWN";
   public static final String ER_GETTING_NULL_PROPERTY = "ER_GETTING_NULL_PROPERTY";
   public static final String ER_GETTING_UNKNOWN_PROPERTY = "ER_GETTING_UNKNOWN_PROPERTY";
+  public static final String ER_XPATH_GROUP_LIMIT = "XPATH_GROUP_LIMIT";
+  public static final String ER_XPATH_OPERATOR_LIMIT = "XPATH_OPERATOR_LIMIT";
+
   //END: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
 
   public static final String WG_LOCALE_NAME_NOT_HANDLED =
@@ -859,6 +862,14 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_GETTING_UNKNOWN_PROPERTY,
        "Trying to get the unknown property \"{0}\":{1}#getProperty({0})"},
+
+  { ER_XPATH_GROUP_LIMIT,
+      "JAXP0801001: the compiler encountered an XPath expression containing "
+          + "''{0}'' groups that exceeds the ''{1}'' limit set by ''{2}''."},
+
+  { ER_XPATH_OPERATOR_LIMIT,
+      "JAXP0801002: the compiler encountered an XPath expression containing "
+          + "''{0}'' operators that exceeds the ''{1}'' limit set by ''{2}''."},
 
   //END:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
 

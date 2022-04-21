@@ -246,7 +246,7 @@ class os: AllStatic {
     // which being declared MP when in fact not, is a problem - then
     // the bootstrap routine for the stub generator needs to check
     // the processor count directly and leave the bootstrap routine
-    // in place until called after initialization has ocurred.
+    // in place until called after initialization has occurred.
     return (_processor_count != 1);
   }
 
@@ -550,7 +550,6 @@ class os: AllStatic {
   static char* native_path(char *path);
   static int ftruncate(int fd, jlong length);
   static int fsync(int fd);
-  static int available(int fd, jlong *bytes);
   static int get_fileno(FILE* fp);
   static void flockfile(FILE* fp);
   static void funlockfile(FILE* fp);
