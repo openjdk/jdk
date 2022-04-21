@@ -277,29 +277,16 @@ class UnixPath implements Path {
         return new UnixPath(getFileSystem(), result);
     }
 
-    private static int getLastDotIndex(byte[] b) {
-        int dotIndex = b.length - 1;
-        while (b[dotIndex] != '.') {
-            dotIndex--;
-            if (dotIndex < 0)
-                throw new IndexOutOfBoundsException();
-        }
-        return dotIndex;
-    }
-
     @Override
     public Path replaceExtension(String extension) {
         Objects.requireNonNull(extension, "extension");
 
-        // trim the extension and verify that at most a leading dot is present
-        extension = extension.trim();
-        int dotIndex = extension.lastIndexOf('.');
-        if (dotIndex > 0)
-            throw new IllegalArgumentException();
-
-        // dispense with the leading dot if present
-        if (dotIndex == 0)
-            extension = extension.substring(1);
+        // verify the extension contains neither a leading nor trailing dot
+        if (!extension.isEmpty()) {
+            if (extension.indexOf('.') == 0 ||
+                extension.lastIndexOf('.') == extension.length() - 1)
+                throw new IllegalArgumentException("leading or trailing dot");
+        }
 
         String thisExtension = getExtension(null);
 
@@ -317,8 +304,15 @@ class UnixPath implements Path {
             }
         }
 
+        // find the index of the last dot in the path
+        int dotIndex = path.length - 1;
+        while (path[dotIndex] != '.') {
+            dotIndex--;
+            if (dotIndex < 0)
+                throw new IndexOutOfBoundsException();
+        }
+
         // if the provided extension is empty, strip this path's extension
-        dotIndex = getLastDotIndex(path);
         if (extension.isEmpty()) {
             byte[] result = new byte[dotIndex];
             System.arraycopy(path, 0, result, 0, dotIndex);

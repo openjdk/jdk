@@ -350,49 +350,44 @@ public interface Path
      *
      * @param  extension
      *         the extension to replace this path's current extension;
-     *         leading and trailing space is ignored; may contain at most
-     *         one dot ('.') which if present must be the first character
-     *         that is not a space
+     *         if non-empty, may not contain a leading or trailing dot 
+     *         but is not otherwise checked for validity
      *
      * @return a new path equal to this path but with extension replaced by
      *         that provided
      *
-     * @throws IllegalArgumentException if the provided extension contains a dot
-     *         ('.') which is not the first non-space character of the parameter
+     * @throws IllegalArgumentException if the provided extension contains a
+     *         leading or trailing dot ('.')
      *
      * @since 19
      */
     default Path replaceExtension(String extension) {
         Objects.requireNonNull(extension, "extension");
 
-        // trim the extension and verify that at most a leading dot is present
-        extension = extension.trim();
-        int dotIndex = extension.lastIndexOf('.');
-        if (dotIndex > 0)
-            throw new IllegalArgumentException();
+        // verify the extension contains neither a leading nor trailing dot
+        if (!extension.isEmpty()) {
+            if (extension.indexOf('.') == 0 ||
+                extension.lastIndexOf('.') == extension.length() - 1)
+                throw new IllegalArgumentException("leading or trailing dot");
+        }
 
-        // dispense with the leading dot if present
-        if (dotIndex == 0)
-            extension = extension.substring(1);
-
-        String path = toString();
+        String thisPath = toString();
         String thisExtension = getExtension(null);
+        FileSystem fs = this.getFileSystem();
 
         // if this path has no extension, append that provided
         if (thisExtension == null)
             return extension.isEmpty() ?
-                this : Path.of(path + "." + extension);
+                this : fs.getPath(thisPath + "." + extension);
 
         // if the provided extension is empty, strip this path's extension
-        dotIndex = path.lastIndexOf('.');
+        int dotIndex = thisPath.lastIndexOf('.');
         assert dotIndex != -1;
         if (extension.isEmpty())
-            return Path.of(path.substring(0, dotIndex));
+            return fs.getPath(thisPath.substring(0, dotIndex));
 
         // replace the path's extension with that provided
-        StringBuilder sb = new StringBuilder(path.substring(0, dotIndex + 1));
-        sb.append(extension);
-        return Path.of(sb.toString());
+        return fs.getPath(thisPath.substring(0, dotIndex + 1) + extension);
     }
 
     /**

@@ -108,15 +108,12 @@ final class ZipPath implements Path {
     public Path replaceExtension(String extension) {
         Objects.requireNonNull(extension, "extension");
 
-        // trim the extension and verify that at most a leading dot is present
-        extension = extension.trim();
-        int dotIndex = extension.lastIndexOf('.');
-        if (dotIndex > 0)
-            throw new IllegalArgumentException();
-
-        // dispense with the leading dot if present
-        if (dotIndex == 0)
-            extension = extension.substring(1);
+        // verify the extension contains neither a leading nor trailing dot
+        if (!extension.isEmpty()) {
+            if (extension.indexOf('.') == 0 ||
+                extension.lastIndexOf('.') == extension.length() - 1)
+                throw new IllegalArgumentException("leading or trailing dot");
+        }
 
         String thisExtension = getExtension(null);
 
@@ -125,29 +122,36 @@ final class ZipPath implements Path {
             if (extension.isEmpty()) {
                 return this;
             } else {
-                byte[] ext = encode(this.fs, extension);
+                byte[] ext = normalize(extension);
                 byte[] result = new byte[path.length + 1 + ext.length];
                 System.arraycopy(path, 0, result, 0, path.length);
                 result[path.length] = '.';
                 System.arraycopy(ext, 0, result, path.length + 1, ext.length);
-                return new UnixPath(this.fs, result);
+                return new ZipPath(this.zfs, result);
             }
         }
 
+        // find the index of the last dot in the path
+        int dotIndex = path.length - 1;
+        while (path[dotIndex] != '.') {
+            dotIndex--;
+            if (dotIndex < 0)
+                throw new IndexOutOfBoundsException();
+        }
+
         // if the provided extension is empty, strip this path's extension
-        dotIndex = getLastDotIndex(path);
         if (extension.isEmpty()) {
             byte[] result = new byte[dotIndex];
             System.arraycopy(path, 0, result, 0, dotIndex);
-            return new UnixPath(this.fs, result);
+            return new ZipPath(this.zfs, result);
         }
 
         // replace the path's extension with that provided
-        byte[] ext = encode(this.fs, extension);
+        byte[] ext = normalize(extension);
         byte[] result = new byte[dotIndex + 1 + ext.length];
         System.arraycopy(path, 0, result, 0, dotIndex + 1);
         System.arraycopy(ext, 0, result, dotIndex + 1, ext.length);
-        return new UnixPath(this.fs, result);
+        return new ZipPath(this.zfs, result);
     }
 
     @Override
