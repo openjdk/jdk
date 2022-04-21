@@ -214,7 +214,7 @@ void MetaspaceObjectTypeConstant::serialize(JfrCheckpointWriter& writer) {
 static const char* reference_type_to_string(ReferenceType rt) {
   switch (rt) {
     case REF_NONE: return "None reference";
-    case REF_REFERENCE: return "j.l.r.Reference";
+    case REF_REFERENCE: return "java.lang.ref.Reference";
     case REF_SOFT: return "Soft reference";
     case REF_WEAK: return "Weak reference";
     case REF_FINAL: return "Final reference";
