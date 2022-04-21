@@ -26,6 +26,7 @@
 package com.sun.tools.javac.tree;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.util.List;
 
@@ -115,14 +116,6 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     /* ************************************************************************
      * Traversal methods
      *************************************************************************/
-
-    /** Exception to propagate IOException through visitXYZ methods */
-    private static final class UncheckedIOException extends Error {
-        static final long serialVersionUID = -4032692679158424751L;
-        UncheckedIOException(IOException e) {
-            super(e.getMessage(), e, true, false);
-        }
-    }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitAttribute(AttributeTree node, Void p) {
