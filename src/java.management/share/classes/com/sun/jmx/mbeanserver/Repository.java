@@ -98,7 +98,7 @@ public class Repository {
     /**
      * We use a global reentrant read write lock to protect the repository.
      * This seems safer and more efficient: we are using Maps of Maps,
-     * Guaranteing consistency while using Concurent objects at each level
+     * Guaranteing consistency while using Concurrent objects at each level
      * may be more difficult.
      **/
     private final ReentrantReadWriteLock lock;
@@ -377,7 +377,7 @@ public class Repository {
      *                can be stored in the repository with that {@code name}.
      *                If {@link RegistrationContext#registering()
      *                context.registering()} throws an exception, the
-     *                operation is abandonned, the MBean is not added to the
+     *                operation is abandoned, the MBean is not added to the
      *                repository, and a {@link RuntimeOperationsException}
      *                is thrown.
      */

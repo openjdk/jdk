@@ -34,10 +34,10 @@ public interface ELFSymbol {
     /** Binding secifying that the symbol resembles a global symbol, but has
      * a lower precedence. */
     public static final int BINDING_WEAK = 2;
-    /** Lower bound binding values reserverd for processor specific
+    /** Lower bound binding values reserved for processor specific
      * semantics. */
     public static final int BINDING_LOPROC = 13;
-    /** Upper bound binding values reserverd for processor specific
+    /** Upper bound binding values reserved for processor specific
      * semantics. */
     public static final int BINDING_HIPROC = 15;
 

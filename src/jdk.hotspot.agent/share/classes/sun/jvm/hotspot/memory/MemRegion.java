@@ -33,7 +33,7 @@ import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
-/** A very simple data structure representing a contigous region of
+/** A very simple data structure representing a contiguous region of
     address space. */
 
 public class MemRegion implements Cloneable {

@@ -48,7 +48,7 @@ public class ScopeDesc {
   private int     localsDecodeOffset;
   private int     expressionsDecodeOffset;
   private int     monitorsDecodeOffset;
-  /** Scalar replaced bjects pool */
+  /** Scalar replaced objects pool */
   private List<ObjectValue> objects;
 
   private ScopeDesc(NMethod code, int decodeOffset, List<ObjectValue> objects, boolean reexecute) {

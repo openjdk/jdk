@@ -116,7 +116,7 @@ public interface Location extends Mirror, Comparable<Location> {
     long codeIndex();
 
     /**
-     * Gets an identifing name for the source corresponding to
+     * Gets an identifying name for the source corresponding to
      * this location.
      * <P>
      * This method is equivalent to
@@ -131,7 +131,7 @@ public interface Location extends Mirror, Comparable<Location> {
     String sourceName() throws AbsentInformationException;
 
     /**
-     * Gets an identifing name for the source corresponding to
+     * Gets an identifying name for the source corresponding to
      * this location. Interpretation of this string is the
      * responsibility of the source repository mechanism.
      * <P>

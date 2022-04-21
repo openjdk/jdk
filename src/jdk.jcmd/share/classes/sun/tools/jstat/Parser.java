@@ -532,7 +532,7 @@ public class Parser {
         nextToken();
 
         /*
-         * this search stops on the first occurance of an option
+         * this search stops on the first occurrence of an option
          * statement with a name matching the given option. Any
          * duplicate options are ignored.
          */

@@ -282,7 +282,7 @@ public class ObjectHistogramPanel extends JPanel implements ActionListener {
      * Find and select the row that contains the text in the find field starting
      * from the current selected row.
      *
-     * Uses a linear search from the current row. Could be optimized withing the
+     * Uses a linear search from the current row. Could be optimized within the
      * model and internal representation.
      */
     private void findObject() {

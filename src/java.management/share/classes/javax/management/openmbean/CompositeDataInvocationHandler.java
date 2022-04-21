@@ -164,7 +164,7 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
                 return equals(proxy, args[0]);
             else {
                 /* Either someone is calling invoke by hand, or
-                   it is a non-final method from Object overriden
+                   it is a non-final method from Object overridden
                    by the generated Proxy.  At the time of writing,
                    the only non-final methods in Object that are not
                    handled above are finalize and clone, and these

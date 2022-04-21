@@ -249,7 +249,7 @@ public class TabularType extends OpenType<TabularData> {
     }
 
 
-    /* *** Methods overriden from class Object *** */
+    /* *** Methods overridden from class Object *** */
 
     /**
      * Compares the specified <code>obj</code> parameter with this <code>TabularType</code> instance for equality.
@@ -301,7 +301,7 @@ public class TabularType extends OpenType<TabularData> {
             return false;
         }
 
-        // All tests for equality were successfull
+        // All tests for equality were successful
         //
         return true;
     }

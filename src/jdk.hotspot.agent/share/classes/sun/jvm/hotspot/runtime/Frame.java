@@ -599,7 +599,7 @@ public abstract class Frame implements Cloneable {
         // => process callee's arguments
         //
         // Note: The expression stack can be empty if an exception
-        //       occured during method resolution/execution. In all
+        //       occurred during method resolution/execution. In all
         //       cases we empty the expression stack completely be-
         //       fore handling the exception (the exception handling
         //       code in the interpreter calls a blocking runtime

@@ -125,7 +125,7 @@ class SharedMemoryConnection extends Connection {
          * Check that the byte array contains the complete packet
          */
         if (len > b.length) {
-            throw new IllegalArgumentException("length mis-match");
+            throw new IllegalArgumentException("length mismatch");
         }
 
         try {

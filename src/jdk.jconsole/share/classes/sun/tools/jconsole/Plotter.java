@@ -221,7 +221,7 @@ public class Plotter extends JComponent
     }
 
     /**
-     * @param minutes the displayed time range in minutes, or -1 to diaplay all data
+     * @param minutes the displayed time range in minutes, or -1 to display all data
      */
     public void setViewRange(int minutes) {
         if (minutes != viewRange) {

@@ -584,7 +584,7 @@ private jboolean isValid(void);
 
     /**
      * Until the next stratum section, everything after this
-     * is in stratumId - so, store the current indicies.
+     * is in stratumId - so, store the current indices.
      */
     private void storeStratum(String stratumId) {
         /* remove redundant strata */

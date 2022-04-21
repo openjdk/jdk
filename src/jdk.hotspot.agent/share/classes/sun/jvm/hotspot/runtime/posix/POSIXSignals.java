@@ -48,7 +48,7 @@ public class POSIXSignals {
     "SIGPWR",     /* power-fail restart */
     "SIGWINCH",   /* window size change */
     "SIGURG",     /* urgent socket condition */
-    "SIGPOLL",    /* pollable event occured */
+    "SIGPOLL",    /* pollable event occurred */
     "SIGSTOP",    /* stop (cannot be caught or ignored) */
     "SIGTSTP",    /* user stop requested from tty */
     "SIGCONT",    /* stopped process has been continued */

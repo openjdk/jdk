@@ -132,7 +132,7 @@ public class AttributeValueExp implements ValueExp  {
      * obtain an attribute value is {@link QueryEval#getMBeanServer()}.
      */
     /* There is no need for this method, because if a query is being
-       evaluted an AttributeValueExp can only appear inside a QueryExp,
+       evaluated an AttributeValueExp can only appear inside a QueryExp,
        and that QueryExp will itself have done setMBeanServer.  */
     @Deprecated
     @Override

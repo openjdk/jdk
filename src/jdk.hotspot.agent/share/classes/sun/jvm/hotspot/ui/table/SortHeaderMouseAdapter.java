@@ -34,7 +34,7 @@ import javax.swing.table.TableColumnModel;
 import com.sun.java.swing.ui.CommonUI;
 
 /**
- * A mouse adapater which is attached to the header of a JTable. It listens
+ * A mouse adapter which is attached to the header of a JTable. It listens
  * for mouse clicks on a column and sorts that column.
  */
 public class SortHeaderMouseAdapter extends MouseAdapter {

@@ -121,7 +121,7 @@ public class FinalizerInfo extends Tool {
             }
 
             /*
-             * Sort results - decending order by total size
+             * Sort results - descending order by total size
              */
             ArrayList<ObjectHistogramElement> list = new ArrayList<>();
             list.addAll(map.values());

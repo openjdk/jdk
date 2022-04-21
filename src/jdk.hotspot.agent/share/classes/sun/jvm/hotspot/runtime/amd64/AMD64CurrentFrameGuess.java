@@ -95,7 +95,7 @@ public class AMD64CurrentFrameGuess {
     }
 
     // Either frame->method is not a Method* or frame->bcp is not valid. That means either
-    // we have pushed the new interpreter frame, but have not intialized it yet, or
+    // we have pushed the new interpreter frame, but have not initialized it yet, or
     // we have yet to push the new interpreter frame, and the "current" frame is not an
     // interpreter frame. Figure out which is the case.
 

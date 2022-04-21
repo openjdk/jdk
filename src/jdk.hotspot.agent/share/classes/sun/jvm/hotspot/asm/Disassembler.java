@@ -138,7 +138,7 @@ public class Disassembler {
    }
 
    // This is called from the native code to process various markers
-   // in the dissassembly.
+   // in the disassembly.
    private long handleEvent(InstructionVisitor visitor, String event, long arg) {
       if (match(event, "insn")) {
          try {

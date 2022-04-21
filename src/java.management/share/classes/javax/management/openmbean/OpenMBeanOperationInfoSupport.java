@@ -305,7 +305,7 @@ public class OpenMBeanOperationInfoSupport
             return false;
         }
 
-        // All tests for equality were successfull
+        // All tests for equality were successful
         //
         return true;
     }

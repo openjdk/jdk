@@ -666,7 +666,7 @@ public abstract class VirtualMachine {
 
     /**
      * Returns a hash-code value for this VirtualMachine. The hash
-     * code is based upon the VirtualMachine's components, and satifies
+     * code is based upon the VirtualMachine's components, and satisfies
      * the general contract of the {@link java.lang.Object#hashCode()
      * Object.hashCode} method.
      *

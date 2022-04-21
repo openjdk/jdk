@@ -42,7 +42,7 @@ public abstract class AbstractTreeTableModel implements TreeTableModel {
     }
 
     //
-    // Default implmentations for methods in the TreeModel interface.
+    // Default implementations for methods in the TreeModel interface.
     //
 
     public Object getRoot() {

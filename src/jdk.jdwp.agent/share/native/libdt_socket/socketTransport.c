@@ -740,7 +740,7 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
     }
 
     if (listenAddr == NULL) {
-        // No address of preferred addres family found, grab the fist one.
+        // No address of preferred address family found, grab the fist one.
         listenAddr = &(addrInfo[0]);
     }
 

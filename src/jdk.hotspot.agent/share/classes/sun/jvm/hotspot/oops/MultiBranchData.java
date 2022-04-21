@@ -36,7 +36,7 @@ import sun.jvm.hotspot.utilities.*;
 // A MultiBranchData is used to access profiling information for
 // a multi-way branch (*switch bytecodes).  It consists of a series
 // of (count, displacement) pairs, which count the number of times each
-// case was taken and specify the data displacment for each branch target.
+// case was taken and specify the data displacement for each branch target.
 public class MultiBranchData extends ArrayData {
   static final int   defaultCountOffSet = 0;
   static final int     defaultDisaplacementOffSet = 1;

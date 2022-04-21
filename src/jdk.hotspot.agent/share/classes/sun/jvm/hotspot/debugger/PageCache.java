@@ -28,7 +28,7 @@ package sun.jvm.hotspot.debugger;
     size and number of pages. It is configured with a PageFetcher
     which enables it to transparently satisfy requests which span
     multiple pages when one or more of those pages is not in the
-    cache. It is generic enough to be sharable among debugger
+    cache. It is generic enough to be shareable among debugger
     implementations. */
 
 import sun.jvm.hotspot.utilities.*;

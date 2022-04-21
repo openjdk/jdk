@@ -56,7 +56,7 @@ public class LinuxSignals {
     "SIGVTALRM",  /* virtual timer expired */
     "SIGPROF",    /* profiling timer expired */
     "SIGWINCH",   /* window size change */
-    "SIGPOLL",    /* pollable event occured */
+    "SIGPOLL",    /* pollable event occurred */
     "SIGPWR",     /* power-fail restart */
     "SIGSYS"
   };

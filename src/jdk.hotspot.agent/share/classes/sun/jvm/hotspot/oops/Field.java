@@ -116,7 +116,7 @@ public class Field {
   public boolean hasInitialValue()           { return holder.getFieldInitialValueIndex(fieldIndex) != 0;    }
 
   //
-  // Following acccessors are for named, non-VM fields only
+  // Following accessors are for named, non-VM fields only
   //
   public boolean isPublic()                  { return accessFlags.isPublic(); }
   public boolean isPrivate()                 { return accessFlags.isPrivate(); }

@@ -742,7 +742,7 @@ public class TabularDataSupport
             }
         }
 
-        // All tests for equality were successfull
+        // All tests for equality were successful
         //
         return true;
     }

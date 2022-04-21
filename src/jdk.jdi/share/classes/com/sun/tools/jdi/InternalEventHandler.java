@@ -98,7 +98,7 @@ public class InternalEventHandler implements Runnable
                 /*
                  * If any of these exceptions below occurs, there is some
                  * sort of programming error that should be addressed in
-                 * the JDI implemementation. However, it would cripple
+                 * the JDI implementation. However, it would cripple
                  * the implementation if we let this thread die due to
                  * one of them. So, a notification of the exception is
                  * given and we attempt to continue.

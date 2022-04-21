@@ -158,7 +158,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
         }
 
         /*
-         * Othewise, only one thread is being resumed:
+         * Otherwise, only one thread is being resumed:
          *   if it is us,
          *      we have already done our processThreadAction to notify our
          *      listeners when we processed the resume.

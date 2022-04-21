@@ -25,7 +25,7 @@
 package sun.jvm.hotspot.debugger.posix.elf;
 
 /**
- * This is the interface definintion for a ProgramHeader in an ELF file.
+ * This is the interface definition for a ProgramHeader in an ELF file.
  * Program headers contain system information necessary for preparing a program
  * for execution.
  */

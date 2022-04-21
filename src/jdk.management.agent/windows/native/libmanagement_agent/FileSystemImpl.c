@@ -311,7 +311,7 @@ JNIEXPORT jboolean JNICALL Java_jdk_internal_agent_FileSystemImpl_isAccessUserOn
                 } else {
                     /*
                      * If acl is NULL it means that an exception was thrown
-                     * or there is "all acess" to the file.
+                     * or there is "all access" to the file.
                      */
                     res = JNI_FALSE;
                 }

@@ -163,7 +163,7 @@ public class TargetVM implements Runnable {
                     // Whoa! a reply without a sender. Problem.
                     // FIX ME! Need to post an error.
 
-                    System.err.println("Recieved reply with no sender!");
+                    System.err.println("Received reply with no sender!");
                     continue;
                 }
                 p2.errorCode = p.errorCode;

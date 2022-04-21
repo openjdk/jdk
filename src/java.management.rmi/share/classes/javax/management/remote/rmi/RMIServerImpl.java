@@ -414,7 +414,7 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
         // Loop to close all clients
         while (true) {
             synchronized (clientList) {
-                if (debug) logger.debug("close","droping dead references");
+                if (debug) logger.debug("close","dropping dead references");
                 dropDeadReferences();
 
                 if (debug) logger.debug("close","client count: "+clientList.size());

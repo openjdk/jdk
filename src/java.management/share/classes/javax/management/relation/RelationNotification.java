@@ -575,7 +575,7 @@ public class RelationNotification extends Notification {
             throw new InvalidObjectException("Invalid object read");
         }
 
-        // assign deserialized vaules to object fields
+        // assign deserialized values to object fields
         relationObjName = safeGetObjectName(tmpRelationObjName);
         newRoleValue = safeGetObjectNameList(tmpNewRoleValue);
         oldRoleValue = safeGetObjectNameList(tmpOldRoleValue);

@@ -57,7 +57,7 @@ import sun.jvm.hotspot.runtime.*;
  * <ul>
  * <li>Java byte, int, short, long - GXL int attribute
  * <li>Java float, double - GXL float attribute
- * <li>Java boolean - GXL bool atttribute
+ * <li>Java boolean - GXL bool attribute
  * <li>Java char - GXL string attribute
  * </ul>
  *

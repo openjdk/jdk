@@ -84,7 +84,7 @@ public class MonitoredHostProvider extends MonitoredHost {
     /**
      * {@inheritDoc}.
      * <p>
-     * Note - the <em>file:</em> protocol currenly does not support
+     * Note - the <em>file:</em> protocol currently does not support
      * registration or notification of event listeners. This method
      * silently ignores the add request.
      */
@@ -95,7 +95,7 @@ public class MonitoredHostProvider extends MonitoredHost {
     /**
      * {@inheritDoc}.
      * <p>
-     * Note - the <em>file:</em> protocol currenly does not support
+     * Note - the <em>file:</em> protocol currently does not support
      * registration or notification of event listeners. This method
      * silently ignores the remove request.
      */

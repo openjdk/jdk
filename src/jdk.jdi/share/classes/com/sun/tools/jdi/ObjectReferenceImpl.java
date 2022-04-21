@@ -417,7 +417,7 @@ public class ObjectReferenceImpl extends ValueImpl
         }
 
         /*
-         * There is an implict VM-wide suspend at the conclusion
+         * There is an implicit VM-wide suspend at the conclusion
          * of a normal (non-single-threaded) method invoke
          */
         if ((options & INVOKE_SINGLE_THREADED) == 0) {

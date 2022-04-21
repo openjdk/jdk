@@ -98,7 +98,7 @@ public class RMIJRMPServerImpl extends RMIServerImpl {
         this.env = (env == null) ? Collections.<String, Object>emptyMap() : env;
 
         // This attribute was represented by RMIConnectorServer.CREDENTIALS_TYPES.
-        // This attribute is superceded by
+        // This attribute is superseded by
         // RMIConnectorServer.CREDENTIALS_FILTER_PATTERN.
         // Retaining this for backward compatibility.
         String[] credentialsTypes

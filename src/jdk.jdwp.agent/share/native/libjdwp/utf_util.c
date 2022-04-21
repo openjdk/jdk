@@ -35,7 +35,7 @@
 #define UTF_ERROR(m) utfError(__FILE__, __LINE__,  m)
 #define UTF_ASSERT(x) ( (x)==0 ? UTF_ERROR("ASSERT ERROR " #x) : (void)0 )
 
-// Platform independed part
+// Platform independent part
 
 static void utfError(char *file, int line, char *message) {
     (void)fprintf(stderr, "UTF ERROR [\"%s\":%d]: %s\n", file, line, message);
@@ -487,7 +487,7 @@ static int iconvConvert(conv_direction drn, char *bytes, size_t len, char *outpu
         }
 
         if (codeset == NULL) {
-           // Not able to intialize process locale from platform one.
+           // Not able to initialize process locale from platform one.
            codeset = (char *) -1;
         }
     }

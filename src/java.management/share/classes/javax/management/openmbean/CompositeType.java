@@ -346,7 +346,7 @@ public class CompositeType extends OpenType<CompositeData> {
     }
 
 
-    /* *** Methods overriden from class Object *** */
+    /* *** Methods overridden from class Object *** */
 
     /**
      * Compares the specified <code>obj</code> parameter with this <code>CompositeType</code> instance for equality.
@@ -392,7 +392,7 @@ public class CompositeType extends OpenType<CompositeData> {
             return false;
         }
 
-        // All tests for equality were successfull
+        // All tests for equality were successful
         //
         return true;
     }

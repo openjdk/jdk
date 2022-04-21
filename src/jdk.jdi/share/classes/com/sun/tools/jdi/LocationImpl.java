@@ -132,7 +132,7 @@ public class LocationImpl extends MirrorImpl implements Location {
     LineInfo getLineInfo(SDE.Stratum stratum) {
         LineInfo lineInfo;
 
-        /* base stratum is done slighly differently */
+        /* base stratum is done slightly differently */
         if (stratum.isJava()) {
             return getBaseLineInfo(stratum);
         }

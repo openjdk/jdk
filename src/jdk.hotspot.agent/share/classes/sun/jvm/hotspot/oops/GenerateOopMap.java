@@ -40,7 +40,7 @@ public class GenerateOopMap {
   // Used for debugging this code
   private static final boolean DEBUG = false;
 
-  // These two should be removed. But requires som code to be cleaned up
+  // These two should be removed. But requires some code to be cleaned up
   private static final int MAXARGSIZE     =   256;      // This should be enough
   private static final int MAX_LOCAL_VARS = 65536;      // 16-bit entry
   private static final boolean TraceMonitorMismatch = true;
@@ -163,7 +163,7 @@ public class GenerateOopMap {
     }
   }
 
-  /** Contains maping between jsr targets and there return addresses.
+  /** Contains mapping between jsr targets and their return addresses.
       One-to-many mapping. */
   static class RetTableEntry {
     private static int _init_nof_jsrs; // Default size of jsrs list
@@ -824,7 +824,7 @@ public class GenerateOopMap {
         if (Assert.ASSERTS_ENABLED) {
           Assert.that(!fall_through, "cannot be set if ret instruction");
         }
-        // Automatically handles 'wide' ret indicies
+        // Automatically handles 'wide' ret indices
         retJumpTargetsDo(itr, new JumpClosure() {
             public void process(GenerateOopMap c, int bcpDelta, int[] data) {
               c.mergeState(bcpDelta, data);
@@ -1027,7 +1027,7 @@ public class GenerateOopMap {
 
         bbNo++;
       }
-      // Remember prevous bci.
+      // Remember previous bci.
       prev_bci = bci;
     }
     // Set
@@ -1700,7 +1700,7 @@ public class GenerateOopMap {
                          ", nameAndTypeIdx = " + nameAndTypeIdx + ", signatureIdx = " + signatureIdx + ", bci = " + bci);
     }
 
-    // Parse signature (espcially simple for fields)
+    // Parse signature (especially simple for fields)
     // The signature is UFT8 encoded, but the first char is always ASCII for signatures.
     char sigch = (char) signature.getByteAt(0);
     CellTypeState[] temp = new CellTypeState[4];
@@ -2006,7 +2006,7 @@ public class GenerateOopMap {
     return new String(_state_vec_buf, 0, len);
   }
 
-  // Helper method. Can be used in subclasses to fx. calculate gc_points. If the current instuction
+  // Helper method. Can be used in subclasses to fx. calculate gc_points. If the current instruction
   // is a control transfer, then calls the jmpFct all possible destinations.
   void  retJumpTargetsDo                    (BytecodeStream bcs, JumpClosure closure, int varNo, int[] data) {
     CellTypeState ra = vars().get(varNo);

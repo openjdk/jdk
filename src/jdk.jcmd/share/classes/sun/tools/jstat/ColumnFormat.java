@@ -53,7 +53,7 @@ public class ColumnFormat extends OptionFormat {
     public void validate() throws ParserException {
 
         // if we allow column spanning, then this method must change. it
-        // should allow null data statments
+        // should allow null data statements
 
         if (expression == null) {
             // current policy is that a data statement must be specified
@@ -66,7 +66,7 @@ public class ColumnFormat extends OptionFormat {
             throw new ParserException("Missing header statement in column " + number);
         }
         if (format == null) {
-            // if no formating is specified, then the format is set to output
+            // if no formatting is specified, then the format is set to output
             // the raw data.
             format="0";
         }

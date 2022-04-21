@@ -62,7 +62,7 @@ abstract class EventRequestSpec {
 
     /**
      * @return If this EventRequestSpec matches the 'refType'
-     * return the cooresponding EventRequest.  Otherwise
+     * return the corresponding EventRequest.  Otherwise
      * return null.
      */
     synchronized EventRequest resolve(ClassPrepareEvent event) throws Exception {

@@ -165,7 +165,7 @@ public abstract class AbstractPerfDataBufferPrologue {
 
     /**
      * Get the accessible flag. If supported, it indicates that the shared
-     * memory region is sufficiently initialized for client acccess.
+     * memory region is sufficiently initialized for client access.
      *
      * @return boolean - the initialized status
      * @see #supportsAccessible()

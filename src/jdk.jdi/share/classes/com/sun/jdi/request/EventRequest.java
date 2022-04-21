@@ -142,7 +142,7 @@ public interface EventRequest extends Mirror {
      * reported. In either case subsequent events are never reported for
      * this request.
      *
-     * @param count the number of ocurrences before generating an event.
+     * @param count the number of occurrences before generating an event.
      * @throws InvalidRequestStateException if this request is currently
      * enabled or has been deleted.
      * Filters may be added only to disabled requests.

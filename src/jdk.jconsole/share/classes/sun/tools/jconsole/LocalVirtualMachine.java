@@ -195,7 +195,7 @@ public class LocalVirtualMachine {
             // Check if the VM is attachable but not included in the list
             // if it's running with a different security context.
             // For example, Windows services running
-            // local SYSTEM account are attachable if you have Adminstrator
+            // local SYSTEM account are attachable if you have Administrator
             // privileges.
             boolean attachable = false;
             String address = null;

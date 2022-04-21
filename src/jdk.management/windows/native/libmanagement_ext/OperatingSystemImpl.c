@@ -959,7 +959,7 @@ bindPdhFunctionPointers(HMODULE h) {
     assert(h);
     assert(GetCurrentThreadId() == initializationLock.owningThread);
 
-    /* The 'A' at the end means the ANSI (not the UNICODE) vesions of the methods */
+    /* The 'A' at the end means the ANSI (not the UNICODE) versions of the methods */
     PdhAddCounter_i         = (PdhAddCounterFunc)GetProcAddress(h, "PdhAddCounterA");
     PdhOpenQuery_i         = (PdhOpenQueryFunc)GetProcAddress(h, "PdhOpenQueryA");
     PdhCloseQuery_i         = (PdhCloseQueryFunc)GetProcAddress(h, "PdhCloseQuery");

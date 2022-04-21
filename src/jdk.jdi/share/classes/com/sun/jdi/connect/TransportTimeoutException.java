@@ -35,7 +35,7 @@ import com.sun.jdi.connect.spi.TransportService;
  * <p> When attaching to a target VM, using {@link
  * AttachingConnector#attach attach} this
  * exception may be thrown if the connector supports a timeout
- * {@link Connector.Argument connector argument}. Similiarly,
+ * {@link Connector.Argument connector argument}. Similarly,
  * when waiting to accept a connection from a target VM,
  * using {@link ListeningConnector#accept accept} this
  * exception may be thrown if the connector supports a

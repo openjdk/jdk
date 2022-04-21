@@ -35,7 +35,7 @@
 typedef struct InvokeRequest {
     jboolean pending;      /* Is an invoke requested? */
     jboolean started;      /* Is an invoke happening? */
-    jboolean available;    /* Is the thread in an invokable state? */
+    jboolean available;    /* Is the thread in an invocable state? */
     jboolean detached;     /* Has the requesting debugger detached? */
     jint id;
     /* Input */

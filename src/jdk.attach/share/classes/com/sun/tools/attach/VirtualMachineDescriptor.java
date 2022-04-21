@@ -142,7 +142,7 @@ public class VirtualMachineDescriptor {
 
     /**
      * Returns a hash-code value for this VirtualMachineDescriptor. The hash
-     * code is based upon the descriptor's components, and satifies
+     * code is based upon the descriptor's components, and satisfies
      * the general contract of the {@link java.lang.Object#hashCode()
      * Object.hashCode} method.
      *

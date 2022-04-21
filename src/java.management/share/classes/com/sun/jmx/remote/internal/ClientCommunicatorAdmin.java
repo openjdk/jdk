@@ -169,7 +169,7 @@ public abstract class ClientCommunicatorAdmin {
     }
 
 // --------------------------------------------------------------
-// private varaibles
+// private variables
 // --------------------------------------------------------------
     private class Checker implements Runnable {
         public void run() {

@@ -276,7 +276,7 @@ public final class HashedPasswordManager {
                     hasClearPasswords.set(true);
                     if (logger.debugOn()) {
                         logger.debug("loadPasswords",
-                                "Found atleast one clear password");
+                                "Found at least one clear password");
                     }
                     break;
                 }

@@ -479,7 +479,7 @@ public class TTYResources extends java.util.ListResourceBundle {
              "    -tserver          run the application in the HotSpot(TM) Server Compiler\n" +
              "    -R<option>        forward <option> to debuggee process if launched by jdb, otherwise ignored\n" +
              "\n" +
-             "options forwarded to debuggee process if lauched by jdb (shorthand instead of using -R):\n" +
+             "options forwarded to debuggee process if launched by jdb (shorthand instead of using -R):\n" +
              "    -v -verbose[:class|gc|jni]\n" +
              "                      turn on verbose mode\n" +
              "    -D<name>=<value>  set a system property\n" +

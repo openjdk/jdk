@@ -267,7 +267,7 @@ public class EnvHelp {
     public static int getNotifBufferSize(Map<String, ?> env) {
         int defaultQueueSize = 1000; // default value
 
-        // keep it for the compability for the fix:
+        // keep it for the compatibility for the fix:
         // 6174229: Environment parameter should be notification.buffer.size
         // instead of buffer.size
         final String oldP = "jmx.remote.x.buffer.size";

@@ -49,7 +49,7 @@ public interface Event extends Mirror {
     /**
      * @return The {@link EventRequest} that requested this event.
      * Some events (eg. {@link VMDeathEvent}) may not have
-     * a cooresponding request and thus will return null.
+     * a corresponding request and thus will return null.
      */
     EventRequest request();
 }

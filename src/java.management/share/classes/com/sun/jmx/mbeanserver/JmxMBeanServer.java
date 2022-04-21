@@ -1429,7 +1429,7 @@ public final class JmxMBeanServer
 
         // This constructor happens to disregard the value of the interceptors
         // flag - that is, it always uses the default value - false.
-        // This is admitedly a bug, but we chose not to fix it for now
+        // This is admittedly a bug, but we chose not to fix it for now
         // since we would rather not have anybody depending on the Sun private
         // interceptor APIs - which is most probably going to be removed and
         // replaced by a public (javax) feature in the future.

@@ -437,7 +437,7 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
                     if (isDisposed()) {
                         if (logger.debugOn())
                             logger.debug("fetchNotifications",
-                                         "dispose callled, no wait");
+                                         "dispose called, no wait");
                         return new NotificationResult(earliestSequenceNumber(),
                                                   nextSequenceNumber(),
                                                   new TargetedNotification[0]);

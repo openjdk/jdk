@@ -94,7 +94,7 @@ import sun.reflect.misc.ReflectUtil;
  * MBean Server will always have the same interface here.)
  *
  * The MBeanInfo in this second cache will be the MBeanInfo from the
- * PerInterface cache for the given itnerface, but with the
+ * PerInterface cache for the given interface, but with the
  * getClassName() having the concrete class's name, and the public
  * constructors based on the concrete class's constructors.  This
  * MBeanInfo can be shared between all instances of the concrete class

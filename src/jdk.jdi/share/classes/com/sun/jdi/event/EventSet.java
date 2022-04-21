@@ -90,7 +90,7 @@ import com.sun.jdi.request.EventRequest;
  *     <UL>
  *     <LI>{@link ModificationWatchpointEvent}
  *     </UL>
- * <LI>Only with other ExceptionEvents for the same exception occurrance:
+ * <LI>Only with other ExceptionEvents for the same exception occurrence:
  *     <UL>
  *     <LI>{@link ExceptionEvent}
  *     </UL>

@@ -623,7 +623,7 @@ public abstract class MappedMXBeanType {
                     });
             } catch (PrivilegedActionException e) {
                 // ignore NoSuchMethodException since we allow classes
-                // that has no from method to be embeded in another class.
+                // that has no from method to be embedded in another class.
             }
 
             if (COMPOSITE_DATA_CLASS.isAssignableFrom(c)) {

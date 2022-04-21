@@ -43,7 +43,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /*
  * A transport service based on a TCP connection between the
- * debugger and debugee.
+ * debugger and debuggee.
  */
 
 public class SocketTransportService extends TransportService {

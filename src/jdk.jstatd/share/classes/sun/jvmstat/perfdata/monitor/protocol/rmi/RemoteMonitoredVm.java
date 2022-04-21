@@ -270,7 +270,7 @@ public class RemoteMonitoredVm extends AbstractMonitoredVm {
                 System.err.println("Exception updating monitors for "
                                    + getVmIdentifier());
                 e.printStackTrace();
-                // XXX: should we cancle the notifierTask here?
+                // XXX: should we cancel the notifierTask here?
                 // this.cancel();
             }
         }

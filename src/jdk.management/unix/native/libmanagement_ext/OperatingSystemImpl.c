@@ -311,7 +311,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getOpenFileDescriptorCount0
         return -1;
     }
 
-    // allocate memory to hold the fd information (we don't acutally use this information
+    // allocate memory to hold the fd information (we don't actually use this information
     // but need it to get the number of open files)
     fds_size = bsdinfo.pbi_nfiles * sizeof(struct proc_fdinfo);
     fds = malloc(fds_size);

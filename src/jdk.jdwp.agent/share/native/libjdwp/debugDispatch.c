@@ -96,7 +96,7 @@ debugDispatch_getHandler(int cmdSetNum, int cmdNum, const char **cmdSetName_p, c
 {
     CommandSet *cmd_set;
     *cmdSetName_p = "<Invalid CommandSet>";
-    *cmdName_p = "<Unkown Command>";
+    *cmdName_p = "<Unknown Command>";
 
     if (cmdSetNum > JDWP_HIGHEST_COMMAND_SET) {
         return NULL;

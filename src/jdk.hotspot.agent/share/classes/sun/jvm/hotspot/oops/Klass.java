@@ -172,7 +172,7 @@ public class Klass extends Metadata implements ClassConstants {
     return isSubclassOf(k);
   }
 
-  // Find LCA (Least Common Ancester) in class heirarchy
+  // Find LCA (Least Common Ancester) in class hierarchy
   public Klass lca( Klass k2 ) {
     Klass k1 = this;
     while ( true ) {

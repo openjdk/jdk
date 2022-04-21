@@ -111,7 +111,7 @@ typedef struct SharedMemoryTransport {
 } SharedMemoryTransport;
 
 /*
- * Access must be syncronized.  Holds one shared
+ * Access must be synchronized.  Holds one shared
  * memory buffer and its state.
  */
 typedef struct SharedStream {

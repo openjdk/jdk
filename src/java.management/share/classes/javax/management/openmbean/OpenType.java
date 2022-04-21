@@ -369,7 +369,7 @@ public abstract class OpenType<T> implements Serializable {
         return this.equals(ot);
     }
 
-    /* *** Methods overriden from class Object *** */
+    /* *** Methods overridden from class Object *** */
 
     /**
      * Compares the specified <code>obj</code> parameter with this
