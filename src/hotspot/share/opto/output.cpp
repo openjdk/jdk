@@ -1884,13 +1884,13 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       }
       if (C->method() != NULL) {
         tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", C->compile_id());
-        tty->print("%s", method_metadata_str.as_string());
+        tty->print_raw(method_metadata_str.as_string());
       } else if (C->stub_name() != NULL) {
         tty->print_cr("----------------------------- RuntimeStub %s -------------------------------", C->stub_name());
       }
       tty->cr();
       tty->print_cr("------------------------ OptoAssembly for Compile_id = %d -----------------------", C->compile_id());
-      tty->print("%s", dump_asm_str.as_string());
+      tty->print_raw(dump_asm_str.as_string());
       tty->print_cr("--------------------------------------------------------------------------------");
       if (xtty != NULL) {
         xtty->tail("opto_assembly");
