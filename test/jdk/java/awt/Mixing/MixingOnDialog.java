@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,14 @@
  * summary:  Tests whether awt.Button and swing.JButton mix correctly
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.Button;
+import java.awt.Dialog;
+import java.awt.Frame;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+import javax.swing.JButton;
+
 import test.java.awt.regtesthelpers.Util;
 
 
@@ -76,14 +81,14 @@ public class MixingOnDialog
                 );
 
         // Overlap the buttons
-        heavy.setBounds(30, 30, 200, 200);
-        light.setBounds(10, 10, 50, 50);
+        heavy.setBounds(230, 230, 200, 200);
+        light.setBounds(210, 210, 50, 50);
 
         // Put the components into the frame
         d.setLayout(null);
         d.add(light);
         d.add(heavy);
-        d.setBounds(50, 50, 400, 400);
+        d.setBounds(250, 250, 400, 400);
         d.setVisible(true);
 
 
@@ -98,8 +103,8 @@ public class MixingOnDialog
         robot.mouseMove(heavyLoc.x + 5, heavyLoc.y + 5);
 
         // Now perform the click at this point
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         Util.waitForIdle(robot);
 
         // If the buttons are correctly mixed, the test sequence
