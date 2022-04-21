@@ -208,7 +208,6 @@ java/awt/TrayIcon/ModalityTest/ModalityTest.java 8150540 windows-all,macosx-all
 java/awt/TrayIcon/MouseEventMask/MouseEventMaskTest.java 8150540 windows-all
 java/awt/TrayIcon/MouseMovedTest/MouseMovedTest.java 8150540 windows-all
 java/awt/TrayIcon/SecurityCheck/FunctionalityCheck/FunctionalityCheck.java 8150540 windows-all
-java/awt/TrayIcon/SystemTrayInstance/SystemTrayInstanceTest.java 8193543 linux-all
 java/awt/TrayIcon/TrayIconEventModifiers/TrayIconEventModifiersTest.java 8150540 windows-all
 java/awt/TrayIcon/TrayIconEvents/TrayIconEventsTest.java 8150540 windows-all
 java/awt/TrayIcon/TrayIconMouseTest/TrayIconMouseTest.java 8150540 windows-all
