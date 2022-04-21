@@ -169,10 +169,10 @@ public final class RIXMLProvider extends SyncProvider {
     /**
      * Returns the <code>SyncProvider</code> grade of syncrhonization that
      * <code>RowSet</code> object instances can expect when using this
-     * implementation. As this implementation provides no synchonization
+     * implementation. As this implementation provides no synchronization
      * facilities to the XML data source, the lowest grade is returned.
      *
-     * @return the <code>SyncProvider</code> syncronization grade of this
+     * @return the <code>SyncProvider</code> synchronization grade of this
      *     provider; must be one of the following constants:
      *       <PRE>
      *          SyncProvider.GRADE_NONE,
@@ -236,7 +236,7 @@ public final class RIXMLProvider extends SyncProvider {
     }
 
     /**
-     * Returns the vendor name of the Reference Implemntation Optimistic
+     * Returns the vendor name of the Reference Implementation Optimistic
      * Syncchronication Provider
      *
      * @return the <code>String</code> detailing the vendor name of this

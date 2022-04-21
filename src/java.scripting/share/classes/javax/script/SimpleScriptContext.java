@@ -95,7 +95,7 @@ public class SimpleScriptContext  implements ScriptContext {
 
     /**
      * Package-private constructor to avoid needless creation of reader and writers.
-     * It is the caller's responsability to initialize the engine scope.
+     * It is the caller's responsibility to initialize the engine scope.
      *
      * @param reader the reader
      * @param writer the writer

@@ -132,7 +132,7 @@ public class JdbcRowSetResourceBundle implements Serializable {
      * This method returns an enumerated handle of the keys
      * which correspond to values translated to various locales.
      *
-     * @return an enumeration of keys which have messages tranlated to
+     * @return an enumeration of keys which have messages translated to
      * corresponding locales.
      */
     @SuppressWarnings("rawtypes")

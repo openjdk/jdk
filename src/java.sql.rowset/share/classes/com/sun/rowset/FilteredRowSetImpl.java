@@ -451,8 +451,8 @@ public class FilteredRowSetImpl extends WebRowSetImpl implements Serializable, C
 
    /**
      * This is explanation for the overriding of the updateXXX functions.
-     * These functions have been overriden to ensure that only correct
-     * values that pass the criteria for the filter are actaully inserted.
+     * These functions have been overridden to ensure that only correct
+     * values that pass the criteria for the filter are actually inserted.
      * The evaluation of whether a particular value passes the criteria
      * of the filter is done using the evaluate function in the Predicate
      * interface.
