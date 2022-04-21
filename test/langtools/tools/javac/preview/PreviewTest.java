@@ -308,6 +308,159 @@ public class PreviewTest extends TestRunner {
         }
     }
 
+    @Test
+    public void previewAPIAbstractReAbstract(Path base) throws Exception {
+        Path apiSrc = base.resolve("api-src");
+        tb.writeJavaFiles(apiSrc,
+                          """
+                          package preview.api;
+                          public class Concrete {
+                              @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.TEST)
+                              public void test() {}
+                          }
+                          """,
+                          """
+                          package preview.api;
+                          public abstract class Abstract {
+                              @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.TEST)
+                              public abstract void test();
+                          }
+                          """);
+        Path apiClasses = base.resolve("api-classes");
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(apiClasses)
+                .options("-XDrawDiagnostics", "-doe",
+                         "--patch-module", "java.base=" + apiSrc.toString(),
+                         "-Werror")
+                .files(tb.findJavaFiles(apiSrc))
+                .run()
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        Path testSrc = base.resolve("test-src");
+        tb.writeJavaFiles(testSrc,
+                          """
+                          package test;
+                          import preview.api.Concrete;
+                          public abstract class ReabstractP extends Concrete {
+                              public abstract void test();
+                          }
+                          """,
+                          """
+                          package test;
+                          public abstract class ReabstractSubclass1 extends ReabstractP {
+                              public abstract void test();
+                          }
+                          """,
+                          """
+                          package test;
+                          public class ReabstractSubclass2 extends ReabstractP {
+                              public void test() {}
+                          }
+                          """,
+                          """
+                          package test;
+                          import preview.api.Abstract;
+                          public abstract class AbstractP extends Abstract {
+                              public abstract void test();
+                          }
+                          """,
+                          """
+                          package test;
+                          public abstract class AbstractSubclass1 extends AbstractP {
+                              public abstract void test();
+                          }
+                          """,
+                          """
+                          package test;
+                          public class AbstractSubclass2 extends AbstractP {
+                              public void test() {}
+                          }
+                          """);
+        Path testClasses = base.resolve("test-classes");
+        List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(testClasses)
+                .options("--patch-module", "java.base=" + apiClasses.toString(),
+                         "--add-exports", "java.base/preview.api=ALL-UNNAMED",
+                         "-XDrawDiagnostics")
+                .files(tb.findJavaFiles(testSrc))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected =
+                List.of("AbstractP.java:3:17: compiler.err.is.preview: test()",
+                        "ReabstractP.java:4:26: compiler.err.is.preview: test()",
+                        "2 errors");
+
+        if (!log.equals(expected))
+            throw new Exception("expected output not found" + log);
+
+        Path[] sources = tb.findJavaFiles(testSrc);
+
+        log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .outdir(testClasses)
+                .options("--patch-module", "java.base=" + apiClasses.toString(),
+                         "--add-exports", "java.base/preview.api=ALL-UNNAMED",
+                         "--enable-preview",
+                         "-Xlint:preview",
+                         "-source", String.valueOf(Runtime.version().feature()),
+                         "-XDrawDiagnostics")
+                .files(sources)
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected =
+                List.of("AbstractP.java:3:17: compiler.warn.is.preview: test()",
+                        "ReabstractP.java:4:26: compiler.warn.is.preview: test()",
+                        "2 warnings");
+
+        if (!log.equals(expected))
+            throw new Exception("expected output not found" + log);
+
+        int classfileCount = verifyPreviewClassfiles(testClasses);
+
+        if (sources.length != classfileCount) {
+            throw new IllegalStateException("Unexpected number of classfiles: " + classfileCount + ", number of source files: " + sources.length);
+        }
+
+        for (Path source : sources) {
+            log = new JavacTask(tb, Task.Mode.CMDLINE)
+                    .classpath(testClasses)
+                    .outdir(testClasses)
+                    .options("--patch-module", "java.base=" + apiClasses.toString(),
+                             "--add-exports", "java.base/preview.api=ALL-UNNAMED",
+                             "--enable-preview",
+                             "-Xlint:preview",
+                             "-source", String.valueOf(Runtime.version().feature()),
+                             "-XDrawDiagnostics")
+                    .files(source)
+                    .run(Task.Expect.SUCCESS)
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.DIRECT);
+
+            boolean preview = source.getFileName().toString().contains("P.");
+            boolean hasWarning = false;
+            for (String line : log) {
+                hasWarning |= line.contains(source.getFileName().toString()) &&
+                              line.contains("compiler.warn.is.preview: test()");
+            }
+
+            if (preview != hasWarning)
+                throw new Exception("expected " + (preview ? "preview" : "not preview") +
+                                    "but got " + (hasWarning ? "warning" : "no warning") +
+                                    "in: " + log);
+
+            classfileCount = verifyPreviewClassfiles(testClasses);
+
+            if (sources.length != classfileCount) {
+                throw new IllegalStateException("Unexpected number of classfiles: " + classfileCount + ", number of source files: " + sources.length);
+            }
+        }
+    }
+
     private int verifyPreviewClassfiles(Path directory) throws Exception {
         Path[] classfiles = tb.findFiles("class", directory);
 

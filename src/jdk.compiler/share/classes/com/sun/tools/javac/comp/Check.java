@@ -1915,8 +1915,8 @@ public class Check {
 
             for (Symbol s : types.membersClosure(origin.type, false).getSymbolsByName(m.name)) {
                 if (m != s && m.overrides(s, origin, types, false)) {
-                    //only check if the preview only if "m" immediatelly overrides "other"
-                    //without intermediate methods:
+                    //only produce preview warnings or errors if "m" immediatelly overrides "other"
+                    //without intermediate overriding methods:
                     return s == other;
                 }
             }
