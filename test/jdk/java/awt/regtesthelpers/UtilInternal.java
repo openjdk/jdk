@@ -73,6 +73,12 @@ public final class UtilInternal {
             Class clazz = Class.forName("sun.awt.X11.XEmbeddedFrame");
             Constructor constructor = clazz.getConstructor (new Class [] {Long.TYPE, Boolean.TYPE});
             return (Frame) constructor.newInstance (new Object[] {window, true});
+        } else if ("sun.lwawt.macosx.LWCToolkit".equals(tk.getClass().getName())) {
+            java.awt.Helper.addExports("sun.lwawt", UtilInternal.class.getModule());
+            Class window_peer_class = Class.forName("sun.lwawt.LWComponentPeer");
+            Method get_target = window_peer_class.getMethod("getTarget", new Class[0]);
+            System.out.println("get_target = " + get_target);
+            return (Frame) get_target.invoke(frame_peer, new Object[0]);
         }
 
         throw new RuntimeException("Unexpected toolkit - " + tk);
