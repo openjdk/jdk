@@ -408,7 +408,7 @@ public class TTYResources extends java.util.ListResourceBundle {
              "trace [go] method exit | exits [thread]\n" +
              "                          -- trace the current method's exit, or all methods' exits\n" +
              "                          -- All threads are suspended unless 'go' is specified\n" +
-             "untrace [methods]         -- stop tracing method entrys and/or exits\n" +
+             "untrace [methods]         -- stop tracing method entries and/or exits\n" +
              "step                      -- execute current line\n" +
              "step up                   -- execute until the current method returns to its caller\n" +
              "stepi                     -- execute current instruction\n" +

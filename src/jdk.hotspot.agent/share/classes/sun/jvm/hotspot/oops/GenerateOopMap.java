@@ -2292,7 +2292,7 @@ public class GenerateOopMap {
   //   in order (0...code_length-1)
   // - fillStackmapEpilog is called after all results has been
   //   reported. Note: Since the algorithm does not report stackmaps for
-  //   deadcode, fewer gc_points might have been encounted than assumed
+  //   deadcode, fewer gc_points might have been encountered than assumed
   //   during the epilog. It is the responsibility of the subclass to
   //   count the correct number.
   // - fillInitVars are called once with the result of the init_vars

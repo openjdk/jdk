@@ -95,7 +95,7 @@ public class DebugServer {
          break;
 
        default:
-         // should not happend, taken care already.
+         // should not happen, taken care already.
          break;
     }
 

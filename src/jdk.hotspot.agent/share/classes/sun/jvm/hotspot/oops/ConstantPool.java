@@ -631,7 +631,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
 
               case JVM_CONSTANT_Class: {
                   dos.writeByte(cpConstType);
-                  // Klass already resolved. ConstantPool constains Klass*.
+                  // Klass already resolved. ConstantPool contains Klass*.
                   Klass refKls = (Klass)Metadata.instantiateWrapperFor(getAddressAtRaw(ci));
                   String klassName = refKls.getName().asString();
                   Short s = (Short) utf8ToIndex.get(klassName);

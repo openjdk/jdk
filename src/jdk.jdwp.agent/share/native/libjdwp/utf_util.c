@@ -307,7 +307,7 @@ static UINT getCodepage() {
     static UINT intCodePage = -1;
 
     if (intCodePage == -1) {
-        // Firts call, get codepage from the os
+        // First call, get codepage from the os
         langID = LANGIDFROMLCID(GetUserDefaultLCID());
         localeID = MAKELCID(langID, SORT_DEFAULT);
         if (GetLocaleInfo(localeID, LOCALE_IDEFAULTANSICODEPAGE,
