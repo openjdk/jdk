@@ -27,7 +27,7 @@
 //----------REGISTER DEFINITION BLOCK------------------------------------------
 // This information is used by the matcher and the register allocator to
 // describe individual registers and classes of registers within the target
-// archtecture.
+// architecture.
 
 register %{
 //----------Architecture Description Register Definitions----------------------
@@ -2842,23 +2842,6 @@ instruct ShouldNotReachHere() %{
     if (is_reachable()) {
       __ stop(_halt_reason);
     }
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// =================================EVEX special===============================
-// Existing partial implementation for post-loop multi-versioning computes
-// the mask corresponding to tail loop in K1 opmask register. This may then be
-// used for predicating instructions in loop body during last post-loop iteration.
-// TODO: Remove hard-coded K1 usage while fixing existing post-loop
-// multiversioning support.
-instruct setMask(rRegI dst, rRegI src, kReg_K1 mask) %{
-  predicate(PostLoopMultiversioning && Matcher::has_predicated_vectors());
-  match(Set dst (SetVectMaskI  src));
-  effect(TEMP dst);
-  format %{ "setvectmask   $dst, $src" %}
-  ins_encode %{
-    __ setvectmask($dst$$Register, $src$$Register, $mask$$KRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -6680,13 +6663,13 @@ instruct vshift16S_var_nobw(vec dst, vec src, vec shift, vec vtmp1, vec vtmp2, r
     int opcode = this->ideal_Opcode();
     bool sign = (opcode != Op_URShiftVS);
     int vlen_enc = Assembler::AVX_256bit;
-    // Shift lower half, with result in vtmp2 usign vtmp1 as TEMP
+    // Shift lower half, with result in vtmp2 using vtmp1 as TEMP
     __ vextendwd(sign, $vtmp2$$XMMRegister, $src$$XMMRegister, vlen_enc);
     __ vpmovzxwd($vtmp1$$XMMRegister, $shift$$XMMRegister, vlen_enc);
     __ varshiftd(opcode, $vtmp2$$XMMRegister, $vtmp2$$XMMRegister, $vtmp1$$XMMRegister, vlen_enc);
     __ vpand($vtmp2$$XMMRegister, $vtmp2$$XMMRegister, ExternalAddress(vector_int_to_short_mask()), vlen_enc, $scratch$$Register);
 
-    // Shift upper half, with result in dst usign vtmp1 as TEMP
+    // Shift upper half, with result in dst using vtmp1 as TEMP
     __ vextracti128_high($dst$$XMMRegister, $src$$XMMRegister);
     __ vextracti128_high($vtmp1$$XMMRegister, $shift$$XMMRegister);
     __ vextendwd(sign, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);

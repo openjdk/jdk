@@ -114,7 +114,7 @@ final public class TKit {
     static void runTests(List<TestInstance> tests) {
         if (currentTest != null) {
             throw new IllegalStateException(
-                    "Unexpeced nested or concurrent Test.run() call");
+                    "Unexpected nested or concurrent Test.run() call");
         }
 
         withExtraLogStream(() -> {

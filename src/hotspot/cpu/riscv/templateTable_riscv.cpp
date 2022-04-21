@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -126,7 +126,7 @@ static inline Address at_tos_p5() {
   return Address(esp,  Interpreter::expr_offset_in_bytes(5));
 }
 
-// Miscelaneous helper routines
+// Miscellaneous helper routines
 // Store an oop (or NULL) at the Address described by obj.
 // If val == noreg this means store a NULL
 static void do_oop_store(InterpreterMacroAssembler* _masm,
@@ -2221,7 +2221,7 @@ void TemplateTable::_return(TosState state)
 //
 // According to the new Java Memory Model (JMM):
 // (1) All volatiles are serialized wrt to each other.  ALSO reads &
-//     writes act as aquire & release, so:
+//     writes act as acquire & release, so:
 // (2) A read cannot let unrelated NON-volatile memory refs that
 //     happen after the read float up to before the read.  It's OK for
 //     non-volatile memory refs that happen before the volatile read to
@@ -2352,7 +2352,7 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
 void TemplateTable::jvmti_post_field_access(Register cache, Register index,
                                             bool is_static, bool has_tos) {
   // do the JVMTI work here to avoid disturbing the register state below
-  // We use c_rarg registers here beacause we want to use the register used in
+  // We use c_rarg registers here because we want to use the register used in
   // the call to the VM
   if (JvmtiExport::can_post_field_access()) {
     // Check to see if a field access watch has been set before we
@@ -2424,7 +2424,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   assert(btos == 0, "change code, btos != 0");
   __ bnez(flags, notByte);
 
-  // Dont't rewrite getstatic, only getfield
+  // Don't rewrite getstatic, only getfield
   if (is_static) {
     rc = may_not_rewrite;
   }
@@ -2445,7 +2445,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   // ztos (same code as btos)
   __ access_load_at(T_BOOLEAN, IN_HEAP, x10, field, noreg, noreg);
   __ push(ztos);
-  // Rewirte bytecode to be faster
+  // Rewrite bytecode to be faster
   if (rc == may_rewrite) {
     // uses btos rewriting, no truncating to t/f bit is needed for getfield
     patch_bytecode(Bytecodes::_fast_bgetfield, bc, x11);
@@ -3287,7 +3287,7 @@ void TemplateTable::invokespecial(int byte_no)
 void TemplateTable::invokestatic(int byte_no)
 {
   transition(vtos, vtos);
-  assert(byte_no == f1_byte, "use this arugment");
+  assert(byte_no == f1_byte, "use this argument");
 
   prepare_invoke(byte_no, xmethod);  // get f1 Method*
   // do the call
@@ -3546,7 +3546,7 @@ void TemplateTable::_new() {
     __ sub(x13, x13, sizeof(oopDesc));
     __ beqz(x13, initialize_header);
 
-    // Initialize obejct fields
+    // Initialize object fields
     {
       __ add(x12, x10, sizeof(oopDesc));
       Label loop;
@@ -3859,7 +3859,7 @@ void TemplateTable::monitorenter()
 
    // Increment bcp to point to the next bytecode, so exception
    // handling for async. exceptions work correctly.
-   // The object has already been poped from the stack, so the
+   // The object has already been popped from the stack, so the
    // expression stack looks correct.
    __ addi(xbcp, xbcp, 1);
 

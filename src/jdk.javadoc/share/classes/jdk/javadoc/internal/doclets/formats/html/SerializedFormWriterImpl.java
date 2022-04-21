@@ -43,12 +43,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
 /**
- *  Generates the Serialized Form Information Page, <i>serialized-form.html</i>.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * Generates the Serialized Form Information Page, <i>serialized-form.html</i>.
  */
 public class SerializedFormWriterImpl extends SubWriterHolderWriter
     implements SerializedFormWriter {

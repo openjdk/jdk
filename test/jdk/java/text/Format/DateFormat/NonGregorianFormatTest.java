@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ public class NonGregorianFormatTest {
         Locale.setDefault(locale);
 
         // Tests with the Japanese imperial calendar
-        Locale calendarLocale = new Locale("ja", "JP", "JP");
+        Locale calendarLocale = Locale.of("ja", "JP", "JP");
         testRoundTrip(calendarLocale);
         testRoundTripSimple(calendarLocale,
                             locale == Locale.ENGLISH ? JAPANESE_EN : JAPANESE_JA);
@@ -136,7 +136,7 @@ public class NonGregorianFormatTest {
                             locale == Locale.ENGLISH ? EXCEPTION_JAPANESE_EN : EXCEPTION_JAPANESE_JA);
 
         // Tests with the Thai Buddhist calendar
-        calendarLocale = new Locale("th", "TH");
+        calendarLocale = Locale.of("th", "TH");
         testRoundTrip(calendarLocale);
         testRoundTripSimple(calendarLocale,
                             locale == Locale.ENGLISH ? BUDDHIST_EN : BUDDHIST_JA);

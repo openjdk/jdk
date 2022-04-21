@@ -128,11 +128,6 @@ import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuil
 
 /**
  * Utilities Class for Doclets.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class Utils {
     public final BaseConfiguration configuration;
@@ -2505,7 +2500,7 @@ public class Utils {
     }
 
     public  List<? extends ReturnTree> getReturnTrees(Element element) {
-        return new ArrayList<>(getBlockTags(element, RETURN, ReturnTree.class));
+        return getBlockTags(element, RETURN, ReturnTree.class);
     }
 
     public List<? extends UsesTree> getUsesTrees(Element element) {

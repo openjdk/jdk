@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,7 +361,7 @@ void os::init_system_properties_values() {
   // Where to look for native libraries.
   //
   // Note: Due to a legacy implementation, most of the library path
-  // is set in the launcher. This was to accomodate linking restrictions
+  // is set in the launcher. This was to accommodate linking restrictions
   // on legacy Bsd implementations (which are no longer supported).
   // Eventually, all the library path setting will be done here.
   //
@@ -442,7 +442,7 @@ void os::init_system_properties_values() {
   // Where to look for native libraries.
   //
   // Note: Due to a legacy implementation, most of the library path
-  // is set in the launcher. This was to accomodate linking restrictions
+  // is set in the launcher. This was to accommodate linking restrictions
   // on legacy Bsd implementations (which are no longer supported).
   // Eventually, all the library path setting will be done here.
   //
@@ -1131,7 +1131,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
          IA32, AMD64, IA64, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
   #endif
 
-  // Identify compatability class for VM's architecture and library's architecture
+  // Identify compatibility class for VM's architecture and library's architecture
   // Obtain string descriptions for architectures
 
   arch_t lib_arch={elf_head.e_machine,0,elf_head.e_ident[EI_CLASS], elf_head.e_ident[EI_DATA], NULL};

@@ -145,7 +145,7 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
 
   Node* entry = iff->in(0);
   if (new_entry != NULL) {
-    // Clonning the predicate to new location.
+    // Cloning the predicate to new location.
     entry = new_entry;
   }
   // Create new_iff
@@ -1531,7 +1531,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
           // Both arms are inside the loop. There are two cases:
           // (1) there is one backward branch. In this case, any remaining proj
           //     in the if_proj list post-dominates "iff". So, the condition of "iff"
-          //     does not determine the execution the remining projs directly, and we
+          //     does not determine the execution the remaining projs directly, and we
           //     can safely continue.
           // (2) both arms are forwarded, i.e. a diamond shape. In this case, "proj"
           //     does not dominate loop->tail(), so it can not be in the if_proj list.
