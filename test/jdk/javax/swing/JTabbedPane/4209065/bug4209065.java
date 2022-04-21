@@ -41,13 +41,11 @@ import javax.swing.SwingUtilities;
 public final class bug4209065 {
 
     private static JFrame frame;
-    private static final String text = """
-            If the style of the text on the tabs matches the descriptions,
-             press PASS.
-
-            NOTE: where a large font is used, the text may be larger than the
-             tab height but this is OK and NOT a failure.
-            """;
+    private static final String text =
+            "If the style of the text on the tabs matches the descriptions," +
+                    "\n press PASS.\n\n NOTE: where a large font is used, the " +
+                    " text may be larger than the tab height but this is OK" +
+                    " and NOT a failure.";
 
     public static void createAndShowGUI() throws InterruptedException,
             InvocationTargetException {
