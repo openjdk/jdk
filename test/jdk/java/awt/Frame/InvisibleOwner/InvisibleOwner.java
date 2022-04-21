@@ -32,7 +32,6 @@
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Frame;
-import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
@@ -131,8 +130,8 @@ public class InvisibleOwner {
             Rectangle ownedWindowBounds = ownedWindow.getBounds();
             robot.mouseMove(ownedWindowBounds.x + ownedWindowBounds.width / 2,
                             ownedWindowBounds.y + ownedWindowBounds.height / 2);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(1000);
 
             // 1. Check the color at the center of the invisible & helper frame location
