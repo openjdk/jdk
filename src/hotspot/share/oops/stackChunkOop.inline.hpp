@@ -66,6 +66,16 @@ inline void stackChunkOopDesc::set_argsize(int value)   { jdk_internal_vm_StackC
 inline uint8_t stackChunkOopDesc::flags() const         { return jdk_internal_vm_StackChunk::flags(as_oop()); }
 inline void stackChunkOopDesc::set_flags(uint8_t value) { jdk_internal_vm_StackChunk::set_flags(this, value); }
 
+inline uint8_t stackChunkOopDesc::flags_acquire() const { return jdk_internal_vm_StackChunk::flags_acquire(as_oop()); }
+
+inline void stackChunkOopDesc::release_set_flags(uint8_t value) {
+  jdk_internal_vm_StackChunk::release_set_flags(this, value);
+}
+
+inline bool stackChunkOopDesc::try_set_flags(uint8_t prev_flags, uint8_t new_flags) {
+  return jdk_internal_vm_StackChunk::try_set_flags(this, prev_flags, new_flags);
+}
+
 inline int stackChunkOopDesc::max_size() const          { return jdk_internal_vm_StackChunk::maxSize(as_oop()); }
 inline void stackChunkOopDesc::set_max_size(int value)  {
   assert(value >= 0, "size must be >= 0");
@@ -130,6 +140,9 @@ bool stackChunkOopDesc::is_usable_in_chunk(void* p) const {
 inline bool stackChunkOopDesc::is_flag(uint8_t flag) const {
   return (flags() & flag) != 0;
 }
+inline bool stackChunkOopDesc::is_flag_acquire(uint8_t flag) const {
+  return (flags_acquire() & flag) != 0;
+}
 inline void stackChunkOopDesc::set_flag(uint8_t flag, bool value) {
   uint32_t flags = this->flags();
   set_flags((uint8_t)(value ? flags |= flag : flags &= ~flag));
@@ -142,6 +155,7 @@ inline bool stackChunkOopDesc::has_mixed_frames() const            { return is_f
 inline void stackChunkOopDesc::set_has_mixed_frames(bool value)    { set_flag(FLAG_HAS_INTERPRETED_FRAMES, value); }
 
 inline bool stackChunkOopDesc::is_gc_mode() const                  { return is_flag(FLAG_GC_MODE); }
+inline bool stackChunkOopDesc::is_gc_mode_acquire() const          { return is_flag_acquire(FLAG_GC_MODE); }
 inline void stackChunkOopDesc::set_gc_mode(bool value)             { set_flag(FLAG_GC_MODE, value); }
 
 inline bool stackChunkOopDesc::has_bitmap() const                  { return is_flag(FLAG_HAS_BITMAP); }

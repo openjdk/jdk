@@ -31,7 +31,9 @@ java/lang/Integer/Unsigned.java 8284635 generic-all
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
 
 ############################################################################
+# Loom
 
-# Loom specific
+####
+## Test problems, not loom regressions but not reproduced in jdk
 
 java/lang/ref/ReferenceEnqueue.java                    8284236 generic-all

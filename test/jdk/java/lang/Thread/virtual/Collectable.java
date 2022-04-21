@@ -48,17 +48,6 @@ public class Collectable {
     }
 
     /**
-     * Test that a parked virtual thread can be GC'ed.
-     */
-    @Test
-    public void testParkedThread() {
-        var thread = Thread.ofVirtual().start(LockSupport::park);
-        var ref = new WeakReference<>(thread);
-        thread = null;
-        waitUntilCleared(ref);
-    }
-
-    /**
      * Test that a terminated virtual thread can be GC'ed.
      */
     @Test

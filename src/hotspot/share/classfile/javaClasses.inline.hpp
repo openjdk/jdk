@@ -350,6 +350,18 @@ inline void jdk_internal_vm_StackChunk::set_flags(oop chunk, uint8_t value) {
   Atomic::store(chunk->field_addr<uint8_t>(_flags_offset), value);
 }
 
+inline uint8_t jdk_internal_vm_StackChunk::flags_acquire(oop chunk) {
+  return Atomic::load_acquire(chunk->field_addr<uint8_t>(_flags_offset));
+}
+
+inline void jdk_internal_vm_StackChunk::release_set_flags(oop chunk, uint8_t value) {
+  Atomic::release_store(chunk->field_addr<uint8_t>(_flags_offset), value);
+}
+
+inline bool jdk_internal_vm_StackChunk::try_set_flags(oop chunk, uint8_t expected_value, uint8_t new_value) {
+  return Atomic::cmpxchg(chunk->field_addr<uint8_t>(_flags_offset), expected_value, new_value) == expected_value;
+}
+
 inline int jdk_internal_vm_StackChunk::maxSize(oop chunk) {
   return chunk->int_field(_maxSize_offset);
 }

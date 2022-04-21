@@ -60,7 +60,7 @@ public class SleepWithDuration {
         Thread.currentThread().interrupt();
         try {
             Thread.sleep(Duration.ofNanos(0));
-            assertTrue(false);
+            fail();
         } catch (InterruptedException e) {
             assertFalse(Thread.interrupted());
         }
@@ -68,7 +68,7 @@ public class SleepWithDuration {
         Thread.currentThread().interrupt();
         try {
             Thread.sleep(Duration.ofSeconds(2));
-            assertTrue(false);
+            fail();
         } catch (InterruptedException e) {
             assertFalse(Thread.interrupted());
         }
@@ -92,7 +92,7 @@ public class SleepWithDuration {
         wakerThread.start();
         try {
             Thread.sleep(Duration.ofSeconds(60));
-            assertTrue(false);
+            fail();
         } catch (InterruptedException e) {
             // interrupt status should be cleared
             assertFalse(Thread.interrupted());

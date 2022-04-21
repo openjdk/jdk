@@ -196,7 +196,11 @@ agentProc(jvmtiEnv * jvmti, JNIEnv * jni, void * arg) {
         // char* cname = get_thread_name(jvmti, jni, cthread);
         // char* vname = get_thread_name(jvmti, jni, vthread);
 
-        check_jvmti_status(jni, jvmti->SuspendThread(vthread), "Error in SuspendThread");
+        err = jvmti->SuspendThread(vthread);
+        if (err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
+          continue;
+        }
+        check_jvmti_status(jni, err, "Error in SuspendThread");
         // LOG("Agent: suspended vt: %s ct: %s\n", vname, cname);
 
         check_vthread_consistency_suspended(jvmti, jni, vthread);

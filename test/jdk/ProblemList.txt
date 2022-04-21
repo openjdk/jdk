@@ -869,7 +869,4 @@ java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
 
 ############################################################################
 
-# Loom specific
-
-com/sun/jdi/EATests.java#id0                                    8264699 generic-all
-
+# Loom

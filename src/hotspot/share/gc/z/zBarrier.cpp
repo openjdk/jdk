@@ -178,12 +178,14 @@ uintptr_t ZBarrier::keep_alive_barrier_on_oop_slow_path(uintptr_t addr) {
 }
 
 uintptr_t ZBarrier::keep_alive_barrier_on_weak_oop_slow_path(uintptr_t addr) {
+  assert(ZResurrection::is_blocked(), "This operation is only valid when resurrection is blocked");
   const uintptr_t good_addr = weak_load_barrier_on_oop_slow_path(addr);
   assert(ZHeap::heap()->is_object_strongly_live(good_addr), "Should be live");
   return good_addr;
 }
 
 uintptr_t ZBarrier::keep_alive_barrier_on_phantom_oop_slow_path(uintptr_t addr) {
+  assert(ZResurrection::is_blocked(), "This operation is only valid when resurrection is blocked");
   const uintptr_t good_addr = weak_load_barrier_on_oop_slow_path(addr);
   assert(ZHeap::heap()->is_object_live(good_addr), "Should be live");
   return good_addr;

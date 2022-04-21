@@ -44,7 +44,6 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
-@Test
 public class ThreadFlockTest {
     private ScheduledExecutorService scheduler;
 
@@ -76,6 +75,7 @@ public class ThreadFlockTest {
     /**
      * Test ThreadFlock::name.
      */
+    @Test
     public void testName() {
         try (var flock = ThreadFlock.open(null)) {
             assertEquals(flock.name(), null);
@@ -92,6 +92,7 @@ public class ThreadFlockTest {
     /**
      * Test ThreadFlock::owner.
      */
+    @Test
     public void testOwner() {
         try (var flock = ThreadFlock.open(null)) {
             assertTrue(flock.owner() == Thread.currentThread());
@@ -103,6 +104,7 @@ public class ThreadFlockTest {
     /**
      * Test ThreadFlock::isXXXX methods.
      */
+    @Test
     public void testState() {
         try (var flock = ThreadFlock.open(null)) {
             assertFalse(flock.isShutdown());
@@ -335,6 +337,10 @@ public class ThreadFlockTest {
         }
     }
 
+    /**
+     * Test that a thread created with the given factory cannot start a thread
+     * in the given flock.
+     */
     private void testStartConfined(ThreadFlock flock,
                                    Function<Runnable, Thread> factory) throws Exception {
         var exception = new AtomicReference<Exception>();
@@ -358,6 +364,7 @@ public class ThreadFlockTest {
     /**
      * Test awaitAll with no threads.
      */
+    @Test
     public void testAwaitAllWithNoThreads() throws Exception {
         try (var flock = ThreadFlock.open(null)) {
             assertTrue(flock.awaitAll());
@@ -424,7 +431,7 @@ public class ThreadFlockTest {
                 long startMillis = millisTime();
                 try {
                     flock.awaitAll(Duration.ofSeconds(2));
-                    assertTrue(false);
+                    fail();
                 } catch (TimeoutException e) {
                     checkDuration(startMillis, 1900, 4000);
                 }
@@ -452,7 +459,7 @@ public class ThreadFlockTest {
                 for (int i = 0; i < 3; i++) {
                     try {
                         flock.awaitAll(Duration.ofSeconds(1));
-                        assertTrue(false);
+                        fail();
                     } catch (TimeoutException expected) { }
                 }
             } finally {
@@ -481,11 +488,11 @@ public class ThreadFlockTest {
             try {
                 try {
                     flock.awaitAll(Duration.ofSeconds(0));
-                    assertTrue(false);
+                    fail();
                 } catch (TimeoutException expected) { }
                 try {
                     flock.awaitAll(Duration.ofSeconds(-1));
-                    assertTrue(false);
+                    fail();
                 } catch (TimeoutException expected) { }
             } finally {
                 thread.interrupt();
@@ -520,7 +527,7 @@ public class ThreadFlockTest {
             Thread.currentThread().interrupt();
             try {
                 flock.awaitAll();
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // interrupt status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
@@ -530,9 +537,9 @@ public class ThreadFlockTest {
             Thread.currentThread().interrupt();
             try {
                 flock.awaitAll(Duration.ofSeconds(30));
-                assertTrue(false);
+                fail();
             } catch (TimeoutException e) {
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // interrupt status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
@@ -572,7 +579,7 @@ public class ThreadFlockTest {
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 flock.awaitAll();
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // interrupt status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
@@ -581,9 +588,9 @@ public class ThreadFlockTest {
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 flock.awaitAll(Duration.ofSeconds(30));
-                assertTrue(false);
+                fail();
             } catch (TimeoutException e) {
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // interrupt status should be clear
                 assertFalse(Thread.currentThread().isInterrupted());
@@ -603,6 +610,7 @@ public class ThreadFlockTest {
     /**
      * Test awaitAll after close.
      */
+    @Test
     public void testAwaitAfterClose() throws Exception {
         var flock = ThreadFlock.open(null);
         flock.close();
@@ -631,6 +639,9 @@ public class ThreadFlockTest {
         }
     }
 
+    /**
+     * Test that a thread created with the given factory cannot call awaitAll.
+     */
     private void testAwaitAllConfined(ThreadFlock flock,
                                       Function<Runnable, Thread> factory) throws Exception {
         var exception = new AtomicReference<Exception>();
@@ -729,6 +740,10 @@ public class ThreadFlockTest {
         }
     }
 
+    /**
+     * Test that a thread created with the given factory cannot wakeup the
+     * given flock.
+     */
     private void testWakeupConfined(ThreadFlock flock,
                                     Function<Runnable, Thread> factory) throws Exception {
         var exception = new AtomicReference<Exception>();
@@ -751,6 +766,7 @@ public class ThreadFlockTest {
     /**
      * Test close with no threads running.
      */
+    @Test
     public void testCloseWithNoThreads() {
         var flock = ThreadFlock.open(null);
         flock.close();
@@ -786,6 +802,7 @@ public class ThreadFlockTest {
     /**
      * Test close after flock is closed.
      */
+    @Test
     public void testCloseAfterClose() {
         var flock = ThreadFlock.open(null);
         flock.close();
@@ -815,6 +832,10 @@ public class ThreadFlockTest {
         }
     }
 
+    /**
+     * Test that a thread created with the given factory cannot close the
+     * given flock.
+     */
     private void testCloseConfined(ThreadFlock flock,
                                    Function<Runnable, Thread> factory) throws Exception {
         var exception = new AtomicReference<Exception>();
@@ -905,6 +926,10 @@ public class ThreadFlockTest {
         }
     }
 
+    /**
+     * Test that a thread created with the given factory cannot shut down the
+     * given flock.
+     */
     private void testShutdownConfined(ThreadFlock flock,
                                       Function<Runnable, Thread> factory) throws Exception {
         var exception = new AtomicReference<Exception>();
@@ -927,12 +952,13 @@ public class ThreadFlockTest {
     /**
      * Test that closing an enclosing thread flock closes a nested thread flocks.
      */
+    @Test
     public void testStructureViolation() {
         try (var flock1 = ThreadFlock.open("flock1")) {
             try (var flock2 = ThreadFlock.open("flock2")) {
                 try {
                     flock1.close();
-                    assertTrue(false);
+                    fail();
                 } catch (RuntimeException e) {
                     assertTrue(e.toString().contains("Structure"));
                 }
@@ -975,6 +1001,7 @@ public class ThreadFlockTest {
     /**
      * Test toString includes the flock name.
      */
+    @Test
     public void testToString() {
         try (var flock = ThreadFlock.open("xxxx")) {
             assertTrue(flock.toString().contains("xxx"));
@@ -984,6 +1011,7 @@ public class ThreadFlockTest {
     /**
      * Test for NullPointerException.
      */
+    @Test
     public void testNulls() {
         try (var flock = ThreadFlock.open(null)) {
             expectThrows(NullPointerException.class, () -> flock.start(null));

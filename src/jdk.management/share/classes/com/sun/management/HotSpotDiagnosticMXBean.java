@@ -120,8 +120,9 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
     public void setVMOption(String name, String value);
 
     /**
-     * Generate a thread dump to the given file in the given format. The file
-     * must not exist. The {@code outputFile} parameter must be an absolute path.
+     * Generate a thread dump to the given file in the given format. The
+     * {@code outputFile} parameter must be an absolute path to a file that
+     * does not exist.
      *
      * <p> The thread dump will include output for all platform threads. It may
      * include output for some or all virtual threads.
@@ -131,20 +132,20 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      *
      * @apiNote
      * The output file is required to be an absolute path as the MXBean may be
-     * accessed remotely from a tool or program with a different current user
+     * accessed remotely from a tool or program with a different current working
      * directory.
      *
      * @param  outputFile the path to the file to create
-     * @param  format the format to use (TEXT_PLAIN or JSON)
+     * @param  format the format to use
      * @throws IllegalArgumentException if the file path is not absolute
      * @throws IOException if the file already exists or an I/O exception is
      *         thrown writing to the file
-     * @throws NullPointerException if either parameter is {@code null}.
+     * @throws NullPointerException if either parameter is {@code null}
      * @throws SecurityException
-     *         If a security manager is set and its {@link
+     *         if a security manager is set and its {@link
      *         SecurityManager#checkWrite(java.lang.String)} method denies write
      *         access to the file or {@link java.lang.management.ManagementPermission
-     *         ManagementPermission("control")} is denied.
+     *         ManagementPermission("control")} is denied
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)

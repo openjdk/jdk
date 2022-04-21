@@ -326,13 +326,13 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                    GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list,
                                    jint depth);
  public:
-  static vframe* vframe_for_no_process(JavaThread* java_thread, jint depth, bool for_cont = false);
+  static javaVFrame* jvf_for_thread_and_depth(JavaThread* java_thread, jint depth);
 
   // get a field descriptor for the specified class and field
   static bool get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd);
 
   // check and skip frames hidden in mount/unmount transitions
-  static javaVFrame* check_and_skip_hidden_frames(bool is_in_VTMT, javaVFrame* jvf);
+  static javaVFrame* check_and_skip_hidden_frames(bool is_in_VTMS_transition, javaVFrame* jvf);
   static javaVFrame* check_and_skip_hidden_frames(JavaThread* jt, javaVFrame* jvf);
   static javaVFrame* check_and_skip_hidden_frames(oop vthread, javaVFrame* jvf);
 
@@ -365,24 +365,26 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static jint get_frame_count(javaVFrame* jvf);
   jvmtiError get_frame_count(JavaThread* java_thread, jint *count_ptr);
   jvmtiError get_frame_count(oop frame_oop, jint *count_ptr);
+  jvmtiError get_frame_location(javaVFrame* jvf, jint depth,
+                                jmethodID* method_ptr, jlocation* location_ptr);
   jvmtiError get_frame_location(JavaThread* java_thread, jint depth,
                                 jmethodID* method_ptr, jlocation* location_ptr);
   jvmtiError get_frame_location(oop vthread_oop, jint depth,
                                 jmethodID* method_ptr, jlocation* location_ptr);
   jvmtiError set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth);
-  jvmtiError get_object_monitor_usage(JavaThread *calling_thread,
-                                                    jobject object, jvmtiMonitorUsage* info_ptr);
-  jvmtiError get_stack_trace(javaVFrame *jvf,
+  jvmtiError get_object_monitor_usage(JavaThread* calling_thread,
+                                      jobject object, jvmtiMonitorUsage* info_ptr);
+  jvmtiError get_stack_trace(javaVFrame* jvf,
                              jint stack_depth, jint max_count,
                              jvmtiFrameInfo* frame_buffer, jint* count_ptr);
-  jvmtiError get_stack_trace(JavaThread *java_thread,
-                                           jint stack_depth, jint max_count,
-                                           jvmtiFrameInfo* frame_buffer, jint* count_ptr);
-  jvmtiError get_current_contended_monitor(JavaThread* calling_thread, JavaThread *java_thread,
-                                           jobject *monitor_ptr, bool is_virtual);
+  jvmtiError get_stack_trace(JavaThread* java_thread,
+                             jint stack_depth, jint max_count,
+                             jvmtiFrameInfo* frame_buffer, jint* count_ptr);
+  jvmtiError get_current_contended_monitor(JavaThread* calling_thread, JavaThread* java_thread,
+                                           jobject* monitor_ptr, bool is_virtual);
   jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread,
                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
-  jvmtiError get_owned_monitors(JavaThread *calling_thread, JavaThread* java_thread, javaVFrame* jvf,
+  jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread, javaVFrame* jvf,
                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
   static jvmtiError check_top_frame(Thread* current_thread, JavaThread* java_thread,
                                     jvalue value, TosState tos, Handle* ret_ob_h);
@@ -556,7 +558,7 @@ public:
 };
 
 #ifdef ASSERT
-// HandshakeClosure to print stack trace in JvmtiVTMTDisabler error handling
+// HandshakeClosure to print stack trace in JvmtiVTMSTransitionDisabler error handling.
 class PrintStackTraceClosure : public HandshakeClosure {
  public:
   static void do_thread_impl(Thread *target);
@@ -567,7 +569,7 @@ class PrintStackTraceClosure : public HandshakeClosure {
 };
 #endif
 
-// forward declaration
+// Forward declaration.
 struct StackInfoNode;
 
 // Get stack trace at safepoint or at direct handshake.

@@ -139,7 +139,7 @@ public class JoinWithDuration {
         thread.start();
         try {
             thread.join(Duration.ofMinutes(1));
-            assertTrue(false);
+            fail();
         } catch (InterruptedException e) {
             // interrupt status should be cleared
             assertFalse(thread.isInterrupted());

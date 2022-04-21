@@ -37,9 +37,7 @@ inline bool ContinuationGCSupport::relativize_stack_chunk(oop obj) {
   }
 
   stackChunkOop chunk = stackChunkOopDesc::cast(obj);
-  if (!chunk->is_gc_mode()) {
-    chunk->relativize_derived_oops();
-  }
+  chunk->relativize_derived_pointers_concurrently();
 
   return true;
 }

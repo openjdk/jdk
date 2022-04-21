@@ -71,31 +71,29 @@ class JvmtiEnvThreadStateIterator : public StackObj {
 
 ///////////////////////////////////////////////////////////////
 //
-// class JvmtiVTMTDisabler
+// class JvmtiVTMSTransitionDisabler
 //
-// Virtual Threads Mount Transition (VTMT) mechanism
+// Virtual Thread Mount State Transition (VTMS transition) mechanism
 //
-class JvmtiVTMTDisabler {
+class JvmtiVTMSTransitionDisabler {
  private:
-  static volatile bool _SR_mode;             // there is an active suspender or resumer
-  static volatile int _VTMT_count;           // current number of VTMT transitions
-  static volatile int _VTMT_disable_count;   // VTMT is disabled while it is non-zero
+  static volatile bool _SR_mode;                      // there is an active suspender or resumer
+  static volatile int _VTMS_transition_count;         // current number of VTMS transitions
+  static volatile int _VTMS_transition_disable_count; // VTMS transitions are disabled while it is non-zero
 
-  bool _is_SR;                               // is suspender or resumer
+  bool _is_SR;                                        // is suspender or resumer
 
-  void disable_VTMT();
-  void enable_VTMT();
+  void disable_VTMS_transitions();
+  void enable_VTMS_transitions();
 
   DEBUG_ONLY(static void print_info();)
  public:
   // parameter is_SR: suspender or resumer
-  JvmtiVTMTDisabler(bool is_SR = false);
-  ~JvmtiVTMTDisabler();
+  JvmtiVTMSTransitionDisabler(bool is_SR = false);
+  ~JvmtiVTMSTransitionDisabler();
 
-  static void start_VTMT(jthread vthread, bool is_mount);
-  static void finish_VTMT(jthread vthread, bool is_mount);
-  static int  VTMT_disable_count();
-  static int  VTMT_count();
+  static void start_VTMS_transition(jthread vthread, bool is_mount);
+  static void finish_VTMS_transition(jthread vthread, bool is_mount);
 };
 
 ///////////////////////////////////////////////////////////////
@@ -153,8 +151,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   OopHandle         _thread_oop_h;
   // Jvmti Events that cannot be posted in their current context.
   JvmtiDeferredEventQueue* _jvmti_event_queue;
-  bool              _is_in_VTMT; // saved JavaThread.is_in_VTMT()
-  bool              _is_virtual; // state belongs to a virtual thread
+  bool              _is_in_VTMS_transition; // saved JavaThread.is_in_VTMS_transition()
+  bool              _is_virtual;            // state belongs to a virtual thread
   bool              _hide_single_stepping;
   bool              _pending_interp_only_mode;
   bool              _pending_step_for_popframe;
@@ -270,9 +268,9 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   void set_thread(JavaThread* thread);
   oop get_thread_oop();
 
-  // The JavaThread is_in_VTMT() bit saved at unmount to restore at mount.
-  inline bool is_in_VTMT() { return _is_in_VTMT; }
-  inline void set_is_in_VTMT(bool val) { _is_in_VTMT = val; }
+  // The JavaThread is_in_VTMS_transition() bit saved at unmount to restore at mount.
+  inline bool is_in_VTMS_transition() { return _is_in_VTMS_transition; }
+  inline void set_is_in_VTMS_transition(bool val) { _is_in_VTMS_transition = val; }
   inline bool is_virtual() { return _is_virtual; } // the _thread is virtual
 
   inline bool is_exception_detected()  { return _exception_state == ES_DETECTED;  }

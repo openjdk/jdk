@@ -732,22 +732,22 @@ public class BasicTests {
         group.list();
     }
 
-    @Test(expectedExceptions = { UnsupportedOperationException.class })
+    @Test
     public void testSuspend() {
         ThreadGroup group = new ThreadGroup("foo");
-        group.suspend();
+        assertThrows(UnsupportedOperationException.class, () -> group.suspend());
     }
 
-    @Test(expectedExceptions = { UnsupportedOperationException.class })
+    @Test
     public void testResume() {
         ThreadGroup group = new ThreadGroup("foo");
-        group.resume();
+        assertThrows(UnsupportedOperationException.class, () -> group.resume());
     }
 
-    @Test(expectedExceptions = { UnsupportedOperationException.class })
+    @Test
     public void testStop() {
         ThreadGroup group = new ThreadGroup("foo");
-        group.stop();
+        assertThrows(UnsupportedOperationException.class, () -> group.stop());
     }
 
     @Test
@@ -757,33 +757,38 @@ public class BasicTests {
         assertFalse(group.allowThreadSuspension(true));
     }
 
-    @Test(expectedExceptions = { NullPointerException.class })
+    @Test
     public void testNull1() {
-        new ThreadGroup(null, "group");
+        assertThrows(NullPointerException.class,
+                     () -> new ThreadGroup(null, "group"));
     }
 
-    @Test(expectedExceptions = { NullPointerException.class })
+    @Test
     public void testNull2() {
         ThreadGroup group = new ThreadGroup("group");
-        group.enumerate((Thread[])null);
+        assertThrows(NullPointerException.class,
+                     () -> group.enumerate((Thread[]) null));
     }
 
-    @Test(expectedExceptions = { NullPointerException.class })
+    @Test
     public void testNull3() {
         ThreadGroup group = new ThreadGroup("group");
-        group.enumerate((Thread[])null, false);
+        assertThrows(NullPointerException.class,
+                     () -> group.enumerate((Thread[]) null, false));
     }
 
-    @Test(expectedExceptions = { NullPointerException.class })
+    @Test
     public void testNull4() {
         ThreadGroup group = new ThreadGroup("group");
-        group.enumerate((ThreadGroup[])null);
+        assertThrows(NullPointerException.class,
+                     () -> group.enumerate((ThreadGroup[]) null));
     }
 
-    @Test(expectedExceptions = { NullPointerException.class })
+    @Test
     public void testNull5() {
         ThreadGroup group = new ThreadGroup("group");
-        group.enumerate((ThreadGroup[])null, false);
+        assertThrows(NullPointerException.class,
+                     () -> group.enumerate((ThreadGroup[]) null, false));
     }
 
     private <T> Set<T> toSet(T[] array, int len) {

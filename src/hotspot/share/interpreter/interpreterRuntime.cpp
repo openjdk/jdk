@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1120,7 +1120,7 @@ JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
   // if this is called during a safepoint
 
   if (java_lang_VirtualThread::notify_jvmti_events()) {
-    JvmtiExport::check_suspend_at_safepoint(current);
+    JvmtiExport::check_vthread_and_suspend_at_safepoint(current);
   }
 
   if (JvmtiExport::should_post_single_step()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Test that HTTP connections can be interrupted
  * @compile --enable-preview -source ${jdk.version} InterruptHttp.java
- * @run testng/othervm --enable-preview InterruptHttp
+ * @run main/othervm --enable-preview InterruptHttp
  */
 
 import java.io.Closeable;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class TestManyVirtualThreads {
             Path p = Files.createTempFile("test", ".jfr");
             r.dump(p);
             long size = Files.size(p);
-            Asserts.assertLessThan(size, 100_000_000L, "Size of recording looks suspicious large");
+            Asserts.assertLessThan(size, 100_000_000L, "Size of recording looks suspiciously large");
             System.out.println("File size: " + size);
             List<RecordedEvent> events = RecordingFile.readAllEvents(p);
             Asserts.assertEquals(events.size(), VIRTUAL_THREAD_COUNT, "Expected " + VIRTUAL_THREAD_COUNT + " events");

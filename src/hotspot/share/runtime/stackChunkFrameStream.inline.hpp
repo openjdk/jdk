@@ -353,7 +353,13 @@ inline void StackChunkFrameStream<frame_kind>::iterate_oops(OopClosureType* clos
 template <ChunkFrames frame_kind>
 template <class DerivedOopClosureType, class RegisterMapT>
 inline void StackChunkFrameStream<frame_kind>::iterate_derived_pointers(DerivedOopClosureType* closure, const RegisterMapT* map) const {
-  if (is_interpreted()) {
+  if (!is_compiled()) {
+    // Only compiled frames have derived pointers
+    return;
+  }
+
+  assert(oopmap()->has_derived_oops() == oopmap()->has_any(OopMapValue::derived_oop_value), "");
+  if (!oopmap()->has_derived_oops()) {
     return;
   }
 
@@ -375,7 +381,6 @@ inline void StackChunkFrameStream<frame_kind>::iterate_derived_pointers(DerivedO
 
     Devirtualizer::do_derived_oop(closure, (oop*)base_loc, (derived_pointer*)derived_loc);
   }
-  OrderAccess::storestore(); // to preserve that we set the offset *before* fixing the base oop
 }
 
 #ifdef ASSERT

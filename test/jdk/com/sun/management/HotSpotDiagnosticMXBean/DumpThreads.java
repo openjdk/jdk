@@ -26,6 +26,9 @@
  * @summary Basic test for com.sun.management.HotSpotDiagnosticMXBean.dumpThreads
  * @compile --enable-preview -source ${jdk.version} DumpThreads.java
  * @run testng/othervm --enable-preview DumpThreads
+ * @run testng/othervm --enable-preview -Djdk.trackAllThreads DumpThreads
+ * @run testng/othervm --enable-preview -Djdk.trackAllThreads=true DumpThreads
+ * @run testng/othervm --enable-preview -Djdk.trackAllThreadds=false DumpThreads
  */
 
 import java.lang.management.ManagementFactory;
@@ -44,6 +47,11 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class DumpThreads {
+    private static final boolean TRACK_ALL_THREADS;
+    static {
+        String s = System.getProperty("jdk.trackAllThreads");
+        TRACK_ALL_THREADS = (s != null) && (s.isEmpty() || Boolean.parseBoolean(s));
+    }
 
     /**
      * Thread dump in plain text format.
@@ -71,7 +79,7 @@ public class DumpThreads {
 
                 // if the current thread is a platform thread then it should be included
                 Thread currentThread = Thread.currentThread();
-                if (!currentThread.isVirtual()) {
+                if (!currentThread.isVirtual() || TRACK_ALL_THREADS) {
                     assertTrue(isPresent(file, currentThread));
                 }
             } finally {
@@ -106,7 +114,7 @@ public class DumpThreads {
 
                 // if the current thread is a platform thread then it should be included
                 Thread currentThread = Thread.currentThread();
-                if (!currentThread.isVirtual()) {
+                if (!currentThread.isVirtual() || TRACK_ALL_THREADS) {
                     assertTrue(isJsonPresent(file, currentThread));
                 }
 
@@ -176,7 +184,7 @@ public class DumpThreads {
      * Returns true if the file contains #<tid>
      */
     private static boolean isPresent(Path file, Thread thread) throws Exception {
-        String expect = "#" + thread.getId();
+        String expect = "#" + thread.threadId();
         return count(file, expect) > 0;
     }
 
@@ -184,10 +192,13 @@ public class DumpThreads {
      * Returns true if the file contains "tid": <tid>
      */
     private static boolean isJsonPresent(Path file, Thread thread) throws Exception {
-        String expect = "\"tid\": " + thread.getId();
+        String expect = "\"tid\": " + thread.threadId();
         return count(file, expect) > 0;
     }
 
+    /**
+     * Generate a file path with the given suffix to use as an output file.
+     */
     private static Path genOutputPath(String suffix) throws Exception {
         Path dir = Path.of(".").toAbsolutePath();
         Path file = Files.createTempFile(dir, "dump", suffix);
@@ -195,21 +206,31 @@ public class DumpThreads {
         return file;
     }
 
+    /**
+     * Return the count of the number of files in the given file that contain
+     * the given character sequence.
+     */
     static long count(Path file, CharSequence cs) throws Exception {
         try (Stream<String> stream = Files.lines(file)) {
             return stream.filter(line -> line.contains(cs)).count();
         }
     }
 
-    private static void cat(Path file) throws Exception {
-        try (Stream<String> stream = Files.lines(file)) {
-            stream.forEach(System.out::println);
-        }
-    }
-
+    /**
+     * Return line $n of the given file.
+     */
     private String line(Path file, long n) throws Exception {
         try (Stream<String> stream = Files.lines(file)) {
             return stream.skip(n).findFirst().orElseThrow();
+        }
+    }
+
+    /**
+     * Print the given file to standard output.
+     */
+    private static void cat(Path file) throws Exception {
+        try (Stream<String> stream = Files.lines(file)) {
+            stream.forEach(System.out::println);
         }
     }
 }

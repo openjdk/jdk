@@ -597,6 +597,10 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * where each thread owns one monitor while
      * trying to obtain another monitor already held by another thread
      * in a cycle.
+     * This method returns the IDs of the platform threads that are in
+     * deadlock. The IDs of virtual threads that are in deadlock are not
+     * included. The IDs of platform threads that are in a cycle with
+     * virtual threads may or may not be included.
      * <p>
      * More formally, a thread is <em>monitor deadlocked</em> if it is
      * part of a cycle in the relation "is waiting for an object monitor
@@ -606,8 +610,6 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * <p>
      * This method is designed for troubleshooting use, but not for
      * synchronization control.  It might be an expensive operation.
-     * Its behavior with cycles involving virtual threads is not defined
-     * in this release.
      * <p>
      * This method finds deadlocks involving only object monitors.
      * To find deadlocks involving both object monitors and
@@ -615,7 +617,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * the {@link #findDeadlockedThreads findDeadlockedThreads} method
      * should be used.
      *
-     * @return an array of IDs of the threads that are monitor
+     * @return an array of IDs of the platform threads that are monitor
      * deadlocked, if any; {@code null} otherwise.
      *
      * @throws SecurityException if a security manager
@@ -628,7 +630,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
 
     /**
      * Resets the peak thread count to the current number of
-     * live threads.
+     * live platform threads.
      *
      * @throws SecurityException if a security manager
      *         exists and the caller does not have
@@ -640,21 +642,22 @@ public interface ThreadMXBean extends PlatformManagedObject {
     public void resetPeakThreadCount();
 
     /**
-     * Finds cycles of threads that are in deadlock waiting to acquire
-     * object monitors or
+     * Finds cycles of platform threads that are in deadlock waiting to
+     * acquire object monitors or
      * <a href="LockInfo.html#OwnableSynchronizer">ownable synchronizers</a>.
-     *
      * Threads are <em>deadlocked</em> in a cycle waiting for a lock of
      * these two types if each thread owns one lock while
      * trying to acquire another lock already held
      * by another thread in the cycle.
+     * This method returns the IDs of the platform threads that are in
+     * deadlock. The IDs of virtual threads that are in deadlock are not
+     * included. The IDs of platform threads that are in a cycle with
+     * virtual threads may or may not be included.
      * <p>
      * This method is designed for troubleshooting use, but not for
      * synchronization control.  It might be an expensive operation.
-     * Its behavior with cycles involving virtual threads is not defined
-     * in this release.
      *
-     * @return an array of IDs of the threads that are
+     * @return an array of IDs of the platform threads that are
      * deadlocked waiting for object monitors or ownable synchronizers, if any;
      * {@code null} otherwise.
      *
@@ -837,7 +840,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
     }
 
     /**
-     * Returns the thread info for all live threads with stack trace
+     * Returns the thread info for all live platform threads with stack trace
      * and synchronization information.
      * The thread IDs of virtual threads are not included.
      * This method is equivalent to calling:
@@ -850,7 +853,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * @param  lockedSynchronizers if {@code true}, dump all locked
      *             ownable synchronizers.
      *
-     * @return an array of {@link ThreadInfo} for all live threads.
+     * @return an array of {@link ThreadInfo} for all live platform threads.
      *
      * @throws SecurityException if a security manager
      *         exists and the caller does not have
@@ -876,7 +879,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
 
 
     /**
-     * Returns the thread info for all live threads
+     * Returns the thread info for all live platform threads
      * with stack trace of the specified maximum number of elements
      * and synchronization information.
      * if {@code maxDepth == 0}, no stack trace of the thread
@@ -899,7 +902,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * @param  maxDepth indicates the maximum number of
      * {@link StackTraceElement} to be retrieved from the stack trace.
      *
-     * @return an array of {@link ThreadInfo} for all live threads.
+     * @return an array of {@link ThreadInfo} for all live platform threads.
      *
      * @throws IllegalArgumentException if {@code maxDepth} is negative.
      * @throws SecurityException if a security manager

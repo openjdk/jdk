@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,14 @@ public class ReferenceQueue<T> {
     private final ReentrantLock lock;
     private final Condition notEmpty;
 
-    void signal() { notEmpty.signalAll(); }
-    void await() throws InterruptedException { notEmpty.await(); }
+    void signal() {
+        notEmpty.signalAll();
+    }
+
+    void await() throws InterruptedException {
+        notEmpty.await();
+    }
+
     void await(long timeoutMillis) throws InterruptedException {
         notEmpty.await(timeoutMillis, TimeUnit.MILLISECONDS);
     }
@@ -200,10 +206,11 @@ public class ReferenceQueue<T> {
      * @throws  InterruptedException
      *          If the timeout wait is interrupted
      */
-    public Reference<? extends T> remove(long timeout)
-        throws IllegalArgumentException, InterruptedException {
-        if (timeout < 0) throw new IllegalArgumentException("Negative timeout value");
-        if (timeout == 0) return remove();
+    public Reference<? extends T> remove(long timeout) throws InterruptedException {
+        if (timeout < 0)
+            throw new IllegalArgumentException("Negative timeout value");
+        if (timeout == 0)
+            return remove();
 
         lock.lock();
         try {

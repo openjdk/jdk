@@ -69,7 +69,7 @@ public class ThreadDumpToFileTest {
         assertTrue(find(file, "threadDump"), "`threadDump` not found in " + file);
 
         // test that thread dump contains the id of the current thread
-        long tid = Thread.currentThread().getId();
+        long tid = Thread.currentThread().threadId();
         String expected = "\"tid\": " + tid;
         assertTrue(find(file, expected), expected + " not found in " + file);
     }
@@ -106,7 +106,7 @@ public class ThreadDumpToFileTest {
 
         // test that thread dump contains the name and id of the current thread
         String name = Thread.currentThread().getName();
-        long tid = Thread.currentThread().getId();
+        long tid = Thread.currentThread().threadId();
         String expected = "#" + tid + " \"" + name + "\"";
         assertTrue(find(file, expected), expected + " not found in " + file);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -332,16 +332,16 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test submit with null.
      */
-    @Test(dataProvider = "factories", expectedExceptions = { NullPointerException.class })
+    @Test(dataProvider = "factories")
     public void testSubmitNulls1(ThreadFactory factory) {
         var executor = Executors.newThreadPerTaskExecutor(factory);
-        executor.submit((Runnable) null);
+        assertThrows(NullPointerException.class, () -> executor.submit((Runnable) null));
     }
 
-    @Test(dataProvider = "factories", expectedExceptions = { NullPointerException.class })
+    @Test(dataProvider = "factories")
     public void testSubmitNulls2(ThreadFactory factory) {
         var executor = Executors.newThreadPerTaskExecutor(factory);
-        executor.submit((Callable<String>) null);
+        assertThrows(NullPointerException.class, () -> executor.submit((Callable<String>) null));
     }
 
     /**
@@ -401,7 +401,7 @@ public class ThreadPerTaskExecutorTest {
             Callable<String> task2 = () -> { throw new FooException(); };
             try {
                 executor.invokeAny(Set.of(task1, task2));
-                assertTrue(false);
+                fail();
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
                 assertTrue(cause instanceof FooException);
@@ -424,7 +424,7 @@ public class ThreadPerTaskExecutorTest {
             };
             try {
                 executor.invokeAny(Set.of(task1, task2));
-                assertTrue(false);
+                fail();
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
                 assertTrue(cause instanceof FooException);
@@ -513,7 +513,7 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test timed-invokeAny where timeout expires before any task completes.
      */
-    @Test(dataProvider = "executors", expectedExceptions = { TimeoutException.class })
+    @Test(dataProvider = "executors")
     public void testInvokeAnyWithTimeout3(ExecutorService executor) throws Exception {
         try (executor) {
             Callable<String> task1 = () -> {
@@ -524,7 +524,8 @@ public class ThreadPerTaskExecutorTest {
                 Thread.sleep(Duration.ofMinutes(2));
                 return "bar";
             };
-            executor.invokeAny(Set.of(task1, task2), 1, TimeUnit.SECONDS);
+            assertThrows(TimeoutException.class,
+                         () -> executor.invokeAny(Set.of(task1, task2), 1, TimeUnit.SECONDS));
         }
     }
 
@@ -532,7 +533,7 @@ public class ThreadPerTaskExecutorTest {
      * Test invokeAny where timeout expires after some tasks have completed
      * with exception.
      */
-    @Test(dataProvider = "executors", expectedExceptions = { TimeoutException.class })
+    @Test(dataProvider = "executors")
     public void testInvokeAnyWithTimeout4(ExecutorService executor) throws Exception {
         try (executor) {
             class FooException extends Exception { }
@@ -541,7 +542,8 @@ public class ThreadPerTaskExecutorTest {
                 Thread.sleep(Duration.ofMinutes(2));
                 return "bar";
             };
-            executor.invokeAny(Set.of(task1, task2), 1, TimeUnit.SECONDS);
+            assertThrows(TimeoutException.class,
+                         () -> executor.invokeAny(Set.of(task1, task2), 1, TimeUnit.SECONDS));
         }
     }
 
@@ -556,7 +558,7 @@ public class ThreadPerTaskExecutorTest {
             Thread.currentThread().interrupt();
             try {
                 executor.invokeAny(Set.of(task1, task2));
-                assertTrue(false);
+                fail();
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
             } finally {
@@ -582,7 +584,7 @@ public class ThreadPerTaskExecutorTest {
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 executor.invokeAny(Set.of(task1, task2));
-                assertTrue(false);
+                fail();
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
             } finally {
@@ -594,54 +596,56 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAny after ExecutorService has been shutdown.
      */
-    @Test(dataProvider = "executors", expectedExceptions = { RejectedExecutionException.class })
+    @Test(dataProvider = "executors")
     public void testInvokeAnyAfterShutdown(ExecutorService executor) throws Exception {
         executor.shutdown();
         Callable<String> task1 = () -> "foo";
         Callable<String> task2 = () -> "bar";
-        executor.invokeAny(Set.of(task1, task2));
+        assertThrows(RejectedExecutionException.class,
+                     () -> executor.invokeAny(Set.of(task1, task2)));
     }
 
     /**
      * Test invokeAny with empty collection.
      */
-    @Test(dataProvider = "factories", expectedExceptions = { IllegalArgumentException.class })
+    @Test(dataProvider = "factories")
     public void testInvokeAnyEmpty1(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
-            executor.invokeAny(Set.of());
+            assertThrows(IllegalArgumentException.class, () -> executor.invokeAny(Set.of()));
         }
     }
 
     /**
      * Test timed-invokeAny with empty collection.
      */
-    @Test(dataProvider = "factories", expectedExceptions = { IllegalArgumentException.class })
+    @Test(dataProvider = "factories")
     public void testInvokeAnyEmpty2(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
-            executor.invokeAny(Set.of(), 1, TimeUnit.MINUTES);
+            assertThrows(IllegalArgumentException.class,
+                         () -> executor.invokeAny(Set.of(), 1, TimeUnit.MINUTES));
         }
     }
 
     /**
      * Test invokeAny with null.
      */
-    @Test(dataProvider = "factories", expectedExceptions = { NullPointerException.class })
+    @Test(dataProvider = "factories")
     public void testInvokeAnyNull1(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
-            executor.invokeAny(null);
+            assertThrows(NullPointerException.class, () -> executor.invokeAny(null));
         }
     }
 
     /**
      * Test invokeAny with null element
      */
-    @Test(dataProvider = "factories", expectedExceptions = { NullPointerException.class })
+    @Test(dataProvider = "factories")
     public void testInvokeAnyNull2(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
             List<Callable<String>> list = new ArrayList<>();
             list.add(() -> "foo");
             list.add(null);
-            executor.invokeAny(null);
+            assertThrows(NullPointerException.class, () -> executor.invokeAny(null));
         }
     }
 
@@ -777,7 +781,7 @@ public class ThreadPerTaskExecutorTest {
             Thread.currentThread().interrupt();
             try {
                 executor.invokeAll(List.of(task1, task2));
-                assertTrue(false);
+                fail();
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
             } finally {
@@ -801,7 +805,7 @@ public class ThreadPerTaskExecutorTest {
             Thread.currentThread().interrupt();
             try {
                 executor.invokeAll(List.of(task1, task2), 1, TimeUnit.SECONDS);
-                assertTrue(false);
+                fail();
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
             } finally {
@@ -821,7 +825,7 @@ public class ThreadPerTaskExecutorTest {
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 executor.invokeAll(Set.of(task1, task2));
-                assertTrue(false);
+                fail();
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
 
@@ -847,7 +851,7 @@ public class ThreadPerTaskExecutorTest {
             scheduleInterrupt(Thread.currentThread(), Duration.ofMillis(500));
             try {
                 executor.invokeAll(Set.of(task1, task2), 1, TimeUnit.DAYS);
-                assertTrue(false);
+                fail();
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
 
@@ -865,22 +869,24 @@ public class ThreadPerTaskExecutorTest {
     /**
      * Test invokeAll after ExecutorService has been shutdown.
      */
-    @Test(dataProvider = "executors", expectedExceptions = { RejectedExecutionException.class })
+    @Test(dataProvider = "executors")
     public void testInvokeAllAfterShutdown1(ExecutorService executor) throws Exception {
         executor.shutdown();
 
         Callable<String> task1 = () -> "foo";
         Callable<String> task2 = () -> "bar";
-        executor.invokeAll(Set.of(task1, task2));
+        assertThrows(RejectedExecutionException.class,
+                     () -> executor.invokeAll(Set.of(task1, task2)));
     }
 
-    @Test(dataProvider = "executors", expectedExceptions = { RejectedExecutionException.class })
+    @Test(dataProvider = "executors")
     public void testInvokeAllAfterShutdown2(ExecutorService executor) throws Exception {
         executor.shutdown();
 
         Callable<String> task1 = () -> "foo";
         Callable<String> task2 = () -> "bar";
-        executor.invokeAll(Set.of(task1, task2), 1, TimeUnit.SECONDS);
+        assertThrows(RejectedExecutionException.class,
+                     () -> executor.invokeAll(Set.of(task1, task2), 1, TimeUnit.SECONDS));
     }
 
     /**
@@ -902,78 +908,84 @@ public class ThreadPerTaskExecutorTest {
         }
     }
 
-    @Test(dataProvider = "factories", expectedExceptions = { NullPointerException.class })
+    @Test(dataProvider = "factories")
     public void testInvokeAllNull1(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
-            executor.invokeAll(null);
+            assertThrows(NullPointerException.class, () -> executor.invokeAll(null));
         }
     }
 
-    @Test(dataProvider = "factories", expectedExceptions = { NullPointerException.class })
+    @Test(dataProvider = "factories")
     public void testInvokeAllNull2(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
             List<Callable<String>> tasks = new ArrayList<>();
             tasks.add(() -> "foo");
             tasks.add(null);
-            executor.invokeAll(tasks);
+            assertThrows(NullPointerException.class, () -> executor.invokeAll(tasks));
         }
     }
 
-    @Test(dataProvider = "factories", expectedExceptions = { NullPointerException.class })
+    @Test(dataProvider = "factories")
     public void testInvokeAllNull3(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
-            executor.invokeAll(null, 1, TimeUnit.SECONDS);
+            assertThrows(NullPointerException.class,
+                         () -> executor.invokeAll(null, 1, TimeUnit.SECONDS));
         }
     }
 
-    @Test(dataProvider = "factories", expectedExceptions = { NullPointerException.class })
+    @Test(dataProvider = "factories")
     public void testInvokeAllNull4(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
             Callable<String> task = () -> "foo";
-            executor.invokeAll(List.of(task), 1, null);
+            assertThrows(NullPointerException.class,
+                         () -> executor.invokeAll(List.of(task), 1, null));
         }
     }
 
-    @Test(dataProvider = "factories", expectedExceptions = { NullPointerException.class })
+    @Test(dataProvider = "factories")
     public void testInvokeAllNull5(ThreadFactory factory) throws Exception {
         try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
             List<Callable<String>> tasks = new ArrayList<>();
             tasks.add(() -> "foo");
             tasks.add(null);
-            executor.invokeAll(tasks, 1, TimeUnit.SECONDS);
+            assertThrows(NullPointerException.class,
+                         () -> executor.invokeAll(tasks, 1, TimeUnit.SECONDS));
         }
     }
 
     /**
      * Test ThreadFactory that does not produce any threads
      */
-    @Test(expectedExceptions = { RejectedExecutionException.class })
+    @Test
     public void testNoThreads1() throws Exception {
         ExecutorService executor = Executors.newThreadPerTaskExecutor(task -> null);
-        executor.execute(() -> { });
+        assertThrows(RejectedExecutionException.class, () -> executor.execute(() -> { }));
     }
 
-    @Test(expectedExceptions = { RejectedExecutionException.class })
+    @Test
     public void testNoThreads2() throws Exception {
         ExecutorService executor = Executors.newThreadPerTaskExecutor(task -> null);
-        executor.submit(() -> "foo");
+        assertThrows(RejectedExecutionException.class, () -> executor.submit(() -> "foo"));
     }
 
-    @Test(expectedExceptions = { RejectedExecutionException.class })
+    @Test
     public void testNoThreads3() throws Exception {
         ExecutorService executor = Executors.newThreadPerTaskExecutor(task -> null);
-        executor.invokeAll(List.of(() -> "foo"));
+        assertThrows(RejectedExecutionException.class,
+                     () -> executor.invokeAll(List.of(() -> "foo")));
     }
 
-    @Test(expectedExceptions = { RejectedExecutionException.class })
+    @Test
     public void testNoThreads4() throws Exception {
         ExecutorService executor = Executors.newThreadPerTaskExecutor(task -> null);
-        executor.invokeAny(List.of(() -> "foo"));
+        assertThrows(RejectedExecutionException.class,
+                     () -> executor.invokeAny(List.of(() -> "foo")));
     }
 
-    @Test(expectedExceptions = { NullPointerException.class })
+    @Test
     public void testNull() {
-        Executors.newThreadPerTaskExecutor(null);
+        assertThrows(NullPointerException.class,
+                     () -> Executors.newThreadPerTaskExecutor(null));
     }
 
     // -- supporting classes --

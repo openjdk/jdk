@@ -168,7 +168,7 @@ public class NetSockets {
 
                 try {
                     s1.getInputStream().read();
-                    assertTrue(false);
+                    fail();
                 } catch (IOException ioe) {
                     // expected
                 }
@@ -312,7 +312,7 @@ public class NetSockets {
                 s2.sendUrgentData('X');
                 try {
                     s1.getInputStream().read(ba);
-                    assertTrue(false);
+                    fail();
                 } catch (SocketTimeoutException expected) { }
             }
         });
@@ -522,7 +522,7 @@ public class NetSockets {
                 DatagramPacket p = new DatagramPacket(ba, ba.length);
                 try {
                     s.receive(p);
-                    assertTrue(false);
+                    fail();
                 } catch (SocketTimeoutException expected) { }
             }
         });
@@ -562,7 +562,7 @@ public class NetSockets {
                     byte[] ba = new byte[100];
                     DatagramPacket p = new DatagramPacket(ba, ba.length);
                     s.receive(p);
-                    assertTrue(false);
+                    fail();
                 } catch (SocketException expected) { }
             }
         });
@@ -602,7 +602,7 @@ public class NetSockets {
                     byte[] ba = new byte[100];
                     DatagramPacket p = new DatagramPacket(ba, ba.length);
                     s.receive(p);
-                    assertTrue(false);
+                    fail();
                 } catch (SocketException expected) {
                     assertTrue(Thread.interrupted());
                     assertTrue(s.isClosed());

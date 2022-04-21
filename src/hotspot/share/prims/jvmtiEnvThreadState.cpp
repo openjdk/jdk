@@ -373,7 +373,7 @@ void JvmtiEnvThreadState::reset_current_location(jvmtiEvent event_type, bool ena
     JavaThread* thread = get_thread_or_saved();
 
     oop thread_oop = jvmti_thread_state()->get_thread_oop();
-    assert(!jvmti_thread_state()->is_in_VTMT(), "sanity check");
+    assert(!jvmti_thread_state()->is_in_VTMS_transition(), "sanity check");
 
     if (thread == NULL && event_type == JVMTI_EVENT_SINGLE_STEP && is_virtual()) {
       // Handle the unmounted virtual thread case.

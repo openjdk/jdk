@@ -150,7 +150,7 @@ public class JfrEvents {
                 // unpark, the submit should fail
                 try {
                     LockSupport.unpark(thread);
-                    assertTrue(false);
+                    fail();
                 } catch (RejectedExecutionException expected) { }
 
                 // start another thread, it should fail and an event should be recorded

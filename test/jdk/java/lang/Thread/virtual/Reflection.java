@@ -62,7 +62,7 @@ public class Reflection {
         TestHelper.runInVirtualThread(() -> {
             try {
                 divideMethod().invoke(null, 20, 0);
-                assertTrue(false);
+                fail();
             } catch (InvocationTargetException e) {
                 assertTrue(e.getCause() instanceof ArithmeticException);
             }
@@ -101,7 +101,7 @@ public class Reflection {
             Method foo = BadClass1.class.getDeclaredMethod("foo");
             try {
                 foo.invoke(null);
-                assertTrue(false);
+                fail();
             } catch (ExceptionInInitializerError e) {
                 assertTrue(e.getCause() instanceof ArithmeticException);
             }
@@ -185,7 +185,7 @@ public class Reflection {
             var adder = new Adder();
             try {
                 Adder.addMethod().invoke(adder, -5);
-                assertTrue(false);
+                fail();
             } catch (InvocationTargetException e) {
                 assertTrue(e.getCause() instanceof IllegalArgumentException);
             }
@@ -236,7 +236,7 @@ public class Reflection {
             Constructor<?> ctor = Adder.class.getDeclaredConstructor(long.class);
             try {
                 ctor.newInstance(-10);
-                assertTrue(false);
+                fail();
             } catch (InvocationTargetException e) {
                 assertTrue(e.getCause() instanceof IllegalArgumentException);
             }
@@ -275,7 +275,7 @@ public class Reflection {
             Constructor<?> ctor = BadClass3.class.getDeclaredConstructor();
             try {
                 ctor.newInstance((Object[])null);
-                assertTrue(false);
+                fail();
             } catch (ExceptionInInitializerError e) {
                 assertTrue(e.getCause() instanceof ArithmeticException);
             }

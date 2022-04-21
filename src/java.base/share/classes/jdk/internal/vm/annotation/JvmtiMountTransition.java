@@ -29,7 +29,7 @@ import java.lang.annotation.*;
 
 /**
  * A method is annotated as "jvmti mount transition" if it starts
- * or ends virtual thread mount transition (VTMT).
+ * or ends virtual thread mount state transition (VTMS transition).
  *
  * @implNote
  * This annotation is only used for VirtualThread methods.

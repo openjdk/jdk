@@ -78,7 +78,7 @@ static jvmtiError JNICALL GetVirtualThread(const jvmtiEnv* env, ...) {
   va_end(ap);
 
   ThreadInVMfromNative tiv(current_thread);
-  JvmtiVTMTDisabler vtmt_disabler;
+  JvmtiVTMSTransitionDisabler disabler;
   ThreadsListHandle tlh(current_thread);
 
   jvmtiError err;
@@ -131,7 +131,7 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
   va_end(ap);
 
   ThreadInVMfromNative tiv(current_thread);
-  JvmtiVTMTDisabler vtmt_disabler;
+  JvmtiVTMSTransitionDisabler disabler;
 
   ThreadsListHandle tlh(current_thread);
   JavaThread* java_thread;
@@ -152,7 +152,7 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
     return JVMTI_ERROR_INVALID_THREAD;
   }
   if (thread_ptr == NULL) {
-      return JVMTI_ERROR_NULL_POINTER;
+    return JVMTI_ERROR_NULL_POINTER;
   }
   VirtualThreadGetThreadClosure op(Handle(current_thread, vthread_oop), thread_ptr);
   Handshake::execute(&op, &tlh, current_thread);
@@ -178,7 +178,7 @@ void JvmtiExtensions::register_extensions() {
     { (char*)"GetVirtualThread", JVMTI_KIND_OUT, JVMTI_TYPE_JTHREAD, JNI_FALSE }
   };
   static jvmtiParamInfo func_params2[] = {
-    { (char*)"GetVirtualThread", JVMTI_KIND_IN, JVMTI_TYPE_JTHREAD, JNI_FALSE },
+    { (char*)"GetCarrierThread", JVMTI_KIND_IN, JVMTI_TYPE_JTHREAD, JNI_FALSE },
     { (char*)"GetCarrierThread", JVMTI_KIND_OUT, JVMTI_TYPE_JTHREAD, JNI_FALSE }
   };
 

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 * @run testng/othervm --enable-preview -Xint Basic
 *
 * @run testng/othervm --enable-preview -Xcomp -XX:TieredStopAtLevel=3 -XX:CompileOnly=jdk/internal/vm/Continuation,Basic Basic
-*
 * @run testng/othervm --enable-preview -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic Basic
 * @run testng/othervm --enable-preview -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic -XX:CompileCommand=exclude,Basic.manyArgsDriver Basic
 * @run testng/othervm --enable-preview -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic -XX:CompileCommand=exclude,jdk/internal/vm/Continuation.enter Basic
@@ -56,12 +55,12 @@ import static org.testng.Assert.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-@Test
 public class Basic {
     static final ContinuationScope FOO = new ContinuationScope() {};
 
+    @Test
     public void test1() {
-        System.out.println("test1");
+        // Basic freeze and thaw
         final AtomicInteger res = new AtomicInteger(0);
         Continuation cont = new Continuation(FOO, ()-> {
             double r = 0;
@@ -101,16 +100,6 @@ public class Basic {
         boolean res = Continuation.yield(FOO);
 
         assertEquals(res, true);
-
-        // StackWalker walker = StackWalker.getInstance();
-        // List<String> frames = walker.walk(fs -> fs.map(StackWalker.StackFrame::getMethodName).collect(Collectors.toList()));
-
-        // assertEquals(frames.subList(0, 7), List.of("bar", "foo", "lambda$test1$0", "enter", "run", "test1"));
-
-        // walker = StackWalkerHelper.getInstance(FOO);
-        // frames = walker.walk(fs -> fs.map(StackWalker.StackFrame::getMethodName).collect(Collectors.toList()));
-
-        // assertEquals(frames, List.of("bar", "foo", "lambda$test1$0", "enter"));
 
         deep(DEPTH);
 
@@ -178,8 +167,9 @@ public class Basic {
         return "" + r;
     }
 
+    @Test
     public void testException1() {
-        System.out.println("testException1");
+        // Freeze and thaw with exceptions
         Continuation cont = new Continuation(FOO, ()-> {
             double r = 0;
             for (int k = 1; k < 20; k++) {
@@ -210,8 +200,9 @@ public class Basic {
         }
     }
 
+    @Test
     public void testManyArgs() {
-        System.out.println("testManyArgs");
+        // Methods with stack-passed arguments
         final AtomicInteger res = new AtomicInteger(0);
         Continuation cont = new Continuation(FOO, ()-> {
             res.set((int)manyArgsDriver());
@@ -271,8 +262,9 @@ public class Basic {
         return "" + r;
     }
 
+    @Test
     public void testPinnedMonitor() {
-        System.out.println("testPinnedMonitor");
+        // Test pinning due to held monitor
         final AtomicReference<Continuation.Pinned> res = new AtomicReference<>();
 
         Continuation cont = new Continuation(FOO, ()-> {
@@ -301,8 +293,8 @@ public class Basic {
         return Integer.parseInt(r)+1;
     }
 
-    private void testNotPinnedMonitor() {
-        System.out.println("testNotPinnedMonitor");
+    @Test
+    public void testNotPinnedMonitor() {
         final AtomicReference<Continuation.Pinned> res = new AtomicReference<>();
 
         Continuation cont = new Continuation(FOO, ()-> {
@@ -331,8 +323,9 @@ public class Basic {
         return Integer.parseInt(r)+1;
     }
 
-    private void testPinnedNative() {
-        System.out.println("testPinnedNative");
+    // @Test
+    public void testPinnedNative() {
+        // pinning due to native method
         final AtomicReference<Continuation.Pinned> res = new AtomicReference<>();
 
         Continuation cont = new Continuation(FOO, ()-> {
@@ -352,26 +345,35 @@ public class Basic {
         try {
             long x = 8;
             String s = "yyy";
-            String r = (String)Basic.class.getDeclaredMethod("nativeBar", long.class).invoke(null, 1L);
-            return Integer.parseInt(r)+1;
+            return Bar.x; // load the class
         } catch (Exception e) {
             throw new AssertionError(e);
         }
     }
 
-    static String nativeBar(long b) {
-        double x = 9.99;
-        String s = "zzz";
-        assert Continuation.isPinned(FOO);
-        boolean res = Continuation.yield(FOO);
-        assert res == false;
+    // use a class initializer to have a native method on the stack
+    class Bar {
+        static {
+            nativeBar(5);
+        }
 
-        long r = b+1;
-        return "" + r;
+        static String nativeBar(long b) {
+            double x = 9.99;
+            String s = "zzz";
+            assert Continuation.isPinned(FOO);
+            boolean res = Continuation.yield(FOO);
+            assert res == false;
+
+            long r = b+1;
+            return "" + r;
+        }
+
+        static int x = 5;
     }
 
-    private void testPinnedCriticalSection() {
-        System.out.println("testPinnedCriticalSection");
+    @Test
+    public void testPinnedCriticalSection() {
+        // pinning due to critical section
         final AtomicReference<Continuation.Pinned> res = new AtomicReference<>();
 
         Continuation cont = new Continuation(FOO, ()-> {

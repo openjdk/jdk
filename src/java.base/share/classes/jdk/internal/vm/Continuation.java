@@ -111,7 +111,7 @@ public class Continuation {
         }
     }
 
-    private Runnable target;
+    private final Runnable target;
 
     /* While the native JVM code is aware that every continuation has a scope, it is, for the most part,
      * oblivious to the continuation hierarchy. The only time this hierarchy is traversed in native code
@@ -260,8 +260,6 @@ public class Continuation {
                 }
             } finally {
                 fence();
-                StackChunk c = tail;
-
                 try {
                     assert isEmpty() == done : "empty: " + isEmpty() + " done: " + done + " cont: " + Integer.toHexString(System.identityHashCode(this));
                     JLA.setContinuation(currentCarrierThread(), this.parent);
@@ -456,20 +454,9 @@ public class Continuation {
 
     static private native int isPinned0(ContinuationScope scope);
 
-    private void clean() {
-        // if (!isStackEmpty())
-        //     clean0();
-    }
-
     private boolean fence() {
         U.storeFence(); // needed to prevent certain transformations by the compiler
         return true;
-    }
-
-    private static Map<Long, Integer> liveNmethods = new ConcurrentHashMap<>();
-
-    private void processNmethods(int before, int after) {
-
     }
 
     private boolean compareAndSetMounted(boolean expectedValue, boolean newValue) {
@@ -478,16 +465,13 @@ public class Continuation {
      }
 
     private void setMounted(boolean newValue) {
-        mounted = newValue;
-        // MOUNTED.setVolatile(this, newValue);
+        mounted = newValue; // MOUNTED.setVolatile(this, newValue);
     }
 
     private String id() {
         return Integer.toHexString(System.identityHashCode(this))
                 + " [" + currentCarrierThread().threadId() + "]";
     }
-
-    // private native void clean0();
 
     /**
      * Tries to forcefully preempt this continuation if it is currently mounted on the given thread

@@ -263,7 +263,7 @@ public class ThreadFlock implements AutoCloseable {
      * @throws WrongThreadException if the current thread is not the owner or a thread
      * contained in the flock
      * @throws jdk.incubator.concurrent.StructureViolationException if the current
-      * scope-local bindings are not the same as when the flock was created
+     * scope-local bindings are not the same as when the flock was created
      */
     public Thread start(Thread thread) {
         ensureOwnerOrContainsThread();

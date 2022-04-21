@@ -645,7 +645,7 @@ public class ThreadAPI {
             Thread.currentThread().interrupt();
             try {
                 thread.join(Duration.ofSeconds(Integer.MAX_VALUE));
-                assertTrue(false);
+                fail();
             } catch (InterruptedException expected) {
                 assertFalse(Thread.interrupted());
             } finally {
@@ -672,7 +672,7 @@ public class ThreadAPI {
             TestHelper.scheduleInterrupt(Thread.currentThread(), 100);
             try {
                 thread.join(Duration.ofSeconds(Integer.MAX_VALUE));
-                assertTrue(false);
+                fail();
             } catch (InterruptedException expected) {
                 assertFalse(Thread.interrupted());
             } finally {
@@ -843,7 +843,7 @@ public class ThreadAPI {
             try {
                 try {
                     Thread.sleep(60*1000);
-                    assertTrue(false);
+                    fail();
                 } catch (InterruptedException e) {
                     // interrupt status should be reset
                     assertFalse(Thread.interrupted());
@@ -896,7 +896,7 @@ public class ThreadAPI {
             synchronized (lock) {
                 try {
                     lock.wait();
-                    assertTrue(false);
+                    fail();
                 } catch (InterruptedException expected) {
                     assertFalse(Thread.interrupted());
                 }
@@ -1199,7 +1199,7 @@ public class ThreadAPI {
             me.interrupt();
             try {
                 Thread.sleep(0);
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // expected
                 assertFalse(me.isInterrupted());
@@ -1211,7 +1211,7 @@ public class ThreadAPI {
             me.interrupt();
             try {
                 Thread.sleep(0, 0);
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // expected
                 assertFalse(me.isInterrupted());
@@ -1223,7 +1223,7 @@ public class ThreadAPI {
             me.interrupt();
             try {
                 Thread.sleep(1000);
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // expected
                 assertFalse(me.isInterrupted());
@@ -1235,7 +1235,7 @@ public class ThreadAPI {
             me.interrupt();
             try {
                 Thread.sleep(1000, 0);
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // expected
                 assertFalse(me.isInterrupted());
@@ -1254,7 +1254,7 @@ public class ThreadAPI {
             me.interrupt();
             try {
                 Thread.sleep(Duration.ofMillis(0));
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // expected
                 assertFalse(me.isInterrupted());
@@ -1266,7 +1266,7 @@ public class ThreadAPI {
             me.interrupt();
             try {
                 Thread.sleep(Duration.ofMillis(1000));
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // expected
                 assertFalse(me.isInterrupted());
@@ -1284,7 +1284,7 @@ public class ThreadAPI {
             TestHelper.scheduleInterrupt(t, 2000);
             try {
                 Thread.sleep(20*1000);
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // interrupt status should be cleared
                 assertFalse(t.isInterrupted());
@@ -1296,7 +1296,7 @@ public class ThreadAPI {
             TestHelper.scheduleInterrupt(t, 2000);
             try {
                 Thread.sleep(20*1000, 0);
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // interrupt status should be cleared
                 assertFalse(t.isInterrupted());
@@ -1308,7 +1308,7 @@ public class ThreadAPI {
             TestHelper.scheduleInterrupt(t, 2000);
             try {
                 Thread.sleep(Duration.ofSeconds(20));
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // interrupt status should be cleared
                 assertFalse(t.isInterrupted());
@@ -1390,7 +1390,7 @@ public class ThreadAPI {
                 synchronized (lock) {
                     Thread.sleep(2000);
                 }
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // expected
                 assertFalse(me.isInterrupted());
@@ -1410,7 +1410,7 @@ public class ThreadAPI {
                 synchronized (lock) {
                     Thread.sleep(20 * 1000);
                 }
-                assertTrue(false);
+                fail();
             } catch (InterruptedException e) {
                 // interrupt status should be cleared
                 assertFalse(t.isInterrupted());

@@ -176,19 +176,21 @@ vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEa
 
 #############################################################################
 
-# Loom specific
+# Loom
 
-runtime/Thread/StopAtExit.java                                               8283610 generic-all
-
+# fails with StackOverflowError on Windows
 serviceability/jvmti/GetLocalVariable/GetLocalWithoutSuspendTest.java        8279663 windows-all
-serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java          8264699 generic-all
-serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorVMEventsTest.java#id0  8280914 generic-all
-serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorVMEventsTest.java#id1  8280914 generic-all
+
+# timeout when testing with virtual threads
 serviceability/jvmti/events/FramePop/framepop02/framepop02.java#id1          8283818 generic-all
 
-# Stratum mismatch
+# stratum mismatch
 vmTestbase/vm/mlvm/indy/func/jdi/breakpointOtherStratum/Test.java            8276713 generic-all
 vmTestbase/vm/mlvm/meth/func/jdi/breakpointOtherStratum/Test.java            8276713 generic-all
 
+# obsolete test using Thread.stop
+runtime/Thread/StopAtExit.java                                               8283610 generic-all
+
+# test issues that don't reproduce in jdk repo
 gc/metaspace/TestPerfCountersAndMemoryPools.java                             8278109 generic-all
 vmTestbase/gc/gctests/ReferencesGC/ReferencesGC.java                         8284234 generic-all

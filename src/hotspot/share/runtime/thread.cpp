@@ -1047,9 +1047,9 @@ JavaThread::JavaThread() :
   _do_not_unlock_if_synchronized(false),
 #if INCLUDE_JVMTI
   _carrier_thread_suspended(false),
-  _is_in_VTMT(false),
+  _is_in_VTMS_transition(false),
 #ifdef ASSERT
-  _is_VTMT_disabler(false),
+  _is_VTMS_transition_disabler(false),
 #endif
 #endif
   _jni_attach_state(_not_attaching_via_jni),
@@ -1747,13 +1747,13 @@ void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
 }
 
 #if INCLUDE_JVMTI
-void JavaThread::set_is_in_VTMT(bool val) {
-  _is_in_VTMT = val;
+void JavaThread::set_is_in_VTMS_transition(bool val) {
+  _is_in_VTMS_transition = val;
 }
 
 #ifdef ASSERT
-void JavaThread::set_is_VTMT_disabler(bool val) {
-  _is_VTMT_disabler = val;
+void JavaThread::set_is_VTMS_transition_disabler(bool val) {
+  _is_VTMS_transition_disabler = val;
 }
 #endif
 #endif
@@ -1766,9 +1766,9 @@ void JavaThread::set_is_VTMT_disabler(bool val) {
 //
 bool JavaThread::java_suspend() {
 #if INCLUDE_JVMTI
-  // Suspending a JavaThread in VTMT or disabling VTMT can cause deadlocks.
-  assert(!is_in_VTMT(), "no suspend allowed in VTMT transition");
-  assert(!is_VTMT_disabler(), "no suspend allowed for VTMT disablers");
+  // Suspending a JavaThread in VTMS transition or disabling VTMS transitions can cause deadlocks.
+  assert(!is_in_VTMS_transition(), "no suspend allowed in VTMS transition");
+  assert(!is_VTMS_transition_disabler(), "no suspend allowed for VTMS transition disablers");
 #endif
 
   guarantee(Thread::is_JavaThread_protected_by_TLH(/* target */ this),

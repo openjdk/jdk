@@ -2166,11 +2166,11 @@ public final class System {
         // classes are used.
         VM.initializeOSEnvironment();
 
-        // system properties, java.lang and other core classes are now initialized
-        VM.initLevel(1);
-
         // start Finalizer and Reference Handler threads
         SharedSecrets.getJavaLangRefAccess().startThreads();
+
+        // system properties, java.lang and other core classes are now initialized
+        VM.initLevel(1);
     }
 
     // @see #initPhase2()

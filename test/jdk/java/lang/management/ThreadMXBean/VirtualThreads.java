@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,13 @@ import java.util.concurrent.locks.LockSupport;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
-@Test
 public class VirtualThreads {
 
     /**
      * Test that ThreadMXBean::getAllThreadsIds does not include thread ids for
      * virtual threads.
      */
+    @Test
     public void testGetAllThreadIds() throws Exception {
         runInVirtualThread(() -> {
             long currentTid = Thread.currentThread().getId();
@@ -63,6 +63,7 @@ public class VirtualThreads {
     /**
      * Test that ThreadMXBean::getThreadInfo returns null for a virual thread.
      */
+    @Test
     public void testGetThreadInfo1() throws Exception {
         runInVirtualThread(() -> {
             long tid = Thread.currentThread().getId();
@@ -75,6 +76,7 @@ public class VirtualThreads {
      * Test that ThreadMXBean::getThreadInfo on a carrier thread. The stack
      * frames of the virtual thread should not be returned.
      */
+    @Test
     public void testGetThreadInfo2() throws Exception {
         try (ExecutorService pool = Executors.newFixedThreadPool(1)) {
             var carrierRef = new AtomicReference<Thread>();
@@ -116,6 +118,7 @@ public class VirtualThreads {
     /**
      * Test that getThreadCpuTime returns -1 for a virual thread..
      */
+    @Test
     public void testGetThreadCpuTime() throws Exception {
         runInVirtualThread(() -> {
             long tid = Thread.currentThread().getId();
@@ -127,6 +130,7 @@ public class VirtualThreads {
     /**
      * Test that getThreadUserTime returns -1 for a virual thread.
      */
+    @Test
     public void testGetThreadUserTime() throws Exception {
         runInVirtualThread(() -> {
             long tid = Thread.currentThread().getId();
@@ -161,6 +165,7 @@ public class VirtualThreads {
      * Test that ThreadMXBean::getCurrentThreadAllocatedBytes returns -1 when
      * invoked on a virtual thread.
      */
+    @Test
     public void testGetCurrentThreadAllocatedBytes() throws Exception {
         runInVirtualThread(() -> {
             long allocated = ManagementFactory.getPlatformMXBean(com.sun.management.ThreadMXBean.class)

@@ -30,6 +30,7 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.stream.Stream;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -435,21 +436,30 @@ public class ThreadImpl implements ThreadMXBean {
         }
     }
 
+    /**
+     * Returns an array of thread identifiers for the threads in the given
+     * array. Returns {@code null} if {@code threads} is null or the array
+     * of threads only includes carrier threads.
+     */
+    private long[] threadsToIds(Thread[] threads) {
+        if (threads != null) {
+            long[] tids = Stream.of(threads)
+                    .filter(t -> !(t instanceof jdk.internal.misc.CarrierThread))
+                    .mapToLong(Thread::threadId)
+                    .toArray();
+            if (tids.length > 0) {
+                return tids;
+            }
+        }
+        return null;
+    }
+
     @Override
     public long[] findMonitorDeadlockedThreads() {
         Util.checkMonitorAccess();
 
         Thread[] threads = findMonitorDeadlockedThreads0();
-        if (threads == null) {
-            return null;
-        }
-
-        long[] ids = new long[threads.length];
-        for (int i = 0; i < threads.length; i++) {
-            Thread t = threads[i];
-            ids[i] = t.threadId();
-        }
-        return ids;
+        return threadsToIds(threads);
     }
 
     @Override
@@ -462,16 +472,7 @@ public class ThreadImpl implements ThreadMXBean {
         Util.checkMonitorAccess();
 
         Thread[] threads = findDeadlockedThreads0();
-        if (threads == null) {
-            return null;
-        }
-
-        long[] ids = new long[threads.length];
-        for (int i = 0; i < threads.length; i++) {
-            Thread t = threads[i];
-            ids[i] = t.threadId();
-        }
-        return ids;
+        return threadsToIds(threads);
     }
 
     @Override

@@ -292,12 +292,12 @@ u_char* interpretedVFrame::bcp() const {
 }
 
 void interpretedVFrame::set_bcp(u_char* bcp) {
-  assert(stack_chunk() == NULL, ""); // unsupported for now because seems to be unused
+  assert(stack_chunk() == NULL, "Not supported for heap frames"); // unsupported for now because seems to be unused
   fr().interpreter_frame_set_bcp(bcp);
 }
 
 intptr_t* interpretedVFrame::locals_addr_at(int offset) const {
-  assert(stack_chunk() == NULL, ""); // unsupported for now because seems to be unused
+  assert(stack_chunk() == NULL, "Not supported for heap frames"); // unsupported for now because seems to be unused
   assert(fr().is_interpreted_frame(), "frame should be an interpreted frame");
   return fr().interpreter_frame_local_at(offset);
 }
@@ -320,7 +320,6 @@ int interpretedVFrame::bci() const {
 }
 
 Method* interpretedVFrame::method() const {
-  // assert((stack_chunk() != NULL) == register_map()->in_cont(), "_in_cont: %d register_map()->in_cont(): %d", stack_chunk() != NULL, register_map()->in_cont());
   return stack_chunk() == NULL ? fr().interpreter_frame_method() : stack_chunk()->interpreter_frame_method(fr());
 }
 

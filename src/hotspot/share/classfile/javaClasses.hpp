@@ -1171,6 +1171,9 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline void set_argsize(oop chunk, int value);
   static inline uint8_t flags(oop chunk);
   static inline void set_flags(oop chunk, uint8_t value);
+  static inline uint8_t flags_acquire(oop chunk);
+  static inline void release_set_flags(oop chunk, uint8_t value);
+  static inline bool try_set_flags(oop chunk, uint8_t expected_value, uint8_t new_value);
 
   static inline int maxSize(oop chunk);
   static inline void set_maxSize(oop chunk, int value);

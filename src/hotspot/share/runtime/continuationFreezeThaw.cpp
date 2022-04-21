@@ -29,6 +29,7 @@
 #include "code/compiledMethod.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.inline.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/memAllocator.hpp"
@@ -1150,6 +1151,13 @@ NOINLINE void FreezeBase::finish_freeze(const frame& f, const frame& top) {
 
   if (UNLIKELY(_barriers)) {
     log_develop_trace(continuations)("do barriers on old chunk");
+    // ParallelGC can allocate objects directly into the old generation.
+    // Then we want to relativize the derived pointers eagerly so that
+    // old chunks are all in GC mode.
+    assert(!UseG1GC, "G1 can not deal with allocating outside of eden");
+    assert(!UseZGC, "ZGC can not deal with allocating chunks visible to marking");
+    assert(!UseShenandoahGC, "Shenandoah can not deal with allocating chunks visible to marking");
+    ContinuationGCSupport::transform_stack_chunk(_cont.tail());
     _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>();
   }
 
@@ -1796,6 +1804,12 @@ NOINLINE intptr_t* ThawBase::thaw_slow(stackChunkOop chunk, bool return_barrier)
     assert(heap_frame.is_heap_frame(), "should have created a relative frame");
     heap_frame.print_value_on(&ls, nullptr);
   }
+
+#if INCLUDE_ZGC || INCLUDE_SHENANDOAHGC
+  if (UseZGC || UseShenandoahGC) {
+    _cont.tail()->relativize_derived_pointers_concurrently();
+  }
+#endif
 
   frame caller;
   thaw_one_frame(heap_frame, caller, num_frames, true);

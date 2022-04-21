@@ -3941,7 +3941,7 @@ JVM_ENTRY(void, JVM_VirtualThreadMountBegin(JNIEnv* env, jobject vthread, jboole
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
-  JvmtiVTMTDisabler::start_VTMT(vthread, /* is_mount */ true);
+  JvmtiVTMSTransitionDisabler::start_VTMS_transition(vthread, /* is_mount */ true);
 #else
   fatal("Should only be called with JVMTI enabled");
 #endif
@@ -3964,8 +3964,8 @@ JVM_ENTRY(void, JVM_VirtualThreadMountEnd(JNIEnv* env, jobject vthread, jboolean
       JvmtiEventController::enter_interp_only_mode();
     }
   }
-  assert(thread->is_in_VTMT(), "VTMT sanity check");
-  JvmtiVTMTDisabler::finish_VTMT(vthread, /* is_mount */ true);
+  assert(thread->is_in_VTMS_transition(), "sanity check");
+  JvmtiVTMSTransitionDisabler::finish_VTMS_transition(vthread, /* is_mount */ true);
   if (first_mount) {
     // thread start
     if (JvmtiExport::can_support_virtual_threads()) {
@@ -4014,8 +4014,8 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmountBegin(JNIEnv* env, jobject vthread, jboo
     }
   }
 
-  assert(!thread->is_in_VTMT(), "VTMT sanity check");
-  JvmtiVTMTDisabler::start_VTMT(vthread, /* is_mount */ false);
+  assert(!thread->is_in_VTMS_transition(), "sanity check");
+  JvmtiVTMSTransitionDisabler::start_VTMS_transition(vthread, /* is_mount */ false);
 
   if (last_unmount && thread->jvmti_thread_state() != NULL) {
     JvmtiExport::cleanup_thread(thread);
@@ -4035,8 +4035,8 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboole
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
-  assert(thread->is_in_VTMT(), "VTMT sanity check");
-  JvmtiVTMTDisabler::finish_VTMT(vthread, /* is_mount */ false);
+  assert(thread->is_in_VTMS_transition(), "sanity check");
+  JvmtiVTMSTransitionDisabler::finish_VTMS_transition(vthread, /* is_mount */ false);
 #else
   fatal("Should only be called with JVMTI enabled");
 #endif
