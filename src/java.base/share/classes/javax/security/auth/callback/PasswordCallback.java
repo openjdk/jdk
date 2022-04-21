@@ -118,6 +118,7 @@ public class PasswordCallback implements Callback, java.io.Serializable {
         // Cleanup the last buffered password copy.
         if (cleanable != null) {
             cleanable.clean();
+            cleanable = null;
         }
 
         // Set the retrieved password.
@@ -147,8 +148,9 @@ public class PasswordCallback implements Callback, java.io.Serializable {
      */
     public void clearPassword() {
         // Cleanup the last retrieved password copy.
-        if (inputPassword != null && cleanable != null) {
+        if (cleanable != null) {
             cleanable.clean();
+            cleanable = null;
         }
     }
 
