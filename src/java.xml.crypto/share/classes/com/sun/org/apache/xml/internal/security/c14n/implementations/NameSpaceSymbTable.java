@@ -50,7 +50,7 @@ public class NameSpaceSymbTable {
         initialMap.put(XMLNS, ne);
     }
 
-    /**The map between prefix-> entry table. */
+    /**The map betwen prefix-> entry table. */
     private SymbMap symb;
 
     /**The stacks for removing the definitions when doing pop.*/
@@ -58,7 +58,7 @@ public class NameSpaceSymbTable {
     private boolean cloned = true;
 
     /**
-     * Default constructor
+     * Default constractor
      **/
     public NameSpaceSymbTable() {
         //Insert the default binding for xmlns.
@@ -170,14 +170,14 @@ public class NameSpaceSymbTable {
         symb.put(prefix, entry);
         entry.rendered = true;
         entry.lastrendered = entry.uri;
-        // Return the node for outputting.
+        // Return the node for outputing.
         return entry.n;
     }
 
     /**
      * Gets a definition without mark it as render.
      * For render in exclusive c14n the namespaces in the include prefixes.
-     * @param prefix The prefix whose definition is needed.
+     * @param prefix The prefix whose definition is neaded.
      * @return the attr to render, null if there is no need to render
      **/
     public Attr getMappingWithoutRendered(String prefix) {

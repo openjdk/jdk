@@ -468,15 +468,15 @@ public class RFC2253Parser {
      */
     static String trim(String str) {
 
-        String trimmed = str.trim();
-        int i = str.indexOf(trimmed) + trimmed.length();
+        String trimed = str.trim();
+        int i = str.indexOf(trimed) + trimed.length();
 
-        if (str.length() > i && trimmed.endsWith("\\")
-            && !trimmed.endsWith("\\\\") && str.charAt(i) == ' ') {
-            trimmed = trimmed + " ";
+        if (str.length() > i && trimed.endsWith("\\")
+            && !trimed.endsWith("\\\\") && str.charAt(i) == ' ') {
+            trimed = trimed + " ";
         }
 
-        return trimmed;
+        return trimed;
     }
 
 }

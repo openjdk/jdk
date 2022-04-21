@@ -294,7 +294,7 @@ public class RetrievalMethodResolver extends KeyResolverSpi {
         }
         List<Node> parents = new ArrayList<>();
 
-        // Obtain all the parents of the element
+        // Obtain all the parents of the elemnt
         while (e != null) {
             parents.add(e);
             Node n = e.getParentNode();

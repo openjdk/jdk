@@ -55,7 +55,7 @@ public final class I18n {
     /**
      * Method translate
      *
-     * translates a message ID into an internationalized String, see also
+     * translates a message ID into an internationalized String, see alse
      * {@code XMLSecurityException.getExceptionMEssage()}. The strings are
      * stored in the {@code ResourceBundle}, which is identified in
      * {@code exceptionMessagesResourceBundleBase}

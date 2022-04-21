@@ -352,7 +352,7 @@ class XmlAttrStack {
                 // that from the input buffer else if the input buffer consists
                 // only of ".." and if the output buffer does not contain only
                 // the root slash "/", then move the ".." to the output buffer
-                // else delete it.; otherwise,
+                // else delte it.; otherwise,
             } else if (".".equals(input)) {
                 input = "";
                 printStep("2D", output.toString(), input);

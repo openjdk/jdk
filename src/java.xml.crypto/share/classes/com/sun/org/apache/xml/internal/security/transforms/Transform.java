@@ -309,7 +309,7 @@ public final class Transform extends SignatureElementProxy {
     /**
      * Transforms the input, and generates {@link XMLSignatureInput} as output.
      *
-     * @param input input {@link XMLSignatureInput} which can supplied Octet
+     * @param input input {@link XMLSignatureInput} which can supplied Octect
      * Stream and NodeSet as Input of Transformation
      * @param os where to output the result of the last transformation
      * @param secureValidation Whether secure validation is enabled
