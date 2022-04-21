@@ -1671,7 +1671,7 @@ class StubGenerator: public StubCodeGenerator {
     // possible extended key lengths: 44, 52, and 60 bytes.
     // We therefore can compare the actual length against the "middle" length
     // and get: lt -> len=44, eq -> len=52, gt -> len=60.
-    if (VM_Version::has_Crypto_AES()   ) { __ z_cghi(keylen, 52); }
+    __ z_cghi(keylen, 52);
     if (VM_Version::has_Crypto_AES128()) { __ z_brl(parmBlk_128); }  // keyLen <  52: AES128
     if (VM_Version::has_Crypto_AES192()) { __ z_bre(parmBlk_192); }  // keyLen == 52: AES192
     if (VM_Version::has_Crypto_AES256()) { __ z_brh(parmBlk_256); }  // keyLen >  52: AES256
@@ -1787,10 +1787,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register srclen  = Z_ARG2; // Must be odd reg and pair with src. Overwrites destination address.
     const Register dst     = Z_ARG3; // Must be even reg (KM requirement). Overwrites expanded key address.
 
-    if (! VM_Version::has_Crypto_AES()) {
-      __ should_not_reach_here();
-    }
-
     // Read key len of expanded key (in 4-byte words).
     __ z_lgf(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
@@ -1857,10 +1853,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register src     = Z_ARG1; // is Z_R2
     const Register srclen  = Z_ARG2; // Overwrites destination address.
     const Register dst     = Z_ARG3; // Overwrites key address.
-
-    if (! VM_Version::has_Crypto_AES()) {
-      __ should_not_reach_here();
-    }
 
     // Read key len of expanded key (in 4-byte words).
     __ z_lgf(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
@@ -1937,7 +1929,7 @@ class StubGenerator: public StubCodeGenerator {
   //   |        |
   //   +--------+ <-- Z_SP + alignment loss (part 1+2), octoword-aligned
   //   |        |
-  //   :        :  additional alignment loss. Blocks above can't tolerate unusabe DW @SP.
+  //   :        :  additional alignment loss. Blocks above can't tolerate unusable DW @SP.
   //   |        |
   //   +--------+ <-- Z_SP + alignment loss (part 1), octoword-aligned
   //   |        |
@@ -1949,12 +1941,12 @@ class StubGenerator: public StubCodeGenerator {
   //    spillSpace = parmBlk - AES_parmBlk_addspace
   //    dataBlocks = spillSpace - AES_dataBlk_space
   //
-  //    parmBlk-8  various lengths
-  //                parmBlk-1: key_len (only one byte is stored at parmBlk-1)
-  //                parmBlk-2: fCode (only one byte is stored at parmBlk-2)
-  //                parmBlk-4: ctrVal_len (as retrieved from iv array), in bytes, as HW
-  //                parmBlk-8: msglen length (in bytes) of crypto msg, as passed in by caller
-  //                              return value is calculated from this: rv = msglen - processed.
+  //    parmBlk-8  various fields of various lengths
+  //               parmBlk-1: key_len (only one byte is stored at parmBlk-1)
+  //               parmBlk-2: fCode (only one byte is stored at parmBlk-2)
+  //               parmBlk-4: ctrVal_len (as retrieved from iv array), in bytes, as HW
+  //               parmBlk-8: msglen length (in bytes) of crypto msg, as passed in by caller
+  //                          return value is calculated from this: rv = msglen - processed.
   //    parmBlk-16 old_SP (SP before resize)
   //    parmBlk-24 temp values
   //                up to and including main loop in generate_counterMode_AES
@@ -1993,15 +1985,6 @@ class StubGenerator: public StubCodeGenerator {
     //   ARG1(from) is Z_RET as well. Not saved or restored.
     //   ARG5(msglen) is restored by other means.
     __ z_stmg(Z_ARG2, Z_ARG4, argsave_offset,    parmBlk);
-
-#if defined(ASSERT)
-    // save ctr byte array length for debugging and check length against expected.
-    __ z_lgf(scratch, Address(ctr, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-    __ z_sthy(scratch, ctrVal_len_offset, Z_R0, parmBlk);
-    // check length against expected.
-    __ z_chi(scratch, AES_ctrVal_len);
-    __ asm_assert_eq("counter value needs same size as data block", 0xb00b);
-#endif
 
     assert(AES_ctrVec_len > 0, "sanity. We need a counter vector");
     __ add2reg(counter, AES_parmBlk_align, parmBlk);             // counter array is located behind crypto key. Available range is disp12 only.
@@ -2047,7 +2030,8 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT(err_msg("push_Block counterMode_AESCrypt%d {", parmBlk_len*8));
 
-    AES_dataBlk_space    = (2*dataBlk_len + AES_parmBlk_align - 1) & (~(AES_parmBlk_align - 1)); // space for data blocks (src and dst, one each) for partial block processing)
+    // space for data blocks (src and dst, one each) for partial block processing)
+    AES_dataBlk_space    = roundup(2*dataBlk_len, AES_parmBlk_align);
     AES_parmBlk_addspace = AES_parmBlk_align    // spill space (temp data)
                          + AES_parmBlk_align    // for argument save/restore
                          ;
@@ -2064,7 +2048,7 @@ class StubGenerator: public StubCodeGenerator {
                          + AES_parmBlk_align     // extra room for alignment
                          + AES_dataBlk_space     // one src and one dst data blk
                          + AES_parmBlk_addspace  // spill space for local data
-                         + ((parmBlk_len + AES_parmBlk_align - 1) & (~(AES_parmBlk_align - 1)))  // aligned length of parmBlk
+                         + roundup(parmBlk_len, AES_parmBlk_align)  // aligned length of parmBlk
                          + AES_ctrArea_len       // stack space for ctr vector
                          ;
     Register scratch     = fCode;  // We can use fCode as a scratch register. It's contents on entry
@@ -2231,10 +2215,6 @@ class StubGenerator: public StubCodeGenerator {
 
     Label srcMover, dstMover, fromMover, ctrXOR, dataEraser;  // EXRL (execution) templates.
     Label CryptoLoop, CryptoLoop_doit, CryptoLoop_end, CryptoLoop_setupAndDoLast, CryptoLoop_ctrVal_inc, allDone, Exit;
-
-    if (! VM_Version::has_Crypto_AES_CTR()) {
-      __ should_not_reach_here();
-    }
 
 #if defined(JIT_TIMER)
     __ JIT_TIMER_emit_start(-1, timerNum);
@@ -2419,10 +2399,6 @@ class StubGenerator: public StubCodeGenerator {
     const int vec_long  = threshold>>2; // that many blocks (16 bytes each) per iteration.
 
     Label AESCTR_short, AESCTR_long;
-
-    if (! VM_Version::has_Crypto_AES_CTR()) {
-      __ should_not_reach_here();
-    }
 
     __ z_chi(msglen, threshold);
     __ z_brh(AESCTR_long);
@@ -2964,15 +2940,21 @@ class StubGenerator: public StubCodeGenerator {
 
     // Generate AES intrinsics code.
     if (UseAESIntrinsics) {
-      StubRoutines::_aescrypt_encryptBlock = generate_AES_encryptBlock("AES_encryptBlock");
-      StubRoutines::_aescrypt_decryptBlock = generate_AES_decryptBlock("AES_decryptBlock");
-      StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_AES_encrypt("AES_encryptBlock_chaining");
-      StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_AES_decrypt("AES_decryptBlock_chaining");
+      if (VM_Version::has_Crypto_AES()) {
+        StubRoutines::_aescrypt_encryptBlock = generate_AES_encryptBlock("AES_encryptBlock");
+        StubRoutines::_aescrypt_decryptBlock = generate_AES_decryptBlock("AES_decryptBlock");
+        StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_AES_encrypt("AES_encryptBlock_chaining");
+        StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_AES_decrypt("AES_decryptBlock_chaining");
+      } else {
+        assert(VM_Version::has_Crypto_AES(), "Inconsistent settings. Check vm_version_s390.cpp");
+      }
     }
 
     if (UseAESCTRIntrinsics) {
       if (VM_Version::has_Crypto_AES_CTR()) {
         StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt("counterMode_AESCrypt");
+      } else {
+        assert(VM_Version::has_Crypto_AES_CTR(), "Inconsistent settings. Check vm_version_s390.cpp");
       }
     }
 
