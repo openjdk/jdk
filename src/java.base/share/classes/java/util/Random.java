@@ -234,6 +234,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
         protected int next(int bits) {
             throw new UnsupportedOperationException();
         }
+
         @Override
         public String toString() {
             return "RandomWrapper[" + generator + "]";
@@ -334,12 +335,15 @@ public class Random implements RandomGenerator, java.io.Serializable {
 
     /**
      * Sets the seed of this random number generator using a single
-     * {@code long} seed. The general contract of {@code setSeed} is
+     * {@code long} seed (optional operation).
+     *
+     * @implSpec The general contract of {@code setSeed} is
      * that it alters the state of this random number generator object
      * so as to be in exactly the same state as if it had just been
-     * created with the argument {@code seed} as a seed. The method
-     * {@code setSeed} is implemented by class {@code Random} by
-     * atomically updating the seed to
+     * created with the argument {@code seed} as a seed.
+     *
+     * <p>The method {@code setSeed} is implemented by class
+     * {@code Random} by atomically updating the seed to
      *  <pre>{@code (seed ^ 0x5DEECE66DL) & ((1L << 48) - 1)}</pre>
      * and clearing the {@code haveNextNextGaussian} flag used by {@link
      * #nextGaussian}.
@@ -350,6 +354,8 @@ public class Random implements RandomGenerator, java.io.Serializable {
      * argument as a seed value.
      *
      * @param seed the initial seed
+     * @throws UnsupportedOperationException if the {@code setSeed}
+     *         operation is not supported by this random number generator
      */
     public synchronized void setSeed(long seed) {
         this.seed.set(initialScramble(seed));
