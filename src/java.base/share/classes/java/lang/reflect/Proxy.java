@@ -879,9 +879,7 @@ public class Proxy implements java.io.Serializable {
             return e;
         }
 
-        private record DynamicModuleInfo(Module module, String exportedPackage, String nonExportedPackage) {}
-
-        private static final ClassLoaderValue<DynamicModuleInfo> dynProxyModules =
+        private static final ClassLoaderValue<Module> dynProxyModules =
             new ClassLoaderValue<>();
         private static final AtomicInteger counter = new AtomicInteger();
 
@@ -893,7 +891,7 @@ public class Proxy implements java.io.Serializable {
          * Each class loader will have one dynamic module.
          */
         private static ProxyContext getDynamicModuleContext(ClassLoader loader, boolean nonExported) {
-            var info = dynProxyModules.computeIfAbsent(loader, (ld, clv) -> {
+            var module = dynProxyModules.computeIfAbsent(loader, (ld, clv) -> {
                 // create a dynamic module and setup module access
                 String mn = "jdk.proxy" + counter.incrementAndGet();
                 String pn = PROXY_PACKAGE_PREFIX + "." + mn;
@@ -908,11 +906,11 @@ public class Proxy implements java.io.Serializable {
                 // java.base to create proxy instance and access its Lookup instance
                 Modules.addOpens(m, pn, Proxy.class.getModule());
                 Modules.addOpens(m, mn, Proxy.class.getModule());
-                return new DynamicModuleInfo(m, mn, pn);
+                return m;
             });
-            return new ProxyContext(info.module, nonExported
-                    ? info.nonExportedPackage
-                    : info.exportedPackage, false);
+            return new ProxyContext(module, nonExported
+                    ? PROXY_PACKAGE_PREFIX + '.' + module.getName()
+                    : module.getName(), false);
         }
     }
 
