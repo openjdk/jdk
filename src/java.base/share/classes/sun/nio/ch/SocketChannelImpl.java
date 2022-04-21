@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ class SocketChannelImpl
      * Checks that the channel is open and connected.
      *
      * @apiNote This method uses the "state" field to check if the channel is
-     * open. It should never be used in conjuncion with isOpen or ensureOpen
+     * open. It should never be used in conjunction with isOpen or ensureOpen
      * as these methods check AbstractInterruptibleChannel's closed field - that
      * field is set before implCloseSelectableChannel is called and so before
      * the state is changed.
