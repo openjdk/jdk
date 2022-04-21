@@ -234,6 +234,10 @@ public class Random implements RandomGenerator, java.io.Serializable {
         protected int next(int bits) {
             throw new UnsupportedOperationException();
         }
+        @Override
+        public String toString() {
+            return "RandomWrapper[" + generator + "]";
+        }
     }
 
     /** use serialVersionUID from JDK 1.1 for interoperability */
