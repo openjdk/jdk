@@ -50,13 +50,29 @@ public class BlackholeHotInlineTest {
     static long x, y;
 
     /*
-     * Baseline test: check that dontinline method does not allow the elimination.
+     * Negative test: check that dangling expression is eliminated
+     */
+
+    @Test
+    @IR(failOn = IRNode.MUL_L)
+    static void testNothing() {
+        long r = x * y;
+    }
+
+    @Run(test = "testNothing")
+    static void runNothing() {
+        testNothing();
+    }
+
+    /*
+     * Auxiliary test: check that dontinline method does not allow the elimination.
      */
 
     @Test
     @IR(counts = {IRNode.MUL_L, "1"})
     static void testDontline() {
-        dontinline(x * y);
+        long r = x * y;
+        dontinline(r);
     }
 
     static void dontinline(long x) {}
@@ -73,7 +89,8 @@ public class BlackholeHotInlineTest {
     @Test
     @IR(counts = {IRNode.MUL_L, "1"})
     static void testBlackholed() {
-        blackhole(x * y);
+        long r = x * y;
+        blackhole(r);
     }
 
     static void blackhole(long x) {}
