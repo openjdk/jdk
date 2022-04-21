@@ -184,7 +184,7 @@ public interface MechanismFactory {
      *
      * @param myAcceptorCred a credential element for the context acceptor
      * obtained previously from this mechanism. The identity of the context
-     * acceptor cna be obtained from this credential. Passing a value of
+     * acceptor can be obtained from this credential. Passing a value of
      * null here indicates that tha default entity of the mechanism's
      * choice should be assumed to be the context acceptor and default
      * credentials should be applied.

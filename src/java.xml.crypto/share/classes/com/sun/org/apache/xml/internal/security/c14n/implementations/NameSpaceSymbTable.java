@@ -50,7 +50,7 @@ public class NameSpaceSymbTable {
         initialMap.put(XMLNS, ne);
     }
 
-    /**The map betwen prefix-> entry table. */
+    /**The map between prefix-> entry table. */
     private SymbMap symb;
 
     /**The stacks for removing the definitions when doing pop.*/
@@ -58,7 +58,7 @@ public class NameSpaceSymbTable {
     private boolean cloned = true;
 
     /**
-     * Default constractor
+     * Default constructor
      **/
     public NameSpaceSymbTable() {
         //Insert the default binding for xmlns.
@@ -170,7 +170,7 @@ public class NameSpaceSymbTable {
         symb.put(prefix, entry);
         entry.rendered = true;
         entry.lastrendered = entry.uri;
-        // Return the node for outputing.
+        // Return the node for outputting.
         return entry.n;
     }
 

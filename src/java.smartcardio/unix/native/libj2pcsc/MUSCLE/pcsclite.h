@@ -58,7 +58,7 @@ typedef SCARDHANDLE *LPSCARDHANDLE;
 
 #define MAX_ATR_SIZE                  33      /**< Maximum ATR size */
 
-/* Set structure elements aligment on bytes
+/* Set structure elements alignment on bytes
  * http://gcc.gnu.org/onlinedocs/gcc/Structure_002dPacking-Pragmas.html */
 #ifdef __APPLE__
 #pragma pack(1)
@@ -292,7 +292,7 @@ extern const SCARD_IO_REQUEST g_rgSCardT0Pci, g_rgSCardT1Pci, g_rgSCardRawPci;
 /*
  * The message and buffer sizes must be multiples of 16.
  * The max message size must be at least large enough
- * to accomodate the transmit_struct
+ * to accommodate the transmit_struct
  */
 #define MAX_BUFFER_SIZE                  264      /**< Maximum Tx/Rx Buffer for short APDU */
 #define MAX_BUFFER_SIZE_EXTENDED      (4 + 3 + (1<<16) + 3 + 2)      /**< enhanced (64K + APDU + Lc + Le + SW) Tx/Rx Buffer */

@@ -141,7 +141,7 @@ abstract class MessageToken extends Krb5Token {
 
     /**
      * Constructs a MessageToken from a byte array. If there are more bytes
-     * in the array than needed, the extra bytes are simply ignroed.
+     * in the array than needed, the extra bytes are simply ignored.
      *
      * @param tokenId the token id that should be contained in this token as
      * it is read.

@@ -244,7 +244,7 @@ public class KerberosKey implements SecretKey {
     /**
      * Destroys this key by clearing out the key material of this secret key.
      *
-     * @throws DestroyFailedException if some error occurs while destorying
+     * @throws DestroyFailedException if some error occurs while destroying
      * this key.
      */
     public void destroy() throws DestroyFailedException {
