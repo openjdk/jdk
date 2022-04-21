@@ -347,7 +347,7 @@ class Scrubber {
 // Calls of Java mehtods need stubs to the interpreter. Calls sharing the same Java method
 // can share a stub to interpreter.
 // A SharedStubToInterpRequest describes a request for a shared stub to the interpreter.
-class SharedStubToInterpRequest {
+class SharedStubToInterpRequest: public ResourceObj {
  private:
   Method* _shared_method;
   address _caller_pc;
