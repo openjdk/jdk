@@ -377,6 +377,21 @@ public final class FileUtils {
         }
     }
 
+    public static void patch(Path path, int fromLine, int toLine, List<String> from, String to) throws IOException {
+        if(fromLine < 1 || toLine < 1) {
+            throw new RuntimeException("Invalid range fromLine: " + fromLine + ", toLine: " + toLine);
+        }
+        var lines = Files.readAllLines(path);
+        if(toLine > lines.size()) {
+            throw new RuntimeException("Expected toLine: " + toLine + ", actual range available: " + lines.size());
+        }
+        for (int i = toLine - 1; i >= fromLine - 1; i--) {
+            lines.remove(i);
+        }
+        lines.addAll(fromLine - 1, to.lines().toList());
+        Files.write(path, lines);
+    }
+
     private static native long getWinProcessHandleCount();
 
     // Possible command locations and arguments
