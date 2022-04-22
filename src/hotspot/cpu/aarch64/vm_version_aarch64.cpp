@@ -308,7 +308,7 @@ void VM_Version::initialize() {
     UseMD5Intrinsics = true;
   }
 
-  if (VM_Version::supports_sha1() || VM_Version::supports_sha2() ||
+  if (VM_Version::supports_sha1() || VM_Version::supports_sha256() ||
       VM_Version::supports_sha3() || VM_Version::supports_sha512()) {
     if (FLAG_IS_DEFAULT(UseSHA)) {
       FLAG_SET_DEFAULT(UseSHA, true);
@@ -327,7 +327,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
   }
 
-  if (UseSHA && VM_Version::supports_sha2()) {
+  if (UseSHA && VM_Version::supports_sha256()) {
     if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
     }
