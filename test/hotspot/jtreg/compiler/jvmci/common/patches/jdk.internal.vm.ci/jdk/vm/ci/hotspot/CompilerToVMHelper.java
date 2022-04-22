@@ -172,7 +172,7 @@ public class CompilerToVMHelper {
             speculations = new byte[0];
             failedSpeculationsAddress = 0L;
         }
-        return CTVM.installCode(target, compiledCode, code, failedSpeculationsAddress, speculations);
+        return CTVM.installCode(compiledCode, code, failedSpeculationsAddress, speculations);
     }
 
     public static void resetCompilationStatistics() {
