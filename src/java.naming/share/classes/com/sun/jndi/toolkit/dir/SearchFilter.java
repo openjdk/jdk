@@ -82,7 +82,7 @@ public class SearchFilter implements AttrFilter {
      * Utility routines used by member classes
      */
 
-    // does some pre-processing on the string to make it look exactly lik
+    // does some pre-processing on the string to make it look exactly like
     // what the parser expects. This only needs to be called once.
     protected void normalizeFilter() {
         skipWhiteSpace(); // get rid of any leading whitespaces

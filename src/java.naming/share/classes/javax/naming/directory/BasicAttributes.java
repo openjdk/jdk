@@ -76,7 +76,7 @@ public class BasicAttributes implements Attributes {
     private boolean ignoreCase = false;
 
     // The 'key' in attrs is stored in the 'right case'.
-    // If ignoreCase is true, key is aways lowercase.
+    // If ignoreCase is true, key is always lowercase.
     // If ignoreCase is false, key is stored as supplied by put().
     // %%% Not declared "private" due to bug 4064984.
     transient Hashtable<String,Attribute> attrs = new Hashtable<>(11);

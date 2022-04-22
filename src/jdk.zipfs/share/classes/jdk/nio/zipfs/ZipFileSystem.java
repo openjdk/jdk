@@ -868,7 +868,7 @@ class ZipFileSystem extends FileSystem {
     }
 
     private void checkOptions(Set<? extends OpenOption> options) {
-        // check for options of null type and option is an intance of StandardOpenOption
+        // check for options of null type and option is an instance of StandardOpenOption
         for (OpenOption option : options) {
             if (option == null)
                 throw new NullPointerException();

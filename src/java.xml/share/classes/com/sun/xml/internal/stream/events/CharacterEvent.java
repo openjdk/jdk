@@ -46,7 +46,7 @@ implements Characters {
     private boolean fIsCData;
     /* true if fData is ignorableWhitespace*/
     private boolean fIsIgnorableWhitespace;
-    /* true if fData contet is whitespace*/
+    /* true if fData content is whitespace*/
     private boolean fIsSpace = false;
     /*used to prevent scanning of  data multiple times */
     private boolean fCheckIfSpaceNeeded = true;

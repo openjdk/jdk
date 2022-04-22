@@ -400,7 +400,7 @@ public class UnicastRef implements RemoteRef {
         } catch (RuntimeException e) {
             /*
              * REMIND: Since runtime exceptions are no longer wrapped,
-             * we can't assue that the connection was left in
+             * we can't assume that the connection was left in
              * a reusable state. Is this okay?
              */
             clientRefLog.log(Log.BRIEF, "exception: ", e);
