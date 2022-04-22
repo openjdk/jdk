@@ -175,7 +175,6 @@ void vmClasses::resolve_all(TRAPS) {
   java_lang_ref_Reference::compute_offsets();
 
   // Preload ref klasses and set reference types
-  vmClasses::Reference_klass()->set_reference_type(REF_REFERENCE);
   InstanceRefKlass::update_nonstatic_oop_maps(vmClasses::Reference_klass());
 
   resolve_through(VM_CLASS_ID(PhantomReference_klass), scan, CHECK);

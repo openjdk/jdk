@@ -31,7 +31,6 @@
 
 enum ReferenceType {
   REF_NONE,      // Regular class
-  REF_REFERENCE, // java/lang/ref/Reference, super class of the following
   REF_SOFT,      // Subclass of java/lang/ref/SoftReference
   REF_WEAK,      // Subclass of java/lang/ref/WeakReference
   REF_FINAL,     // Subclass of java/lang/ref/FinalReference
