@@ -1949,43 +1949,66 @@ class StubGenerator: public StubCodeGenerator {
     __ z_stmg(Z_ARG2, Z_ARG4, argsave_offset,    parmBlk);
 
     assert(AES_ctrVec_len > 0, "sanity. We need a counter vector");
-    __ add2reg(counter, AES_parmBlk_align, parmBlk);             // counter array is located behind crypto key. Available range is disp12 only.
-    __ z_mvc(0, AES_ctrVal_len-1, counter, 0, ctr);              // move first copy of iv
-    for (int j = 1; j < AES_ctrVec_len; j+=j) {                  // j (and amount of moved data) doubles with every iteration
+    __ add2reg(counter, AES_parmBlk_align, parmBlk);       // counter array is located behind crypto key. Available range is disp12 only.
+    __ z_mvc(0, AES_ctrVal_len-1, counter, 0, ctr);        // move first copy of iv
+    for (int j = 1; j < AES_ctrVec_len; j+=j) {            // j (and amount of moved data) doubles with every iteration
       int offset = j * AES_ctrVal_len;
       if (offset <= 256) {
-        __ z_mvc(offset, offset-1, counter, 0, counter);         // move iv
+        __ z_mvc(offset, offset-1, counter, 0, counter);   // move iv
       } else {
         for (int k = 0; k < offset; k += 256) {
           __ z_mvc(offset+k, 255, counter, 0, counter);
         }
       }
     }
-    for (int j = 1; j < AES_ctrVec_len; j++) {                   // start with j = 1; no need to add 0 to the first counter value.
+
+    Label noCarry, done;
+    __ z_lg(scratch, Address(ctr, 8));                     // get low-order DW of initial counter.
+    __ z_algfi(scratch, AES_ctrVec_len);                   // check if we will overflow during init.
+    __ z_brc(Assembler::bcondLogNoCarry, noCarry);         // No, 64-bit increment is sufficient.
+
+    for (int j = 1; j < AES_ctrVec_len; j++) {             // start with j = 1; no need to add 0 to the first counter value.
       int offset = j * AES_ctrVal_len;
-      __ z_algsi(offset + 8, counter, j);                        // increment iv by index value
-                                                                 // TODO: for correctness, use 128-bit add
+      generate_increment128(counter, offset, j, scratch);  // increment iv by index value
     }
+    __ z_bru(done);
+
+    __ bind(noCarry);
+    for (int j = 1; j < AES_ctrVec_len; j++) {             // start with j = 1; no need to add 0 to the first counter value.
+      int offset = j * AES_ctrVal_len;
+      generate_increment64(counter, offset, j);            // increment iv by index value
+    }
+
+    __ bind(done);
 
     BLOCK_COMMENT("} prepare stack counterMode_AESCrypt");
   }
 
 
-  void generate_counterMode_increment_ctrVector(Register parmBlk, Register counter, bool v0_only) {
+  void generate_counterMode_increment_ctrVector(Register parmBlk, Register counter, Register scratch, bool v0_only) {
 
     BLOCK_COMMENT("increment ctrVector counterMode_AESCrypt {");
 
-    __ add2reg(counter, AES_parmBlk_align, parmBlk);             // ptr to counter array needs to be restored
+    __ add2reg(counter, AES_parmBlk_align, parmBlk);       // ptr to counter array needs to be restored
     for (int j = 0; j < AES_ctrVec_len; j++) {
       int offset = j * AES_ctrVal_len;
-      __ z_algsi(offset + 8, counter, AES_ctrVec_len);           // calculate new ctr vector elements (simple increment)
-                                                                 // TODO: for correctness, use 128-bit add
+      generate_increment128(counter, offset, AES_ctrVec_len, scratch); // increment iv by # vector elements
       if (v0_only) break;
     }
 
     BLOCK_COMMENT("} increment ctrVector counterMode_AESCrypt");
   }
 
+  void generate_increment64(Register counter, int offset, int increment) {
+    __ z_algsi(offset + 8, counter, increment);            // increment, no overflow check
+  }
+
+  void generate_increment128(Register counter, int offset, int increment, Register scratch) {
+    __ clear_reg(scratch);                                 // prepare to add carry to high-order DW
+    __ z_algsi(offset + 8, counter, increment);            // increment low order DW
+    __ z_alcg(scratch, Address(counter, offset));          // add carry to high-order DW
+    __ z_stg(scratch, Address(counter, offset));           // store back
+  }
 
   void generate_counterMode_push_Block(int dataBlk_len, int parmBlk_len, int crypto_fCode,
                            Register parmBlk, Register msglen, Register fCode, Register key) {
@@ -2264,7 +2287,7 @@ class StubGenerator: public StubCodeGenerator {
                                                               //       vector element to encrypt remaining unprocessed bytes.
 //    __ z_brl(CryptoLoop_end);                               //  < 0: this was detected before and handled at CryptoLoop_setupAndDoLast
 
-      generate_counterMode_increment_ctrVector(parmBlk, counter, false);
+      generate_counterMode_increment_ctrVector(parmBlk, counter, srclen, false); // srclen unused here (serves as scratch)
       __ z_bru(CryptoLoop);
 
     __ bind(CryptoLoop_end);
@@ -2335,7 +2358,7 @@ class StubGenerator: public StubCodeGenerator {
       __ z_bru(CryptoLoop_end);
 
     __ bind(CryptoLoop_ctrVal_inc);
-      generate_counterMode_increment_ctrVector(parmBlk, counter, true);
+      generate_counterMode_increment_ctrVector(parmBlk, counter, srclen, true); // srclen unused here (serves as scratch)
       __ z_bru(CryptoLoop_end);
 
     //-------------------------------
