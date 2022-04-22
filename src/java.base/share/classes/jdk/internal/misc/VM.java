@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,10 +263,10 @@ public class VM {
         // by the vm option -XX:MaxDirectMemorySize=<size>.
         // The maximum amount of allocatable direct buffer memory (in bytes)
         // from the system property sun.nio.MaxDirectMemorySize set by the VM.
-        // If not set or set to 0 or -1, the max memory will be used
+        // If not set or set to -1, the max memory will be used
         // The system property will be removed.
         String s = props.get("sun.nio.MaxDirectMemorySize");
-        if (s == null || s.isEmpty() || s.equals("-1") || s.equals("0")) {
+        if (s == null || s.isEmpty() || s.equals("-1")) {
             // -XX:MaxDirectMemorySize not given, take default
             directMemory = Runtime.getRuntime().maxMemory();
         } else {
