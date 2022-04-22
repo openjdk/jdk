@@ -204,7 +204,6 @@ class nmethod : public CompiledMethod {
   int _stub_offset;
   int _oops_offset;                       // offset to where embedded oop table begins (inside data)
   int _metadata_offset;                   // embedded meta data table
-  int _scopes_data_offset;
   int _scopes_pcs_offset;
   int _dependencies_offset;
   int _native_invokers_offset;
@@ -802,10 +801,9 @@ class nmethodLocker : public StackObj {
   }
 };
 
-#if defined(AARCH64)
-class mintrinsic : public CompiledMethod {
+class mhmethod : public CompiledMethod {
  public:
-  static mintrinsic* new_mintrinsic(const methodHandle& method,
+  static mhmethod* new_mhmethod(const methodHandle& method,
                               int compile_id,
                               CodeBuffer *code_buffer,
                               int vep_offset,
@@ -832,38 +830,38 @@ class mintrinsic : public CompiledMethod {
 
   address entry_point() const               { return _entry_point;             } // normal entry point
   bool is_osr_method() const                { return false; }
-  int  osr_entry_bci() const                { assert(is_osr_method(), "wrong kind of mintrinsic"); return InvocationEntryBci; }
+  int  osr_entry_bci() const                { assert(is_osr_method(), "wrong kind of mhmethod"); return InvocationEntryBci; }
 
   // boundaries for different parts
-  address scopes_data_end             () const    { return           header_begin() + _scopes_pcs_offset    ; }
-  PcDesc* scopes_pcs_begin            () const    { return (PcDesc*)(header_begin() + _scopes_pcs_offset   ); }
-  PcDesc* scopes_pcs_end              () const    { return (PcDesc*)(header_begin() + _dependencies_offset) ; }
-  address consts_begin                () const    { return           header_begin() + _consts_offset        ; }
+  address scopes_data_end             () const    { return           header_begin() + _data_offset          ; }
+  PcDesc* scopes_pcs_begin            () const    { return (PcDesc*)(header_begin() + _data_offset)         ; }
+  PcDesc* scopes_pcs_end              () const    { return (PcDesc*)(header_begin() + _data_offset)         ; }
+  address consts_begin                () const    { return           header_begin() + _data_offset          ; }
   address consts_end                  () const    { return           code_begin()                           ; }
-  address stub_begin                  () const    { return           header_begin() + _stub_offset          ; }
-  address stub_end                    () const    { return           header_begin() + _oops_offset          ; }
+  address stub_begin                  () const    { return           header_begin() + _data_offset          ; }
+  address stub_end                    () const    { return           header_begin() + _data_offset          ; }
   address exception_begin             () const    { return           header_begin()                         ; }
   address unwind_handler_begin        () const    { return NULL                                             ; }
-  oop*    oops_begin                  () const    { return (oop*)   (header_begin() + _oops_offset)         ; }
-  oop*    oops_end                    () const    { return (oop*)   (header_begin() + _metadata_offset)     ; }
+  oop*    oops_begin                  () const    { return (oop*)   (header_begin() + _data_offset)         ; }
+  oop*    oops_end                    () const    { return (oop*)   (header_begin() + _data_offset)         ; }
 
-  Metadata** metadata_begin           () const    { return (Metadata**)  (header_begin() + _metadata_offset); }
-  Metadata** metadata_end             () const    { return (Metadata**)  _scopes_data_begin;                  }
+  Metadata** metadata_begin           () const    { return (Metadata**)  (header_begin() + _data_offset)    ; }
+  Metadata** metadata_end             () const    { return (Metadata**)  _scopes_data_begin                 ; }
 
-  address dependencies_begin          () const    { return           header_begin() + _dependencies_offset  ; }
-  address dependencies_end            () const    { return           header_begin() + _native_invokers_offset ; }
-  RuntimeStub** native_invokers_begin () const    { return (RuntimeStub**)(header_begin() + _native_invokers_offset); }
-  RuntimeStub** native_invokers_end   () const    { return (RuntimeStub**)(header_begin() + _handler_table_offset)  ; }
-  address handler_table_begin         () const    { return           header_begin() + _handler_table_offset ; }
-  address handler_table_end           () const    { return           header_begin() + _nul_chk_table_offset ; }
-  address nul_chk_table_begin         () const    { return           header_begin() + _nul_chk_table_offset ; }
-  address nul_chk_table_end           () const    { return           header_begin() + _mintrinsic_end_offset; }
+  RuntimeStub** native_invokers_begin () const    { return (RuntimeStub**)(header_begin() + _data_offset)   ; }
+  RuntimeStub** native_invokers_end   () const    { return (RuntimeStub**)(header_begin() + _data_offset)   ; }
+  address handler_table_begin         () const    { return           header_begin() + _data_offset          ; }
+  address handler_table_end           () const    { return           header_begin() + _data_offset          ; }
+  address nul_chk_table_begin         () const    { return           header_begin() + _data_offset          ; }
+  address nul_chk_table_end           () const    { return           header_begin() + _data_offset          ; }
 
-  void    set_original_pc(const frame* fr, address pc)  { *orig_pc_addr(fr) = pc; }
+  void    set_original_pc(const frame* fr, address pc)  { *orig_pc_addr(fr) = pc;   }
   address get_original_pc(const frame* fr)              { return *orig_pc_addr(fr); }
 
-  oop   oop_at(int index) const;
-  Metadata* metadata_at(int index)       const    { return index == 0 ? NULL: *metadata_addr_at(index);       }
+  oop         oop_at(int index)           const   { assert(index == 0, "invalid index"); return nullptr     ; }
+  Metadata*   metadata_at(int index)      const   { assert(index == 0, "invalid index"); return nullptr     ; }
+  oop*        oop_addr_at(int index)      const   { assert(false, "unreachable"); return nullptr; }
+  Metadata**  metadata_addr_at(int index) const   { assert(false, "unreachable"); return nullptr; }
 
   bool can_convert_to_zombie()                          { assert(false, "unreachable"); return false; }
   const char* compile_kind() const                      { return "c2n";  }
@@ -879,87 +877,56 @@ class mintrinsic : public CompiledMethod {
   CompiledStaticCall* compiledStaticCall_at(address addr)           const;
   CompiledStaticCall* compiledStaticCall_before(address addr)       const;
 
-  bool make_in_use() {
-    return try_transition(in_use);
-  }
+  bool make_in_use();
 
   bool is_unloading()                             { return false; }
   void do_unloading(bool unloading_occurred);
 
-  void print()const;
-  void print_on(outputStream* st) const           { CodeBlob::print_on(st); }
-  void print_pcs()                                { }
-
- protected:
-  void flush()                                    { assert(false, "never flush"); }
-
-  // Sizes
-  int oops_size         () const                  { return (address)  oops_end         () - (address)  oops_begin         (); }
-  int metadata_size     () const                  { return (address)  metadata_end     () - (address)  metadata_begin     (); }
-  int dependencies_size () const                  { return            dependencies_end () -            dependencies_begin (); }
-
-  void init_defaults();
-
   void metadata_do(MetadataClosure* f);
 
-  oop*  oop_addr_at(int index) const {  // for GC
-    // relocation indexes are biased by 1 (because 0 is reserved)
-    assert(false, "must be a valid non-zero index");
-    return &oops_begin()[index - 1];
-  }
+  void print() const;
+  void print_on(outputStream* st) const           { CodeBlob::print_on(st); }
 
-  Metadata**  metadata_addr_at(int index) const {  // for GC
-    // relocation indexes are biased by 1 (because 0 is reserved)
-    assert(false, "must be a valid non-zero index");
-    return &metadata_begin()[index - 1];
-  }
+#if defined(SUPPORT_DATA_STRUCTS)
+  // print output in opt build for disassembler library
+  void print_relocations()                        PRODUCT_RETURN;
+  void print_pcs();
+#else
+  void print_pcs()                                { }
+#endif
 
-  // offsets for entry points
-  address _entry_point;                   // entry point with class check
-  address _verified_entry_point;          // entry point without class check
+  void flush()                                    { assert(false, "never flush"); }
 
-  int _consts_offset;
-  int _stub_offset;
-  int _oops_offset;                       // offset to where embedded oop table begins (inside data)
-  int _metadata_offset;                   // embedded meta data table
-  int _scopes_data_offset;
-  int _scopes_pcs_offset;
-  int _dependencies_offset;
-  int _native_invokers_offset;
-  int _handler_table_offset;
-  int _nul_chk_table_offset;
-  int _mintrinsic_end_offset;
-
-  int _compile_id;
-
-  volatile signed char _state;
 
  private:
-  mintrinsic(Method* method,
+  void* operator new(size_t size, int mhmethod_size, int comp_level) throw();
+
+  mhmethod(Method* method,
             CompilerType type,
-            int mintrinsic_size,
+            int mhmethod_size,
             int compile_id,
             CodeOffsets* offsets,
             CodeBuffer *code_buffer,
             int frame_size);
 
-  void* operator new(size_t size, int mintrinsic_size, int comp_level) throw();
+  void init_defaults();
 
   address* orig_pc_addr(const frame* fr)  {  return (address*) ((address)fr->unextended_sp()); }
 
-  bool try_transition(int new_state);
-
-  void verify() {}
+  void verify();
 
   void print(outputStream* st)          const;
-  virtual void print_on(outputStream* st, const char* msg) const;
+  void print_on(outputStream* st, const char* msg) const;
 
-#if defined(SUPPORT_DATA_STRUCTS)
-  // print output in opt build for disassembler library
-  void print_relocations()                        PRODUCT_RETURN;
-#endif
+  void log_new_mhmethod() const;
+
+  // offsets for entry points
+  address _entry_point;                   // entry point with class check
+  address _verified_entry_point;          // entry point without class check
+
+  int _compile_id;
+
+  volatile signed char _state;
 };
-
-#endif
 
 #endif // SHARE_CODE_NMETHOD_HPP

@@ -3055,7 +3055,11 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
 
       // Generate the compiled-to-native wrapper code
-      nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
+      if (!method->is_method_handle_intrinsic()) {
+        nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
+      } else {
+        nm = SharedRuntime::generate_mhi_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
+      }
 
       if (nm != NULL) {
         {

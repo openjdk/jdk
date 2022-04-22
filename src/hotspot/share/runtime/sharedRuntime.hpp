@@ -480,14 +480,12 @@ class SharedRuntime: AllStatic {
                                           VMRegPair* regs,
                                           BasicType ret_type);
 
-#if defined(AARCH64)
-  static CompiledMethod* generate_method_handle_intrinsic_wrapper(MacroAssembler* masm,
+  static CompiledMethod* generate_mhi_wrapper(MacroAssembler* masm,
                                           const methodHandle& method,
                                           int compile_id,
                                           BasicType* sig_bt,
                                           VMRegPair* regs,
                                           BasicType ret_type);
-#endif
 
   // A compiled caller has just called the interpreter, but compiled code
   // exists.  Patch the caller so he no longer calls into the interpreter.

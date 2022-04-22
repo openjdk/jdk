@@ -78,6 +78,16 @@ CompiledMethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   return NULL;
 }
 
+CompiledMethod *SharedRuntime::generate_mhi_wrapper(MacroAssembler *masm,
+                                                    const methodHandle& method,
+                                                    int compile_id,
+                                                    BasicType *sig_bt,
+                                                    VMRegPair *regs,
+                                                    BasicType ret_type) {
+  ShouldNotCallThis();
+  return NULL;
+}
+
 int Deoptimization::last_frame_adjust(int callee_parameters,
                                       int callee_locals) {
   return 0;
