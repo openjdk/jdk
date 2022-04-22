@@ -178,10 +178,6 @@ void vmClasses::resolve_all(TRAPS) {
   InstanceRefKlass::update_nonstatic_oop_maps(vmClasses::Reference_klass());
 
   resolve_through(VM_CLASS_ID(PhantomReference_klass), scan, CHECK);
-  vmClasses::SoftReference_klass()->set_reference_type(REF_SOFT);
-  vmClasses::WeakReference_klass()->set_reference_type(REF_WEAK);
-  vmClasses::FinalReference_klass()->set_reference_type(REF_FINAL);
-  vmClasses::PhantomReference_klass()->set_reference_type(REF_PHANTOM);
 
   // JSR 292 classes
   vmClassID jsr292_group_start = VM_CLASS_ID(MethodHandle_klass);

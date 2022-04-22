@@ -494,7 +494,7 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind) :
   _itable_len(parser.itable_size()),
   _nest_host_index(0),
   _init_state(allocated),
-  _reference_type(parser.super_reference_type()),
+  _reference_type(REF_NONE),
   _init_thread(NULL)
 {
   set_vtable_length(parser.vtable_size());
