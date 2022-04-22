@@ -49,6 +49,7 @@ import test.java.awt.regtesthelpers.Util;
 public class DisposeFrameOnDragTest {
 
     private static JTextArea textArea;
+    private static JFrame background;
 
     public static void main(String[] args) throws Throwable {
 
@@ -77,9 +78,15 @@ public class DisposeFrameOnDragTest {
         Util.waitForIdle(testRobot);
 
         testRobot.delay(200);
+        background.dispose();
     }
 
     private static void constructTestUI() {
+        background = new JFrame("Background");
+        background.setBounds(100, 100, 100, 100);
+        background.setUndecorated(true);
+        background.setVisible(true);
+
         final JFrame frame = new JFrame("Test frame");
         textArea = new JTextArea("Drag Me!");
         try {
