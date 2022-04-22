@@ -2189,7 +2189,7 @@ encode %{
       if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
         // Calls of the same statically bound method can share
         // a stub to the interpreter.
-        cbuf.shared_stub_to_interp_for(_method->get_Method(), mark);
+        cbuf.shared_stub_to_interp_for(_method, mark);
       } else {
         // Emit stubs for static call.
         address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
