@@ -175,7 +175,7 @@ public class XMLDOMWriterImpl implements XMLStreamWriterBase  {
     }
 
     /**
-     * Creates a DOM Atrribute @see org.w3c.dom.Node and associates it with the current DOM element @see org.w3c.dom.Node.
+     * Creates a DOM Attribute @see org.w3c.dom.Node and associates it with the current DOM element @see org.w3c.dom.Node.
      * @param localName {@inheritDoc}
      * @param value {@inheritDoc}
      * @throws javax.xml.stream.XMLStreamException {@inheritDoc}
@@ -194,7 +194,7 @@ public class XMLDOMWriterImpl implements XMLStreamWriterBase  {
     }
 
     /**
-     * Creates a DOM Atrribute @see org.w3c.dom.Node and associates it with the current DOM element @see org.w3c.dom.Node.
+     * Creates a DOM Attribute @see org.w3c.dom.Node and associates it with the current DOM element @see org.w3c.dom.Node.
      * @param namespaceURI {@inheritDoc}
      * @param localName {@inheritDoc}
      * @param value {@inheritDoc}
@@ -235,7 +235,7 @@ public class XMLDOMWriterImpl implements XMLStreamWriterBase  {
     }
 
     /**
-     * Creates a DOM Atrribute @see org.w3c.dom.Node and associates it with the current DOM element @see org.w3c.dom.Node.
+     * Creates a DOM Attribute @see org.w3c.dom.Node and associates it with the current DOM element @see org.w3c.dom.Node.
      * @param prefix {@inheritDoc}
      * @param namespaceURI {@inheritDoc}
      * @param localName {@inheritDoc}

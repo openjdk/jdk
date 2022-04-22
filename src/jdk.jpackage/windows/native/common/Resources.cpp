@@ -80,7 +80,7 @@ LPVOID Resource::getPtr(DWORD &size) const
 {
     // LoadString returns the same result if value is zero-length or
     // if if the value does not exists,
-    // so wee need to ensure the stringtable exists
+    // so we need to ensure the stringtable exists
     HRSRC resInfo = findResource();
     if (resInfo == NULL) {
         JP_THROW(SysError(getErrMsg("cannot find resource"), FindResource));

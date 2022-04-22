@@ -70,7 +70,7 @@ public interface LoaderHandler {
      * @param name      the name of the class to load
      * @return the <code>Class</code> object representing the loaded class
      * @throws MalformedURLException
-     *         if the <code>codebase</code> paramater
+     *         if the <code>codebase</code> parameter
      *         contains an invalid URL
      * @throws ClassNotFoundException
      *         if a definition for the class could not

@@ -63,7 +63,7 @@ public interface EntityDeclaration extends XMLEvent {
    * The replacement text of the entity.
    * This method will only return non-null
    * if this is an internal entity.
-   * @return null or the replacment text
+   * @return null or the replacement text
    */
   String getReplacementText();
 

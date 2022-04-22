@@ -27,7 +27,7 @@ package jdk.tools.jlink.internal;
 import java.util.List;
 
 /**
- * Plugin wishing to post-proces must implement this interface. PostProcessors
+ * Plugin wishing to post-process must implement this interface. PostProcessors
  * are called once the image has been generated and is executable.
  **/
 public interface PostProcessor {

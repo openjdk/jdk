@@ -82,7 +82,7 @@ import jdk.internal.jimage.ImageStringsReader;
  *     size N.  If this situation occurs then the size of the table is
  *     adjusted so that keys distribute differently.
  *
- * Readers algoritm;
+ * Readers algorithm;
  *
  *   - Compute the hash for the key using the fixed base value modulo N.  This
  *     will provide an index into the redirect table. The integer value in the

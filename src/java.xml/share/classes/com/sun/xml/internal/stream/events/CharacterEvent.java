@@ -166,7 +166,7 @@ implements Characters {
 
     /**
      * Returns true if this set of Characters
-     * is all whitespace.  Whitspace inside a document
+     * is all whitespace.  Whitespace inside a document
      * is reported as CHARACTERS.  This method allows
      * checking of CHARACTERS events to see if they
      * are composed of only whitespace characters
@@ -182,7 +182,7 @@ implements Characters {
     }
 
     private void checkWhiteSpace(){
-        //for now - remove dependancy of XMLChar
+        //for now - remove dependency of XMLChar
         if(fData != null && fData.length() >0 ){
             fIsSpace = true;
             for(int i=0;i<fData.length();i++){

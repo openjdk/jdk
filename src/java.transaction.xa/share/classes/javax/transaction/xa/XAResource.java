@@ -137,7 +137,7 @@ public interface XAResource {
     /**
      * This method is called to determine if the resource manager
      * instance represented by the target object is the same as the
-     * resouce manager instance represented by the parameter <i>xares</i>.
+     * resource manager instance represented by the parameter <i>xares</i>.
      *
      * @param xares An XAResource object whose resource manager instance
      *      is to be compared with the resource manager instance of the

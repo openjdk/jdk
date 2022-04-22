@@ -306,7 +306,7 @@ public final class TaskHelper {
 
             // make sure that more than one plugin does not use the same option!
             if (optionsSeen.contains(option)) {
-                throw new BadArgs("err.plugin.mutiple.options",
+                throw new BadArgs("err.plugin.multiple.options",
                         option);
             }
             optionsSeen.add(option);
@@ -433,7 +433,7 @@ public final class TaskHelper {
                 List<Map<String, String>> argsMaps = entry.getValue();
 
                 // same plugin option may be used multiple times in command line.
-                // we call configure once for each occurrence. It is upto the plugin
+                // we call configure once for each occurrence. It is up to the plugin
                 // to 'merge' and/or 'override' arguments.
                 for (Map<String, String> map : argsMaps) {
                     try {

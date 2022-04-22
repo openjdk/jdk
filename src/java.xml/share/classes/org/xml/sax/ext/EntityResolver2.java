@@ -118,7 +118,7 @@ public interface EntityResolver2 extends EntityResolver
      * other reasons adopt a "no DTDs" policy.
      * Non-validation motives include forcing documents to include DTDs so
      * that attributes are handled consistently.
-     * For example, an XPath processor needs to know which attibutes have
+     * For example, an XPath processor needs to know which attributes have
      * type "ID" before it can process a widely used type of reference.
      *
      * <p><strong>Warning:</strong> Returning an external subset modifies

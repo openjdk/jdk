@@ -30,7 +30,7 @@ import javax.naming.directory.*;
 
 /* Direct subclasses of ComponentDirContext must provide implementations for
  * the abstract c_ DirContext methods, and override the c_ Context methods
- * (which are no longer abstract because they have been overriden by
+ * (which are no longer abstract because they have been overridden by
  * AtomicContext, the direct superclass of PartialDSCompositeContext).
  *
  * If the subclass is supports implicit nns, it must override all the

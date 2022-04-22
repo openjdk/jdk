@@ -97,7 +97,7 @@ void launchApp() {
 
         if (thisHash != hash) {
             // This launcher execution is the result of execve() call from
-            // withing JVM.
+            // within JVM.
             // This means all JVM arguments are already configured in launcher
             // process command line.
             // No need to construct command line for JVM.

@@ -324,7 +324,7 @@ public class RMIClassLoader {
      * {@link RMIClassLoaderSpi#getClassLoader(String)} method
      * of the provider instance, passing <code>codebase</code> as the argument.
      *
-     * <p>If there is a security manger, its <code>checkPermission</code>
+     * <p>If there is a security manager, its <code>checkPermission</code>
      * method will be invoked with a
      * <code>RuntimePermission("getClassLoader")</code> permission;
      * this could result in a <code>SecurityException</code>.

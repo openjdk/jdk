@@ -33,7 +33,7 @@ import jdk.xml.internal.JdkXmlUtils;
 /**
  *
  * This class store all the information for a particular EntityDeclaration. EntityDeclaration interface
- * has various get* functiosn to retirve information about a particular EntityDeclaration.
+ * has various get* functions to retrieve information about a particular EntityDeclaration.
  *
  * @author  Neeraj Bajaj, Sun Microsystems.
  */

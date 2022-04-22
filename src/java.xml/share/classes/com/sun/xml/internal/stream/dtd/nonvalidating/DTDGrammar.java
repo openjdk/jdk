@@ -38,7 +38,7 @@ import java.util.Map;
 
 /**
  * A DTD grammar. This class implements the XNI handler interfaces
- * for DTD information so that it can build the approprate validation
+ * for DTD information so that it can build the appropriate validation
  * structures automatically from the callbacks.
  *
  * @author Eric Ye, IBM

@@ -31,7 +31,7 @@ import javax.naming.directory.*;
 /**
  * Direct subclasses of AtomicDirContext must provide implementations for
  * the abstract a_ DirContext methods, and override the a_ Context methods
- * (which are no longer abstract because they have been overriden by
+ * (which are no longer abstract because they have been overridden by
  * PartialCompositeDirContext with dummy implementations).
  *
  * If the subclass implements the notion of implicit nns,

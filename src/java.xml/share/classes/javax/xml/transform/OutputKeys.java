@@ -164,7 +164,7 @@ public class OutputKeys {
      * <p><code>cdata-section-elements</code> specifies a whitespace delimited
      * list of the names of elements whose text node children should be output
      * using CDATA sections. Note that these names must use the format
-     * described in the section Qualfied Name Representation in
+     * described in the section Qualified Name Representation in
      * {@link javax.xml.transform}.</p>
      *
      * @see <a href="http://www.w3.org/TR/xslt#output">

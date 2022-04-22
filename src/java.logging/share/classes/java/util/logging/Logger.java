@@ -2511,7 +2511,7 @@ public class Logger {
             return lb;
         } else if (b != null) {
             // either lb.userBundle is null or getResourceBundle() is
-            // overriden
+            // overridden
             final String rbName = getResourceBundleName();
             return LoggerBundle.get(rbName, b);
         }

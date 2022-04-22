@@ -132,7 +132,7 @@ final class CatalogMessages {
 
     /**
      * Reports IllegalArgumentException
-     * @param arguments the arguments for formating the error message
+     * @param arguments the arguments for formatting the error message
      * @param cause the cause if any
      */
     static void reportIAE(String key, Object[] arguments, Throwable cause) {

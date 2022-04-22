@@ -76,7 +76,7 @@ public class HandlerBase
      * in a subclass to do special translations such as catalog lookups
      * or URI redirection.</p>
      *
-     * @param publicId The public identifer, or null if none is
+     * @param publicId The public identifier, or null if none is
      *                 available.
      * @param systemId The system identifier provided in the XML
      *                 document.

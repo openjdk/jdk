@@ -266,7 +266,7 @@ public class XMLInputFactoryImpl extends javax.xml.stream.XMLInputFactory {
         //& the setProperty() hasn't been called
         if(fReuseInstance && fTempReader.canReuse() && !fPropertyChanged){
             if(DEBUG)System.out.println("Reusing the instance");
-            //we can make setInputSource() call reset() and this way there wont be two function calls
+            //we can make setInputSource() call reset() and this way there won't be two function calls
             fTempReader.reset();
             fTempReader.setInputSource(inputSource);
             fPropertyChanged = false;

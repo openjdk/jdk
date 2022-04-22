@@ -25,7 +25,7 @@
 
 /**
   * Given an enumeration of candidates, check whether each
-  * item in enumeration satifies the given filter.
+  * item in enumeration satisfies the given filter.
   * Each item is a Binding and the following is used to get its
   * attributes for used by the filter:
   *

@@ -137,7 +137,7 @@ public class XMLEventReaderImpl implements javax.xml.stream.XMLEventReader{
                 //ignore
             } else if(type == XMLEvent.START_ELEMENT) {
                 throw new XMLStreamException(
-                "elementGetText() function expects text only elment but START_ELEMENT was encountered.", event.getLocation());
+                "elementGetText() function expects text only element but START_ELEMENT was encountered.", event.getLocation());
             }else if(type == XMLEvent.END_ELEMENT){
                 return "";
             }
@@ -168,7 +168,7 @@ public class XMLEventReaderImpl implements javax.xml.stream.XMLEventReader{
                     throw new XMLStreamException("unexpected end of document when reading element text content");
                 } else if(type == XMLEvent.START_ELEMENT) {
                     throw new XMLStreamException(
-                    "elementGetText() function expects text only elment but START_ELEMENT was encountered.", event.getLocation());
+                    "elementGetText() function expects text only element but START_ELEMENT was encountered.", event.getLocation());
                 } else {
                     throw new XMLStreamException(
                     "Unexpected event type "+ type, event.getLocation());
@@ -223,7 +223,7 @@ public class XMLEventReaderImpl implements javax.xml.stream.XMLEventReader{
                 eventType = event.getEventType();
             }
 
-            //we have to have the while loop because there can be many PI or comment event in sucession
+            //we have to have the while loop because there can be many PI or comment event in succession
             while((event.isCharacters() && event.asCharacters().isWhiteSpace())
             || eventType == XMLStreamConstants.PROCESSING_INSTRUCTION
             || eventType == XMLStreamConstants.COMMENT){

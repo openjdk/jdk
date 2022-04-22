@@ -129,7 +129,7 @@ public abstract class TypeInfoProvider {
      * to be ID.
      *
      * <p>
-     * Exacly how an attribute is "determined to be ID" is up to the
+     * Exactly how an attribute is "determined to be ID" is up to the
      * schema language. In case of W3C XML Schema, this means
      * that the actual type of the attribute is the built-in ID type
      * or its derived type.

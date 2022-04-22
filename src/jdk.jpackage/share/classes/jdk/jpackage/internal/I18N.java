@@ -51,7 +51,7 @@ class I18N {
             PLATFORM = ResourceBundle.getBundle(
                     "jdk.jpackage.internal.resources.MacResources");
         } else {
-            throw new IllegalStateException("Unknwon platform");
+            throw new IllegalStateException("Unknown platform");
         }
     }
 }

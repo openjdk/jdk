@@ -207,7 +207,7 @@ public abstract class TransformerFactory {
      *
      * @param source The XML source document.
      * @param media The media attribute to be matched.  May be null, in which
-     *      case the prefered templates will be used (i.e. alternate = no).
+     *      case the preferred templates will be used (i.e. alternate = no).
      * @param title The value of the title attribute to match.  May be null.
      * @param charset The value of the charset attribute to match.  May be null.
      *

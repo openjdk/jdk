@@ -143,7 +143,7 @@ public final class ImagePluginStack {
         private List<String> getSortedStrings() {
             Stream<java.util.Map.Entry<String, Integer>> stream
                     = stringsUsage.entrySet().stream();
-            // Remove strings that have a single occurence
+            // Remove strings that have a single occurrence
             List<String> result = stream.sorted(Comparator.comparing(e -> e.getValue(),
                     Comparator.reverseOrder())).filter((e) -> {
                         return e.getValue() > 1;

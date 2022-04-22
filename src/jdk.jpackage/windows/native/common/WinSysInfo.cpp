@@ -88,7 +88,7 @@ tstring getModulePath(HMODULE h)
     }
 
     if (len == 0) {
-        // error occured
+        // error occurred
         JP_THROW(SysError("GetModuleFileName failed", GetModuleFileName));
     }
     return tstring(buf.begin(), buf.begin() + len);

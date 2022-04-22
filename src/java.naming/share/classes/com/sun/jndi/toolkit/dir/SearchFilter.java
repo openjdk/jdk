@@ -400,7 +400,7 @@ public class SearchFilter implements AttrFilter {
                     !value.toLowerCase(Locale.ENGLISH).startsWith(
                         subStrs.nextToken().toLowerCase(Locale.ENGLISH))) {
                 if(debug) {
-                    System.out.println("faild initial test");
+                    System.out.println("failed initial test");
                 }
                 return false;
             }
@@ -421,7 +421,7 @@ public class SearchFilter implements AttrFilter {
             // do we need to end with the last token?
             if(proto.charAt(proto.length() - 1) != WILDCARD_TOKEN &&
                currentPos != value.length() ) {
-                if(debug) {System.out.println("faild final test");}
+                if(debug) {System.out.println("failed final test");}
                 return false;
             }
 

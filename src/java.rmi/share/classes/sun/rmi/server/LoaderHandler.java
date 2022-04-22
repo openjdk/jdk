@@ -710,7 +710,7 @@ public final class LoaderHandler {
     }
 
     /*
-     * Load Class objects for the names in the interfaces array fron
+     * Load Class objects for the names in the interfaces array from
      * the given class loader.
      *
      * We pass classObjs and nonpublic arrays to avoid needing a
@@ -882,7 +882,7 @@ public final class LoaderHandler {
                  * A matching loader was not found, so create a new class
                  * loader instance for the requested codebase URL path and
                  * parent class loader.  The instance is created within an
-                 * access control context retricted to the permissions
+                 * access control context restricted to the permissions
                  * necessary to load classes from its codebase URL path.
                  */
                 AccessControlContext acc = getLoaderAccessControlContext(urls);

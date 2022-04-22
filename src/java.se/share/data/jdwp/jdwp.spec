@@ -44,7 +44,7 @@ JDWP "Java(tm) Debug Wire Protocol"
     (Command ClassesBySignature=2
         "Returns reference types for all the classes loaded by the target VM "
         "which match the given signature. "
-        "Multple reference types will be returned if two or more class "
+        "Multiple reference types will be returned if two or more class "
         "loaders have loaded a class of the same name. "
         "The search is confined to loaded classes only; no attempt is made "
         "to load a class of the given signature. "
@@ -796,7 +796,7 @@ JDWP "Java(tm) Debug Wire Protocol"
         "<cite>The Java Virtual Machine Specification</cite>. "
         "If the class is linked the PREPARED and VERIFIED bits in the returned status bits "
         "will be set. If the class is initialized the INITIALIZED bit in the returned "
-        "status bits will be set. If an error occured during initialization then the "
+        "status bits will be set. If an error occurred during initialization then the "
         "ERROR bit in the returned status bits will be set. "
         "The returned status bits are undefined for array types and for "
         "primitive classes (such as java.lang.Integer.TYPE). "
@@ -935,7 +935,7 @@ JDWP "Java(tm) Debug Wire Protocol"
     (Command MethodsWithGeneric=15
         "Returns information, including the generic signature if any, "
         "for each method in a reference type. "
-        "Inherited methodss are not included. The list of methods will "
+        "Inherited methods are not included. The list of methods will "
         "include constructors (identified with the name \"&lt;init&gt;\"), "
         "the initialization method (identified with the name \"&lt;clinit&gt;\") "
         "if present, and any synthetic methods created by the compiler. "
@@ -1927,7 +1927,7 @@ JDWP "Java(tm) Debug Wire Protocol"
                         "(-1 means all remaining). ")
         )
         (Reply
-            (Repeat frames "The number of frames retreived"
+            (Repeat frames "The number of frames retrieved"
                 (Group Frame
                     (frame frameID "The ID of this frame. ")
                     (location location "The current location of this frame")
@@ -2771,7 +2771,7 @@ JDWP "Java(tm) Debug Wire Protocol"
         "    <UL>"
         "    <LI>Monitor Waited Event"
         "    </UL>"
-        "<LI>Only with other ExceptionEvents for the same exception occurrance:"
+        "<LI>Only with other ExceptionEvents for the same exception occurrence:"
         "    <UL>"
         "    <LI>ExceptionEvent"
         "    </UL>"
@@ -2928,7 +2928,7 @@ JDWP "Java(tm) Debug Wire Protocol"
                                 "Request that generated event")
                         (threadObject thread "Thread which waited")
                         (tagged-object object "Monitor object reference")
-                        (location location "Location at which the wait occured")
+                        (location location "Location at which the wait occurred")
                         (boolean  timed_out "True if timed out")
                     )
                     (Alt Exception=JDWP.EventKind.EXCEPTION

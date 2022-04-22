@@ -29,7 +29,7 @@ package java.sql;
  * The subclass of {@link SQLException} thrown when the SQLState class value is '<i>0A</i>'
  * ( the value is 'zero' A).
  * This indicates that the JDBC driver does not support an optional JDBC feature.
- * Optional JDBC features can fall into the fallowing categories:
+ * Optional JDBC features can fall into the following categories:
  *
  *<UL>
  *<LI>no support for an optional feature

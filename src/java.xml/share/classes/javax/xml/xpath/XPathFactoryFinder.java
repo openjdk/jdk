@@ -245,7 +245,7 @@ class XPathFactoryFinder  {
             }
         }
 
-        // use approprite ClassLoader
+        // use appropriate ClassLoader
         try {
             if (classLoader != null && !internal) {
                     clazz = Class.forName(className, false, classLoader);

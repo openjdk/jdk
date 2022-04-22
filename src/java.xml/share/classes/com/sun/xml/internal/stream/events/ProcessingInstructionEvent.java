@@ -43,7 +43,7 @@ implements ProcessingInstruction {
 
     /** Processing Instruction Name */
     private String fName;
-    /** Processsing instruction content */
+    /** Processing instruction content */
     private String fContent;
 
     public ProcessingInstructionEvent() {

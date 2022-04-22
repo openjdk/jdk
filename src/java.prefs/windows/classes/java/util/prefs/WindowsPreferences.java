@@ -776,7 +776,7 @@ class WindowsPreferences extends AbstractPreferences {
 
     /**
      * Implements {@code AbstractPreferences} {@code childrenNamesSpi()} method.
-     * Calls Windows registry to retrive children of this node.
+     * Calls Windows registry to retrieve children of this node.
      * Throws a BackingStoreException and logs a warning message,
      * if Windows registry is not available.
      */

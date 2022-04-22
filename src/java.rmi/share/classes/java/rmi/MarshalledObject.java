@@ -224,7 +224,7 @@ public final class MarshalledObject<T> implements Serializable {
             if (objBytes.length != other.objBytes.length)
                 return false;
 
-            //!! There is talk about adding an array comparision method
+            //!! There is talk about adding an array comparison method
             //!! at 1.2 -- if so, this should be rewritten.  -arnold
             for (int i = 0; i < objBytes.length; ++i) {
                 if (objBytes[i] != other.objBytes[i])

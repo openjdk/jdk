@@ -175,7 +175,7 @@ public class XMLFormatter extends Formatter {
             // date field, using the ISO_INSTANT formatter.
             DateTimeFormatter.ISO_INSTANT.formatTo(instant, sb);
         } else {
-            // If useInstant is false - we will keep the 'old' formating
+            // If useInstant is false - we will keep the 'old' formatting
             appendISO8601(sb, instant.toEpochMilli());
         }
         sb.append("</date>\n");

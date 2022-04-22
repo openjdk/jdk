@@ -148,7 +148,7 @@ private:
     CfgFile::Properties& sectionData;
 };
 
-} // namepsace
+} // namespace
 
 CfgFile CfgFile::load(const tstring& path) {
     std::ifstream input(path.c_str());

@@ -43,7 +43,7 @@ package com.sun.jndi.ldap.pool;
  */
 public interface PoolCallback {
     /**
-     * Releases a useable connection back to the pool.
+     * Releases a usable connection back to the pool.
      *
      * @param conn The connection to release.
      * @return true if the connection released; false if the connection

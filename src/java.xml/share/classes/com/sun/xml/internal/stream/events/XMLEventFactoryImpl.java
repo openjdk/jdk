@@ -73,7 +73,7 @@ public class XMLEventFactoryImpl extends XMLEventFactory {
     @Override
     public Characters createCData(String content) {
         //stax doesn't have separate CDATA event. This is taken care by
-        //CHRACTERS event setting the cdata flag to true.
+        //CHARACTERS event setting the cdata flag to true.
         CharacterEvent charEvent =  new CharacterEvent(content, true);
         if(location != null)charEvent.setLocation(location);
         return charEvent;

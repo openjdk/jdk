@@ -34,7 +34,7 @@ import org.w3c.dom.Node;
  * form of a Document Object Model (DOM) tree.</p>
  *
  * <p>Note that XSLT requires namespace support. Attempting to transform a DOM
- * that was not contructed with a namespace-aware parser may result in errors.
+ * that was not constructed with a namespace-aware parser may result in errors.
  * Parsers can be made namespace aware by calling
  * {@link javax.xml.parsers.DocumentBuilderFactory#setNamespaceAware(boolean awareness)}.</p>
  *

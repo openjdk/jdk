@@ -180,7 +180,7 @@ public class XAException extends Exception {
     public static final int XAER_INVAL = -5;
 
     /**
-     * Routine was invoked in an inproper context.
+     * Routine was invoked in an improper context.
      */
     public static final int XAER_PROTO = -6;
 
