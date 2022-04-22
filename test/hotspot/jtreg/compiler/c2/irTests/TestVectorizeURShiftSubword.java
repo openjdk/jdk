@@ -42,7 +42,7 @@ public class TestVectorizeURShiftSubword {
 
     private static final Random RANDOM = Utils.getRandomInstance();
 
-    final private static int NUM = 2345;
+    final private static int NUM = 3000;
 
     private short[] shorta = new short[NUM];
     private short[] shortb = new short[NUM];
@@ -55,8 +55,16 @@ public class TestVectorizeURShiftSubword {
         Integer.MAX_VALUE, Integer.MIN_VALUE
     };
 
+    public byte urshift(byte input, int amount) {
+        return (byte) (input >>> amount);
+    }
+
+    public short urshift(short input, int amount) {
+        return (short) (input >>> amount);
+    }
+
     public static void main(String[] args) {
-        TestFramework.run();
+        TestFramework.runWithFlags("-XX:CompileCommand=exclude,*.urshift");
     }
 
     @Test
@@ -111,27 +119,27 @@ public class TestVectorizeURShiftSubword {
     public void checkTest() {
         testByte0();
         for (int i = 0; i < bytea.length; i++) {
-            Asserts.assertEquals(byteb[i], (byte) (bytea[i] >>> 3));
+            Asserts.assertEquals(byteb[i], urshift(bytea[i], 3));
         }
         testByte1();
         for (int i = 0; i < bytea.length; i++) {
-            Asserts.assertEquals(byteb[i], (byte) (bytea[i] >>> 24));
+            Asserts.assertEquals(byteb[i], urshift(bytea[i], 24));
         }
         testByte2();
         for (int i = 0; i < bytea.length; i++) {
-            Asserts.assertEquals(byteb[i], (byte) (bytea[i] >>> 25));
+            Asserts.assertEquals(byteb[i], urshift(bytea[i], 25));
         }
         testShort0();
         for (int i = 0; i < shorta.length; i++) {
-            Asserts.assertEquals(shortb[i], (short) (shorta[i] >>> 10));
+            Asserts.assertEquals(shortb[i], urshift(shorta[i], 10));
         }
         testShort1();
         for (int i = 0; i < shorta.length; i++) {
-            Asserts.assertEquals(shortb[i], (short) (shorta[i] >>> 16));
+            Asserts.assertEquals(shortb[i], urshift(shorta[i], 16));
         }
         testShort2();
         for (int i = 0; i < shorta.length; i++) {
-            Asserts.assertEquals(shortb[i], (short) (shorta[i] >>> 17));
+            Asserts.assertEquals(shortb[i], urshift(shorta[i], 17));
         }
 
     }
