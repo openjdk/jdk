@@ -1412,10 +1412,9 @@ public class HtmlDocletWriter {
      * an inline tag, such as in comments or in free-form text arguments
      * to block tags.
      *
-     * @param element    specific element where comment resides
-     * @param tags   array of text tags and inline tags (often alternating)
-               present in the text of interest for this element
-     * @param isFirstSentence  true if text is first sentence
+     * @param element         specific element where comment resides
+     * @param tags            list of text trees and inline tag trees (often alternating)
+     * @param isFirstSentence true if text is first sentence
      * @return a Content object
      */
     public Content commentTagsToContent(Element element,
@@ -1426,14 +1425,13 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Converts inline tags and text to text strings, expanding the
+     * Converts inline tags and text to Content, expanding the
      * inline tags along the way.  Called wherever text can contain
      * an inline tag, such as in comments or in free-form text arguments
      * to block tags.
      *
      * @param element         specific element where comment resides
-     * @param trees           array of text tags and inline tags (often alternating)
-     *                        present in the text of interest for this element
+     * @param trees           list of text trees and inline tag trees (often alternating)
      * @param isFirstSentence true if text is first sentence
      * @param inSummary       if the comment tags are added into the summary section
      * @return a Content object
@@ -1447,14 +1445,13 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Converts inline tags and text to text strings, expanding the
+     * Converts inline tags and text to Content, expanding the
      * inline tags along the way.  Called wherever text can contain
      * an inline tag, such as in comments or in free-form text arguments
      * to block tags.
      *
      * @param element   specific element where comment resides
      * @param trees     list of text trees and inline tag trees (often alternating)
-     *                  present in the text of interest for this element
      * @param context   the enclosing context for the trees
      *
      * @return a Content object
