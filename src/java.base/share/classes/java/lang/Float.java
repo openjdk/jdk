@@ -125,7 +125,7 @@ public final class Float extends Number
     /**
      * The number of bits in the significand of a {@code float} value.
      * This is the parameter N in section {@jls 4.2.3} of
-     * <em>The Java Language Specification</em>.
+     * <cite>The Java Language Specification</cite>.
      *
      * @since 19
      */
@@ -138,7 +138,7 @@ public final class Float extends Number
      *
      * @since 1.6
      */
-    public static final int MAX_EXPONENT = (1 << (SIZE - PRECISION - 1)) - 1;
+    public static final int MAX_EXPONENT = (1 << (SIZE - PRECISION - 1)) - 1; // 127
 
     /**
      * Minimum exponent a normalized {@code float} variable may have.
@@ -147,7 +147,7 @@ public final class Float extends Number
      *
      * @since 1.6
      */
-    public static final int MIN_EXPONENT = 1 - MAX_EXPONENT;
+    public static final int MIN_EXPONENT = 1 - MAX_EXPONENT; // -126
 
     /**
      * The number of bytes used to represent a {@code float} value.

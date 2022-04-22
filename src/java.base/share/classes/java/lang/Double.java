@@ -215,7 +215,7 @@ public final class Double extends Number
     /**
      * The number of bits in the significand of a {@code double} value.
      * This is the parameter N in section {@jls 4.2.3} of
-     * <em>The Java Language Specification</em>.
+     * <cite>The Java Language Specification</cite>.
      *
      * @since 19
      */
@@ -228,7 +228,7 @@ public final class Double extends Number
      *
      * @since 1.6
      */
-    public static final int MAX_EXPONENT = (1 << (SIZE - PRECISION - 1)) - 1;
+    public static final int MAX_EXPONENT = (1 << (SIZE - PRECISION - 1)) - 1; // 1023
 
     /**
      * Minimum exponent a normalized {@code double} variable may
@@ -237,7 +237,7 @@ public final class Double extends Number
      *
      * @since 1.6
      */
-    public static final int MIN_EXPONENT = 1 - MAX_EXPONENT;
+    public static final int MIN_EXPONENT = 1 - MAX_EXPONENT; // -1022
 
     /**
      * The number of bytes used to represent a {@code double} value.
