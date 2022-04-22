@@ -56,9 +56,12 @@ public class InheritDocTaglet extends BaseTaglet {
     }
 
     /**
-     * Given an element, a {@code DocTree} in the element's doc comment
-     * replace all occurrences of {@code {@inheritDoc}} with documentation from its
-     * superclass or superinterface.
+     * Given an element and {@code @inheritDoc} tag in that element's doc comment,
+     * returns the (recursive) expansion of that tag.
+     *
+     * This method does not expand all {@code {@inheritDoc}} tags in the given
+     * element's doc comment. To do this, the method must be called for every
+     * such tag.
      *
      * @param writer the writer that is writing the output.
      * @param e the {@link Element} that we are documenting.
