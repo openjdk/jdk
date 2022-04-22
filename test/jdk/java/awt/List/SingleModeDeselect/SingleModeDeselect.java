@@ -29,6 +29,7 @@
   @run main SingleModeDeselect
 */
 
+import java.awt.AWTException;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.List;
@@ -54,19 +55,16 @@ public class SingleModeDeselect {
         try {
             Robot robot = new Robot();
             robot.waitForIdle();
-        } catch(Exception ex) {
+            if (list.getSelectedIndex() != 0) {
+                throw new RuntimeException("Test failed: List.getSelectedIndex() returns "
+                                           + list.getSelectedIndex());
+            }
+        } catch(AWTException ex) {
             ex.printStackTrace();
             throw new RuntimeException("Unexpected failure");
-        }
-
-        try {
-            if (list.getSelectedIndex() != 0) {
-                throw new RuntimeException("Test failed: List.getSelectedIndex() returns "+list.getSelectedIndex());
-            }
         } finally {
             frame.setVisible(false);
             frame.dispose();
         }
-
-    }//End  init()
+    }
 }
