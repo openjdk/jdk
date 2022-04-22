@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public:
   const TypePtr* type() const { return reinterpret_cast<const TypePtr*>(_type); }
 };
 
-// This class wraps a bunch of context parameters thare are passed around in the
+// This class wraps a bunch of context parameters that are passed around in the
 // BarrierSetC2 backend hierarchy, for loads and stores, to reduce boiler plate.
 class C2Access: public StackObj {
 protected:
@@ -163,7 +163,7 @@ public:
   virtual bool is_parse_access() const { return true; }
 };
 
-// This class wraps a bunch of context parameters thare are passed around in the
+// This class wraps a bunch of context parameters that are passed around in the
 // BarrierSetC2 backend hierarchy, for atomic accesses, to reduce boiler plate.
 class C2AtomicParseAccess: public C2ParseAccess {
   Node* _memory;

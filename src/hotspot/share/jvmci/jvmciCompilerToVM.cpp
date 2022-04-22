@@ -584,7 +584,7 @@ C2V_VMENTRY_NULL(jobject, lookupClass, (JNIEnv* env, jobject, jclass mirror))
   }
   JVMCIObject result = JVMCIENV->get_jvmci_type(klass, JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(result);
-}
+C2V_END
 
 C2V_VMENTRY_NULL(jobject, resolvePossiblyCachedConstantInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
   constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
@@ -623,6 +623,77 @@ C2V_VMENTRY_NULL(jobject, resolvePossiblyCachedConstantInPool, (JNIEnv* env, job
     }
   }
   return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(obj));
+C2V_END
+
+C2V_VMENTRY_NULL(jobjectArray, resolveBootstrapMethod, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
+  constantPoolHandle cp(THREAD, JVMCIENV->asConstantPool(jvmci_constant_pool));
+  constantTag tag = cp->tag_at(index);
+  bool is_indy = tag.is_invoke_dynamic();
+  bool is_condy = tag.is_dynamic_constant();
+  if (!(is_condy || is_indy)) {
+    JVMCI_THROW_MSG_0(IllegalArgumentException, err_msg("Unexpected constant pool tag at index %d: %d", index, tag.value()));
+  }
+  // Resolve the bootstrap specifier, its name, type, and static arguments
+  BootstrapInfo bootstrap_specifier(cp, index);
+  Handle bsm = bootstrap_specifier.resolve_bsm(CHECK_NULL);
+
+  // call java.lang.invoke.MethodHandle::asFixedArity() -> MethodHandle
+  // to get a DirectMethodHandle from which we can then extract a Method*
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_virtual(&result,
+                         bsm,
+                         vmClasses::MethodHandle_klass(),
+                         vmSymbols::asFixedArity_name(),
+                         vmSymbols::asFixedArity_signature(),
+                         CHECK_NULL);
+  bsm = Handle(THREAD, result.get_oop());
+
+  // Check assumption about getting a DirectMethodHandle
+  if (!java_lang_invoke_DirectMethodHandle::is_instance(bsm())) {
+    JVMCI_THROW_MSG_NULL(InternalError, err_msg("Unexpected MethodHandle subclass: %s", bsm->klass()->external_name()));
+  }
+  // Create return array describing the bootstrap method invocation (BSMI)
+  JVMCIObjectArray bsmi = JVMCIENV->new_Object_array(4, JVMCI_CHECK_NULL);
+
+  // Extract Method* and wrap it in a ResolvedJavaMethod
+  Handle member = Handle(THREAD, java_lang_invoke_DirectMethodHandle::member(bsm()));
+  JVMCIObject bsmi_method = JVMCIENV->get_jvmci_method(methodHandle(THREAD, java_lang_invoke_MemberName::vmtarget(member())), JVMCI_CHECK_NULL);
+  JVMCIENV->put_object_at(bsmi, 0, bsmi_method);
+
+  JVMCIObject bsmi_name = JVMCIENV->create_string(bootstrap_specifier.name(), JVMCI_CHECK_NULL);
+  JVMCIENV->put_object_at(bsmi, 1, bsmi_name);
+
+  Handle type_arg = bootstrap_specifier.type_arg();
+  JVMCIObject bsmi_type = JVMCIENV->get_object_constant(type_arg());
+  JVMCIENV->put_object_at(bsmi, 2, bsmi_type);
+
+  Handle arg_values = bootstrap_specifier.arg_values();
+  if (arg_values.not_null()) {
+    if (!arg_values->is_array()) {
+      JVMCIENV->put_object_at(bsmi, 3, JVMCIENV->get_object_constant(arg_values()));
+    } else if (arg_values->is_objArray()) {
+      objArrayHandle args_array = objArrayHandle(THREAD, (objArrayOop) arg_values());
+      int len = args_array->length();
+      JVMCIObjectArray arguments = JVMCIENV->new_JavaConstant_array(len, JVMCI_CHECK_NULL);
+      JVMCIENV->put_object_at(bsmi, 3, arguments);
+      for (int i = 0; i < len; i++) {
+        oop x = args_array->obj_at(i);
+        if (x != nullptr) {
+          JVMCIENV->put_object_at(arguments, i, JVMCIENV->get_object_constant(x));
+        } else {
+          JVMCIENV->put_object_at(arguments, i, JVMCIENV->get_JavaConstant_NULL_POINTER());
+        }
+      }
+    } else if (arg_values->is_typeArray()) {
+      typeArrayHandle bsci = typeArrayHandle(THREAD, (typeArrayOop) arg_values());
+      JVMCIPrimitiveArray arguments = JVMCIENV->new_intArray(bsci->length(), JVMCI_CHECK_NULL);
+      JVMCIENV->put_object_at(bsmi, 3, arguments);
+      for (int i = 0; i < bsci->length(); i++) {
+        JVMCIENV->put_int_at(arguments, i, bsci->int_at(i));
+      }
+    }
+  }
+  return JVMCIENV->get_jobjectArray(bsmi);
 C2V_END
 
 C2V_VMENTRY_0(jint, lookupNameAndTypeRefIndexInPool, (JNIEnv* env, jobject, jobject jvmci_constant_pool, jint index))
@@ -896,10 +967,6 @@ C2V_VMENTRY_0(jint, installCode, (JNIEnv *env, jobject, jobject target, jobject 
     }
   }
   return result;
-C2V_END
-
-C2V_VMENTRY_0(jint, getMetadata, (JNIEnv *env, jobject, jobject target, jobject compiled_code, jobject metadata))
-  JVMCI_THROW_MSG_0(InternalError, "unimplemented");
 C2V_END
 
 C2V_VMENTRY(void, resetCompilationStatistics, (JNIEnv* env, jobject))
@@ -1602,10 +1669,6 @@ C2V_VMENTRY_0(jint, methodDataProfileDataSize, (JNIEnv* env, jobject, jlong meta
     }
   }
   JVMCI_THROW_MSG_0(IllegalArgumentException, err_msg("Invalid profile data position %d", position));
-C2V_END
-
-C2V_VMENTRY_0(jlong, getFingerprint, (JNIEnv* env, jobject, jlong metaspace_klass))
-  JVMCI_THROW_MSG_0(InternalError, "unimplemented");
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, getInterfaces, (JNIEnv* env, jobject, jobject jvmci_type))
@@ -2695,7 +2758,6 @@ C2V_VMENTRY_0(jlong, getThreadLocalLong, (JNIEnv* env, jobject, jint id))
 #define HS_CONSTANT_POOL        "Ljdk/vm/ci/hotspot/HotSpotConstantPool;"
 #define HS_COMPILED_CODE        "Ljdk/vm/ci/hotspot/HotSpotCompiledCode;"
 #define HS_CONFIG               "Ljdk/vm/ci/hotspot/HotSpotVMConfig;"
-#define HS_METADATA             "Ljdk/vm/ci/hotspot/HotSpotMetaData;"
 #define HS_STACK_FRAME_REF      "Ljdk/vm/ci/hotspot/HotSpotStackFrameReference;"
 #define HS_SPECULATION_LOG      "Ljdk/vm/ci/hotspot/HotSpotSpeculationLog;"
 #define METASPACE_OBJECT        "Ljdk/vm/ci/hotspot/MetaspaceObject;"
@@ -2726,6 +2788,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "lookupAppendixInPool",                         CC "(" HS_CONSTANT_POOL "I)" OBJECTCONSTANT,                                          FN_PTR(lookupAppendixInPool)},
   {CC "lookupMethodInPool",                           CC "(" HS_CONSTANT_POOL "IB)" HS_RESOLVED_METHOD,                                     FN_PTR(lookupMethodInPool)},
   {CC "constantPoolRemapInstructionOperandFromCache", CC "(" HS_CONSTANT_POOL "I)I",                                                        FN_PTR(constantPoolRemapInstructionOperandFromCache)},
+  {CC "resolveBootstrapMethod",                       CC "(" HS_CONSTANT_POOL "I)[" OBJECT,                                                 FN_PTR(resolveBootstrapMethod)},
   {CC "resolvePossiblyCachedConstantInPool",          CC "(" HS_CONSTANT_POOL "I)" JAVACONSTANT,                                            FN_PTR(resolvePossiblyCachedConstantInPool)},
   {CC "resolveTypeInPool",                            CC "(" HS_CONSTANT_POOL "I)" HS_RESOLVED_KLASS,                                       FN_PTR(resolveTypeInPool)},
   {CC "resolveFieldInPool",                           CC "(" HS_CONSTANT_POOL "I" HS_RESOLVED_METHOD "B[I)" HS_RESOLVED_KLASS,              FN_PTR(resolveFieldInPool)},
@@ -2744,7 +2807,6 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getResolvedJavaType0",                         CC "(Ljava/lang/Object;JZ)" HS_RESOLVED_KLASS,                                        FN_PTR(getResolvedJavaType0)},
   {CC "readConfiguration",                            CC "()[" OBJECT,                                                                      FN_PTR(readConfiguration)},
   {CC "installCode",                                  CC "(" TARGET_DESCRIPTION HS_COMPILED_CODE INSTALLED_CODE "J[B)I",                    FN_PTR(installCode)},
-  {CC "getMetadata",                                  CC "(" TARGET_DESCRIPTION HS_COMPILED_CODE HS_METADATA ")I",                          FN_PTR(getMetadata)},
   {CC "resetCompilationStatistics",                   CC "()V",                                                                             FN_PTR(resetCompilationStatistics)},
   {CC "disassembleCodeBlob",                          CC "(" INSTALLED_CODE ")" STRING,                                                     FN_PTR(disassembleCodeBlob)},
   {CC "executeHotSpotNmethod",                        CC "([" OBJECT HS_NMETHOD ")" OBJECT,                                                 FN_PTR(executeHotSpotNmethod)},
@@ -2766,7 +2828,6 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "writeDebugOutput",                             CC "(JIZ)V",                                                                          FN_PTR(writeDebugOutput)},
   {CC "flushDebugOutput",                             CC "()V",                                                                             FN_PTR(flushDebugOutput)},
   {CC "methodDataProfileDataSize",                    CC "(JI)I",                                                                           FN_PTR(methodDataProfileDataSize)},
-  {CC "getFingerprint",                               CC "(J)J",                                                                            FN_PTR(getFingerprint)},
   {CC "interpreterFrameSize",                         CC "(" BYTECODE_FRAME ")I",                                                           FN_PTR(interpreterFrameSize)},
   {CC "compileToBytecode",                            CC "(" OBJECTCONSTANT ")V",                                                           FN_PTR(compileToBytecode)},
   {CC "getFlagValue",                                 CC "(" STRING ")" OBJECT,                                                             FN_PTR(getFlagValue)},

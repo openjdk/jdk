@@ -111,7 +111,7 @@ void SafepointMechanism::update_poll_values(JavaThread* thread) {
   }
 }
 
-void SafepointMechanism::process(JavaThread *thread, bool allow_suspend) {
+void SafepointMechanism::process(JavaThread *thread, bool allow_suspend, bool check_async_exception) {
   // Read global poll and has_handshake after local poll
   OrderAccess::loadload();
 
@@ -135,7 +135,7 @@ void SafepointMechanism::process(JavaThread *thread, bool allow_suspend) {
     // 3) Before the handshake code is run
     StackWatermarkSet::on_safepoint(thread);
 
-    need_rechecking = thread->handshake_state()->has_operation() && thread->handshake_state()->process_by_self(allow_suspend);
+    need_rechecking = thread->handshake_state()->has_operation() && thread->handshake_state()->process_by_self(allow_suspend, check_async_exception);
   } while (need_rechecking);
 
   update_poll_values(thread);

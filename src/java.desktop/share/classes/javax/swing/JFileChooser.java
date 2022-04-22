@@ -303,7 +303,7 @@ public class JFileChooser extends JComponent implements Accessible {
     /**
      * Constructs a <code>JFileChooser</code> pointing to the user's
      * default directory. This default depends on the operating system.
-     * It is typically the "My Documents" folder on Windows, and the
+     * It is typically the "Documents" folder on Windows, and the
      * user's home directory on Unix.
      */
     public JFileChooser() {
@@ -315,7 +315,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * Passing in a <code>null</code>
      * string causes the file chooser to point to the user's default directory.
      * This default depends on the operating system. It is
-     * typically the "My Documents" folder on Windows, and the user's
+     * typically the "Documents" folder on Windows, and the user's
      * home directory on Unix.
      *
      * @param currentDirectoryPath  a <code>String</code> giving the path
@@ -330,7 +330,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * as the path. Passing in a <code>null</code> file
      * causes the file chooser to point to the user's default directory.
      * This default depends on the operating system. It is
-     * typically the "My Documents" folder on Windows, and the user's
+     * typically the "Documents" folder on Windows, and the user's
      * home directory on Unix.
      *
      * @param currentDirectory  a <code>File</code> object specifying
@@ -570,7 +570,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * Sets the current directory. Passing in <code>null</code> sets the
      * file chooser to point to the user's default directory.
      * This default depends on the operating system. It is
-     * typically the "My Documents" folder on Windows, and the user's
+     * typically the "Documents" folder on Windows, and the user's
      * home directory on Unix.
      *
      * If the file passed in as <code>currentDirectory</code> is not a
