@@ -50,11 +50,12 @@ import javax.swing.SwingUtilities;
 
 public class MixingOnDialog {
     static volatile boolean lightClicked = false;
+    static Dialog d;
     static Button heavy;
 
     private static void init() {
         // Create components
-        final Dialog d = new Dialog((Frame)null, "Button-JButton mix test");
+        d = new Dialog((Frame)null, "Button-JButton mix test");
         heavy = new Button("  Heavyweight Button  ");
         final JButton light = new JButton("  LW Button  ");
 
@@ -90,6 +91,8 @@ public class MixingOnDialog {
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
+
+        SwingUtilities.invokeLater(() -> d.dispose());
 
         if (!lightClicked) {
             throw new RuntimeException("The lightweight component left behind the heavyweight one.");
