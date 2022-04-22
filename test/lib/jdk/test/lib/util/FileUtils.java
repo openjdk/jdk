@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import jdk.test.lib.Platform;
 
@@ -377,16 +378,30 @@ public final class FileUtils {
         }
     }
 
-    public static void patch(Path path, int fromLine, int toLine, String to) throws IOException {
-        if(fromLine < 1 || toLine < 1) {
-            throw new RuntimeException("Invalid range fromLine: " + fromLine + ", toLine: " + toLine);
-        }
+    /**
+     * Patches a part of a file.
+     * @param path of file
+     * @param fromLine the first line to patch. This is the number you see in an editor, 1-based.
+     * @param toLine the last line to patch. This is the number you see in an editor, inclusive.
+     * @param from the lines to remove, used to ensure the correct lines are removed. Ignored if null.
+     * @param to the newly added line, can be multiple lines or empty. Cannot be null.
+     * @throws IOException
+     */
+    public static void patch(Path path, int fromLine, int toLine, List<String> from, String to) throws IOException {
         var lines = Files.readAllLines(path);
-        if(toLine > lines.size()) {
-            throw new RuntimeException("Expected toLine: " + toLine + ", actual range available: " + lines.size());
-        }
-        for (int i = toLine - 1; i >= fromLine - 1; i--) {
-            lines.remove(i);
+        if (from != null) {
+            var removed = "";
+            for (int i = fromLine; i <= toLine; i++) {
+                removed += lines.remove(fromLine - 1).trim();
+            }
+            var froms = from.stream()
+                    .map(String::trim)
+                    .collect(Collectors.joining());
+            if (!removed.equals(froms)) {
+                throw new IOException("Removed not the same");
+            }
+        } else {
+            lines.subList(fromLine - 1, toLine).clear();
         }
         lines.addAll(fromLine - 1, to.lines().toList());
         Files.write(path, lines);
