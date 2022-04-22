@@ -213,10 +213,12 @@ abstract class RSASignature extends SignatureSpi {
                     RSACore.getByteLength(publicKey));
             }
             byte[] digest = getDigestValue();
+            // https://www.rfc-editor.org/rfc/rfc8017.html#section-8.2.2
+            // Step 4: Compare the encoded message, not the decoded.
+            byte[] encoded = RSAUtil.encodeSignature(digestOID, digest);
             byte[] decrypted = RSACore.rsa(sigBytes, publicKey);
             byte[] unpadded = padding.unpad(decrypted);
-            byte[] decodedDigest = RSAUtil.decodeSignature(digestOID, unpadded);
-            return MessageDigest.isEqual(digest, decodedDigest);
+            return MessageDigest.isEqual(unpadded, encoded);
         } catch (javax.crypto.BadPaddingException e) {
             // occurs if the app has used the wrong RSA public key
             // or if sigBytes is invalid
