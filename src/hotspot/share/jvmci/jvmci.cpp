@@ -201,7 +201,7 @@ void JVMCI::do_unloading(bool unloading_occurred) {
       _java_runtime->_metadata_handles->do_unloading();
     }
     for (JVMCIRuntime* runtime = _compiler_runtimes; runtime != nullptr; runtime = runtime->_next) {
-     runtime->_metadata_handles->do_unloading();
+      runtime->_metadata_handles->do_unloading();
     }
     if (_shutdown_compiler_runtime != nullptr) {
       _shutdown_compiler_runtime->_metadata_handles->do_unloading();
@@ -261,7 +261,7 @@ void JVMCI::shutdown(JavaThread* thread) {
   if (java_runtime != nullptr) {
     java_runtime->shutdown();
   }
-  JVMCIRuntime *runtime = thread->libjvmci_runtime();
+  JVMCIRuntime* runtime = thread->libjvmci_runtime();
   if (runtime != nullptr) {
     runtime->detach_thread(thread, "JVMCI shutdown");
   }

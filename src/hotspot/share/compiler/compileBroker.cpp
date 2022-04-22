@@ -440,7 +440,7 @@ CompileTask* CompileQueue::get(CompilerThread* thread) {
       return NULL;
     }
 
-    AbstractCompiler *compiler = thread->compiler();
+    AbstractCompiler* compiler = thread->compiler();
     guarantee(compiler != nullptr, "Compiler object must exist");
     compiler->on_empty_queue(this, thread);
 

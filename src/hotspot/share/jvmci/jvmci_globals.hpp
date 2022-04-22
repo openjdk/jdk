@@ -68,7 +68,7 @@ class fileStream;
           "a compilation task before being considered idle. When a JVMCI "  \
           "compiler queue becomes idle, it is detached from its JVMCIRuntime. "\
           "Once the last thread is detached from a JVMCIRuntime, all "      \
-          "all resources associated with the runtime are reclaimed.")       \
+          "resources associated with the runtime are reclaimed.")           \
           range(0, max_jint)                                                \
                                                                             \
   product(bool, JVMCIPrintProperties, false, EXPERIMENTAL,                  \

@@ -2266,7 +2266,7 @@ C2V_VMENTRY_PREFIX(jboolean, isCurrentThreadAttached, (JNIEnv* env, jobject c2vm
   if (thread->jni_environment() == env) {
     C2V_BLOCK(jboolean, isCurrentThreadAttached, (JNIEnv* env, jobject))
     requireJVMCINativeLibrary(JVMCI_CHECK_0);
-    JVMCIRuntime *runtime = thread->libjvmci_runtime();
+    JVMCIRuntime* runtime = thread->libjvmci_runtime();
     if (runtime == nullptr || !runtime->has_shared_library_javavm()) {
       JVMCI_THROW_MSG_0(IllegalStateException, "Require JVMCI shared library JavaVM to be initialized in isCurrentThreadAttached");
     }
@@ -2388,7 +2388,7 @@ C2V_VMENTRY_PREFIX(jboolean, detachCurrentThread, (JNIEnv* env, jobject c2vm, jb
     C2V_BLOCK(void, detachCurrentThread, (JNIEnv* env, jobject))
     requireJVMCINativeLibrary(JVMCI_CHECK_0);
     requireInHotSpot("detachCurrentThread", JVMCI_CHECK_0);
-    JVMCIRuntime *runtime = thread->libjvmci_runtime();
+    JVMCIRuntime* runtime = thread->libjvmci_runtime();
     if (runtime == nullptr || !runtime->has_shared_library_javavm()) {
       JVMCI_THROW_MSG_0(IllegalStateException, "Require JVMCI shared library JavaVM to be initialized in detachCurrentThread");
     }
@@ -2411,7 +2411,7 @@ C2V_VMENTRY_PREFIX(jboolean, detachCurrentThread, (JNIEnv* env, jobject c2vm, jb
     if (release) {
       JNI_THROW_("detachCurrentThread", InternalError, "JVMCI shared library thread cannot release JVMCI shared library JavaVM", false);
     }
-    JVMCIRuntime *runtime = thread->libjvmci_runtime();
+    JVMCIRuntime* runtime = thread->libjvmci_runtime();
     if (runtime == nullptr) {
       JNI_THROW_("detachCurrentThread", InternalError, "JVMCI shared library thread should have a JVMCI runtime", false);
     }
