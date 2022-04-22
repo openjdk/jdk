@@ -430,12 +430,6 @@ java/awt/Modal/ToBack/ToBackNonModal2Test.java 8196441 macosx-all,linux-all
 java/awt/Modal/ToBack/ToBackNonModal3Test.java 8196441 macosx-all,linux-all
 java/awt/Modal/ToBack/ToBackNonModal4Test.java 8196441 macosx-all,linux-all
 java/awt/Modal/ToBack/ToBackNonModal5Test.java 8196441 macosx-all
-java/awt/Modal/OnTop/OnTopAppModal1Test.java 8198666 macosx-all
-java/awt/Modal/OnTop/OnTopAppModal2Test.java 8198666 macosx-all
-java/awt/Modal/OnTop/OnTopAppModal3Test.java 8198666 macosx-all
-java/awt/Modal/OnTop/OnTopAppModal4Test.java 8198666 macosx-all
-java/awt/Modal/OnTop/OnTopAppModal5Test.java 8198666 macosx-all
-java/awt/Modal/OnTop/OnTopAppModal6Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopDocModal1Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopDocModal2Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopDocModal3Test.java 8198666 macosx-all
