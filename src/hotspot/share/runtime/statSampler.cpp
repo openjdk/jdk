@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,7 +292,7 @@ void StatSampler::create_misc_perfdata() {
                                           Arguments::jvm_args(), CHECK);
 
   // java class name/jar file and arguments to main class
-  // note: name is cooridnated with launcher and Arguments.cpp
+  // note: name is coordinated with launcher and Arguments.cpp
   PerfDataManager::create_string_constant(SUN_RT, "javaCommand",
                                           Arguments::java_command(), CHECK);
 

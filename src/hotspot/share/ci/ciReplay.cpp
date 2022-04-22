@@ -1383,7 +1383,7 @@ int ciReplay::replay_impl(TRAPS) {
   if (ReplaySuppressInitializers > 2) {
     // ReplaySuppressInitializers > 2 means that we want to allow
     // normal VM bootstrap but once we get into the replay itself
-    // don't allow any intializers to be run.
+    // don't allow any initializers to be run.
     ReplaySuppressInitializers = 1;
   }
 

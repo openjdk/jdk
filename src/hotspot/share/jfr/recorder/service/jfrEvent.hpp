@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,13 +197,13 @@ class JfrEvent {
     }
     bool large = is_large();
     if (write_sized_event(buffer, event_thread, tl, large)) {
-      // Event written succesfully
+      // Event written successfully
       return;
     }
     if (!large) {
       // Try large size
       if (write_sized_event(buffer, event_thread, tl, true)) {
-        // Event written succesfully, use large size from now on
+        // Event written successfully, use large size from now on
         set_large();
       }
     }

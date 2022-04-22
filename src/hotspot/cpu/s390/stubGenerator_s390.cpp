@@ -42,6 +42,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Declaration and definition of StubGenerator (no .hpp file).
@@ -1457,44 +1458,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_oop_arraycopy_uninit = generate_conjoint_oop_copy  (true, "arrayof_oop_arraycopy_uninit", true);
   }
 
-  void generate_safefetch(const char* name, int size, address* entry, address* fault_pc, address* continuation_pc) {
-
-    // safefetch signatures:
-    //   int      SafeFetch32(int*      adr, int      errValue);
-    //   intptr_t SafeFetchN (intptr_t* adr, intptr_t errValue);
-    //
-    // arguments:
-    //   Z_ARG1 = adr
-    //   Z_ARG2 = errValue
-    //
-    // result:
-    //   Z_RET  = *adr or errValue
-
-    StubCodeMark mark(this, "StubRoutines", name);
-
-    // entry point
-    // Load *adr into Z_ARG2, may fault.
-    *entry = *fault_pc = __ pc();
-    switch (size) {
-      case 4:
-        // Sign extended int32_t.
-        __ z_lgf(Z_ARG2, 0, Z_ARG1);
-        break;
-      case 8:
-        // int64_t
-        __ z_lg(Z_ARG2, 0, Z_ARG1);
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-
-    // Return errValue or *adr.
-    *continuation_pc = __ pc();
-    __ z_lgr(Z_RET, Z_ARG2);
-    __ z_br(Z_R14);
-
-  }
-
   // Call interface for AES_encryptBlock, AES_decryptBlock stubs.
   //
   //   Z_ARG1 - source data block. Ptr to leftmost byte to be processed.
@@ -1961,7 +1924,7 @@ class StubGenerator: public StubCodeGenerator {
     if (multiBlock) {  // Process everything from offset to limit.
 
       // The following description is valid if we get a raw (unpimped) source data buffer,
-      // spanning the range between [srcOff(Z_ARG3), srcLimit(Z_ARG4)). As detailled above,
+      // spanning the range between [srcOff(Z_ARG3), srcLimit(Z_ARG4)). As detailed above,
       // the calling convention for these stubs is different. We leave the description in
       // to inform the reader what must be happening hidden in the calling code.
       //
@@ -2041,7 +2004,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (multiBlock) {  // Process everything from offset to limit.
       // The following description is valid if we get a raw (unpimped) source data buffer,
-      // spanning the range between [srcOff(Z_ARG3), srcLimit(Z_ARG4)). As detailled above,
+      // spanning the range between [srcOff(Z_ARG3), srcLimit(Z_ARG4)). As detailed above,
       // the calling convention for these stubs is different. We leave the description in
       // to inform the reader what must be happening hidden in the calling code.
       //
@@ -2121,7 +2084,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (multiBlock) {  // Process everything from offset to limit.
       // The following description is valid if we get a raw (unpimped) source data buffer,
-      // spanning the range between [srcOff(Z_ARG3), srcLimit(Z_ARG4)). As detailled above,
+      // spanning the range between [srcOff(Z_ARG3), srcLimit(Z_ARG4)). As detailed above,
       // the calling convention for these stubs is different. We leave the description in
       // to inform the reader what must be happening hidden in the calling code.
       //
@@ -2337,10 +2300,6 @@ class StubGenerator: public StubCodeGenerator {
 
     // Comapct string intrinsics: Translate table for string inflate intrinsic. Used by trot instruction.
     StubRoutines::zarch::_trot_table_addr = (address)StubRoutines::zarch::_trot_table;
-
-    // safefetch stubs
-    generate_safefetch("SafeFetch32", sizeof(int),      &StubRoutines::_safefetch32_entry, &StubRoutines::_safefetch32_fault_pc, &StubRoutines::_safefetch32_continuation_pc);
-    generate_safefetch("SafeFetchN",  sizeof(intptr_t), &StubRoutines::_safefetchN_entry,  &StubRoutines::_safefetchN_fault_pc,  &StubRoutines::_safefetchN_continuation_pc);
   }
 
 

@@ -41,7 +41,7 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
      *     Derive-Secret(Secret, Label, Messages) =
      *          HKDF-Expand-Label(..., Transcript-Hash(""), ...);
      *
-     * Hardcode tha Transcript-Hash("") result and skip a digest operation.
+     * Hardcode the Transcript-Hash("") result and skip a digest operation.
      */
     private static final byte[] sha256EmptyDigest = new byte[] {
         (byte)0xE3, (byte)0xB0, (byte)0xC4, (byte)0x42,
