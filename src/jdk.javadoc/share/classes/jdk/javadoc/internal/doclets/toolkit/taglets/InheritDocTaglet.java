@@ -33,6 +33,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.util.DocTreePath;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -77,13 +78,13 @@ public class InheritDocTaglet extends BaseTaglet {
         Messages messages = configuration.getMessages();
         Utils utils = configuration.utils;
         CommentHelper ch = utils.getCommentHelper(e);
-        DocTree holderTag = ch.getDocTreePath(inheritDoc).getParentPath().getLeaf();
+        var path = ch.getDocTreePath(inheritDoc);
+        DocTree holderTag = path.getParentPath().getLeaf();
         Taglet taglet = holderTag.getKind() == DocTree.Kind.DOC_COMMENT
                 ? null
                 : configuration.tagletManager.getTaglet(ch.getTagName(holderTag));
         if (taglet != null && !(taglet instanceof InheritableTaglet)) {
             // This tag does not support inheritance.
-            var path = writer.configuration().utils.getCommentHelper(e).getDocTreePath(inheritDoc);
             messages.warning(path, "doclet.inheritDocWithinInappropriateTag");
             return replacement;
         }
