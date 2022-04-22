@@ -210,19 +210,23 @@ void ShenandoahControlThread::run_service() {
         } else {
           heap->set_unload_classes(false);
         }
+
+        // Don't want to spin in this loop and start a cycle every time, so
+        // clear requested gc cause. This creates a race with callers of the
+        // blocking 'request_gc' method, but there it loops and resets the
+        // '_requested_gc_cause' until a full cycle is completed.
+        _requested_gc_cause = GCCause::_no_gc;
       } else if (heap->is_concurrent_old_mark_in_progress() || heap->is_concurrent_prep_for_mixed_evacuation_in_progress()) {
         // Nobody asked us to do anything, but we have an old-generation mark or old-generation preparation for
         // mixed evacuation in progress, so resume working on that.
+        log_info(gc)("Resume old gc: marking=%s, preparing=%s",
+                     BOOL_TO_STR(heap->is_concurrent_old_mark_in_progress()),
+                     BOOL_TO_STR(heap->is_concurrent_prep_for_mixed_evacuation_in_progress()));
+
         cause = GCCause::_shenandoah_concurrent_gc;
         generation = OLD;
         set_gc_mode(marking_old);
       }
-
-      // Don't want to spin in this loop and start a cycle every time, so
-      // clear requested gc cause. This creates a race with callers of the
-      // blocking 'request_gc' method, but there it loops and resets the
-      // '_requested_gc_cause' until a full cycle is completed.
-      _requested_gc_cause = GCCause::_no_gc;
     }
 
     // Blow all soft references on this cycle, if handling allocation failure,
@@ -754,7 +758,7 @@ bool ShenandoahControlThread::request_concurrent_gc(GenerationMode generation) {
   }
 
   if (preempt_old_marking(generation)) {
-    log_info(gc)("Preempting old generation mark to allow young GC.");
+    log_info(gc)("Preempting old generation mark to allow %s GC.", generation_name(generation));
     _requested_gc_cause = GCCause::_shenandoah_concurrent_gc;
     _requested_generation = generation;
     _preemption_requested.set();

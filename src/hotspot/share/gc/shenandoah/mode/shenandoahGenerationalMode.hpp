@@ -43,6 +43,7 @@ enum ShenandoahRegionAffiliation {
 const char* affiliation_name(oop ptr);
 const char* affiliation_name(ShenandoahRegionAffiliation type);
 const char affiliation_code(ShenandoahRegionAffiliation type);
+const char* generation_name(GenerationMode mode);
 
 class ShenandoahGenerationalMode : public ShenandoahMode {
 public:
