@@ -128,8 +128,7 @@ public class MachCodeFramesInErrorFile {
         // Extract hs_err_pid file.
         String hs_err_file = output.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
         if (hs_err_file == null) {
-            System.out.println("stdout:\n" + output.getStdout());
-            System.err.println("stderr:\n" + output.getStderr());
+            output.reportDiagnosticSummary();
             throw new RuntimeException("Did not find hs_err_pid file in output");
         }
         Path hsErrPath = Paths.get(hs_err_file);
