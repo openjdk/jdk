@@ -30,36 +30,25 @@
  *
  * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="i386" | os.arch=="x86" | os.arch=="aarch64"
  *
- * @run driver compiler.sharedstubs.SharedStubToInterpTest c2 StaticMethodTest
- * @run driver compiler.sharedstubs.SharedStubToInterpTest c1 StaticMethodTest
- * @run driver compiler.sharedstubs.SharedStubToInterpTest c2 FinalClassTest
- * @run driver compiler.sharedstubs.SharedStubToInterpTest c1 FinalClassTest
- * @run driver compiler.sharedstubs.SharedStubToInterpTest c2 FinalMethodTest
- * @run driver compiler.sharedstubs.SharedStubToInterpTest c1 FinalMethodTest
+ * @run driver compiler.sharedstubs.SharedStubToInterpTest
  */
 
 package compiler.sharedstubs;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.ListIterator;
+import java.util.List;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class SharedStubToInterpTest {
-    public static void main(String[] args) throws Exception {
-        String compiler = args[0];
-        String testClassName = SharedStubToInterpTest.class.getName() + "$" + args[1];
+    private final static int ITERATIONS_TO_HEAT_LOOP = 20_000;
+
+    private static void runTest(String compiler, String test) throws Exception {
+        String testClassName = SharedStubToInterpTest.class.getName() + "$" + test;
         ArrayList<String> command = new ArrayList<String>();
-        command.add("-XX:+IgnoreUnrecognizedVMOptions");
+        command.add(compiler);
         command.add("-XX:+UnlockDiagnosticVMOptions");
-        if (compiler.equals("c2")) {
-            command.add("-XX:-TieredCompilation");
-        } else if (compiler.equals("c1")) {
-            command.add("-XX:TieredStopAtLevel=1");
-        } else {
-            throw new RuntimeException("Unknown compiler: " + compiler);
-        }
         command.add("-Xbatch");
         command.add("-XX:CompileCommand=compileonly," + testClassName + "::" + "test");
         command.add("-XX:CompileCommand=dontinline," + testClassName + "::" + "test");
@@ -69,9 +58,6 @@ public class SharedStubToInterpTest {
         command.add("-XX:CompileCommand=exclude," + testClassName + "::" + "log02");
         command.add("-XX:CompileCommand=dontinline," + testClassName + "::" + "log02");
         command.add(testClassName);
-        command.add("a");
-        command.add("b");
-        command.add("c");
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(command);
 
@@ -82,6 +68,18 @@ public class SharedStubToInterpTest {
         System.out.println(analyzer.getOutput());
 
         checkOutput(analyzer);
+    }
+
+    public static void main(String[] args) throws Exception {
+        List<String> compilers = java.util.Arrays.asList("-XX:-TieredCompilation" /* C2 */,
+            "-XX:TieredStopAtLevel=1" /* C1 */);
+        List<String> tests = java.util.Arrays.asList("StaticMethodTest",
+            "FinalClassTest", "FinalMethodTest");
+        for (String compiler : compilers) {
+            for (String test : tests) {
+                runTest(compiler, test);
+            }
+        }
     }
 
     private static String skipTo(Iterator<String> iter, String substring) {
@@ -135,8 +133,8 @@ public class SharedStubToInterpTest {
         static void log02(int i) {
         }
 
-        static void test(int i, String[] args) {
-            if (i % args.length == 0) {
+        static void test(int i) {
+            if (i % 3 == 0) {
                 log01(i);
                 log02(i);
             } else {
@@ -146,8 +144,8 @@ public class SharedStubToInterpTest {
         }
 
         public static void main(String[] args) {
-            for (int i = 1; i < 50_000; ++i) {
-                test(i, args);
+            for (int i = 1; i < ITERATIONS_TO_HEAT_LOOP; ++i) {
+                test(i);
             }
         }
     }
@@ -158,8 +156,8 @@ public class SharedStubToInterpTest {
         void log02(int i) {
         }
 
-        void test(int i, String[] args) {
-            if (i % args.length == 0) {
+        void test(int i) {
+            if (i % 3 == 0) {
                 log01(i);
                 log02(i);
             } else {
@@ -170,8 +168,8 @@ public class SharedStubToInterpTest {
 
         public static void main(String[] args) {
             FinalClassTest tFC = new FinalClassTest();
-            for (int i = 1; i < 50_000; ++i) {
-                tFC.test(i,args);
+            for (int i = 1; i < ITERATIONS_TO_HEAT_LOOP; ++i) {
+                tFC.test(i);
             }
         }
     }
@@ -182,8 +180,8 @@ public class SharedStubToInterpTest {
         final void log02(int i) {
         }
 
-        void test(int i, String[] args) {
-            if (i % args.length == 0) {
+        void test(int i) {
+            if (i % 3 == 0) {
                 log01(i);
                 log02(i);
             } else {
@@ -194,8 +192,8 @@ public class SharedStubToInterpTest {
 
         public static void main(String[] args) {
             FinalMethodTest tFM = new FinalMethodTest();
-            for (int i = 1; i < 50_000; ++i) {
-                tFM.test(i,args);
+            for (int i = 1; i < ITERATIONS_TO_HEAT_LOOP; ++i) {
+                tFM.test(i);
             }
         }
     }
