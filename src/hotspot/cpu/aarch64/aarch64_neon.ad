@@ -611,6 +611,7 @@ instruct reduce_addL_neon(iRegLNoSp dst, iRegL isrc, vecX vsrc, vecX vtmp) %{
   ins_pipe(pipe_slow);
 %}
 
+
 instruct reduce_mul_neon_8B(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecD vtmp1, vecD vtmp2) %{
   predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
   match(Set dst (MulReductionVI isrc vsrc));
@@ -678,7 +679,7 @@ instruct reduce_mul_neon_2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc) %{
                                    as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 8,
                                    fnoreg, fnoreg);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(pipe_slow);
 %}
 
 instruct reduce_mul_neon_4I(iRegINoSp dst, iRegIorL2I isrc, vecX vsrc, vecX vtmp) %{
@@ -692,10 +693,11 @@ instruct reduce_mul_neon_4I(iRegINoSp dst, iRegIorL2I isrc, vecX vsrc, vecX vtmp
                                    as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 16,
                                    as_FloatRegister($vtmp$$reg), fnoreg);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(pipe_slow);
 %}
 
 instruct reduce_mul_neon_2L(iRegLNoSp dst, iRegL isrc, vecX vsrc) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_LONG);
   match(Set dst (MulReductionVL isrc vsrc));
   ins_cost(4 * INSN_COST);
   effect(TEMP_DEF dst);

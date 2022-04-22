@@ -380,102 +380,42 @@ instruct reduce_addL_neon(iRegLNoSp dst, iRegL isrc, vecX vsrc, vecX vtmp) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_mul_neon_8B(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecD vtmp1, vecD vtmp2) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
-  match(Set dst (MulReductionVI isrc vsrc));
-  ins_cost(10 * INSN_COST);
-  effect(TEMP_DEF dst, TEMP vtmp1, TEMP vtmp2);
-  format %{ "neon_mul_reduction_integral $dst, $isrc, $vsrc\t# mul reduction8B" %}
+dnl REDUCE_MUL_NEON($1,       $2,           $3,                     $4)
+dnl REDUCE_MUL_NEON(lane_cnt, element_type, vector_length_in_bytes, cost)
+define(`REDUCE_MUL_NEON', `
+instruct reduce_mul_neon_$1$2(ifelse($2, L, iRegLNoSp, iRegINoSp) dst,dnl
+ ifelse($2, L, iRegL, iRegIorL2I) isrc, ifelse($3, 8, vecD, vecX) vsrc`'ifelse($1$2, 8B, `, vecD vtmp1, vecD vtmp2',
+                                                          $1$2, 16B,`, vecX vtmp1, vecX vtmp2',
+                                                          $1$2, 4S, `, vecD vtmp',
+                                                          $1$2, 8S, `, vecX vtmp1, vecX vtmp2',
+                                                          $1$2, 4I, `, vecX vtmp')) %{
+  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($2));
+  match(Set dst (MulReductionV`'ifelse($2, L, L, I) isrc vsrc));
+  ins_cost($4 * INSN_COST);
+  effect(ifelse($2, B, `TEMP_DEF dst, TEMP vtmp1, TEMP vtmp2',
+                $1$2, 4S, `TEMP_DEF dst, TEMP vtmp',
+                $1$2, 8S, `TEMP_DEF dst, TEMP vtmp1, TEMP vtmp2',
+                $1, 2, `TEMP_DEF dst',
+                $1$2, 4I, `TEMP_DEF dst, TEMP vtmp'));
+  format %{ "neon_mul_reduction_integral $dst, $isrc, $vsrc\t# mul reduction$1$2" %}
   ins_encode %{
-    __ neon_mul_reduction_integral(as_Register($dst$$reg), T_BYTE, as_Register($isrc$$reg),
-                                   as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 8,
-                                   as_FloatRegister($vtmp1$$reg), as_FloatRegister($vtmp2$$reg));
+    __ neon_mul_reduction_integral(as_Register($dst$$reg), T_`'TYPE2DATATYPE($2), as_Register($isrc$$reg),
+                                   as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ $3,
+                                   ifelse($2, B, `as_FloatRegister($vtmp1$$reg), as_FloatRegister($vtmp2$$reg)',
+                                          $1$2, 4S, `as_FloatRegister($vtmp$$reg), fnoreg',
+                                          $1$2, 8S, `as_FloatRegister($vtmp1$$reg), as_FloatRegister($vtmp2$$reg)',
+                                          $1,   2,  `fnoreg, fnoreg',
+                                          $1$2, 4I, `as_FloatRegister($vtmp$$reg), fnoreg'));
   %}
   ins_pipe(pipe_slow);
-%}
-
-instruct reduce_mul_neon_16B(iRegINoSp dst, iRegIorL2I isrc, vecX vsrc, vecX vtmp1, vecX vtmp2) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
-  match(Set dst (MulReductionVI isrc vsrc));
-  ins_cost(12 * INSN_COST);
-  effect(TEMP_DEF dst, TEMP vtmp1, TEMP vtmp2);
-  format %{ "neon_mul_reduction_integral $dst, $isrc, $vsrc\t# mul reduction16B" %}
-  ins_encode %{
-    __ neon_mul_reduction_integral(as_Register($dst$$reg), T_BYTE, as_Register($isrc$$reg),
-                                   as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 16,
-                                   as_FloatRegister($vtmp1$$reg), as_FloatRegister($vtmp2$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct reduce_mul_neon_4S(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecD vtmp) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (MulReductionVI isrc vsrc));
-  ins_cost(8 * INSN_COST);
-  effect(TEMP_DEF dst, TEMP vtmp);
-  format %{ "neon_mul_reduction_integral $dst, $isrc, $vsrc\t# mul reduction4S" %}
-  ins_encode %{
-    __ neon_mul_reduction_integral(as_Register($dst$$reg), T_SHORT, as_Register($isrc$$reg),
-                                   as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 8,
-                                   as_FloatRegister($vtmp$$reg), fnoreg);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct reduce_mul_neon_8S(iRegINoSp dst, iRegIorL2I isrc, vecX vsrc, vecX vtmp1, vecX vtmp2) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_SHORT);
-  match(Set dst (MulReductionVI isrc vsrc));
-  ins_cost(10 * INSN_COST);
-  effect(TEMP_DEF dst, TEMP vtmp1, TEMP vtmp2);
-  format %{ "neon_mul_reduction_integral $dst, $isrc, $vsrc\t# mul reduction8S" %}
-  ins_encode %{
-    __ neon_mul_reduction_integral(as_Register($dst$$reg), T_SHORT, as_Register($isrc$$reg),
-                                   as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 16,
-                                   as_FloatRegister($vtmp1$$reg), as_FloatRegister($vtmp2$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct reduce_mul_neon_2I(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (MulReductionVI isrc vsrc));
-  ins_cost(4 * INSN_COST);
-  effect(TEMP_DEF dst);
-  format %{ "neon_mul_reduction_integral $dst, $isrc, $vsrc\t# mul reduction2I" %}
-  ins_encode %{
-    __ neon_mul_reduction_integral(as_Register($dst$$reg), T_INT, as_Register($isrc$$reg),
-                                   as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 8,
-                                   fnoreg, fnoreg);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct reduce_mul_neon_4I(iRegINoSp dst, iRegIorL2I isrc, vecX vsrc, vecX vtmp) %{
-  predicate(n->in(2)->bottom_type()->is_vect()->element_basic_type() == T_INT);
-  match(Set dst (MulReductionVI isrc vsrc));
-  ins_cost(6 * INSN_COST);
-  effect(TEMP_DEF dst, TEMP vtmp);
-  format %{ "neon_mul_reduction_integral $dst, $isrc, $vsrc\t# mul reduction4I" %}
-  ins_encode %{
-    __ neon_mul_reduction_integral(as_Register($dst$$reg), T_INT, as_Register($isrc$$reg),
-                                   as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 16,
-                                   as_FloatRegister($vtmp$$reg), fnoreg);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct reduce_mul_neon_2L(iRegLNoSp dst, iRegL isrc, vecX vsrc) %{
-  match(Set dst (MulReductionVL isrc vsrc));
-  ins_cost(4 * INSN_COST);
-  effect(TEMP_DEF dst);
-  format %{ "neon_mul_reduction_integral $dst, $isrc, $vsrc\t# mul reduction2L" %}
-  ins_encode %{
-    __ neon_mul_reduction_integral(as_Register($dst$$reg), T_LONG, as_Register($isrc$$reg),
-                                   as_FloatRegister($vsrc$$reg), /* vector_length_in_bytes */ 16,
-                                   fnoreg, fnoreg);
-  %}
-  ins_pipe(pipe_slow);
-%}
+%}')dnl
+REDUCE_MUL_NEON(8,  B, 8,   10)
+REDUCE_MUL_NEON(16, B, 16,  12)
+REDUCE_MUL_NEON(4,  S, 8,   8)
+REDUCE_MUL_NEON(8,  S, 16,  10)
+REDUCE_MUL_NEON(2,  I, 8,   4)
+REDUCE_MUL_NEON(4,  I, 16,  6)
+REDUCE_MUL_NEON(2,  L, 16,  4)
 
 instruct reduce_mul_neon_2F(vRegF dst, vRegF fsrc, vecD vsrc, vecD vtmp) %{
   match(Set dst (MulReductionVF fsrc vsrc));
