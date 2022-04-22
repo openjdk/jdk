@@ -85,7 +85,7 @@ public class DocTreePath implements Iterable<DocTree> {
 
             @Override
             public DocTreePath scan(Iterable<? extends DocTree> nodes, DocTree docTree) {
-                if (nodes != null) {
+                if (nodes != null && result == null) {
                     for (DocTree node : nodes) {
                         scan(node, docTree);
                         if (result != null) {
