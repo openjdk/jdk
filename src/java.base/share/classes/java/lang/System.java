@@ -770,14 +770,12 @@ public final class System {
      *     the user's settings. Setting this system property has no effect.</td></tr>
      * <tr><th scope="row">{@systemProperty stdout.encoding}</th>
      *     <td>Character encoding name for {@link System#out System.out}.
-     *     The property may be set on the command line to the value
-     *     {@code UTF-8}. Setting the property to a value other than {@code UTF-8}
-     *     leads to unspecified behavior.
+     *     The Java runtime can be started with the system property set to {@code UTF-8},
+     *     starting it with the property set to another value clears to undefined behavior.
      * <tr><th scope="row">{@systemProperty stderr.encoding}</th>
      *     <td>Character encoding name for {@link System#err System.err}.
-     *     The property may be set on the command line to the value
-     *     {@code UTF-8}. Setting the property to a value other than {@code UTF-8}
-     *     leads to unspecified behavior.
+     *     The Java runtime can be started with the system property set to {@code UTF-8},
+     *     starting it with the property set to another value clears to undefined behavior.
      * </tbody>
      * </table>
      * <p>
