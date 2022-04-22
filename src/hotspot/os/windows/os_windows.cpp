@@ -4977,21 +4977,6 @@ int os::get_fileno(FILE* fp) {
   return _fileno(fp);
 }
 
-// This code is a copy of JDK's sysSync
-// from src/windows/hpi/src/sys_api_md.c
-// except for the legacy workaround for a bug in Win 98
-
-int os::fsync(int fd) {
-  HANDLE handle = (HANDLE)::_get_osfhandle(fd);
-
-  if ((!::FlushFileBuffers(handle)) &&
-      (GetLastError() != ERROR_ACCESS_DENIED)) {
-    // from winerror.h
-    return -1;
-  }
-  return 0;
-}
-
 void os::flockfile(FILE* fp) {
   _lock_file(fp);
 }
