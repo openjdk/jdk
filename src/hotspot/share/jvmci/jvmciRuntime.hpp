@@ -415,7 +415,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // A helper to allow invocation of an arbitrary Java method.  For simplicity the method is
   // restricted to a static method that takes at most one argument.  For calling convention
-  // simplicty all types are passed by being converted into a jlong
+  // simplicity all types are passed by being converted into a jlong
   static jlong invoke_static_method_one_arg(JavaThread* current, Method* method, jlong argument);
 
   // Test only function

@@ -36,7 +36,7 @@ class ObjectSample;
 class SampleList;
 class SamplePriorityQueue;
 
-// Class reponsible for holding samples and
+// Class responsible for holding samples and
 // making sure the samples are evenly distributed as
 // new entries are added and removed.
 class ObjectSampler : public CHeapObj<mtTracing> {

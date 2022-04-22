@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1598,7 +1598,7 @@ final class DummyX509TrustManager extends X509ExtendedTrustManager
     public void checkClientTrusted(X509Certificate[] chain, String authType)
         throws CertificateException {
         throw new CertificateException(
-            "No X509TrustManager implementation avaiable");
+            "No X509TrustManager implementation available");
     }
 
     /*

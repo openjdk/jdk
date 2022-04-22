@@ -81,7 +81,7 @@ enum Alert {
     // description of the Alert
     final String description;
 
-    // Does tha alert happen during handshake only?
+    // Does the alert happen during handshake only?
     final boolean handshakeOnly;
 
     // Alert message consumer

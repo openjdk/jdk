@@ -39,7 +39,7 @@
 //    On more recent models (from z9 on), I-fetch is done on a Octoword
 //    (32 bytes at a time) basis. To avoid I-fetching unnecessary
 //    instructions, branch targets should be 32-byte aligend. If this
-//    exact alingment cannot be achieved, having the branch target in
+//    exact alignment cannot be achieved, having the branch target in
 //    the first doubleword still provides some benefit.
 //  - Avoid branch targets at the end of cache lines (> 64 bytes distance).
 //    Sequential instruction prefetching after the branch target starts
@@ -47,7 +47,7 @@
 //    branch target. When I-fetching crosses a cache line, there may be
 //    a small stall. The worst case: the branch target (at the end of
 //    a cache line) is a L1 I-cache miss and the next line as well.
-//    Then, the entire target line must be filled first (to contine at the
+//    Then, the entire target line must be filled first (to continue at the
 //    branch target). Only then can the next sequential line be filled.
 //  - Avoid multiple poorly predicted branches in a row.
 //
@@ -3663,7 +3663,7 @@ operand cmpOp() %{
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used to simplify
 // instruction definitions by not requiring the AD writer to specify
-// seperate instructions for every form of operand when the
+// separate instructions for every form of operand when the
 // instruction accepts multiple operand types with the same basic
 // encoding and format.  The classic case of this is memory operands.
 // Indirect is not included since its use is limited to Compare & Swap
@@ -10339,7 +10339,7 @@ instruct encode_ascii_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch (incI_eReg movI);
 //   // require that the destination register of the increment
 //   // match the destination register of the move
@@ -10755,7 +10755,7 @@ instruct bytes_reverse_long(iRegL dst, iRegL src) %{
 // returns the bit position of the leftmost 1 in the 64bit source register.
 // As the bits are numbered from left to right (0..63), the returned
 // position index is equivalent to the number of leading zeroes.
-// If no 1-bit is found (i.e. the regsiter contains zero), the instruction
+// If no 1-bit is found (i.e. the register contains zero), the instruction
 // returns position 64. That's exactly what we need.
 
 instruct countLeadingZerosI(revenRegI dst, iRegI src, roddRegI tmp, flagsReg cr) %{

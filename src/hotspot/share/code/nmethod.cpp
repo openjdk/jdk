@@ -3031,7 +3031,7 @@ void nmethod::decode2(outputStream* ost) const {
 #if defined(SUPPORT_ABSTRACT_ASSEMBLY)
 
   // Compressed undisassembled disassembly format.
-  // The following stati are defined/supported:
+  // The following status values are defined/supported:
   //   = 0 - currently at bol() position, nothing printed yet on current line.
   //   = 1 - currently at position after print_location().
   //   > 1 - in the midst of printing instruction stream bytes.

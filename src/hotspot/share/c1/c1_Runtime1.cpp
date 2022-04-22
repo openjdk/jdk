@@ -551,7 +551,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(exception);
 
-  // Check the stack guard pages and reenable them if necessary and there is
+  // Check the stack guard pages and re-enable them if necessary and there is
   // enough space on the stack to do so.  Use fast exceptions only if the guard
   // pages are enabled.
   bool guard_pages_enabled = current->stack_overflow_state()->reguard_stack_if_needed();
@@ -867,7 +867,7 @@ static Klass* resolve_field_return_klass(const methodHandle& caller, int bci, TR
 // If the class is being initialized the patch body is rewritten and
 // the patch site is rewritten to jump to being_init, instead of
 // patch_stub.  Whenever this code is executed it checks the current
-// thread against the intializing thread so other threads will enter
+// thread against the initializing thread so other threads will enter
 // the runtime and end up blocked waiting the class to finish
 // initializing inside the calls to resolve_field below.  The
 // initializing class will continue on it's way.  Once the class is

@@ -334,7 +334,7 @@ public:
   // Reason this compilation is failing, such as "too many basic blocks".
   const char* failure_reason() { return _failure_reason; }
 
-  // Return state of appropriate compilability
+  // Return state of appropriate compatibility
   int compilable() { return _compilable; }
 
   const char* retry_message() const {

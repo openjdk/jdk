@@ -87,7 +87,7 @@ static bool is_init_with_ea(ciMethod* callee_method,
     return false; // EA is off
   }
   if (callee_method->is_initializer()) {
-    return true; // constuctor
+    return true; // constructor
   }
   if (caller_method->is_initializer() &&
       caller_method != C->method() &&

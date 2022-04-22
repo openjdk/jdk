@@ -25,7 +25,7 @@
 #ifndef CPU_ZERO_REGISTERMAP_ZERO_HPP
 #define CPU_ZERO_REGISTERMAP_ZERO_HPP
 
-  // machine-dependent implemention for register maps
+  // machine-dependent implementation for register maps
   friend class frame;
 
  private:

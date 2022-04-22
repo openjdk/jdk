@@ -217,13 +217,13 @@ class JfrEvent {
     }
     bool large = is_large();
     if (write_sized_event(buffer, thread, tid, sid, large)) {
-      // Event written succesfully.
+      // Event written successfully
       return;
     }
     if (!large) {
       // Try large size.
       if (write_sized_event(buffer, thread, tid, sid, true)) {
-        // Event written succesfully, use large size from now on.
+        // Event written successfully, use large size from now on.
         set_large();
       }
     }

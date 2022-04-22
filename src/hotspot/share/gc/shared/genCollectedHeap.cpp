@@ -464,7 +464,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
   // Do collection work
   {
     // Note on ref discovery: For what appear to be historical reasons,
-    // GCH enables and disabled (by enqueing) refs discovery.
+    // GCH enables and disabled (by enqueuing) refs discovery.
     // In the future this should be moved into the generation's
     // collect method so that ref discovery and enqueueing concerns
     // are local to a generation. The collect method could return

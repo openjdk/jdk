@@ -479,7 +479,7 @@ JVM_LookupDefineClass(JNIEnv *env, jclass lookup, const char *name, const jbyte 
                       jsize len, jobject pd, jboolean init, int flags, jobject classData);
 
 /*
- * Module support funcions
+ * Module support functions
  */
 
 /*

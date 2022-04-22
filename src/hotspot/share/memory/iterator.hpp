@@ -312,7 +312,7 @@ class VoidClosure : public StackObj {
 
 // YieldClosure is intended for use by iteration loops
 // to incrementalize their work, allowing interleaving
-// of an interruptable task so as to allow other
+// of an interruptible task so as to allow other
 // threads to run (which may not otherwise be able to access
 // exclusive resources, for instance). Additionally, the
 // closure also allows for aborting an ongoing iteration

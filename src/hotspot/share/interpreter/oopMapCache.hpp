@@ -91,7 +91,7 @@ class InterpreterOopMap: ResourceObj {
                                   // ptr to bit mask otherwise
                                   // "protected" so that sub classes can
                                   // access it without using trickery in
-                                  // methd bit_mask().
+                                  // method bit_mask().
   int            _num_oops;
 #ifdef ASSERT
   bool _resource_allocate_bit_mask;

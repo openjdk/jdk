@@ -141,6 +141,11 @@ class UnixFileSystem extends FileSystem {
     }
 
     @Override
+    public boolean isInvalid(File f) {
+        return f.getPath().indexOf('\u0000') < 0 ? false : true;
+    }
+
+    @Override
     public String resolve(File f) {
         if (isAbsolute(f)) return f.getPath();
         @SuppressWarnings("removal")

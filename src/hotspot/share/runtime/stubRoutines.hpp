@@ -262,14 +262,6 @@ class StubRoutines: AllStatic {
   JFR_ONLY(static RuntimeStub* _jfr_get_event_writer_stub;)
   JFR_ONLY(static address _jfr_get_event_writer;)
 
-  // Safefetch stubs.
-  static address _safefetch32_entry;
-  static address _safefetch32_fault_pc;
-  static address _safefetch32_continuation_pc;
-  static address _safefetchN_entry;
-  static address _safefetchN_fault_pc;
-  static address _safefetchN_continuation_pc;
-
   // Vector Math Routines
   static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
   static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
@@ -450,34 +442,6 @@ class StubRoutines: AllStatic {
   JFR_ONLY(static address jfr_get_event_writer() { return _jfr_get_event_writer; })
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
-
-  //
-  // Safefetch stub support
-  //
-
-  typedef int      (*SafeFetch32Stub)(int*      adr, int      errValue);
-  typedef intptr_t (*SafeFetchNStub) (intptr_t* adr, intptr_t errValue);
-
-  static SafeFetch32Stub SafeFetch32_stub() { return CAST_TO_FN_PTR(SafeFetch32Stub, _safefetch32_entry); }
-  static SafeFetchNStub  SafeFetchN_stub()  { return CAST_TO_FN_PTR(SafeFetchNStub,  _safefetchN_entry); }
-
-  static bool is_safefetch_fault(address pc) {
-    return pc != NULL &&
-          (pc == _safefetch32_fault_pc ||
-           pc == _safefetchN_fault_pc);
-  }
-
-  static address continuation_for_safefetch_fault(address pc) {
-    assert(_safefetch32_continuation_pc != NULL &&
-           _safefetchN_continuation_pc  != NULL,
-           "not initialized");
-
-    if (pc == _safefetch32_fault_pc) return _safefetch32_continuation_pc;
-    if (pc == _safefetchN_fault_pc)  return _safefetchN_continuation_pc;
-
-    ShouldNotReachHere();
-    return NULL;
-  }
 
   //
   // Default versions of the above arraycopy functions for platforms which do

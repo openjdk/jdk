@@ -40,7 +40,7 @@
 // Apply pre-processor token pasting to the expansions of x and y.
 // The token pasting operator (##) prevents its arguments from being
 // expanded.  This macro allows expansion of its arguments before the
-// concatenation is performed.  Note: One auxilliary level ought to be
+// concatenation is performed.  Note: One auxiliary level ought to be
 // sufficient, but two are used because of bugs in some preprocesors.
 #define PASTE_TOKENS(x, y) PASTE_TOKENS_AUX(x, y)
 #define PASTE_TOKENS_AUX(x, y) PASTE_TOKENS_AUX2(x, y)

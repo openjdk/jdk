@@ -359,7 +359,7 @@ void JvmtiEnvThreadState::reset_current_location(jvmtiEvent event_type, bool ena
   // e.g., the debugger stepi command:
   // - bytecode single stepped
   // - SINGLE_STEP event posted and SINGLE_STEP event disabled
-  // - SINGLE_STEP event reenabled
+  // - SINGLE_STEP event re-enabled
   // - bytecode rewritten to fast version
 
   // If breakpoint event is disabled, clear current location only if

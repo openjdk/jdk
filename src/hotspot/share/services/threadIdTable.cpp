@@ -91,8 +91,8 @@ static size_t ceil_log2(size_t val) {
 void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
   if (!_is_initialized) {
     {
-      // There is no obvious benefits in allowing the thread table
-      // to be concurently populated during the initalization.
+      // There is no obvious benefit in allowing the thread table
+      // to be concurrently populated during initialization.
       MutexLocker ml(ThreadIdTableCreate_lock);
       if (_is_initialized) {
         return;

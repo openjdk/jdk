@@ -289,7 +289,7 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     return new_obj;
   } else {
     // We lost, someone else "owns" this object.
-    // Ensure loads from the forwardee follow all changes that preceeded the
+    // Ensure loads from the forwardee follow all changes that preceded the
     // release-cmpxchg that performed the forwarding in another thread.
     OrderAccess::acquire();
 

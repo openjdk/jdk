@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -980,7 +980,7 @@ public final class Module implements AnnotatedElement {
         // the packages to all unnamed modules.
         Map<String, Set<Module>> openPackages = this.openPackages;
         if (openPackages == null) {
-            openPackages = new HashMap<>((4 * (concealedPkgs.size() + exportedPkgs.size()) / 3) + 1);
+            openPackages = HashMap.newHashMap(concealedPkgs.size() + exportedPkgs.size());
         } else {
             openPackages = new HashMap<>(openPackages);
         }
@@ -1133,8 +1133,7 @@ public final class Module implements AnnotatedElement {
         boolean isBootLayer = (ModuleLayer.boot() == null);
 
         int numModules = cf.modules().size();
-        int cap = (int)(numModules / 0.75f + 1.0f);
-        Map<String, Module> nameToModule = new HashMap<>(cap);
+        Map<String, Module> nameToModule = HashMap.newHashMap(numModules);
 
         // to avoid repeated lookups and reduce iteration overhead, we create
         // arrays holding correlated information about each module.

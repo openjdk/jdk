@@ -173,7 +173,7 @@ void CompiledMethod::clean_exception_cache() {
   // first ExceptionCache node that has a Klass* that is alive. That is fine,
   // as long as there is no concurrent cleanup of next pointers from concurrent writers.
   // And the concurrent writers do not clean up next pointers, only the head.
-  // Also note that concurent readers will walk through Klass* pointers that are not
+  // Also note that concurrent readers will walk through Klass* pointers that are not
   // alive. That does not cause ABA problems, because Klass* is deleted after
   // a handshake with all threads, after all stale ExceptionCaches have been
   // unlinked. That is also when the CodeCache::exception_cache_purge_list()
@@ -483,7 +483,7 @@ bool CompiledMethod::clean_ic_if_metadata_is_dead(CompiledIC *ic) {
     return true;
   }
   if (ic->is_icholder_call()) {
-    // The only exception is compiledICHolder metdata which may
+    // The only exception is compiledICHolder metadata which may
     // yet be marked below. (We check this further below).
     CompiledICHolder* cichk_metdata = ic->cached_icholder();
 

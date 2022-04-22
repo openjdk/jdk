@@ -2652,7 +2652,7 @@ Value PhiSimplifier::simplify(Value v) {
       }
     }
 
-    // sucessfully simplified phi function
+    // successfully simplified phi function
     assert(subst != NULL, "illegal phi function");
     _has_substitutions = true;
     phi->clear(Phi::visited);

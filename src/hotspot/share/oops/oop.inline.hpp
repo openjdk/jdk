@@ -257,14 +257,14 @@ bool oopDesc::is_forwarded() const {
 void oopDesc::forward_to(oop p) {
   verify_forwardee(p);
   markWord m = markWord::encode_pointer_as_mark(p);
-  assert(m.decode_pointer() == p, "encoding must be reversable");
+  assert(m.decode_pointer() == p, "encoding must be reversible");
   set_mark(m);
 }
 
 oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order order) {
   verify_forwardee(p);
   markWord m = markWord::encode_pointer_as_mark(p);
-  assert(m.decode_pointer() == p, "encoding must be reversable");
+  assert(m.decode_pointer() == p, "encoding must be reversible");
   markWord old_mark = cas_set_mark(m, compare, order);
   if (old_mark == compare) {
     return NULL;
