@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class PKCS9Attributes {
     private final byte[] derEncoding;
 
     /*
-     * Contols how attributes, which are not recognized by the PKCS9Attribute
+     * Controls how attributes, which are not recognized by the PKCS9Attribute
      * class, are handled during parsing.
      */
     private boolean ignoreUnsupportedAttributes = false;
