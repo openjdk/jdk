@@ -59,9 +59,9 @@ public class InheritDocTaglet extends BaseTaglet {
      * Given an element and {@code @inheritDoc} tag in that element's doc comment,
      * returns the (recursive) expansion of that tag.
      *
-     * This method does not expand all {@code {@inheritDoc}} tags in the given
+     * <p>This method does not expand all {@code {@inheritDoc}} tags in the given
      * element's doc comment. To do this, the method must be called for every
-     * such tag.
+     * such tag.</p>
      *
      * @param writer the writer that is writing the output.
      * @param e the {@link Element} that we are documenting.
