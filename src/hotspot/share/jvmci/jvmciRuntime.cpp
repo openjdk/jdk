@@ -888,19 +888,20 @@ int JVMCIRuntime::find_oop_handle(jlong handle) {
 int JVMCIRuntime::release_and_clear_globals() {
   int released = 0;
   if (_oop_handles.length() != 0) {
-    // Collect non-null JNI handles into an array for
+    // Squash non-null JNI handles to front of _oop_handles for
     // the bulk release operation
-    ResourceMark rm;
-    oop** ptrs = NEW_RESOURCE_ARRAY(oop*, _oop_handles.length());
     for (int i = 0; i < _oop_handles.length(); i++) {
       oop* oop_ptr = _oop_handles.at(i);
       if (oop_ptr != nullptr) {
-        ptrs[released++] = oop_ptr;
-        NativeAccess<>::oop_store(oop_ptr, (oop) nullptr);
+        // Satisfy OopHandles::release precondition that all
+        // handles being released are null.
+        NativeAccess<>::oop_store(oop_ptr, (oop) NULL);
+
+        _oop_handles.at_put(released++, oop_ptr);
       }
     }
     // Do the bulk release
-    object_handles()->release(ptrs, released);
+    object_handles()->release(_oop_handles.adr_at(0), released);
   }
   _oop_handles.clear();
   _last_found_oop_handle_index = -1;
