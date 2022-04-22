@@ -25,7 +25,7 @@
  * @test
  * @bug 8014678
  * @run main EnclosingMethodWithSecurityManager
- * @run main/othervm EnclosingMethodWithSecurityManager "WithSecurityManager"
+ * @run main/othervm -Djava.security.manager=allow EnclosingMethodWithSecurityManager "WithSecurityManager"
  */
 
 public class EnclosingMethodWithSecurityManager {

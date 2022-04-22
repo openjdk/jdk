@@ -37,9 +37,9 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- *        sun.hotspot.WhiteBox sun.hotspot.parser.DiagnosticCommand
+ *        sun.hotspot.WhiteBox jdk.test.whitebox.parser.DiagnosticCommand
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- *                                sun.hotspot.parser.DiagnosticCommand
+ *                                jdk.test.whitebox.parser.DiagnosticCommand
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI

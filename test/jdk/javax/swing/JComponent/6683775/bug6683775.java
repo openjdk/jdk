@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,10 @@ public class bug6683775 {
     static final int LOC = 100,
             SIZE = 200;
 
+    static JFrame testFrame;
+    static JFrame backgroundFrame;
+    static BufferedImage capture;
+
     public static void main(String[] args) throws Exception {
         GraphicsConfiguration gc = getGC();
         if (gc == null || !gc.getDevice().isWindowTranslucencySupported(
@@ -53,35 +57,39 @@ public class bug6683775 {
             return;
         }
         Robot robot = new Robot();
-        final JFrame testFrame = new JFrame(gc);
 
-        SwingUtilities.invokeAndWait(() -> {
-            JFrame backgroundFrame = new JFrame("Background frame");
-            backgroundFrame.setUndecorated(true);
-            JPanel panel = new JPanel();
-            panel.setBackground(Color.RED);
-            backgroundFrame.add(panel);
-            backgroundFrame.setBounds(LOC, LOC, SIZE, SIZE);
-            backgroundFrame.setVisible(true);
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                testFrame = new JFrame(gc);
+                backgroundFrame = new JFrame("Background frame");
+                backgroundFrame.setUndecorated(true);
+                JPanel panel = new JPanel();
+                panel.setBackground(Color.RED);
+                backgroundFrame.add(panel);
+                backgroundFrame.setBounds(LOC, LOC, SIZE, SIZE);
+                backgroundFrame.setVisible(true);
 
-            testFrame.setUndecorated(true);
-            JPanel p = new JPanel();
-            p.setOpaque(false);
-            testFrame.add(p);
-            setOpaque(testFrame, false);
-            testFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            testFrame.setBounds(LOC, LOC, SIZE, SIZE);
-            testFrame.setVisible(true);
-        });
+                testFrame.setUndecorated(true);
+                JPanel p = new JPanel();
+                p.setOpaque(false);
+                testFrame.add(p);
+                setOpaque(testFrame, false);
+                testFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                testFrame.setBounds(LOC, LOC, SIZE, SIZE);
+                testFrame.setVisible(true);
+            });
 
-        robot.waitForIdle();
-        Thread.sleep(1500);
+            robot.waitForIdle();
+            robot.delay(1000);
 
-        //robot.getPixelColor() didn't work right for some reason
-        BufferedImage capture =
-                robot.createScreenCapture(new Rectangle(LOC, LOC, SIZE, SIZE));
+            //robot.getPixelColor() didn't work right for some reason
+            capture =
+                    robot.createScreenCapture(new Rectangle(LOC, LOC, SIZE, SIZE));
 
-        SwingUtilities.invokeAndWait(testFrame::dispose);
+        } finally {
+            SwingUtilities.invokeAndWait(testFrame::dispose);
+            SwingUtilities.invokeAndWait(backgroundFrame::dispose);
+        }
 
         int redRGB = Color.RED.getRGB();
         if (redRGB != capture.getRGB(SIZE/2, SIZE/2)) {

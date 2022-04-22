@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,88 +23,147 @@
 
 /**
  * @test
- * @bug 8167108
- * @summary Stress test java.lang.Thread.suspend() at thread exit.
- * @run main/othervm -Xlog:thread+smr=debug SuspendAtExit
- * @run main/othervm -Xlog:thread+smr=debug -XX:+UnlockDiagnosticVMOptions -XX:GuaranteedSafepointInterval=1 -XX:+HandshakeALot SuspendAtExit
+ * @bug 8167108 8265240
+ * @summary Stress test SuspendThread at thread exit.
+ * @requires vm.jvmti
+ * @run main/othervm/native -agentlib:SuspendAtExit SuspendAtExit
+ * @run main/othervm/native -agentlib:SuspendAtExit -XX:+UnlockDiagnosticVMOptions -XX:GuaranteedSafepointInterval=1 -XX:+HandshakeALot SuspendAtExit
  */
 
 import java.util.concurrent.CountDownLatch;
 
 public class SuspendAtExit extends Thread {
-    final static int N_THREADS = 32;
-    final static int N_LATE_CALLS = 10000;
+    private final static String AGENT_LIB = "SuspendAtExit";
+    private final static int DEF_TIME_MAX = 30;  // default max # secs to test
+    private final static int JVMTI_ERROR_THREAD_NOT_ALIVE = 15;
 
     public CountDownLatch exitSyncObj = new CountDownLatch(1);
     public CountDownLatch startSyncObj = new CountDownLatch(1);
+
+    private static void log(String msg) { System.out.println(msg); }
+
+    native static int resumeThread(SuspendAtExit thr);
+    native static int suspendThread(SuspendAtExit thr);
 
     @Override
     public void run() {
         // Tell main thread we have started.
         startSyncObj.countDown();
         try {
-            // Wait for main thread to interrupt us so we
-            // can race to exit.
+            // Wait for main thread to tell us to race to the exit.
             exitSyncObj.await();
         } catch (InterruptedException e) {
-            // ignore because we expect one
+            throw new RuntimeException("Unexpected: " + e);
         }
     }
 
     public static void main(String[] args) {
-        SuspendAtExit threads[] = new SuspendAtExit[N_THREADS];
+        try {
+            System.loadLibrary(AGENT_LIB);
+            log("Loaded library: " + AGENT_LIB);
+        } catch (UnsatisfiedLinkError ule) {
+            log("Failed to load library: " + AGENT_LIB);
+            log("java.library.path: " + System.getProperty("java.library.path"));
+            throw ule;
+        }
 
-        for (int i = 0; i < N_THREADS; i++ ) {
-            threads[i] = new SuspendAtExit();
-            int late_count = 1;
-            threads[i].start();
+        int timeMax = 0;
+        if (args.length == 0) {
+            timeMax = DEF_TIME_MAX;
+        } else {
             try {
-                // Wait for the worker thread to get going.
-                threads[i].startSyncObj.await();
-
-                // This interrupt() call will break the worker out
-                // of the exitSyncObj.await() call and the suspend()
-                // calls will come in during thread exit.
-                threads[i].interrupt();
-                for (; late_count <= N_LATE_CALLS; late_count++) {
-                    threads[i].suspend();
-
-                    if (!threads[i].isAlive()) {
-                        // Done with Thread.suspend() calls since
-                        // thread is not alive.
-                        break;
-                    }
-                    threads[i].resume();
-                }
-            } catch (InterruptedException e) {
-                throw new Error("Unexpected: " + e);
-            }
-
-            System.out.println("INFO: thread #" + i + ": made " + late_count +
-                               " late calls to java.lang.Thread.suspend()");
-            System.out.println("INFO: thread #" + i + ": N_LATE_CALLS==" +
-                               N_LATE_CALLS + " value is " +
-                               ((late_count >= N_LATE_CALLS) ? "NOT " : "") +
-                               "large enough to cause a Thread.suspend() " +
-                               "call after thread exit.");
-
-            try {
-                threads[i].join();
-            } catch (InterruptedException e) {
-                throw new Error("Unexpected: " + e);
-            }
-            threads[i].suspend();
-            threads[i].resume();
-            if (threads[i].isAlive()) {
-                throw new Error("Expected !Thread.isAlive() after thread #" +
-                                i + " has been join()'ed");
+                timeMax = Integer.parseUnsignedInt(args[0]);
+            } catch (NumberFormatException nfe) {
+                System.err.println("'" + args[0] + "': invalid timeMax value.");
+                    usage();
             }
         }
+
+        System.out.println("About to execute for " + timeMax + " seconds.");
+
+        long count = 0;
+        long start_time = System.currentTimeMillis();
+        while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
+            count++;
+
+            int retCode;
+            SuspendAtExit thread = new SuspendAtExit();
+            thread.start();
+            try {
+                // Wait for the worker thread to get going.
+                thread.startSyncObj.await();
+                // Tell the worker thread to race to the exit and the
+                // SuspendThread() calls will come in during thread exit.
+                thread.exitSyncObj.countDown();
+                while (true) {
+                    retCode = suspendThread(thread);
+
+                    if (retCode == JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                        // Done with SuspendThread() calls since
+                        // thread is not alive.
+                        break;
+                    } else if (retCode != 0) {
+                        throw new RuntimeException("thread " + thread.getName()
+                                                   + ": suspendThread() " +
+                                                   "retCode=" + retCode +
+                                                   ": unexpected value.");
+                    }
+
+                    if (!thread.isAlive()) {
+                        throw new RuntimeException("thread " + thread.getName()
+                                                   + ": is not alive " +
+                                                   "after successful " +
+                                                   "suspendThread().");
+                    }
+                    retCode = resumeThread(thread);
+                    if (retCode != 0) {
+                        throw new RuntimeException("thread " + thread.getName()
+                                                   + ": resumeThread() " +
+                                                   "retCode=" + retCode +
+                                                   ": unexpected value.");
+                    }
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Unexpected: " + e);
+            }
+
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Unexpected: " + e);
+            }
+            retCode = suspendThread(thread);
+            if (retCode != JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                throw new RuntimeException("thread " + thread.getName() +
+                                           ": suspendThread() " +
+                                           "retCode=" + retCode +
+                                           ": unexpected value.");
+            }
+            retCode = resumeThread(thread);
+            if (retCode != JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                throw new RuntimeException("thread " + thread.getName() +
+                                           ": suspendThread() " +
+                                           "retCode=" + retCode +
+                                           ": unexpected value.");
+            }
+        }
+
+        System.out.println("Executed " + count + " loops in " + timeMax +
+                           " seconds.");
 
         String cmd = System.getProperty("sun.java.command");
         if (cmd != null && !cmd.startsWith("com.sun.javatest.regtest.agent.MainWrapper")) {
             // Exit with success in a non-JavaTest environment:
             System.exit(0);
         }
+    }
+
+    public static void usage() {
+        System.err.println("Usage: " + AGENT_LIB + " [time_max]");
+        System.err.println("where:");
+        System.err.println("    time_max ::= max looping time in seconds");
+        System.err.println("                 (default is " + DEF_TIME_MAX +
+                           " seconds)");
+        System.exit(1);
     }
 }

@@ -793,7 +793,7 @@ SetXDockArgForAWT(const char *arg)
          * change drastically between update release, and it may even be
          * removed or replaced with another mechanism.
          *
-         * NOTE: It is used by SWT, and JavaFX.
+         * NOTE: It is used by SWT
          */
         snprintf(envVar, sizeof(envVar), "APP_NAME_%d", getpid());
         setenv(envVar, (arg + 12), 1);
@@ -828,40 +828,78 @@ SetMainClassForAWT(JNIEnv *env, jclass mainClass) {
     jmethodID getCanonicalNameMID = NULL;
     NULL_CHECK(getCanonicalNameMID = (*env)->GetMethodID(env, classClass, "getCanonicalName", "()Ljava/lang/String;"));
 
+    jclass strClass = NULL;
+    NULL_CHECK(strClass = (*env)->FindClass(env, "java/lang/String"));
+
+    jmethodID lastIndexMID = NULL;
+    NULL_CHECK(lastIndexMID = (*env)->GetMethodID(env, strClass, "lastIndexOf", "(I)I"));
+
+    jmethodID subStringMID = NULL;
+    NULL_CHECK(subStringMID = (*env)->GetMethodID(env, strClass, "substring", "(I)Ljava/lang/String;"));
+
     jstring mainClassString = (*env)->CallObjectMethod(env, mainClass, getCanonicalNameMID);
     if ((*env)->ExceptionCheck(env) || NULL == mainClassString) {
-        /*
-         * Clears all errors caused by getCanonicalName() on the mainclass and
-         * leaves the JAVA_MAIN_CLASS__<pid> empty.
-         */
         (*env)->ExceptionClear(env);
         return;
     }
 
-    const char *mainClassName = NULL;
-    NULL_CHECK(mainClassName = (*env)->GetStringUTFChars(env, mainClassString, NULL));
+    jint lastPeriod = (*env)->CallIntMethod(env, mainClassString, lastIndexMID, (jint)'.');
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+        return;
+    }
 
-    char envVar[80];
-    /*
-     * The JAVA_MAIN_CLASS_<pid> environment variable is used to pass
-     * the name of a Java class whose main() method is invoked by
-     * the Java launcher code to start the application, to the AWT code
-     * in order to assign the name to the Apple menu bar when the app
-     * is active on the Mac.
-     * The _<pid> part is added to avoid collisions with child processes.
+    if (lastPeriod != -1) {
+        mainClassString = (*env)->CallObjectMethod(env, mainClassString, subStringMID, lastPeriod+1);
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+            return;
+        }
+    }
+
+    /* There are multiple apple.awt.*" system properties that AWT(the desktop module)
+     * references that are inherited from Apple JDK.
+     * This inherited AWT code looks for this property and uses it for the name
+     * of the app as it appears in the system menu bar.
      *
-     * WARNING: This environment variable is an implementation detail and
-     * isn't meant for use outside of the core platform. The mechanism for
-     * passing this information from Java launcher to other modules may
-     * change drastically between update release, and it may even be
-     * removed or replaced with another mechanism.
-     *
-     * NOTE: It is used by SWT, and JavaFX.
+     * No idea if how much external code ever sets it, but use it if set, else
+     * if not set (the high probability event) set it to the application class name.
      */
-    snprintf(envVar, sizeof(envVar), "JAVA_MAIN_CLASS_%d", getpid());
-    setenv(envVar, mainClassName, 1);
+    const char* propName = "apple.awt.application.name";
+    jstring jKey = NULL;
+    NULL_CHECK(jKey = (*env)->NewStringUTF(env, propName));
 
-    (*env)->ReleaseStringUTFChars(env, mainClassString, mainClassName);
+    jclass sysClass = NULL;
+    NULL_CHECK(sysClass = (*env)->FindClass(env, "java/lang/System"));
+
+    jmethodID getPropertyMID = NULL;
+    NULL_CHECK(getPropertyMID = (*env)->GetStaticMethodID(env, sysClass,
+               "getProperty", "(Ljava/lang/String;)Ljava/lang/String;"));
+
+    jmethodID setPropertyMID = NULL;
+    NULL_CHECK(setPropertyMID = (*env)->GetStaticMethodID(env, sysClass,
+               "setProperty",
+               "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;"));
+
+    jstring jValue = (*env)->CallStaticObjectMethod(env, sysClass, getPropertyMID, jKey);
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+        (*env)->DeleteLocalRef(env, jKey);
+        return;
+    }
+    if (jValue == NULL) {
+        (*env)->CallStaticObjectMethod(env, sysClass, setPropertyMID,
+                                       jKey, mainClassString);
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+            (*env)->DeleteLocalRef(env, jKey);
+            return;
+        }
+    } else {
+        (*env)->DeleteLocalRef(env, jValue);
+    }
+
+    (*env)->DeleteLocalRef(env, jKey);
 }
 
 void

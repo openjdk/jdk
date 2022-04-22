@@ -27,6 +27,7 @@ import java.security.Provider;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.List;
 import javax.crypto.SecretKey;
 import javax.crypto.Cipher;
@@ -84,7 +85,7 @@ import javax.crypto.KeyGenerator;
  */
 public class Encrypt {
 
-    private static final String ALGORITHMS[] = { "AES", "Rijndael" };
+    private static final String ALGORITHMS[] = { "AES" };
     private static final int KEY_STRENGTHS[] = { 128, 192, 256 };
     private static final int TEXT_LENGTHS[] = { 0, 256, 1024 };
     private static final int AAD_LENGTHS[] = { 0, 8, 128, 256, 1024 };
@@ -230,8 +231,12 @@ public class Encrypt {
         combination_16(outputTexts, mode, AAD, inputText, params);
 
         for (int k = 0; k < outputTexts.size(); k++) {
+            HexFormat hex = HexFormat.of().withUpperCase();
             if (!Arrays.equals(output, outputTexts.get(k))) {
-                throw new RuntimeException("Combination #" + k + " failed");
+                System.out.println("Combination #" + (k + 1) + "\nresult    " +
+                    hex.formatHex(outputTexts.get(k)) +
+                    "\nexpected: " + hex.formatHex(output));
+                throw new RuntimeException("Combination #" + (k + 1) + " failed");
             }
         }
         return output;

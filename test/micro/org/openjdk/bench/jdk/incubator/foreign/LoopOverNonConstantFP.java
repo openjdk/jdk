@@ -22,10 +22,8 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign;
 
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -38,13 +36,12 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
-import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
 import static jdk.incubator.foreign.MemoryLayout.PathElement.sequenceElement;
-import static jdk.incubator.foreign.MemoryLayouts.JAVA_DOUBLE;
+import static jdk.incubator.foreign.ValueLayout.JAVA_DOUBLE;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -74,13 +71,13 @@ public class LoopOverNonConstantFP {
         for (int i = 0; i < ELEM_SIZE; i++) {
             unsafe.putDouble(unsafe_addrOut + (i * CARRIER_SIZE), i);
         }
-        segmentIn = MemorySegment.allocateNative(ALLOC_SIZE);
-        segmentOut = MemorySegment.allocateNative(ALLOC_SIZE);
+        segmentIn = MemorySegment.allocateNative(ALLOC_SIZE, ResourceScope.newConfinedScope());
+        segmentOut = MemorySegment.allocateNative(ALLOC_SIZE, ResourceScope.newConfinedScope());
         for (int i = 0; i < ELEM_SIZE; i++) {
-            MemoryAccess.setDoubleAtIndex(segmentIn, i, i);
+            segmentIn.setAtIndex(JAVA_DOUBLE, i, i);
         }
         for (int i = 0; i < ELEM_SIZE; i++) {
-            MemoryAccess.setDoubleAtIndex(segmentOut, i, i);
+            segmentOut.setAtIndex(JAVA_DOUBLE, i, i);
         }
         byteBufferIn = ByteBuffer.allocateDirect(ALLOC_SIZE).order(ByteOrder.nativeOrder());
         byteBufferOut = ByteBuffer.allocateDirect(ALLOC_SIZE).order(ByteOrder.nativeOrder());
@@ -94,8 +91,8 @@ public class LoopOverNonConstantFP {
 
     @TearDown
     public void tearDown() {
-        segmentIn.close();
-        segmentOut.close();
+        segmentIn.scope().close();
+        segmentOut.scope().close();
         unsafe.invokeCleaner(byteBufferIn);
         unsafe.invokeCleaner(byteBufferOut);
         unsafe.freeMemory(unsafe_addrIn);
@@ -114,9 +111,9 @@ public class LoopOverNonConstantFP {
     @Benchmark
     public void segment_loop() {
         for (int i = 0; i < ELEM_SIZE; i ++) {
-            MemoryAccess.setDoubleAtIndex(segmentOut, i,
-                    MemoryAccess.getDoubleAtIndex(segmentIn, i) +
-                    MemoryAccess.getDoubleAtIndex(segmentOut, i));
+            segmentOut.setAtIndex(JAVA_DOUBLE, i,
+                    segmentIn.getAtIndex(JAVA_DOUBLE, i) +
+                    segmentOut.getAtIndex(JAVA_DOUBLE, i));
         }
     }
 

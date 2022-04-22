@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
 
 package jdk.test.failurehandler.action;
 
-import com.sun.tools.attach.VirtualMachine;
-import com.sun.tools.attach.VirtualMachineDescriptor;
 import jdk.test.failurehandler.value.InvalidValueException;
 import jdk.test.failurehandler.value.Value;
 import jdk.test.failurehandler.value.ValueHandler;
@@ -134,7 +132,7 @@ public class ActionHelper {
                 .directory(workDir.toFile());
     }
 
-    private File findApp(String app) {
+    public File findApp(String app) {
         String name = app + executableSuffix;
         for (Path pathElem : paths) {
             File result = pathElem.resolve(name).toFile();

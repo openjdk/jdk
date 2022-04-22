@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,29 +103,7 @@ public enum Option {
 
     XLINT("-Xlint", "opt.Xlint", EXTENDED, BASIC),
 
-    XLINT_CUSTOM("-Xlint:", "opt.arg.Xlint", "opt.Xlint.custom", EXTENDED, BASIC, ANYOF, getXLintChoices()) {
-        private final String LINT_KEY_FORMAT = LARGE_INDENT + "  %-" +
-                (DEFAULT_SYNOPSIS_WIDTH + SMALL_INDENT.length() - LARGE_INDENT.length() - 2) + "s %s";
-        @Override
-        protected void help(Log log) {
-            super.help(log);
-            log.printRawLines(WriterKind.STDOUT,
-                              String.format(LINT_KEY_FORMAT,
-                                            "all",
-                                            log.localize(PrefixKind.JAVAC, "opt.Xlint.all")));
-            for (LintCategory lc : LintCategory.values()) {
-                log.printRawLines(WriterKind.STDOUT,
-                                  String.format(LINT_KEY_FORMAT,
-                                                lc.option,
-                                                log.localize(PrefixKind.JAVAC,
-                                                             "opt.Xlint.desc." + lc.option)));
-            }
-            log.printRawLines(WriterKind.STDOUT,
-                              String.format(LINT_KEY_FORMAT,
-                                            "none",
-                                            log.localize(PrefixKind.JAVAC, "opt.Xlint.none")));
-        }
-    },
+    XLINT_CUSTOM("-Xlint:", "opt.arg.Xlint", "opt.Xlint.custom", EXTENDED, BASIC, ANYOF, getXLintChoices()),
 
     XDOCLINT("-Xdoclint", "opt.Xdoclint", EXTENDED, BASIC),
 
@@ -499,12 +477,43 @@ public enum Option {
         }
     },
 
+    HELP_LINT("--help-lint", "opt.help.lint", EXTENDED, INFO) {
+        private final String LINT_KEY_FORMAT = SMALL_INDENT + SMALL_INDENT + "%-" +
+                (DEFAULT_SYNOPSIS_WIDTH - LARGE_INDENT.length()) + "s %s";
+        @Override
+        public void process(OptionHelper helper, String option) throws InvalidValueException {
+            Log log = helper.getLog();
+            log.printRawLines(WriterKind.STDOUT, log.localize(PrefixKind.JAVAC, "opt.help.lint.header"));
+            log.printRawLines(WriterKind.STDOUT,
+                              String.format(LINT_KEY_FORMAT,
+                                            "all",
+                                            log.localize(PrefixKind.JAVAC, "opt.Xlint.all")));
+            for (LintCategory lc : LintCategory.values()) {
+                log.printRawLines(WriterKind.STDOUT,
+                                  String.format(LINT_KEY_FORMAT,
+                                                lc.option,
+                                                log.localize(PrefixKind.JAVAC,
+                                                             "opt.Xlint.desc." + lc.option)));
+            }
+            log.printRawLines(WriterKind.STDOUT,
+                              String.format(LINT_KEY_FORMAT,
+                                            "none",
+                                            log.localize(PrefixKind.JAVAC, "opt.Xlint.none")));
+            super.process(helper, option);
+        }
+    },
+
     // This option exists only for the purpose of documenting itself.
     // It's actually implemented by the launcher.
     J("-J", "opt.arg.flag", "opt.J", STANDARD, INFO, ArgKind.ADJACENT) {
         @Override
         public void process(OptionHelper helper, String option) {
             throw new AssertionError("the -J flag should be caught by the launcher.");
+        }
+
+        @Override
+        public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
+            throw helper.newInvalidValueException(Errors.InvalidFlag(option + arg));
         }
     },
 
@@ -1150,6 +1159,11 @@ public enum Option {
             }
             process(helper, option, operand);
         } else {
+            if ((this == HELP || this == X || this == HELP_LINT || this == VERSION || this == FULLVERSION)
+                    && (helper.get(this) != null)) {
+                // avoid processing the info options repeatedly
+                return;
+            }
             process(helper, arg);
         }
     }

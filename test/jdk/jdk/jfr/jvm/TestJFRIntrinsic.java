@@ -59,24 +59,20 @@ public class TestJFRIntrinsic {
     public Object eventWriter;
 
     public static void main(String... args) throws Exception {
-        /*
-        Temporarily excluded until getClassId is reworked to accommodate epoch shift tagging
+        JVM.getJVM().createNativeJFR();
+        TestJFRIntrinsic ti = new TestJFRIntrinsic();
         Method classid = TestJFRIntrinsic.class.getDeclaredMethod("getClassIdIntrinsic",  Class.class);
         ti.runIntrinsicTest(classid);
-        */
-        TestJFRIntrinsic ti = new TestJFRIntrinsic();
         Method eventWriterMethod = TestJFRIntrinsic.class.getDeclaredMethod("getEventWriterIntrinsic", Class.class);
         ti.runIntrinsicTest(eventWriterMethod);
     }
 
-    /*
     public void getClassIdIntrinsic(Class<?> cls) {
         long exp = JVM.getClassId(cls);
         if (exp == 0) {
             throw new RuntimeException("Class id is zero");
         }
     }
-    */
 
     public void getEventWriterIntrinsic(Class<?> cls) {
         Object o = JVM.getEventWriter();

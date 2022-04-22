@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Verifies the creation and cleaup of entries in the Protection Domain Table
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
@@ -48,6 +49,7 @@ public class CleanProtectionDomain {
                                   "-XX:+UnlockDiagnosticVMOptions",
                                   "-XX:+WhiteBoxAPI",
                                   "-Xbootclasspath/a:.",
+                                  "-Djava.security.manager=allow",
                                   Test.class.getName());
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldContain("protection domain added");

@@ -25,9 +25,10 @@
 #ifndef SHARE_RUNTIME_SEMAPHORE_INLINE_HPP
 #define SHARE_RUNTIME_SEMAPHORE_INLINE_HPP
 
+#include "runtime/semaphore.hpp"
+
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/semaphore.hpp"
 #include "runtime/thread.hpp"
 
 inline void Semaphore::wait_with_safepoint_check(JavaThread* thread) {

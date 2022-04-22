@@ -44,7 +44,7 @@ typedef JfrStringPool::BufferPtr BufferPtr;
 static JfrSignal _new_string;
 
 bool JfrStringPool::is_modified() {
-  return _new_string.is_signaled();
+  return _new_string.is_signaled_with_reset();
 }
 
 static JfrStringPool* _instance = NULL;

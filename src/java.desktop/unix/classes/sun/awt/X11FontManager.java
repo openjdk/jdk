@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -481,11 +481,9 @@ public final class X11FontManager extends FcFontManager {
             return name; // what else can we do?
         }
 
-        StringBuffer sb =
-            new StringBuffer(name.substring(hPos[FAMILY_NAME_FIELD-1],
-                                            hPos[SETWIDTH_NAME_FIELD]));
-        sb.append(name.substring(hPos[CHARSET_REGISTRY_FIELD-1]));
-        String retval = sb.toString().toLowerCase (Locale.ENGLISH);
+        String sb = name.substring(hPos[FAMILY_NAME_FIELD-1], hPos[SETWIDTH_NAME_FIELD])
+                + name.substring(hPos[CHARSET_REGISTRY_FIELD-1]);
+        String retval = sb.toLowerCase(Locale.ENGLISH);
         return retval;
     }
 
@@ -529,15 +527,12 @@ public final class X11FontManager extends FcFontManager {
             && encoding.equals("fontspecific")){
             registry = "adobe";
         }
-        StringBuffer sb =
-            new StringBuffer(name.substring(hPos[FAMILY_NAME_FIELD-1],
-                                            hPos[SLANT_FIELD-1]+1));
-        sb.append(slant);
-        sb.append(name.substring(hPos[SLANT_FIELD],
-                                 hPos[SETWIDTH_NAME_FIELD]+1));
-        sb.append(registry);
-        sb.append(name.substring(hPos[CHARSET_ENCODING_FIELD-1]));
-        String retval = sb.toString().toLowerCase (Locale.ENGLISH);
+        String sb = name.substring(hPos[FAMILY_NAME_FIELD-1], hPos[SLANT_FIELD-1]+1)
+                + slant
+                + name.substring(hPos[SLANT_FIELD], hPos[SETWIDTH_NAME_FIELD]+1)
+                + registry
+                + name.substring(hPos[CHARSET_ENCODING_FIELD-1]);
+        String retval = sb.toLowerCase(Locale.ENGLISH);
         return retval;
     }
 

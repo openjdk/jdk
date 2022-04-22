@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.util.concurrent.Callable;
  * All operation using this path must happen in {@link #doPrivilegedIO(Callable)}
  */
 public final class WriteableUserPath {
+    @SuppressWarnings("removal")
     private final AccessControlContext controlContext;
     private final Path original;
     private final Path real;
@@ -57,6 +58,7 @@ public final class WriteableUserPath {
     // against programming errors
     private volatile boolean inPrivileged;
 
+    @SuppressWarnings("removal")
     public WriteableUserPath(Path path) throws IOException {
         controlContext = AccessController.getContext();
         // verify that the path is writeable
@@ -120,6 +122,7 @@ public final class WriteableUserPath {
         return real;
     }
 
+    @SuppressWarnings("removal")
     public void doPrivilegedIO(Callable<?> function) throws IOException {
         try {
             inPrivileged = true;

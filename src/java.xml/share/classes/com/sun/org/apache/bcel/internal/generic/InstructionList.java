@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
  /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -47,14 +47,14 @@ import java.util.NoSuchElementException;
  * @see Instruction
  * @see InstructionHandle
  * @see BranchHandle
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 public class InstructionList implements Iterable<InstructionHandle> {
 
     private InstructionHandle start = null;
     private InstructionHandle end = null;
     private int length = 0; // number of elements in list
-    private int[] byte_positions; // byte code offsets corresponding to instructions
+    private int[] bytePositions; // byte code offsets corresponding to instructions
 
     /**
      * Create (empty) instruction list.
@@ -145,7 +145,7 @@ public class InstructionList implements Iterable<InstructionHandle> {
      * @return target position's instruction handle if available
      */
     public InstructionHandle findHandle(final int pos) {
-        final int[] positions = byte_positions;
+        final int[] positions = bytePositions;
         InstructionHandle ih = start;
         for (int i = 0; i < length; i++) {
             if (positions[i] == pos) {
@@ -193,8 +193,8 @@ public class InstructionList implements Iterable<InstructionHandle> {
         } catch (final IOException e) {
             throw new ClassGenException(e.toString(), e);
         }
-        byte_positions = new int[count]; // Trim to proper size
-        System.arraycopy(pos, 0, byte_positions, 0, count);
+        bytePositions = new int[count]; // Trim to proper size
+        System.arraycopy(pos, 0, bytePositions, 0, count);
         /*
          * Pass 2: Look for BranchInstruction and update their targets, i.e., convert offsets to instruction handles.
          */
@@ -204,7 +204,7 @@ public class InstructionList implements Iterable<InstructionHandle> {
                 int target = bi.getPosition() + bi.getIndex();
                 /*
                  * Byte code position: relative -> absolute.
-                */
+                 */
                 // Search for target position
                 InstructionHandle ih = findHandle(ihs, pos, count, target);
                 if (ih == null) {
@@ -797,10 +797,8 @@ public class InstructionList implements Iterable<InstructionHandle> {
     }
 
     /**
-     * Remove instructions from instruction `from' to instruction `to' contained
-     * in this list. The user must ensure that `from' is an instruction before
-     * `to', or risk havoc. The corresponding Instruction handles must not be
-     * reused!
+     * Remove instructions from instruction `from' to instruction `to' contained in this list. The user must ensure that `from' is an instruction before `to',
+     * or risk havoc. The corresponding Instruction handles must not be reused!
      *
      * @param from
      *            where to start deleting (inclusive)
@@ -960,8 +958,8 @@ public class InstructionList implements Iterable<InstructionHandle> {
             pos[count++] = index;
             index += i.getLength();
         }
-        byte_positions = new int[count]; // Trim to proper size
-        System.arraycopy(pos, 0, byte_positions, 0, count);
+        bytePositions = new int[count]; // Trim to proper size
+        System.arraycopy(pos, 0, bytePositions, 0, count);
     }
 
     /**
@@ -1074,7 +1072,7 @@ public class InstructionList implements Iterable<InstructionHandle> {
      * @return array containing all instruction's offset in byte code
      */
     public int[] getInstructionPositions() {
-        return byte_positions;
+        return bytePositions;
     }
 
     /**

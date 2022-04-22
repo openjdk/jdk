@@ -37,31 +37,28 @@
  * @requires os.maxMemory > 6G
  * @build GetObjectSizeOverflowAgent
  * @run driver jdk.test.lib.helpers.ClassFileInstaller GetObjectSizeOverflowAgent
- * @run main GetObjectSizeOverflow
+ * @run driver GetObjectSizeOverflow
  */
 
 import java.io.PrintWriter;
 
 import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jtreg.SkippedException;
 
 public class GetObjectSizeOverflow {
     public static void main(String[] args) throws Exception  {
 
-        PrintWriter pw = new PrintWriter("MANIFEST.MF");
-        pw.println("Premain-Class: GetObjectSizeOverflowAgent");
-        pw.close();
+        try (var pw = new PrintWriter("MANIFEST.MF")) {
+            pw.println("Premain-Class: GetObjectSizeOverflowAgent");
+        }
 
-        ProcessBuilder pb = new ProcessBuilder();
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", "agent.jar", "GetObjectSizeOverflowAgent.class"});
-        pb.start().waitFor();
+        var jar = new ProcessBuilder(JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", "agent.jar", "GetObjectSizeOverflowAgent.class");
+        new OutputAnalyzer(jar.start()).shouldHaveExitValue(0);
 
         ProcessBuilder pt = ProcessTools.createTestJvm("-Xmx4000m", "-javaagent:agent.jar",  "GetObjectSizeOverflowAgent");
         OutputAnalyzer output = new OutputAnalyzer(pt.start());
-
         output.stdoutShouldContain("GetObjectSizeOverflow passed");
+        output.shouldHaveExitValue(0);
     }
 }

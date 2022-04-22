@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,11 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor_impl(jobject jabi) cons
 }
 
 const BufferLayout ForeignGlobals::parse_buffer_layout_impl(jobject jlayout) const {
+  ShouldNotCallThis();
+  return {};
+}
+
+const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
   ShouldNotCallThis();
   return {};
 }

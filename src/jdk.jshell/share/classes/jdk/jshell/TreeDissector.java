@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,18 +58,18 @@ import jdk.jshell.Util.Pair;
 
 class TreeDissector {
 
-    private final TaskFactory.BaseTask bt;
+    private final TaskFactory.BaseTask<?> bt;
     private final ClassTree targetClass;
     private final CompilationUnitTree targetCompilationUnit;
     private SourcePositions theSourcePositions = null;
 
-    private TreeDissector(TaskFactory.BaseTask bt, CompilationUnitTree targetCompilationUnit, ClassTree targetClass) {
+    private TreeDissector(TaskFactory.BaseTask<?> bt, CompilationUnitTree targetCompilationUnit, ClassTree targetClass) {
         this.bt = bt;
         this.targetCompilationUnit = targetCompilationUnit;
         this.targetClass = targetClass;
     }
 
-    static TreeDissector createByFirstClass(TaskFactory.BaseTask bt) {
+    static TreeDissector createByFirstClass(TaskFactory.BaseTask<?> bt) {
         Pair<CompilationUnitTree, ClassTree> pair = classes(bt.firstCuTree())
                 .findFirst().orElseGet(() -> new Pair<>(bt.firstCuTree(), null));
 
@@ -92,7 +92,7 @@ class TreeDissector {
                 .flatMap(TreeDissector::classes);
     }
 
-    static TreeDissector createBySnippet(TaskFactory.BaseTask bt, Snippet si) {
+    static TreeDissector createBySnippet(TaskFactory.BaseTask<?> bt, Snippet si) {
         String name = si.className();
 
         Pair<CompilationUnitTree, ClassTree> pair = classes(bt.cuTrees())

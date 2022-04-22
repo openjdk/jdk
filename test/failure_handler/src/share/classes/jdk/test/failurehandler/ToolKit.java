@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,25 @@ package jdk.test.failurehandler;
 import jdk.test.failurehandler.action.ActionSet;
 import jdk.test.failurehandler.action.ActionHelper;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Deque;
+import java.util.zip.GZIPInputStream;
 
-public class ToolKit implements EnvironmentInfoGatherer, ProcessInfoGatherer {
+public class ToolKit implements EnvironmentInfoGatherer, ProcessInfoGatherer, CoreInfoGatherer {
     private final List<ActionSet> actions = new ArrayList<>();
     private final ActionHelper helper;
+    private final PrintWriter log;
 
     public ToolKit(ActionHelper helper, PrintWriter log, String... names) {
         this.helper = helper;
+        this.log = log;
         for (String name : names) {
             actions.add(new ActionSet(helper, log, name));
         }
@@ -48,6 +54,27 @@ public class ToolKit implements EnvironmentInfoGatherer, ProcessInfoGatherer {
     public void gatherEnvironmentInfo(HtmlSection section) {
         for (ActionSet set : actions) {
             set.gatherEnvironmentInfo(section);
+        }
+    }
+
+    @Override
+    public void gatherCoreInfo(HtmlSection section, Path core) {
+        if (core.getFileName().toString().endsWith(".gz")) {
+            Path unpackedCore = Path.of(core.toString().replace(".gz", ""));
+            try (GZIPInputStream gzis = new GZIPInputStream(Files.newInputStream(core))) {
+                Files.copy(gzis, unpackedCore);
+                for (ActionSet set : actions) {
+                    set.gatherCoreInfo(section, unpackedCore);
+                }
+                Files.delete(unpackedCore);
+            } catch (IOException ioe) {
+                log.printf("Unexpected exception whilc opening %s", core.getFileName().toString());
+                ioe.printStackTrace(log);
+            }
+        } else {
+            for (ActionSet set : actions) {
+                set.gatherCoreInfo(section, core);
+            }
         }
     }
 

@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.misc.VM;
 import sun.security.action.GetPropertyAction;
 
 import java.util.Properties;
@@ -46,6 +47,7 @@ class MethodHandleStatics {
     private MethodHandleStatics() { }  // do not instantiate
 
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    static final int CLASSFILE_VERSION = VM.classFileVersion();
 
     static final boolean DEBUG_METHOD_HANDLE_NAMES;
     static final boolean DUMP_CLASS_FILES;
@@ -188,16 +190,5 @@ class MethodHandleStatics {
     private static String message(String message, Object obj, Object obj2) {
         if (obj != null || obj2 != null)  message = message + ": " + obj + ", " + obj2;
         return message;
-    }
-    /*non-public*/
-    static void rangeCheck2(int start, int end, int size) {
-        if (0 > start || start > end || end > size)
-            throw new IndexOutOfBoundsException(start+".."+end);
-    }
-    /*non-public*/
-    static int rangeCheck1(int index, int size) {
-        if (0 > index || index >= size)
-            throw new IndexOutOfBoundsException(index);
-        return index;
     }
 }

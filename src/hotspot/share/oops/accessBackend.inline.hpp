@@ -25,8 +25,9 @@
 #ifndef SHARE_OOPS_ACCESSBACKEND_INLINE_HPP
 #define SHARE_OOPS_ACCESSBACKEND_INLINE_HPP
 
-#include "oops/access.hpp"
 #include "oops/accessBackend.hpp"
+
+#include "oops/access.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oopsHierarchy.hpp"

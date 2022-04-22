@@ -334,9 +334,8 @@ implements java.io.Serializable
         if (obj == this)
             return true;
 
-        if (! (obj instanceof UnresolvedPermission))
+        if (!(obj instanceof UnresolvedPermission that))
             return false;
-        UnresolvedPermission that = (UnresolvedPermission) obj;
 
         // check type
         if (!this.type.equals(that.type)) {

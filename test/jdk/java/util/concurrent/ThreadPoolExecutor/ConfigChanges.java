@@ -27,7 +27,7 @@
  * @summary Test proper handling of pool state changes
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run main/othervm ConfigChanges
+ * @run main/othervm -Djava.security.manager=allow ConfigChanges
  * @key randomness
  * @author Martin Buchholz
  */

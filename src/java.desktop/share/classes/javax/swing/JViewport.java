@@ -287,7 +287,6 @@ public class JViewport extends JComponent implements Accessible
     public JViewport() {
         super();
         setLayout(createLayoutManager());
-        setOpaque(true);
         updateUI();
         setInheritsPopupMenu(true);
     }
@@ -566,7 +565,7 @@ public class JViewport extends JComponent implements Accessible
      * a <code>JViewPort</code>.
      *
      * @param border the <code>Border</code> to set
-     * @exception IllegalArgumentException this method is not implemented
+     * @throws IllegalArgumentException this method is not implemented
      */
     public final void setBorder(Border border) {
         if (border != null) {

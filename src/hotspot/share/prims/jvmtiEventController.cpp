@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
@@ -200,7 +201,7 @@ class EnterInterpOnlyModeClosure : public HandshakeClosure {
  public:
   EnterInterpOnlyModeClosure() : HandshakeClosure("EnterInterpOnlyMode"), _completed(false) { }
   void do_thread(Thread* th) {
-    JavaThread* jt = th->as_Java_thread();
+    JavaThread* jt = JavaThread::cast(th);
     JvmtiThreadState* state = jt->jvmti_thread_state();
 
     // Set up the current stack depth for later tracking
@@ -615,8 +616,18 @@ JvmtiEventControllerPrivate::recompute_enabled() {
   }
 
   // compute and set thread-filtered events
-  for (JvmtiThreadState *state = JvmtiThreadState::first(); state != NULL; state = state->next()) {
-    any_env_thread_enabled |= recompute_thread_enabled(state);
+  JvmtiThreadState *state = JvmtiThreadState::first();
+  if (state != nullptr) {
+    // If we have a JvmtiThreadState, then we've reached the point where
+    // threads can exist so create a ThreadsListHandle to protect them.
+    // The held JvmtiThreadState_lock prevents exiting JavaThreads from
+    // being removed from the JvmtiThreadState list we're about to walk
+    // so this ThreadsListHandle exists just to satisfy the lower level sanity
+    // checks that the target JavaThreads are protected.
+    ThreadsListHandle tlh;
+    for (; state != nullptr; state = state->next()) {
+      any_env_thread_enabled |= recompute_thread_enabled(state);
+    }
   }
 
   // set universal state (across all envs and threads)

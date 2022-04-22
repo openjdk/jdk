@@ -29,7 +29,7 @@
  * @modules jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile TestBindingVariable.java
- * @compile --enable-preview -source ${jdk.version} -processor TestBindingVariable -proc:only TestBindingVariableData.java
+ * @compile -processor TestBindingVariable -proc:only TestBindingVariableData.java
  */
 
 import javax.annotation.processing.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,7 +193,7 @@ public class AttrRecover {
                                  attr.new ResultInfo(todo.resultInfo.pkind, todo.resultInfo.pt.getReturnType(), todo.resultInfo.checkContext, todo.resultInfo.checkMode),
                                  todo.env, args, pats,
                                  todo.resultInfo.pt.getTypeArguments());
-                rollback.stream().forEach(Runnable::run);
+                rollback.forEach(Runnable::run);
             } else {
                 owntype = basicMethodInvocationRecovery(todo.tree, todo.site, todo.errSym, todo.env, todo.resultInfo);
             }
@@ -243,8 +243,8 @@ public class AttrRecover {
                     break;
             }
             for (Object a : d.getArgs()) {
-                if (a instanceof JCDiagnostic) {
-                    diags = diags.prepend((JCDiagnostic) a);
+                if (a instanceof JCDiagnostic diagnostic) {
+                    diags = diags.prepend(diagnostic);
                 }
             }
         }

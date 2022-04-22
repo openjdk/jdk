@@ -133,6 +133,7 @@ public class DataFlavor implements Externalizable, Cloneable {
     {
         ReflectUtil.checkPackageAccess(className);
         try {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(new RuntimePermission("getClassLoader"));

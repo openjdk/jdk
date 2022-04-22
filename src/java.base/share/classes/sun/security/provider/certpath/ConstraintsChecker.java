@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,14 +185,14 @@ class ConstraintsChecker extends PKIXCertPathChecker {
 
         if (debug != null) {
             debug.println("prevNC = " + prevNC +
-                        ", newNC = " + String.valueOf(newConstraints));
+                        ", newNC = " + newConstraints);
         }
 
         // if there are no previous name constraints, we just return the
         // new name constraints.
         if (prevNC == null) {
             if (debug != null) {
-                debug.println("mergedNC = " + String.valueOf(newConstraints));
+                debug.println("mergedNC = " + newConstraints);
             }
             if (newConstraints == null) {
                 return newConstraints;

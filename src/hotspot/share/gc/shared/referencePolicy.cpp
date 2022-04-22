@@ -28,7 +28,6 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "memory/universe.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 
 LRUCurrentHeapPolicy::LRUCurrentHeapPolicy() {

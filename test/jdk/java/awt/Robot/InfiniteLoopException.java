@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ public final class InfiniteLoopException {
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
             test(frame);
+            frame.setVisible(false);
         } finally {
             frame.dispose();
         }
@@ -49,6 +50,7 @@ public final class InfiniteLoopException {
         Runnable repaint = () -> {
             while (frame.isDisplayable()) {
                 frame.repaint();
+                Thread.yield();
             }
         };
         new Thread(repaint).start();

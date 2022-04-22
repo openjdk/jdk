@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,6 @@ $(eval $(call SetupTarget, buildtools-modules, \
 
 $(eval $(call SetupTarget, buildtools-hotspot, \
     MAKEFILE := CompileToolsHotspot, \
-    DEPS := interim-langtools, \
 ))
 
 ################################################################################
@@ -262,6 +261,13 @@ ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
     $(HOTSPOT_VARIANT_LIBS_TARGETS)
 
 ################################################################################
+# Help and user support
+
+$(eval $(call SetupTarget, doctor, \
+    MAKEFILE := Doctor, \
+))
+
+################################################################################
 # Generate libs and launcher targets for creating compile_commands.json fragments
 define DeclareCompileCommandsRecipe
   $1-compile-commands:
@@ -325,7 +331,7 @@ $(eval $(call SetupTarget, vscode-project-ccls, \
 # aren't built until after libjava and libjvm are available to link to.
 $(eval $(call SetupTarget, demos-jdk, \
     MAKEFILE := CompileDemos, \
-    DEPS := java.base-libs exploded-image, \
+    DEPS := java.base-libs exploded-image buildtools-jdk, \
 ))
 
 $(eval $(call SetupTarget, test-image-demos-jdk, \
@@ -384,12 +390,12 @@ bootcycle-images:
 
 $(eval $(call SetupTarget, zip-security, \
     MAKEFILE := ZipSecurity, \
-    DEPS := java.base-java java.security.jgss-java java.security.jgss-libs, \
+    DEPS := buildtools-jdk java.base-java java.security.jgss-java java.security.jgss-libs, \
 ))
 
 $(eval $(call SetupTarget, zip-source, \
     MAKEFILE := ZipSource, \
-    DEPS := gensrc, \
+    DEPS := buildtools-jdk gensrc, \
 ))
 
 $(eval $(call SetupTarget, jrtfs-jar, \
@@ -509,13 +515,13 @@ $(eval $(call SetupTarget, docs-jdk-index, \
 $(eval $(call SetupTarget, docs-zip, \
     MAKEFILE := Docs, \
     TARGET := docs-zip, \
-    DEPS :=  docs-jdk, \
+    DEPS :=  docs-jdk buildtools-jdk, \
 ))
 
 $(eval $(call SetupTarget, docs-specs-zip, \
     MAKEFILE := Docs, \
     TARGET := docs-specs-zip, \
-    DEPS := docs-jdk-specs, \
+    DEPS := docs-jdk-specs buildtools-jdk, \
 ))
 
 $(eval $(call SetupTarget, update-build-docs, \
@@ -526,6 +532,19 @@ $(eval $(call SetupTarget, update-x11wrappers, \
     MAKEFILE := UpdateX11Wrappers, \
     DEPS := java.base-copy buildtools-jdk, \
 ))
+
+ifneq ($(HSDIS_BACKEND), none)
+  $(eval $(call SetupTarget, build-hsdis, \
+      MAKEFILE := Hsdis, \
+      TARGET := build, \
+  ))
+
+  $(eval $(call SetupTarget, install-hsdis, \
+      MAKEFILE := Hsdis, \
+      TARGET := install, \
+      DEPS := jdk-image, \
+  ))
+endif
 
 ################################################################################
 # Cross compilation support
@@ -658,18 +677,6 @@ $(eval $(call SetupTarget, test-image-libtest-jtreg-native, \
     MAKEFILE := test/JtregNativeLibTest, \
     TARGET := test-image-libtest-jtreg-native, \
     DEPS := build-test-libtest-jtreg-native, \
-))
-
-$(eval $(call SetupTarget, build-test-hotspot-jtreg-graal, \
-    MAKEFILE := test/JtregGraalUnit, \
-    TARGET := build-test-hotspot-jtreg-graal, \
-    DEPS := exploded-image, \
-))
-
-$(eval $(call SetupTarget, test-image-hotspot-jtreg-graal, \
-    MAKEFILE := test/JtregGraalUnit, \
-    TARGET := test-image-hotspot-jtreg-graal, \
-    DEPS := build-test-hotspot-jtreg-graal, \
 ))
 
 ifneq ($(GTEST_FRAMEWORK_SRC), )
@@ -862,6 +869,10 @@ else
   $(foreach t, $(filter-out java.base-libs, $(LIBS_TARGETS)), \
       $(eval $t: java.base-libs))
 
+  ifeq ($(ENABLE_HSDIS_BUNDLING), true)
+    java.base-copy: build-hsdis
+  endif
+
   # jdk.accessibility depends on java.desktop
   jdk.accessibility-libs: java.desktop-libs
 
@@ -870,22 +881,13 @@ else
   # virtual target.
   jdk.jdwp.agent-libs: jdk.jdwp.agent-gensrc
 
+  # jdk.jfr-gendata uses TOOL_JFR_GEN from buildtools-hotspot
+  jdk.jfr-gendata: buildtools-hotspot
+
   # The swing beans need to have java base properly generated to avoid errors
   # in javadoc. The X11 wrappers need the java.base include files to have been
   # copied and processed.
   java.desktop-gensrc-src: java.base-gensrc java.base-copy
-
-  # The annotation processing for jdk.internal.vm.compiler
-  # and jdk.internal.vm.compiler.management needs classes from the current JDK.
-  jdk.internal.vm.compiler-gensrc-src: $(addsuffix -java, \
-      $(call FindTransitiveDepsForModule, jdk.internal.vm.compiler))
-  jdk.internal.vm.compiler.management-gensrc-src: $(addsuffix -java, \
-      $(call FindTransitiveDepsForModule, jdk.internal.vm.compiler.management))
-
-  # For these modules, the gensrc step is generating a module-info.java.extra
-  # file to be processed by the gensrc-moduleinfo target.
-  jdk.internal.vm.compiler-gensrc-moduleinfo: jdk.internal.vm.compiler-gensrc-src
-  jdk.internal.vm.compiler.management-gensrc-moduleinfo: jdk.internal.vm.compiler.management-gensrc-src
 
   jdk.jdeps-gendata: java
 
@@ -1173,10 +1175,6 @@ else
   test-image: test-image-hotspot-jtreg-native
   ifneq ($(GTEST_FRAMEWORK_SRC), )
     test-image: test-image-hotspot-gtest
-  endif
-
-  ifeq ($(INCLUDE_GRAAL), true)
-    test-image: test-image-hotspot-jtreg-graal
   endif
 endif
 

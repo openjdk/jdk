@@ -67,8 +67,7 @@ public class Size {
         File largeFile = new File("largeFileTest");
         long testSize = ((long)Integer.MAX_VALUE) * 2;
         initTestFile(largeFile, 10);
-        try (FileChannel fc = new RandomAccessFile(largeFile, "rw").getChannel())
-        {
+        try (FileChannel fc = new RandomAccessFile(largeFile, "rw").getChannel()) {
             fc.size();
             fc.map(FileChannel.MapMode.READ_WRITE, testSize, 10);
             if (fc.size() != testSize + 10) {

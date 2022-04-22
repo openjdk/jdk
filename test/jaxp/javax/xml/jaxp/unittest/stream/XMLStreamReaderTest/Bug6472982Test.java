@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6472982
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.Bug6472982Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamReaderTest.Bug6472982Test
  * @run testng/othervm stream.XMLStreamReaderTest.Bug6472982Test
  * @summary Test XMLStreamReader.getNamespaceContext().getPrefix("") won't throw IllegalArgumentException.
  */

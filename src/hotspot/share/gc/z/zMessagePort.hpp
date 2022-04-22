@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,19 @@ class ZMessagePort {
 private:
   typedef ZMessageRequest<T> Request;
 
-  Monitor        _monitor;
-  bool           _has_message;
-  T              _message;
-  uint64_t       _seqnum;
-  ZList<Request> _queue;
+  mutable Monitor _monitor;
+  bool            _has_message;
+  T               _message;
+  uint64_t        _seqnum;
+  ZList<Request>  _queue;
 
 public:
   ZMessagePort();
 
-  void send_sync(T message);
-  void send_async(T message);
+  bool is_busy() const;
+
+  void send_sync(const T& message);
+  void send_async(const T& message);
 
   T receive();
   void ack();

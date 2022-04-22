@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  *        java.base/jdk.internal.test.TestProviderImpl1
  *        java.base/jdk.internal.test.TestProviderImpl2
  * @run shell MakeJAR3.sh RedefineModuleAgent
- * @run testng/othervm --illegal-access=deny -javaagent:RedefineModuleAgent.jar RedefineModuleTest
+ * @run testng/othervm -javaagent:RedefineModuleAgent.jar RedefineModuleTest
  */
 
 import java.lang.TestProvider;

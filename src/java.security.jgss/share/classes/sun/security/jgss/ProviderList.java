@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ public final class ProviderList {
                         new HashMap<PreferencesEntry, MechanismFactory>(5);
     private HashSet<Oid> mechs = new HashSet<Oid>(5);
 
-    final private GSSCaller caller;
+    private final GSSCaller caller;
 
     public ProviderList(GSSCaller caller, boolean useNative) {
         this.caller = caller;
@@ -134,8 +134,10 @@ public final class ProviderList {
                 addProviderAtEnd(prov, null);
             } catch (GSSException ge) {
                 // Move on to the next provider
-                GSSUtil.debug("Error in adding provider " +
-                              prov.getName() + ": " + ge);
+                if (GSSUtil.DEBUG) {
+                    GSSUtil.debug("Error in adding provider " +
+                            prov.getName() + ": " + ge);
+                }
             }
         } // End of for loop
     }
@@ -160,7 +162,7 @@ public final class ProviderList {
     }
 
     // So the existing code do not have to be changed
-    synchronized public MechanismFactory getMechFactory(Oid mechOid)
+    public synchronized MechanismFactory getMechFactory(Oid mechOid)
         throws GSSException {
         if (mechOid == null) mechOid = ProviderList.DEFAULT_MECH_OID;
         return getMechFactory(mechOid, null);
@@ -177,7 +179,7 @@ public final class ProviderList {
      * support the desired mechanism, or when no provider supports
      * the desired mechanism.
      */
-    synchronized public MechanismFactory getMechFactory(Oid mechOid,
+    public synchronized MechanismFactory getMechFactory(Oid mechOid,
                                                         Provider p)
         throws GSSException {
 
@@ -304,17 +306,9 @@ public final class ProviderList {
                 throw createGSSException(p, className, "is not a " +
                                          SPI_MECH_FACTORY_TYPE, null);
             }
-        } catch (ClassNotFoundException e) {
-            throw createGSSException(p, className, "cannot be created", e);
-        } catch (NoSuchMethodException e) {
-            throw createGSSException(p, className, "cannot be created", e);
-        } catch (InvocationTargetException e) {
-            throw createGSSException(p, className, "cannot be created", e);
-        } catch (InstantiationException e) {
-            throw createGSSException(p, className, "cannot be created", e);
-        } catch (IllegalAccessException e) {
-            throw createGSSException(p, className, "cannot be created", e);
-        } catch (SecurityException e) {
+        } catch (ClassNotFoundException | NoSuchMethodException |
+                 InvocationTargetException | InstantiationException |
+                 IllegalAccessException | SecurityException e) {
             throw createGSSException(p, className, "cannot be created", e);
         }
     }
@@ -335,7 +329,7 @@ public final class ProviderList {
         return mechs.toArray(new Oid[] {});
     }
 
-    synchronized public void addProviderAtFront(Provider p, Oid mechOid)
+    public synchronized void addProviderAtFront(Provider p, Oid mechOid)
         throws GSSException {
 
         PreferencesEntry newEntry = new PreferencesEntry(p, mechOid);
@@ -367,7 +361,7 @@ public final class ProviderList {
         }
     }
 
-    synchronized public void addProviderAtEnd(Provider p, Oid mechOid)
+    public synchronized void addProviderAtEnd(Provider p, Oid mechOid)
         throws GSSException {
 
         PreferencesEntry newEntry = new PreferencesEntry(p, mechOid);
@@ -429,8 +423,10 @@ public final class ProviderList {
                     retVal = true;
                 } catch (GSSException e) {
                     // Skip to next property
-                    GSSUtil.debug("Ignore the invalid property " +
-                                  prop + " from provider " + p.getName());
+                    if (GSSUtil.DEBUG) {
+                        GSSUtil.debug("Ignore the invalid property " +
+                                prop + " from provider " + p.getName());
+                    }
                 }
             } // Processed GSS property
         } // while loop

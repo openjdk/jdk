@@ -48,7 +48,7 @@ import java.util.logging.Logger;
  *       todo: add at randomness
  * @modules java.logging
  *          java.management
- * @run main/othervm TestConfigurationLock
+ * @run main/othervm -Djava.security.manager=allow TestConfigurationLock
  * @author danielfuchs
  */
 // This test is a best effort to try & detect issues. The test itself will run

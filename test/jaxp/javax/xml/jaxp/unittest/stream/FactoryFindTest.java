@@ -45,7 +45,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.FactoryFindTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.FactoryFindTest
  * @run testng/othervm stream.FactoryFindTest
  * @summary Test SaTX factory using factory property and using ContextClassLoader.
  */

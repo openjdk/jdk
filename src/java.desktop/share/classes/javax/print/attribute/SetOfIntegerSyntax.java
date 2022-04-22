@@ -483,9 +483,9 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      *         set-of-integer attribute, {@code false} otherwise
      */
     public boolean equals(Object object) {
-        if (object != null && object instanceof SetOfIntegerSyntax) {
+        if (object instanceof SetOfIntegerSyntax other) {
             int[][] myMembers = this.members;
-            int[][] otherMembers = ((SetOfIntegerSyntax) object).members;
+            int[][] otherMembers = other.members;
             int m = myMembers.length;
             int n = otherMembers.length;
             if (m == n) {

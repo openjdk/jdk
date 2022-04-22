@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 
 #ifndef SHARE_SERVICES_MEMREPORTER_HPP
 #define SHARE_SERVICES_MEMREPORTER_HPP
-
-#if INCLUDE_NMT
 
 #include "memory/metaspace.hpp"
 #include "oops/instanceKlass.hpp"
@@ -56,6 +54,9 @@ class MemReporterBase : public StackObj {
     return _output;
   }
   // Current reporting scale
+  size_t scale() const {
+    return _scale;
+  }
   inline const char* current_scale() const {
     return NMTUtil::scale_name(_scale);
   }
@@ -144,10 +145,10 @@ class MemDetailReporter : public MemSummaryReporter {
   void report_detail();
   // Report virtual memory map
   void report_virtual_memory_map();
-  // Report malloc allocation sites
-  void report_malloc_sites();
-  // Report virtual memory reservation sites
-  void report_virtual_memory_allocation_sites();
+  // Report malloc allocation sites; returns number of omitted sites
+  int report_malloc_sites();
+  // Report virtual memory reservation sites; returns number of omitted sites
+  int report_virtual_memory_allocation_sites();
 
   // Report a virtual memory region
   void report_virtual_memory_region(const ReservedMemoryRegion* rgn);
@@ -177,9 +178,9 @@ class MemSummaryDiffReporter : public MemReporterBase {
   // report the comparison of each memory type
   void diff_summary_of_type(MEMFLAGS type,
     const MallocMemory* early_malloc, const VirtualMemory* early_vm,
-    const MetaspaceSnapshot* early_ms,
+    const MetaspaceCombinedStats& early_ms,
     const MallocMemory* current_malloc, const VirtualMemory* current_vm,
-    const MetaspaceSnapshot* current_ms) const;
+    const MetaspaceCombinedStats& current_ms) const;
 
  protected:
   void print_malloc_diff(size_t current_amount, size_t current_count,
@@ -189,10 +190,11 @@ class MemSummaryDiffReporter : public MemReporterBase {
   void print_arena_diff(size_t current_amount, size_t current_count,
     size_t early_amount, size_t early_count) const;
 
-  void print_metaspace_diff(const MetaspaceSnapshot* current_ms,
-                            const MetaspaceSnapshot* early_ms) const;
-  void print_metaspace_diff(Metaspace::MetadataType type,
-    const MetaspaceSnapshot* current_ms, const MetaspaceSnapshot* early_ms) const;
+  void print_metaspace_diff(const MetaspaceCombinedStats& current_ms,
+                            const MetaspaceCombinedStats& early_ms) const;
+  void print_metaspace_diff(const char* header,
+                            const MetaspaceStats& current_ms,
+                            const MetaspaceStats& early_ms) const;
 };
 
 /*
@@ -211,7 +213,7 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
 
   // Malloc allocation site comparison
   void diff_malloc_sites() const;
-  // Virutal memory reservation site comparison
+  // Virtual memory reservation site comparison
   void diff_virtual_memory_sites() const;
 
   // New malloc allocation site in recent baseline
@@ -234,7 +236,5 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
   void diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
     size_t current_committed, size_t early_reserved, size_t early_committed, MEMFLAGS flag) const;
 };
-
-#endif // INCLUDE_NMT
 
 #endif // SHARE_SERVICES_MEMREPORTER_HPP

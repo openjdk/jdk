@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import sun.util.logging.PlatformLogger;
 public class  XMSelection {
 
     /*
-     * A method for a subsytem to express its interest in a certain
+     * A method for a subsystem to express its interest in a certain
      * manager selection.
      *
      * If owner changes, the ownerChanged of the XMSelectionListener
@@ -318,9 +318,7 @@ public class  XMSelection {
             log.fine("Selection Changed : Screen = " + screen + "Event =" + ev);
         }
         if (listeners != null) {
-            Iterator<XMSelectionListener> iter = listeners.iterator();
-            while (iter.hasNext()) {
-                XMSelectionListener disp = iter.next();
+            for (XMSelectionListener disp : listeners) {
                 disp.selectionChanged(screen, this, ev.get_window(), ev);
             }
         }
@@ -331,11 +329,8 @@ public class  XMSelection {
             log.fine("Owner dead : Screen = " + screen + "Event =" + de);
         }
         if (listeners != null) {
-            Iterator<XMSelectionListener> iter = listeners.iterator();
-            while (iter.hasNext()) {
-                XMSelectionListener disp = iter.next();
+            for (XMSelectionListener disp : listeners) {
                 disp.ownerDeath(screen, this, de.get_window());
-
             }
         }
     }
@@ -357,10 +352,8 @@ public class  XMSelection {
 
     synchronized void dispatchOwnerChangedEvent(XEvent ev, int screen, long owner, long data, long timestamp) {
         if (listeners != null) {
-            Iterator<XMSelectionListener> iter = listeners.iterator();
-            while (iter.hasNext()) {
-                XMSelectionListener disp = iter.next();
-                disp.ownerChanged(screen,this, owner, data, timestamp);
+            for (XMSelectionListener disp : listeners) {
+                disp.ownerChanged(screen, this, owner, data, timestamp);
             }
         }
     }

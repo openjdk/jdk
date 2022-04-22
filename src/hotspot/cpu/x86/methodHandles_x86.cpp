@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,7 +503,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
 #ifndef PRODUCT
 void trace_method_handle_stub(const char* adaptername,
-                              oop mh,
+                              oopDesc* mh,
                               intptr_t* saved_regs,
                               intptr_t* entry_sp) {
   // called as a leaf from native code: do not block the JVM!
@@ -555,18 +555,25 @@ void trace_method_handle_stub(const char* adaptername,
       PreserveExceptionMark pem(Thread::current());
       FrameValues values;
 
-      // Current C frame
       frame cur_frame = os::current_frame();
 
       if (cur_frame.fp() != 0) {  // not walkable
 
         // Robust search of trace_calling_frame (independent of inlining).
         // Assumes saved_regs comes from a pusha in the trace_calling_frame.
+        //
+        // We have to start the search from cur_frame, because trace_calling_frame may be it.
+        // It is guaranteed that trace_calling_frame is different from the top frame.
+        // But os::current_frame() does NOT return the top frame: it returns the next frame under it (caller's frame).
+        // (Due to inlining and tail call optimizations, caller's frame doesn't necessarily correspond to the immediate
+        // caller in the source code.)
         assert(cur_frame.sp() < saved_regs, "registers not saved on stack ?");
-        frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
+        frame trace_calling_frame = cur_frame;
         while (trace_calling_frame.fp() < saved_regs) {
+          assert(trace_calling_frame.cb() == NULL, "not a C frame");
           trace_calling_frame = os::get_sender_for_C_frame(&trace_calling_frame);
         }
+        assert(trace_calling_frame.sp() < saved_regs, "wrong frame");
 
         // safely create a frame and call frame::describe
         intptr_t *dump_sp = trace_calling_frame.sender_sp();
@@ -624,7 +631,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ enter();
   __ andptr(rsp, -16); // align stack if needed for FPU state
   __ pusha();
-  __ mov(rbx, rsp); // for retreiving saved_regs
+  __ mov(rbx, rsp); // for retrieving saved_regs
   // Note: saved_regs must be in the entered frame for the
   // robust stack walking implemented in trace_method_handle_stub.
 

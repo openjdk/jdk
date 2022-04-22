@@ -26,7 +26,7 @@
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "runtime/safepoint.hpp"
 
 bool G1RemSetTrackingPolicy::needs_scan_for_rebuild(HeapRegion* r) const {
@@ -170,7 +170,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
                                     "size " SIZE_FORMAT ")",
                                     r->hrm_index(),
                                     p2i(r->next_top_at_mark_start()),
-                                    cm->liveness(r->hrm_index()) * HeapWordSize,
+                                    cm->live_bytes(r->hrm_index()),
                                     r->next_marked_bytes(),
                                     r->rem_set()->occupied(),
                                     r->rem_set()->mem_size());

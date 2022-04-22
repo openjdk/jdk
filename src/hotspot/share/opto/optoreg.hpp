@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 // non-SSA names.  A Register is represented as a number.  Non-regular values
 // (e.g., Control, Memory, I/O) use the Special register.  The actual machine
 // registers (as described in the ADL file for a machine) start at zero.
-// Stack-slots (spill locations) start at the nest Chunk past the last machine
+// Stack-slots (spill locations) start at the next Chunk past the last machine
 // register.
 //
 // Note that stack spill-slots are treated as a very large register set.
@@ -177,7 +177,7 @@ class OptoReg {
 // world, notably flags. [ But by design there is "space" in the VMReg world
 // for such registers they just may not be concrete ]. So if we were to use VMRegPair
 // then the VMReg world would have to have a representation for these registers
-// so that a OptoReg->VMReg->OptoReg would reproduce ther original OptoReg. As it
+// so that a OptoReg->VMReg->OptoReg would reproduce the original OptoReg. As it
 // stands if you convert a flag (condition code) to a VMReg you will get VMRegImpl::Bad
 // and converting that will return OptoReg::Bad losing the identity of the OptoReg.
 

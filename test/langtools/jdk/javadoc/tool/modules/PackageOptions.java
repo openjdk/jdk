@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ public class PackageOptions extends ModuleTestBase {
                          "--module", "m1",
                          "-subpackages", "m1pub.pub1:pro");
 
-        assertMessagePresent("javadoc: error - No source files for package pro");
+        assertMessagePresent("error: No source files for package pro");
     }
 
     @Test

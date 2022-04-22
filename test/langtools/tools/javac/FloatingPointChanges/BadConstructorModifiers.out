@@ -1,2 +1,2 @@
-BadConstructorModifiers.java:12:14: compiler.err.mod.not.allowed.here: strictfp
+BadConstructorModifiers.java:13:14: compiler.err.mod.not.allowed.here: strictfp
 1 error

@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestObjIterWithHeapDump
+ * @test
  * @summary Test heap dump triggered heap object iteration
  * @bug 8225014
  * @requires vm.gc.Shenandoah

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 4313887 7006126 8142968 8178380 8183320 8210112 8266345 8263940
  * @modules jdk.jartool
  * @library /test/lib
  * @build SetDefaultProvider TestProvider m/* jdk.test.lib.process.ProcessTools
@@ -36,18 +37,20 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.spi.ToolProvider;
+import java.util.stream.Stream;
 
 import jdk.test.lib.process.ProcessTools;
 
-import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 @Test
 public class SetDefaultProvider {
 
-    private static String SET_DEFAULT_FSP =
+    private static final String SET_DEFAULT_FSP =
         "-Djava.nio.file.spi.DefaultFileSystemProvider=TestProvider";
 
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
@@ -69,7 +72,62 @@ public class SetDefaultProvider {
         String testClasses = System.getProperty("test.classes");
         String classpath = moduleClasses + File.pathSeparator + testClasses;
         int exitValue = exec(SET_DEFAULT_FSP, "-cp", classpath, "p.Main");
-        assertTrue(exitValue == 0);
+        assertEquals(exitValue, 0);
+    }
+
+    /**
+     * Test override of default FileSystemProvider with a
+     * FileSystemProvider jar and the main application on the class path.
+     */
+    public void testClassPathWithFileSystemProviderJar() throws Exception {
+        String testClasses = System.getProperty("test.classes");
+        Path jar = Path.of("testFileSystemProvider.jar");
+        Files.deleteIfExists(jar);
+        createFileSystemProviderJar(jar, Path.of(testClasses));
+        String classpath = jar + File.pathSeparator + testClasses
+                + File.separator + "modules" + File.separator + "m";
+        int exitValue = exec(SET_DEFAULT_FSP, "-cp", classpath, "p.Main");
+        assertEquals(exitValue, 0);
+    }
+
+    /**
+     * Creates a JAR containing the FileSystemProvider used to override the
+     * default FileSystemProvider
+     */
+    private void createFileSystemProviderJar(Path jar, Path dir) throws IOException {
+
+        List<String>  args = new ArrayList<>();
+        args.add("--create");
+        args.add("--file=" + jar);
+        try (Stream<Path> stream = Files.list(dir)) {
+            List<String> paths = stream
+                    .map(path -> path.getFileName().toString())
+                    .filter(f -> f.startsWith("TestProvider"))
+                    .toList();
+            for(var p : paths) {
+                args.add("-C");
+                args.add(dir.toString());
+                args.add(p);
+            }
+        }
+        int ret = JAR_TOOL.run(System.out, System.out, args.toArray(new String[0]));
+        assertEquals(ret, 0);
+    }
+
+    /**
+     * Test override of default FileSystemProvider with the main application
+     * on the class path and a SecurityManager enabled.
+     */
+    public void testClassPathWithSecurityManager() throws Exception {
+        String moduleClasses = moduleClasses();
+        String testClasses = System.getProperty("test.classes");
+        String classpath = moduleClasses + File.pathSeparator + testClasses;
+        String policyFile = System.getProperty("test.src", ".")
+            + File.separator + "fs.policy";
+        int exitValue = exec(SET_DEFAULT_FSP, "-cp", classpath,
+            "-Dtest.classes=" + testClasses, "-Djava.security.manager",
+            "-Djava.security.policy==" + policyFile, "p.Main");
+        assertEquals(exitValue, 0);
     }
 
     /**
@@ -79,7 +137,7 @@ public class SetDefaultProvider {
     public void testExplodedModule() throws Exception {
         String modulePath = System.getProperty("jdk.module.path");
         int exitValue = exec(SET_DEFAULT_FSP, "-p", modulePath, "-m", "m/p.Main");
-        assertTrue(exitValue == 0);
+        assertEquals(exitValue, 0);
     }
 
     /**
@@ -89,7 +147,7 @@ public class SetDefaultProvider {
     public void testModularJar() throws Exception {
         String jarFile = createModularJar();
         int exitValue = exec(SET_DEFAULT_FSP, "-p", jarFile, "-m", "m/p.Main");
-        assertTrue(exitValue == 0);
+        assertEquals(exitValue, 0);
     }
 
     /**
@@ -103,7 +161,7 @@ public class SetDefaultProvider {
                              "--patch-module", "m=" + patchdir,
                              "-p", modulePath,
                              "-m", "m/p.Main");
-        assertTrue(exitValue == 0);
+        assertEquals(exitValue, 0);
     }
 
     /**
@@ -119,7 +177,7 @@ public class SetDefaultProvider {
                              "--patch-module", "m=" + patch,
                              "-p", modulePath,
                              "-m", "m/p.Main");
-        assertTrue(exitValue == 0);
+        assertEquals(exitValue, 0);
     }
 
     /**
@@ -131,7 +189,7 @@ public class SetDefaultProvider {
             Path m = Paths.get(dir, "m");
             if (Files.exists(m)) return m.toString();
         }
-        assertFalse(true);
+        fail();
         return null;
     }
 
@@ -151,7 +209,7 @@ public class SetDefaultProvider {
         Path jar = createTempDirectory("tmp").resolve("m.jar");
         String[] args = { "--create", "--file=" + jar, "-C", dir.toString(), "." };
         int ret = JAR_TOOL.run(System.out, System.out, args);
-        assertTrue(ret == 0);
+        assertEquals(ret, 0);
         return jar;
     }
 

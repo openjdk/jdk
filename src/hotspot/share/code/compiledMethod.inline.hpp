@@ -26,6 +26,7 @@
 #define SHARE_CODE_COMPILEDMETHOD_INLINE_HPP
 
 #include "code/compiledMethod.hpp"
+
 #include "code/nativeInst.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.hpp"

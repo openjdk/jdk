@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,8 @@
 #ifndef OS_AIX_OS_AIX_INLINE_HPP
 #define OS_AIX_OS_AIX_INLINE_HPP
 
+// os_aix.hpp included by os.hpp
+
 #include "runtime/os.hpp"
 #include "os_posix.inline.hpp"
 
@@ -34,7 +36,7 @@ inline bool os::uses_stack_guard_pages() {
 }
 
 // Whether or not calling code should/can commit/uncommit stack pages
-// before guarding them. Answer for AIX is definitly no, because memory
+// before guarding them. Answer for AIX is definitely no, because memory
 // is automatically committed on touch.
 inline bool os::must_commit_stack_guard_pages() {
   assert(uses_stack_guard_pages(), "sanity check");

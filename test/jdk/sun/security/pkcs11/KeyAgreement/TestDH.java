@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm -Djdk.crypto.KeyAgreement.legacyKDF=true TestDH
- * @run main/othervm -Djdk.crypto.KeyAgreement.legacyKDF=true TestDH sm
+ * @run main/othervm -Djava.security.manager=allow -Djdk.crypto.KeyAgreement.legacyKDF=true TestDH sm
  */
 
 import java.security.KeyPair;

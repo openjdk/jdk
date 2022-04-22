@@ -62,17 +62,8 @@ endif
 # Filter out jvmci specific modules if jvmci is disabled
 ifeq ($(INCLUDE_JVMCI), false)
   MODULES_FILTER += jdk.internal.vm.ci
-endif
-
-# Filter out Graal specific modules if Graal is disabled
-ifeq ($(INCLUDE_GRAAL), false)
   MODULES_FILTER += jdk.internal.vm.compiler
   MODULES_FILTER += jdk.internal.vm.compiler.management
-endif
-
-# Filter out aot specific modules if aot is disabled
-ifeq ($(ENABLE_AOT), false)
-  MODULES_FILTER += jdk.aot
 endif
 
 # jpackage is only on windows, macosx, and linux

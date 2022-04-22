@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2020, 2022, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ public class CgroupSubsystemFactory {
     private static final String CPUSET_CTRL = "cpuset";
     private static final String BLKIO_CTRL = "blkio";
     private static final String MEMORY_CTRL = "memory";
+    private static final String PIDS_CTRL = "pids";
 
     /*
      * From https://www.kernel.org/doc/Documentation/filesystems/proc.txt
@@ -81,9 +82,7 @@ public class CgroupSubsystemFactory {
         Optional<CgroupTypeResult> optResult = null;
         try {
             optResult = determineType("/proc/self/mountinfo", "/proc/cgroups", "/proc/self/cgroup");
-        } catch (IOException e) {
-            return null;
-        } catch (UncheckedIOException e) {
+        } catch (IOException | UncheckedIOException e) {
             return null;
         }
 
@@ -149,6 +148,7 @@ public class CgroupSubsystemFactory {
             case CPUSET_CTRL:   infos.put(CPUSET_CTRL, info); break;
             case MEMORY_CTRL:   infos.put(MEMORY_CTRL, info); break;
             case BLKIO_CTRL:    infos.put(BLKIO_CTRL, info); break;
+            case PIDS_CTRL:     infos.put(PIDS_CTRL, info); break;
             }
         }
 
@@ -194,9 +194,10 @@ public class CgroupSubsystemFactory {
             if (isCgroupsV2) {
                 action = (tokens -> setCgroupV2Path(infos, tokens));
             }
-            selfCgroupLines.map(line -> line.split(":"))
-                     .filter(tokens -> (tokens.length >= 3))
-                     .forEach(action);
+            // The limit value of 3 is because /proc/self/cgroup contains three
+            // colon-separated tokens per line. The last token, cgroup path, might
+            // contain a ':'.
+            selfCgroupLines.map(line -> line.split(":", 3)).forEach(action);
         }
 
         CgroupTypeResult result = new CgroupTypeResult(isCgroupsV2,
@@ -251,6 +252,7 @@ public class CgroupSubsystemFactory {
                     case CPUACCT_CTRL:
                     case CPU_CTRL:
                     case BLKIO_CTRL:
+                    case PIDS_CTRL:
                         CgroupInfo info = infos.get(cName);
                         info.setCgroupPath(cgroupPath);
                         break;
@@ -302,6 +304,7 @@ public class CgroupSubsystemFactory {
                         case MEMORY_CTRL: // fall-through
                         case CPU_CTRL:
                         case CPUACCT_CTRL:
+                        case PIDS_CTRL:
                         case BLKIO_CTRL: {
                             CgroupInfo info = infos.get(controllerName);
                             assert info.getMountPoint() == null;

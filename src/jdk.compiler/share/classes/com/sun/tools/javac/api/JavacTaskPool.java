@@ -295,10 +295,9 @@ public class JavacTaskPool {
         TreeScanner<Void, Symtab> pollutionScanner = new TreeScanner<Void, Symtab>() {
             @Override @DefinedBy(Api.COMPILER_TREE)
             public Void scan(Tree tree, Symtab syms) {
-                if (tree instanceof LetExpr) {
-                    LetExpr le = (LetExpr) tree;
-                    scan(le.defs, syms);
-                    scan(le.expr, syms);
+                if (tree instanceof LetExpr letExpr) {
+                    scan(letExpr.defs, syms);
+                    scan(letExpr.expr, syms);
                     return null;
                 } else {
                     return super.scan(tree, syms);

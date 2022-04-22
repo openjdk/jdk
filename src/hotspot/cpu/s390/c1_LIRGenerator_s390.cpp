@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -331,7 +331,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
   } else {
     LIR_Opr reg = rlock(x);
     LIR_Opr tmp = LIR_OprFact::illegalOpr;
-    arithmetic_op_fpu(x->op(), reg, left.result(), right.result(), x->is_strictfp(), tmp);
+    arithmetic_op_fpu(x->op(), reg, left.result(), right.result(), tmp);
     set_result(x, reg);
   }
 }
@@ -339,7 +339,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
 // for _ladd, _lmul, _lsub, _ldiv, _lrem
 void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
   if (x->op() == Bytecodes::_ldiv || x->op() == Bytecodes::_lrem) {
-    // Use shifts if divisior is a power of 2 otherwise use DSGR instruction.
+    // Use shifts if divisor is a power of 2 otherwise use DSGR instruction.
     // Instruction: DSGR R1, R2
     // input : R1+1: dividend   (R1, R1+1 designate a register pair, R1 must be even)
     //         R2:   divisor
@@ -415,7 +415,7 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
 // for: _iadd, _imul, _isub, _idiv, _irem
 void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
   if (x->op() == Bytecodes::_idiv || x->op() == Bytecodes::_irem) {
-    // Use shifts if divisior is a power of 2 otherwise use DSGFR instruction.
+    // Use shifts if divisor is a power of 2 otherwise use DSGFR instruction.
     // Instruction: DSGFR R1, R2
     // input : R1+1: dividend   (R1, R1+1 designate a register pair, R1 must be even)
     //         R2:   divisor
@@ -629,14 +629,16 @@ LIR_Opr LIRGenerator::atomic_add(BasicType type, LIR_Opr addr, LIRItem& value) {
 void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   switch (x->id()) {
     case vmIntrinsics::_dabs:
-    case vmIntrinsics::_dsqrt: {
+    case vmIntrinsics::_dsqrt:
+    case vmIntrinsics::_dsqrt_strict: {
       assert(x->number_of_arguments() == 1, "wrong type");
       LIRItem value(x->argument_at(0), this);
       value.load_item();
       LIR_Opr dst = rlock_result(x);
 
       switch (x->id()) {
-        case vmIntrinsics::_dsqrt: {
+        case vmIntrinsics::_dsqrt:
+        case vmIntrinsics::_dsqrt_strict: {
           __ sqrt(value.result(), dst, LIR_OprFact::illegalOpr);
           break;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeOptionalMemberWriter;
-import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeRequiredMemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.ConstantsSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
@@ -46,11 +44,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * The factory that returns HTML writers.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class WriterFactoryImpl implements WriterFactory {
 
@@ -80,19 +73,27 @@ public class WriterFactoryImpl implements WriterFactory {
     }
 
     @Override
-    public AnnotationTypeOptionalMemberWriter getAnnotationTypeOptionalMemberWriter(
+    public AnnotationTypeMemberWriterImpl getAnnotationTypeMemberWriter(
             ClassWriter classWriter) {
         TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeOptionalMemberWriterImpl(
-                (ClassWriterImpl) classWriter, te);
+        return new AnnotationTypeMemberWriterImpl(
+                (ClassWriterImpl) classWriter, te, AnnotationTypeMemberWriterImpl.Kind.ANY);
     }
 
     @Override
-    public AnnotationTypeRequiredMemberWriter getAnnotationTypeRequiredMemberWriter(
+    public AnnotationTypeMemberWriterImpl getAnnotationTypeOptionalMemberWriter(
             ClassWriter classWriter) {
         TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeRequiredMemberWriterImpl(
-            (ClassWriterImpl) classWriter, te);
+        return new AnnotationTypeMemberWriterImpl(
+                (ClassWriterImpl) classWriter, te, AnnotationTypeMemberWriterImpl.Kind.OPTIONAL);
+    }
+
+    @Override
+    public AnnotationTypeMemberWriterImpl getAnnotationTypeRequiredMemberWriter(
+            ClassWriter classWriter) {
+        TypeElement te = classWriter.getTypeElement();
+        return new AnnotationTypeMemberWriterImpl(
+            (ClassWriterImpl) classWriter, te, AnnotationTypeMemberWriterImpl.Kind.REQUIRED);
     }
 
     @Override
@@ -132,16 +133,14 @@ public class WriterFactoryImpl implements WriterFactory {
             case ENUM_CONSTANTS:
                 return getEnumConstantWriter(classWriter);
             case ANNOTATION_TYPE_MEMBER_OPTIONAL:
-                return (AnnotationTypeOptionalMemberWriterImpl)
-                        getAnnotationTypeOptionalMemberWriter(classWriter);
+                return getAnnotationTypeOptionalMemberWriter(classWriter);
             case ANNOTATION_TYPE_MEMBER_REQUIRED:
-                return (AnnotationTypeRequiredMemberWriterImpl)
-                        getAnnotationTypeRequiredMemberWriter(classWriter);
+                return getAnnotationTypeRequiredMemberWriter(classWriter);
             case FIELDS:
                 return getFieldWriter(classWriter);
             case PROPERTIES:
                 return getPropertyWriter(classWriter);
-            case INNER_CLASSES:
+            case NESTED_CLASSES:
                 return new NestedClassWriterImpl((SubWriterHolderWriter)
                     classWriter, classWriter.getTypeElement());
             case METHODS:

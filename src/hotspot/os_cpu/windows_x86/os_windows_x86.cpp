@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,13 +70,13 @@ JNIEXPORT
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
 
 // Install a win32 structured exception handler around thread.
-void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread) {
+void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread) {
   __try {
 
 #ifndef AMD64
     // We store the current thread in this wrapperthread location
     // and determine how far away this address is from the structured
-    // execption pointer that FS:[0] points to.  This get_thread
+    // exception pointer that FS:[0] points to.  This get_thread
     // code can then get the thread pointer via FS.
     //
     // Warning:  This routine must NEVER be inlined since we'd end up with
@@ -94,7 +94,7 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandl
       os::win32::set_thread_ptr_offset(thread_ptr_offset);
     }
 #ifdef ASSERT
-    // Verify that the offset hasn't changed since we initally captured
+    // Verify that the offset hasn't changed since we initially captured
     // it. This might happen if we accidentally ended up with an
     // inlined version of this routine.
     else {
@@ -533,7 +533,7 @@ juint os::cpu_microcode_revision() {
 
 void os::setup_fpu() {
 #ifndef AMD64
-  int fpu_cntrl_word = StubRoutines::fpu_cntrl_wrd_std();
+  int fpu_cntrl_word = StubRoutines::x86::fpu_cntrl_wrd_std();
   __asm fldcw fpu_cntrl_word;
 #endif // !AMD64
 }

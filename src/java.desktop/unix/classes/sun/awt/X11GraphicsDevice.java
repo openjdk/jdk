@@ -315,6 +315,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
     public boolean isFullScreenSupported() {
         boolean fsAvailable = isXrandrExtensionSupported();
         if (fsAvailable) {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 if (fullScreenExclusivePermission == null) {
@@ -422,6 +423,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
         return modes.toArray(retArray);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public synchronized void setDisplayMode(DisplayMode dm) {
         if (!isDisplayChangeSupported()) {

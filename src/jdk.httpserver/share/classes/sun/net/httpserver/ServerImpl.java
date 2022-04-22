@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,9 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.net.httpserver.HttpConnection.State;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static sun.net.httpserver.Utils.*;
+
 /**
  * Provides implementation for both HTTP and HTTPS
  */
@@ -72,13 +75,13 @@ class ServerImpl implements TimeSource {
     private volatile long ticks; /* number of clock ticks since server started */
     private HttpServer wrapper;
 
-    final static int CLOCK_TICK = ServerConfig.getClockTick();
-    final static long IDLE_INTERVAL = ServerConfig.getIdleInterval();
-    final static int MAX_IDLE_CONNECTIONS = ServerConfig.getMaxIdleConnections();
-    final static long TIMER_MILLIS = ServerConfig.getTimerMillis ();
-    final static long MAX_REQ_TIME=getTimeMillis(ServerConfig.getMaxReqTime());
-    final static long MAX_RSP_TIME=getTimeMillis(ServerConfig.getMaxRspTime());
-    final static boolean timer1Enabled = MAX_REQ_TIME != -1 || MAX_RSP_TIME != -1;
+    static final int CLOCK_TICK = ServerConfig.getClockTick();
+    static final long IDLE_INTERVAL = ServerConfig.getIdleInterval();
+    static final int MAX_IDLE_CONNECTIONS = ServerConfig.getMaxIdleConnections();
+    static final long TIMER_MILLIS = ServerConfig.getTimerMillis ();
+    static final long MAX_REQ_TIME=getTimeMillis(ServerConfig.getMaxReqTime());
+    static final long MAX_RSP_TIME=getTimeMillis(ServerConfig.getMaxRspTime());
+    static final boolean timer1Enabled = MAX_REQ_TIME != -1 || MAX_RSP_TIME != -1;
 
     private Timer timer, timer1;
     private final Logger logger;
@@ -258,6 +261,7 @@ class ServerImpl implements TimeSource {
         logger.log (Level.DEBUG, "context removed: " + context.getPath());
     }
 
+    @SuppressWarnings("removal")
     public InetSocketAddress getAddress() {
         return AccessController.doPrivileged(
                 new PrivilegedAction<InetSocketAddress>() {
@@ -290,15 +294,19 @@ class ServerImpl implements TimeSource {
             try {
                 if (r instanceof WriteFinishedEvent) {
 
+                    logger.log(Level.TRACE, "Write Finished");
                     int exchanges = endExchange();
                     if (terminating && exchanges == 0) {
                         finished = true;
                     }
-                    responseCompleted (c);
                     LeftOverInputStream is = t.getOriginalInputStream();
                     if (!is.isEOF()) {
                         t.close = true;
+                        if (c.getState() == State.REQUEST) {
+                            requestCompleted(c);
+                        }
                     }
+                    responseCompleted (c);
                     if (t.close || idleConnections.size() >= MAX_IDLE_CONNECTIONS) {
                         c.close();
                         allConnections.remove (c);
@@ -512,6 +520,19 @@ class ServerImpl implements TimeSource {
 
         public void run () {
             /* context will be null for new connections */
+            logger.log(Level.TRACE, "exchange started");
+
+            if (dispatcherThread == Thread.currentThread()) {
+                try {
+                    // call selector to process cancelled keys
+                    selector.selectNow();
+                } catch (IOException ioe) {
+                    logger.log(Level.DEBUG, "processing of cancelled keys failed: closing");
+                    closeConnection(connection);
+                    return;
+                }
+            }
+
             context = connection.getHttpContext();
             boolean newconnection;
             SSLEngine engine = null;
@@ -576,17 +597,47 @@ class ServerImpl implements TimeSource {
                 start = space+1;
                 String version = requestLine.substring (start);
                 Headers headers = req.headers();
-                String s = headers.getFirst ("Transfer-encoding");
+                /* check key for illegal characters */
+                for (var k : headers.keySet()) {
+                    if (!isValidName(k)) {
+                        reject(Code.HTTP_BAD_REQUEST, requestLine,
+                                "Header key contains illegal characters");
+                        return;
+                    }
+                }
+                /* checks for unsupported combinations of lengths and encodings */
+                if (headers.containsKey("Content-Length") &&
+                        (headers.containsKey("Transfer-encoding") || headers.get("Content-Length").size() > 1)) {
+                    reject(Code.HTTP_BAD_REQUEST, requestLine,
+                            "Conflicting or malformed headers detected");
+                    return;
+                }
                 long clen = 0L;
-                if (s !=null && s.equalsIgnoreCase ("chunked")) {
-                    clen = -1L;
+                String headerValue = null;
+                List<String> teValueList = headers.get("Transfer-encoding");
+                if (teValueList != null && !teValueList.isEmpty()) {
+                    headerValue = teValueList.get(0);
+                }
+                if (headerValue != null) {
+                    if (headerValue.equalsIgnoreCase("chunked") && teValueList.size() == 1) {
+                        clen = -1L;
+                    } else {
+                        reject(Code.HTTP_NOT_IMPLEMENTED,
+                                requestLine, "Unsupported Transfer-Encoding value");
+                        return;
+                    }
                 } else {
-                    s = headers.getFirst ("Content-Length");
-                    if (s != null) {
-                        clen = Long.parseLong(s);
+                    headerValue = headers.getFirst("Content-Length");
+                    if (headerValue != null) {
+                        clen = Long.parseLong(headerValue);
+                        if (clen < 0) {
+                            reject(Code.HTTP_BAD_REQUEST, requestLine,
+                                    "Illegal Content-Length value");
+                            return;
+                        }
                     }
                     if (clen == 0) {
-                        requestCompleted (connection);
+                        requestCompleted(connection);
                     }
                 }
                 ctx = contexts.findContext (protocol, uri.getPath());
@@ -649,11 +700,11 @@ class ServerImpl implements TimeSource {
                  * They are linked together by a LinkHandler
                  * so that they can both be invoked in one call.
                  */
-                List<Filter> sf = ctx.getSystemFilters();
-                List<Filter> uf = ctx.getFilters();
+                final List<Filter> sf = ctx.getSystemFilters();
+                final List<Filter> uf = ctx.getFilters();
 
-                Filter.Chain sc = new Filter.Chain(sf, ctx.getHandler());
-                Filter.Chain uc = new Filter.Chain(uf, new LinkHandler (sc));
+                final Filter.Chain sc = new Filter.Chain(sf, ctx.getHandler());
+                final Filter.Chain uc = new Filter.Chain(uf, new LinkHandler (sc));
 
                 /* set up the two stream references */
                 tx.getRequestBody();
@@ -678,6 +729,9 @@ class ServerImpl implements TimeSource {
             } catch (Exception e4) {
                 logger.log (Level.TRACE, "ServerImpl.Exchange (4)", e4);
                 closeConnection(connection);
+            } catch (Throwable t) {
+                logger.log(Level.TRACE, "ServerImpl.Exchange (5)", t);
+                throw t;
             }
         }
 
@@ -725,7 +779,7 @@ class ServerImpl implements TimeSource {
                 }
                 builder.append ("\r\n").append (text);
                 String s = builder.toString();
-                byte[] b = s.getBytes("ISO8859_1");
+                byte[] b = s.getBytes(ISO_8859_1);
                 rawout.write (b);
                 rawout.flush();
                 if (closeNow) {

@@ -105,8 +105,27 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * It is left for backward compatibility only.
      * @deprecated since 1.8
      */
+    @SuppressWarnings("removal")
     @Deprecated
-    protected static final Component component;
+    protected static final Component component
+            = AccessController.doPrivileged(new PrivilegedAction<Component>() {
+        public Component run() {
+            try {
+                final Component component = createNoPermsComponent();
+
+                // 6482575 - clear the appContext field so as not to leak it
+                AWTAccessor.getComponentAccessor().
+                        setAppContext(component, null);
+
+                return component;
+            } catch (Throwable e) {
+                // We don't care about component.
+                // So don't prevent class initialisation.
+                e.printStackTrace();
+                return null;
+            }
+        }
+    });
 
     /**
      * Do not use this shared media tracker, which is used to load images.
@@ -114,30 +133,9 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @deprecated since 1.8
      */
     @Deprecated
-    protected static final MediaTracker tracker;
+    protected static final MediaTracker tracker = new MediaTracker(component);
 
-    static {
-        component = AccessController.doPrivileged(new PrivilegedAction<Component>() {
-            public Component run() {
-                try {
-                    final Component component = createNoPermsComponent();
-
-                    // 6482575 - clear the appContext field so as not to leak it
-                    AWTAccessor.getComponentAccessor().
-                            setAppContext(component, null);
-
-                    return component;
-                } catch (Throwable e) {
-                    // We don't care about component.
-                    // So don't prevent class initialisation.
-                    e.printStackTrace();
-                    return null;
-                }
-            }
-        });
-        tracker = new MediaTracker(component);
-    }
-
+    @SuppressWarnings("removal")
     private static Component createNoPermsComponent() {
         // 7020198 - set acc field to no permissions and no subject
         // Note, will have appContext set.
@@ -323,6 +321,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      */
     protected void loadImage(Image image) {
         MediaTracker mTracker = getTracker();
+        boolean interrupted = false;
         synchronized(mTracker) {
             int id = getNextID();
 
@@ -330,10 +329,15 @@ public class ImageIcon implements Icon, Serializable, Accessible {
             try {
                 mTracker.waitForID(id, 0);
             } catch (InterruptedException e) {
-                System.out.println("INTERRUPTED while loading Image");
+                interrupted = true;
             }
+
             loadStatus = mTracker.statusID(id, false);
             mTracker.removeImage(image, id);
+
+            if (interrupted && ((loadStatus & MediaTracker.LOADING) != 0)) {
+                loadStatus = MediaTracker.ABORTED;
+            }
 
             width = image.getWidth(imageObserver);
             height = image.getHeight(imageObserver);

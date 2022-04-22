@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -95,7 +95,7 @@ void destroyLockObject(JNIEnv *env, jobject jLockObject) {
 /*
  * Add the given pkcs11Implementation object to the list of present modules.
  * Attach the given data to the entry. If the given pkcs11Implementation is
- * already in the lsit, just override its old module data with the new one.
+ * already in the list, just override its old module data with the new one.
  * None of the arguments can be NULL. If one of the arguments is NULL, this
  * function does nothing.
  */
@@ -136,6 +136,20 @@ CK_FUNCTION_LIST_PTR getFunctionList(JNIEnv *env, jobject pkcs11Implementation) 
     return ckpFunctions;
 }
 
+CK_FUNCTION_LIST_3_0_PTR getFunctionList30(JNIEnv *env, jobject
+        pkcs11Implementation) {
+    ModuleData *moduleData;
+    CK_FUNCTION_LIST_3_0_PTR ckpFunctions30;
+
+    moduleData = getModuleEntry(env, pkcs11Implementation);
+    if (moduleData == NULL) {
+        throwDisconnectedRuntimeException(env);
+        return NULL;
+    }
+    ckpFunctions30 = moduleData->ckFunctionList30Ptr;
+    return ckpFunctions30;
+}
+
 
 /*
  * Returns 1, if the given pkcs11Implementation is in the list.
@@ -149,21 +163,6 @@ int isModulePresent(JNIEnv *env, jobject pkcs11Implementation) {
     present = (moduleData != NULL) ? 1 : 0;
 
     return present ;
-}
-
-
-/*
- * Removes the entry for the given pkcs11Implementation from the list. Returns
- * the module's data, after the node was removed. If this function returns NULL
- * the pkcs11Implementation was not in the list.
- */
-ModuleData * removeModuleEntry(JNIEnv *env, jobject pkcs11Implementation) {
-    ModuleData *moduleData = getModuleEntry(env, pkcs11Implementation);
-    if (moduleData == NULL) {
-        return NULL;
-    }
-    (*env)->SetLongField(env, pkcs11Implementation, pNativeDataID, 0);
-    return moduleData;
 }
 
 /*
@@ -182,27 +181,48 @@ void removeAllModuleEntries(JNIEnv *env) {
 /*
  * function to convert a PKCS#11 return value into a PKCS#11Exception
  *
- * This function generates a PKCS#11Exception with the returnValue as the errorcode
- * if the returnValue is not CKR_OK. The functin returns 0, if the returnValue is
- * CKR_OK. Otherwise, it returns the returnValue as a jLong.
+ * This function generates a PKCS#11Exception with the returnValue as the
+ * errorcode. If the returnValue is not CKR_OK. The function returns 0, if the
+ * returnValue is CKR_OK. Otherwise, it returns the returnValue as a jLong.
  *
- * @param env - used to call JNI funktions and to get the Exception class
+ * @param env - used to call JNI functions and to get the Exception class
  * @param returnValue - of the PKCS#11 function
  */
-jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue)
-{
+jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue) {
+    return ckAssertReturnValueOK2(env, returnValue, NULL);
+}
+
+/*
+ * function to convert a PKCS#11 return value and additional message into a
+ * PKCS#11Exception
+ *
+ * This function generates a PKCS#11Exception with the returnValue as the
+ * errorcode. If the returnValue is not CKR_OK. The function returns 0, if the
+ * returnValue is CKR_OK. Otherwise, it returns the returnValue as a jLong.
+ *
+ * @param env - used to call JNI functions and to get the Exception class
+ * @param returnValue - of the PKCS#11 function
+ * @param msg - additional message for the generated PKCS11Exception
+ */
+jlong ckAssertReturnValueOK2(JNIEnv *env, CK_RV returnValue, const char* msg) {
     jclass jPKCS11ExceptionClass;
     jmethodID jConstructor;
     jthrowable jPKCS11Exception;
     jlong jErrorCode = 0L;
+    jstring jMsg = NULL;
 
     if (returnValue != CKR_OK) {
         jErrorCode = ckULongToJLong(returnValue);
         jPKCS11ExceptionClass = (*env)->FindClass(env, CLASS_PKCS11EXCEPTION);
         if (jPKCS11ExceptionClass != NULL) {
-            jConstructor = (*env)->GetMethodID(env, jPKCS11ExceptionClass, "<init>", "(J)V");
+            jConstructor = (*env)->GetMethodID(env, jPKCS11ExceptionClass,
+                    "<init>", "(JLjava/lang/String;)V");
             if (jConstructor != NULL) {
-                jPKCS11Exception = (jthrowable) (*env)->NewObject(env, jPKCS11ExceptionClass, jConstructor, jErrorCode);
+                if (msg != NULL) {
+                    jMsg = (*env)->NewStringUTF(env, msg);
+                }
+                jPKCS11Exception = (jthrowable) (*env)->NewObject(env,
+                        jPKCS11ExceptionClass, jConstructor, jErrorCode, jMsg);
                 if (jPKCS11Exception != NULL) {
                     (*env)->Throw(env, jPKCS11Exception);
                 }
@@ -210,7 +230,7 @@ jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue)
         }
         (*env)->DeleteLocalRef(env, jPKCS11ExceptionClass);
     }
-    return jErrorCode ;
+    return jErrorCode;
 }
 
 
@@ -253,7 +273,7 @@ void throwIOException(JNIEnv *env, const char *msg)
  * This function simply throws a PKCS#11RuntimeException with the given
  * string as its message.
  *
- * @param env Used to call JNI funktions and to get the Exception class.
+ * @param env Used to call JNI functions and to get the Exception class.
  * @param jmessage The message string of the Exception object.
  */
 void throwPKCS11RuntimeException(JNIEnv *env, const char *message)
@@ -265,7 +285,7 @@ void throwPKCS11RuntimeException(JNIEnv *env, const char *message)
  * This function simply throws a PKCS#11RuntimeException. The message says that
  * the object is not connected to the module.
  *
- * @param env Used to call JNI funktions and to get the Exception class.
+ * @param env Used to call JNI functions and to get the Exception class.
  */
 void throwDisconnectedRuntimeException(JNIEnv *env)
 {
@@ -322,6 +342,11 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
                      TRACE0("[ CK_CCM_PARAMS ]\n");
                      free(((CK_CCM_PARAMS*)tmp)->pNonce);
                      free(((CK_CCM_PARAMS*)tmp)->pAAD);
+                     break;
+                 case CKM_CHACHA20_POLY1305:
+                     TRACE0("[ CK_SALSA20_CHACHA20_POLY1305_PARAMS ]\n");
+                     free(((CK_SALSA20_CHACHA20_POLY1305_PARAMS*)tmp)->pNonce);
+                     free(((CK_SALSA20_CHACHA20_POLY1305_PARAMS*)tmp)->pAAD);
                      break;
                  case CKM_TLS_PRF:
                  case CKM_NSS_TLS_PRF_GENERAL:
@@ -481,7 +506,7 @@ CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr) {
 /*
  * converts a jbooleanArray to a CK_BBOOL array. The allocated memory has to be freed after use!
  *
- * @param env - used to call JNI funktions to get the array informtaion
+ * @param env - used to call JNI functions to get the array informtaion
  * @param jArray - the Java array to convert
  * @param ckpArray - the reference, where the pointer to the new CK_BBOOL array will be stored
  * @param ckpLength - the reference, where the array length will be stored
@@ -523,7 +548,7 @@ void jBooleanArrayToCKBBoolArray(JNIEnv *env, const jbooleanArray jArray, CK_BBO
 /*
  * converts a jbyteArray to a CK_BYTE array. The allocated memory has to be freed after use!
  *
- * @param env - used to call JNI funktions to get the array informtaion
+ * @param env - used to call JNI functions to get the array informtaion
  * @param jArray - the Java array to convert
  * @param ckpArray - the reference, where the pointer to the new CK_BYTE array will be stored
  * @param ckpLength - the reference, where the array length will be stored
@@ -570,7 +595,7 @@ void jByteArrayToCKByteArray(JNIEnv *env, const jbyteArray jArray, CK_BYTE_PTR *
 /*
  * converts a jlongArray to a CK_ULONG array. The allocated memory has to be freed after use!
  *
- * @param env - used to call JNI funktions to get the array informtaion
+ * @param env - used to call JNI functions to get the array informtaion
  * @param jArray - the Java array to convert
  * @param ckpArray - the reference, where the pointer to the new CK_ULONG array will be stored
  * @param ckpLength - the reference, where the array length will be stored
@@ -612,7 +637,7 @@ void jLongArrayToCKULongArray(JNIEnv *env, const jlongArray jArray, CK_ULONG_PTR
 /*
  * converts a jcharArray to a CK_CHAR array. The allocated memory has to be freed after use!
  *
- * @param env - used to call JNI funktions to get the array informtaion
+ * @param env - used to call JNI functions to get the array informtaion
  * @param jArray - the Java array to convert
  * @param ckpArray - the reference, where the pointer to the new CK_CHAR array will be stored
  * @param ckpLength - the reference, where the array length will be stored
@@ -654,7 +679,7 @@ void jCharArrayToCKCharArray(JNIEnv *env, const jcharArray jArray, CK_CHAR_PTR *
 /*
  * converts a jcharArray to a CK_UTF8CHAR array. The allocated memory has to be freed after use!
  *
- * @param env - used to call JNI funktions to get the array informtaion
+ * @param env - used to call JNI functions to get the array informtaion
  * @param jArray - the Java array to convert
  * @param ckpArray - the reference, where the pointer to the new CK_UTF8CHAR array will be stored
  * @param ckpLength - the reference, where the array length will be stored
@@ -696,7 +721,7 @@ void jCharArrayToCKUTF8CharArray(JNIEnv *env, const jcharArray jArray, CK_UTF8CH
 /*
  * converts a jstring to a CK_CHAR array. The allocated memory has to be freed after use!
  *
- * @param env - used to call JNI funktions to get the array informtaion
+ * @param env - used to call JNI functions to get the array informtaion
  * @param jArray - the Java array to convert
  * @param ckpArray - the reference, where the pointer to the new CK_CHAR array will be stored
  * @param ckpLength - the reference, where the array length will be stored
@@ -730,7 +755,7 @@ void jStringToCKUTF8CharArray(JNIEnv *env, const jstring jArray, CK_UTF8CHAR_PTR
  * converts a jobjectArray with Java Attributes to a CK_ATTRIBUTE array. The allocated memory
  * has to be freed after use!
  *
- * @param env - used to call JNI funktions to get the array informtaion
+ * @param env - used to call JNI functions to get the array informtaion
  * @param jArray - the Java Attribute array (template) to convert
  * @param ckpArray - the reference, where the pointer to the new CK_ATTRIBUTE array will be
  *                   stored
@@ -776,7 +801,7 @@ void jAttributeArrayToCKAttributeArray(JNIEnv *env, jobjectArray jArray, CK_ATTR
 /*
  * converts a CK_BYTE array and its length to a jbyteArray.
  *
- * @param env - used to call JNI funktions to create the new Java array
+ * @param env - used to call JNI functions to create the new Java array
  * @param ckpArray - the pointer to the CK_BYTE array to convert
  * @param ckpLength - the length of the array to convert
  * @return - the new Java byte array or NULL if error occurred
@@ -814,7 +839,7 @@ jbyteArray ckByteArrayToJByteArray(JNIEnv *env, const CK_BYTE_PTR ckpArray, CK_U
 /*
  * converts a CK_ULONG array and its length to a jlongArray.
  *
- * @param env - used to call JNI funktions to create the new Java array
+ * @param env - used to call JNI functions to create the new Java array
  * @param ckpArray - the pointer to the CK_ULONG array to convert
  * @param ckpLength - the length of the array to convert
  * @return - the new Java long array
@@ -845,7 +870,7 @@ jlongArray ckULongArrayToJLongArray(JNIEnv *env, const CK_ULONG_PTR ckpArray, CK
 /*
  * converts a CK_CHAR array and its length to a jcharArray.
  *
- * @param env - used to call JNI funktions to create the new Java array
+ * @param env - used to call JNI functions to create the new Java array
  * @param ckpArray - the pointer to the CK_CHAR array to convert
  * @param ckpLength - the length of the array to convert
  * @return - the new Java char array
@@ -876,7 +901,7 @@ jcharArray ckCharArrayToJCharArray(JNIEnv *env, const CK_CHAR_PTR ckpArray, CK_U
 /*
  * converts a CK_UTF8CHAR array and its length to a jcharArray.
  *
- * @param env - used to call JNI funktions to create the new Java array
+ * @param env - used to call JNI functions to create the new Java array
  * @param ckpArray - the pointer to the CK_UTF8CHAR array to convert
  * @param ckpLength - the length of the array to convert
  * @return - the new Java char array
@@ -925,7 +950,7 @@ jcharArray ckUTF8CharArrayToJCharArray(JNIEnv *env, const CK_UTF8CHAR_PTR ckpArr
 /*
  * converts a CK_BBOOL pointer to a Java boolean Object.
  *
- * @param env - used to call JNI funktions to create the new Java object
+ * @param env - used to call JNI functions to create the new Java object
  * @param ckpValue - the pointer to the CK_BBOOL value
  * @return - the new Java boolean object with the boolean value
  */
@@ -949,7 +974,7 @@ jobject ckBBoolPtrToJBooleanObject(JNIEnv *env, const CK_BBOOL *ckpValue)
 /*
  * converts a CK_ULONG pointer to a Java long Object.
  *
- * @param env - used to call JNI funktions to create the new Java object
+ * @param env - used to call JNI functions to create the new Java object
  * @param ckpValue - the pointer to the CK_ULONG value
  * @return - the new Java long object with the long value
  */
@@ -974,7 +999,7 @@ jobject ckULongPtrToJLongObject(JNIEnv *env, const CK_ULONG_PTR ckpValue)
  * converts a Java boolean object into a pointer to a CK_BBOOL value. The memory has to be
  * freed after use!
  *
- * @param env - used to call JNI funktions to get the value out of the Java object
+ * @param env - used to call JNI functions to get the value out of the Java object
  * @param jObject - the "java/lang/Boolean" object to convert
  * @return - the pointer to the new CK_BBOOL value
  */
@@ -1004,7 +1029,7 @@ CK_BBOOL* jBooleanObjectToCKBBoolPtr(JNIEnv *env, jobject jObject)
  * converts a Java byte object into a pointer to a CK_BYTE value. The memory has to be
  * freed after use!
  *
- * @param env - used to call JNI funktions to get the value out of the Java object
+ * @param env - used to call JNI functions to get the value out of the Java object
  * @param jObject - the "java/lang/Byte" object to convert
  * @return - the pointer to the new CK_BYTE value
  */
@@ -1033,7 +1058,7 @@ CK_BYTE_PTR jByteObjectToCKBytePtr(JNIEnv *env, jobject jObject)
  * converts a Java integer object into a pointer to a CK_ULONG value. The memory has to be
  * freed after use!
  *
- * @param env - used to call JNI funktions to get the value out of the Java object
+ * @param env - used to call JNI functions to get the value out of the Java object
  * @param jObject - the "java/lang/Integer" object to convert
  * @return - the pointer to the new CK_ULONG value
  */
@@ -1062,7 +1087,7 @@ CK_ULONG* jIntegerObjectToCKULongPtr(JNIEnv *env, jobject jObject)
  * converts a Java long object into a pointer to a CK_ULONG value. The memory has to be
  * freed after use!
  *
- * @param env - used to call JNI funktions to get the value out of the Java object
+ * @param env - used to call JNI functions to get the value out of the Java object
  * @param jObject - the "java/lang/Long" object to convert
  * @return - the pointer to the new CK_ULONG value
  */
@@ -1092,7 +1117,7 @@ CK_ULONG* jLongObjectToCKULongPtr(JNIEnv *env, jobject jObject)
  * converts a Java char object into a pointer to a CK_CHAR value. The memory has to be
  * freed after use!
  *
- * @param env - used to call JNI funktions to get the value out of the Java object
+ * @param env - used to call JNI functions to get the value out of the Java object
  * @param jObject - the "java/lang/Char" object to convert
  * @return - the pointer to the new CK_CHAR value
  */
@@ -1122,7 +1147,7 @@ CK_CHAR_PTR jCharObjectToCKCharPtr(JNIEnv *env, jobject jObject)
  * converts a Java object into a pointer to CK-type or a CK-structure with the length in Bytes.
  * The memory of the returned pointer MUST BE FREED BY CALLER!
  *
- * @param env - used to call JNI funktions to get the Java classes and objects
+ * @param env - used to call JNI functions to get the Java classes and objects
  * @param jObject - the Java object to convert
  * @param ckpLength - pointer to the length (bytes) of the newly-allocated CK-value or CK-structure
  * @return ckpObject - pointer to the newly-allocated CK-value or CK-structure

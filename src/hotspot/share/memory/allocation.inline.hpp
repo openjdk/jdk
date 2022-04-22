@@ -25,6 +25,8 @@
 #ifndef SHARE_MEMORY_ALLOCATION_INLINE_HPP
 #define SHARE_MEMORY_ALLOCATION_INLINE_HPP
 
+#include "memory/allocation.hpp"
+
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -31,7 +32,6 @@
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -40,8 +40,8 @@
 #include "oops/method.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/flags/flagSetting.hpp"
+#include "runtime/java.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/copy.hpp"
@@ -51,7 +51,7 @@ inline InstanceKlass* klassVtable::ik() const {
 }
 
 bool klassVtable::is_preinitialized_vtable() {
-  return _klass->is_shared() && !MetaspaceShared::remapped_readwrite();
+  return _klass->is_shared() && !MetaspaceShared::remapped_readwrite() && _klass->verified_at_dump_time();
 }
 
 
@@ -274,7 +274,7 @@ void klassVtable::initialize_vtable(GrowableArray<InstanceKlass*>* supers) {
 }
 
 // Returns true iff super_method can be overridden by a method in targetclassname
-// See JLS 3rd edition 8.4.6.1
+// See JLS 8.4.8.1
 // Assumes name-signature match
 // Note that the InstanceKlass of the method in the targetclassname has not always been created yet
 static bool can_be_overridden(Method* super_method, Handle targetclassloader, Symbol* targetclassname) {
@@ -1088,15 +1088,19 @@ void klassVtable::dump_vtable() {
 // Itable code
 
 // Initialize a itableMethodEntry
-void itableMethodEntry::initialize(Method* m) {
+void itableMethodEntry::initialize(InstanceKlass* klass, Method* m) {
   if (m == NULL) return;
 
 #ifdef ASSERT
   if (MetaspaceShared::is_in_shared_metaspace((void*)&_method) &&
-     !MetaspaceShared::remapped_readwrite()) {
+     !MetaspaceShared::remapped_readwrite() &&
+     m->method_holder()->verified_at_dump_time() &&
+     klass->verified_at_dump_time()) {
     // At runtime initialize_itable is rerun as part of link_class_impl()
     // for a shared class loaded by the non-boot loader.
     // The dumptime itable method entry should be the same as the runtime entry.
+    // For a shared old class which was not linked during dump time, we can't compare the dumptime
+    // itable method entry with the runtime entry.
     assert(_method == m, "sanity");
   }
 #endif
@@ -1143,7 +1147,7 @@ void klassItable::initialize_itable(GrowableArray<Method*>* supers) {
       _klass->is_interface() ||
       _klass->itable_length() == itableOffsetEntry::size()) return;
 
-  // There's alway an extra itable entry so we can null-terminate it.
+  // There's always an extra itable entry so we can null-terminate it.
   guarantee(size_offset_table() >= 1, "too small");
   int num_interfaces = size_offset_table() - 1;
   if (num_interfaces > 0) {
@@ -1335,7 +1339,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
       if (!(target == NULL) && !target->is_public()) {
         // Stuff an IllegalAccessError throwing method in there instead.
         itableOffsetEntry::method_entry(_klass, method_table_offset)[m->itable_index()].
-            initialize(Universe::throw_illegal_access_error());
+            initialize(_klass, Universe::throw_illegal_access_error());
       }
     } else {
 
@@ -1348,7 +1352,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Insta
         supers->at_put(start_offset + ime_num, m);
       }
 
-      itableOffsetEntry::method_entry(_klass, method_table_offset)[ime_num].initialize(target);
+      itableOffsetEntry::method_entry(_klass, method_table_offset)[ime_num].initialize(_klass, target);
       if (log_develop_is_enabled(Trace, itables)) {
         ResourceMark rm;
         if (target != NULL) {
@@ -1380,7 +1384,7 @@ void klassItable::adjust_method_entries(bool * trace_name_printed) {
     }
     assert(!old_method->is_deleted(), "itable methods may not be deleted");
     Method* new_method = old_method->get_new_method();
-    ime->initialize(new_method);
+    ime->initialize(_klass, new_method);
 
     if (!(*trace_name_printed)) {
       log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());
@@ -1504,11 +1508,8 @@ int klassItable::compute_itable_size(Array<InstanceKlass*>* transitive_interface
   CountInterfacesClosure cic;
   visit_all_interfaces(transitive_interfaces, &cic);
 
-  // There's alway an extra itable entry so we can null-terminate it.
+  // There's always an extra itable entry so we can null-terminate it.
   int itable_size = calc_itable_size(cic.nof_interfaces() + 1, cic.nof_methods());
-
-  // Statistics
-  update_stats(itable_size * wordSize);
 
   return itable_size;
 }
@@ -1624,75 +1625,4 @@ void vtableEntry::print() {
     tty->print("m " PTR_FORMAT " ", p2i(method()));
   }
 }
-
-class VtableStats : AllStatic {
- public:
-  static int no_klasses;                // # classes with vtables
-  static int no_array_klasses;          // # array classes
-  static int no_instance_klasses;       // # instanceKlasses
-  static int sum_of_vtable_len;         // total # of vtable entries
-  static int sum_of_array_vtable_len;   // total # of vtable entries in array klasses only
-  static int fixed;                     // total fixed overhead in bytes
-  static int filler;                    // overhead caused by filler bytes
-  static int entries;                   // total bytes consumed by vtable entries
-  static int array_entries;             // total bytes consumed by array vtable entries
-
-  static void do_class(Klass* k) {
-    Klass* kl = k;
-    klassVtable vt = kl->vtable();
-    no_klasses++;
-    if (kl->is_instance_klass()) {
-      no_instance_klasses++;
-      kl->array_klasses_do(do_class);
-    }
-    if (kl->is_array_klass()) {
-      no_array_klasses++;
-      sum_of_array_vtable_len += vt.length();
-    }
-    sum_of_vtable_len += vt.length();
-  }
-
-  static void compute() {
-    LockedClassesDo locked_do_class(&do_class);
-    ClassLoaderDataGraph::classes_do(&locked_do_class);
-    fixed  = no_klasses * oopSize;      // vtable length
-    // filler size is a conservative approximation
-    filler = oopSize * (no_klasses - no_instance_klasses) * (sizeof(InstanceKlass) - sizeof(ArrayKlass) - 1);
-    entries = sizeof(vtableEntry) * sum_of_vtable_len;
-    array_entries = sizeof(vtableEntry) * sum_of_array_vtable_len;
-  }
-};
-
-int VtableStats::no_klasses = 0;
-int VtableStats::no_array_klasses = 0;
-int VtableStats::no_instance_klasses = 0;
-int VtableStats::sum_of_vtable_len = 0;
-int VtableStats::sum_of_array_vtable_len = 0;
-int VtableStats::fixed = 0;
-int VtableStats::filler = 0;
-int VtableStats::entries = 0;
-int VtableStats::array_entries = 0;
-
-void klassVtable::print_statistics() {
-  ResourceMark rm;
-  VtableStats::compute();
-  tty->print_cr("vtable statistics:");
-  tty->print_cr("%6d classes (%d instance, %d array)", VtableStats::no_klasses, VtableStats::no_instance_klasses, VtableStats::no_array_klasses);
-  int total = VtableStats::fixed + VtableStats::filler + VtableStats::entries;
-  tty->print_cr("%6d bytes fixed overhead (refs + vtable object header)", VtableStats::fixed);
-  tty->print_cr("%6d bytes filler overhead", VtableStats::filler);
-  tty->print_cr("%6d bytes for vtable entries (%d for arrays)", VtableStats::entries, VtableStats::array_entries);
-  tty->print_cr("%6d bytes total", total);
-}
-
-int    klassItable::_total_classes;   // Total no. of classes with itables
-size_t klassItable::_total_size;      // Total no. of bytes used for itables
-
-void klassItable::print_statistics() {
- tty->print_cr("itable statistics:");
- tty->print_cr("%6d classes with itables", _total_classes);
- tty->print_cr(SIZE_FORMAT_W(6) " K uses for itables (average by class: " SIZE_FORMAT " bytes)",
-               _total_size / K, _total_size / _total_classes);
-}
-
 #endif // PRODUCT

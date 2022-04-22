@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ public class StreamCloser {
     private static WeakHashMap<CloseAction, Object> toCloseQueue;
     private static Thread streamCloser;
 
+    @SuppressWarnings("removal")
     public static void addToQueue(CloseAction ca) {
         synchronized (StreamCloser.class) {
             if (toCloseQueue == null) {

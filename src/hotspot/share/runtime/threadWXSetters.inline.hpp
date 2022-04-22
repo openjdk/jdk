@@ -26,9 +26,12 @@
 #ifndef SHARE_RUNTIME_THREADWXSETTERS_INLINE_HPP
 #define SHARE_RUNTIME_THREADWXSETTERS_INLINE_HPP
 
-#include "runtime/thread.inline.hpp"
+// No threadWXSetters.hpp
 
 #if defined(__APPLE__) && defined(AARCH64)
+
+#include "runtime/thread.inline.hpp"
+
 class ThreadWXEnable  {
   Thread* _thread;
   WXMode _old_mode;

@@ -25,6 +25,7 @@
  * @bug 7152690
  * @summary Initialize SJIS_0213 charset with SecurityManager enabled
  * @modules jdk.charsets
+ * @run main/othervm -Djava.security.manager=allow TestSJIS0213_SM
  */
 public class TestSJIS0213_SM {
     public static void main(String[] args) throws Throwable {

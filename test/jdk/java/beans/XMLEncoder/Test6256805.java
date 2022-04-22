@@ -25,6 +25,7 @@
  * @test
  * @bug 6256805
  * @summary Tests invalid XML characters encoding
+ * @run main/othervm -Djava.security.manager=allow Test6256805
  * @author Sergey Malenkov
  */
 

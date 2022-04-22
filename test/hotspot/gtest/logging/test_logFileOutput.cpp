@@ -74,7 +74,7 @@ TEST_VM(LogFileOutput, parse_invalid) {
     "filecount= 2", "filesize=2 ",
     "filecount=ab", "filesize=0xz",
     "filecount=1MB", "filesize=99bytes",
-    "filesize=9999999999999999999999999"
+    "filesize=9999999999999999999999999",
     "filecount=9999999999999999999999999"
   };
 

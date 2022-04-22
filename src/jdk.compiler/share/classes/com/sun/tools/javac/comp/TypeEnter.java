@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,6 @@ public class TypeEnter implements Completer {
     private final Annotate annotate;
     private final TypeAnnotations typeAnnotations;
     private final Types types;
-    private final JCDiagnostic.Factory diags;
     private final DeferredLintHandler deferredLintHandler;
     private final Lint lint;
     private final TypeEnvs typeEnvs;
@@ -137,7 +136,6 @@ public class TypeEnter implements Completer {
         annotate = Annotate.instance(context);
         typeAnnotations = TypeAnnotations.instance(context);
         types = Types.instance(context);
-        diags = JCDiagnostic.Factory.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
         lint = Lint.instance(context);
         typeEnvs = TypeEnvs.instance(context);
@@ -356,8 +354,10 @@ public class TypeEnter implements Completer {
 
                 // Import-on-demand java.lang.
                 PackageSymbol javaLang = syms.enterPackage(syms.java_base, names.java_lang);
-                if (javaLang.members().isEmpty() && !javaLang.exists())
-                    throw new FatalError(diags.fragment(Fragments.FatalErrNoJavaLang));
+                if (javaLang.members().isEmpty() && !javaLang.exists()) {
+                    log.error(Errors.NoJavaLang);
+                    throw new Abort();
+                }
                 importAll(make.at(tree.pos()).Import(make.QualIdent(javaLang), false), javaLang, env);
 
                 JCModuleDecl decl = tree.getModuleDecl();
@@ -371,10 +371,15 @@ public class TypeEnter implements Completer {
                 }
 
                 if (decl != null) {
-                    //check @Deprecated:
-                    markDeprecated(decl.sym, decl.mods.annotations, env);
+                    DiagnosticPosition prevCheckDeprecatedLintPos = deferredLintHandler.setPos(decl.pos());
+                    try {
+                        //check @Deprecated:
+                        markDeprecated(decl.sym, decl.mods.annotations, env);
+                    } finally {
+                        deferredLintHandler.setPos(prevCheckDeprecatedLintPos);
+                    }
                     // process module annotations
-                    annotate.annotateLater(decl.mods.annotations, env, env.toplevel.modle, null);
+                    annotate.annotateLater(decl.mods.annotations, env, env.toplevel.modle, decl.pos());
                 }
             } finally {
                 this.env = prevEnv;
@@ -402,7 +407,7 @@ public class TypeEnter implements Completer {
                 }
             }
             // process package annotations
-            annotate.annotateLater(tree.annotations, env, env.toplevel.packge, null);
+            annotate.annotateLater(tree.annotations, env, env.toplevel.packge, tree.pos());
         }
 
         private void doImport(JCImport tree) {
@@ -552,6 +557,16 @@ public class TypeEnter implements Completer {
             return result;
         }
 
+        /** Generate a base clause for a record type.
+         *  @param pos              The position for trees and diagnostics, if any
+         *  @param c                The class symbol of the record
+         */
+        protected  JCExpression recordBase(int pos, ClassSymbol c) {
+            JCExpression result = make.at(pos).
+                QualIdent(syms.recordType.tsym);
+            return result;
+        }
+
         protected Type modelMissingTypes(Env<AttrContext> env, Type t, final JCExpression tree, final boolean interfaceExpected) {
             if (!t.hasTag(ERROR))
                 return t;
@@ -690,11 +705,14 @@ public class TypeEnter implements Completer {
             } else {
                 extending = null;
                 supertype = ((tree.mods.flags & Flags.ENUM) != 0)
-                ? attr.attribBase(enumBase(tree.pos, sym), baseEnv,
+                ? attr.attribBase(extending = enumBase(tree.pos, sym), baseEnv,
                                   true, false, false)
                 : (sym.fullname == names.java_lang_Object)
                 ? Type.noType
-                : sym.isRecord() ? syms.recordType : syms.objectType;
+                : sym.isRecord()
+                ? attr.attribBase(extending = recordBase(tree.pos, sym), baseEnv,
+                                  true, false, false)
+                : syms.objectType;
             }
             ct.supertype_field = modelMissingTypes(baseEnv, supertype, extending, false);
 

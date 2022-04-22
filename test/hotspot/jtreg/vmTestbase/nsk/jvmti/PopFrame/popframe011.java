@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,12 @@ import java.io.*;
  * The test was changed due to the bug 4448675.
  */
 public class popframe011 {
+    private final static String AGENT_LIB = "popframe011";
+    private final static int DEF_TIME_MAX = 30;  // default max # secs to test
+
     static final int PASSED = 0;
     static final int FAILED = 2;
     static final int JCK_STATUS_BASE = 95;
-
-    static final int N_LATE_CALLS = 100;
 
     static boolean DEBUG_MODE = false;
     static volatile boolean popFdone = false;
@@ -58,9 +59,9 @@ public class popframe011 {
 
     static {
         try {
-            System.loadLibrary("popframe011");
+            System.loadLibrary(AGENT_LIB);
         } catch (UnsatisfiedLinkError e) {
-            System.err.println("Could not load popframe011 library");
+            System.err.println("Could not load " + AGENT_LIB + " library");
             System.err.println("java.library.path:" +
                 System.getProperty("java.library.path"));
             throw e;
@@ -81,115 +82,160 @@ public class popframe011 {
     }
 
     private int runIt(String argv[], PrintStream out) {
+        int timeMax = 0;
+        if (argv.length == 0) {
+            timeMax = DEF_TIME_MAX;
+        } else {
+            int argIndex = 0;
+            int argvLeft = argv.length;
+            if (argv[0].equals("-v")) {
+                DEBUG_MODE = true;
+                argIndex = 1;
+                argvLeft--;
+            }
+            if (argvLeft == 0) {
+                timeMax = DEF_TIME_MAX;
+            } else if (argvLeft == 1) {
+                try {
+                    timeMax = Integer.parseUnsignedInt(argv[argIndex]);
+                } catch (NumberFormatException nfe) {
+                    System.err.println("'" + argv[argIndex] +
+                                       "': invalid timeMax value.");
+                    usage();
+                }
+            } else {
+                usage();
+            }
+        }
+
+        System.out.println("About to execute for " + timeMax + " seconds.");
+
         // Original popframe002 test block starts here:
         //
         int retValue = 0;
-
         this.out = out;
-        for (int i = 0; i < argv.length; i++) {
-            if (argv[i].equals("-v")) // verbose mode
-                DEBUG_MODE = true;
-        }
 
-        popFrameClsThr = new popFrameCls();
-        synchronized (barrier) { // force a child thread to pause
-            synchronized(readi) {
-                popFrameClsThr.start(); // start the child thread
+        long count = 0;
+        long start_time = System.currentTimeMillis();
+        while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
+            count++;
+            popFdone = false;
+
+            popFrameClsThr = new popFrameCls();
+            synchronized (barrier) { // force a child thread to pause
+                synchronized(readi) {
+                    popFrameClsThr.start(); // start the child thread
 // wait until the thread will enter into a necessary method
-                try {
-                    readi.wait(); // wait for the child readiness
-                } catch (Exception e) {
-                    out.println("TEST FAILURE: waiting for " +
-                        popFrameClsThr.toString() + ": caught " + e);
-                    return FAILED;
+                    try {
+                        readi.wait(); // wait for the child readiness
+                    } catch (Exception e) {
+                        out.println("TEST FAILURE: waiting for " +
+                            popFrameClsThr.toString() + ": caught " + e);
+                        return FAILED;
+                    }
                 }
-            }
 
 /* check that if PopFrame() would be invoked with NULL pointer to
    the thread, it will return the error JVMTI_ERROR_NULL_POINTER */
-            if (DEBUG_MODE)
-                totRes = retValue = doPopFrame(1, popFrameClsThr);
-            else
-                totRes = retValue = doPopFrame(0, popFrameClsThr);
-            if (DEBUG_MODE && retValue == PASSED)
-                out.println("Check #1 PASSED:\n" +
-                    "\tPopFrame(), being invoked with NULL pointer " +
-                    "to the thread,\n" +
-                    "\treturned the appropriate error JVMTI_ERROR_NULL_POINTER");
+                if (DEBUG_MODE)
+                    totRes = retValue = doPopFrame(1, popFrameClsThr);
+                else
+                    totRes = retValue = doPopFrame(0, popFrameClsThr);
+                if (DEBUG_MODE && retValue == PASSED)
+                    out.println("Check #1 PASSED:\n" +
+                        "\tPopFrame(), being invoked with NULL pointer " +
+                        "to the thread,\n" +
+                        "\treturned the appropriate error JVMTI_ERROR_NULL_POINTER");
 
 /* check that if the thread, whose top frame is to be popped,
   is invalid, the PopFrame() will return the error
   JVMTI_ERROR_INVALID_THREAD */
-            if (DEBUG_MODE)
-                retValue = doPopFrame(3, popFrameClsThr);
-            else
-                retValue = doPopFrame(2, popFrameClsThr);
-            if (retValue == FAILED) {
-                popFdone = true;
-                totRes = FAILED;
-            } else
-                if (DEBUG_MODE && retValue == PASSED)
-                    out.println("Check #3 PASSED:\n" +
-                        "\tPopFrame(), being invoked with " +
-                        "the invalid thread,\n" +
-                        "\treturned the appropriate error " +
-                        "JVMTI_ERROR_INVALID_THREAD");
+                if (DEBUG_MODE)
+                    retValue = doPopFrame(3, popFrameClsThr);
+                else
+                    retValue = doPopFrame(2, popFrameClsThr);
+                if (retValue == FAILED) {
+                    popFdone = true;
+                    totRes = FAILED;
+                } else
+                    if (DEBUG_MODE && retValue == PASSED)
+                        out.println("Check #3 PASSED:\n" +
+                            "\tPopFrame(), being invoked with " +
+                            "the invalid thread,\n" +
+                            "\treturned the appropriate error " +
+                            "JVMTI_ERROR_INVALID_THREAD");
 
 /* check that if the thread, whose top frame is to be popped,
   has not been suspended, the PopFrame() will return the error
   JVMTI_ERROR_THREAD_NOT_SUSPENDED */
-            if (DEBUG_MODE)
-                retValue = doPopFrame(5, popFrameClsThr);
-            else
-                retValue = doPopFrame(4, popFrameClsThr);
-            if (retValue == FAILED) {
-                popFdone = true;
-                totRes = FAILED;
-            } else
-                if (DEBUG_MODE && retValue == PASSED)
-                    out.println("Check #5 PASSED:\n" +
-                        "\tPopFrame(), being invoked with " +
-                        "the non suspended thread,\n" +
-                        "\treturned the appropriate error " +
-                        "JVMTI_ERROR_THREAD_NOT_SUSPENDED");
-        }
-        //
-        // Original popframe002 test block ends here.
+                if (DEBUG_MODE)
+                    retValue = doPopFrame(5, popFrameClsThr);
+                else
+                    retValue = doPopFrame(4, popFrameClsThr);
+                if (retValue == FAILED) {
+                    popFdone = true;
+                    totRes = FAILED;
+                } else
+                    if (DEBUG_MODE && retValue == PASSED)
+                        out.println("Check #5 PASSED:\n" +
+                            "\tPopFrame(), being invoked with " +
+                            "the non suspended thread,\n" +
+                            "\treturned the appropriate error " +
+                            "JVMTI_ERROR_THREAD_NOT_SUSPENDED");
+            }
+            //
+            // Original popframe002 test block ends here.
 
-        int late_count = 1;
-        for (; late_count <= N_LATE_CALLS; late_count++) {
+            while (true) {
 /* check that if the thread, whose top frame is to be popped,
   has not been suspended and is exiting, the PopFrame() will
   return the error JVMTI_ERROR_THREAD_NOT_SUSPENDED or
   JVMTI_ERROR_THREAD_NOT_ALIVE */
-            if (DEBUG_MODE)
-                retValue = doPopFrame(7, popFrameClsThr);
-            else
-                retValue = doPopFrame(6, popFrameClsThr);
-            if (retValue == FAILED) {
-                popFdone = true;
-                totRes = FAILED;
-            } else
-                if (DEBUG_MODE && retValue == PASSED)
-                    out.println("Check #7 PASSED:\n" +
-                        "\tPopFrame(), being invoked with " +
-                        "the non suspended and is exiting thread,\n" +
-                        "\treturned the appropriate error " +
-                        "JVMTI_ERROR_THREAD_NOT_SUSPENDED");
-            if (isThreadNotAliveError()) {
-                // Done with PopFrame() calls since thread is not alive.
+                if (DEBUG_MODE)
+                    retValue = doPopFrame(7, popFrameClsThr);
+                else
+                    retValue = doPopFrame(6, popFrameClsThr);
+                if (retValue == FAILED) {
+                    popFdone = true;
+                    totRes = FAILED;
+                } else
+                    if (DEBUG_MODE && retValue == PASSED)
+                        out.println("Check #7 PASSED:\n" +
+                            "\tPopFrame(), being invoked with " +
+                            "the non suspended and is exiting thread,\n" +
+                            "\treturned the appropriate error " +
+                            "JVMTI_ERROR_THREAD_NOT_SUSPENDED");
+                if (isThreadNotAliveError()) {
+                    // Done with PopFrame() calls since thread is not alive.
+                    break;
+                }
+            }
+
+            try {
+                popFrameClsThr.join();
+            } catch (InterruptedException e) {
+                throw new Error("Unexpected: " + e);
+            }
+
+            if (totRes != PASSED) {
                 break;
             }
         }
 
-        out.println("INFO: made " + late_count +
-                    " late calls to JVM/TI PopFrame()");
-        out.println("INFO: N_LATE_CALLS==" + N_LATE_CALLS + " value is " +
-                    ((late_count >= N_LATE_CALLS) ? "NOT " : "") +
-                    "large enough to cause a PopFrame() call after thread " +
-                    "exit.");
+        System.out.println("Executed " + count + " loops in " + timeMax +
+                           " seconds.");
 
         return totRes;
+    }
+
+    public static void usage() {
+        System.err.println("Usage: " + AGENT_LIB + " [-v][time_max]");
+        System.err.println("where:");
+        System.err.println("    -v        verbose mode");
+        System.err.println("    time_max  max looping time in seconds");
+        System.err.println("              (default is " + DEF_TIME_MAX +
+                           " seconds)");
+        System.exit(1);
     }
 
     class popFrameCls extends Thread {

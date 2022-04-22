@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.net;
 import java.security.PrivilegedAction;
 import java.security.Security;
 
+@SuppressWarnings("removal")
 public final class InetAddressCachePolicy {
 
     // Controls the cache policy for successful lookups only

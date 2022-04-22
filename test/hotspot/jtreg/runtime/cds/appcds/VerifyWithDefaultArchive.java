@@ -26,6 +26,7 @@
  * @test
  * @bug 8264337
  * @summary test default cds archive when turning on VerifySharedSpaces
+ * @requires vm.flagless
  * @requires vm.cds
  * @library /test/lib
  * @run driver VerifyWithDefaultArchive

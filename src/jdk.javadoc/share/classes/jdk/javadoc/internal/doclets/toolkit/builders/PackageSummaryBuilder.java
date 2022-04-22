@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,7 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
@@ -44,11 +35,6 @@ import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 
 /**
  * Builds the summary for a given package.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class PackageSummaryBuilder extends AbstractBuilder {
 
@@ -61,10 +47,6 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      * The doclet specific writer that will output the result.
      */
     private final PackageSummaryWriter packageWriter;
-
-    // Maximum number of subpackages and sibling packages to list in related packages table
-    private final static int MAX_SUBPACKAGES = 20;
-    private final static int MAX_SIBLING_PACKAGES = 5;
 
     /**
      * Construct a new PackageSummaryBuilder.
@@ -117,12 +99,12 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildPackageDoc() throws DocletException {
-        Content contentTree = packageWriter.getPackageHeader();
+        Content content = packageWriter.getPackageHeader();
 
         buildContent();
 
         packageWriter.addPackageFooter();
-        packageWriter.printDocument(contentTree);
+        packageWriter.printDocument(content);
         DocFilesHandler docFilesHandler = configuration
                 .getWriterFactory()
                 .getDocFilesHandler(packageElement);
@@ -135,36 +117,30 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildContent() throws DocletException {
-        Content packageContentTree = packageWriter.getContentHeader();
+        Content packageContent = packageWriter.getContentHeader();
 
-        packageWriter.addPackageSignature(packageContentTree);
-        buildPackageDescription(packageContentTree);
-        buildPackageTags(packageContentTree);
-        buildSummary(packageContentTree);
+        packageWriter.addPackageSignature(packageContent);
+        buildPackageDescription(packageContent);
+        buildPackageTags(packageContent);
+        buildSummary(packageContent);
 
-        packageWriter.addPackageContent(packageContentTree);
+        packageWriter.addPackageContent(packageContent);
     }
 
     /**
      * Builds the list of summaries for the different kinds of types in this package.
      *
-     * @param packageContentTree the package content tree to which the summaries will
-     *                           be added
+     * @param packageContent the package content to which the summaries will
+     *                       be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildSummary(Content packageContentTree) throws DocletException {
+    protected void buildSummary(Content packageContent) throws DocletException {
         Content summariesList = packageWriter.getSummariesList();
 
         buildRelatedPackagesSummary(summariesList);
-        buildInterfaceSummary(summariesList);
-        buildClassSummary(summariesList);
-        buildEnumSummary(summariesList);
-        buildRecordSummary(summariesList);
-        buildExceptionSummary(summariesList);
-        buildErrorSummary(summariesList);
-        buildAnnotationTypeSummary(summariesList);
+        buildAllClassesAndInterfacesSummary(summariesList);
 
-        packageContentTree.add(packageWriter.getPackageSummary(summariesList));
+        packageContent.add(packageWriter.getPackageSummary(summariesList));
     }
 
     /**
@@ -173,180 +149,41 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      * @param summariesList the list of summaries to which the summary will be added
      */
     protected void buildRelatedPackagesSummary(Content summariesList) {
-        List<PackageElement> packages = findRelatedPackages();
-        if (!packages.isEmpty()) {
-            packageWriter.addRelatedPackagesSummary(packages, summariesList);
-        }
+        packageWriter.addRelatedPackagesSummary(summariesList);
     }
 
     /**
-     * Builds the summary for any interfaces in this package.
+     * Builds the summary for all classes and interfaces in this package.
      *
      * @param summariesList the list of summaries to which the summary will be added
      */
-    protected void buildInterfaceSummary(Content summariesList) {
-        SortedSet<TypeElement> ilist = utils.isSpecified(packageElement)
-                        ? utils.getTypeElementsAsSortedSet(utils.getInterfaces(packageElement))
-                        : configuration.typeElementCatalog.interfaces(packageElement);
-        SortedSet<TypeElement> interfaces = utils.filterOutPrivateClasses(ilist, options.javafx());
-        if (!interfaces.isEmpty()) {
-            packageWriter.addInterfaceSummary(interfaces, summariesList);
-        }
+    protected void buildAllClassesAndInterfacesSummary(Content summariesList) {
+        packageWriter.addAllClassesAndInterfacesSummary(summariesList);
     }
 
-    /**
-     * Builds the summary for any classes in this package.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildClassSummary(Content summariesList) {
-        SortedSet<TypeElement> clist = utils.isSpecified(packageElement)
-            ? utils.getTypeElementsAsSortedSet(utils.getOrdinaryClasses(packageElement))
-            : configuration.typeElementCatalog.ordinaryClasses(packageElement);
-        SortedSet<TypeElement> classes = utils.filterOutPrivateClasses(clist, options.javafx());
-        if (!classes.isEmpty()) {
-            packageWriter.addClassSummary(classes, summariesList);
-        }
-    }
-
-    /**
-     * Builds the summary for the enum types in this package.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildEnumSummary(Content summariesList) {
-        SortedSet<TypeElement> elist = utils.isSpecified(packageElement)
-            ? utils.getTypeElementsAsSortedSet(utils.getEnums(packageElement))
-            : configuration.typeElementCatalog.enums(packageElement);
-        SortedSet<TypeElement> enums = utils.filterOutPrivateClasses(elist, options.javafx());
-        if (!enums.isEmpty()) {
-            packageWriter.addEnumSummary(enums, summariesList);
-        }
-    }
-
-    /**
-     * Builds the summary for any record types in this package.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildRecordSummary(Content summariesList) {
-        SortedSet<TypeElement> rlist = utils.isSpecified(packageElement)
-                ? utils.getTypeElementsAsSortedSet(utils.getRecords(packageElement))
-                : configuration.typeElementCatalog.records(packageElement);
-        SortedSet<TypeElement> records = utils.filterOutPrivateClasses(rlist, options.javafx());
-        if (!records.isEmpty()) {
-            packageWriter.addRecordSummary(records, summariesList);
-        }
-    }
-
-    /**
-     * Builds the summary for any exception types in this package.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildExceptionSummary(Content summariesList) {
-        Set<TypeElement> iexceptions =
-            utils.isSpecified(packageElement)
-                ? utils.getTypeElementsAsSortedSet(utils.getExceptions(packageElement))
-                : configuration.typeElementCatalog.exceptions(packageElement);
-        SortedSet<TypeElement> exceptions = utils.filterOutPrivateClasses(iexceptions,
-                options.javafx());
-        if (!exceptions.isEmpty()) {
-            packageWriter.addExceptionSummary(exceptions, summariesList);
-        }
-    }
-
-    /**
-     * Builds the summary for any error types in this package.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildErrorSummary(Content summariesList) {
-        Set<TypeElement> ierrors =
-            utils.isSpecified(packageElement)
-                ? utils.getTypeElementsAsSortedSet(utils.getErrors(packageElement))
-                : configuration.typeElementCatalog.errors(packageElement);
-        SortedSet<TypeElement> errors = utils.filterOutPrivateClasses(ierrors, options.javafx());
-        if (!errors.isEmpty()) {
-            packageWriter.addErrorSummary(errors, summariesList);
-        }
-    }
-
-    /**
-     * Builds the summary for any annotation types in this package.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildAnnotationTypeSummary(Content summariesList) {
-        SortedSet<TypeElement> iannotationTypes =
-            utils.isSpecified(packageElement)
-                ? utils.getTypeElementsAsSortedSet(utils.getAnnotationTypes(packageElement))
-                : configuration.typeElementCatalog.annotationTypes(packageElement);
-        SortedSet<TypeElement> annotationTypes = utils.filterOutPrivateClasses(iannotationTypes,
-                options.javafx());
-        if (!annotationTypes.isEmpty()) {
-            packageWriter.addAnnotationTypeSummary(annotationTypes, summariesList);
-        }
-    }
 
     /**
      * Build the description of the summary.
      *
-     * @param packageContentTree the tree to which the package description will
-     *                           be added
+     * @param packageContent the content to which the package description will
+     *                       be added
      */
-    protected void buildPackageDescription(Content packageContentTree) {
+    protected void buildPackageDescription(Content packageContent) {
         if (options.noComment()) {
             return;
         }
-        packageWriter.addPackageDescription(packageContentTree);
+        packageWriter.addPackageDescription(packageContent);
     }
 
     /**
      * Build the tags of the summary.
      *
-     * @param packageContentTree the tree to which the package tags will be added
+     * @param packageContent the content to which the package tags will be added
      */
-    protected void buildPackageTags(Content packageContentTree) {
+    protected void buildPackageTags(Content packageContent) {
         if (options.noComment()) {
             return;
         }
-        packageWriter.addPackageTags(packageContentTree);
-    }
-
-    private List<PackageElement> findRelatedPackages() {
-        String pkgName = packageElement.getQualifiedName().toString();
-
-        // always add super package
-        int lastdot = pkgName.lastIndexOf('.');
-        String pkgPrefix = lastdot > 0 ? pkgName.substring(0, lastdot) : null;
-        List<PackageElement> packages = new ArrayList<>(
-                filterPackages(p -> p.getQualifiedName().toString().equals(pkgPrefix)));
-
-        // add subpackages unless there are very many of them
-        Pattern subPattern = Pattern.compile(pkgName.replace(".", "\\.") + "\\.\\w+");
-        List<PackageElement> subpackages = filterPackages(
-                p -> subPattern.matcher(p.getQualifiedName().toString()).matches());
-        if (subpackages.size() <= MAX_SUBPACKAGES) {
-            packages.addAll(subpackages);
-        }
-
-        // only add sibling packages if we are beneath threshold, and number of siblings is beneath threshold as well
-        if (pkgPrefix != null && packages.size() <= MAX_SIBLING_PACKAGES) {
-            Pattern siblingPattern = Pattern.compile(pkgPrefix.replace(".", "\\.") + "\\.\\w+");
-
-            List<PackageElement> siblings = filterPackages(
-                    p -> siblingPattern.matcher(p.getQualifiedName().toString()).matches());
-            if (siblings.size() <= MAX_SIBLING_PACKAGES) {
-                packages.addAll(siblings);
-            }
-        }
-        return packages;
-    }
-
-    private List<PackageElement> filterPackages(Predicate<? super PackageElement> filter) {
-        return configuration.packages.stream()
-                .filter(p -> p != packageElement && filter.test(p))
-                .collect(Collectors.toList());
+        packageWriter.addPackageTags(packageContent);
     }
 }

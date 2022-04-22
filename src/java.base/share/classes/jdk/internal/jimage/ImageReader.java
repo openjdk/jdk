@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -389,7 +389,7 @@ public final class ImageReader implements AutoCloseable {
         Node handlePackages(String name, ImageLocation loc) {
             long size = loc.getUncompressedSize();
             Node n = null;
-            // Only possiblities are /packages, /packages/package/module
+            // Only possibilities are /packages, /packages/package/module
             if (name.equals("/packages")) {
                 visitLocation(loc, (childloc) -> {
                     findNode(childloc.getFullName());
@@ -468,6 +468,19 @@ public final class ImageReader implements AutoCloseable {
 
         Node handleResource(String name) {
             Node n = null;
+            if (!name.startsWith("/modules/")) {
+                return null;
+            }
+            // Make sure that the thing that follows "/modules/" is a module name.
+            int moduleEndIndex = name.indexOf('/', "/modules/".length());
+            if (moduleEndIndex == -1) {
+                return null;
+            }
+            ImageLocation moduleLoc = findLocation(name.substring(0, moduleEndIndex));
+            if (moduleLoc == null || moduleLoc.getModuleOffset() == 0) {
+                return null;
+            }
+
             String locationPath = name.substring("/modules".length());
             ImageLocation resourceLoc = findLocation(locationPath);
             if (resourceLoc != null) {

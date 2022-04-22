@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -58,6 +58,7 @@ public class NodeSequence extends XObject
    * <p>
    * Multiple NodeSequence objects may share the same cache.
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   private IteratorCache m_cache;
 
   /**
@@ -128,6 +129,7 @@ public class NodeSequence extends XObject
   /**
    * The functional iterator that fetches nodes.
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   protected DTMIterator m_iter;
 
   /**
@@ -152,6 +154,7 @@ public class NodeSequence extends XObject
    * The DTMManager to use if we're using a NodeVector only.
    * We may well want to do away with this, and store it in the NodeVector.
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   protected DTMManager m_dtmMgr;
 
   // ==== Constructors ====

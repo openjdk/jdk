@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,10 @@
 #include <fcntl.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#ifdef MACOSX
+#include <sys/mount.h>
+#include <sys/param.h>
+#endif
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 
@@ -167,9 +171,18 @@ Java_sun_nio_ch_FileDispatcherImpl_force0(JNIEnv *env, jobject this,
 
 #ifdef MACOSX
     result = fcntl(fd, F_FULLFSYNC);
-    if (result == -1 && errno == ENOTSUP) {
-        /* Try fsync() in case F_FULLSYUNC is not implemented on the file system. */
-        result = fsync(fd);
+    if (result == -1) {
+        struct statfs fbuf;
+        int errno_fcntl = errno;
+        if (fstatfs(fd, &fbuf) == 0) {
+            if ((fbuf.f_flags & MNT_LOCAL) == 0) {
+                /* Try fsync() in case file is not local. */
+                result = fsync(fd);
+            }
+        } else {
+            /* fstatfs() failed so restore errno from fcntl(). */
+            errno = errno_fcntl;
+        }
     }
 #else /* end MACOSX, begin not-MACOSX */
     if (md == JNI_FALSE) {
@@ -325,6 +338,16 @@ Java_sun_nio_ch_FileDispatcherImpl_closeIntFD(JNIEnv *env, jclass clazz, jint fd
     closeFileDescriptor(env, fd);
 }
 
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_FileDispatcherImpl_canTransferToFromOverlappedMap0(JNIEnv *env, jclass clazz)
+{
+#ifdef MACOSX
+    return JNI_FALSE;
+#else
+    return JNI_TRUE;
+#endif
+}
+
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_setDirect0(JNIEnv *env, jclass clazz,
                                            jobject fdo)
@@ -375,7 +398,7 @@ Java_sun_nio_ch_FileDispatcherImpl_setDirect0(JNIEnv *env, jclass clazz,
         result = (int)file_stat.f_frsize;
     }
 #else
-    result == -1;
+    result = -1;
 #endif
     return result;
 }

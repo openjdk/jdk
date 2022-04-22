@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,28 +26,37 @@
 
 package jdk.incubator.foreign;
 
-import java.io.FileDescriptor;
-import java.lang.ref.Cleaner;
+import java.io.UncheckedIOException;
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.HeapMemorySegmentImpl;
 import jdk.internal.foreign.MappedMemorySegmentImpl;
+import jdk.internal.foreign.ResourceScopeImpl;
 import jdk.internal.foreign.NativeMemorySegmentImpl;
 import jdk.internal.foreign.Utils;
+import jdk.internal.foreign.abi.SharedUtils;
+import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.misc.Unsafe;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.ForceInline;
 
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Spliterator;
+import java.util.stream.Stream;
 
 /**
  * A memory segment models a contiguous region of memory. A memory segment is associated with both spatial
- * and temporal bounds. Spatial bounds ensure that memory access operations on a memory segment cannot affect a memory location
+ * and temporal bounds (e.g. a {@link ResourceScope}). Spatial bounds ensure that memory access operations on a memory segment cannot affect a memory location
  * which falls <em>outside</em> the boundaries of the memory segment being accessed. Temporal bounds ensure that memory access
- * operations on a segment cannot occur after a memory segment has been closed (see {@link MemorySegment#close()}).
+ * operations on a segment cannot occur <em>after</em> the resource scope associated with a memory segment has been closed (see {@link ResourceScope#close()}).
  * <p>
  * All implementations of this interface must be <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>;
  * programmers should treat instances that are {@linkplain Object#equals(Object) equal} as interchangeable and should not
@@ -62,8 +71,8 @@ import java.util.Spliterator;
  * <h2>Constructing memory segments</h2>
  *
  * There are multiple ways to obtain a memory segment. First, memory segments backed by off-heap memory can
- * be allocated using one of the many factory methods provided (see {@link MemorySegment#allocateNative(MemoryLayout)},
- * {@link MemorySegment#allocateNative(long)} and {@link MemorySegment#allocateNative(long, long)}). Memory segments obtained
+ * be allocated using one of the many factory methods provided (see {@link MemorySegment#allocateNative(MemoryLayout, ResourceScope)},
+ * {@link MemorySegment#allocateNative(long, ResourceScope)} and {@link MemorySegment#allocateNative(long, long, ResourceScope)}). Memory segments obtained
  * in this way are called <em>native memory segments</em>.
  * <p>
  * It is also possible to obtain a memory segment backed by an existing heap-allocated Java array,
@@ -77,161 +86,174 @@ import java.util.Spliterator;
  * depending on the characteristics of the byte buffer instance the segment is associated with. For instance, a buffer memory
  * segment obtained from a byte buffer created with the {@link ByteBuffer#allocateDirect(int)} method will be backed
  * by native memory.
- * <p>
- * Finally, it is also possible to obtain a memory segment backed by a memory-mapped file using the factory method
- * {@link MemorySegment#mapFile(Path, long, long, FileChannel.MapMode)}. Such memory segments are called <em>mapped memory segments</em>;
- * mapped memory segments are associated with an underlying file descriptor. For more operations on mapped memory segments, please refer to the
- * {@link MappedMemorySegments} class.
- * <p>
- * Array and buffer segments are effectively <em>views</em> over existing memory regions which might outlive the
- * lifecycle of the segments derived from them, and can even be manipulated directly (e.g. via array access, or direct use
- * of the {@link ByteBuffer} API) by other clients. As a result, while sharing array or buffer segments is possible,
- * it is strongly advised that clients wishing to do so take extra precautions to make sure that the underlying memory sources
- * associated with such segments remain inaccessible, and that said memory sources are never aliased by more than one segment
- * at a time - e.g. so as to prevent concurrent modifications of the contents of an array, or buffer segment.
  *
- * <h2>Explicit deallocation</h2>
+ * <h2>Mapping memory segments from files</h2>
  *
- * Memory segments are closed explicitly (see {@link MemorySegment#close()}). When a segment is closed, it is no longer
- * <em>alive</em> (see {@link #isAlive()}, and subsequent operation on the segment (or on any {@link MemoryAddress} instance
- * derived from it) will fail with {@link IllegalStateException}.
+ * It is also possible to obtain a native memory segment backed by a memory-mapped file using the factory method
+ * {@link MemorySegment#mapFile(Path, long, long, FileChannel.MapMode, ResourceScope)}. Such native memory segments are
+ * called <em>mapped memory segments</em>; mapped memory segments are associated with an underlying file descriptor.
  * <p>
- * Closing a segment might trigger the releasing of the underlying memory resources associated with said segment, depending on
- * the kind of memory segment being considered:
- * <ul>
- *     <li>closing a native memory segment results in <em>freeing</em> the native memory associated with it</li>
- *     <li>closing a mapped memory segment results in the backing memory-mapped file to be unmapped</li>
- *     <li>closing a buffer, or a heap segment does not have any side-effect, other than marking the segment
- *     as <em>not alive</em> (see {@link MemorySegment#isAlive()}). Also, since the buffer and heap segments might keep
- *     strong references to the original buffer or array instance, it is the responsibility of clients to ensure that
- *     these segments are discarded in a timely manner, so as not to prevent garbage collection to reclaim the underlying
- *     objects.</li>
- * </ul>
- *
- * <h2><a id = "access-modes">Access modes</a></h2>
- *
- * Memory segments supports zero or more <em>access modes</em>. Supported access modes are {@link #READ},
- * {@link #WRITE}, {@link #CLOSE}, {@link #SHARE} and {@link #HANDOFF}. The set of access modes supported by a segment alters the
- * set of operations that are supported by that segment. For instance, attempting to call {@link #close()} on
- * a segment which does not support the {@link #CLOSE} access mode will result in an exception.
+ * Contents of mapped memory segments can be {@linkplain #force() persisted} and {@linkplain #load() loaded} to and from the underlying file;
+ * these capabilities are suitable replacements for some capabilities in the {@link java.nio.MappedByteBuffer} class.
+ * Note that, while it is possible to map a segment into a byte buffer (see {@link MemorySegment#asByteBuffer()}),
+ * and then call e.g. {@link java.nio.MappedByteBuffer#force()} that way, this can only be done when the source segment
+ * is small enough, due to the size limitation inherent to the ByteBuffer API.
  * <p>
- * The set of supported access modes can only be made stricter (by supporting <em>fewer</em> access modes). This means
- * that restricting the set of access modes supported by a segment before sharing it with other clients
- * is generally a good practice if the creator of the segment wants to retain some control over how the segment
- * is going to be accessed.
+ * Clients requiring sophisticated, low-level control over mapped memory segments, should consider writing
+ * custom mapped memory segment factories; using {@link CLinker}, e.g. on Linux, it is possible to call {@code mmap}
+ * with the desired parameters; the returned address can be easily wrapped into a memory segment, using
+ * {@link MemoryAddress#ofLong(long)} and {@link MemorySegment#ofAddress(MemoryAddress, long, ResourceScope)}.
+ *
+ * <h2>Restricted native segments</h2>
+ *
+ * Sometimes it is necessary to turn a memory address obtained from native code into a memory segment with
+ * full spatial, temporal and confinement bounds. To do this, clients can {@link #ofAddress(MemoryAddress, long, ResourceScope) obtain}
+ * a native segment <em>unsafely</em> from a give memory address, by providing the segment size, as well as the segment {@linkplain ResourceScope scope}.
+ * This is a <a href="package-summary.html#restricted"><em>restricted</em></a> operation and should be used with
+ * caution: for instance, an incorrect segment size could result in a VM crash when attempting to dereference
+ * the memory segment.
+ *
+ * <h2>Dereference</h2>
+ *
+ * A memory segment can be read or written using various methods provided in this class (e.g. {@link #get(ValueLayout.OfInt, long)}).
+ * Each dereference method takes a {@linkplain jdk.incubator.foreign.ValueLayout value layout}, which specifies the size,
+ * alignment constraints, byte order as well as the Java type associated with the dereference operation, and an offset.
+ * For instance, to read an int from a segment, using {@link ByteOrder#nativeOrder() default endianness}, the following code can be used:
+ * {@snippet lang=java :
+ * MemorySegment segment = ...
+ * int value = segment.get(ValueLayout.JAVA_INT, 0);
+ * }
+ *
+ * If the value to be read is stored in memory using {@link ByteOrder#BIG_ENDIAN big-endian} encoding, the dereference operation
+ * can be expressed as follows:
+ * {@snippet lang=java :
+ * MemorySegment segment = ...
+ * int value = segment.get(ValueLayout.JAVA_INT.withOrder(BIG_ENDIAN), 0);
+ * }
+ *
+ * For more complex dereference operations (e.g. structured memory access), clients can obtain a <em>memory access var handle</em>,
+ * that is, a var handle that accepts a segment and, optionally, one or more additional {@code long} coordinates. Memory
+ * access var handles can be obtained from {@linkplain MemoryLayout#varHandle(MemoryLayout.PathElement...) memory layouts}
+ * by providing a so called <a href="MemoryLayout.html#layout-paths"><em>layout path</em></a>.
+ * Alternatively, clients can obtain raw memory access var handles from a given
+ * {@linkplain MemoryHandles#varHandle(ValueLayout) value layout}, and then adapt it using the var handle combinator
+ * functions defined in the {@link MemoryHandles} class.
+ *
+ * <h2 id="segment-alignment">Alignment</h2>
+ *
+ * When dereferencing a memory segment using a layout, the runtime must check that the segment address being dereferenced
+ * matches the layout's {@linkplain MemoryLayout#byteAlignment() alignment constraints}. If the segment being
+ * dereferenced is a native segment, then it has a concrete {@linkplain #address() base address}, which can
+ * be used to perform the alignment check. The pseudo-function below demonstrates this:
+ *
+ * <blockquote><pre>{@code
+boolean isAligned(MemorySegment segment, long offset, MemoryLayout layout) {
+   return ((segment.address().toRawLongValue() + offset) % layout.byteAlignment()) == 0
+}
+ * }</pre></blockquote>
+ *
+ * If, however, the segment being dereferenced is a heap segment, the above function will not work: a heap
+ * segment's base address is <em>virtualized</em> and, as such, cannot be used to construct an alignment check. Instead,
+ * heap segments are assumed to produce addresses which are never more aligned than the element size of the Java array from which
+ * they have originated from, as shown in the following table:
+ *
+ * <blockquote><table class="plain">
+ * <caption style="display:none">Array type of an array backing a segment and its address alignment</caption>
+ * <thead>
+ * <tr>
+ *     <th scope="col">Array type</th>
+ *     <th scope="col">Alignment</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row" style="font-weight:normal">{@code boolean[]}</th>
+ *     <td style="text-align:center;">{@code 1}</td></tr>
+ * <tr><th scope="row" style="font-weight:normal">{@code byte[]}</th>
+ *     <td style="text-align:center;">{@code 1}</td></tr>
+ * <tr><th scope="row" style="font-weight:normal">{@code char[]}</th>
+ *     <td style="text-align:center;">{@code 2}</td></tr>
+ * <tr><th scope="row" style="font-weight:normal">{@code short[]}</th>
+ *     <td style="text-align:center;">{@code 2}</td></tr>
+ * <tr><th scope="row" style="font-weight:normal">{@code int[]}</th>
+ *     <td style="text-align:center;">{@code 4}</td></tr>
+ * <tr><th scope="row" style="font-weight:normal">{@code float[]}</th>
+ *     <td style="text-align:center;">{@code 4}</td></tr>
+ * <tr><th scope="row" style="font-weight:normal">{@code long[]}</th>
+ *     <td style="text-align:center;">{@code 8}</td></tr>
+ * <tr><th scope="row" style="font-weight:normal">{@code double[]}</th>
+ *     <td style="text-align:center;">{@code 8}</td></tr>
+ * </tbody>
+ * </table></blockquote>
+ *
+ * Note that the above definition is conservative: it might be possible, for instance, that a heap segment
+ * constructed from a {@code byte[]} might have a subset of addresses {@code S} which happen to be 8-byte aligned. But determining
+ * which segment addresses belong to {@code S} requires reasoning about details which are ultimately implementation-dependent.
+ *
+ * <h2>Lifecycle and confinement</h2>
+ *
+ * Memory segments are associated with a resource scope (see {@link ResourceScope}), which can be accessed using
+ * the {@link #scope()} method. As for all resources associated with a resource scope, a segment cannot be
+ * accessed after its corresponding scope has been closed. For instance, the following code will result in an
+ * exception:
+ * {@snippet lang=java :
+ * MemorySegment segment = null;
+ * try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+ *     segment = MemorySegment.allocateNative(8, scope);
+ * }
+ * segment.get(ValueLayout.JAVA_LONG, 0); // already closed!
+ * }
+ * Additionally, access to a memory segment is subject to the thread-confinement checks enforced by the owning scope; that is,
+ * if the segment is associated with a shared scope, it can be accessed by multiple threads; if it is associated with a confined
+ * scope, it can only be accessed by the thread which owns the scope.
+ * <p>
+ * Heap and buffer segments are always associated with a <em>global</em>, shared scope. This scope cannot be closed,
+ * and segments associated with it can be considered as <em>always alive</em>.
  *
  * <h2>Memory segment views</h2>
  *
- * Memory segments support <em>views</em>. For instance, it is possible to alter the set of supported access modes,
- * by creating an <em>immutable</em> view of a memory segment, as follows:
- * <blockquote><pre>{@code
-MemorySegment segment = ...
-MemorySegment roSegment = segment.withAccessModes(segment.accessModes() & ~WRITE);
- * }</pre></blockquote>
+ * Memory segments support <em>views</em>. For instance, it is possible to create an <em>immutable</em> view of a memory segment, as follows:
+ * {@snippet lang=java :
+ * MemorySegment segment = ...
+ * MemorySegment roSegment = segment.asReadOnly();
+ * }
  * It is also possible to create views whose spatial bounds are stricter than the ones of the original segment
  * (see {@link MemorySegment#asSlice(long, long)}).
  * <p>
- * Temporal bounds of the original segment are inherited by the view; that is, closing a segment view, such as a sliced
- * view, will cause the original segment to be closed; as such special care must be taken when sharing views
- * between multiple clients. If a client want to protect itself against early closure of a segment by
- * another actor, it is the responsibility of that client to take protective measures, such as removing {@link #CLOSE}
- * from the set of supported access modes, before sharing the view with another client.
+ * Temporal bounds of the original segment are inherited by the views; that is, when the scope associated with a segment
+ * is closed, all the views associated with that segment will also be rendered inaccessible.
  * <p>
  * To allow for interoperability with existing code, a byte buffer view can be obtained from a memory segment
  * (see {@link #asByteBuffer()}). This can be useful, for instance, for those clients that want to keep using the
  * {@link ByteBuffer} API, but need to operate on large memory segments. Byte buffers obtained in such a way support
- * the same spatial and temporal access restrictions associated to the memory segment from which they originated.
+ * the same spatial and temporal access restrictions associated with the memory segment from which they originated.
  *
- * <h2><a id = "thread-confinement">Thread confinement</a></h2>
+ * <h2>Stream support</h2>
  *
- * Memory segments support strong thread-confinement guarantees. Upon creation, they are assigned an <em>owner thread</em>,
- * typically the thread which initiated the creation operation. After creation, only the owner thread will be allowed
- * to directly manipulate the memory segment (e.g. close the memory segment) or access the underlying memory associated with
- * the segment using a memory access var handle. Any attempt to perform such operations from a thread other than the
- * owner thread will result in a runtime failure.
- * <p>
- * The {@link #handoff(Thread)} method can be used to change the thread-confinement properties of a memory segment.
- * This method is, like {@link #close()}, a <em>terminal operation</em> which marks the original segment as not alive
- * (see {@link #isAlive()}) and creates a <em>new</em> segment with the desired thread-confinement properties. Calling
- * {@link #handoff(Thread)} is only possible if the segment features the corresponding {@link #HANDOFF} access mode.
- * <p>
- * For instance, if a client wants to transfer ownership of a segment to another (known) thread, it can do so as follows:
+ * A client might obtain a {@link Stream} from a segment, which can then be used to slice the segment (according to a given
+ * element layout) and even allow multiple threads to work in parallel on disjoint segment slices
+ * (to do this, the segment has to be associated with a shared scope). The following code can be used to sum all int
+ * values in a memory segment in parallel:
  *
- * <blockquote><pre>{@code
-MemorySegment segment = ...
-MemorySegment aSegment = segment.handoff(threadA);
- * }</pre></blockquote>
- *
- * By doing so, the original segment is marked as not alive, and a new segment is returned whose owner thread
- * is {@code threadA}; this allows, for instance, for two threads {@code A} and {@code B} to share
- * a segment in a controlled, cooperative and race-free fashion (also known as <em>serial thread confinement</em>).
- * <p>
- * Alternatively, the {@link #share()} method can be used to remove thread ownership altogether; this is only possible
- * if the segment features the corresponding {@link #SHARE} access mode. The following code shows how clients can
- * obtain a shared segment:
- *
- * <blockquote><pre>{@code
-MemorySegment segment = ...
-MemorySegment sharedSegment = segment.share();
- * }</pre></blockquote>
- *
- * Again here, the original segment is marked as not alive, and a new <em>shared</em> segment is returned which features no owner
- * thread (e.g. {@link #ownerThread()} returns {@code null}). This might be useful when multiple threads need to process
- * the contents of the same memory segment concurrently (e.g. in the case of parallel processing). For instance, a client
- * might obtain a {@link Spliterator} from a shared segment, which can then be used to slice the segment and allow multiple
- * threads to work in parallel on disjoint segment slices. The following code can be used to sum all int values in a memory segment in parallel:
- *
- * <blockquote><pre>{@code
-SequenceLayout SEQUENCE_LAYOUT = MemoryLayout.ofSequence(1024, MemoryLayouts.JAVA_INT);
-try (MemorySegment segment = MemorySegment.allocateNative(SEQUENCE_LAYOUT).share()) {
-    VarHandle VH_int = SEQUENCE_LAYOUT.elementLayout().varHandle(int.class);
-    int sum = StreamSupport.stream(segment.spliterator(SEQUENCE_LAYOUT), true)
-                           .mapToInt(s -> (int)VH_int.get(s.address()))
-                           .sum();
-}
- * }</pre></blockquote>
- *
- * Once shared, a segment can be claimed back by a given thread (again using {@link #handoff(Thread)}); in fact, many threads
- * can attempt to gain ownership of the same segment, concurrently, and only one of them is guaranteed to succeed.
- * <p>
- * When using shared segments, clients should make sure that no other thread is accessing the segment while
- * the segment is being closed. If one or more threads attempts to access a segment concurrently while the
- * segment is being closed, an exception might occur on both the accessing and the closing threads. Clients should
- * refrain from attempting to close a segment repeatedly (e.g. keep calling {@link #close()} until no exception is thrown);
- * such exceptions should instead be seen as an indication that the client code is lacking appropriate synchronization between the threads
- * accessing/closing the segment.
- *
- * <h2>Implicit deallocation</h2>
- *
- * Clients can register a memory segment against a {@link Cleaner}, to make sure that underlying resources associated with
- * that segment will be released when the segment becomes <em>unreachable</em>, which can be useful to prevent native memory
- * leaks. This can be achieved using the {@link #registerCleaner(Cleaner)} method, as follows:
- *
- * <blockquote><pre>{@code
-MemorySegment segment = ...
-MemorySegment gcSegment = segment.registerCleaner(cleaner);
- * }</pre></blockquote>
- *
- * Here, the original segment is marked as not alive, and a new segment is returned (the owner thread of the returned
- * segment set is set to that of the current thread, see {@link #ownerThread()}); the new segment
- * will also be registered with the the {@link Cleaner} instance provided to the {@link #registerCleaner(Cleaner)} method;
- * as such, if not closed explicitly (see {@link #close()}), the new segment will be automatically closed by the cleaner.
- *
- * @apiNote In the future, if the Java language permits, {@link MemorySegment}
- * may become a {@code sealed} interface, which would prohibit subclassing except by other explicitly permitted subtypes.
+ * {@snippet lang=java :
+ * try (ResourceScope scope = ResourceScope.newSharedScope()) {
+ *     SequenceLayout SEQUENCE_LAYOUT = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
+ *     MemorySegment segment = MemorySegment.allocateNative(SEQUENCE_LAYOUT, scope);
+ *     int sum = segment.elements(ValueLayout.JAVA_INT).parallel()
+ *                      .mapToInt(s -> s.get(ValueLayout.JAVA_INT, 0))
+ *                      .sum();
+ * }
+ * }
  *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
-public interface MemorySegment extends Addressable, AutoCloseable {
+public sealed interface MemorySegment extends Addressable permits AbstractMemorySegmentImpl {
 
     /**
-     * The base memory address associated with this memory segment. The returned address is
-     * a <em>checked</em> memory address and can therefore be used in dereference operations
-     * (see {@link MemoryAddress}).
-     * @return The base memory address.
-     * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
-     * thread owning this segment
+     * {@return the base memory address associated with this native memory segment}
+     * @throws UnsupportedOperationException if this segment is not a {@linkplain #isNative() native} segment.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
      */
     @Override
     MemoryAddress address();
@@ -241,68 +263,55 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * {@link Spliterator#SUBSIZED}, {@link Spliterator#IMMUTABLE}, {@link Spliterator#NONNULL} and {@link Spliterator#ORDERED}
      * characteristics.
      * <p>
-     * The returned spliterator splits this segment according to the specified sequence layout; that is,
-     * if the supplied layout is a sequence layout whose element count is {@code N}, then calling {@link Spliterator#trySplit()}
-     * will result in a spliterator serving approximatively {@code N/2} elements (depending on whether N is even or not).
-     * As such, splitting is possible as long as {@code N >= 2}. The spliterator returns segments that feature the same
-     * <a href="#access-modes">access modes</a> as the given segment less the {@link #CLOSE} access mode.
+     * The returned spliterator splits this segment according to the specified element layout; that is,
+     * if the supplied layout has size N, then calling {@link Spliterator#trySplit()} will result in a spliterator serving
+     * approximately {@code S/N} elements (depending on whether N is even or not), where {@code S} is the size of
+     * this segment. As such, splitting is possible as long as {@code S/N >= 2}. The spliterator returns segments that
+     * are associated with the same scope as this segment.
      * <p>
-     * The returned spliterator effectively allows to slice this segment into disjoint sub-segments, which can then
-     * be processed in parallel by multiple threads (if the segment is shared).
+     * The returned spliterator effectively allows to slice this segment into disjoint {@linkplain #asSlice(long, long) slices},
+     * which can then be processed in parallel by multiple threads.
      *
-     * @param layout the layout to be used for splitting.
+     * @param elementLayout the layout to be used for splitting.
      * @return the element spliterator for this segment
-     * @throws IllegalStateException if the segment is not <em>alive</em>, or if access occurs from a thread other than the
-     * thread owning this segment
+     * @throws IllegalArgumentException if the {@code elementLayout} size is zero, or the segment size modulo the
+     * {@code elementLayout} size is greater than zero, if this segment is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the {@code elementLayout} alignment is greater than its size.
      */
-    Spliterator<MemorySegment> spliterator(SequenceLayout layout);
+    Spliterator<MemorySegment> spliterator(MemoryLayout elementLayout);
 
     /**
-     * The thread owning this segment.
-     * @return the thread owning this segment.
+     * Returns a sequential {@code Stream} over disjoint slices (whose size matches that of the specified layout)
+     * in this segment. Calling this method is equivalent to the following code:
+     * {@snippet lang=java :
+     * StreamSupport.stream(segment.spliterator(elementLayout), false);
+     * }
+     *
+     * @param elementLayout the layout to be used for splitting.
+     * @return a sequential {@code Stream} over disjoint slices in this segment.
+     * @throws IllegalArgumentException if the {@code elementLayout} size is zero, or the segment size modulo the
+     * {@code elementLayout} size is greater than zero, if this segment is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the {@code elementLayout} alignment is greater than its size.
      */
-    Thread ownerThread();
+    Stream<MemorySegment> elements(MemoryLayout elementLayout);
 
     /**
-     * The size (in bytes) of this memory segment.
-     * @return The size (in bytes) of this memory segment.
+     * {@return the resource scope associated with this memory segment}
+     */
+    ResourceScope scope();
+
+    /**
+     * {@return the size (in bytes) of this memory segment}
      */
     long byteSize();
-
-    /**
-     * Obtains a segment view with specific <a href="#access-modes">access modes</a>. Supported access modes are {@link #READ}, {@link #WRITE},
-     * {@link #CLOSE}, {@link #SHARE} and {@link #HANDOFF}. It is generally not possible to go from a segment with stricter access modes
-     * to one with less strict access modes. For instance, attempting to add {@link #WRITE} access mode to a read-only segment
-     * will be met with an exception.
-     * @param accessModes an ORed mask of zero or more access modes.
-     * @return a segment view with specific access modes.
-     * @throws IllegalArgumentException when {@code mask} is an access mask which is less strict than the one supported by this
-     * segment, or when {@code mask} contains bits not associated with any of the supported access modes.
-     */
-    MemorySegment withAccessModes(int accessModes);
-
-    /**
-     * Does this segment support a given set of access modes?
-     * @param accessModes an ORed mask of zero or more access modes.
-     * @return true, if the access modes in {@code accessModes} are stricter than the ones supported by this segment.
-     * @throws IllegalArgumentException when {@code mask} contains bits not associated with any of the supported access modes.
-     */
-    boolean hasAccessModes(int accessModes);
-
-    /**
-     * Returns the <a href="#access-modes">access modes</a> associated with this segment; the result is represented as ORed values from
-     * {@link #READ}, {@link #WRITE}, {@link #CLOSE}, {@link #SHARE} and {@link #HANDOFF}.
-     * @return the access modes associated with this segment.
-     */
-    int accessModes();
 
     /**
      * Obtains a new memory segment view whose base address is the same as the base address of this segment plus a given offset,
      * and whose new size is specified by the given argument.
      *
      * @see #asSlice(long)
-     * @see #asSlice(MemoryAddress)
-     * @see #asSlice(MemoryAddress, long)
      *
      * @param offset The new segment base offset (relative to the current segment base address), specified in bytes.
      * @param newSize The new segment size, specified in bytes.
@@ -312,38 +321,14 @@ public interface MemorySegment extends Addressable, AutoCloseable {
     MemorySegment asSlice(long offset, long newSize);
 
     /**
-     * Obtains a new memory segment view whose base address is the given address, and whose new size is specified by the given argument.
-     * <p>
-     * Equivalent to the following code:
-     * <pre>{@code
-    asSlice(newBase.segmentOffset(this), newSize);
-     * }</pre>
-     *
-     * @see #asSlice(long)
-     * @see #asSlice(MemoryAddress)
-     * @see #asSlice(long, long)
-     *
-     * @param newBase The new segment base address.
-     * @param newSize The new segment size, specified in bytes.
-     * @return a new memory segment view with updated base/limit addresses.
-     * @throws IndexOutOfBoundsException if {@code offset < 0}, {@code offset > byteSize()}, {@code newSize < 0}, or {@code newSize > byteSize() - offset}
-     */
-    default MemorySegment asSlice(MemoryAddress newBase, long newSize) {
-        Objects.requireNonNull(newBase);
-        return asSlice(newBase.segmentOffset(this), newSize);
-    }
-
-    /**
      * Obtains a new memory segment view whose base address is the same as the base address of this segment plus a given offset,
      * and whose new size is computed by subtracting the specified offset from this segment size.
      * <p>
      * Equivalent to the following code:
-     * <pre>{@code
-    asSlice(offset, byteSize() - offset);
-     * }</pre>
+     * {@snippet lang=java :
+     * asSlice(offset, byteSize() - offset);
+     * }
      *
-     * @see #asSlice(MemoryAddress)
-     * @see #asSlice(MemoryAddress, long)
      * @see #asSlice(long, long)
      *
      * @param offset The new segment base offset (relative to the current segment base address), specified in bytes.
@@ -355,155 +340,71 @@ public interface MemorySegment extends Addressable, AutoCloseable {
     }
 
     /**
-     * Obtains a new memory segment view whose base address is the given address, and whose new size is computed by subtracting
-     * the address offset relative to this segment (see {@link MemoryAddress#segmentOffset(MemorySegment)}) from this segment size.
-     * <p>
-     * Equivalent to the following code:
-     * <pre>{@code
-    asSlice(newBase.segmentOffset(this));
-     * }</pre>
-     *
-     * @see #asSlice(long)
-     * @see #asSlice(MemoryAddress, long)
-     * @see #asSlice(long, long)
-     *
-     * @param newBase The new segment base offset (relative to the current segment base address), specified in bytes.
-     * @return a new memory segment view with updated base/limit addresses.
-     * @throws IndexOutOfBoundsException if {@code address.segmentOffset(this) < 0}, or {@code address.segmentOffset(this) > byteSize()}.
+     * {@return {@code true}, if this segment is read-only}
+     * @see #asReadOnly()
      */
-    default MemorySegment asSlice(MemoryAddress newBase) {
-        Objects.requireNonNull(newBase);
-        return asSlice(newBase.segmentOffset(this));
-    }
+    boolean isReadOnly();
 
     /**
-     * Is this a mapped segment? Returns true if this segment is a mapped memory segment,
-     * created using the {@link #mapFile(Path, long, long, FileChannel.MapMode)} factory, or a buffer segment
+     * Obtains a read-only view of this segment. The resulting segment will be identical to this one, but
+     * attempts to overwrite the contents of the returned segment will cause runtime exceptions.
+     * @return a read-only view of this segment
+     * @see #isReadOnly()
+     */
+    MemorySegment asReadOnly();
+
+    /**
+     * Returns {@code true} if this segment is a native segment. A native memory segment is
+     * created using the {@link #allocateNative(long, ResourceScope)} (and related) factory, or a buffer segment
+     * derived from a direct {@link java.nio.ByteBuffer} using the {@link #ofByteBuffer(ByteBuffer)} factory,
+     * or if this is a {@linkplain #isMapped() mapped} segment.
+     * @return {@code true} if this segment is native segment.
+     */
+    boolean isNative();
+
+    /**
+     * Returns {@code true} if this segment is a mapped segment. A mapped memory segment is
+     * created using the {@link #mapFile(Path, long, long, FileChannel.MapMode, ResourceScope)} factory, or a buffer segment
      * derived from a {@link java.nio.MappedByteBuffer} using the {@link #ofByteBuffer(ByteBuffer)} factory.
      * @return {@code true} if this segment is a mapped segment.
      */
     boolean isMapped();
 
     /**
-     * Is this segment alive?
-     * @return true, if the segment is alive.
-     * @see MemorySegment#close()
+     * Returns a slice of this segment that is the overlap between this and
+     * the provided segment.
+     *
+     * <p>Two segments {@code S1} and {@code S2} are said to overlap if it is possible to find
+     * at least two slices {@code L1} (from {@code S1}) and {@code L2} (from {@code S2}) that are backed by the
+     * same memory region. As such, it is not possible for a
+     * {@link #isNative() native} segment to overlap with a heap segment; in
+     * this case, or when no overlap occurs, {@code null} is returned.
+     *
+     * @param other the segment to test for an overlap with this segment.
+     * @return a slice of this segment, or {@code null} if no overlap occurs.
      */
-    boolean isAlive();
+    MemorySegment asOverlappingSlice(MemorySegment other);
 
     /**
-     * Closes this memory segment. This is a <em>terminal operation</em>; as a side-effect, if this operation completes
-     * without exceptions, this segment will be marked as <em>not alive</em>, and subsequent operations on this segment
-     * will fail with {@link IllegalStateException}.
-     * <p>
-     * Depending on the kind of memory segment being closed, calling this method further triggers deallocation of all the resources
-     * associated with the memory segment.
+     * Returns the offset, in bytes, of the provided segment, relative to this
+     * segment.
      *
-     * @apiNote This operation is not idempotent; that is, closing an already closed segment <em>always</em> results in an
-     * exception being thrown. This reflects a deliberate design choice: segment state transitions should be
-     * manifest in the client code; a failure in any of these transitions reveals a bug in the underlying application
-     * logic. This is especially useful when reasoning about the lifecycle of dependent segment views (see {@link #asSlice(MemoryAddress)},
-     * where closing one segment might side-effect multiple segments. In such cases it might in fact not be obvious, looking
-     * at the code, as to whether a given segment is alive or not.
+     * <p>The offset is relative to the base address of this segment and can be
+     * a negative or positive value. For instance, if both segments are native
+     * segments, the resulting offset can be computed as follows:
      *
-     * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
-     * thread owning this segment, or if this segment is shared and the segment is concurrently accessed while this method is
-     * called.
-     * @throws UnsupportedOperationException if this segment does not support the {@link #CLOSE} access mode.
+     * {@snippet lang=java :
+     * other.baseAddress().toRawLongValue() - segment.baseAddress().toRawLongValue()
+     * }
+     *
+     * If the segments share the same base address, {@code 0} is returned. If
+     * {@code other} is a slice of this segment, the offset is always
+     * {@code 0 <= x < this.byteSize()}.
+     *
+     * @param other the segment to retrieve an offset to.
+     * @return the relative offset, in bytes, of the provided segment.
      */
-    void close();
-
-    /**
-     * Obtains a new confined memory segment backed by the same underlying memory region as this segment. The returned segment will
-     * be confined on the specified thread, and will feature the same spatial bounds and access modes (see {@link #accessModes()})
-     * as this segment.
-     * <p>
-     * This is a <em>terminal operation</em>; as a side-effect, if this operation completes
-     * without exceptions, this segment will be marked as <em>not alive</em>, and subsequent operations on this segment
-     * will fail with {@link IllegalStateException}.
-     * <p>
-     * In case where the owner thread of the returned segment differs from that of this segment, write accesses to this
-     * segment's content <a href="../../../java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
-     * hand-over from the current owner thread to the new owner thread, which in turn <i>happens before</i> read accesses
-     * to the returned segment's contents on the new owner thread.
-     *
-     * @param thread the new owner thread
-     * @return a new confined memory segment whose owner thread is set to {@code thread}.
-     * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
-     * thread owning this segment.
-     * @throws UnsupportedOperationException if this segment does not support the {@link #HANDOFF} access mode.
-     */
-    MemorySegment handoff(Thread thread);
-
-    /**
-     * Obtains a new confined memory segment backed by the same underlying memory region as this segment, but whose
-     * temporal bounds are controlled by the provided {@link NativeScope} instance.
-     * <p>
-     * This is a <em>terminal operation</em>;
-     * as a side-effect, this segment will be marked as <em>not alive</em>, and subsequent operations on this segment
-     * will fail with {@link IllegalStateException}.
-     * <p>
-     * The returned segment will feature only {@link MemorySegment#READ} and {@link MemorySegment#WRITE} access modes
-     * (assuming these were available in the original segment). As such the returned segment cannot be closed directly
-     * using {@link MemorySegment#close()} - but it will be closed indirectly when this native scope is closed. The
-     * returned segment will also be confined by the same thread as the provided native scope (see {@link NativeScope#ownerThread()}).
-     * <p>
-     * In case where the owner thread of the returned segment differs from that of this segment, write accesses to this
-     * segment's content <a href="../../../java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
-     * hand-over from the current owner thread to the new owner thread, which in turn <i>happens before</i> read accesses
-     * to the returned segment's contents on the new owner thread.
-     *
-     * @param nativeScope the native scope.
-     * @return a new confined memory segment backed by the same underlying memory region as this segment, but whose life-cycle
-     * is tied to that of {@code nativeScope}.
-     * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
-     * thread owning this segment.
-     * @throws UnsupportedOperationException if this segment does not support the {@link #HANDOFF} access mode.
-     */
-    MemorySegment handoff(NativeScope nativeScope);
-
-    /**
-     * Obtains a new shared memory segment backed by the same underlying memory region as this segment. The returned segment will
-     * not be confined on any thread and can therefore be accessed concurrently from multiple threads; moreover, the
-     * returned segment will feature the same spatial bounds and access modes (see {@link #accessModes()})
-     * as this segment.
-     * <p>
-     * This is a <em>terminal operation</em>; as a side-effect, if this operation completes
-     * without exceptions, this segment will be marked as <em>not alive</em>, and subsequent operations on this segment
-     * will fail with {@link IllegalStateException}.
-     * <p>
-     * Write accesses to this segment's content <a href="../../../java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
-     * hand-over from the current owner thread to the new owner thread, which in turn <i>happens before</i> read accesses
-     * to the returned segment's contents on a new thread.
-     *
-     * @return a new memory shared segment backed by the same underlying memory region as this segment.
-     * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
-     * thread owning this segment.
-     */
-    MemorySegment share();
-
-    /**
-     * Register this memory segment instance against a {@link Cleaner} object, by returning a new memory segment backed
-     * by the same underlying memory region as this segment. The returned segment will feature the same confinement,
-     * spatial bounds and access modes (see {@link #accessModes()}) as this segment. Moreover, the returned segment
-     * will be associated with the specified {@link Cleaner} object; this allows for the segment to be closed
-     * as soon as it becomes <em>unreachable</em>, which might be helpful in preventing native memory leaks.
-     * <p>
-     * This is a <em>terminal operation</em>; as a side-effect, if this operation completes
-     * without exceptions, this segment will be marked as <em>not alive</em>, and subsequent operations on this segment
-     * will fail with {@link IllegalStateException}.
-     * <p>
-     * The implicit deallocation behavior associated with the returned segment will be preserved under terminal
-     * operations such as {@link #handoff(Thread)} and {@link #share()}.
-     *
-     * @param cleaner the cleaner object, responsible for implicit deallocation of the returned segment.
-     * @return a new memory segment backed by the same underlying memory region as this segment, which features
-     * implicit deallocation.
-     * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
-     * thread owning this segment, or if this segment is already associated with a cleaner.
-     * @throws UnsupportedOperationException if this segment does not support the {@link #CLOSE} access mode.
-     */
-    MemorySegment registerCleaner(Cleaner cleaner);
+    long segmentOffset(MemorySegment other);
 
     /**
      * Fills a value into this memory segment.
@@ -511,13 +412,13 @@ public interface MemorySegment extends Addressable, AutoCloseable {
      * More specifically, the given value is filled into each address of this
      * segment. Equivalent to (but likely more efficient than) the following code:
      *
-     * <pre>{@code
-byteHandle = MemoryLayout.ofSequence(MemoryLayouts.JAVA_BYTE)
-         .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
-for (long l = 0; l < segment.byteSize(); l++) {
-     byteHandle.set(segment.address(), l, value);
-}
-     * }</pre>
+     * {@snippet lang=java :
+     * byteHandle = MemoryLayout.ofSequence(ValueLayout.JAVA_BYTE)
+     *         .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
+     * for (long l = 0; l < segment.byteSize(); l++) {
+     *     byteHandle.set(segment.address(), l, value);
+     * }
+     * }
      *
      * without any regard or guarantees on the ordering of particular memory
      * elements being set.
@@ -526,9 +427,9 @@ for (long l = 0; l < segment.byteSize(); l++) {
      *
      * @param value the value to fill into this segment
      * @return this memory segment
-     * @throws IllegalStateException if this segment is not <em>alive</em>, or if access occurs from a thread other than the
-     * thread owning this segment
-     * @throws UnsupportedOperationException if this segment does not support the {@link #WRITE} access mode
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws UnsupportedOperationException if this segment is read-only (see {@link #isReadOnly()}).
      */
     MemorySegment fill(byte value);
 
@@ -536,326 +437,502 @@ for (long l = 0; l < segment.byteSize(); l++) {
      * Performs a bulk copy from given source segment to this segment. More specifically, the bytes at
      * offset {@code 0} through {@code src.byteSize() - 1} in the source segment are copied into this segment
      * at offset {@code 0} through {@code src.byteSize() - 1}.
-     * If the source segment overlaps with this segment, then the copying is performed as if the bytes at
-     * offset {@code 0} through {@code src.byteSize() - 1} in the source segment were first copied into a
-     * temporary segment with size {@code bytes}, and then the contents of the temporary segment were copied into
-     * this segment at offset {@code 0} through {@code src.byteSize() - 1}.
      * <p>
-     * The result of a bulk copy is unspecified if, in the uncommon case, the source segment and this segment
-     * do not overlap, but refer to overlapping regions of the same backing storage using different addresses.
-     * For example, this may occur if the same file is {@link MemorySegment#mapFile mapped} to two segments.
-     *
+     * Calling this method is equivalent to the following code:
+     * {@snippet lang=java :
+     * MemorySegment.copy(src, 0, this, 0, src.byteSize);
+     * }
      * @param src the source segment.
      * @throws IndexOutOfBoundsException if {@code src.byteSize() > this.byteSize()}.
-     * @throws IllegalStateException if either the source segment or this segment have been already closed,
-     * or if access occurs from a thread other than the thread owning either segment.
-     * @throws UnsupportedOperationException if either the source segment or this segment do not feature required access modes;
-     * more specifically, {@code src} should feature at least the {@link MemorySegment#READ} access mode,
-     * while this segment should feature at least the {@link MemorySegment#WRITE} access mode.
+     * @throws IllegalStateException if either the scope associated with the source segment or the scope associated
+     * with this segment have been already closed, or if access occurs from a thread other than the thread owning either
+     * scopes.
+     * @throws UnsupportedOperationException if this segment is read-only (see {@link #isReadOnly()}).
+     * @return this segment.
      */
-    void copyFrom(MemorySegment src);
+    default MemorySegment copyFrom(MemorySegment src) {
+        MemorySegment.copy(src, 0, this, 0, src.byteSize());
+        return this;
+    }
 
     /**
      * Finds and returns the offset, in bytes, of the first mismatch between
      * this segment and a given other segment. The offset is relative to the
-     * {@link #address() base address} of each segment and will be in the
-     * range of 0 (inclusive) up to the {@link #byteSize() size} (in bytes) of
+     * {@linkplain #address() base address} of each segment and will be in the
+     * range of 0 (inclusive) up to the {@linkplain #byteSize() size} (in bytes) of
      * the smaller memory segment (exclusive).
      * <p>
      * If the two segments share a common prefix then the returned offset is
-     * the length of the common prefix and it follows that there is a mismatch
+     * the length of the common prefix, and it follows that there is a mismatch
      * between the two segments at that offset within the respective segments.
-     * If one segment is a proper prefix of the other then the returned offset is
-     * the smaller of the segment sizes, and it follows that the offset is only
+     * If one segment is a proper prefix of the other, then the returned offset is
+     * the smallest of the segment sizes, and it follows that the offset is only
      * valid for the larger segment. Otherwise, there is no mismatch and {@code
      * -1} is returned.
      *
      * @param other the segment to be tested for a mismatch with this segment
      * @return the relative offset, in bytes, of the first mismatch between this
      * and the given other segment, otherwise -1 if no mismatch
-     * @throws IllegalStateException if either this segment of the other segment
-     * have been already closed, or if access occurs from a thread other than the
-     * thread owning either segment
-     * @throws UnsupportedOperationException if either this segment or the other
-     * segment does not feature at least the {@link MemorySegment#READ} access mode
+     * @throws IllegalStateException if either the scope associated with this segment or the scope associated
+     * with the {@code other} segment have been already closed, or if access occurs from a thread other than the thread
+     * owning either scopes.
      */
     long mismatch(MemorySegment other);
 
     /**
-     * Wraps this segment in a {@link ByteBuffer}. Some of the properties of the returned buffer are linked to
+     * Determines whether the contents of this mapped segment is resident in physical
+     * memory.
+     *
+     * <p> A return value of {@code true} implies that it is highly likely
+     * that all the data in this segment is resident in physical memory and
+     * may therefore be accessed without incurring any virtual-memory page
+     * faults or I/O operations.  A return value of {@code false} does not
+     * necessarily imply that this segment's content is not resident in physical
+     * memory.
+     *
+     * <p> The returned value is a hint, rather than a guarantee, because the
+     * underlying operating system may have paged out some of this segment's data
+     * by the time that an invocation of this method returns.  </p>
+     *
+     * @return  {@code true} if it is likely that the contents of this segment
+     *          is resident in physical memory
+     *
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws UnsupportedOperationException if this segment is not a mapped memory segment, e.g. if
+     * {@code isMapped() == false}.
+     */
+    boolean isLoaded();
+
+    /**
+     * Loads the contents of this mapped segment into physical memory.
+     *
+     * <p> This method makes a best effort to ensure that, when it returns,
+     * this contents of this segment is resident in physical memory.  Invoking this
+     * method may cause some number of page faults and I/O operations to
+     * occur. </p>
+     *
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws UnsupportedOperationException if this segment is not a mapped memory segment, e.g. if
+     * {@code isMapped() == false}.
+     */
+    void load();
+
+    /**
+     * Unloads the contents of this mapped segment from physical memory.
+     *
+     * <p> This method makes a best effort to ensure that the contents of this segment are
+     * are no longer resident in physical memory. Accessing this segment's contents
+     * after invoking this method may cause some number of page faults and I/O operations to
+     * occur (as this segment's contents might need to be paged back in). </p>
+     *
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws UnsupportedOperationException if this segment is not a mapped memory segment, e.g. if
+     * {@code isMapped() == false}.
+     */
+    void unload();
+
+    /**
+     * Forces any changes made to the contents of this mapped segment to be written to the
+     * storage device described by the mapped segment's file descriptor.
+     *
+     * <p> If the file descriptor associated with this mapped segment resides on a local storage
+     * device then when this method returns it is guaranteed that all changes
+     * made to this segment since it was created, or since this method was last
+     * invoked, will have been written to that device.
+     *
+     * <p> If the file descriptor associated with this mapped segment does not reside on a local device then
+     * no such guarantee is made.
+     *
+     * <p> If this segment was not mapped in read/write mode ({@link
+     * java.nio.channels.FileChannel.MapMode#READ_WRITE}) then
+     * invoking this method may have no effect. In particular, the
+     * method has no effect for segments mapped in read-only or private
+     * mapping modes. This method may or may not have an effect for
+     * implementation-specific mapping modes.
+     * </p>
+     *
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws UnsupportedOperationException if this segment is not a mapped memory segment, e.g. if
+     * {@code isMapped() == false}.
+     * @throws UncheckedIOException if there is an I/O error writing the contents of this segment to the associated storage device
+     */
+    void force();
+
+    /**
+     * Wraps this segment in a {@link ByteBuffer}. Some properties of the returned buffer are linked to
      * the properties of this segment. For instance, if this segment is <em>immutable</em>
-     * (e.g. the segment has access mode {@link #READ} but not {@link #WRITE}), then the resulting buffer is <em>read-only</em>
-     * (see {@link ByteBuffer#isReadOnly()}. Additionally, if this is a native memory segment, the resulting buffer is
+     * (e.g. the segment is a read-only segment, see {@link #isReadOnly()}), then the resulting buffer is <em>read-only</em>
+     * (see {@link ByteBuffer#isReadOnly()}). Additionally, if this is a native memory segment, the resulting buffer is
      * <em>direct</em> (see {@link ByteBuffer#isDirect()}).
      * <p>
-     * The returned buffer's position (see {@link ByteBuffer#position()} is initially set to zero, while
+     * The returned buffer's position (see {@link ByteBuffer#position()}) is initially set to zero, while
      * the returned buffer's capacity and limit (see {@link ByteBuffer#capacity()} and {@link ByteBuffer#limit()}, respectively)
      * are set to this segment' size (see {@link MemorySegment#byteSize()}). For this reason, a byte buffer cannot be
      * returned if this segment' size is greater than {@link Integer#MAX_VALUE}.
      * <p>
-     * The life-cycle of the returned buffer will be tied to that of this segment. That means that if the this segment
-     * is closed (see {@link MemorySegment#close()}, accessing the returned
-     * buffer will throw an {@link IllegalStateException}.
+     * The life-cycle of the returned buffer will be tied to that of this segment. That is, accessing the returned buffer
+     * after the scope associated with this segment has been closed (see {@link ResourceScope#close()}), will throw an {@link IllegalStateException}.
      * <p>
-     * If this segment is <em>shared</em>, calling certain I/O operations on the resulting buffer might result in
-     * an unspecified exception being thrown. Examples of such problematic operations are {@link FileChannel#read(ByteBuffer)},
-     * {@link FileChannel#write(ByteBuffer)}, {@link java.nio.channels.SocketChannel#read(ByteBuffer)} and
-     * {@link java.nio.channels.SocketChannel#write(ByteBuffer)}.
+     * If this segment is associated with a confined scope, calling read/write I/O operations on the resulting buffer
+     * might result in an unspecified exception being thrown. Examples of such problematic operations are
+     * {@link java.nio.channels.AsynchronousSocketChannel#read(ByteBuffer)} and
+     * {@link java.nio.channels.AsynchronousSocketChannel#write(ByteBuffer)}.
      * <p>
      * Finally, the resulting buffer's byte order is {@link java.nio.ByteOrder#BIG_ENDIAN}; this can be changed using
      * {@link ByteBuffer#order(java.nio.ByteOrder)}.
      *
      * @return a {@link ByteBuffer} view of this memory segment.
      * @throws UnsupportedOperationException if this segment cannot be mapped onto a {@link ByteBuffer} instance,
-     * e.g. because it models an heap-based segment that is not based on a {@code byte[]}), or if its size is greater
-     * than {@link Integer#MAX_VALUE}, or if the segment does not support the {@link #READ} access mode.
+     * e.g. because it models a heap-based segment that is not based on a {@code byte[]}), or if its size is greater
+     * than {@link Integer#MAX_VALUE}.
      */
     ByteBuffer asByteBuffer();
 
     /**
      * Copy the contents of this memory segment into a fresh byte array.
+     * @param elementLayout the source element layout. If the byte order associated with the layout is
+     * different from the native order, a byte swap operation will be performed on each array element.
      * @return a fresh byte array copy of this memory segment.
-     * @throws UnsupportedOperationException if this segment does not feature the {@link #READ} access mode, or if this
-     * segment's contents cannot be copied into a {@link byte[]} instance, e.g. its size is greater than {@link Integer#MAX_VALUE},
-     * @throws IllegalStateException if this segment has been closed, or if access occurs from a thread other than the
-     * thread owning this segment.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope, or if this segment's contents cannot be copied into a {@link byte[]} instance,
+     * e.g. its size is greater than {@link Integer#MAX_VALUE}.
      */
-    byte[] toByteArray();
+    byte[] toArray(ValueLayout.OfByte elementLayout);
 
     /**
      * Copy the contents of this memory segment into a fresh short array.
+     * @param elementLayout the source element layout. If the byte order associated with the layout is
+     * different from the native order, a byte swap operation will be performed on each array element.
      * @return a fresh short array copy of this memory segment.
-     * @throws UnsupportedOperationException if this segment does not feature the {@link #READ} access mode, or if this
-     * segment's contents cannot be copied into a {@link short[]} instance, e.g. because {@code byteSize() % 2 != 0},
-     * or {@code byteSize() / 2 > Integer#MAX_VALUE}.
-     * @throws IllegalStateException if this segment has been closed, or if access occurs from a thread other than the
-     * thread owning this segment.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope, or if this segment's contents cannot be copied into a {@link short[]} instance,
+     * e.g. because {@code byteSize() % 2 != 0}, or {@code byteSize() / 2 > Integer#MAX_VALUE}
      */
-    short[] toShortArray();
+    short[] toArray(ValueLayout.OfShort elementLayout);
 
     /**
      * Copy the contents of this memory segment into a fresh char array.
+     * @param elementLayout the source element layout. If the byte order associated with the layout is
+     * different from the native order, a byte swap operation will be performed on each array element.
      * @return a fresh char array copy of this memory segment.
-     * @throws UnsupportedOperationException if this segment does not feature the {@link #READ} access mode, or if this
-     * segment's contents cannot be copied into a {@link char[]} instance, e.g. because {@code byteSize() % 2 != 0},
-     * or {@code byteSize() / 2 > Integer#MAX_VALUE}.
-     * @throws IllegalStateException if this segment has been closed, or if access occurs from a thread other than the
-     * thread owning this segment.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope, or if this segment's contents cannot be copied into a {@link char[]} instance,
+     * e.g. because {@code byteSize() % 2 != 0}, or {@code byteSize() / 2 > Integer#MAX_VALUE}.
      */
-    char[] toCharArray();
+    char[] toArray(ValueLayout.OfChar elementLayout);
 
     /**
      * Copy the contents of this memory segment into a fresh int array.
+     * @param elementLayout the source element layout. If the byte order associated with the layout is
+     * different from the native order, a byte swap operation will be performed on each array element.
      * @return a fresh int array copy of this memory segment.
-     * @throws UnsupportedOperationException if this segment does not feature the {@link #READ} access mode, or if this
-     * segment's contents cannot be copied into a {@link int[]} instance, e.g. because {@code byteSize() % 4 != 0},
-     * or {@code byteSize() / 4 > Integer#MAX_VALUE}.
-     * @throws IllegalStateException if this segment has been closed, or if access occurs from a thread other than the
-     * thread owning this segment.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope, or if this segment's contents cannot be copied into a {@link int[]} instance,
+     * e.g. because {@code byteSize() % 4 != 0}, or {@code byteSize() / 4 > Integer#MAX_VALUE}.
      */
-    int[] toIntArray();
+    int[] toArray(ValueLayout.OfInt elementLayout);
 
     /**
      * Copy the contents of this memory segment into a fresh float array.
+     * @param elementLayout the source element layout. If the byte order associated with the layout is
+     * different from the native order, a byte swap operation will be performed on each array element.
      * @return a fresh float array copy of this memory segment.
-     * @throws UnsupportedOperationException if this segment does not feature the {@link #READ} access mode, or if this
-     * segment's contents cannot be copied into a {@link float[]} instance, e.g. because {@code byteSize() % 4 != 0},
-     * or {@code byteSize() / 4 > Integer#MAX_VALUE}.
-     * @throws IllegalStateException if this segment has been closed, or if access occurs from a thread other than the
-     * thread owning this segment.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope, or if this segment's contents cannot be copied into a {@link float[]} instance,
+     * e.g. because {@code byteSize() % 4 != 0}, or {@code byteSize() / 4 > Integer#MAX_VALUE}.
      */
-    float[] toFloatArray();
+    float[] toArray(ValueLayout.OfFloat elementLayout);
 
     /**
      * Copy the contents of this memory segment into a fresh long array.
+     * @param elementLayout the source element layout. If the byte order associated with the layout is
+     * different from the native order, a byte swap operation will be performed on each array element.
      * @return a fresh long array copy of this memory segment.
-     * @throws UnsupportedOperationException if this segment does not feature the {@link #READ} access mode, or if this
-     * segment's contents cannot be copied into a {@link long[]} instance, e.g. because {@code byteSize() % 8 != 0},
-     * or {@code byteSize() / 8 > Integer#MAX_VALUE}.
-     * @throws IllegalStateException if this segment has been closed, or if access occurs from a thread other than the
-     * thread owning this segment.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope, or if this segment's contents cannot be copied into a {@link long[]} instance,
+     * e.g. because {@code byteSize() % 8 != 0}, or {@code byteSize() / 8 > Integer#MAX_VALUE}.
      */
-    long[] toLongArray();
+    long[] toArray(ValueLayout.OfLong elementLayout);
 
     /**
      * Copy the contents of this memory segment into a fresh double array.
+     * @param elementLayout the source element layout. If the byte order associated with the layout is
+     * different from the native order, a byte swap operation will be performed on each array element.
      * @return a fresh double array copy of this memory segment.
-     * @throws UnsupportedOperationException if this segment does not feature the {@link #READ} access mode, or if this
-     * segment's contents cannot be copied into a {@link double[]} instance, e.g. because {@code byteSize() % 8 != 0},
-     * or {@code byteSize() / 8 > Integer#MAX_VALUE}.
-     * @throws IllegalStateException if this segment has been closed, or if access occurs from a thread other than the
-     * thread owning this segment.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope, or if this segment's contents cannot be copied into a {@link double[]} instance,
+     * e.g. because {@code byteSize() % 8 != 0}, or {@code byteSize() / 8 > Integer#MAX_VALUE}.
      */
-    double[] toDoubleArray();
+    double[] toArray(ValueLayout.OfDouble elementLayout);
 
     /**
-     * Creates a new confined buffer memory segment that models the memory associated with the given byte
+     * Reads a UTF-8 encoded, null-terminated string from this segment at given offset.
+     * <p>
+     * This method always replaces malformed-input and unmappable-character
+     * sequences with this charset's default replacement string.  The {@link
+     * java.nio.charset.CharsetDecoder} class should be used when more control
+     * over the decoding process is required.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @return a Java string constructed from the bytes read from the given starting address up to (but not including)
+     * the first {@code '\0'} terminator character (assuming one is found).
+     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
+     * @throws IllegalStateException if the size of the native string is greater than the size of this segment,
+     * or if the scope associated with this segment has been closed, or if access occurs from a thread other than the thread owning that scope.
+     */
+    default String getUtf8String(long offset) {
+        return SharedUtils.toJavaStringInternal(this, offset);
+    }
+
+    /**
+     * Writes the given string into this segment at given offset, converting it to a null-terminated byte sequence using UTF-8 encoding.
+     * <p>
+     * This method always replaces malformed-input and unmappable-character
+     * sequences with this charset's default replacement string.  The {@link
+     * java.nio.charset.CharsetDecoder} class should be used when more control
+     * over the decoding process is required.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @param str the Java string to be written into this segment.
+     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
+     * @throws IllegalStateException if the size of the native string is greater than the size of this segment,
+     * or if the scope associated with this segment has been closed, or if access occurs from a thread other than the thread owning that scope.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     */
+    default void setUtf8String(long offset, String str) {
+        Utils.toCString(str.getBytes(StandardCharsets.UTF_8), SegmentAllocator.prefixAllocator(asSlice(offset)));
+    }
+
+
+    /**
+     * Creates a new buffer memory segment that models the memory associated with the given byte
      * buffer. The segment starts relative to the buffer's position (inclusive)
      * and ends relative to the buffer's limit (exclusive).
      * <p>
-     * The segment will feature all <a href="#access-modes">access modes</a> (see {@link #ALL_ACCESS}),
-     * unless the given buffer is {@linkplain ByteBuffer#isReadOnly() read-only} in which case the segment will
-     * not feature the {@link #WRITE} access mode, and its confinement thread is the current thread (see {@link Thread#currentThread()}).
+     * If the buffer is {@link ByteBuffer#isReadOnly() read-only}, the resulting segment will also be
+     * {@link ByteBuffer#isReadOnly() read-only}. The scope associated with this segment can either be the
+     * {@linkplain ResourceScope#globalScope() global} resource scope, in case the buffer has been created independently,
+     * or some other resource scope, in case the buffer has been obtained using {@link #asByteBuffer()}.
      * <p>
-     * The resulting memory segment keeps a reference to the backing buffer, to ensure it remains <em>reachable</em>
-     * for the life-time of the segment.
+     * The resulting memory segment keeps a reference to the backing buffer, keeping it <em>reachable</em>.
      *
      * @param bb the byte buffer backing the buffer memory segment.
-     * @return a new confined buffer memory segment.
+     * @return a new buffer memory segment.
      */
     static MemorySegment ofByteBuffer(ByteBuffer bb) {
         return AbstractMemorySegmentImpl.ofBuffer(bb);
     }
 
     /**
-     * Creates a new confined array memory segment that models the memory associated with a given heap-allocated byte array.
-     * <p>
-     * The resulting memory segment keeps a reference to the backing array, to ensure it remains <em>reachable</em>
-     * for the life-time of the segment. The segment will feature all <a href="#access-modes">access modes</a>
-     * (see {@link #ALL_ACCESS}), and its confinement thread is the current thread (see {@link Thread#currentThread()}).
+     * Creates a new array memory segment that models the memory associated with a given heap-allocated byte array.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
-     * @return a new confined array memory segment.
+     * @return a new array memory segment.
      */
     static MemorySegment ofArray(byte[] arr) {
         return HeapMemorySegmentImpl.OfByte.fromArray(arr);
     }
 
     /**
-     * Creates a new confined array memory segment that models the memory associated with a given heap-allocated char array.
-     * <p>
-     * The resulting memory segment keeps a reference to the backing array, to ensure it remains <em>reachable</em>
-     * for the life-time of the segment. The segment will feature all <a href="#access-modes">access modes</a>
-     * (see {@link #ALL_ACCESS}), and its confinement thread is the current thread (see {@link Thread#currentThread()}).
+     * Creates a new array memory segment that models the memory associated with a given heap-allocated char array.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
-     * @return a new confined array memory segment.
+     * @return a new array memory segment.
      */
     static MemorySegment ofArray(char[] arr) {
         return HeapMemorySegmentImpl.OfChar.fromArray(arr);
     }
 
     /**
-     * Creates a new confined array memory segment that models the memory associated with a given heap-allocated short array.
-     * <p>
-     * The resulting memory segment keeps a reference to the backing array, to ensure it remains <em>reachable</em>
-     * for the life-time of the segment. The segment will feature all <a href="#access-modes">access modes</a>
-     * (see {@link #ALL_ACCESS}), and its confinement thread is the current thread (see {@link Thread#currentThread()}).
+     * Creates a new array memory segment that models the memory associated with a given heap-allocated short array.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
-     * @return a new confined array memory segment.
+     * @return a new array memory segment.
      */
     static MemorySegment ofArray(short[] arr) {
         return HeapMemorySegmentImpl.OfShort.fromArray(arr);
     }
 
     /**
-     * Creates a new confined array memory segment that models the memory associated with a given heap-allocated int array.
-     * <p>
-     * The resulting memory segment keeps a reference to the backing array, to ensure it remains <em>reachable</em>
-     * for the life-time of the segment. The segment will feature all <a href="#access-modes">access modes</a>
-     * (see {@link #ALL_ACCESS}), and its confinement thread is the current thread (see {@link Thread#currentThread()}).
+     * Creates a new array memory segment that models the memory associated with a given heap-allocated int array.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
-     * @return a new confined array memory segment.
+     * @return a new array memory segment.
      */
     static MemorySegment ofArray(int[] arr) {
         return HeapMemorySegmentImpl.OfInt.fromArray(arr);
     }
 
     /**
-     * Creates a new confined array memory segment that models the memory associated with a given heap-allocated float array.
-     * <p>
-     * The resulting memory segment keeps a reference to the backing array, to ensure it remains <em>reachable</em>
-     * for the life-time of the segment. The segment will feature all <a href="#access-modes">access modes</a>
-     * (see {@link #ALL_ACCESS}), and its confinement thread is the current thread (see {@link Thread#currentThread()}).
+     * Creates a new array memory segment that models the memory associated with a given heap-allocated float array.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
-     * @return a new confined array memory segment.
+     * @return a new array memory segment.
      */
     static MemorySegment ofArray(float[] arr) {
         return HeapMemorySegmentImpl.OfFloat.fromArray(arr);
     }
 
     /**
-     * Creates a new confined array memory segment that models the memory associated with a given heap-allocated long array.
-     * <p>
-     * The resulting memory segment keeps a reference to the backing array, to ensure it remains <em>reachable</em>
-     * for the life-time of the segment. The segment will feature all <a href="#access-modes">access modes</a>
-     * (see {@link #ALL_ACCESS}), and its confinement thread is the current thread (see {@link Thread#currentThread()}).
+     * Creates a new array memory segment that models the memory associated with a given heap-allocated long array.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
-     * @return a new confined array memory segment.
+     * @return a new array memory segment.
      */
     static MemorySegment ofArray(long[] arr) {
         return HeapMemorySegmentImpl.OfLong.fromArray(arr);
     }
 
     /**
-     * Creates a new confined array memory segment that models the memory associated with a given heap-allocated double array.
-     * <p>
-     * The resulting memory segment keeps a reference to the backing array, to ensure it remains <em>reachable</em>
-     * for the life-time of the segment. The segment will feature all <a href="#access-modes">access modes</a>
-     * (see {@link #ALL_ACCESS}).
+     * Creates a new array memory segment that models the memory associated with a given heap-allocated double array.
+     * The returned segment is associated with the {@linkplain ResourceScope#globalScope() global} resource scope.
      *
      * @param arr the primitive array backing the array memory segment.
-     * @return a new confined array memory segment.
+     * @return a new array memory segment.
      */
     static MemorySegment ofArray(double[] arr) {
         return HeapMemorySegmentImpl.OfDouble.fromArray(arr);
     }
 
+
     /**
-     * Creates a new confined native memory segment that models a newly allocated block of off-heap memory with given layout.
+     * Creates a new native memory segment with given size and resource scope, and whose base address is the given address.
+     * This method can be useful when interacting with custom
+     * native memory sources (e.g. custom allocators), where an address to some
+     * underlying memory region is typically obtained from native code (often as a plain {@code long} value).
+     * The returned segment is not read-only (see {@link MemorySegment#isReadOnly()}), and is associated with the
+     * provided resource scope.
+     * <p>
+     * Clients should ensure that the address and bounds refer to a valid region of memory that is accessible for reading and,
+     * if appropriate, writing; an attempt to access an invalid memory location from Java code will either return an arbitrary value,
+     * have no visible effect, or cause an unspecified exception to be thrown.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     *
+     * @param address the returned segment's base address.
+     * @param bytesSize the desired size.
+     * @param scope the native segment scope.
+     * @return a new native memory segment with given base address, size and scope.
+     * @throws IllegalArgumentException if {@code bytesSize <= 0}.
+     * @throws IllegalStateException if the provided scope has been already closed,
+     * or if access occurs from a thread other than the thread owning the scope.
+     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
+     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
+     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     */
+    @CallerSensitive
+    static MemorySegment ofAddress(MemoryAddress address, long bytesSize, ResourceScope scope) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass());
+        Objects.requireNonNull(address);
+        Objects.requireNonNull(scope);
+        if (bytesSize <= 0) {
+            throw new IllegalArgumentException("Invalid size : " + bytesSize);
+        }
+        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(address, bytesSize, (ResourceScopeImpl)scope);
+    }
+
+    /**
+     * Creates a new native memory segment that models a newly allocated block of off-heap memory with given layout
+     * and resource scope. A client is responsible make sure that the resource scope associated with the returned segment is closed
+     * when the segment is no longer in use. Failure to do so will result in off-heap memory leaks.
      * <p>
      * This is equivalent to the following code:
-     * <blockquote><pre>{@code
-    allocateNative(layout.bytesSize(), layout.bytesAlignment());
-     * }</pre></blockquote>
-     *
-     * @implNote The block of off-heap memory associated with the returned native memory segment is initialized to zero.
-     * Moreover, a client is responsible to call the {@link MemorySegment#close()} on a native memory segment,
-     * to make sure the backing off-heap memory block is deallocated accordingly. Failure to do so will result in off-heap memory leaks.
+     * {@snippet lang=java :
+     * allocateNative(layout.bytesSize(), layout.bytesAlignment(), scope);
+     * }
+     * <p>
+     * The block of off-heap memory associated with the returned native memory segment is initialized to zero.
      *
      * @param layout the layout of the off-heap memory block backing the native memory segment.
+     * @param scope the segment scope.
      * @return a new native memory segment.
      * @throws IllegalArgumentException if the specified layout has illegal size or alignment constraint.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      */
-    static MemorySegment allocateNative(MemoryLayout layout) {
+    static MemorySegment allocateNative(MemoryLayout layout, ResourceScope scope) {
+        Objects.requireNonNull(scope);
         Objects.requireNonNull(layout);
-        return allocateNative(layout.byteSize(), layout.byteAlignment());
+        return allocateNative(layout.byteSize(), layout.byteAlignment(), scope);
     }
 
     /**
-     * Creates a new confined native memory segment that models a newly allocated block of off-heap memory with given size (in bytes).
+     * Creates a new native memory segment that models a newly allocated block of off-heap memory with given size (in bytes)
+     * and resource scope. A client is responsible make sure that the resource scope associated with the returned segment is closed
+     * when the segment is no longer in use. Failure to do so will result in off-heap memory leaks.
      * <p>
      * This is equivalent to the following code:
-     * <blockquote><pre>{@code
-allocateNative(bytesSize, 1);
-     * }</pre></blockquote>
-     *
-     * @implNote The block of off-heap memory associated with the returned native memory segment is initialized to zero.
-     * Moreover, a client is responsible to call the {@link MemorySegment#close()} on a native memory segment,
-     * to make sure the backing off-heap memory block is deallocated accordingly. Failure to do so will result in off-heap memory leaks.
+     * {@snippet lang=java :
+     * allocateNative(bytesSize, 1, scope);
+     * }
+     * <p>
+     * The block of off-heap memory associated with the returned native memory segment is initialized to zero.
      *
      * @param bytesSize the size (in bytes) of the off-heap memory block backing the native memory segment.
-     * @return a new confined native memory segment.
-     * @throws IllegalArgumentException if {@code bytesSize < 0}.
+     * @param scope the segment scope.
+     * @return a new native memory segment.
+     * @throws IllegalArgumentException if {@code bytesSize <= 0}.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      */
-    static MemorySegment allocateNative(long bytesSize) {
-        return allocateNative(bytesSize, 1);
+    static MemorySegment allocateNative(long bytesSize, ResourceScope scope) {
+        return allocateNative(bytesSize, 1, scope);
     }
 
     /**
-     * Creates a new confined mapped memory segment that models a memory-mapped region of a file from a given path.
+     * Creates a new native memory segment that models a newly allocated block of off-heap memory with given size
+     * (in bytes), alignment constraint (in bytes) and resource scope. A client is responsible make sure that the resource
+     * scope associated with the returned segment is closed when the segment is no longer in use.
+     * Failure to do so will result in off-heap memory leaks.
      * <p>
-     * The segment will feature all <a href="#access-modes">access modes</a> (see {@link #ALL_ACCESS}),
-     * unless the given mapping mode is {@linkplain FileChannel.MapMode#READ_ONLY READ_ONLY}, in which case
-     * the segment will not feature the {@link #WRITE} access mode, and its confinement thread is the current thread (see {@link Thread#currentThread()}).
+     * The block of off-heap memory associated with the returned native memory segment is initialized to zero.
+     *
+     * @param bytesSize the size (in bytes) of the off-heap memory block backing the native memory segment.
+     * @param alignmentBytes the alignment constraint (in bytes) of the off-heap memory block backing the native memory segment.
+     * @param scope the segment scope.
+     * @return a new native memory segment.
+     * @throws IllegalArgumentException if {@code bytesSize <= 0}, {@code alignmentBytes <= 0}, or if {@code alignmentBytes}
+     * is not a power of 2.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
+     */
+    static MemorySegment allocateNative(long bytesSize, long alignmentBytes, ResourceScope scope) {
+        Objects.requireNonNull(scope);
+        if (bytesSize <= 0) {
+            throw new IllegalArgumentException("Invalid allocation size : " + bytesSize);
+        }
+
+        if (alignmentBytes <= 0 ||
+                ((alignmentBytes & (alignmentBytes - 1)) != 0L)) {
+            throw new IllegalArgumentException("Invalid alignment constraint : " + alignmentBytes);
+        }
+
+        return NativeMemorySegmentImpl.makeNativeSegment(bytesSize, alignmentBytes, (ResourceScopeImpl) scope);
+    }
+
+    /**
+     * Creates a new mapped memory segment that models a memory-mapped region of a file from a given path.
+     * <p>
+     * If the specified mapping mode is {@linkplain FileChannel.MapMode#READ_ONLY READ_ONLY}, the resulting segment
+     * will be read-only (see {@link #isReadOnly()}).
      * <p>
      * The content of a mapped memory segment can change at any time, for example
      * if the content of the corresponding region of the mapped file is changed by
-     * this (or another) program.  Whether or not such changes occur, and when they
+     * this (or another) program.  Whether such changes occur, and when they
      * occur, is operating-system dependent and therefore unspecified.
      * <p>
      * All or part of a mapped memory segment may become
@@ -873,116 +950,897 @@ allocateNative(bytesSize, 1);
      * @param path the path to the file to memory map.
      * @param bytesOffset the offset (expressed in bytes) within the file at which the mapped segment is to start.
      * @param bytesSize the size (in bytes) of the mapped memory backing the memory segment.
-     * @param mapMode a file mapping mode, see {@link FileChannel#map(FileChannel.MapMode, long, long)}; the chosen mapping mode
-     *                might affect the behavior of the returned memory mapped segment (see {@link MappedMemorySegments#force(MemorySegment)}).
-     * @return a new confined mapped memory segment.
+     * @param mapMode a file mapping mode, see {@link FileChannel#map(FileChannel.MapMode, long, long)}; the mapping mode
+     *                might affect the behavior of the returned memory mapped segment (see {@link #force()}).
+     * @param scope the segment scope.
+     * @return a new mapped memory segment.
      * @throws IllegalArgumentException if {@code bytesOffset < 0}, {@code bytesSize < 0}, or if {@code path} is not associated
      * with the default file system.
+     * @throws IllegalStateException if {@code scope} has been already closed, or if access occurs from a thread other
+     * than the thread owning {@code scope}.
      * @throws UnsupportedOperationException if an unsupported map mode is specified.
      * @throws IOException if the specified path does not point to an existing file, or if some other I/O error occurs.
-     * @throws  SecurityException If a security manager is installed and it denies an unspecified permission required by the implementation.
+     * @throws  SecurityException If a security manager is installed, and it denies an unspecified permission required by the implementation.
      * In the case of the default provider, the {@link SecurityManager#checkRead(String)} method is invoked to check
      * read access if the file is opened for reading. The {@link SecurityManager#checkWrite(String)} method is invoked to check
      * write access if the file is opened for writing.
      */
-    static MemorySegment mapFile(Path path, long bytesOffset, long bytesSize, FileChannel.MapMode mapMode) throws IOException {
-        return MappedMemorySegmentImpl.makeMappedSegment(path, bytesOffset, bytesSize, mapMode);
+    static MemorySegment mapFile(Path path, long bytesOffset, long bytesSize, FileChannel.MapMode mapMode, ResourceScope scope) throws IOException {
+        Objects.requireNonNull(scope);
+        return MappedMemorySegmentImpl.makeMappedSegment(path, bytesOffset, bytesSize, mapMode, (ResourceScopeImpl) scope);
     }
 
     /**
-     * Creates a new confined native memory segment that models a newly allocated block of off-heap memory with given size and
-     * alignment constraint (in bytes). The segment will feature all <a href="#access-modes">access modes</a>
-     * (see {@link #ALL_ACCESS}), and its confinement thread is the current thread (see {@link Thread#currentThread()}).
-     *
-     * @implNote The block of off-heap memory associated with the returned native memory segment is initialized to zero.
-     * Moreover, a client is responsible to call the {@link MemorySegment#close()} on a native memory segment,
-     * to make sure the backing off-heap memory block is deallocated accordingly. Failure to do so will result in off-heap memory leaks.
-     *
-     * @param bytesSize the size (in bytes) of the off-heap memory block backing the native memory segment.
-     * @param alignmentBytes the alignment constraint (in bytes) of the off-heap memory block backing the native memory segment.
-     * @return a new confined native memory segment.
-     * @throws IllegalArgumentException if {@code bytesSize < 0}, {@code alignmentBytes < 0}, or if {@code alignmentBytes}
-     * is not a power of 2.
-     */
-    static MemorySegment allocateNative(long bytesSize, long alignmentBytes) {
-        if (bytesSize <= 0) {
-            throw new IllegalArgumentException("Invalid allocation size : " + bytesSize);
-        }
-
-        if (alignmentBytes < 0 ||
-                ((alignmentBytes & (alignmentBytes - 1)) != 0L)) {
-            throw new IllegalArgumentException("Invalid alignment constraint : " + alignmentBytes);
-        }
-
-        return NativeMemorySegmentImpl.makeNativeSegment(bytesSize, alignmentBytes);
-    }
-
-    /**
-     * Returns a shared native memory segment whose base address is {@link MemoryAddress#NULL} and whose size is {@link Long#MAX_VALUE}.
-     * This method can be very useful when dereferencing memory addresses obtained when interacting with native libraries.
-     * The segment will feature the {@link #READ} and {@link #WRITE} <a href="#access-modes">access modes</a>.
-     * Equivalent to (but likely more efficient than) the following code:
-     * <pre>{@code
-    MemoryAddress.NULL.asSegmentRestricted(Long.MAX_VALUE)
-                 .withOwnerThread(null)
-                 .withAccessModes(READ | WRITE);
-     * }</pre>
+     * Performs a bulk copy from source segment to destination segment. More specifically, the bytes at offset
+     * {@code srcOffset} through {@code srcOffset + bytes - 1} in the source segment are copied into the destination
+     * segment at offset {@code dstOffset} through {@code dstOffset + bytes - 1}.
      * <p>
-     * This method is <em>restricted</em>. Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
-     *
-     * @return a memory segment whose base address is {@link MemoryAddress#NULL} and whose size is {@link Long#MAX_VALUE}.
-     * @throws IllegalAccessError if the runtime property {@code foreign.restricted} is not set to either
-     * {@code permit}, {@code warn} or {@code debug} (the default value is set to {@code deny}).
+     * If the source segment overlaps with this segment, then the copying is performed as if the bytes at
+     * offset {@code srcOffset} through {@code srcOffset + bytes - 1} in the source segment were first copied into a
+     * temporary segment with size {@code bytes}, and then the contents of the temporary segment were copied into
+     * the destination segment at offset {@code dstOffset} through {@code dstOffset + bytes - 1}.
+     * <p>
+     * The result of a bulk copy is unspecified if, in the uncommon case, the source segment and the destination segment
+     * do not overlap, but refer to overlapping regions of the same backing storage using different addresses.
+     * For example, this may occur if the same file is {@linkplain MemorySegment#mapFile mapped} to two segments.
+     * <p>
+     * Calling this method is equivalent to the following code:
+     * {@snippet lang=java :
+     * MemorySegment.copy(srcSegment, ValueLayout.JAVA_BYTE, srcOffset, dstSegment, ValueLayout.JAVA_BYTE, dstOffset, bytes);
+     * }
+     * @param srcSegment the source segment.
+     * @param srcOffset the starting offset, in bytes, of the source segment.
+     * @param dstSegment the destination segment.
+     * @param dstOffset the starting offset, in bytes, of the destination segment.
+     * @param bytes the number of bytes to be copied.
+     * @throws IllegalStateException if either the scope associated with the source segment or the scope associated
+     * with the destination segment have been already closed, or if access occurs from a thread other than the thread
+     * owning either scopes.
+     * @throws IndexOutOfBoundsException if {@code srcOffset + bytes > srcSegment.byteSize()} or if
+     * {@code dstOffset + bytes > dstSegment.byteSize()}, or if either {@code srcOffset}, {@code dstOffset}
+     * or {@code bytes} are {@code < 0}.
+     * @throws UnsupportedOperationException if the destination segment is read-only (see {@link #isReadOnly()}).
      */
-    static MemorySegment ofNativeRestricted() {
-        Utils.checkRestrictedAccess("MemorySegment.ofNativeRestricted");
-        return NativeMemorySegmentImpl.EVERYTHING;
+    @ForceInline
+    static void copy(MemorySegment srcSegment, long srcOffset, MemorySegment dstSegment, long dstOffset, long bytes) {
+        copy(srcSegment, ValueLayout.JAVA_BYTE, srcOffset, dstSegment, ValueLayout.JAVA_BYTE, dstOffset, bytes);
     }
 
-    // access mode masks
+    /**
+     * Performs a bulk copy from source segment to destination segment. More specifically, if {@code S} is the byte size
+     * of the element layouts, the bytes at offset {@code srcOffset} through {@code srcOffset + (elementCount * S) - 1}
+     * in the source segment are copied into the destination segment at offset {@code dstOffset} through {@code dstOffset + (elementCount * S) - 1}.
+     * <p>
+     * The copy occurs in an element-wise fashion: the bytes in the source segment are interpreted as a sequence of elements
+     * whose layout is {@code srcElementLayout}, whereas the bytes in the destination segment are interpreted as a sequence of
+     * elements whose layout is {@code dstElementLayout}. Both element layouts must have same size {@code S}.
+     * If the byte order of the two element layouts differ, the bytes corresponding to each element to be copied
+     * are swapped accordingly during the copy operation.
+     * <p>
+     * If the source segment overlaps with this segment, then the copying is performed as if the bytes at
+     * offset {@code srcOffset} through {@code srcOffset + (elementCount * S) - 1} in the source segment were first copied into a
+     * temporary segment with size {@code bytes}, and then the contents of the temporary segment were copied into
+     * the destination segment at offset {@code dstOffset} through {@code dstOffset + (elementCount * S) - 1}.
+     * <p>
+     * The result of a bulk copy is unspecified if, in the uncommon case, the source segment and the destination segment
+     * do not overlap, but refer to overlapping regions of the same backing storage using different addresses.
+     * For example, this may occur if the same file is {@linkplain MemorySegment#mapFile mapped} to two segments.
+     * @param srcSegment the source segment.
+     * @param srcElementLayout the element layout associated with the source segment.
+     * @param srcOffset the starting offset, in bytes, of the source segment.
+     * @param dstSegment the destination segment.
+     * @param dstElementLayout the element layout associated with the destination segment.
+     * @param dstOffset the starting offset, in bytes, of the destination segment.
+     * @param elementCount the number of elements to be copied.
+     * @throws IllegalArgumentException if the element layouts have different sizes, if the source (resp. destination) segment/offset are
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the source
+     * (resp. destination) element layout, or if the source (resp. destination) element layout alignment is greater than its size.
+     * @throws IllegalStateException if either the scope associated with the source segment or the scope associated
+     * with the destination segment have been already closed, or if access occurs from a thread other than the thread
+     * owning either scopes.
+     * @throws IndexOutOfBoundsException if {@code srcOffset + (elementCount * S) > srcSegment.byteSize()} or if
+     * {@code dstOffset + (elementCount * S) > dstSegment.byteSize()}, where {@code S} is the byte size
+     * of the element layouts, or if either {@code srcOffset}, {@code dstOffset} or {@code elementCount} are {@code < 0}.
+     * @throws UnsupportedOperationException if the destination segment is read-only (see {@link #isReadOnly()}).
+     */
+    @ForceInline
+    static void copy(MemorySegment srcSegment, ValueLayout srcElementLayout, long srcOffset, MemorySegment dstSegment,
+                     ValueLayout dstElementLayout, long dstOffset, long elementCount) {
+        Objects.requireNonNull(srcSegment);
+        Objects.requireNonNull(srcElementLayout);
+        Objects.requireNonNull(dstSegment);
+        Objects.requireNonNull(dstElementLayout);
+        AbstractMemorySegmentImpl srcImpl = (AbstractMemorySegmentImpl)srcSegment;
+        AbstractMemorySegmentImpl dstImpl = (AbstractMemorySegmentImpl)dstSegment;
+        if (srcElementLayout.byteSize() != dstElementLayout.byteSize()) {
+            throw new IllegalArgumentException("Source and destination layouts must have same size");
+        }
+        Utils.checkElementAlignment(srcElementLayout, "Source layout alignment greater than its size");
+        Utils.checkElementAlignment(dstElementLayout, "Destination layout alignment greater than its size");
+        if (!srcImpl.isAlignedForElement(srcOffset, srcElementLayout)) {
+            throw new IllegalArgumentException("Source segment incompatible with alignment constraints");
+        }
+        if (!dstImpl.isAlignedForElement(dstOffset, dstElementLayout)) {
+            throw new IllegalArgumentException("Destination segment incompatible with alignment constraints");
+        }
+        long size = elementCount * srcElementLayout.byteSize();
+        srcImpl.checkAccess(srcOffset, size, true);
+        dstImpl.checkAccess(dstOffset, size, false);
+        if (srcElementLayout.byteSize() == 1 || srcElementLayout.order() == dstElementLayout.order()) {
+            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.scope(), dstImpl.scope(),
+                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
+                    dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size);
+        } else {
+            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(srcImpl.scope(), dstImpl.scope(),
+                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
+                    dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size, srcElementLayout.byteSize());
+        }
+    }
 
     /**
-     * Read access mode; read operations are supported by a segment which supports this access mode.
-     * @see MemorySegment#accessModes()
-     * @see MemorySegment#withAccessModes(int)
+     * Reads a byte from this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @return a byte value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
-    int READ = 1;
+    @ForceInline
+    default byte get(ValueLayout.OfByte layout, long offset) {
+        return (byte)layout.accessHandle().get(this, offset);
+    }
 
     /**
-     * Write access mode; write operations are supported by a segment which supports this access mode.
-     * @see MemorySegment#accessModes()
-     * @see MemorySegment#withAccessModes(int)
+     * Writes a byte to this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @param value the byte value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    int WRITE = READ << 1;
+    @ForceInline
+    default void set(ValueLayout.OfByte layout, long offset, byte value) {
+        layout.accessHandle().set(this, offset, value);
+    }
 
     /**
-     * Close access mode; calling {@link #close()} is supported by a segment which supports this access mode.
-     * @see MemorySegment#accessModes()
-     * @see MemorySegment#withAccessModes(int)
+     * Reads a boolean from this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @return a boolean value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
-    int CLOSE = WRITE << 1;
+    @ForceInline
+    default boolean get(ValueLayout.OfBoolean layout, long offset) {
+        return (boolean)layout.accessHandle().get(this, offset);
+    }
 
     /**
-     * Share access mode; this segment support sharing with threads other than the owner thread (see {@link #share()}).
-     * @see MemorySegment#accessModes()
-     * @see MemorySegment#withAccessModes(int)
+     * Writes a boolean to this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @param value the boolean value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    int SHARE = CLOSE << 1;
+    @ForceInline
+    default void set(ValueLayout.OfBoolean layout, long offset, boolean value) {
+        layout.accessHandle().set(this, offset, value);
+    }
 
     /**
-     * Handoff access mode; this segment support serial thread-confinement via thread ownership changes
-     * (see {@link #handoff(NativeScope)} and {@link #handoff(Thread)}).
-     * @see MemorySegment#accessModes()
-     * @see MemorySegment#withAccessModes(int)
+     * Reads a char from this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @return a char value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
      */
-    int HANDOFF = SHARE << 1;
+    @ForceInline
+    default char get(ValueLayout.OfChar layout, long offset) {
+        return (char)layout.accessHandle().get(this, offset);
+    }
 
     /**
-     * Default access mode; this is a union of all the access modes supported by memory segments.
-     * @see MemorySegment#accessModes()
-     * @see MemorySegment#withAccessModes(int)
+     * Writes a char to this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @param value the char value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
      */
-    int ALL_ACCESS = READ | WRITE | CLOSE | SHARE | HANDOFF;
+    @ForceInline
+    default void set(ValueLayout.OfChar layout, long offset, char value) {
+        layout.accessHandle().set(this, offset, value);
+    }
+
+    /**
+     * Reads a short from this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @return a short value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     */
+    @ForceInline
+    default short get(ValueLayout.OfShort layout, long offset) {
+        return (short)layout.accessHandle().get(this, offset);
+    }
+
+    /**
+     * Writes a short to this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @param value the short value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     */
+    @ForceInline
+    default void set(ValueLayout.OfShort layout, long offset, short value) {
+        layout.accessHandle().set(this, offset, value);
+    }
+
+    /**
+     * Reads an int from this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @return an int value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     */
+    @ForceInline
+    default int get(ValueLayout.OfInt layout, long offset) {
+        return (int)layout.accessHandle().get(this, offset);
+    }
+
+    /**
+     * Writes an int to this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @param value the int value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     */
+    @ForceInline
+    default void set(ValueLayout.OfInt layout, long offset, int value) {
+        layout.accessHandle().set(this, offset, value);
+    }
+
+    /**
+     * Reads a float from this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @return a float value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     */
+    @ForceInline
+    default float get(ValueLayout.OfFloat layout, long offset) {
+        return (float)layout.accessHandle().get(this, offset);
+    }
+
+    /**
+     * Writes a float to this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @param value the float value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     */
+    @ForceInline
+    default void set(ValueLayout.OfFloat layout, long offset, float value) {
+        layout.accessHandle().set(this, offset, value);
+    }
+
+    /**
+     * Reads a long from this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @return a long value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     */
+    @ForceInline
+    default long get(ValueLayout.OfLong layout, long offset) {
+        return (long)layout.accessHandle().get(this, offset);
+    }
+
+    /**
+     * Writes a long to this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @param value the long value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     */
+    @ForceInline
+    default void set(ValueLayout.OfLong layout, long offset, long value) {
+        layout.accessHandle().set(this, offset, value);
+    }
+
+    /**
+     * Reads a double from this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @return a double value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     */
+    @ForceInline
+    default double get(ValueLayout.OfDouble layout, long offset) {
+        return (double)layout.accessHandle().get(this, offset);
+    }
+
+    /**
+     * Writes a double to this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @param value the double value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     */
+    @ForceInline
+    default void set(ValueLayout.OfDouble layout, long offset, double value) {
+        layout.accessHandle().set(this, offset, value);
+    }
+
+    /**
+     * Reads an address from this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @return an address value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     */
+    @ForceInline
+    default MemoryAddress get(ValueLayout.OfAddress layout, long offset) {
+        return (MemoryAddress)layout.accessHandle().get(this, offset);
+    }
+
+    /**
+     * Writes an address to this segment and offset with given layout.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
+     * @param value the address value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     */
+    @ForceInline
+    default void set(ValueLayout.OfAddress layout, long offset, Addressable value) {
+        layout.accessHandle().set(this, offset, value.address());
+    }
+
+    /**
+     * Reads a char from this segment and index, scaled by given layout size.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
+     * @return a char value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     */
+    @ForceInline
+    default char getAtIndex(ValueLayout.OfChar layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (char)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
+    }
+
+    /**
+     * Writes a char to this segment and index, scaled by given layout size.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
+     * @param value the char value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     */
+    @ForceInline
+    default void setAtIndex(ValueLayout.OfChar layout, long index, char value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
+    }
+
+    /**
+     * Reads a short from this segment and index, scaled by given layout size.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
+     * @return a short value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     */
+    @ForceInline
+    default short getAtIndex(ValueLayout.OfShort layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (short)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
+    }
+
+    /**
+     * Writes a short to this segment and index, scaled by given layout size.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
+     * @param value the short value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     */
+    @ForceInline
+    default void setAtIndex(ValueLayout.OfShort layout, long index, short value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
+    }
+
+    /**
+     * Reads an int from this segment and index, scaled by given layout size.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
+     * @return an int value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     */
+    @ForceInline
+    default int getAtIndex(ValueLayout.OfInt layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (int)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
+    }
+
+    /**
+     * Writes an int to this segment and index, scaled by given layout size.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
+     * @param value the int value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     */
+    @ForceInline
+    default void setAtIndex(ValueLayout.OfInt layout, long index, int value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
+    }
+
+    /**
+     * Reads a float from this segment and index, scaled by given layout size.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
+     * @return a float value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     */
+    @ForceInline
+    default float getAtIndex(ValueLayout.OfFloat layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (float)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
+    }
+
+    /**
+     * Writes a float to this segment and index, scaled by given layout size.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
+     * @param value the float value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     */
+    @ForceInline
+    default void setAtIndex(ValueLayout.OfFloat layout, long index, float value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
+    }
+
+    /**
+     * Reads a long from this segment and index, scaled by given layout size.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
+     * @return a long value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     */
+    @ForceInline
+    default long getAtIndex(ValueLayout.OfLong layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (long)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
+    }
+
+    /**
+     * Writes a long to this segment and index, scaled by given layout size.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
+     * @param value the long value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     */
+    @ForceInline
+    default void setAtIndex(ValueLayout.OfLong layout, long index, long value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
+    }
+
+    /**
+     * Reads a double from this segment and index, scaled by given layout size.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
+     * @return a double value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     */
+    @ForceInline
+    default double getAtIndex(ValueLayout.OfDouble layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (double)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
+    }
+
+    /**
+     * Writes a double to this segment and index, scaled by given layout size.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
+     * @param value the double value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     */
+    @ForceInline
+    default void setAtIndex(ValueLayout.OfDouble layout, long index, double value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value);
+    }
+
+    /**
+     * Reads an address from this segment and index, scaled by given layout size.
+     *
+     * @param layout the layout of the memory region to be read.
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
+     * @return an address value read from this address.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     */
+    @ForceInline
+    default MemoryAddress getAtIndex(ValueLayout.OfAddress layout, long index) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        return (MemoryAddress)layout.accessHandle().get(this, Utils.scaleOffset(this, index, layout.byteSize()));
+    }
+
+    /**
+     * Writes an address to this segment and index, scaled by given layout size.
+     *
+     * @param layout the layout of the memory region to be written.
+     * @param index index (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
+     *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + (index * layout.byteSize())}.
+     * @param value the address value to be written.
+     * @throws IllegalStateException if the scope associated with this segment has been closed, or if access occurs from
+     * a thread other than the thread owning that scope.
+     * @throws IllegalArgumentException if the dereference operation is
+     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the provided layout,
+     * or if the layout alignment is greater than its size.
+     * @throws IndexOutOfBoundsException when the dereference operation falls outside the <em>spatial bounds</em> of the
+     * memory segment.
+     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}.
+     */
+    @ForceInline
+    default void setAtIndex(ValueLayout.OfAddress layout, long index, Addressable value) {
+        Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
+        layout.accessHandle().set(this, Utils.scaleOffset(this, index, layout.byteSize()), value.address());
+    }
+
+
+    /**
+     * Copies a number of elements from a source segment to a destination array,
+     * starting at a given segment offset (expressed in bytes), and a given array index, using the given source element layout.
+     * Supported array types are {@code byte[]}, {@code char[]}, {@code short[]}, {@code int[]}, {@code float[]}, {@code long[]} and {@code double[]}.
+     * @param srcSegment the source segment.
+     * @param srcLayout the source element layout. If the byte order associated with the layout is
+     * different from the native order, a byte swap operation will be performed on each array element.
+     * @param srcOffset the starting offset, in bytes, of the source segment.
+     * @param dstArray the destination array.
+     * @param dstIndex the starting index of the destination array.
+     * @param elementCount the number of array elements to be copied.
+     * @throws  IllegalArgumentException if {@code dstArray} is not an array, or if it is an array but whose type is not supported,
+     * if the destination array component type does not match the carrier of the source element layout, if the source
+     * segment/offset are <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the source element layout,
+     * or if the destination element layout alignment is greater than its size.
+     */
+    @ForceInline
+    static void copy(
+            MemorySegment srcSegment, ValueLayout srcLayout, long srcOffset,
+            Object dstArray, int dstIndex, int elementCount) {
+        Objects.requireNonNull(srcSegment);
+        Objects.requireNonNull(dstArray);
+        Objects.requireNonNull(srcLayout);
+        long baseAndScale = getBaseAndScale(dstArray.getClass());
+        if (dstArray.getClass().componentType() != srcLayout.carrier()) {
+            throw new IllegalArgumentException("Incompatible value layout: " + srcLayout);
+        }
+        int dstBase = (int)baseAndScale;
+        int dstWidth = (int)(baseAndScale >> 32);
+        AbstractMemorySegmentImpl srcImpl = (AbstractMemorySegmentImpl)srcSegment;
+        Utils.checkElementAlignment(srcLayout, "Source layout alignment greater than its size");
+        if (!srcImpl.isAlignedForElement(srcOffset, srcLayout)) {
+            throw new IllegalArgumentException("Source segment incompatible with alignment constraints");
+        }
+        srcImpl.checkAccess(srcOffset, elementCount * dstWidth, true);
+        Objects.checkFromIndexSize(dstIndex, elementCount, Array.getLength(dstArray));
+        if (dstWidth == 1 || srcLayout.order() == ByteOrder.nativeOrder()) {
+            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.scope(), null,
+                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
+                    dstArray, dstBase + (dstIndex * dstWidth), elementCount * dstWidth);
+        } else {
+            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(srcImpl.scope(), null,
+                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
+                    dstArray, dstBase + (dstIndex * dstWidth), elementCount * dstWidth, dstWidth);
+        }
+    }
+
+    /**
+     * Copies a number of elements from a source array to a destination segment,
+     * starting at a given array index, and a given segment offset (expressed in bytes), using the given destination element layout.
+     * Supported array types are {@code byte[]}, {@code char[]}, {@code short[]}, {@code int[]}, {@code float[]}, {@code long[]} and {@code double[]}.
+     * @param srcArray the source array.
+     * @param srcIndex the starting index of the source array.
+     * @param dstSegment the destination segment.
+     * @param dstLayout the destination element layout. If the byte order associated with the layout is
+     * different from the native order, a byte swap operation will be performed on each array element.
+     * @param dstOffset the starting offset, in bytes, of the destination segment.
+     * @param elementCount the number of array elements to be copied.
+     * @throws  IllegalArgumentException if {@code srcArray} is not an array, or if it is an array but whose type is not supported,
+     * if the source array component type does not match the carrier of the destination element layout, if the destination
+     * segment/offset are <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraints</a> in the destination element layout,
+     * or if the destination element layout alignment is greater than its size.
+     */
+    @ForceInline
+    static void copy(
+            Object srcArray, int srcIndex,
+            MemorySegment dstSegment, ValueLayout dstLayout, long dstOffset, int elementCount) {
+        Objects.requireNonNull(srcArray);
+        Objects.requireNonNull(dstSegment);
+        Objects.requireNonNull(dstLayout);
+        long baseAndScale = getBaseAndScale(srcArray.getClass());
+        if (srcArray.getClass().componentType() != dstLayout.carrier()) {
+            throw new IllegalArgumentException("Incompatible value layout: " + dstLayout);
+        }
+        int srcBase = (int)baseAndScale;
+        int srcWidth = (int)(baseAndScale >> 32);
+        Objects.checkFromIndexSize(srcIndex, elementCount, Array.getLength(srcArray));
+        AbstractMemorySegmentImpl destImpl = (AbstractMemorySegmentImpl)dstSegment;
+        Utils.checkElementAlignment(dstLayout, "Destination layout alignment greater than its size");
+        if (!destImpl.isAlignedForElement(dstOffset, dstLayout)) {
+            throw new IllegalArgumentException("Destination segment incompatible with alignment constraints");
+        }
+        destImpl.checkAccess(dstOffset, elementCount * srcWidth, false);
+        if (srcWidth == 1 || dstLayout.order() == ByteOrder.nativeOrder()) {
+            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(null, destImpl.scope(),
+                    srcArray, srcBase + (srcIndex * srcWidth),
+                    destImpl.unsafeGetBase(), destImpl.unsafeGetOffset() + dstOffset, elementCount * srcWidth);
+        } else {
+            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(null, destImpl.scope(),
+                    srcArray, srcBase + (srcIndex * srcWidth),
+                    destImpl.unsafeGetBase(), destImpl.unsafeGetOffset() + dstOffset, elementCount * srcWidth, srcWidth);
+        }
+    }
+
+    private static long getBaseAndScale(Class<?> arrayType) {
+        if (arrayType.equals(byte[].class)) {
+            return (long)Unsafe.ARRAY_BYTE_BASE_OFFSET | ((long)Unsafe.ARRAY_BYTE_INDEX_SCALE << 32);
+        } else if (arrayType.equals(char[].class)) {
+            return (long)Unsafe.ARRAY_CHAR_BASE_OFFSET | ((long)Unsafe.ARRAY_CHAR_INDEX_SCALE << 32);
+        } else if (arrayType.equals(short[].class)) {
+            return (long)Unsafe.ARRAY_SHORT_BASE_OFFSET | ((long)Unsafe.ARRAY_SHORT_INDEX_SCALE << 32);
+        } else if (arrayType.equals(int[].class)) {
+            return (long)Unsafe.ARRAY_INT_BASE_OFFSET | ((long) Unsafe.ARRAY_INT_INDEX_SCALE << 32);
+        } else if (arrayType.equals(float[].class)) {
+            return (long)Unsafe.ARRAY_FLOAT_BASE_OFFSET | ((long)Unsafe.ARRAY_FLOAT_INDEX_SCALE << 32);
+        } else if (arrayType.equals(long[].class)) {
+            return (long)Unsafe.ARRAY_LONG_BASE_OFFSET | ((long)Unsafe.ARRAY_LONG_INDEX_SCALE << 32);
+        } else if (arrayType.equals(double[].class)) {
+            return (long)Unsafe.ARRAY_DOUBLE_BASE_OFFSET | ((long)Unsafe.ARRAY_DOUBLE_INDEX_SCALE << 32);
+        } else {
+            throw new IllegalArgumentException("Not a supported array class: " + arrayType.getSimpleName());
+        }
+    }
 }

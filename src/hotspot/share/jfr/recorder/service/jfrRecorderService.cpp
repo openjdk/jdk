@@ -645,7 +645,7 @@ void JfrRecorderService::invoke_flush() {
 }
 
 void JfrRecorderService::flushpoint() {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(Thread::current()));
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
   JfrRotationLock lock;
   if (_chunkwriter.is_valid()) {
     invoke_flush();
@@ -653,7 +653,7 @@ void JfrRecorderService::flushpoint() {
 }
 
 void JfrRecorderService::process_full_buffers() {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(Thread::current()));
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
   JfrRotationLock lock;
   if (_chunkwriter.is_valid()) {
     _storage.write_full();
@@ -661,6 +661,6 @@ void JfrRecorderService::process_full_buffers() {
 }
 
 void JfrRecorderService::evaluate_chunk_size_for_rotation() {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(Thread::current()));
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
   JfrChunkRotation::evaluate(_chunkwriter);
 }

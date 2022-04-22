@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -50,15 +50,15 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLPullParserConfiguration;
 import java.io.IOException;
 import java.util.Locale;
 import javax.xml.XMLConstants;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
-import jdk.xml.internal.SecuritySupport;
 
 /**
  * @xerces.internal
  *
  * @author Rahul Srivastava, Sun Microsystems Inc.
  *
- * @LastModified: Sep 2017
+ * @LastModified: May 2021
  */
 public class SchemaParsingConfig extends BasicParserConfiguration
     implements XMLPullParserConfiguration {
@@ -305,7 +305,7 @@ public class SchemaParsingConfig extends BasicParserConfiguration
             LOAD_EXTERNAL_DTD,          NOTIFY_BUILTIN_REFS,
             NOTIFY_CHAR_REFS, GENERATE_SYNTHETIC_ANNOTATIONS,
             XMLConstants.USE_CATALOG,
-            JdkXmlUtils.OVERRIDE_PARSER
+            JdkConstants.OVERRIDE_PARSER
         };
         addRecognizedFeatures(recognizedFeatures);
         fFeatures.put(PARSER_SETTINGS, Boolean.TRUE);
@@ -320,7 +320,7 @@ public class SchemaParsingConfig extends BasicParserConfiguration
         fFeatures.put(NOTIFY_CHAR_REFS, Boolean.FALSE);
         fFeatures.put(GENERATE_SYNTHETIC_ANNOTATIONS, Boolean.FALSE);
         fFeatures.put(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
-        fFeatures.put(JdkXmlUtils.OVERRIDE_PARSER, JdkXmlUtils.OVERRIDE_PARSER_DEFAULT);
+        fFeatures.put(JdkConstants.OVERRIDE_PARSER, JdkConstants.OVERRIDE_PARSER_DEFAULT);
 
         // add default recognized properties
         final String[] recognizedProperties = {
@@ -339,7 +339,7 @@ public class SchemaParsingConfig extends BasicParserConfiguration
             JdkXmlUtils.CATALOG_FILES,
             JdkXmlUtils.CATALOG_PREFER,
             JdkXmlUtils.CATALOG_RESOLVE,
-            JdkXmlUtils.CDATA_CHUNK_SIZE
+            JdkConstants.CDATA_CHUNK_SIZE
         };
         addRecognizedProperties(recognizedProperties);
 
@@ -371,7 +371,7 @@ public class SchemaParsingConfig extends BasicParserConfiguration
 
         fValidationManager = new ValidationManager();
         fProperties.put(VALIDATION_MANAGER, fValidationManager);
-        fProperties.put(JdkXmlUtils.CDATA_CHUNK_SIZE, JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT);
+        fProperties.put(JdkConstants.CDATA_CHUNK_SIZE, JdkConstants.CDATA_CHUNK_SIZE_DEFAULT);
 
         fVersionDetector = new XMLVersionDetector();
 

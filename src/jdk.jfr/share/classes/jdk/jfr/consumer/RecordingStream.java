@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.jfr.consumer;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.time.Duration;
@@ -33,6 +34,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import jdk.jfr.Configuration;
@@ -40,6 +42,7 @@ import jdk.jfr.Event;
 import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
+import jdk.jfr.RecordingState;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport;
@@ -53,15 +56,8 @@ import jdk.jfr.internal.consumer.EventDirectoryStream;
  * The following example shows how to record events using the default
  * configuration and print the Garbage Collection, CPU Load and JVM Information
  * event to standard out.
- * <pre>{@literal
- * Configuration c = Configuration.getConfiguration("default");
- * try (var rs = new RecordingStream(c)) {
- *     rs.onEvent("jdk.GarbageCollection", System.out::println);
- *     rs.onEvent("jdk.CPULoad", System.out::println);
- *     rs.onEvent("jdk.JVMInformation", System.out::println);
- *     rs.start();
- * }
- * }</pre>
+ *
+ * {@snippet class="Snippets" region="RecordingStreamOverview"}
  *
  * @since 14
  */
@@ -101,17 +97,32 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      *         {@code FlightRecorderPermission("accessFlightRecorder")}
      */
     public RecordingStream() {
+        this(Map.of());
+    }
+
+    private RecordingStream(Map<String, String> settings) {
         Utils.checkAccessFlightRecorder();
+        @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
         this.recording = new Recording();
         this.creationTime = Instant.now();
         this.recording.setName("Recording Stream: " + creationTime);
         try {
             PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
-            this.directoryStream = new EventDirectoryStream(acc, null, SecuritySupport.PRIVILEGED, pr, configurations());
+            this.directoryStream = new EventDirectoryStream(
+                acc,
+                null,
+                SecuritySupport.PRIVILEGED,
+                pr,
+                configurations(),
+                false
+            );
         } catch (IOException ioe) {
             this.recording.close();
             throw new IllegalStateException(ioe.getMessage());
+        }
+        if (!settings.isEmpty()) {
+            recording.setSettings(settings);
         }
     }
 
@@ -129,13 +140,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * The following example shows how to create a recording stream that uses a
      * predefined configuration.
      *
-     * <pre>{@literal
-     * var c = Configuration.getConfiguration("default");
-     * try (var rs = new RecordingStream(c)) {
-     *   rs.onEvent(System.out::println);
-     *   rs.start();
-     * }
-     * }</pre>
+     * {@snippet class="Snippets" region="RecordingStreamConstructor"}
      *
      * @param configuration configuration that contains the settings to use,
      *        not {@code null}
@@ -150,8 +155,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * @see Configuration
      */
     public RecordingStream(Configuration configuration) {
-        this();
-        recording.setSettings(configuration.getSettings());
+        this(Objects.requireNonNull(configuration, "configuration").getSettings());
     }
 
     /**
@@ -178,17 +182,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * The following example records 20 seconds using the "default" configuration
      * and then changes settings to the "profile" configuration.
      *
-     * <pre>{@literal
-     * Configuration defaultConfiguration = Configuration.getConfiguration("default");
-     * Configuration profileConfiguration = Configuration.getConfiguration("profile");
-     * try (var rs = new RecordingStream(defaultConfiguration)) {
-     *    rs.onEvent(System.out::println);
-     *    rs.startAsync();
-     *    Thread.sleep(20_000);
-     *    rs.setSettings(profileConfiguration.getSettings());
-     *    Thread.sleep(20_000);
-     * }
-     * }</pre>
+     * {@snippet class="Snippets" region="RecordingStreamSetSettings"}
      *
      * @param settings the settings to set, not {@code null}
      *
@@ -373,16 +367,8 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * The following example prints the CPU usage for ten seconds. When
      * the current thread leaves the try-with-resources block the
      * stream is stopped/closed.
-     * <pre>{@literal
-     * try (var stream = new RecordingStream()) {
-     *   stream.enable("jdk.CPULoad").withPeriod(Duration.ofSeconds(1));
-     *   stream.onEvent("jdk.CPULoad", event -> {
-     *     System.out.println(event);
-     *   });
-     *   stream.startAsync();
-     *   Thread.sleep(10_000);
-     * }
-     * }</pre>
+     *
+     * {@snippet class="Snippets" region="RecordingStreamStartAsync"}
      *
      * @throws IllegalStateException if the stream is already started or closed
      */
@@ -392,6 +378,43 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         long startNanos = pr.start();
         updateOnCompleteHandler();
         directoryStream.startAsync(startNanos);
+    }
+
+    /**
+     * Writes recording data to a file.
+     * <p>
+     * The recording stream must be started, but not closed.
+     * <p>
+     * It's highly recommended that a max age or max size is set before
+     * starting the stream. Otherwise, the dump may not contain any events.
+     *
+     * @param destination the location where recording data is written, not
+     *        {@code null}
+     *
+     * @throws IOException if the recording data can't be copied to the specified
+     *         location, or if the stream is closed, or not started.
+     *
+     * @throws SecurityException if a security manager exists and the caller doesn't
+     *         have {@code FilePermission} to write to the destination path
+     *
+     * @see RecordingStream#setMaxAge(Duration)
+     * @see RecordingStream#setMaxSize(long)
+     *
+     * @since 17
+     */
+    public void dump(Path destination) throws IOException {
+        Objects.requireNonNull(destination);
+        Object recorder = PrivateAccess.getInstance().getPlatformRecorder();
+        synchronized (recorder) {
+            RecordingState state = recording.getState();
+            if (state == RecordingState.CLOSED) {
+                throw new IOException("Recording stream has been closed, no content to write");
+            }
+            if (state == RecordingState.NEW) {
+                throw new IOException("Recording stream has not been started, no content to write");
+            }
+            recording.dump(destination);
+        }
     }
 
     @Override

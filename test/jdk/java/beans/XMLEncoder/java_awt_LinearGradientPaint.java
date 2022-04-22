@@ -25,6 +25,7 @@
  * @test
  * @bug 4358979
  * @summary Tests LinearGradientPaint encoding
+ * @run main/othervm -Djava.security.manager=allow java_awt_LinearGradientPaint
  * @author Sergey Malenkov
  */
 

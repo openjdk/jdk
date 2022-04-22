@@ -136,12 +136,6 @@ public final class ManagementSupport {
         return PrivateAccess.getInstance().newEventSettings(esm);
     }
 
-    // When streaming an ongoing recording, consumed chunks should be removed
-    public static void removeBefore(Recording recording, Instant timestamp) {
-        PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
-        pr.removeBefore(timestamp);
-    }
-
     // Needed callback to detect when a chunk has been parsed.
     public static void removePath(Recording recording, Path path) {
         PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
@@ -171,9 +165,17 @@ public final class ManagementSupport {
     // EventStream::onMetadataData need to supply MetadataEvent
     // with configuration objects
     public static EventStream newEventDirectoryStream(
+            @SuppressWarnings("removal")
             AccessControlContext acc,
             Path directory,
             List<Configuration> confs) throws IOException {
-        return new EventDirectoryStream(acc, directory, FileAccess.UNPRIVILEGED, null, confs);
+        return new EventDirectoryStream(
+            acc,
+            directory,
+            FileAccess.UNPRIVILEGED,
+            null,
+            confs,
+            false
+        );
     }
 }

@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestKeyFactory
- * @run main/othervm TestKeyFactory sm rsakeys.ks.policy
+ * @run main/othervm -Djava.security.manager=allow TestKeyFactory sm rsakeys.ks.policy
  */
 
 import java.io.*;
@@ -98,8 +98,7 @@ public class TestKeyFactory extends PKCS11Test {
             }
             @Override
             public byte[] getEncoded() {
-                // skip cloning for testing key.
-                return encodedPriv;
+                return encodedPriv.clone();
             }
         };
         byte[] encodedPub = Base64.getDecoder().decode(PKCS1_PUB_STR);
@@ -114,8 +113,7 @@ public class TestKeyFactory extends PKCS11Test {
             }
             @Override
             public byte[] getEncoded() {
-                // skip cloning for testing key.
-                return encodedPub;
+                return encodedPub.clone();
             }
         };
     }

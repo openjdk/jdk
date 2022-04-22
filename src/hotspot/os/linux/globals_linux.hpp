@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,14 @@
   product(bool, UseContainerSupport, true,                              \
           "Enable detection and runtime container configuration support") \
                                                                         \
+  product(bool, UseContainerCpuShares, false,                           \
+          "(Deprecated) Include CPU shares in the CPU availability"     \
+          " calculation.")                                              \
+                                                                        \
   product(bool, PreferContainerQuotaForCPUCount, true,                  \
-          "Calculate the container CPU availability based on the value" \
-          " of quotas (if set), when true. Otherwise, use the CPU"      \
-          " shares value, provided it is less than quota.")             \
+          "(Deprecated) Calculate the container CPU availability based" \
+          " on the value of quotas (if set), when true. Otherwise, use" \
+          " the CPU shares value, provided it is less than quota.")     \
                                                                         \
   product(bool, AdjustStackSizeForTLS, false,                           \
           "Increase the thread stack size to include space for glibc "  \

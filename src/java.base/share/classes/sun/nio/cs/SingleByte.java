@@ -49,10 +49,10 @@ public class SingleByte
         return cr;
     }
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     public static final class Decoder extends CharsetDecoder
                                       implements ArrayDecoder {
-
-        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
         private final char[] b2c;
         private final boolean isASCIICompatible;
@@ -214,8 +214,14 @@ public class SingleByte
             byte[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            int len  = Math.min(dl - dp, sl - sp);
+            int len = Math.min(dl - dp, sl - sp);
 
+            if (isASCIICompatible) {
+                int n = JLA.encodeASCII(sa, sp, da, dp, len);
+                sp += n;
+                dp += n;
+                len -= n;
+            }
             while (len-- > 0) {
                 char c = sa[sp];
                 int b = encode(c);

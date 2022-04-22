@@ -37,7 +37,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 4674384
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug4674384_MAX_OCCURS_Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug4674384_MAX_OCCURS_Test
  * @run testng/othervm parsers.Bug4674384_MAX_OCCURS_Test
  * @summary Test large maxOccurs.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -48,6 +48,7 @@ import com.sun.org.apache.xml.internal.dtm.Axis;
 import com.sun.org.apache.xml.internal.dtm.DTM;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +63,7 @@ import java.util.Set;
  * @author Morten Jorgensen
  * @author Erwin Bolwidt <ejb@klomp.org>
  * @author G. Todd Miller
- * @LastModified: Nov 2017
+ * @LastModified: Sep 2021
  */
 final class Mode implements Constants {
 
@@ -129,13 +130,15 @@ final class Mode implements Constants {
 
     /**
      * A mapping between templates and test sequences.
+     * {@link LinkedHashMap} is necessary to make traversal order consistent across runs.
      */
-    private Map<Template, Object> _neededTemplates = new HashMap<>();
+    private Map<Template, Object> _neededTemplates = new LinkedHashMap<>();
 
     /**
      * A mapping between named templates and Mode objects.
+     * {@link LinkedHashMap} is necessary to make traversal order consistent across runs.
      */
-    private Map<Template, Mode> _namedTemplates = new HashMap<>();
+    private Map<Template, Mode> _namedTemplates = new LinkedHashMap<>();
 
     /**
      * A mapping between templates and instruction handles.
@@ -198,7 +201,7 @@ final class Mode implements Constants {
 
     public String functionName(int min, int max) {
         if (_importLevels == null) {
-            _importLevels = new HashMap<>();
+            _importLevels = new LinkedHashMap<>();
         }
         _importLevels.put(max, min);
         return _methodName + '_' + max;
@@ -1053,8 +1056,8 @@ final class Mode implements Constants {
         final List<String> names = xsltc.getNamesIndex();
 
         // Clear some datastructures
-        _namedTemplates = new HashMap<>();
-        _neededTemplates = new HashMap<>();
+        _namedTemplates = new LinkedHashMap<>();
+        _neededTemplates = new LinkedHashMap<>();
         _templateIHs = new HashMap<>();
         _templateILs = new HashMap<>();
         _patternGroups = (List<LocationPathPattern>[])new ArrayList[32];

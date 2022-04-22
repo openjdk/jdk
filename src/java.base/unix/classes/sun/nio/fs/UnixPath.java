@@ -774,18 +774,21 @@ class UnixPath implements Path {
     }
 
     void checkRead() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkRead(getPathForPermissionCheck());
     }
 
     void checkWrite() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkWrite(getPathForPermissionCheck());
     }
 
     void checkDelete() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkDelete(getPathForPermissionCheck());
@@ -798,6 +801,7 @@ class UnixPath implements Path {
         }
         // The path is relative so need to resolve against default directory,
         // taking care not to reveal the user.dir
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertyAccess("user.dir");

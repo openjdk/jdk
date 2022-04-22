@@ -29,7 +29,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/method.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 
@@ -406,7 +405,11 @@ void ConstMethod::copy_annotations_from(ClassLoaderData* loader_data, ConstMetho
 void ConstMethod::metaspace_pointers_do(MetaspaceClosure* it) {
   log_trace(cds)("Iter(ConstMethod): %p", this);
 
-  it->push(&_constants);
+  if (!method()->method_holder()->is_rewritten()) {
+    it->push(&_constants, MetaspaceClosure::_writable);
+  } else {
+    it->push(&_constants);
+  }
   it->push(&_stackmap_data);
   if (has_method_annotations()) {
     it->push(method_annotations_addr());
@@ -420,7 +423,6 @@ void ConstMethod::metaspace_pointers_do(MetaspaceClosure* it) {
   if (has_default_annotations()) {
       it->push(default_annotations_addr());
   }
-  ConstMethod* this_ptr = this;
 }
 
 // Printing

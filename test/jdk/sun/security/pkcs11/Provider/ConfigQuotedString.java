@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,29 @@
  * questions.
  */
 
-import java.io.*;
-import java.util.*;
+/* @test
+ * @bug 5070773
+ * @summary SunPKCS11 provider does not support spaces config's provider name
+ * @library /test/lib ..
+ * @run testng/othervm ConfigQuotedString
+ */
+
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import java.nio.file.Path;
 import java.security.*;
-import javax.security.auth.callback.*;
 
 public class ConfigQuotedString extends PKCS11Test {
 
-    public static void main(String[] args) throws Exception {
+    @BeforeClass
+    public void setUp() throws Exception {
+        Path configPath = Path.of(BASE).resolve("ConfigQuotedString-nss.txt");
+        System.setProperty("CUSTOM_P11_CONFIG", configPath.toString());
+    }
+
+    @Test
+    public void testQuotedString() throws Exception {
         main(new ConfigQuotedString());
     }
 

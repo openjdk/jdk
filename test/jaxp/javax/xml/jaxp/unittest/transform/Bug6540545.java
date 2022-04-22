@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6540545
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6540545
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6540545
  * @run testng/othervm transform.Bug6540545
  * @summary Test XSLT as expected.
  */

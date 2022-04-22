@@ -26,31 +26,19 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-import sun.hotspot.WhiteBox;
-
 /*
  * @test HandshakeTransitionTest
  * @summary This does a sanity test of the poll in the native wrapper.
  * @requires vm.debug
  * @library /testlibrary /test/lib
  * @build HandshakeTransitionTest
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/native -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI HandshakeTransitionTest
+ * @run main/native HandshakeTransitionTest
  */
 
 public class HandshakeTransitionTest {
     public static native void someTime(int ms);
 
     public static void main(String[] args) throws Exception {
-        WhiteBox wb = WhiteBox.getWhiteBox();
-        Boolean useJVMCICompiler = wb.getBooleanVMFlag("UseJVMCICompiler");
-        String useJVMCICompilerStr;
-        if (useJVMCICompiler != null) {
-            useJVMCICompilerStr = useJVMCICompiler ?  "-XX:+UseJVMCICompiler" : "-XX:-UseJVMCICompiler";
-        } else {
-            // pass something innocuous
-            useJVMCICompilerStr = "-XX:+UnlockExperimentalVMOptions";
-        }
         ProcessBuilder pb =
             ProcessTools.createTestJvm(
                     "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
@@ -61,8 +49,6 @@ public class HandshakeTransitionTest {
                     "-XX:ParallelGCThreads=1",
                     "-XX:ConcGCThreads=1",
                     "-XX:CICompilerCount=2",
-                    "-XX:+UnlockExperimentalVMOptions",
-                    useJVMCICompilerStr,
                     "HandshakeTransitionTest$Test");
 
         OutputAnalyzer output = ProcessTools.executeProcess(pb);

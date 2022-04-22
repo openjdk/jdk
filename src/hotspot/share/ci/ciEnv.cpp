@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -48,6 +49,7 @@
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
@@ -64,6 +66,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/reflection.hpp"
@@ -166,7 +169,72 @@ ciEnv::ciEnv(CompileTask* task)
   _jvmti_can_access_local_variables = false;
   _jvmti_can_post_on_exceptions = false;
   _jvmti_can_pop_frame = false;
+
+  _dyno_klasses = NULL;
+  _dyno_locs = NULL;
+  _dyno_name[0] = '\0';
 }
+
+// Record components of a location descriptor string.  Components are appended by the constructor and
+// removed by the destructor, like a stack, so scope matters.  These location descriptors are used to
+// locate dynamic classes, and terminate at a Method* or oop field associated with dynamic/hidden class.
+//
+// Example use:
+//
+// {
+//   RecordLocation fp(this, "field1");
+//   // location: "field1"
+//   { RecordLocation fp(this, " field2"); // location: "field1 field2" }
+//   // location: "field1"
+//   { RecordLocation fp(this, " field3"); // location: "field1 field3" }
+//   // location: "field1"
+// }
+// // location: ""
+//
+// Examples of actual locations
+// @bci compiler/ciReplay/CiReplayBase$TestMain test (I)V 1 <appendix> argL0 ;
+// // resolve invokedynamic at bci 1 of TestMain.test, then read field "argL0" from appendix
+// @bci compiler/ciReplay/CiReplayBase$TestMain main ([Ljava/lang/String;)V 0 <appendix> form vmentry <vmtarget> ;
+// // resolve invokedynamic at bci 0 of TestMain.main, then read field "form.vmentry.method.vmtarget" from appendix
+// @cpi compiler/ciReplay/CiReplayBase$TestMain 56 form vmentry <vmtarget> ;
+// // resolve MethodHandle at cpi 56 of TestMain, then read field "vmentry.method.vmtarget" from resolved MethodHandle
+class RecordLocation {
+private:
+  char* end;
+
+  ATTRIBUTE_PRINTF(3, 4)
+  void push(ciEnv* ci, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    push_va(ci, fmt, args);
+    va_end(args);
+  }
+
+public:
+  ATTRIBUTE_PRINTF(3, 0)
+  void push_va(ciEnv* ci, const char* fmt, va_list args) {
+    char *e = ci->_dyno_name + strlen(ci->_dyno_name);
+    char *m = ci->_dyno_name + ARRAY_SIZE(ci->_dyno_name) - 1;
+    os::vsnprintf(e, m - e, fmt, args);
+    assert(strlen(ci->_dyno_name) < (ARRAY_SIZE(ci->_dyno_name) - 1), "overflow");
+  }
+
+  // append a new component
+  ATTRIBUTE_PRINTF(3, 4)
+  RecordLocation(ciEnv* ci, const char* fmt, ...) {
+    end = ci->_dyno_name + strlen(ci->_dyno_name);
+    va_list args;
+    va_start(args, fmt);
+    push(ci, " ");
+    push_va(ci, fmt, args);
+    va_end(args);
+  }
+
+  // reset to previous state
+  ~RecordLocation() {
+    *end = '\0';
+  }
+};
 
 ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   ASSERT_IN_VM;
@@ -222,6 +290,9 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   _jvmti_can_access_local_variables = false;
   _jvmti_can_post_on_exceptions = false;
   _jvmti_can_pop_frame = false;
+
+  _dyno_klasses = NULL;
+  _dyno_locs = NULL;
 }
 
 ciEnv::~ciEnv() {
@@ -238,7 +309,7 @@ ciEnv::~ciEnv() {
 // Cache Jvmti state
 bool ciEnv::cache_jvmti_state() {
   VM_ENTRY_MARK;
-  // Get Jvmti capabilities under lock to get consistant values.
+  // Get Jvmti capabilities under lock to get consistent values.
   MutexLocker mu(JvmtiThreadState_lock);
   _jvmti_redefinition_count             = JvmtiExport::redefinition_count();
   _jvmti_can_hotswap_or_post_breakpoint = JvmtiExport::can_hotswap_or_post_breakpoint();
@@ -319,6 +390,23 @@ ciInstance* ciEnv::get_or_create_exception(jobject& handle, Symbol* name) {
   }
   oop obj = JNIHandles::resolve(handle);
   return obj == NULL? NULL: get_object(obj)->as_instance();
+}
+
+ciInstanceKlass* ciEnv::get_box_klass_for_primitive_type(BasicType type) {
+  switch (type) {
+    case T_BOOLEAN: return Boolean_klass();
+    case T_BYTE   : return Byte_klass();
+    case T_CHAR   : return Character_klass();
+    case T_SHORT  : return Short_klass();
+    case T_INT    : return Integer_klass();
+    case T_LONG   : return Long_klass();
+    case T_FLOAT  : return Float_klass();
+    case T_DOUBLE : return Double_klass();
+
+    default:
+      assert(false, "not a primitive: %s", type2name(type));
+      return NULL;
+  }
 }
 
 ciInstance* ciEnv::ArrayIndexOutOfBoundsException_instance() {
@@ -432,13 +520,6 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     domain = Handle(current, accessing_klass->protection_domain());
   }
 
-  // setup up the proper type to return on OOM
-  ciKlass* fail_type;
-  if (sym->char_at(0) == JVM_SIGNATURE_ARRAY) {
-    fail_type = _unloaded_ciobjarrayklass;
-  } else {
-    fail_type = _unloaded_ciinstance_klass;
-  }
   Klass* found_klass;
   {
     ttyUnlocker ttyul;  // release tty lock to avoid ordering problems
@@ -520,7 +601,6 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
                                         int index,
                                         bool& is_accessible,
                                         ciInstanceKlass* accessor) {
-  EXCEPTION_CONTEXT;
   Klass* klass = NULL;
   Symbol* klass_name = NULL;
 
@@ -528,7 +608,7 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
     klass_name = cpool->symbol_at(index);
   } else {
     // Check if it's resolved if it's not a symbol constant pool entry.
-    klass =  ConstantPool::klass_at_if_loaded(cpool, index);
+    klass = ConstantPool::klass_at_if_loaded(cpool, index);
     // Try to look it up by name.
     if (klass == NULL) {
       klass_name = cpool->klass_name_at(index);
@@ -565,8 +645,15 @@ ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
   }
 
   // It is known to be accessible, since it was found in the constant pool.
+  ciKlass* ciKlass = get_klass(klass);
   is_accessible = true;
-  return get_klass(klass);
+#ifndef PRODUCT
+  if (ReplayCompiles && ciKlass == _unloaded_ciinstance_klass) {
+    // Klass was unresolved at replay dump time and therefore not accessible.
+    is_accessible = false;
+  }
+#endif
+  return ciKlass;
 }
 
 // ------------------------------------------------------------------
@@ -581,52 +668,74 @@ ciKlass* ciEnv::get_klass_by_index(const constantPoolHandle& cpool,
 }
 
 // ------------------------------------------------------------------
-// ciEnv::get_constant_by_index_impl
+// ciEnv::unbox_primitive_value
 //
-// Implementation of get_constant_by_index().
-ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
-                                             int pool_index, int cache_index,
-                                             ciInstanceKlass* accessor) {
-  bool ignore_will_link;
-  EXCEPTION_CONTEXT;
-  int index = pool_index;
-  if (cache_index >= 0) {
-    assert(index < 0, "only one kind of index at a time");
-    index = cpool->object_to_cp_index(cache_index);
-    oop obj = cpool->resolved_references()->obj_at(cache_index);
-    if (obj != NULL) {
-      if (obj == Universe::the_null_sentinel()) {
-        return ciConstant(T_OBJECT, get_object(NULL));
-      }
-      BasicType bt = T_OBJECT;
-      if (cpool->tag_at(index).is_dynamic_constant())
-        bt = Signature::basic_type(cpool->uncached_signature_ref_at(index));
-      if (is_reference_type(bt)) {
-      } else {
-        // we have to unbox the primitive value
-        if (!is_java_primitive(bt))  return ciConstant();
-        jvalue value;
-        BasicType bt2 = java_lang_boxing_object::get_value(obj, &value);
-        assert(bt2 == bt, "");
-        switch (bt2) {
-        case T_DOUBLE:  return ciConstant(value.d);
-        case T_FLOAT:   return ciConstant(value.f);
-        case T_LONG:    return ciConstant(value.j);
-        case T_INT:     return ciConstant(bt2, value.i);
-        case T_SHORT:   return ciConstant(bt2, value.s);
-        case T_BYTE:    return ciConstant(bt2, value.b);
-        case T_CHAR:    return ciConstant(bt2, value.c);
-        case T_BOOLEAN: return ciConstant(bt2, value.z);
-        default:  return ciConstant();
-        }
-      }
-      ciObject* ciobj = get_object(obj);
-      if (ciobj->is_array()) {
-        return ciConstant(T_ARRAY, ciobj);
+// Unbox a primitive and return it as a ciConstant.
+ciConstant ciEnv::unbox_primitive_value(ciObject* cibox, BasicType expected_bt) {
+  jvalue value;
+  BasicType bt = java_lang_boxing_object::get_value(cibox->get_oop(), &value);
+  if (bt != expected_bt && expected_bt != T_ILLEGAL) {
+    assert(false, "type mismatch: %s vs %s", type2name(expected_bt), cibox->klass()->name()->as_klass_external_name());
+    return ciConstant();
+  }
+  switch (bt) {
+    case T_BOOLEAN: return ciConstant(bt, value.z);
+    case T_BYTE:    return ciConstant(bt, value.b);
+    case T_SHORT:   return ciConstant(bt, value.s);
+    case T_CHAR:    return ciConstant(bt, value.c);
+    case T_INT:     return ciConstant(bt, value.i);
+    case T_LONG:    return ciConstant(value.j);
+    case T_FLOAT:   return ciConstant(value.f);
+    case T_DOUBLE:  return ciConstant(value.d);
+
+    default:
+      assert(false, "not a primitive type: %s", type2name(bt));
+      return ciConstant();
+  }
+}
+
+// ------------------------------------------------------------------
+// ciEnv::get_resolved_constant
+//
+ciConstant ciEnv::get_resolved_constant(const constantPoolHandle& cpool, int obj_index) {
+  assert(obj_index >= 0, "");
+  oop obj = cpool->resolved_references()->obj_at(obj_index);
+  if (obj == NULL) {
+    // Unresolved constant. It is resolved when the corresponding slot contains a non-null reference.
+    // Null constant is represented as a sentinel (non-null) value.
+    return ciConstant();
+  } else if (obj == Universe::the_null_sentinel()) {
+    return ciConstant(T_OBJECT, get_object(NULL));
+  } else {
+    ciObject* ciobj = get_object(obj);
+    if (ciobj->is_array()) {
+      return ciConstant(T_ARRAY, ciobj);
+    } else {
+      int cp_index = cpool->object_to_cp_index(obj_index);
+      BasicType bt = cpool->basic_type_for_constant_at(cp_index);
+      if (is_java_primitive(bt)) {
+        assert(cpool->tag_at(cp_index).is_dynamic_constant(), "sanity");
+        return unbox_primitive_value(ciobj, bt);
       } else {
         assert(ciobj->is_instance(), "should be an instance");
         return ciConstant(T_OBJECT, ciobj);
       }
+    }
+  }
+}
+
+// ------------------------------------------------------------------
+// ciEnv::get_constant_by_index_impl
+//
+// Implementation of get_constant_by_index().
+ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
+                                             int index, int obj_index,
+                                             ciInstanceKlass* accessor) {
+  bool ignore_will_link;
+  if (obj_index >= 0) {
+    ciConstant con = get_resolved_constant(cpool, obj_index);
+    if (con.is_valid()) {
+      return con;
     }
   }
   constantTag tag = cpool->tag_at(index);
@@ -639,45 +748,30 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
   } else if (tag.is_double()) {
     return ciConstant((jdouble)cpool->double_at(index));
   } else if (tag.is_string()) {
-    oop string = NULL;
-    assert(cache_index >= 0, "should have a cache index");
-    if (cpool->is_pseudo_string_at(index)) {
-      string = cpool->pseudo_string_at(index, cache_index);
-    } else {
-      string = cpool->string_at(index, cache_index, THREAD);
-      if (HAS_PENDING_EXCEPTION) {
-        CLEAR_PENDING_EXCEPTION;
-        record_out_of_memory_failure();
-        return ciConstant();
-      }
-    }
-    ciObject* constant = get_object(string);
-    if (constant->is_array()) {
-      return ciConstant(T_ARRAY, constant);
-    } else {
-      assert (constant->is_instance(), "must be an instance, or not? ");
-      return ciConstant(T_OBJECT, constant);
-    }
-  } else if (tag.is_unresolved_klass_in_error()) {
-    return ciConstant();
-  } else if (tag.is_klass() || tag.is_unresolved_klass()) {
-    // 4881222: allow ldc to take a class type
-    ciKlass* klass = get_klass_by_index_impl(cpool, index, ignore_will_link, accessor);
+    EXCEPTION_CONTEXT;
+    assert(obj_index >= 0, "should have an object index");
+    oop string = cpool->string_at(index, obj_index, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
       record_out_of_memory_failure();
       return ciConstant();
     }
-    assert (klass->is_instance_klass() || klass->is_array_klass(),
-            "must be an instance or array klass ");
+    ciInstance* constant = get_object(string)->as_instance();
+    return ciConstant(T_OBJECT, constant);
+  } else if (tag.is_unresolved_klass_in_error()) {
+    return ciConstant(T_OBJECT, get_unloaded_klass_mirror(NULL));
+  } else if (tag.is_klass() || tag.is_unresolved_klass()) {
+    ciKlass* klass = get_klass_by_index_impl(cpool, index, ignore_will_link, accessor);
     return ciConstant(T_OBJECT, klass->java_mirror());
-  } else if (tag.is_method_type()) {
+  } else if (tag.is_method_type() || tag.is_method_type_in_error()) {
     // must execute Java code to link this CP entry into cache[i].f1
+    assert(obj_index >= 0, "should have an object index");
     ciSymbol* signature = get_symbol(cpool->method_type_signature_at(index));
     ciObject* ciobj = get_unloaded_method_type_constant(signature);
     return ciConstant(T_OBJECT, ciobj);
-  } else if (tag.is_method_handle()) {
+  } else if (tag.is_method_handle() || tag.is_method_handle_in_error()) {
     // must execute Java code to link this CP entry into cache[i].f1
+    assert(obj_index >= 0, "should have an object index");
     int ref_kind        = cpool->method_handle_ref_kind_at(index);
     int callee_index    = cpool->method_handle_klass_index_at(index);
     ciKlass* callee     = get_klass_by_index_impl(cpool, callee_index, ignore_will_link, accessor);
@@ -685,10 +779,11 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
     ciSymbol* signature = get_symbol(cpool->method_handle_signature_ref_at(index));
     ciObject* ciobj     = get_unloaded_method_handle_constant(callee, name, signature, ref_kind);
     return ciConstant(T_OBJECT, ciobj);
-  } else if (tag.is_dynamic_constant()) {
-    return ciConstant();
+  } else if (tag.is_dynamic_constant() || tag.is_dynamic_constant_in_error()) {
+    assert(obj_index >= 0, "should have an object index");
+    return ciConstant(T_OBJECT, unloaded_ciinstance()); // unresolved dynamic constant
   } else {
-    ShouldNotReachHere();
+    assert(false, "unknown tag: %d (%s)", tag.value(), tag.internal_name());
     return ciConstant();
   }
 }
@@ -1194,10 +1289,347 @@ ciInstance* ciEnv::unloaded_ciinstance() {
 }
 
 // ------------------------------------------------------------------
-// ciEnv::dump_replay_data*
+// Replay support
 
-// Don't change thread state and acquire any locks.
-// Safe to call from VM error reporter.
+
+// Lookup location descriptor for the class, if any.
+// Returns false if not found.
+bool ciEnv::dyno_loc(const InstanceKlass* ik, const char *&loc) const {
+  bool found = false;
+  int pos = _dyno_klasses->find_sorted<const InstanceKlass*, klass_compare>(ik, found);
+  if (!found) {
+    return false;
+  }
+  loc = _dyno_locs->at(pos);
+  return found;
+}
+
+// Associate the current location descriptor with the given class and record for later lookup.
+void ciEnv::set_dyno_loc(const InstanceKlass* ik) {
+  const char *loc = os::strdup(_dyno_name);
+  bool found = false;
+  int pos = _dyno_klasses->find_sorted<const InstanceKlass*, klass_compare>(ik, found);
+  if (found) {
+    _dyno_locs->at_put(pos, loc);
+  } else {
+    _dyno_klasses->insert_before(pos, ik);
+    _dyno_locs->insert_before(pos, loc);
+  }
+}
+
+// Associate the current location descriptor with the given class and record for later lookup.
+// If it turns out that there are multiple locations for the given class, that conflict should
+// be handled here.  Currently we choose the first location found.
+void ciEnv::record_best_dyno_loc(const InstanceKlass* ik) {
+  if (!ik->is_hidden()) {
+    return;
+  }
+  const char *loc0;
+  if (dyno_loc(ik, loc0)) {
+    // TODO: found multiple references, see if we can improve
+    if (Verbose) {
+      tty->print_cr("existing call site @ %s for %s",
+                     loc0, ik->external_name());
+    }
+  } else {
+    set_dyno_loc(ik);
+  }
+}
+
+// Look up the location descriptor for the given class and print it to the output stream.
+bool ciEnv::print_dyno_loc(outputStream* out, const InstanceKlass* ik) const {
+  const char *loc;
+  if (dyno_loc(ik, loc)) {
+    out->print("%s", loc);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// Look up the location descriptor for the given class and return it as a string.
+// Returns NULL if no location is found.
+const char *ciEnv::dyno_name(const InstanceKlass* ik) const {
+  if (ik->is_hidden()) {
+    stringStream ss;
+    if (print_dyno_loc(&ss, ik)) {
+      ss.print(" ;"); // add terminator
+      const char* call_site = ss.as_string();
+      return call_site;
+    }
+  }
+  return NULL;
+}
+
+// Look up the location descriptor for the given class and return it as a string.
+// Returns the class name as a fallback if no location is found.
+const char *ciEnv::replay_name(ciKlass* k) const {
+  if (k->is_instance_klass()) {
+    return replay_name(k->as_instance_klass()->get_instanceKlass());
+  }
+  return k->name()->as_quoted_ascii();
+}
+
+// Look up the location descriptor for the given class and return it as a string.
+// Returns the class name as a fallback if no location is found.
+const char *ciEnv::replay_name(const InstanceKlass* ik) const {
+  const char* name = dyno_name(ik);
+  if (name != NULL) {
+      return name;
+  }
+  return ik->name()->as_quoted_ascii();
+}
+
+// Process a java.lang.invoke.MemberName object and record any dynamic locations.
+void ciEnv::record_member(Thread* thread, oop member) {
+  assert(java_lang_invoke_MemberName::is_instance(member), "!");
+  // Check MemberName.clazz field
+  oop clazz = java_lang_invoke_MemberName::clazz(member);
+  if (clazz->klass()->is_instance_klass()) {
+    RecordLocation fp(this, "clazz");
+    InstanceKlass* ik = InstanceKlass::cast(clazz->klass());
+    record_best_dyno_loc(ik);
+  }
+  // Check MemberName.method.vmtarget field
+  Method* vmtarget = java_lang_invoke_MemberName::vmtarget(member);
+  if (vmtarget != NULL) {
+    RecordLocation fp2(this, "<vmtarget>");
+    InstanceKlass* ik = vmtarget->method_holder();
+    record_best_dyno_loc(ik);
+  }
+}
+
+// Read an object field.  Lookup is done by name only.
+static inline oop obj_field(oop obj, const char* name) {
+    return ciReplay::obj_field(obj, name);
+}
+
+// Process a java.lang.invoke.LambdaForm object and record any dynamic locations.
+void ciEnv::record_lambdaform(Thread* thread, oop form) {
+  assert(java_lang_invoke_LambdaForm::is_instance(form), "!");
+
+  {
+    // Check LambdaForm.vmentry field
+    oop member = java_lang_invoke_LambdaForm::vmentry(form);
+    RecordLocation fp0(this, "vmentry");
+    record_member(thread, member);
+  }
+
+  // Check LambdaForm.names array
+  objArrayOop names = (objArrayOop)obj_field(form, "names");
+  if (names != NULL) {
+    RecordLocation lp0(this, "names");
+    int len = names->length();
+    for (int i = 0; i < len; ++i) {
+      oop name = names->obj_at(i);
+      RecordLocation lp1(this, "%d", i);
+     // Check LambdaForm.names[i].function field
+      RecordLocation lp2(this, "function");
+      oop function = obj_field(name, "function");
+      if (function != NULL) {
+        // Check LambdaForm.names[i].function.member field
+        oop member = obj_field(function, "member");
+        if (member != NULL) {
+          RecordLocation lp3(this, "member");
+          record_member(thread, member);
+        }
+        // Check LambdaForm.names[i].function.resolvedHandle field
+        oop mh = obj_field(function, "resolvedHandle");
+        if (mh != NULL) {
+          RecordLocation lp3(this, "resolvedHandle");
+          record_mh(thread, mh);
+        }
+        // Check LambdaForm.names[i].function.invoker field
+        oop invoker = obj_field(function, "invoker");
+        if (invoker != NULL) {
+          RecordLocation lp3(this, "invoker");
+          record_mh(thread, invoker);
+        }
+      }
+    }
+  }
+}
+
+// Process a java.lang.invoke.MethodHandle object and record any dynamic locations.
+void ciEnv::record_mh(Thread* thread, oop mh) {
+  {
+    // Check MethodHandle.form field
+    oop form = java_lang_invoke_MethodHandle::form(mh);
+    RecordLocation fp(this, "form");
+    record_lambdaform(thread, form);
+  }
+  // Check DirectMethodHandle.member field
+  if (java_lang_invoke_DirectMethodHandle::is_instance(mh)) {
+    oop member = java_lang_invoke_DirectMethodHandle::member(mh);
+    RecordLocation fp(this, "member");
+    record_member(thread, member);
+  } else {
+    // Check <MethodHandle subclass>.argL<n> fields
+    // Probably BoundMethodHandle.Species_L*, but we only care if the field exists
+    char arg_name[] = "argLXX";
+    int max_arg = 99;
+    for (int index = 0; index <= max_arg; ++index) {
+      jio_snprintf(arg_name, sizeof (arg_name), "argL%d", index);
+      oop arg = obj_field(mh, arg_name);
+      if (arg != NULL) {
+        RecordLocation fp(this, "%s", arg_name);
+        if (arg->klass()->is_instance_klass()) {
+          InstanceKlass* ik2 = InstanceKlass::cast(arg->klass());
+          record_best_dyno_loc(ik2);
+          record_call_site_obj(thread, arg);
+        }
+      } else {
+        break;
+      }
+    }
+  }
+}
+
+// Process an object found at an invokedynamic/invokehandle call site and record any dynamic locations.
+// Types currently supported are MethodHandle and CallSite.
+// The object is typically the "appendix" object, or Bootstrap Method (BSM) object.
+void ciEnv::record_call_site_obj(Thread* thread, oop obj)
+{
+  if (obj != NULL) {
+    if (java_lang_invoke_MethodHandle::is_instance(obj)) {
+        record_mh(thread, obj);
+    } else if (java_lang_invoke_ConstantCallSite::is_instance(obj)) {
+      oop target = java_lang_invoke_CallSite::target(obj);
+      if (target->klass()->is_instance_klass()) {
+        RecordLocation fp(this, "target");
+        InstanceKlass* ik = InstanceKlass::cast(target->klass());
+        record_best_dyno_loc(ik);
+      }
+    }
+  }
+}
+
+// Process an adapter Method* found at an invokedynamic/invokehandle call site and record any dynamic locations.
+void ciEnv::record_call_site_method(Thread* thread, Method* adapter) {
+  InstanceKlass* holder = adapter->method_holder();
+  if (!holder->is_hidden()) {
+    return;
+  }
+  RecordLocation fp(this, "<adapter>");
+  record_best_dyno_loc(holder);
+}
+
+// Process an invokedynamic call site and record any dynamic locations.
+void ciEnv::process_invokedynamic(const constantPoolHandle &cp, int indy_index, JavaThread* thread) {
+  ConstantPoolCacheEntry* cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(indy_index);
+  if (cp_cache_entry->is_resolved(Bytecodes::_invokedynamic)) {
+    // process the adapter
+    Method* adapter = cp_cache_entry->f1_as_method();
+    record_call_site_method(thread, adapter);
+    // process the appendix
+    oop appendix = cp_cache_entry->appendix_if_resolved(cp);
+    {
+      RecordLocation fp(this, "<appendix>");
+      record_call_site_obj(thread, appendix);
+    }
+    // process the BSM
+    int pool_index = cp_cache_entry->constant_pool_index();
+    BootstrapInfo bootstrap_specifier(cp, pool_index, indy_index);
+    oop bsm = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), thread);
+    {
+      RecordLocation fp(this, "<bsm>");
+      record_call_site_obj(thread, bsm);
+    }
+  }
+}
+
+// Process an invokehandle call site and record any dynamic locations.
+void ciEnv::process_invokehandle(const constantPoolHandle &cp, int index, JavaThread* thread) {
+  const int holder_index = cp->klass_ref_index_at(index);
+  if (!cp->tag_at(holder_index).is_klass()) {
+    return;  // not resolved
+  }
+  Klass* holder = ConstantPool::klass_at_if_loaded(cp, holder_index);
+  Symbol* name = cp->name_ref_at(index);
+  if (MethodHandles::is_signature_polymorphic_name(holder, name)) {
+    ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
+    if (cp_cache_entry->is_resolved(Bytecodes::_invokehandle)) {
+      // process the adapter
+      Method* adapter = cp_cache_entry->f1_as_method();
+      oop appendix = cp_cache_entry->appendix_if_resolved(cp);
+      record_call_site_method(thread, adapter);
+      // process the appendix
+      {
+        RecordLocation fp(this, "<appendix>");
+        record_call_site_obj(thread, appendix);
+      }
+    }
+  }
+}
+
+// Search the class hierarchy for dynamic classes reachable through dynamic call sites or
+// constant pool entries and record for future lookup.
+void ciEnv::find_dynamic_call_sites() {
+  _dyno_klasses = new (arena()) GrowableArray<const InstanceKlass*>(arena(), 100, 0, NULL);
+  _dyno_locs    = new (arena()) GrowableArray<const char *>(arena(), 100, 0, NULL);
+
+  // Iterate over the class hierarchy
+  for (ClassHierarchyIterator iter(vmClasses::Object_klass()); !iter.done(); iter.next()) {
+    Klass* sub = iter.klass();
+    if (sub->is_instance_klass()) {
+      InstanceKlass *isub = InstanceKlass::cast(sub);
+      InstanceKlass* ik = isub;
+      if (!ik->is_linked()) {
+        continue;
+      }
+      if (ik->is_hidden()) {
+        continue;
+      }
+      JavaThread* thread = JavaThread::current();
+      const constantPoolHandle pool(thread, ik->constants());
+
+      // Look for invokedynamic/invokehandle call sites
+      for (int i = 0; i < ik->methods()->length(); ++i) {
+        Method* m = ik->methods()->at(i);
+
+        BytecodeStream bcs(methodHandle(thread, m));
+        while (!bcs.is_last_bytecode()) {
+          Bytecodes::Code opcode = bcs.next();
+          opcode = bcs.raw_code();
+          switch (opcode) {
+          case Bytecodes::_invokedynamic:
+          case Bytecodes::_invokehandle: {
+            RecordLocation fp(this, "@bci %s %s %s %d",
+                         ik->name()->as_quoted_ascii(),
+                         m->name()->as_quoted_ascii(), m->signature()->as_quoted_ascii(),
+                         bcs.bci());
+            if (opcode == Bytecodes::_invokedynamic) {
+              int index = bcs.get_index_u4();
+              process_invokedynamic(pool, index, thread);
+            } else {
+              assert(opcode == Bytecodes::_invokehandle, "new switch label added?");
+              int cp_cache_index = bcs.get_index_u2_cpcache();
+              process_invokehandle(pool, cp_cache_index, thread);
+            }
+            break;
+          }
+          default:
+            break;
+          }
+        }
+      }
+
+      // Look for MethodHandle constant pool entries
+      RecordLocation fp(this, "@cpi %s", ik->name()->as_quoted_ascii());
+      int len = pool->length();
+      for (int i = 0; i < len; ++i) {
+        if (pool->tag_at(i).is_method_handle()) {
+          bool found_it;
+          oop mh = pool->find_cached_constant_at(i, found_it, thread);
+          if (mh != NULL) {
+            RecordLocation fp(this, "%d", i);
+            record_mh(thread, mh);
+          }
+        }
+      }
+    }
+  }
+}
 
 void ciEnv::dump_compile_data(outputStream* out) {
   CompileTask* task = this->task();
@@ -1205,11 +1637,9 @@ void ciEnv::dump_compile_data(outputStream* out) {
     Method* method = task->method();
     int entry_bci = task->osr_bci();
     int comp_level = task->comp_level();
-    out->print("compile %s %s %s %d %d",
-               method->klass_name()->as_quoted_ascii(),
-               method->name()->as_quoted_ascii(),
-               method->signature()->as_quoted_ascii(),
-               entry_bci, comp_level);
+    out->print("compile ");
+    get_method(method)->dump_name_as_ascii(out);
+    out->print(" %d %d", entry_bci, comp_level);
     if (compiler_data() != NULL) {
       if (is_c2_compile(comp_level)) {
 #ifdef COMPILER2
@@ -1227,16 +1657,29 @@ void ciEnv::dump_compile_data(outputStream* out) {
   }
 }
 
-void ciEnv::dump_replay_data_unsafe(outputStream* out) {
+// Called from VM error reporter, so be careful.
+// Don't safepoint or acquire any locks.
+//
+void ciEnv::dump_replay_data_helper(outputStream* out) {
+  NoSafepointVerifier no_safepoint;
   ResourceMark rm;
+
+  out->print_cr("version %d", REPLAY_VERSION);
 #if INCLUDE_JVMTI
   out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
   out->print_cr("JvmtiExport can_hotswap_or_post_breakpoint %d", _jvmti_can_hotswap_or_post_breakpoint);
   out->print_cr("JvmtiExport can_post_on_exceptions %d",         _jvmti_can_post_on_exceptions);
 #endif // INCLUDE_JVMTI
 
+  find_dynamic_call_sites();
+
   GrowableArray<ciMetadata*>* objects = _factory->get_ci_metadata();
   out->print_cr("# %d ciObject found", objects->length());
+
+  // The very first entry is the InstanceKlass of the root method of the current compilation in order to get the right
+  // protection domain to load subsequent classes during replay compilation.
+  ciInstanceKlass::dump_replay_instanceKlass(out, task()->method()->method_holder());
+
   for (int i = 0; i < objects->length(); i++) {
     objects->at(i)->dump_replay_data(out);
   }
@@ -1244,20 +1687,29 @@ void ciEnv::dump_replay_data_unsafe(outputStream* out) {
   out->flush();
 }
 
+// Called from VM error reporter, so be careful.
+// Don't safepoint or acquire any locks.
+//
+void ciEnv::dump_replay_data_unsafe(outputStream* out) {
+  GUARDED_VM_ENTRY(
+    dump_replay_data_helper(out);
+  )
+}
+
 void ciEnv::dump_replay_data(outputStream* out) {
   GUARDED_VM_ENTRY(
     MutexLocker ml(Compile_lock);
-    dump_replay_data_unsafe(out);
+    dump_replay_data_helper(out);
   )
 }
 
 void ciEnv::dump_replay_data(int compile_id) {
-  static char buffer[O_BUFLEN];
-  int ret = jio_snprintf(buffer, O_BUFLEN, "replay_pid%p_compid%d.log", os::current_process_id(), compile_id);
+  char buffer[64];
+  int ret = jio_snprintf(buffer, sizeof(buffer), "replay_pid%d_compid%d.log", os::current_process_id(), compile_id);
   if (ret > 0) {
     int fd = os::open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
     if (fd != -1) {
-      FILE* replay_data_file = os::open(fd, "w");
+      FILE* replay_data_file = os::fdopen(fd, "w");
       if (replay_data_file != NULL) {
         fileStream replay_data_stream(replay_data_file, /*need_close=*/true);
         dump_replay_data(&replay_data_stream);
@@ -1270,12 +1722,12 @@ void ciEnv::dump_replay_data(int compile_id) {
 }
 
 void ciEnv::dump_inline_data(int compile_id) {
-  static char buffer[O_BUFLEN];
-  int ret = jio_snprintf(buffer, O_BUFLEN, "inline_pid%p_compid%d.log", os::current_process_id(), compile_id);
+  char buffer[64];
+  int ret = jio_snprintf(buffer, sizeof(buffer), "inline_pid%d_compid%d.log", os::current_process_id(), compile_id);
   if (ret > 0) {
     int fd = os::open(buffer, O_RDWR | O_CREAT | O_TRUNC, 0666);
     if (fd != -1) {
-      FILE* inline_data_file = os::open(fd, "w");
+      FILE* inline_data_file = os::fdopen(fd, "w");
       if (inline_data_file != NULL) {
         fileStream replay_data_stream(inline_data_file, /*need_close=*/true);
         GUARDED_VM_ENTRY(

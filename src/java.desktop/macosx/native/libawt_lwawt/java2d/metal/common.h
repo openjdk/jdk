@@ -114,7 +114,6 @@ struct TxtFrameUniforms {
     vector_float4 color;
     int mode; // NOTE: consider to use bit fields
     int isSrcOpaque;
-    int isDstOpaque;
     float extraAlpha;
 };
 
@@ -155,5 +154,10 @@ struct LCDFrameUniforms {
     vector_float3 src_adj;
     vector_float3 gamma;
     vector_float3 invgamma;
+};
+
+struct SwizzleUniforms {
+    unsigned char swizzle[4];
+    unsigned char hasAlpha;
 };
 #endif

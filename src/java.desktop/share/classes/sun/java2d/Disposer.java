@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import java.util.Hashtable;
  *
  * @see DisposerRecord
  */
+@SuppressWarnings("removal")
 public class Disposer implements Runnable {
     private static final ReferenceQueue<Object> queue = new ReferenceQueue<>();
     private static final Hashtable<java.lang.ref.Reference<Object>, DisposerRecord> records =
@@ -141,8 +142,8 @@ public class Disposer implements Runnable {
     public void run() {
         while (true) {
             try {
-                Object obj = queue.remove();
-                ((Reference)obj).clear();
+                Reference<?> obj = queue.remove();
+                obj.clear();
                 DisposerRecord rec = records.remove(obj);
                 rec.dispose();
                 obj = null;
@@ -183,7 +184,7 @@ public class Disposer implements Runnable {
     /*
      * Set to indicate the queue is presently being polled.
      */
-    public static volatile boolean pollingQueue = false;
+    public static volatile boolean pollingQueue;
 
     /*
      * The pollRemove() method is called back from a dispose method
@@ -199,7 +200,7 @@ public class Disposer implements Runnable {
         if (pollingQueue) {
             return;
         }
-        Object obj;
+        Reference<?> obj;
         pollingQueue = true;
         int freed = 0;
         int deferred = 0;
@@ -207,7 +208,7 @@ public class Disposer implements Runnable {
             while ( freed < 10000 && deferred < 100 &&
                     (obj = queue.poll()) != null ) {
                 freed++;
-                ((Reference)obj).clear();
+                obj.clear();
                 DisposerRecord rec = records.remove(obj);
                 if (rec instanceof PollDisposable) {
                     rec.dispose();

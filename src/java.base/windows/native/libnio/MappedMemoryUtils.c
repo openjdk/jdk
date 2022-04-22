@@ -32,7 +32,7 @@
 
 JNIEXPORT jboolean JNICALL
 Java_java_nio_MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong address,
-                                         jlong len, jint numPages)
+                                         jlong len, jlong numPages)
 {
     jboolean loaded = JNI_FALSE;
     /* Information not available?

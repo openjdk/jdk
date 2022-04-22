@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
+#include "jfr/recorder/repository/jfrEmergencyDump.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
@@ -118,10 +119,6 @@ NO_TRANSITION_END
 
 NO_TRANSITION(void, jfr_set_file_notification(JNIEnv* env, jobject jvm, jlong threshold))
   JfrChunkRotation::set_threshold(threshold);
-NO_TRANSITION_END
-
-NO_TRANSITION(void, jfr_set_sample_threads(JNIEnv* env, jobject jvm, jboolean sampleThreads))
-  JfrOptionSet::set_sample_threads(sampleThreads);
 NO_TRANSITION_END
 
 NO_TRANSITION(void, jfr_set_stack_depth(JNIEnv* env, jobject jvm, jint depth))
@@ -258,6 +255,10 @@ JVM_ENTRY_NO_ENV(void, jfr_log(JNIEnv* env, jobject jvm, jint tag_set, jint leve
   JfrJavaLog::log(tag_set, level, message, thread);
 JVM_END
 
+JVM_ENTRY_NO_ENV(void, jfr_log_event(JNIEnv* env, jobject jvm, jint level, jobjectArray lines, jboolean system))
+  JfrJavaLog::log_event(env, level, lines, system == JNI_TRUE, thread);
+JVM_END
+
 JVM_ENTRY_NO_ENV(void, jfr_subscribe_log_level(JNIEnv* env, jobject jvm, jobject log_tag, jint id))
   JfrJavaLog::subscribe_log_level(log_tag, id, thread);
 JVM_END
@@ -310,6 +311,20 @@ JVM_END
 JVM_ENTRY_NO_ENV(void, jfr_set_repository_location(JNIEnv* env, jobject repo, jstring location))
   return JfrRepository::set_path(location, thread);
 JVM_END
+
+NO_TRANSITION(void, jfr_set_dump_path(JNIEnv* env, jobject jvm, jstring dumppath))
+  if (dumppath == NULL) {
+    JfrEmergencyDump::set_dump_path(NULL);
+  } else {
+    const char* dump_path = env->GetStringUTFChars(dumppath, NULL);
+    JfrEmergencyDump::set_dump_path(dump_path);
+    env->ReleaseStringUTFChars(dumppath, dump_path);
+  }
+NO_TRANSITION_END
+
+NO_TRANSITION(jstring, jfr_get_dump_path(JNIEnv* env, jobject jvm))
+  return env->NewStringUTF(JfrEmergencyDump::get_dump_path());
+NO_TRANSITION_END
 
 JVM_ENTRY_NO_ENV(void, jfr_uncaught_exception(JNIEnv* env, jobject jvm, jobject t, jthrowable throwable))
   JfrJavaSupport::uncaught_exception(throwable, thread);

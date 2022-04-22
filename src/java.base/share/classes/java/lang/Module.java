@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,6 @@ import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.CDS;
-import jdk.internal.misc.VM;
-import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.module.Resources;
@@ -70,6 +68,7 @@ import jdk.internal.org.objectweb.asm.ModuleVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.vm.annotation.Stable;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -111,6 +110,9 @@ public final class Module implements AnnotatedElement {
     // the module descriptor
     private final ModuleDescriptor descriptor;
 
+    // true, if this module allows restricted native access
+    @Stable
+    private boolean enableNativeAccess;
 
     /**
      * Creates a new named Module. The resulting Module will be defined to the
@@ -135,6 +137,10 @@ public final class Module implements AnnotatedElement {
         String loc = Objects.toString(uri, null);
         Object[] packages = descriptor.packages().toArray();
         defineModule0(this, isOpen, vs, loc, packages);
+        if (loader == null || loader == ClassLoaders.platformClassLoader()) {
+            // boot/builtin modules are always native
+            implAddEnableNativeAccess();
+        }
     }
 
 
@@ -200,6 +206,7 @@ public final class Module implements AnnotatedElement {
      *         If denied by the security manager
      */
     public ClassLoader getClassLoader() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
@@ -244,6 +251,30 @@ public final class Module implements AnnotatedElement {
             }
         }
         return null;
+    }
+
+    /**
+     * Update this module to allow access to restricted methods.
+     */
+    Module implAddEnableNativeAccess() {
+        enableNativeAccess = true;
+        return this;
+    }
+
+    /**
+     * Update all unnamed modules to allow access to restricted methods.
+     */
+    static void implAddEnableNativeAccessAllUnnamed() {
+        ALL_UNNAMED_MODULE.enableNativeAccess = true;
+    }
+
+    /**
+     * Returns true if module m can access restricted methods.
+     */
+    boolean implIsEnableNativeAccess() {
+        return isNamed() ?
+                enableNativeAccess :
+                ALL_UNNAMED_MODULE.enableNativeAccess;
     }
 
     // --
@@ -903,27 +934,8 @@ public final class Module implements AnnotatedElement {
             return;
 
         // check if the package is already exported/open to other
-        if (implIsExportedOrOpen(pn, other, open)) {
-
-            // if the package is exported/open for illegal access then we need
-            // to record that it has also been exported/opened reflectively so
-            // that the IllegalAccessLogger doesn't emit a warning.
-            boolean needToAdd = false;
-            if (!other.isNamed()) {
-                IllegalAccessLogger l = IllegalAccessLogger.illegalAccessLogger();
-                if (l != null) {
-                    if (open) {
-                        needToAdd = l.isOpenForIllegalAccess(this, pn);
-                    } else {
-                        needToAdd = l.isExportedForIllegalAccess(this, pn);
-                    }
-                }
-            }
-            if (!needToAdd) {
-                // nothing to do
-                return;
-            }
-        }
+        if (implIsExportedOrOpen(pn, other, open))
+            return;
 
         // can only export a package in the module
         if (!descriptor.packages().contains(pn)) {
@@ -968,7 +980,7 @@ public final class Module implements AnnotatedElement {
         // the packages to all unnamed modules.
         Map<String, Set<Module>> openPackages = this.openPackages;
         if (openPackages == null) {
-            openPackages = new HashMap<>((4 * (concealedPkgs.size() + exportedPkgs.size()) / 3) + 1);
+            openPackages = HashMap.newHashMap(concealedPkgs.size() + exportedPkgs.size());
         } else {
             openPackages = new HashMap<>(openPackages);
         }
@@ -1121,8 +1133,7 @@ public final class Module implements AnnotatedElement {
         boolean isBootLayer = (ModuleLayer.boot() == null);
 
         int numModules = cf.modules().size();
-        int cap = (int)(numModules / 0.75f + 1.0f);
-        Map<String, Module> nameToModule = new HashMap<>(cap);
+        Map<String, Module> nameToModule = HashMap.newHashMap(numModules);
 
         // to avoid repeated lookups and reduce iteration overhead, we create
         // arrays holding correlated information about each module.
@@ -1462,6 +1473,7 @@ public final class Module implements AnnotatedElement {
     // cached class file with annotations
     private volatile Class<?> moduleInfoClass;
 
+    @SuppressWarnings("removal")
     private Class<?> moduleInfoClass() {
         Class<?> clazz = this.moduleInfoClass;
         if (clazz != null)
@@ -1641,11 +1653,11 @@ public final class Module implements AnnotatedElement {
             if (caller != this && caller != Object.class.getModule()) {
                 String pn = Resources.toPackageName(name);
                 if (getPackages().contains(pn)) {
-                    if (caller == null && !isOpen(pn)) {
-                        // no caller, package not open
-                        return null;
-                    }
-                    if (!isOpen(pn, caller)) {
+                    if (caller == null) {
+                        if (!isOpen(pn)) {
+                            return null;
+                        }
+                    } else if (!isOpen(pn, caller)) {
                         // package not open to caller
                         return null;
                     }

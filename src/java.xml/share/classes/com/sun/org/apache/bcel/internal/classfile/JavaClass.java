@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,28 +41,28 @@ import com.sun.org.apache.bcel.internal.util.SyntheticRepository;
 /**
  * Represents a Java class, i.e., the data structures, constant pool,
  * fields, methods and commands contained in a Java .class file.
- * See <a href="http://docs.oracle.com/javase/specs/">JVM specification</a> for details.
+ * See <a href="https://docs.oracle.com/javase/specs/">JVM specification</a> for details.
  * The intent of this class is to represent a parsed or otherwise existing
  * class file.  Those interested in programatically generating classes
  * should see the <a href="../generic/ClassGen.html">ClassGen</a> class.
 
  * @see com.sun.org.apache.bcel.internal.generic.ClassGen
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 public class JavaClass extends AccessFlags implements Cloneable, Node, Comparable<JavaClass> {
 
-    private String file_name;
-    private String package_name;
-    private String source_file_name = "<Unknown>";
-    private int class_name_index;
-    private int superclass_name_index;
-    private String class_name;
-    private String superclass_name;
+    private String fileName;
+    private String packageName;
+    private String sourceFileName = "<Unknown>";
+    private int classNameIndex;
+    private int superclassNameIndex;
+    private String className;
+    private String superclassName;
     private int major;
     private int minor; // Compiler version
-    private ConstantPool constant_pool; // Constant pool
+    private ConstantPool constantPool; // Constant pool
     private int[] interfaces; // implemented interfaces
-    private String[] interface_names;
+    private String[] interfaceNames;
     private Field[] fields; // Fields, i.e., variables of class
     private Method[] methods; // methods defined in the class
     private Attribute[] attributes; // attributes defined in the class
@@ -104,24 +104,24 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
     /**
      * Constructor gets all contents as arguments.
      *
-     * @param class_name_index Index into constant pool referencing a
+     * @param classNameIndex Index into constant pool referencing a
      * ConstantClass that represents this class.
-     * @param superclass_name_index Index into constant pool referencing a
+     * @param superclassNameIndex Index into constant pool referencing a
      * ConstantClass that represents this class's superclass.
-     * @param file_name File name
+     * @param fileName File name
      * @param major Major compiler version
      * @param minor Minor compiler version
      * @param access_flags Access rights defined by bit flags
-     * @param constant_pool Array of constants
+     * @param constantPool Array of constants
      * @param interfaces Implemented interfaces
      * @param fields Class fields
      * @param methods Class methods
      * @param attributes Class attributes
      * @param source Read from file or generated in memory?
      */
-    public JavaClass(final int class_name_index, final int superclass_name_index,
-            final String file_name, final int major, final int minor, final int access_flags,
-            final ConstantPool constant_pool, int[] interfaces, Field[] fields,
+    public JavaClass(final int classNameIndex, final int superclassNameIndex,
+            final String fileName, final int major, final int minor, final int access_flags,
+            final ConstantPool constantPool, int[] interfaces, Field[] fields,
             Method[] methods, Attribute[] attributes, final byte source) {
         super(access_flags);
         if (interfaces == null) {
@@ -136,12 +136,12 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
         if (methods == null) {
             methods = new Method[0];
         }
-        this.class_name_index = class_name_index;
-        this.superclass_name_index = superclass_name_index;
-        this.file_name = file_name;
+        this.classNameIndex = classNameIndex;
+        this.superclassNameIndex = superclassNameIndex;
+        this.fileName = fileName;
         this.major = major;
         this.minor = minor;
-        this.constant_pool = constant_pool;
+        this.constantPool = constantPool;
         this.interfaces = interfaces;
         this.fields = fields;
         this.methods = methods;
@@ -150,7 +150,7 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
         // Get source file name if available
         for (final Attribute attribute : attributes) {
             if (attribute instanceof SourceFile) {
-                source_file_name = ((SourceFile) attribute).getSourceFileName();
+                sourceFileName = ((SourceFile) attribute).getSourceFileName();
                 break;
             }
         }
@@ -158,26 +158,26 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
          * `ConstantClass' but we check that anyway via the
          * `ConstPool.getConstant' method.
          */
-        class_name = constant_pool.getConstantString(class_name_index, Const.CONSTANT_Class);
-        class_name = Utility.compactClassName(class_name, false);
-        final int index = class_name.lastIndexOf('.');
+        className = constantPool.getConstantString(classNameIndex, Const.CONSTANT_Class);
+        className = Utility.compactClassName(className, false);
+        final int index = className.lastIndexOf('.');
         if (index < 0) {
-            package_name = "";
+            packageName = "";
         } else {
-            package_name = class_name.substring(0, index);
+            packageName = className.substring(0, index);
         }
-        if (superclass_name_index > 0) {
+        if (superclassNameIndex > 0) {
             // May be zero -> class is java.lang.Object
-            superclass_name = constant_pool.getConstantString(superclass_name_index,
+            superclassName = constantPool.getConstantString(superclassNameIndex,
                     Const.CONSTANT_Class);
-            superclass_name = Utility.compactClassName(superclass_name, false);
+            superclassName = Utility.compactClassName(superclassName, false);
         } else {
-            superclass_name = "java.lang.Object";
+            superclassName = "java.lang.Object";
         }
-        interface_names = new String[interfaces.length];
+        interfaceNames = new String[interfaces.length];
         for (int i = 0; i < interfaces.length; i++) {
-            final String str = constant_pool.getConstantString(interfaces[i], Const.CONSTANT_Class);
-            interface_names[i] = Utility.compactClassName(str, false);
+            final String str = constantPool.getConstantString(interfaces[i], Const.CONSTANT_Class);
+            interfaceNames[i] = Utility.compactClassName(str, false);
         }
     }
 
@@ -185,24 +185,24 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
     /**
      * Constructor gets all contents as arguments.
      *
-     * @param class_name_index Class name
-     * @param superclass_name_index Superclass name
-     * @param file_name File name
+     * @param classNameIndex Class name
+     * @param superclassNameIndex Superclass name
+     * @param fileName File name
      * @param major Major compiler version
      * @param minor Minor compiler version
      * @param access_flags Access rights defined by bit flags
-     * @param constant_pool Array of constants
+     * @param constantPool Array of constants
      * @param interfaces Implemented interfaces
      * @param fields Class fields
      * @param methods Class methods
      * @param attributes Class attributes
      */
-    public JavaClass(final int class_name_index, final int superclass_name_index,
-            final String file_name, final int major, final int minor, final int access_flags,
-            final ConstantPool constant_pool, final int[] interfaces, final Field[] fields,
+    public JavaClass(final int classNameIndex, final int superclassNameIndex,
+            final String fileName, final int major, final int minor, final int access_flags,
+            final ConstantPool constantPool, final int[] interfaces, final Field[] fields,
             final Method[] methods, final Attribute[] attributes) {
-        this(class_name_index, superclass_name_index, file_name, major, minor, access_flags,
-                constant_pool, interfaces, fields, methods, attributes, HEAP);
+        this(classNameIndex, superclassNameIndex, fileName, major, minor, access_flags,
+                constantPool, interfaces, fields, methods, attributes, HEAP);
     }
 
 
@@ -251,7 +251,7 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
 
 
     /**
-     * Dump class to a file named file_name.
+     * Dump class to a file named fileName.
      *
      * @param _file_name Output file name
      * @throws IOException
@@ -303,10 +303,10 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
         file.writeInt(Const.JVM_CLASSFILE_MAGIC);
         file.writeShort(minor);
         file.writeShort(major);
-        constant_pool.dump(file);
+        constantPool.dump(file);
         file.writeShort(super.getAccessFlags());
-        file.writeShort(class_name_index);
-        file.writeShort(superclass_name_index);
+        file.writeShort(classNameIndex);
+        file.writeShort(superclassNameIndex);
         file.writeShort(interfaces.length);
         for (final int interface1 : interfaces) {
             file.writeShort(interface1);
@@ -354,7 +354,7 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
      * @return Class name.
      */
     public String getClassName() {
-        return class_name;
+        return className;
     }
 
 
@@ -362,7 +362,7 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
      * @return Package name.
      */
     public String getPackageName() {
-        return package_name;
+        return packageName;
     }
 
 
@@ -370,7 +370,7 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
      * @return Class name index.
      */
     public int getClassNameIndex() {
-        return class_name_index;
+        return classNameIndex;
     }
 
 
@@ -378,7 +378,7 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
      * @return Constant pool.
      */
     public ConstantPool getConstantPool() {
-        return constant_pool;
+        return constantPool;
     }
 
 
@@ -396,7 +396,7 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
      * @return File name of class, aka SourceFile attribute value
      */
     public String getFileName() {
-        return file_name;
+        return fileName;
     }
 
 
@@ -404,7 +404,7 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
      * @return Names of implemented interfaces.
      */
     public String[] getInterfaceNames() {
-        return interface_names;
+        return interfaceNames;
     }
 
 
@@ -459,7 +459,7 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
      * @return sbsolute path to file where this class was read from
      */
     public String getSourceFileName() {
-        return source_file_name;
+        return sourceFileName;
     }
 
 
@@ -471,7 +471,7 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
      * @return Superclass name.
      */
     public String getSuperclassName() {
-        return superclass_name;
+        return superclassName;
     }
 
 
@@ -479,7 +479,7 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
      * @return Class name index.
      */
     public int getSuperclassNameIndex() {
-        return superclass_name_index;
+        return superclassNameIndex;
     }
 
     /**
@@ -491,26 +491,26 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
 
 
     /**
-     * @param class_name .
+     * @param className .
      */
-    public void setClassName( final String class_name ) {
-        this.class_name = class_name;
+    public void setClassName( final String className ) {
+        this.className = className;
     }
 
 
     /**
-     * @param class_name_index .
+     * @param classNameIndex .
      */
-    public void setClassNameIndex( final int class_name_index ) {
-        this.class_name_index = class_name_index;
+    public void setClassNameIndex( final int classNameIndex ) {
+        this.classNameIndex = classNameIndex;
     }
 
 
     /**
-     * @param constant_pool .
+     * @param constantPool .
      */
-    public void setConstantPool( final ConstantPool constant_pool ) {
-        this.constant_pool = constant_pool;
+    public void setConstantPool( final ConstantPool constantPool ) {
+        this.constantPool = constantPool;
     }
 
 
@@ -525,16 +525,16 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
     /**
      * Set File name of class, aka SourceFile attribute value
      */
-    public void setFileName( final String file_name ) {
-        this.file_name = file_name;
+    public void setFileName( final String fileName ) {
+        this.fileName = fileName;
     }
 
 
     /**
-     * @param interface_names .
+     * @param interfaceNames .
      */
-    public void setInterfaceNames( final String[] interface_names ) {
-        this.interface_names = interface_names;
+    public void setInterfaceNames( final String[] interfaceNames ) {
+        this.interfaceNames = interfaceNames;
     }
 
 
@@ -573,24 +573,24 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
     /**
      * Set absolute path to file this class was read from.
      */
-    public void setSourceFileName( final String source_file_name ) {
-        this.source_file_name = source_file_name;
+    public void setSourceFileName( final String sourceFileName ) {
+        this.sourceFileName = sourceFileName;
     }
 
 
     /**
-     * @param superclass_name .
+     * @param superclassName .
      */
-    public void setSuperclassName( final String superclass_name ) {
-        this.superclass_name = superclass_name;
+    public void setSuperclassName( final String superclassName ) {
+        this.superclassName = superclassName;
     }
 
 
     /**
-     * @param superclass_name_index .
+     * @param superclassNameIndex .
      */
-    public void setSuperclassNameIndex( final int superclass_name_index ) {
-        this.superclass_name_index = superclass_name_index;
+    public void setSuperclassNameIndex( final int superclassNameIndex ) {
+        this.superclassNameIndex = superclassNameIndex;
     }
 
 
@@ -603,24 +603,24 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
         access = access.isEmpty() ? "" : (access + " ");
         final StringBuilder buf = new StringBuilder(128);
         buf.append(access).append(Utility.classOrInterface(super.getAccessFlags())).append(" ").append(
-                class_name).append(" extends ").append(
-                Utility.compactClassName(superclass_name, false)).append('\n');
+                className).append(" extends ").append(
+                Utility.compactClassName(superclassName, false)).append('\n');
         final int size = interfaces.length;
         if (size > 0) {
             buf.append("implements\t\t");
             for (int i = 0; i < size; i++) {
-                buf.append(interface_names[i]);
+                buf.append(interfaceNames[i]);
                 if (i < size - 1) {
                     buf.append(", ");
                 }
             }
             buf.append('\n');
         }
-        buf.append("file name\t\t").append(file_name).append('\n');
-        buf.append("compiled from\t\t").append(source_file_name).append('\n');
+        buf.append("file name\t\t").append(fileName).append('\n');
+        buf.append("compiled from\t\t").append(sourceFileName).append('\n');
         buf.append("compiler version\t").append(major).append(".").append(minor).append('\n');
         buf.append("access flags\t\t").append(super.getAccessFlags()).append('\n');
-        buf.append("constant pool\t\t").append(constant_pool.getLength()).append(" entries\n");
+        buf.append("constant pool\t\t").append(constantPool.getLength()).append(" entries\n");
         buf.append("ACC_SUPER flag\t\t").append(isSuper()).append("\n");
         if (attributes.length > 0) {
             buf.append("\nAttribute(s):\n");
@@ -668,20 +668,20 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
         JavaClass c = null;
         try {
             c = (JavaClass) clone();
-            c.constant_pool = constant_pool.copy();
+            c.constantPool = constantPool.copy();
             c.interfaces = interfaces.clone();
-            c.interface_names = interface_names.clone();
+            c.interfaceNames = interfaceNames.clone();
             c.fields = new Field[fields.length];
             for (int i = 0; i < fields.length; i++) {
-                c.fields[i] = fields[i].copy(c.constant_pool);
+                c.fields[i] = fields[i].copy(c.constantPool);
             }
             c.methods = new Method[methods.length];
             for (int i = 0; i < methods.length; i++) {
-                c.methods[i] = methods[i].copy(c.constant_pool);
+                c.methods[i] = methods[i].copy(c.constantPool);
             }
             c.attributes = new Attribute[attributes.length];
             for (int i = 0; i < attributes.length; i++) {
-                c.attributes[i] = attributes[i].copy(c.constant_pool);
+                c.attributes[i] = attributes[i].copy(c.constantPool);
             }
         } catch (final CloneNotSupportedException e) {
             // TODO should this throw?
@@ -724,7 +724,7 @@ public class JavaClass extends AccessFlags implements Cloneable, Node, Comparabl
                   final InnerClass[] innerClasses = ((InnerClasses) attribute).getInnerClasses();
                   for (final InnerClass innerClasse : innerClasses) {
                       boolean innerClassAttributeRefersToMe = false;
-                      String inner_class_name = constant_pool.getConstantString(innerClasse.getInnerClassIndex(),
+                      String inner_class_name = constantPool.getConstantString(innerClasse.getInnerClassIndex(),
                                  Const.CONSTANT_Class);
                       inner_class_name = Utility.compactClassName(inner_class_name, false);
                       if (inner_class_name.equals(getClassName())) {

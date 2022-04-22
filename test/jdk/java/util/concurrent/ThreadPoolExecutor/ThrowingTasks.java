@@ -26,6 +26,7 @@
  * @bug 6450200 6450205 6450207 6450211
  * @summary Test proper handling of tasks that terminate abruptly
  * @author Martin Buchholz
+ * @run main/othervm -Djava.security.manager=allow ThrowingTasks
  */
 
 import java.security.Permission;

@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 4511326
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true test.gaptest.Bug4511326
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.gaptest.Bug4511326
  * @run testng/othervm test.gaptest.Bug4511326
  * @summary In forwards-compatible mode the attribute isn't ignored
  */

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.jpackage.internal;
 
 import java.io.IOException;
@@ -137,16 +136,16 @@ public class OverridableResourceTest {
     }
 
     private void testCustomtWithSubstitution(String defaultName) throws IOException {
-        final List<String> resourceData = List.of("A", "[BB]", "C", "Foo",
-                "GoodbyeHello");
+        final List<String> resourceData = List.of("A", "[BB]", "C", "Foo", "Foo",
+                "GoodbyeHello", "_B");
         final Path customFile = createCustomFile("foo", resourceData);
 
         final Map<String, String> substitutionData = new HashMap(Map.of("B",
-                "Bar", "Foo", "B"));
+                "Bar", "Foo", "B", "_B", "JJ"));
         substitutionData.put("Hello", null);
 
         final List<String> expectedResourceData = List.of("A", "[BarBar]", "C",
-                "B", "Goodbye");
+                "Bar", "Bar", "Goodbye", "JJ");
 
         final List<String> actualResourceData = convertToStringList(saveToFile(
                 new OverridableResource(defaultName)

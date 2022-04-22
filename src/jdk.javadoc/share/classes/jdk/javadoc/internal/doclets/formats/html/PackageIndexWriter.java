@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -39,11 +40,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Group;
 
 /**
  * Generate the package index page "index.html".
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class PackageIndexWriter extends AbstractOverviewIndexWriter {
 
@@ -81,10 +77,10 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
     /**
      * Adds the packages list to the documentation tree.
      *
-     * @param main the documentation tree to which the packages list will be added
+     * @param target the content to which the packages list will be added
      */
     @Override
-    protected void addIndex(Content main) {
+    protected void addIndex(Content target) {
         Map<String, SortedSet<PackageElement>> groupPackageMap
                 = configuration.group.groupPackages(packages);
 
@@ -93,28 +89,26 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
                     .setHeader(getPackageTableHeader())
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setId(HtmlIds.ALL_PACKAGES_TABLE)
-                    .setDefaultTab(resources.getText("doclet.All_Packages"));
+                    .setDefaultTab(contents.getContent("doclet.All_Packages"));
 
             // add the tabs in command-line order
             for (String groupName : configuration.group.getGroupList()) {
                 Set<PackageElement> groupPackages = groupPackageMap.get(groupName);
                 if (groupPackages != null) {
-                    table.addTab(groupName, groupPackages::contains);
+                    table.addTab(Text.of(groupName), groupPackages::contains);
                 }
             }
 
             for (PackageElement pkg : configuration.packages) {
-                if (!pkg.isUnnamed()) {
-                    if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
-                        Content packageLinkContent = getPackageLink(pkg, getLocalizedPackageName(pkg));
-                        Content summaryContent = new ContentBuilder();
-                        addSummaryComment(pkg, summaryContent);
-                        table.addRow(pkg, packageLinkContent, summaryContent);
-                    }
+                if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
+                    Content packageLinkContent = getPackageLink(pkg, getLocalizedPackageName(pkg));
+                    Content summaryContent = new ContentBuilder();
+                    addSummaryComment(pkg, summaryContent);
+                    table.addRow(pkg, packageLinkContent, summaryContent);
                 }
             }
 
-            main.add(table);
+            target.add(table);
 
             if (table.needsScript()) {
                 getMainBodyScript().append(table.getScript());

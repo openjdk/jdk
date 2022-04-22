@@ -1444,8 +1444,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         implements RunnableFuture<T> {
         @SuppressWarnings("serial") // Conditionally serializable
         final Callable<? extends T> callable;
-        @SuppressWarnings("serial") // Conditionally serializable
         transient volatile Thread runner;
+        @SuppressWarnings("serial") // Conditionally serializable
         T result;
         AdaptedInterruptibleCallable(Callable<? extends T> callable) {
             if (callable == null) throw new NullPointerException();

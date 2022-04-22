@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -515,7 +515,7 @@ class SSLStreams {
                 throw new IOException ("SSL stream is closed");
             }
             if (eof) {
-                return 0;
+                return -1;
             }
             int available=0;
             if (!needData) {
@@ -528,7 +528,7 @@ class SSLStreams {
                 bbuf = r.buf== bbuf? bbuf: r.buf;
                 if ((available=bbuf.remaining()) == 0) {
                     eof = true;
-                    return 0;
+                    return -1;
                 } else {
                     needData = false;
                 }
@@ -579,7 +579,7 @@ class SSLStreams {
         /**
          * close the SSL connection. All data must have been consumed
          * before this is called. Otherwise an exception will be thrown.
-         * [Note. May need to revisit this. not quite the normal close() symantics
+         * [Note. May need to revisit this. not quite the normal close() semantics
          */
         public void close () throws IOException {
             eof = true;
@@ -593,8 +593,11 @@ class SSLStreams {
         byte single[] = new byte [1];
 
         public int read () throws IOException {
+            if (eof) {
+                return -1;
+            }
             int n = read (single, 0, 1);
-            if (n == 0) {
+            if (n <= 0) {
                 return -1;
             } else {
                 return single[0] & 0xFF;
@@ -659,7 +662,9 @@ class SSLStreams {
                 r = wrapper.wrapAndSend (buf);
                 stat = r.result.getHandshakeStatus();
             }
-            assert r.result.getStatus() == Status.CLOSED;
+            assert r.result.getStatus() == Status.CLOSED
+                    : "status is: " + r.result.getStatus()
+                    + ", handshakeStatus is: " + stat;
         }
     }
 }

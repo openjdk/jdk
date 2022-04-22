@@ -25,6 +25,7 @@
  * @test
  * @bug 4733558 6471539
  * @summary Tests Date encoding
+ * @run main/othervm -Djava.security.manager=allow java_sql_Date
  * @author Sergey Malenkov
  * @modules java.desktop
  *          java.sql

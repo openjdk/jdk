@@ -295,14 +295,10 @@ public final class OptionalDouble {
             return true;
         }
 
-        if (!(obj instanceof OptionalDouble)) {
-            return false;
-        }
-
-        OptionalDouble other = (OptionalDouble) obj;
-        return (isPresent && other.isPresent)
-               ? Double.compare(value, other.value) == 0
-               : isPresent == other.isPresent;
+        return obj instanceof OptionalDouble other
+                && (isPresent && other.isPresent
+                ? Double.compare(value, other.value) == 0
+                : isPresent == other.isPresent);
     }
 
     /**
@@ -332,7 +328,7 @@ public final class OptionalDouble {
     @Override
     public String toString() {
         return isPresent
-                ? String.format("OptionalDouble[%s]", value)
+                ? ("OptionalDouble[" + value + "]")
                 : "OptionalDouble.empty";
     }
 }

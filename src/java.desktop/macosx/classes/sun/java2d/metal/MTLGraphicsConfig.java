@@ -75,6 +75,7 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
     private static boolean mtlAvailable;
     private static ImageCapabilities imageCaps = new MTLImageCaps();
 
+    @SuppressWarnings("removal")
     private static final String mtlShadersLib = AccessController.doPrivileged(
             (PrivilegedAction<String>) () ->
                     System.getProperty("java.home", "") + File.separator +
@@ -145,10 +146,6 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
         MTLRenderQueue rq = MTLRenderQueue.getInstance();
         rq.lock();
         try {
-            // getMTLConfigInfo() creates and destroys temporary
-            // surfaces/contexts, so we should first invalidate the current
-            // Java-level context and flush the queue...
-            MTLContext.invalidateCurrentContext();
             cfginfo = getMTLConfigInfo(displayID, mtlShadersLib);
             if (cfginfo != 0L) {
                 textureSize = nativeGetMaxTextureSize();

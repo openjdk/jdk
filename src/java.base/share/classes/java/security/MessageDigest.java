@@ -298,8 +298,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
         if (provider == null)
             throw new IllegalArgumentException("missing provider");
         Object[] objs = Security.getImpl(algorithm, "MessageDigest", provider);
-        if (objs[0] instanceof MessageDigest) {
-            MessageDigest md = (MessageDigest)objs[0];
+        if (objs[0] instanceof MessageDigest md) {
             md.provider = (Provider)objs[1];
             return md;
         } else {
@@ -448,12 +447,8 @@ public abstract class MessageDigest extends MessageDigestSpi {
         PrintStream p = new PrintStream(baos);
         p.print(algorithm+" Message Digest from "+getProviderName()+", ");
         switch (state) {
-        case INITIAL:
-            p.print("<initialized>");
-            break;
-        case IN_PROGRESS:
-            p.print("<in progress>");
-            break;
+            case INITIAL     -> p.print("<initialized>");
+            case IN_PROGRESS -> p.print("<in progress>");
         }
         p.println();
         return (baos.toString());

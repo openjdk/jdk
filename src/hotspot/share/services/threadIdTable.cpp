@@ -1,6 +1,6 @@
 
 /*
-* Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -69,11 +69,11 @@ class ThreadIdTableConfig : public AllStatic {
       jlong tid = value->tid();
       return primitive_hash(tid);
     }
-    static void* allocate_node(size_t size, Value const& value) {
+    static void* allocate_node(void* context, size_t size, Value const& value) {
       ThreadIdTable::item_added();
       return AllocateHeap(size, mtInternal);
     }
-    static void free_node(void* memory, Value const& value) {
+    static void free_node(void* context, void* memory, Value const& value) {
       delete value;
       FreeHeap(memory);
       ThreadIdTable::item_removed();
@@ -91,8 +91,8 @@ static size_t ceil_log2(size_t val) {
 void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
   if (!_is_initialized) {
     {
-      // There is no obvious benefits in allowing the thread table
-      // to be concurently populated during the initalization.
+      // There is no obvious benefit in allowing the thread table
+      // to be concurrently populated during initialization.
       MutexLocker ml(ThreadIdTableCreate_lock);
       if (_is_initialized) {
         return;

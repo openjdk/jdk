@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"Changes.the.store.password.of.a.keystore",
                 "Changes the store password of a keystore"}, //-storepasswd
         {"showinfo.command.help", "Displays security-related information"},
+        {"Prints.the.program.version", "Prints the program version"},
 
         // keytool: help: options
         {"alias.name.of.the.entry.to.process",
@@ -162,6 +163,10 @@ public class Resources extends java.util.ListResourceBundle {
                 "output in RFC style"}, //-rfc
         {"signature.algorithm.name",
                 "signature algorithm name"}, //-sigalg
+        {"signer.alias",
+                "signer alias"}, //-signer
+        {"signer.key.password",
+                "signer key password"}, //-signerkeypass
         {"source.alias",
                 "source alias"}, //-srcalias
         {"source.key.password",
@@ -302,6 +307,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "Key pair not generated, alias <{0}> already exists"},
         {"Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for",
                 "Generating {0} bit {1} key pair and self-signed certificate ({2}) with a validity of {3} days\n\tfor: {4}"},
+        {"Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for",
+                "Generating {0} bit {1} key pair and a certificate ({2}) issued by <{3}> with a validity of {4} days\n\tfor: {5}"},
         {"Enter.key.password.for.alias.", "Enter key password for <{0}>"},
         {".RETURN.if.same.as.keystore.password.",
                 "\t(RETURN if same as keystore password):  "},
@@ -390,8 +397,8 @@ public class Resources extends java.util.ListResourceBundle {
         {".WARNING.WARNING.WARNING.",
             "*****************  WARNING WARNING WARNING  *****************"},
         {"Signer.d.", "Signer #%d:"},
+        {"Certificate.d.", "Certificate #%d:"},
         {"Timestamp.", "Timestamp:"},
-        {"Signature.", "Signature:"},
         {"Certificate.owner.", "Certificate owner: "},
         {"Not.a.signed.jar.file", "Not a signed jar file"},
         {"No.certificate.from.the.SSL.server",
@@ -458,6 +465,9 @@ public class Resources extends java.util.ListResourceBundle {
         {"the.input", "The input"},
         {"reply", "Reply"},
         {"one.in.many", "%1$s #%2$d of %3$d"},
+        {"one.in.many1", "%1$s #%2$d"},
+        {"one.in.many2", "%1$s of signer #%2$d"},
+        {"one.in.many3", "%1$s #%2$d of signer #%3$d"},
         {"alias.in.cacerts", "Issuer <%s> in cacerts"},
         {"alias.in.keystore", "Issuer <%s>"},
         {"with.weak", "%s (weak)"},
@@ -473,6 +483,8 @@ public class Resources extends java.util.ListResourceBundle {
                         "Subject: %1$s\nFormat: %2$s\nPublic Key: %3$s\nSignature algorithm: %4$s\n"},
         {"verified.by.s.in.s.weak", "Verified by %1$s in %2$s with a %3$s"},
         {"whose.sigalg.disabled", "%1$s uses the %2$s signature algorithm which is considered a security risk and is disabled."},
+        {"whose.sigalg.usagesignedjar", "%1$s uses the %2$s signature algorithm which is considered a security risk and cannot be used to sign JARs after %3$s."},
+        {"Unable.to.parse.denyAfter.string.in.exception.message", "Unable to parse denyAfter date string in exception message"},
         {"whose.sigalg.weak", "%1$s uses the %2$s signature algorithm which is considered a security risk. This algorithm will be disabled in a future update."},
         {"whose.key.disabled", "%1$s uses a %2$s which is considered a security risk and is disabled."},
         {"whose.key.weak", "%1$s uses a %2$s which is considered a security risk. This key size will be disabled in a future update."},
@@ -481,7 +493,6 @@ public class Resources extends java.util.ListResourceBundle {
         {"backup.keystore.warning", "The original keystore \"%1$s\" is backed up as \"%3$s\"..."},
         {"importing.keystore.status", "Importing keystore %1$s to %2$s..."},
         {"keyalg.option.missing.error", "The -keyalg option must be specified."},
-
         {"showinfo.no.option", "Missing option for -showinfo. Try \"keytool -showinfo -tls\"."},
     };
 

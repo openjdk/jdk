@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,29 +31,6 @@
 #include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
-
-StringDedupCleaningTask::StringDedupCleaningTask(BoolObjectClosure* is_alive,
-                                                 OopClosure* keep_alive,
-                                                 bool resize_table) :
-  AbstractGangTask("String Dedup Cleaning"),
-  _dedup_closure(is_alive, keep_alive) {
-
-  if (StringDedup::is_enabled()) {
-    StringDedup::gc_prologue(resize_table);
-  }
-}
-
-StringDedupCleaningTask::~StringDedupCleaningTask() {
-  if (StringDedup::is_enabled()) {
-    StringDedup::gc_epilogue();
-  }
-}
-
-void StringDedupCleaningTask::work(uint worker_id) {
-  if (StringDedup::is_enabled()) {
-    StringDedup::parallel_unlink(&_dedup_closure, worker_id);
-  }
-}
 
 CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, BoolObjectClosure* is_alive, bool unloading_occurred) :
   _unloading_scope(is_alive),

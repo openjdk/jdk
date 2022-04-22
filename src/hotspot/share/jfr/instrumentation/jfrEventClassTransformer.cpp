@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1365,7 +1365,7 @@ static u1* new_bytes_for_lazy_instrumentation(const InstanceKlass* ik,
   // We would need to do:
   // 1. Nothing (@Registered(false) annotation)
   // 2. Build up a new <clinit> - and if the original class already contains a <clinit>,
-  //                              merging will be neccessary.
+  //                              merging will be necessary.
   //
   if (register_klass) {
     insert_clinit_method(ik, parser, writer, orig_cp_len, utf8_indexes, flr_register_method_ref_index, clinit_method, THREAD);
@@ -1397,7 +1397,7 @@ static bool should_force_instrumentation() {
   return !JfrOptionSet::allow_event_retransforms() || JfrEventClassTransformer::is_force_instrumentation();
 }
 
-static ClassFileStream* create_new_bytes_for_subklass(const InstanceKlass* ik, const ClassFileParser& parser, Thread* t) {
+static ClassFileStream* create_new_bytes_for_subklass(const InstanceKlass* ik, const ClassFileParser& parser, JavaThread* t) {
   assert(JdkJfrEvent::is_a(ik), "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(t));
   jint size_of_new_bytes = 0;

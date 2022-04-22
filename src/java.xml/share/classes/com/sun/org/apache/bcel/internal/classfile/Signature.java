@@ -36,7 +36,7 @@ import com.sun.org.apache.bcel.internal.Const;
  */
 public final class Signature extends Attribute {
 
-    private int signature_index;
+    private int signatureIndex;
 
 
     /**
@@ -65,12 +65,12 @@ public final class Signature extends Attribute {
     /**
      * @param name_index Index in constant pool to CONSTANT_Utf8
      * @param length Content length in bytes
-     * @param signature_index Index in constant pool to CONSTANT_Utf8
+     * @param signatureIndex Index in constant pool to CONSTANT_Utf8
      * @param constant_pool Array of constants
      */
-    public Signature(final int name_index, final int length, final int signature_index, final ConstantPool constant_pool) {
+    public Signature(final int name_index, final int length, final int signatureIndex, final ConstantPool constant_pool) {
         super(Const.ATTR_SIGNATURE, name_index, length, constant_pool);
-        this.signature_index = signature_index;
+        this.signatureIndex = signatureIndex;
     }
 
 
@@ -97,7 +97,7 @@ public final class Signature extends Attribute {
     @Override
     public void dump( final DataOutputStream file ) throws IOException {
         super.dump(file);
-        file.writeShort(signature_index);
+        file.writeShort(signatureIndex);
     }
 
 
@@ -105,15 +105,15 @@ public final class Signature extends Attribute {
      * @return Index in constant pool of source file name.
      */
     public int getSignatureIndex() {
-        return signature_index;
+        return signatureIndex;
     }
 
 
     /**
-     * @param signature_index the index info the constant pool of this signature
+     * @param signatureIndex the index info the constant pool of this signature
      */
-    public void setSignatureIndex( final int signature_index ) {
-        this.signature_index = signature_index;
+    public void setSignatureIndex( final int signatureIndex ) {
+        this.signatureIndex = signatureIndex;
     }
 
 
@@ -121,7 +121,7 @@ public final class Signature extends Attribute {
      * @return GJ signature.
      */
     public String getSignature() {
-        final ConstantUtf8 c = (ConstantUtf8) super.getConstantPool().getConstant(signature_index,
+        final ConstantUtf8 c = (ConstantUtf8) super.getConstantPool().getConstant(signatureIndex,
                 Const.CONSTANT_Utf8);
         return c.getBytes();
     }
@@ -157,7 +157,7 @@ public final class Signature extends Attribute {
     private static void matchIdent( final MyByteArrayInputStream in, final StringBuilder buf ) {
         int ch;
         if ((ch = in.read()) == -1) {
-            throw new RuntimeException("Illegal signature: " + in.getData()
+            throw new IllegalArgumentException("Illegal signature: " + in.getData()
                     + " no ident, reaching EOF");
         }
         //System.out.println("return from ident:" + (char)ch);
@@ -207,7 +207,7 @@ public final class Signature extends Attribute {
             matchGJIdent(in, buf);
             while (((ch = in.read()) != '>') && (ch != ')')) { // List of parameters
                 if (ch == -1) {
-                    throw new RuntimeException("Illegal signature: " + in.getData()
+                    throw new IllegalArgumentException("Illegal signature: " + in.getData()
                             + " reaching EOF");
                 }
                 //System.out.println("Still no >");
@@ -228,7 +228,7 @@ public final class Signature extends Attribute {
             in.unread();
             return;
         } else if (ch != ';') {
-            throw new RuntimeException("Illegal signature: " + in.getData() + " read " + (char) ch);
+            throw new IllegalArgumentException("Illegal signature: " + in.getData() + " read " + (char) ch);
         }
     }
 

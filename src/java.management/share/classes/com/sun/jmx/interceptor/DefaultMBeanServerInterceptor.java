@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import com.sun.jmx.mbeanserver.Repository.RegistrationContext;
 import com.sun.jmx.mbeanserver.Util;
 import com.sun.jmx.remote.util.EnvHelp;
 
-import java.io.ObjectInputStream;
 import java.lang.ref.WeakReference;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -80,7 +79,6 @@ import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
-import javax.management.OperationsException;
 import javax.management.QueryEval;
 import javax.management.QueryExp;
 import javax.management.ReflectionException;
@@ -208,8 +206,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         } catch (InstanceNotFoundException e) {
             /* Can only happen if loaderName doesn't exist, but we just
                passed null, so we shouldn't get this exception.  */
-            throw EnvHelp.initCause(
-                new IllegalArgumentException("Unexpected exception: " + e), e);
+            throw new IllegalArgumentException("Unexpected exception: " + e, e);
         }
     }
 
@@ -465,6 +462,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
     }
 
     public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             // Check if the caller has the right to invoke 'queryMBeans'
@@ -511,6 +509,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
 
     public Set<ObjectName> queryNames(ObjectName name, QueryExp query) {
         Set<ObjectName> queryList;
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             // Check if the caller has the right to invoke 'queryNames'
@@ -576,6 +575,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
     }
 
     public String[] getDomains()  {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             // Check if the caller has the right to invoke 'getDomains'
@@ -670,6 +670,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
 
         final DynamicMBean instance = getMBean(name);
         final String[] allowedAttributes;
+        @SuppressWarnings("removal")
         final SecurityManager sm = System.getSecurityManager();
         if (sm == null)
             allowedAttributes = attributes;
@@ -734,9 +735,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
 
         try {
             instance.setAttribute(attribute);
-        } catch (AttributeNotFoundException e) {
-            throw e;
-        } catch (InvalidAttributeValueException e) {
+        } catch (AttributeNotFoundException | InvalidAttributeValueException e) {
             throw e;
         } catch (Throwable t) {
             rethrowMaybeMBeanException(t);
@@ -764,6 +763,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
 
         final DynamicMBean instance = getMBean(name);
         final AttributeList allowedAttributes;
+        @SuppressWarnings("removal")
         final SecurityManager sm = System.getSecurityManager();
         if (sm == null)
             allowedAttributes = attributes;
@@ -819,11 +819,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             throws ReflectionException {
         try {
             throw t;
-        } catch (ReflectionException e) {
-            throw e;
-        } catch (RuntimeOperationsException e) {
-            throw e;
-        } catch (RuntimeErrorException e) {
+        } catch (ReflectionException | RuntimeOperationsException | RuntimeErrorException e) {
             throw e;
         } catch (RuntimeException e) {
             throw new RuntimeMBeanException(e, e.toString());
@@ -1354,9 +1350,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         final MBeanInfo mbi;
         try {
             mbi = moi.getMBeanInfo();
-        } catch (RuntimeMBeanException e) {
-            throw e;
-        } catch (RuntimeErrorException e) {
+        } catch (RuntimeMBeanException | RuntimeErrorException e) {
             throw e;
         } catch (RuntimeException e) {
             throw new RuntimeMBeanException(e,
@@ -1765,6 +1759,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
                                              String member,
                                              ObjectName objectName,
                                              String actions) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             checkMBeanPermission(safeGetClassName(mbean),
@@ -1778,6 +1773,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
                                              String member,
                                              ObjectName objectName,
                                              String actions) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             Permission perm = new MBeanPermission(classname,
@@ -1790,6 +1786,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
 
     private static void checkMBeanTrustPermission(final Class<?> theClass)
         throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             Permission perm = new MBeanTrustPermission("register");
@@ -1799,7 +1796,9 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
                         return theClass.getProtectionDomain();
                     }
                 };
+            @SuppressWarnings("removal")
             ProtectionDomain pd = AccessController.doPrivileged(act);
+            @SuppressWarnings("removal")
             AccessControlContext acc =
                 new AccessControlContext(new ProtectionDomain[] { pd });
             sm.checkPermission(perm, acc);
@@ -2013,6 +2012,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         return ResourceContext.NONE;
     }
 
+    @SuppressWarnings("removal")
     private ModifiableClassLoaderRepository getInstantiatorCLR() {
         return AccessController.doPrivileged(new PrivilegedAction<ModifiableClassLoaderRepository>() {
             @Override

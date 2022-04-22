@@ -70,7 +70,6 @@ class BootstrapInfo;
 class ClassFileStream;
 class ClassLoadInfo;
 class Dictionary;
-class LoaderConstraintTable;
 template <MEMFLAGS F> class HashtableBucket;
 class ResolutionErrorTable;
 class SymbolPropertyTable;
@@ -119,8 +118,8 @@ class SystemDictionary : AllStatic {
                                               bool is_superclass,
                                               TRAPS);
  private:
-  // Parse the stream to create an unsafe anonymous or hidden class.
-  // Used by Unsafe_DefineAnonymousClass and jvm_lookup_define_class.
+  // Parse the stream to create a hidden class.
+  // Used by jvm_lookup_define_class.
   static InstanceKlass* resolve_hidden_class_from_stream(ClassFileStream* st,
                                                          Symbol* class_name,
                                                          Handle class_loader,
@@ -203,14 +202,13 @@ class SystemDictionary : AllStatic {
   // Initialization
   static void initialize(TRAPS);
 
-protected:
-  // Returns the class loader data to be used when looking up/updating the
-  // system dictionary.
-  static ClassLoaderData *class_loader_data(Handle class_loader);
-
 public:
   // Returns java system loader
   static oop java_system_loader();
+
+  // Returns the class loader data to be used when looking up/updating the
+  // system dictionary.
+  static ClassLoaderData *class_loader_data(Handle class_loader);
 
   // Returns java platform loader
   static oop java_platform_loader();
@@ -221,7 +219,6 @@ public:
   // Register a new class loader
   static ClassLoaderData* register_loader(Handle class_loader, bool create_mirror_cld = false);
 
-public:
   static Symbol* check_signature_loaders(Symbol* signature, Klass* klass_being_linked,
                                          Handle loader1, Handle loader2, bool is_method);
 
@@ -293,13 +290,8 @@ public:
                                   const char* message);
   static const char* find_nest_host_error(const constantPoolHandle& pool, int which);
 
-  static ProtectionDomainCacheEntry* cache_get(Handle protection_domain);
-
  private:
   // Static tables owned by the SystemDictionary
-
-  // Constraints on class loaders
-  static LoaderConstraintTable*  _loader_constraints;
 
   // Resolution errors
   static ResolutionErrorTable*   _resolution_errors;
@@ -320,8 +312,6 @@ private:
   static OopHandle  _java_system_loader;
   static OopHandle  _java_platform_loader;
 
-  friend class VM_PopulateDumpSharedSpace;
-  static LoaderConstraintTable* constraints() { return _loader_constraints; }
   static ResolutionErrorTable* resolution_errors() { return _resolution_errors; }
   static SymbolPropertyTable* invoke_method_table() { return _invoke_method_table; }
 
@@ -366,7 +356,7 @@ private:
   static bool check_shared_class_super_types(InstanceKlass* ik, Handle class_loader,
                                                Handle protection_domain, TRAPS);
   // Second part of load_shared_class
-  static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data, TRAPS) NOT_CDS_RETURN;
+  static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data) NOT_CDS_RETURN;
 protected:
   // Used by SystemDictionaryShared
 
@@ -384,9 +374,6 @@ protected:
                                           const ClassFileStream *cfs,
                                           PackageEntry* pkg_entry,
                                           TRAPS);
-  static InstanceKlass* load_shared_boot_class(Symbol* class_name,
-                                               PackageEntry* pkg_entry,
-                                               TRAPS);
   static Handle get_loader_lock_or_null(Handle class_loader);
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                       Handle class_loader,

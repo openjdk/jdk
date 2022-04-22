@@ -54,6 +54,7 @@ import java.util.Locale;
 import java.util.StringTokenizer;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMErrorHandler;
@@ -70,7 +71,7 @@ import org.w3c.dom.ls.LSResourceResolver;
  *
  * @author Elena Litani, IBM
  * @author Neeraj Bajaj, Sun Microsystems.
- * @LastModified: Apr 2019
+ * @LastModified: May 2021
  */
 public class DOMConfigurationImpl extends ParserConfigurationSettings
     implements XMLParserConfiguration, DOMConfiguration {
@@ -213,7 +214,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
 
     /** Property identifier: Security property manager. */
     private static final String XML_SECURITY_PROPERTY_MANAGER =
-            Constants.XML_SECURITY_PROPERTY_MANAGER;
+            JdkConstants.XML_SECURITY_PROPERTY_MANAGER;
 
     //
     // Data
@@ -327,7 +328,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
             NAMESPACE_GROWTH,
             TOLERATE_DUPLICATES,
             XMLConstants.USE_CATALOG,
-            JdkXmlUtils.OVERRIDE_PARSER
+            JdkConstants.OVERRIDE_PARSER
         };
         addRecognizedFeatures(recognizedFeatures);
 
@@ -351,7 +352,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
         setFeature(NAMESPACE_GROWTH, false);
         setFeature(TOLERATE_DUPLICATES, false);
         setFeature(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
-        setFeature(JdkXmlUtils.OVERRIDE_PARSER, JdkXmlUtils.OVERRIDE_PARSER_DEFAULT);
+        setFeature(JdkConstants.OVERRIDE_PARSER, JdkConstants.OVERRIDE_PARSER_DEFAULT);
 
         // add default recognized properties
         final String[] recognizedProperties = {
@@ -376,7 +377,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
             JdkXmlUtils.CATALOG_FILES,
             JdkXmlUtils.CATALOG_PREFER,
             JdkXmlUtils.CATALOG_RESOLVE,
-            JdkXmlUtils.CDATA_CHUNK_SIZE
+            JdkConstants.CDATA_CHUNK_SIZE
         };
         addRecognizedProperties(recognizedProperties);
 
@@ -415,7 +416,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
 
         setProperty(SECURITY_MANAGER, new XMLSecurityManager(true));
 
-        setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER,
+        setProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER,
                 new XMLSecurityPropertyManager());
 
         // add message formatters
@@ -455,7 +456,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
             setProperty(f.getPropertyName(), null);
         }
 
-        setProperty(JdkXmlUtils.CDATA_CHUNK_SIZE, JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT);
+        setProperty(JdkConstants.CDATA_CHUNK_SIZE, JdkConstants.CDATA_CHUNK_SIZE_DEFAULT);
     } // <init>(SymbolTable)
 
 

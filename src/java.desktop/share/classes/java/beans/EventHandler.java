@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,6 +281,7 @@ public class EventHandler implements InvocationHandler {
     private String action;
     private final String eventPropertyName;
     private final String listenerMethodName;
+    @SuppressWarnings("removal")
     private final AccessControlContext acc = AccessController.getContext();
 
     /**
@@ -420,6 +421,7 @@ public class EventHandler implements InvocationHandler {
      *
      * @see EventHandler
      */
+    @SuppressWarnings("removal")
     public Object invoke(final Object proxy, final Method method, final Object[] arguments) {
         AccessControlContext acc = this.acc;
         if ((acc == null) && (System.getSecurityManager() != null)) {
@@ -687,6 +689,7 @@ public class EventHandler implements InvocationHandler {
      * @see EventHandler
      * @see Proxy#newProxyInstance
      */
+    @SuppressWarnings("removal")
     public static <T> T create(Class<T> listenerInterface,
                                Object target, String action,
                                String eventPropertyName,

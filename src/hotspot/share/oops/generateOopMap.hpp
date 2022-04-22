@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ class BasicBlock;
 class CellTypeState;
 class StackMap;
 
-// These two should be removed. But requires som code to be cleaned up
+// These two should be removed. But requires some code to be cleaned up
 #define MAXARGSIZE      256      // This should be enough
 #define MAX_LOCAL_VARS  65536    // 16-bit entry
 
@@ -47,7 +47,7 @@ typedef void (*jmpFct_t)(GenerateOopMap *c, int bcpDelta, int* data);
 
 //  RetTable
 //
-// Contains maping between jsr targets and there return addresses. One-to-many mapping
+// Contains mapping between jsr targets and there return addresses. One-to-many mapping
 //
 class RetTableEntry : public ResourceObj {
  private:
@@ -304,7 +304,7 @@ class GenerateOopMap {
   bool         _got_error;                  // True, if an error occurred during interpretation.
   Handle       _exception;                  // Exception if got_error is true.
   bool         _did_rewriting;              // was bytecodes rewritten
-  bool         _did_relocation;             // was relocation neccessary
+  bool         _did_relocation;             // was relocation necessary
   bool         _monitor_safe;               // The monitors in this method have been determined
                                             // to be safe.
 
@@ -374,7 +374,7 @@ class GenerateOopMap {
   static void   reachable_basicblock        (GenerateOopMap *c, int deltaBci, int *data);
 
   // Interpretation methods (primary)
-  void  do_interpretation                   (Thread* thread);
+  void  do_interpretation                   ();
   void  init_basic_blocks                   ();
   void  setup_method_entry_state            ();
   void  interp_all                          ();
@@ -414,7 +414,7 @@ class GenerateOopMap {
 
   // Create result set
   bool  _report_result;
-  bool  _report_result_for_send;            // Unfortunatly, stackmaps for sends are special, so we need some extra
+  bool  _report_result_for_send;            // Unfortunately, stackmaps for sends are special, so we need some extra
   BytecodeStream *_itr_send;                // variables to handle them properly.
 
   void  report_result                       ();
@@ -450,7 +450,7 @@ class GenerateOopMap {
   int  binsToHold                           (int no)                      { return  ((no+(BitsPerWord-1))/BitsPerWord); }
   char *state_vec_to_string                 (CellTypeState* vec, int len);
 
-  // Helper method. Can be used in subclasses to fx. calculate gc_points. If the current instuction
+  // Helper method. Can be used in subclasses to fx. calculate gc_points. If the current instruction
   // is a control transfer, then calls the jmpFct all possible destinations.
   void  ret_jump_targets_do                 (BytecodeStream *bcs, jmpFct_t jmpFct, int varNo,int *data);
   bool  jump_targets_do                     (BytecodeStream *bcs, jmpFct_t jmpFct, int *data);
@@ -459,8 +459,11 @@ class GenerateOopMap {
  public:
   GenerateOopMap(const methodHandle& method);
 
-  // Compute the map.
-  void compute_map(TRAPS);
+  // Compute the map - returns true on success and false on error.
+  bool compute_map(Thread* current);
+  // Returns the exception related to any error, if the map was computed by a suitable JavaThread.
+  Handle exception() { return _exception; }
+
   void result_for_basicblock(int bci);    // Do a callback on fill_stackmap_for_opcodes for basicblock containing bci
 
   // Query
@@ -482,7 +485,7 @@ class GenerateOopMap {
   //   number of gc points
   // - fill_stackmap_for_opcodes is called once for each bytecode index in order (0...code_length-1)
   // - fill_stackmap_epilog is called after all results has been reported. Note: Since the algorithm does not report
-  //   stackmaps for deadcode, fewer gc_points might have been encounted than assumed during the epilog. It is the
+  //   stackmaps for deadcode, fewer gc_points might have been encountered than assumed during the epilog. It is the
   //   responsibility of the subclass to count the correct number.
   // - fill_init_vars are called once with the result of the init_vars computation
   //
@@ -540,7 +543,7 @@ class ResolveOopMapConflicts: public GenerateOopMap {
 
 
 //
-// Subclass used by the compiler to generate pairing infomation
+// Subclass used by the compiler to generate pairing information
 //
 class GeneratePairingInfo: public GenerateOopMap {
  private:
@@ -559,7 +562,7 @@ class GeneratePairingInfo: public GenerateOopMap {
  public:
   GeneratePairingInfo(const methodHandle& method) : GenerateOopMap(method)       {};
 
-  // Call compute_map(CHECK) to generate info.
+  // Call compute_map() to generate info.
 };
 
 #endif // SHARE_OOPS_GENERATEOOPMAP_HPP

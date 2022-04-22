@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/g1/g1FullGCOopClosures.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/shared/preservedMarks.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
 #include "oops/markWord.hpp"
@@ -45,6 +46,7 @@ typedef GenericTaskQueueSet<ObjArrayTaskQueue, mtGC> ObjArrayTaskQueueSet;
 
 class G1CMBitMap;
 class G1FullCollector;
+class TaskTerminator;
 
 class G1FullGCMarker : public CHeapObj<mtGC> {
   G1FullCollector*   _collector;
@@ -59,17 +61,16 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   PreservedMarks*    _preserved_stack;
 
   // Marking closures
-  G1MarkAndPushClosure _mark_closure;
-  G1VerifyOopClosure   _verify_closure;
-  G1FollowStackClosure _stack_closure;
-  CLDToOopClosure      _cld_closure;
+  G1MarkAndPushClosure  _mark_closure;
+  G1VerifyOopClosure    _verify_closure;
+  G1FollowStackClosure  _stack_closure;
+  CLDToOopClosure       _cld_closure;
+  StringDedup::Requests _string_dedup_requests;
 
 
   G1RegionMarkStatsCache _mark_stats_cache;
 
   inline bool is_empty();
-  inline bool pop_object(oop& obj);
-  inline bool pop_objarray(ObjArrayTask& array);
   inline void push_objarray(oop obj, size_t index);
   inline bool mark_object(oop obj);
 
@@ -77,6 +78,14 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   inline void follow_object(oop obj);
   inline void follow_array(objArrayOop array);
   inline void follow_array_chunk(objArrayOop array, int index);
+
+  inline void publish_and_drain_oop_tasks();
+  // Try to publish all contents from the objArray task queue overflow stack to
+  // the shared objArray stack.
+  // Returns true and a valid task if there has not been enough space in the shared
+  // objArray stack, otherwise returns false and the task is invalid.
+  inline bool publish_or_pop_objarray_tasks(ObjArrayTask& task);
+
 public:
   G1FullGCMarker(G1FullCollector* collector,
                  uint worker_id,
@@ -94,7 +103,7 @@ public:
   inline void follow_klass(Klass* k);
   inline void follow_cld(ClassLoaderData* cld);
 
-  inline void drain_stack();
+  inline void follow_marking_stacks();
   void complete_marking(OopQueueSet* oop_stacks,
                         ObjArrayTaskQueueSet* array_stacks,
                         TaskTerminator* terminator);

@@ -88,8 +88,6 @@ public class TestLibrary {
      */
     public final static int FIXED_PORT_MIN = 60001;
     public final static int FIXED_PORT_MAX = 60010;
-    public final static int RMIDVIAINHERITEDCHANNEL_ACTIVATION_PORT = 60001;
-    public final static int RMIDVIAINHERITEDCHANNEL_REGISTRY_PORT = 60002;
     public final static int INHERITEDCHANNELNOTSERVERSOCKET_ACTIVATION_PORT = 60003;
     public final static int INHERITEDCHANNELNOTSERVERSOCKET_REGISTRY_PORT = 60004;
     public final static int READTEST_REGISTRY_PORT = 60005;

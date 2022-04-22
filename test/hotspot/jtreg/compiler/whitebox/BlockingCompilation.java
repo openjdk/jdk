@@ -48,14 +48,12 @@ import compiler.testlibrary.CompilerUtils;
 import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Method;
-import java.util.Random;
 
 public class BlockingCompilation {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static final Random RANDOM = new Random(42);
 
     public static int foo() {
-        return RANDOM.nextInt();
+        return 42; //constant's value is arbitrary and meaningless
     }
 
     public static void main(String[] args) throws Exception {

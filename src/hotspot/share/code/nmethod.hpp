@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ class nmethod : public CompiledMethod {
   // STW two-phase nmethod root processing helpers.
   //
   // When determining liveness of a given nmethod to do code cache unloading,
-  // some collectors need to to different things depending on whether the nmethods
+  // some collectors need to do different things depending on whether the nmethods
   // need to absolutely be kept alive during root processing; "strong"ly reachable
   // nmethods are known to be kept alive at root processing, but the liveness of
   // "weak"ly reachable ones is to be determined later.
@@ -129,7 +129,7 @@ class nmethod : public CompiledMethod {
   // Unclaimed (C)-> N|SD (C)-> X|SD: the nmethod has been processed strongly from
   //   the beginning by a single thread.
   //
-  // "|" describes the concatentation of bits in _oops_do_mark_link.
+  // "|" describes the concatenation of bits in _oops_do_mark_link.
   //
   // The diagram also describes the threads responsible for changing the nmethod to
   // the next state by marking the _transition_ with (C) and (O), which mean "current"
@@ -256,7 +256,7 @@ class nmethod : public CompiledMethod {
   // stack.  An not_entrant method can be removed when there are no
   // more activations, i.e., when the _stack_traversal_mark is less than
   // current sweep traversal index.
-  volatile long _stack_traversal_mark;
+  volatile int64_t _stack_traversal_mark;
 
   // The _hotness_counter indicates the hotness of a method. The higher
   // the value the hotter the method. The hotness counter of a nmethod is
@@ -269,17 +269,13 @@ class nmethod : public CompiledMethod {
   volatile uint8_t _is_unloading_state;
 
   // These are used for compiled synchronized native methods to
-  // locate the owner and stack slot for the BasicLock so that we can
-  // properly revoke the bias of the owner if necessary. They are
+  // locate the owner and stack slot for the BasicLock. They are
   // needed because there is no debug information for compiled native
   // wrappers and the oop maps are insufficient to allow
   // frame::retrieve_receiver() to work. Currently they are expected
   // to be byte offsets from the Java stack pointer for maximum code
-  // sharing between platforms. Note that currently biased locking
-  // will never cause Class instances to be biased but this code
-  // handles the static synchronized case as well.
-  // JVMTI's GetLocalInstance() also uses these offsets to find the receiver
-  // for non-static native wrapper frames.
+  // sharing between platforms. JVMTI's GetLocalInstance() uses these
+  // offsets to find the receiver for non-static native wrapper frames.
   ByteSize _native_receiver_sp_offset;
   ByteSize _native_basic_lock_sp_offset;
 
@@ -338,7 +334,7 @@ class nmethod : public CompiledMethod {
   // Inform external interfaces that a compiled method has been unloaded
   void post_compiled_method_unload();
 
-  // Initailize fields to their default values
+  // Initialize fields to their default values
   void init_defaults();
 
   // Offsets
@@ -542,8 +538,8 @@ public:
   void fix_oop_relocations()                           { fix_oop_relocations(NULL, NULL, false); }
 
   // Sweeper support
-  long  stack_traversal_mark()                    { return _stack_traversal_mark; }
-  void  set_stack_traversal_mark(long l)          { _stack_traversal_mark = l; }
+  int64_t stack_traversal_mark()                  { return _stack_traversal_mark; }
+  void    set_stack_traversal_mark(int64_t l)     { _stack_traversal_mark = l; }
 
   // On-stack replacement support
   int   osr_entry_bci() const                     { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }
@@ -736,7 +732,7 @@ public:
   // is it ok to patch at address?
   bool is_patchable_at(address instr_address);
 
-  // UseBiasedLocking support
+  // JVMTI's GetLocalInstance() support
   ByteSize native_receiver_sp_offset() {
     return _native_receiver_sp_offset;
   }

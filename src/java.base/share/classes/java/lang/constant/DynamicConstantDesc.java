@@ -56,7 +56,7 @@ import static java.util.stream.Collectors.joining;
  *
  * @since 12
  */
-public abstract class DynamicConstantDesc<T>
+public abstract non-sealed class DynamicConstantDesc<T>
         implements ConstantDesc {
 
     private final DirectMethodHandleDesc bootstrapMethod;

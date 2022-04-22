@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveBuilder.hpp"
+#include "cds/filemap.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -31,13 +34,11 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/archiveBuilder.hpp"
-#include "memory/heapShared.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/oop.inline.hpp"
@@ -53,7 +54,11 @@
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 #include "utilities/utf8.hpp"
+#if INCLUDE_G1GC
+#include "gc/g1/g1CollectedHeap.hpp"
+#endif
 
 // We prefer short chains of avg 2
 const double PREF_AVG_LIST_LEN = 2.0;
@@ -66,16 +71,26 @@ const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 
 #if INCLUDE_CDS_JAVA_HEAP
 inline oop read_string_from_compact_hashtable(address base_address, u4 offset) {
-  assert(sizeof(narrowOop) == sizeof(offset), "must be");
-  narrowOop v = CompressedOops::narrow_oop_cast(offset);
-  return HeapShared::decode_from_archive(v);
+  if (UseCompressedOops) {
+    assert(sizeof(narrowOop) == sizeof(offset), "must be");
+    narrowOop v = CompressedOops::narrow_oop_cast(offset);
+    return HeapShared::decode_from_archive(v);
+  } else {
+    intptr_t dumptime_oop = (uintptr_t)offset;
+    assert(dumptime_oop != 0, "null strings cannot be interned");
+    intptr_t runtime_oop = dumptime_oop +
+                           (intptr_t)FileMapInfo::current_info()->header()->heap_begin() +
+                           (intptr_t)HeapShared::runtime_delta();
+    return (oop)cast_to_oop(runtime_oop);
+  }
 }
 
-static CompactHashtable<
+typedef CompactHashtable<
   const jchar*, oop,
   read_string_from_compact_hashtable,
-  java_lang_String::equals
-> _shared_table;
+  java_lang_String::equals> SharedStringTable;
+
+static SharedStringTable _shared_table;
 #endif
 
 // --------------------------------------------------------------------------
@@ -105,17 +120,16 @@ class StringTableConfig : public StackObj {
   typedef WeakHandle Value;
 
   static uintx get_hash(Value const& value, bool* is_dead) {
-    EXCEPTION_MARK;
     oop val_oop = value.peek();
     if (val_oop == NULL) {
       *is_dead = true;
       return 0;
     }
     *is_dead = false;
-    ResourceMark rm(THREAD);
+    ResourceMark rm;
     // All String oops are hashed as unicode
     int length;
-    jchar* chars = java_lang_String::as_unicode_string(val_oop, length, THREAD);
+    jchar* chars = java_lang_String::as_unicode_string_or_null(val_oop, length);
     if (chars != NULL) {
       return hash_string(chars, length, _alt_hash);
     }
@@ -123,11 +137,11 @@ class StringTableConfig : public StackObj {
     return 0;
   }
   // We use default allocation/deallocation but counted
-  static void* allocate_node(size_t size, Value const& value) {
+  static void* allocate_node(void* context, size_t size, Value const& value) {
     StringTable::item_added();
     return AllocateHeap(size, mtSymbol);
   }
-  static void free_node(void* memory, Value const& value) {
+  static void free_node(void* context, void* memory, Value const& value) {
     value.release(StringTable::_oop_storage);
     FreeHeap(memory);
     StringTable::item_removed();
@@ -346,14 +360,16 @@ oop StringTable::do_intern(Handle string_or_null_h, const jchar* name,
     string_h = java_lang_String::create_from_unicode(name, len, CHECK_NULL);
   }
 
-  // Deduplicate the string before it is interned. Note that we should never
-  // deduplicate a string after it has been interned. Doing so will counteract
-  // compiler optimizations done on e.g. interned string literals.
-  Universe::heap()->deduplicate_string(string_h());
-
   assert(java_lang_String::equals(string_h(), name, len),
          "string must be properly initialized");
   assert(len == java_lang_String::length(string_h()), "Must be same length");
+
+  // Notify deduplication support that the string is being interned.  A string
+  // must never be deduplicated after it has been interned.  Doing so interferes
+  // with compiler optimizations done on e.g. interned string literals.
+  if (StringDedup::is_enabled()) {
+    StringDedup::notify_intern(string_h());
+  }
 
   StringTableLookupOop lookup(THREAD, hash, string_h);
   StringTableGet stg(THREAD);
@@ -535,18 +551,19 @@ void StringTable::rehash_table() {
 }
 
 // Statistics
-static int literal_size(oop obj) {
-  // NOTE: this would over-count if (pre-JDK8)
-  // java_lang_Class::has_offset_field() is true and the String.value array is
-  // shared by several Strings. However, starting from JDK8, the String.value
-  // array is not shared anymore.
+static size_t literal_size(oop obj) {
   if (obj == NULL) {
     return 0;
-  } else if (obj->klass() == vmClasses::String_klass()) {
-    return (obj->size() + java_lang_String::value(obj)->size()) * HeapWordSize;
-  } else {
-    return obj->size();
   }
+
+  size_t word_size = obj->size();
+
+  if (obj->klass() == vmClasses::String_klass()) {
+    // This may overcount if String.value arrays are shared.
+    word_size += java_lang_String::value(obj)->size();
+  }
+
+  return word_size * HeapWordSize;
 }
 
 struct SizeFunc : StackObj {
@@ -567,10 +584,14 @@ TableStatistics StringTable::get_table_statistics() {
   return ts;
 }
 
-void StringTable::print_table_statistics(outputStream* st,
-                                         const char* table_name) {
+void StringTable::print_table_statistics(outputStream* st) {
   SizeFunc sz;
-  _local_table->statistics_to(Thread::current(), sz, st, table_name);
+  _local_table->statistics_to(Thread::current(), sz, st, "StringTable");
+#if INCLUDE_CDS_JAVA_HEAP
+  if (!_shared_table.empty()) {
+    _shared_table.print_table_statistics(st, "Shared String Table");
+  }
+#endif
 }
 
 // Verification
@@ -596,40 +617,67 @@ void StringTable::verify() {
 
 // Verification and comp
 class VerifyCompStrings : StackObj {
-  GrowableArray<oop>* _oops;
+  static unsigned string_hash(oop const& str) {
+    return java_lang_String::hash_code_noupdate(str);
+  }
+  static bool string_equals(oop const& a, oop const& b) {
+    return java_lang_String::equals(a, b);
+  }
+
+  ResizeableResourceHashtable<oop, bool,
+                              ResourceObj::C_HEAP, mtInternal,
+                              string_hash, string_equals> _table;
  public:
   size_t _errors;
-  VerifyCompStrings(GrowableArray<oop>* oops) : _oops(oops), _errors(0) {}
+  VerifyCompStrings() : _table(unsigned(_items_count / 8) + 1), _errors(0) {}
   bool operator()(WeakHandle* val) {
     oop s = val->resolve();
     if (s == NULL) {
       return true;
     }
-    int len = _oops->length();
-    for (int i = 0; i < len; i++) {
-      bool eq = java_lang_String::equals(s, _oops->at(i));
-      assert(!eq, "Duplicate strings");
-      if (eq) {
-        _errors++;
-      }
+    bool created;
+    _table.put_if_absent(s, true, &created);
+    assert(created, "Duplicate strings");
+    if (!created) {
+      _errors++;
     }
-    _oops->push(s);
     return true;
   };
 };
 
 size_t StringTable::verify_and_compare_entries() {
   Thread* thr = Thread::current();
-  GrowableArray<oop>* oops =
-    new (ResourceObj::C_HEAP, mtInternal)
-      GrowableArray<oop>((int)_current_size, mtInternal);
-
-  VerifyCompStrings vcs(oops);
+  VerifyCompStrings vcs;
   if (!_local_table->try_scan(thr, vcs)) {
     log_info(stringtable)("verify unavailable at this moment");
   }
-  delete oops;
   return vcs._errors;
+}
+
+static void print_string(Thread* current, outputStream* st, oop s) {
+  typeArrayOop value     = java_lang_String::value_no_keepalive(s);
+  int          length    = java_lang_String::length(s);
+  bool         is_latin1 = java_lang_String::is_latin1(s);
+
+  if (length <= 0) {
+    st->print("%d: ", length);
+  } else {
+    ResourceMark rm(current);
+    int utf8_length = length;
+    char* utf8_string;
+
+    if (!is_latin1) {
+      jchar* chars = value->char_at_addr(0);
+      utf8_string = UNICODE::as_utf8(chars, utf8_length);
+    } else {
+      jbyte* bytes = value->byte_at_addr(0);
+      utf8_string = UNICODE::as_utf8(bytes, utf8_length);
+    }
+
+    st->print("%d: ", utf8_length);
+    HashtableTextDump::put_utf8(st, utf8_string, utf8_length);
+  }
+  st->cr();
 }
 
 // Dumping
@@ -643,36 +691,27 @@ class PrintString : StackObj {
     if (s == NULL) {
       return true;
     }
-    typeArrayOop value     = java_lang_String::value_no_keepalive(s);
-    int          length    = java_lang_String::length(s);
-    bool         is_latin1 = java_lang_String::is_latin1(s);
-
-    if (length <= 0) {
-      _st->print("%d: ", length);
-    } else {
-      ResourceMark rm(_thr);
-      int utf8_length = length;
-      char* utf8_string;
-
-      if (!is_latin1) {
-        jchar* chars = value->char_at_addr(0);
-        utf8_string = UNICODE::as_utf8(chars, utf8_length);
-      } else {
-        jbyte* bytes = value->byte_at_addr(0);
-        utf8_string = UNICODE::as_utf8(bytes, utf8_length);
-      }
-
-      _st->print("%d: ", utf8_length);
-      HashtableTextDump::put_utf8(_st, utf8_string, utf8_length);
-    }
-    _st->cr();
+    print_string(_thr, _st, s);
     return true;
+  };
+};
+
+class PrintSharedString : StackObj {
+  Thread* _thr;
+  outputStream* _st;
+public:
+  PrintSharedString(Thread* thr, outputStream* st) : _thr(thr), _st(st) {}
+  void do_value(oop s) {
+    if (s == NULL) {
+      return;
+    }
+    print_string(_thr, _st, s);
   };
 };
 
 void StringTable::dump(outputStream* st, bool verbose) {
   if (!verbose) {
-    print_table_statistics(st, "StringTable");
+    print_table_statistics(st);
   } else {
     Thread* thr = Thread::current();
     ResourceMark rm(thr);
@@ -681,6 +720,15 @@ void StringTable::dump(outputStream* st, bool verbose) {
     if (!_local_table->try_scan(thr, ps)) {
       st->print_cr("dump unavailable at this moment");
     }
+#if INCLUDE_CDS_JAVA_HEAP
+    if (!_shared_table.empty()) {
+      st->print_cr("#----------------");
+      st->print_cr("# Shared strings:");
+      st->print_cr("#----------------");
+      PrintSharedString pss(thr, st);
+      _shared_table.iterate(&pss);
+    }
+#endif
   }
 }
 
@@ -698,48 +746,59 @@ void StringtableDCmd::execute(DCmdSource source, TRAPS) {
   VMThread::execute(&dumper);
 }
 
-int StringtableDCmd::num_arguments() {
-  ResourceMark rm;
-  StringtableDCmd* dcmd = new StringtableDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
-
 // Sharing
 #if INCLUDE_CDS_JAVA_HEAP
+size_t StringTable::shared_entry_count() {
+  return _shared_table.entry_count();
+}
+
 oop StringTable::lookup_shared(const jchar* name, int len, unsigned int hash) {
   assert(hash == java_lang_String::hash_code(name, len),
          "hash must be computed using java_lang_String::hash_code");
   return _shared_table.lookup(name, hash, len);
 }
 
+oop StringTable::lookup_shared(const jchar* name, int len) {
+  return _shared_table.lookup(name, java_lang_String::hash_code(name, len), len);
+}
+
 oop StringTable::create_archived_string(oop s) {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
   assert(java_lang_String::is_instance(s), "sanity");
-  assert(!HeapShared::is_archived_object(s), "sanity");
+  assert(!HeapShared::is_archived_object_during_dumptime(s), "sanity");
 
   oop new_s = NULL;
   typeArrayOop v = java_lang_String::value_no_keepalive(s);
-  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_heap_object(v);
+  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_object(v);
   if (new_v == NULL) {
     return NULL;
   }
-  new_s = HeapShared::archive_heap_object(s);
+  new_s = HeapShared::archive_object(s);
   if (new_s == NULL) {
     return NULL;
   }
 
   // adjust the pointer to the 'value' field in the new String oop
   java_lang_String::set_value_raw(new_s, new_v);
+  // Prevent string deduplication from changing the 'value' field to
+  // something not in the archive before building the archive.  Also marks
+  // the shared string when loaded.
+  java_lang_String::set_deduplication_forbidden(new_s);
   return new_s;
 }
 
 class CopyToArchive : StackObj {
   CompactHashtableWriter* _writer;
+private:
+  u4 compute_delta(oop s) {
+    HeapWord* start = G1CollectedHeap::heap()->reserved().start();
+    intx offset = ((address)(void*)s) - ((address)(void*)start);
+    assert(offset >= 0, "must be");
+    if (offset > 0xffffffff) {
+      fatal("too large");
+    }
+    return (u4)offset;
+  }
 public:
   CopyToArchive(CompactHashtableWriter* writer) : _writer(writer) {}
   bool do_entry(oop s, bool value_ignored) {
@@ -751,13 +810,17 @@ public:
     }
 
     // add to the compact table
-    _writer->add(hash, CompressedOops::narrow_oop_value(new_s));
+    if (UseCompressedOops) {
+      _writer->add(hash, CompressedOops::narrow_oop_value(new_s));
+    } else {
+      _writer->add(hash, compute_delta(new_s));
+    }
     return true;
   }
 };
 
 void StringTable::write_to_archive(const DumpedInternedStrings* dumped_interned_strings) {
-  assert(HeapShared::is_heap_object_archiving_allowed(), "must be");
+  assert(HeapShared::can_write(), "must be");
 
   _shared_table.reset();
   CompactHashtableWriter writer(_items_count, ArchiveBuilder::string_stats());
@@ -765,7 +828,6 @@ void StringTable::write_to_archive(const DumpedInternedStrings* dumped_interned_
   // Copy the interned strings into the "string space" within the java heap
   CopyToArchive copier(&writer);
   dumped_interned_strings->iterate(&copier);
-
   writer.dump(&_shared_table, "string");
 }
 
@@ -775,22 +837,47 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
   if (soc->writing()) {
     // Sanity. Make sure we don't use the shared table at dump time
     _shared_table.reset();
-  } else if (!HeapShared::closed_archive_heap_region_mapped()) {
+  } else if (!HeapShared::are_archived_strings_available()) {
     _shared_table.reset();
   }
+
 }
 
-class SharedStringIterator {
-  OopClosure* _oop_closure;
+class SharedStringTransfer {
+  JavaThread* _current;
 public:
-  SharedStringIterator(OopClosure* f) : _oop_closure(f) {}
+  SharedStringTransfer(JavaThread* current) : _current(current) {}
+
   void do_value(oop string) {
-    _oop_closure->do_oop(&string);
+    JavaThread* THREAD = _current;
+    ExceptionMark rm(THREAD);
+    HandleMark hm(THREAD);
+    StringTable::intern(string, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      // The archived constant pools contains strings that must be in the interned string table.
+      // If we fail here, it means the VM runs out of memory during bootstrap, so there's no point
+      // of trying to recover from here.
+      vm_exit_during_initialization("Failed to transfer shared strings to interned string table");
+    }
   }
 };
 
-void StringTable::shared_oops_do(OopClosure* f) {
-  SharedStringIterator iter(f);
-  _shared_table.iterate(&iter);
+// If the CDS archive heap is loaded (not mapped) into the old generation,
+// it's possible for the shared strings to move due to full GC, making the
+// _shared_table invalid. Therefore, we proactively copy all the shared
+// strings into the _local_table, which can deal with oop relocation.
+void StringTable::transfer_shared_strings_to_local_table() {
+  assert(HeapShared::is_loaded(), "must be");
+  EXCEPTION_MARK;
+
+  // Reset _shared_table so that during the transfer, StringTable::intern()
+  // will not look up from there. Instead, it will create a new entry in
+  // _local_table for each element in shared_table_copy.
+  SharedStringTable shared_table_copy = _shared_table;
+  _shared_table.reset();
+
+  SharedStringTransfer transfer(THREAD);
+  shared_table_copy.iterate(&transfer);
 }
+
 #endif //INCLUDE_CDS_JAVA_HEAP

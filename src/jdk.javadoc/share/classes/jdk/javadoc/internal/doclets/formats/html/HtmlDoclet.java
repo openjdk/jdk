@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,11 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 
@@ -48,15 +53,11 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
+import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
 /**
  * The class with "start" method, calls individual Writers.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class HtmlDoclet extends AbstractDoclet {
 
@@ -139,8 +140,6 @@ public class HtmlDoclet extends AbstractDoclet {
                 { "doclet.help.annotation_type.description", "doclet.help.annotation_interface.description" },
 
                 // in doclets.properties
-                { "doclet.Annotation_Types_Summary", "doclet.Annotation_Interfaces_Summary" },
-                { "doclet.Enum_Summary", "doclet.Enum_Class_Summary" },
                 { "doclet.Enums", "doclet.EnumClasses" },
                 { "doclet.AnnotationType", "doclet.AnnotationInterface" },
                 { "doclet.AnnotationTypes", "doclet.AnnotationInterfaces" },
@@ -168,18 +167,25 @@ public class HtmlDoclet extends AbstractDoclet {
 
     @Override // defined by AbstractDoclet
     public void generateClassFiles(ClassTree classTree) throws DocletException {
-
+        List<String> since = configuration.getOptions().since();
         if (!(configuration.getOptions().noDeprecated()
                 || configuration.getOptions().noDeprecatedList())) {
-            DeprecatedAPIListBuilder builder = new DeprecatedAPIListBuilder(configuration);
-            if (!builder.isEmpty()) {
-                configuration.deprecatedAPIListBuilder = builder;
+            DeprecatedAPIListBuilder deprecatedBuilder = new DeprecatedAPIListBuilder(configuration, since);
+            if (!deprecatedBuilder.isEmpty()) {
+                configuration.deprecatedAPIListBuilder = deprecatedBuilder;
                 configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.DEPRECATED);
             }
         }
-        PreviewAPIListBuilder builder = new PreviewAPIListBuilder(configuration);
-        if (!builder.isEmpty()) {
-            configuration.previewAPIListBuilder = builder;
+        if (!since.isEmpty()) {
+            NewAPIBuilder newAPIBuilder = new NewAPIBuilder(configuration, since);
+            if (!newAPIBuilder.isEmpty()) {
+                configuration.newAPIPageBuilder = newAPIBuilder;
+                configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.NEW);
+            }
+        }
+        PreviewAPIListBuilder previewBuilder = new PreviewAPIListBuilder(configuration);
+        if (!previewBuilder.isEmpty()) {
+            configuration.previewAPIListBuilder = previewBuilder;
             configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.PREVIEW);
         }
 
@@ -202,7 +208,7 @@ public class HtmlDoclet extends AbstractDoclet {
         super.generateOtherFiles(classtree);
         HtmlOptions options = configuration.getOptions();
         if (options.linkSource()) {
-            SourceToHTMLConverter.convertRoot(configuration,DocPaths.SOURCE_OUTPUT);
+            SourceToHTMLConverter.convertRoot(configuration, DocPaths.SOURCE_OUTPUT);
         }
         // Modules with no documented classes may be specified on the
         // command line to specify a service provider, allow these.
@@ -212,10 +218,13 @@ public class HtmlDoclet extends AbstractDoclet {
             return;
         }
         boolean nodeprecated = options.noDeprecated();
-        performCopy(options.helpFile());
-        performCopy(options.stylesheetFile());
+        performCopy(options.helpFile(), DocPath.empty);
+        performCopy(options.stylesheetFile(), DocPath.empty);
         for (String stylesheet : options.additionalStylesheets()) {
-            performCopy(stylesheet);
+            performCopy(stylesheet, DocPath.empty);
+        }
+        for (String script : options.additionalScripts()) {
+            performCopy(script, DocPaths.SCRIPT_DIR);
         }
         // do early to reduce memory footprint
         if (options.classUse()) {
@@ -232,6 +241,10 @@ public class HtmlDoclet extends AbstractDoclet {
 
         if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.PREVIEW))) {
             PreviewListWriter.generate(configuration);
+        }
+
+        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.NEW))) {
+            NewAPIListWriter.generate(configuration);
         }
 
         if (options.createOverview()) {
@@ -273,6 +286,8 @@ public class HtmlDoclet extends AbstractDoclet {
         }
         f = DocFile.createFileForOutput(configuration, DocPaths.JAVASCRIPT);
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.JAVASCRIPT), true, true);
+        f = DocFile.createFileForOutput(configuration, DocPaths.CLIPBOARD_SVG);
+        f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.CLIPBOARD_SVG), true, true);
         if (options.createIndex()) {
             f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_JS);
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_JS_TEMPLATE), configuration.docResources);
@@ -287,11 +302,13 @@ public class HtmlDoclet extends AbstractDoclet {
             f = DocFile.createFileForOutput(configuration, DocPaths.JQUERY_OVERRIDES_CSS);
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.JQUERY_OVERRIDES_CSS), true, true);
         }
+
+        copyLegalFiles(options.createIndex());
     }
 
     private void copyJqueryFiles() throws DocletException {
         List<String> files = Arrays.asList(
-                "jquery-3.5.1.min.js",
+                "jquery-3.6.0.min.js",
                 "jquery-ui.min.js",
                 "jquery-ui.min.css",
                 "jquery-ui.structure.min.css",
@@ -308,9 +325,52 @@ public class HtmlDoclet extends AbstractDoclet {
                 "images/ui-bg_glass_75_e6e6e6_1x400.png");
         DocFile f;
         for (String file : files) {
-            DocPath filePath = DocPaths.JQUERY_FILES.resolve(file);
+            DocPath filePath = DocPaths.SCRIPT_DIR.resolve(file);
             f = DocFile.createFileForOutput(configuration, filePath);
             f.copyResource(DOCLET_RESOURCES.resolve(filePath), true, false);
+        }
+    }
+
+    private void copyLegalFiles(boolean includeJQuery) throws DocletException {
+        Path legalNoticesDir;
+        String legalNotices = configuration.getOptions().legalNotices();
+        switch (legalNotices) {
+            case "", "default" -> {
+                Path javaHome = Path.of(System.getProperty("java.home"));
+                legalNoticesDir = javaHome.resolve("legal").resolve(getClass().getModule().getName());
+            }
+
+            case "none" -> {
+                return;
+            }
+
+            default -> {
+                try {
+                    legalNoticesDir = Path.of(legalNotices);
+                } catch (InvalidPathException e) {
+                    messages.error("doclet.Error_invalid_path_for_legal_notices",
+                            legalNotices, e.getMessage());
+                    return;
+                }
+            }
+        }
+
+        if (Files.exists(legalNoticesDir)) {
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(legalNoticesDir)) {
+                for (Path entry: ds) {
+                    if (!Files.isRegularFile(entry)) {
+                        continue;
+                    }
+                    if (entry.getFileName().toString().startsWith("jquery") && !includeJQuery) {
+                        continue;
+                    }
+                    DocPath filePath = DocPaths.LEGAL.resolve(entry.getFileName().toString());
+                    DocFile df = DocFile.createFileForOutput(configuration, filePath);
+                    df.copyFile(DocFile.createFileForInput(configuration, entry));
+                }
+            } catch (IOException e) {
+                messages.error("doclet.Error_copying_legal_notices", e);
+            }
         }
     }
 
@@ -364,18 +424,20 @@ public class HtmlDoclet extends AbstractDoclet {
         return configuration.getOptions().getSupportedOptions();
     }
 
-    private void performCopy(String filename) throws DocFileIOException {
-        if (filename.isEmpty())
+    private void performCopy(String filename, DocPath targetPath) throws DocFileIOException {
+        if (filename.isEmpty()) {
             return;
+        }
 
         DocFile fromfile = DocFile.createFileForInput(configuration, filename);
-        DocPath path = DocPath.create(fromfile.getName());
+        DocPath path = targetPath.resolve(fromfile.getName());
         DocFile toFile = DocFile.createFileForOutput(configuration, path);
-        if (toFile.isSameFile(fromfile))
+        if (toFile.isSameFile(fromfile)) {
             return;
+        }
 
         messages.notice("doclet.Copying_File_0_To_File_1",
-                fromfile.toString(), path.getPath());
+                fromfile.getPath(), path.getPath());
         toFile.copyFile(fromfile);
     }
 }

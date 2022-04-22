@@ -28,6 +28,7 @@
 #include "oops/accessDecorators.hpp"
 #include "runtime/handshake.hpp"
 
+class BarrierSetNMethod;
 class ShenandoahBarrierSet;
 class ShenandoahHeap;
 class ShenandoahMarkingContext;

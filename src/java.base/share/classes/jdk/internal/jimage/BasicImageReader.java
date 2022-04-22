@@ -49,6 +49,7 @@ import jdk.internal.jimage.decompressor.Decompressor;
  * to the jimage file provided by the shipped JDK by tools running on JDK 8.
  */
 public class BasicImageReader implements AutoCloseable {
+    @SuppressWarnings("removal")
     private static boolean isSystemProperty(String key, String value, String def) {
         // No lambdas during bootstrap
         return AccessController.doPrivileged(
@@ -60,11 +61,11 @@ public class BasicImageReader implements AutoCloseable {
             });
     }
 
-    static private final boolean IS_64_BIT =
+    private static final boolean IS_64_BIT =
             isSystemProperty("sun.arch.data.model", "64", "32");
-    static private final boolean USE_JVM_MAP =
+    private static final boolean USE_JVM_MAP =
             isSystemProperty("jdk.image.use.jvm.map", "true", "true");
-    static private final boolean MAP_ALL =
+    private static final boolean MAP_ALL =
             isSystemProperty("jdk.image.map.all", "true", IS_64_BIT ? "true" : "false");
 
     private final Path imagePath;
@@ -81,6 +82,7 @@ public class BasicImageReader implements AutoCloseable {
     private final ImageStringsReader stringsReader;
     private final Decompressor decompressor;
 
+    @SuppressWarnings("removal")
     protected BasicImageReader(Path path, ByteOrder byteOrder)
             throws IOException {
         this.imagePath = Objects.requireNonNull(path);

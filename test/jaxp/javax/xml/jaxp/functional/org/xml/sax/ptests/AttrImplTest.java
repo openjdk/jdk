@@ -35,7 +35,7 @@ import org.xml.sax.helpers.AttributesImpl;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.AttrImplTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.xml.sax.ptests.AttrImplTest
  * @run testng/othervm org.xml.sax.ptests.AttrImplTest
  */
 @Listeners({jaxp.library.BasePolicy.class})

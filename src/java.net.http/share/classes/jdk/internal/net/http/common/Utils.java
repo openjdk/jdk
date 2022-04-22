@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ public final class Utils {
     // used by caller.
 
     public static final BiPredicate<String, String> CONTEXT_RESTRICTED(HttpClient client) {
-        return (k, v) -> !client.authenticator().isPresent() ||
+        return (k, v) -> client.authenticator().isEmpty() ||
                 (!k.equalsIgnoreCase("Authorization")
                         && !k.equalsIgnoreCase("Proxy-Authorization"));
     }
@@ -391,7 +391,6 @@ public final class Utils {
         return new URLPermission(urlString, actionStringBuilder.toString());
     }
 
-
     // ABNF primitives defined in RFC 7230
     private static final boolean[] tchar      = new boolean[256];
     private static final boolean[] fieldvchar = new boolean[256];
@@ -411,7 +410,7 @@ public final class Utils {
     }
 
     /*
-     * Validates a RFC 7230 field-name.
+     * Validates an RFC 7230 field-name.
      */
     public static boolean isValidName(String token) {
         for (int i = 0; i < token.length(); i++) {
@@ -472,7 +471,7 @@ public final class Utils {
     }
 
     /*
-     * Validates a RFC 7230 field-value.
+     * Validates an RFC 7230 field-value.
      *
      * "Obsolete line folding" rule
      *
@@ -495,27 +494,31 @@ public final class Utils {
         return true;
     }
 
-
+    @SuppressWarnings("removal")
     public static int getIntegerNetProperty(String name, int defaultValue) {
         return AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
                 NetProperties.getInteger(name, defaultValue));
     }
 
+    @SuppressWarnings("removal")
     public static String getNetProperty(String name) {
         return AccessController.doPrivileged((PrivilegedAction<String>) () ->
                 NetProperties.get(name));
     }
 
+    @SuppressWarnings("removal")
     public static boolean getBooleanProperty(String name, boolean def) {
         return AccessController.doPrivileged((PrivilegedAction<Boolean>) () ->
                 Boolean.parseBoolean(System.getProperty(name, String.valueOf(def))));
     }
 
+    @SuppressWarnings("removal")
     public static String getProperty(String name) {
         return AccessController.doPrivileged((PrivilegedAction<String>) () ->
                 System.getProperty(name));
     }
 
+    @SuppressWarnings("removal")
     public static int getIntegerProperty(String name, int defaultValue) {
         return AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
                 Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue))));
@@ -655,33 +658,33 @@ public final class Utils {
     }
 
     public static boolean hasRemaining(List<ByteBuffer> bufs) {
-        synchronized (bufs) {
-            for (ByteBuffer buf : bufs) {
-                if (buf.hasRemaining())
-                    return true;
-            }
+        for (ByteBuffer buf : bufs) {
+            if (buf.hasRemaining())
+                return true;
         }
         return false;
     }
 
     public static long remaining(List<ByteBuffer> bufs) {
         long remain = 0;
-        synchronized (bufs) {
-            for (ByteBuffer buf : bufs) {
-                remain += buf.remaining();
-            }
+        for (ByteBuffer buf : bufs) {
+            remain += buf.remaining();
         }
         return remain;
     }
 
+    public static long synchronizedRemaining(List<ByteBuffer> bufs) {
+        synchronized (bufs) {
+            return remaining(bufs);
+        }
+    }
+
     public static int remaining(List<ByteBuffer> bufs, int max) {
         long remain = 0;
-        synchronized (bufs) {
-            for (ByteBuffer buf : bufs) {
-                remain += buf.remaining();
-                if (remain > max) {
-                    throw new IllegalArgumentException("too many bytes");
-                }
+        for (ByteBuffer buf : bufs) {
+            remain += buf.remaining();
+            if (remain > max) {
+                throw new IllegalArgumentException("too many bytes");
             }
         }
         return (int) remain;
@@ -868,7 +871,7 @@ public final class Utils {
         if (defaultPort) {
             return host;
         } else {
-            return host + ":" + Integer.toString(port);
+            return host + ":" + port;
         }
     }
 

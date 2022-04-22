@@ -107,6 +107,9 @@ public class OverlapByteBuffer {
                     }
                 }
 
+                System.out.println("inOfsInBuf  = " + inOfsInBuf);
+                System.out.println("outOfsInBuf = " + outOfsInBuf);
+
                 // Copy data into shared buffer
                 input.put(baseBuf);
                 input.flip();
@@ -132,8 +135,6 @@ public class OverlapByteBuffer {
                     cipher.doFinal(in, output);
 
                     output.flip();
-                    System.out.println("inOfsInBuf  = " + inOfsInBuf);
-                    System.out.println("outOfsInBuf = " + outOfsInBuf);
                     ByteBuffer b = ByteBuffer.wrap(baseBuf);
                     if (b.compareTo(output) != 0) {
                         System.err.println(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,13 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.misc.ScopedMemoryAccess.Scope;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM.BufferPool;
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.io.FileDescriptor;
+import java.util.Objects;
 import java.util.Spliterator;
 
 /**
@@ -190,7 +191,9 @@ import java.util.Spliterator;
  * @since 1.4
  */
 
-public abstract class Buffer {
+public abstract sealed class Buffer
+    permits ByteBuffer, CharBuffer, DoubleBuffer, FloatBuffer, IntBuffer,
+        LongBuffer, ShortBuffer {
     // Cached unsafe-access object
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
@@ -736,11 +739,8 @@ public abstract class Buffer {
      * IndexOutOfBoundsException} if it is not smaller than the limit
      * or is smaller than zero.
      */
-    @IntrinsicCandidate
     final int checkIndex(int i) {                       // package-private
-        if ((i < 0) || (i >= limit))
-            throw new IndexOutOfBoundsException();
-        return i;
+        return Objects.checkIndex(i, limit);
     }
 
     final int checkIndex(int i, int nb) {               // package-private
@@ -769,7 +769,11 @@ public abstract class Buffer {
     final void checkScope() {
         ScopedMemoryAccess.Scope scope = scope();
         if (scope != null) {
-            scope.checkValidState();
+            try {
+                scope.checkValidState();
+            } catch (ScopedMemoryAccess.Scope.ScopedAccessError e) {
+                throw new IllegalStateException("This segment is already closed");
+            }
         }
     }
 
@@ -819,6 +823,19 @@ public abstract class Buffer {
                 @Override
                 public MemorySegmentProxy bufferSegment(Buffer buffer) {
                     return buffer.segment;
+                }
+
+                @Override
+                public Runnable acquireScope(Buffer buffer, boolean async) {
+                    var scope = buffer.scope();
+                    if (scope == null) {
+                        return null;
+                    }
+                    if (async && scope.ownerThread() != null) {
+                        throw new IllegalStateException("Confined scope not supported");
+                    }
+                    scope.acquire0();
+                    return scope::release0;
                 }
 
                 @Override

@@ -340,7 +340,7 @@ public class GenerateCharacter {
                 ++codePoint;
             }
             else {
-                System.out.println("An error has occured during spec mapping.");
+                System.out.println("An error has occurred during spec mapping.");
                 System.exit(0);
             }
         }
@@ -409,7 +409,7 @@ public class GenerateCharacter {
 
         // extract and record the uppercase letter / lowercase letter property into the
         // maskOtherUppercase/-Lowercase bit so that Character.isLower|UpperCase
-        // can use a one-step lookup (this property includes
+        // can use a one-step lookup
         if (resultA == Character.UPPERCASE_LETTER) {
             resultA |= maskOtherUppercase;
         } else if (resultA == Character.LOWERCASE_LETTER) {
@@ -1897,7 +1897,6 @@ OUTER:  for (int i = 0; i < n; i += m) {
                              hex8(maxOffset));
             }
         }
-        catch (FileNotFoundException e) { FAIL(e.toString()); }
         catch (IOException e) { FAIL(e.toString()); }
         catch (Throwable e) {
             System.out.println("Unexpected exception:");

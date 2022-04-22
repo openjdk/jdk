@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class RSAPSSSignature extends SignatureSpi {
     private boolean isDigestEqual(String stdAlg, String givenAlg) {
         if (stdAlg == null || givenAlg == null) return false;
 
-        if (givenAlg.indexOf("-") != -1) {
+        if (givenAlg.contains("-")) {
             return stdAlg.equalsIgnoreCase(givenAlg);
         } else {
             if (stdAlg.equals("SHA-1")) {
@@ -123,12 +123,14 @@ public class RSAPSSSignature extends SignatureSpi {
     @Override
     protected void engineInitVerify(PublicKey publicKey)
             throws InvalidKeyException {
-        if (!(publicKey instanceof RSAPublicKey)) {
+        if (publicKey instanceof RSAPublicKey rsaPubKey) {
+            isPublicKeyValid(rsaPubKey);
+            this.pubKey = rsaPubKey;
+            this.privKey = null;
+            resetDigest();
+        } else {
             throw new InvalidKeyException("key must be RSAPublicKey");
         }
-        this.pubKey = (RSAPublicKey) isValid((RSAKey)publicKey);
-        this.privKey = null;
-        resetDigest();
     }
 
     // initialize for signing. See JCA doc
@@ -142,14 +144,16 @@ public class RSAPSSSignature extends SignatureSpi {
     @Override
     protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
             throws InvalidKeyException {
-        if (!(privateKey instanceof RSAPrivateKey)) {
+        if (privateKey instanceof RSAPrivateKey rsaPrivateKey) {
+            isPrivateKeyValid(rsaPrivateKey);
+            this.privKey = rsaPrivateKey;
+            this.pubKey = null;
+            this.random =
+                    (random == null ? JCAUtil.getSecureRandom() : random);
+            resetDigest();
+        } else {
             throw new InvalidKeyException("key must be RSAPrivateKey");
         }
-        this.privKey = (RSAPrivateKey) isValid((RSAKey)privateKey);
-        this.pubKey = null;
-        this.random =
-            (random == null? JCAUtil.getSecureRandom() : random);
-        resetDigest();
     }
 
     /**
@@ -202,11 +206,55 @@ public class RSAPSSSignature extends SignatureSpi {
     }
 
     /**
+     * Validate the specified RSAPrivateKey
+     */
+    private void isPrivateKeyValid(RSAPrivateKey prKey)  throws InvalidKeyException {
+        try {
+            if (prKey instanceof RSAPrivateCrtKey crtKey) {
+                if (RSAPrivateCrtKeyImpl.checkComponents(crtKey)) {
+                    RSAKeyFactory.checkRSAProviderKeyLengths(
+                            crtKey.getModulus().bitLength(),
+                            crtKey.getPublicExponent());
+                } else {
+                    throw new InvalidKeyException(
+                            "Some of the CRT-specific components are not available");
+                }
+            } else {
+                RSAKeyFactory.checkRSAProviderKeyLengths(
+                        prKey.getModulus().bitLength(),
+                        null);
+            }
+        } catch (InvalidKeyException ikEx) {
+            throw ikEx;
+        } catch (Exception e) {
+            throw new InvalidKeyException(
+                    "Can not access private key components", e);
+        }
+        isValid(prKey);
+    }
+
+    /**
+     * Validate the specified RSAPublicKey
+     */
+    private void isPublicKeyValid(RSAPublicKey pKey)  throws InvalidKeyException {
+        try {
+            RSAKeyFactory.checkRSAProviderKeyLengths(
+                    pKey.getModulus().bitLength(),
+                    pKey.getPublicExponent());
+        } catch (InvalidKeyException ikEx) {
+            throw ikEx;
+        } catch (Exception e) {
+            throw new InvalidKeyException(
+                    "Can not access public key components", e);
+        }
+        isValid(pKey);
+    }
+
+    /**
      * Validate the specified RSAKey and its associated parameters against
      * internal signature parameters.
      */
-    private RSAKey isValid(RSAKey rsaKey) throws InvalidKeyException {
-        AlgorithmParameterSpec keyParams = rsaKey.getParams();
+    private void isValid(RSAKey rsaKey) throws InvalidKeyException {
         // validate key parameters
         if (!isCompatible(rsaKey.getParams(), this.sigParams)) {
             throw new InvalidKeyException
@@ -232,7 +280,6 @@ public class RSAPSSSignature extends SignatureSpi {
                         ("Unrecognized digest algo: " + digestAlgo);
             }
         }
-        return rsaKey;
     }
 
     /**
@@ -368,7 +415,7 @@ public class RSAPSSSignature extends SignatureSpi {
         try {
             ensureInit();
         } catch (SignatureException se) {
-            // hack for working around API bug
+            // workaround for API bug
             throw new RuntimeException(se.getMessage());
         }
         this.md.update(b);

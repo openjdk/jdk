@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -324,7 +324,7 @@ compare_general_files() {
         ! -name "*.cpl" ! -name "*.pdb" ! -name "*.exp" ! -name "*.ilk" \
         ! -name "*.lib" ! -name "*.jmod" ! -name "*.exe" \
         ! -name "*.obj" ! -name "*.o" ! -name "jspawnhelper" ! -name "*.a" \
-        ! -name "*.tar.gz" ! -name "*.jsa" ! -name "gtestLauncher" \
+        ! -name "*.tar.gz" ! -name "classes_nocoops.jsa" ! -name "gtestLauncher" \
         ! -name "*.map" \
         | $GREP -v "./bin/"  | $SORT | $FILTER)
 
@@ -356,8 +356,8 @@ compare_general_files() {
                     "
                 $CAT $OTHER_DIR/$f | eval "$SVG_FILTER" > $OTHER_FILE
                 $CAT $THIS_DIR/$f | eval "$SVG_FILTER" > $THIS_FILE
-            elif [[ "$f" = *"/lib/classlist" ]] || [ "$SUFFIX" = "jar_contents" ]; then
-                # The classlist files may have some lines in random order
+            elif [ "$SUFFIX" = "jar_contents" ]; then
+                # The jar_contents files may have some lines in random order
                 OTHER_FILE=$WORK_DIR/$f.other
                 THIS_FILE=$WORK_DIR/$f.this
                 $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
@@ -1122,7 +1122,7 @@ if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "-?" ] || [ "$1" = "/h" ] || [ "$1
     echo "-names              Compare the file names and directory structure"
     echo "-perms              Compare the permission bits on all files and directories"
     echo "-types              Compare the output of the file command on all files"
-    echo "-general            Compare the files not convered by the specialized comparisons"
+    echo "-general            Compare the files not covered by the specialized comparisons"
     echo "-zips               Compare the contents of all zip files and files in them"
     echo "-zips-names         Compare the file names inside all zip files"
     echo "-jars               Compare the contents of all jar files"

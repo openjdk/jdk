@@ -229,13 +229,13 @@ MTLTR_AddToGlyphCache(GlyphInfo *glyph, MTLContext *mtlc,
             unsigned char imageData[imageBytes];
             memset(&imageData, 0, sizeof(imageData));
 
-            for (int i = 0; i < h; i++) {
-                for (int j = 0; j < w; j++) {
-                    imageData[(i * w * 4) + j * 4] = glyph->image[(i * w * 3) + j * 3];
-                    imageData[(i * w * 4) + j * 4 + 1] = glyph->image[(i * w * 3) + j * 3 + 1];
-                    imageData[(i * w * 4) + j * 4 + 2] = glyph->image[(i * w * 3) + j * 3 + 2];
-                    imageData[(i * w * 4) + j * 4 + 3] = 0xFF;
-                }
+            int srcIndex = 0;
+            int dstIndex = 0;
+            for (int i = 0; i < (w * h); i++) {
+                imageData[dstIndex++] = glyph->image[srcIndex++];
+                imageData[dstIndex++] = glyph->image[srcIndex++];
+                imageData[dstIndex++] = glyph->image[srcIndex++];
+                imageData[dstIndex++] = 0xFF;
             }
 
             NSUInteger bytesPerRow = 4 * w;
@@ -324,6 +324,19 @@ void MTLTR_FreeGlyphCaches() {
     }
 }
 
+static MTLPaint* storedPaint = nil;
+
+static void EnableColorGlyphPainting(MTLContext *mtlc) {
+    storedPaint = mtlc.paint;
+    mtlc.paint = [[MTLPaint alloc] init];
+}
+
+static void DisableColorGlyphPainting(MTLContext *mtlc) {
+    [mtlc.paint release];
+    mtlc.paint = storedPaint;
+    storedPaint = nil;
+}
+
 static jboolean
 MTLTR_DrawGrayscaleGlyphViaCache(MTLContext *mtlc,
                                  GlyphInfo *ginfo, jint x, jint y, BMTLSDOps *dstOps)
@@ -337,6 +350,8 @@ MTLTR_DrawGrayscaleGlyphViaCache(MTLContext *mtlc,
         } else if (glyphMode == MODE_USE_CACHE_LCD) {
             [mtlc.encoderManager endEncoder];
             lcdCacheEncoder = nil;
+        } else if (glyphMode == MODE_NO_CACHE_COLOR) {
+            DisableColorGlyphPainting(mtlc);
         }
         MTLTR_EnableGlyphVertexCache(mtlc, dstOps);
         glyphMode = MODE_USE_CACHE_GRAY;
@@ -383,6 +398,8 @@ MTLTR_DrawLCDGlyphViaCache(MTLContext *mtlc, BMTLSDOps *dstOps,
             MTLVertexCache_DisableMaskCache(mtlc);
         } else if (glyphMode == MODE_USE_CACHE_GRAY) {
             MTLTR_DisableGlyphVertexCache(mtlc);
+        } else if (glyphMode == MODE_NO_CACHE_COLOR) {
+            DisableColorGlyphPainting(mtlc);
         }
 
         if (glyphCacheLCD == NULL) {
@@ -422,8 +439,8 @@ MTLTR_DrawLCDGlyphViaCache(MTLContext *mtlc, BMTLSDOps *dstOps,
     tx2 = cell->tx2;
     ty2 = cell->ty2;
 
-    J2dTraceLn4(J2D_TRACE_INFO, "tx1 %f, ty1 %f, tx2 %f, ty2 %f", tx1, ty1, tx2, ty2);
-    J2dTraceLn2(J2D_TRACE_INFO, "textureWidth %d textureHeight %d", dstOps->textureWidth, dstOps->textureHeight);
+    J2dTraceLn4(J2D_TRACE_INFO, "tx1 = %f, ty1 = %f, tx2 = %f, ty2 = %f", tx1, ty1, tx2, ty2);
+    J2dTraceLn2(J2D_TRACE_INFO, "width = %d height = %d", dstOps->width, dstOps->height);
 
     LCD_ADD_TRIANGLES(tx1, ty1, tx2, ty2, x, y, x+w, y+h);
 
@@ -455,6 +472,8 @@ MTLTR_DrawGrayscaleGlyphNoCache(MTLContext *mtlc,
         } else if (glyphMode == MODE_USE_CACHE_LCD) {
             [mtlc.encoderManager endEncoder];
             lcdCacheEncoder = nil;
+        } else if (glyphMode == MODE_NO_CACHE_COLOR) {
+            DisableColorGlyphPainting(mtlc);
         }
         MTLVertexCache_EnableMaskCache(mtlc, dstOps);
         glyphMode = MODE_NO_CACHE_GRAY;
@@ -517,6 +536,8 @@ MTLTR_DrawLCDGlyphNoCache(MTLContext *mtlc, BMTLSDOps *dstOps,
         } else if (glyphMode == MODE_USE_CACHE_LCD) {
             [mtlc.encoderManager endEncoder];
             lcdCacheEncoder = nil;
+        } else if (glyphMode == MODE_NO_CACHE_COLOR) {
+            DisableColorGlyphPainting(mtlc);
         }
 
         if (blitTexture == nil) {
@@ -530,17 +551,17 @@ MTLTR_DrawLCDGlyphNoCache(MTLContext *mtlc, BMTLSDOps *dstOps,
     encoder = [mtlc.encoderManager getLCDEncoder:dstOps->pTexture isSrcOpaque:YES isDstOpaque:YES];
     MTLTR_SetLCDContrast(mtlc, contrast, encoder);
 
-    unsigned int imageBytes = w * h *4;
+    unsigned int imageBytes = w * h * 4;
     unsigned char imageData[imageBytes];
     memset(&imageData, 0, sizeof(imageData));
 
-    for (int i = 0; i < h; i++) {
-        for (int j = 0; j < w; j++) {
-            imageData[(i * w * 4) + j * 4] = ginfo->image[((i * w * 3) + j * 3) + rowBytesOffset];
-            imageData[(i * w * 4) + j * 4 + 1] = ginfo->image[((i * w * 3) + j * 3 + 1) + rowBytesOffset];
-            imageData[(i * w * 4) + j * 4 + 2] = ginfo->image[((i * w * 3) + j * 3 + 2) + rowBytesOffset];
-            imageData[(i * w * 4) + j * 4 + 3] = 0xFF;
-        }
+    int srcIndex = 0;
+    int dstIndex = 0;
+    for (int i = 0; i < (w * h); i++) {
+        imageData[dstIndex++] = ginfo->image[srcIndex++ + rowBytesOffset];
+        imageData[dstIndex++] = ginfo->image[srcIndex++ + rowBytesOffset];
+        imageData[dstIndex++] = ginfo->image[srcIndex++ + rowBytesOffset];
+        imageData[dstIndex++] = 0xFF;
     }
 
     // copy LCD mask into glyph texture tile
@@ -557,9 +578,7 @@ MTLTR_DrawLCDGlyphNoCache(MTLContext *mtlc, BMTLSDOps *dstOps,
     tx2 = 1.0f;
     ty2 = 1.0f;
 
-    J2dTraceLn3(J2D_TRACE_INFO, "xOffset %d yOffset %d, dstOps->height %d", dstOps->xOffset, dstOps->yOffset, dstOps->height);
-    J2dTraceLn4(J2D_TRACE_INFO, "tx1 %f, ty1 %f, tx2 %f, ty2 %f", tx1, ty1, tx2, ty2);
-    J2dTraceLn2(J2D_TRACE_INFO, "textureWidth %d textureHeight %d", dstOps->textureWidth, dstOps->textureHeight);
+    J2dTraceLn2(J2D_TRACE_INFO, "MTLTR_DrawLCDGlyphNoCache : dstOps->width = %d, dstOps->height = %d", dstOps->width, dstOps->height);
 
     LCD_ADD_TRIANGLES(tx1, ty1, tx2, ty2, x, y, x+w, y+h);
 
@@ -582,6 +601,51 @@ MTLTR_DrawLCDGlyphNoCache(MTLContext *mtlc, BMTLSDOps *dstOps,
 
     [commandbuf commit];
     [commandbuf waitUntilCompleted];
+
+    return JNI_TRUE;
+}
+
+static jboolean
+MTLTR_DrawColorGlyphNoCache(MTLContext *mtlc,
+                            GlyphInfo *ginfo, jint x, jint y, BMTLSDOps *dstOps)
+{
+    id<MTLTexture> dest = dstOps->pTexture;
+    const void *src = ginfo->image;
+    jint w = ginfo->width;
+    jint h = ginfo->height;
+    jint rowBytes = ginfo->rowBytes;
+    unsigned int imageSize = rowBytes * h;
+
+    J2dTraceLn(J2D_TRACE_INFO, "MTLTR_DrawColorGlyphNoCache");
+
+    if (glyphMode != MODE_NO_CACHE_COLOR) {
+        if (glyphMode == MODE_NO_CACHE_GRAY) {
+            MTLVertexCache_DisableMaskCache(mtlc);
+        } else if (glyphMode == MODE_USE_CACHE_GRAY) {
+            MTLTR_DisableGlyphVertexCache(mtlc);
+        } else if (glyphMode == MODE_USE_CACHE_LCD) {
+            [mtlc.encoderManager endEncoder];
+            lcdCacheEncoder = nil;
+        }
+        glyphMode = MODE_NO_CACHE_COLOR;
+        EnableColorGlyphPainting(mtlc);
+    }
+
+    MTLPooledTextureHandle* texHandle = [mtlc.texturePool getTexture:w height:h format:MTLPixelFormatBGRA8Unorm];
+    if (texHandle == nil) {
+        J2dTraceLn(J2D_TRACE_ERROR, "MTLTR_DrawColorGlyphNoCache: can't obtain temporary texture object from pool");
+        return JNI_FALSE;
+    }
+
+    [[mtlc getCommandBufferWrapper] registerPooledTexture:texHandle];
+
+    [texHandle.texture replaceRegion:MTLRegionMake2D(0, 0, w, h)
+                         mipmapLevel:0
+                           withBytes:src
+                         bytesPerRow:rowBytes];
+
+    drawTex2Tex(mtlc, texHandle.texture, dest, JNI_FALSE, dstOps->isOpaque, INTERPOLATION_NEAREST_NEIGHBOR,
+                0, 0, w, h, x, y, x + w, y + h);
 
     return JNI_TRUE;
 }
@@ -616,7 +680,7 @@ MTLTR_DrawGlyphList(JNIEnv *env, MTLContext *mtlc, BMTLSDOps *dstOps,
         J2dTraceLn(J2D_TRACE_INFO, "Entered for loop for glyph list");
         jint x, y;
         jfloat glyphx, glyphy;
-        jboolean grayscale, ok;
+        jboolean ok;
         GlyphInfo *ginfo = (GlyphInfo *)jlong_to_ptr(NEXT_LONG(images));
 
         if (ginfo == NULL) {
@@ -625,8 +689,6 @@ MTLTR_DrawGlyphList(JNIEnv *env, MTLContext *mtlc, BMTLSDOps *dstOps,
                           "MTLTR_DrawGlyphList: glyph info is null");
             break;
         }
-
-        grayscale = (ginfo->rowBytes == ginfo->width);
 
         if (usePositions) {
             jfloat posx = NEXT_FLOAT(positions);
@@ -651,7 +713,7 @@ MTLTR_DrawGlyphList(JNIEnv *env, MTLContext *mtlc, BMTLSDOps *dstOps,
 
         J2dTraceLn2(J2D_TRACE_INFO, "Glyph width = %d height = %d", ginfo->width, ginfo->height);
         J2dTraceLn1(J2D_TRACE_INFO, "rowBytes = %d", ginfo->rowBytes);
-        if (grayscale) {
+        if (ginfo->rowBytes == ginfo->width) {
             // grayscale or monochrome glyph data
             if (ginfo->width <= MTLTR_CACHE_CELL_WIDTH &&
                 ginfo->height <= MTLTR_CACHE_CELL_HEIGHT)
@@ -662,6 +724,10 @@ MTLTR_DrawGlyphList(JNIEnv *env, MTLContext *mtlc, BMTLSDOps *dstOps,
                 J2dTraceLn(J2D_TRACE_INFO, "MTLTR_DrawGlyphList Grayscale no cache");
                 ok = MTLTR_DrawGrayscaleGlyphNoCache(mtlc, ginfo, x, y, dstOps);
             }
+        } else if (ginfo->rowBytes == ginfo->width * 4) {
+            J2dTraceLn(J2D_TRACE_INFO, "MTLTR_DrawGlyphList color glyph no cache");
+            ok = MTLTR_DrawColorGlyphNoCache(mtlc, ginfo, x, y, dstOps);
+            flushBeforeLCD = JNI_FALSE;
         } else {
             if (!flushBeforeLCD) {
                 [mtlc.encoderManager endEncoder];
@@ -720,6 +786,8 @@ MTLTR_DrawGlyphList(JNIEnv *env, MTLContext *mtlc, BMTLSDOps *dstOps,
     } else if (glyphMode == MODE_USE_CACHE_LCD) {
         [mtlc.encoderManager endEncoder];
         lcdCacheEncoder = nil;
+    } else if (glyphMode == MODE_NO_CACHE_COLOR) {
+        DisableColorGlyphPainting(mtlc);
     }
 }
 

@@ -124,7 +124,6 @@ void TemplateInterpreterGenerator::generate_all() {
   }
 
   { CodeletMark cm(_masm, "earlyret entry points");
-    address earlyret_entry_itos = generate_earlyret_entry_for(itos);
     Interpreter::_earlyret_entry =
       EntryPoint(
                  generate_earlyret_entry_for(atos),
@@ -202,7 +201,9 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_fmaF )
   method_entry(java_lang_math_fmaD )
   method_entry(java_lang_ref_reference_get)
-
+#ifdef AMD64
+  method_entry(java_lang_Thread_currentThread)
+#endif
   AbstractInterpreter::initialize_method_handle_entries();
 
   // all native method kinds (must be one contiguous block)
@@ -235,7 +236,6 @@ void TemplateInterpreterGenerator::generate_all() {
     Interpreter::_deopt_entry[0] = EntryPoint();
     Interpreter::_deopt_entry[0].set_entry(vtos, generate_deopt_entry_for(vtos, 0));
     for (int i = 1; i < Interpreter::number_of_deopt_entries; i++) {
-      address deopt_itos = generate_deopt_entry_for(itos, i);
       Interpreter::_deopt_entry[i] =
         EntryPoint(
                    generate_deopt_entry_for(atos, i),
@@ -433,6 +433,11 @@ address TemplateInterpreterGenerator::generate_method_entry(
                                            : // fall thru
   case Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer
                                            : entry_point = generate_CRC32C_updateBytes_entry(kind); break;
+#ifdef AMD64
+  case Interpreter::java_lang_Thread_currentThread
+                                           : entry_point = generate_currentThread(); break;
+#endif
+
 #ifdef IA32
   // On x86_32 platforms, a special entry is generated for the following four methods.
   // On other platforms the normal entry is used to enter these methods.

@@ -26,6 +26,7 @@
 #define SHARE_CLASSFILE_CLASSLOADER_INLINE_HPP
 
 #include "classfile/classLoader.hpp"
+
 #include "runtime/atomic.hpp"
 #include "runtime/arguments.hpp"
 

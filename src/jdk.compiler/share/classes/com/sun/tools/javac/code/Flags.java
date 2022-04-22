@@ -176,7 +176,12 @@ public class Flags {
 
     /** Flag for synthesized default constructors of anonymous classes.
      */
-    public static final int ANONCONSTR   = 1<<29;
+    public static final int ANONCONSTR   = 1<<29; //non-class members
+
+    /**
+     * Flag to indicate the super classes of this ClassSymbol has been attributed.
+     */
+    public static final int SUPER_OWNER_ATTRIBUTED = 1<<29; //ClassSymbols
 
     /** Flag for class symbols to indicate it has been checked and found
      *  acyclic.
@@ -306,7 +311,12 @@ public class Flags {
     /**
      * Flag to indicate the given ModuleSymbol is a system module.
      */
-    public static final long SYSTEM_MODULE = 1L<<53;
+    public static final long SYSTEM_MODULE = 1L<<53; //ModuleSymbols only
+
+    /**
+     * Flag to indicate the given ClassSymbol is a value based.
+     */
+    public static final long VALUE_BASED = 1L<<53; //ClassSymbols only
 
     /**
      * Flag to indicate the given symbol has a @Deprecated annotation.
@@ -380,6 +390,7 @@ public class Flags {
      */
     public static final long NON_SEALED = 1L<<63; // ClassSymbols
 
+
     /** Modifier masks.
      */
     public static final int
@@ -409,7 +420,6 @@ public class Flags {
         LocalVarFlags                     = FINAL | PARAMETER,
         ReceiverParamFlags                = PARAMETER;
 
-    @SuppressWarnings("preview")
     public static Set<Modifier> asModifierSet(long flags) {
         Set<Modifier> modifiers = modifierSets.get(flags);
         if (modifiers == null) {

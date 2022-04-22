@@ -25,6 +25,7 @@
 package jdk.jpackage.internal;
 
 import java.math.BigInteger;
+import java.text.MessageFormat;
 
 
 final class MsiVersion {
@@ -42,9 +43,11 @@ final class MsiVersion {
         DottedVersion ver = new DottedVersion(value);
 
         BigInteger[] components = ver.getComponents();
-        if (components.length > 3) {
-            throw new IllegalArgumentException(I18N.getString(
-                    "error.msi-product-version-too-many-components"));
+
+        if (components.length < 2 || components.length > 4) {
+            throw new IllegalArgumentException(MessageFormat.format(
+                    I18N.getString("error.msi-product-version-components"),
+                    value));
         }
 
         if (BigInteger.valueOf(255).compareTo(components[0]) < 0) {

@@ -83,7 +83,7 @@ public class TestLogCompilation {
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+LogCompilation",
         "-XX:LogFile=target/jfr.log",
-        "-XX:StartFlightRecording=dumponexit=true,filename=rwrecording.jfr"
+        "-XX:StartFlightRecording:dumponexit=true,filename=rwrecording.jfr"
     };
 
     static final String allSetupArgs[][] = {

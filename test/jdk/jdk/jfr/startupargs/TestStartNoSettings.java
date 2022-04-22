@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.jfr.Recording;
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.startupargs.TestStartNoSettings
- *      -XX:StartFlightRecording=settings=none
+ *      -XX:StartFlightRecording:settings=none
  */
 public class TestStartNoSettings {
 
@@ -61,7 +61,7 @@ public class TestStartNoSettings {
         }
 
         if (!userEnabled)  {
-            throw new Exception("Expected 'UserEvent' to be enabled with -XX:StartFlightRecording=settings=none");
+            throw new Exception("Expected 'UserEvent' to be enabled with -XX:StartFlightRecording:settings=none");
         }
     }
 }

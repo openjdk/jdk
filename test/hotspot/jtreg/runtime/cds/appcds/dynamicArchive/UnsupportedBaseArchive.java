@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class UnsupportedBaseArchive extends DynamicArchiveTestBase {
         "Dynamic archiving is disabled because base layer archive has appended boot classpath";
 
     private static final String warningModulePath =
-        "Dynamic archiving is disabled because base layer archive has module path";
+        "Dynamic archiving is disabled because base layer archive has a different module path";
 
     public static void buildTestModule() throws Exception {
 
@@ -104,22 +104,23 @@ public class UnsupportedBaseArchive extends DynamicArchiveTestBase {
         // create a base archive with the --module-path option
         buildTestModule();
         baseArchiveName = getNewArchiveName("base-with-module");
+        String appClasses[] = {mainClass};
         TestCommon.dumpBaseArchive(baseArchiveName,
-                        "-cp", srcJar.toString(),
+                        appClasses,
+                        "-Xlog:class+load",
+                        "-cp", appJar,
                         "--module-path", moduleDir.toString(),
                         "-m", TEST_MODULE);
 
-        // dumping of dynamic archive should be disabled with a warning message
-        // if the base archive contains --module-path entries.
-        topArchiveName = getNewArchiveName("top-with-module");
+        // Try to create a dynamic archive without specifying module path,
+        // dumping should fail.
+        topArchiveName = getNewArchiveName("top-with-module-failed");
         dump2(baseArchiveName, topArchiveName,
               "-Xlog:cds*",
               "-Xlog:cds+dynamic=debug",
-              "-Xlog:class+path=info",
-              "-cp", srcJar.toString(),
-              "--module-path", moduleDir.toString(),
-              "-m", TEST_MODULE)
+              "-Xlog:class+path=info,class+load",
+              "-cp", appJar,
+              mainClass)
             .assertNormalExit(warningModulePath);
-
     }
 }

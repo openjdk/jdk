@@ -99,6 +99,8 @@ grant codeBase "jrt:/java.xml.crypto" {
                    "accessClassInPackage.com.sun.org.apache.xpath.internal";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.org.apache.xpath.internal.*";
+    permission java.io.FilePermission "<<ALL FILES>>","read";
+    permission java.net.SocketPermission "*", "connect,resolve";
 };
 
 
@@ -109,6 +111,8 @@ grant codeBase "jrt:/jdk.accessibility" {
 grant codeBase "jrt:/jdk.charsets" {
     permission java.util.PropertyPermission "os.name", "read";
     permission java.lang.RuntimePermission "charsetProvider";
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.jdk.internal.access";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.jdk.internal.misc";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.cs";
@@ -126,6 +130,7 @@ grant codeBase "jrt:/jdk.crypto.ec" {
 grant codeBase "jrt:/jdk.crypto.cryptoki" {
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.crypto.provider";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.sun.security.*";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";

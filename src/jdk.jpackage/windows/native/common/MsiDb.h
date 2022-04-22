@@ -126,7 +126,7 @@ public:
 
     explicit DatabaseRecord(unsigned fieldCount);
 
-    explicit DatabaseRecord(DatabaseView& view) {
+    explicit DatabaseRecord(DatabaseView& view) : handle(MSIHANDLE(0)) {
         fetch(view);
     }
 
@@ -171,6 +171,12 @@ class DatabaseView {
 public:
     DatabaseView(const Database& db, const tstring& sqlQuery,
                         const DatabaseRecord& queryParam=DatabaseRecord());
+
+    ~DatabaseView() {
+      if (handle != 0) {
+        closeMSIHANDLE(handle);
+      }
+    }
 
     DatabaseRecord fetch();
 

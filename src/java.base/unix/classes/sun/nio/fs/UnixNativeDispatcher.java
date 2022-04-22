@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package sun.nio.fs;
+
+import java.util.function.Function;
 
 /**
  * Unix system and library calls.
@@ -90,12 +92,30 @@ class UnixNativeDispatcher {
     /**
      * close(int filedes). If fd is -1 this is a no-op.
      */
-    static void close(int fd) {
+    static void close(int fd) throws UnixException {
         if (fd != -1) {
             close0(fd);
         }
     }
-    private static native void close0(int fd);
+    private static native void close0(int fd) throws UnixException;
+
+    /**
+     * close(fd). If close fails then the given exception supplier function is
+     * invoked to produce an exception to throw. If the function returns null
+     * then no exception is thrown. If close fails and the exception supplier
+     * function is null, then no exception is thrown.
+     */
+    static <X extends Throwable>
+    void close(int fd, Function<UnixException, X> mapper) throws X {
+        try {
+            close(fd);
+        } catch (UnixException e) {
+            if (mapper != null) {
+                X ex = mapper.apply(e);
+                if (ex != null) throw ex;
+            }
+        }
+    }
 
     /**
      * void rewind(FILE* stream);
@@ -614,8 +634,9 @@ class UnixNativeDispatcher {
      */
     private static final int SUPPORTS_OPENAT        = 1 << 1;  // syscalls
     private static final int SUPPORTS_FUTIMES       = 1 << 2;
-    private static final int SUPPORTS_FUTIMENS      = 1 << 4;
-    private static final int SUPPORTS_LUTIMES       = 1 << 8;
+    private static final int SUPPORTS_FUTIMENS      = 1 << 3;
+    private static final int SUPPORTS_LUTIMES       = 1 << 4;
+    private static final int SUPPORTS_XATTR         = 1 << 5;
     private static final int SUPPORTS_BIRTHTIME     = 1 << 16; // other features
     private static final int capabilities;
 
@@ -652,6 +673,13 @@ class UnixNativeDispatcher {
      */
     static boolean birthtimeSupported() {
         return (capabilities & SUPPORTS_BIRTHTIME) != 0;
+    }
+
+    /**
+     * Supports extended attributes
+     */
+    static boolean xattrSupported() {
+        return (capabilities & SUPPORTS_XATTR) != 0;
     }
 
     private static native int init();

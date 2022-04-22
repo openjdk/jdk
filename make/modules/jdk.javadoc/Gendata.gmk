@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ JAVADOC_MODULES := $(DOCS_MODULES)
 # Get the complete module source path:
 JAVADOC_MODULESOURCEPATH := $(call GetModuleSrcPath)
 
-CT_DATA_DESCRIPTION += $(TOPDIR)/make/data/symbols/symbols
+CT_DATA_DESCRIPTION += $(TOPDIR)/src/jdk.compiler/share/data/symbols/symbols
 
 COMPILECREATESYMBOLS_ADD_EXPORTS := \
     --add-exports java.base/jdk.internal=java.compiler.interim,jdk.compiler.interim \
@@ -61,36 +61,56 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
         $(COMPILECREATESYMBOLS_ADD_EXPORTS), \
 ))
 
-$(SUPPORT_OUTPUTDIR)/javadoc-symbols/symbols: \
+GENERATE_SYMBOLS_FROM_JDK_VERSION := 11
+JDK_JAVADOC_DIR := $(JDK_OUTPUTDIR)/modules/jdk.javadoc
+ELEMENT_LISTS_PKG := jdk/javadoc/internal/doclets/toolkit/resources/releases
+ELEMENT_LISTS_DIR := $(JDK_JAVADOC_DIR)/$(ELEMENT_LISTS_PKG)
+
+$(JDK_JAVADOC_DIR)/_element_lists.marker: \
     $(COMPILE_CREATE_SYMBOLS) \
-    $(wildcard $(TOPDIR)/make/data/symbols/*) \
+    $(wildcard $(TOPDIR)/src/jdk.compiler/share/data/symbols/*) \
     $(MODULE_INFOS)
-	$(RM) -r $(@D)
-	$(MKDIR) -p $(@D)
-	$(ECHO) Creating javadoc element list
-	$(JAVA_SMALL) $(INTERIM_LANGTOOLS_ARGS) \
-	    $(COMPILECREATESYMBOLS_ADD_EXPORTS) \
-	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javadoc \
-	    build.tools.symbolgenerator.CreateSymbols \
-	    build-javadoc-data \
-	    $(CT_DATA_DESCRIPTION) \
-	    $(JDK_OUTPUTDIR)/modules/jdk.javadoc/jdk/javadoc/internal/doclets/toolkit/resources/releases \
-	    11
-	$(JAVA_SMALL) $(INTERIM_LANGTOOLS_ARGS) \
-	    $(COMPILECREATESYMBOLS_ADD_EXPORTS) \
-	    -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javadoc \
-	    build.tools.symbolgenerator.JavadocElementList \
-	    $(JDK_OUTPUTDIR)/modules/jdk.javadoc/jdk/javadoc/internal/doclets/toolkit/resources/releases/element-list-$(JDK_SOURCE_TARGET_VERSION).txt \
-	    $(JAVADOC_MODULESOURCEPATH) \
-	    $(JAVADOC_MODULES)
+	$(call MakeTargetDir)
+	$(call LogInfo, Creating javadoc element lists)
+	$(RM) $(ELEMENT_LISTS_DIR)/element-list-{$(call CommaList, \
+		$(call sequence, $(GENERATE_SYMBOLS_FROM_JDK_VERSION), \
+				 $(JDK_SOURCE_TARGET_VERSION)))}.txt
+        # Generate element-list files for JDK 11 to current-1
+	$(call ExecuteWithLog, $@_historic, \
+	    $(JAVA_SMALL) $(INTERIM_LANGTOOLS_ARGS) \
+	        $(COMPILECREATESYMBOLS_ADD_EXPORTS) \
+	        -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javadoc \
+	        build.tools.symbolgenerator.CreateSymbols \
+	        build-javadoc-data \
+	        $(CT_DATA_DESCRIPTION) \
+	        $(ELEMENT_LISTS_DIR) \
+	        $(GENERATE_SYMBOLS_FROM_JDK_VERSION) \
+	)
+        # Generate element-list file for the current JDK version
+	$(call ExecuteWithLog, $@_current, \
+	    $(JAVA_SMALL) $(INTERIM_LANGTOOLS_ARGS) \
+	        $(COMPILECREATESYMBOLS_ADD_EXPORTS) \
+	        -classpath $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javadoc \
+	        build.tools.symbolgenerator.JavadocElementList \
+	        $(ELEMENT_LISTS_DIR)/element-list-$(JDK_SOURCE_TARGET_VERSION).txt \
+	        $(JAVADOC_MODULESOURCEPATH) \
+	        $(JAVADOC_MODULES) \
+	)
 	$(TOUCH) $@
 
-# Copy ct.sym to the modules libs dir
-$(eval $(call SetupCopyFiles, COPY_TO_LIBS, \
-    FILES := $(SUPPORT_OUTPUTDIR)/javadoc-symbols/*.txt, \
-    DEST := $(JDK_OUTPUTDIR)/modules/jdk.javadoc/jdk/javadoc/internal/doclets/toolkit/resources/releases, \
-))
+################################################################################
+# Copy element-lists to interim langtools
 
-TARGETS += $(SUPPORT_OUTPUTDIR)/javadoc-symbols/symbols
+INTERIM_JDK_JAVADOC_DIR := $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules/jdk.javadoc.interim
+INTERIM_ELEMENT_LISTS_DIR := $(INTERIM_JDK_JAVADOC_DIR)/$(ELEMENT_LISTS_PKG)
+
+$(INTERIM_JDK_JAVADOC_DIR)/_element_lists.marker: $(JDK_JAVADOC_DIR)/_element_lists.marker
+	$(call MakeDir, $(INTERIM_ELEMENT_LISTS_DIR))
+	$(RM) -r $(INTERIM_ELEMENT_LISTS_DIR)/*
+	$(CP) -R $(ELEMENT_LISTS_DIR)/* $(INTERIM_ELEMENT_LISTS_DIR)/
+	$(TOUCH) $@
 
 ################################################################################
+
+TARGETS += $(JDK_JAVADOC_DIR)/_element_lists.marker \
+    $(INTERIM_JDK_JAVADOC_DIR)/_element_lists.marker

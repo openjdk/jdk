@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/resourceArea.hpp"
@@ -37,7 +38,7 @@
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
-#include "runtime/arguments.hpp"
+#include "opto/type.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -351,7 +352,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
       // case and aborts the compile if addresses are live into an OSR
       // entry point.  Because of that we can assume that any address
       // locals at the OSR entry point are dead.  Method liveness
-      // isn't precise enought to figure out that they are dead in all
+      // isn't precise enough to figure out that they are dead in all
       // cases so simply skip checking address locals all
       // together. Any type check is guaranteed to fail since the
       // interpreter type is the result of a load which might have any
@@ -1193,6 +1194,33 @@ void Parse::do_method_entry() {
     make_dtrace_method_entry(method());
   }
 
+#ifdef ASSERT
+  // Narrow receiver type when it is too broad for the method being parsed.
+  if (!method()->is_static()) {
+    ciInstanceKlass* callee_holder = method()->holder();
+    const Type* holder_type = TypeInstPtr::make(TypePtr::BotPTR, callee_holder);
+
+    Node* receiver_obj = local(0);
+    const TypeInstPtr* receiver_type = _gvn.type(receiver_obj)->isa_instptr();
+
+    if (receiver_type != NULL && !receiver_type->higher_equal(holder_type)) {
+      // Receiver should always be a subtype of callee holder.
+      // But, since C2 type system doesn't properly track interfaces,
+      // the invariant can't be expressed in the type system for default methods.
+      // Example: for unrelated C <: I and D <: I, (C `meet` D) = Object </: I.
+      assert(callee_holder->is_interface(), "missing subtype check");
+
+      // Perform dynamic receiver subtype check against callee holder class w/ a halt on failure.
+      Node* holder_klass = _gvn.makecon(TypeKlassPtr::make(callee_holder));
+      Node* not_subtype_ctrl = gen_subtype_check(receiver_obj, holder_klass);
+      assert(!stopped(), "not a subtype");
+
+      Node* halt = _gvn.transform(new HaltNode(not_subtype_ctrl, frameptr(), "failed receiver subtype check"));
+      C->root()->add_req(halt);
+    }
+  }
+#endif // ASSERT
+
   // If the method is synchronized, we need to construct a lock node, attach
   // it to the Start node, and pin it there.
   if (method()->is_synchronized()) {
@@ -1206,7 +1234,7 @@ void Parse::do_method_entry() {
 
     // Setup Object Pointer
     Node *lock_obj = NULL;
-    if(method()->is_static()) {
+    if (method()->is_static()) {
       ciInstance* mirror = _method->holder()->java_mirror();
       const TypeInstPtr *t_lock = TypeInstPtr::make(mirror);
       lock_obj = makecon(t_lock);
@@ -1417,7 +1445,7 @@ void Parse::BytecodeParseHistogram::print(float cutoff) {
   tty->print_cr("relative:  percentage contribution to compiled nodes");
   tty->print_cr("nodes   :  Average number of nodes constructed per bytecode");
   tty->print_cr("rnodes  :  Significance towards total nodes constructed, (nodes*relative)");
-  tty->print_cr("transforms: Average amount of tranform progress per bytecode compiled");
+  tty->print_cr("transforms: Average amount of transform progress per bytecode compiled");
   tty->print_cr("values  :  Average number of node values improved per bytecode");
   tty->print_cr("name    :  Bytecode name");
   tty->cr();
@@ -1525,7 +1553,22 @@ void Parse::do_one_block() {
     assert(!have_se || pre_bc_sp >= inputs, "have enough stack to execute this BC: pre_bc_sp=%d, inputs=%d", pre_bc_sp, inputs);
 #endif //ASSERT
 
-    do_one_bytecode();
+    // Try parsing machine-dependently, then if it is not needed then parse
+    // the bytecode in a machine independent manner
+    if (!do_one_bytecode_targeted()) {
+      do_one_bytecode_common();
+    }
+#ifndef PRODUCT
+    if (C->should_print_igv(1)) {
+      IdealGraphPrinter* printer = C->igv_printer();
+      char buffer[256];
+      jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
+      bool old = printer->traverse_outs();
+      printer->set_traverse_outs(true);
+      printer->print_method(buffer, 4);
+      printer->set_traverse_outs(old);
+    }
+#endif
 
     assert(!have_se || stopped() || failing() || (sp() - pre_bc_sp) == depth,
            "incorrect depth prediction: sp=%d, pre_bc_sp=%d, depth=%d", sp(), pre_bc_sp, depth);
@@ -2280,7 +2323,7 @@ void Parse::add_safepoint() {
   // Create a node for the polling address
   Node *polladr;
   Node *thread = _gvn.transform(new ThreadLocalNode());
-  Node *polling_page_load_addr = _gvn.transform(basic_plus_adr(top(), thread, in_bytes(Thread::polling_page_offset())));
+  Node *polling_page_load_addr = _gvn.transform(basic_plus_adr(top(), thread, in_bytes(JavaThread::polling_page_offset())));
   polladr = make_load(control(), polling_page_load_addr, TypeRawPtr::BOTTOM, T_ADDRESS, Compile::AliasIdxRaw, MemNode::unordered);
   sfpnt->init_req(TypeFunc::Parms+0, _gvn.transform(polladr));
 
@@ -2291,7 +2334,7 @@ void Parse::add_safepoint() {
 
   // Provide an edge from root to safepoint.  This makes the safepoint
   // appear useful until the parse has completed.
-  if( OptoRemoveUseless && transformed_sfpnt->is_SafePoint() ) {
+  if (transformed_sfpnt->is_SafePoint()) {
     assert(C->root() != NULL, "Expect parse is still valid");
     C->root()->add_prec(transformed_sfpnt);
   }

@@ -87,3 +87,32 @@ const BufferLayout ForeignGlobals::parse_buffer_layout_impl(jobject jlayout) con
 
   return layout;
 }
+
+const CallRegs ForeignGlobals::parse_call_regs_impl(jobject jconv) const {
+  oop conv_oop = JNIHandles::resolve_non_null(jconv);
+  objArrayOop arg_regs_oop = cast<objArrayOop>(conv_oop->obj_field(CallConvOffsets.arg_regs_offset));
+  objArrayOop ret_regs_oop = cast<objArrayOop>(conv_oop->obj_field(CallConvOffsets.ret_regs_offset));
+
+  CallRegs result;
+  result._args_length = arg_regs_oop->length();
+  result._arg_regs = NEW_RESOURCE_ARRAY(VMReg, result._args_length);
+
+  result._rets_length = ret_regs_oop->length();
+  result._ret_regs = NEW_RESOURCE_ARRAY(VMReg, result._rets_length);
+
+  for (int i = 0; i < result._args_length; i++) {
+    oop storage = arg_regs_oop->obj_at(i);
+    jint index = storage->int_field(VMS.index_offset);
+    jint type = storage->int_field(VMS.type_offset);
+    result._arg_regs[i] = VMRegImpl::vmStorageToVMReg(type, index);
+  }
+
+  for (int i = 0; i < result._rets_length; i++) {
+    oop storage = ret_regs_oop->obj_at(i);
+    jint index = storage->int_field(VMS.index_offset);
+    jint type = storage->int_field(VMS.type_offset);
+    result._ret_regs[i] = VMRegImpl::vmStorageToVMReg(type, index);
+  }
+
+  return result;
+}

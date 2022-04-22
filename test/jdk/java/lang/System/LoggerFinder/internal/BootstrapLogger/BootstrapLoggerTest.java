@@ -57,8 +57,8 @@ import jdk.internal.logger.LazyLoggers;
  *          java.logging
  * @build BootstrapLoggerUtils LogStream
  * @run main/othervm BootstrapLoggerTest NO_SECURITY
- * @run main/othervm BootstrapLoggerTest SECURE
- * @run main/othervm/timeout=120 BootstrapLoggerTest SECURE_AND_WAIT
+ * @run main/othervm -Djava.security.manager=allow BootstrapLoggerTest SECURE
+ * @run main/othervm/timeout=120 -Djava.security.manager=allow BootstrapLoggerTest SECURE_AND_WAIT
  */
 public class BootstrapLoggerTest {
 

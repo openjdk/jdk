@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ void ThreadShadow::clear_pending_nonasync_exception() {
 
 // Implementation of Exceptions
 
-bool Exceptions::special_exception(Thread* thread, const char* file, int line, Handle h_exception) {
+bool Exceptions::special_exception(JavaThread* thread, const char* file, int line, Handle h_exception) {
   // bootstrapping check
   if (!Universe::is_fully_initialized()) {
    vm_exit_during_initialization(h_exception);
@@ -102,9 +102,8 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, H
   }
 #endif // ASSERT
 
-  if (thread->is_VM_thread()
-      || !thread->can_call_java()) {
-    // We do not care what kind of exception we get for the vm-thread or a thread which
+  if (!thread->can_call_java()) {
+    // We do not care what kind of exception we get for a thread which
     // is compiling.  We just install a dummy exception object
     thread->set_pending_exception(Universe::vm_exception(), file, line);
     return true;
@@ -113,11 +112,11 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, H
   return false;
 }
 
-bool Exceptions::special_exception(Thread* thread, const char* file, int line, Symbol* h_name, const char* message) {
+bool Exceptions::special_exception(JavaThread* thread, const char* file, int line, Symbol* h_name, const char* message) {
   // bootstrapping check
   if (!Universe::is_fully_initialized()) {
     if (h_name == NULL) {
-      // atleast an informative message.
+      // at least an informative message.
       vm_exit_during_initialization("Exception", message);
     } else {
       vm_exit_during_initialization(h_name, message);
@@ -125,9 +124,8 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, S
     ShouldNotReachHere();
   }
 
-  if (thread->is_VM_thread()
-      || !thread->can_call_java()) {
-    // We do not care what kind of exception we get for the vm-thread or a thread which
+  if (!thread->can_call_java()) {
+    // We do not care what kind of exception we get for a thread which
     // is compiling.  We just install a dummy exception object
     thread->set_pending_exception(Universe::vm_exception(), file, line);
     return true;
@@ -137,13 +135,13 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, S
 
 // This method should only be called from generated code,
 // therefore the exception oop should be in the oopmap.
-void Exceptions::_throw_oop(Thread* thread, const char* file, int line, oop exception) {
+void Exceptions::_throw_oop(JavaThread* thread, const char* file, int line, oop exception) {
   assert(exception != NULL, "exception should not be NULL");
   Handle h_exception(thread, exception);
   _throw(thread, file, line, h_exception);
 }
 
-void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exception, const char* message) {
+void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h_exception, const char* message) {
   ResourceMark rm(thread);
   assert(h_exception() != NULL, "exception should not be NULL");
 
@@ -158,7 +156,7 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(h_exception, message);
 
-  // Check for special boot-strapping/vm-thread handling
+  // Check for special boot-strapping/compiler-thread handling
   if (special_exception(thread, file, line, h_exception)) {
     return;
   }
@@ -168,7 +166,7 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
   }
 
   if (h_exception->is_a(vmClasses::LinkageError_klass())) {
-    Atomic::inc(&_linkage_errors);
+    Atomic::inc(&_linkage_errors, memory_order_relaxed);
   }
 
   assert(h_exception->is_a(vmClasses::Throwable_klass()), "exception is not a subclass of java/lang/Throwable");
@@ -181,9 +179,9 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
 }
 
 
-void Exceptions::_throw_msg(Thread* thread, const char* file, int line, Symbol* name, const char* message,
+void Exceptions::_throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message,
                             Handle h_loader, Handle h_protection_domain) {
-  // Check for special boot-strapping/vm-thread handling
+  // Check for special boot-strapping/compiler-thread handling
   if (special_exception(thread, file, line, name, message)) return;
   // Create and throw exception
   Handle h_cause(thread, NULL);
@@ -191,26 +189,26 @@ void Exceptions::_throw_msg(Thread* thread, const char* file, int line, Symbol* 
   _throw(thread, file, line, h_exception, message);
 }
 
-void Exceptions::_throw_msg_cause(Thread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause,
+void Exceptions::_throw_msg_cause(JavaThread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause,
                                   Handle h_loader, Handle h_protection_domain) {
-  // Check for special boot-strapping/vm-thread handling
+  // Check for special boot-strapping/compiler-thread handling
   if (special_exception(thread, file, line, name, message)) return;
   // Create and throw exception and init cause
   Handle h_exception = new_exception(thread, name, message, h_cause, h_loader, h_protection_domain);
   _throw(thread, file, line, h_exception, message);
 }
 
-void Exceptions::_throw_cause(Thread* thread, const char* file, int line, Symbol* name, Handle h_cause,
+void Exceptions::_throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause,
                               Handle h_loader, Handle h_protection_domain) {
-  // Check for special boot-strapping/vm-thread handling
+  // Check for special boot-strapping/compiler-thread handling
   if (special_exception(thread, file, line, h_cause)) return;
   // Create and throw exception
   Handle h_exception = new_exception(thread, name, h_cause, h_loader, h_protection_domain);
   _throw(thread, file, line, h_exception, NULL);
 }
 
-void Exceptions::_throw_args(Thread* thread, const char* file, int line, Symbol* name, Symbol* signature, JavaCallArguments *args) {
-  // Check for special boot-strapping/vm-thread handling
+void Exceptions::_throw_args(JavaThread* thread, const char* file, int line, Symbol* name, Symbol* signature, JavaCallArguments *args) {
+  // Check for special boot-strapping/compiler-thread handling
   if (special_exception(thread, file, line, name, NULL)) return;
   // Create and throw exception
   Handle h_loader(thread, NULL);
@@ -222,18 +220,18 @@ void Exceptions::_throw_args(Thread* thread, const char* file, int line, Symbol*
 
 // Methods for default parameters.
 // NOTE: These must be here (and not in the header file) because of include circularities.
-void Exceptions::_throw_msg_cause(Thread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause) {
+void Exceptions::_throw_msg_cause(JavaThread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause) {
   _throw_msg_cause(thread, file, line, name, message, h_cause, Handle(thread, NULL), Handle(thread, NULL));
 }
-void Exceptions::_throw_msg(Thread* thread, const char* file, int line, Symbol* name, const char* message) {
+void Exceptions::_throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message) {
   _throw_msg(thread, file, line, name, message, Handle(thread, NULL), Handle(thread, NULL));
 }
-void Exceptions::_throw_cause(Thread* thread, const char* file, int line, Symbol* name, Handle h_cause) {
+void Exceptions::_throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause) {
   _throw_cause(thread, file, line, name, h_cause, Handle(thread, NULL), Handle(thread, NULL));
 }
 
 
-void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file, int line, const methodHandle& method) {
+void Exceptions::throw_stack_overflow_exception(JavaThread* THREAD, const char* file, int line, const methodHandle& method) {
   Handle exception;
   if (!THREAD->has_pending_exception()) {
     InstanceKlass* k = vmClasses::StackOverflowError_klass();
@@ -244,7 +242,7 @@ void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file
       java_lang_Throwable::fill_in_stack_trace(exception, method);
     }
     // Increment counter for hs_err file reporting
-    Atomic::inc(&Exceptions::_stack_overflow_errors);
+    Atomic::inc(&Exceptions::_stack_overflow_errors, memory_order_relaxed);
   } else {
     // if prior exception, throw that one instead
     exception = Handle(THREAD, THREAD->pending_exception());
@@ -252,13 +250,7 @@ void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file
   _throw(THREAD, file, line, exception);
 }
 
-void Exceptions::throw_unsafe_access_internal_error(Thread* thread, const char* file, int line, const char* message) {
-  Handle h_exception = new_exception(thread, vmSymbols::java_lang_InternalError(), message);
-  java_lang_InternalError::set_during_unsafe_access(h_exception());
-  _throw(thread, file, line, h_exception, message);
-}
-
-void Exceptions::fthrow(Thread* thread, const char* file, int line, Symbol* h_name, const char* format, ...) {
+void Exceptions::fthrow(JavaThread* thread, const char* file, int line, Symbol* h_name, const char* format, ...) {
   const int max_msg_size = 1024;
   va_list ap;
   va_start(ap, format);
@@ -271,12 +263,11 @@ void Exceptions::fthrow(Thread* thread, const char* file, int line, Symbol* h_na
 
 // Creates an exception oop, calls the <init> method with the given signature.
 // and returns a Handle
-Handle Exceptions::new_exception(Thread *thread, Symbol* name,
+Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  Symbol* signature, JavaCallArguments *args,
                                  Handle h_loader, Handle h_protection_domain) {
   assert(Universe::is_fully_initialized(),
     "cannot be called during initialization");
-  assert(thread->is_Java_thread(), "can only be called by a Java thread");
   assert(!thread->has_pending_exception(), "already has exception");
 
   Handle h_exception;
@@ -303,7 +294,7 @@ Handle Exceptions::new_exception(Thread *thread, Symbol* name,
 // Creates an exception oop, calls the <init> method with the given signature.
 // and returns a Handle
 // Initializes the cause if cause non-null
-Handle Exceptions::new_exception(Thread *thread, Symbol* name,
+Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  Symbol* signature, JavaCallArguments *args,
                                  Handle h_cause,
                                  Handle h_loader, Handle h_protection_domain) {
@@ -334,7 +325,7 @@ Handle Exceptions::new_exception(Thread *thread, Symbol* name,
 
 // Convenience method. Calls either the <init>() or <init>(Throwable) method when
 // creating a new exception
-Handle Exceptions::new_exception(Thread* thread, Symbol* name,
+Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  Handle h_cause,
                                  Handle h_loader, Handle h_protection_domain,
                                  ExceptionMsgToUtf8Mode to_utf8_safe) {
@@ -351,7 +342,7 @@ Handle Exceptions::new_exception(Thread* thread, Symbol* name,
 
 // Convenience method. Calls either the <init>() or <init>(String) method when
 // creating a new exception
-Handle Exceptions::new_exception(Thread* thread, Symbol* name,
+Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  const char* message, Handle h_cause,
                                  Handle h_loader, Handle h_protection_domain,
                                  ExceptionMsgToUtf8Mode to_utf8_safe) {
@@ -402,7 +393,7 @@ Handle Exceptions::new_exception(Thread* thread, Symbol* name,
 // encoding scheme of the string into account. One thing we should do at some
 // point is to push this flag down to class java_lang_String since other
 // classes may need similar functionalities.
-Handle Exceptions::new_exception(Thread* thread, Symbol* name,
+Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  const char* message,
                                  ExceptionMsgToUtf8Mode to_utf8_safe) {
 
@@ -419,7 +410,7 @@ Handle Exceptions::new_exception(Thread* thread, Symbol* name,
 // dynamically computed constant uses wrap_dynamic_exception for:
 //    - bootstrap method resolution
 //    - post call to MethodHandleNatives::linkDynamicConstant
-void Exceptions::wrap_dynamic_exception(bool is_indy, Thread* THREAD) {
+void Exceptions::wrap_dynamic_exception(bool is_indy, JavaThread* THREAD) {
   if (THREAD->has_pending_exception()) {
     bool log_indy = log_is_enabled(Debug, methodhandles, indy) && is_indy;
     bool log_condy = log_is_enabled(Debug, methodhandles, condy) && !is_indy;
@@ -464,13 +455,13 @@ volatile int Exceptions::_out_of_memory_error_metaspace_errors = 0;
 volatile int Exceptions::_out_of_memory_error_class_metaspace_errors = 0;
 
 void Exceptions::count_out_of_memory_exceptions(Handle exception) {
-  if (exception() == Universe::out_of_memory_error_metaspace()) {
-     Atomic::inc(&_out_of_memory_error_metaspace_errors);
-  } else if (exception() == Universe::out_of_memory_error_class_metaspace()) {
-     Atomic::inc(&_out_of_memory_error_class_metaspace_errors);
+  if (Universe::is_out_of_memory_error_metaspace(exception())) {
+     Atomic::inc(&_out_of_memory_error_metaspace_errors, memory_order_relaxed);
+  } else if (Universe::is_out_of_memory_error_class_metaspace(exception())) {
+     Atomic::inc(&_out_of_memory_error_class_metaspace_errors, memory_order_relaxed);
   } else {
      // everything else reported as java heap OOM
-     Atomic::inc(&_out_of_memory_error_java_heap_errors);
+     Atomic::inc(&_out_of_memory_error_java_heap_errors, memory_order_relaxed);
   }
 }
 
@@ -499,14 +490,14 @@ void Exceptions::print_exception_counts_on_error(outputStream* st) {
 
 // Implementation of ExceptionMark
 
-ExceptionMark::ExceptionMark(Thread* thread) {
-  assert(thread == Thread::current(), "must be");
+ExceptionMark::ExceptionMark(JavaThread* thread) {
+  assert(thread == JavaThread::current(), "must be");
   _thread  = thread;
   check_no_pending_exception();
 }
 
 ExceptionMark::ExceptionMark() {
-  _thread = Thread::current();
+  _thread = JavaThread::current();
   check_no_pending_exception();
 }
 
@@ -541,7 +532,11 @@ void Exceptions::debug_check_abort(const char *value_string, const char* message
       strstr(value_string, AbortVMOnException)) {
     if (AbortVMOnExceptionMessage == NULL || (message != NULL &&
         strstr(message, AbortVMOnExceptionMessage))) {
-      fatal("Saw %s, aborting", value_string);
+      if (message == NULL) {
+        fatal("Saw %s, aborting", value_string);
+      } else {
+        fatal("Saw %s: %s, aborting", value_string, message);
+      }
     }
   }
 }

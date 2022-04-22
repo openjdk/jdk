@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -315,7 +315,7 @@ void NativeMovRegMem::set_offset(int x) {
 
 void NativeMovRegMem::verify() {
 #ifdef ASSERT
-  address dest = MacroAssembler::target_addr_for_insn(instruction_address());
+  address dest = MacroAssembler::target_addr_for_insn_or_null(instruction_address());
 #endif
 }
 
@@ -329,7 +329,7 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
 
 
 address NativeJump::jump_destination() const          {
-  address dest = MacroAssembler::target_addr_for_insn(instruction_address());
+  address dest = MacroAssembler::target_addr_for_insn_or_null(instruction_address());
 
   // We use jump to self as the unresolved address which the inline
   // cache code (and relocs) know about
@@ -476,16 +476,9 @@ bool NativeInstruction::is_stop() {
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
 
   assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
-
-#ifdef ASSERT
-  // This may be the temporary nmethod generated while we're AOT
-  // compiling.  Such an nmethod doesn't begin with a NOP but with an ADRP.
-  if (! (CalculateClassFingerprint && UseAOT && is_adrp_at(verified_entry))) {
-    assert(nativeInstruction_at(verified_entry)->is_jump_or_nop()
-           || nativeInstruction_at(verified_entry)->is_sigill_zombie_not_entrant(),
-           "Aarch64 cannot replace non-jump with jump");
-  }
-#endif
+  assert(nativeInstruction_at(verified_entry)->is_jump_or_nop()
+         || nativeInstruction_at(verified_entry)->is_sigill_zombie_not_entrant(),
+         "Aarch64 cannot replace non-jump with jump");
 
   // Patch this nmethod atomically.
   if (Assembler::reachable_from_branch_at(verified_entry, dest)) {

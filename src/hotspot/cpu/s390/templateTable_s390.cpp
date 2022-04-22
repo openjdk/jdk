@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,6 +43,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #ifdef PRODUCT
@@ -2319,7 +2320,7 @@ void TemplateTable::_return(TosState state) {
 
   if (_desc->bytecode() != Bytecodes::_return_register_finalizer) {
     Label no_safepoint;
-    const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_word_offset()) + 7 /* Big Endian */);
+    const Address poll_byte_addr(Z_thread, in_bytes(JavaThread::polling_word_offset()) + 7 /* Big Endian */);
     __ z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
     __ z_braz(no_safepoint);
     __ push(state);
@@ -3768,9 +3769,8 @@ void TemplateTable::_new() {
 
   // Get instance_size in InstanceKlass (scaled to a count of bytes).
   Register Rsize = offset;
-  const int mask = 1 << Klass::_lh_instance_slow_path_bit;
   __ z_llgf(Rsize, Address(iklass, Klass::layout_helper_offset()));
-  __ z_tmll(Rsize, mask);
+  __ z_tmll(Rsize, Klass::_lh_instance_slow_path_bit);
   __ z_btrue(slow_case);
 
   // Allocate the instance
@@ -3813,14 +3813,8 @@ void TemplateTable::_new() {
 
     // Initialize object header only.
     __ bind(initialize_header);
-    if (UseBiasedLocking) {
-      Register prototype = RobjectFields;
-      __ z_lg(prototype, Address(iklass, Klass::prototype_header_offset()));
-      __ z_stg(prototype, Address(RallocatedObject, oopDesc::mark_offset_in_bytes()));
-    } else {
-      __ store_const(Address(RallocatedObject, oopDesc::mark_offset_in_bytes()),
-                     (long)markWord::prototype().value());
-    }
+    __ store_const(Address(RallocatedObject, oopDesc::mark_offset_in_bytes()),
+                   (long)markWord::prototype().value());
 
     __ store_klass_gap(Rzero, RallocatedObject);  // Zero klass gap for compressed oops.
     __ store_klass(iklass, RallocatedObject);     // Store klass last.
@@ -3829,7 +3823,7 @@ void TemplateTable::_new() {
       SkipIfEqual skip(_masm, &DTraceAllocProbes, false, Z_ARG5 /*scratch*/);
       // Trigger dtrace event for fastpath.
       __ push(atos); // Save the return value.
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc), RallocatedObject);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), RallocatedObject);
       __ pop(atos); // Restore the return value.
     }
     __ z_bru(done);
@@ -4158,7 +4152,7 @@ void TemplateTable::monitorenter() {
 
   // Increment bcp to point to the next bytecode, so exception
   // handling for async. exceptions work correctly.
-  // The object has already been poped from the stack, so the
+  // The object has already been popped from the stack, so the
   // expression stack looks correct.
   __ add2reg(Z_bcp, 1, Z_bcp);
 

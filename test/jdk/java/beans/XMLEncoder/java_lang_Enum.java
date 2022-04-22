@@ -25,6 +25,7 @@
  * @test
  * @bug 5015403
  * @summary Tests Enum value encoding
+ * @run main/othervm -Djava.security.manager=allow java_lang_Enum
  * @author Sergey Malenkov
  */
 

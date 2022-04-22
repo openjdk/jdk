@@ -52,7 +52,7 @@ import org.xml.sax.helpers.XMLFilterImpl;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.EHFatalTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.xml.sax.ptests.EHFatalTest
  * @run testng/othervm org.xml.sax.ptests.EHFatalTest
  */
 @Listeners({jaxp.library.FilePolicy.class})

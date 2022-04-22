@@ -407,7 +407,7 @@ class VM_RedefineClasses: public VM_Operation {
   void compute_added_deleted_matching_methods();
 
   // Change jmethodIDs to point to the new methods
-  void update_jmethod_ids(Thread* thread);
+  void update_jmethod_ids();
 
   // In addition to marking methods as old and/or obsolete, this routine
   // counts the number of methods that are EMCP (Equivalent Module Constant Pool).
@@ -415,15 +415,15 @@ class VM_RedefineClasses: public VM_Operation {
   void transfer_old_native_function_registrations(InstanceKlass* the_class);
 
   // Install the redefinition of a class
-  void redefine_single_class(jclass the_jclass,
-    InstanceKlass* scratch_class_oop, TRAPS);
+  void redefine_single_class(Thread* current, jclass the_jclass,
+                             InstanceKlass* scratch_class_oop);
 
   void swap_annotations(InstanceKlass* new_class,
                         InstanceKlass* scratch_class);
 
   // Increment the classRedefinedCount field in the specific InstanceKlass
   // and in all direct and indirect subclasses.
-  void increment_class_counter(InstanceKlass *ik);
+  void increment_class_counter(InstanceKlass* ik);
 
   // Support for constant pool merging (these routines are in alpha order):
   void append_entry(const constantPoolHandle& scratch_cp, int scratch_i,
@@ -493,7 +493,6 @@ class VM_RedefineClasses: public VM_Operation {
          constantPoolHandle scratch_cp, int scratch_cp_length, TRAPS);
 
   void flush_dependent_code();
-  void mark_dependent_code(InstanceKlass* ik);
 
   // lock classes to redefine since constant pool merging isn't thread safe.
   void lock_classes();

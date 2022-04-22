@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,51 +26,33 @@
 #ifndef SHARE_RUNTIME_THREAD_INLINE_HPP
 #define SHARE_RUNTIME_THREAD_INLINE_HPP
 
-#include "gc/shared/tlab_globals.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
-#include "runtime/os.inline.hpp"
-#include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
 
-inline void Thread::set_suspend_flag(SuspendFlags f) {
-  uint32_t flags;
-  do {
-    flags = _suspend_flags;
-  }
-  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags | f)) != flags);
-}
-inline void Thread::clear_suspend_flag(SuspendFlags f) {
-  uint32_t flags;
-  do {
-    flags = _suspend_flags;
-  }
-  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags & ~f)) != flags);
-}
+#include "classfile/vmClasses.hpp"
+#include "gc/shared/tlab_globals.hpp"
+#include "memory/universe.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/oopHandle.inline.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/nonJavaThread.hpp"
+#include "runtime/orderAccess.hpp"
+#include "runtime/safepoint.hpp"
 
-inline void Thread::set_has_async_exception() {
-  set_suspend_flag(_has_async_exception);
-}
-inline void Thread::clear_has_async_exception() {
-  clear_suspend_flag(_has_async_exception);
-}
-inline void Thread::set_trace_flag() {
-  set_suspend_flag(_trace_flag);
-}
-inline void Thread::clear_trace_flag() {
-  clear_suspend_flag(_trace_flag);
-}
-inline void Thread::set_obj_deopt_flag() {
-  set_suspend_flag(_obj_deopt);
-}
-inline void Thread::clear_obj_deopt_flag() {
-  clear_suspend_flag(_obj_deopt);
-}
+#if defined(__APPLE__) && defined(AARCH64)
+#include "runtime/os.hpp"
+#endif
 
 inline jlong Thread::cooked_allocated_bytes() {
   jlong allocated_bytes = Atomic::load_acquire(&_allocated_bytes);
   if (UseTLAB) {
-    size_t used_bytes = tlab().used_bytes();
+    // These reads are unsynchronized and unordered with the thread updating its tlab pointers.
+    // Use only if top > start && used_bytes <= max_tlab_size_bytes.
+    const HeapWord* const top = tlab().top_relaxed();
+    const HeapWord* const start = tlab().start_relaxed();
+    if (top <= start) {
+      return allocated_bytes;
+    }
+    const size_t used_bytes = pointer_delta(top, start, 1);
     if (used_bytes <= ThreadLocalAllocBuffer::max_size_in_bytes()) {
       // Comparing used_bytes with the maximum allowed size will ensure
       // that we don't add the used bytes from a semi-initialized TLAB
@@ -87,7 +69,7 @@ inline ThreadsList* Thread::cmpxchg_threads_hazard_ptr(ThreadsList* exchange_val
   return (ThreadsList*)Atomic::cmpxchg(&_threads_hazard_ptr, compare_value, exchange_value);
 }
 
-inline ThreadsList* Thread::get_threads_hazard_ptr() {
+inline ThreadsList* Thread::get_threads_hazard_ptr() const {
   return (ThreadsList*)Atomic::load_acquire(&_threads_hazard_ptr);
 }
 
@@ -116,28 +98,94 @@ inline WXMode Thread::enable_wx(WXMode new_state) {
 }
 #endif // __APPLE__ && AARCH64
 
-inline void JavaThread::set_ext_suspended() {
-  set_suspend_flag (_ext_suspended);
+inline void JavaThread::set_suspend_flag(SuspendFlags f) {
+  uint32_t flags;
+  do {
+    flags = _suspend_flags;
+  }
+  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags | f)) != flags);
 }
-inline void JavaThread::clear_ext_suspended() {
-  clear_suspend_flag(_ext_suspended);
+inline void JavaThread::clear_suspend_flag(SuspendFlags f) {
+  uint32_t flags;
+  do {
+    flags = _suspend_flags;
+  }
+  while (Atomic::cmpxchg(&_suspend_flags, flags, (flags & ~f)) != flags);
 }
 
-inline void JavaThread::set_external_suspend() {
-  set_suspend_flag(_external_suspend);
+inline void JavaThread::set_trace_flag() {
+  set_suspend_flag(_trace_flag);
 }
-inline void JavaThread::clear_external_suspend() {
-  clear_suspend_flag(_external_suspend);
+inline void JavaThread::clear_trace_flag() {
+  clear_suspend_flag(_trace_flag);
+}
+inline void JavaThread::set_obj_deopt_flag() {
+  set_suspend_flag(_obj_deopt);
+}
+inline void JavaThread::clear_obj_deopt_flag() {
+  clear_suspend_flag(_obj_deopt);
 }
 
-inline void JavaThread::set_pending_async_exception(oop e) {
-  _pending_async_exception = e;
-  _special_runtime_exit_condition = _async_exception;
-  set_has_async_exception();
+class AsyncExceptionHandshake : public AsyncHandshakeClosure {
+  OopHandle _exception;
+  bool _is_ThreadDeath;
+ public:
+  AsyncExceptionHandshake(OopHandle& o, const char* name = "AsyncExceptionHandshake")
+  : AsyncHandshakeClosure(name), _exception(o) {
+    _is_ThreadDeath = exception()->is_a(vmClasses::ThreadDeath_klass());
+  }
+
+  ~AsyncExceptionHandshake() {
+    assert(!_exception.is_empty(), "invariant");
+    _exception.release(Universe::vm_global());
+  }
+
+  void do_thread(Thread* thr) {
+    JavaThread* self = JavaThread::cast(thr);
+    assert(self == JavaThread::current(), "must be");
+
+    self->handle_async_exception(exception());
+  }
+  oop exception() {
+    assert(!_exception.is_empty(), "invariant");
+    return _exception.resolve();
+  }
+  bool is_async_exception()   { return true; }
+  bool is_ThreadDeath()       { return _is_ThreadDeath; }
+};
+
+class UnsafeAccessErrorHandshake : public AsyncHandshakeClosure {
+ public:
+  UnsafeAccessErrorHandshake() : AsyncHandshakeClosure("UnsafeAccessErrorHandshake") {}
+  void do_thread(Thread* thr) {
+    JavaThread* self = JavaThread::cast(thr);
+    assert(self == JavaThread::current(), "must be");
+
+    self->handshake_state()->handle_unsafe_access_error();
+  }
+  bool is_async_exception()   { return true; }
+};
+
+inline void JavaThread::set_pending_unsafe_access_error() {
+  if (!has_async_exception_condition()) {
+    Handshake::execute(new UnsafeAccessErrorHandshake(), this);
+  }
+}
+
+inline bool JavaThread::has_async_exception_condition(bool ThreadDeath_only) {
+  return handshake_state()->has_async_exception_operation(ThreadDeath_only);
+}
+
+inline JavaThread::NoAsyncExceptionDeliveryMark::NoAsyncExceptionDeliveryMark(JavaThread *t) : _target(t) {
+  assert(!_target->handshake_state()->async_exceptions_blocked(), "Nesting is not supported");
+  _target->handshake_state()->set_async_exceptions_blocked(true);
+}
+inline JavaThread::NoAsyncExceptionDeliveryMark::~NoAsyncExceptionDeliveryMark() {
+  _target->handshake_state()->set_async_exceptions_blocked(false);
 }
 
 inline JavaThreadState JavaThread::thread_state() const    {
-#if defined(PPC64) || defined (AARCH64)
+#if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
   return (JavaThreadState) Atomic::load_acquire((volatile jint*)&_thread_state);
@@ -149,7 +197,7 @@ inline JavaThreadState JavaThread::thread_state() const    {
 inline void JavaThread::set_thread_state(JavaThreadState s) {
   assert(current_or_null() == NULL || current_or_null() == this,
          "state change should only be called by the current thread");
-#if defined(PPC64) || defined (AARCH64)
+#if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
   Atomic::release_store((volatile jint*)&_thread_state, (jint)s);
@@ -191,28 +239,20 @@ inline void JavaThread::set_done_attaching_via_jni() {
 inline bool JavaThread::is_exiting() const {
   // Use load-acquire so that setting of _terminated by
   // JavaThread::exit() is seen more quickly.
-  TerminatedTypes l_terminated = (TerminatedTypes)
-      Atomic::load_acquire((volatile jint *) &_terminated);
+  TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
   return l_terminated == _thread_exiting || check_is_terminated(l_terminated);
 }
 
 inline bool JavaThread::is_terminated() const {
   // Use load-acquire so that setting of _terminated by
   // JavaThread::exit() is seen more quickly.
-  TerminatedTypes l_terminated = (TerminatedTypes)
-      Atomic::load_acquire((volatile jint *) &_terminated);
+  TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
   return check_is_terminated(l_terminated);
 }
 
 inline void JavaThread::set_terminated(TerminatedTypes t) {
   // use release-store so the setting of _terminated is seen more quickly
-  Atomic::release_store((volatile jint *) &_terminated, (jint) t);
-}
-
-// special for Threads::remove() which is static:
-inline void JavaThread::set_terminated_value() {
-  // use release-store so the setting of _terminated is seen more quickly
-  Atomic::release_store((volatile jint *) &_terminated, (jint) _thread_terminated);
+  Atomic::release_store(&_terminated, t);
 }
 
 // Allow tracking of class initialization monitor use

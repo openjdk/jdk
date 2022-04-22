@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -33,6 +33,7 @@ import com.sun.org.apache.xml.internal.serializer.ElemDesc;
 import com.sun.org.apache.xml.internal.serializer.ToHTMLStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +43,7 @@ import java.util.Set;
  * @author Jacek Ambroziak
  * @author Santiago Pericas-Geertsen
  * @author Morten Jorgensen
- * @LastModified: Oct 2017
+ * @LastModified: Sep 2021
  */
 final class LiteralElement extends Instruction {
 
@@ -202,7 +203,7 @@ final class LiteralElement extends Instruction {
      * to _ANY_ namespace URI. Used by literal result elements to determine
      */
     public Set<Map.Entry<String, String>> getNamespaceScope(SyntaxTreeNode node) {
-        Map<String, String> all = new HashMap<>();
+        Map<String, String> all = new LinkedHashMap<>();
 
         while (node != null) {
             Map<String, String> mapping = node.getPrefixMapping();

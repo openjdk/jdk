@@ -43,7 +43,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6809409
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true sax.IssueTracker56Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow sax.IssueTracker56Test
  * @run testng/othervm sax.IssueTracker56Test
  * @summary Test SAXException has Cause.
  */

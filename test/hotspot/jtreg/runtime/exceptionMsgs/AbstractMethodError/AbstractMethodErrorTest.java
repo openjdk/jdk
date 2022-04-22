@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,7 @@
  * @test
  * @summary Check that the verbose message of the AME is printed correctly.
  * @requires !(os.arch=="arm") & vm.flavor == "server" & !vm.emulatedClient & vm.compMode=="Xmixed" & !vm.graal.enabled & vm.opt.UseJVMCICompiler != true & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel==4)
+ * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
@@ -502,7 +503,7 @@ public class AbstractMethodErrorTest {
 // -------------------------------------------------------------------------
 // This error should be detected interpreted.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //            C     // interface, defines aFunctionOfMyInterface()
 //            |
@@ -618,7 +619,7 @@ class AME1_E extends AME1_B implements AME1_C {
 // -------------------------------------------------------------------------
 // This error should be detected interpreted.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //      A   // an interface declaring aFunctionOfMyInterface()
 //      |
@@ -664,7 +665,7 @@ class AME2_C extends AME2_B {
 // -----------------------------------------------------------------------
 // Test AbstractMethod error shadowing existing implementation.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //           A           // a class implementing m()
 //           |
@@ -693,7 +694,7 @@ class AME3_C extends AME3_B {
 // Test AbstractMethod error shadowing existing implementation. In
 // this test there are several subclasses of the abstract class.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //           A           // A: a class implementing ma()
 //           |
@@ -733,7 +734,7 @@ class AME4_E extends AME4_B {
 // -------------------------------------------------------------------------
 // This error should be detected while processing the vtable stub.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //              A__     // abstract
 //             /|\ \
@@ -811,7 +812,7 @@ class AME5_E extends AME5_A {
 // Test AbstractMethod error detected while processing
 // the itable stub.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //           A__   (interface)
 //          /|\ \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,13 +34,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ThrowsTree;
@@ -54,15 +53,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- * A taglet that represents the @throws tag.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * A taglet that represents the {@code @throws} tag.
  */
-public class ThrowsTaglet extends BaseTaglet
-    implements InheritableTaglet {
+public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
     public ThrowsTaglet() {
         super(DocTree.Kind.THROWS, false, EnumSet.of(Location.CONSTRUCTOR, Location.METHOD));
@@ -74,10 +67,10 @@ public class ThrowsTaglet extends BaseTaglet
         Element exception;
         CommentHelper ch = utils.getCommentHelper(input.element);
         if (input.tagId == null) {
-            exception = input.docTreeInfo.docTree instanceof ThrowsTree
-                    ? ch.getException((ThrowsTree) input.docTreeInfo.docTree) : null;
+            exception = input.docTreeInfo.docTree() instanceof ThrowsTree tt
+                    ? ch.getException(tt) : null;
             input.tagId = exception == null
-                    ? ch.getExceptionName(input.docTreeInfo.docTree).getSignature()
+                    ? ch.getExceptionName(input.docTreeInfo.docTree()).getSignature()
                     : utils.getFullyQualifiedName(exception);
         } else {
             exception = input.utils.findClass(input.element, input.tagId);
@@ -86,14 +79,14 @@ public class ThrowsTaglet extends BaseTaglet
         for (ThrowsTree tt : input.utils.getThrowsTrees(input.element)) {
             Element exc = ch.getException(tt);
             if (exc != null && (input.tagId.equals(utils.getSimpleName(exc)) ||
-                 (input.tagId.equals(utils.getFullyQualifiedName(exc))))) {
+                    (input.tagId.equals(utils.getFullyQualifiedName(exc))))) {
                 output.holder = input.element;
                 output.holderTag = tt;
                 output.inlineTags = ch.getBody(output.holderTag);
                 output.tagList.add(tt);
             } else if (exception != null && exc != null &&
                     utils.isTypeElement(exc) && utils.isTypeElement(exception) &&
-                    utils.isSubclassOf((TypeElement)exc, (TypeElement)exception)) {
+                    utils.isSubclassOf((TypeElement) exc, (TypeElement) exception)) {
                 output.tagList.add(tt);
             }
         }
@@ -103,15 +96,16 @@ public class ThrowsTaglet extends BaseTaglet
      * Add links for exceptions that are declared but not documented.
      */
     private Content linkToUndocumentedDeclaredExceptions(List<? extends TypeMirror> declaredExceptionTypes,
-            Set<String> alreadyDocumented, TagletWriter writer) {
+                                                         Set<String> alreadyDocumented,
+                                                         TagletWriter writer) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
         //Add links to the exceptions declared but not documented.
         for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
             TypeElement te = utils.asTypeElement(declaredExceptionType);
             if (te != null &&
-                !alreadyDocumented.contains(declaredExceptionType.toString()) &&
-                !alreadyDocumented.contains(utils.getFullyQualifiedName(te, false))) {
+                    !alreadyDocumented.contains(declaredExceptionType.toString()) &&
+                    !alreadyDocumented.contains(utils.getFullyQualifiedName(te, false))) {
                 if (alreadyDocumented.isEmpty()) {
                     result.add(writer.getThrowsHeader());
                 }
@@ -127,11 +121,13 @@ public class ThrowsTaglet extends BaseTaglet
      * documented.
      */
     private Content inheritThrowsDocumentation(Element holder,
-            List<? extends TypeMirror> declaredExceptionTypes, Set<String> alreadyDocumented,
-            Map<String, TypeMirror> typeSubstitutions, TagletWriter writer) {
+                                               List<? extends TypeMirror> declaredExceptionTypes,
+                                               Set<String> alreadyDocumented,
+                                               Map<String, TypeMirror> typeSubstitutions,
+                                               TagletWriter writer) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
-        if (utils.isExecutableElement(holder)) {
+        if (utils.isMethod(holder)) {
             Map<List<? extends ThrowsTree>, ExecutableElement> declaredExceptionTags = new LinkedHashMap<>();
             for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
                 Input input = new DocFinder.Input(utils, holder, this,
@@ -148,7 +144,7 @@ public class ThrowsTaglet extends BaseTaglet
                     }
                     List<? extends ThrowsTree> inheritedTags = inheritedDoc.tagList.stream()
                             .map(t -> (ThrowsTree) t)
-                            .collect(Collectors.toList());
+                            .toList();
                     declaredExceptionTags.put(inheritedTags, (ExecutableElement) inheritedDoc.holder);
                 }
             }
@@ -163,10 +159,12 @@ public class ThrowsTaglet extends BaseTaglet
         Utils utils = writer.configuration().utils;
         ExecutableElement execHolder = (ExecutableElement) holder;
         ExecutableType instantiatedType = utils.asInstantiatedMethodType(
-                writer.getCurrentPageElement(), (ExecutableElement)holder);
+                writer.getCurrentPageElement(), (ExecutableElement) holder);
         List<? extends TypeMirror> thrownTypes = instantiatedType.getThrownTypes();
         Map<String, TypeMirror> typeSubstitutions = getSubstitutedThrownTypes(
-                ((ExecutableElement) holder).getThrownTypes(), thrownTypes);
+                writer.configuration().utils.typeUtils,
+                ((ExecutableElement) holder).getThrownTypes(),
+                thrownTypes);
         Map<List<? extends ThrowsTree>, ExecutableElement> tagsMap = new LinkedHashMap<>();
         tagsMap.put(utils.getThrowsTrees(execHolder), execHolder);
         Content result = writer.getOutputInstance();
@@ -190,8 +188,10 @@ public class ThrowsTaglet extends BaseTaglet
      * @return the generated content for the tags
      */
     protected Content throwsTagsOutput(Map<List<? extends ThrowsTree>, ExecutableElement> throwTags,
-                                       TagletWriter writer, Set<String> alreadyDocumented,
-                                       Map<String,TypeMirror> typeSubstitutions, boolean allowDuplicates) {
+                                       TagletWriter writer,
+                                       Set<String> alreadyDocumented,
+                                       Map<String, TypeMirror> typeSubstitutions,
+                                       boolean allowDuplicates) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
         if (!throwTags.isEmpty()) {
@@ -203,9 +203,9 @@ public class ThrowsTaglet extends BaseTaglet
                     String excName = ch.getExceptionName(dt).toString();
                     TypeMirror substituteType = typeSubstitutions.get(excName);
                     if ((!allowDuplicates) &&
-                        (alreadyDocumented.contains(excName) ||
-                        (te != null && alreadyDocumented.contains(utils.getFullyQualifiedName(te, false)))) ||
-                        (substituteType != null && alreadyDocumented.contains(substituteType.toString()))) {
+                            (alreadyDocumented.contains(excName) ||
+                                    (te != null && alreadyDocumented.contains(utils.getFullyQualifiedName(te, false)))) ||
+                            (substituteType != null && alreadyDocumented.contains(substituteType.toString()))) {
                         continue;
                     }
                     if (alreadyDocumented.isEmpty()) {
@@ -233,7 +233,8 @@ public class ThrowsTaglet extends BaseTaglet
      * @param instantiatedThrownTypes the thrown types in the context of the current type.
      * @return map of declared to instantiated thrown types or an empty map.
      */
-    private Map<String, TypeMirror> getSubstitutedThrownTypes(List<? extends TypeMirror> declaredThrownTypes,
+    private Map<String, TypeMirror> getSubstitutedThrownTypes(Types types,
+                                                              List<? extends TypeMirror> declaredThrownTypes,
                                                               List<? extends TypeMirror> instantiatedThrownTypes) {
         if (!instantiatedThrownTypes.equals(declaredThrownTypes)) {
             Map<String, TypeMirror> map = new HashMap<>();
@@ -242,11 +243,11 @@ public class ThrowsTaglet extends BaseTaglet
             while (i1.hasNext() && i2.hasNext()) {
                 TypeMirror t1 = i1.next();
                 TypeMirror t2 = i2.next();
-                if (!t1.equals(t2))
+                if (!types.isSameType(t1, t2))
                     map.put(t2.toString(), t1);
             }
             return map;
         }
-        return Collections.emptyMap();
+        return Map.of();
     }
 }

@@ -25,6 +25,7 @@
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "memory/allocation.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/memBaseline.hpp"
@@ -95,7 +96,7 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
   }
 
   bool do_malloc_site(const MallocSite* site) {
-    if (site->size() >= MemBaseline::SIZE_THRESHOLD) {
+    if (site->size() > 0) {
       if (_malloc_sites.add(*site) != NULL) {
         _count++;
         return true;
@@ -103,7 +104,7 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
         return false;  // OOM
       }
     } else {
-      // malloc site does not meet threshold, ignore and continue
+      // Ignore empty sites.
       return true;
     }
   }
@@ -125,15 +126,17 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
   VirtualMemoryAllocationWalker() : _count(0) { }
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn)  {
-    if (rgn->size() >= MemBaseline::SIZE_THRESHOLD) {
+    if (rgn->size() > 0) {
       if (_virtual_memory_regions.add(*rgn) != NULL) {
         _count ++;
         return true;
       } else {
         return false;
       }
+    } else {
+      // Ignore empty sites.
+      return true;
     }
-    return true;
   }
 
   LinkedList<ReservedMemoryRegion>* virtual_memory_allocations() {
@@ -145,7 +148,7 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
 bool MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
-  MetaspaceSnapshot::snapshot(_metaspace_snapshot);
+  _metaspace_stats = MetaspaceUtils::get_combined_statistics();
   return true;
 }
 

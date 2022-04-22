@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "aot/aotLoader.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
@@ -34,6 +34,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
@@ -45,26 +46,23 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/dynamicArchive.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
+#include "oops/klassVtable.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/arguments.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
-#include "runtime/memprofiler.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -224,10 +222,6 @@ void print_bytecode_count() {
 
 // General statistics printing (profiling ...)
 void print_statistics() {
-  if (MemProfiling) {
-    MemProfiler::disengage();
-  }
-
   if (CITime) {
     CompileBroker::print_times();
   }
@@ -236,7 +230,6 @@ void print_statistics() {
   if ((PrintC1Statistics || LogVMOutput || LogCompilation) && UseCompiler) {
     FlagSetting fs(DisplayVMOutput, DisplayVMOutput && PrintC1Statistics);
     Runtime1::print_statistics();
-    Deoptimization::print_statistics();
     SharedRuntime::print_statistics();
   }
 #endif /* COMPILER1 */
@@ -245,14 +238,14 @@ void print_statistics() {
   if ((PrintOptoStatistics || LogVMOutput || LogCompilation) && UseCompiler) {
     FlagSetting fs(DisplayVMOutput, DisplayVMOutput && PrintOptoStatistics);
     Compile::print_statistics();
-#ifndef COMPILER1
     Deoptimization::print_statistics();
+#ifndef COMPILER1
     SharedRuntime::print_statistics();
 #endif //COMPILER1
     os::print_statistics();
   }
 
-  if (PrintLockStatistics || PrintPreciseBiasedLockingStatistics || PrintPreciseRTMLockingStatistics) {
+  if (PrintLockStatistics || PrintPreciseRTMLockingStatistics) {
     OptoRuntime::print_named_counters();
   }
 #ifdef ASSERT
@@ -271,10 +264,6 @@ void print_statistics() {
 #endif // COMPILER1
 #endif // INCLUDE_JVMCI
 #endif // COMPILER2
-
-  if (PrintAOTStatistics) {
-    AOTLoader::print_statistics();
-  }
 
   if (PrintNMethodStatistics) {
     nmethod::print_statistics();
@@ -316,10 +305,6 @@ void print_statistics() {
     CodeCache::print_internals();
   }
 
-  if (PrintVtableStats) {
-    klassVtable::print_statistics();
-    klassItable::print_statistics();
-  }
   if (VerifyOops && Verbose) {
     tty->print_cr("+VerifyOops count: %d", StubRoutines::verify_oop_count());
   }
@@ -330,15 +315,16 @@ void print_statistics() {
     ResourceMark rm;
     MutexLocker mcld(ClassLoaderDataGraph_lock);
     SystemDictionary::print();
+  }
+
+  if (PrintClassLoaderDataGraphAtExit) {
+    ResourceMark rm;
+    MutexLocker mcld(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::print();
   }
 
   if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
     Method::print_touched_methods(tty);
-  }
-
-  if (PrintBiasedLockingStatistics) {
-    BiasedLocking::print_counters();
   }
 
   // Native memory tracking data
@@ -365,6 +351,14 @@ void print_statistics() {
     CompileBroker::print_times();
   }
 
+#ifdef COMPILER2_OR_JVMCI
+  if ((LogVMOutput || LogCompilation) && UseCompiler) {
+    // Only print the statistics to the log file
+    FlagSetting fs(DisplayVMOutput, false);
+    Deoptimization::print_statistics();
+  }
+#endif /* COMPILER2 || INCLUDE_JVMCI */
+
   if (PrintCodeCache) {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::print();
@@ -379,13 +373,10 @@ void print_statistics() {
   }
 
 #ifdef COMPILER2
-  if (PrintPreciseBiasedLockingStatistics || PrintPreciseRTMLockingStatistics) {
+  if (PrintPreciseRTMLockingStatistics) {
     OptoRuntime::print_named_counters();
   }
 #endif
-  if (PrintBiasedLockingStatistics) {
-    BiasedLocking::print_counters();
-  }
 
   // Native memory tracking data
   if (PrintNMTStatistics) {
@@ -467,6 +458,11 @@ void before_exit(JavaThread* thread) {
   StatSampler::disengage();
   StatSampler::destroy();
 
+  // Shut down string deduplication if running.
+  if (StringDedup::is_enabled()) {
+    StringDedup::stop();
+  }
+
   // Stop concurrent GC threads
   Universe::heap()->stop();
 
@@ -507,8 +503,17 @@ void before_exit(JavaThread* thread) {
   os::terminate_signal_thread();
 
 #if INCLUDE_CDS
-  if (DynamicDumpSharedSpaces) {
-    DynamicArchive::dump();
+  if (DynamicArchive::should_dump_at_vm_exit()) {
+    assert(ArchiveClassesAtExit != NULL, "Must be already set");
+    ExceptionMark em(thread);
+    DynamicArchive::dump(ArchiveClassesAtExit, thread);
+    if (thread->has_pending_exception()) {
+      ResourceMark rm(thread);
+      oop pending_exception = thread->pending_exception();
+      log_error(cds)("ArchiveClassesAtExit has failed %s: %s", pending_exception->klass()->external_name(),
+                     java_lang_String::as_utf8_string(java_lang_Throwable::message(pending_exception)));
+      thread->clear_pending_exception();
+    }
   }
 #endif
 
@@ -552,7 +557,7 @@ void vm_exit(int code) {
       // Historically there must have been some exit path for which
       // that was not the case and so we set it explicitly - even
       // though we no longer know what that path may be.
-      thread->as_Java_thread()->set_thread_state(_thread_in_vm);
+      JavaThread::cast(thread)->set_thread_state(_thread_in_vm);
     }
 
     // Fire off a VM_Exit operation to bring VM to a safepoint and exit
@@ -600,7 +605,7 @@ void vm_perform_shutdown_actions() {
     if (thread != NULL && thread->is_Java_thread()) {
       // We are leaving the VM, set state to native (in case any OS exit
       // handlers call back to the VM)
-      JavaThread* jt = thread->as_Java_thread();
+      JavaThread* jt = JavaThread::cast(thread);
       // Must always be walkable or have no last_Java_frame when in
       // thread_in_native
       jt->frame_anchor()->make_walkable(jt);
@@ -677,7 +682,7 @@ void vm_exit_during_initialization(Handle exception) {
   // If there are exceptions on this thread it must be cleared
   // first and here. Any future calls to EXCEPTION_MARK requires
   // that no pending exceptions exist.
-  Thread *THREAD = Thread::current(); // can't be NULL
+  JavaThread* THREAD = JavaThread::current(); // can't be NULL
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
   }

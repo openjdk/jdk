@@ -52,7 +52,6 @@ import com.sun.tools.sjavac.pubapi.TypeDesc;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-@SuppressWarnings("preview")
 public class PubapiVisitor extends ElementScanner14<Void, Void> {
 
     private PubApi collectedApi = new PubApi();
@@ -124,7 +123,6 @@ public class PubapiVisitor extends ElementScanner14<Void, Void> {
         return null;
     }
 
-    @SuppressWarnings("preview")
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public Void visitRecordComponent(RecordComponentElement e, Void p) {
         PubVar v = new PubVar(e.getModifiers(),
@@ -152,20 +150,20 @@ public class PubapiVisitor extends ElementScanner14<Void, Void> {
     private List<PubApiTypeParam> getTypeParameters(List<? extends TypeParameterElement> elements) {
         return elements.stream()
                        .map(e -> new PubApiTypeParam(e.getSimpleName().toString(), getTypeDescs(e.getBounds())))
-                       .collect(Collectors.toList());
+                       .toList();
     }
 
     private List<TypeMirror> getParamTypes(ExecutableElement e) {
         return e.getParameters()
                 .stream()
                 .map(VariableElement::asType)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<TypeDesc> getTypeDescs(List<? extends TypeMirror> list) {
         return list.stream()
                    .map(TypeDesc::fromType)
-                   .collect(Collectors.toList());
+                   .toList();
     }
 
     public PubApi getCollectedPubApi() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -182,7 +181,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
 
       // If we don't profile all invoke bytecodes we must make sure
       // it's a bytecode we indeed profile. We can't go back to the
-      // begining of the ProfileData we intend to update to check its
+      // beginning of the ProfileData we intend to update to check its
       // type because we're right after it and we don't known its
       // length
       Label do_profile;
@@ -858,7 +857,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
   Label no_safepoint, dispatch;
   if (table != safepoint_table && generate_poll) {
     NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
-    testb(Address(r15_thread, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
+    testb(Address(r15_thread, JavaThread::polling_word_offset()), SafepointMechanism::poll_bit());
 
     jccb(Assembler::zero, no_safepoint);
     lea(rscratch1, ExternalAddress((address)safepoint_table));
@@ -877,7 +876,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     Label no_safepoint;
     const Register thread = rcx;
     get_thread(thread);
-    testb(Address(thread, Thread::polling_word_offset()), SafepointMechanism::poll_bit());
+    testb(Address(thread, JavaThread::polling_word_offset()), SafepointMechanism::poll_bit());
 
     jccb(Assembler::zero, no_safepoint);
     ArrayAddress dispatch_addr(ExternalAddress((address)safepoint_table), index);
@@ -968,7 +967,7 @@ void InterpreterMacroAssembler::narrow(Register result) {
 //
 // Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
-// Unlock any Java monitors from syncronized blocks.
+// Unlock any Java monitors from synchronized blocks.
 // Remove the activation from the stack.
 //
 // If there are locked Java monitors
@@ -1205,8 +1204,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     Label done;
 
     const Register swap_reg = rax; // Must use rax for cmpxchg instruction
-    const Register tmp_reg = rbx; // Will be passed to biased_locking_enter to avoid a
-                                  // problematic case where tmp_reg = no_reg.
+    const Register tmp_reg = rbx;
     const Register obj_reg = LP64_ONLY(c_rarg3) NOT_LP64(rcx); // Will contain the oop
     const Register rklass_decode_tmp = LP64_ONLY(rscratch1) NOT_LP64(noreg);
 
@@ -1227,10 +1225,6 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
       jcc(Assembler::notZero, slow_case);
     }
 
-    if (UseBiasedLocking) {
-      biased_locking_enter(lock_reg, obj_reg, swap_reg, tmp_reg, rklass_decode_tmp, false, done, &slow_case);
-    }
-
     // Load immediate 1 into swap_reg %rax
     movl(swap_reg, (int32_t)1);
 
@@ -1245,10 +1239,6 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
 
     lock();
     cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-    if (PrintBiasedLockingStatistics) {
-      cond_inc32(Assembler::zero,
-                 ExternalAddress((address) BiasedLocking::fast_path_entry_count_addr()));
-    }
     jcc(Assembler::zero, done);
 
     const int zero_bits = LP64_ONLY(7) NOT_LP64(3);
@@ -1285,11 +1275,6 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
 
     // Save the test result, for recursive case, the result is zero
     movptr(Address(lock_reg, mark_offset), swap_reg);
-
-    if (PrintBiasedLockingStatistics) {
-      cond_inc32(Assembler::zero,
-                 ExternalAddress((address) BiasedLocking::fast_path_entry_count_addr()));
-    }
     jcc(Assembler::zero, done);
 
     bind(slow_case);
@@ -1340,10 +1325,6 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
 
     // Free entry
     movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), (int32_t)NULL_WORD);
-
-    if (UseBiasedLocking) {
-      biased_locking_exit(obj_reg, header_reg, done);
-    }
 
     // Load the old header from BasicLock structure
     movptr(header_reg, Address(swap_reg,
@@ -1991,19 +1972,18 @@ void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
 #endif
 }
 
-// Jump if ((*counter_addr += increment) & mask) satisfies the condition.
-void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr,
-                                                        int increment, Address mask,
-                                                        Register scratch, bool preloaded,
-                                                        Condition cond, Label* where) {
-  if (!preloaded) {
-    movl(scratch, counter_addr);
-  }
-  incrementl(scratch, increment);
+// Jump if ((*counter_addr += increment) & mask) == 0
+void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr, Address mask,
+                                                        Register scratch, Label* where) {
+  // This update is actually not atomic and can lose a number of updates
+  // under heavy contention, but the alternative of using the (contended)
+  // atomic update here penalizes profiling paths too much.
+  movl(scratch, counter_addr);
+  incrementl(scratch, InvocationCounter::count_increment);
   movl(counter_addr, scratch);
   andl(scratch, mask);
   if (where != NULL) {
-    jcc(cond, *where);
+    jcc(Assembler::zero, *where);
   }
 }
 

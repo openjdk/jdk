@@ -50,7 +50,7 @@ import org.xml.sax.SAXException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.ls.LSParserTCKTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.ls.LSParserTCKTest
  * @run testng/othervm dom.ls.LSParserTCKTest
  * @summary Test Specifications and Descriptions for LSParser.
  */

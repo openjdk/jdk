@@ -83,7 +83,7 @@ public abstract class ArrayInstruction extends Instruction implements ExceptionT
             case com.sun.org.apache.bcel.internal.Const.AASTORE:
                 return Type.OBJECT;
             default:
-                throw new ClassGenException("Oops: unknown case in switch" + _opcode);
+                throw new ClassGenException("Unknown case in switch" + _opcode);
         }
     }
 }

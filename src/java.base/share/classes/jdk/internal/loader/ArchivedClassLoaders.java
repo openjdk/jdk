@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class ArchivedClassLoaders {
         appLoader = ClassLoaders.appClassLoader();
 
         servicesCatalogs = new ServicesCatalog[3];
-        servicesCatalogs[0] = BootLoader.getServicesCatalog();
+        servicesCatalogs[0] = ServicesCatalog.getServicesCatalog(bootLoader);
         servicesCatalogs[1] = ServicesCatalog.getServicesCatalog(platformLoader);
         servicesCatalogs[2] = ServicesCatalog.getServicesCatalog(appLoader);
 
@@ -67,7 +67,7 @@ class ArchivedClassLoaders {
     }
 
     ServicesCatalog servicesCatalog(ClassLoader loader) {
-        if (loader == null) {
+        if (loader == bootLoader) {
             return servicesCatalogs[0];
         } else if (loader == platformLoader) {
             return servicesCatalogs[1];

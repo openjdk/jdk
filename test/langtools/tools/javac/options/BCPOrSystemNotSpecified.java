@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.file
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.TestRunner
  * @run main BCPOrSystemNotSpecified
  */
@@ -43,6 +44,7 @@ import java.nio.file.Files;
 import java.util.EnumSet;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 import toolbox.JavacTask;
@@ -50,6 +52,8 @@ import toolbox.Task;
 import toolbox.Task.Expect;
 import toolbox.TestRunner;
 import toolbox.ToolBox;
+
+import com.sun.tools.javac.file.PathFileObject;
 
 public class BCPOrSystemNotSpecified extends TestRunner {
 
@@ -192,7 +196,7 @@ public class BCPOrSystemNotSpecified extends TestRunner {
     }
 
     private void prepareBCP(Path target) throws IOException {
-        try (JavaFileManager jfm = ToolProvider.getSystemJavaCompiler()
+        try (StandardJavaFileManager jfm = ToolProvider.getSystemJavaCompiler()
                                                .getStandardFileManager(null, null, null)) {
             for (String pack : new String[] {"", "java.lang", "java.lang.annotation", "jdk.internal.javac"}) {
                 JavaFileManager.Location javaBase =
@@ -206,7 +210,9 @@ public class BCPOrSystemNotSpecified extends TestRunner {
                     Files.createDirectories(targetDir);
                     try (InputStream in = file.openInputStream()) {
                         String sourcePath = file.getName();
-                        int sepPos = sourcePath.lastIndexOf(fileSep);
+                        // Here, we should use file system separator instead of the operating system separator.
+                        String fileSystemSep = jfm.asPath(file).getFileSystem().getSeparator();
+                        int sepPos = sourcePath.lastIndexOf(fileSystemSep);
                         String fileName = sourcePath.substring(sepPos + 1);
                         Files.copy(in, targetDir.resolve(fileName));
                     }

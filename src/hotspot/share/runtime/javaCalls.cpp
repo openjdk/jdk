@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -53,8 +53,7 @@
 // Implementation of JavaCallWrapper
 
 JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle receiver, JavaValue* result, TRAPS) {
-  JavaThread* thread = THREAD->as_Java_thread();
-  bool clear_pending_exception = true;
+  JavaThread* thread = THREAD;
 
   guarantee(thread->is_Java_thread(), "crucial check - the VM thread cannot and must not escape to Java code");
   assert(!thread->owns_locks(), "must release all locks when leaving VM");
@@ -65,19 +64,12 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   // since it can potentially block.
   JNIHandleBlock* new_handles = JNIHandleBlock::allocate_block(thread);
 
+  // clear any pending exception in thread (native calls start with no exception pending)
+  thread->clear_pending_exception();
+
   // After this, we are official in JavaCode. This needs to be done before we change any of the thread local
   // info, since we cannot find oops before the new information is set up completely.
-  ThreadStateTransition::transition(thread, _thread_in_vm, _thread_in_Java);
-
-  // Make sure that we handle asynchronous stops and suspends _before_ we clear all thread state
-  // in JavaCallWrapper::JavaCallWrapper(). This way, we can decide if we need to do any pd actions
-  // to prepare for stop/suspend (flush register windows on sparcs, cache sp, or other state).
-  if (thread->has_special_runtime_exit_condition()) {
-    thread->handle_special_runtime_exit_condition();
-    if (HAS_PENDING_EXCEPTION) {
-      clear_pending_exception = false;
-    }
-  }
+  ThreadStateTransition::transition_from_vm(thread, _thread_in_Java, true /* check_asyncs */);
 
   // Make sure to set the oop's after the thread transition - since we can block there. No one is GC'ing
   // the JavaCallWrapper before the entry frame is on the stack.
@@ -104,11 +96,6 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
 
   assert (_thread->thread_state() != _thread_in_native, "cannot set native pc to NULL");
 
-  // clear any pending exception in thread (native calls start with no exception pending)
-  if(clear_pending_exception) {
-    _thread->clear_pending_exception();
-  }
-
   MACOS_AARCH64_ONLY(_thread->enable_wx(WXExec));
 }
 
@@ -132,7 +119,7 @@ JavaCallWrapper::~JavaCallWrapper() {
   // State has been restored now make the anchor frame visible for the profiler.
   // Do this after the transition because this allows us to put an assert
   // the Java->vm transition which checks to see that stack is not walkable
-  // on sparc/ia64 which will catch violations of the reseting of last_Java_frame
+  // on sparc/ia64 which will catch violations of the resetting of last_Java_frame
   // invariants (i.e. _flags always cleared on return to Java)
 
   _thread->frame_anchor()->copy(&_anchor);
@@ -336,17 +323,16 @@ Handle JavaCalls::construct_new_instance(InstanceKlass* klass, Symbol* construct
 
 
 void JavaCalls::call(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS) {
-  // Check if we need to wrap a potential OS exception handler around thread
-  // This is used for e.g. Win32 structured exception handlers
-  assert(THREAD->is_Java_thread(), "only JavaThreads can make JavaCalls");
+  // Check if we need to wrap a potential OS exception handler around thread.
+  // This is used for e.g. Win32 structured exception handlers.
   // Need to wrap each and every time, since there might be native code down the
-  // stack that has installed its own exception handlers
+  // stack that has installed its own exception handlers.
   os::os_exception_wrapper(call_helper, result, method, args, THREAD);
 }
 
 void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS) {
 
-  JavaThread* thread = THREAD->as_Java_thread();
+  JavaThread* thread = THREAD;
   assert(method.not_null(), "must have a method to call");
   assert(!SafepointSynchronize::is_at_safepoint(), "call to Java code during VM operation");
   assert(!thread->handle_area()->no_handle_mark_active(), "cannot call out to Java here");
@@ -388,13 +374,13 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
   // Find receiver
   Handle receiver = (!method->is_static()) ? args->receiver() : Handle();
 
-  // When we reenter Java, we need to reenable the reserved/yellow zone which
+  // When we reenter Java, we need to re-enable the reserved/yellow zone which
   // might already be disabled when we are in VM.
   thread->stack_overflow_state()->reguard_stack_if_needed();
 
   // Check that there are shadow pages available before changing thread state
   // to Java. Calculate current_stack_pointer here to make sure
-  // stack_shadow_pages_available() and bang_stack_shadow_pages() use the same sp.
+  // stack_shadow_pages_available() and map_stack_shadow_pages() use the same sp.
   address sp = os::current_stack_pointer();
   if (!os::stack_shadow_pages_available(THREAD, method, sp)) {
     // Throw stack overflow exception with preinitialized exception.

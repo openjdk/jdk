@@ -44,10 +44,10 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import sun.hotspot.code.Compiler;
-import sun.hotspot.cpuinfo.CPUInfo;
-import sun.hotspot.gc.GC;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.code.Compiler;
+import jdk.test.whitebox.cpuinfo.CPUInfo;
+import jdk.test.whitebox.gc.GC;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Container;
 
@@ -102,17 +102,16 @@ public class VMProps implements Callable<Map<String, String>> {
         // vm.hasJFR is "true" if JFR is included in the build of the VM and
         // so tests can be executed.
         map.put("vm.hasJFR", this::vmHasJFR);
+        map.put("vm.hasDTrace", this::vmHasDTrace);
         map.put("vm.jvmti", this::vmHasJVMTI);
         map.put("vm.cpu.features", this::cpuFeatures);
         map.put("vm.pageSize", this::vmPageSize);
         map.put("vm.rtm.cpu", this::vmRTMCPU);
         map.put("vm.rtm.compiler", this::vmRTMCompiler);
-        map.put("vm.aot", this::vmAOT);
-        map.put("vm.aot.enabled", this::vmAotEnabled);
         // vm.cds is true if the VM is compiled with cds support.
         map.put("vm.cds", this::vmCDS);
         map.put("vm.cds.custom.loaders", this::vmCDSForCustomLoaders);
-        map.put("vm.cds.archived.java.heap", this::vmCDSForArchivedJavaHeap);
+        map.put("vm.cds.write.archived.java.heap", this::vmCDSCanWriteArchivedJavaHeap);
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", this::isGraalEnabled);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
@@ -123,6 +122,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         vmGC(map); // vm.gc.X = true/false
+        vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
 
         dump(map.map);
@@ -294,6 +294,34 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
+     * "jtreg -vmoptions:-Dtest.cds.runtime.options=..." can be used to specify
+     * the GC type to be used when running with a CDS archive. Set "vm.gc" accordingly,
+     * so that tests that need to explicitly choose the GC type can be excluded
+     * with "@requires vm.gc == null".
+     *
+     * @param map - property-value pairs
+     */
+    protected void vmGCforCDS(SafeMap map) {
+        if (!GC.isSelectedErgonomically()) {
+            // The GC has been explicitly specified on the command line, so
+            // jtreg will set the "vm.gc" property. Let's not interfere with it.
+            return;
+        }
+
+        String GC_PREFIX  = "-XX:+Use";
+        String GC_SUFFIX  = "GC";
+        String jtropts = System.getProperty("test.cds.runtime.options");
+        if (jtropts != null) {
+            for (String opt : jtropts.split(",")) {
+                if (opt.startsWith(GC_PREFIX) && opt.endsWith(GC_SUFFIX)) {
+                    String gc = opt.substring(GC_PREFIX.length(), opt.length() - GC_SUFFIX.length());
+                    map.put("vm.gc", () -> gc);
+                }
+            }
+        }
+    }
+
+    /**
      * Selected final flag.
      *
      * @param map - property-value pairs
@@ -313,8 +341,10 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlag(map, "ClassUnloading");
         vmOptFinalFlag(map, "ClassUnloadingWithConcurrentMark");
         vmOptFinalFlag(map, "UseCompressedOops");
+        vmOptFinalFlag(map, "UseVectorizedMismatchIntrinsic");
         vmOptFinalFlag(map, "EnableJVMCI");
         vmOptFinalFlag(map, "EliminateAllocations");
+        vmOptFinalFlag(map, "UseVtableBasedCHA");
     }
 
     /**
@@ -329,7 +359,7 @@ public class VMProps implements Callable<Map<String, String>> {
      * support.
      */
     protected String vmHasJFR() {
-        return "" + WB.isJFRIncludedInVmBuild();
+        return "" + WB.isJFRIncluded();
     }
 
     /**
@@ -337,6 +367,13 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmHasJVMTI() {
         return "" + WB.isJVMTIIncluded();
+    }
+
+    /**
+     * @return "true" if the VM is compiled with DTrace
+     */
+    protected String vmHasDTrace() {
+        return "" + WB.isDTraceIncluded();
     }
 
     /**
@@ -360,52 +397,12 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * @return true if VM supports AOT and false otherwise
-     */
-    protected String vmAOT() {
-        // builds with aot have jaotc in <JDK>/bin
-        Path bin = Paths.get(System.getProperty("java.home"))
-                        .resolve("bin");
-        Path jaotc;
-        if (Platform.isWindows()) {
-            jaotc = bin.resolve("jaotc.exe");
-        } else {
-            jaotc = bin.resolve("jaotc");
-        }
-
-        if (!Files.exists(jaotc)) {
-            // No jaotc => no AOT
-            return "false";
-        }
-
-        switch (GC.selected()) {
-            case Serial:
-            case Parallel:
-            case G1:
-                // These GCs are supported with AOT
-                return "true";
-            default:
-                break;
-        }
-
-        // Every other GC is not supported
-        return "false";
-    }
-
-    /*
-     * @return true if there is at least one loaded AOT'ed library.
-     */
-    protected String vmAotEnabled() {
-        return "" + (WB.aotLibrariesCount() > 0);
-    }
-
-    /**
      * Check for CDS support.
      *
      * @return true if CDS is supported by the VM to be tested.
      */
     protected String vmCDS() {
-        return "" + WB.isCDSIncludedInVmBuild();
+        return "" + WB.isCDSIncluded();
     }
 
     /**
@@ -418,12 +415,10 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * Check for CDS support for archived Java heap regions.
-     *
-     * @return true if CDS provides support for archive Java heap regions in the VM to be tested.
+     * @return true if this VM can write Java heap objects into the CDS archive
      */
-    protected String vmCDSForArchivedJavaHeap() {
-        return "" + ("true".equals(vmCDS()) && WB.isJavaHeapArchiveSupported());
+    protected String vmCDSCanWriteArchivedJavaHeap() {
+        return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive());
     }
 
     /**

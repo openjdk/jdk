@@ -46,6 +46,7 @@ class InlineTree : public ResourceObj {
   Compile*    C;                  // cache
   JVMState*   _caller_jvms;       // state of caller
   ciMethod*   _method;            // method being called by the caller_jvms
+  bool        _late_inline;       // method is inlined incrementally
   InlineTree* _caller_tree;
   uint        _count_inline_bcs;  // Accumulated count of inlined bytecodes
   const int   _max_inline_level;  // the maximum inline level for this sub-tree (may be adjusted)
@@ -71,17 +72,17 @@ protected:
                             int caller_bci,
                             JVMState* jvms,
                             ciCallProfile& profile,
-                            WarmCallInfo* wci_result,
                             bool& should_delay);
   bool        should_inline(ciMethod* callee_method,
                             ciMethod* caller_method,
                             int caller_bci,
-                            ciCallProfile& profile,
-                            WarmCallInfo* wci_result);
+                            NOT_PRODUCT_ARG(bool& should_delay)
+                            ciCallProfile& profile);
   bool        should_not_inline(ciMethod* callee_method,
                                 ciMethod* caller_method,
-                                JVMState* jvms,
-                                WarmCallInfo* wci_result);
+                                int caller_bci,
+                                NOT_PRODUCT_ARG(bool& should_delay)
+                                ciCallProfile& profile);
   bool        is_not_reached(ciMethod* callee_method,
                              ciMethod* caller_method,
                              int caller_bci,
@@ -112,7 +113,11 @@ public:
   // and may be accessed by find_subtree_from_root.
   // The call_method is the dest_method for a special or static invocation.
   // The call_method is an optimized virtual method candidate otherwise.
-  WarmCallInfo* ok_to_inline(ciMethod *call_method, JVMState* caller_jvms, ciCallProfile& profile, WarmCallInfo* wci, bool& should_delay);
+  bool ok_to_inline(ciMethod *call_method, JVMState* caller_jvms, ciCallProfile& profile, bool& should_delay);
+
+  void set_late_inline() {
+    _late_inline = true;
+  }
 
   // Information about inlined method
   JVMState*   caller_jvms()       const { return _caller_jvms; }
@@ -457,7 +462,8 @@ class Parse : public GraphKit {
   void merge_memory_edges(MergeMemNode* n, int pnum, bool nophi);
 
   // Parse this bytecode, and alter the Parsers JVM->Node mapping
-  void do_one_bytecode();
+  void do_one_bytecode_common();
+  bool do_one_bytecode_targeted();
 
   // helper function to generate array store check
   void array_store_check();
@@ -483,7 +489,7 @@ class Parse : public GraphKit {
 
   // Insert a compiler safepoint into the graph, if there is a back-branch.
   void maybe_add_safepoint(int target_bci) {
-    if (UseLoopSafepoints && target_bci <= bci()) {
+    if (target_bci <= bci()) {
       add_safepoint();
     }
   }
@@ -504,8 +510,6 @@ class Parse : public GraphKit {
   void modf();
   void modd();
   void l2f();
-
-  void do_irem();
 
   // implementation of _get* and _put* bytecodes
   void do_getstatic() { do_field_access(true,  false); }
@@ -531,6 +535,10 @@ class Parse : public GraphKit {
   void do_jsr();
   void do_ret();
 
+  // implementation of div/rem bytecodes for handling of special case
+  // min_jint / -1
+  void do_divmod_fixup();
+
   float   dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* test);
   float   branch_prediction(float &cnt, BoolTest::mask btest, int target_bci, Node* test);
   bool    seems_never_taken(float prob) const;
@@ -547,7 +555,6 @@ class Parse : public GraphKit {
                                 Node* val, const Type* tval);
   void    maybe_add_predicate_after_if(Block* path);
   IfNode* jump_if_fork_int(Node* a, Node* b, BoolTest::mask mask, float prob, float cnt);
-  Node*   jump_if_join(Node* iffalse, Node* iftrue);
   void    jump_if_true_fork(IfNode *ifNode, int dest_bci_if_true, bool unc);
   void    jump_if_false_fork(IfNode *ifNode, int dest_bci_if_false, bool unc);
   void    jump_if_always_fork(int dest_bci_if_true, bool unc);

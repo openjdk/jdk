@@ -36,7 +36,7 @@ class TypeArrayKlass : public ArrayKlass {
   friend class VMStructs;
 
  public:
-  static const KlassID ID = TypeArrayKlassID;
+  static const KlassKind Kind = TypeArrayKlassKind;
 
  private:
   jint _max_length;            // maximum number of elements allowed in an array
@@ -61,7 +61,7 @@ class TypeArrayKlass : public ArrayKlass {
     return create_klass(type, external_name(type), THREAD);
   }
 
-  int oop_size(oop obj) const;
+  size_t oop_size(oop obj) const;
 
   // Allocation
   typeArrayOop allocate_common(int length, bool do_zero, TRAPS);
@@ -93,14 +93,15 @@ class TypeArrayKlass : public ArrayKlass {
   template <typename T, typename OopClosureType>
   inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
 
- protected:
+ public:
   // Find n'th dimensional array
-  virtual Klass* array_klass_impl(bool or_null, int n, TRAPS);
+  virtual Klass* array_klass(int n, TRAPS);
+  virtual Klass* array_klass_or_null(int n);
 
   // Returns the array class with this class as element type
-  virtual Klass* array_klass_impl(bool or_null, TRAPS);
+  virtual Klass* array_klass(TRAPS);
+  virtual Klass* array_klass_or_null();
 
- public:
   static TypeArrayKlass* cast(Klass* k) {
     return const_cast<TypeArrayKlass*>(cast(const_cast<const Klass*>(k)));
   }

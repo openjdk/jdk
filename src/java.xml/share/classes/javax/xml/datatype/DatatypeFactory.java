@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,49 +36,9 @@ import com.sun.org.apache.xerces.internal.jaxp.datatype.DatatypeFactoryImpl;
  * Factory that creates new {@code javax.xml.datatype} {@code Object}s that map XML to/from Java {@code Object}s.
  * <p id="DatatypeFactory.newInstance">
  * A new instance of the {@code DatatypeFactory} is created through the {@link #newInstance()} method
- * that uses the following implementation resolution mechanisms to determine an implementation:
- * <ol>
- *    <li>
- *      If the system property specified by {@link #DATATYPEFACTORY_PROPERTY}, "{@code javax.xml.datatype.DatatypeFactory}",
- *      exists, a class with the name of the property value is instantiated.
- *      Any Exception thrown during the instantiation process is wrapped as a {@link DatatypeConfigurationException}.
- *    </li>
- *    <li>
- *      <p>
- *      Use the configuration file "jaxp.properties". The file is in standard
- *      {@link java.util.Properties} format and typically located in the
- *      {@code conf} directory of the Java installation. It contains the fully qualified
- *      name of the implementation class with the key being the system property
- *      defined above.
- *      <p>
- *      The jaxp.properties file is read only once by the JAXP implementation
- *      and its values are then cached for future use.  If the file does not exist
- *      when the first attempt is made to read from it, no further attempts are
- *      made to check for its existence.  It is not possible to change the value
- *      of any property in jaxp.properties after it has been read for the first time.
- *    </li>
- *    <li>
- *     <p>
- *     Use the service-provider loading facility, defined by the {@link java.util.ServiceLoader} class, to attempt
- *     to locate and load an implementation of the service using the {@linkplain
- *     java.util.ServiceLoader#load(java.lang.Class) default loading mechanism}:
- *     the service-provider loading facility will use the {@linkplain
- *     java.lang.Thread#getContextClassLoader() current thread's context class loader}
- *     to attempt to load the service. If the context class
- *     loader is null, the {@linkplain
- *     ClassLoader#getSystemClassLoader() system class loader} will be used.
- *     <p>
- *     In case of {@link java.util.ServiceConfigurationError service
- *     configuration error}, a {@link javax.xml.datatype.DatatypeConfigurationException}
- *     will be thrown.
- *    </li>
- *    <li>
- *      <p>
- *      The final mechanism is to attempt to instantiate the {@code Class} specified by
- *      {@link #DATATYPEFACTORY_IMPLEMENTATION_CLASS}.
- *      Any Exception thrown during the instantiation process is wrapped as a {@link DatatypeConfigurationException}.
- *    </li>
- * </ol>
+ * that uses the
+ * <a href="../../../module-summary.html#LookupMechanism">JAXP Lookup Mechanism</a>
+ * to determine the {@code DatatypeFactory} implementation class to load.
  *
  * @author Joseph Fialli
  * @author Jeff Suttor
@@ -152,9 +112,9 @@ public abstract class DatatypeFactory {
 
     /**
      * Obtain a new instance of a {@code DatatypeFactory}.
-     *
-     * <p>The implementation resolution mechanisms are <a href="#DatatypeFactory.newInstance">defined</a> in this
-     * {@code Class}'s documentation.
+     * This method uses the
+     * <a href="../../../module-summary.html#LookupMechanism">JAXP Lookup Mechanism</a>
+     * to determine the {@code DatatypeFactory} implementation class to load.
      *
      * @return New instance of a {@code DatatypeFactory}
      *

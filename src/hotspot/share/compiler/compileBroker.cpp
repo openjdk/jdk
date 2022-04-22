@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,13 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/whitebox.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/escapeBarrier.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
@@ -140,6 +140,7 @@ CompileLog** CompileBroker::_compiler2_logs = NULL;
 // These counters are used to assign an unique ID to each compilation.
 volatile jint CompileBroker::_compilation_id     = 0;
 volatile jint CompileBroker::_osr_compilation_id = 0;
+volatile jint CompileBroker::_native_compilation_id = 0;
 
 // Performance counters
 PerfCounter* CompileBroker::_perf_total_compilation = NULL;
@@ -185,7 +186,7 @@ int CompileBroker::_sum_standard_bytes_compiled    = 0;
 int CompileBroker::_sum_nmethod_size               = 0;
 int CompileBroker::_sum_nmethod_code_size          = 0;
 
-long CompileBroker::_peak_compilation_time         = 0;
+jlong CompileBroker::_peak_compilation_time        = 0;
 
 CompilerStatistics CompileBroker::_stats_per_level[CompLevel_full_optimization];
 
@@ -224,11 +225,13 @@ class CompilationLog : public StringEventLog {
   }
 
   void log_metaspace_failure(const char* reason) {
+    // Note: This method can be called from non-Java/compiler threads to
+    // log the global metaspace failure that might affect profiling.
     ResourceMark rm;
     StringLogMessage lm;
     lm.print("%4d   COMPILE PROFILING SKIPPED: %s", -1, reason);
     lm.print("\n");
-    log(JavaThread::current(), "%s", (const char*)lm);
+    log(Thread::current(), "%s", (const char*)lm);
   }
 };
 
@@ -410,6 +413,7 @@ void CompileQueue::free_all() {
     CompileTask::free(current);
   }
   _first = NULL;
+  _last = NULL;
 
   // Wake up all threads that block on the queue.
   MethodCompileQueue_lock->notify_all();
@@ -612,9 +616,8 @@ void register_jfr_phasetype_serializer(CompilerType compiler_type) {
 #ifdef COMPILER2
   } else if (compiler_type == compiler_c2) {
     assert(first_registration, "invariant"); // c2 must be registered first.
-    GrowableArray<const char*>* c2_phase_names = new GrowableArray<const char*>(PHASE_NUM_TYPES);
     for (int i = 0; i < PHASE_NUM_TYPES; i++) {
-      const char* phase_name = CompilerPhaseTypeHelper::to_string((CompilerPhaseType) i);
+      const char* phase_name = CompilerPhaseTypeHelper::to_description((CompilerPhaseType) i);
       CompilerEvent::PhaseEvent::get_phase_id(phase_name, false, false, false);
     }
     first_registration = false;
@@ -627,7 +630,7 @@ void register_jfr_phasetype_serializer(CompilerType compiler_type) {
 // CompileBroker::compilation_init
 //
 // Initialize the Compilation object
-void CompileBroker::compilation_init_phase1(Thread* THREAD) {
+void CompileBroker::compilation_init_phase1(JavaThread* THREAD) {
   // No need to initialize compilation system if we do not use it.
   if (!UseCompiler) {
     return;
@@ -653,7 +656,9 @@ void CompileBroker::compilation_init_phase1(Thread* THREAD) {
       }
       if (FLAG_IS_DEFAULT(JVMCIHostThreads)) {
       } else {
+#ifdef COMPILER1
         _c1_count = JVMCIHostThreads;
+#endif // COMPILER1
       }
     }
   }
@@ -793,14 +798,8 @@ void CompileBroker::compilation_init_phase2() {
 }
 
 Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
-  Handle string = java_lang_String::create_from_str(name, CHECK_NH);
-  Handle thread_group(THREAD, Universe::system_thread_group());
-  return JavaCalls::construct_new_instance(
-                       vmClasses::Thread_klass(),
-                       vmSymbols::threadgroup_string_void_signature(),
-                       thread_group,
-                       string,
-                       CHECK_NH);
+  Handle thread_oop = JavaThread::create_system_thread_object(name, false /* not visible */, CHECK_NH);
+  return thread_oop;
 }
 
 #if defined(ASSERT) && COMPILER2_OR_JVMCI
@@ -871,92 +870,77 @@ void DeoptimizeObjectsALotThread::deoptimize_objects_alot_loop_all() {
 #endif // defined(ASSERT) && COMPILER2_OR_JVMCI
 
 
-JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, CompileQueue* queue, AbstractCompiler* comp, Thread* THREAD) {
+JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD) {
   JavaThread* new_thread = NULL;
-  {
-    MutexLocker mu(THREAD, Threads_lock);
-    switch (type) {
-      case compiler_t:
-        assert(comp != NULL, "Compiler instance missing.");
-        if (!InjectCompilerCreationFailure || comp->num_compiler_threads() == 0) {
-          CompilerCounters* counters = new CompilerCounters();
-          new_thread = new CompilerThread(queue, counters);
-        }
-        break;
-      case sweeper_t:
-        new_thread = new CodeCacheSweeperThread();
-        break;
+
+  switch (type) {
+    case compiler_t:
+      assert(comp != NULL, "Compiler instance missing.");
+      if (!InjectCompilerCreationFailure || comp->num_compiler_threads() == 0) {
+        CompilerCounters* counters = new CompilerCounters();
+        new_thread = new CompilerThread(queue, counters);
+      }
+      break;
+    case sweeper_t:
+      new_thread = new CodeCacheSweeperThread();
+      break;
 #if defined(ASSERT) && COMPILER2_OR_JVMCI
-      case deoptimizer_t:
-        new_thread = new DeoptimizeObjectsALotThread();
-        break;
+    case deoptimizer_t:
+      new_thread = new DeoptimizeObjectsALotThread();
+      break;
 #endif // ASSERT
-      default:
-        ShouldNotReachHere();
-    }
-
-    // At this point the new CompilerThread data-races with this startup
-    // thread (which I believe is the primoridal thread and NOT the VM
-    // thread).  This means Java bytecodes being executed at startup can
-    // queue compile jobs which will run at whatever default priority the
-    // newly created CompilerThread runs at.
-
-
-    // At this point it may be possible that no osthread was created for the
-    // JavaThread due to lack of memory. We would have to throw an exception
-    // in that case. However, since this must work and we do not allow
-    // exceptions anyway, check and abort if this fails. But first release the
-    // lock.
-
-    if (new_thread != NULL && new_thread->osthread() != NULL) {
-
-      java_lang_Thread::set_thread(JNIHandles::resolve_non_null(thread_handle), new_thread);
-
-      // Note that this only sets the JavaThread _priority field, which by
-      // definition is limited to Java priorities and not OS priorities.
-      // The os-priority is set in the CompilerThread startup code itself
-
-      java_lang_Thread::set_priority(JNIHandles::resolve_non_null(thread_handle), NearMaxPriority);
-
-      // Note that we cannot call os::set_priority because it expects Java
-      // priorities and we are *explicitly* using OS priorities so that it's
-      // possible to set the compiler thread priority higher than any Java
-      // thread.
-
-      int native_prio = CompilerThreadPriority;
-      if (native_prio == -1) {
-        if (UseCriticalCompilerThreadPriority) {
-          native_prio = os::java_to_os_priority[CriticalPriority];
-        } else {
-          native_prio = os::java_to_os_priority[NearMaxPriority];
-        }
-      }
-      os::set_native_priority(new_thread, native_prio);
-
-      java_lang_Thread::set_daemon(JNIHandles::resolve_non_null(thread_handle));
-
-      new_thread->set_threadObj(JNIHandles::resolve_non_null(thread_handle));
-      if (type == compiler_t) {
-        new_thread->as_CompilerThread()->set_compiler(comp);
-      }
-      Threads::add(new_thread);
-      Thread::start(new_thread);
-    }
+    default:
+      ShouldNotReachHere();
   }
 
-  // First release lock before aborting VM.
-  if (new_thread == NULL || new_thread->osthread() == NULL) {
-    if (UseDynamicNumberOfCompilerThreads && type == compiler_t && comp->num_compiler_threads() > 0) {
-      if (new_thread != NULL) {
-        new_thread->smr_delete();
+  // At this point the new CompilerThread data-races with this startup
+  // thread (which is the main thread and NOT the VM thread).
+  // This means Java bytecodes being executed at startup can
+  // queue compile jobs which will run at whatever default priority the
+  // newly created CompilerThread runs at.
+
+
+  // At this point it may be possible that no osthread was created for the
+  // JavaThread due to lack of resources. We will handle that failure below.
+  // Also check new_thread so that static analysis is happy.
+  if (new_thread != NULL && new_thread->osthread() != NULL) {
+    Handle thread_oop(THREAD, JNIHandles::resolve_non_null(thread_handle));
+
+    if (type == compiler_t) {
+      CompilerThread::cast(new_thread)->set_compiler(comp);
+    }
+
+    // Note that we cannot call os::set_priority because it expects Java
+    // priorities and we are *explicitly* using OS priorities so that it's
+    // possible to set the compiler thread priority higher than any Java
+    // thread.
+
+    int native_prio = CompilerThreadPriority;
+    if (native_prio == -1) {
+      if (UseCriticalCompilerThreadPriority) {
+        native_prio = os::java_to_os_priority[CriticalPriority];
+      } else {
+        native_prio = os::java_to_os_priority[NearMaxPriority];
       }
+    }
+    os::set_native_priority(new_thread, native_prio);
+
+    // Note that this only sets the JavaThread _priority field, which by
+    // definition is limited to Java priorities and not OS priorities.
+    JavaThread::start_internal_daemon(THREAD, new_thread, thread_oop, NearMaxPriority);
+
+  } else { // osthread initialization failure
+    if (UseDynamicNumberOfCompilerThreads && type == compiler_t
+        && comp->num_compiler_threads() > 0) {
+      // The new thread is not known to Thread-SMR yet so we can just delete.
+      delete new_thread;
       return NULL;
+    } else {
+      vm_exit_during_initialization("java.lang.OutOfMemoryError",
+                                    os::native_thread_creation_failed_msg());
     }
-    vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                  os::native_thread_creation_failed_msg());
   }
 
-  // Let go of Threads_lock before yielding
   os::naked_yield(); // make sure that the compiler thread is started early (especially helpful on SOLARIS)
 
   return new_thread;
@@ -1006,9 +990,9 @@ void CompileBroker::init_compiler_sweeper_threads() {
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        ThreadsListHandle tlh;  // name() depends on the TLH.
         assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
-        tty->print_cr("Added initial compiler thread %s", ct->get_thread_name());
+        tty->print_cr("Added initial compiler thread %s", ct->name());
       }
     }
   }
@@ -1027,9 +1011,9 @@ void CompileBroker::init_compiler_sweeper_threads() {
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        ThreadsListHandle tlh;  // name() depends on the TLH.
         assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
-        tty->print_cr("Added initial compiler thread %s", ct->get_thread_name());
+        tty->print_cr("Added initial compiler thread %s", ct->name());
       }
     }
   }
@@ -1058,7 +1042,7 @@ void CompileBroker::init_compiler_sweeper_threads() {
 #endif // defined(ASSERT) && COMPILER2_OR_JVMCI
 }
 
-void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
+void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
 
   julong available_memory = os::available_memory();
   // If SegmentedCodeCache is off, both values refer to the single heap (with type CodeBlobType::All).
@@ -1114,10 +1098,10 @@ void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
       _compilers[1]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        ThreadsListHandle tlh;  // name() depends on the TLH.
         assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
         tty->print_cr("Added compiler thread %s (available memory: %dMB, available non-profiled code cache: %dMB)",
-                      ct->get_thread_name(), (int)(available_memory/M), (int)(available_cc_np/M));
+                      ct->name(), (int)(available_memory/M), (int)(available_cc_np/M));
       }
     }
   }
@@ -1135,10 +1119,10 @@ void CompileBroker::possibly_add_compiler_threads(Thread* THREAD) {
       _compilers[0]->set_num_compiler_threads(i + 1);
       if (TraceCompilerThreads) {
         ResourceMark rm;
-        ThreadsListHandle tlh;  // get_thread_name() depends on the TLH.
+        ThreadsListHandle tlh;  // name() depends on the TLH.
         assert(tlh.includes(ct), "ct=" INTPTR_FORMAT " exited unexpectedly.", p2i(ct));
         tty->print_cr("Added compiler thread %s (available memory: %dMB, available profiled code cache: %dMB)",
-                      ct->get_thread_name(), (int)(available_memory/M), (int)(available_cc_p/M));
+                      ct->name(), (int)(available_memory/M), (int)(available_cc_p/M));
       }
     }
   }
@@ -1274,7 +1258,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
 
       if (!UseJVMCINativeLibrary) {
         // Don't allow blocking compiles if inside a class initializer or while performing class loading
-        vframeStream vfst(thread->as_Java_thread());
+        vframeStream vfst(JavaThread::cast(thread));
         for (; !vfst.at_end(); vfst.next()) {
           if (vfst.method()->is_static_initializer() ||
               (vfst.method()->method_holder()->is_subclass_of(vmClasses::ClassLoader_klass()) &&
@@ -1355,7 +1339,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        const methodHandle& hot_method, int hot_count,
                                        CompileTask::CompileReason compile_reason,
                                        TRAPS) {
-  // Do nothing if compilebroker is not initalized or compiles are submitted on level none
+  // Do nothing if compilebroker is not initialized or compiles are submitted on level none
   if (!_initialized || comp_level == CompLevel_none) {
     return NULL;
   }
@@ -1364,7 +1348,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   assert(comp != NULL, "Ensure we have a compiler");
 
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
-  // CompileBroker::compile_method can trap and can have pending aysnc exception.
+  // CompileBroker::compile_method can trap and can have pending async exception.
   nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
   DirectivesStack::release(directive);
   return nm;
@@ -1418,7 +1402,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   assert(!HAS_PENDING_EXCEPTION, "No exception should be present");
   // some prerequisites that are compiler specific
-  if (comp->is_c2()) {
+  if (comp->is_c2() || comp->is_jvmci()) {
     method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NONASYNC_NULL);
     // Resolve all classes seen in the signature of the method
     // we are compiling.
@@ -1607,7 +1591,7 @@ int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
     assert(!is_osr, "can't be osr");
     // Adapters, native wrappers and method handle intrinsics
     // should be generated always.
-    return Atomic::add(&_compilation_id, 1);
+    return Atomic::add(CICountNative ? &_native_compilation_id : &_compilation_id, 1);
   } else if (CICountOSR && is_osr) {
     id = Atomic::add(&_osr_compilation_id, 1);
     if (CIStartOSR <= id && id < CIStopOSR) {
@@ -1987,6 +1971,8 @@ void CompileBroker::compiler_thread_loop() {
           method->clear_queued_for_compilation();
           task->set_failure_reason("compilation is disabled");
         }
+      } else {
+        task->set_failure_reason("breakpoints are present");
       }
 
       if (UseDynamicNumberOfCompilerThreads) {
@@ -2020,7 +2006,7 @@ void CompileBroker::init_compiler_thread_log() {
                      os::file_separator(), thread_id, os::current_process_id());
       }
 
-      fp = fopen(file_name, "wt");
+      fp = os::fopen(file_name, "wt");
       if (fp != NULL) {
         if (LogCompilation && Verbose) {
           tty->print_cr("Opening compilation log %s", file_name);
@@ -2144,8 +2130,6 @@ void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, bool
       fatal("Never compilable: %s", failure_reason);
     }
   }
-  // simulate crash during compilation
-  assert(task->compile_id() != CICrashAt, "just as planned");
 }
 
 static void post_compilation_event(EventCompilation& event, CompileTask* task) {
@@ -2220,7 +2204,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   }
 
   // Allocate a new set of JNI handles.
-  push_jni_handle_block();
+  JNIHandleMark jhm(thread);
   Method* target_handle = task->method();
   int compilable = ciEnv::MethodCompilable;
   const char* failure_reason = NULL;
@@ -2339,9 +2323,6 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       post_compilation_event(event, task);
     }
   }
-  // Remove the JNI handle block after the ciEnv destructor has run in
-  // the previous block.
-  pop_jni_handle_block();
 
   if (failure_reason != NULL) {
     task->set_failure_reason(failure_reason, failure_reason_on_C_heap);
@@ -2493,43 +2474,13 @@ void CompileBroker::update_compile_perf_data(CompilerThread* thread, const metho
   int last_compile_type = normal_compile;
   if (CICountOSR && is_osr) {
     last_compile_type = osr_compile;
+  } else if (CICountNative && method->is_native()) {
+    last_compile_type = native_compile;
   }
 
   CompilerCounters* counters = thread->counters();
   counters->set_current_method(current_method);
   counters->set_compile_type((jlong) last_compile_type);
-}
-
-// ------------------------------------------------------------------
-// CompileBroker::push_jni_handle_block
-//
-// Push on a new block of JNI handles.
-void CompileBroker::push_jni_handle_block() {
-  JavaThread* thread = JavaThread::current();
-
-  // Allocate a new block for JNI handles.
-  // Inlined code from jni_PushLocalFrame()
-  JNIHandleBlock* java_handles = thread->active_handles();
-  JNIHandleBlock* compile_handles = JNIHandleBlock::allocate_block(thread);
-  assert(compile_handles != NULL && java_handles != NULL, "should not be NULL");
-  compile_handles->set_pop_frame_link(java_handles);  // make sure java handles get gc'd.
-  thread->set_active_handles(compile_handles);
-}
-
-
-// ------------------------------------------------------------------
-// CompileBroker::pop_jni_handle_block
-//
-// Pop off the current block of JNI handles.
-void CompileBroker::pop_jni_handle_block() {
-  JavaThread* thread = JavaThread::current();
-
-  // Release our JNI handle block
-  JNIHandleBlock* compile_handles = thread->active_handles();
-  JNIHandleBlock* java_handles = compile_handles->pop_frame_link();
-  thread->set_active_handles(java_handles);
-  compile_handles->set_pop_frame_link(NULL);
-  JNIHandleBlock::release_block(compile_handles, thread); // may block
 }
 
 // ------------------------------------------------------------------

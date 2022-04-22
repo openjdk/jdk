@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -745,21 +745,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>y MMMM d, EEEE</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>y MMMM d</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>y MMM d</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>y-MM-dd</pattern>
+							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -767,21 +771,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
+							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1909,10 +1917,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="contributed">{0} mm</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName draft="unconfirmed">µm</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0} µm</unitPattern>
-				<unitPattern count="two" draft="unconfirmed">{0} µm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} µm</unitPattern>
+				<displayName draft="unconfirmed">μm</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} μm</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} μm</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName draft="unconfirmed">nm</displayName>
@@ -1990,9 +1998,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} mg</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<unitPattern count="one" draft="unconfirmed">{0} µg</unitPattern>
-				<unitPattern count="two" draft="unconfirmed">{0} µg</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0} µg</unitPattern>
+				<unitPattern count="one" draft="unconfirmed">{0} μg</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} μg</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName draft="unconfirmed">eangas tonna à 907kg</displayName>
@@ -2304,10 +2312,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="contributed">{0}mm</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName draft="unconfirmed">µm</displayName>
-				<unitPattern count="one" draft="unconfirmed">{0}µm</unitPattern>
-				<unitPattern count="two" draft="unconfirmed">{0}µm</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}µm</unitPattern>
+				<displayName draft="unconfirmed">μm</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}μm</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}μm</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName draft="unconfirmed">nm</displayName>
@@ -2369,9 +2377,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0}mg</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<unitPattern count="one" draft="unconfirmed">{0}µg</unitPattern>
-				<unitPattern count="two" draft="unconfirmed">{0}µg</unitPattern>
-				<unitPattern count="other" draft="unconfirmed">{0}µg</unitPattern>
+				<unitPattern count="one" draft="unconfirmed">{0}μg</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}μg</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName draft="unconfirmed">eangas tonna</displayName>

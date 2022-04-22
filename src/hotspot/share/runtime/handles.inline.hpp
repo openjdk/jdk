@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_HANDLES_INLINE_HPP
 
 #include "runtime/handles.hpp"
+
 #include "runtime/thread.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"

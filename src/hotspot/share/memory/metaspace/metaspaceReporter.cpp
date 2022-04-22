@@ -78,7 +78,7 @@ static void print_vs(outputStream* out, size_t scale) {
     out->print(" committed, ");
     out->print(" %d nodes.", num_nodes_c);
     out->cr();
-    out->print("              Both:  ");
+    out->print("             Both:  ");
     print_scaled_words(out, reserved_c + reserved_nc, scale, 7);
     out->print(" reserved, ");
     print_scaled_words_and_percentage(out, committed_c + committed_nc, reserved_c + reserved_nc, scale, 7);
@@ -299,6 +299,24 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
     non_class_cm_stat.print_on(out, scale);
     out->cr();
   }
+
+  // -- Print Chunkmanager details.
+  if ((flags & (int)Option::ShowChunkFreeList) > 0) {
+    out->cr();
+    out->print_cr("Chunk freelist details:");
+    if (Metaspace::using_class_space()) {
+      out->print_cr("   Non-Class:");
+    }
+    ChunkManager::chunkmanager_nonclass()->print_on(out);
+    out->cr();
+    if (Metaspace::using_class_space()) {
+      out->print_cr("       Class:");
+      ChunkManager::chunkmanager_class()->print_on(out);
+      out->cr();
+    }
+  }
+  out->cr();
+
 
   //////////// Waste section ///////////////////////////
   // As a convenience, print a summary of common waste.

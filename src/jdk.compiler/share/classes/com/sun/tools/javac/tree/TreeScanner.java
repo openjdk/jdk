@@ -177,7 +177,7 @@ public class TreeScanner extends Visitor {
     }
 
     public void visitCase(JCCase tree) {
-        scan(tree.pats);
+        scan(tree.labels);
         scan(tree.stats);
     }
 
@@ -305,6 +305,21 @@ public class TreeScanner extends Visitor {
 
     public void visitBindingPattern(JCBindingPattern tree) {
         scan(tree.var);
+    }
+
+    @Override
+    public void visitDefaultCaseLabel(JCDefaultCaseLabel tree) {
+    }
+
+    @Override
+    public void visitParenthesizedPattern(JCParenthesizedPattern that) {
+        scan(that.pattern);
+    }
+
+    @Override
+    public void visitGuardPattern(JCGuardPattern that) {
+        scan(that.patt);
+        scan(that.expr);
     }
 
     public void visitIndexed(JCArrayAccess tree) {

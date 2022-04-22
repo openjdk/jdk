@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.URI;
@@ -78,6 +77,7 @@ final class Exchange<T> {
     // used to record possible cancellation raised before the exchImpl
     // has been established.
     private volatile IOException failed;
+    @SuppressWarnings("removal")
     final AccessControlContext acc;
     final MultiExchange<T> multi;
     final Executor parentExecutor;
@@ -104,7 +104,7 @@ final class Exchange<T> {
     /* If different AccessControlContext to be used  */
     Exchange(HttpRequestImpl request,
              MultiExchange<T> multi,
-             AccessControlContext acc)
+             @SuppressWarnings("removal") AccessControlContext acc)
     {
         this.request = request;
         this.acc = acc;
@@ -143,14 +143,45 @@ final class Exchange<T> {
         private volatile boolean closeRequested;
 
         void connection(HttpConnection connection) {
-            this.connection = connection;
-            if (closeRequested) closeConnection();
+            boolean closeRequested;
+            synchronized (this) {
+                // check whether this new connection should be
+                // closed
+                closeRequested = this.closeRequested;
+                if (!closeRequested) {
+                    this.connection = connection;
+                } else {
+                    // assert this.connection == null
+                    this.closeRequested = false;
+                }
+            }
+            if (closeRequested) closeConnection(connection);
         }
 
         void closeConnection() {
-            closeRequested = true;
-            HttpConnection connection = this.connection;
-            this.connection = null;
+            HttpConnection connection;
+            synchronized (this) {
+                connection = this.connection;
+                if (connection == null) {
+                    closeRequested = true;
+                } else {
+                    this.connection = null;
+                }
+            }
+            closeConnection(connection);
+        }
+
+        HttpConnection disable() {
+            HttpConnection connection;
+            synchronized (this) {
+                connection = this.connection;
+                this.connection = null;
+                this.closeRequested = false;
+            }
+            return connection;
+        }
+
+        private static void closeConnection(HttpConnection connection) {
             if (connection != null) {
                 try {
                     connection.close();
@@ -158,11 +189,6 @@ final class Exchange<T> {
                     // ignore
                 }
             }
-        }
-
-        void disable() {
-            connection = null;
-            closeRequested = false;
         }
     }
 
@@ -523,8 +549,11 @@ final class Exchange<T> {
                                                  client.client2(),
                                                  this, e::drainLeftOverBytes)
                         .thenCompose((Http2Connection c) -> {
+                            HttpConnection connection = connectionAborter.disable();
                             boolean cached = c.offerConnection();
-                            if (cached) connectionAborter.disable();
+                            if (!cached && connection != null) {
+                                connectionAborter.connection(connection);
+                            }
                             Stream<T> s = c.getStream(1);
 
                             if (s == null) {
@@ -621,6 +650,7 @@ final class Exchange<T> {
      */
     private SecurityException checkPermissions() {
         String method = request.method();
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm == null || method.equals("CONNECT")) {
             // tunneling will have a null acc, which is fine. The proxy

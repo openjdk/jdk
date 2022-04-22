@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ class Env {
         return sourceMapper.getSourcePath();
     }
 
-    static private List<String> excludes() {
+    private static List<String> excludes() {
         if (excludes == null) {
             setExcludes("java.*, javax.*, sun.*, com.sun.*, jdk.*");
         }

@@ -34,7 +34,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 4988387
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4988387
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4988387
  * @run testng/othervm validation.Bug4988387
  * @summary Test SchemaFactory can detect invalid XPath expressions.
  */

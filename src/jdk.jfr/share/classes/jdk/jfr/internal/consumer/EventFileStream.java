@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,10 +46,10 @@ public final class EventFileStream extends AbstractEventStream {
     private ChunkParser currentParser;
     private RecordedEvent[] cacheSorted;
 
-    public EventFileStream(AccessControlContext acc, Path path) throws IOException {
+    public EventFileStream(@SuppressWarnings("removal") AccessControlContext acc, Path file) throws IOException {
         super(acc, null, Collections.emptyList());
-        Objects.requireNonNull(path);
-        this.input = new RecordingInput(path.toFile(), FileAccess.UNPRIVILEGED);
+        this.input = new RecordingInput(file.toFile(), FileAccess.UNPRIVILEGED);
+        this.input.setStreamed();
     }
 
     @Override
@@ -64,7 +64,7 @@ public final class EventFileStream extends AbstractEventStream {
 
     @Override
     public void close() {
-        setClosed(true);
+        closeParser();
         dispatcher().runCloseActions();
         try {
             input.close();
@@ -85,7 +85,7 @@ public final class EventFileStream extends AbstractEventStream {
             end = disp.endNanos;
         }
 
-        currentParser = new ChunkParser(input, disp.parserConfiguration);
+        currentParser = new ChunkParser(input, disp.parserConfiguration, parserState);
         while (!isClosed()) {
             onMetadata(currentParser);
             if (currentParser.getStartNanos() > end) {

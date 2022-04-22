@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ extends KeyAgreementSpi {
 
         private static final boolean VALUE = getValue();
 
+        @SuppressWarnings("removal")
         private static boolean getValue() {
             return AccessController.doPrivileged(
                 (PrivilegedAction<Boolean>)
@@ -343,6 +344,8 @@ extends KeyAgreementSpi {
         } else {
             // Array too short, pad it w/ leading 0s
             if (secret.length < expectedLen) {
+                Arrays.fill(sharedSecret, offset,
+                        offset + (expectedLen - secret.length), (byte)0);
                 System.arraycopy(secret, 0, sharedSecret,
                     offset + (expectedLen - secret.length),
                     secret.length);

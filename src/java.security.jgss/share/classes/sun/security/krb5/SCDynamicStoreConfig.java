@@ -43,6 +43,7 @@ public class SCDynamicStoreConfig {
     private static boolean DEBUG = sun.security.krb5.internal.Krb5.DEBUG;
 
     static {
+        @SuppressWarnings("removal")
         boolean isMac = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Boolean>() {
                 public Boolean run() {

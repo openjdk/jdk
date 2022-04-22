@@ -63,8 +63,7 @@ namespace AccessInternal {
     BARRIER_ATOMIC_XCHG,
     BARRIER_ATOMIC_XCHG_AT,
     BARRIER_ARRAYCOPY,
-    BARRIER_CLONE,
-    BARRIER_RESOLVE
+    BARRIER_CLONE
   };
 
   template <DecoratorSet decorators, typename T>
@@ -114,7 +113,6 @@ namespace AccessInternal {
                                      arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                                      size_t length);
     typedef void (*clone_func_t)(oop src, oop dst, size_t size);
-    typedef oop (*resolve_func_t)(oop obj);
   };
 
   template <DecoratorSet decorators>
@@ -141,7 +139,6 @@ namespace AccessInternal {
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_ATOMIC_XCHG_AT, atomic_xchg_at_func_t);
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_ARRAYCOPY, arraycopy_func_t);
   ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_CLONE, clone_func_t);
-  ACCESS_GENERATE_ACCESS_FUNCTION(BARRIER_RESOLVE, resolve_func_t);
 #undef ACCESS_GENERATE_ACCESS_FUNCTION
 
   template <DecoratorSet decorators, typename T, BarrierType barrier_type>
@@ -391,8 +388,6 @@ public:
                             size_t length);
 
   static void clone(oop src, oop dst, size_t size);
-
-  static oop resolve(oop obj) { return obj; }
 };
 
 // Below is the implementation of the first 4 steps of the template pipeline:
@@ -574,18 +569,6 @@ namespace AccessInternal {
     }
   };
 
-  template <DecoratorSet decorators, typename T>
-  struct RuntimeDispatch<decorators, T, BARRIER_RESOLVE>: AllStatic {
-    typedef typename AccessFunction<decorators, T, BARRIER_RESOLVE>::type func_t;
-    static func_t _resolve_func;
-
-    static oop resolve_init(oop obj);
-
-    static inline oop resolve(oop obj) {
-      return _resolve_func(obj);
-    }
-  };
-
   // Initialize the function pointers to point to the resolving function.
   template <DecoratorSet decorators, typename T>
   typename AccessFunction<decorators, T, BARRIER_STORE>::type
@@ -626,10 +609,6 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename T>
   typename AccessFunction<decorators, T, BARRIER_CLONE>::type
   RuntimeDispatch<decorators, T, BARRIER_CLONE>::_clone_func = &clone_init;
-
-  template <DecoratorSet decorators, typename T>
-  typename AccessFunction<decorators, T, BARRIER_RESOLVE>::type
-  RuntimeDispatch<decorators, T, BARRIER_RESOLVE>::_resolve_func = &resolve_init;
 
   // Step 3: Pre-runtime dispatching.
   // The PreRuntimeDispatch class is responsible for filtering the barrier strength

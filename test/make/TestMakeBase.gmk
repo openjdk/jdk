@@ -344,25 +344,16 @@ $(call AssertEquals, \
     FindCommonPathPrefix, \
 )
 
-################################################################################
-# DirToDotDot
-
 $(call AssertEquals, \
-    $(call DirToDotDot, foo/bar/baz/), \
-    ../../.., \
-    DirToDotDot, \
+    $(call FindCommonPathPrefix, /foo/bar/, /foo/bar), \
+    /foo/bar, \
+    FindCommonPathPrefix, \
 )
 
 $(call AssertEquals, \
-    $(call DirToDotDot, foo/bar), \
-    ../.., \
-    DirToDotDot, \
-)
-
-$(call AssertEquals, \
-    $(call DirToDotDot, /foo), \
-    .., \
-    DirToDotDot, \
+    $(call FindCommonPathPrefix, /fo oo/bar1/, /fo oo/bar2), \
+    /fo oo, \
+    FindCommonPathPrefix, \
 )
 
 ################################################################################
@@ -388,13 +379,43 @@ $(call AssertEquals, \
 
 $(call AssertEquals, \
     $(call RelativePath, /foo/bar/baz/banan/kung, /foo/bar/baz), \
-    ./banan/kung, \
+    banan/kung, \
     RelativePath, \
 )
 
 $(call AssertEquals, \
     $(call RelativePath, /foo/bar/baz/banan/kung, /foo/bar/baz/), \
-    ./banan/kung, \
+    banan/kung, \
+    RelativePath, \
+)
+
+$(call AssertEquals, \
+    $(call RelativePath, /foo/bar, /foo/bar/baz), \
+    .., \
+    RelativePath, \
+)
+
+$(call AssertEquals, \
+    $(call RelativePath, /foo/bar/baz/, /foo/bar/baz), \
+    ., \
+    RelativePath, \
+)
+
+$(call AssertEquals, \
+    $(call RelativePath, /fo oo/bar/baz/ban an, /fo oo/bar/), \
+    baz/ban an, \
+    RelativePath, \
+)
+
+$(call AssertEquals, \
+    $(call RelativePath, /foo/ba rr/ba zz, /foo/ba rr/banan), \
+    ../ba zz, \
+    RelativePath, \
+)
+
+$(call AssertEquals, \
+    $(call RelativePath, /foo, /bar), \
+    ../foo, \
     RelativePath, \
 )
 

@@ -407,10 +407,8 @@ void NodeHash::operator=(const NodeHash& nh) {
 //------------------------------PhaseRemoveUseless-----------------------------
 // 1) Use a breadthfirst walk to collect useful nodes reachable from root.
 PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List* worklist, PhaseNumber phase_num) : Phase(phase_num) {
-
-  // Implementation requires 'UseLoopSafepoints == true' and an edge from root
-  // to each SafePointNode at a backward branch.  Inserted in add_safepoint().
-  if( !UseLoopSafepoints || !OptoRemoveUseless ) return;
+  // Implementation requires an edge from root to each SafePointNode
+  // at a backward branch. Inserted in add_safepoint().
 
   // Identify nodes that are reachable from below, useful.
   C->identify_useful_nodes(_useful);
@@ -794,9 +792,7 @@ ConLNode* PhaseTransform::longcon(jlong l) {
 }
 ConNode* PhaseTransform::integercon(jlong l, BasicType bt) {
   if (bt == T_INT) {
-    jint int_con = (jint)l;
-    assert(((long)int_con) == l, "not an int");
-    return intcon(int_con);
+    return intcon(checked_cast<jint>(l));
   }
   assert(bt == T_LONG, "not an integer");
   return longcon(l);
@@ -993,8 +989,7 @@ PhaseIterGVN::PhaseIterGVN(PhaseGVN* gvn) : PhaseGVN(gvn),
     if(n != NULL && n != _table.sentinel() && n->outcnt() == 0) {
       if( n->is_top() ) continue;
       // If remove_useless_nodes() has run, we expect no such nodes left.
-      assert(!UseLoopSafepoints || !OptoRemoveUseless,
-             "remove_useless_nodes missed this node");
+      assert(false, "remove_useless_nodes missed this node");
       hash_delete(n);
     }
   }
@@ -1024,11 +1019,17 @@ void PhaseIterGVN::shuffle_worklist() {
 #ifndef PRODUCT
 void PhaseIterGVN::verify_step(Node* n) {
   if (VerifyIterativeGVN) {
+    ResourceMark rm;
+    VectorSet visited;
+    Node_List worklist;
+
     _verify_window[_verify_counter % _verify_window_size] = n;
     ++_verify_counter;
     if (C->unique() < 1000 || 0 == _verify_counter % (C->unique() < 10000 ? 10 : 100)) {
       ++_verify_full_passes;
-      Node::verify(C->root(), -1);
+      worklist.push(C->root());
+      Node::verify(-1, visited, worklist);
+      return;
     }
     for (int i = 0; i < _verify_window_size; i++) {
       Node* n = _verify_window[i];
@@ -1041,8 +1042,11 @@ void PhaseIterGVN::verify_step(Node* n) {
         continue;
       }
       // Typical fanout is 1-2, so this call visits about 6 nodes.
-      Node::verify(n, 4);
+      if (!visited.test_set(n->_idx)) {
+        worklist.push(n);
+      }
     }
+    Node::verify(4, visited, worklist);
   }
 }
 
@@ -1241,7 +1245,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   // Remove 'n' from hash table in case it gets modified
   _table.hash_delete(n);
   if (VerifyIterativeGVN) {
-   assert(!_table.find_index(n->_idx), "found duplicate entry in table");
+    assert(!_table.find_index(n->_idx), "found duplicate entry in table");
   }
 
   // Apply the Ideal call in a loop until it no longer applies
@@ -1481,6 +1485,9 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   temp->init_req(0,nn);     // Add a use to nn to prevent him from dying
   remove_dead_node( old );
   temp->del_req(0);         // Yank bogus edge
+  if (nn != NULL && nn->outcnt() == 0) {
+    _worklist.push(nn);
+  }
 #ifndef PRODUCT
   if( VerifyIterativeGVN ) {
     for ( int i = 0; i < _verify_window_size; i++ ) {
@@ -1501,13 +1508,13 @@ void PhaseIterGVN::add_users_to_worklist0( Node *n ) {
 
 // Return counted loop Phi if as a counted loop exit condition, cmp
 // compares the the induction variable with n
-static PhiNode* countedloop_phi_from_cmp(CmpINode* cmp, Node* n) {
+static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
   for (DUIterator_Fast imax, i = cmp->fast_outs(imax); i < imax; i++) {
     Node* bol = cmp->fast_out(i);
     for (DUIterator_Fast i2max, i2 = bol->fast_outs(i2max); i2 < i2max; i2++) {
       Node* iff = bol->fast_out(i2);
-      if (iff->is_CountedLoopEnd()) {
-        CountedLoopEndNode* cle = iff->as_CountedLoopEnd();
+      if (iff->is_BaseCountedLoopEnd()) {
+        BaseCountedLoopEndNode* cle = iff->as_BaseCountedLoopEnd();
         if (cle->limit() == n) {
           PhiNode* phi = cle->phi();
           if (phi != NULL) {
@@ -1684,7 +1691,7 @@ bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
     case Op_DivI:
     case Op_ModI: {
       // Type of divisor includes 0?
-      if (n->in(2)->is_top()) {
+      if (type(n->in(2)) == Type::TOP) {
         // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
         return false;
       }
@@ -1694,7 +1701,7 @@ bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
     case Op_DivL:
     case Op_ModL: {
       // Type of divisor includes 0?
-      if (n->in(2)->is_top()) {
+      if (type(n->in(2)) == Type::TOP) {
         // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
         return false;
       }
@@ -1825,8 +1832,8 @@ void PhaseCCP::analyze() {
         // If n is used in a counted loop exit condition then the type
         // of the counted loop's Phi depends on the type of n. See
         // PhiNode::Value().
-        if (m_op == Op_CmpI) {
-          PhiNode* phi = countedloop_phi_from_cmp((CmpINode*)m, n);
+        if (m_op == Op_CmpI || m_op == Op_CmpL) {
+          PhiNode* phi = countedloop_phi_from_cmp(m->as_Cmp(), n);
           if (phi != NULL) {
             worklist.push(phi);
           }
@@ -1958,7 +1965,9 @@ Node *PhaseCCP::transform_once( Node *n ) {
 
   // TEMPORARY fix to ensure that 2nd GVN pass eliminates NULL checks
   switch( n->Opcode() ) {
-  case Op_FastLock:      // Revisit FastLocks for lock coarsening
+  case Op_CallStaticJava:  // Give post-parse call devirtualization a chance
+  case Op_CallDynamicJava:
+  case Op_FastLock:        // Revisit FastLocks for lock coarsening
   case Op_If:
   case Op_CountedLoopEnd:
   case Op_Region:

@@ -64,20 +64,20 @@ public class CDSandJFR {
         TestCommon.checkDump(output, "Skipping jdk/jfr/Event: JFR event class");
 
         output = TestCommon.exec(appJar,
-                                 "-XX:StartFlightRecording=dumponexit=true",
+                                 "-XX:StartFlightRecording:dumponexit=true",
                                  "Hello");
         TestCommon.checkExec(output, "Hello World");
 
         TestCommon.checkExec(TestCommon.exec(appJar,
-                                             "-XX:FlightRecorderOptions=retransform=true",
+                                             "-XX:FlightRecorderOptions:retransform=true",
                                              "GetFlightRecorder"));
         TestCommon.checkExec(TestCommon.exec(appJar,
-                                             "-XX:FlightRecorderOptions=retransform=false",
+                                             "-XX:FlightRecorderOptions:retransform=false",
                                              "GetFlightRecorder"));
 
         // Test dumping with flight recorder enabled.
         output = TestCommon.testDump(appJar, TestCommon.list(classes),
-                                     "-XX:StartFlightRecording=dumponexit=true");
+                                     "-XX:StartFlightRecording:dumponexit=true");
         TestCommon.checkDump(output, "warning: JFR will be disabled during CDS dumping");
     }
 }

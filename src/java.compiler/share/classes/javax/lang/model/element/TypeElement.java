@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,33 @@ import javax.lang.model.util.*;
  * source of information is Java source code, then the elements will be
  * returned in source code order.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
+ * @apiNote
+ * The represented class or interface may have a {@linkplain
+ * javax.lang.model.util.Elements#getFileObjectOf(Element) reference
+ * representation} (either source code or executable output). Multiple
+ * classes and interfaces can share the same reference representation
+ * backing construct. For example, multiple classes and interface can
+ * be declared in the same source file, including, but are not limited
+ * to:
+ * <ul>
+ * <li> a {@linkplain NestingKind#TOP_LEVEL top-level} class or
+ * interface and auxiliary classes and interfaces
+ * <li>a top-level class or interface and {@linkplain
+ * NestingKind#isNested() nested class and interfaces} within it
+ * </ul>
+ * <p>In the context of annotation processing, a type element can
+ * be:
+ * <ul>
+ * <li>created from the initial inputs to a run of the tool
+ * <li>created from {@linkplain
+ * javax.annotation.processing.Filer#createSourceFile(CharSequence,
+ * Element...) source code} or {@linkplain
+ * javax.annotation.processing.Filer#createClassFile(CharSequence,
+ * Element...) class files} written by a processor
+ * <li>{@linkplain
+ * javax.lang.model.util.Elements#getAllTypeElements(CharSequence)
+ * queried for} in the configured environment
+ * </ul>
  * @see DeclaredType
  * @since 1.6
  */
@@ -108,6 +132,7 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      *
      * @jls 8.8.9 Default Constructor
      * @jls 8.9.3 Enum Members
+     * @jls 8.10.3 Record Members
      */
     @Override
     List<? extends Element> getEnclosedElements();
@@ -207,10 +232,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      *
      * @return the permitted classes, or an empty list if there are none
      *
-     * @since 15
+     * @since 17
      */
-    @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.SEALED_CLASSES,
-                                 reflective=true)
     default List<? extends TypeMirror> getPermittedSubclasses() {
         return List.of();
     }

@@ -25,8 +25,9 @@
 #ifndef SHARE_MEMORY_ITERATOR_INLINE_HPP
 #define SHARE_MEMORY_ITERATOR_INLINE_HPP
 
-#include "classfile/classLoaderData.hpp"
 #include "memory/iterator.hpp"
+
+#include "classfile/classLoaderData.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"
@@ -173,7 +174,7 @@ void Devirtualizer::do_cld(OopClosureType* closure, ClassLoaderData* cld) {
 // It allows for a single call to do a multi-dispatch to an optimized version
 //   of oop_oop_iterate that statically know all these types:
 //   - OopClosureType    : static type give at call site
-//   - Klass*            : dynamic to static type through Klass::id() -> table index
+//   - Klass*            : dynamic to static type through Klass::kind() -> table index
 //   - UseCompressedOops : dynamic to static value determined once
 //
 // when users call obj->oop_iterate(&cl).
@@ -189,7 +190,7 @@ void Devirtualizer::do_cld(OopClosureType* closure, ClassLoaderData* cld) {
 //   used when calling do_oop.
 //
 // Klass* :
-//   A table mapping from *Klass::ID to function is setup. This happens once
+//   A table mapping from *Klass::Kind to function is setup. This happens once
 //   when the program starts, when the static _table instance is initialized for
 //   the OopOopIterateDispatch specialized with the OopClosureType.
 //
@@ -206,6 +207,8 @@ void Devirtualizer::do_cld(OopClosureType* closure, ClassLoaderData* cld) {
 template <typename OopClosureType>
 class OopOopIterateDispatch : public AllStatic {
 private:
+  typedef void (*FunctionType)(OopClosureType*, oop, Klass*);
+
   class Table {
   private:
     template <typename KlassType, typename T>
@@ -220,7 +223,7 @@ private:
 
     template <typename KlassType>
     void set_init_function() {
-      _function[KlassType::ID] = &init<KlassType>;
+      _function[KlassType::Kind] = &init<KlassType>;
     }
 
     template <typename KlassType>
@@ -229,20 +232,20 @@ private:
       // when functions pointers are updated.
       STATIC_ASSERT(sizeof(_function[0]) == sizeof(void*));
       if (UseCompressedOops) {
-        _function[KlassType::ID] = &oop_oop_iterate<KlassType, narrowOop>;
+        _function[KlassType::Kind] = &oop_oop_iterate<KlassType, narrowOop>;
       } else {
-        _function[KlassType::ID] = &oop_oop_iterate<KlassType, oop>;
+        _function[KlassType::Kind] = &oop_oop_iterate<KlassType, oop>;
       }
     }
 
     template <typename KlassType>
     void set_resolve_function_and_execute(OopClosureType* cl, oop obj, Klass* k) {
       set_resolve_function<KlassType>();
-      _function[KlassType::ID](cl, obj, k);
+      _function[KlassType::Kind](cl, obj, k);
     }
 
   public:
-    void (*_function[KLASS_ID_COUNT])(OopClosureType*, oop, Klass*);
+    FunctionType _function[KLASS_KIND_COUNT];
 
     Table(){
       set_init_function<InstanceKlass>();
@@ -257,8 +260,8 @@ private:
   static Table _table;
 public:
 
-  static void (*function(Klass* klass))(OopClosureType*, oop, Klass*) {
-    return _table._function[klass->id()];
+  static FunctionType function(Klass* klass) {
+    return _table._function[klass->kind()];
   }
 };
 
@@ -269,6 +272,8 @@ typename OopOopIterateDispatch<OopClosureType>::Table OopOopIterateDispatch<OopC
 template <typename OopClosureType>
 class OopOopIterateBoundedDispatch {
 private:
+  typedef void (*FunctionType)(OopClosureType*, oop, Klass*, MemRegion);
+
   class Table {
   private:
     template <typename KlassType, typename T>
@@ -283,26 +288,26 @@ private:
 
     template <typename KlassType>
     void set_init_function() {
-      _function[KlassType::ID] = &init<KlassType>;
+      _function[KlassType::Kind] = &init<KlassType>;
     }
 
     template <typename KlassType>
     void set_resolve_function() {
       if (UseCompressedOops) {
-        _function[KlassType::ID] = &oop_oop_iterate_bounded<KlassType, narrowOop>;
+        _function[KlassType::Kind] = &oop_oop_iterate_bounded<KlassType, narrowOop>;
       } else {
-        _function[KlassType::ID] = &oop_oop_iterate_bounded<KlassType, oop>;
+        _function[KlassType::Kind] = &oop_oop_iterate_bounded<KlassType, oop>;
       }
     }
 
     template <typename KlassType>
     void set_resolve_function_and_execute(OopClosureType* cl, oop obj, Klass* k, MemRegion mr) {
       set_resolve_function<KlassType>();
-      _function[KlassType::ID](cl, obj, k, mr);
+      _function[KlassType::Kind](cl, obj, k, mr);
     }
 
   public:
-    void (*_function[KLASS_ID_COUNT])(OopClosureType*, oop, Klass*, MemRegion);
+    FunctionType _function[KLASS_KIND_COUNT];
 
     Table(){
       set_init_function<InstanceKlass>();
@@ -317,8 +322,8 @@ private:
   static Table _table;
 public:
 
-  static void (*function(Klass* klass))(OopClosureType*, oop, Klass*, MemRegion) {
-    return _table._function[klass->id()];
+  static FunctionType function(Klass* klass) {
+    return _table._function[klass->kind()];
   }
 };
 
@@ -329,6 +334,8 @@ typename OopOopIterateBoundedDispatch<OopClosureType>::Table OopOopIterateBounde
 template <typename OopClosureType>
 class OopOopIterateBackwardsDispatch {
 private:
+  typedef void (*FunctionType)(OopClosureType*, oop, Klass*);
+
   class Table {
   private:
     template <typename KlassType, typename T>
@@ -343,26 +350,26 @@ private:
 
     template <typename KlassType>
     void set_init_function() {
-      _function[KlassType::ID] = &init<KlassType>;
+      _function[KlassType::Kind] = &init<KlassType>;
     }
 
     template <typename KlassType>
     void set_resolve_function() {
       if (UseCompressedOops) {
-        _function[KlassType::ID] = &oop_oop_iterate_backwards<KlassType, narrowOop>;
+        _function[KlassType::Kind] = &oop_oop_iterate_backwards<KlassType, narrowOop>;
       } else {
-        _function[KlassType::ID] = &oop_oop_iterate_backwards<KlassType, oop>;
+        _function[KlassType::Kind] = &oop_oop_iterate_backwards<KlassType, oop>;
       }
     }
 
     template <typename KlassType>
     void set_resolve_function_and_execute(OopClosureType* cl, oop obj, Klass* k) {
       set_resolve_function<KlassType>();
-      _function[KlassType::ID](cl, obj, k);
+      _function[KlassType::Kind](cl, obj, k);
     }
 
   public:
-    void (*_function[KLASS_ID_COUNT])(OopClosureType*, oop, Klass*);
+    FunctionType _function[KLASS_KIND_COUNT];
 
     Table(){
       set_init_function<InstanceKlass>();
@@ -377,8 +384,8 @@ private:
   static Table _table;
 public:
 
-  static void (*function(Klass* klass))(OopClosureType*, oop, Klass*) {
-    return _table._function[klass->id()];
+  static FunctionType function(Klass* klass) {
+    return _table._function[klass->kind()];
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ class NativeMovConstReg;
 // and in fact represent not a code-stream offset but some inline data.
 // The data takes the form of a counted sequence of halfwords, which
 // precedes the actual relocation record.  (Clients never see it directly.)
-// The interpetation of this extra data depends on the relocation type.
+// The interpretation of this extra data depends on the relocation type.
 //
 // On machines that have 32-bit immediate fields, there is usually
 // little need for relocation "prefix" data, because the instruction stream
@@ -226,7 +226,7 @@ class NativeMovConstReg;
 //%note reloc_1
 //
 // This uses 4 instruction words, 8 relocation halfwords,
-// and an entry (which is sharable) in the CodeBlob's oop pool,
+// and an entry (which is shareable) in the CodeBlob's oop pool,
 // for a total of 36 bytes.
 //
 // Note that the compiler is responsible for ensuring the "fldOffset" when
@@ -414,7 +414,7 @@ class relocInfo {
 
   // Update methods for relocation information
   // (since code is dynamically patched, we also need to dynamically update the relocation info)
-  // Both methods takes old_type, so it is able to performe sanity checks on the information removed.
+  // Both methods takes old_type, so it is able to perform sanity checks on the information removed.
   static void change_reloc_info_for_address(RelocIterator *itr, address pc, relocType old_type, relocType new_type);
 
   // Machine dependent stuff
@@ -803,7 +803,7 @@ class Relocation {
   virtual bool clear_inline_cache()              { return true; }
 
   // This method assumes that all virtual/static (inline) caches are cleared (since for static_call_type and
-  // ic_call_type is not always posisition dependent (depending on the state of the cache)). However, this is
+  // ic_call_type is not always position dependent (depending on the state of the cache)). However, this is
   // probably a reasonable assumption, since empty caches simplifies code reloacation.
   virtual void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) { }
 };
@@ -897,7 +897,7 @@ class oop_Relocation : public DataRelocation {
   // an oop in the instruction stream
   static RelocationHolder spec_for_immediate() {
     // If no immediate oops are generated, we can skip some walks over nmethods.
-    // Assert that they don't get generated accidently!
+    // Assert that they don't get generated accidentally!
     assert(relocInfo::mustIterateImmediateOopsInCode(),
            "Must return true so we will search for oops as roots etc. in the code.");
     const int oop_index = 0;
@@ -1066,7 +1066,7 @@ class opt_virtual_call_Relocation : public CallRelocation {
   bool clear_inline_cache();
 
   // find the matching static_stub
-  address static_stub(bool is_aot);
+  address static_stub();
 };
 
 
@@ -1098,24 +1098,23 @@ class static_call_Relocation : public CallRelocation {
   bool clear_inline_cache();
 
   // find the matching static_stub
-  address static_stub(bool is_aot);
+  address static_stub();
 };
 
 class static_stub_Relocation : public Relocation {
  public:
-  static RelocationHolder spec(address static_call, bool is_aot = false) {
+  static RelocationHolder spec(address static_call) {
     RelocationHolder rh = newHolder();
-    new(rh) static_stub_Relocation(static_call, is_aot);
+    new(rh) static_stub_Relocation(static_call);
     return rh;
   }
 
  private:
   address _static_call;  // location of corresponding static_call
-  bool _is_aot;          // trampoline to aot code
 
-  static_stub_Relocation(address static_call, bool is_aot)
+  static_stub_Relocation(address static_call)
     : Relocation(relocInfo::static_stub_type),
-      _static_call(static_call), _is_aot(is_aot) { }
+      _static_call(static_call) { }
 
   friend class RelocIterator;
   static_stub_Relocation() : Relocation(relocInfo::static_stub_type) { }
@@ -1124,7 +1123,6 @@ class static_stub_Relocation : public Relocation {
   bool clear_inline_cache();
 
   address static_call() { return _static_call; }
-  bool is_aot() { return _is_aot; }
 
   // data is packed as a scaled offset in "1_int" format:  [c] or [Cc]
   void pack_data_to(CodeSection* dest);

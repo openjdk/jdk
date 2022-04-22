@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class Executor {
@@ -182,7 +181,7 @@ public final class Executor {
                 code = p.waitFor();
             }
             if (!quietCommand) {
-                Log.verbose(pb.command(), getOutput(), code);
+                Log.verbose(pb.command(), getOutput(), code, IOUtils.getPID(p));
             }
             return code;
         } catch (InterruptedException ex) {

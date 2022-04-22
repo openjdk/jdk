@@ -139,7 +139,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     EXTRA_SRC := $(LIBAWT_EXTRA_SRC), \
     EXCLUDES := $(LIBAWT_EXCLUDES), \
     EXCLUDE_FILES := $(LIBAWT_EXFILES), \
-    OPTIMIZATION := LOW, \
+    OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
     DISABLED_WARNINGS_gcc := sign-compare unused-result maybe-uninitialized \
@@ -339,7 +339,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVAJPEG, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB), \
     HEADERS_FROM_SRC := $(LIBJPEG_HEADERS_FROM_SRC), \
-    DISABLED_WARNINGS_gcc := clobbered implicit-fallthrough shift-negative-value, \
+    DISABLED_WARNINGS_gcc := clobbered implicit-fallthrough shift-negative-value array-bounds, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(LIBJPEG_LIBS) $(JDKLIB_LIBS), \
@@ -435,7 +435,7 @@ endif
 
 ifeq ($(USE_EXTERNAL_HARFBUZZ), true)
    LIBFONTMANAGER_EXTRA_SRC =
-   BUILD_LIBFONTMANAGER_FONTLIB += $(LIBHARFBUZZ_LIBS)
+   BUILD_LIBFONTMANAGER_FONTLIB += $(HARFBUZZ_LIBS)
 else
    LIBFONTMANAGER_EXTRA_SRC = libharfbuzz
 
@@ -447,9 +447,6 @@ else
    ifeq ($(call isTargetOs, linux macosx), true)
      HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES
    endif
-   ifeq ($(call isTargetOs, macosx), true)
-     HARFBUZZ_CFLAGS += -DHAVE_CORETEXT
-   endif
 
    # Early re-canonizing has to be disabled to workaround an internal XlC compiler error
    # when building libharfbuzz
@@ -457,15 +454,12 @@ else
      HARFBUZZ_CFLAGS += -qdebug=necan
    endif
 
-   ifeq ($(call isTargetOs, macosx), false)
-     LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-coretext.cc
-   endif
    # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
    LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-ft.cc
 
    HARFBUZZ_DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
-        maybe-uninitialized class-memaccess
+        maybe-uninitialized class-memaccess unused-result extra
    HARFBUZZ_DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
         undef missing-field-initializers range-loop-analysis \
@@ -475,7 +469,6 @@ else
    LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
 
 endif
-
 
 LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
     libharfbuzz \
@@ -490,6 +483,14 @@ LIBFONTMANAGER_CFLAGS += $(LIBFREETYPE_CFLAGS)
 BUILD_LIBFONTMANAGER_FONTLIB +=  $(LIBFREETYPE_LIBS)
 
 LIBFONTMANAGER_OPTIMIZATION := HIGHEST
+
+ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
+  # gcc (and to an extent clang) is particularly bad at optimizing these files,
+  # causing a massive spike in compile time. We don't care about these
+  # particular files anyway, so lower optimization level.
+  BUILD_LIBFONTMANAGER_hb-subset.cc_OPTIMIZATION := SIZE
+  BUILD_LIBFONTMANAGER_hb-subset-plan.cc_OPTIMIZATION := SIZE
+endif
 
 ifeq ($(call isTargetOs, windows), true)
   LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c \
@@ -748,7 +749,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
           maybe-uninitialized shift-negative-value implicit-fallthrough \
           unused-function, \
       DISABLED_WARNINGS_clang := incompatible-pointer-types sign-compare \
-          deprecated-declarations, \
+          deprecated-declarations null-pointer-subtraction, \
       DISABLED_WARNINGS_microsoft := 4018 4244 4267, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -840,6 +841,19 @@ endif
 
 ################################################################################
 
+# MACOSX_METAL_VERSION_MIN specifies the lowest version of Macosx
+# that should be used to compile Metal shaders. We support Metal
+# pipeline only on Macosx >=10.14. For Macosx versions <10.14 even if
+# we enable Metal pipeline using -Dsun.java2d.metal=true, at
+# runtime we force it to use OpenGL pipeline. And MACOSX_VERSION_MIN
+# for aarch64 has always been >10.14 so we use continue to use
+# MACOSX_VERSION_MIN for aarch64.
+ifeq ($(OPENJDK_TARGET_CPU_ARCH), xaarch64)
+    MACOSX_METAL_VERSION_MIN=$(MACOSX_VERSION_MIN)
+else
+    MACOSX_METAL_VERSION_MIN=10.14.0
+endif
+
 ifeq ($(call isTargetOs, macosx), true)
   SHADERS_SRC := $(TOPDIR)/src/java.desktop/macosx/native/libawt_lwawt/java2d/metal/shaders.metal
   SHADERS_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/native/java.desktop/libosxui
@@ -851,7 +865,9 @@ ifeq ($(call isTargetOs, macosx), true)
       DEPS := $(SHADERS_SRC), \
       OUTPUT_FILE := $(SHADERS_AIR), \
       SUPPORT_DIR := $(SHADERS_SUPPORT_DIR), \
-      COMMAND := $(METAL) -c -std=osx-metal2.0 -o $(SHADERS_AIR) $(SHADERS_SRC), \
+      COMMAND := $(METAL) -c -std=osx-metal2.0 \
+          -mmacosx-version-min=$(MACOSX_METAL_VERSION_MIN) \
+          -o $(SHADERS_AIR) $(SHADERS_SRC), \
   ))
 
   $(eval $(call SetupExecute, metallib_shaders, \

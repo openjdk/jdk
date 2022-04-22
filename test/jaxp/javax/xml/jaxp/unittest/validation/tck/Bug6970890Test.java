@@ -37,7 +37,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6970890
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.tck.Bug6970890Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.tck.Bug6970890Test
  * @run testng/othervm validation.tck.Bug6970890Test
  * @summary Test Schema allows [-] in regex.
  */

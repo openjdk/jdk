@@ -520,7 +520,7 @@ public class SwingUtilities2 {
                  * it to fit in the screen width. This distributes the spacing
                  * more evenly than directly laying out to the screen advances.
                  */
-                String trimmedText = trimTrailingSpaces(text);
+                String trimmedText = text.stripTrailing();
                 if (!trimmedText.isEmpty()) {
                     float screenWidth = (float) g2d.getFont().getStringBounds
                             (trimmedText, getFontRenderContext(c)).getWidth();
@@ -866,7 +866,7 @@ public class SwingUtilities2 {
                     String text = new String(data, offset, length);
                     TextLayout layout = new TextLayout(text, g2d.getFont(),
                                     deviceFontRenderContext);
-                    String trimmedText = trimTrailingSpaces(text);
+                    String trimmedText = text.stripTrailing();
                     if (!trimmedText.isEmpty()) {
                         float screenWidth = (float)g2d.getFont().
                             getStringBounds(trimmedText, frc).getWidth();
@@ -1321,14 +1321,6 @@ public class SwingUtilities2 {
         return (g instanceof PrinterGraphics || g instanceof PrintGraphics);
     }
 
-    private static String trimTrailingSpaces(String s) {
-        int i = s.length() - 1;
-        while(i >= 0 && Character.isWhitespace(s.charAt(i))) {
-            i--;
-        }
-        return s.substring(0, i + 1);
-    }
-
     private static AttributedCharacterIterator getTrimmedTrailingSpacesIterator
             (AttributedCharacterIterator iterator) {
         int curIdx = iterator.getIndex();
@@ -1486,6 +1478,7 @@ public class SwingUtilities2 {
    public static boolean canAccessSystemClipboard() {
        boolean canAccess = false;
        if (!GraphicsEnvironment.isHeadless()) {
+           @SuppressWarnings("removal")
            SecurityManager sm = System.getSecurityManager();
            if (sm == null) {
                canAccess = true;
@@ -1591,6 +1584,7 @@ public class SwingUtilities2 {
      *
      * @param modifiers a set of modifiers
      */
+    @SuppressWarnings("removal")
     public static void checkAccess(int modifiers) {
         if (System.getSecurityManager() != null
                 && !Modifier.isPublic(modifiers)) {
@@ -1616,6 +1610,7 @@ public class SwingUtilities2 {
      * details
      *
      */
+    @SuppressWarnings("removal")
     private static boolean isTrustedContext() {
         return (System.getSecurityManager() == null)
             || (AppContext.getAppContext().
@@ -1711,6 +1706,7 @@ public class SwingUtilities2 {
                                   final String imageFile,
                                   final boolean enablePrivileges) {
         return (UIDefaults.LazyValue) (table) -> {
+            @SuppressWarnings("removal")
             byte[] buffer = enablePrivileges ? AccessController.doPrivileged(
                     (PrivilegedAction<byte[]>) ()
                     -> getIconBytes(baseClass, rootClass, imageFile))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,13 @@ public class TestMissingComment extends JavadocTester {
     public void testClass(Path base) throws Exception {
         test(base.resolve("class"), """
                     // no doc comment
-                    public class C { }
+                    public class C {
+                        /** . */ C() { }
+                    }
                     """,
                 """
                     testClass/class/src/C.java:2: warning: no comment
-                    public class C { }
+                    public class C {
                            ^
                     """);
     }
@@ -65,6 +67,7 @@ public class TestMissingComment extends JavadocTester {
                     public class C {
                         // no doc comment
                         public void m() { }
+                        /** . */ C() { }
                     }
                     """,
                 """
@@ -81,6 +84,7 @@ public class TestMissingComment extends JavadocTester {
                     public class C {
                         // no doc comment
                         public int f;
+                        /** . */ C() { }
                     }
                     """,
                 """
@@ -96,12 +100,15 @@ public class TestMissingComment extends JavadocTester {
                     /** Class comment. */
                     public class C {
                         // no doc comment
-                        public class Nested { }
+                        public class Nested {
+                            /** . */ Nested() { }
+                        }
+                        /** . */ C() { }
                     }
                     """,
                 """
                     testNested/nest/src/C.java:4: warning: no comment
-                        public class Nested { }
+                        public class Nested {
                                ^
                     """);
     }
@@ -112,6 +119,7 @@ public class TestMissingComment extends JavadocTester {
 
         javadoc("-d", base.resolve("api").toString(),
                 "-Xdoclint:missing",
+                "--no-platform-links",
                 src.resolve("C.java").toString());
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true,

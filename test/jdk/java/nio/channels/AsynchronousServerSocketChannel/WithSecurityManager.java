@@ -25,8 +25,8 @@
  * @bug 4607272
  * @summary Unit test for AsynchronousServerServerSocketChannel
  * @build WithSecurityManager
- * @run main/othervm WithSecurityManager allow
- * @run main/othervm WithSecurityManager deny
+ * @run main/othervm -Djava.security.manager=allow WithSecurityManager allow
+ * @run main/othervm -Djava.security.manager=allow WithSecurityManager deny
  */
 
 import java.nio.file.Paths;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,16 +114,17 @@ final class ChannelImpl extends CardChannel {
         return responseBytes.length;
     }
 
-    private final static boolean t0GetResponse =
+    private static final boolean t0GetResponse =
         getBooleanProperty("sun.security.smartcardio.t0GetResponse", true);
 
-    private final static boolean t1GetResponse =
+    private static final boolean t1GetResponse =
         getBooleanProperty("sun.security.smartcardio.t1GetResponse", true);
 
-    private final static boolean t1StripLe =
+    private static final boolean t1StripLe =
         getBooleanProperty("sun.security.smartcardio.t1StripLe", false);
 
     private static boolean getBooleanProperty(String name, boolean def) {
+        @SuppressWarnings("removal")
         String val = AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> System.getProperty(name));
         if (val == null) {
@@ -150,8 +151,8 @@ final class ChannelImpl extends CardChannel {
         return res;
     }
 
-    private final static int RESPONSE_ITERATIONS = 256;
-    private final static byte[] B0 = new byte[0];
+    private static final int RESPONSE_ITERATIONS = 256;
+    private static final byte[] B0 = new byte[0];
 
     private byte[] doTransmit(byte[] command) throws CardException {
         // note that we modify the 'command' array in some cases, so it must

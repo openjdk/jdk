@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@
 import java.util.Set;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
-import static javax.tools.Diagnostic.Kind.*;
 
 /**
  * Verify that TypeElement for interfaces does not have Modifier.DEFAULT in getModifiers().
@@ -48,7 +47,7 @@ public class TestTypeElement extends JavacTestingAbstractProcessor {
             for (Element element : roundEnv.getRootElements()) {
                 if (element.getKind().isClass() || element.getKind().isInterface()) {
                     if (element.getModifiers().contains(Modifier.DEFAULT))
-                        messager.printMessage(ERROR, "Modifier.DEFAULT not expected on classes/interfaces");
+                        messager.printError("Modifier.DEFAULT not expected on classes/interfaces");
                 }
             }
         }

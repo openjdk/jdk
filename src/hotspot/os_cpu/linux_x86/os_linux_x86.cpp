@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@
 #include "os_share_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -344,6 +343,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   // the si_code for this condition may change in the future.
   // Furthermore, a false-positive should be harmless.
   if (UnguardOnExecutionViolation > 0 &&
+      stub == NULL &&
       (sig == SIGSEGV || sig == SIGBUS) &&
       uc->uc_mcontext.gregs[REG_TRAPNO] == trap_page_fault) {
     int page_size = os::vm_page_size();
@@ -459,11 +459,26 @@ bool os::supports_sse() {
 }
 
 juint os::cpu_microcode_revision() {
+  // Note: this code runs on startup, and therefore should not be slow,
+  // see JDK-8283200.
+
   juint result = 0;
-  char data[2048] = {0}; // lines should fit in 2K buf
-  size_t len = sizeof(data);
-  FILE *fp = fopen("/proc/cpuinfo", "r");
+
+  // Attempt 1 (faster): Read the microcode version off the sysfs.
+  FILE *fp = os::fopen("/sys/devices/system/cpu/cpu0/microcode/version", "r");
   if (fp) {
+    int read = fscanf(fp, "%x", &result);
+    fclose(fp);
+    if (read > 0) {
+      return result;
+    }
+  }
+
+  // Attempt 2 (slower): Read the microcode version off the procfs.
+  fp = os::fopen("/proc/cpuinfo", "r");
+  if (fp) {
+    char data[2048] = {0}; // lines should fit in 2K buf
+    size_t len = sizeof(data);
     while (!feof(fp)) {
       if (fgets(data, len, fp)) {
         if (strstr(data, "microcode") != NULL) {
@@ -475,6 +490,7 @@ juint os::cpu_microcode_revision() {
     }
     fclose(fp);
   }
+
   return result;
 }
 
@@ -615,7 +631,7 @@ void os::print_register_info(outputStream *st, const void *context) {
 
 void os::setup_fpu() {
 #ifndef AMD64
-  address fpu_cntrl = StubRoutines::addr_fpu_cntrl_wrd_std();
+  address fpu_cntrl = StubRoutines::x86::addr_fpu_cntrl_wrd_std();
   __asm__ volatile (  "fldcw (%0)" :
                       : "r" (fpu_cntrl) : "memory");
 #endif // !AMD64

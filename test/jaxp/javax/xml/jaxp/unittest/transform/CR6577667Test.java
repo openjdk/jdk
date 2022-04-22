@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6577667
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.CR6577667Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.CR6577667Test
  * @run testng/othervm transform.CR6577667Test
  * @summary Test XSLT can parse statement "not(preceding-sibling::* or following-sibling::*)" in stylesheet file.
  */

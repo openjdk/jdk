@@ -33,7 +33,7 @@ import java.io.IOException;
 public abstract class ParameterAnnotations extends Attribute {
 
     /** Table of parameter annotations */
-    private ParameterAnnotationEntry[] parameter_annotation_table;
+    private ParameterAnnotationEntry[] parameterAnnotationTable;
 
     /**
      * @param parameter_annotation_type the subclass type of the parameter annotation
@@ -47,24 +47,24 @@ public abstract class ParameterAnnotations extends Attribute {
         this(parameter_annotation_type, name_index, length, (ParameterAnnotationEntry[]) null,
                 constant_pool);
         final int num_parameters = input.readUnsignedByte();
-        parameter_annotation_table = new ParameterAnnotationEntry[num_parameters];
+        parameterAnnotationTable = new ParameterAnnotationEntry[num_parameters];
         for (int i = 0; i < num_parameters; i++) {
-            parameter_annotation_table[i] = new ParameterAnnotationEntry(input, constant_pool);
+            parameterAnnotationTable[i] = new ParameterAnnotationEntry(input, constant_pool);
         }
     }
 
 
     /**
-     * @param parameter_annotation_type the subclass type of the parameter annotation
-     * @param name_index Index pointing to the name <em>Code</em>
+     * @param parameterAnnotationType the subclass type of the parameter annotation
+     * @param nameIndex Index pointing to the name <em>Code</em>
      * @param length Content length in bytes
-     * @param parameter_annotation_table the actual parameter annotations
-     * @param constant_pool Array of constants
+     * @param parameterAnnotationTable the actual parameter annotations
+     * @param constantPool Array of constants
      */
-    public ParameterAnnotations(final byte parameter_annotation_type, final int name_index, final int length,
-            final ParameterAnnotationEntry[] parameter_annotation_table, final ConstantPool constant_pool) {
-        super(parameter_annotation_type, name_index, length, constant_pool);
-        this.parameter_annotation_table = parameter_annotation_table;
+    public ParameterAnnotations(final byte parameterAnnotationType, final int nameIndex, final int length,
+            final ParameterAnnotationEntry[] parameterAnnotationTable, final ConstantPool constantPool) {
+        super(parameterAnnotationType, nameIndex, length, constantPool);
+        this.parameterAnnotationTable = parameterAnnotationTable;
     }
 
 
@@ -82,10 +82,10 @@ public abstract class ParameterAnnotations extends Attribute {
 
 
     /**
-     * @param parameter_annotation_table the entries to set in this parameter annotation
+     * @param parameterAnnotationTable the entries to set in this parameter annotation
      */
-    public final void setParameterAnnotationTable(final ParameterAnnotationEntry[] parameter_annotation_table ) {
-        this.parameter_annotation_table = parameter_annotation_table;
+    public final void setParameterAnnotationTable(final ParameterAnnotationEntry[] parameterAnnotationTable ) {
+        this.parameterAnnotationTable = parameterAnnotationTable;
     }
 
 
@@ -93,7 +93,7 @@ public abstract class ParameterAnnotations extends Attribute {
      * @return the parameter annotation entry table
      */
     public final ParameterAnnotationEntry[] getParameterAnnotationTable() {
-        return parameter_annotation_table;
+        return parameterAnnotationTable;
     }
 
 
@@ -101,16 +101,16 @@ public abstract class ParameterAnnotations extends Attribute {
      * returns the array of parameter annotation entries in this parameter annotation
      */
     public ParameterAnnotationEntry[] getParameterAnnotationEntries() {
-        return parameter_annotation_table;
+        return parameterAnnotationTable;
     }
 
     @Override
     public void dump(final DataOutputStream dos) throws IOException
     {
         super.dump(dos);
-        dos.writeByte(parameter_annotation_table.length);
+        dos.writeByte(parameterAnnotationTable.length);
 
-        for (final ParameterAnnotationEntry element : parameter_annotation_table) {
+        for (final ParameterAnnotationEntry element : parameterAnnotationTable) {
             element.dump(dos);
         }
 

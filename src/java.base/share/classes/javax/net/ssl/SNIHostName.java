@@ -34,6 +34,7 @@ import java.nio.charset.CharacterCodingException;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Instances of this class represent a server name of type
@@ -297,7 +298,7 @@ public final class SNIHostName extends SNIServerName {
      * @return a {@code SNIMatcher} object for {@code SNIHostName}s
      * @throws NullPointerException if {@code regex} is
      *         {@code null}
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's
+     * @throws PatternSyntaxException if the regular expression's
      *         syntax is invalid
      */
     public static SNIMatcher createSNIMatcher(String regex) {

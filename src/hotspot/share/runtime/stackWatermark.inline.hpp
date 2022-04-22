@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 #ifndef SHARE_RUNTIME_STACKWATERMARK_INLINE_HPP
 #define SHARE_RUNTIME_STACKWATERMARK_INLINE_HPP
 
-#include "code/nmethod.hpp"
 #include "runtime/stackWatermark.hpp"
+
+#include "code/nmethod.hpp"
+#include "runtime/registerMap.hpp"
 #include "runtime/thread.hpp"
 
 static inline bool is_above_watermark(uintptr_t sp, uintptr_t watermark) {

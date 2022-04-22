@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,7 +20,6 @@
 
 package com.sun.org.apache.xpath.internal.jaxp;
 
-import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.res.XSLMessages;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
 import javax.xml.XMLConstants;
@@ -28,12 +27,17 @@ import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathFactoryConfigurationException;
 import javax.xml.xpath.XPathFunctionResolver;
 import javax.xml.xpath.XPathVariableResolver;
+import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkProperty;
 import jdk.xml.internal.JdkXmlFeatures;
+import jdk.xml.internal.XMLSecurityManager;
 
 /**
  * The XPathFactory builds XPaths.
  *
  * @author  Ramesh Mandava
+ *
+ * @LastModified: Jan 2022
  */
 public  class XPathFactoryImpl extends XPathFactory {
 
@@ -67,15 +71,23 @@ public  class XPathFactoryImpl extends XPathFactory {
         private final JdkXmlFeatures _featureManager;
 
         /**
+         * The XML security manager
+         */
+        private XMLSecurityManager _xmlSecMgr;
+
+        /**
          * javax.xml.xpath.XPathFactory implementation.
          */
+        @SuppressWarnings("removal")
         public XPathFactoryImpl() {
             if (System.getSecurityManager() != null) {
                 _isSecureMode = true;
                 _isNotSecureProcessing = false;
             }
             _featureManager = new JdkXmlFeatures(!_isNotSecureProcessing);
+            _xmlSecMgr = new XMLSecurityManager(true);
         }
+
         /**
          * <p>Is specified object model supported by this
          * <code>XPathFactory</code>?</p>
@@ -122,9 +134,8 @@ public  class XPathFactoryImpl extends XPathFactory {
          * @return New <code>XPath</code>
          */
         public javax.xml.xpath.XPath newXPath() {
-            return new com.sun.org.apache.xpath.internal.jaxp.XPathImpl(
-                    xPathVariableResolver, xPathFunctionResolver,
-                    !_isNotSecureProcessing, _featureManager );
+            return new XPathImpl(xPathVariableResolver, xPathFunctionResolver,
+                    !_isNotSecureProcessing, _featureManager, _xmlSecMgr);
         }
 
         /**
@@ -153,6 +164,7 @@ public  class XPathFactoryImpl extends XPathFactory {
          * @throws NullPointerException if <code>name</code> is
          * <code>null</code>.
          */
+        @SuppressWarnings("deprecation")
         public void setFeature(String name, boolean value)
                 throws XPathFactoryConfigurationException {
 
@@ -176,20 +188,20 @@ public  class XPathFactoryImpl extends XPathFactory {
                 _isNotSecureProcessing = !value;
                 if (value && _featureManager != null) {
                     _featureManager.setFeature(JdkXmlFeatures.XmlFeature.ENABLE_EXTENSION_FUNCTION,
-                            JdkXmlFeatures.State.FSP, false);
+                            JdkProperty.State.FSP, false);
                 }
 
                 // all done processing feature
                 return;
             }
-            if (name.equals(XalanConstants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
+            if (name.equals(JdkConstants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
                 // for compatibility, in secure mode, useServicesMechanism is determined by the constructor
                 if (_isSecureMode)
                     return;
             }
 
             if (_featureManager != null &&
-                    _featureManager.setFeature(name, JdkXmlFeatures.State.APIPROPERTY, value)) {
+                    _featureManager.setFeature(name, JdkProperty.State.APIPROPERTY, value)) {
                 return;
             }
 
@@ -305,4 +317,78 @@ public  class XPathFactoryImpl extends XPathFactory {
 
                 xPathVariableResolver = resolver;
         }
+
+    /**
+     * Sets a property for the {@code XPathFactory}. The property applies to
+     * {@code XPath} objects that the {@code XPathFactory} creates. It has no
+     * impact on {@code XPath} objects that are already created.
+     * <p>
+     * A property can either be defined in the {@code XPathFactory}, or by the
+     * underlying implementation.
+     *
+     * @param name the property name
+     * @param value the value for the property
+     *
+     * @throws IllegalArgumentException if the property name is not recognized,
+     * or the value can not be assigned
+     * @throws UnsupportedOperationException if the implementation does not
+     * support the method
+     * @throws NullPointerException if the {@code name} is {@code null}
+     */
+    public void setProperty(String name, String value) {
+        // property name cannot be null
+        if (name == null) {
+            String fmsg = XSLMessages.createXPATHMessage(
+                    XPATHErrorResources.ER_PROPERTY_NAME_NULL,
+                    new Object[] {CLASS_NAME,  value} );
+            throw new NullPointerException(fmsg);
+         }
+
+        if (_xmlSecMgr != null &&
+                _xmlSecMgr.setLimit(name, JdkProperty.State.APIPROPERTY, value)) {
+            return;
+        }
+
+        // property name not recognized
+        String fmsg = XSLMessages.createXPATHMessage(
+                XPATHErrorResources.ER_PROPERTY_UNKNOWN,
+                new Object[] {name, CLASS_NAME, value} );
+        throw new IllegalArgumentException(fmsg);
+    }
+
+    /**
+     * Returns the value of the specified property.
+     *
+     * @param name the property name
+     * @return the value of the property.
+     *
+     * @throws IllegalArgumentException if the property name is not recognized
+     * @throws UnsupportedOperationException if the implementation does not
+     * support the method
+     * @throws NullPointerException if the {@code name} is {@code null}
+     *
+     * @since 18
+     */
+    public String getProperty(String name) {
+        // property name cannot be null
+        if (name == null) {
+            String fmsg = XSLMessages.createXPATHMessage(
+                    XPATHErrorResources.ER_GETTING_NULL_PROPERTY,
+                    new Object[] {CLASS_NAME} );
+            throw new NullPointerException(fmsg);
+        }
+
+        /** Check to see if the property is managed by the security manager **/
+        String propertyValue = (_xmlSecMgr != null) ?
+                _xmlSecMgr.getLimitAsString(name) : null;
+        if (propertyValue != null) {
+            return propertyValue;
+        }
+
+        // unknown property
+        String fmsg = XSLMessages.createXPATHMessage(
+                XPATHErrorResources.ER_GETTING_UNKNOWN_PROPERTY,
+                new Object[] {name, CLASS_NAME} );
+        throw new IllegalArgumentException(fmsg);
+    }
 }

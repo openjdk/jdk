@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import jdk.internal.org.objectweb.asm.ConstantDynamic;
@@ -190,13 +191,15 @@ public abstract class Remapper {
         }
         if (value instanceof Handle) {
             Handle handle = (Handle) value;
+            boolean isFieldHandle = handle.getTag() <= Opcodes.H_PUTSTATIC;
+
             return new Handle(
                     handle.getTag(),
                     mapType(handle.getOwner()),
-                    mapMethodName(handle.getOwner(), handle.getName(), handle.getDesc()),
-                    handle.getTag() <= Opcodes.H_PUTSTATIC
-                            ? mapDesc(handle.getDesc())
-                            : mapMethodDesc(handle.getDesc()),
+                    isFieldHandle
+                            ? mapFieldName(handle.getOwner(), handle.getName(), handle.getDesc())
+                            : mapMethodName(handle.getOwner(), handle.getName(), handle.getDesc()),
+                    isFieldHandle ? mapDesc(handle.getDesc()) : mapMethodDesc(handle.getDesc()),
                     handle.isInterface());
         }
         if (value instanceof ConstantDynamic) {
@@ -264,6 +267,18 @@ public abstract class Remapper {
       */
     protected SignatureVisitor createSignatureRemapper(final SignatureVisitor signatureVisitor) {
         return new SignatureRemapper(signatureVisitor, this);
+    }
+
+    /**
+      * Maps an annotation attribute name. The default implementation of this method returns the given
+      * name, unchanged. Subclasses can override.
+      *
+      * @param descriptor the descriptor of the annotation class.
+      * @param name the name of the annotation attribute.
+      * @return the new name of the annotation attribute.
+      */
+    public String mapAnnotationAttributeName(final String descriptor, final String name) {
+        return name;
     }
 
     /**
@@ -376,3 +391,4 @@ public abstract class Remapper {
         return internalName;
     }
 }
+

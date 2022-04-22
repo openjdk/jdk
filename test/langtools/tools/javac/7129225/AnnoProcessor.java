@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ import java.util.Set;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic.Kind;
 
 @SupportedAnnotationTypes("Anno")
 public class AnnoProcessor extends JavacTestingAbstractProcessor {
@@ -36,7 +35,7 @@ public class AnnoProcessor extends JavacTestingAbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment re) {
-        messager.printMessage(Kind.NOTE, "RUNNING - lastRound = " + re.processingOver());
+        messager.printNote("RUNNING - lastRound = " + re.processingOver());
         return true;
     }
 }

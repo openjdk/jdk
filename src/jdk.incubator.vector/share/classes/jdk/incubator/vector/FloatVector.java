@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,10 @@ import java.nio.ByteOrder;
 import java.nio.ReadOnlyBufferException;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
+import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
@@ -172,6 +172,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
     final
     FloatVector uOpTemplate(VectorMask<Float> m,
                                      FUnOp f) {
+        if (m == null) {
+            return uOpTemplate(f);
+        }
         float[] vec = vec();
         float[] res = new float[length()];
         boolean[] mbits = ((AbstractMask<Float>)m).getBits();
@@ -215,6 +218,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
     FloatVector bOpTemplate(Vector<Float> o,
                                      VectorMask<Float> m,
                                      FBinOp f) {
+        if (m == null) {
+            return bOpTemplate(o, f);
+        }
         float[] res = new float[length()];
         float[] vec1 = this.vec();
         float[] vec2 = ((FloatVector)o).vec();
@@ -264,6 +270,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                      Vector<Float> o2,
                                      VectorMask<Float> m,
                                      FTriOp f) {
+        if (m == null) {
+            return tOpTemplate(o1, o2, f);
+        }
         float[] res = new float[length()];
         float[] vec1 = this.vec();
         float[] vec2 = ((FloatVector)o1).vec();
@@ -279,7 +288,22 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     /*package-private*/
     abstract
-    float rOp(float v, FBinOp f);
+    float rOp(float v, VectorMask<Float> m, FBinOp f);
+
+    @ForceInline
+    final
+    float rOpTemplate(float v, VectorMask<Float> m, FBinOp f) {
+        if (m == null) {
+            return rOpTemplate(v, f);
+        }
+        float[] vec = vec();
+        boolean[] mbits = ((AbstractMask<Float>)m).getBits();
+        for (int i = 0; i < vec.length; i++) {
+            v = mbits[i] ? f.apply(i, v, vec[i]) : v;
+        }
+        return v;
+    }
+
     @ForceInline
     final
     float rOpTemplate(float v, FBinOp f) {
@@ -379,19 +403,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return maskFactory(bits);
     }
 
-    /*package-private*/
-    @ForceInline
-    static boolean doBinTest(int cond, float a, float b) {
-        switch (cond) {
-        case BT_eq:  return a == b;
-        case BT_ne:  return a != b;
-        case BT_lt:  return a < b;
-        case BT_le:  return a <= b;
-        case BT_gt:  return a > b;
-        case BT_ge:  return a >= b;
-        }
-        throw new AssertionError(Integer.toHexString(cond));
-    }
 
     /*package-private*/
     @Override
@@ -433,8 +444,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @ForceInline
     public static FloatVector zero(VectorSpecies<Float> species) {
         FloatSpecies vsp = (FloatSpecies) species;
-        return VectorSupport.broadcastCoerced(vsp.vectorType(), float.class, species.length(),
-                        toBits(0.0f), vsp,
+        return VectorSupport.fromBitsCoerced(vsp.vectorType(), float.class, species.length(),
+                        toBits(0.0f), MODE_BROADCAST, vsp,
                         ((bits_, s_) -> s_.rvOp(i -> bits_)));
     }
 
@@ -549,65 +560,83 @@ public abstract class FloatVector extends AbstractVector<Float> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
-            if (op == SIN) {
-                return uOp((i, a) -> (float) Math.sin(a));
-            } else if (op == COS) {
-                return uOp((i, a) -> (float) Math.cos(a));
-            } else if (op == TAN) {
-                return uOp((i, a) -> (float) Math.tan(a));
-            } else if (op == ASIN) {
-                return uOp((i, a) -> (float) Math.asin(a));
-            } else if (op == ACOS) {
-                return uOp((i, a) -> (float) Math.acos(a));
-            } else if (op == ATAN) {
-                return uOp((i, a) -> (float) Math.atan(a));
-            } else if (op == EXP) {
-                return uOp((i, a) -> (float) Math.exp(a));
-            } else if (op == LOG) {
-                return uOp((i, a) -> (float) Math.log(a));
-            } else if (op == LOG10) {
-                return uOp((i, a) -> (float) Math.log10(a));
-            } else if (op == CBRT) {
-                return uOp((i, a) -> (float) Math.cbrt(a));
-            } else if (op == SINH) {
-                return uOp((i, a) -> (float) Math.sinh(a));
-            } else if (op == COSH) {
-                return uOp((i, a) -> (float) Math.cosh(a));
-            } else if (op == TANH) {
-                return uOp((i, a) -> (float) Math.tanh(a));
-            } else if (op == EXPM1) {
-                return uOp((i, a) -> (float) Math.expm1(a));
-            } else if (op == LOG1P) {
-                return uOp((i, a) -> (float) Math.log1p(a));
-            }
         }
         int opc = opCode(op);
         return VectorSupport.unaryOp(
-            opc, getClass(), float.class, length(),
-            this,
-            UN_IMPL.find(op, opc, (opc_) -> {
-              switch (opc_) {
-                case VECTOR_OP_NEG: return v0 ->
-                        v0.uOp((i, a) -> (float) -a);
-                case VECTOR_OP_ABS: return v0 ->
-                        v0.uOp((i, a) -> (float) Math.abs(a));
-                case VECTOR_OP_SQRT: return v0 ->
-                        v0.uOp((i, a) -> (float) Math.sqrt(a));
-                default: return null;
-              }}));
+            opc, getClass(), null, float.class, length(),
+            this, null,
+            UN_IMPL.find(op, opc, FloatVector::unaryOperations));
     }
-    private static final
-    ImplCache<Unary,UnaryOperator<FloatVector>> UN_IMPL
-        = new ImplCache<>(Unary.class, FloatVector.class);
 
     /**
      * {@inheritDoc} <!--workaround-->
      */
-    @ForceInline
-    public final
+    @Override
+    public abstract
     FloatVector lanewise(VectorOperators.Unary op,
-                                  VectorMask<Float> m) {
-        return blend(lanewise(op), m);
+                                  VectorMask<Float> m);
+    @ForceInline
+    final
+    FloatVector lanewiseTemplate(VectorOperators.Unary op,
+                                          Class<? extends VectorMask<Float>> maskClass,
+                                          VectorMask<Float> m) {
+        m.check(maskClass, this);
+        if (opKind(op, VO_SPECIAL)) {
+            if (op == ZOMO) {
+                return blend(broadcast(-1), compare(NE, 0, m));
+            }
+        }
+        int opc = opCode(op);
+        return VectorSupport.unaryOp(
+            opc, getClass(), maskClass, float.class, length(),
+            this, m,
+            UN_IMPL.find(op, opc, FloatVector::unaryOperations));
+    }
+
+    private static final
+    ImplCache<Unary, UnaryOperation<FloatVector, VectorMask<Float>>>
+        UN_IMPL = new ImplCache<>(Unary.class, FloatVector.class);
+
+    private static UnaryOperation<FloatVector, VectorMask<Float>> unaryOperations(int opc_) {
+        switch (opc_) {
+            case VECTOR_OP_NEG: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) -a);
+            case VECTOR_OP_ABS: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.abs(a));
+            case VECTOR_OP_SIN: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.sin(a));
+            case VECTOR_OP_COS: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.cos(a));
+            case VECTOR_OP_TAN: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.tan(a));
+            case VECTOR_OP_ASIN: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.asin(a));
+            case VECTOR_OP_ACOS: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.acos(a));
+            case VECTOR_OP_ATAN: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.atan(a));
+            case VECTOR_OP_EXP: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.exp(a));
+            case VECTOR_OP_LOG: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.log(a));
+            case VECTOR_OP_LOG10: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.log10(a));
+            case VECTOR_OP_SQRT: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.sqrt(a));
+            case VECTOR_OP_CBRT: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.cbrt(a));
+            case VECTOR_OP_SINH: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.sinh(a));
+            case VECTOR_OP_COSH: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.cosh(a));
+            case VECTOR_OP_TANH: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.tanh(a));
+            case VECTOR_OP_EXPM1: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.expm1(a));
+            case VECTOR_OP_LOG1P: return (v0, m) ->
+                    v0.uOp(m, (i, a) -> (float) Math.log1p(a));
+            default: return null;
+        }
     }
 
     // Binary lanewise support
@@ -627,6 +656,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                           Vector<Float> v) {
         FloatVector that = (FloatVector) v;
         that.check(this);
+
         if (opKind(op, VO_SPECIAL )) {
             if (op == FIRST_NONZERO) {
                 // FIXME: Support this in the JIT.
@@ -639,50 +669,76 @@ public abstract class FloatVector extends AbstractVector<Float> {
                     .lanewise(op, that.viewAsIntegralLanes())
                     .viewAsFloatingLanes();
             }
-            if (op == ATAN2) {
-                return bOp(that, (i, a, b) -> (float) Math.atan2(a, b));
-            } else if (op == POW) {
-                return bOp(that, (i, a, b) -> (float) Math.pow(a, b));
-            } else if (op == HYPOT) {
-                return bOp(that, (i, a, b) -> (float) Math.hypot(a, b));
-            }
         }
+
         int opc = opCode(op);
         return VectorSupport.binaryOp(
-            opc, getClass(), float.class, length(),
-            this, that,
-            BIN_IMPL.find(op, opc, (opc_) -> {
-              switch (opc_) {
-                case VECTOR_OP_ADD: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, b) -> (float)(a + b));
-                case VECTOR_OP_SUB: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, b) -> (float)(a - b));
-                case VECTOR_OP_MUL: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, b) -> (float)(a * b));
-                case VECTOR_OP_DIV: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, b) -> (float)(a / b));
-                case VECTOR_OP_MAX: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, b) -> (float)Math.max(a, b));
-                case VECTOR_OP_MIN: return (v0, v1) ->
-                        v0.bOp(v1, (i, a, b) -> (float)Math.min(a, b));
-                default: return null;
-                }}));
+            opc, getClass(), null, float.class, length(),
+            this, that, null,
+            BIN_IMPL.find(op, opc, FloatVector::binaryOperations));
     }
-    private static final
-    ImplCache<Binary,BinaryOperator<FloatVector>> BIN_IMPL
-        = new ImplCache<>(Binary.class, FloatVector.class);
 
     /**
      * {@inheritDoc} <!--workaround-->
      * @see #lanewise(VectorOperators.Binary,float,VectorMask)
      */
-    @ForceInline
-    public final
+    @Override
+    public abstract
     FloatVector lanewise(VectorOperators.Binary op,
                                   Vector<Float> v,
-                                  VectorMask<Float> m) {
-        return blend(lanewise(op, v), m);
+                                  VectorMask<Float> m);
+    @ForceInline
+    final
+    FloatVector lanewiseTemplate(VectorOperators.Binary op,
+                                          Class<? extends VectorMask<Float>> maskClass,
+                                          Vector<Float> v, VectorMask<Float> m) {
+        FloatVector that = (FloatVector) v;
+        that.check(this);
+        m.check(maskClass, this);
+
+        if (opKind(op, VO_SPECIAL )) {
+            if (op == FIRST_NONZERO) {
+                return blend(lanewise(op, v), m);
+            }
+        }
+
+        int opc = opCode(op);
+        return VectorSupport.binaryOp(
+            opc, getClass(), maskClass, float.class, length(),
+            this, that, m,
+            BIN_IMPL.find(op, opc, FloatVector::binaryOperations));
     }
+
+    private static final
+    ImplCache<Binary, BinaryOperation<FloatVector, VectorMask<Float>>>
+        BIN_IMPL = new ImplCache<>(Binary.class, FloatVector.class);
+
+    private static BinaryOperation<FloatVector, VectorMask<Float>> binaryOperations(int opc_) {
+        switch (opc_) {
+            case VECTOR_OP_ADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (float)(a + b));
+            case VECTOR_OP_SUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (float)(a - b));
+            case VECTOR_OP_MUL: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (float)(a * b));
+            case VECTOR_OP_DIV: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (float)(a / b));
+            case VECTOR_OP_MAX: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (float)Math.max(a, b));
+            case VECTOR_OP_MIN: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (float)Math.min(a, b));
+            case VECTOR_OP_OR: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> fromBits(toBits(a) | toBits(b)));
+            case VECTOR_OP_ATAN2: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (float) Math.atan2(a, b));
+            case VECTOR_OP_POW: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (float) Math.pow(a, b));
+            case VECTOR_OP_HYPOT: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (float) Math.hypot(a, b));
+            default: return null;
+        }
+    }
+
     // FIXME: Maybe all of the public final methods in this file (the
     // simple ones that just call lanewise) should be pushed down to
     // the X-VectorBits template.  They can't optimize properly at
@@ -739,7 +795,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     FloatVector lanewise(VectorOperators.Binary op,
                                   float e,
                                   VectorMask<Float> m) {
-        return blend(lanewise(op, e), m);
+        return lanewise(op, broadcast(e), m);
     }
 
     /**
@@ -757,8 +813,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     FloatVector lanewise(VectorOperators.Binary op,
                                   long e) {
         float e1 = (float) e;
-        if ((long)e1 != e
-            ) {
+        if ((long)e1 != e) {
             vspecies().checkValue(e);  // for exception
         }
         return lanewise(op, e1);
@@ -778,7 +833,11 @@ public abstract class FloatVector extends AbstractVector<Float> {
     public final
     FloatVector lanewise(VectorOperators.Binary op,
                                   long e, VectorMask<Float> m) {
-        return blend(lanewise(op, e), m);
+        float e1 = (float) e;
+        if ((long)e1 != e) {
+            vspecies().checkValue(e);  // for exception
+        }
+        return lanewise(op, e1, m);
     }
 
 
@@ -820,18 +879,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
         tother.check(this);
         int opc = opCode(op);
         return VectorSupport.ternaryOp(
-            opc, getClass(), float.class, length(),
-            this, that, tother,
-            TERN_IMPL.find(op, opc, (opc_) -> {
-              switch (opc_) {
-                case VECTOR_OP_FMA: return (v0, v1_, v2_) ->
-                        v0.tOp(v1_, v2_, (i, a, b, c) -> Math.fma(a, b, c));
-                default: return null;
-                }}));
+            opc, getClass(), null, float.class, length(),
+            this, that, tother, null,
+            TERN_IMPL.find(op, opc, FloatVector::ternaryOperations));
     }
-    private static final
-    ImplCache<Ternary,TernaryOperation<FloatVector>> TERN_IMPL
-        = new ImplCache<>(Ternary.class, FloatVector.class);
 
     /**
      * {@inheritDoc} <!--workaround-->
@@ -839,13 +890,45 @@ public abstract class FloatVector extends AbstractVector<Float> {
      * @see #lanewise(VectorOperators.Ternary,Vector,float,VectorMask)
      * @see #lanewise(VectorOperators.Ternary,float,Vector,VectorMask)
      */
-    @ForceInline
-    public final
+    @Override
+    public abstract
     FloatVector lanewise(VectorOperators.Ternary op,
                                   Vector<Float> v1,
                                   Vector<Float> v2,
-                                  VectorMask<Float> m) {
-        return blend(lanewise(op, v1, v2), m);
+                                  VectorMask<Float> m);
+    @ForceInline
+    final
+    FloatVector lanewiseTemplate(VectorOperators.Ternary op,
+                                          Class<? extends VectorMask<Float>> maskClass,
+                                          Vector<Float> v1,
+                                          Vector<Float> v2,
+                                          VectorMask<Float> m) {
+        FloatVector that = (FloatVector) v1;
+        FloatVector tother = (FloatVector) v2;
+        // It's a word: https://www.dictionary.com/browse/tother
+        // See also Chapter 11 of Dickens, Our Mutual Friend:
+        // "Totherest Governor," replied Mr Riderhood...
+        that.check(this);
+        tother.check(this);
+        m.check(maskClass, this);
+
+        int opc = opCode(op);
+        return VectorSupport.ternaryOp(
+            opc, getClass(), maskClass, float.class, length(),
+            this, that, tother, m,
+            TERN_IMPL.find(op, opc, FloatVector::ternaryOperations));
+    }
+
+    private static final
+    ImplCache<Ternary, TernaryOperation<FloatVector, VectorMask<Float>>>
+        TERN_IMPL = new ImplCache<>(Ternary.class, FloatVector.class);
+
+    private static TernaryOperation<FloatVector, VectorMask<Float>> ternaryOperations(int opc_) {
+        switch (opc_) {
+            case VECTOR_OP_FMA: return (v0, v1_, v2_, m) ->
+                    v0.tOp(v1_, v2_, m, (i, a, b, c) -> Math.fma(a, b, c));
+            default: return null;
+        }
     }
 
     /**
@@ -902,7 +985,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                   float e1,
                                   float e2,
                                   VectorMask<Float> m) {
-        return blend(lanewise(op, e1, e2), m);
+        return lanewise(op, broadcast(e1), broadcast(e2), m);
     }
 
     /**
@@ -960,7 +1043,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                   Vector<Float> v1,
                                   float e2,
                                   VectorMask<Float> m) {
-        return blend(lanewise(op, v1, e2), m);
+        return lanewise(op, v1, broadcast(e2), m);
     }
 
     /**
@@ -1017,7 +1100,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                   float e1,
                                   Vector<Float> v2,
                                   VectorMask<Float> m) {
-        return blend(lanewise(op, e1, v2), m);
+        return lanewise(op, broadcast(e1), v2, m);
     }
 
     // (Thus endeth the Great and Mighty Ternary Ogdoad.)
@@ -1644,7 +1727,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
             else {
                 throw new AssertionError(op);
             }
-            return maskType.cast(m.cast(this.vspecies()));
+            return maskType.cast(m.cast(vsp));
         }
         int opc = opCode(op);
         throw new AssertionError(op);
@@ -1654,11 +1737,48 @@ public abstract class FloatVector extends AbstractVector<Float> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    @ForceInline
-    public final
+    public abstract
     VectorMask<Float> test(VectorOperators.Test op,
-                                  VectorMask<Float> m) {
-        return test(op).and(m);
+                                  VectorMask<Float> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends VectorMask<Float>>
+    M testTemplate(Class<M> maskType, Test op, M mask) {
+        FloatSpecies vsp = vspecies();
+        mask.check(maskType, this);
+        if (opKind(op, VO_SPECIAL)) {
+            IntVector bits = this.viewAsIntegralLanes();
+            VectorMask<Integer> m = mask.cast(IntVector.species(shape()));
+            if (op == IS_DEFAULT) {
+                m = bits.compare(EQ, (int) 0, m);
+            } else if (op == IS_NEGATIVE) {
+                m = bits.compare(LT, (int) 0, m);
+            }
+            else if (op == IS_FINITE ||
+                     op == IS_NAN ||
+                     op == IS_INFINITE) {
+                // first kill the sign:
+                bits = bits.and(Integer.MAX_VALUE);
+                // next find the bit pattern for infinity:
+                int infbits = (int) toBits(Float.POSITIVE_INFINITY);
+                // now compare:
+                if (op == IS_FINITE) {
+                    m = bits.compare(LT, infbits, m);
+                } else if (op == IS_NAN) {
+                    m = bits.compare(GT, infbits, m);
+                } else {
+                    m = bits.compare(EQ, infbits, m);
+                }
+            }
+            else {
+                throw new AssertionError(op);
+            }
+            return maskType.cast(m.cast(vsp));
+        }
+        int opc = opCode(op);
+        throw new AssertionError(op);
     }
 
     /**
@@ -1673,15 +1793,13 @@ public abstract class FloatVector extends AbstractVector<Float> {
     final
     <M extends VectorMask<Float>>
     M compareTemplate(Class<M> maskType, Comparison op, Vector<Float> v) {
-        Objects.requireNonNull(v);
-        FloatSpecies vsp = vspecies();
         FloatVector that = (FloatVector) v;
         that.check(this);
         int opc = opCode(op);
         return VectorSupport.compare(
             opc, getClass(), maskType, float.class, length(),
-            this, that,
-            (cond, v0, v1) -> {
+            this, that, null,
+            (cond, v0, v1, m1) -> {
                 AbstractMask<Float> m
                     = v0.bTest(cond, v1, (cond_, i, a, b)
                                -> compareWithOp(cond, a, b));
@@ -1691,30 +1809,39 @@ public abstract class FloatVector extends AbstractVector<Float> {
             });
     }
 
+    /*package-private*/
     @ForceInline
-    private static
-    boolean compareWithOp(int cond, float a, float b) {
-        switch (cond) {
-        case BT_eq:  return a == b;
-        case BT_ne:  return a != b;
-        case BT_lt:  return a <  b;
-        case BT_le:  return a <= b;
-        case BT_gt:  return a >  b;
-        case BT_ge:  return a >= b;
-        }
-        throw new AssertionError();
+    final
+    <M extends VectorMask<Float>>
+    M compareTemplate(Class<M> maskType, Comparison op, Vector<Float> v, M m) {
+        FloatVector that = (FloatVector) v;
+        that.check(this);
+        m.check(maskType, this);
+        int opc = opCode(op);
+        return VectorSupport.compare(
+            opc, getClass(), maskType, float.class, length(),
+            this, that, m,
+            (cond, v0, v1, m1) -> {
+                AbstractMask<Float> cmpM
+                    = v0.bTest(cond, v1, (cond_, i, a, b)
+                               -> compareWithOp(cond, a, b));
+                @SuppressWarnings("unchecked")
+                M m2 = (M) cmpM.and(m1);
+                return m2;
+            });
     }
 
-    /**
-     * {@inheritDoc} <!--workaround-->
-     */
-    @Override
     @ForceInline
-    public final
-    VectorMask<Float> compare(VectorOperators.Comparison op,
-                                  Vector<Float> v,
-                                  VectorMask<Float> m) {
-        return compare(op, v).and(m);
+    private static boolean compareWithOp(int cond, float a, float b) {
+        return switch (cond) {
+            case BT_eq -> a == b;
+            case BT_ne -> a != b;
+            case BT_lt -> a < b;
+            case BT_le -> a <= b;
+            case BT_gt -> a > b;
+            case BT_ge -> a >= b;
+            default -> throw new AssertionError();
+        };
     }
 
     /**
@@ -1775,7 +1902,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     public final VectorMask<Float> compare(VectorOperators.Comparison op,
                                                float e,
                                                VectorMask<Float> m) {
-        return compare(op, e).and(m);
+        return compare(op, broadcast(e), m);
     }
 
     /**
@@ -1906,14 +2033,11 @@ public abstract class FloatVector extends AbstractVector<Float> {
     FloatVector sliceTemplate(int origin, Vector<Float> v1) {
         FloatVector that = (FloatVector) v1;
         that.check(this);
-        float[] a0 = this.vec();
-        float[] a1 = that.vec();
-        float[] res = new float[a0.length];
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        System.arraycopy(a0, origin, res, 0, firstPart);
-        System.arraycopy(a1, 0, res, firstPart, origin);
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Float> iota = iotaShuffle();
+        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((float)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
     /**
@@ -1935,6 +2059,17 @@ public abstract class FloatVector extends AbstractVector<Float> {
     public abstract
     FloatVector slice(int origin);
 
+    /*package-private*/
+    final
+    @ForceInline
+    FloatVector sliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Float> iota = iotaShuffle();
+        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((float)(length() - origin))));
+        iota = iotaShuffle(origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
+
     /**
      * {@inheritDoc} <!--workaround-->
      */
@@ -1949,21 +2084,12 @@ public abstract class FloatVector extends AbstractVector<Float> {
     unsliceTemplate(int origin, Vector<Float> w, int part) {
         FloatVector that = (FloatVector) w;
         that.check(this);
-        float[] slice = this.vec();
-        float[] res = that.vec().clone();
-        int vlen = res.length;
-        int firstPart = vlen - origin;
-        switch (part) {
-        case 0:
-            System.arraycopy(slice, 0, res, origin, firstPart);
-            break;
-        case 1:
-            System.arraycopy(slice, firstPart, res, 0, origin);
-            break;
-        default:
-            throw wrongPartForSlice(part);
-        }
-        return vectorFactory(res);
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Float> iota = iotaShuffle();
+        VectorMask<Float> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
+                                                                  (broadcast((float)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return that.blend(this.rearrange(iota), blendMask);
     }
 
     /*package-private*/
@@ -1993,6 +2119,19 @@ public abstract class FloatVector extends AbstractVector<Float> {
     public abstract
     FloatVector unslice(int origin);
 
+    /*package-private*/
+    final
+    @ForceInline
+    FloatVector
+    unsliceTemplate(int origin) {
+        Objects.checkIndex(origin, length() + 1);
+        VectorShuffle<Float> iota = iotaShuffle();
+        VectorMask<Float> blendMask = iota.toVector().compare(VectorOperators.GE,
+                                                                  (broadcast((float)(origin))));
+        iota = iotaShuffle(-origin, 1, true);
+        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+    }
+
     private ArrayIndexOutOfBoundsException
     wrongPartForSlice(int part) {
         String msg = String.format("bad part number %d for slice operation",
@@ -2014,9 +2153,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
     FloatVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
         shuffle.checkIndexes();
         return VectorSupport.rearrangeOp(
-            getClass(), shuffletype, float.class, length(),
-            this, shuffle,
-            (v1, s_) -> v1.uOp((i, a) -> {
+            getClass(), shuffletype, null, float.class, length(),
+            this, shuffle, null,
+            (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = s_.laneSource(i);
                 return v1.lane(ei);
             }));
@@ -2033,24 +2172,25 @@ public abstract class FloatVector extends AbstractVector<Float> {
     /*package-private*/
     @ForceInline
     final
-    <S extends VectorShuffle<Float>>
+    <S extends VectorShuffle<Float>, M extends VectorMask<Float>>
     FloatVector rearrangeTemplate(Class<S> shuffletype,
+                                           Class<M> masktype,
                                            S shuffle,
-                                           VectorMask<Float> m) {
-        FloatVector unmasked =
-            VectorSupport.rearrangeOp(
-                getClass(), shuffletype, float.class, length(),
-                this, shuffle,
-                (v1, s_) -> v1.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
-                    return ei < 0 ? 0 : v1.lane(ei);
-                }));
+                                           M m) {
+
+        m.check(masktype, this);
         VectorMask<Float> valid = shuffle.laneIsValid();
         if (m.andNot(valid).anyTrue()) {
             shuffle.checkIndexes();
             throw new AssertionError();
         }
-        return broadcast((float)0).blend(unmasked, m);
+        return VectorSupport.rearrangeOp(
+                   getClass(), shuffletype, masktype, float.class, length(),
+                   this, shuffle, m,
+                   (v1, s_, m_) -> v1.uOp((i, a) -> {
+                        int ei = s_.laneSource(i);
+                        return ei < 0  || !m_.laneIsSet(i) ? 0 : v1.lane(ei);
+                   }));
     }
 
     /**
@@ -2073,21 +2213,44 @@ public abstract class FloatVector extends AbstractVector<Float> {
         S ws = (S) shuffle.wrapIndexes();
         FloatVector r0 =
             VectorSupport.rearrangeOp(
-                getClass(), shuffletype, float.class, length(),
-                this, ws,
-                (v0, s_) -> v0.uOp((i, a) -> {
+                getClass(), shuffletype, null, float.class, length(),
+                this, ws, null,
+                (v0, s_, m_) -> v0.uOp((i, a) -> {
                     int ei = s_.laneSource(i);
                     return v0.lane(ei);
                 }));
         FloatVector r1 =
             VectorSupport.rearrangeOp(
-                getClass(), shuffletype, float.class, length(),
-                v, ws,
-                (v1, s_) -> v1.uOp((i, a) -> {
+                getClass(), shuffletype, null, float.class, length(),
+                v, ws, null,
+                (v1, s_, m_) -> v1.uOp((i, a) -> {
                     int ei = s_.laneSource(i);
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
+    }
+
+    @ForceInline
+    private final
+    VectorShuffle<Float> toShuffle0(FloatSpecies dsp) {
+        float[] a = toArray();
+        int[] sa = new int[a.length];
+        for (int i = 0; i < a.length; i++) {
+            sa[i] = (int) a[i];
+        }
+        return VectorShuffle.fromArray(dsp, sa, 0);
+    }
+
+    /*package-private*/
+    @ForceInline
+    final
+    VectorShuffle<Float> toShuffleTemplate(Class<?> shuffleType) {
+        FloatSpecies vsp = vspecies();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), float.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     FloatVector::toShuffle0);
     }
 
     /**
@@ -2309,9 +2472,19 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @ForceInline
     final
     float reduceLanesTemplate(VectorOperators.Associative op,
+                               Class<? extends VectorMask<Float>> maskClass,
                                VectorMask<Float> m) {
-        FloatVector v = reduceIdentityVector(op).blend(this, m);
-        return v.reduceLanesTemplate(op);
+        m.check(maskClass, this);
+        if (op == FIRST_NONZERO) {
+            // FIXME:  The JIT should handle this.
+            FloatVector v = broadcast((float) 0).blend(this, m);
+            return v.reduceLanesTemplate(op);
+        }
+        int opc = opCode(op);
+        return fromBits(VectorSupport.reductionCoerced(
+            opc, getClass(), maskClass, float.class, length(),
+            this, m,
+            REDUCE_IMPL.find(op, opc, FloatVector::reductionOperations)));
     }
 
     /*package-private*/
@@ -2319,55 +2492,36 @@ public abstract class FloatVector extends AbstractVector<Float> {
     final
     float reduceLanesTemplate(VectorOperators.Associative op) {
         if (op == FIRST_NONZERO) {
-            // FIXME:  The JIT should handle this, and other scan ops alos.
+            // FIXME:  The JIT should handle this.
             VectorMask<Integer> thisNZ
                 = this.viewAsIntegralLanes().compare(NE, (int) 0);
-            return this.lane(thisNZ.firstTrue());
+            int ft = thisNZ.firstTrue();
+            return ft < length() ? this.lane(ft) : (float) 0;
         }
         int opc = opCode(op);
         return fromBits(VectorSupport.reductionCoerced(
-            opc, getClass(), float.class, length(),
-            this,
-            REDUCE_IMPL.find(op, opc, (opc_) -> {
-              switch (opc_) {
-              case VECTOR_OP_ADD: return v ->
-                      toBits(v.rOp((float)0, (i, a, b) -> (float)(a + b)));
-              case VECTOR_OP_MUL: return v ->
-                      toBits(v.rOp((float)1, (i, a, b) -> (float)(a * b)));
-              case VECTOR_OP_MIN: return v ->
-                      toBits(v.rOp(MAX_OR_INF, (i, a, b) -> (float) Math.min(a, b)));
-              case VECTOR_OP_MAX: return v ->
-                      toBits(v.rOp(MIN_OR_INF, (i, a, b) -> (float) Math.max(a, b)));
-              default: return null;
-              }})));
+            opc, getClass(), null, float.class, length(),
+            this, null,
+            REDUCE_IMPL.find(op, opc, FloatVector::reductionOperations)));
     }
-    private static final
-    ImplCache<Associative,Function<FloatVector,Long>> REDUCE_IMPL
-        = new ImplCache<>(Associative.class, FloatVector.class);
 
-    private
-    @ForceInline
-    FloatVector reduceIdentityVector(VectorOperators.Associative op) {
-        int opc = opCode(op);
-        UnaryOperator<FloatVector> fn
-            = REDUCE_ID_IMPL.find(op, opc, (opc_) -> {
-                switch (opc_) {
-                case VECTOR_OP_ADD:
-                    return v -> v.broadcast(0);
-                case VECTOR_OP_MUL:
-                    return v -> v.broadcast(1);
-                case VECTOR_OP_MIN:
-                    return v -> v.broadcast(MAX_OR_INF);
-                case VECTOR_OP_MAX:
-                    return v -> v.broadcast(MIN_OR_INF);
-                default: return null;
-                }
-            });
-        return fn.apply(this);
-    }
     private static final
-    ImplCache<Associative,UnaryOperator<FloatVector>> REDUCE_ID_IMPL
-        = new ImplCache<>(Associative.class, FloatVector.class);
+    ImplCache<Associative, ReductionOperation<FloatVector, VectorMask<Float>>>
+        REDUCE_IMPL = new ImplCache<>(Associative.class, FloatVector.class);
+
+    private static ReductionOperation<FloatVector, VectorMask<Float>> reductionOperations(int opc_) {
+        switch (opc_) {
+            case VECTOR_OP_ADD: return (v, m) ->
+                    toBits(v.rOp((float)0, m, (i, a, b) -> (float)(a + b)));
+            case VECTOR_OP_MUL: return (v, m) ->
+                    toBits(v.rOp((float)1, m, (i, a, b) -> (float)(a * b)));
+            case VECTOR_OP_MIN: return (v, m) ->
+                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (float) Math.min(a, b)));
+            case VECTOR_OP_MAX: return (v, m) ->
+                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (float) Math.max(a, b)));
+            default: return null;
+        }
+    }
 
     private static final float MIN_OR_INF = Float.NEGATIVE_INFINITY;
     private static final float MAX_OR_INF = Float.POSITIVE_INFINITY;
@@ -2553,9 +2707,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                        VectorMask<Float> m) {
         FloatSpecies vsp = (FloatSpecies) species;
         if (offset >= 0 && offset <= (a.length - species.vectorByteSize())) {
-            FloatVector zero = vsp.zero();
-            FloatVector v = zero.fromByteArray0(a, offset);
-            return zero.blend(v.maybeSwap(bo), m);
+            return vsp.dummyVector().fromByteArray0(a, offset, m).maybeSwap(bo);
         }
 
         // FIXME: optimize
@@ -2617,8 +2769,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                    VectorMask<Float> m) {
         FloatSpecies vsp = (FloatSpecies) species;
         if (offset >= 0 && offset <= (a.length - species.length())) {
-            FloatVector zero = vsp.zero();
-            return zero.blend(zero.fromArray0(a, offset), m);
+            return vsp.dummyVector().fromArray0(a, offset, m);
         }
 
         // FIXME: optimize
@@ -2676,13 +2827,13 @@ public abstract class FloatVector extends AbstractVector<Float> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         return VectorSupport.loadWithMap(
-            vectorType, float.class, vsp.laneCount(),
-            IntVector.species(vsp.indexShape()).vectorType(),
-            a, ARRAY_BASE, vix,
+            vectorType, null, float.class, vsp.laneCount(),
+            isp.vectorType(),
+            a, ARRAY_BASE, vix, null,
             a, offset, indexMap, mapOffset, vsp,
-            (float[] c, int idx, int[] iMap, int idy, FloatSpecies s) ->
+            (c, idx, iMap, idy, s, vm) ->
             s.vOp(n -> c[idx + iMap[idy+n]]));
-        }
+    }
 
     /**
      * Gathers a new vector composed of elements from an array of type
@@ -2730,11 +2881,12 @@ public abstract class FloatVector extends AbstractVector<Float> {
             return fromArray(species, a, offset, indexMap, mapOffset);
         }
         else {
-            // FIXME: Cannot vectorize yet, if there's a mask.
             FloatSpecies vsp = (FloatSpecies) species;
-            return vsp.vOp(m, n -> a[offset + indexMap[mapOffset + n]]);
+            return vsp.dummyVector().fromArray0(a, offset, indexMap, mapOffset, m);
         }
     }
+
+
 
     /**
      * Loads a vector from a {@linkplain ByteBuffer byte buffer}
@@ -2824,9 +2976,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                         VectorMask<Float> m) {
         FloatSpecies vsp = (FloatSpecies) species;
         if (offset >= 0 && offset <= (bb.limit() - species.vectorByteSize())) {
-            FloatVector zero = vsp.zero();
-            FloatVector v = zero.fromByteBuffer0(bb, offset);
-            return zero.blend(v.maybeSwap(bo), m);
+            return vsp.dummyVector().fromByteBuffer0(bb, offset, m).maybeSwap(bo);
         }
 
         // FIXME: optimize
@@ -2868,7 +3018,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     }
 
     /**
-     * Stores this vector into an array of {@code float}
+     * Stores this vector into an array of type {@code float[]}
      * starting at offset and using a mask.
      * <p>
      * For each vector lane, where {@code N} is the vector lane index,
@@ -2898,10 +3048,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
         if (m.allTrue()) {
             intoArray(a, offset);
         } else {
-            // FIXME: optimize
             FloatSpecies vsp = vspecies();
             checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
-            stOp(a, offset, m, (arr, off, i, v) -> arr[off+i] = v);
+            intoArray0(a, offset, m);
         }
     }
 
@@ -2945,12 +3094,12 @@ public abstract class FloatVector extends AbstractVector<Float> {
         vix = VectorIntrinsics.checkIndex(vix, a.length);
 
         VectorSupport.storeWithMap(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+            vsp.vectorType(), null, vsp.elementType(), vsp.laneCount(),
             isp.vectorType(),
             a, arrayAddress(a, 0), vix,
-            this,
+            this, null,
             a, offset, indexMap, mapOffset,
-            (arr, off, v, map, mo)
+            (arr, off, v, map, mo, vm)
             -> v.stOp(arr, off,
                       (arr_, off_, i, e) -> {
                           int j = map[mo + i];
@@ -2997,14 +3146,11 @@ public abstract class FloatVector extends AbstractVector<Float> {
             intoArray(a, offset, indexMap, mapOffset);
         }
         else {
-            // FIXME: Cannot vectorize yet, if there's a mask.
-            stOp(a, offset, m,
-                 (arr, off, i, e) -> {
-                     int j = indexMap[mapOffset + i];
-                     arr[off + j] = e;
-                 });
+            intoArray0(a, offset, indexMap, mapOffset, m);
         }
     }
+
+
 
     /**
      * {@inheritDoc} <!--workaround-->
@@ -3030,12 +3176,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
         if (m.allTrue()) {
             intoByteArray(a, offset, bo);
         } else {
-            // FIXME: optimize
             FloatSpecies vsp = vspecies();
             checkMaskFromIndexSize(offset, vsp, m, 4, a.length);
-            ByteBuffer wb = wrapper(a, bo);
-            this.stOp(wb, offset, m,
-                    (wb_, o, i, e) -> wb_.putFloat(o + i * 4, e));
+            maybeSwap(bo).intoByteArray0(a, offset, m);
         }
     }
 
@@ -3047,7 +3190,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     public final
     void intoByteBuffer(ByteBuffer bb, int offset,
                         ByteOrder bo) {
-        if (bb.isReadOnly()) {
+        if (ScopedMemoryAccess.isReadOnly(bb)) {
             throw new ReadOnlyBufferException();
         }
         offset = checkFromIndexSize(offset, byteSize(), bb.limit());
@@ -3066,15 +3209,12 @@ public abstract class FloatVector extends AbstractVector<Float> {
         if (m.allTrue()) {
             intoByteBuffer(bb, offset, bo);
         } else {
-            // FIXME: optimize
             if (bb.isReadOnly()) {
                 throw new ReadOnlyBufferException();
             }
             FloatSpecies vsp = vspecies();
             checkMaskFromIndexSize(offset, vsp, m, 4, bb.limit());
-            ByteBuffer wb = wrapper(bb, bo);
-            this.stOp(wb, offset, m,
-                    (wb_, o, i, e) -> wb_.putFloat(o + i * 4, e));
+            maybeSwap(bo).intoByteBuffer0(bb, offset, m);
         }
     }
 
@@ -3112,6 +3252,59 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                     (arr_, off_, i) -> arr_[off_ + i]));
     }
 
+    /*package-private*/
+    abstract
+    FloatVector fromArray0(float[] a, int offset, VectorMask<Float> m);
+    @ForceInline
+    final
+    <M extends VectorMask<Float>>
+    FloatVector fromArray0Template(Class<M> maskClass, float[] a, int offset, M m) {
+        m.check(species());
+        FloatSpecies vsp = vspecies();
+        return VectorSupport.loadMasked(
+            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            a, arrayAddress(a, offset), m,
+            a, offset, vsp,
+            (arr, off, s, vm) -> s.ldOp(arr, off, vm,
+                                        (arr_, off_, i) -> arr_[off_ + i]));
+    }
+
+    /*package-private*/
+    abstract
+    FloatVector fromArray0(float[] a, int offset,
+                                    int[] indexMap, int mapOffset,
+                                    VectorMask<Float> m);
+    @ForceInline
+    final
+    <M extends VectorMask<Float>>
+    FloatVector fromArray0Template(Class<M> maskClass, float[] a, int offset,
+                                            int[] indexMap, int mapOffset, M m) {
+        FloatSpecies vsp = vspecies();
+        IntVector.IntSpecies isp = IntVector.species(vsp.indexShape());
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(indexMap);
+        m.check(vsp);
+        Class<? extends FloatVector> vectorType = vsp.vectorType();
+
+        // Index vector: vix[0:n] = k -> offset + indexMap[mapOffset + k]
+        IntVector vix = IntVector
+            .fromArray(isp, indexMap, mapOffset)
+            .add(offset);
+
+        // FIXME: Check index under mask controlling.
+        vix = VectorIntrinsics.checkIndex(vix, a.length);
+
+        return VectorSupport.loadWithMap(
+            vectorType, maskClass, float.class, vsp.laneCount(),
+            isp.vectorType(),
+            a, ARRAY_BASE, vix, m,
+            a, offset, indexMap, mapOffset, vsp,
+            (c, idx, iMap, idy, s, vm) ->
+            s.vOp(vm, n -> c[idx + iMap[idy+n]]));
+    }
+
+
+
     @Override
     abstract
     FloatVector fromByteArray0(byte[] a, int offset);
@@ -3131,20 +3324,56 @@ public abstract class FloatVector extends AbstractVector<Float> {
     }
 
     abstract
+    FloatVector fromByteArray0(byte[] a, int offset, VectorMask<Float> m);
+    @ForceInline
+    final
+    <M extends VectorMask<Float>>
+    FloatVector fromByteArray0Template(Class<M> maskClass, byte[] a, int offset, M m) {
+        FloatSpecies vsp = vspecies();
+        m.check(vsp);
+        return VectorSupport.loadMasked(
+            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            a, byteArrayAddress(a, offset), m,
+            a, offset, vsp,
+            (arr, off, s, vm) -> {
+                ByteBuffer wb = wrapper(arr, NATIVE_ENDIAN);
+                return s.ldOp(wb, off, vm,
+                        (wb_, o, i) -> wb_.getFloat(o + i * 4));
+            });
+    }
+
+    abstract
     FloatVector fromByteBuffer0(ByteBuffer bb, int offset);
     @ForceInline
     final
     FloatVector fromByteBuffer0Template(ByteBuffer bb, int offset) {
         FloatSpecies vsp = vspecies();
-        return VectorSupport.load(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            bb, offset, vsp,
-            (buf, off, s) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                return s.ldOp(wb, off,
-                        (wb_, o, i) -> wb_.getFloat(o + i * 4));
-           });
+        return ScopedMemoryAccess.loadFromByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                bb, offset, vsp,
+                (buf, off, s) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    return s.ldOp(wb, off,
+                            (wb_, o, i) -> wb_.getFloat(o + i * 4));
+                });
+    }
+
+    abstract
+    FloatVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Float> m);
+    @ForceInline
+    final
+    <M extends VectorMask<Float>>
+    FloatVector fromByteBuffer0Template(Class<M> maskClass, ByteBuffer bb, int offset, M m) {
+        FloatSpecies vsp = vspecies();
+        m.check(vsp);
+        return ScopedMemoryAccess.loadFromByteBufferMasked(
+                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+                bb, offset, m, vsp,
+                (buf, off, s, vm) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    return s.ldOp(wb, off, vm,
+                            (wb_, o, i) -> wb_.getFloat(o + i * 4));
+                });
     }
 
     // Unchecked storing operations in native byte order.
@@ -3167,6 +3396,58 @@ public abstract class FloatVector extends AbstractVector<Float> {
     }
 
     abstract
+    void intoArray0(float[] a, int offset, VectorMask<Float> m);
+    @ForceInline
+    final
+    <M extends VectorMask<Float>>
+    void intoArray0Template(Class<M> maskClass, float[] a, int offset, M m) {
+        m.check(species());
+        FloatSpecies vsp = vspecies();
+        VectorSupport.storeMasked(
+            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            a, arrayAddress(a, offset),
+            this, m, a, offset,
+            (arr, off, v, vm)
+            -> v.stOp(arr, off, vm,
+                      (arr_, off_, i, e) -> arr_[off_ + i] = e));
+    }
+
+    abstract
+    void intoArray0(float[] a, int offset,
+                    int[] indexMap, int mapOffset,
+                    VectorMask<Float> m);
+    @ForceInline
+    final
+    <M extends VectorMask<Float>>
+    void intoArray0Template(Class<M> maskClass, float[] a, int offset,
+                            int[] indexMap, int mapOffset, M m) {
+        m.check(species());
+        FloatSpecies vsp = vspecies();
+        IntVector.IntSpecies isp = IntVector.species(vsp.indexShape());
+        // Index vector: vix[0:n] = i -> offset + indexMap[mo + i]
+        IntVector vix = IntVector
+            .fromArray(isp, indexMap, mapOffset)
+            .add(offset);
+
+        // FIXME: Check index under mask controlling.
+        vix = VectorIntrinsics.checkIndex(vix, a.length);
+
+        VectorSupport.storeWithMap(
+            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            isp.vectorType(),
+            a, arrayAddress(a, 0), vix,
+            this, m,
+            a, offset, indexMap, mapOffset,
+            (arr, off, v, map, mo, vm)
+            -> v.stOp(arr, off, vm,
+                      (arr_, off_, i, e) -> {
+                          int j = map[mo + i];
+                          arr[off + j] = e;
+                      }));
+    }
+
+
+    abstract
     void intoByteArray0(byte[] a, int offset);
     @ForceInline
     final
@@ -3183,20 +3464,57 @@ public abstract class FloatVector extends AbstractVector<Float> {
             });
     }
 
+    abstract
+    void intoByteArray0(byte[] a, int offset, VectorMask<Float> m);
+    @ForceInline
+    final
+    <M extends VectorMask<Float>>
+    void intoByteArray0Template(Class<M> maskClass, byte[] a, int offset, M m) {
+        FloatSpecies vsp = vspecies();
+        m.check(vsp);
+        VectorSupport.storeMasked(
+            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            a, byteArrayAddress(a, offset),
+            this, m, a, offset,
+            (arr, off, v, vm) -> {
+                ByteBuffer wb = wrapper(arr, NATIVE_ENDIAN);
+                v.stOp(wb, off, vm,
+                        (tb_, o, i, e) -> tb_.putFloat(o + i * 4, e));
+            });
+    }
+
     @ForceInline
     final
     void intoByteBuffer0(ByteBuffer bb, int offset) {
         FloatSpecies vsp = vspecies();
-        VectorSupport.store(
-            vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            bufferBase(bb), bufferAddress(bb, offset),
-            this, bb, offset,
-            (buf, off, v) -> {
-                ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
-                v.stOp(wb, off,
-                        (wb_, o, i, e) -> wb_.putFloat(o + i * 4, e));
-            });
+        ScopedMemoryAccess.storeIntoByteBuffer(
+                vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
+                this, bb, offset,
+                (buf, off, v) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    v.stOp(wb, off,
+                            (wb_, o, i, e) -> wb_.putFloat(o + i * 4, e));
+                });
     }
+
+    abstract
+    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Float> m);
+    @ForceInline
+    final
+    <M extends VectorMask<Float>>
+    void intoByteBuffer0Template(Class<M> maskClass, ByteBuffer bb, int offset, M m) {
+        FloatSpecies vsp = vspecies();
+        m.check(vsp);
+        ScopedMemoryAccess.storeIntoByteBufferMasked(
+                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+                this, m, bb, offset,
+                (buf, off, v, vm) -> {
+                    ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
+                    v.stOp(wb, off, vm,
+                            (wb_, o, i, e) -> wb_.putFloat(o + i * 4, e));
+                });
+    }
+
 
     // End of low-level memory operations.
 
@@ -3246,6 +3564,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
     static long arrayAddress(float[] a, int index) {
         return ARRAY_BASE + (((long)index) << ARRAY_SHIFT);
     }
+
+
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {
@@ -3399,9 +3719,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
         @ForceInline
         final FloatVector broadcastBits(long bits) {
             return (FloatVector)
-                VectorSupport.broadcastCoerced(
+                VectorSupport.fromBitsCoerced(
                     vectorType, float.class, laneCount,
-                    bits, this,
+                    bits, MODE_BROADCAST, this,
                     (bits_, s_) -> s_.rvOp(i -> bits_));
         }
 
@@ -3513,7 +3833,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         /*package-private*/
         @ForceInline
         <M> FloatVector ldOp(M memory, int offset,
-                                      AbstractMask<Float> m,
+                                      VectorMask<Float> m,
                                       FLdOp<M> f) {
             return dummyVector().ldOp(memory, offset, m, f);
         }
@@ -3593,12 +3913,12 @@ public abstract class FloatVector extends AbstractVector<Float> {
      */
     static FloatSpecies species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s) {
-            case S_64_BIT: return (FloatSpecies) SPECIES_64;
-            case S_128_BIT: return (FloatSpecies) SPECIES_128;
-            case S_256_BIT: return (FloatSpecies) SPECIES_256;
-            case S_512_BIT: return (FloatSpecies) SPECIES_512;
-            case S_Max_BIT: return (FloatSpecies) SPECIES_MAX;
+        switch (s.switchKey) {
+            case VectorShape.SK_64_BIT: return (FloatSpecies) SPECIES_64;
+            case VectorShape.SK_128_BIT: return (FloatSpecies) SPECIES_128;
+            case VectorShape.SK_256_BIT: return (FloatSpecies) SPECIES_256;
+            case VectorShape.SK_512_BIT: return (FloatSpecies) SPECIES_512;
+            case VectorShape.SK_Max_BIT: return (FloatSpecies) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }

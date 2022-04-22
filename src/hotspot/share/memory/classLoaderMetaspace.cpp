@@ -81,8 +81,6 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
 }
 
 ClassLoaderMetaspace::~ClassLoaderMetaspace() {
-  Metaspace::assert_not_frozen();
-
   UL(debug, "dies.");
 
   delete _non_class_space_arena;
@@ -92,7 +90,6 @@ ClassLoaderMetaspace::~ClassLoaderMetaspace() {
 
 // Allocate word_size words from Metaspace.
 MetaWord* ClassLoaderMetaspace::allocate(size_t word_size, Metaspace::MetadataType mdType) {
-  Metaspace::assert_not_frozen();
   if (Metaspace::is_class_space_allocation(mdType)) {
     return class_space_arena()->allocate(word_size);
   } else {
@@ -103,7 +100,6 @@ MetaWord* ClassLoaderMetaspace::allocate(size_t word_size, Metaspace::MetadataTy
 // Attempt to expand the GC threshold to be good for at least another word_size words
 // and allocate. Returns NULL if failure. Used during Metaspace GC.
 MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace::MetadataType mdType) {
-  Metaspace::assert_not_frozen();
   size_t delta_bytes = MetaspaceGC::delta_capacity_until_GC(word_size * BytesPerWord);
   assert(delta_bytes > 0, "Must be");
 
@@ -135,7 +131,6 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
 // Prematurely returns a metaspace allocation to the _block_freelists
 // because it is not needed anymore.
 void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
-  Metaspace::assert_not_frozen();
   if (Metaspace::using_class_space() && is_class) {
     class_space_arena()->deallocate(ptr, word_size);
   } else {

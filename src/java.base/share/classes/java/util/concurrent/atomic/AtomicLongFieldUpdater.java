@@ -40,7 +40,6 @@ import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Objects;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongUnaryOperator;
 import jdk.internal.misc.Unsafe;
@@ -385,6 +384,7 @@ public abstract class AtomicLongFieldUpdater<T> {
         /** class holding the field */
         private final Class<T> tclass;
 
+        @SuppressWarnings("removal")
         CASUpdater(final Class<T> tclass, final String fieldName,
                    final Class<?> caller) {
             final Field field;
@@ -526,6 +526,7 @@ public abstract class AtomicLongFieldUpdater<T> {
         /** class holding the field */
         private final Class<T> tclass;
 
+        @SuppressWarnings("removal")
         LockedUpdater(final Class<T> tclass, final String fieldName,
                       final Class<?> caller) {
             final Field field;
@@ -656,6 +657,6 @@ public abstract class AtomicLongFieldUpdater<T> {
      */
     static boolean isSamePackage(Class<?> class1, Class<?> class2) {
         return class1.getClassLoader() == class2.getClassLoader()
-               && Objects.equals(class1.getPackageName(), class2.getPackageName());
+               && class1.getPackageName() == class2.getPackageName();
     }
 }

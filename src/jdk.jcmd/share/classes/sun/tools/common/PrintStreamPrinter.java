@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.Arrays;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * A helper class which prints the content of input streams to print streams.
  */
@@ -47,7 +49,7 @@ public class PrintStreamPrinter {
         long result = 0;
 
         try (BufferedInputStream bis = new BufferedInputStream(is);
-             InputStreamReader isr = new InputStreamReader(bis, "UTF-8")) {
+             InputStreamReader isr = new InputStreamReader(bis, UTF_8)) {
             char c[] = new char[256];
             int n;
 

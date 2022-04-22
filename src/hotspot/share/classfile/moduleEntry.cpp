@@ -24,15 +24,15 @@
 
 #include "precompiled.hpp"
 #include "jni.h"
+#include "cds/archiveBuilder.hpp"
+#include "cds/archiveUtils.hpp"
+#include "cds/filemap.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "logging/log.hpp"
-#include "memory/archiveBuilder.hpp"
-#include "memory/archiveUtils.hpp"
-#include "memory/filemap.hpp"
-#include "memory/heapShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -372,8 +372,6 @@ void ModuleEntry::set_loader_data(ClassLoaderData* cld) {
 typedef ResourceHashtable<
   const ModuleEntry*,
   ModuleEntry*,
-  primitive_hash<const ModuleEntry*>,
-  primitive_equals<const ModuleEntry*>,
   557, // prime number
   ResourceObj::C_HEAP> ArchivedModuleEntries;
 static ArchivedModuleEntries* _archive_modules_entries = NULL;

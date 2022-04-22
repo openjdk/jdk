@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Implementation of InterpreterMacroAssembler.
@@ -225,7 +226,7 @@ void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, Register byt
     address *sfpt_tbl = Interpreter::safept_table(state);
     if (table != sfpt_tbl) {
       Label dispatch;
-      ld(R0, in_bytes(Thread::polling_word_offset()), R16_thread);
+      ld(R0, in_bytes(JavaThread::polling_word_offset()), R16_thread);
       // Armed page has poll_bit set, if poll bit is cleared just continue.
       andi_(R0, R0, SafepointMechanism::poll_bit());
       beq(CCR0, dispatch);
@@ -943,10 +944,6 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
       bne(CCR0, slow_case);
     }
 
-    if (UseBiasedLocking) {
-      biased_locking_enter(CCR0, object, displaced_header, tmp, current_header, done, &slow_case);
-    }
-
     // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
     ori(displaced_header, displaced_header, markWord::unlocked_value);
 
@@ -1048,13 +1045,6 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
 
     assert_different_registers(object, displaced_header, object_mark_addr, current_header);
 
-    if (UseBiasedLocking) {
-      // The object address from the monitor is in object.
-      ld(object, BasicObjectLock::obj_offset_in_bytes(), monitor);
-      assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-      biased_locking_exit(CCR0, object, displaced_header, free_slot);
-    }
-
     // Test first if we are in the fast recursive case.
     ld(displaced_header, BasicObjectLock::lock_offset_in_bytes() +
            BasicLock::displaced_header_offset_in_bytes(), monitor);
@@ -1070,7 +1060,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
     // If we still have a lightweight lock, unlock the object and be done.
 
     // The object address from the monitor is in object.
-    if (!UseBiasedLocking) { ld(object, BasicObjectLock::obj_offset_in_bytes(), monitor); }
+    ld(object, BasicObjectLock::obj_offset_in_bytes(), monitor);
     addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
 
     // We have the displaced header in displaced_header. If the lock is still
@@ -1848,7 +1838,7 @@ void InterpreterMacroAssembler::profile_return_type(Register ret, Register tmp1,
     if (MethodData::profile_return_jsr292_only()) {
       // If we don't profile all invoke bytecodes we must make sure
       // it's a bytecode we indeed profile. We can't go back to the
-      // begining of the ProfileData we intend to update to check its
+      // beginning of the ProfileData we intend to update to check its
       // type because we're right after it and we don't known its
       // length.
       lbz(tmp1, 0, R14_bcp);

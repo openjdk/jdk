@@ -760,6 +760,7 @@ public class FileHandler extends StreamHandler {
      * @param  record  description of the log event. A null record is
      *                 silently ignored and is not published
      */
+    @SuppressWarnings("removal")
     @Override
     public synchronized void publish(LogRecord record) {
         if (!isLoggable(record)) {

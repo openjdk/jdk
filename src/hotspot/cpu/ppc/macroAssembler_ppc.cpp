@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@
 #include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/objectMonitor.hpp"
@@ -104,6 +103,10 @@ void MacroAssembler::align(int modulus, int max, int rem) {
   int padding = (rem + modulus - (offset() % modulus)) % modulus;
   if (padding > max) return;
   for (int c = (padding >> 2); c > 0; --c) { nop(); }
+}
+
+void MacroAssembler::align_prefix() {
+  if (is_aligned(offset() + BytesPerInstWord, 64)) { nop(); }
 }
 
 // Issue instructions that calculate given TOC from global TOC.
@@ -230,7 +233,7 @@ address MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop
   return inst1_addr;
 }
 
-// Get compressed oop or klass constant.
+// Get compressed oop constant.
 narrowOop MacroAssembler::get_narrow_oop(address a, address bound) {
   assert(UseCompressedOops, "Should only patch compressed oops");
 
@@ -1457,7 +1460,7 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
     modval = tmp1;
     shift_amount = tmp2;
     val32 = tmp3;
-    // Need some preperation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
+    // Need some preparation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
 #ifdef VM_LITTLE_ENDIAN
     rldic(shift_amount, addr_base, 3, 64-5); // (dest & 3) * 8;
     clrrdi(addr_base, addr_base, 2);
@@ -1534,7 +1537,7 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
     shift_amount = tmp1;
     val32 = tmp2;
     modval = tmp2;
-    // Need some preperation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
+    // Need some preparation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
 #ifdef VM_LITTLE_ENDIAN
     rldic(shift_amount, addr_base, 3, 64-5); // (dest & 3) * 8;
     clrrdi(addr_base, addr_base, 2);
@@ -1666,7 +1669,7 @@ void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_curre
   // (flag == eq) => (dest_current_value == compare_value), ( swapped)
 }
 
-// Preforms atomic compare exchange:
+// Performs atomic compare exchange:
 //   if (compare_value == *addr_base)
 //     *addr_base = exchange_value
 //     int_flag_success = 1;
@@ -2073,218 +2076,6 @@ RegisterOrConstant MacroAssembler::argument_offset(RegisterOrConstant arg_slot,
   }
 }
 
-// Supports temp2_reg = R0.
-void MacroAssembler::biased_locking_enter(ConditionRegister cr_reg, Register obj_reg,
-                                          Register mark_reg, Register temp_reg,
-                                          Register temp2_reg, Label& done, Label* slow_case) {
-  assert(UseBiasedLocking, "why call this otherwise?");
-
-#ifdef ASSERT
-  assert_different_registers(obj_reg, mark_reg, temp_reg, temp2_reg);
-#endif
-
-  Label cas_label;
-
-  // Branch to done if fast path fails and no slow_case provided.
-  Label *slow_case_int = (slow_case != NULL) ? slow_case : &done;
-
-  // Biased locking
-  // See whether the lock is currently biased toward our thread and
-  // whether the epoch is still valid
-  // Note that the runtime guarantees sufficient alignment of JavaThread
-  // pointers to allow age to be placed into low bits
-  assert(markWord::age_shift == markWord::lock_bits + markWord::biased_lock_bits,
-         "biased locking makes assumptions about bit layout");
-
-  if (PrintBiasedLockingStatistics) {
-    load_const(temp2_reg, (address) BiasedLocking::total_entry_count_addr(), temp_reg);
-    lwzx(temp_reg, temp2_reg);
-    addi(temp_reg, temp_reg, 1);
-    stwx(temp_reg, temp2_reg);
-  }
-
-  andi(temp_reg, mark_reg, markWord::biased_lock_mask_in_place);
-  cmpwi(cr_reg, temp_reg, markWord::biased_lock_pattern);
-  bne(cr_reg, cas_label);
-
-  load_klass(temp_reg, obj_reg);
-
-  load_const_optimized(temp2_reg, ~((int) markWord::age_mask_in_place));
-  ld(temp_reg, in_bytes(Klass::prototype_header_offset()), temp_reg);
-  orr(temp_reg, R16_thread, temp_reg);
-  xorr(temp_reg, mark_reg, temp_reg);
-  andr(temp_reg, temp_reg, temp2_reg);
-  cmpdi(cr_reg, temp_reg, 0);
-  if (PrintBiasedLockingStatistics) {
-    Label l;
-    bne(cr_reg, l);
-    load_const(temp2_reg, (address) BiasedLocking::biased_lock_entry_count_addr());
-    lwzx(mark_reg, temp2_reg);
-    addi(mark_reg, mark_reg, 1);
-    stwx(mark_reg, temp2_reg);
-    // restore mark_reg
-    ld(mark_reg, oopDesc::mark_offset_in_bytes(), obj_reg);
-    bind(l);
-  }
-  beq(cr_reg, done);
-
-  Label try_revoke_bias;
-  Label try_rebias;
-
-  // At this point we know that the header has the bias pattern and
-  // that we are not the bias owner in the current epoch. We need to
-  // figure out more details about the state of the header in order to
-  // know what operations can be legally performed on the object's
-  // header.
-
-  // If the low three bits in the xor result aren't clear, that means
-  // the prototype header is no longer biased and we have to revoke
-  // the bias on this object.
-  andi(temp2_reg, temp_reg, markWord::biased_lock_mask_in_place);
-  cmpwi(cr_reg, temp2_reg, 0);
-  bne(cr_reg, try_revoke_bias);
-
-  // Biasing is still enabled for this data type. See whether the
-  // epoch of the current bias is still valid, meaning that the epoch
-  // bits of the mark word are equal to the epoch bits of the
-  // prototype header. (Note that the prototype header's epoch bits
-  // only change at a safepoint.) If not, attempt to rebias the object
-  // toward the current thread. Note that we must be absolutely sure
-  // that the current epoch is invalid in order to do this because
-  // otherwise the manipulations it performs on the mark word are
-  // illegal.
-
-  int shift_amount = 64 - markWord::epoch_shift;
-  // rotate epoch bits to right (little) end and set other bits to 0
-  // [ big part | epoch | little part ] -> [ 0..0 | epoch ]
-  rldicl_(temp2_reg, temp_reg, shift_amount, 64 - markWord::epoch_bits);
-  // branch if epoch bits are != 0, i.e. they differ, because the epoch has been incremented
-  bne(CCR0, try_rebias);
-
-  // The epoch of the current bias is still valid but we know nothing
-  // about the owner; it might be set or it might be clear. Try to
-  // acquire the bias of the object using an atomic operation. If this
-  // fails we will go in to the runtime to revoke the object's bias.
-  // Note that we first construct the presumed unbiased header so we
-  // don't accidentally blow away another thread's valid bias.
-  andi(mark_reg, mark_reg, (markWord::biased_lock_mask_in_place |
-                                markWord::age_mask_in_place |
-                                markWord::epoch_mask_in_place));
-  orr(temp_reg, R16_thread, mark_reg);
-
-  assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-  // CmpxchgX sets cr_reg to cmpX(temp2_reg, mark_reg).
-  cmpxchgd(/*flag=*/cr_reg, /*current_value=*/temp2_reg,
-           /*compare_value=*/mark_reg, /*exchange_value=*/temp_reg,
-           /*where=*/obj_reg,
-           MacroAssembler::MemBarAcq,
-           MacroAssembler::cmpxchgx_hint_acquire_lock(),
-           noreg, slow_case_int); // bail out if failed
-
-  // If the biasing toward our thread failed, this means that
-  // another thread succeeded in biasing it toward itself and we
-  // need to revoke that bias. The revocation will occur in the
-  // interpreter runtime in the slow case.
-  if (PrintBiasedLockingStatistics) {
-    load_const(temp2_reg, (address) BiasedLocking::anonymously_biased_lock_entry_count_addr(), temp_reg);
-    lwzx(temp_reg, temp2_reg);
-    addi(temp_reg, temp_reg, 1);
-    stwx(temp_reg, temp2_reg);
-  }
-  b(done);
-
-  bind(try_rebias);
-  // At this point we know the epoch has expired, meaning that the
-  // current "bias owner", if any, is actually invalid. Under these
-  // circumstances _only_, we are allowed to use the current header's
-  // value as the comparison value when doing the cas to acquire the
-  // bias in the current epoch. In other words, we allow transfer of
-  // the bias from one thread to another directly in this situation.
-  load_klass(temp_reg, obj_reg);
-  andi(temp2_reg, mark_reg, markWord::age_mask_in_place);
-  orr(temp2_reg, R16_thread, temp2_reg);
-  ld(temp_reg, in_bytes(Klass::prototype_header_offset()), temp_reg);
-  orr(temp_reg, temp2_reg, temp_reg);
-
-  assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-  cmpxchgd(/*flag=*/cr_reg, /*current_value=*/temp2_reg,
-                 /*compare_value=*/mark_reg, /*exchange_value=*/temp_reg,
-                 /*where=*/obj_reg,
-                 MacroAssembler::MemBarAcq,
-                 MacroAssembler::cmpxchgx_hint_acquire_lock(),
-                 noreg, slow_case_int); // bail out if failed
-
-  // If the biasing toward our thread failed, this means that
-  // another thread succeeded in biasing it toward itself and we
-  // need to revoke that bias. The revocation will occur in the
-  // interpreter runtime in the slow case.
-  if (PrintBiasedLockingStatistics) {
-    load_const(temp2_reg, (address) BiasedLocking::rebiased_lock_entry_count_addr(), temp_reg);
-    lwzx(temp_reg, temp2_reg);
-    addi(temp_reg, temp_reg, 1);
-    stwx(temp_reg, temp2_reg);
-  }
-  b(done);
-
-  bind(try_revoke_bias);
-  // The prototype mark in the klass doesn't have the bias bit set any
-  // more, indicating that objects of this data type are not supposed
-  // to be biased any more. We are going to try to reset the mark of
-  // this object to the prototype value and fall through to the
-  // CAS-based locking scheme. Note that if our CAS fails, it means
-  // that another thread raced us for the privilege of revoking the
-  // bias of this particular object, so it's okay to continue in the
-  // normal locking code.
-  load_klass(temp_reg, obj_reg);
-  ld(temp_reg, in_bytes(Klass::prototype_header_offset()), temp_reg);
-  andi(temp2_reg, mark_reg, markWord::age_mask_in_place);
-  orr(temp_reg, temp_reg, temp2_reg);
-
-  assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-  // CmpxchgX sets cr_reg to cmpX(temp2_reg, mark_reg).
-  cmpxchgd(/*flag=*/cr_reg, /*current_value=*/temp2_reg,
-                 /*compare_value=*/mark_reg, /*exchange_value=*/temp_reg,
-                 /*where=*/obj_reg,
-                 MacroAssembler::MemBarAcq,
-                 MacroAssembler::cmpxchgx_hint_acquire_lock());
-
-  // reload markWord in mark_reg before continuing with lightweight locking
-  ld(mark_reg, oopDesc::mark_offset_in_bytes(), obj_reg);
-
-  // Fall through to the normal CAS-based lock, because no matter what
-  // the result of the above CAS, some thread must have succeeded in
-  // removing the bias bit from the object's header.
-  if (PrintBiasedLockingStatistics) {
-    Label l;
-    bne(cr_reg, l);
-    load_const(temp2_reg, (address) BiasedLocking::revoked_lock_entry_count_addr(), temp_reg);
-    lwzx(temp_reg, temp2_reg);
-    addi(temp_reg, temp_reg, 1);
-    stwx(temp_reg, temp2_reg);
-    bind(l);
-  }
-
-  bind(cas_label);
-}
-
-void MacroAssembler::biased_locking_exit (ConditionRegister cr_reg, Register mark_addr, Register temp_reg, Label& done) {
-  // Check for biased locking unlock case, which is a no-op
-  // Note: we do not have to check the thread ID for two reasons.
-  // First, the interpreter checks for IllegalMonitorStateException at
-  // a higher level. Second, if the bias was revoked while we held the
-  // lock, the object could not be rebiased toward another thread, so
-  // the bias bit would be clear.
-
-  ld(temp_reg, 0, mark_addr);
-  andi(temp_reg, temp_reg, markWord::biased_lock_mask_in_place);
-
-  cmpwi(cr_reg, temp_reg, markWord::biased_lock_pattern);
-  beq(cr_reg, done);
-}
-
 // allocation (for C1)
 void MacroAssembler::eden_allocate(
   Register obj,                      // result: pointer to object after successful allocation
@@ -2484,7 +2275,7 @@ void MacroAssembler::rtm_counters_update(Register abort_status, Register rtm_cou
           if (failure_bit[nbit] == tm_transaction_level) {
             // Don't check outer transaction, TL = 1 (bit 63). Hence only
             // 11 bits in the TL field are checked to find out if failure
-            // occured in a nested transaction. This check also matches
+            // occurred in a nested transaction. This check also matches
             // the case when nesting_of = 1 (nesting overflow).
             rldicr_(temp_Reg, abort_status_R0, failure_bit[nbit], 10);
           } else if (failure_bit[nbit] == tm_failure_code) {
@@ -2623,7 +2414,7 @@ void MacroAssembler::rtm_retry_lock_on_abort(Register retry_count_Reg, Register 
   // transactional state, like for instance trying to write the TFHAR after a
   // transaction is started; or when there is (B) a Nesting Overflow (too many
   // nested transactions); or when (C) the Footprint overflows (too many
-  // addressess touched in TM state so there is no more space in the footprint
+  // addresses touched in TM state so there is no more space in the footprint
   // area to track them); or in case of (D) a Self-Induced Conflict, i.e. a
   // store is performed to a given address in TM state, then once in suspended
   // state the same address is accessed. Failure (A) is very unlikely to occur
@@ -2695,14 +2486,13 @@ void MacroAssembler::rtm_stack_locking(ConditionRegister flag,
                                        Metadata* method_data, bool profile_rtm,
                                        Label& DONE_LABEL, Label& IsInflated) {
   assert(UseRTMForStackLocks, "why call this otherwise?");
-  assert(!UseBiasedLocking, "Biased locking is not supported with RTM locking");
   Label L_rtm_retry, L_decrement_retry, L_on_abort;
 
   if (RTMRetryCount > 0) {
     load_const_optimized(retry_on_abort_count_Reg, RTMRetryCount); // Retry on abort
     bind(L_rtm_retry);
   }
-  andi_(R0, mark_word, markWord::monitor_value);  // inflated vs stack-locked|neutral|biased
+  andi_(R0, mark_word, markWord::monitor_value);  // inflated vs stack-locked|neutral
   bne(CCR0, IsInflated);
 
   if (PrintPreciseRTMLockingStatistics || profile_rtm) {
@@ -2720,10 +2510,10 @@ void MacroAssembler::rtm_stack_locking(ConditionRegister flag,
   }
   tbegin_();
   beq(CCR0, L_on_abort);
-  ld(mark_word, oopDesc::mark_offset_in_bytes(), obj);      // Reload in transaction, conflicts need to be tracked.
-  andi(R0, mark_word, markWord::biased_lock_mask_in_place); // look at 3 lock bits
-  cmpwi(flag, R0, markWord::unlocked_value);                // bits = 001 unlocked
-  beq(flag, DONE_LABEL);                                    // all done if unlocked
+  ld(mark_word, oopDesc::mark_offset_in_bytes(), obj);   // Reload in transaction, conflicts need to be tracked.
+  andi(R0, mark_word, markWord::lock_mask_in_place);     // look at 2 lock bits
+  cmpwi(flag, R0, markWord::unlocked_value);             // bits = 01 unlocked
+  beq(flag, DONE_LABEL);                                 // all done if unlocked
 
   if (UseRTMXendForLockBusy) {
     tend_();
@@ -2837,7 +2627,6 @@ void MacroAssembler::rtm_inflated_locking(ConditionRegister flag,
 // "The box" is the space on the stack where we copy the object mark.
 void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register oop, Register box,
                                                Register temp, Register displaced_header, Register current_header,
-                                               bool try_bias,
                                                RTMLockingCounters* rtm_counters,
                                                RTMLockingCounters* stack_rtm_counters,
                                                Metadata* method_data,
@@ -2858,10 +2647,6 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
     bne(flag, cont);
   }
 
-  if (try_bias) {
-    biased_locking_enter(flag, oop, displaced_header, temp, current_header, cont);
-  }
-
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
     rtm_stack_locking(flag, oop, displaced_header, temp, /*temp*/ current_header,
@@ -2875,27 +2660,32 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   andi_(temp, displaced_header, markWord::monitor_value);
   bne(CCR0, object_has_monitor);
 
-  // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
-  ori(displaced_header, displaced_header, markWord::unlocked_value);
+  if (!UseHeavyMonitors) {
+    // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
+    ori(displaced_header, displaced_header, markWord::unlocked_value);
 
-  // Load Compare Value application register.
+    // Load Compare Value application register.
 
-  // Initialize the box. (Must happen before we update the object mark!)
-  std(displaced_header, BasicLock::displaced_header_offset_in_bytes(), box);
+    // Initialize the box. (Must happen before we update the object mark!)
+    std(displaced_header, BasicLock::displaced_header_offset_in_bytes(), box);
 
-  // Must fence, otherwise, preceding store(s) may float below cmpxchg.
-  // Compare object markWord with mark and if equal exchange scratch1 with object markWord.
-  cmpxchgd(/*flag=*/flag,
-           /*current_value=*/current_header,
-           /*compare_value=*/displaced_header,
-           /*exchange_value=*/box,
-           /*where=*/oop,
-           MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
-           MacroAssembler::cmpxchgx_hint_acquire_lock(),
-           noreg,
-           &cas_failed,
-           /*check without membar and ldarx first*/true);
-  assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+    // Must fence, otherwise, preceding store(s) may float below cmpxchg.
+    // Compare object markWord with mark and if equal exchange scratch1 with object markWord.
+    cmpxchgd(/*flag=*/flag,
+             /*current_value=*/current_header,
+             /*compare_value=*/displaced_header,
+             /*exchange_value=*/box,
+             /*where=*/oop,
+             MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
+             MacroAssembler::cmpxchgx_hint_acquire_lock(),
+             noreg,
+             &cas_failed,
+             /*check without membar and ldarx first*/true);
+    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+  } else {
+    // Set NE to indicate 'failure' -> take slow-path.
+    crandc(flag, Assembler::equal, flag, Assembler::equal);
+  }
 
   // If the compare-and-exchange succeeded, then we found an unlocked
   // object and we have now locked it.
@@ -2942,16 +2732,17 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
   // Store a non-null value into the box.
   std(box, BasicLock::displaced_header_offset_in_bytes(), box);
+  beq(flag, cont);
 
-# ifdef ASSERT
+  // Check for recursive locking.
+  cmpd(flag, current_header, R16_thread);
   bne(flag, cont);
-  // We have acquired the monitor, check some invariants.
-  addi(/*monitor=*/temp, temp, -ObjectMonitor::owner_offset_in_bytes());
-  // Invariant 1: _recursions should be 0.
-  //assert(ObjectMonitor::recursions_size_in_bytes() == 8, "unexpected size");
-  asm_assert_mem8_is_zero(ObjectMonitor::recursions_offset_in_bytes(), temp,
-                            "monitor->_recursions should be 0");
-# endif
+
+  // Current thread already owns the lock. Just increment recursions.
+  Register recursions = displaced_header;
+  ld(recursions, ObjectMonitor::recursions_offset_in_bytes()-ObjectMonitor::owner_offset_in_bytes(), temp);
+  addi(recursions, recursions, 1);
+  std(recursions, ObjectMonitor::recursions_offset_in_bytes()-ObjectMonitor::owner_offset_in_bytes(), temp);
 
 #if INCLUDE_RTM_OPT
   } // use_rtm()
@@ -2964,36 +2755,32 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
 void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
                                                  Register temp, Register displaced_header, Register current_header,
-                                                 bool try_bias, bool use_rtm) {
+                                                 bool use_rtm) {
   assert_different_registers(oop, box, temp, displaced_header, current_header);
   assert(flag != CCR0, "bad condition register");
-  Label cont;
-  Label object_has_monitor;
-
-  if (try_bias) {
-    biased_locking_exit(flag, oop, current_header, cont);
-  }
+  Label cont, object_has_monitor, notRecursive;
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
-    assert(!UseBiasedLocking, "Biased locking is not supported with RTM locking");
     Label L_regular_unlock;
-    ld(current_header, oopDesc::mark_offset_in_bytes(), oop);      // fetch markword
-    andi(R0, current_header, markWord::biased_lock_mask_in_place); // look at 3 lock bits
-    cmpwi(flag, R0, markWord::unlocked_value);                     // bits = 001 unlocked
-    bne(flag, L_regular_unlock);                                   // else RegularLock
-    tend_();                                                       // otherwise end...
-    b(cont);                                                       // ... and we're done
+    ld(current_header, oopDesc::mark_offset_in_bytes(), oop);   // fetch markword
+    andi(R0, current_header, markWord::lock_mask_in_place);     // look at 2 lock bits
+    cmpwi(flag, R0, markWord::unlocked_value);                  // bits = 01 unlocked
+    bne(flag, L_regular_unlock);                                // else RegularLock
+    tend_();                                                    // otherwise end...
+    b(cont);                                                    // ... and we're done
     bind(L_regular_unlock);
   }
 #endif
 
-  // Find the lock address and load the displaced header from the stack.
-  ld(displaced_header, BasicLock::displaced_header_offset_in_bytes(), box);
+  if (!UseHeavyMonitors) {
+    // Find the lock address and load the displaced header from the stack.
+    ld(displaced_header, BasicLock::displaced_header_offset_in_bytes(), box);
 
-  // If the displaced header is 0, we have a recursive unlock.
-  cmpdi(flag, displaced_header, 0);
-  beq(flag, cont);
+    // If the displaced header is 0, we have a recursive unlock.
+    cmpdi(flag, displaced_header, 0);
+    beq(flag, cont);
+  }
 
   // Handle existing monitor.
   // The object has an existing monitor iff (mark & monitor_value) != 0.
@@ -3002,20 +2789,24 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   andi_(R0, current_header, markWord::monitor_value);
   bne(CCR0, object_has_monitor);
 
-  // Check if it is still a light weight lock, this is is true if we see
-  // the stack address of the basicLock in the markWord of the object.
-  // Cmpxchg sets flag to cmpd(current_header, box).
-  cmpxchgd(/*flag=*/flag,
-           /*current_value=*/current_header,
-           /*compare_value=*/box,
-           /*exchange_value=*/displaced_header,
-           /*where=*/oop,
-           MacroAssembler::MemBarRel,
-           MacroAssembler::cmpxchgx_hint_release_lock(),
-           noreg,
-           &cont);
-
-  assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+  if (!UseHeavyMonitors) {
+    // Check if it is still a light weight lock, this is is true if we see
+    // the stack address of the basicLock in the markWord of the object.
+    // Cmpxchg sets flag to cmpd(current_header, box).
+    cmpxchgd(/*flag=*/flag,
+             /*current_value=*/current_header,
+             /*compare_value=*/box,
+             /*exchange_value=*/displaced_header,
+             /*where=*/oop,
+             MacroAssembler::MemBarRel,
+             MacroAssembler::cmpxchgx_hint_release_lock(),
+             noreg,
+             &cont);
+    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+  } else {
+    // Set NE to indicate 'failure' -> take slow-path.
+    crandc(flag, Assembler::equal, flag, Assembler::equal);
+  }
 
   // Handle existing monitor.
   b(cont);
@@ -3039,11 +2830,16 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 #endif
 
   ld(displaced_header, ObjectMonitor::recursions_offset_in_bytes(), current_header);
-  xorr(temp, R16_thread, temp);      // Will be 0 if we are the owner.
-  orr(temp, temp, displaced_header); // Will be 0 if there are 0 recursions.
-  cmpdi(flag, temp, 0);
+
+  cmpd(flag, temp, R16_thread);
   bne(flag, cont);
 
+  addic_(displaced_header, displaced_header, -1);
+  blt(CCR0, notRecursive); // Not recursive if negative after decrement.
+  std(displaced_header, ObjectMonitor::recursions_offset_in_bytes(), current_header);
+  b(cont); // flag is already EQ here.
+
+  bind(notRecursive);
   ld(temp,             ObjectMonitor::EntryList_offset_in_bytes(), current_header);
   ld(displaced_header, ObjectMonitor::cxq_offset_in_bytes(), current_header);
   orr(temp, temp, displaced_header); // Will be 0 if both are 0.
@@ -3058,7 +2854,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod) {
-  ld(temp, in_bytes(Thread::polling_word_offset()), R16_thread);
+  ld(temp, in_bytes(JavaThread::polling_word_offset()), R16_thread);
 
   if (at_return) {
     if (in_nmethod) {

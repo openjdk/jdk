@@ -37,7 +37,7 @@ import org.xml.sax.XMLReader;
  * @test
  * @bug 6506304
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug6506304Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug6506304Test
  * @run testng/othervm parsers.Bug6506304Test
  * @summary Test MalformedURLException: unknown protocol won't be thrown when there is a space within the full path file name.
  */

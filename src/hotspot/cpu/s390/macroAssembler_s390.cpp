@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +39,6 @@
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "registerSaver_s390.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/objectMonitor.hpp"
@@ -1242,7 +1241,7 @@ bool MacroAssembler::is_compare_immediate_narrow_klass(address pos) {
 //  patch the load_constant
 //-----------------------------------
 
-// CPU-version dependend patching of load_const.
+// CPU-version dependent patching of load_const.
 void MacroAssembler::patch_const(address a, long x) {
   assert(is_load_const(a), "not a load of a constant");
   // Note: Right shift is only cleanly defined for unsigned types
@@ -1428,7 +1427,7 @@ int MacroAssembler::store_const(const Address &dest, long imm,
 //===       N O T   P A T CH A B L E   C O N S T A N T S          ===
 //===================================================================
 
-// Load constant x into register t with a fast instrcution sequence
+// Load constant x into register t with a fast instruction sequence
 // depending on the bits in x. Preserves CC under all circumstances.
 int MacroAssembler::load_const_optimized_rtn_len(Register t, long x, bool emit) {
   if (x == 0) {
@@ -2424,7 +2423,7 @@ bool MacroAssembler::is_call_far_patchable_variant2_at(address instruction_addr)
 //
 // A call_far_patchable comes in different flavors:
 //  - LARL(CP) / LG(CP) / BR (address in constant pool, access via CP register)
-//  - LGRL(CP) / BR          (address in constant pool, pc-relative accesss)
+//  - LGRL(CP) / BR          (address in constant pool, pc-relative access)
 //  - BRASL                  (relative address of call target coded in instruction)
 // All flavors occupy the same amount of space. Length differences are compensated
 // by leading nops, such that the instruction sequence always ends at the same
@@ -2652,7 +2651,7 @@ uint MacroAssembler::get_poll_register(address instr_loc) {
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp_reg) {
-  const Address poll_byte_addr(Z_thread, in_bytes(Thread::polling_word_offset()) + 7 /* Big Endian */);
+  const Address poll_byte_addr(Z_thread, in_bytes(JavaThread::polling_word_offset()) + 7 /* Big Endian */);
   // Armed page has poll_bit set.
   z_tm(poll_byte_addr, SafepointMechanism::poll_bit());
   z_brnaz(slow_path);
@@ -2845,7 +2844,7 @@ void MacroAssembler::lookup_virtual_method(Register           recv_klass,
 //   trapMarker   - Marking byte for the generated illtrap instructions (if any).
 //                  Any value except 0x00 is supported.
 //                  = 0x00 - do not generate illtrap instructions.
-//                         use nops to fill ununsed space.
+//                         use nops to fill unused space.
 //   requiredSize - required size of the generated code. If the actually
 //                  generated code is smaller, use padding instructions to fill up.
 //                  = 0 - no size requirement, no padding.
@@ -3010,7 +3009,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register Rsubklass,
                                                    Label* L_success,
                                                    Label* L_failure) {
   // Input registers must not overlap.
-  // Also check for R1 which is explicitely used here.
+  // Also check for R1 which is explicitly used here.
   assert_different_registers(Z_R1, Rsubklass, Rsuperklass, Rarray_ptr, Rlength);
   NearLabel L_fallthrough;
   int label_nulls = 0;
@@ -3128,194 +3127,7 @@ void MacroAssembler::increment_counter_eq(address counter_address, Register tmp1
   bind(l);
 }
 
-// Semantics are dependent on the slow_case label:
-//   If the slow_case label is not NULL, failure to biased-lock the object
-//   transfers control to the location of the slow_case label. If the
-//   object could be biased-locked, control is transferred to the done label.
-//   The condition code is unpredictable.
-//
-//   If the slow_case label is NULL, failure to biased-lock the object results
-//   in a transfer of control to the done label with a condition code of not_equal.
-//   If the biased-lock could be successfully obtained, control is transfered to
-//   the done label with a condition code of equal.
-//   It is mandatory to react on the condition code At the done label.
-//
-void MacroAssembler::biased_locking_enter(Register  obj_reg,
-                                          Register  mark_reg,
-                                          Register  temp_reg,
-                                          Register  temp2_reg,    // May be Z_RO!
-                                          Label    &done,
-                                          Label    *slow_case) {
-  assert(UseBiasedLocking, "why call this otherwise?");
-  assert_different_registers(obj_reg, mark_reg, temp_reg, temp2_reg);
-
-  Label cas_label; // Try, if implemented, CAS locking. Fall thru to slow path otherwise.
-
-  BLOCK_COMMENT("biased_locking_enter {");
-
-  // Biased locking
-  // See whether the lock is currently biased toward our thread and
-  // whether the epoch is still valid.
-  // Note that the runtime guarantees sufficient alignment of JavaThread
-  // pointers to allow age to be placed into low bits.
-  assert(markWord::age_shift == markWord::lock_bits + markWord::biased_lock_bits,
-         "biased locking makes assumptions about bit layout");
-  z_lr(temp_reg, mark_reg);
-  z_nilf(temp_reg, markWord::biased_lock_mask_in_place);
-  z_chi(temp_reg, markWord::biased_lock_pattern);
-  z_brne(cas_label);  // Try cas if object is not biased, i.e. cannot be biased locked.
-
-  load_prototype_header(temp_reg, obj_reg);
-  load_const_optimized(temp2_reg, ~((int) markWord::age_mask_in_place));
-
-  z_ogr(temp_reg, Z_thread);
-  z_xgr(temp_reg, mark_reg);
-  z_ngr(temp_reg, temp2_reg);
-  if (PrintBiasedLockingStatistics) {
-    increment_counter_eq((address) BiasedLocking::biased_lock_entry_count_addr(), mark_reg, temp2_reg);
-    // Restore mark_reg.
-    z_lg(mark_reg, oopDesc::mark_offset_in_bytes(), obj_reg);
-  }
-  branch_optimized(Assembler::bcondEqual, done);  // Biased lock obtained, return success.
-
-  Label try_revoke_bias;
-  Label try_rebias;
-  Address mark_addr = Address(obj_reg, oopDesc::mark_offset_in_bytes());
-
-  //----------------------------------------------------------------------------
-  // At this point we know that the header has the bias pattern and
-  // that we are not the bias owner in the current epoch. We need to
-  // figure out more details about the state of the header in order to
-  // know what operations can be legally performed on the object's
-  // header.
-
-  // If the low three bits in the xor result aren't clear, that means
-  // the prototype header is no longer biased and we have to revoke
-  // the bias on this object.
-  z_tmll(temp_reg, markWord::biased_lock_mask_in_place);
-  z_brnaz(try_revoke_bias);
-
-  // Biasing is still enabled for this data type. See whether the
-  // epoch of the current bias is still valid, meaning that the epoch
-  // bits of the mark word are equal to the epoch bits of the
-  // prototype header. (Note that the prototype header's epoch bits
-  // only change at a safepoint.) If not, attempt to rebias the object
-  // toward the current thread. Note that we must be absolutely sure
-  // that the current epoch is invalid in order to do this because
-  // otherwise the manipulations it performs on the mark word are
-  // illegal.
-  z_tmll(temp_reg, markWord::epoch_mask_in_place);
-  z_brnaz(try_rebias);
-
-  //----------------------------------------------------------------------------
-  // The epoch of the current bias is still valid but we know nothing
-  // about the owner; it might be set or it might be clear. Try to
-  // acquire the bias of the object using an atomic operation. If this
-  // fails we will go in to the runtime to revoke the object's bias.
-  // Note that we first construct the presumed unbiased header so we
-  // don't accidentally blow away another thread's valid bias.
-  z_nilf(mark_reg, markWord::biased_lock_mask_in_place | markWord::age_mask_in_place |
-         markWord::epoch_mask_in_place);
-  z_lgr(temp_reg, Z_thread);
-  z_llgfr(mark_reg, mark_reg);
-  z_ogr(temp_reg, mark_reg);
-
-  assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-  z_csg(mark_reg, temp_reg, 0, obj_reg);
-
-  // If the biasing toward our thread failed, this means that
-  // another thread succeeded in biasing it toward itself and we
-  // need to revoke that bias. The revocation will occur in the
-  // interpreter runtime in the slow case.
-
-  if (PrintBiasedLockingStatistics) {
-    increment_counter_eq((address) BiasedLocking::anonymously_biased_lock_entry_count_addr(),
-                         temp_reg, temp2_reg);
-  }
-  if (slow_case != NULL) {
-    branch_optimized(Assembler::bcondNotEqual, *slow_case); // Biased lock not obtained, need to go the long way.
-  }
-  branch_optimized(Assembler::bcondAlways, done);           // Biased lock status given in condition code.
-
-  //----------------------------------------------------------------------------
-  bind(try_rebias);
-  // At this point we know the epoch has expired, meaning that the
-  // current "bias owner", if any, is actually invalid. Under these
-  // circumstances _only_, we are allowed to use the current header's
-  // value as the comparison value when doing the cas to acquire the
-  // bias in the current epoch. In other words, we allow transfer of
-  // the bias from one thread to another directly in this situation.
-
-  z_nilf(mark_reg, markWord::biased_lock_mask_in_place | markWord::age_mask_in_place | markWord::epoch_mask_in_place);
-  load_prototype_header(temp_reg, obj_reg);
-  z_llgfr(mark_reg, mark_reg);
-
-  z_ogr(temp_reg, Z_thread);
-
-  assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-  z_csg(mark_reg, temp_reg, 0, obj_reg);
-
-  // If the biasing toward our thread failed, this means that
-  // another thread succeeded in biasing it toward itself and we
-  // need to revoke that bias. The revocation will occur in the
-  // interpreter runtime in the slow case.
-
-  if (PrintBiasedLockingStatistics) {
-    increment_counter_eq((address) BiasedLocking::rebiased_lock_entry_count_addr(), temp_reg, temp2_reg);
-  }
-  if (slow_case != NULL) {
-    branch_optimized(Assembler::bcondNotEqual, *slow_case);  // Biased lock not obtained, need to go the long way.
-  }
-  z_bru(done);           // Biased lock status given in condition code.
-
-  //----------------------------------------------------------------------------
-  bind(try_revoke_bias);
-  // The prototype mark in the klass doesn't have the bias bit set any
-  // more, indicating that objects of this data type are not supposed
-  // to be biased any more. We are going to try to reset the mark of
-  // this object to the prototype value and fall through to the
-  // CAS-based locking scheme. Note that if our CAS fails, it means
-  // that another thread raced us for the privilege of revoking the
-  // bias of this particular object, so it's okay to continue in the
-  // normal locking code.
-  load_prototype_header(temp_reg, obj_reg);
-
-  assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-  z_csg(mark_reg, temp_reg, 0, obj_reg);
-
-  // Fall through to the normal CAS-based lock, because no matter what
-  // the result of the above CAS, some thread must have succeeded in
-  // removing the bias bit from the object's header.
-  if (PrintBiasedLockingStatistics) {
-    // z_cgr(mark_reg, temp2_reg);
-    increment_counter_eq((address) BiasedLocking::revoked_lock_entry_count_addr(), temp_reg, temp2_reg);
-  }
-
-  bind(cas_label);
-  BLOCK_COMMENT("} biased_locking_enter");
-}
-
-void MacroAssembler::biased_locking_exit(Register mark_addr, Register temp_reg, Label& done) {
-  // Check for biased locking unlock case, which is a no-op
-  // Note: we do not have to check the thread ID for two reasons.
-  // First, the interpreter checks for IllegalMonitorStateException at
-  // a higher level. Second, if the bias was revoked while we held the
-  // lock, the object could not be rebiased toward another thread, so
-  // the bias bit would be clear.
-  BLOCK_COMMENT("biased_locking_exit {");
-
-  z_lg(temp_reg, 0, mark_addr);
-  z_nilf(temp_reg, markWord::biased_lock_mask_in_place);
-
-  z_chi(temp_reg, markWord::biased_lock_pattern);
-  z_bre(done);
-  BLOCK_COMMENT("} biased_locking_exit");
-}
-
-void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2, bool try_bias) {
+void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2) {
   Register displacedHeader = temp1;
   Register currentHeader = temp1;
   Register temp = temp2;
@@ -3332,10 +3144,6 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
     assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
     z_nilh(Z_R1_scratch, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
     z_brne(done);
-  }
-
-  if (try_bias) {
-    biased_locking_enter(oop, displacedHeader, temp, Z_R0, done);
   }
 
   // Handle existing monitor.
@@ -3402,7 +3210,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   // _complete_monitor_locking_Java.
 }
 
-void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2, bool try_bias) {
+void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2) {
   Register displacedHeader = temp1;
   Register currentHeader = temp2;
   Register temp = temp1;
@@ -3411,10 +3219,6 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   Label done, object_has_monitor;
 
   BLOCK_COMMENT("compiler_fast_unlock_object {");
-
-  if (try_bias) {
-    biased_locking_exit(oop, currentHeader, done);
-  }
 
   // Find the lock address and load the displaced header from the stack.
   // if the displaced header is zero, we have a recursive unlock.
@@ -3613,7 +3417,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   z_tmll(current, KlassAlignmentInBytes-1); // Check alignment.
   z_brc(Assembler::bcondAllZero, ok);
   // The plain disassembler does not recognize illtrap. It instead displays
-  // a 32-bit value. Issueing two illtraps assures the disassembler finds
+  // a 32-bit value. Issuing two illtraps assures the disassembler finds
   // the proper beginning of the next instruction.
   z_illtrap(0xee);
   z_illtrap(0xee);
@@ -3757,7 +3561,7 @@ void MacroAssembler::decode_klass_not_null(Register dst) {
   z_tmll(dst, KlassAlignmentInBytes-1); // Check alignment.
   z_brc(Assembler::bcondAllZero, ok);
   // The plain disassembler does not recognize illtrap. It instead displays
-  // a 32-bit value. Issueing two illtraps assures the disassembler finds
+  // a 32-bit value. Issuing two illtraps assures the disassembler finds
   // the proper beginning of the next instruction.
   z_illtrap(0xd1);
   z_illtrap(0xd1);
@@ -3804,7 +3608,7 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   z_tmll(dst, KlassAlignmentInBytes-1); // Check alignment.
   z_brc(Assembler::bcondAllZero, ok);
   // The plain disassembler does not recognize illtrap. It instead displays
-  // a 32-bit value. Issueing two illtraps assures the disassembler finds
+  // a 32-bit value. Issuing two illtraps assures the disassembler finds
   // the proper beginning of the next instruction.
   z_illtrap(0xd2);
   z_illtrap(0xd2);
@@ -3831,12 +3635,6 @@ void MacroAssembler::load_klass(Register klass, Register src_oop) {
   } else {
     z_lg(klass, oopDesc::klass_offset_in_bytes(), src_oop);
   }
-}
-
-void MacroAssembler::load_prototype_header(Register Rheader, Register Rsrc_oop) {
-  assert_different_registers(Rheader, Rsrc_oop);
-  load_klass(Rheader, Rsrc_oop);
-  z_lg(Rheader, Address(Rheader, Klass::prototype_header_offset()));
 }
 
 void MacroAssembler::store_klass(Register klass, Register dst_oop, Register ck) {
@@ -5695,7 +5493,7 @@ void MacroAssembler::stop(int type, const char* msg, int id) {
   push_frame_abi160(0);
   call_VM_leaf(CAST_FROM_FN_PTR(address, stop_on_request), Z_ARG1, Z_ARG2);
   // The plain disassembler does not recognize illtrap. It instead displays
-  // a 32-bit value. Issueing two illtraps assures the disassembler finds
+  // a 32-bit value. Issuing two illtraps assures the disassembler finds
   // the proper beginning of the next instruction.
   z_illtrap(); // Illegal instruction.
   z_illtrap(); // Illegal instruction.

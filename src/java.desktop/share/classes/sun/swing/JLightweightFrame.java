@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,19 +83,6 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
     private volatile double scaleFactorX;
     private volatile double scaleFactorY;
 
-    /**
-     * {@code copyBufferEnabled}, true by default, defines the following strategy.
-     * A duplicating (copy) buffer is created for the original pixel buffer.
-     * The copy buffer is synchronized with the original buffer every time the
-     * latter changes. {@code JLightweightFrame} passes the copy buffer array
-     * to the {@link LightweightContent#imageBufferReset} method. The code spot
-     * which synchronizes two buffers becomes the only critical section guarded
-     * by the lock (managed with the {@link LightweightContent#paintLock()},
-     * {@link LightweightContent#paintUnlock()} methods).
-     */
-    private static boolean copyBufferEnabled;
-    private int[] copyBuffer;
-
     private PropertyChangeListener layoutSizeListener;
     private RepaintListener repaintListener;
 
@@ -106,14 +93,28 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
                 frame.updateClientCursor();
             }
         });
-        copyBufferEnabled = "true".equals(AccessController.
-            doPrivileged(new GetPropertyAction("swing.jlf.copyBufferEnabled", "true")));
     }
+
+    /**
+     * {@code copyBufferEnabled}, true by default, defines the following strategy.
+     * A duplicating (copy) buffer is created for the original pixel buffer.
+     * The copy buffer is synchronized with the original buffer every time the
+     * latter changes. {@code JLightweightFrame} passes the copy buffer array
+     * to the {@link LightweightContent#imageBufferReset} method. The code spot
+     * which synchronizes two buffers becomes the only critical section guarded
+     * by the lock (managed with the {@link LightweightContent#paintLock()},
+     * {@link LightweightContent#paintUnlock()} methods).
+     */
+    @SuppressWarnings("removal")
+    private static boolean copyBufferEnabled = "true".equals(AccessController.
+            doPrivileged(new GetPropertyAction("swing.jlf.copyBufferEnabled", "true")));
+    private int[] copyBuffer;
 
     /**
      * Constructs a new, initially invisible {@code JLightweightFrame}
      * instance.
      */
+    @SuppressWarnings("removal")
     public JLightweightFrame() {
         super();
         AffineTransform defaultTransform =
@@ -330,7 +331,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         content.imageUpdated(x, y, width, height);
     }
 
-    @SuppressWarnings("serial") // anonymous class inside
+    @SuppressWarnings({"removal","serial"}) // anonymous class inside
     private void initInterior() {
         contentPane = new JPanel() {
             @Override

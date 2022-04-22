@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 import java.nio.file.Path;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.internal.ApplicationLayout;
 
 /**
@@ -39,26 +39,26 @@ import jdk.jpackage.internal.ApplicationLayout;
  * @build jdk.jpackage.test.*
  * @build EmptyFolderTest
  * @modules jdk.jpackage/jdk.jpackage.internal
- * @run main/othervm -Xmx512m EmptyFolderTest
+ * @run main/othervm -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=EmptyFolderTest
  */
 public class EmptyFolderTest {
 
-    public static void main(String[] args) throws Exception {
-        TKit.run(args, () -> {
-            JPackageCommand cmd = JPackageCommand.helloAppImage();
+    @Test
+    public static void test() throws Exception {
+        JPackageCommand cmd = JPackageCommand.helloAppImage();
 
-            // Add more files into input folder
-            Path input = cmd.inputDir();
-            EmptyFolderBase.createDirStrcture(input);
+        // Add more files into input folder
+        Path input = cmd.inputDir();
+        EmptyFolderBase.createDirStrcture(input);
 
-            // Create app image
-            cmd.executeAndAssertHelloAppImageCreated();
+        // Create app image
+        cmd.executeAndAssertHelloAppImageCreated();
 
-            // Verify directory strcture
-            ApplicationLayout appLayout = cmd.appLayout();
-            Path appDir = appLayout.appDirectory();
-            EmptyFolderBase.validateDirStrcture(appDir);
-        });
+        // Verify directory strcture
+        ApplicationLayout appLayout = cmd.appLayout();
+        Path appDir = appLayout.appDirectory();
+        EmptyFolderBase.validateDirStrcture(appDir);
     }
 
 }

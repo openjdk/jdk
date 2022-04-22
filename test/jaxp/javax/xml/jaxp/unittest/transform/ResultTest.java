@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,32 +24,40 @@
 package transform;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stax.StAXResult;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.helpers.DefaultHandler;
 
 /*
  * @test
- * @bug 8238183
+ * @bug 8238183 8266019
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm transform.ResultTest
  * @summary Verifies that the output of a transformation is well-formed when
  *          StAXResult is used.
  */
 public class ResultTest {
+    public static final String TEST_DIR = System.getProperty("test.classes", ".");
+
     // The XML contains a comment before the root element
     final static String XML =
             "<?xml version=\"1.0\" ?>\n"
@@ -64,6 +72,25 @@ public class ResultTest {
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
+    }
+
+    /**
+     * @bug 8266019
+     * Verifies that a StreamResult created with a File is processed correctly.
+     *
+     * @throws Exception if test fails
+     */
+    @Test
+    public void testStreamResult() throws Exception {
+        File f = new File(TEST_DIR + "/output/#/dom.xml");
+        f.getParentFile().mkdirs();
+
+        Document dom = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+        dom.appendChild(dom.createElement("root"));
+
+        Transformer tr = TransformerFactory.newInstance().newTransformer();
+        tr.setOutputProperty(OutputKeys.INDENT, "yes");
+        tr.transform(new DOMSource(dom), new StreamResult(f));
     }
 
     /**

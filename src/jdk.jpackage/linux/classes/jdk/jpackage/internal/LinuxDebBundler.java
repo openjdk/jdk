@@ -40,13 +40,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.RELEASE;
@@ -107,12 +108,17 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         DEB_ARCH = debArch;
     }
 
+    private static final String releaseSuffix(Map<String, ? super Object> params) {
+        return Optional.ofNullable(RELEASE.fetchFrom(params, false)).map(
+                rel -> "-" + rel).orElse("");
+    }
+
     private static final BundlerParamInfo<String> FULL_PACKAGE_NAME =
             new StandardBundlerParam<>(
                     "linux.deb.fullPackageName", String.class, params -> {
                         return PACKAGE_NAME.fetchFrom(params)
                             + "_" + VERSION.fetchFrom(params)
-                            + "-" + RELEASE.fetchFrom(params)
+                            + releaseSuffix(params)
                             + "_" + DEB_ARCH;
                     }, (s, p) -> s);
 
@@ -274,9 +280,9 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         List<PackageProperty> properties = List.of(
                 new PackageProperty("Package", PACKAGE_NAME.fetchFrom(params),
                         "APPLICATION_PACKAGE", controlFileName),
-                new PackageProperty("Version", String.format("%s-%s",
-                        VERSION.fetchFrom(params), RELEASE.fetchFrom(params)),
-                        "APPLICATION_VERSION-APPLICATION_RELEASE",
+                new PackageProperty("Version", String.format("%s%s",
+                        VERSION.fetchFrom(params), releaseSuffix(params)),
+                        "APPLICATION_VERSION_WITH_RELEASE",
                         controlFileName),
                 new PackageProperty("Architecture", DEB_ARCH, "APPLICATION_ARCH",
                         controlFileName));
@@ -412,7 +418,10 @@ public class LinuxDebBundler extends LinuxPackageBundler {
                 configDir.resolve("postrm"),
                 "resource.deb-postrm-script").setExecutable());
 
-        if (!StandardBundlerParam.isRuntimeInstaller(params)) {
+        final String installDir = LINUX_INSTALL_DIR.fetchFrom(params);
+
+        if (!StandardBundlerParam.isRuntimeInstaller(params)
+                || (isInstallDirInUsrTree(installDir) || installDir.startsWith("/usr/"))) {
             debianFiles.add(new DebianFile(
                     getConfig_CopyrightFile(params),
                     "resource.copyright-file"));
@@ -435,6 +444,11 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         data.put("APPLICATION_ARCH", DEB_ARCH);
         data.put("APPLICATION_INSTALLED_SIZE", Long.toString(
                 createMetaPackage(params).sourceApplicationLayout().sizeInBytes() >> 10));
+        data.put("APPLICATION_HOMEPAGE", Optional.ofNullable(
+                ABOUT_URL.fetchFrom(params)).map(value -> "Homepage: " + value).orElse(
+                ""));
+        data.put("APPLICATION_VERSION_WITH_RELEASE", String.format("%s%s",
+                VERSION.fetchFrom(params), releaseSuffix(params)));
 
         return data;
     }

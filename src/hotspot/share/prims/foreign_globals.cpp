@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,23 +59,28 @@ const BufferLayout ForeignGlobals::parse_buffer_layout(jobject jlayout) {
   return instance().parse_buffer_layout_impl(jlayout);
 }
 
+const CallRegs ForeignGlobals::parse_call_regs(jobject jconv) {
+  return instance().parse_call_regs_impl(jconv);
+}
+
 ForeignGlobals::ForeignGlobals() {
-  Thread* current_thread = Thread::current();
+  JavaThread* current_thread = JavaThread::current();
   ResourceMark rm(current_thread);
 
   // ABIDescriptor
   InstanceKlass* k_ABI = find_InstanceKlass(FOREIGN_ABI "ABIDescriptor", current_thread);
-  const char* strVMSArray = "[[L" FOREIGN_ABI "VMStorage;";
-  Symbol* symVMSArray = SymbolTable::new_symbol(strVMSArray, (int)strlen(strVMSArray));
-  ABI.inputStorage_offset = field_offset(k_ABI, "inputStorage", symVMSArray);
-  ABI.outputStorage_offset = field_offset(k_ABI, "outputStorage", symVMSArray);
-  ABI.volatileStorage_offset = field_offset(k_ABI, "volatileStorage", symVMSArray);
+  const char* strVMSArrayArray = "[[L" FOREIGN_ABI "VMStorage;";
+  Symbol* symVMSArrayArray = SymbolTable::new_symbol(strVMSArrayArray);
+  ABI.inputStorage_offset = field_offset(k_ABI, "inputStorage", symVMSArrayArray);
+  ABI.outputStorage_offset = field_offset(k_ABI, "outputStorage", symVMSArrayArray);
+  ABI.volatileStorage_offset = field_offset(k_ABI, "volatileStorage", symVMSArrayArray);
   ABI.stackAlignment_offset = field_offset(k_ABI, "stackAlignment", vmSymbols::int_signature());
   ABI.shadowSpace_offset = field_offset(k_ABI, "shadowSpace", vmSymbols::int_signature());
 
   // VMStorage
   InstanceKlass* k_VMS = find_InstanceKlass(FOREIGN_ABI "VMStorage", current_thread);
   VMS.index_offset = field_offset(k_VMS, "index", vmSymbols::int_signature());
+  VMS.type_offset = field_offset(k_VMS, "type", vmSymbols::int_signature());
 
   // BufferLayout
   InstanceKlass* k_BL = find_InstanceKlass(FOREIGN_ABI "BufferLayout", current_thread);
@@ -85,4 +90,41 @@ ForeignGlobals::ForeignGlobals() {
   BL.stack_args_offset = field_offset(k_BL, "stack_args", vmSymbols::long_signature());
   BL.input_type_offsets_offset = field_offset(k_BL, "input_type_offsets", vmSymbols::long_array_signature());
   BL.output_type_offsets_offset = field_offset(k_BL, "output_type_offsets", vmSymbols::long_array_signature());
+
+  // CallRegs
+  const char* strVMSArray = "[L" FOREIGN_ABI "VMStorage;";
+  Symbol* symVMSArray = SymbolTable::new_symbol(strVMSArray);
+  InstanceKlass* k_CC = find_InstanceKlass(FOREIGN_ABI "ProgrammableUpcallHandler$CallRegs", current_thread);
+  CallConvOffsets.arg_regs_offset = field_offset(k_CC, "argRegs", symVMSArray);
+  CallConvOffsets.ret_regs_offset = field_offset(k_CC, "retRegs", symVMSArray);
+}
+
+void CallRegs::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
+  int src_pos = 0;
+  for (uint i = 0; i < argcnt; i++) {
+    switch (sig_bt[i]) {
+      case T_BOOLEAN:
+      case T_CHAR:
+      case T_BYTE:
+      case T_SHORT:
+      case T_INT:
+      case T_FLOAT:
+        assert(src_pos < _args_length, "oob");
+        parm_regs[i].set1(_arg_regs[src_pos++]);
+        break;
+      case T_LONG:
+      case T_DOUBLE:
+        assert((i + 1) < argcnt && sig_bt[i + 1] == T_VOID, "expecting half");
+        assert(src_pos < _args_length, "oob");
+        parm_regs[i].set2(_arg_regs[src_pos++]);
+        break;
+      case T_VOID: // Halves of longs and doubles
+        assert(i != 0 && (sig_bt[i - 1] == T_LONG || sig_bt[i - 1] == T_DOUBLE), "expecting half");
+        parm_regs[i].set_bad();
+        break;
+      default:
+        ShouldNotReachHere();
+        break;
+    }
+  }
 }

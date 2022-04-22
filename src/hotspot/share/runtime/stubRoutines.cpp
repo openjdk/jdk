@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,11 @@
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/vectorSupport.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timerTrace.hpp"
-#include "runtime/safefetch.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #ifdef COMPILER2
@@ -72,15 +73,6 @@ address StubRoutines::_atomic_cmpxchg_long_entry                = NULL;
 address StubRoutines::_atomic_add_entry                         = NULL;
 address StubRoutines::_atomic_add_long_entry                    = NULL;
 address StubRoutines::_fence_entry                              = NULL;
-address StubRoutines::_d2i_wrapper                              = NULL;
-address StubRoutines::_d2l_wrapper                              = NULL;
-
-jint    StubRoutines::_fpu_cntrl_wrd_std                        = 0;
-jint    StubRoutines::_fpu_cntrl_wrd_24                         = 0;
-jint    StubRoutines::_fpu_cntrl_wrd_trunc                      = 0;
-jint    StubRoutines::_mxcsr_std                                = 0;
-jint    StubRoutines::_fpu_subnormal_bias1[3]                   = { 0, 0, 0 };
-jint    StubRoutines::_fpu_subnormal_bias2[3]                   = { 0, 0, 0 };
 
 // Compiled code entry points default values
 // The default functions don't have separate disjoint versions.
@@ -132,6 +124,7 @@ address StubRoutines::_cipherBlockChaining_decryptAESCrypt = NULL;
 address StubRoutines::_electronicCodeBook_encryptAESCrypt  = NULL;
 address StubRoutines::_electronicCodeBook_decryptAESCrypt  = NULL;
 address StubRoutines::_counterMode_AESCrypt                = NULL;
+address StubRoutines::_galoisCounterMode_AESCrypt          = NULL;
 address StubRoutines::_ghash_processBlocks                 = NULL;
 address StubRoutines::_base64_encodeBlock                  = NULL;
 address StubRoutines::_base64_decodeBlock                  = NULL;
@@ -175,12 +168,8 @@ address StubRoutines::_dlibm_reduce_pi04l = NULL;
 address StubRoutines::_dlibm_tan_cot_huge = NULL;
 address StubRoutines::_dtan = NULL;
 
-address StubRoutines::_safefetch32_entry                 = NULL;
-address StubRoutines::_safefetch32_fault_pc              = NULL;
-address StubRoutines::_safefetch32_continuation_pc       = NULL;
-address StubRoutines::_safefetchN_entry                  = NULL;
-address StubRoutines::_safefetchN_fault_pc               = NULL;
-address StubRoutines::_safefetchN_continuation_pc        = NULL;
+address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{NULL}, {NULL}};
+address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{NULL}, {NULL}};
 
 // Initialization
 //
@@ -219,7 +208,10 @@ void StubRoutines::initialize1() {
   if (_code1 == NULL) {
     ResourceMark rm;
     TraceTime timer("StubRoutines generation 1", TRACETIME_LOG(Info, startuptime));
-    _code1 = BufferBlob::create("StubRoutines (1)", code_size1);
+    // Add extra space for large CodeEntryAlignment
+    int max_aligned_stubs = 10;
+    int size = code_size1 + CodeEntryAlignment * max_aligned_stubs;
+    _code1 = BufferBlob::create("StubRoutines (1)", size);
     if (_code1 == NULL) {
       vm_exit_out_of_memory(code_size1, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (1)");
     }
@@ -273,7 +265,10 @@ void StubRoutines::initialize2() {
   if (_code2 == NULL) {
     ResourceMark rm;
     TraceTime timer("StubRoutines generation 2", TRACETIME_LOG(Info, startuptime));
-    _code2 = BufferBlob::create("StubRoutines (2)", code_size2);
+    // Add extra space for large CodeEntryAlignment
+    int max_aligned_stubs = 100;
+    int size = code_size2 + CodeEntryAlignment * max_aligned_stubs;
+    _code2 = BufferBlob::create("StubRoutines (2)", size);
     if (_code2 == NULL) {
       vm_exit_out_of_memory(code_size2, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (2)");
     }

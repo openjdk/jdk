@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveBuilder.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/archiveBuilder.hpp"
-#include "memory/dynamicArchive.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -91,7 +91,14 @@ static volatile bool   _has_items_to_clean = false;
 
 
 static volatile bool _alt_hash = false;
+
+#ifdef USE_LIBRARY_BASED_TLS_ONLY
 static volatile bool _lookup_shared_first = false;
+#else
+// "_lookup_shared_first" can get highly contended with many cores if multiple threads
+// are updating "lookup success history" in a global shared variable. If built-in TLS is available, use it.
+static THREAD_LOCAL bool _lookup_shared_first = false;
+#endif
 
 // Static arena for symbols that are not deallocated
 Arena* SymbolTable::_arena = NULL;
@@ -132,11 +139,11 @@ public:
     }
   }
   // We use default allocation/deallocation but counted
-  static void* allocate_node(size_t size, Value const& value) {
+  static void* allocate_node(void* context, size_t size, Value const& value) {
     SymbolTable::item_added();
     return AllocateHeap(size, mtSymbol);
   }
-  static void free_node(void* memory, Value const& value) {
+  static void free_node(void* context, void* memory, Value const& value) {
     // We get here because #1 some threads lost a race to insert a newly created Symbol
     // or #2 we're cleaning up unused symbol.
     // If #1, then the symbol can be either permanent,
@@ -452,7 +459,7 @@ Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
 void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHandle& cp,
                               int names_count, const char** names, int* lengths,
                               int* cp_indices, unsigned int* hashValues) {
-  // Note that c_heap will be true for non-strong hidden classes and unsafe anonymous classes
+  // Note that c_heap will be true for non-strong hidden classes.
   // even if their loader is the boot loader because they will have a different cld.
   bool c_heap = !loader_data->is_the_null_class_loader_data();
   for (int i = 0; i < names_count; i++) {
@@ -472,17 +479,17 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   bool clean_hint = false;
   bool rehash_warning = false;
   Symbol* sym = NULL;
-  Thread* THREAD = Thread::current();
+  Thread* current = Thread::current();
 
   do {
     // Callers have looked up the symbol once, insert the symbol.
     sym = allocate_symbol(name, len, heap);
-    if (_local_table->insert(THREAD, lookup, sym, &rehash_warning, &clean_hint)) {
+    if (_local_table->insert(current, lookup, sym, &rehash_warning, &clean_hint)) {
       break;
     }
     // In case another thread did a concurrent add, return value already in the table.
     // This could fail if the symbol got deleted concurrently, so loop back until success.
-    if (_local_table->get(THREAD, lookup, stg, &rehash_warning)) {
+    if (_local_table->get(current, lookup, stg, &rehash_warning)) {
       sym = stg.get_res_sym();
       break;
     }
@@ -528,10 +535,17 @@ TableStatistics SymbolTable::get_table_statistics() {
   return ts;
 }
 
-void SymbolTable::print_table_statistics(outputStream* st,
-                                         const char* table_name) {
+void SymbolTable::print_table_statistics(outputStream* st) {
   SizeFunc sz;
-  _local_table->statistics_to(Thread::current(), sz, st, table_name);
+  _local_table->statistics_to(Thread::current(), sz, st, "SymbolTable");
+
+  if (!_shared_table.empty()) {
+    _shared_table.print_table_statistics(st, "Shared Symbol Table");
+  }
+
+  if (!_dynamic_shared_table.empty()) {
+    _dynamic_shared_table.print_table_statistics(st, "Dynamic Shared Symbol Table");
+  }
 }
 
 // Verification
@@ -555,6 +569,14 @@ void SymbolTable::verify() {
   }
 }
 
+static void print_symbol(outputStream* st, Symbol* sym) {
+  const char* utf8_string = (const char*)sym->bytes();
+  int utf8_length = sym->utf8_length();
+  st->print("%d %d: ", utf8_length, sym->refcount());
+  HashtableTextDump::put_utf8(st, utf8_string, utf8_length);
+  st->cr();
+}
+
 // Dumping
 class DumpSymbol : StackObj {
   Thread* _thr;
@@ -564,19 +586,24 @@ public:
   bool operator()(Symbol** value) {
     assert(value != NULL, "expected valid value");
     assert(*value != NULL, "value should point to a symbol");
-    Symbol* sym = *value;
-    const char* utf8_string = (const char*)sym->bytes();
-    int utf8_length = sym->utf8_length();
-    _st->print("%d %d: ", utf8_length, sym->refcount());
-    HashtableTextDump::put_utf8(_st, utf8_string, utf8_length);
-    _st->cr();
+    print_symbol(_st, *value);
     return true;
+  };
+};
+
+class DumpSharedSymbol : StackObj {
+  outputStream* _st;
+public:
+  DumpSharedSymbol(outputStream* st) : _st(st) {}
+  void do_value(Symbol* value) {
+    assert(value != NULL, "value should point to a symbol");
+    print_symbol(_st, value);
   };
 };
 
 void SymbolTable::dump(outputStream* st, bool verbose) {
   if (!verbose) {
-    print_table_statistics(st, "SymbolTable");
+    print_table_statistics(st);
   } else {
     Thread* thr = Thread::current();
     ResourceMark rm(thr);
@@ -584,6 +611,20 @@ void SymbolTable::dump(outputStream* st, bool verbose) {
     DumpSymbol ds(thr, st);
     if (!_local_table->try_scan(thr, ds)) {
       log_info(symboltable)("dump unavailable at this moment");
+    }
+    if (!_shared_table.empty()) {
+      st->print_cr("#----------------");
+      st->print_cr("# Shared symbols:");
+      st->print_cr("#----------------");
+      DumpSharedSymbol dss(st);
+      _shared_table.iterate(&dss);
+    }
+    if (!_dynamic_shared_table.empty()) {
+      st->print_cr("#------------------------");
+      st->print_cr("# Dynamic shared symbols:");
+      st->print_cr("#------------------------");
+      DumpSharedSymbol dss(st);
+      _dynamic_shared_table.iterate(&dss);
     }
   }
 }
@@ -880,15 +921,4 @@ void SymboltableDCmd::execute(DCmdSource source, TRAPS) {
   VM_DumpHashtable dumper(output(), VM_DumpHashtable::DumpSymbols,
                          _verbose.value());
   VMThread::execute(&dumper);
-}
-
-int SymboltableDCmd::num_arguments() {
-  ResourceMark rm;
-  SymboltableDCmd* dcmd = new SymboltableDCmd(NULL, false);
-  if (dcmd != NULL) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
 }

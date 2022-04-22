@@ -39,7 +39,7 @@ import org.xml.sax.helpers.XMLReaderAdapter;
  * @test
  * @bug 8158246
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true sax.XMLReaderTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow sax.XMLReaderTest
  * @run testng/othervm sax.XMLReaderTest
  * @summary This class contains tests that cover the creation of XMLReader.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,11 +56,11 @@ static long calculate_number_of_pages_in_range(void* address, size_t len, size_t
 
 JNIEXPORT jboolean JNICALL
 Java_java_nio_MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong address,
-                                         jlong len, jint numPages)
+                                         jlong len, jlong numPages)
 {
     jboolean loaded = JNI_TRUE;
     int result = 0;
-    int i = 0;
+    long i = 0;
     void *a = (void *) jlong_to_ptr(address);
     mincore_vec_t* vec = NULL;
 
@@ -70,7 +70,7 @@ Java_java_nio_MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong addres
     if ((long)pagesize == -1) {
         return JNI_FALSE;
     }
-    numPages = (jint) calculate_number_of_pages_in_range(a, len, pagesize);
+    numPages = (jlong) calculate_number_of_pages_in_range(a, len, pagesize);
 #endif
 
     /* Include space for one sentinel byte at the end of the buffer

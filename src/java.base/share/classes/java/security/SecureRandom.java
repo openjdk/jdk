@@ -25,11 +25,13 @@
 
 package java.security;
 
+import java.math.BigInteger;
 import java.util.*;
+import java.util.random.RandomGenerator;
 import java.util.regex.*;
-
 import java.security.Provider.Service;
 
+import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
 import sun.security.provider.SunEntries;
@@ -48,7 +50,7 @@ import sun.security.util.Debug;
  * Therefore any seed material passed to a {@code SecureRandom} object must be
  * unpredictable, and all {@code SecureRandom} output sequences must be
  * cryptographically strong, as described in
- * <a href="http://tools.ietf.org/html/rfc4086">
+ * <a href="https://tools.ietf.org/html/rfc4086">
  * <i>RFC 4086: Randomness Requirements for Security</i></a>.
  *
  * <p> Many {@code SecureRandom} implementations are in the form of a
@@ -147,6 +149,10 @@ import sun.security.util.Debug;
  * @since 1.1
  */
 
+@RandomGeneratorProperties(
+        name = "SecureRandom",
+        isStochastic = true
+)
 public class SecureRandom extends java.util.Random {
 
     private static final Debug pdebug =
@@ -927,6 +933,7 @@ public class SecureRandom extends java.util.Random {
     public static SecureRandom getInstanceStrong()
             throws NoSuchAlgorithmException {
 
+        @SuppressWarnings("removal")
         String property = AccessController.doPrivileged(
             new PrivilegedAction<>() {
                 @Override

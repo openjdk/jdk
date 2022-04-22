@@ -25,6 +25,7 @@
  * @test
  * @bug 8191278
  * @requires os.family != "windows"
+ * @requires vm.flavor != "zero"
  * @summary Check that SIGBUS errors caused by memory accesses in Unsafe_CopyMemory()
  * and UnsafeCopySwapMemory() get converted to java.lang.InternalError exceptions.
  * @modules java.base/jdk.internal.misc
@@ -55,7 +56,7 @@ public class InternalErrorTest {
 
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static final int pageSize = WhiteBox.getWhiteBox().getVMPageSize();
-    private static final String expectedErrorMsg = "fault occurred in a recent unsafe memory access";
+    private static final String expectedErrorMsg = "fault occurred in an unsafe memory access";
     private static final String failureMsg1 = "InternalError not thrown";
     private static final String failureMsg2 = "Wrong InternalError: ";
 

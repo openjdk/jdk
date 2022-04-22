@@ -27,6 +27,7 @@
  * @summary Verify processing of UseCountLeadingZerosInstruction option
  *          on CPU without LZCNT support.
  * @library /test/lib /
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
  *

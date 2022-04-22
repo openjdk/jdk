@@ -204,7 +204,7 @@ public class BasicJavacTask extends JavacTask {
                 java.util.List<String> options =
                         pluginDesc.getOptions().entrySet().stream()
                                 .map(e -> e.getKey() + "=" + e.getValue())
-                                .collect(Collectors.toList());
+                                .toList();
                 try {
                     initPlugin(pluginDesc.getPlugin(), options.toArray(new String[options.size()]));
                 } catch (RuntimeException ex) {

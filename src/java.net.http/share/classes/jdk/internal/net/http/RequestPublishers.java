@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,6 +253,7 @@ public final class RequestPublishers {
          */
         public static FilePublisher create(Path path)
                 throws FileNotFoundException {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             FilePermission filePermission = null;
             boolean defaultFS = true;
@@ -289,6 +290,7 @@ public final class RequestPublishers {
 
             Permission perm = filePermission;
             assert perm == null || perm.getActions().equals("read");
+            @SuppressWarnings("removal")
             AccessControlContext acc = sm != null ?
                     AccessController.getContext() : null;
             boolean finalDefaultFS = defaultFS;
@@ -305,6 +307,7 @@ public final class RequestPublishers {
             return new FilePublisher(path, length, inputStreamSupplier);
         }
 
+        @SuppressWarnings("removal")
         private static InputStream createInputStream(Path path,
                                                      AccessControlContext acc,
                                                      Permission perm,
@@ -583,7 +586,7 @@ public final class RequestPublishers {
         AggregateSubscription(List<BodyPublisher> bodies, Flow.Subscriber<? super ByteBuffer> subscriber) {
             this.bodies = new ConcurrentLinkedQueue<>(bodies);
             this.subscriber = subscriber;
-            this.scheduler = SequentialScheduler.synchronizedScheduler(this::run);
+            this.scheduler = SequentialScheduler.lockingScheduler(this::run);
         }
 
         @Override

@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6354969
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true xpath.ClassLoaderTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow xpath.ClassLoaderTest
  * @run testng/othervm xpath.ClassLoaderTest
  * @summary Test XPathFactory newInstance() with ContextClassLoader.
  */

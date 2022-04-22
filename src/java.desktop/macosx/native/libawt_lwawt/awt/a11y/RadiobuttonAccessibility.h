@@ -28,5 +28,6 @@
 @interface RadiobuttonAccessibility : ButtonAccessibility <NSAccessibilityRadioButton> {
 
 };
-- (id)accessibilityValue;
+- (NSAccessibilityRole _Nonnull)accessibilityRole;
+- (id _Nonnull)accessibilityValue;
 @end

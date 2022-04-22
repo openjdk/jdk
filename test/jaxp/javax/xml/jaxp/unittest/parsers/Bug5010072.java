@@ -36,7 +36,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 5010072
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug5010072
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug5010072
  * @run testng/othervm parsers.Bug5010072
  * @summary Test SchemaFactory throws SAXException if xpath is "@".
  */

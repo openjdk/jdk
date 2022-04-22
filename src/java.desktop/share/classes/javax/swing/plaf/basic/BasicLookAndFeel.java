@@ -186,6 +186,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("removal")
     public void uninitialize() {
         AppContext context = AppContext.getAppContext();
         synchronized (BasicPopupMenuUI.MOUSE_GRABBER_KEY) {
@@ -2071,6 +2072,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
          * Class.getResourceAsStream just returns raw
          * bytes, which we can convert to a sound.
          */
+        @SuppressWarnings("removal")
         byte[] buffer = AccessController.doPrivileged(
                                                  new PrivilegedAction<byte[]>() {
                 public byte[] run() {
@@ -2179,6 +2181,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
      * events that can possibly invoke popup on the component
      */
     class AWTEventHelper implements AWTEventListener,PrivilegedAction<Object> {
+        @SuppressWarnings("removal")
         AWTEventHelper() {
             super();
             AccessController.doPrivileged(this);

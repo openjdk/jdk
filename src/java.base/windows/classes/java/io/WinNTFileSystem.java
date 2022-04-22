@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.io;
 
 import java.io.File;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.BitSet;
 import java.util.Locale;
@@ -44,6 +45,21 @@ class WinNTFileSystem extends FileSystem {
     private final char altSlash;
     private final char semicolon;
     private final String userDir;
+
+    // Whether to enable alternative data streams (ADS) by suppressing
+    // checking the path for invalid characters, in particular ":".
+    // ADS support will be enabled if and only if the property is set and
+    // is the empty string or is equal, ignoring case, to the string "true".
+    // By default ADS support is disabled.
+    private static final boolean ENABLE_ADS;
+    static {
+        String enableADS = GetPropertyAction.privilegedGetProperty("jdk.io.File.enableADS");
+        if (enableADS != null) {
+            ENABLE_ADS = "".equals(enableADS) || Boolean.parseBoolean(enableADS);
+        } else {
+            ENABLE_ADS = false;
+        }
+    }
 
     public WinNTFileSystem() {
         Properties props = GetPropertyAction.privilegedGetProperties();
@@ -306,6 +322,36 @@ class WinNTFileSystem extends FileSystem {
     }
 
     @Override
+    public boolean isInvalid(File f) {
+        if (f.getPath().indexOf('\u0000') >= 0)
+            return true;
+
+        if (ENABLE_ADS)
+            return false;
+
+        // Invalid if there is a ":" at a position greater than 1, or if there
+        // is a ":" at position 1 and the first character is not a letter
+        String pathname = f.getPath();
+        int lastColon = pathname.lastIndexOf(":");
+
+        // Valid if there is no ":" present or if the last ":" present is
+        // at index 1 and the first character is a latter
+        if (lastColon < 0 ||
+            (lastColon == 1 && isLetter(pathname.charAt(0))))
+            return false;
+
+        // Invalid if path creation fails
+        Path path = null;
+        try {
+            path = sun.nio.fs.DefaultFileSystemProvider.theFileSystem().getPath(pathname);
+            return false;
+        } catch (InvalidPathException ignored) {
+        }
+
+        return true;
+    }
+
+    @Override
     public String resolve(File f) {
         String path = f.getPath();
         int pl = f.getPrefixLength();
@@ -333,6 +379,7 @@ class WinNTFileSystem extends FileSystem {
                    drive other than the current drive, insist that the caller
                    have read permission on the result */
                 String p = drive + (':' + dir + slashify(path.substring(2)));
+                @SuppressWarnings("removal")
                 SecurityManager security = System.getSecurityManager();
                 try {
                     if (security != null) security.checkRead(p);
@@ -350,11 +397,12 @@ class WinNTFileSystem extends FileSystem {
     private String getUserPath() {
         /* For both compatibility and security,
            we must look this up every time */
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertyAccess("user.dir");
         }
-        return normalize(userDir);
+        return userDir;
     }
 
     private String getDrive(String path) {
@@ -614,6 +662,7 @@ class WinNTFileSystem extends FileSystem {
 
     private boolean access(String path) {
         try {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) security.checkRead(path);
             return true;

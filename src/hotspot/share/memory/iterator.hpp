@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,15 +283,13 @@ class MonitorClosure : public StackObj {
 // A closure that is applied without any arguments.
 class VoidClosure : public StackObj {
  public:
-  // I would have liked to declare this a pure virtual, but that breaks
-  // in mysterious ways, for unknown reasons.
-  virtual void do_void();
+  virtual void do_void() = 0;
 };
 
 
 // YieldClosure is intended for use by iteration loops
 // to incrementalize their work, allowing interleaving
-// of an interruptable task so as to allow other
+// of an interruptible task so as to allow other
 // threads to run (which may not otherwise be able to access
 // exclusive resources, for instance). Additionally, the
 // closure also allows for aborting an ongoing iteration
@@ -341,17 +339,6 @@ public:
 class SymbolClosure : public StackObj {
  public:
   virtual void do_symbol(Symbol**) = 0;
-
-  // Clear LSB in symbol address; it can be set by CPSlot.
-  static Symbol* load_symbol(Symbol** p) {
-    return (Symbol*)(intptr_t(*p) & ~1);
-  }
-
-  // Store symbol, adjusting new pointer if the original pointer was adjusted
-  // (symbol references in constant pool slots have their LSB set to 1).
-  static void store_symbol(Symbol** p, Symbol* sym) {
-    *p = (Symbol*)(intptr_t(sym) | (intptr_t(*p) & 1));
-  }
 };
 
 template <typename E>

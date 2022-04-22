@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestRSAKeyLength
- * @run main/othervm TestRSAKeyLength sm
+ * @run main/othervm -Djava.security.manager=allow TestRSAKeyLength sm
  */
 
 import java.security.InvalidKeyException;

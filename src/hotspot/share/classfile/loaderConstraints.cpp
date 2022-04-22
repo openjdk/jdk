@@ -191,6 +191,7 @@ void log_ldr_constraint_msg(Symbol* class_name, const char* reason,
 bool LoaderConstraintTable::add_entry(Symbol* class_name,
                                       InstanceKlass* klass1, Handle class_loader1,
                                       InstanceKlass* klass2, Handle class_loader2) {
+
   LogTarget(Info, class, loader, constraints) lt;
   if (klass1 != NULL && klass2 != NULL) {
     if (klass1 == klass2) {
@@ -244,9 +245,8 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
     p->set_loaders(NEW_C_HEAP_ARRAY(ClassLoaderData*, 2, mtClass));
     p->set_loader(0, class_loader1());
     p->set_loader(1, class_loader2());
-    p->set_klass(klass);
-    p->set_next(bucket(index));
-    set_entry(index, p);
+    Hashtable<InstanceKlass*, mtClass>::add_entry(index, p);
+
     if (lt.is_enabled()) {
       ResourceMark rm;
       lt.print("adding new constraint for name: %s, loader[0]: %s,"
@@ -476,13 +476,15 @@ void LoaderConstraintTable::print_on(outputStream* st) const {
                                 probe != NULL;
                                 probe = probe->next()) {
       st->print("%4d: ", cindex);
-      probe->name()->print_on(st);
-      st->print(" , loaders:");
+      st->print("Symbol: %s loaders:", probe->name()->as_C_string());
       for (int n = 0; n < probe->num_loaders(); n++) {
+        st->cr();
+        st->print("    ");
         probe->loader_data(n)->print_value_on(st);
-        st->print(", ");
       }
       st->cr();
     }
   }
 }
+
+void LoaderConstraintTable::print() const { print_on(tty); }

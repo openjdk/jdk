@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public abstract class AbstractEventStream implements EventStream {
 
     private final Object terminated = new Object();
     private final Runnable flushOperation = () -> dispatcher().runFlushActions();
+    @SuppressWarnings("removal")
     private final AccessControlContext accessControllerContext;
     private final StreamConfiguration streamConfiguration = new StreamConfiguration();
     protected final PlatformRecording recording;
@@ -64,9 +65,11 @@ public abstract class AbstractEventStream implements EventStream {
     private volatile Thread thread;
     private Dispatcher dispatcher;
 
-    private volatile boolean closed;
+    protected final ParserState parserState = new ParserState();
 
-    AbstractEventStream(AccessControlContext acc, PlatformRecording recording, List<Configuration> configurations) throws IOException {
+    private boolean daemon = false;
+
+    AbstractEventStream(@SuppressWarnings("removal") AccessControlContext acc, PlatformRecording recording, List<Configuration> configurations) throws IOException {
         this.accessControllerContext = Objects.requireNonNull(acc);
         this.recording = recording;
         this.configurations = configurations;
@@ -101,9 +104,14 @@ public abstract class AbstractEventStream implements EventStream {
         streamConfiguration.setReuse(reuse);
     }
 
+    // Only used if -Xlog:jfr+event* is specified
+    public final void setDaemon(boolean daemon) {
+        this.daemon = daemon;
+    }
+
     @Override
     public final void setStartTime(Instant startTime) {
-        Objects.nonNull(startTime);
+        Objects.requireNonNull(startTime, "startTime");
         synchronized (streamConfiguration) {
             if (streamConfiguration.started) {
                 throw new IllegalStateException("Stream is already started");
@@ -117,7 +125,7 @@ public abstract class AbstractEventStream implements EventStream {
 
     @Override
     public final void setEndTime(Instant endTime) {
-        Objects.requireNonNull(endTime);
+        Objects.requireNonNull(endTime, "endTime");
         synchronized (streamConfiguration) {
             if (streamConfiguration.started) {
                 throw new IllegalStateException("Stream is already started");
@@ -128,38 +136,38 @@ public abstract class AbstractEventStream implements EventStream {
 
     @Override
     public final void onEvent(Consumer<RecordedEvent> action) {
-        Objects.requireNonNull(action);
+        Objects.requireNonNull(action, "action");
         streamConfiguration.addEventAction(action);
     }
 
     @Override
     public final void onEvent(String eventName, Consumer<RecordedEvent> action) {
-        Objects.requireNonNull(eventName);
-        Objects.requireNonNull(action);
+        Objects.requireNonNull(eventName, "eventName");
+        Objects.requireNonNull(action, "action");
         streamConfiguration.addEventAction(eventName, action);
     }
 
     @Override
     public final void onFlush(Runnable action) {
-        Objects.requireNonNull(action);
+        Objects.requireNonNull(action, "action");
         streamConfiguration.addFlushAction(action);
     }
 
     @Override
     public final void onClose(Runnable action) {
-        Objects.requireNonNull(action);
+        Objects.requireNonNull(action, "action");
         streamConfiguration.addCloseAction(action);
     }
 
     @Override
     public final void onError(Consumer<Throwable> action) {
-        Objects.requireNonNull(action);
+        Objects.requireNonNull(action, "action");
         streamConfiguration.addErrorAction(action);
     }
 
     @Override
     public final boolean remove(Object action) {
-        Objects.requireNonNull(action);
+        Objects.requireNonNull(action, "action");
         return streamConfiguration.remove(action);
     }
 
@@ -170,7 +178,7 @@ public abstract class AbstractEventStream implements EventStream {
 
     @Override
     public final void awaitTermination(Duration timeout) throws InterruptedException {
-        Objects.requireNonNull(timeout);
+        Objects.requireNonNull(timeout, "timeout");
         if (timeout.isNegative()) {
             throw new IllegalArgumentException("timeout value is negative");
         }
@@ -207,18 +215,19 @@ public abstract class AbstractEventStream implements EventStream {
 
     protected abstract void process() throws IOException;
 
-    protected final void setClosed(boolean closed) {
-        this.closed = closed;
+    protected final void closeParser() {
+        parserState.close();
     }
 
     protected final boolean isClosed() {
-        return closed;
+        return parserState.isClosed();
     }
 
     public final void startAsync(long startNanos) {
         startInternal(startNanos);
         Runnable r = () -> run(accessControllerContext);
         thread = SecuritySupport.createThreadWitNoPermissions(nextThreadName(), r);
+        SecuritySupport.setDaemonThread(thread, daemon);
         thread.start();
     }
 
@@ -272,6 +281,7 @@ public abstract class AbstractEventStream implements EventStream {
         }
     }
 
+    @SuppressWarnings("removal")
     private void run(AccessControlContext accessControlContext) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
@@ -288,7 +298,7 @@ public abstract class AbstractEventStream implements EventStream {
 
     @Override
     public void onMetadata(Consumer<MetadataEvent> action) {
-        Objects.requireNonNull(action);
+        Objects.requireNonNull(action, "action");
         synchronized (streamConfiguration) {
             if (streamConfiguration.started) {
                 throw new IllegalStateException("Stream is already started");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
  */
 
 package sun.net.httpserver;
-import java.io.*;
 import java.util.*;
 import java.lang.System.Logger;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import com.sun.net.httpserver.*;
-import com.sun.net.httpserver.spi.*;
 
 /**
  * HttpContext represents a mapping between a protocol (http or https) together with a root URI path
@@ -40,17 +40,17 @@ import com.sun.net.httpserver.spi.*;
  */
 class HttpContextImpl extends HttpContext {
 
-    private String path;
-    private String protocol;
-    private HttpHandler handler;
-    private Map<String,Object> attributes = new HashMap<String,Object>();
-    private ServerImpl server;
+    private final String path;
+    private final String protocol;
+    private final ServerImpl server;
+    private final AuthFilter authfilter;
+    private final Map<String,Object> attributes = new ConcurrentHashMap<>();
     /* system filters, not visible to applications */
-    private LinkedList<Filter> sfilters = new LinkedList<Filter>();
+    private final List<Filter> sfilters = new CopyOnWriteArrayList<>();
     /* user filters, set by applications */
-    private LinkedList<Filter> ufilters = new LinkedList<Filter>();
+    private final List<Filter> ufilters = new CopyOnWriteArrayList<>();
     private Authenticator authenticator;
-    private AuthFilter authfilter;
+    private HttpHandler handler;
 
     /**
      * constructor is package private.

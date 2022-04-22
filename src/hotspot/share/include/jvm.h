@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,10 @@ JNIEXPORT jboolean JNICALL
 JVM_IsUseContainerSupport(void);
 
 JNIEXPORT void * JNICALL
-JVM_LoadLibrary(const char *name);
+JVM_LoadZipLibrary();
+
+JNIEXPORT void * JNICALL
+JVM_LoadLibrary(const char *name, jboolean throwException);
 
 JNIEXPORT void JNICALL
 JVM_UnloadLibrary(void * handle);
@@ -170,20 +173,20 @@ JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
 
 JNIEXPORT void JNICALL
 JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env, jclass caller,
-                                         jstring invokedName,
-                                         jobject invokedType,
-                                         jobject methodType,
-                                         jobject implMethodMember,
-                                         jobject instantiatedMethodType,
+                                         jstring interfaceMethodName,
+                                         jobject factoryType,
+                                         jobject interfaceMethodType,
+                                         jobject implementationMember,
+                                         jobject dynamicMethodType,
                                          jclass lambdaProxyClass);
 
 JNIEXPORT jclass JNICALL
 JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env, jclass caller,
-                                      jstring invokedName,
-                                      jobject invokedType,
-                                      jobject methodType,
-                                      jobject implMethodMember,
-                                      jobject instantiatedMethodType);
+                                      jstring interfaceMethodName,
+                                      jobject factoryType,
+                                      jobject interfaceMethodType,
+                                      jobject implementationMember,
+                                      jobject dynamicMethodType);
 
 JNIEXPORT jboolean JNICALL
 JVM_IsCDSDumpingEnabled(JNIEnv* env);
@@ -199,6 +202,12 @@ JVM_GetRandomSeedForDumping();
 
 JNIEXPORT void JNICALL
 JVM_LogLambdaFormInvoker(JNIEnv* env, jstring line);
+
+JNIEXPORT void JNICALL
+JVM_DumpClassListToFile(JNIEnv* env, jstring fileName);
+
+JNIEXPORT void JNICALL
+JVM_DumpDynamicArchive(JNIEnv* env, jstring archiveName);
 
 /*
  * java.lang.Throwable
@@ -440,7 +449,7 @@ JVM_LookupDefineClass(JNIEnv *env, jclass lookup, const char *name, const jbyte 
                       jsize len, jobject pd, jboolean init, int flags, jobject classData);
 
 /*
- * Module support funcions
+ * Module support functions
  */
 
 /*
@@ -600,7 +609,7 @@ JVM_GetNestHost(JNIEnv *env, jclass current);
 JNIEXPORT jobjectArray JNICALL
 JVM_GetNestMembers(JNIEnv *env, jclass current);
 
-/* Records - since JDK 14 */
+/* Records - since JDK 16 */
 
 JNIEXPORT jboolean JNICALL
 JVM_IsRecord(JNIEnv *env, jclass cls);
@@ -608,7 +617,7 @@ JVM_IsRecord(JNIEnv *env, jclass cls);
 JNIEXPORT jobjectArray JNICALL
 JVM_GetRecordComponents(JNIEnv *env, jclass ofClass);
 
-/* Sealed types - since JDK 15 */
+/* Sealed classes - since JDK 17 */
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetPermittedSubclasses(JNIEnv *env, jclass current);
@@ -746,6 +755,15 @@ JVM_AssertionStatusDirectives(JNIEnv *env, jclass unused);
  */
 JNIEXPORT jboolean JNICALL
 JVM_SupportsCX8(void);
+
+/*
+ * java.lang.ref.Finalizer
+ */
+JNIEXPORT void JNICALL
+JVM_ReportFinalizationComplete(JNIEnv *env, jobject finalizee);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsFinalizationEnabled(JNIEnv *env);
 
 /*************************************************************************
  PART 2: Support for the Verifier and Class File Format Checker

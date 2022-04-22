@@ -1,2 +1,2 @@
-- compiler.err.cannot.generate.class: compiler.misc.anonymous.class: T8203436b$1, (compiler.misc.illegal.signature: compiler.misc.anonymous.class: T8203436b$1, java.lang.Object&T8203436b.A&T8203436b.B)
+T8203436b.java:17:10: compiler.err.enclosing.class.type.non.denotable: T8203436b<java.lang.Object&T8203436b.A&T8203436b.B>
 1 error

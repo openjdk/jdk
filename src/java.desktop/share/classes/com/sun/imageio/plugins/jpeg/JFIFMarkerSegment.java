@@ -25,40 +25,40 @@
 
 package com.sun.imageio.plugins.jpeg;
 
+import java.awt.Graphics;
+import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ColorSpace;
+import java.awt.color.ICC_Profile;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.IndexColorModel;
+import java.awt.image.Raster;
+import java.awt.image.SampleModel;
+import java.awt.image.WritableRaster;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.imageio.IIOException;
 import javax.imageio.IIOImage;
-import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageReader;
+import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.event.IIOReadProgressListener;
 import javax.imageio.metadata.IIOInvalidTreeException;
 import javax.imageio.metadata.IIOMetadataNode;
-import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import javax.imageio.stream.MemoryCacheImageOutputStream;
-import javax.imageio.event.IIOReadProgressListener;
 
-import java.awt.Graphics;
-import java.awt.color.ICC_Profile;
-import java.awt.color.ICC_ColorSpace;
-import java.awt.color.ColorSpace;
-import java.awt.image.ColorModel;
-import java.awt.image.SampleModel;
-import java.awt.image.IndexColorModel;
-import java.awt.image.ComponentColorModel;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferByte;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
-import java.io.IOException;
-import java.io.ByteArrayOutputStream;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.NamedNodeMap;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * A JFIF (JPEG File Interchange Format) APP0 (Application-Specific)
@@ -158,9 +158,7 @@ class JFIFMarkerSegment extends MarkerSegment {
         JFIFMarkerSegment newGuy = (JFIFMarkerSegment) super.clone();
         if (!extSegments.isEmpty()) { // Clone the list with a deep copy
             newGuy.extSegments = new ArrayList<>();
-            for (Iterator<JFIFExtensionMarkerSegment> iter =
-                    extSegments.iterator(); iter.hasNext();) {
-                JFIFExtensionMarkerSegment jfxx = iter.next();
+            for (JFIFExtensionMarkerSegment jfxx : extSegments) {
                 newGuy.extSegments.add((JFIFExtensionMarkerSegment) jfxx.clone());
             }
         }
@@ -230,9 +228,7 @@ class JFIFMarkerSegment extends MarkerSegment {
         if (!extSegments.isEmpty()) {
             IIOMetadataNode JFXXnode = new IIOMetadataNode("JFXX");
             node.appendChild(JFXXnode);
-            for (Iterator<JFIFExtensionMarkerSegment> iter =
-                    extSegments.iterator(); iter.hasNext();) {
-                JFIFExtensionMarkerSegment seg = iter.next();
+            for (JFIFExtensionMarkerSegment seg : extSegments) {
                 JFXXnode.appendChild(seg.getNativeNode());
             }
         }
@@ -556,7 +552,7 @@ class JFIFMarkerSegment extends MarkerSegment {
     // Could put reason codes in here to be parsed in writeJFXXSegment
     // in order to provide more meaningful warnings.
     @SuppressWarnings("serial") // JDK-implementation class
-    private class IllegalThumbException extends Exception {}
+    private static class IllegalThumbException extends Exception {}
 
     /**
      * Writes out a new JFXX extension segment, without saving it.
@@ -621,8 +617,7 @@ class JFIFMarkerSegment extends MarkerSegment {
         printTag("JFIF");
         System.out.print("Version ");
         System.out.print(majorVersion);
-        System.out.println(".0"
-                           + Integer.toString(minorVersion));
+        System.out.println(".0" + minorVersion);
         System.out.print("Resolution units: ");
         System.out.println(resUnits);
         System.out.print("X density: ");
@@ -634,9 +629,7 @@ class JFIFMarkerSegment extends MarkerSegment {
         System.out.print("Thumbnail Height: ");
         System.out.println(thumbHeight);
         if (!extSegments.isEmpty()) {
-            for (Iterator<JFIFExtensionMarkerSegment> iter =
-                    extSegments.iterator(); iter.hasNext();) {
-                JFIFExtensionMarkerSegment extSegment = iter.next();
+            for (JFIFExtensionMarkerSegment extSegment : extSegments) {
                 extSegment.print();
             }
         }
@@ -801,7 +794,7 @@ class JFIFMarkerSegment extends MarkerSegment {
      * A superclass for the varieties of thumbnails that can
      * be stored in a JFIF extension marker segment.
      */
-    abstract class JFIFThumb implements Cloneable {
+    abstract static class JFIFThumb implements Cloneable {
         long streamPos = -1L;  // Save the thumbnail pos when reading
         abstract int getLength(); // When writing
         abstract int getWidth();
@@ -1118,7 +1111,7 @@ class JFIFMarkerSegment extends MarkerSegment {
      * to clip these, but the entire image must fit into a
      * single JFXX marker segment.
      */
-    class JFIFThumbJPEG extends JFIFThumb {
+    static class JFIFThumbJPEG extends JFIFThumb {
         JPEGMetadata thumbMetadata = null;
         byte [] data = null;  // Compressed image data, for writing
         private static final int PREAMBLE_SIZE = 6;
@@ -1241,7 +1234,7 @@ class JFIFMarkerSegment extends MarkerSegment {
             return retval;
         }
 
-        private class ThumbnailReadListener
+        private static class ThumbnailReadListener
             implements IIOReadProgressListener {
             JPEGImageReader reader = null;
             ThumbnailReadListener (JPEGImageReader reader) {
@@ -1353,7 +1346,7 @@ class JFIFMarkerSegment extends MarkerSegment {
             ios.write(0xff);
             ios.write(JPEG.APP2);
             MarkerSegment.write2bytes(ios, segLength);
-            byte [] id = ID.getBytes("US-ASCII");
+            byte[] id = ID.getBytes(US_ASCII);
             ios.write(id);
             ios.write(0); // Null-terminate the string
             ios.write(chunkNum++);

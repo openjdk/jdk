@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 package com.sun.crypto.provider;
 
 import java.util.Arrays;
-import java.nio.ByteBuffer;
 
-import javax.crypto.MacSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.spec.PBEKeySpec;
@@ -174,18 +172,22 @@ abstract class PBMAC1Core extends HmacCore {
             Arrays.fill(passwdChars, '\0');
         }
 
-        SecretKey s;
+        PBKDF2KeyImpl s = null;
         PBKDF2Core kdf = getKDFImpl(kdfAlgo);
+        byte[] derivedKey;
         try {
-            s = kdf.engineGenerateSecret(pbeSpec);
+            s = (PBKDF2KeyImpl)kdf.engineGenerateSecret(pbeSpec);
+            derivedKey = s.getEncoded();
         } catch (InvalidKeySpecException ikse) {
-            InvalidKeyException ike =
-                new InvalidKeyException("Cannot construct PBE key");
-            ike.initCause(ikse);
-            throw ike;
+            throw new InvalidKeyException("Cannot construct PBE key", ikse);
+        } finally {
+            pbeSpec.clearPassword();
+            if (s != null) {
+                s.clearPassword();
+            }
         }
-        byte[] derivedKey = s.getEncoded();
         SecretKey cipherKey = new SecretKeySpec(derivedKey, kdfAlgo);
+        Arrays.fill(derivedKey, (byte)0);
 
         super.engineInit(cipherKey, null);
     }

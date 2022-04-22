@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.security.sasl.ntlm;
 import com.sun.security.ntlm.NTLMException;
 import com.sun.security.ntlm.Server;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.Map;
 import java.util.Random;
 import javax.security.auth.callback.Callback;
@@ -83,11 +82,11 @@ import javax.security.sasl.*;
 
 final class NTLMServer implements SaslServer {
 
-    private final static String NTLM_VERSION =
+    private static final String NTLM_VERSION =
             "com.sun.security.sasl.ntlm.version";
-    private final static String NTLM_DOMAIN =
+    private static final String NTLM_DOMAIN =
             "com.sun.security.sasl.ntlm.domain";
-    private final static String NTLM_HOSTNAME =
+    private static final String NTLM_HOSTNAME =
             "com.sun.security.sasl.ntlm.hostname";
     private static final String NTLM_RANDOM =
             "com.sun.security.sasl.ntlm.random";
@@ -153,9 +152,7 @@ final class NTLMServer implements SaslServer {
                         char[] passwd = pcb.getPassword();
                         pcb.clearPassword();
                         return passwd;
-                    } catch (IOException ioe) {
-                        return null;
-                    } catch (UnsupportedCallbackException uce) {
+                    } catch (IOException | UnsupportedCallbackException e) {
                         return null;
                     }
                 }

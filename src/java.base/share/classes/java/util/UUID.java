@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
             throw new IllegalArgumentException("UUID string too large");
         }
 
-        int dash1 = name.indexOf('-', 0);
+        int dash1 = name.indexOf('-');
         int dash2 = name.indexOf('-', dash1 + 1);
         int dash3 = name.indexOf('-', dash2 + 1);
         int dash4 = name.indexOf('-', dash3 + 1);
@@ -468,8 +468,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      */
     @Override
     public int hashCode() {
-        long hilo = mostSigBits ^ leastSigBits;
-        return ((int)(hilo >> 32)) ^ (int) hilo;
+        return Long.hashCode(mostSigBits ^ leastSigBits);
     }
 
     /**
@@ -513,10 +512,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     public int compareTo(UUID val) {
         // The ordering is intentionally set up so that the UUIDs
         // can simply be numerically compared as two numbers
-        return (this.mostSigBits < val.mostSigBits ? -1 :
-                (this.mostSigBits > val.mostSigBits ? 1 :
-                 (this.leastSigBits < val.leastSigBits ? -1 :
-                  (this.leastSigBits > val.leastSigBits ? 1 :
-                   0))));
+        int mostSigBits = Long.compare(this.mostSigBits, val.mostSigBits);
+        return mostSigBits != 0 ? mostSigBits : Long.compare(this.leastSigBits, val.leastSigBits);
     }
 }

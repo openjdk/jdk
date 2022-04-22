@@ -26,6 +26,7 @@
  * @bug 6589532
  * @summary Tests PrintColorUIResource value encoding
  * @modules java.desktop/sun.swing
+ * @run main/othervm -Djava.security.manager=allow sun_swing_PrintColorUIResource
  * @author Sergey Malenkov
  */
 

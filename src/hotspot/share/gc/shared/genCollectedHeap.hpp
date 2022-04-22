@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class GCPolicyCounters;
 class GenerationSpec;
 class StrongRootsScope;
 class SubTasksDone;
-class WorkGang;
+class WorkerThreads;
 
 // A "GenCollectedHeap" is a CollectedHeap that uses generational
 // collection.  It has two generations, young and old.
@@ -48,7 +48,6 @@ class GenCollectedHeap : public CollectedHeap {
   friend class GenMarkSweep;
   friend class VM_GenCollectForAllocation;
   friend class VM_GenCollectFull;
-  friend class VM_GenCollectFullConcurrent;
   friend class VM_GC_HeapInspection;
   friend class VM_HeapDumper;
   friend class HeapInspection;
@@ -90,8 +89,7 @@ private:
 
   // Collects the given generation.
   void collect_generation(Generation* gen, bool full, size_t size, bool is_tlab,
-                          bool run_verification, bool clear_soft_refs,
-                          bool restore_marks_for_biased_locking);
+                          bool run_verification, bool clear_soft_refs);
 
   // Reserve aligned space for the heap as needed by the contained generations.
   ReservedHeapSpace allocate(size_t alignment);
@@ -194,9 +192,6 @@ public:
   // supports. Caller does not hold the Heap_lock on entry.
   virtual void collect(GCCause::Cause cause);
 
-  // The same as above but assume that the caller holds the Heap_lock.
-  void collect_locked(GCCause::Cause cause);
-
   // Perform a full collection of generations up to and including max_generation.
   // Mostly used for testing purposes. Caller does not hold the Heap_lock on entry.
   void collect(GCCause::Cause cause, GenerationType max_generation);
@@ -281,8 +276,6 @@ public:
 
   // Update above counter, as appropriate, at the end of a stop-world GC cycle
   unsigned int update_full_collections_completed();
-  // Update above counter, as appropriate, at the end of a concurrent GC cycle
-  unsigned int update_full_collections_completed(unsigned int count);
 
   // Update the gc statistics for each generation.
   void update_gc_stats(Generation* current_generation, bool full) {
@@ -423,11 +416,6 @@ private:
   // iterating over spaces.
   void prepare_for_compaction();
 #endif
-
-  // Perform a full collection of the generations up to and including max_generation.
-  // This is the low level interface used by the public versions of
-  // collect() and collect_locked(). Caller holds the Heap_lock on entry.
-  void collect_locked(GCCause::Cause cause, GenerationType max_generation);
 
   // Save the tops of the spaces in all generations
   void record_gen_tops_before_GC() PRODUCT_RETURN;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,11 @@ public abstract class Cache<K,V> {
      * Remove an entry from the cache.
      */
     public abstract void remove(Object key);
+
+    /**
+     * Pull an entry from the cache.
+     */
+    public abstract V pull(Object key);
 
     /**
      * Set the maximum size.
@@ -224,6 +229,10 @@ class NullCache<K,V> extends Cache<K,V> {
         // empty
     }
 
+    public V pull(Object key) {
+        return null;
+    }
+
     public void setCapacity(int size) {
         // empty
     }
@@ -294,7 +303,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
             }
             CacheEntry<K,V> currentEntry = cacheMap.remove(key);
             // check if the entry in the map corresponds to the expired
-            // entry. If not, readd the entry
+            // entry. If not, re-add the entry
             if ((currentEntry != null) && (entry != currentEntry)) {
                 cacheMap.put(key, currentEntry);
             }
@@ -412,6 +421,26 @@ class MemoryCache<K,V> extends Cache<K,V> {
         }
     }
 
+    public synchronized V pull(Object key) {
+        emptyQueue();
+        CacheEntry<K,V> entry = cacheMap.remove(key);
+        if (entry == null) {
+            return null;
+        }
+
+        long time = (lifetime == 0) ? 0 : System.currentTimeMillis();
+        if (entry.isValid(time)) {
+            V value = entry.getValue();
+            entry.invalidate();
+            return value;
+        } else {
+            if (DEBUG) {
+                System.out.println("Ignoring expired entry");
+            }
+            return null;
+        }
+    }
+
     public synchronized void setCapacity(int size) {
         expungeExpiredEntries();
         if (size > 0 && cacheMap.size() > size) {
@@ -452,7 +481,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
     }
 
     private Map<K,V> getCachedEntries() {
-        Map<K,V> kvmap = new HashMap<>(cacheMap.size());
+        Map<K,V> kvmap = HashMap.newHashMap(cacheMap.size());
 
         for (CacheEntry<K,V> entry : cacheMap.values()) {
             kvmap.put(entry.getKey(), entry.getValue());

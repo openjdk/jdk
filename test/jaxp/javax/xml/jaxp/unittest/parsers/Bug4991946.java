@@ -33,7 +33,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 4991946
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug4991946
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug4991946
  * @run testng/othervm parsers.Bug4991946
  * @summary Can parse the element type is anyType in the schema and is substituted by the simple type via the 'xsi:type' attribute in xml document.
  */

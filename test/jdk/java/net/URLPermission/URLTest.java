@@ -28,8 +28,8 @@ import java.net.URLPermission;
  * @modules jdk.httpserver
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run main/othervm URLTest
- * @run main/othervm -Djava.net.preferIPv6Addresses=true URLTest
+ * @run main/othervm -Djava.security.manager=allow URLTest
+ * @run main/othervm -Djava.security.manager=allow -Djava.net.preferIPv6Addresses=true URLTest
  * @summary check URLPermission with Http(s)URLConnection
  */
 

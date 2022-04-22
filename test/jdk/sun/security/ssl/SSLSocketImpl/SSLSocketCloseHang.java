@@ -23,11 +23,16 @@
 
 /*
  * @test
- * @bug 8184328 8253368
+ * @bug 8184328 8253368 8260923
  * @summary JDK8u131-b34-socketRead0 hang at SSL read
- * @run main/othervm SSLSocketCloseHang
- * @run main/othervm SSLSocketCloseHang shutdownInputTest
+ * @run main/othervm SSLSocketCloseHang TLSv1.2
+ * @run main/othervm SSLSocketCloseHang TLSv1.2 shutdownInput
+ * @run main/othervm SSLSocketCloseHang TLSv1.2 shutdownOutput
+ * @run main/othervm SSLSocketCloseHang TLSv1.3
+ * @run main/othervm SSLSocketCloseHang TLSv1.3 shutdownInput
+ * @run main/othervm SSLSocketCloseHang TLSv1.3 shutdownOutput
  */
+
 
 import java.io.*;
 import java.net.*;
@@ -36,7 +41,6 @@ import java.security.*;
 import javax.net.ssl.*;
 
 public class SSLSocketCloseHang {
-
     /*
      * =============================================================
      * Set the various variables needed for the tests, then
@@ -73,7 +77,7 @@ public class SSLSocketCloseHang {
      */
     static boolean debug = false;
 
-    static boolean shutdownInputTest = false;
+    static String socketCloseType;
 
     /*
      * If the client or server is doing some kind of object creation
@@ -148,28 +152,45 @@ public class SSLSocketCloseHang {
         Thread.sleep(500);
         System.err.println("Client closing: " + System.nanoTime());
 
-        if (shutdownInputTest) {
-            try {
-                sslSocket.shutdownInput();
-            } catch (SSLException e) {
-                if (!e.getMessage().contains
-                        ("closing inbound before receiving peer's close_notify")) {
-                    throw new RuntimeException("expected different exception message. " +
-                        e.getMessage());
-                }
-            }
-            if (!sslSocket.getSession().isValid()) {
-                throw new RuntimeException("expected session to remain valid");
-            }
-
-        } else {
-            sslSocket.close();
-        }
-
-
+        closeConnection(sslSocket);
 
         clientClosed = true;
         System.err.println("Client closed: " + System.nanoTime());
+    }
+
+    private void closeConnection(SSLSocket sslSocket) throws IOException {
+        if ("shutdownInput".equals(socketCloseType)) {
+            shutdownInput(sslSocket);
+            // second call to shutdownInput() should just return,
+            // shouldn't throw any exception
+            sslSocket.shutdownInput();
+            // invoking shutdownOutput() just after shutdownInput()
+            sslSocket.shutdownOutput();
+        } else if ("shutdownOutput".equals(socketCloseType)) {
+            sslSocket.shutdownOutput();
+            // second call to shutdownInput() should just return,
+            // shouldn't throw any exception
+            sslSocket.shutdownOutput();
+            // invoking shutdownInput() just after shutdownOutput()
+            shutdownInput(sslSocket);
+        } else {
+            sslSocket.close();
+        }
+    }
+
+    private void shutdownInput(SSLSocket sslSocket) throws IOException {
+        try {
+            sslSocket.shutdownInput();
+        } catch (SSLException e) {
+            if (!e.getMessage().contains
+                    ("closing inbound before receiving peer's close_notify")) {
+                throw new RuntimeException("expected different exception "
+                        + "message. " + e.getMessage());
+            }
+        }
+        if (!sslSocket.getSession().isValid()) {
+            throw new RuntimeException("expected session to remain valid");
+        }
     }
 
     /*
@@ -197,11 +218,13 @@ public class SSLSocketCloseHang {
         System.setProperty("javax.net.ssl.keyStorePassword", passwd);
         System.setProperty("javax.net.ssl.trustStore", trustFilename);
         System.setProperty("javax.net.ssl.trustStorePassword", passwd);
+        System.setProperty("jdk.tls.client.protocols", args[0]);
 
         if (debug)
             System.setProperty("javax.net.debug", "all");
 
-        shutdownInputTest = args.length > 0 ? true : false;
+        socketCloseType = args.length > 1 ? args[1] : "";
+
 
         /*
          * Start the tests.

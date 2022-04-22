@@ -32,7 +32,6 @@ import sun.java2d.pipe.hw.ContextCapabilities;
 
 import java.lang.annotation.Native;
 
-import static sun.java2d.pipe.BufferedOpCodes.INVALIDATE_CONTEXT;
 import static sun.java2d.pipe.BufferedOpCodes.SET_SCRATCH_SURFACE;
 
 /**
@@ -77,32 +76,6 @@ final class MTLContext extends BufferedContext {
         rq.ensureCapacityAndAlignment(12, 4);
         buf.putInt(SET_SCRATCH_SURFACE);
         buf.putLong(pConfigInfo);
-    }
-
-    /**
-     * Invalidates the currentContext field to ensure that we properly
-     * revalidate the MTLContext (make it current, etc.) next time through
-     * the validate() method.  This is typically invoked from methods
-     * that affect the current context state (e.g. disposing a context or
-     * surface).
-     */
-    public static void invalidateCurrentContext() {
-        // assert MTLRenderQueue.getInstance().lock.isHeldByCurrentThread();
-
-        // invalidate the current Java-level context so that we
-        // revalidate everything the next time around
-        if (currentContext != null) {
-            currentContext.invalidateContext();
-            currentContext = null;
-        }
-
-        // invalidate the context reference at the native level, and
-        // then flush the queue so that we have no pending operations
-        // dependent on the current context
-        MTLRenderQueue rq = MTLRenderQueue.getInstance();
-        rq.ensureCapacity(4);
-        rq.getBuffer().putInt(INVALIDATE_CONTEXT);
-        rq.flushNow();
     }
 
     public static class MTLContextCaps extends ContextCapabilities {

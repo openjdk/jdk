@@ -37,7 +37,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 8142463
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.tck.ParticleTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.tck.ParticleTest
  * @run testng/othervm validation.tck.ParticleTest
  * @summary Tests that verify bug fixes for Particles (http://www.w3.org/TR/xmlschema11-1/#cParticles)
 

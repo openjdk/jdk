@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
  * All bound arguments are encapsulated in dedicated species.
  */
 /*non-public*/
-abstract class BoundMethodHandle extends MethodHandle {
+abstract non-sealed class BoundMethodHandle extends MethodHandle {
 
     /*non-public*/
     BoundMethodHandle(MethodType type, LambdaForm form) {
@@ -64,19 +64,14 @@ abstract class BoundMethodHandle extends MethodHandle {
     static BoundMethodHandle bindSingle(MethodType type, LambdaForm form, BasicType xtype, Object x) {
         // for some type signatures, there exist pre-defined concrete BMH classes
         try {
-            switch (xtype) {
-            case L_TYPE:
-                return bindSingle(type, form, x);  // Use known fast path.
-            case I_TYPE:
-                return (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(I_TYPE_NUM).factory().invokeBasic(type, form, ValueConversions.widenSubword(x));
-            case J_TYPE:
-                return (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(J_TYPE_NUM).factory().invokeBasic(type, form, (long) x);
-            case F_TYPE:
-                return (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(F_TYPE_NUM).factory().invokeBasic(type, form, (float) x);
-            case D_TYPE:
-                return (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(D_TYPE_NUM).factory().invokeBasic(type, form, (double) x);
-            default : throw newInternalError("unexpected xtype: " + xtype);
-            }
+            return switch (xtype) {
+                case L_TYPE -> bindSingle(type, form, x);  // Use known fast path.
+                case I_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(I_TYPE_NUM).factory().invokeBasic(type, form, ValueConversions.widenSubword(x));
+                case J_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(J_TYPE_NUM).factory().invokeBasic(type, form, (long) x);
+                case F_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(F_TYPE_NUM).factory().invokeBasic(type, form, (float) x);
+                case D_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(D_TYPE_NUM).factory().invokeBasic(type, form, (double) x);
+                default -> throw newInternalError("unexpected xtype: " + xtype);
+            };
         } catch (Throwable t) {
             throw uncaughtException(t);
         }

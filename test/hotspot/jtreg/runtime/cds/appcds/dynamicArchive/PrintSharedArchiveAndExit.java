@@ -64,7 +64,7 @@ public class PrintSharedArchiveAndExit extends DynamicArchiveTestBase {
             "-Xlog:cds",
             "-Xlog:cds+dynamic=debug",
             "-cp", appJar,
-            mainAppClass, customJarPath, "false", "false")
+            mainAppClass, customJarPath, "false", "false", "keep-alive")
             .assertNormalExit(output -> {
                 output.shouldContain("Written dynamic archive 0x")
                       .shouldNotContain("klasses.*=.*CustomLoadee")

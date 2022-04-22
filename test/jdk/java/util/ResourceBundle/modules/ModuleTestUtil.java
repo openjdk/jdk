@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,6 +186,33 @@ public class ModuleTestUtil {
                         + "from the jar file specified by the class-path failed. "
                         + "Unexpected exit code: " + exitCode);
             }
+        }
+    }
+
+    /**
+     * Run the module test with "useOldISOCodes=true".
+     *
+     * @param mp module path
+     * @param mn module name
+     * @param localeList locale list
+     */
+    public static void runModuleWithLegacyCode(String mp, String mn, List<String> localeList)
+            throws Throwable {
+        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
+        launcher.addToolArg("-ea")
+                .addToolArg("-esa")
+                .addToolArg("-Djava.locale.useOldISOCodes=true")
+                .addToolArg("-p")
+                .addToolArg(mp)
+                .addToolArg("-m")
+                .addToolArg(mn);
+        localeList.forEach(launcher::addToolArg);
+
+        int exitCode = ProcessTools.executeCommand(launcher.getCommand())
+                .getExitValue();
+        if (exitCode != 0) {
+            throw new RuntimeException("Execution of the test failed. "
+                    + "Unexpected exit code: " + exitCode);
         }
     }
 }

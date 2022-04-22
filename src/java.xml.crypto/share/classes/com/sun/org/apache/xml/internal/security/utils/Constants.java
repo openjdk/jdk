@@ -141,6 +141,9 @@ public final class Constants {
     /** Tag of Element RSAPSSParams **/
     public static final String _TAG_RSAPSSPARAMS = "RSAPSSParams";
 
+    /** Tag of Element MaskGenerationFunction **/
+    public static final String _TAG_MGF = "MaskGenerationFunction";
+
     /** Tag of Element SaltLength **/
     public static final String _TAG_SALTLENGTH = "SaltLength";
 

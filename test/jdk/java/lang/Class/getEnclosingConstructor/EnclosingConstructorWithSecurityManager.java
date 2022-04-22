@@ -25,7 +25,7 @@
  * @test
  * @bug 8014678
  * @run main EnclosingConstructorWithSecurityManager
- * @run main/othervm EnclosingConstructorWithSecurityManager "WithSecurityManager"
+ * @run main/othervm -Djava.security.manager=allow EnclosingConstructorWithSecurityManager "WithSecurityManager"
  */
 
 public class EnclosingConstructorWithSecurityManager {

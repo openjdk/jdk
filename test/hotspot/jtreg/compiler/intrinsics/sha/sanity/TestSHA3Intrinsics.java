@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,8 +26,6 @@
  * @test
  * @bug 8252204
  * @summary Verify that SHA3-224, SHA3-256, SHA3-384, SHA3-512 intrinsic is actually used.
- * @comment the test verifies compilation of java.base methods, so it can't be run w/ AOT'ed java.base
- * @requires !vm.aot.enabled
  *
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc

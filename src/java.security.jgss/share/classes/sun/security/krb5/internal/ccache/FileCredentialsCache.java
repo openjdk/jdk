@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,12 +89,7 @@ public class FileCredentialsCache extends CredentialsCache
             }
             fcc.load(cacheName);
             return fcc;
-        } catch (IOException e) {
-            // we don't handle it now, instead we return a null at the end.
-            if (DEBUG) {
-                e.printStackTrace();
-            }
-        } catch (KrbException e) {
+        } catch (IOException | KrbException e) {
             // we don't handle it now, instead we return a null at the end.
             if (DEBUG) {
                 e.printStackTrace();
@@ -119,9 +114,7 @@ public class FileCredentialsCache extends CredentialsCache
             fcc.init(principal, cacheName);
             return fcc;
         }
-        catch (IOException e) {
-        }
-        catch (KrbException e) {
+        catch (IOException | KrbException e) {
         }
         return null;
     }
@@ -133,15 +126,10 @@ public class FileCredentialsCache extends CredentialsCache
             fcc.init(principal, cacheName);
             return fcc;
         }
-        catch (IOException e) {
+        catch (IOException | KrbException e) {
             if (DEBUG) {
                 e.printStackTrace();
             }
-        } catch (KrbException e) {
-            if (DEBUG) {
-                e.printStackTrace();
-            }
-
         }
         return null;
     }
@@ -458,11 +446,11 @@ public class FileCredentialsCache extends CredentialsCache
     public static String getDefaultCacheName() {
 
         String stdCacheNameComponent = "krb5cc";
-        String name;
 
         // The env var can start with TYPE:, we only support FILE: here.
         // http://docs.oracle.com/cd/E19082-01/819-2252/6n4i8rtr3/index.html
-        name = java.security.AccessController.doPrivileged(
+        @SuppressWarnings("removal")
+        String name = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<String>() {
             @Override
             public String run() {
@@ -567,14 +555,14 @@ public class FileCredentialsCache extends CredentialsCache
 
     private static String exec(String c) {
         StringTokenizer st = new StringTokenizer(c);
-        Vector<String> v = new Vector<>();
+        ArrayList<String> v = new ArrayList<>();
         while (st.hasMoreTokens()) {
-            v.addElement(st.nextToken());
+            v.add(st.nextToken());
         }
-        final String[] command = new String[v.size()];
-        v.copyInto(command);
+        final String[] command = v.toArray(new String[0]);
         try {
 
+            @SuppressWarnings("removal")
             Process p =
                 java.security.AccessController.doPrivileged
                 (new java.security.PrivilegedAction<Process> () {

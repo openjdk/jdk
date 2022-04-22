@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,16 +205,16 @@ class CodeCache : AllStatic {
   static address high_bound()                         { return _high_bound; }
   static address high_bound(int code_blob_type);
 
-  // Have to use far call instructions to call this pc.
-  static bool is_far_target(address pc);
-
   // Profiling
   static size_t capacity();
   static size_t unallocated_capacity(int code_blob_type);
   static size_t unallocated_capacity();
   static size_t max_capacity();
 
-  static double reverse_free_ratio(int code_blob_type);
+  static double reverse_free_ratio();
+
+  static size_t max_distance_to_non_nmethod();
+  static bool is_non_nmethod(address addr);
 
   static void clear_inline_caches();                  // clear all inline caches
   static void cleanup_inline_caches();                // clean unloaded/zombie nmethods from inline caches
@@ -229,7 +229,6 @@ class CodeCache : AllStatic {
 
   static bool code_blob_type_accepts_compiled(int type) {
     bool result = type == CodeBlobType::All || type <= CodeBlobType::MethodProfiled;
-    AOT_ONLY( result = result || type == CodeBlobType::AOT; )
     return result;
   }
 
@@ -275,7 +274,6 @@ class CodeCache : AllStatic {
 
   // RedefineClasses support
   // Flushing and deoptimization in case of evolution
-  static void mark_for_evol_deoptimization(InstanceKlass* dependee);
   static int  mark_dependents_for_evol_deoptimization();
   static void mark_all_nmethods_for_evol_deoptimization();
   static void flush_evol_dependents();

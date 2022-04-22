@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,6 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
     _stack_closure(this),
     _cld_closure(mark_closure(), ClassLoaderData::_claim_strong),
     _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize) {
-  _mark_stats_cache.reset();
-  _oop_stack.initialize();
-  _objarray_stack.initialize();
 }
 
 G1FullGCMarker::~G1FullGCMarker() {
@@ -58,7 +55,7 @@ void G1FullGCMarker::complete_marking(OopQueueSet* oop_stacks,
                                       ObjArrayTaskQueueSet* array_stacks,
                                       TaskTerminator* terminator) {
   do {
-    drain_stack();
+    follow_marking_stacks();
     ObjArrayTask steal_array;
     if (array_stacks->steal(_worker_id, steal_array)) {
       follow_array_chunk(objArrayOop(steal_array.obj()), steal_array.index());

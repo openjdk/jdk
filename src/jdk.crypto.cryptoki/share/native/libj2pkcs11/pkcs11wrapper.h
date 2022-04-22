@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -100,9 +100,11 @@
 #define P11_ENABLE_C_CLOSESESSION
 #undef  P11_ENABLE_C_CLOSEALLSESSIONS
 #define P11_ENABLE_C_GETSESSIONINFO
+#define P11_ENABLE_C_SESSIONCANCEL
 #define P11_ENABLE_C_GETOPERATIONSTATE
 #define P11_ENABLE_C_SETOPERATIONSTATE
 #define P11_ENABLE_C_LOGIN
+//#define P11_ENABLE_C_LOGINUSER
 #define P11_ENABLE_C_LOGOUT
 #define P11_ENABLE_C_CREATEOBJECT
 #define P11_ENABLE_C_COPYOBJECT
@@ -209,17 +211,21 @@
 //#define TRACE0d(s) { printf(s); fflush(stdout); }
 //#define TRACE1d(s, p1) { printf(s, p1); fflush(stdout); }
 //#define TRACE2d(s, p1, p2) { printf(s, p1, p2); fflush(stdout); }
+//#define TRACE3d(s, p1, p2, p3) { printf(s, p1, p2, p3); fflush(stdout); }
+//#define TRACE4d(s, p1, p2, p3, p4) { printf(s, p1, p2, p3, p4); fflush(stdout); }
 
 #ifdef P11_DEBUG
 #define TRACE0(s) { printf(s); fflush(stdout); }
 #define TRACE1(s, p1) { printf(s, p1); fflush(stdout); }
 #define TRACE2(s, p1, p2) { printf(s, p1, p2); fflush(stdout); }
 #define TRACE3(s, p1, p2, p3) { printf(s, p1, p2, p3); fflush(stdout); }
+#define TRACE4(s, p1, p2, p3, p4) { printf(s, p1, p2, p3, p4); fflush(stdout); }
 #else
 #define TRACE0(s)
 #define TRACE1(s, p1)
 #define TRACE2(s, p1, p2)
 #define TRACE3(s, p1, p2, p3)
+#define TRACE4(s, p1, p2, p3, p4)
 #define TRACE_INTEND
 #define TRACE_UNINTEND
 #endif
@@ -256,6 +262,8 @@ void printDebug(const char *format, ...);
 #define CLASS_AES_CTR_PARAMS "sun/security/pkcs11/wrapper/CK_AES_CTR_PARAMS"
 #define CLASS_GCM_PARAMS "sun/security/pkcs11/wrapper/CK_GCM_PARAMS"
 #define CLASS_CCM_PARAMS "sun/security/pkcs11/wrapper/CK_CCM_PARAMS"
+#define CLASS_SALSA20_CHACHA20_POLY1305_PARAMS \
+        "sun/security/pkcs11/wrapper/CK_SALSA20_CHACHA20_POLY1305_PARAMS"
 #define CLASS_RSA_PKCS_PSS_PARAMS "sun/security/pkcs11/wrapper/CK_RSA_PKCS_PSS_PARAMS"
 #define CLASS_RSA_PKCS_OAEP_PARAMS "sun/security/pkcs11/wrapper/CK_RSA_PKCS_OAEP_PARAMS"
 
@@ -305,6 +313,7 @@ CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr);
  */
 
 jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue);
+jlong ckAssertReturnValueOK2(JNIEnv *env, CK_RV returnValue, const char *msg);
 void throwOutOfMemoryError(JNIEnv *env, const char *message);
 void throwNullPointerException(JNIEnv *env, const char *message);
 void throwIOException(JNIEnv *env, const char *message);
@@ -407,8 +416,9 @@ CK_RV callJUnlockMutex(CK_VOID_PTR pMutex);
 #endif /* NO_CALLBACKS */
 
 void putModuleEntry(JNIEnv *env, jobject pkcs11Implementation, ModuleData *moduleData);
-ModuleData * removeModuleEntry(JNIEnv *env, jobject pkcs11Implementation);
 CK_FUNCTION_LIST_PTR getFunctionList(JNIEnv *env, jobject pkcs11Implementation);
+CK_FUNCTION_LIST_3_0_PTR getFunctionList30(JNIEnv *env, jobject
+        pkcs11Implementation);
 
 /* A structure to encapsulate the required data for a Notify callback */
 struct NotifyEncapsulation {

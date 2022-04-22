@@ -25,6 +25,7 @@
  * @test
  * @bug 6570354
  * @summary Tests listeners removing
+ * @run main/othervm -Djava.security.manager=allow Test6570354
  * @author Sergey Malenkov
  */
 

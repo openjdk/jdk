@@ -151,6 +151,21 @@ public final class OutputAnalyzer {
 
     /**
      * Verify that the stderr contents of output buffer is empty,
+     * after filtering out all messages matching "warning" (case insensitive)
+     *
+     * @throws RuntimeException
+     *             If stderr was not empty
+     */
+    public OutputAnalyzer stderrShouldBeEmptyIgnoreWarnings() {
+        if (!getStderr().replaceAll("(?i).*warning.*\\R", "").isEmpty()) {
+            reportDiagnosticSummary();
+            throw new RuntimeException("stderr was not empty");
+        }
+        return this;
+    }
+
+    /**
+     * Verify that the stderr contents of output buffer is empty,
      * after filtering out the Hotspot deprecation warning messages
      *
      * @throws RuntimeException

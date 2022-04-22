@@ -186,6 +186,7 @@ public class ForkJoinWorkerThread extends Thread {
      */
     static final class InnocuousForkJoinWorkerThread extends ForkJoinWorkerThread {
         /** The ThreadGroup for all InnocuousForkJoinWorkerThreads */
+        @SuppressWarnings("removal")
         private static final ThreadGroup innocuousThreadGroup =
             AccessController.doPrivileged(new PrivilegedAction<>() {
                 public ThreadGroup run() {

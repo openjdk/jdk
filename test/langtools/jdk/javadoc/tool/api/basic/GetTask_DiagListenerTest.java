@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,8 @@ public class GetTask_DiagListenerTest extends APITest {
     /**
      * Verify that a diagnostic listener can be specified.
      * Note that messages from the tool and doclet are imperfectly modeled
-     * because the DocErrorReporter API works in terms of localized strings
-     * and file:line positions. Therefore, messages reported via DocErrorReporter
-     * and simply wrapped and passed through.
+     * because the Reporter API works in terms of localized strings.
+     * Therefore, messages reported via Reporter are simply wrapped and passed through.
      */
     @Test
     public void testDiagListener() throws Exception {
@@ -73,13 +72,12 @@ public class GetTask_DiagListenerTest extends APITest {
             } else {
                 List<String> diagCodes = new ArrayList<String>();
                 for (Diagnostic d: dc.getDiagnostics()) {
-                    System.err.println(d);
+                    System.err.println("[" + d.getCode() + "]: " + d);
                     diagCodes.add(d.getCode());
                 }
                 List<String> expect = Arrays.asList(
-                        "javadoc.note.msg",         // Loading source file
                         "compiler.err.expected4",   // class, interface, enum, or record expected
-                        "javadoc.note.msg");        // 1 error
+                        "javadoc.note.message");    // 1 error
                 if (!diagCodes.equals(expect))
                     throw new Exception("unexpected diagnostics occurred");
                 System.err.println("diagnostics received as expected");

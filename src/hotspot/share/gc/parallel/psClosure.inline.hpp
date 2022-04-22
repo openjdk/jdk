@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #ifndef SHARE_GC_PARALLEL_PSCLOSURE_INLINE_HPP
 #define SHARE_GC_PARALLEL_PSCLOSURE_INLINE_HPP
 
+// No psClosure.hpp
+
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "memory/iterator.hpp"
@@ -43,7 +45,7 @@ public:
       oop new_obj = o->forwardee();
       if (log_develop_is_enabled(Trace, gc, scavenge)) {
         ResourceMark rm; // required by internal_name()
-        log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
+        log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (" SIZE_FORMAT ")}",
                                         "forwarding",
                                         new_obj->klass()->internal_name(), p2i((void *)o), p2i((void *)new_obj), new_obj->size());
       }
@@ -58,9 +60,12 @@ private:
   PSPromotionManager* _promotion_manager;
 
   template <class T> void do_oop_work(T *p) {
-    if (PSScavenge::should_scavenge(p)) {
-      // We never card mark roots, maybe call a func without test?
-      _promotion_manager->copy_and_push_safe_barrier<promote_immediately>(p);
+    assert(!ParallelScavengeHeap::heap()->is_in_reserved(p), "roots should be outside of heap");
+    oop o = RawAccess<>::oop_load(p);
+    if (PSScavenge::is_obj_in_young(o)) {
+      assert(!PSScavenge::is_obj_in_to_space(o), "Revisiting roots?");
+      oop new_obj = _promotion_manager->copy_to_survivor_space<promote_immediately>(o);
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }
   }
 public:
@@ -88,13 +93,8 @@ public:
     if (PSScavenge::should_scavenge(p)) {
       assert(PSScavenge::should_scavenge(p, true), "revisiting object?");
 
-      oop o = *p;
-      oop new_obj;
-      if (o->is_forwarded()) {
-        new_obj = o->forwardee();
-      } else {
-        new_obj = _pm->copy_to_survivor_space</*promote_immediately=*/false>(o);
-      }
+      oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
+      oop new_obj = _pm->copy_to_survivor_space</*promote_immediately=*/false>(o);
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
 
       if (PSScavenge::is_obj_in_young(new_obj)) {

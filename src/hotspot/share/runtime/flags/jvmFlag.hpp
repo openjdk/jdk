@@ -194,8 +194,7 @@ public:
 
 #define JVM_FLAG_TYPE_ACCESSOR(t)                                                                 \
   bool is_##t() const                      { return _type == TYPE_##t;}                           \
-  t get_##t() const                        { assert(is_##t(), "sanity"); return *((t*) _addr); }  \
-  void set_##t(t value)                    { assert(is_##t(), "sanity"); *((t*) _addr) = value; }
+  t get_##t() const                        { assert(is_##t(), "sanity"); return *((t*) _addr); }
 
   JVM_FLAG_NON_STRING_TYPES_DO(JVM_FLAG_TYPE_ACCESSOR)
 
@@ -225,23 +224,15 @@ public:
   int type() const { return _type; }
   const char* name() const { return _name; }
 
-  void assert_type(int type_enum) const {
-    if (type_enum == JVMFlag::TYPE_ccstr) {
-      assert(is_ccstr(), "type check"); // ccstr or ccstrlist
-    } else {
-      assert(_type == type_enum, "type check");
-    }
-  }
-
   // Do not use JVMFlag::read() or JVMFlag::write() directly unless you know
   // what you're doing. Use FLAG_SET_XXX macros or JVMFlagAccess instead.
-  template <typename T, int type_enum> T read() const {
-    assert_type(type_enum);
+  template <typename T> T read() const {
+    assert_compatible_type<T>(_type);
     return *static_cast<T*>(_addr);
   }
 
-  template <typename T, int type_enum> void write(T value) {
-    assert_type(type_enum);
+  template <typename T> void write(T value) {
+    assert_compatible_type<T>(_type);
     *static_cast<T*>(_addr) = value;
   }
 
@@ -291,25 +282,37 @@ public:
 
   static const char* flag_error_str(JVMFlag::Error error);
 
-  // type checking
-#define CHECK_COMPATIBLE(type) \
-  case TYPE_##type: \
-    assert(sizeof(T) == sizeof(type) && \
-           std::is_integral<T>::value == std::is_integral<type>::value && \
-           std::is_signed  <T>::value == std::is_signed  <type>::value, "must be"); \
-    break;
+private:
+  // type checking - the following functions make sure you access *_addr as
+  // the correct type <T>
 
-  template <typename T>
-  static void assert_compatible_type(int type_enum) {
-#ifndef PRODUCT
-    switch (type_enum) {
-      JVM_FLAG_NON_STRING_TYPES_DO(CHECK_COMPATIBLE);
-      default: ShouldNotReachHere();
-    }
-#endif
+  static void assert_valid_type_enum(int type_enum) {
+    assert(0 <= type_enum && type_enum < NUM_FLAG_TYPES, "sanity");
   }
 
-#undef CHECK_COMPATIBLE
+  // The following computation is not universal, but should be correct
+  // for the limited number of types that can be stored inside a JVMFlag.
+  template <typename T>
+  static constexpr int type_signature() {
+    return int(sizeof(T)) |
+           (((std::is_integral<T>::value) ? 1 : 0) << 8) |
+           (((std::is_signed<T>::value)   ? 1 : 0) << 9) |
+           (((std::is_pointer<T>::value)  ? 1 : 0) << 10);
+  }
+
+  static const int type_signatures[];
+
+public:
+  template <typename T>
+  static void assert_compatible_type(int type_enum) {
+    assert(is_compatible_type<T>(type_enum), "must be");
+  }
+
+  template <typename T>
+  static bool is_compatible_type(int type_enum) {
+    assert_valid_type_enum(type_enum);
+    return type_signatures[type_enum] == type_signature<T>();
+  }
 
 public:
   static void printSetFlags(outputStream* out);

@@ -83,7 +83,7 @@ final class LCMSImageLayout {
      * at once by doTransfrom() native call. Otherwise, the
      * image is processed scan by scan.
      */
-    private boolean imageAtOnce = false;
+    boolean imageAtOnce = false;
     Object dataArray;
 
     private int dataArrayLength; /* in bytes */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,12 +51,12 @@ import javax.management.remote.TargetedNotification;
 
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.util.concurrent.RejectedExecutionException;
 
 
 public abstract class ClientNotifForwarder {
 
+    @SuppressWarnings("removal")
     private final AccessControlContext acc;
 
     public ClientNotifForwarder(Map<String, ?> env) {
@@ -121,6 +121,7 @@ public abstract class ClientNotifForwarder {
         private Thread thread;
     }
 
+    @SuppressWarnings("removal")
     public ClientNotifForwarder(ClassLoader defaultClassLoader, Map<String, ?> env) {
         maxNotifications = EnvHelp.getMaxFetchNotifNumber(env);
         timeout = EnvHelp.getFetchTimeout(env);
@@ -144,22 +145,22 @@ public abstract class ClientNotifForwarder {
     /**
      * Called to fetch notifications from a server.
      */
-    abstract protected NotificationResult fetchNotifs(long clientSequenceNumber,
+    protected abstract NotificationResult fetchNotifs(long clientSequenceNumber,
                                                       int maxNotifications,
                                                       long timeout)
             throws IOException, ClassNotFoundException;
 
-    abstract protected Integer addListenerForMBeanRemovedNotif()
+    protected abstract Integer addListenerForMBeanRemovedNotif()
         throws IOException, InstanceNotFoundException;
 
-    abstract protected void removeListenerForMBeanRemovedNotif(Integer id)
+    protected abstract void removeListenerForMBeanRemovedNotif(Integer id)
         throws IOException, InstanceNotFoundException,
                ListenerNotFoundException;
 
     /**
      * Used to send out a notification about lost notifs
      */
-    abstract protected void lostNotifs(String message, long number);
+    protected abstract void lostNotifs(String message, long number);
 
 
     public synchronized void addNotificationListener(Integer listenerID,
@@ -338,9 +339,7 @@ public abstract class ClientNotifForwarder {
             try {
                 wait();
             } catch (InterruptedException ire) {
-                IOException ioe = new IOException(ire.toString());
-                EnvHelp.initCause(ioe, ire);
-                throw ioe;
+                throw new IOException(ire.toString(), ire);
             }
         }
 
@@ -379,9 +378,7 @@ public abstract class ClientNotifForwarder {
                   try {
                       wait();
                   } catch (InterruptedException ire) {
-                      IOException ioe = new IOException(ire.toString());
-                      EnvHelp.initCause(ioe, ire);
-                      throw ioe;
+                      throw new IOException(ire.toString(), ire);
                   }
               }
 
@@ -428,6 +425,7 @@ public abstract class ClientNotifForwarder {
         }
 
         // Set new context class loader, returns previous one.
+        @SuppressWarnings("removal")
         private final ClassLoader setContextClassLoader(final ClassLoader loader) {
             final AccessControlContext ctxt = ClientNotifForwarder.this.acc;
             // if ctxt is null, log a config message and throw a
@@ -818,10 +816,7 @@ public abstract class ClientNotifForwarder {
                 try {
                     wait();
                 } catch (InterruptedException ire) {
-                    IOException ioe = new IOException(ire.toString());
-                    EnvHelp.initCause(ioe, ire);
-
-                    throw ioe;
+                    throw new IOException(ire.toString(), ire);
                 }
             }
 
@@ -898,10 +893,7 @@ public abstract class ClientNotifForwarder {
             try {
                 wait();
             } catch (InterruptedException ire) {
-                IOException ioe = new IOException(ire.toString());
-                EnvHelp.initCause(ioe, ire);
-
-                throw ioe;
+                throw new IOException(ire.toString(), ire);
             }
         }
 

@@ -24,8 +24,8 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "assembler_aarch64.inline.hpp"
 #include "code/vtableStubs.hpp"
 #include "interp_masm_aarch64.hpp"
 #include "memory/resourceArea.hpp"

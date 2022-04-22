@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "code/codeCache.hpp"
 #include "code/vmreg.inline.hpp"
+#include "runtime/registerMap.hpp"
 
 // Inline functions for Intel frames:
 
@@ -137,9 +138,12 @@ inline intptr_t* frame::id(void) const { return unextended_sp(); }
 inline bool frame::is_older(intptr_t* id) const   { assert(this->id() != NULL && id != NULL, "NULL frame id");
                                                     return this->id() > id ; }
 
-
-
 inline intptr_t* frame::link() const              { return (intptr_t*) *(intptr_t **)addr_at(link_offset); }
+
+inline intptr_t* frame::link_or_null() const {
+  intptr_t** ptr = (intptr_t **)addr_at(link_offset);
+  return os::is_readable_pointer(ptr) ? *ptr : NULL;
+}
 
 inline intptr_t* frame::unextended_sp() const     { return _unextended_sp; }
 
@@ -226,6 +230,10 @@ inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
 
 // Compiled frames
 
+// Register is a class, but it would be assigned numerical value.
+// "0" is assigned for rax. Thus we need to ignore -Wnonnull.
+PRAGMA_DIAG_PUSH
+PRAGMA_NONNULL_IGNORED
 inline oop frame::saved_oop_result(RegisterMap* map) const {
   oop* result_adr = (oop *)map->location(rax->as_VMReg());
   guarantee(result_adr != NULL, "bad register save location");
@@ -239,5 +247,6 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
 
   *result_adr = obj;
 }
+PRAGMA_DIAG_POP
 
 #endif // CPU_X86_FRAME_X86_INLINE_HPP

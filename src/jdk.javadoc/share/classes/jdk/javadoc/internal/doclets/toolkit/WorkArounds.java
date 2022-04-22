@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -46,7 +47,6 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileManager.Location;
 
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
@@ -55,11 +55,13 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.util.Names;
+import com.sun.tools.javac.util.Options;
 
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.tool.ToolEnvironment;
@@ -74,12 +76,6 @@ import static javax.lang.model.element.ElementKind.*;
  * A quarantine class to isolate all the workarounds and bridges to
  * a locality. This class should eventually disappear once all the
  * standard APIs support the needed interfaces.
- *
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class WorkArounds {
 
@@ -121,9 +117,8 @@ public class WorkArounds {
         return false;
     }
 
-    // TODO: fix jx.l.m add this method.
-    public boolean isSynthesized(AnnotationMirror aDesc) {
-        return ((Attribute)aDesc).isSynthesized();
+    public boolean isMandated(AnnotationMirror aDesc) {
+        return elementUtils.getOrigin(null, aDesc) == Elements.Origin.MANDATED;
     }
 
     // TODO: DocTrees: Trees.getPath(Element e) is slow a factor 4-5 times.
@@ -198,46 +193,41 @@ public class WorkArounds {
         return elementUtils.getTypeElement(className);
     }
 
-
-    // TODO: The following should be replaced by a new method such as Elements.isAutomaticModule
-    // see JDK-8261625
-    public boolean isAutomaticModule(ModuleElement me) {
-        if (me == null) {
-            return false;
-        } else {
-            ModuleSymbol msym = (ModuleSymbol) me;
-            return (msym.flags() & Flags.AUTOMATIC_MODULE) != 0;
-        }
-    }
-
     // TODO:  need to re-implement this using j.l.m. correctly!, this has
     //        implications on testInterface, the note here is that javac's supertype
     //        does the right thing returning Parameters in scope.
-    /**
-     * Return the type containing the method that this method overrides.
-     * It may be a <code>TypeElement</code> or a <code>TypeParameterElement</code>.
-     * @param method target
-     * @return a type
+    /*
+     * Returns the closest superclass (not the superinterface) that contains
+     * a method that is both:
+     *
+     *   - overridden by the specified method, and
+     *   - is not itself a *simple* override
+     *
+     * If no such class can be found, returns null.
+     *
+     * If the specified method belongs to an interface, the only considered
+     * superclass is java.lang.Object no matter how many other interfaces
+     * that interface extends.
      */
-    public TypeMirror overriddenType(ExecutableElement method) {
+    public DeclaredType overriddenType(ExecutableElement method) {
         if (utils.isStatic(method)) {
             return null;
         }
         MethodSymbol sym = (MethodSymbol) method;
         ClassSymbol origin = (ClassSymbol) sym.owner;
-        for (com.sun.tools.javac.code.Type t = javacTypes.supertype(origin.type);
-                t.hasTag(TypeTag.CLASS);
-                t = javacTypes.supertype(t)) {
+        for (Type t = javacTypes.supertype(origin.type);
+             t.hasTag(TypeTag.CLASS);
+             t = javacTypes.supertype(t)) {
             ClassSymbol c = (ClassSymbol) t.tsym;
-            for (com.sun.tools.javac.code.Symbol sym2 : c.members().getSymbolsByName(sym.name)) {
+            for (Symbol sym2 : c.members().getSymbolsByName(sym.name)) {
                 if (sym.overrides(sym2, origin, javacTypes, true)) {
                     // Ignore those methods that may be a simple override
                     // and allow the real API method to be found.
-                    if (sym2.type.hasTag(TypeTag.METHOD) &&
-                            utils.isSimpleOverride((MethodSymbol)sym2)) {
+                    if (utils.isSimpleOverride((MethodSymbol)sym2)) {
                         continue;
                     }
-                    return t;
+                    assert t.hasTag(TypeTag.CLASS) && !t.isInterface();
+                    return (Type.ClassType) t;
                 }
             }
         }
@@ -534,6 +524,23 @@ public class WorkArounds {
     public boolean isReflectivePreviewAPI(Element el) {
         Symbol sym = (Symbol) el;
         return (sym.flags() & Flags.PREVIEW_REFLECTIVE) != 0;
+    }
+
+    /**
+     * Returns whether or not to permit dynamically loaded components to access
+     * part of the javadoc internal API. The flag is the same (hidden) compiler
+     * option that allows javac plugins and annotation processors to access
+     * javac internal API.
+     *
+     * As with all workarounds, it is better to consider updating the public API,
+     * rather than relying on undocumented features like this, that may be withdrawn
+     * at any time, without notice.
+     *
+     * @return true if access is permitted to internal API
+     */
+    public boolean accessInternalAPI() {
+        Options compilerOptions = Options.instance(toolEnv.context);
+        return compilerOptions.isSet("accessInternalAPI");
     }
 
 }

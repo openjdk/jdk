@@ -40,7 +40,6 @@ import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Objects;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 import jdk.internal.misc.Unsafe;
@@ -321,6 +320,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
          * screenings fail.
          */
 
+        @SuppressWarnings("removal")
         AtomicReferenceFieldUpdaterImpl(final Class<T> tclass,
                                         final Class<V> vclass,
                                         final String fieldName,
@@ -397,7 +397,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
          */
         private static boolean isSamePackage(Class<?> class1, Class<?> class2) {
             return class1.getClassLoader() == class2.getClassLoader()
-                   && Objects.equals(class1.getPackageName(), class2.getPackageName());
+                   && class1.getPackageName() == class2.getPackageName();
         }
 
         /**

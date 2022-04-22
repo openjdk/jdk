@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,15 @@
  *          java.instrument
  * @compile ../NamedBuffer.java
  * @run main RedefineClassHelper
- * @compile --enable-preview --source ${jdk.version} Host/Host.java ClassOne.java ClassTwo.java ClassThree.java ClassFour.java
- * @compile --enable-preview --source ${jdk.version} TestPermittedSubclassesAttr.java
- * @run main/othervm -javaagent:redefineagent.jar --enable-preview -Xlog:redefine+class+sealed=trace TestPermittedSubclassesAttr Host
- * @compile --enable-preview --source ${jdk.version} HostA/Host.java
- * @run main/othervm -javaagent:redefineagent.jar --enable-preview -Xlog:redefine+class+sealed=trace TestPermittedSubclassesAttr HostA
- * @compile --enable-preview --source ${jdk.version} HostAB/Host.java
- * @run main/othervm -javaagent:redefineagent.jar --enable-preview -Xlog:redefine+class+sealed=trace TestPermittedSubclassesAttr HostAB
- * @compile --enable-preview --source ${jdk.version} HostABC/Host.java
- * @run main/othervm -javaagent:redefineagent.jar --enable-preview -Xlog:redefine+class+sealed=trace TestPermittedSubclassesAttr HostABC
+ * @compile Host/Host.java ClassOne.java ClassTwo.java ClassThree.java ClassFour.java
+ * @compile TestPermittedSubclassesAttr.java
+ * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+sealed=trace TestPermittedSubclassesAttr Host
+ * @compile HostA/Host.java
+ * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+sealed=trace TestPermittedSubclassesAttr HostA
+ * @compile HostAB/Host.java
+ * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+sealed=trace TestPermittedSubclassesAttr HostAB
+ * @compile HostABC/Host.java
+ * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+sealed=trace TestPermittedSubclassesAttr HostABC
  */
 
 /* Test Description
@@ -139,7 +139,6 @@ public class TestPermittedSubclassesAttr {
     static final String SRC = System.getProperty("test.src");
     static final String DEST = System.getProperty("test.classes");
     static final boolean VERBOSE = Boolean.getBoolean("verbose");
-    private static final String VERSION = Integer.toString(Runtime.version().feature());
 
     public static void main(String[] args) throws Throwable {
         String origin = args[0];
@@ -266,8 +265,6 @@ public class TestPermittedSubclassesAttr {
         CompilerUtils.compile(src.toPath(),
                               dst.toPath(),
                               false /* don't recurse */,
-                              "-classpath", DEST,
-                              "--enable-preview",
-                              "--source", VERSION);
+                              "-classpath", DEST);
     }
 }

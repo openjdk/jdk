@@ -142,11 +142,6 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   }
 }
 
-void BarrierSetAssembler::obj_equals(MacroAssembler* masm,
-                                     Register obj1, Register obj2) {
-  __ cmp(obj1, obj2);
-}
-
 // Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
 void BarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register obj, Register obj_end, Register tmp1, Register tmp2,
                                  RegisterOrConstant size_expression, Label& slow_case) {

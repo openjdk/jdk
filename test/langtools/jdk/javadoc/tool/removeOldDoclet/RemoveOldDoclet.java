@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,10 +70,10 @@ public class RemoveOldDoclet extends JavadocTester {
                 "pkg");
 
         checkExit(Exit.ERROR);
-        checkOutput(Output.OUT, true,
-                "javadoc: error - Class " + Doclet_CLASS_NAME + """
-                     is not a valid doclet.
-                    Note: As of JDK 13, the com.sun.javadoc API is no longer supported.""");
+        checkOutput(Output.OUT, true, String.format("""
+                error: Class %s is not a valid doclet.
+                  Note: As of JDK 13, the com.sun.javadoc API is no longer supported.""",
+                Doclet_CLASS_NAME));
     }
 
     static class TestDoclet {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4035266 4052418 4068133 4068137 4068139 4086052 4095322 4097779
  *      4097920 4098467 4111338 4113835 4117554 4143071 4146175 4152117
- *      4152416 4153072 4158381 4214367 4217703 4638433
+ *      4152416 4153072 4158381 4214367 4217703 4638433 8264765
  * @library /java/text/testlib
  * @run main/timeout=2000 BreakIteratorTest
  * @summary test BreakIterator
@@ -746,6 +746,17 @@ public class BreakIteratorTest extends IntlTest
         generalIteratorTest(sentenceBreak, sentenceSelectionData);
     }
 
+    public void TestBug8264765() {
+        Vector<String> sentenceSelectionData = new Vector<String>();
+
+        // Comma should not be regarded as the start of a sentence,
+        // otherwise the backwards rule would break the following sentence.
+        sentenceSelectionData.addElement(
+            "Due to a problem (e.g., software bug), the server is down. ");
+
+        generalIteratorTest(sentenceBreak, sentenceSelectionData);
+    }
+
     public void TestLineBreak() {
         Vector<String> lineSelectionData = new Vector<String>();
 
@@ -1380,7 +1391,7 @@ public class BreakIteratorTest extends IntlTest
 
 
         // Confirm changes in BreakIteratorRules_th.java have been reflected.
-        iter = BreakIterator.getLineInstance(new Locale("th", ""));
+        iter = BreakIterator.getLineInstance(Locale.of("th"));
 
         /* Thai <Seven(Nd)>
          *      <Left Double Quotation Mark(Pi)>

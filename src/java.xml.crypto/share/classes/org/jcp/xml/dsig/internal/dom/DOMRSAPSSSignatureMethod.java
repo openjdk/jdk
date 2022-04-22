@@ -21,12 +21,13 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
 import javax.xml.crypto.*;
 import javax.xml.crypto.dsig.*;
+import javax.xml.crypto.dsig.spec.RSAPSSParameterSpec;
 import javax.xml.crypto.dsig.spec.SignatureMethodParameterSpec;
 
 import java.io.IOException;
@@ -46,7 +47,6 @@ import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 
 /**
  * DOM-based abstract implementation of SignatureMethod for RSA-PSS.
- *
  */
 public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMethod {
 
@@ -62,9 +62,12 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
     static final String RSA_PSS =
         "http://www.w3.org/2007/05/xmldsig-more#rsa-pss";
 
-    private int trailerField = 1;
-    private int saltLength = 32;
-    private String digestName = "SHA-256";
+    private static final RSAPSSParameterSpec DEFAULT_PSS_SPEC
+            = new RSAPSSParameterSpec(new PSSParameterSpec(
+                "SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"),
+                32, PSSParameterSpec.TRAILER_FIELD_BC));
+
+    private PSSParameterSpec spec;
 
     /**
      * Creates a {@code DOMSignatureMethod}.
@@ -82,7 +85,7 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
                 ("params must be of type SignatureMethodParameterSpec");
         }
         if (params == null) {
-            params = getDefaultParameterSpec();
+            params = DEFAULT_PSS_SPEC;
         }
         checkParams((SignatureMethodParameterSpec)params);
         this.params = (SignatureMethodParameterSpec)params;
@@ -100,7 +103,7 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
         if (paramsElem != null) {
             params = unmarshalParams(paramsElem);
         } else {
-            params = getDefaultParameterSpec();
+            params = DEFAULT_PSS_SPEC;
         }
         try {
             checkParams(params);
@@ -113,25 +116,13 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
     void checkParams(SignatureMethodParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
-        if (params != null) {
-            if (!(params instanceof RSAPSSParameterSpec)) {
-                throw new InvalidAlgorithmParameterException
-                    ("params must be of type RSAPSSParameterSpec");
-            }
-
-            if (((RSAPSSParameterSpec)params).getTrailerField() > 0) {
-                trailerField = ((RSAPSSParameterSpec)params).getTrailerField();
-                LOG.debug("Setting trailerField from RSAPSSParameterSpec to: {}", trailerField);
-            }
-            if (((RSAPSSParameterSpec)params).getSaltLength() > 0) {
-                saltLength = ((RSAPSSParameterSpec)params).getSaltLength();
-                LOG.debug("Setting saltLength from RSAPSSParameterSpec to: {}", saltLength);
-            }
-            if (((RSAPSSParameterSpec)params).getDigestName() != null) {
-                digestName = ((RSAPSSParameterSpec)params).getDigestName();
-                LOG.debug("Setting digestName from RSAPSSParameterSpec to: {}", digestName);
-            }
+        if (!(params instanceof RSAPSSParameterSpec)) {
+            throw new InvalidAlgorithmParameterException
+                ("params must be of type RSAPSSParameterSpec");
         }
+
+        spec = ((RSAPSSParameterSpec) params).getPSSParameterSpec();
+        LOG.debug("Setting RSAPSSParameterSpec to: {}", params.toString());
     }
 
     public final AlgorithmParameterSpec getParameterSpec() {
@@ -146,28 +137,70 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
         Element rsaPssParamsElement = ownerDoc.createElementNS(Constants.XML_DSIG_NS_MORE_07_05, "pss" + ":" + Constants._TAG_RSAPSSPARAMS);
         rsaPssParamsElement.setAttributeNS(Constants.NamespaceSpecNS, "xmlns:" + "pss", Constants.XML_DSIG_NS_MORE_07_05);
 
-        Element digestMethodElement = DOMUtils.createElement(rsaPssParamsElement.getOwnerDocument(), Constants._TAG_DIGESTMETHOD,
-                                                             XMLSignature.XMLNS, prefix);
+        DigestAlgorithm digestAlgorithm;
         try {
-            digestMethodElement.setAttributeNS(null, Constants._ATT_ALGORITHM, DigestAlgorithm.fromDigestAlgorithm(digestName).getXmlDigestAlgorithm());
+            digestAlgorithm = DigestAlgorithm.fromDigestAlgorithm(spec.getDigestAlgorithm());
+            String xmlDigestAlgorithm = digestAlgorithm.getXmlDigestAlgorithm();
+            if (!xmlDigestAlgorithm.equals(DigestMethod.SHA256)) {
+                Element digestMethodElement = DOMUtils.createElement(rsaPssParamsElement.getOwnerDocument(), Constants._TAG_DIGESTMETHOD,
+                        XMLSignature.XMLNS, prefix);
+                digestMethodElement.setAttributeNS(null, Constants._ATT_ALGORITHM, xmlDigestAlgorithm);
+                rsaPssParamsElement.appendChild(digestMethodElement);
+            }
+            if (spec.getSaltLength() != digestAlgorithm.getSaltLength()) {
+                Element saltLengthElement = rsaPssParamsElement.getOwnerDocument().createElementNS(Constants.XML_DSIG_NS_MORE_07_05, "pss" + ":" + Constants._TAG_SALTLENGTH);
+                Text saltLengthText = rsaPssParamsElement.getOwnerDocument().createTextNode(String.valueOf(spec.getSaltLength()));
+                saltLengthElement.appendChild(saltLengthText);
+                rsaPssParamsElement.appendChild(saltLengthElement);
+            }
         } catch (DOMException | com.sun.org.apache.xml.internal.security.signature.XMLSignatureException e) {
-            throw new MarshalException("Invalid digest name supplied: " + digestName);
+            throw new MarshalException("Invalid digest name supplied: " + spec.getDigestAlgorithm());
         }
-        rsaPssParamsElement.appendChild(digestMethodElement);
 
-        Element saltLengthElement = rsaPssParamsElement.getOwnerDocument().createElementNS(Constants.XML_DSIG_NS_MORE_07_05, "pss" + ":" + Constants._TAG_SALTLENGTH);
-        Text saltLengthText = rsaPssParamsElement.getOwnerDocument().createTextNode(String.valueOf(saltLength));
-        saltLengthElement.appendChild(saltLengthText);
+        if (!spec.getMGFAlgorithm().equals("MGF1")) {
+            throw new MarshalException("Unsupported MGF algorithm supplied: " + spec.getMGFAlgorithm());
+        }
 
-        rsaPssParamsElement.appendChild(saltLengthElement);
+        MGF1ParameterSpec mgfSpec = (MGF1ParameterSpec)spec.getMGFParameters();
+        try {
+            DigestAlgorithm mgfDigestAlgorithm = DigestAlgorithm.fromDigestAlgorithm(mgfSpec.getDigestAlgorithm());
+            if (mgfDigestAlgorithm != digestAlgorithm) {
+                Element mgfElement = rsaPssParamsElement.getOwnerDocument().createElementNS(Constants.XML_DSIG_NS_MORE_07_05, "pss" + ":" + Constants._TAG_MGF);
+                try {
+                    mgfElement.setAttributeNS(null, Constants._ATT_ALGORITHM, "http://www.w3.org/2007/05/xmldsig-more#MGF1");
+                } catch (DOMException e) {
+                    throw new MarshalException("Should not happen");
+                }
+                Element mgfDigestMethodElement = DOMUtils.createElement(rsaPssParamsElement.getOwnerDocument(), Constants._TAG_DIGESTMETHOD,
+                        XMLSignature.XMLNS, prefix);
+                String xmlDigestAlgorithm = mgfDigestAlgorithm.getXmlDigestAlgorithm();
+                mgfDigestMethodElement.setAttributeNS(null, Constants._ATT_ALGORITHM, xmlDigestAlgorithm);
+                mgfElement.appendChild(mgfDigestMethodElement);
+                rsaPssParamsElement.appendChild(mgfElement);
+            }
+        } catch (DOMException | com.sun.org.apache.xml.internal.security.signature.XMLSignatureException e) {
+            throw new MarshalException("Invalid digest name supplied: " + mgfSpec.getDigestAlgorithm());
+        }
 
-        Element trailerFieldElement = rsaPssParamsElement.getOwnerDocument().createElementNS(Constants.XML_DSIG_NS_MORE_07_05, "pss" + ":" + Constants._TAG_TRAILERFIELD);
-        Text trailerFieldText = rsaPssParamsElement.getOwnerDocument().createTextNode(String.valueOf(trailerField));
-        trailerFieldElement.appendChild(trailerFieldText);
+        if (spec.getTrailerField() != 1) {
+            Element trailerFieldElement = rsaPssParamsElement.getOwnerDocument().createElementNS(Constants.XML_DSIG_NS_MORE_07_05, "pss" + ":" + Constants._TAG_TRAILERFIELD);
+            Text trailerFieldText = rsaPssParamsElement.getOwnerDocument().createTextNode(String.valueOf(spec.getTrailerField()));
+            trailerFieldElement.appendChild(trailerFieldText);
+            rsaPssParamsElement.appendChild(trailerFieldElement);
+        }
 
-        rsaPssParamsElement.appendChild(trailerFieldElement);
+        if (rsaPssParamsElement.hasChildNodes()) {
+            parent.appendChild(rsaPssParamsElement);
+        }
+    }
 
-        parent.appendChild(rsaPssParamsElement);
+    private static DigestAlgorithm validateDigestAlgorithm(String input)
+            throws MarshalException {
+        try {
+            return DigestAlgorithm.fromXmlDigestAlgorithm(input);
+        } catch (com.sun.org.apache.xml.internal.security.signature.XMLSignatureException e) {
+            throw new MarshalException("Invalid digest algorithm supplied: " + input);
+        }
     }
 
     SignatureMethodParameterSpec unmarshalParams(Element paramsElem)
@@ -176,35 +209,45 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
         if (paramsElem != null) {
             Element saltLengthNode = XMLUtils.selectNode(paramsElem.getFirstChild(), Constants.XML_DSIG_NS_MORE_07_05, Constants._TAG_SALTLENGTH, 0);
             Element trailerFieldNode = XMLUtils.selectNode(paramsElem.getFirstChild(), Constants.XML_DSIG_NS_MORE_07_05, Constants._TAG_TRAILERFIELD, 0);
-            int trailerField = 1;
-            if (trailerFieldNode != null) {
-                try {
-                    trailerField = Integer.parseInt(trailerFieldNode.getTextContent());
-                } catch (NumberFormatException ex) {
-                    throw new MarshalException("Invalid trailer field supplied: " + trailerFieldNode.getTextContent());
+            Element digestAlgorithmNode = XMLUtils.selectDsNode(paramsElem.getFirstChild(), Constants._TAG_DIGESTMETHOD, 0);
+            Element mgfNode = XMLUtils.selectNode(paramsElem.getFirstChild(), Constants.XML_DSIG_NS_MORE_07_05, Constants._TAG_MGF, 0);
+
+            DigestAlgorithm digestAlgorithm = digestAlgorithmNode != null
+                    ? validateDigestAlgorithm(digestAlgorithmNode.getAttribute(Constants._ATT_ALGORITHM))
+                    : DigestAlgorithm.SHA256;
+
+            DigestAlgorithm mgfDigestAlgorithm = digestAlgorithm;
+            if (mgfNode != null) {
+                String mgfAlgorithm = mgfNode.getAttribute(Constants._ATT_ALGORITHM);
+                if (!mgfAlgorithm.equals("http://www.w3.org/2007/05/xmldsig-more#MGF1")) {
+                    throw new MarshalException("Unknown MGF algorithm: " + mgfAlgorithm);
+                }
+                Element mgfDigestAlgorithmNode = XMLUtils.selectDsNode(mgfNode.getFirstChild(), Constants._TAG_DIGESTMETHOD, 0);
+                if (mgfDigestAlgorithmNode != null) {
+                    mgfDigestAlgorithm = validateDigestAlgorithm(mgfDigestAlgorithmNode.getAttribute(Constants._ATT_ALGORITHM));
                 }
             }
-            String xmlAlgorithm = XMLUtils.selectDsNode(paramsElem.getFirstChild(), Constants._TAG_DIGESTMETHOD, 0).getAttribute(Constants._ATT_ALGORITHM);
-            DigestAlgorithm digestAlgorithm;
-            try {
-                digestAlgorithm = DigestAlgorithm.fromXmlDigestAlgorithm(xmlAlgorithm);
-            } catch (com.sun.org.apache.xml.internal.security.signature.XMLSignatureException e) {
-                throw new MarshalException("Invalid digest algorithm supplied: " + xmlAlgorithm);
-            }
-            String digestName = digestAlgorithm.getDigestAlgorithm();
 
-            RSAPSSParameterSpec params = new RSAPSSParameterSpec();
-            params.setTrailerField(trailerField);
+            int saltLength;
             try {
-                int saltLength = saltLengthNode == null ? digestAlgorithm.getSaltLength() : Integer.parseInt(saltLengthNode.getTextContent());
-                params.setSaltLength(saltLength);
+                saltLength = saltLengthNode == null ? digestAlgorithm.getSaltLength() : Integer.parseUnsignedInt(saltLengthNode.getTextContent());
             } catch (NumberFormatException ex) {
                 throw new MarshalException("Invalid salt length supplied: " + saltLengthNode.getTextContent());
             }
-            params.setDigestName(digestName);
-            return params;
+
+            int trailerField;
+            try {
+                trailerField = trailerFieldNode == null ? 1 : Integer.parseUnsignedInt(trailerFieldNode.getTextContent());
+            } catch (NumberFormatException ex) {
+                throw new MarshalException("Invalid trailer field supplied: " + trailerFieldNode.getTextContent());
+            }
+
+            return new RSAPSSParameterSpec(new PSSParameterSpec(
+                    digestAlgorithm.getDigestAlgorithm(),
+                    "MGF1", new MGF1ParameterSpec(mgfDigestAlgorithm.getDigestAlgorithm()),
+                    saltLength, trailerField));
         }
-        return getDefaultParameterSpec();
+        return DEFAULT_PSS_SPEC;
     }
 
     boolean verify(Key key, SignedInfo si, byte[] sig,
@@ -230,7 +273,7 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
         }
         signature.initVerify((PublicKey)key);
         try {
-            signature.setParameter(new PSSParameterSpec(digestName, "MGF1", new MGF1ParameterSpec(digestName), saltLength, trailerField));
+            signature.setParameter(spec);
         } catch (InvalidAlgorithmParameterException e) {
             throw new XMLSignatureException(e);
         }
@@ -270,7 +313,7 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
         }
         signature.initSign((PrivateKey)key);
         try {
-            signature.setParameter(new PSSParameterSpec(digestName, "MGF1", new MGF1ParameterSpec(digestName), saltLength, trailerField));
+            signature.setParameter(spec);
         } catch (InvalidAlgorithmParameterException e) {
             throw new XMLSignatureException(e);
         }
@@ -290,14 +333,6 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
     @Override
     boolean paramsEqual(AlgorithmParameterSpec spec) {
         return getParameterSpec().equals(spec);
-    }
-
-    private SignatureMethodParameterSpec getDefaultParameterSpec() {
-        RSAPSSParameterSpec params = new RSAPSSParameterSpec();
-        params.setTrailerField(trailerField);
-        params.setSaltLength(saltLength);
-        params.setDigestName(digestName);
-        return params;
     }
 
     static final class RSAPSS extends DOMRSAPSSSignatureMethod {

@@ -30,6 +30,7 @@
  * @modules java.compiler
  *          java.desktop
  *          jdk.compiler
+ * @run main/othervm -Djava.security.manager=allow TestColorClass
  */
 
 import java.awt.Color;

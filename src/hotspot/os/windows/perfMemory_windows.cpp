@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_windows.inline.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
@@ -142,9 +143,9 @@ static void save_memory_to_file(char* addr, size_t size) {
 // user specific directory and the backing store file be stored in either a
 // RAM based file system or a local disk based file system. Network based
 // file systems are not recommended for performance reasons. In addition,
-// use of SMB network based file systems may result in unsuccesful cleanup
+// use of SMB network based file systems may result in unsuccessful cleanup
 // of the disk based resource on exit of the VM. The Windows TMP and TEMP
-// environement variables, as used by the GetTempPath() Win32 API (see
+// environment variables, as used by the GetTempPath() Win32 API (see
 // os::get_temp_directory() in os_win32.cpp), control the location of the
 // user specific directory and the shared memory backing store file.
 
@@ -1545,7 +1546,7 @@ static size_t sharedmem_filesize(const char* filename, TRAPS) {
   //
   // on win95/98/me, _stat returns a file size of 0 bytes, but on
   // winnt/2k the appropriate file size is returned. support for
-  // the sharable aspects of performance counters was abandonded
+  // the shareable aspects of performance counters was abandoned
   // on the non-nt win32 platforms due to this and other api
   // inconsistencies
   //
@@ -1745,7 +1746,7 @@ void PerfMemory::create_memory_region(size_t size) {
       if (PrintMiscellaneous && Verbose) {
         warning("Reverting to non-shared PerfMemory region.\n");
       }
-      PerfDisableSharedMem = true;
+      FLAG_SET_ERGO(PerfDisableSharedMem, true);
       _start = create_standard_memory(size);
     }
   }
@@ -1823,7 +1824,7 @@ void PerfMemory::attach(const char* user, int vmid, PerfMemoryMode mode,
 // the indicated process's PerfData memory region from this
 // process's address space.
 //
-void PerfMemory::detach(char* addr, size_t bytes, TRAPS) {
+void PerfMemory::detach(char* addr, size_t bytes) {
 
   assert(addr != 0, "address sanity check");
   assert(bytes > 0, "capacity sanity check");
@@ -1833,7 +1834,7 @@ void PerfMemory::detach(char* addr, size_t bytes, TRAPS) {
     return;
   }
 
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     // it does not go through os api, the operation has to record from here
     Tracker tkr(Tracker::release);
     remove_file_mapping(addr);

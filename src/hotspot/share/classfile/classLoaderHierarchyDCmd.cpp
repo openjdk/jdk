@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,6 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/safepoint.hpp"
-#include "oops/reflectionAccessorImplKlassHelper.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
@@ -172,7 +171,7 @@ class LoaderTreeNode : public ResourceObj {
 
     branchtracker.print(st);
 
-    // e.g. "+--- jdk.internal.reflect.DelegatingClassLoader"
+    // e.g. +-- "app", jdk.internal.loader.ClassLoaders$AppClassLoader
     st->print("+%.*s", BranchTracker::twig_len, "----------");
     if (_cld->is_the_null_class_loader_data()) {
       st->print(" <bootstrap>");
@@ -221,7 +220,7 @@ class LoaderTreeNode : public ResourceObj {
       if (print_classes) {
         if (_classes != NULL) {
           for (LoadedClassInfo* lci = _classes; lci; lci = lci->_next) {
-            // non-strong hidden and unsafe anonymous classes should not live in
+            // non-strong hidden classes should not live in
             // the primary CLD of their loaders.
             assert(lci->_cld == _cld, "must be");
 
@@ -232,14 +231,6 @@ class LoaderTreeNode : public ResourceObj {
               st->print("%*s ", indentation, "");
             }
             st->print("%s", lci->_klass->external_name());
-
-            // Special treatment for generated core reflection accessor classes: print invocation target.
-            if (ReflectionAccessorImplKlassHelper::is_generated_accessor(lci->_klass)) {
-              st->print(" (invokes: ");
-              ReflectionAccessorImplKlassHelper::print_invocation_target(st, lci->_klass);
-              st->print(")");
-            }
-
             st->cr();
           }
           branchtracker.print(st);
@@ -369,14 +360,14 @@ public:
 
   // Attempt to fold similar nodes among this node's children. We only fold leaf nodes
   // (no child class loaders).
-  // For non-leaf nodes (class loaders with child class loaders), do this recursivly.
+  // For non-leaf nodes (class loaders with child class loaders), do this recursively.
   void fold_children() {
     LoaderTreeNode* node = _child;
     LoaderTreeNode* prev = NULL;
     while (node != NULL) {
       LoaderTreeNode* matching_node = NULL;
       if (node->is_leaf()) {
-        // Look among the preceeding node siblings for a match.
+        // Look among the preceding node siblings for a match.
         for (LoaderTreeNode* node2 = _child; node2 != node && matching_node == NULL;
             node2 = node2->_next) {
           if (node2->is_leaf() && node->can_fold_into(node2)) {

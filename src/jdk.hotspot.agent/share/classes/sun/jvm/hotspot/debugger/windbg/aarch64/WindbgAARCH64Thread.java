@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -75,7 +75,7 @@ class WindbgAARCH64Thread implements ThreadProxy {
   }
 
   public int hashCode() {
-    return (int) getThreadID();
+    return Long.hashCode(getThreadID());
   }
 
   public String toString() {

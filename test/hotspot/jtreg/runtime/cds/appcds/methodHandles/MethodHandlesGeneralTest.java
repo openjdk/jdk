@@ -50,6 +50,7 @@ import java.io.File;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Platform;
 
 public class MethodHandlesGeneralTest {
     @Test
@@ -68,6 +69,10 @@ public class MethodHandlesGeneralTest {
         String appJar = JarBuilder.build("MH", new File(classDir), null);
         String classList = testClassName + ".list";
         String archiveName = testClassName + ".jsa";
+        // Disable VerifyDpendencies when running with debug build because
+        // the test requires a lot more time to execute with the option enabled.
+        String verifyOpt =
+            Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-showversion";
 
         String[] classPaths = javaClassPath.split(File.pathSeparator);
         String junitJar = null;
@@ -81,7 +86,7 @@ public class MethodHandlesGeneralTest {
         String jars = appJar + ps + junitJar;
 
         // dump class list
-        CDSTestUtils.dumpClassList(classList, "-cp", jars, mainClass,
+        CDSTestUtils.dumpClassList(classList, "-cp", jars, verifyOpt, mainClass,
                                    testPackageName + "." + testClassName);
 
         // create archive with the class list
@@ -94,7 +99,7 @@ public class MethodHandlesGeneralTest {
 
         // run with archive
         CDSOptions runOpts = (new CDSOptions())
-            .addPrefix("-cp", jars, "-Xlog:class+load,cds=debug")
+            .addPrefix("-cp", jars, "-Xlog:class+load,cds=debug", verifyOpt)
             .setArchiveName(archiveName)
             .setUseVersion(false)
             .addSuffix(mainClass, testPackageName + "." + testClassName);

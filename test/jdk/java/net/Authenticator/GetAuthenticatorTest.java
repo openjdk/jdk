@@ -30,7 +30,7 @@ import java.security.AccessControlException;
  * @test
  * @bug 8169068
  * @summary  Basic test for Authenticator.getDefault()
- * @run main/othervm GetAuthenticatorTest
+ * @run main/othervm -Djava.security.manager=allow GetAuthenticatorTest
  */
 public class GetAuthenticatorTest {
 

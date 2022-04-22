@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,36 +92,36 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
      * Print all the classes in the file.
      */
     protected void buildAllClassesFile() throws DocFileIOException {
-        String label = resources.getText("doclet.All_Classes");
+        String label = resources.getText("doclet.All_Classes_And_Interfaces");
         Content allClassesContent = new ContentBuilder();
         addContents(allClassesContent);
         Content mainContent = new ContentBuilder();
         mainContent.add(allClassesContent);
-        HtmlTree bodyTree = getBody(getWindowTitle(label));
-        bodyTree.add(new BodyContents()
+        HtmlTree body = getBody(getWindowTitle(label));
+        body.add(new BodyContents()
                 .setHeader(getHeader(PageMode.ALL_CLASSES))
                 .addMainContent(mainContent)
                 .setFooter(getFooter()));
-        printHtmlDocument(null, "class index", bodyTree);
+        printHtmlDocument(null, "class index", body);
     }
 
     /**
-     * Add all types to the content tree.
+     * Add all types to the content.
      *
-     * @param content HtmlTree content to which the links will be added
+     * @param target the content to which the links will be added
      */
-    protected void addContents(Content content) {
+    protected void addContents(Content target) {
         Table table = new Table(HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                 .setId(HtmlIds.ALL_CLASSES_TABLE)
-                .setDefaultTab(resources.getText("doclet.All_Classes"))
-                .addTab(contents.interfaceSummary, utils::isInterface)
-                .addTab(contents.classSummary, e -> utils.isOrdinaryClass((TypeElement)e))
-                .addTab(contents.enumSummary, utils::isEnum)
-                .addTab(contents.exceptionSummary, e -> utils.isException((TypeElement)e))
-                .addTab(contents.errorSummary, e -> utils.isError((TypeElement)e))
-                .addTab(contents.annotationTypeSummary, utils::isAnnotationType);
+                .setDefaultTab(contents.allClassesAndInterfacesLabel)
+                .addTab(contents.interfaces, utils::isPlainInterface)
+                .addTab(contents.classes, e -> utils.isNonThrowableClass((TypeElement)e))
+                .addTab(contents.enums, utils::isEnum)
+                .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
+                .addTab(contents.exceptionClasses, e -> utils.isThrowable((TypeElement)e))
+                .addTab(contents.annotationTypes, utils::isAnnotationInterface);
         for (Character unicode : indexBuilder.getFirstCharacters()) {
             for (IndexItem indexItem : indexBuilder.getItems(unicode)) {
                 TypeElement typeElement = (TypeElement) indexItem.getElement();
@@ -130,13 +130,13 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 }
             }
         }
-        Content titleContent = contents.allClassesLabel;
-        Content pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+        Content titleContent = contents.allClassesAndInterfacesLabel;
+        var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
-        Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
-        content.add(headerDiv);
+        var headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
+        target.add(headerDiv);
         if (!table.isEmpty()) {
-            content.add(table);
+            target.add(table);
             if (table.needsScript()) {
                 getMainBodyScript().append(table.getScript());
             }

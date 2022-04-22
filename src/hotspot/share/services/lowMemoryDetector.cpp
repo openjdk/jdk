@@ -39,7 +39,6 @@
 #include "services/management.hpp"
 
 volatile bool LowMemoryDetector::_enabled_for_collected_pools = false;
-volatile jint LowMemoryDetector::_disabled_count = 0;
 
 bool LowMemoryDetector::has_pending_requests() {
   assert(Notification_lock->owned_by_self(), "Must own Notification_lock");

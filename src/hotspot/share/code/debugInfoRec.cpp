@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/scopeDesc.hpp"
+#include "compiler/oopMap.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/globals_extension.hpp"
 
@@ -311,7 +312,7 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   last_pd->set_has_ea_local_in_scope(has_ea_local_in_scope);
   last_pd->set_arg_escape(arg_escape);
 
-  // serialize sender stream offest
+  // serialize sender stream offset
   stream()->write_int(sender_stream_offset);
 
   // serialize scope

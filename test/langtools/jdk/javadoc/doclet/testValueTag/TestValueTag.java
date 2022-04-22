@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,14 +152,14 @@ public class TestValueTag extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true,
                 // Test @value warning printed when used with non-constant.
-                "warning - @value tag (which references nonConstant) "
+                "warning: @value tag (which references nonConstant) "
                 + "can only be used in constants.",
-                "warning - @value tag (which references NULL) "
+                "warning: @value tag (which references NULL) "
                 + "can only be used in constants.",
-                "warning - @value tag (which references TEST_12_ERROR) "
+                "warning: @value tag (which references TEST_12_ERROR) "
                 + "can only be used in constants.",
                 // Test warning printed for bad reference.
-                "warning - {@value UnknownClass#unknownConstant}"
+                "warning: {@value UnknownClass#unknownConstant}"
                 + " (referenced by @value tag) is an unknown reference."
         );
         checkForException();

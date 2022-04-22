@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,9 +95,9 @@ private:
   bool operator ==(const FormDict &d) const; // Compare dictionaries for equal
 
 public:
-  // cmp is a key comparision routine.  hash is a routine to hash a key.
+  // cmp is a key comparison routine.  hash is a routine to hash a key.
   // FormDict( CmpKey cmp, Hash hash );
-  FormDict( CmpKey cmp, Hash hash, Arena *arena );
+  FormDict( CmpKey cmp, Hash hash, AdlArena *arena );
   FormDict( const FormDict & fd );    // Deep-copy guts
   ~FormDict();
 
@@ -119,9 +119,9 @@ public:
 //------------------------------Form-------------------------------------------
 class Form {
 public:
-  static Arena  *arena;            // arena used by forms
+  static AdlArena  *arena;         // arena used by forms
 private:
-  static Arena  *generate_arena(); // allocate arena used by forms
+  static AdlArena  *generate_arena(); // allocate arena used by forms
 
 protected:
   int   _ftype;                    // Indicator for derived class type
@@ -572,8 +572,8 @@ private:
   bool operator ==(const ExprDict &d) const; // Compare dictionaries for equal
 
 public:
-  // cmp is a key comparision routine.  hash is a routine to hash a key.
-  ExprDict( CmpKey cmp, Hash hash, Arena *arena );
+  // cmp is a key comparison routine.  hash is a routine to hash a key.
+  ExprDict( CmpKey cmp, Hash hash, AdlArena *arena );
   ~ExprDict();
 
   // Return # of key-value pairs in dict

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,6 +193,7 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
             return FlightRecorder.getFlightRecorder().getInternal();
         }
 
+        @SuppressWarnings("removal")
         @Override
         public AccessControlContext getContext(SettingControl settingControl) {
             return settingControl.getContext();
@@ -201,6 +202,11 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
         @Override
         public EventSettings newEventSettings(EventSettingsModifier esm) {
             return new EventSettings.DelegatedEventSettings(esm);
+        }
+
+        @Override
+        public boolean isVisible(EventType t) {
+            return t.isVisible();
         }
     }
 
@@ -214,7 +220,7 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
      * @throws IllegalArgumentException if {@code name} is empty or not valid
      */
     public FlightRecorderPermission(String name) {
-        super(Objects.requireNonNull(name));
+        super(Objects.requireNonNull(name, "name"));
         if (!name.equals(Utils.ACCESS_FLIGHT_RECORDER) && !name.equals(Utils.REGISTER_EVENT)) {
             throw new IllegalArgumentException("name: " + name);
         }

@@ -46,7 +46,7 @@ import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
  * @test
  * @bug 8167179
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true transform.NamespacePrefixTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.NamespacePrefixTest
  * @run testng/othervm transform.NamespacePrefixTest
  * @summary This class tests the generation of namespace prefixes
  */

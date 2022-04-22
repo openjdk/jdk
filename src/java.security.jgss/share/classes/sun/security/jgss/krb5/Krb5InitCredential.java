@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.net.InetAddress;
 import java.io.IOException;
 import java.util.Date;
 import java.security.AccessController;
-import java.security.AccessControlContext;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 
@@ -108,10 +107,7 @@ public class Krb5InitCredential
                                               endTime,
                                               renewTill,
                                               clientAddresses);
-        } catch (KrbException e) {
-            throw new GSSException(GSSException.NO_CRED, -1,
-                                   e.getMessage());
-        } catch (IOException e) {
+        } catch (KrbException | IOException e) {
             throw new GSSException(GSSException.NO_CRED, -1,
                                    e.getMessage());
         }
@@ -348,6 +344,7 @@ public class Krb5InitCredential
     // XXX call to this.destroy() should destroy the locally cached copy
     // of krb5Credentials and then call super.destroy().
 
+    @SuppressWarnings("removal")
     private static KerberosTicket getTgt(GSSCaller caller, Krb5NameElement name,
                                                  int initLifetime)
         throws GSSException {
@@ -364,20 +361,17 @@ public class Krb5InitCredential
             clientPrincipal = null;
         }
 
-        final AccessControlContext acc = AccessController.getContext();
-
         try {
             final GSSCaller realCaller = (caller == GSSCaller.CALLER_UNKNOWN)
                                    ? GSSCaller.CALLER_INITIATE
                                    : caller;
-            return AccessController.doPrivileged(
+            return AccessController.doPrivilegedWithCombiner(
                 new PrivilegedExceptionAction<KerberosTicket>() {
                 public KerberosTicket run() throws Exception {
                     // It's OK to use null as serverPrincipal. TGT is almost
                     // the first ticket for a principal and we use list.
                     return Krb5Util.getInitialTicket(
-                        realCaller,
-                        clientPrincipal, acc);
+                        realCaller, clientPrincipal);
                         }});
         } catch (PrivilegedActionException e) {
             GSSException ge =
@@ -395,7 +389,7 @@ public class Krb5InitCredential
             Krb5NameElement kname = (Krb5NameElement)name;
             Credentials newCred = Credentials.acquireS4U2selfCreds(
                     kname.getKrb5PrincipalName(), krb5Credentials);
-            return new Krb5ProxyCredential(this, kname, newCred.getTicket());
+            return new Krb5ProxyCredential(this, kname, newCred);
         } catch (IOException | KrbException ke) {
             GSSException ge =
                 new GSSException(GSSException.FAILURE, -1,

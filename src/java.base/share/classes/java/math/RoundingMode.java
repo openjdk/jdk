@@ -377,34 +377,16 @@ public enum RoundingMode {
      * @throws IllegalArgumentException integer is out of range
      */
     public static RoundingMode valueOf(int rm) {
-        switch(rm) {
-
-        case BigDecimal.ROUND_UP:
-            return UP;
-
-        case BigDecimal.ROUND_DOWN:
-            return DOWN;
-
-        case BigDecimal.ROUND_CEILING:
-            return CEILING;
-
-        case BigDecimal.ROUND_FLOOR:
-            return FLOOR;
-
-        case BigDecimal.ROUND_HALF_UP:
-            return HALF_UP;
-
-        case BigDecimal.ROUND_HALF_DOWN:
-            return HALF_DOWN;
-
-        case BigDecimal.ROUND_HALF_EVEN:
-            return HALF_EVEN;
-
-        case BigDecimal.ROUND_UNNECESSARY:
-            return UNNECESSARY;
-
-        default:
-            throw new IllegalArgumentException("argument out of range");
-        }
+        return switch (rm) {
+            case BigDecimal.ROUND_UP          -> UP;
+            case BigDecimal.ROUND_DOWN        -> DOWN;
+            case BigDecimal.ROUND_CEILING     -> CEILING;
+            case BigDecimal.ROUND_FLOOR       -> FLOOR;
+            case BigDecimal.ROUND_HALF_UP     -> HALF_UP;
+            case BigDecimal.ROUND_HALF_DOWN   -> HALF_DOWN;
+            case BigDecimal.ROUND_HALF_EVEN   -> HALF_EVEN;
+            case BigDecimal.ROUND_UNNECESSARY -> UNNECESSARY;
+            default -> throw new IllegalArgumentException("argument out of range");
+        };
     }
 }

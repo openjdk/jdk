@@ -168,7 +168,7 @@ void Parse::array_store_check() {
   if (MonomorphicArrayCheck
       && !too_many_traps(Deoptimization::Reason_array_check)
       && !tak->klass_is_exact()
-      && tak != TypeKlassPtr::OBJECT) {
+      && tak != TypeInstKlassPtr::OBJECT) {
       // Regarding the fourth condition in the if-statement from above:
       //
       // If the compiler has determined that the type of array 'ary' (represented

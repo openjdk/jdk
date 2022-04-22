@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *
- * @run main/othervm DebugdConnectTest
+ * @run driver DebugdConnectTest
  */
 
 import java.io.IOException;
@@ -44,13 +44,13 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class DebugdConnectTest {
 
-    private static OutputAnalyzer runJHSDB(String command, String id) throws IOException, InterruptedException {
+    private static OutputAnalyzer runJHSDB(String command, String serverID) throws IOException, InterruptedException {
         JDKToolLauncher jhsdbLauncher = JDKToolLauncher.createUsingTestJDK("jhsdb");
         jhsdbLauncher.addVMArgs(Utils.getFilteredTestJavaOpts("-showversion", "-Xcomp"));
         jhsdbLauncher.addToolArg(command);
         jhsdbLauncher.addToolArg("--connect");
-        if (id != null) {
-            jhsdbLauncher.addToolArg(id + "@localhost");
+        if (serverID != null) {
+            jhsdbLauncher.addToolArg(serverID + "@localhost");
         } else {
             jhsdbLauncher.addToolArg("localhost");
         }
@@ -66,47 +66,50 @@ public class DebugdConnectTest {
         return out;
     }
 
-    private static void runJSTACK(String id) throws IOException, InterruptedException {
-        OutputAnalyzer out = runJHSDB("jstack", id);
+    private static void runJSTACK(String serverID) throws IOException, InterruptedException {
+        OutputAnalyzer out = runJHSDB("jstack", serverID);
 
         out.shouldContain("LingeredApp");
         out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
         out.shouldHaveExitValue(0);
     }
 
-    private static void runJMAP(String id) throws IOException, InterruptedException {
-        OutputAnalyzer out = runJHSDB("jmap", id);
+    private static void runJMAP(String serverID) throws IOException, InterruptedException {
+        OutputAnalyzer out = runJHSDB("jmap", serverID);
 
         out.shouldContain("JVM version is");
         out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
         out.shouldHaveExitValue(0);
     }
 
-    private static void runJINFO(String id) throws IOException, InterruptedException {
-        OutputAnalyzer out = runJHSDB("jinfo", id);
+    private static void runJINFO(String serverID) throws IOException, InterruptedException {
+        OutputAnalyzer out = runJHSDB("jinfo", serverID);
 
         out.shouldContain("Java System Properties:");
         out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
         out.shouldHaveExitValue(0);
     }
 
-    private static void runJSNAP(String id) throws IOException, InterruptedException {
-        OutputAnalyzer out = runJHSDB("jsnap", id);
+    private static void runJSNAP(String serverID) throws IOException, InterruptedException {
+        OutputAnalyzer out = runJHSDB("jsnap", serverID);
 
         out.shouldContain("java.vm.name=");
         out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
         out.shouldHaveExitValue(0);
     }
 
-    private static void runTests(String id, long debuggeePid) throws IOException, InterruptedException {
-        DebugdUtils debugd = new DebugdUtils(id);
+    private static void runTests(String serverID, long debuggeePid) throws IOException, InterruptedException {
+        DebugdUtils debugd = new DebugdUtils();
+        if (serverID != null) {
+            debugd.setServerID(serverID);
+        }
         debugd.attach(debuggeePid);
 
         try {
-            runJSTACK(id);
-            runJMAP(id);
-            runJINFO(id);
-            runJSNAP(id);
+            runJSTACK(serverID);
+            runJMAP(serverID);
+            runJINFO(serverID);
+            runJSNAP(serverID);
         } finally {
             debugd.detach();
         }

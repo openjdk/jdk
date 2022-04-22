@@ -64,6 +64,11 @@ public class MemoryAccessProviderTest {
         Assert.assertNull(PROVIDER.readPrimitiveConstant(kind, null, offset, bitsCount), "Unexpected value for null base");
     }
 
+    @Test(dataProvider = "unalignedPrimitive", dataProviderClass = MemoryAccessProviderData.class, expectedExceptions = {IllegalArgumentException.class})
+    public void testReadUnalignedConstantConstant(JavaKind kind, Constant base, Long offset, Object expected, int bitsCount) {
+        PROVIDER.readPrimitiveConstant(kind, null, offset, bitsCount);
+    }
+
     @Test(dataProvider = "negative", dataProviderClass = MemoryAccessProviderData.class, expectedExceptions = {IllegalArgumentException.class})
     public void testNegativeReadPrimitiveConstant(JavaKind kind, Constant base) {
         PROVIDER.readPrimitiveConstant(kind, base, 0L, kind == null ? 0 : kind.getByteCount() / 8);
@@ -75,7 +80,7 @@ public class MemoryAccessProviderTest {
             PROVIDER.readPrimitiveConstant(kind, base, offset, kind.getByteCount() * 8);
             Assert.assertFalse(isOutOfBounds);
         } catch (IllegalArgumentException iae) {
-            Assert.assertTrue(isOutOfBounds);
+            Assert.assertTrue(isOutOfBounds, iae.getMessage());
         }
     }
 
@@ -85,7 +90,17 @@ public class MemoryAccessProviderTest {
             PROVIDER.readPrimitiveConstant(kind, base, offset, kind.getByteCount() * 8);
             Assert.assertFalse(isOutOfBounds);
         } catch (IllegalArgumentException iae) {
-            Assert.assertTrue(isOutOfBounds);
+            Assert.assertTrue(isOutOfBounds, iae.getMessage());
+        }
+    }
+
+    @Test(dataProvider = "outOfBoundsObjectArray", dataProviderClass = MemoryAccessProviderData.class)
+    public void testReadObjectOutOfBoundsObjectArray(JavaKind kind, Constant base, Long offset, boolean isOutOfBounds) {
+        try {
+            PROVIDER.readObjectConstant(base, offset);
+            Assert.assertFalse(isOutOfBounds);
+        } catch (IllegalArgumentException iae) {
+            Assert.assertTrue(isOutOfBounds, iae.getMessage());
         }
     }
 

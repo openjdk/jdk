@@ -52,7 +52,7 @@
  *      -Xlog:gc:gc.log
  *      -XX:-UseGCOverheadLimit
  *      gc.g1.unloading.UnloadingTest
- *      -classloadingMethod anonymous_classloader
+ *      -classloadingMethod hidden_classloader
  *      -keep object
  *      -numberOfChecksLimit 4
  *      -stressTime 180

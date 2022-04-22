@@ -27,6 +27,7 @@ package com.sun.tools.javac.parser;
 
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.function.Predicate;
 import java.util.Map;
 
 import com.sun.tools.javac.api.Formattable;
@@ -90,7 +91,7 @@ public class Tokens {
      * This enum defines all tokens used by the javac scanner. A token is
      * optionally associated with a name.
      */
-    public enum TokenKind implements Formattable, Filter<TokenKind> {
+    public enum TokenKind implements Formattable, Predicate<TokenKind> {
         EOF(),
         ERROR(),
         IDENTIFIER(Tag.NAMED),
@@ -263,7 +264,7 @@ public class Tokens {
         }
 
         @Override
-        public boolean accepts(TokenKind that) {
+        public boolean test(TokenKind that) {
             return this == that;
         }
     }
@@ -318,14 +319,14 @@ public class Tokens {
 
         Token[] split(Tokens tokens) {
             if (kind.name.length() < 2 || kind.tag != Tag.DEFAULT) {
-                throw new AssertionError("Cant split" + kind);
+                throw new AssertionError("Can't split" + kind);
             }
 
             TokenKind t1 = tokens.lookupKind(kind.name.substring(0, 1));
             TokenKind t2 = tokens.lookupKind(kind.name.substring(1));
 
             if (t1 == null || t2 == null) {
-                throw new AssertionError("Cant split - bad subtokens");
+                throw new AssertionError("Can't split - bad subtokens");
             }
             return new Token[] {
                 new Token(t1, pos, pos + t1.name.length(), comments),

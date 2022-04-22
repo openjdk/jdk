@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import javax.crypto.spec.*;
 import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
 import sun.security.util.KeyUtil;
 
@@ -50,24 +51,24 @@ import sun.security.util.KeyUtil;
 final class P11RSACipher extends CipherSpi {
 
     // minimum length of PKCS#1 v1.5 padding
-    private final static int PKCS1_MIN_PADDING_LENGTH = 11;
+    private static final int PKCS1_MIN_PADDING_LENGTH = 11;
 
     // constant byte[] of length 0
-    private final static byte[] B0 = new byte[0];
+    private static final byte[] B0 = new byte[0];
 
     // mode constant for public key encryption
-    private final static int MODE_ENCRYPT = 1;
+    private static final int MODE_ENCRYPT = 1;
     // mode constant for private key decryption
-    private final static int MODE_DECRYPT = 2;
+    private static final int MODE_DECRYPT = 2;
     // mode constant for private key encryption (signing)
-    private final static int MODE_SIGN    = 3;
+    private static final int MODE_SIGN    = 3;
     // mode constant for public key decryption (verifying)
-    private final static int MODE_VERIFY  = 4;
+    private static final int MODE_VERIFY  = 4;
 
     // padding type constant for NoPadding
-    private final static int PAD_NONE = 1;
+    private static final int PAD_NONE = 1;
     // padding type constant for PKCS1Padding
-    private final static int PAD_PKCS1 = 2;
+    private static final int PAD_PKCS1 = 2;
 
     // token instance
     private final Token token;
@@ -266,7 +267,21 @@ final class P11RSACipher extends CipherSpi {
     // state variables such as "initialized"
     private void cancelOperation() {
         token.ensureValid();
-        // cancel operation by finishing it; avoid killSession as some
+
+        long flags = switch(mode) {
+            case MODE_ENCRYPT -> CKF_ENCRYPT;
+            case MODE_DECRYPT -> CKF_DECRYPT;
+            case MODE_SIGN -> CKF_SIGN;
+            case MODE_VERIFY -> CKF_VERIFY;
+            default -> {
+                throw new AssertionError("Unexpected value: " + mode);
+            }
+        };
+        if (P11Util.trySessionCancel(token, session, flags)) {
+            return;
+        }
+
+        // cancel by finishing operations; avoid killSession as some
         // hardware vendors may require re-login
         try {
             PKCS11 p11 = token.p11;

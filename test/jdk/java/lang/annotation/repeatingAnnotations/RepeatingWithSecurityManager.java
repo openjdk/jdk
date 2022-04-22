@@ -29,7 +29,7 @@
  * @library /test/lib
  * @build jdk.test.lib.Asserts
  * @run main RepeatingWithSecurityManager
- * @run main/othervm RepeatingWithSecurityManager "withSM"
+ * @run main/othervm -Djava.security.manager=allow RepeatingWithSecurityManager "withSM"
  */
 
 import java.lang.annotation.*;

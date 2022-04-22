@@ -75,7 +75,7 @@ TypeArrayKlass* TypeArrayKlass::allocate(ClassLoaderData* loader_data, BasicType
   return new (loader_data, size, THREAD) TypeArrayKlass(type, name);
 }
 
-TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name, ID) {
+TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name, Kind) {
   set_layout_helper(array_layout_helper(type));
   assert(is_array_klass(), "sanity");
   assert(is_typeArray_klass(), "sanity");
@@ -90,7 +90,7 @@ typeArrayOop TypeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
   assert(log2_element_size() >= 0, "bad scale");
   check_array_allocation_length(length, max_length(), CHECK_NULL);
   size_t size = typeArrayOopDesc::object_size(layout_helper(), length);
-  return (typeArrayOop)Universe::heap()->array_allocate(this, (int)size, length,
+  return (typeArrayOop)Universe::heap()->array_allocate(this, size, length,
                                                         do_zero, CHECK_NULL);
 }
 
@@ -171,7 +171,7 @@ void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
 }
 
 // create a klass of array holding typeArrays
-Klass* TypeArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
+Klass* TypeArrayKlass::array_klass(int n, TRAPS) {
   int dim = dimension();
   assert(dim <= n, "check order of chain");
     if (dim == n)
@@ -179,10 +179,9 @@ Klass* TypeArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
 
   // lock-free read needs acquire semantics
   if (higher_dimension_acquire() == NULL) {
-    if (or_null)  return NULL;
 
     ResourceMark rm;
-    JavaThread *jt = THREAD->as_Java_thread();
+    JavaThread *jt = THREAD;
     {
       // Atomic create higher dimension and link into list
       MutexLocker mu(THREAD, MultiArray_lock);
@@ -200,21 +199,38 @@ Klass* TypeArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
   }
 
   ObjArrayKlass* h_ak = ObjArrayKlass::cast(higher_dimension());
-  if (or_null) {
-    return h_ak->array_klass_or_null(n);
-  }
   THREAD->check_possible_safepoint();
   return h_ak->array_klass(n, THREAD);
 }
 
-Klass* TypeArrayKlass::array_klass_impl(bool or_null, TRAPS) {
-  return array_klass_impl(or_null, dimension() +  1, THREAD);
+// return existing klass of array holding typeArrays
+Klass* TypeArrayKlass::array_klass_or_null(int n) {
+  int dim = dimension();
+  assert(dim <= n, "check order of chain");
+    if (dim == n)
+      return this;
+
+  // lock-free read needs acquire semantics
+  if (higher_dimension_acquire() == NULL) {
+    return NULL;
+  }
+
+  ObjArrayKlass* h_ak = ObjArrayKlass::cast(higher_dimension());
+  return h_ak->array_klass_or_null(n);
 }
 
-int TypeArrayKlass::oop_size(oop obj) const {
+Klass* TypeArrayKlass::array_klass(TRAPS) {
+  return array_klass(dimension() +  1, THREAD);
+}
+
+Klass* TypeArrayKlass::array_klass_or_null() {
+  return array_klass_or_null(dimension() +  1);
+}
+
+size_t TypeArrayKlass::oop_size(oop obj) const {
   assert(obj->is_typeArray(),"must be a type array");
   typeArrayOop t = typeArrayOop(obj);
-  return t->object_size();
+  return t->object_size(this);
 }
 
 void TypeArrayKlass::initialize(TRAPS) {

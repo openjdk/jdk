@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ void HotSpotJVMCI::compute_offsets(TRAPS) {
 
 #define START_CLASS(className, fullClassName)                                           \
   void HotSpotJVMCI::className::initialize(JVMCI_TRAPS) {                               \
-    Thread* THREAD = Thread::current();                                                 \
+    JavaThread* THREAD = JavaThread::current(); /* For exception macros. */             \
     className::klass()->initialize(CHECK);                                              \
   }                                                                                     \
   bool HotSpotJVMCI::className::is_instance(JVMCIEnv* env, JVMCIObject object) {        \
@@ -231,13 +231,13 @@ void HotSpotJVMCI::compute_offsets(TRAPS) {
       assert(className::klass() != NULL && className::klass()->is_linked(), "Class not yet linked: " #className);         \
       InstanceKlass* ik = className::klass();                                                                             \
       oop base = ik->static_field_base_raw();                                                                             \
-      return HeapAccess<>::load_at(base, className::_##name##_offset);                                                    \
+      return *base->field_addr<jtypename>(className::_##name##_offset);                                                   \
     }                                                                                                                     \
     void HotSpotJVMCI::className::set_##name(JVMCIEnv* env, jtypename x) {                                                \
       assert(className::klass() != NULL && className::klass()->is_linked(), "Class not yet linked: " #className);         \
       InstanceKlass* ik = className::klass();                                                                             \
       oop base = ik->static_field_base_raw();                                                                             \
-      HeapAccess<>::store_at(base, _##name##_offset, x);                                                                  \
+      *base->field_addr<jtypename>(className::_##name##_offset) = x;                                                      \
     }
 
 #define STATIC_INT_FIELD(className, name) STATIC_PRIMITIVE_FIELD(className, name, jint)
@@ -306,7 +306,6 @@ void JNIJVMCI::initialize_field_id(JNIEnv* env, jfieldID &fieldid, jclass clazz,
     env->ExceptionDescribe();
     env->ExceptionClear();
     ResourceMark rm;
-    Thread* THREAD = Thread::current();
     fatal("Could not find field %s.%s with signature %s", class_name, name, signature);
   }
 }
@@ -379,7 +378,7 @@ class ThrowableInitDumper : public SymbolClosure {
  public:
   ThrowableInitDumper(fileStream* st)     { _st = st; }
   void do_symbol(Symbol** p) {
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     Symbol* name = *p;
     if (name == NULL) {
       return;
@@ -488,7 +487,7 @@ void JNIJVMCI::initialize_ids(JNIEnv* env) {
 } while(0)
 
   if (JVMCILibDumpJNIConfig != NULL) {
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     fileStream* st = JVMCIGlobals::get_jni_config_file();
 
     DUMP_ALL_NATIVE_METHODS(vmSymbols::jdk_vm_ci_hotspot_CompilerToVM());

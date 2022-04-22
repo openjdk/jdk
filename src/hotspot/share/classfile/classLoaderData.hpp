@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,18 +117,17 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   Mutex* _metaspace_lock;  // Locks the metaspace for allocations and setup.
   bool _unloading;         // true if this class loader goes away
   bool _has_class_mirror_holder; // If true, CLD is dedicated to one class and that class determines
-                                 // the CLDs lifecycle.  For example, a non-strong hidden class or an
-                                 // unsafe anonymous class.  Arrays of these classes are also assigned
-                                 // to these class loader datas.
+                                 // the CLDs lifecycle.  For example, a non-strong hidden class.
+                                 // Arrays of these classes are also assigned
+                                 // to these class loader data.
 
   // Remembered sets support for the oops in the class loader data.
   bool _modified_oops;     // Card Table Equivalent
 
   int _keep_alive;         // if this CLD is kept alive.
-                           // Used for non-strong hidden classes, unsafe anonymous classes and the
+                           // Used for non-strong hidden classes and the
                            // boot class loader. _keep_alive does not need to be volatile or
-                           // atomic since there is one unique CLD per non-strong hidden class
-                           // or unsafe anonymous class.
+                           // atomic since there is one unique CLD per non-strong hidden class.
 
   volatile int _claim; // non-zero if claimed, for example during GC traces.
                        // To avoid applying oop closure more than once.
@@ -175,7 +174,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool has_modified_oops()               { return _modified_oops; }
 
   oop holder_no_keepalive() const;
-  oop holder_phantom() const;
+  oop holder() const;
 
  private:
   void unload();
@@ -191,9 +190,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // Deallocate free list during class unloading.
   void free_deallocate_list();                      // for the classes that are not unloaded
   void free_deallocate_list_C_heap_structures();    // for the classes that are unloaded
-
-  // Allocate out of this class loader data
-  MetaWord* allocate(size_t size);
 
   Dictionary* create_dictionary();
 
@@ -238,15 +234,15 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   }
 
   // Returns true if this class loader data is for the system class loader.
-  // (Note that the class loader data may be for a non-strong hidden class or unsafe anonymous class)
+  // (Note that the class loader data may be for a non-strong hidden class)
   bool is_system_class_loader_data() const;
 
   // Returns true if this class loader data is for the platform class loader.
-  // (Note that the class loader data may be for a non-strong hidden class or unsafe anonymous class)
+  // (Note that the class loader data may be for a non-strong hidden class)
   bool is_platform_class_loader_data() const;
 
   // Returns true if this class loader data is for the boot class loader.
-  // (Note that the class loader data may be for a non-strong hidden class or unsafe anonymous class)
+  // (Note that the class loader data may be for a non-strong hidden class)
   inline bool is_boot_class_loader_data() const;
 
   bool is_builtin_class_loader_data() const;
@@ -267,8 +263,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
     return _unloading;
   }
 
-  // Used to refcount a non-strong hidden class's or unsafe anonymous class's CLD in order to
-  // indicate their aliveness.
+  // Used to refcount a non-strong hidden class's s CLD in order to indicate their aliveness.
   void inc_keep_alive();
   void dec_keep_alive();
 
@@ -316,7 +311,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // Also works if unloading.
   Klass* class_loader_klass() const { return _class_loader_klass; }
 
-  // Returns the class loader's explict name as specified during
+  // Returns the class loader's explicit name as specified during
   // construction or the class loader's qualified class name.
   // Works during unloading.
   const char* loader_name() const;
@@ -326,6 +321,10 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // Obtain the class loader's _name_and_id, works during unloading.
   const char* loader_name_and_id() const;
   Symbol* name_and_id() const { return _name_and_id; }
+
+  unsigned identity_hash() const {
+    return (unsigned)((uintptr_t)this >> LogBytesPerWord);
+  }
 
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 };

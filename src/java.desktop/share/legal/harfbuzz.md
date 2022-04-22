@@ -1,4 +1,4 @@
-## Harfbuzz v2.7.2
+## Harfbuzz v2.8
 
 ### Harfbuzz License
 

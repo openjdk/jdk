@@ -25,6 +25,7 @@
  * @test
  * @bug 6437265
  * @summary Tests encoding of container with BorderLayout
+ * @run main/othervm -Djava.security.manager=allow Test6437265
  * @author Sergey Malenkov
  */
 

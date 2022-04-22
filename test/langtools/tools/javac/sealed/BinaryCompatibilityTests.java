@@ -168,15 +168,12 @@ public class BinaryCompatibilityTests extends TestRunner {
         Files.createDirectories(out);
 
         new JavacTask(tb)
-                .options("--enable-preview",
-                        "-source", Integer.toString(Runtime.version().feature()))
                 .outdir(out)
                 .files(findJavaFiles(pkg))
                 .run();
 
         // let's execute to check that it's working
         String output = new JavaTask(tb)
-                .vmOptions("--enable-preview")
                 .classpath(out.toString())
                 .classArgs("pkg.Super")
                 .run()
@@ -192,8 +189,6 @@ public class BinaryCompatibilityTests extends TestRunner {
         tb.writeJavaFiles(superClass, superClassCode2);
 
         new JavacTask(tb)
-                .options("--enable-preview",
-                        "-source", Integer.toString(Runtime.version().feature()))
                 .classpath(out)
                 .outdir(out)
                 .files(findJavaFiles(superClass))
@@ -202,7 +197,6 @@ public class BinaryCompatibilityTests extends TestRunner {
         if (shouldFail) {
             // let's now check that there is an IncompatibleClassChangeError
             output = new JavaTask(tb)
-                    .vmOptions("--enable-preview")
                     .classpath(out.toString())
                     .classArgs("pkg.Super")
                     .run(Task.Expect.FAIL)
@@ -213,7 +207,6 @@ public class BinaryCompatibilityTests extends TestRunner {
             }
         } else {
             new JavaTask(tb)
-                    .vmOptions("--enable-preview")
                     .classpath(out.toString())
                     .classArgs("pkg.Super")
                     .run(Task.Expect.SUCCESS);
@@ -414,15 +407,12 @@ public class BinaryCompatibilityTests extends TestRunner {
 
         new JavacTask(tb)
                 .outdir(out)
-                .options("--enable-preview",
-                        "-source", Integer.toString(Runtime.version().feature()))
                 .files(findJavaFiles(pkg))
                 .run();
 
         // let's execute to check that it's working
         String output = new JavaTask(tb)
                 .classpath(out.toString())
-                .vmOptions("--enable-preview")
                 .classArgs("pkg.Super")
                 .run()
                 .writeAll()
@@ -437,8 +427,6 @@ public class BinaryCompatibilityTests extends TestRunner {
         tb.writeJavaFiles(sub, subClassCode2);
 
         new JavacTask(tb)
-                .options("--enable-preview",
-                        "-source", Integer.toString(Runtime.version().feature()))
                 .classpath(out)
                 .outdir(out)
                 .files(findJavaFiles(sub))
@@ -446,7 +434,6 @@ public class BinaryCompatibilityTests extends TestRunner {
 
         // should execute without issues
         output = new JavaTask(tb)
-                .vmOptions("--enable-preview")
                 .classpath(out.toString())
                 .classArgs("pkg.Super")
                 .run()
@@ -588,15 +575,12 @@ public class BinaryCompatibilityTests extends TestRunner {
         Files.createDirectories(out);
 
         new JavacTask(tb)
-                .options("--enable-preview",
-                        "-source", Integer.toString(Runtime.version().feature()))
                 .outdir(out)
                 .files(findJavaFiles(pkg))
                 .run();
 
         // let's execute to check that it's working
         String output = new JavaTask(tb)
-                .vmOptions("--enable-preview")
                 .classpath(out.toString())
                 .classArgs("pkg.Super")
                 .run()
@@ -614,15 +598,12 @@ public class BinaryCompatibilityTests extends TestRunner {
         tb.writeJavaFiles(sub2, subClass2Code);
 
         new JavacTask(tb)
-                .options("--enable-preview",
-                        "-source", Integer.toString(Runtime.version().feature()))
                 .classpath(out)
                 .outdir(out)
                 .files(findJavaFiles(superClass)[0], findJavaFiles(sub2)[0])
                 .run();
 
         new JavaTask(tb)
-                .vmOptions("--enable-preview")
                 .classpath(out.toString())
                 .classArgs("pkg.Super")
                 .run(Task.Expect.SUCCESS);

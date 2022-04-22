@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ JVM_DefineClass
 JVM_DefineClassWithSource
 JVM_DesiredAssertionStatus
 JVM_DumpAllStacks
+JVM_DumpClassListToFile
+JVM_DumpDynamicArchive
 JVM_DumpThreads
 JVM_FillInStackTrace
 JVM_FindClassFromCaller
@@ -145,6 +147,7 @@ JVM_IsArrayClass
 JVM_IsCDSDumpingEnabled
 JVM_IsConstructorIx
 JVM_IsDumpingClassList
+JVM_IsFinalizationEnabled
 JVM_IsHiddenClass
 JVM_IsInterface
 JVM_IsPrimitiveClass
@@ -155,6 +158,7 @@ JVM_IsSupportedJNIVersion
 JVM_IsThreadAlive
 JVM_IsVMGeneratedMethodIx
 JVM_LatestUserDefinedLoader
+JVM_LoadZipLibrary
 JVM_LoadLibrary
 JVM_LookupDefineClass
 JVM_LookupLambdaProxyClassFromArchive
@@ -181,6 +185,7 @@ JVM_ReferenceRefersTo
 JVM_RegisterLambdaProxyClassForArchiving
 JVM_RegisterSignal
 JVM_ReleaseUTF
+JVM_ReportFinalizationComplete
 JVM_ResumeThread
 JVM_SetArrayElement
 JVM_SetClassSigners

@@ -28,14 +28,14 @@ package sun.tools.jmap;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 
 import com.sun.tools.attach.VirtualMachine;
-import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.AttachNotSupportedException;
 import sun.tools.attach.HotSpotVirtualMachine;
 import sun.tools.common.ProcessArgumentMatcher;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /*
  * This class is the main class for the JMap utility. It parses its arguments
@@ -123,8 +123,7 @@ public class JMap {
     }
 
     private static void executeCommandForPid(String pid, String command, Object ... args)
-        throws AttachNotSupportedException, IOException,
-               UnsupportedEncodingException {
+        throws AttachNotSupportedException, IOException {
         VirtualMachine vm = VirtualMachine.attach(pid);
 
         // Cast to HotSpotVirtualMachine as this is an
@@ -137,7 +136,7 @@ public class JMap {
           do {
               n = in.read(b);
               if (n > 0) {
-                  String s = new String(b, 0, n, "UTF-8");
+                  String s = new String(b, 0, n, UTF_8);
                   System.out.print(s);
               }
           } while (n > 0);
@@ -165,15 +164,13 @@ public class JMap {
     }
 
     private static void histo(String pid, String options)
-        throws AttachNotSupportedException, IOException,
-               UnsupportedEncodingException {
+        throws AttachNotSupportedException, IOException {
         String liveopt = "-all";
         String filename = null;
         String parallel = null;
         String subopts[] = options.split(",");
 
-        for (int i = 0; i < subopts.length; i++) {
-            String subopt = subopts[i];
+        for (String subopt : subopts) {
             if (subopt.equals("") || subopt.equals("all")) {
                 // pass
             } else if (subopt.equals("live")) {
@@ -185,11 +182,11 @@ public class JMap {
                     usage(1);
                 }
             } else if (subopt.startsWith("parallel=")) {
-               parallel = subopt.substring("parallel=".length());
-               if (parallel == null) {
+                parallel = subopt.substring("parallel=".length());
+                if (parallel == null) {
                     System.err.println("Fail: no number provided in option: '" + subopt + "'");
                     usage(1);
-               }
+                }
             } else {
                 System.err.println("Fail: invalid option: '" + subopt + "'");
                 usage(1);
@@ -203,16 +200,14 @@ public class JMap {
     }
 
     private static void dump(String pid, String options)
-        throws AttachNotSupportedException, IOException,
-               UnsupportedEncodingException {
+        throws AttachNotSupportedException, IOException {
 
         String subopts[] = options.split(",");
         String filename = null;
         String liveopt = "-all";
         String compress_level = null;
 
-        for (int i = 0; i < subopts.length; i++) {
-            String subopt = subopts[i];
+        for (String subopt : subopts) {
             if (subopt.equals("") || subopt.equals("all")) {
                 // pass
             } else if (subopt.equals("live")) {
@@ -226,11 +221,11 @@ public class JMap {
             } else if (subopt.equals("format=b")) {
                 // ignore format (not needed at this time)
             } else if (subopt.startsWith("gz=")) {
-               compress_level = subopt.substring("gz=".length());
-               if (compress_level.length() == 0) {
+                compress_level = subopt.substring("gz=".length());
+                if (compress_level.length() == 0) {
                     System.err.println("Fail: no number provided in option: '" + subopt + "'");
                     usage(1);
-               }
+                }
             } else {
                 System.err.println("Fail: invalid option: '" + subopt + "'");
                 usage(1);
@@ -316,13 +311,13 @@ public class JMap {
         System.err.println("    Example: jmap -dump:live,format=b,file=heap.bin <pid>");
         System.err.println("");
         System.err.println("    histo-options:");
-        System.err.println("      live         count only live objects (takes precedence if both \"live\" and \"all\" are specified)");
-        System.err.println("      all          count all objects in the heap (default if one of \"live\" or \"all\" is not specified)");
-        System.err.println("      file=<file>  dump data to <file>");
-        System.err.println("      parallel=<number>  parallel threads number for heap iteration:");
-        System.err.println("                                  parallel=0 default behavior, use predefined number of threads");
-        System.err.println("                                  parallel=1 disable parallel heap iteration");
-        System.err.println("                                  parallel=<N> use N threads for parallel heap iteration");
+        System.err.println("      live                count only live objects (takes precedence if both \"live\" and \"all\" are specified)");
+        System.err.println("      all                 count all objects in the heap (default if one of \"live\" or \"all\" is not specified)");
+        System.err.println("      file=<file>         dump data to <file>");
+        System.err.println("      parallel=<number>   Number of parallel threads to use for heap inspection:");
+        System.err.println("                          0 (the default) means let the VM determine the number of threads to use");
+        System.err.println("                          1 means use one thread (disable parallelism).");
+        System.err.println("                          For any other value the VM will try to use the specified number of threads, but might use fewer.");
         System.err.println("");
         System.err.println("    Example: jmap -histo:live,file=/tmp/histo.data <pid>");
         System.exit(exit);

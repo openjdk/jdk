@@ -50,7 +50,7 @@ import org.xml.sax.helpers.XMLReaderAdapter;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.ParserAdapterTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.xml.sax.ptests.ParserAdapterTest
  * @run testng/othervm org.xml.sax.ptests.ParserAdapterTest
  */
 @Listeners({jaxp.library.FilePolicy.class})

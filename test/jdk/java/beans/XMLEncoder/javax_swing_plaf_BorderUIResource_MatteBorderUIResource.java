@@ -25,6 +25,7 @@
  * @test
  * @bug 6402062
  * @summary Tests MatteBorderUIResource encoding
+ * @run main/othervm -Djava.security.manager=allow javax_swing_plaf_BorderUIResource_MatteBorderUIResource
  * @author Sergey Malenkov
  */
 

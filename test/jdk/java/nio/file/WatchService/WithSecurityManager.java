@@ -26,14 +26,14 @@
  * @summary Unit test for Watchable#register's permission checks
  * @modules jdk.unsupported
  * @build WithSecurityManager
- * @run main/othervm WithSecurityManager denyAll.policy - fail
- * @run main/othervm WithSecurityManager denyAll.policy tree fail
- * @run main/othervm WithSecurityManager grantDirOnly.policy - pass
- * @run main/othervm WithSecurityManager grantDirOnly.policy tree fail
- * @run main/othervm WithSecurityManager grantDirAndOneLevel.policy - pass
- * @run main/othervm WithSecurityManager grantDirAndOneLevel.policy tree fail
- * @run main/othervm WithSecurityManager grantDirAndTree.policy - pass
- * @run main/othervm WithSecurityManager grantDirAndTree.policy tree pass
+ * @run main/othervm -Djava.security.manager=allow WithSecurityManager denyAll.policy - fail
+ * @run main/othervm -Djava.security.manager=allow WithSecurityManager denyAll.policy tree fail
+ * @run main/othervm -Djava.security.manager=allow WithSecurityManager grantDirOnly.policy - pass
+ * @run main/othervm -Djava.security.manager=allow WithSecurityManager grantDirOnly.policy tree fail
+ * @run main/othervm -Djava.security.manager=allow WithSecurityManager grantDirAndOneLevel.policy - pass
+ * @run main/othervm -Djava.security.manager=allow WithSecurityManager grantDirAndOneLevel.policy tree fail
+ * @run main/othervm -Djava.security.manager=allow WithSecurityManager grantDirAndTree.policy - pass
+ * @run main/othervm -Djava.security.manager=allow WithSecurityManager grantDirAndTree.policy tree pass
  */
 
 import java.nio.file.*;

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2022, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +24,15 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
 frame JavaThread::pd_last_frame() {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
   vmassert(_anchor.last_Java_pc() != NULL, "not walkable");
-  return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
+  frame f = frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
+  f.set_sp_is_trusted();
+  return f;
 }
 
 // For Forte Analyzer AsyncGetCallTrace profiling support - thread is

@@ -83,7 +83,9 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  *
  * @see ICC_ColorSpace
  */
-public class ICC_Profile implements Serializable {
+public sealed class ICC_Profile implements Serializable
+    permits ICC_ProfileGray,
+            ICC_ProfileRGB {
 
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.
@@ -768,24 +770,6 @@ public class ICC_Profile implements Serializable {
     }
 
     /**
-     * Frees the resources associated with an {@code ICC_Profile} object.
-     *
-     * @deprecated The {@code finalize} method has been deprecated. Subclasses
-     *         that override {@code finalize} in order to perform cleanup should
-     *         be modified to use alternative cleanup mechanisms and to remove
-     *         the overriding {@code finalize} method. When overriding the
-     *         {@code finalize} method, its implementation must explicitly
-     *         ensure that {@code super.finalize()} is invoked as described in
-     *         {@link Object#finalize}. See the specification for {@link
-     *         Object#finalize()} for further information about migration
-     *         options.
-     */
-    @Deprecated(since = "9", forRemoval = true)
-    @SuppressWarnings("removal")
-    protected void finalize() {
-    }
-
-    /**
      * Constructs an {@code ICC_Profile} object corresponding to the data in a
      * byte array.
      *
@@ -1355,6 +1339,7 @@ public class ICC_Profile implements Serializable {
      * fileName. If there is no built-in profile with such name, then the method
      * returns {@code null}.
      */
+    @SuppressWarnings("removal")
     private static InputStream getStandardProfileInputStream(String fileName) {
         return AccessController.doPrivileged(
             (PrivilegedAction<InputStream>) () -> {
