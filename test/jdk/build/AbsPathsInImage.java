@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public class AbsPathsInImage {
     // JTREG=JAVA_OPTIONS=-Djdk.test.build.AbsPathInImage.dir=/path/to/dir
     public static final String DIR_PROPERTY = "jdk.test.build.AbsPathsInImage.dir";
     private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
+    private static final boolean IS_LINUX   = System.getProperty("os.name").toLowerCase().contains("linux");
 
     private boolean matchFound = false;
 
@@ -164,7 +165,7 @@ public class AbsPathsInImage {
                 String fileName = file.toString();
                 if (Files.isSymbolicLink(file)) {
                     return super.visitFile(file, attrs);
-                } else if (fileName.endsWith(".debuginfo") || fileName.endsWith(".pdb")) {
+                } else if ((fileName.endsWith(".debuginfo") && !IS_LINUX) || fileName.endsWith(".pdb")) {
                     // Do nothing
                 } else if (fileName.endsWith(".zip")) {
                     scanZipFile(file, searchPatterns);

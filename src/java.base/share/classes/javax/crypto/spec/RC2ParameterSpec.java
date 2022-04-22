@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.security.spec.AlgorithmParameterSpec;
 public class RC2ParameterSpec implements AlgorithmParameterSpec {
 
     private byte[] iv = null;
-    private int effectiveKeyBits;
+    private final int effectiveKeyBits;
 
     /**
      * Constructs a parameter set for RC2 from the given effective key size
@@ -135,10 +135,9 @@ public class RC2ParameterSpec implements AlgorithmParameterSpec {
         if (obj == this) {
             return true;
         }
-        if (!(obj instanceof RC2ParameterSpec)) {
+        if (!(obj instanceof RC2ParameterSpec other)) {
             return false;
         }
-        RC2ParameterSpec other = (RC2ParameterSpec) obj;
 
         return ((effectiveKeyBits == other.effectiveKeyBits) &&
                 java.util.Arrays.equals(iv, other.iv));
@@ -155,6 +154,6 @@ public class RC2ParameterSpec implements AlgorithmParameterSpec {
                 retval += iv[i] * i;
             }
         }
-        return (retval += effectiveKeyBits);
+        return retval + effectiveKeyBits;
     }
 }

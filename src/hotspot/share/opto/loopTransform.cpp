@@ -970,6 +970,10 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       case Op_ModL: body_size += 30; break;
       case Op_DivL: body_size += 30; break;
       case Op_MulL: body_size += 10; break;
+      case Op_RoundF: body_size += 30; break;
+      case Op_RoundD: body_size += 30; break;
+      case Op_RoundVF: body_size += 30; break;
+      case Op_RoundVD: body_size += 30; break;
       case Op_PopCountVI:
       case Op_PopCountVL: {
         const TypeVect* vt = n->bottom_type()->is_vect();
@@ -3667,7 +3671,8 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
       phase->has_range_checks(this);
     }
 
-    if (should_unroll && !should_peel && PostLoopMultiversioning) {
+    if (should_unroll && !should_peel && PostLoopMultiversioning &&
+        Matcher::has_predicated_vectors()) {
       // Try to setup multiversioning on main loops before they are unrolled
       if (cl->is_main_loop() && (cl->unrolled_count() == 1)) {
         phase->insert_scalar_rced_post_loop(this, old_new);

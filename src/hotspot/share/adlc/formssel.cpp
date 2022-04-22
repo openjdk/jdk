@@ -1354,7 +1354,7 @@ void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
   }
 }
 
-// Seach through operands to determine parameters unique positions.
+// Search through operands to determine parameters unique positions.
 void InstructForm::set_unique_opnds() {
   uint* uniq_idx = NULL;
   uint  nopnds = num_opnds();
@@ -4212,7 +4212,7 @@ bool MatchRule::is_vector() const {
     "CMoveVD", "CMoveVF",
     "DivVF","DivVD",
     "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD",
-    "NegVF","NegVD","NegVI",
+    "NegVF","NegVD","NegVI","NegVL",
     "SqrtVD","SqrtVF",
     "AndV" ,"XorV" ,"OrV",
     "MaxV", "MinV",
@@ -4239,6 +4239,7 @@ bool MatchRule::is_vector() const {
     "FmaVD","FmaVF","PopCountVI", "PopCountVL", "VectorLongToMask",
     // Next are vector mask ops.
     "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
+    "RoundVF", "RoundVD",
     // Next are not supported currently.
     "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",
     "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD"

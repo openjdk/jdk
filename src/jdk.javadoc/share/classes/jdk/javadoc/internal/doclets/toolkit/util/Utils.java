@@ -35,7 +35,6 @@ import java.text.RuleBasedCollator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -53,7 +52,6 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.SourceVersion;
@@ -74,7 +72,6 @@ import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.ExecutableType;
-import javax.lang.model.type.NoType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
@@ -131,11 +128,6 @@ import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuil
 
 /**
  * Utilities Class for Doclets.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class Utils {
     public final BaseConfiguration configuration;
@@ -285,33 +277,19 @@ public class Utils {
         return !e.getAnnotationMirrors().isEmpty();
     }
 
-    public boolean isAnnotationType(Element e) {
-        return new SimpleElementVisitor14<Boolean, Void>() {
-            @Override
-            public Boolean visitExecutable(ExecutableElement e, Void p) {
-                return visit(e.getEnclosingElement());
-            }
-
-            @Override
-            public Boolean visitUnknown(Element e, Void p) {
-                return false;
-            }
-
-            @Override
-            protected Boolean defaultAction(Element e, Void p) {
-                return e.getKind() == ANNOTATION_TYPE;
-            }
-        }.visit(e);
+    public boolean isAnnotationInterface(Element e) {
+        return e.getKind() == ANNOTATION_TYPE;
     }
 
-    /**
-     * An Enum implementation is almost identical, thus this method returns if
-     * this element represents a CLASS or an ENUM
-     * @param e element
-     * @return true if class or enum
-     */
+    // Note that e.getKind().isClass() is not the same as e.getKind() == CLASS
     public boolean isClass(Element e) {
         return e.getKind().isClass();
+    }
+
+    // Note that e.getKind().isInterface() is not the same as e.getKind() == INTERFACE
+    // See Also: isPlainInterface(Element)
+    public boolean isInterface(Element e) {
+        return e.getKind().isInterface();
     }
 
     public boolean isConstructor(Element e) {
@@ -326,7 +304,7 @@ public class Utils {
         return e.getKind() == FIELD;
     }
 
-    public boolean isInterface(Element e) {
+    public boolean isPlainInterface(Element e) {
         return e.getKind() == INTERFACE;
     }
 
@@ -448,46 +426,30 @@ public class Utils {
         return t.getKind() == NONE;
     }
 
-    public boolean isOrdinaryClass(TypeElement te) {
-        if (isEnum(te) || isInterface(te) || isAnnotationType(te) || isRecord(te)) {
-            return false;
-        }
-        return !isThrowable(te);
-    }
-
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
         return (isPackagePrivate(enclosingTypeElement) || isPrivate(enclosingTypeElement)
                     || hasHiddenTag(enclosingTypeElement))
                 && !isLinkable(enclosingTypeElement);
     }
 
+    public boolean isNonThrowableClass(TypeElement te) {
+        return te.getKind() == CLASS && !isThrowable(te);
+    }
+
     public boolean isThrowable(TypeElement te) {
-        if (isEnum(te) || isInterface(te) || isAnnotationType(te)) {
-            return false;
-        }
-        return typeUtils.isSubtype(te.asType(), getThrowableType());
+        return te.getKind() == CLASS && typeUtils.isSubtype(te.asType(), getThrowableType());
     }
 
     public boolean isExecutableElement(Element e) {
-        return switch (e.getKind()) {
-            case CONSTRUCTOR, METHOD, INSTANCE_INIT -> true;
-            default -> false;
-        };
+        return e.getKind().isExecutable();
     }
 
     public boolean isVariableElement(Element e) {
-        return switch (e.getKind()) {
-            case ENUM_CONSTANT, EXCEPTION_PARAMETER, FIELD, LOCAL_VARIABLE,
-                    PARAMETER, RESOURCE_VARIABLE -> true;
-            default -> false;
-        };
+        return e.getKind().isVariable();
     }
 
     public boolean isTypeElement(Element e) {
-        return switch (e.getKind()) {
-            case CLASS, ENUM, INTERFACE, ANNOTATION_TYPE, RECORD -> true;
-            default -> false;
-        };
+        return e.getKind().isDeclaredType();
     }
 
     /**
@@ -643,7 +605,7 @@ public class Utils {
         if (!bounds.isEmpty()) {
             TypeMirror upperBound = bounds.get(bounds.size() - 1);
             if (ignoreBounds(upperBound)) {
-                return Collections.emptyList();
+                return List.of();
             }
         }
         return bounds;
@@ -764,7 +726,7 @@ public class Utils {
     }
 
     public TypeMirror getDeclaredType(TypeElement enclosing, TypeMirror target) {
-        return getDeclaredType(Collections.emptyList(), enclosing, target);
+        return getDeclaredType(List.of(), enclosing, target);
     }
 
     /**
@@ -870,7 +832,7 @@ public class Utils {
             if (typeUtils.isSameType(t, getObjectType()))
                 continue;
             TypeElement e = asTypeElement(t);
-            if (isInterface(e)) {
+            if (isPlainInterface(e)) {
                 if (!visited.add(e)) {
                     continue; // seen it before
                 }
@@ -1128,8 +1090,7 @@ public class Utils {
     }
 
     private boolean checkType(TypeElement te) {
-        return isInterface(te) || typeUtils.isSameType(te.asType(), getObjectType())
-                || isAnnotationType(te);
+        return isInterface(te) || typeUtils.isSameType(te.asType(), getObjectType());
     }
 
     public TypeElement getFirstVisibleSuperClassAsTypeElement(TypeElement te) {
@@ -2261,7 +2222,7 @@ public class Utils {
     }
 
     public List<? extends DocTree> getBlockTags(DocCommentTree dcTree) {
-        return dcTree == null ? Collections.emptyList() : dcTree.getBlockTags();
+        return dcTree == null ? List.of() : dcTree.getBlockTags();
     }
 
     public List<? extends DocTree> getBlockTags(Element element, Predicate<DocTree> filter) {
@@ -2480,21 +2441,21 @@ public class Utils {
     public List<? extends DocTree> getPreamble(Element element) {
         DocCommentTree docCommentTree = getDocCommentTree(element);
         return docCommentTree == null
-                ? Collections.emptyList()
+                ? List.of()
                 : docCommentTree.getPreamble();
     }
 
     public List<? extends DocTree> getFullBody(Element element) {
         DocCommentTree docCommentTree = getDocCommentTree(element);
             return (docCommentTree == null)
-                    ? Collections.emptyList()
+                    ? List.of()
                     : docCommentTree.getFullBody();
     }
 
     public List<? extends DocTree> getBody(Element element) {
         DocCommentTree docCommentTree = getDocCommentTree(element);
         return (docCommentTree == null)
-                ? Collections.emptyList()
+                ? List.of()
                 : docCommentTree.getFullBody();
     }
 
@@ -2539,7 +2500,7 @@ public class Utils {
     }
 
     public  List<? extends ReturnTree> getReturnTrees(Element element) {
-        return new ArrayList<>(getBlockTags(element, RETURN, ReturnTree.class));
+        return getBlockTags(element, RETURN, ReturnTree.class);
     }
 
     public List<? extends UsesTree> getUsesTrees(Element element) {
@@ -2549,7 +2510,7 @@ public class Utils {
     public List<? extends DocTree> getFirstSentenceTrees(Element element) {
         DocCommentTree dcTree = getDocCommentTree(element);
         if (dcTree == null) {
-            return Collections.emptyList();
+            return List.of();
         }
         return new ArrayList<>(dcTree.getFirstSentence());
     }
@@ -2649,7 +2610,7 @@ public class Utils {
     public PreviewSummary declaredUsingPreviewAPIs(Element el) {
         if (el.asType().getKind() == ERROR) {
             // Can happen with undocumented --ignore-source-errors option
-            return new PreviewSummary(Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+            return new PreviewSummary(Set.of(), Set.of(), Set.of());
         }
         List<TypeElement> usedInDeclaration = new ArrayList<>(annotations2Classes(el));
         switch (el.getKind()) {

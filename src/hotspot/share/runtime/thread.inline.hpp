@@ -28,7 +28,11 @@
 
 #include "runtime/thread.hpp"
 
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "memory/universe.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/oopHandle.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/orderAccess.hpp"
@@ -122,31 +126,62 @@ inline void JavaThread::clear_obj_deopt_flag() {
   clear_suspend_flag(_obj_deopt);
 }
 
-inline bool JavaThread::clear_async_exception_condition() {
-  bool ret = has_async_exception_condition();
-  if (ret) {
-    clear_suspend_flag(_has_async_exception);
+class AsyncExceptionHandshake : public AsyncHandshakeClosure {
+  OopHandle _exception;
+  bool _is_ThreadDeath;
+ public:
+  AsyncExceptionHandshake(OopHandle& o, const char* name = "AsyncExceptionHandshake")
+  : AsyncHandshakeClosure(name), _exception(o) {
+    _is_ThreadDeath = exception()->is_a(vmClasses::ThreadDeath_klass());
   }
-  return ret;
-}
 
-inline void JavaThread::set_pending_async_exception(oop e) {
-  _pending_async_exception = e;
-  set_suspend_flag(_has_async_exception);
-}
+  ~AsyncExceptionHandshake() {
+    assert(!_exception.is_empty(), "invariant");
+    _exception.release(Universe::vm_global());
+  }
+
+  void do_thread(Thread* thr) {
+    JavaThread* self = JavaThread::cast(thr);
+    assert(self == JavaThread::current(), "must be");
+
+    self->handle_async_exception(exception());
+  }
+  oop exception() {
+    assert(!_exception.is_empty(), "invariant");
+    return _exception.resolve();
+  }
+  bool is_async_exception()   { return true; }
+  bool is_ThreadDeath()       { return _is_ThreadDeath; }
+};
+
+class UnsafeAccessErrorHandshake : public AsyncHandshakeClosure {
+ public:
+  UnsafeAccessErrorHandshake() : AsyncHandshakeClosure("UnsafeAccessErrorHandshake") {}
+  void do_thread(Thread* thr) {
+    JavaThread* self = JavaThread::cast(thr);
+    assert(self == JavaThread::current(), "must be");
+
+    self->handshake_state()->handle_unsafe_access_error();
+  }
+  bool is_async_exception()   { return true; }
+};
 
 inline void JavaThread::set_pending_unsafe_access_error() {
-  set_suspend_flag(_has_async_exception);
-  DEBUG_ONLY(_is_unsafe_access_error = true);
+  if (!has_async_exception_condition()) {
+    Handshake::execute(new UnsafeAccessErrorHandshake(), this);
+  }
 }
 
+inline bool JavaThread::has_async_exception_condition(bool ThreadDeath_only) {
+  return handshake_state()->has_async_exception_operation(ThreadDeath_only);
+}
 
 inline JavaThread::NoAsyncExceptionDeliveryMark::NoAsyncExceptionDeliveryMark(JavaThread *t) : _target(t) {
-  assert((_target->_suspend_flags & _async_delivery_disabled) == 0, "Nesting is not supported");
-  _target->set_suspend_flag(_async_delivery_disabled);
+  assert(!_target->handshake_state()->async_exceptions_blocked(), "Nesting is not supported");
+  _target->handshake_state()->set_async_exceptions_blocked(true);
 }
 inline JavaThread::NoAsyncExceptionDeliveryMark::~NoAsyncExceptionDeliveryMark() {
-  _target->clear_suspend_flag(_async_delivery_disabled);
+  _target->handshake_state()->set_async_exceptions_blocked(false);
 }
 
 inline JavaThreadState JavaThread::thread_state() const    {
@@ -162,7 +197,7 @@ inline JavaThreadState JavaThread::thread_state() const    {
 inline void JavaThread::set_thread_state(JavaThreadState s) {
   assert(current_or_null() == NULL || current_or_null() == this,
          "state change should only be called by the current thread");
-#if defined(PPC64) || defined (AARCH64)
+#if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
   Atomic::release_store((volatile jint*)&_thread_state, (jint)s);

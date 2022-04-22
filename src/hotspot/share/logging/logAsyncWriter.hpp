@@ -133,7 +133,7 @@ typedef ResourceHashtable<LogFileStreamOutput*,
 //
 // enqueue() is the basic operation of AsyncLogWriter. Two overloading versions of it are provided to match LogOutput::write().
 // They are both MT-safe and non-blocking. Derived classes of LogOutput can invoke the corresponding enqueue() in write() and
-// return 0. AsyncLogWriter is responsible of copying neccessary data.
+// return 0. AsyncLogWriter is responsible of copying necessary data.
 //
 // flush() ensures that all pending messages have been written out before it returns. It is not MT-safe in itself. When users
 // change the logging configuration via jcmd, LogConfiguration::configure_output() calls flush() under the protection of the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@
 #include "utilities/hashtable.inline.hpp"
 
 // Optimization: if any dictionary needs resizing, we set this flag,
-// so that we dont't have to walk all dictionaries to check if any actually
+// so that we don't have to walk all dictionaries to check if any actually
 // needs resizing, which is costly to do at Safepoint.
 bool Dictionary::_some_dictionary_needs_resizing = false;
 
@@ -631,7 +631,7 @@ void Dictionary::verify() {
 
   ClassLoaderData* cld = loader_data();
   // class loader must be present;  a null class loader is the
-  // boostrap loader
+  // bootstrap loader
   guarantee(cld != NULL &&
             (cld->the_null_class_loader_data() || cld->class_loader()->is_instance()),
             "checking type of class_loader");
