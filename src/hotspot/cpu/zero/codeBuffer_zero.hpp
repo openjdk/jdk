@@ -34,5 +34,7 @@
     }
     return true;
   }
+ public:
+  static constexpr bool supports_shared_stubs() { return false; }
 
 #endif // CPU_ZERO_CODEBUFFER_ZERO_HPP

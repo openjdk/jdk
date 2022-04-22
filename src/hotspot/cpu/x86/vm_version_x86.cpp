@@ -2056,10 +2056,6 @@ void VM_Version::initialize() {
   detect_virt_stub = CAST_TO_FN_PTR(detect_virt_stub_t,
                                      g.generate_detect_virt());
 
-  if (FLAG_IS_DEFAULT(UseSharedStubs)) {
-    FLAG_SET_DEFAULT(UseSharedStubs, true);
-  }
-
   get_processor_features();
 
   LP64_ONLY(Assembler::precompute_instructions();)

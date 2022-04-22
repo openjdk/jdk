@@ -52,7 +52,7 @@ bool emit_shared_stubs_to_interp(CodeBuffer* cb, SharedStubToInterpRequests* sha
       return false;
     }
 
-    Method* method = shared_stub_to_interp_requests->at(i).shared_method();
+    ciMethod* method = shared_stub_to_interp_requests->at(i).shared_method();
     do {
       masm.relocate(static_stub_Relocation::spec(shared_stub_to_interp_requests->at(i).caller_pc()), relocate_format);
       ++i;
