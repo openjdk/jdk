@@ -94,6 +94,12 @@ class name java/awt/MenuShortcut
 header extends java/lang/Object implements java/io/Serializable flags 21
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name java/awt/MultipleGradientPaint
+header extends java/lang/Object implements java/awt/Paint nestMembers java/awt/MultipleGradientPaint$ColorSpaceType,java/awt/MultipleGradientPaint$CycleMethod sealed true flags 421
+innerclass innerClass java/awt/MultipleGradientPaint$ColorSpaceType outerClass java/awt/MultipleGradientPaint innerClassName ColorSpaceType flags 4019
+innerclass innerClass java/awt/MultipleGradientPaint$CycleMethod outerClass java/awt/MultipleGradientPaint innerClassName CycleMethod flags 4019
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
 class name java/awt/Point
 header extends java/awt/geom/Point2D implements java/io/Serializable flags 21
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19

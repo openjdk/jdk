@@ -85,6 +85,8 @@ class name java/lang/Integer
 -method name remainderUnsigned descriptor (II)I
 method name divideUnsigned descriptor (II)I flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 method name remainderUnsigned descriptor (II)I flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
+method name compress descriptor (II)I flags 9
+method name expand descriptor (II)I flags 9
 
 class name java/lang/LayerInstantiationException
 header extends java/lang/RuntimeException flags 21
@@ -94,6 +96,8 @@ class name java/lang/Long
 -method name remainderUnsigned descriptor (JJ)J
 method name divideUnsigned descriptor (JJ)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 method name remainderUnsigned descriptor (JJ)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
+method name compress descriptor (JJ)J flags 9
+method name expand descriptor (JJ)J flags 9
 
 class name java/lang/Math
 -method name round descriptor (F)I
@@ -376,8 +380,14 @@ class name java/util/GregorianCalendar
 header extends java/util/Calendar flags 21
 innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
 
+class name java/util/HashMap
+method name newHashMap descriptor (I)Ljava/util/HashMap; flags 9 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>(I)Ljava/util/HashMap<TK;TV;>;
+
 class name java/util/IllegalFormatException
 header extends java/lang/IllegalArgumentException sealed true flags 21
+
+class name java/util/LinkedHashMap
+method name newLinkedHashMap descriptor (I)Ljava/util/LinkedHashMap; flags 9 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>(I)Ljava/util/LinkedHashMap<TK;TV;>;
 
 class name java/util/Locale
 -method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
@@ -420,6 +430,9 @@ innerclass innerClass java/util/Locale$Category outerClass java/util/Locale inne
 class name java/util/TreeSet
 header extends java/util/AbstractSet implements java/util/NavigableSet,java/lang/Cloneable,java/io/Serializable flags 21 signature <E:Ljava/lang/Object;>Ljava/util/AbstractSet<TE;>;Ljava/util/NavigableSet<TE;>;Ljava/lang/Cloneable;Ljava/io/Serializable;
 innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
+
+class name java/util/WeakHashMap
+method name newWeakHashMap descriptor (I)Ljava/util/WeakHashMap; flags 9 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>(I)Ljava/util/WeakHashMap<TK;TV;>;
 
 class name java/util/concurrent/ConcurrentHashMap
 header extends java/util/AbstractMap implements java/util/concurrent/ConcurrentMap,java/io/Serializable nestMembers java/util/concurrent/ConcurrentHashMap$KeySetView,java/util/concurrent/ConcurrentHashMap$CollectionView flags 21 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/util/AbstractMap<TK;TV;>;Ljava/util/concurrent/ConcurrentMap<TK;TV;>;Ljava/io/Serializable;
@@ -700,6 +713,7 @@ header extends java/lang/Object implements java/security/spec/AlgorithmParameter
 
 class name javax/crypto/spec/SecretKeySpec
 header extends java/lang/Object implements java/security/spec/KeySpec,javax/crypto/SecretKey flags 21
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name javax/net/ssl/SSLHandshakeException
 method name <init> descriptor (Ljava/lang/String;Ljava/lang/Throwable;)V flags 1
