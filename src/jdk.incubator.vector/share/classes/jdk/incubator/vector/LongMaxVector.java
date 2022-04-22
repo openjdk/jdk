@@ -813,8 +813,8 @@ final class LongMaxVector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m, boolean usePred) {
-        return super.fromArray0Template(LongMaxMask.class, a, offset, (LongMaxMask) m, usePred);  // specialize
+    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m, boolean offsetInRange) {
+        return super.fromArray0Template(LongMaxMask.class, a, offset, (LongMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -836,8 +836,8 @@ final class LongMaxVector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromByteArray0(byte[] a, int offset, VectorMask<Long> m, boolean usePred) {
-        return super.fromByteArray0Template(LongMaxMask.class, a, offset, (LongMaxMask) m, usePred);  // specialize
+    LongVector fromByteArray0(byte[] a, int offset, VectorMask<Long> m, boolean offsetInRange) {
+        return super.fromByteArray0Template(LongMaxMask.class, a, offset, (LongMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -850,8 +850,8 @@ final class LongMaxVector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Long> m, boolean usePred) {
-        return super.fromByteBuffer0Template(LongMaxMask.class, bb, offset, (LongMaxMask) m, usePred);  // specialize
+    LongVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Long> m, boolean offsetInRange) {
+        return super.fromByteBuffer0Template(LongMaxMask.class, bb, offset, (LongMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline

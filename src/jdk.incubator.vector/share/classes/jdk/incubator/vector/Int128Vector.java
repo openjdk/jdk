@@ -829,8 +829,8 @@ final class Int128Vector extends IntVector {
     @ForceInline
     @Override
     final
-    IntVector fromArray0(int[] a, int offset, VectorMask<Integer> m, boolean usePred) {
-        return super.fromArray0Template(Int128Mask.class, a, offset, (Int128Mask) m, usePred);  // specialize
+    IntVector fromArray0(int[] a, int offset, VectorMask<Integer> m, boolean offsetInRange) {
+        return super.fromArray0Template(Int128Mask.class, a, offset, (Int128Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -852,8 +852,8 @@ final class Int128Vector extends IntVector {
     @ForceInline
     @Override
     final
-    IntVector fromByteArray0(byte[] a, int offset, VectorMask<Integer> m, boolean usePred) {
-        return super.fromByteArray0Template(Int128Mask.class, a, offset, (Int128Mask) m, usePred);  // specialize
+    IntVector fromByteArray0(byte[] a, int offset, VectorMask<Integer> m, boolean offsetInRange) {
+        return super.fromByteArray0Template(Int128Mask.class, a, offset, (Int128Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -866,8 +866,8 @@ final class Int128Vector extends IntVector {
     @ForceInline
     @Override
     final
-    IntVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Integer> m, boolean usePred) {
-        return super.fromByteBuffer0Template(Int128Mask.class, bb, offset, (Int128Mask) m, usePred);  // specialize
+    IntVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Integer> m, boolean offsetInRange) {
+        return super.fromByteBuffer0Template(Int128Mask.class, bb, offset, (Int128Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline

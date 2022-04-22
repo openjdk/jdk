@@ -837,8 +837,8 @@ final class Byte64Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m, boolean usePred) {
-        return super.fromArray0Template(Byte64Mask.class, a, offset, (Byte64Mask) m, usePred);  // specialize
+    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+        return super.fromArray0Template(Byte64Mask.class, a, offset, (Byte64Mask) m, offsetInRange);  // specialize
     }
 
 
@@ -853,8 +853,8 @@ final class Byte64Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m, boolean usePred) {
-        return super.fromBooleanArray0Template(Byte64Mask.class, a, offset, (Byte64Mask) m, usePred);  // specialize
+    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+        return super.fromBooleanArray0Template(Byte64Mask.class, a, offset, (Byte64Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -867,8 +867,8 @@ final class Byte64Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m, boolean usePred) {
-        return super.fromByteArray0Template(Byte64Mask.class, a, offset, (Byte64Mask) m, usePred);  // specialize
+    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+        return super.fromByteArray0Template(Byte64Mask.class, a, offset, (Byte64Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -881,8 +881,8 @@ final class Byte64Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m, boolean usePred) {
-        return super.fromByteBuffer0Template(Byte64Mask.class, bb, offset, (Byte64Mask) m, usePred);  // specialize
+    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+        return super.fromByteBuffer0Template(Byte64Mask.class, bb, offset, (Byte64Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline

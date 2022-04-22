@@ -399,7 +399,7 @@ public class VectorSupport {
      M extends VectorMask<E>>
     V loadMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
                  int length, Object base, long offset,
-                 M m, int usePred,
+                 M m, int offsetInRange,
                  C container, int index, S s,
                  LoadVectorMaskedOperation<C, V, S, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;

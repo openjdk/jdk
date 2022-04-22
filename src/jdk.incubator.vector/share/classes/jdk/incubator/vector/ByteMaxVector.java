@@ -823,8 +823,8 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m, boolean usePred) {
-        return super.fromArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m, usePred);  // specialize
+    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+        return super.fromArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m, offsetInRange);  // specialize
     }
 
 
@@ -839,8 +839,8 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m, boolean usePred) {
-        return super.fromBooleanArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m, usePred);  // specialize
+    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+        return super.fromBooleanArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -853,8 +853,8 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m, boolean usePred) {
-        return super.fromByteArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m, usePred);  // specialize
+    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+        return super.fromByteArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -867,8 +867,8 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m, boolean usePred) {
-        return super.fromByteBuffer0Template(ByteMaxMask.class, bb, offset, (ByteMaxMask) m, usePred);  // specialize
+    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+        return super.fromByteBuffer0Template(ByteMaxMask.class, bb, offset, (ByteMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline

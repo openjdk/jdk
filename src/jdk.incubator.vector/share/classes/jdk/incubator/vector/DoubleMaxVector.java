@@ -811,8 +811,8 @@ final class DoubleMaxVector extends DoubleVector {
     @ForceInline
     @Override
     final
-    DoubleVector fromArray0(double[] a, int offset, VectorMask<Double> m, boolean usePred) {
-        return super.fromArray0Template(DoubleMaxMask.class, a, offset, (DoubleMaxMask) m, usePred);  // specialize
+    DoubleVector fromArray0(double[] a, int offset, VectorMask<Double> m, boolean offsetInRange) {
+        return super.fromArray0Template(DoubleMaxMask.class, a, offset, (DoubleMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -834,8 +834,8 @@ final class DoubleMaxVector extends DoubleVector {
     @ForceInline
     @Override
     final
-    DoubleVector fromByteArray0(byte[] a, int offset, VectorMask<Double> m, boolean usePred) {
-        return super.fromByteArray0Template(DoubleMaxMask.class, a, offset, (DoubleMaxMask) m, usePred);  // specialize
+    DoubleVector fromByteArray0(byte[] a, int offset, VectorMask<Double> m, boolean offsetInRange) {
+        return super.fromByteArray0Template(DoubleMaxMask.class, a, offset, (DoubleMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -848,8 +848,8 @@ final class DoubleMaxVector extends DoubleVector {
     @ForceInline
     @Override
     final
-    DoubleVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Double> m, boolean usePred) {
-        return super.fromByteBuffer0Template(DoubleMaxMask.class, bb, offset, (DoubleMaxMask) m, usePred);  // specialize
+    DoubleVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Double> m, boolean offsetInRange) {
+        return super.fromByteBuffer0Template(DoubleMaxMask.class, bb, offset, (DoubleMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline

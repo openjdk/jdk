@@ -1137,7 +1137,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 //  S extends VectorSpecies<E>,
 //  M extends VectorMask<E>>
 // V loadMasked(Class<? extends V> vectorClass, Class<M> maskClass, Class<E> elementType,
-//              int length, Object base, long offset, M m, int usePred,
+//              int length, Object base, long offset, M m, int offsetInRange,
 //              C container, int index, S s,  // Arguments for default implementation
 //              LoadVectorMaskedOperation<C, V, S, M> defaultImpl) {
 //
@@ -1235,17 +1235,17 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
       use_predicate = true;
     } else {
       // Masked vector load with IOOBE always uses the predicated load.
-      const TypeInt* pred = gvn().type(argument(8))->isa_int();
-      if (!pred->is_con()) {
+      const TypeInt* offset_in_range = gvn().type(argument(8))->isa_int();
+      if (!offset_in_range->is_con()) {
         if (C->print_intrinsics()) {
-          tty->print_cr("  ** missing constant: usePred=%s",
+          tty->print_cr("  ** missing constant: offsetInRange=%s",
                         NodeClassNames[argument(8)->Opcode()]);
         }
         set_map(old_map);
         set_sp(old_sp);
         return false;
       }
-      use_predicate = (pred->get_con() == 1);
+      use_predicate = (offset_in_range->get_con() == 0);
     }
 
     if (use_predicate) {

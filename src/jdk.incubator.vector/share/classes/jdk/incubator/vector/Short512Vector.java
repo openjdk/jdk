@@ -885,8 +885,8 @@ final class Short512Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m, boolean usePred) {
-        return super.fromArray0Template(Short512Mask.class, a, offset, (Short512Mask) m, usePred);  // specialize
+    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m, boolean offsetInRange) {
+        return super.fromArray0Template(Short512Mask.class, a, offset, (Short512Mask) m, offsetInRange);  // specialize
     }
 
 
@@ -900,8 +900,8 @@ final class Short512Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m, boolean usePred) {
-        return super.fromCharArray0Template(Short512Mask.class, a, offset, (Short512Mask) m, usePred);  // specialize
+    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m, boolean offsetInRange) {
+        return super.fromCharArray0Template(Short512Mask.class, a, offset, (Short512Mask) m, offsetInRange);  // specialize
     }
 
 
@@ -915,8 +915,8 @@ final class Short512Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromByteArray0(byte[] a, int offset, VectorMask<Short> m, boolean usePred) {
-        return super.fromByteArray0Template(Short512Mask.class, a, offset, (Short512Mask) m, usePred);  // specialize
+    ShortVector fromByteArray0(byte[] a, int offset, VectorMask<Short> m, boolean offsetInRange) {
+        return super.fromByteArray0Template(Short512Mask.class, a, offset, (Short512Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -929,8 +929,8 @@ final class Short512Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m, boolean usePred) {
-        return super.fromByteBuffer0Template(Short512Mask.class, bb, offset, (Short512Mask) m, usePred);  // specialize
+    ShortVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m, boolean offsetInRange) {
+        return super.fromByteBuffer0Template(Short512Mask.class, bb, offset, (Short512Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
