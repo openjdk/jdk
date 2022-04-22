@@ -39,5 +39,6 @@
   void flush_bundle(bool start_new_bundle) {}
 
   void getCpuData(const CodeBuffer * const cb) {}
+  static constexpr bool supports_shared_stubs() { return false; }
 
 #endif // CPU_S390_CODEBUFFER_S390_HPP

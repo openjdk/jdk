@@ -36,5 +36,6 @@ private:
 
 public:
   void flush_bundle(bool start_new_bundle) {}
+  static constexpr bool supports_shared_stubs() { return false; }
 
 #endif // CPU_ARM_CODEBUFFER_ARM_HPP

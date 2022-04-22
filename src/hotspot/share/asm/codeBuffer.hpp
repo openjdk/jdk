@@ -37,6 +37,7 @@ class Compile;
 class BufferBlob;
 class CodeBuffer;
 class Label;
+class ciMethod;
 
 class CodeOffsets: public StackObj {
 public:
@@ -347,16 +348,16 @@ class Scrubber {
 // Calls of Java mehtods need stubs to the interpreter. Calls sharing the same Java method
 // can share a stub to interpreter.
 // A SharedStubToInterpRequest describes a request for a shared stub to the interpreter.
-class SharedStubToInterpRequest: public ResourceObj {
+class SharedStubToInterpRequest : public ResourceObj {
  private:
-  Method* _shared_method;
+  ciMethod* _shared_method;
   address _caller_pc;
 
  public:
-  SharedStubToInterpRequest(Method* method = NULL, address caller_pc = NULL) : _shared_method(method),
+  SharedStubToInterpRequest(ciMethod* method = NULL, address caller_pc = NULL) : _shared_method(method),
       _caller_pc(caller_pc) {}
 
-  Method* shared_method() const { return _shared_method; }
+  ciMethod* shared_method() const { return _shared_method; }
   address caller_pc() const { return _caller_pc; }
 };
 typedef GrowableArray<SharedStubToInterpRequest> SharedStubToInterpRequests;
@@ -710,7 +711,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   void finalize_stubs();
 
   // Request for a shared stub to the interpreter
-  void shared_stub_to_interp_for(Method* call, address caller_pc);
+  void shared_stub_to_interp_for(ciMethod* callee, address caller_pc);
 
 #ifndef PRODUCT
  public:

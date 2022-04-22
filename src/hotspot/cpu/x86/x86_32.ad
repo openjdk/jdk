@@ -1814,10 +1814,9 @@ encode %{
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      rspec, RELOC_DISP32);
       address mark = cbuf.insts_mark();
-      if (UseSharedStubs && _method->is_loaded() &&
-          (!_optimized_virtual || _method->is_final_method())) {
-        // Postpone creating a stub to the interpreter because
-        // it might be shared among calls of the same Java method.
+      if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
+        // Calls of the same statically bound method can share
+        // a stub to the interpreter.
         cbuf.shared_stub_to_interp_for(_method->get_Method(), mark);
       } else {
         // Emit stubs for static call.

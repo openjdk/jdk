@@ -37,5 +37,6 @@ private:
 
 public:
   void flush_bundle(bool start_new_bundle) {}
+  static constexpr bool supports_shared_stubs() { return false; }
 
 #endif // CPU_PPC_CODEBUFFER_PPC_HPP
