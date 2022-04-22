@@ -1898,6 +1898,7 @@ G1ConcurrentMark::claim_region(uint worker_id) {
       assert(_finger >= end, "the finger should have moved forward");
 
       if (limit > bottom) {
+        assert(!curr_region->is_closed_archive(), "CA regions should be skipped");
         return curr_region;
       } else {
         assert(limit == bottom,
