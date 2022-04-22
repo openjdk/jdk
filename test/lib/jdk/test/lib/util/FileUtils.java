@@ -377,7 +377,7 @@ public final class FileUtils {
         }
     }
 
-    public static void patch(Path path, int fromLine, int toLine, List<String> from, String to) throws IOException {
+    public static void patch(Path path, int fromLine, int toLine, String to) throws IOException {
         if(fromLine < 1 || toLine < 1) {
             throw new RuntimeException("Invalid range fromLine: " + fromLine + ", toLine: " + toLine);
         }
