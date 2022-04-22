@@ -44,8 +44,8 @@ public class Test8019180 implements Runnable {
         try {
             SwingUtilities.invokeLater(new Test8019180());
             LATCH.await();
-	    System.out.println("selectionFail " + selectionFail);
-	    if (selectionFail) {
+            System.out.println("selectionFail " + selectionFail);
+            if (selectionFail) {
                 throw new RuntimeException("Combobox not selected");
             }
         } finally {
