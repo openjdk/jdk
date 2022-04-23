@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1224,7 +1224,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     private static long tryLock(ReentrantLock lock, long timeout, TimeUnit unit) {
         assert timeout > 0;
         boolean interrupted = false;
-        long nanos = NANOSECONDS.convert(timeout, unit);
+        long nanos = unit.toNanos(timeout);
         long remainingNanos = nanos;
         long startNanos = System.nanoTime();
         boolean acquired = false;
