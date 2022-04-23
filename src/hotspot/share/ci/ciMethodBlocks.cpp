@@ -169,7 +169,9 @@ void ciMethodBlocks::do_analysis() {
       case Bytecodes::_jsr         :
       {
         cur_block->set_control_bci(bci);
-        ciBlock *ret = make_block_at(s.next_bci());
+        if (s.next_bci() < limit_bci) {
+          ciBlock *ret = make_block_at(s.next_bci());
+        }
         int dest_bci = s.get_dest();
         ciBlock *dest = make_block_at(dest_bci);
         break;
