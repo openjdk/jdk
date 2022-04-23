@@ -54,14 +54,14 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
     private NamingException errEx = null;
 
     /* This class maintains the pieces of state that need (or are needed for)
-     * cleanup, which happens by calling cleanup(), or is done by the Cleaner.
+     * cleanup.
      */
-    private static class CleaningAction implements Runnable {
+    private static class EnumCtx implements Runnable {
         private LdapCtx homeCtx;
         private LdapResult res;
         private LdapClient enumClnt;
 
-        private CleaningAction(LdapCtx homeCtx, LdapResult answer, LdapClient client) {
+        private EnumCtx(LdapCtx homeCtx, LdapResult answer, LdapClient client) {
             this.homeCtx = homeCtx;
             this.res = answer;
             this.enumClnt = client;
@@ -70,6 +70,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         @Override
         public void run() {
             if (enumClnt != null) {
+                assert homeCtx != null;
                 enumClnt.clearSearchReply(res, homeCtx.reqCtls);
                 enumClnt = null;
             }
@@ -80,12 +81,12 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         }
     }
 
-    private CleaningAction state;
-    private Cleanable cleanable;
+    private final EnumCtx enumCtx;
+    private final Cleanable cleanable;
 
     // Subclasses interact directly with the LdapCtx. This method provides
     // access to the LdapCtx in the CleaningAction.
-    protected final LdapCtx homeCtx() { return state.homeCtx; }
+    protected final LdapCtx homeCtx() { return enumCtx.homeCtx; }
 
     /*
      * Record the next set of entries and/or referrals.
@@ -127,10 +128,10 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
                 refEx = answer.refEx;
             }
 
-            this.state = new CleaningAction(homeCtx, answer, homeCtx.clnt);
+            this.enumCtx = new EnumCtx(homeCtx, answer, homeCtx.clnt);
             // Ensures that context won't get closed from underneath us
-            this.state.homeCtx.incEnumCount();
-            this.cleanable = CleanerFactory.cleaner().register(this, state);
+            this.enumCtx.homeCtx.incEnumCount();
+            this.cleanable = CleanerFactory.cleaner().register(this, enumCtx);
     }
 
     @Override
@@ -160,25 +161,25 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     private void getNextBatch() throws NamingException {
 
-        state.res = state.homeCtx.getSearchReply(state.enumClnt, state.res);
-        if (state.res == null) {
+        enumCtx.res = homeCtx().getSearchReply(enumCtx.enumClnt, enumCtx.res);
+        if (enumCtx.res == null) {
             limit = posn = 0;
             return;
         }
 
-        entries = state.res.entries;
+        entries = enumCtx.res.entries;
         limit = (entries == null) ? 0 : entries.size(); // handle empty set
         posn = 0; // reset
 
         // minimize the number of calls to processReturnCode()
         // (expensive when batchSize is small and there are many results)
-        if ((state.res.status != LdapClient.LDAP_SUCCESS) ||
-            ((state.res.status == LdapClient.LDAP_SUCCESS) &&
-                (state.res.referrals != null))) {
+        if ((enumCtx.res.status != LdapClient.LDAP_SUCCESS) ||
+            ((enumCtx.res.status == LdapClient.LDAP_SUCCESS) &&
+                (enumCtx.res.referrals != null))) {
 
             try {
                 // convert referrals into a chain of LdapReferralException
-                state.homeCtx.processReturnCode(state.res, listArg);
+                homeCtx().processReturnCode(enumCtx.res, listArg);
 
             } catch (LimitExceededException | PartialResultException e) {
                 setNamingException(e);
@@ -187,17 +188,17 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         }
 
         // merge any newly received referrals with any current referrals
-        if (state.res.refEx != null) {
+        if (enumCtx.res.refEx != null) {
             if (refEx == null) {
-                refEx = state.res.refEx;
+                refEx = enumCtx.res.refEx;
             } else {
-                refEx = refEx.appendUnprocessedReferrals(state.res.refEx);
+                refEx = refEx.appendUnprocessedReferrals(enumCtx.res.refEx);
             }
-            state.res.refEx = null; // reset
+            enumCtx.res.refEx = null; // reset
         }
 
-        if (state.res.resControls != null) {
-            state.homeCtx.respCtls = state.res.resControls;
+        if (enumCtx.res.resControls != null) {
+            homeCtx().respCtls = enumCtx.res.resControls;
         }
     }
 
@@ -346,7 +347,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         if ((refEx != null) && !(errEx instanceof LimitExceededException) &&
             (refEx.hasMoreReferrals() || refEx.hasMoreReferralExceptions())) {
 
-            if (state.homeCtx.handleReferrals == LdapClient.LDAP_REF_THROW) {
+            if (homeCtx().handleReferrals == LdapClient.LDAP_REF_THROW) {
                 throw (NamingException)(refEx.fillInStackTrace());
             }
 
@@ -355,7 +356,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
                 LdapReferralContext refCtx =
                     (LdapReferralContext)refEx.getReferralContext(
-                    state.homeCtx.envprops, state.homeCtx.reqCtls);
+                    homeCtx().envprops, homeCtx().reqCtls);
 
                 try {
 
@@ -398,22 +399,22 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     protected void update(AbstractLdapNamingEnumeration<? extends NameClassPair> ne) {
         // Cleanup previous context first
-        state.homeCtx.decEnumCount();
+        homeCtx().decEnumCount();
 
         // New enum will have already incremented enum count and recorded clnt
-        state.homeCtx = ne.state.homeCtx;
-        state.enumClnt = ne.state.enumClnt;
+        enumCtx.homeCtx = ne.enumCtx.homeCtx;
+        enumCtx.enumClnt = ne.enumCtx.enumClnt;
 
         // ne's homeCtx is now referred to by state.homeCtx; we will decrement
         // its enum count later (via cleanup() or Cleaner).
         // Clear ne's reference to homeCtx so ne's Cleaner doesn't *also*
         // decrement the count.
-        ne.state.homeCtx = null;
+        ne.enumCtx.homeCtx = null;
 
         // Record rest of information from new enum
         posn = ne.posn;
         limit = ne.limit;
-        state.res = ne.state.res;
+        enumCtx.res = ne.enumCtx.res;
         entries = ne.entries;
         refEx = ne.refEx;
         listArg = ne.listArg;
