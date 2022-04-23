@@ -33,6 +33,7 @@
 
 
 ciBlock *ciMethodBlocks::block_containing(int bci) {
+  assert(bci >=0 && bci < _code_size, "valid bytecode range");
   ciBlock *blk = _bci_to_block[bci];
   return blk;
 }
@@ -146,7 +147,9 @@ void ciMethodBlocks::do_analysis() {
       case Bytecodes::_ifnonnull   :
       {
         cur_block->set_control_bci(bci);
-        ciBlock *fall_through = make_block_at(s.next_bci());
+        if (s.next_bci() < limit_bci) {
+          ciBlock *fall_through = make_block_at(s.next_bci());
+        }
         int dest_bci = s.get_dest();
         ciBlock *dest = make_block_at(dest_bci);
         break;
@@ -224,7 +227,9 @@ void ciMethodBlocks::do_analysis() {
       case Bytecodes::_jsr_w       :
       {
         cur_block->set_control_bci(bci);
-        ciBlock *ret = make_block_at(s.next_bci());
+        if (s.next_bci() < limit_bci) {
+          ciBlock *ret = make_block_at(s.next_bci());
+        }
         int dest_bci = s.get_far_dest();
         ciBlock *dest = make_block_at(dest_bci);
         break;
