@@ -2042,7 +2042,7 @@ CompiledMethod *SharedRuntime::generate_mhi_wrapper(MacroAssembler *masm,
 
   int stack_slots = SharedRuntime::out_preserve_stack_slots();  // No out slots at all, actually.
 
-  return nmethod::new_mhmethod(method,
+  return mhmethod::new_mhmethod(method,
                                compile_id,
                                masm->code(),
                                vep_offset,

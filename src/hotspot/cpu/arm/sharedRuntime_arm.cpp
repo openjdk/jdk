@@ -1331,7 +1331,7 @@ CompiledMethod* SharedRuntime::generate_mhi_wrapper(MacroAssembler* masm,
   int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
   __ flush();
   int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
-  return nmethod::new_mhmethod(method,
+  return mhmethod::new_mhmethod(method,
                                compile_id,
                                masm->code(),
                                vep_offset,

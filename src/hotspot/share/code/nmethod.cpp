@@ -3693,10 +3693,6 @@ void mhmethod::do_unloading(bool unloading_occurred) {
 
 void mhmethod::init_defaults() {
   _state                      = not_installed;
-
-#if INCLUDE_RTM_OPT
-  _rtm_state               = NoRTM;
-#endif
 }
 
 void mhmethod::metadata_do(MetadataClosure* f) {
