@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ public class TrustManagerFactory {
      *
      * @see java.security.Provider
      */
-    public static TrustManagerFactory getInstance(String algorithm)
+    public static final TrustManagerFactory getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         GetInstance.Instance instance = GetInstance.getInstance
@@ -199,7 +199,7 @@ public class TrustManagerFactory {
      *
      * @see java.security.Provider
      */
-    public static TrustManagerFactory getInstance(String algorithm,
+    public static final TrustManagerFactory getInstance(String algorithm,
             String provider) throws NoSuchAlgorithmException,
             NoSuchProviderException {
         Objects.requireNonNull(algorithm, "null algorithm name");
@@ -240,7 +240,7 @@ public class TrustManagerFactory {
      *
      * @see java.security.Provider
      */
-    public static TrustManagerFactory getInstance(String algorithm,
+    public static final TrustManagerFactory getInstance(String algorithm,
             Provider provider) throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         GetInstance.Instance instance = GetInstance.getInstance

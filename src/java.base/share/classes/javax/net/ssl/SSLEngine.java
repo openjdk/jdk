@@ -1336,7 +1336,9 @@ public abstract class SSLEngine {
         }
         if (params.getNeedClientAuth()) {
             setNeedClientAuth(true);
-        } else setWantClientAuth(params.getWantClientAuth());
+        } else {
+            setWantClientAuth(params.getWantClientAuth());
+        }
     }
 
     /**

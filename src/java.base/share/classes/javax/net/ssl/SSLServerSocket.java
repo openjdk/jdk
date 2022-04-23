@@ -545,7 +545,9 @@ public abstract class SSLServerSocket extends ServerSocket {
 
         if (params.getNeedClientAuth()) {
             setNeedClientAuth(true);
-        } else setWantClientAuth(params.getWantClientAuth());
+        } else {
+            setWantClientAuth(params.getWantClientAuth());
+        }
     }
 
 }

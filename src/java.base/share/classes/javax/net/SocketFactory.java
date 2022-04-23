@@ -262,7 +262,8 @@ class DefaultSocketFactory extends SocketFactory {
     }
 
     public Socket createSocket(String host, int port)
-    throws IOException {
+    throws IOException, UnknownHostException
+    {
         return new Socket(host, port);
     }
 
@@ -274,7 +275,8 @@ class DefaultSocketFactory extends SocketFactory {
 
     public Socket createSocket(String host, int port,
         InetAddress clientAddress, int clientPort)
-    throws IOException {
+    throws IOException, UnknownHostException
+    {
         return new Socket(host, port, clientAddress, clientPort);
     }
 
