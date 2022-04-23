@@ -812,7 +812,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
             nativesList.toArray(natives);
         }
 
-        Map<String, DataFlavor> retval =HashMap.newHashMap(natives.length);
+        Map<String, DataFlavor> retval = HashMap.newHashMap(natives.length);
         for (String aNative : natives) {
             List<DataFlavor> flavors = getFlavorsForNative(aNative);
             DataFlavor flav = (flavors.isEmpty())? null : flavors.get(0);
