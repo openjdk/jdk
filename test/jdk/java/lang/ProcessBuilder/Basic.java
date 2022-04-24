@@ -50,6 +50,7 @@ import java.lang.ProcessHandle;
 import static java.lang.ProcessBuilder.Redirect.*;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -598,7 +599,15 @@ public class Basic {
         try {
             // If round trip conversion works, should be able to set env vars
             // correctly in child.
-            if (new String(tested.getBytes()).equals(tested)) {
+            String nativeEncoding = System.getProperty("native.encoding");
+            String fileEncoding = System.getProperty("file.encoding");
+            Charset cs;
+            if (nativeEncoding != null && !nativeEncoding.equals(fileEncoding)) {
+                cs = Charset.forName(nativeEncoding);
+            } else {
+                cs = Charset.defaultCharset();
+            }
+            if (new String(tested.getBytes(cs), cs).equals(tested)) {
                 out.println("Testing " + encoding + " environment values");
                 ProcessBuilder pb = new ProcessBuilder();
                 pb.environment().put("ASCIINAME",tested);

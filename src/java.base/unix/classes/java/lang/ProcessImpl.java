@@ -35,6 +35,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Locale;
@@ -142,11 +143,22 @@ final class ProcessImpl extends Process {
     private static final Platform platform = Platform.get();
     private static final LaunchMechanism launchMechanism = platform.launchMechanism();
     private static final byte[] helperpath = toCString(StaticProperty.javaHome() + "/lib/jspawnhelper");
+    private static Charset jnuCharset = null;
+
+    private static Charset jnuCharset() {
+        if (jnuCharset != null)
+            return jnuCharset;
+        String jnuEncoding = GetPropertyAction.privilegedGetProperty("sun.jnu.encoding");
+        jnuCharset = Charset.forName(
+            jnuEncoding != null ? jnuEncoding : StaticProperty.nativeEncoding(),
+            Charset.defaultCharset());
+        return jnuCharset;
+    }
 
     private static byte[] toCString(String s) {
         if (s == null)
             return null;
-        byte[] bytes = s.getBytes();
+        byte[] bytes = s.getBytes(jnuCharset());
         byte[] result = new byte[bytes.length + 1];
         System.arraycopy(bytes, 0,
                          result, 0,
@@ -170,7 +182,7 @@ final class ProcessImpl extends Process {
         byte[][] args = new byte[cmdarray.length-1][];
         int size = args.length; // For added NUL bytes
         for (int i = 0; i < args.length; i++) {
-            args[i] = cmdarray[i+1].getBytes();
+            args[i] = cmdarray[i+1].getBytes(jnuCharset());
             size += args[i].length;
         }
         byte[] argBlock = new byte[size];
