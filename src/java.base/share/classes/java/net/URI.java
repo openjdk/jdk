@@ -2005,13 +2005,12 @@ public final class URI
             if (authority.startsWith("[")) {
                 // authority should (but may not) contain an embedded IPv6 address
                 int end = authority.indexOf(']');
-                String doquote = authority, dontquote = "";
+                String doquote = authority;
                 if (end != -1 && authority.indexOf(':') != -1) {
                     // the authority contains an IPv6 address
-                    dontquote = authority.substring(0 , end + 1);
+                    sb.append(authority, 0, end + 1);
                     doquote = authority.substring(end + 1);
                 }
-                sb.append(dontquote);
                 sb.append(quote(doquote,
                             L_REG_NAME | L_SERVER,
                             H_REG_NAME | H_SERVER));
