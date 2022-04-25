@@ -771,7 +771,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // thread needs to take no further action and can exit via the fast path (success).
   // If the re-acquire succeeds then pass control into the slow path.
   // As implemented, this latter mode is horrible because we generated more
-  // coherence traffic on the lock *and* artifically extended the critical section
+  // coherence traffic on the lock *and* artificially extended the critical section
   // length while by virtue of passing control into the slow path.
 
   // box is really RAX -- the following CMPXCHG depends on that binding
@@ -2912,7 +2912,7 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1, Regis
 
   bind(SCAN_TO_16_CHAR);
   cmpl(cnt1, stride);
-  jcc(Assembler::less, SCAN_TO_CHAR_INIT);//less than 16 entires left
+  jcc(Assembler::less, SCAN_TO_CHAR_INIT);//less than 16 entries left
   if (UseAVX < 2) {
     movdl(vec1, ch);
     pxor(vec2, vec2);

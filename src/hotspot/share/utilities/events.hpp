@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 #include "utilities/vmError.hpp"
 
 // Events and EventMark provide interfaces to log events taking place in the vm.
-// This facility is extremly useful for post-mortem debugging. The eventlog
+// This facility is extremely useful for post-mortem debugging. The eventlog
 // often provides crucial information about events leading up to the crash.
 //
 // Abstractly the logs can record whatever they way but normally they

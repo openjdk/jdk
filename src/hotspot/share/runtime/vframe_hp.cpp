@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,7 +396,7 @@ jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(Method* method, int
   _bci = bci;
   _id = id;
   _vframe_id = vframe_id;
-  // Alway will need at least one, must be on C heap
+  // Always will need at least one, must be on C heap
   _locals = new(ResourceObj::C_HEAP, mtCompiler) GrowableArray<jvmtiDeferredLocalVariable*> (1, mtCompiler);
   _objects_are_deoptimized = false;
 }
