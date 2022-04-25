@@ -93,7 +93,15 @@ public class StopAtExit extends Thread {
             // the thread is terminated.
             ThreadGroup myTG = new ThreadGroup("myTG-" + count);
             myTG.setDaemon(true);
-            Throwable myException = new ThreadDeath();
+            Throwable myException;
+            if ((count % 1) == 1) {
+              // Throw RuntimeException before ThreadDeath since a
+              // ThreadDeath can also be queued up when there's already
+              // a non-ThreadDeath async execution queued up.
+              myException = new RuntimeException();
+            } else {
+              myException = new ThreadDeath();
+            }
             int retCode;
             StopAtExit thread = new StopAtExit(myTG, null);
             thread.start();

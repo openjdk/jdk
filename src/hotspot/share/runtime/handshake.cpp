@@ -79,6 +79,7 @@ class HandshakeOperation : public CHeapObj<mtThread> {
   int32_t pending_threads()        { return Atomic::load(&_pending_threads); }
   const char* name()               { return _handshake_cl->name(); }
   bool is_async()                  { return _handshake_cl->is_async(); }
+  bool is_async_installer()        { return _handshake_cl->is_async_installer(); }
   bool is_suspend()                { return _handshake_cl->is_suspend(); }
   bool is_async_exception()        { return _handshake_cl->is_async_exception(); }
   bool is_ThreadDeath()            { return _handshake_cl->is_ThreadDeath(); }
@@ -318,6 +319,10 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
   // Only actually execute the operation for non terminated threads.
   if (!thread->is_terminated()) {
     _handshake_cl->do_thread(thread);
+  } else {
+    if (_handshake_cl->is_async_installer()) {
+      _handshake_cl->do_cleanup();
+    }
   }
 
   if (start_time_ns != 0) {
@@ -489,6 +494,17 @@ bool HandshakeState::has_async_exception_operation(bool ThreadDeath_only) {
     return _queue.peek(async_exception_filter) != NULL;
   } else {
     return _queue.peek(is_ThreadDeath_filter) != NULL;
+  }
+}
+
+void HandshakeState::clean_async_exception_operation() {
+  while (has_async_exception_operation(/* ThreadDeath_only */ false)) {
+    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+
+    HandshakeOperation* op;
+    op = _queue.peek(async_exception_filter);
+    remove_op(op);
+    delete op;
   }
 }
 
