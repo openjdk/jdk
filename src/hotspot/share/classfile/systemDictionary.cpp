@@ -1006,11 +1006,28 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
   assert(!ik->is_shared_unregistered_class(), "this function should be called for built-in classes only");
   assert(scp_index >= 0, "must be");
   SharedClassPathEntry* scp_entry = FileMapInfo::shared_path(scp_index);
+
+  if (UseNewCode && class_name->equals("jdk/internal/ref/Cleaner")) {
+    while (!Universe::is_module_initialized()) {
+      tty->print_cr("Cleaner: wait for Universe::is_module_initialized(), pkg_entry = %p", pkg_entry);
+      os::naked_short_sleep(200);
+    }
+  }
+
   if (!Universe::is_module_initialized()) {
     assert(scp_entry != NULL && scp_entry->is_modules_image(),
            "Loading non-bootstrap classes before the module system is initialized");
     assert(class_loader.is_null(), "sanity");
     return true;
+  }
+
+  if (UseNewCode2 && pkg_entry == NULL) {
+    // We might have looked up pkg_entry before the module system was initialized.
+    // Need to reload it now.
+    TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
+    if (pkg_name != NULL) {
+      pkg_entry = ClassLoaderData::class_loader_data(class_loader())->packages()->lookup_only(pkg_name);
+    }
   }
 
   ModuleEntry* mod_entry = (pkg_entry == NULL) ? NULL : pkg_entry->module();
@@ -1274,6 +1291,9 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
 #if INCLUDE_CDS
     if (UseSharedSpaces)
     {
+      if (UseNewCode && class_name->equals("jdk/internal/ref/Cleaner")) {
+        tty->print_cr("Cleaner pkg_entry = %p", pkg_entry);
+      }
       PerfTraceTime vmtimer(ClassLoader::perf_shared_classload_time());
       InstanceKlass* ik = SystemDictionaryShared::find_builtin_class(class_name);
       if (ik != NULL && ik->is_shared_boot_class() && !ik->shared_loading_failed()) {
