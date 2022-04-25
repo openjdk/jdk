@@ -663,10 +663,6 @@ jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) BSD_ONLY(::lseek) NOT_BSD(::lseek64)(fd, offset, whence);
 }
 
-int os::fsync(int fd) {
-  return ::fsync(fd);
-}
-
 int os::ftruncate(int fd, jlong length) {
    return BSD_ONLY(::ftruncate) NOT_BSD(::ftruncate64)(fd, length);
 }
