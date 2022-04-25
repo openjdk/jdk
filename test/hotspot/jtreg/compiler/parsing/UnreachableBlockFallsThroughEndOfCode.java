@@ -26,7 +26,7 @@
  * @test UnreachableBlockFallsThroughEndOfCode.java
  * @bug 8283441
  * @compile Custom.jasm UnreachableBlockFallsThroughEndOfCode.java
- * @summary Compilng method that falls off the end of the code array
+ * @summary Compiling method that falls off the end of the code array
  * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch compiler.parsing.UnreachableBlockFallsThroughEndOfCode
  * @run main/othervm -XX:-TieredCompilation -Xbatch compiler.parsing.UnreachableBlockFallsThroughEndOfCode
  */
