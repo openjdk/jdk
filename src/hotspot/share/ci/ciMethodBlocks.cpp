@@ -33,13 +33,13 @@
 
 
 ciBlock *ciMethodBlocks::block_containing(int bci) {
-  assert(bci >=0 && bci < _code_size, "valid bytecode range");
+  assert(bci >= 0 && bci < _code_size, "valid bytecode range");
   ciBlock *blk = _bci_to_block[bci];
   return blk;
 }
 
 bool ciMethodBlocks::is_block_start(int bci) {
-  assert(bci >=0 && bci < _code_size, "valid bytecode range");
+  assert(bci >= 0 && bci < _code_size, "valid bytecode range");
   ciBlock *b = _bci_to_block[bci];
   assert(b != NULL, "must have block for bytecode");
   return b->start_bci() == bci;
