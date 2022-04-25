@@ -66,8 +66,8 @@ public class DocTreePath implements Iterable<DocTree> {
             private DocTreePath result;
 
             @Override
-            public DocTreePath scan(DocTreePath path, DocTree docTree) {
-                super.scan(path, docTree);
+            public DocTreePath scan(DocTreePath path, DocTree target) {
+                super.scan(path, target);
                 return result;
             }
 
@@ -84,10 +84,10 @@ public class DocTreePath implements Iterable<DocTree> {
             }
 
             @Override
-            public DocTreePath scan(Iterable<? extends DocTree> nodes, DocTree docTree) {
+            public DocTreePath scan(Iterable<? extends DocTree> nodes, DocTree target) {
                 if (nodes != null && result == null) {
                     for (DocTree node : nodes) {
-                        scan(node, docTree);
+                        scan(node, target);
                         if (result != null) {
                             break;
                         }

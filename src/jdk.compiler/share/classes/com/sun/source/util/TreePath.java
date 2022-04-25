@@ -66,8 +66,8 @@ public class TreePath implements Iterable<Tree> {
 
 
             @Override
-            public TreePath scan(TreePath path, Tree docTree) {
-                super.scan(path, docTree);
+            public TreePath scan(TreePath path, Tree target) {
+                super.scan(path, target);
                 return result;
             }
 
@@ -84,10 +84,10 @@ public class TreePath implements Iterable<Tree> {
             }
 
             @Override
-            public TreePath scan(Iterable<? extends Tree> nodes, Tree tree) {
+            public TreePath scan(Iterable<? extends Tree> nodes, Tree target) {
                 if (nodes != null && result == null) {
                     for (Tree node : nodes) {
-                        scan(node, tree);
+                        scan(node, target);
                         if (result != null) {
                             break;
                         }
