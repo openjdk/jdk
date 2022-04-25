@@ -100,7 +100,10 @@ public:
   static int size(const frame& f, InterpreterOopMap* mask);
   static int size(const frame& f);
   static inline int expression_stack_size(const frame &f, InterpreterOopMap* mask);
+
+#ifdef ASSERT
   static bool is_owning_locks(const frame& f);
+#endif
 
   static bool is_instance(const frame& f);
 
@@ -129,8 +132,10 @@ public:
 
   static bool is_instance(const frame& f);
 
+#ifdef ASSERT
   template <typename RegisterMapT>
   static bool is_owning_locks(JavaThread* thread, RegisterMapT* map, const frame& f);
+#endif
 };
 
 class ContinuationHelper::StubFrame : public ContinuationHelper::NonInterpretedFrame {

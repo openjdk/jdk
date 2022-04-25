@@ -32,7 +32,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.VarHandle;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -46,6 +45,7 @@ import java.net.SocketTimeoutException;
 import java.net.StandardSocketOptions;
 import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.MembershipKey;
 import java.security.AccessController;
@@ -237,6 +237,8 @@ public class DatagramSocketAdaptor
                 close();
                 throw new SocketException("Closed by interrupt");
             }
+            throw e;
+        } catch (ClosedByInterruptException e) {
             throw e;
         } catch (ClosedChannelException e) {
             throw new SocketException("Socket closed", e);

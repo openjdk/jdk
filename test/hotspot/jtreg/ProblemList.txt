@@ -74,6 +74,9 @@ compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-all
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 compiler/codecache/TestStressCodeBuffers.java 8272094 generic-aarch64
 
+# fixed in main line for jdk-19+20
+compiler/intrinsics/sha/cli/TestUseSHA256IntrinsicsOptionOnUnsupportedCPU.java 8285266  linux-aarch64
+
 
 #############################################################################
 

@@ -35,7 +35,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Stream;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.vm.ScopeLocalContainer;
+import jdk.internal.vm.ExtentLocalContainer;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.ThreadContainers;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -99,7 +99,7 @@ public class ThreadFlock implements AutoCloseable {
     private volatile int threadCount;
 
     private final String name;
-    private final ScopeLocalContainer.BindingsSnapshot scopeLocalBindings;
+    private final ExtentLocalContainer.BindingsSnapshot extentLocalBindings;
     private final ThreadContainerImpl container; // encapsulate for now
 
     // state
@@ -111,7 +111,7 @@ public class ThreadFlock implements AutoCloseable {
 
     ThreadFlock(String name) {
         this.name = name;
-        this.scopeLocalBindings = ScopeLocalContainer.captureBindings();
+        this.extentLocalBindings = ExtentLocalContainer.captureBindings();
         this.container = new ThreadContainerImpl(this);
     }
 
@@ -119,8 +119,8 @@ public class ThreadFlock implements AutoCloseable {
         return threadCount;
     }
 
-    private ScopeLocalContainer.BindingsSnapshot scopeLocalBindings() {
-        return scopeLocalBindings;
+    private ExtentLocalContainer.BindingsSnapshot extentLocalBindings() {
+        return extentLocalBindings;
     }
 
     private void incrementThreadCount() {
@@ -210,7 +210,7 @@ public class ThreadFlock implements AutoCloseable {
      * Opens a new thread flock. The flock is owned by the current thread. It can be
      * named to aid debugging.
      *
-     * <p> This method captures the current thread's {@linkplain ScopeLocal scope-local}
+     * <p> This method captures the current thread's {@linkplain ExtentLocal extent-local}
      * bindings for inheritance by threads created in the flock.
      *
      * <p> For the purposes of containment, monitoring, and debugging, the parent
@@ -250,7 +250,7 @@ public class ThreadFlock implements AutoCloseable {
     /**
      * Starts the given unstarted thread in this flock.
      *
-     * <p> The thread is started with the scope-local bindings that were captured
+     * <p> The thread is started with the extent-local bindings that were captured
      * when opening the flock. The bindings must match the current thread's bindings.
      *
      * <p> This method may only be invoked by the flock owner or threads {@linkplain
@@ -263,7 +263,7 @@ public class ThreadFlock implements AutoCloseable {
      * @throws WrongThreadException if the current thread is not the owner or a thread
      * contained in the flock
      * @throws jdk.incubator.concurrent.StructureViolationException if the current
-     * scope-local bindings are not the same as when the flock was created
+     * extent-local bindings are not the same as when the flock was created
      */
     public Thread start(Thread thread) {
         ensureOwnerOrContainsThread();
@@ -401,8 +401,8 @@ public class ThreadFlock implements AutoCloseable {
      * closes this flock, and then throws {@link
      * jdk.incubator.concurrent.StructureViolationException}.
      * Similarly, if called to close a flock that <em>encloses</em> {@linkplain
-     * jdk.incubator.concurrent.ScopeLocal.Carrier#run(Runnable) operations} with
-     * scope-local bindings then it also throws {@code StructureViolationException}
+     * jdk.incubator.concurrent.ExtentLocal.Carrier#run(Runnable) operations} with
+     * extent-local bindings then it also throws {@code StructureViolationException}
      * after closing the flock.
      *
      * @throws WrongThreadException if invoked by a thread that is not the owner
@@ -588,8 +588,8 @@ public class ThreadFlock implements AutoCloseable {
             return flock.toString();
         }
         @Override
-        public ScopeLocalContainer.BindingsSnapshot scopeLocalBindings() {
-            return flock.scopeLocalBindings();
+        public ExtentLocalContainer.BindingsSnapshot extentLocalBindings() {
+            return flock.extentLocalBindings();
         }
     }
 }

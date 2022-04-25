@@ -269,13 +269,13 @@ static bool stack_overflow_check(JavaThread* thread, int size, address sp) {
   return true;
 }
 
+#ifdef ASSERT
 static oop get_continuation(JavaThread* thread) {
   assert(thread != nullptr, "");
   assert(thread->threadObj() != nullptr, "");
   return java_lang_Thread::continuation(thread->threadObj());
 }
 
-#ifdef ASSERT
 inline void clear_anchor(JavaThread* thread) {
   thread->frame_anchor()->clear();
 }
@@ -334,30 +334,45 @@ class FreezeBase : public StackObj {
 protected:
   JavaThread* const _thread;
   ContinuationWrapper& _cont;
-  CONT_JFR_ONLY(FreezeThawJfrInfo _jfr_info;)
   bool _barriers;
   const bool _preempt; // used only on the slow path
+  const intptr_t * const _frame_sp; // Top frame sp for this freeze
 
-  intptr_t *_bottom_address;
+  intptr_t* _bottom_address;
 
-  int _size; // total size of all frames plus metadata in words.
-  int _align_size;
+  int _freeze_size; // total size of all frames plus metadata in words.
+  int _total_align_size;
+
+  intptr_t* _cont_stack_top;
+  intptr_t* _cont_stack_bottom;
+
+  CONT_JFR_ONLY(FreezeThawJfrInfo _jfr_info;)
+
+#ifdef ASSERT
+  intptr_t* _orig_chunk_sp;
+  int _fast_freeze_size;
+  bool _empty;
+#endif
 
   JvmtiSampledObjectAllocEventCollector* _jvmti_event_collector;
 
   NOT_PRODUCT(int _frames;)
   DEBUG_ONLY(intptr_t* _last_write;)
 
-  inline FreezeBase(JavaThread* thread, ContinuationWrapper& cont, bool preempt);
+  inline FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* sp);
 
 public:
   NOINLINE freeze_result freeze_slow();
+  void freeze_fast_existing_chunk();
 
   CONT_JFR_ONLY(FreezeThawJfrInfo& jfr_info() { return _jfr_info; })
   void set_jvmti_event_collector(JvmtiSampledObjectAllocEventCollector* jsoaec) { _jvmti_event_collector = jsoaec; }
 
+  inline int size_if_fast_freeze_available();
+
 protected:
   inline void init_rest();
+  void freeze_fast_init_cont_data(intptr_t* frame_sp);
   void throw_stack_overflow_on_humongous_chunk();
 
   // fast path
@@ -367,6 +382,8 @@ protected:
 
   // slow path
   virtual stackChunkOop allocate_chunk_slow(size_t stack_size) = 0;
+
+  int cont_size() { return _cont_stack_bottom - _cont_stack_top; }
 
 private:
   // slow path
@@ -395,6 +412,10 @@ private:
   inline void patch_pd(frame& callee, const frame& caller);
   void adjust_interpreted_frame_unextended_sp(frame& f);
   static inline void relativize_interpreted_frame_metadata(const frame& f, const frame& hf);
+
+protected:
+  void freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp);
+  bool freeze_fast_new_chunk(stackChunkOop chunk);
 };
 
 template <typename ConfigT>
@@ -403,23 +424,17 @@ private:
   stackChunkOop allocate_chunk(size_t stack_size);
 
 public:
-  inline Freeze(JavaThread* thread, ContinuationWrapper& cont, bool preempt)
-    : FreezeBase(thread, cont, preempt) {}
+  inline Freeze(JavaThread* thread, ContinuationWrapper& cont, intptr_t* frame_sp)
+    : FreezeBase(thread, cont, frame_sp) {}
 
-  inline bool is_chunk_available_for_fast_freeze(intptr_t* frame_sp
-#ifdef ASSERT
-    , int* out_size = nullptr
-#endif
-  );
-  template <bool chunk_available> freeze_result try_freeze_fast(intptr_t* sp);
-  template <bool chunk_available> bool freeze_fast(intptr_t* frame_sp);
+  freeze_result try_freeze_fast();
 
 protected:
   virtual stackChunkOop allocate_chunk_slow(size_t stack_size) override { return allocate_chunk(stack_size); }
 };
 
-FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, bool preempt) :
-    _thread(thread), _cont(cont), _barriers(false), _preempt(preempt) {
+FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* frame_sp) :
+    _thread(thread), _cont(cont), _barriers(false), _preempt(false), _frame_sp(frame_sp) {
   DEBUG_ONLY(_jvmti_event_collector = nullptr;)
 
   assert(_thread != nullptr, "");
@@ -442,11 +457,23 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, bool preem
   assert(_bottom_address != nullptr, "");
   assert(_bottom_address <= _cont.entrySP(), "");
   DEBUG_ONLY(_last_write = nullptr;)
+
+  assert(_cont.chunk_invariant(), "");
+  assert(!Interpreter::contains(_cont.entryPC()), "");
+  assert(StubRoutines::cont_doYield_stub()->frame_size() == frame::metadata_words, "");
+
+  // properties of the continuation on the stack; all sizes are in words
+  _cont_stack_top    = frame_sp + frame::metadata_words; // we add metadata_words to skip the doYield stub frame
+  _cont_stack_bottom = _cont.entrySP() - ContinuationHelper::frame_align_words(_cont.argsize()); // see alignment in thaw
+
+  log_develop_trace(continuations)("freeze size: %d argsize: %d top: " INTPTR_FORMAT " bottom: " INTPTR_FORMAT,
+    cont_size(), _cont.argsize(), p2i(_cont_stack_top), p2i(_cont_stack_bottom));
+  assert(cont_size() > 0, "");
 }
 
 void FreezeBase::init_rest() { // we want to postpone some initialization after chunk handling
-  _size = 0;
-  _align_size = 0;
+  _freeze_size = 0;
+  _total_align_size = 0;
   NOT_PRODUCT(_frames = 0;)
 }
 
@@ -473,9 +500,15 @@ void FreezeBase::unwind_frames() {
 }
 
 template <typename ConfigT>
-template <bool chunk_available>
-freeze_result Freeze<ConfigT>::try_freeze_fast(intptr_t* sp) {
-  if (freeze_fast<chunk_available>(sp)) {
+freeze_result Freeze<ConfigT>::try_freeze_fast() {
+  assert(_thread->thread_state() == _thread_in_vm, "");
+  assert(_thread->cont_fastpath(), "");
+
+  DEBUG_ONLY(_fast_freeze_size = size_if_fast_freeze_available();)
+  assert(_fast_freeze_size == 0, "");
+
+  stackChunkOop chunk = allocate_chunk(cont_size() + frame::metadata_words);
+  if (freeze_fast_new_chunk(chunk)) {
     return freeze_ok;
   }
   if (_thread->has_pending_exception()) {
@@ -493,123 +526,100 @@ freeze_result Freeze<ConfigT>::try_freeze_fast(intptr_t* sp) {
   return freeze_slow();
 }
 
-// returns true iff there's room in the chunk for a fast, compiled-frame-only freeze
-template <typename ConfigT>
-bool Freeze<ConfigT>::is_chunk_available_for_fast_freeze(intptr_t* frame_sp
-#ifdef ASSERT
-    , int* out_size
-#endif
-  ) {
+// Returns size needed if the continuation fits, otherwise 0.
+int FreezeBase::size_if_fast_freeze_available() {
   stackChunkOop chunk = _cont.tail();
   if (chunk == nullptr || chunk->is_gc_mode() || chunk->requires_barriers() || chunk->has_mixed_frames()) {
     log_develop_trace(continuations)("chunk available %s", chunk == nullptr ? "no chunk" : "chunk requires barriers");
+    return 0;
+  }
+
+  assert(StubRoutines::cont_doYield_stub()->frame_size() == frame::metadata_words, "");
+
+  int total_size_needed = cont_size();
+  const int chunk_sp = chunk->sp();
+  if (chunk_sp < chunk->stack_size()) {
+    total_size_needed -= _cont.argsize();
+  }
+
+  bool available = chunk_sp - frame::metadata_words >= total_size_needed;
+  log_develop_trace(continuations)("chunk available: %s size: %d argsize: %d top: " INTPTR_FORMAT " bottom: " INTPTR_FORMAT,
+    available ? "yes" : "no" , total_size_needed, _cont.argsize(), p2i(_cont_stack_top), p2i(_cont_stack_bottom));
+  return available ? total_size_needed : 0;
+}
+
+void FreezeBase::freeze_fast_existing_chunk() {
+  stackChunkOop chunk = _cont.tail();
+  DEBUG_ONLY(_orig_chunk_sp = chunk->sp_address();)
+
+  DEBUG_ONLY(_fast_freeze_size = size_if_fast_freeze_available();)
+  assert(_fast_freeze_size > 0, "");
+
+  if (chunk->sp() < chunk->stack_size()) { // we are copying into a non-empty chunk
+    DEBUG_ONLY(_empty = false;)
+    assert(chunk->sp() < (chunk->stack_size() - chunk->argsize()), "");
+    assert(*(address*)(chunk->sp_address() - frame::sender_sp_ret_address_offset()) == chunk->pc(), "");
+
+    // the chunk's sp before the freeze, adjusted to point beyond the stack-passed arguments in the topmost frame
+    const int chunk_start_sp = chunk->sp() + _cont.argsize(); // we overlap; we'll overwrite the chunk's top frame's callee arguments
+    assert(chunk_start_sp <= chunk->stack_size(), "sp not pointing into stack");
+
+    // increase max_size by what we're freezing minus the overlap
+    chunk->set_max_size(chunk->max_size() + cont_size() - _cont.argsize());
+
+    intptr_t* const bottom_sp = _cont_stack_bottom - _cont.argsize();
+    assert(bottom_sp == _bottom_address, "");
+    // Because the chunk isn't empty, we know there's a caller in the chunk, therefore the bottom-most frame
+    // should have a return barrier (installed back when we thawed it).
+    assert(*(address*)(bottom_sp-frame::sender_sp_ret_address_offset()) == StubRoutines::cont_returnBarrier(),
+           "should be the continuation return barrier");
+    // We copy the fp from the chunk back to the stack because it contains some caller data,
+    // including, possibly, an oop that might have gone stale since we thawed.
+    patch_stack_pd(bottom_sp, chunk->sp_address());
+    // we don't patch the return pc at this time, so as not to make the stack unwalkable for async walks
+
+    freeze_fast_copy(chunk, chunk_start_sp);
+  } else { // the chunk is empty
+    DEBUG_ONLY(_empty = true;)
+    const int chunk_start_sp = chunk->sp();
+
+    assert(chunk_start_sp == chunk->stack_size(), "");
+
+    chunk->set_max_size(cont_size());
+    chunk->set_argsize(_cont.argsize());
+
+    freeze_fast_copy(chunk, chunk_start_sp);
+  }
+}
+
+bool FreezeBase::freeze_fast_new_chunk(stackChunkOop chunk) {
+  DEBUG_ONLY(_empty = true;)
+
+  // Install new chunk
+  _cont.set_tail(chunk);
+
+  if (UNLIKELY(chunk == nullptr || !_thread->cont_fastpath() || _barriers)) { // OOME/probably humongous
+    log_develop_trace(continuations)("Retrying slow. Barriers: %d", _barriers);
     return false;
   }
 
-  // assert(CodeCache::find_blob(*(address*)(frame_sp - SENDER_SP_RET_ADDRESS_OFFSET)) == StubRoutines::cont_doYield_stub(), ""); -- fails on Windows
-  assert(StubRoutines::cont_doYield_stub()->frame_size() == frame::metadata_words, "");
-  intptr_t* const stack_top     = frame_sp + frame::metadata_words;
-  intptr_t* const stack_bottom  = _cont.entrySP() - ContinuationHelper::frame_align_words(_cont.argsize());
+  chunk->set_max_size(cont_size());
+  chunk->set_argsize(_cont.argsize());
 
-  int size = stack_bottom - stack_top; // in words
+  // in a fresh chunk, we freeze *with* the bottom-most frame's stack arguments.
+  // They'll then be stored twice: in the chunk and in the parent chunk's top frame
+  const int chunk_start_sp = cont_size() + frame::metadata_words;
+  assert(chunk_start_sp == chunk->stack_size(), "");
 
-  const int chunk_sp = chunk->sp();
-  if (chunk_sp < chunk->stack_size()) {
-    size -= _cont.argsize();
-  }
-  assert(size > 0, "");
+  DEBUG_ONLY(CONT_JFR_ONLY(chunk_is_allocated = true;))
+  DEBUG_ONLY(_orig_chunk_sp = chunk->start_address() + chunk_start_sp;)
 
-  bool available = chunk_sp - frame::metadata_words >= size;
-  log_develop_trace(continuations)("chunk available: %d size: %d argsize: %d top: " INTPTR_FORMAT " bottom: " INTPTR_FORMAT,
-    available, _cont.argsize(), size, p2i(stack_top), p2i(stack_bottom));
-  DEBUG_ONLY(if (out_size != nullptr) *out_size = size;)
-  return available;
+  freeze_fast_copy(chunk, chunk_start_sp);
+
+  return true;
 }
 
-template <typename ConfigT>
-template <bool chunk_available>
-bool Freeze<ConfigT>::freeze_fast(intptr_t* frame_sp) {
-  assert(_cont.chunk_invariant(), "");
-  assert(!Interpreter::contains(_cont.entryPC()), "");
-  assert(StubRoutines::cont_doYield_stub()->frame_size() == frame::metadata_words, "");
-
-  // properties of the continuation on the stack; all sizes are in words
-  intptr_t* const cont_stack_top    = frame_sp + frame::metadata_words; // we add metadata_words to skip the doYield stub frame
-  intptr_t* const cont_stack_bottom = _cont.entrySP() - ContinuationHelper::frame_align_words(_cont.argsize()); // see alignment in thaw
-
-  const int cont_size = cont_stack_bottom - cont_stack_top;
-
-  log_develop_trace(continuations)("freeze_fast size: %d argsize: %d top: " INTPTR_FORMAT " bottom: " INTPTR_FORMAT,
-    cont_size, _cont.argsize(), p2i(cont_stack_top), p2i(cont_stack_bottom));
-  assert(cont_size > 0, "");
-
-#ifdef ASSERT
-  bool empty = true;
-  int is_chunk_available_size;
-  bool is_chunk_available0 = is_chunk_available_for_fast_freeze(frame_sp, &is_chunk_available_size);
-  intptr_t* orig_chunk_sp = nullptr;
-  CONT_JFR_ONLY(bool chunk_is_allocated = false;)
-#endif
-
-  stackChunkOop chunk = _cont.tail();
-  int chunk_start_sp; // the chunk's sp before the freeze, adjusted to point beyond the stack-passed arguments in the topmost frame
-  if (chunk_available) { // LIKELY
-    DEBUG_ONLY(orig_chunk_sp = chunk->sp_address();)
-
-    assert(is_chunk_available0, "");
-
-    if (chunk->sp() < chunk->stack_size()) { // we are copying into a non-empty chunk
-      DEBUG_ONLY(empty = false;)
-      assert(chunk->sp() < (chunk->stack_size() - chunk->argsize()), "");
-      assert(*(address*)(chunk->sp_address() - frame::sender_sp_ret_address_offset()) == chunk->pc(), "");
-
-      chunk_start_sp = chunk->sp() + _cont.argsize(); // we overlap; we'll overwrite the chunk's top frame's callee arguments
-      assert(chunk_start_sp <= chunk->stack_size(), "sp not pointing into stack");
-
-      // increase max_size by what we're freezing minus the overlap
-      chunk->set_max_size(chunk->max_size() + cont_size - _cont.argsize());
-
-      intptr_t* const bottom_sp = cont_stack_bottom - _cont.argsize();
-      assert(bottom_sp == _bottom_address, "");
-      // Because the chunk isn't empty, we know there's a caller in the chunk, therefore the bottom-most frame
-      // should have a return barrier (installed back when we thawed it).
-      assert(*(address*)(bottom_sp-frame::sender_sp_ret_address_offset()) == StubRoutines::cont_returnBarrier(),
-             "should be the continuation return barrier");
-      // We copy the fp from the chunk back to the stack because it contains some caller data,
-      // including, possibly, an oop that might have gone stale since we thawed.
-      patch_stack_pd(bottom_sp, chunk->sp_address());
-      // we don't patch the return pc at this time, so as not to make the stack unwalkable for async walks
-    } else { // the chunk is empty
-      chunk_start_sp = chunk->sp();
-
-      assert(chunk_start_sp == chunk->stack_size(), "");
-
-      chunk->set_max_size(cont_size);
-      chunk->set_argsize(_cont.argsize());
-    }
-  } else { // no chunk; allocate
-    assert(_thread->thread_state() == _thread_in_vm, "");
-    assert(!is_chunk_available_for_fast_freeze(frame_sp), "");
-    assert(_thread->cont_fastpath(), "");
-
-    chunk = allocate_chunk(cont_size + frame::metadata_words);
-    if (UNLIKELY(chunk == nullptr || !_thread->cont_fastpath() || _barriers)) { // OOME/probably humongous
-      log_develop_trace(continuations)("Retrying slow. Barriers: %d", _barriers);
-      return false;
-    }
-
-    chunk->set_max_size(cont_size);
-    chunk->set_argsize(_cont.argsize());
-
-    // in a fresh chunk, we freeze *with* the bottom-most frame's stack arguments.
-    // They'll then be stored twice: in the chunk and in the parent chunk's top frame
-    chunk_start_sp = cont_size + frame::metadata_words;
-    assert(chunk_start_sp == chunk->stack_size(), "");
-
-    DEBUG_ONLY(CONT_JFR_ONLY(chunk_is_allocated = true;))
-    DEBUG_ONLY(orig_chunk_sp = chunk->start_address() + chunk_start_sp;)
-  }
-
+void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp) {
   assert(chunk != nullptr, "");
   assert(!chunk->has_mixed_frames(), "");
   assert(!chunk->is_gc_mode(), "");
@@ -625,30 +635,30 @@ bool Freeze<ConfigT>::freeze_fast(intptr_t* frame_sp) {
   log_develop_trace(continuations)("freeze_fast start: chunk " INTPTR_FORMAT " size: %d orig sp: %d argsize: %d",
     p2i((oopDesc*)chunk), chunk->stack_size(), chunk_start_sp, _cont.argsize());
   assert(chunk_start_sp <= chunk->stack_size(), "");
-  assert(chunk_start_sp >= cont_size, "no room in the chunk");
+  assert(chunk_start_sp >= cont_size(), "no room in the chunk");
 
-  const int chunk_new_sp = chunk_start_sp - cont_size; // the chunk's new sp, after freeze
-  assert(!is_chunk_available0 || orig_chunk_sp - (chunk->start_address() + chunk_new_sp) == is_chunk_available_size, "");
+  const int chunk_new_sp = chunk_start_sp - cont_size(); // the chunk's new sp, after freeze
+  assert(!(_fast_freeze_size > 0) || _orig_chunk_sp - (chunk->start_address() + chunk_new_sp) == _fast_freeze_size, "");
 
   intptr_t* chunk_top = chunk->start_address() + chunk_new_sp;
-  assert(empty || *(address*)(orig_chunk_sp - frame::sender_sp_ret_address_offset()) == chunk->pc(), "");
+  assert(_empty || *(address*)(_orig_chunk_sp - frame::sender_sp_ret_address_offset()) == chunk->pc(), "");
 
   log_develop_trace(continuations)("freeze_fast start: " INTPTR_FORMAT " sp: %d chunk_top: " INTPTR_FORMAT,
                               p2i(chunk->start_address()), chunk_new_sp, p2i(chunk_top));
-  intptr_t* from = cont_stack_top - frame::metadata_words;
+  intptr_t* from = _cont_stack_top - frame::metadata_words;
   intptr_t* to   = chunk_top - frame::metadata_words;
-  copy_to_chunk(from, to, cont_size + frame::metadata_words);
+  copy_to_chunk(from, to, cont_size() + frame::metadata_words);
   // Because we're not patched yet, the chunk is now in a bad state
 
   // patch return pc of the bottom-most frozen frame (now in the chunk) with the actual caller's return address
-  intptr_t* chunk_bottom_sp = chunk_top + cont_size - _cont.argsize();
-  assert(empty || *(address*)(chunk_bottom_sp-frame::sender_sp_ret_address_offset()) == StubRoutines::cont_returnBarrier(), "");
+  intptr_t* chunk_bottom_sp = chunk_top + cont_size() - _cont.argsize();
+  assert(_empty || *(address*)(chunk_bottom_sp-frame::sender_sp_ret_address_offset()) == StubRoutines::cont_returnBarrier(), "");
   *(address*)(chunk_bottom_sp - frame::sender_sp_ret_address_offset()) = chunk->pc();
 
   // We're always writing to a young chunk, so the GC can't see it until the next safepoint.
   chunk->set_sp(chunk_new_sp);
   // set chunk->pc to the return address of the topmost frame in the chunk
-  chunk->set_pc(*(address*)(cont_stack_top - frame::sender_sp_ret_address_offset()));
+  chunk->set_pc(*(address*)(_cont_stack_top - frame::sender_sp_ret_address_offset()));
 
   _cont.write();
 
@@ -672,8 +682,6 @@ bool Freeze<ConfigT>::freeze_fast(intptr_t* frame_sp) {
     e.commit();
   }
 #endif
-
-  return true;
 }
 
 NOINLINE freeze_result FreezeBase::freeze_slow() {
@@ -753,16 +761,9 @@ NOINLINE freeze_result FreezeBase::freeze(frame& f, frame& caller, int callee_ar
       // special native frame
       return freeze_pinned_native;
     }
-    if (UNLIKELY(ContinuationHelper::CompiledFrame::is_owning_locks(_cont.thread(), SmallRegisterMap::instance, f))) {
-      return freeze_pinned_monitor;
-    }
-
     return recurse_freeze_compiled_frame(f, caller, callee_argsize, callee_interpreted);
   } else if (f.is_interpreted_frame()) {
     assert((_preempt && top) || !f.interpreter_frame_method()->is_native(), "");
-    if (ContinuationHelper::InterpretedFrame::is_owning_locks(f)) {
-      return freeze_pinned_monitor;
-    }
     if (_preempt && top && f.interpreter_frame_method()->is_native()) {
       // int native entry
       return freeze_pinned_native;
@@ -782,7 +783,7 @@ inline freeze_result FreezeBase::recurse_freeze_java_frame(const frame& f, frame
 
   assert(fsize > 0, "");
   assert(argsize >= 0, "");
-  _size += fsize;
+  _freeze_size += fsize;
   NOT_PRODUCT(_frames++;)
 
   if (FKind::frame_bottom(f) >= _bottom_address - 1) { // sometimes there's space after enterSpecial
@@ -825,7 +826,7 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
     || callee.cb()->as_nmethod()->is_osr_method()
     || argsize == _cont.argsize(), "argsize: %d cont.argsize: %d", argsize, _cont.argsize());
   log_develop_trace(continuations)("bottom: " INTPTR_FORMAT " count %d size: %d argsize: %d",
-    p2i(_bottom_address), _frames, _size << LogBytesPerWord, argsize);
+    p2i(_bottom_address), _frames, _freeze_size << LogBytesPerWord, argsize);
 
   LogTarget(Trace, continuations) lt;
 
@@ -838,7 +839,7 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
 
   assert(chunk == nullptr || (chunk->max_size() == 0) == chunk->is_empty(), "");
 
-  _size += frame::metadata_words; // for top frame's metadata
+  _freeze_size += frame::metadata_words; // for top frame's metadata
 
   int overlap = 0; // the args overlap the caller -- if there is one in this chunk and is of the same kind
   int unextended_sp = -1;
@@ -857,21 +858,21 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
     }
   }
 
-  log_develop_trace(continuations)("finalize _size: %d overlap: %d unextended_sp: %d", _size, overlap, unextended_sp);
+  log_develop_trace(continuations)("finalize _size: %d overlap: %d unextended_sp: %d", _freeze_size, overlap, unextended_sp);
 
-  _size -= overlap;
-  assert(_size >= 0, "");
+  _freeze_size -= overlap;
+  assert(_freeze_size >= 0, "");
 
   assert(chunk == nullptr || chunk->is_empty()
           || unextended_sp == chunk->to_offset(StackChunkFrameStream<ChunkFrames::Mixed>(chunk).unextended_sp()), "");
-  assert(chunk != nullptr || unextended_sp < _size, "");
+  assert(chunk != nullptr || unextended_sp < _freeze_size, "");
 
     // _barriers can be set to true by an allocation in freeze_fast, in which case the chunk is available
-  assert(!_barriers || (unextended_sp >= _size && chunk->is_empty()),
-    "unextended_sp: %d size: %d is_empty: %d", unextended_sp, _size, chunk->is_empty());
+  assert(!_barriers || (unextended_sp >= _freeze_size && chunk->is_empty()),
+    "unextended_sp: %d size: %d is_empty: %d", unextended_sp, _freeze_size, chunk->is_empty());
 
   DEBUG_ONLY(bool empty_chunk = true);
-  if (unextended_sp < _size || chunk->is_gc_mode() || (!_barriers && chunk->requires_barriers())) {
+  if (unextended_sp < _freeze_size || chunk->is_gc_mode() || (!_barriers && chunk->requires_barriers())) {
     // ALLOCATION
 
     if (lt.develop_is_enabled()) {
@@ -880,18 +881,21 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
         ls.print_cr("no chunk");
       } else {
         ls.print_cr("chunk barriers: %d _size: %d free size: %d",
-          chunk->requires_barriers(), _size, chunk->sp() - frame::metadata_words);
+          chunk->requires_barriers(), _freeze_size, chunk->sp() - frame::metadata_words);
         chunk->print_on(&ls);
       }
     }
 
-    _size += overlap; // we're allocating a new chunk, so no overlap
+    _freeze_size += overlap; // we're allocating a new chunk, so no overlap
     // overlap = 0;
 
-    chunk = allocate_chunk_slow(_size);
+    chunk = allocate_chunk_slow(_freeze_size);
     if (chunk == nullptr) {
       return freeze_exception;
     }
+
+    // Install new chunk
+    _cont.set_tail(chunk);
 
     int sp = chunk->stack_size() - argsize;
     chunk->set_sp(sp);
@@ -903,7 +907,7 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
       int sp = chunk->stack_size() - argsize;
       chunk->set_sp(sp);
       chunk->set_argsize(argsize);
-      _size += overlap;
+      _freeze_size += overlap;
       assert(chunk->max_size() == 0, "");
     } DEBUG_ONLY(else empty_chunk = false;)
   }
@@ -921,7 +925,7 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
   // will either see no continuation or a consistent chunk.
   unwind_frames();
 
-  chunk->set_max_size(chunk->max_size() + _size - frame::metadata_words);
+  chunk->set_max_size(chunk->max_size() + _freeze_size - frame::metadata_words);
 
   if (lt.develop_is_enabled()) {
     LogStream ls(lt);
@@ -932,8 +936,8 @@ freeze_result FreezeBase::finalize_freeze(const frame& callee, frame& caller, in
   caller = StackChunkFrameStream<ChunkFrames::Mixed>(chunk).to_frame();
 
   DEBUG_ONLY(_last_write = caller.unextended_sp() + (empty_chunk ? argsize : overlap);)
-  assert(chunk->is_in_chunk(_last_write - _size),
-    "last_write-size: " INTPTR_FORMAT " start: " INTPTR_FORMAT, p2i(_last_write-_size), p2i(chunk->start_address()));
+  assert(chunk->is_in_chunk(_last_write - _freeze_size),
+    "last_write-size: " INTPTR_FORMAT " start: " INTPTR_FORMAT, p2i(_last_write-_freeze_size), p2i(chunk->start_address()));
 #ifdef ASSERT
   if (lt.develop_is_enabled()) {
     LogStream ls(lt);
@@ -1007,7 +1011,7 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_interpreted_frame(frame& f, fr
   Method* frame_method = ContinuationHelper::Frame::frame_method(f);
 
   log_develop_trace(continuations)("recurse_freeze_interpreted_frame %s _size: %d fsize: %d argsize: %d",
-    frame_method->name_and_sig_as_C_string(), _size, fsize, argsize);
+    frame_method->name_and_sig_as_C_string(), _freeze_size, fsize, argsize);
   // we'd rather not yield inside methods annotated with @JvmtiMountTransition
   assert(!ContinuationHelper::Frame::frame_method(f)->jvmti_mount_transition(), "");
 
@@ -1021,7 +1025,7 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_interpreted_frame(frame& f, fr
   DEBUG_ONLY(before_freeze_java_frame(f, caller, fsize, 0, bottom);)
 
   frame hf = new_heap_frame<ContinuationHelper::InterpretedFrame>(f, caller);
-  _align_size += frame::align_wiggle; // add alignment room for internal interpreted frame alignment om AArch64
+  _total_align_size += frame::align_wiggle; // add alignment room for internal interpreted frame alignment om AArch64
 
   intptr_t* heap_sp = ContinuationHelper::InterpretedFrame::frame_top(hf, callee_argsize, callee_interpreted);
   assert(ContinuationHelper::InterpretedFrame::frame_bottom(hf) == heap_sp + fsize, "");
@@ -1054,7 +1058,7 @@ freeze_result FreezeBase::recurse_freeze_compiled_frame(frame& f, frame& caller,
   log_develop_trace(continuations)("recurse_freeze_compiled_frame %s _size: %d fsize: %d argsize: %d",
                              ContinuationHelper::Frame::frame_method(f) != nullptr ?
                              ContinuationHelper::Frame::frame_method(f)->name_and_sig_as_C_string() : "",
-                             _size, fsize, argsize);
+                             _freeze_size, fsize, argsize);
   // we'd rather not yield inside methods annotated with @JvmtiMountTransition
   assert(!ContinuationHelper::Frame::frame_method(f)->jvmti_mount_transition(), "");
 
@@ -1075,7 +1079,7 @@ freeze_result FreezeBase::recurse_freeze_compiled_frame(frame& f, frame& caller,
   assert(!bottom || !caller.is_compiled_frame() || (heap_sp + fsize) == (caller.unextended_sp() + argsize), "");
 
   if (caller.is_interpreted_frame()) {
-    _align_size += frame::align_wiggle; // See Thaw::align
+    _total_align_size += frame::align_wiggle; // See Thaw::align
   }
 
   patch(f, hf, caller, bottom);
@@ -1092,11 +1096,11 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_stub_frame(frame& f, frame& ca
   const int fsize = f.cb()->frame_size();
 
   log_develop_trace(continuations)("recurse_freeze_stub_frame %s _size: %d fsize: %d :: " INTPTR_FORMAT " - " INTPTR_FORMAT,
-    f.cb()->name(), _size, fsize, p2i(frame_sp), p2i(frame_sp+fsize));
+    f.cb()->name(), _freeze_size, fsize, p2i(frame_sp), p2i(frame_sp+fsize));
 
   // recurse_freeze_java_frame and freeze inlined here because we need to use a full RegisterMap for lock ownership
   NOT_PRODUCT(_frames++;)
-  _size += fsize;
+  _freeze_size += fsize;
 
   RegisterMap map(_cont.thread(), true, false, false);
   map.set_include_argument_oops(false);
@@ -1109,9 +1113,6 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_stub_frame(frame& f, frame& ca
   if (UNLIKELY(senderf.oop_map() == nullptr)) {
     // native frame
     return freeze_pinned_native;
-  }
-  if (UNLIKELY(ContinuationHelper::CompiledFrame::is_owning_locks(_cont.thread(), &map, senderf))) {
-    return freeze_pinned_monitor;
   }
 
   freeze_result result = recurse_freeze_compiled_frame(senderf, caller, 0, 0); // This might be deoptimized
@@ -1147,7 +1148,7 @@ NOINLINE void FreezeBase::finish_freeze(const frame& f, const frame& top) {
   chunk->set_sp(chunk->to_offset(top.sp()));
   chunk->set_pc(top.pc());
 
-  chunk->set_max_size(chunk->max_size() + _align_size);
+  chunk->set_max_size(chunk->max_size() + _total_align_size);
 
   if (UNLIKELY(_barriers)) {
     log_develop_trace(continuations)("do barriers on old chunk");
@@ -1248,8 +1249,6 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
       log_develop_trace(continuations)("allocation requires barriers");
     }
   }
-
-  _cont.set_tail(chunk);
   return chunk;
 }
 
@@ -1287,31 +1286,14 @@ static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
 }
 #endif // INCLUDE_JVMTI
 
-static freeze_result is_pinned(const frame& f, RegisterMap* map) {
-  if (f.is_interpreted_frame()) {
-    if (ContinuationHelper::InterpretedFrame::is_owning_locks(f)) {
-      return freeze_pinned_monitor;
-    }
-    if (f.interpreter_frame_method()->is_native()) {
-      return freeze_pinned_native; // interpreter native entry
-    }
-  } else if (f.is_compiled_frame()) {
-    if (ContinuationHelper::CompiledFrame::is_owning_locks(map->thread(), map, f)) {
-      return freeze_pinned_monitor;
-    }
-  } else {
-    return freeze_pinned_native;
-  }
-  return freeze_ok;
-}
-
 #ifdef ASSERT
 static bool monitors_on_stack(JavaThread* thread) {
   ContinuationEntry* ce = thread->last_continuation();
   RegisterMap map(thread, true, false, false);
   map.set_include_argument_oops(false);
   for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
-    if (is_pinned(f, &map) == freeze_pinned_monitor) {
+    if ((f.is_interpreted_frame() && ContinuationHelper::InterpretedFrame::is_owning_locks(f)) ||
+        (f.is_compiled_frame() && ContinuationHelper::CompiledFrame::is_owning_locks(map.thread(), &map, f))) {
       return true;
     }
   }
@@ -1330,19 +1312,6 @@ static bool interpreted_native_or_deoptimized_on_stack(JavaThread* thread) {
   return false;
 }
 #endif // ASSERT
-
-static inline bool can_freeze_fast(JavaThread* thread) {
-  // There are no interpreted frames if we're not called from the interpreter and we haven't ancountered an i2c adapter or called Deoptimization::unpack_frames
-  // Calls from native frames also go through the interpreter (see JavaCalls::call_helper)
-  assert(!thread->cont_fastpath()
-         || (thread->cont_fastpath_thread_state() && !interpreted_native_or_deoptimized_on_stack(thread)), "");
-
-  // We also clear thread->cont_fastpath on deoptimization (notify_deopt) and when we thaw interpreted frames
-  bool fast = thread->cont_fastpath() && UseContinuationFastPath;
-  assert(!fast || monitors_on_stack(thread) == (thread->held_monitor_count() > 0), "");
-  fast = fast && thread->held_monitor_count() == 0;
-  return fast;
-}
 
 static inline int freeze_epilog(JavaThread* thread, ContinuationWrapper& cont) {
   verify_continuation(cont.continuation());
@@ -1377,7 +1346,7 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
   ContinuationEntry* entry = current->last_continuation();
 
-  oop oopCont = get_continuation(current);
+  oop oopCont = entry->cont_oop();
   assert(oopCont == current->last_continuation()->cont_oop(), "");
   assert(ContinuationEntry::assert_entry_frame_laid_out(current), "");
 
@@ -1387,19 +1356,26 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
   assert(entry->is_virtual_thread() == (entry->scope() == java_lang_VirtualThread::vthread_scope()), "");
 
-  if (entry->is_pinned()) {
-    log_develop_debug(continuations)("PINNED due to critical section");
+  assert(monitors_on_stack(current) == (current->held_monitor_count() > 0), "");
+
+  if (entry->is_pinned() || current->held_monitor_count() > 0) {
+    log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
     verify_continuation(cont.continuation());
-    log_develop_trace(continuations)("=== end of freeze (fail %d)", freeze_pinned_cs);
-    return freeze_pinned_cs;
+    freeze_result res = entry->is_pinned() ? freeze_pinned_cs : freeze_pinned_monitor;
+    log_develop_trace(continuations)("=== end of freeze (fail %d)", res);
+    return res;
   }
 
-  Freeze<ConfigT> fr(current, cont, false);
+  Freeze<ConfigT> freeze(current, cont, sp);
 
-  bool fast = can_freeze_fast(current);
-  if (fast && fr.is_chunk_available_for_fast_freeze(sp)) {
-    freeze_result res = fr.template try_freeze_fast<true>(sp);
-    assert(res == freeze_ok, "");
+  // There are no interpreted frames if we're not called from the interpreter and we haven't ancountered an i2c
+  // adapter or called Deoptimization::unpack_frames. Calls from native frames also go through the interpreter
+  // (see JavaCalls::call_helper).
+  assert(!current->cont_fastpath()
+         || (current->cont_fastpath_thread_state() && !interpreted_native_or_deoptimized_on_stack(current)), "");
+  bool fast = UseContinuationFastPath && current->cont_fastpath();
+  if (fast && freeze.size_if_fast_freeze_available() > 0) {
+    freeze.freeze_fast_existing_chunk();
     CONT_JFR_ONLY(fr.jfr_info().post_jfr_event(&event, oopCont, current);)
     freeze_epilog(current, cont);
     StackWatermarkSet::after_unwind(current);
@@ -1411,10 +1387,10 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
   JRT_BLOCK
     // delays a possible JvmtiSampledObjectAllocEventCollector in alloc_chunk
     JvmtiSampledObjectAllocEventCollector jsoaec(false);
-    fr.set_jvmti_event_collector(&jsoaec);
+    freeze.set_jvmti_event_collector(&jsoaec);
 
-    freeze_result res = fast ? fr.template try_freeze_fast<false>(sp)
-                             : fr.freeze_slow();
+    freeze_result res = fast ? freeze.try_freeze_fast() : freeze.freeze_slow();
+
     CONT_JFR_ONLY(fr.jfr_info().post_jfr_event(&event, oopCont, current);)
     freeze_epilog(current, cont, res);
     cont.done(); // allow safepoint in the transition back to Java
@@ -1430,6 +1406,8 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
   }
   if (entry->is_pinned()) {
     return freeze_pinned_cs;
+  } else if (thread->held_monitor_count() > 0) {
+    return freeze_pinned_monitor;
   }
 
   RegisterMap map(thread, true, false, false);
@@ -1452,9 +1430,8 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
   }
 
   while (true) {
-    freeze_result res = is_pinned(f, &map);
-    if (res != freeze_ok) {
-      return res;
+    if ((f.is_interpreted_frame() && f.interpreter_frame_method()->is_native()) || f.is_native_frame()) {
+      return freeze_pinned_native;
     }
 
     f = f.sender(&map);
@@ -1463,12 +1440,15 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
       if (scope == cont_scope) {
         break;
       }
+      int monitor_count = entry->parent_held_monitor_count();
       entry = entry->parent();
       if (entry == nullptr) {
         break;
       }
       if (entry->is_pinned()) {
         return freeze_pinned_cs;
+      } else if (monitor_count > 0) {
+        return freeze_pinned_monitor;
       }
     }
   }

@@ -25,7 +25,8 @@
  * @test
  * @summary Test virtual threads using core reflection
  * @modules java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} Reflection.java TestHelper.java
+ * @library /test/lib
+ * @compile --enable-preview -source ${jdk.version} Reflection.java
  * @run testng/othervm --enable-preview Reflection
  */
 
@@ -37,6 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.LockSupport;
 
+import jdk.test.lib.thread.VThreadRunner;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
@@ -47,7 +49,7 @@ public class Reflection {
      */
     @Test
     public void testInvokeStatic1() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             int result = (int) divideMethod().invoke(null, 20, 2);
             assertTrue(result == 10);
         });
@@ -59,7 +61,7 @@ public class Reflection {
      */
     @Test
     public void testInvokeStatic2() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try {
                 divideMethod().invoke(null, 20, 0);
                 fail();
@@ -75,7 +77,7 @@ public class Reflection {
      */
     @Test
     public void testInvokeStatic3() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             assertThrows(IllegalArgumentException.class,
                     () -> divideMethod().invoke(null));
             assertThrows(IllegalArgumentException.class,
@@ -97,7 +99,7 @@ public class Reflection {
      */
     @Test
     public void testInvokeStatic4() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Method foo = BadClass1.class.getDeclaredMethod("foo");
             try {
                 foo.invoke(null);
@@ -121,7 +123,7 @@ public class Reflection {
      */
     @Test
     public void testInvokeStatic5() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Method foo = BadClass2.class.getDeclaredMethod("foo");
             assertThrows(AbstractMethodError.class, () -> foo.invoke(null));
         });
@@ -141,7 +143,7 @@ public class Reflection {
     public void testInvokeStatic6() throws Exception {
         Method parkMethod = Parker.class.getDeclaredMethod("park");
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            ThreadFactory factory = TestHelper.virtualThreadBuilder(scheduler).factory();
+            ThreadFactory factory = ThreadBuilders.virtualThreadBuilder(scheduler).factory();
 
             Thread vthread = factory.newThread(() -> {
                 try {
@@ -168,7 +170,7 @@ public class Reflection {
      */
     @Test
     public void testInvokeInstance1() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             var adder = new Adder();
             Adder.addMethod().invoke(adder, 5);
             assertTrue(adder.sum == 5);
@@ -181,7 +183,7 @@ public class Reflection {
      */
     @Test
     public void testInvokeInstance2() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             var adder = new Adder();
             try {
                 Adder.addMethod().invoke(adder, -5);
@@ -198,7 +200,7 @@ public class Reflection {
      */
     @Test
     public void testInvokeInstance3() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             var adder = new Adder();
             Method addMethod = Adder.addMethod();
             assertThrows(NullPointerException.class,
@@ -219,7 +221,7 @@ public class Reflection {
      */
     @Test
     public void testNewInstance1() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Constructor<?> ctor = Adder.class.getDeclaredConstructor(long.class);
             Adder adder = (Adder) ctor.newInstance(10);
             assertTrue(adder.sum == 10);
@@ -232,7 +234,7 @@ public class Reflection {
      */
     @Test
     public void testNewInstance2() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Constructor<?> ctor = Adder.class.getDeclaredConstructor(long.class);
             try {
                 ctor.newInstance(-10);
@@ -249,7 +251,7 @@ public class Reflection {
      */
     @Test
     public void testNewInstance3() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             var adder = new Adder();
             Constructor<?> ctor = Adder.class.getDeclaredConstructor(long.class);
             assertThrows(IllegalArgumentException.class,
@@ -271,7 +273,7 @@ public class Reflection {
      */
     @Test
     public void testNewInstance4() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Constructor<?> ctor = BadClass3.class.getDeclaredConstructor();
             try {
                 ctor.newInstance((Object[])null);
@@ -295,7 +297,7 @@ public class Reflection {
      */
     @Test
     public void testNewInstance5() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Constructor<?> ctor = BadClass4.class.getDeclaredConstructor();
             assertThrows(AbstractMethodError.class, () -> ctor.newInstance((Object[])null));
         });
@@ -315,7 +317,7 @@ public class Reflection {
     public void testNewInstance6() throws Exception {
         Constructor<?> ctor = Parker.class.getDeclaredConstructor();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            ThreadFactory factory = TestHelper.virtualThreadBuilder(scheduler).factory();
+            ThreadFactory factory = ThreadBuilders.virtualThreadBuilder(scheduler).factory();
 
             Thread vthread = factory.newThread(() -> {
                 try {

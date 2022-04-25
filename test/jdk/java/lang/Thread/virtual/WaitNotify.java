@@ -24,12 +24,14 @@
 /**
  * @test
  * @summary Test virtual threads using Object.wait/notifyAll
+ * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} WaitNotify.java
  * @run testng/othervm --enable-preview WaitNotify
  */
 
 import java.util.concurrent.Semaphore;
 
+import jdk.test.lib.thread.VThreadRunner;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
@@ -108,7 +110,7 @@ public class WaitNotify {
      */
     @Test
     public void testWaitNotify4() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             t.interrupt();
             Object lock = new Object();
@@ -129,9 +131,9 @@ public class WaitNotify {
      */
     @Test
     public void testWaitNotify5() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
-            TestHelper.scheduleInterrupt(t, 1000);
+            scheduleInterrupt(t, 1000);
             Object lock = new Object();
             synchronized (lock) {
                 try {
@@ -143,5 +145,20 @@ public class WaitNotify {
                 }
             }
         });
+    }
+
+    /**
+     * Schedule a thread to be interrupted after a delay.
+     */
+    private static void scheduleInterrupt(Thread thread, long delay) {
+        Runnable interruptTask = () -> {
+            try {
+                Thread.sleep(delay);
+                thread.interrupt();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+        new Thread(interruptTask).start();
     }
 }

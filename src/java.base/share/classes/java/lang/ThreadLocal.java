@@ -176,12 +176,16 @@ public class ThreadLocal<T> {
 
     private T get(Thread t) {
         ThreadLocalMap map = getMap(t);
-        if (map != null && map != ThreadLocalMap.NOT_SUPPORTED) {
-            ThreadLocalMap.Entry e = map.getEntry(this);
-            if (e != null) {
-                @SuppressWarnings("unchecked")
-                T result = (T)e.value;
-                return result;
+        if (map != null) {
+            if (map == ThreadLocalMap.NOT_SUPPORTED) {
+                return initialValue();
+            } else {
+                ThreadLocalMap.Entry e = map.getEntry(this);
+                if (e != null) {
+                    @SuppressWarnings("unchecked")
+                    T result = (T) e.value;
+                    return result;
+                }
             }
         }
         return setInitialValue(t);
@@ -213,9 +217,7 @@ public class ThreadLocal<T> {
     private T setInitialValue(Thread t) {
         T value = initialValue();
         ThreadLocalMap map = getMap(t);
-        if (map == ThreadLocalMap.NOT_SUPPORTED) {
-            return value;
-        }
+        assert map != ThreadLocalMap.NOT_SUPPORTED;
         if (map != null) {
             map.set(this, value);
         } else {
@@ -420,7 +422,7 @@ public class ThreadLocal<T> {
         /**
          * Construct a new map without a table.
          */
-        ThreadLocalMap() {
+        private ThreadLocalMap() {
         }
 
         /**

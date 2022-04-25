@@ -106,6 +106,7 @@ inline int ContinuationHelper::InterpretedFrame::expression_stack_size(const fra
   return size;
 }
 
+#ifdef ASSERT
 inline bool ContinuationHelper::InterpretedFrame::is_owning_locks(const frame& f) {
   assert(f.interpreter_frame_monitor_end() <= f.interpreter_frame_monitor_begin(), "must be");
   if (f.interpreter_frame_monitor_end() == f.interpreter_frame_monitor_begin()) {
@@ -123,6 +124,7 @@ inline bool ContinuationHelper::InterpretedFrame::is_owning_locks(const frame& f
   }
   return false;
 }
+#endif
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f) { // inclusive; this will be copied with the frame
   return f.unextended_sp();
@@ -167,6 +169,7 @@ inline int ContinuationHelper::CompiledFrame::num_oops(const frame& f) {
   return f.num_oops() + 1;
 }
 
+#ifdef ASSERT
 template<typename RegisterMapT>
 bool ContinuationHelper::CompiledFrame::is_owning_locks(JavaThread* thread, RegisterMapT* map, const frame& f) {
   assert(!f.is_interpreted_frame(), "");
@@ -203,6 +206,7 @@ bool ContinuationHelper::CompiledFrame::is_owning_locks(JavaThread* thread, Regi
   }
   return false;
 }
+#endif
 
 inline bool ContinuationHelper::StubFrame::is_instance(const frame& f) {
   return !f.is_interpreted_frame() && is_stub(f.cb());

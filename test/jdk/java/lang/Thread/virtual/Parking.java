@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Test virtual threads using park/unpark
+ * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} Parking.java
  * @run testng/othervm --enable-preview Parking
  */
@@ -32,6 +33,7 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
+import jdk.test.lib.thread.VThreadRunner;
 import org.testng.SkipException;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -141,7 +143,7 @@ public class Parking {
      */
     @Test
     public void testPark8() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             t.interrupt();
             LockSupport.park();
@@ -154,9 +156,9 @@ public class Parking {
      */
     @Test
     public void testPark9() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
-            TestHelper.scheduleInterrupt(t, 1000);
+            scheduleInterrupt(t, 1000);
             while (!Thread.currentThread().isInterrupted()) {
                 LockSupport.park();
             }
@@ -168,7 +170,7 @@ public class Parking {
      */
     @Test
     public void testPark10() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             t.interrupt();
             synchronized (lock) {
@@ -183,9 +185,9 @@ public class Parking {
      */
     @Test
     public void testPark11() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
-            TestHelper.scheduleInterrupt(t, 1000);
+            scheduleInterrupt(t, 1000);
             while (!Thread.currentThread().isInterrupted()) {
                 synchronized (lock) {
                     LockSupport.park();
@@ -199,7 +201,7 @@ public class Parking {
      */
     @Test
     public void testParkNanos1() throws Exception {
-        TestHelper.runInVirtualThread(() -> LockSupport.parkNanos(-1));
+        VThreadRunner.run(() -> LockSupport.parkNanos(-1));
     }
 
     /**
@@ -207,7 +209,7 @@ public class Parking {
      */
     @Test
     public void testParkNanos2() throws Exception {
-        TestHelper.runInVirtualThread(() -> LockSupport.parkNanos(0));
+        VThreadRunner.run(() -> LockSupport.parkNanos(0));
     }
 
     /**
@@ -215,7 +217,7 @@ public class Parking {
      */
     @Test
     public void testParkNanos3() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             // park for 1000ms
             long nanos = TimeUnit.NANOSECONDS.convert(1000, TimeUnit.MILLISECONDS);
             long start = System.nanoTime();
@@ -262,7 +264,7 @@ public class Parking {
      */
     @Test
     public void testParkNanos6() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             LockSupport.unpark(Thread.currentThread());
             long nanos = TimeUnit.NANOSECONDS.convert(1, TimeUnit.DAYS);
             LockSupport.parkNanos(nanos);
@@ -290,7 +292,7 @@ public class Parking {
      */
     @Test
     public void testParkNanos8() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             t.interrupt();
             LockSupport.parkNanos(Duration.ofDays(1).toNanos());
@@ -303,9 +305,9 @@ public class Parking {
      */
     @Test
     public void testParkNanos9() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
-            TestHelper.scheduleInterrupt(t, 1000);
+            scheduleInterrupt(t, 1000);
             while (!Thread.currentThread().isInterrupted()) {
                 LockSupport.parkNanos(Duration.ofDays(1).toNanos());
             }
@@ -317,7 +319,7 @@ public class Parking {
      */
     @Test
     public void testParkNanos10() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
             t.interrupt();
             synchronized (lock) {
@@ -332,14 +334,29 @@ public class Parking {
      */
     @Test
     public void testParkNanos11() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
-            TestHelper.scheduleInterrupt(t, 1000);
+            scheduleInterrupt(t, 1000);
             while (!Thread.currentThread().isInterrupted()) {
                 synchronized (lock) {
                     LockSupport.parkNanos(Duration.ofDays(1).toNanos());
                 }
             }
         });
+    }
+
+    /**
+     * Schedule a thread to be interrupted after a delay.
+     */
+    private static void scheduleInterrupt(Thread thread, long delay) {
+        Runnable interruptTask = () -> {
+            try {
+                Thread.sleep(delay);
+                thread.interrupt();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+        new Thread(interruptTask).start();
     }
 }

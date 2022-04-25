@@ -78,6 +78,7 @@ public:
   static size_t size() { return align_up((int)sizeof(ContinuationEntry), 2*wordSize); }
 
   ContinuationEntry* parent() const { return _parent; }
+  int parent_held_monitor_count() const { return _parent_held_monitor_count; }
 
   static address entry_pc() { return return_pc; }
   intptr_t* entry_sp() const { return (intptr_t*)this; }
@@ -117,9 +118,6 @@ public:
   inline oop cont_oop() const;
 
   oop scope()     const { return Continuation::continuation_scope(cont_oop()); }
-
-  oop cont_raw()  const { return _cont; }
-  oop chunk_raw() const { return _chunk; }
 
   bool is_virtual_thread() const { return _flags != 0; }
 

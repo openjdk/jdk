@@ -25,7 +25,7 @@
  * @test
  * @summary Test Thread.holdsLock when lock held by carrier thread
  * @modules java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} HoldsLock.java TestHelper.java
+ * @compile --enable-preview -source ${jdk.version} HoldsLock.java
  * @run testng/othervm --enable-preview HoldsLock
  * @run testng/othervm --enable-preview -XX:+UseHeavyMonitors HoldsLock
  */
@@ -175,7 +175,7 @@ public class HoldsLock {
     }
 
     static Thread newThread(Executor scheduler, Runnable task) {
-        ThreadFactory factory = TestHelper.virtualThreadBuilder(scheduler).factory();
+        ThreadFactory factory = ThreadBuilders.virtualThreadBuilder(scheduler).factory();
         return factory.newThread(task);
     }
 }

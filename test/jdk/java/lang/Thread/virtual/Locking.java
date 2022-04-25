@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Test virtual threads using java.util.concurrent locks
+ * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} Locking.java
  * @run testng/othervm --enable-preview Locking
  */
@@ -32,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
+import jdk.test.lib.thread.VThreadRunner;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
@@ -42,7 +44,7 @@ public class Locking {
      */
     @Test
     public void testReentrantLock1() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             ReentrantLock lock = new ReentrantLock();
             assertFalse(lock.isHeldByCurrentThread());
             lock.lock();
@@ -57,7 +59,7 @@ public class Locking {
      */
     @Test
     public void testReentrantLock2() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             ReentrantLock lock = new ReentrantLock();
             assertFalse(lock.isHeldByCurrentThread());
             boolean acquired = lock.tryLock();
@@ -73,7 +75,7 @@ public class Locking {
      */
     @Test
     public void testReentrantLock3() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             ReentrantLock lock = new ReentrantLock();
             assertFalse(lock.isHeldByCurrentThread());
             assertTrue(lock.getHoldCount() == 0);

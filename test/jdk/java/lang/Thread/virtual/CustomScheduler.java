@@ -25,7 +25,7 @@
  * @test
  * @summary Test virtual threads using a custom scheduler
  * @modules java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} CustomScheduler.java TestHelper.java
+ * @compile --enable-preview -source ${jdk.version} CustomScheduler.java
  * @run testng/othervm --enable-preview CustomScheduler
  */
 
@@ -67,7 +67,7 @@ public class CustomScheduler {
     @Test
     public void testCustomScheduler1() throws Exception {
         AtomicReference<Executor> ref = new AtomicReference<>();
-        TestHelper.virtualThreadBuilder(SCHEDULER_1).start(() -> {
+        ThreadBuilders.virtualThreadBuilder(SCHEDULER_1).start(() -> {
             ref.set(scheduler(Thread.currentThread()));
         }).join();
         assertTrue(ref.get() == SCHEDULER_1);
@@ -81,7 +81,7 @@ public class CustomScheduler {
         AtomicReference<Executor> ref = new AtomicReference<>();
         Thread.ofVirtual().start(() -> {
             try {
-                TestHelper.virtualThreadBuilder(SCHEDULER_1).start(() -> {
+                ThreadBuilders.virtualThreadBuilder(SCHEDULER_1).start(() -> {
                     ref.set(scheduler(Thread.currentThread()));
                 }).join();
             } catch (Exception e) {
@@ -98,7 +98,7 @@ public class CustomScheduler {
     @Test
     public void testCustomScheduler3() throws Exception {
         AtomicReference<Executor> ref = new AtomicReference<>();
-        TestHelper.virtualThreadBuilder(SCHEDULER_1).start(() -> {
+        ThreadBuilders.virtualThreadBuilder(SCHEDULER_1).start(() -> {
             try {
                 Thread.ofVirtual().start(() -> {
                     ref.set(scheduler(Thread.currentThread()));
@@ -117,9 +117,9 @@ public class CustomScheduler {
     @Test
     public void testCustomScheduler4() throws Exception {
         AtomicReference<Executor> ref = new AtomicReference<>();
-        TestHelper.virtualThreadBuilder(SCHEDULER_1).start(() -> {
+        ThreadBuilders.virtualThreadBuilder(SCHEDULER_1).start(() -> {
             try {
-                TestHelper.virtualThreadBuilder(SCHEDULER_2).start(() -> {
+                ThreadBuilders.virtualThreadBuilder(SCHEDULER_2).start(() -> {
                     ref.set(scheduler(Thread.currentThread()));
                 }).join();
             } catch (Exception e) {
@@ -151,7 +151,7 @@ public class CustomScheduler {
             assertTrue(exc.get() instanceof WrongThreadException);
         };
 
-        TestHelper.virtualThreadBuilder(scheduler).start(LockSupport::park);
+        ThreadBuilders.virtualThreadBuilder(scheduler).start(LockSupport::park);
     }
 
     /**
@@ -164,7 +164,8 @@ public class CustomScheduler {
         if (carrier.isVirtual())
             throw new SkipException("Main test is a virtual thread");
         try {
-            Thread vthread = TestHelper.virtualThreadBuilder(Runnable::run).start(() -> {
+            var builder = ThreadBuilders.virtualThreadBuilder(Runnable::run);
+            Thread vthread = builder.start(() -> {
                 Thread.currentThread().interrupt();
                 Thread.yield();
             });
@@ -185,7 +186,8 @@ public class CustomScheduler {
         if (carrier.isVirtual())
             throw new SkipException("Main test is a virtual thread");
         try {
-            Thread vthread = TestHelper.virtualThreadBuilder(Runnable::run).start(() -> {
+            var builder = ThreadBuilders.virtualThreadBuilder(Runnable::run);
+            Thread vthread = builder.start(() -> {
                 Thread.currentThread().interrupt();
             });
             assertTrue(vthread.isInterrupted());
@@ -208,7 +210,7 @@ public class CustomScheduler {
         };
         try {
             AtomicBoolean interrupted = new AtomicBoolean();
-            Thread vthread = TestHelper.virtualThreadBuilder(scheduler).start(() -> {
+            Thread vthread = ThreadBuilders.virtualThreadBuilder(scheduler).start(() -> {
                 interrupted.set(Thread.currentThread().isInterrupted());
             });
             assertFalse(vthread.isInterrupted());

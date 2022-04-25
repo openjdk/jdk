@@ -26,6 +26,7 @@
  * @summary Test stack traces in exceptions and stack frames waslked by the StackWalker
  *     API do not include the carrier stack frames
  * @modules java.management
+ * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} StackTraces.java
  * @run testng/othervm --enable-preview StackTraces
  * @run testng/othervm --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+ShowCarrierFrames StackTraces
@@ -37,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
 import static java.lang.StackWalker.Option.*;
 
+import jdk.test.lib.thread.VThreadRunner;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
@@ -48,7 +50,7 @@ public class StackTraces {
      */
     @Test
     public void testStackTrace() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             Exception e = new Exception();
             boolean found = Arrays.stream(e.getStackTrace())
                     .map(StackTraceElement::getClassName)
@@ -62,7 +64,7 @@ public class StackTraces {
      */
     @Test
     public void testStackWalker() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             StackWalker walker = StackWalker.getInstance(Set.of(RETAIN_CLASS_REFERENCE));
             boolean found = walker.walk(sf ->
                     sf.map(StackWalker.StackFrame::getDeclaringClass)

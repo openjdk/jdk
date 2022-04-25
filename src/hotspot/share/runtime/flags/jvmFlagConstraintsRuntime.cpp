@@ -92,10 +92,10 @@ JVMFlag::Error VMPageSizeConstraintFunc(uintx value, bool verbose) {
   return JVMFlag::SUCCESS;
 }
 
-JVMFlag::Error ScopeLocalCacheSizeConstraintFunc(intx value, bool verbose) {
+JVMFlag::Error ExtentLocalCacheSizeConstraintFunc(intx value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,
-                        "ScopeLocalCacheSize (" INTX_FORMAT ") must be "
+                        "ExtentLocalCacheSize (" INTX_FORMAT ") must be "
                         "power of 2\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;

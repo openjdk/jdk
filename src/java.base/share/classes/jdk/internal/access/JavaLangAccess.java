@@ -464,24 +464,24 @@ public interface JavaLangAccess {
     <T> void setCarrierThreadLocal(ThreadLocal<T> local, T value);
 
     /**
-     * Returns the current thread's scope locals cache
+     * Returns the current thread's extent locals cache
      */
-    Object[] scopeLocalCache();
+    Object[] extentLocalCache();
 
     /**
-     * Sets the current thread's scope locals cache
+     * Sets the current thread's extent locals cache
      */
-    void setScopeLocalCache(Object[] cache);
+    void setExtentLocalCache(Object[] cache);
 
     /**
-     * Return the current thread's scope local bindings.
+     * Return the current thread's extent local bindings.
      */
-    Object scopeLocalBindings();
+    Object extentLocalBindings();
 
     /**
-     * Set the current thread's scope local bindings.
+     * Set the current thread's extent local bindings.
      */
-    void setScopeLocalBindings(Object bindings);
+    void setExtentLocalBindings(Object bindings);
 
     /**
      * Returns the innermost mounted continuation

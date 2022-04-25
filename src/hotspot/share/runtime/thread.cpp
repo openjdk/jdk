@@ -789,7 +789,7 @@ void JavaThread::set_threadOopHandles(oop p) {
   _threadObj   = OopHandle(_thread_oop_storage, p);
   _vthread     = OopHandle(_thread_oop_storage, p);
   _jvmti_vthread = OopHandle(_thread_oop_storage, NULL);
-  _scopeLocalCache = OopHandle(_thread_oop_storage, NULL);
+  _extentLocalCache = OopHandle(_thread_oop_storage, NULL);
 }
 
 oop JavaThread::threadObj() const {
@@ -814,13 +814,13 @@ void JavaThread::set_jvmti_vthread(oop p) {
   _jvmti_vthread.replace(p);
 }
 
-oop JavaThread::scopeLocalCache() const {
-  return _scopeLocalCache.resolve();
+oop JavaThread::extentLocalCache() const {
+  return _extentLocalCache.resolve();
 }
 
-void JavaThread::set_scopeLocalCache(oop p) {
+void JavaThread::set_extentLocalCache(oop p) {
   assert(_thread_oop_storage != NULL, "not yet initialized");
-  _scopeLocalCache.replace(p);
+  _extentLocalCache.replace(p);
 }
 
 void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name,
@@ -1676,11 +1676,11 @@ void JavaThread::handle_async_exception(oop java_throwable) {
     // We cannot call Exceptions::_throw(...) here because we cannot block
     set_pending_exception(java_throwable, __FILE__, __LINE__);
 
-    // Clear any scope-local bindings on ThreadDeath
-    set_scopeLocalCache(NULL);
+    // Clear any extent-local bindings on ThreadDeath
+    set_extentLocalCache(NULL);
     oop threadOop = threadObj();
     assert(threadOop != NULL, "must be");
-    java_lang_Thread::clear_scopeLocalBindings(threadOop);
+    java_lang_Thread::clear_extentLocalBindings(threadOop);
 
     LogTarget(Info, exceptions) lt;
     if (lt.is_enabled()) {

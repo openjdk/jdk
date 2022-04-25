@@ -24,6 +24,8 @@
 ####
 # Bugs
 
+serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java          8264699 generic-all
+
 ####
 ## Classes not unloaded as expected (TODO, need to check if FJ keep link)
 
@@ -107,37 +109,37 @@ vmTestbase/nsk/jdi/ExceptionEvent/catchLocation/location002/TestDescription.java
 ## to support vthreads and expect the OPAQUE_FRAME error. The others were
 ## not because they don't add any additional value.
 
-vmTestbase/nsk/jdi/Scenarios/invokeMethod/popframes001/TestDescription.java
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc01x002/TestDescription.java
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc02x001/TestDescription.java
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc02x002/TestDescription.java
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc04x001/TestDescription.java
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc04x002/TestDescription.java
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc06x001/TestDescription.java
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc08x001/TestDescription.java
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc10x002/TestDescription.java
+vmTestbase/nsk/jdi/Scenarios/invokeMethod/popframes001/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc01x002/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc02x001/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc02x002/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc04x001/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc04x002/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc06x001/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc08x001/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc10x002/TestDescription.java 8285414 generic-all
 
-vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes002/TestDescription.java
-vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes003/TestDescription.java
-vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes004/TestDescription.java
+vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes002/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes003/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes004/TestDescription.java 8285414 generic-all
 
 ####
 ## JVMTI ForceEarlyReturn not supported for vthreads (JVMTI_ERROR_OPAQUE_FRAME)
 ## Note forceEarlyReturn002 was converted to support vthreads. The rest were not
 ## since there is no added value (JVMTI_ERROR_OPAQUE_FRAME is expected).
 
-vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn014/forceEarlyReturn014.java
-vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn001/TestDescription.java
-vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn002/TestDescription.java
+vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn014/forceEarlyReturn014.java 8285415 generic-all
+vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn001/TestDescription.java 8285415 generic-all
+vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn002/TestDescription.java 8285415 generic-all
 
 ###
-# These 2 tests try to create 10 vthreads and have them all block on a synchornized
+# These 2 tests try to create 10 vthreads and have them all block on a synchronized
 # method call, but on some hosts there are not enough carrier threads to support pinning
 # all 10 vthreads, so the test deadlocks. -Djdk.defaultScheduler.parallelism=<n>
 # could be used with the debuggee to ensure there are enough carrier threads.
 
-vmTestbase/nsk/jdi/EventRequestManager/stepRequests/stepreq002/TestDescription.java
-vmTestbase/nsk/jdi/EventRequestManager/deleteEventRequests/delevtreqs002/TestDescription.java
+vmTestbase/nsk/jdi/EventRequestManager/stepRequests/stepreq002/TestDescription.java 8285416 generic-all
+vmTestbase/nsk/jdi/EventRequestManager/deleteEventRequests/delevtreqs002/TestDescription.java 8285416 generic-all
 
 ###
 # These tests all create 5 virtual threads that block on a synchronized block, which causes
@@ -158,7 +160,7 @@ vmTestbase/nsk/jdi/ObjectReference/waitingThreads/waitingthreads002/TestDescript
 # debuggee, which has the side affect of making the Read-Poller thread exit. Because
 # of this no vthreads can complete their reads, and the test times out as a result.
 
-vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java windows-all
+vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java 8285417 windows-all
 
 ####
 ## NSK JMX Tests
@@ -166,18 +168,18 @@ vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemor
 ####
 ## Unsupported functionality
 
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_server_default/TestDescription.java
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_server_custom/TestDescription.java
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_directly/TestDescription.java
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_proxy_custom/TestDescription.java
-vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_proxy_default/TestDescription.java
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_server_default/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_server_custom/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_directly/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_proxy_custom/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_proxy_default/TestDescription.java 8285419 generic-all
 
 
 ####
 ## No ThreadInfo for vthreads
 
-vmTestbase/nsk/monitoring/ThreadInfo/isInNative/isinnative001/TestDescription.java
-vmTestbase/nsk/monitoring/ThreadInfo/getLockOwnerName/getlockownername001/TestDescription.java
-vmTestbase/nsk/monitoring/ThreadInfo/getLockName/getlockname001/TestDescription.java
-vmTestbase/nsk/monitoring/ThreadInfo/from_c/from_c001/TestDescription.java
-vmTestbase/nsk/monitoring/MemoryUsage/from/from001/TestDescription.java
+vmTestbase/nsk/monitoring/ThreadInfo/isInNative/isinnative001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/ThreadInfo/getLockOwnerName/getlockownername001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/ThreadInfo/getLockName/getlockname001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/ThreadInfo/from_c/from_c001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/MemoryUsage/from/from001/TestDescription.java 8285420 generic-all

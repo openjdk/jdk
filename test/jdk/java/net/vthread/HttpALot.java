@@ -25,7 +25,6 @@
  * @test
  * @summary Stress test the HTTP protocol handler and HTTP server
  * @requires vm.debug != true
- * @modules java.base/java.util.concurrent:open
  * @compile --enable-preview -source ${jdk.version} HttpALot.java
  * @run main/othervm/timeout=600
  *     --enable-preview

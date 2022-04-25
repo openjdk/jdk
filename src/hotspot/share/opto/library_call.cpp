@@ -472,8 +472,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_currentThread:            return inline_native_currentThread();
   case vmIntrinsics::_setCurrentThread:         return inline_native_setCurrentThread();
 
-  case vmIntrinsics::_scopeLocalCache:          return inline_native_scopeLocalCache();
-  case vmIntrinsics::_setScopeLocalCache:       return inline_native_setScopeLocalCache();
+  case vmIntrinsics::_extentLocalCache:          return inline_native_extentLocalCache();
+  case vmIntrinsics::_setExtentLocalCache:       return inline_native_setExtentLocalCache();
 
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, JfrTime::time_function()), "counterTime");
@@ -3461,38 +3461,38 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
   return true;
 }
 
-Node* LibraryCallKit::scopeLocalCache_helper() {
+Node* LibraryCallKit::extentLocalCache_helper() {
   ciKlass *objects_klass = ciObjArrayKlass::make(env()->Object_klass());
   const TypeOopPtr *etype = TypeOopPtr::make_from_klass(env()->Object_klass());
 
   bool xk = etype->klass_is_exact();
 
   Node* thread = _gvn.transform(new ThreadLocalNode());
-  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::scopeLocalCache_offset()));
+  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::extentLocalCache_offset()));
   return _gvn.transform(LoadNode::make(_gvn, NULL, immutable_memory(), p, p->bottom_type()->is_ptr(),
         TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered));
 }
 
-//------------------------inline_native_scopeLocalCache------------------
-bool LibraryCallKit::inline_native_scopeLocalCache() {
+//------------------------inline_native_extentLocalCache------------------
+bool LibraryCallKit::inline_native_extentLocalCache() {
   ciKlass *objects_klass = ciObjArrayKlass::make(env()->Object_klass());
   const TypeOopPtr *etype = TypeOopPtr::make_from_klass(env()->Object_klass());
   const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
 
-  // Because we create the scopeLocal cache lazily we have to make the
+  // Because we create the extentLocal cache lazily we have to make the
   // type of the result BotPTR.
   bool xk = etype->klass_is_exact();
   const Type* objects_type = TypeAryPtr::make(TypePtr::BotPTR, arr0, objects_klass, xk, 0);
-  Node* cache_obj_handle = scopeLocalCache_helper();
+  Node* cache_obj_handle = extentLocalCache_helper();
   set_result(access_load(cache_obj_handle, objects_type, T_OBJECT, IN_NATIVE));
 
   return true;
 }
 
-//------------------------inline_native_setScopeLocalCache------------------
-bool LibraryCallKit::inline_native_setScopeLocalCache() {
+//------------------------inline_native_setExtentLocalCache------------------
+bool LibraryCallKit::inline_native_setExtentLocalCache() {
   Node* arr = argument(0);
-  Node* cache_obj_handle = scopeLocalCache_helper();
+  Node* cache_obj_handle = extentLocalCache_helper();
 
   const TypePtr *adr_type = _gvn.type(cache_obj_handle)->isa_ptr();
   store_to_memory(control(), cache_obj_handle, arr, T_OBJECT, adr_type,

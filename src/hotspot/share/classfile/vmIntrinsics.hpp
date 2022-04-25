@@ -259,12 +259,12 @@ class methodHandle;
   do_intrinsic(_currentThread,            java_lang_Thread,       currentThread_name, currentThread_signature,   F_SN)  \
    do_name(     currentThread_name,                              "currentThread")                                       \
    do_signature(currentThread_signature,                         "()Ljava/lang/Thread;")                                \
-  do_intrinsic(_scopeLocalCache,          java_lang_Thread,       scopeLocalCache_name, scopeLocalCache_signature, F_SN) \
-   do_name(     scopeLocalCache_name,                            "scopeLocalCache")                                     \
-   do_signature(scopeLocalCache_signature,                       "()[Ljava/lang/Object;")                               \
-  do_intrinsic(_setScopeLocalCache,       java_lang_Thread,       setScopeLocalCache_name, setScopeLocalCache_signature, F_SN) \
-   do_name(     setScopeLocalCache_name,                         "setScopeLocalCache")                                  \
-   do_signature(setScopeLocalCache_signature,                    "([Ljava/lang/Object;)V")                              \
+  do_intrinsic(_extentLocalCache,          java_lang_Thread,       extentLocalCache_name, extentLocalCache_signature, F_SN) \
+   do_name(     extentLocalCache_name,                            "extentLocalCache")                                     \
+   do_signature(extentLocalCache_signature,                       "()[Ljava/lang/Object;")                               \
+  do_intrinsic(_setExtentLocalCache,       java_lang_Thread,       setExtentLocalCache_name, setExtentLocalCache_signature, F_SN) \
+   do_name(     setExtentLocalCache_name,                         "setExtentLocalCache")                                  \
+   do_signature(setExtentLocalCache_signature,                    "([Ljava/lang/Object;)V")                              \
   do_intrinsic(_setCurrentThread,         java_lang_Thread,       setCurrentThread_name, thread_void_signature,   F_RN) \
    do_name(     setCurrentThread_name,                           "setCurrentThread")                                    \
                                                                                                                         \

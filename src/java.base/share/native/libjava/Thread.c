@@ -53,8 +53,8 @@ static JNINativeMethod methods[] = {
     {"dumpThreads",      "([" THD ")[[" STE, (void *)&JVM_DumpThreads},
     {"getStackTrace0",   "()" OBJ,     (void *)&JVM_GetStackTrace},
     {"setNativeName",    "(" STR ")V", (void *)&JVM_SetNativeThreadName},
-    {"scopeLocalCache",  "()[" OBJ,    (void *)&JVM_ScopeLocalCache},
-    {"setScopeLocalCache", "([" OBJ ")V",(void *)&JVM_SetScopeLocalCache},
+    {"extentLocalCache",  "()[" OBJ,    (void *)&JVM_ExtentLocalCache},
+    {"setExtentLocalCache", "([" OBJ ")V",(void *)&JVM_SetExtentLocalCache},
     {"getNextThreadIdOffset", "()J",     (void *)&JVM_GetNextThreadIdOffset}
 };
 

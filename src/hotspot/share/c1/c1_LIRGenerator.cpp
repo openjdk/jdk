@@ -1417,8 +1417,8 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
   __ branch_destination(L_done->label());
 }
 
-void LIRGenerator::do_scopeLocalCache(Intrinsic* x) {
-  do_JavaThreadField(x, JavaThread::scopeLocalCache_offset());
+void LIRGenerator::do_extentLocalCache(Intrinsic* x) {
+  do_JavaThreadField(x, JavaThread::extentLocalCache_offset());
 }
 
 // Example: Thread.currentCarrierThread()
@@ -2960,7 +2960,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_getObjectSize:  do_getObjectSize(x); break;
   case vmIntrinsics::_currentCarrierThread: do_currentCarrierThread(x); break;
   case vmIntrinsics::_currentThread:  do_vthread(x);       break;
-  case vmIntrinsics::_scopeLocalCache: do_scopeLocalCache(x); break;
+  case vmIntrinsics::_extentLocalCache: do_extentLocalCache(x); break;
 
   case vmIntrinsics::_dlog:           // fall through
   case vmIntrinsics::_dlog10:         // fall through

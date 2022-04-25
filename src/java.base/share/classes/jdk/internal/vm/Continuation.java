@@ -53,7 +53,7 @@ public class Continuation {
 
         StackChunk.init(); // ensure StackChunk class is initialized
 
-        String value = GetPropertyAction.privilegedGetProperty("jdk.preserveScopeLocalCache");
+        String value = GetPropertyAction.privilegedGetProperty("jdk.preserveExtentLocalCache");
         PRESERVE_SCOPE_LOCAL_CACHE = (value == null) || Boolean.parseBoolean(value);
     }
 
@@ -128,7 +128,7 @@ public class Continuation {
     private Object yieldInfo;
     private boolean preempted;
 
-    private Object[] scopeLocalCache;
+    private Object[] extentLocalCache;
 
     /**
      * Constructs a continuation
@@ -237,7 +237,7 @@ public class Continuation {
     public final void run() {
         while (true) {
             mount();
-            JLA.setScopeLocalCache(scopeLocalCache);
+            JLA.setExtentLocalCache(extentLocalCache);
 
             if (done)
                 throw new IllegalStateException("Continuation terminated");
@@ -270,11 +270,11 @@ public class Continuation {
 
                     unmount();
                     if (PRESERVE_SCOPE_LOCAL_CACHE) {
-                        scopeLocalCache = JLA.scopeLocalCache();
+                        extentLocalCache = JLA.extentLocalCache();
                     } else {
-                        scopeLocalCache = null;
+                        extentLocalCache = null;
                     }
-                    JLA.setScopeLocalCache(null);
+                    JLA.setExtentLocalCache(null);
                 } catch (Throwable e) { e.printStackTrace(); System.exit(1); }
             }
             // we're now in the parent continuation

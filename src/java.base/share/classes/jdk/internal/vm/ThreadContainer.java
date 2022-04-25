@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,9 +90,9 @@ public abstract class ThreadContainer extends StackableScope {
     public abstract void onExit(Thread thread);
 
     /**
-     * The scope locals captured when the thread container was created.
+     * The extent locals captured when the thread container was created.
      */
-    public ScopeLocalContainer.BindingsSnapshot scopeLocalBindings() {
+    public ExtentLocalContainer.BindingsSnapshot extentLocalBindings() {
         return null;
     }
 }

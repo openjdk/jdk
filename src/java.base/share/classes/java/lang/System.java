@@ -2541,20 +2541,20 @@ public final class System {
                 local.setCarrierThreadLocal(value);
             }
 
-            public Object[] scopeLocalCache() {
-                return Thread.scopeLocalCache();
+            public Object[] extentLocalCache() {
+                return Thread.extentLocalCache();
             }
 
-            public void setScopeLocalCache(Object[] cache) {
-                Thread.setScopeLocalCache(cache);
+            public void setExtentLocalCache(Object[] cache) {
+                Thread.setExtentLocalCache(cache);
             }
 
-            public Object scopeLocalBindings() {
-                return Thread.scopeLocalBindings();
+            public Object extentLocalBindings() {
+                return Thread.extentLocalBindings();
             }
 
-            public void setScopeLocalBindings(Object bindings) {
-                Thread.setScopeLocalBindings(bindings);
+            public void setExtentLocalBindings(Object bindings) {
+                Thread.setExtentLocalBindings(bindings);
             }
 
             public Continuation getContinuation(Thread thread) {

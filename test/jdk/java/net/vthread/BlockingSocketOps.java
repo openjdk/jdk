@@ -23,10 +23,11 @@
 
 /**
  * @test
- * @summary Basic tests for virtual threads using java.net sockets.
- * @compile --enable-preview -source ${jdk.version} NetSockets.java
- * @run testng/othervm/timeout=300 --enable-preview NetSockets
- * @run testng/othervm/timeout=300 --enable-preview -Djdk.useDirectRegister NetSockets
+ * @summary Basic tests of virtual threads doing blocking I/O with java.net sockets
+ * @library /test/lib
+ * @compile --enable-preview -source ${jdk.version} BlockingSocketOps.java
+ * @run testng/othervm/timeout=300 --enable-preview BlockingSocketOps
+ * @run testng/othervm/timeout=300 --enable-preview -Djdk.useDirectRegister BlockingSocketOps
  */
 
 import java.io.Closeable;
@@ -43,10 +44,11 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
+import jdk.test.lib.thread.VThreadRunner;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
-public class NetSockets {
+public class BlockingSocketOps {
 
     private static final long DELAY = 2000;
 
@@ -55,7 +57,7 @@ public class NetSockets {
      */
     @Test
     public void testSocketReadWrite1() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
@@ -90,7 +92,7 @@ public class NetSockets {
     }
 
     void testSocketRead(int timeout) throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
@@ -117,7 +119,7 @@ public class NetSockets {
      */
     @Test
     public void testSocketWrite1() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
@@ -140,7 +142,7 @@ public class NetSockets {
      */
     @Test
     public void testSocketReadPeerClose1() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
@@ -158,7 +160,7 @@ public class NetSockets {
      */
     @Test
     public void testSocketReadPeerClose2() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
@@ -193,7 +195,7 @@ public class NetSockets {
     }
 
     void testSocketReadAsyncClose(int timeout) throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
                 ScheduledCloser.schedule(s, DELAY);
@@ -226,7 +228,7 @@ public class NetSockets {
     }
 
     void testSocketReadInterrupt(int timeout) throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
                 ScheduledInterrupter.schedule(Thread.currentThread(), DELAY);
@@ -250,7 +252,7 @@ public class NetSockets {
      */
     @Test
     public void testSocketWriteAsyncClose() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
                 ScheduledCloser.schedule(s, DELAY);
@@ -270,7 +272,7 @@ public class NetSockets {
      */
     @Test
     public void testSocketWriteInterrupt() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s = connection.socket1();
                 ScheduledInterrupter.schedule(Thread.currentThread(), DELAY);
@@ -293,7 +295,7 @@ public class NetSockets {
      */
     @Test
     public void testSocketReadUrgentData() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (var connection = new Connection()) {
                 Socket s1 = connection.socket1();
                 Socket s2 = connection.socket2();
@@ -323,7 +325,7 @@ public class NetSockets {
      */
     @Test
     public void testServerSocketAccept1() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (var listener = new ServerSocket(0)) {
                 var socket1 = new Socket(listener.getInetAddress(), listener.getLocalPort());
                 // accept should not block
@@ -351,7 +353,7 @@ public class NetSockets {
     }
 
     void testServerSocketAccept(int timeout) throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (var listener = new ServerSocket(0)) {
                 var socket1 = new Socket();
                 ScheduledConnector.schedule(socket1, listener.getLocalSocketAddress(), DELAY);
@@ -384,7 +386,7 @@ public class NetSockets {
     }
 
     void testServerSocketAcceptAsyncClose(int timeout) throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (var listener = new ServerSocket(0)) {
                 ScheduledCloser.schedule(listener, DELAY);
                 if (timeout > 0) {
@@ -416,7 +418,7 @@ public class NetSockets {
     }
 
     void testServerSocketAcceptInterrupt(int timeout) throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (var listener = new ServerSocket(0)) {
                 ScheduledInterrupter.schedule(Thread.currentThread(), DELAY);
                 if (timeout > 0) {
@@ -439,7 +441,7 @@ public class NetSockets {
      */
     @Test
     public void testDatagramSocketSendReceive1() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (DatagramSocket s1 = new DatagramSocket(null);
                  DatagramSocket s2 = new DatagramSocket(null)) {
 
@@ -480,7 +482,7 @@ public class NetSockets {
     }
 
     private void testDatagramSocketSendReceive(int timeout) throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (DatagramSocket s1 = new DatagramSocket(null);
                  DatagramSocket s2 = new DatagramSocket(null)) {
 
@@ -513,7 +515,7 @@ public class NetSockets {
      */
     @Test
     public void testDatagramSocketReceiveTimeout() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (DatagramSocket s = new DatagramSocket(null)) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 s.bind(new InetSocketAddress(lh, 0));
@@ -545,7 +547,7 @@ public class NetSockets {
     }
 
     private void testDatagramSocketReceiveAsyncClose(int timeout) throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (DatagramSocket s = new DatagramSocket(null)) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 s.bind(new InetSocketAddress(lh, 0));
@@ -585,7 +587,7 @@ public class NetSockets {
     }
 
     private void testDatagramSocketReceiveInterrupt(int timeout) throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             try (DatagramSocket s = new DatagramSocket(null)) {
                 InetAddress lh = InetAddress.getLoopbackAddress();
                 s.bind(new InetSocketAddress(lh, 0));

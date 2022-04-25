@@ -114,7 +114,7 @@ public class GetStackTrace {
         }
 
         Thread startVirtualThread(Runnable task) {
-            return TestHelper.virtualThreadBuilder(this).start(task);
+            return ThreadBuilders.virtualThreadBuilder(this).start(task);
         }
     }
 

@@ -1,44 +1,46 @@
 
+com/sun/jdi/EATests.java#id0                                    8264699 generic-all
+
 ##########
 ## Tests failing when main() is executed in additional vthread or in vthread instead of thread
 #
 
-com/sun/jdi/DeferredStepTest.java
-com/sun/jdi/EarlyReturnTest.java
-com/sun/jdi/ExceptionEvents.java
-com/sun/jdi/FetchLocals.java
-com/sun/jdi/Frames2Test.java
-com/sun/jdi/GetSetLocalTest.java
-com/sun/jdi/JdbMethodExitTest.java
-com/sun/jdi/JdbStepTest.java
-com/sun/jdi/JdbStopThreadTest.java
-com/sun/jdi/JdbStopThreadidTest.java
-com/sun/jdi/LaunchCommandLine.java
-com/sun/jdi/MethodEntryExitEvents.java
-com/sun/jdi/MultiBreakpointsTest.java
-com/sun/jdi/NativeInstanceFilter.java
-com/sun/jdi/PopAndStepTest.java
-com/sun/jdi/PopAsynchronousTest.java
-com/sun/jdi/PopSynchronousTest.java
-com/sun/jdi/RedefineCrossStart.java
-com/sun/jdi/RedefineG.java
-com/sun/jdi/RedefineNestmateAttr/TestNestmateAttr.java
-com/sun/jdi/RedefineTTYLineNumber.java
-com/sun/jdi/ReferrersTest.java
-com/sun/jdi/ResumeAfterThreadResumeCallTest.java
-com/sun/jdi/SetLocalWhileThreadInNative.java
-com/sun/jdi/StepTest.java
-com/sun/jdi/redefine/RedefineTest.java
-com/sun/jdi/redefineMethod/RedefineTest.java
+com/sun/jdi/DeferredStepTest.java 8285422 generic-all
+com/sun/jdi/EarlyReturnTest.java 8285422 generic-all
+com/sun/jdi/ExceptionEvents.java 8285422 generic-all
+com/sun/jdi/FetchLocals.java 8285422 generic-all
+com/sun/jdi/Frames2Test.java 8285422 generic-all
+com/sun/jdi/GetSetLocalTest.java 8285422 generic-all
+com/sun/jdi/JdbMethodExitTest.java 8285422 generic-all
+com/sun/jdi/JdbStepTest.java 8285422 generic-all
+com/sun/jdi/JdbStopThreadTest.java 8285422 generic-all
+com/sun/jdi/JdbStopThreadidTest.java 8285422 generic-all
+com/sun/jdi/LaunchCommandLine.java 8285422 generic-all
+com/sun/jdi/MethodEntryExitEvents.java 8285422 generic-all
+com/sun/jdi/MultiBreakpointsTest.java 8285422 generic-all
+com/sun/jdi/NativeInstanceFilter.java 8285422 generic-all
+com/sun/jdi/PopAndStepTest.java 8285422 generic-all
+com/sun/jdi/PopAsynchronousTest.java 8285422 generic-all
+com/sun/jdi/PopSynchronousTest.java 8285422 generic-all
+com/sun/jdi/RedefineCrossStart.java 8285422 generic-all
+com/sun/jdi/RedefineG.java 8285422 generic-all
+com/sun/jdi/RedefineNestmateAttr/TestNestmateAttr.java 8285422 generic-all
+com/sun/jdi/RedefineTTYLineNumber.java 8285422 generic-all
+com/sun/jdi/ReferrersTest.java 8285422 generic-all
+com/sun/jdi/ResumeAfterThreadResumeCallTest.java 8285422 generic-all
+com/sun/jdi/SetLocalWhileThreadInNative.java 8285422 generic-all
+com/sun/jdi/StepTest.java 8285422 generic-all
+com/sun/jdi/redefine/RedefineTest.java 8285422 generic-all
+com/sun/jdi/redefineMethod/RedefineTest.java 8285422 generic-all
 
 ####
 # JDI SDE Tests
 # Use custom classpath
 
-com/sun/jdi/sde/FilterMangleTest.java
-com/sun/jdi/sde/MangleTest.java
-com/sun/jdi/sde/MangleStepTest.java
-com/sun/jdi/sde/TemperatureTableTest.java
-com/sun/jdi/sde/SourceDebugExtensionTest.java
+com/sun/jdi/sde/FilterMangleTest.java 8285423 generic-all
+com/sun/jdi/sde/MangleTest.java 8285423 generic-all
+com/sun/jdi/sde/MangleStepTest.java 8285423 generic-all
+com/sun/jdi/sde/TemperatureTableTest.java 8285423 generic-all
+com/sun/jdi/sde/SourceDebugExtensionTest.java 8285423 generic-all
 
-com/sun/jdi/EATests.java#id0                                    8264699 generic-all
+com/sun/jdi/EATests.java#id0 8264699 generic-all

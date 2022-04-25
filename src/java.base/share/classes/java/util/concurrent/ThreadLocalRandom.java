@@ -305,7 +305,7 @@ public final class ThreadLocalRandom extends Random {
         // Ideally we should also clear the Thread's ScopedCache, but it is
         // in the VM-internal JavaThread structure. This method is called so
         // early in the lifetime of a ForkJoinPool thread that we don't expect
-        // any ScopeLocals to have yet been bound by this thread, so the
+        // any ExtentLocals to have yet been bound by this thread, so the
         // ScopedCache should be empty at this point.
         // U.putReference(thread, INHERITABLESCOPELOCALBINDINGS, null);
     }
@@ -407,7 +407,7 @@ public final class ThreadLocalRandom extends Random {
         = new AtomicLong(RandomSupport.mixMurmur64(System.currentTimeMillis()) ^
                          RandomSupport.mixMurmur64(System.nanoTime()));
 
-    // used by ScopeLocal
+    // used by ExtentLocal
     private static class Access {
         static {
             SharedSecrets.setJavaUtilConcurrentTLRAccess(

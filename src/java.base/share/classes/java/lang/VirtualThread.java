@@ -451,8 +451,8 @@ final class VirtualThread extends Thread {
         boolean started = false;
         container.onStart(this); // may throw
         try {
-            // scope locals may be inherited
-            inheritScopeLocalBindings(container);
+            // extent locals may be inherited
+            inheritExtentLocalBindings(container);
 
             // bind thread to container
             setThreadContainer(container);
@@ -851,6 +851,17 @@ final class VirtualThread extends Thread {
     }
 
     @Override
+    boolean alive() {
+        int s = state;
+        return (s != NEW && s != TERMINATED);
+    }
+
+    @Override
+    boolean isTerminated() {
+        return (state == TERMINATED);
+    }
+
+    @Override
     StackTraceElement[] asyncGetStackTrace() {
         StackTraceElement[] stackTrace;
         do {
@@ -1013,9 +1024,6 @@ final class VirtualThread extends Thread {
     private static native void registerNatives();
     static {
         registerNatives();
-
-        // ensure that classes required to produce the Thread.State are initialized
-        var ignore = Thread.currentThread().threadState();
     }
 
     /**

@@ -24,10 +24,12 @@
 /**
  * @test
  * @summary Test Virtual threads using thread locals
+ * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} ThreadLocals.java
  * @run testng/othervm --enable-preview ThreadLocals
  */
 
+import jdk.test.lib.thread.VThreadRunner;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
@@ -41,7 +43,7 @@ public class ThreadLocals {
     @Test
     public void testThreadLocal1() throws Exception {
         for (int i = 0; i < 10; i++) {
-            TestHelper.runInVirtualThread(() -> {
+            VThreadRunner.run(() -> {
                 assertTrue(LOCAL.get() == null);
                 Object obj = new Object();
                 LOCAL.set(obj);
@@ -55,7 +57,7 @@ public class ThreadLocals {
      */
     @Test
     public void testThreadLocal2() throws Exception {
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             assertTrue(LOCAL.get() == null);
             Object obj = new Object();
             LOCAL.set(obj);
@@ -83,7 +85,7 @@ public class ThreadLocals {
             }
         };
 
-        TestHelper.runInVirtualThread(TestHelper.NO_THREAD_LOCALS, () -> {
+        VThreadRunner.run(VThreadRunner.NO_THREAD_LOCALS, () -> {
             assertThrows(UnsupportedOperationException.class, () -> LOCAL.set(null));
             assertThrows(UnsupportedOperationException.class, () -> LOCAL.set(new Object()));
             assertTrue(LOCAL.get() == null);
@@ -113,7 +115,7 @@ public class ThreadLocals {
     public void testInheritedThreadLocal1() throws Exception {
         assertTrue(INHERITED_LOCAL.get() == null);
         for (int i = 0; i < 10; i++) {
-            TestHelper.runInVirtualThread(() -> {
+            VThreadRunner.run(() -> {
                 assertTrue(INHERITED_LOCAL.get() == null);
                 Object obj = new Object();
                 INHERITED_LOCAL.set(obj);
@@ -132,7 +134,7 @@ public class ThreadLocals {
         var obj = new Object();
         INHERITED_LOCAL.set(obj);
         try {
-            TestHelper.runInVirtualThread(() -> {
+            VThreadRunner.run(() -> {
                 assertTrue(INHERITED_LOCAL.get() == obj);
             });
         } finally {
@@ -146,10 +148,10 @@ public class ThreadLocals {
     @Test
     public void testInheritedThreadLocal3() throws Exception {
         assertTrue(INHERITED_LOCAL.get() == null);
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             var obj = new Object();
             INHERITED_LOCAL.set(obj);
-            TestHelper.runInVirtualThread(() -> {
+            VThreadRunner.run(() -> {
                 assertTrue(INHERITED_LOCAL.get() == obj);
             });
             assertTrue(INHERITED_LOCAL.get() == obj);
@@ -168,8 +170,8 @@ public class ThreadLocals {
         var obj = new Object();
         INHERITED_LOCAL.set(obj);
         try {
-            int characteristics = TestHelper.NO_INHERIT_THREAD_LOCALS;
-            TestHelper.runInVirtualThread(characteristics, () -> {
+            int characteristics = VThreadRunner.NO_INHERIT_THREAD_LOCALS;
+            VThreadRunner.run(characteristics, () -> {
                 assertTrue(INHERITED_LOCAL.get() == null);
             });
         } finally {
@@ -184,11 +186,11 @@ public class ThreadLocals {
     @Test
     public void testInheritedThreadLocal5() throws Exception {
         assertTrue(INHERITED_LOCAL.get() == null);
-        TestHelper.runInVirtualThread(() -> {
+        VThreadRunner.run(() -> {
             var obj = new Object();
             INHERITED_LOCAL.set(obj);
-            int characteristics = TestHelper.NO_INHERIT_THREAD_LOCALS;
-            TestHelper.runInVirtualThread(characteristics, () -> {
+            int characteristics = VThreadRunner.NO_INHERIT_THREAD_LOCALS;
+            VThreadRunner.run(characteristics, () -> {
                 assertTrue(INHERITED_LOCAL.get() == null);
             });
             assertTrue(INHERITED_LOCAL.get() == obj);

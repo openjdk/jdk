@@ -164,6 +164,12 @@ static inline bool is_class_loader(const Symbol* class_name,
   return false;
 }
 
+static inline bool is_stack_chunk_class(const Symbol* class_name,
+                                        const ClassLoaderData* loader_data) {
+  return (class_name == vmSymbols::jdk_internal_vm_StackChunk() &&
+          loader_data->is_the_null_class_loader_data());
+}
+
 // private: called to verify that k is a static member of this nest.
 // We know that k is an instance class in the same package and hence the
 // same classloader.
@@ -443,7 +449,7 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
     if (class_name == vmSymbols::java_lang_Class()) {
       // mirror - java.lang.Class
       ik = new (loader_data, size, THREAD) InstanceMirrorKlass(parser);
-    } else if (class_name == vmSymbols::jdk_internal_vm_StackChunk()) {
+    } else if (is_stack_chunk_class(class_name, loader_data)) {
       // stack chunk
       ik = new (loader_data, size, THREAD) InstanceStackChunkKlass(parser);
     } else if (is_class_loader(class_name, parser)) {
