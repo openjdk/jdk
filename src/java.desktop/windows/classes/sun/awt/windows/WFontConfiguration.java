@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,16 @@ public final class WFontConfiguration extends FontConfiguration {
             }
             osVersion = null;
         }
+    }
+
+    @Override
+    protected void setEncoding() {
+        String nativeEncoding = System.getProperty("native.encoding");
+        Charset cs = (nativeEncoding != null) ?
+                     Charset.forName(nativeEncoding) :
+                     Charset.defaultCharset();
+        encoding = cs.name();
+        startupLocale = sun.awt.SunToolkit.getStartupLocale();
     }
 
     // overrides FontConfiguration.getFallbackFamilyName
