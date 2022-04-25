@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,29 +24,15 @@
  */
 
 package jdk.jfr.events;
+import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.event.EventConfiguration;
 
-import jdk.jfr.Category;
-import jdk.jfr.Description;
-import jdk.jfr.Label;
-import jdk.jfr.Name;
-import jdk.jfr.internal.Type;
-
-@Name(Type.EVENT_NAME_PREFIX + "JavaExceptionThrow")
-@Label("Java Exception")
-@Category("Java Application")
-@Description("An object derived from java.lang.Exception has been created")
-public final class ExceptionThrownEvent extends AbstractJDKEvent {
-
-    // The order of these fields must be the same as the parameters in
-    // commit(..., String, Class)
-
-    @Label("Message")
-    public String message;
-
-    @Label("Class")
-    public Class<?> thrownClass;
-
-    public static void commit(long start, long duration, String message, Class<? extends Throwable> thrownClass) {
-        // Generated
-    }
+public final class EventConfigurations {
+    public static final EventConfiguration SOCKET_READ = Utils.getConfiguration(SocketReadEvent.class);
+    public static final EventConfiguration SOCKET_WRITE = Utils.getConfiguration(SocketWriteEvent.class);
+    public static final EventConfiguration FILE_READ = Utils.getConfiguration(FileReadEvent.class);
+    public static final EventConfiguration FILE_WRITE = Utils.getConfiguration(FileWriteEvent.class);
+    public static final EventConfiguration FILE_FORCE = Utils.getConfiguration(FileForceEvent.class);
+    public static final EventConfiguration ERROR_THROWN = Utils.getConfiguration(ErrorThrownEvent.class);
+    public static final EventConfiguration EXCEPTION_THROWN = Utils.getConfiguration(ExceptionThrownEvent.class);
 }

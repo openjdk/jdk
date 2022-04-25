@@ -25,11 +25,14 @@
 #ifndef SHARE_JFR_INSTRUMENTATION_JFREVENTCLASSTRANSFORMER_HPP
 #define SHARE_JFR_INSTRUMENTATION_JFREVENTCLASSTRANSFORMER_HPP
 
-#include "memory/allStatic.hpp"
-#include "utilities/exceptions.hpp"
+#include "memory/allocation.hpp"
 
+class CallInfo;
 class ClassFileParser;
 class InstanceKlass;
+class JavaThread;
+class Method;
+class Symbol;
 
 //
 // Intercepts the initial class load of jdk.jfr.Event and subclasses.
@@ -37,7 +40,8 @@ class InstanceKlass;
 //
 class JfrEventClassTransformer : AllStatic {
  public:
-  static void on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, TRAPS);
+  static void on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, JavaThread* thread);
+  static bool is_instrumented(const InstanceKlass* ik);
   static void set_force_instrumentation(bool force_instrumentation);
   static bool is_force_instrumentation();
 };

@@ -123,6 +123,7 @@ class JfrTraceId : public AllStatic {
   static bool is_jdk_jfr_event_sub(const jclass jc);
   static void tag_as_jdk_jfr_event_sub(const Klass* k);
   static void tag_as_jdk_jfr_event_sub(const jclass jc);
+  static void untag_jdk_jfr_event_sub(const Klass* k);
 
   static bool in_jdk_jfr_event_hierarchy(const Klass* k);
   static bool in_jdk_jfr_event_hierarchy(const jclass jc);

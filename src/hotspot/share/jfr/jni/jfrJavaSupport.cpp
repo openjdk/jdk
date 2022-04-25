@@ -28,6 +28,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "jfr/instrumentation/jfrEventClassTransformer.hpp"
 #include "jfr/jni/jfrJavaCall.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/support/jfrThreadId.hpp"
@@ -768,7 +769,7 @@ bool JfrJavaSupport::is_excluded(jobject thread) {
   return native_thread != NULL ? native_thread->jfr_thread_local()->is_excluded() : is_thread_excluded(thread);
 }
 
-static const Klass* get_handler_field_descriptor(const Handle& h_mirror, fieldDescriptor* descriptor, TRAPS) {
+static const Klass* get_configuration_field_descriptor(const Handle& h_mirror, fieldDescriptor* descriptor, TRAPS) {
   assert(h_mirror.not_null(), "invariant");
   assert(descriptor != NULL, "invariant");
   Klass* const k = java_lang_Class::as_Klass(h_mirror());
@@ -778,48 +779,55 @@ static const Klass* get_handler_field_descriptor(const Handle& h_mirror, fieldDe
     ik->initialize(CHECK_NULL);
   }
   assert(ik->is_being_initialized() || ik->is_initialized(), "invariant");
-  const Klass* const typed_field_holder = ik->find_field(vmSymbols::eventHandler_name(),
-                                                         vmSymbols::jdk_jfr_internal_handlers_EventHandler_signature(),
+  const Klass* const typed_field_holder = ik->find_field(vmSymbols::eventConfiguration_name(),
+                                                         vmSymbols::jdk_jfr_internal_event_EventConfiguration_signature(),
                                                          true,
                                                          descriptor);
-  return typed_field_holder != NULL ? typed_field_holder : ik->find_field(vmSymbols::eventHandler_name(),
+  return typed_field_holder != NULL ? typed_field_holder : ik->find_field(vmSymbols::eventConfiguration_name(),
                                                                           vmSymbols::object_signature(), // untyped
                                                                           true,
                                                                           descriptor);
 }
 
-jobject JfrJavaSupport::get_handler(jobject clazz, TRAPS) {
+jobject JfrJavaSupport::get_configuration(jobject clazz, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   HandleMark hm(THREAD);
   const Handle h_mirror(Handle(THREAD, JNIHandles::resolve(clazz)));
   assert(h_mirror.not_null(), "invariant");
-  fieldDescriptor handler_field_descriptor;
-  const Klass* const field_holder = get_handler_field_descriptor(h_mirror, &handler_field_descriptor, THREAD);
+  fieldDescriptor configuration_field_descriptor;
+  const Klass* const field_holder = get_configuration_field_descriptor(h_mirror, &configuration_field_descriptor, THREAD);
   if (field_holder == NULL) {
     // The only reason should be that klass initialization failed.
     return NULL;
   }
   assert(java_lang_Class::as_Klass(h_mirror()) == field_holder, "invariant");
-  oop handler_oop = h_mirror->obj_field(handler_field_descriptor.offset());
-  return handler_oop != NULL ? JfrJavaSupport::local_jni_handle(handler_oop, THREAD) : NULL;
+  oop configuration_oop = h_mirror->obj_field(configuration_field_descriptor.offset());
+  return configuration_oop != NULL ? JfrJavaSupport::local_jni_handle(configuration_oop, THREAD) : NULL;
 }
 
-bool JfrJavaSupport::set_handler(jobject clazz, jobject handler, TRAPS) {
+bool JfrJavaSupport::set_configuration(jobject clazz, jobject configuration, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   HandleMark hm(THREAD);
   const Handle h_mirror(Handle(THREAD, JNIHandles::resolve(clazz)));
   assert(h_mirror.not_null(), "invariant");
-  fieldDescriptor handler_field_descriptor;
-  const Klass* const field_holder = get_handler_field_descriptor(h_mirror, &handler_field_descriptor, THREAD);
+  fieldDescriptor configuration_field_descriptor;
+  const Klass* const field_holder = get_configuration_field_descriptor(h_mirror, &configuration_field_descriptor, THREAD);
   if (field_holder == NULL) {
     // The only reason should be that klass initialization failed.
     return false;
   }
   assert(java_lang_Class::as_Klass(h_mirror()) == field_holder, "invariant");
-  const oop handler_oop = JNIHandles::resolve(handler);
-  assert(handler_oop != NULL, "invariant");
-  h_mirror->obj_field_put(handler_field_descriptor.offset(), handler_oop);
+  const oop configuration_oop = JNIHandles::resolve(configuration);
+  assert(configuration_oop != NULL, "invariant");
+  h_mirror->obj_field_put(configuration_field_descriptor.offset(), configuration_oop);
   return true;
+}
+
+bool JfrJavaSupport::is_instrumented(jobject clazz, TRAPS) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  const Klass* const k = java_lang_Class::as_Klass(resolve_non_null(clazz));
+  assert(k->is_instance_klass(), "invariant");
+  return JfrEventClassTransformer::is_instrumented(InstanceKlass::cast(k));
 }
 
 void JfrJavaSupport::on_thread_start(Thread* t) {

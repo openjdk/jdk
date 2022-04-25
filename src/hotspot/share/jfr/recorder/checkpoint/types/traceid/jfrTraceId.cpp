@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,15 @@
 #include "classfile/symbolTable.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "oops/arrayKlass.inline.hpp"
-#include "oops/klass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/vm_version.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
-#include "utilities/debug.hpp"
+#include "runtime/vm_version.hpp"
+#include "utilities/growableArray.hpp"
 
  // returns updated value
 static traceid atomic_inc(traceid volatile* const dest) {
@@ -117,15 +116,36 @@ static void check_klass(const Klass* klass) {
 }
 
 void JfrTraceId::assign(const Klass* klass) {
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   klass->set_trace_id(next_class_id());
   check_klass(klass);
   const Klass* const super = klass->super();
-  if (super == NULL) {
+  if (super == nullptr) {
     return;
   }
   if (IS_EVENT_KLASS(super)) {
     tag_as_jdk_jfr_event_sub(klass);
+    return;
+  }
+  // Redefining / retransforming?
+  JavaThread* const jt = JavaThread::current();
+  assert(jt != nullptr, "invariant");
+  JvmtiThreadState* const state = jt->jvmti_thread_state();
+  if (state == nullptr) {
+    return;
+  }
+  const GrowableArray<Klass*>* const redef_klasses = state->get_classes_being_redefined();
+  if (redef_klasses == nullptr || redef_klasses->is_empty()) {
+    return;
+  }
+  for (int i = 0; i < redef_klasses->length(); ++i) {
+    if (klass->name() == redef_klasses->at(i)->name() && klass->class_loader_data() == redef_klasses->at(i)->class_loader_data()) {
+      // 'klass' is a scratch klass. If the klass being redefined is a host klass, then tag the scratch klass as well.
+      if (is_event_host(redef_klasses->at(i))) {
+        SET_EVENT_HOST_KLASS(klass);
+        assert(is_event_host(klass), "invariant");
+      }
+    }
   }
 }
 
@@ -273,3 +293,12 @@ void JfrTraceId::tag_as_event_host(const jclass jc) {
   tag_as_event_host(k);
   assert(IS_EVENT_HOST_KLASS(k), "invariant");
 }
+
+void JfrTraceId::untag_jdk_jfr_event_sub(const Klass* k) {
+  assert(k != NULL, "invariant");
+  if (JfrTraceId::is_jdk_jfr_event_sub(k)) {
+    CLEAR_JDK_JFR_EVENT_SUBKLASS(k);
+  }
+  assert(IS_NOT_AN_EVENT_SUB_KLASS(k), "invariant");
+}
+

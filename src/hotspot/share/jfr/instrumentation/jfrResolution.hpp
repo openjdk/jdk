@@ -19,24 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test TestEventWriterLog
- * @summary Test that log message of JFR when handle bytecodes
- * @key jfr
- * @requires vm.hasJFR
- * @library /test/lib /test/jdk
- * @run main/othervm TestEventWriterLog
- */
+#ifndef SHARE_JFR_INSTRUMENTATION_JFRRESOLUTION_HPP
+#define SHARE_JFR_INSTRUMENTATION_JFRRESOLUTION_HPP
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
+#include "memory/allocation.hpp"
+#include "utilities/exceptions.hpp"
 
-public class TestEventWriterLog {
-    public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:jfr+system+bytecode=trace", "-XX:StartFlightRecording", "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("extends jdk/jfr/events/AbstractJDKEvent");
-    }
-}
+class CallInfo;
+class ciKlass;
+class ciMethod;
+class GraphBuilder;
+class Parse;
+
+class JfrResolution : AllStatic {
+ public:
+  static void on_resolution(const CallInfo & info, TRAPS);
+  static void on_resolution(const Parse * parse, const ciKlass * holder, const ciMethod * target);
+  static void on_resolution(const GraphBuilder * builder, const ciKlass * holder, const ciMethod * target);
+};
+
+#endif // SHARE_JFR_INSTRUMENTATION_JFRRESOLUTION_HPP

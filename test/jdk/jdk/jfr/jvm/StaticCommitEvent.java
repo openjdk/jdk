@@ -20,23 +20,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.jvm;
 
-/*
- * @test TestEventWriterLog
- * @summary Test that log message of JFR when handle bytecodes
- * @key jfr
- * @requires vm.hasJFR
- * @library /test/lib /test/jdk
- * @run main/othervm TestEventWriterLog
- */
+// Class used by TestGetEventWriter
+public class StaticCommitEvent implements Runnable {
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
+    String message;
 
-public class TestEventWriterLog {
-    public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:jfr+system+bytecode=trace", "-XX:StartFlightRecording", "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("extends jdk/jfr/events/AbstractJDKEvent");
+    int value;
+
+    public static void commit(long start, long duration, String message, int value) {
+        PlaceholderEventWriter.getEventWriter(4711L);
+        throw new RuntimeException("Should not reach here");
+    }
+
+    @Override
+    public void run() {
+        commit(System.nanoTime(), 0L, "hello, world!", 4711);
     }
 }
