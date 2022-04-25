@@ -869,7 +869,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             SecretKeyFactory skFac = SecretKeyFactory.getInstance("PBE");
             skey = skFac.generateSecret(keySpec);
         } catch (Exception e) {
-           throw new IOException("getSecretKey failed: " + e.getMessage(), e);
+            throw new IOException("getSecretKey failed: " + e.getMessage(), e);
         } finally {
             keySpec.clearPassword();
         }
