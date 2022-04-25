@@ -73,7 +73,7 @@ public class DisposeFrameOnDragTest {
         Util.drag(testRobot,
                 new Point((int) loc.x + 3, (int) loc.y + 3),
                 new Point((int) loc.x + 40, (int) loc.y + 40),
-                InputEvent.BUTTON1_MASK);
+                InputEvent.BUTTON1_DOWN_MASK);
 
         Util.waitForIdle(testRobot);
 
