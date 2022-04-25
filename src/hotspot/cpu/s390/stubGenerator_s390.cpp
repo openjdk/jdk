@@ -2013,8 +2013,6 @@ class StubGenerator: public StubCodeGenerator {
   void generate_counterMode_push_Block(int dataBlk_len, int parmBlk_len, int crypto_fCode,
                            Register parmBlk, Register msglen, Register fCode, Register key) {
 
-    BLOCK_COMMENT(err_msg("push_Block counterMode_AESCrypt%d {", parmBlk_len*8));
-
     // space for data blocks (src and dst, one each) for partial block processing)
     AES_dataBlk_space    = roundup(2*dataBlk_len, AES_parmBlk_align);
     AES_parmBlk_addspace = AES_parmBlk_align    // spill space (temp data)
@@ -2041,6 +2039,8 @@ class StubGenerator: public StubCodeGenerator {
 
     assert(key_len < 256, "excessive crypto key len: %d, limit: 256", key_len);
 
+    BLOCK_COMMENT(err_msg("push_Block (%d bytes) counterMode_AESCrypt%d {", resize_len, parmBlk_len*8));
+
     // After the frame is resized, the parmBlk is positioned such
     // that it is octoword-aligned. This potentially creates some
     // alignment waste in addspace and/or in the gap area.
@@ -2063,7 +2063,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Fill parmBlk with all required data
     __ z_mvc(0, key_len-1, parmBlk, 0, key);               // Copy key. Need to do it here - key_len is only known here.
-    BLOCK_COMMENT(err_msg("} push_Block counterMode_AESCrypt%d", parmBlk_len*8));
+    BLOCK_COMMENT(err_msg("} push_Block (%d bytes) counterMode_AESCrypt%d", resize_len, parmBlk_len*8));
   }
 
 
@@ -2091,8 +2091,6 @@ class StubGenerator: public StubCodeGenerator {
     Label     parmBlk_128, parmBlk_192, parmBlk_256, parmBlk_set;
     Register  keylen = fCode;      // Expanded key length, as read from key array, Temp only.
                                    // use fCode as scratch; fCode receives its final value later.
-
-    BLOCK_COMMENT("push parmBlk counterMode_AESCrypt {");
 
     // Read key len of expanded key (in 4-byte words).
     __ z_lgf(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
@@ -2136,7 +2134,6 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ bind(parmBlk_set);
-    BLOCK_COMMENT("} push parmBlk counterMode_AESCrypt");
   }
 
 
@@ -2158,16 +2155,16 @@ class StubGenerator: public StubCodeGenerator {
   // All space in the range [SP..SP+regSpace) is reserved.
   // As always (here): 0(SP) - stack linkage, 8(SP) - SP before resize for easy pop.
   int generate_push_aux_block(Register from, Register to, unsigned int spillSpace) {
-    BLOCK_COMMENT("push aux_block counterMode_AESCrypt {");
     int n_regs     = to->encoding() - from->encoding() + 1;
     int linkSpace  = 2*wordSize;
     int regSpace   = n_regs*wordSize;
-    int stackSpace = ((linkSpace + regSpace + spillSpace)+(AES_parmBlk_align-1)) & (~(AES_parmBlk_align-1));
+    int stackSpace = roundup(linkSpace + regSpace + spillSpace, AES_parmBlk_align);
+    BLOCK_COMMENT(err_msg("push aux_block (%d bytes) counterMode_AESCrypt {", stackSpace));
     __ z_lgr(Z_R1, Z_SP);
     __ resize_frame(-stackSpace, Z_R0, true);
     __ z_stg(Z_R1, 8, Z_SP);
     __ z_stmg(from, to, linkSpace, Z_SP);
-    BLOCK_COMMENT("} push aux_block counterMode_AESCrypt");
+    BLOCK_COMMENT(err_msg("} push aux_block (%d bytes) counterMode_AESCrypt", stackSpace));
     return stackSpace;
   }
   // Reverts everything done by generate_push_aux_block().
@@ -2180,7 +2177,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // Implementation of counter-mode AES encrypt/decrypt function.
   //
-  void generate_counterMode_AES_impl(bool is_decipher, int timerNum) {
+  void generate_counterMode_AES_impl(bool is_decipher) {
 
     Register       from    = Z_ARG1; // byte[], source byte array (clear text)
     Register       to      = Z_ARG2; // byte[], destination byte array (ciphered)
@@ -2200,10 +2197,6 @@ class StubGenerator: public StubCodeGenerator {
 
     Label srcMover, dstMover, fromMover, ctrXOR, dataEraser;  // EXRL (execution) templates.
     Label CryptoLoop, CryptoLoop_doit, CryptoLoop_end, CryptoLoop_setupAndDoLast, CryptoLoop_ctrVal_inc, allDone, Exit;
-
-#if defined(JIT_TIMER)
-    __ JIT_TIMER_emit_start(-1, timerNum);
-#endif
 
     // Check if there is a leftover, partially used encrypted counter from last invocation.
     // If so, use those leftover counter bytes first before starting the "normal" encryption.
@@ -2342,9 +2335,6 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(Exit);
     __ z_lgfr(Z_RET, msglen);
 
-#if defined(JIT_TIMER)
-    __ JIT_TIMER_emit_stop(-1, timerNum, msglen);
-#endif
     __ z_br(Z_R14);
 
     //----------------------------
@@ -2375,7 +2365,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // Create two intrinsic variants, optimized for short and long plaintexts.
   //
-  void generate_counterMode_AES(bool is_decipher, int timerNum) {
+  void generate_counterMode_AES(bool is_decipher) {
 
     const Register msglen  = Z_ARG5;    // int, Total length of the msg to be encrypted. Value must be
                                         // returned in Z_RET upon completion of this stub.
@@ -2388,23 +2378,23 @@ class StubGenerator: public StubCodeGenerator {
     __ z_chi(msglen, threshold);
     __ z_brh(AESCTR_long);
 
-    BLOCK_COMMENT(err_msg("counterMode_AESCrypt (len <= %d, block size = %d) {", threshold, vec_short*16));
+    BLOCK_COMMENT(err_msg("counterMode_AESCrypt (text len <= %d, block size = %d) {", threshold, vec_short*16));
 
     __ bind(AESCTR_short);
     AES_ctrVec_len = vec_short;
-    generate_counterMode_AES_impl(false, timerNum);   // control of generated code will not return
+    generate_counterMode_AES_impl(false);   // control of generated code will not return
 
-    BLOCK_COMMENT(err_msg("} counterMode_AESCrypt (len <= %d, block size = %d)", threshold, vec_short*16));
+    BLOCK_COMMENT(err_msg("} counterMode_AESCrypt (text len <= %d, block size = %d)", threshold, vec_short*16));
 
     __ align(32); // Octoword alignment benefits branch targets.
 
-    BLOCK_COMMENT(err_msg("counterMode_AESCrypt (len > %d, block size = %d) {", threshold, vec_long*16));
+    BLOCK_COMMENT(err_msg("counterMode_AESCrypt (text len > %d, block size = %d) {", threshold, vec_long*16));
 
     __ bind(AESCTR_long);
     AES_ctrVec_len = vec_long;
-    generate_counterMode_AES_impl(false, timerNum+1); // control of generated code will not return
+    generate_counterMode_AES_impl(false);   // control of generated code will not return
 
-    BLOCK_COMMENT(err_msg("} counterMode_AESCrypt (len > %d, block size = %d)", threshold, vec_long*16));
+    BLOCK_COMMENT(err_msg("} counterMode_AESCrypt (text len > %d, block size = %d)", threshold, vec_long*16));
   }
 
 
@@ -2415,7 +2405,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
     unsigned int   start_off = __ offset();  // Remember stub start address (is rtn value).
 
-    generate_counterMode_AES(false, 5);
+    generate_counterMode_AES(false);
 
     return __ addr_at(start_off);
   }
