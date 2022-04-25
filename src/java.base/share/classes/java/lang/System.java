@@ -771,11 +771,11 @@ public final class System {
      * <tr><th scope="row">{@systemProperty stdout.encoding}</th>
      *     <td>Character encoding name for {@link System#out System.out}.
      *     The Java runtime can be started with the system property set to {@code UTF-8},
-     *     starting it with the property set to another value clears to undefined behavior.
+     *     starting it with the property set to another value leads to undefined behavior.
      * <tr><th scope="row">{@systemProperty stderr.encoding}</th>
      *     <td>Character encoding name for {@link System#err System.err}.
      *     The Java runtime can be started with the system property set to {@code UTF-8},
-     *     starting it with the property set to another value clears to undefined behavior.
+     *     starting it with the property set to another value leads to undefined behavior.
      * </tbody>
      * </table>
      * <p>
