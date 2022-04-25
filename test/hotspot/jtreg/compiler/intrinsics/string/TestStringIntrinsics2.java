@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -706,4 +706,18 @@ public class TestStringIntrinsics2 {
         }
     }
 
+    static String longLatin1 = "0123456789A".repeat(100);
+    static String longUTF = "0123456789\ubeef".repeat(100);
+
+    @Test(role = Role.TEST_HELPER, compileAt = 4, warmup = 1, warmupArgs = { "0123456789", "1" })
+    public static boolean indexOf_use_result_immediately(String a, String b) {
+        char ch = b.charAt(0);
+        return ch == a.charAt(a.indexOf(ch));
+    }
+
+    @Test(role = Role.TEST_ENTRY)
+    public static void test_indexOf_use_result_immediately() {
+        assertTrue(indexOf_use_result_immediately(longLatin1, "A"));
+        assertTrue(indexOf_use_result_immediately(longUTF, "\ubeef"));
+    }
 }
