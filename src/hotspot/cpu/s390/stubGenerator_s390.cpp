@@ -1999,6 +1999,9 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("} increment ctrVector counterMode_AESCrypt");
   }
 
+  // IBM s390 (IBM z/Architecture, to be more exact) uses Big-Endian number representation.
+  // Therefore, the bits are ordered from most significant to least significant. The address
+  // of a number in memory points to its lowest location where the most significant bit is stored.
   void generate_increment64(Register counter, int offset, int increment) {
     __ z_algsi(offset + 8, counter, increment);            // increment, no overflow check
   }
@@ -2917,6 +2920,8 @@ class StubGenerator: public StubCodeGenerator {
         StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_AES_encrypt("AES_encryptBlock_chaining");
         StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_AES_decrypt("AES_decryptBlock_chaining");
       } else {
+        // In PRODUCT builds, the function pointers will keep their initial (NULL) value.
+        // LibraryCallKit::try_to_inline() will return false then, preventing the intrinsic to be called.
         assert(VM_Version::has_Crypto_AES(), "Inconsistent settings. Check vm_version_s390.cpp");
       }
     }
@@ -2925,6 +2930,8 @@ class StubGenerator: public StubCodeGenerator {
       if (VM_Version::has_Crypto_AES_CTR()) {
         StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt("counterMode_AESCrypt");
       } else {
+        // In PRODUCT builds, the function pointers will keep their initial (NULL) value.
+        // LibraryCallKit::try_to_inline() will return false then, preventing the intrinsic to be called.
         assert(VM_Version::has_Crypto_AES_CTR(), "Inconsistent settings. Check vm_version_s390.cpp");
       }
     }
