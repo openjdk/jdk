@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Path;
+import jdk.jfr.internal.Utils;
 
 public final class RecordingInput implements DataInput, AutoCloseable {
 
@@ -66,6 +67,7 @@ public final class RecordingInput implements DataInput, AutoCloseable {
     }
     private final int blockSize;
     private final FileAccess fileAccess;
+    private long pollCount = 1000;
     private RandomAccessFile file;
     private String filename;
     private Block currentBlock = new Block();
@@ -418,6 +420,15 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         return filename;
     }
 
+    // Purpose of this method is to prevent OOM by sanity check
+    // the minimum required number of bytes against what is available in
+    // segment/chunk/file
+    public void require(int minimumBytes, String errorMessage) throws IOException {
+        if (position + minimumBytes > size) {
+            throw new IOException(String.format(errorMessage, minimumBytes));
+        }
+    }
+
     // Purpose of this method is to reuse block cache from a
     // previous RecordingInput
     public void setFile(Path path) throws IOException {
@@ -430,4 +441,18 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         initialize(path.toFile());
     }
 
+    // Marks that it is OK to poll indefinitely for file update
+    // By default, only 1000 polls are allowed
+    public void setStreamed() {
+        this.pollCount = Long.MAX_VALUE;
+    }
+
+    // Wait for file to be updated
+    public void pollWait() throws IOException {
+        pollCount--;
+        if (pollCount < 0) {
+            throw new IOException("Recording file is stuck in locked stream state.");
+        }
+        Utils.takeNap(1);
+    }
 }

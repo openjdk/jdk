@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -636,7 +636,7 @@ public class PolicyFile extends java.security.Policy {
                 pe.add(new PropertyPermission("java.vm.name",
                     SecurityConstants.PROPERTY_READ_ACTION));
 
-                // No need to sync because noone has access to newInfo yet
+                // No need to sync because no one has access to newInfo yet
                 newInfo.policyEntries.add(pe);
 
                 return null;
@@ -789,7 +789,7 @@ public class PolicyFile extends java.security.Policy {
                 }
             }
 
-            // No need to sync because noone has access to newInfo yet
+            // No need to sync because no one has access to newInfo yet
             newInfo.policyEntries.add(entry);
         } catch (Exception e) {
             Object[] source = {e.toString()};

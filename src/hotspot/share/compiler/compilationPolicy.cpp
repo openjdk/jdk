@@ -527,7 +527,7 @@ bool CompilationPolicy::verify_level(CompLevel level) {
 
 CompLevel CompilationPolicy::highest_compile_level() {
   CompLevel level = CompLevel_none;
-  // Setup the maximum level availible for the current compiler configuration.
+  // Setup the maximum level available for the current compiler configuration.
   if (!CompilerConfig::is_interpreter_only()) {
     if (CompilerConfig::is_c2_or_jvmci_compiler_enabled()) {
       level = CompLevel_full_optimization;
@@ -724,7 +724,7 @@ nmethod* CompilationPolicy::event(const methodHandle& method, const methodHandle
     // Check if event led to a higher level OSR compilation
     CompLevel expected_comp_level = MIN2(CompLevel_full_optimization, static_cast<CompLevel>(comp_level + 1));
     if (!CompilationModeFlag::disable_intermediate() && inlinee->is_not_osr_compilable(expected_comp_level)) {
-      // It's not possble to reach the expected level so fall back to simple.
+      // It's not possible to reach the expected level so fall back to simple.
       expected_comp_level = CompLevel_simple;
     }
     CompLevel max_osr_level = static_cast<CompLevel>(inlinee->highest_osr_comp_level());

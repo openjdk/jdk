@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ jint  IPv6_supported()
     fd = socket(AF_INET6, SOCK_STREAM, 0) ;
     if (fd < 0) {
         /*
-         *  TODO: We really cant tell since it may be an unrelated error
+         *  TODO: We really can't tell since it may be an unrelated error
          *  for now we will assume that AF_INET6 is not available
          */
         return JNI_FALSE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1305,7 +1305,7 @@ public class JavaCompiler {
             log.printVerbose("checking.attribution", env.enclClass.sym);
 
         if (!taskListener.isEmpty()) {
-            TaskEvent e = new TaskEvent(TaskEvent.Kind.ANALYZE, env.toplevel, env.enclClass.sym);
+            TaskEvent e = newAnalyzeTaskEvent(env);
             taskListener.started(e);
         }
 
@@ -1390,10 +1390,28 @@ public class JavaCompiler {
         }
         finally {
             if (!taskListener.isEmpty()) {
-                TaskEvent e = new TaskEvent(TaskEvent.Kind.ANALYZE, env.toplevel, env.enclClass.sym);
+                TaskEvent e = newAnalyzeTaskEvent(env);
                 taskListener.finished(e);
             }
         }
+    }
+
+    private TaskEvent newAnalyzeTaskEvent(Env<AttrContext> env) {
+        JCCompilationUnit toplevel = env.toplevel;
+        ClassSymbol sym;
+        if (env.enclClass.sym == syms.predefClass) {
+            if (TreeInfo.isModuleInfo(toplevel)) {
+                sym = toplevel.modle.module_info;
+            } else if (TreeInfo.isPackageInfo(toplevel)) {
+                sym = toplevel.packge.package_info;
+            } else {
+                throw new IllegalStateException("unknown env.toplevel");
+            }
+        } else {
+            sym = env.enclClass.sym;
+        }
+
+        return new TaskEvent(TaskEvent.Kind.ANALYZE, toplevel, sym);
     }
 
     /**
