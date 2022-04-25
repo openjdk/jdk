@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,7 +171,11 @@ class XPathResultImpl<T> implements XPathEvaluationResult<T> {
             case XObject.CLASS_RTREEFRAG:  //NODE
                 NodeIterator ni = resultObject.nodeset();
                 //Return the first node, or null
-                return type.cast(ni.nextNode());
+                try {
+                    return type.cast(ni.nextNode());
+                } catch (RuntimeException e) {
+                    throw new TransformerException(e.getMessage(), e.getCause());
+                }
         }
 
         return null;

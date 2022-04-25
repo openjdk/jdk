@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package jdk.test.lib;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -274,6 +275,64 @@ public class SecurityTools {
             result.add(sb.toString());
         }
         return result;
+    }
+
+    // Create a temporary keychain in macOS and use it. The original
+    // keychains will be restored when the object is closed.
+    public static class TemporaryKeychain implements Closeable {
+        // name of new keychain
+        private final String newChain;
+        // names of the original keychains
+        private final List<String> oldChains;
+
+        public TemporaryKeychain(String name) {
+            Path p = Path.of(name + ".keychain-db");
+            newChain = p.toAbsolutePath().toString();
+            try {
+                oldChains = ProcessTools.executeProcess("security", "list-keychains")
+                        .shouldHaveExitValue(0)
+                        .getStdout()
+                        .lines()
+                        .map(String::trim)
+                        .map(x -> x.startsWith("\"") ? x.substring(1, x.length() - 1) : x)
+                        .collect(Collectors.toList());
+                if (!Files.exists(p)) {
+                    ProcessTools.executeProcess("security", "create-keychain", "-p", "changeit", newChain)
+                            .shouldHaveExitValue(0);
+                }
+                ProcessTools.executeProcess("security", "unlock-keychain", "-p", "changeit", newChain)
+                        .shouldHaveExitValue(0);
+                ProcessTools.executeProcess("security", "list-keychains", "-s", newChain)
+                        .shouldHaveExitValue(0);
+            } catch (Throwable t) {
+                if (t instanceof RuntimeException re) {
+                    throw re;
+                } else {
+                    throw new RuntimeException(t);
+                }
+            }
+        }
+
+        public String chain() {
+            return newChain;
+        }
+
+        @Override
+        public void close() throws IOException {
+            List<String> cmds = new ArrayList<>();
+            cmds.addAll(List.of("security", "list-keychains", "-s"));
+            cmds.addAll(oldChains);
+            try {
+                ProcessTools.executeProcess(cmds.toArray(new String[0]))
+                        .shouldHaveExitValue(0);
+            } catch (Throwable t) {
+                if (t instanceof RuntimeException re) {
+                    throw re;
+                } else {
+                    throw new RuntimeException(t);
+                }
+            }
+        }
     }
 }
 

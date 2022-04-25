@@ -69,6 +69,7 @@ public final class StringParser extends Parser {
         @Override
         public Object parse(RecordingInput input) throws IOException {
             int size = input.readInt();
+            input.require(size, "String size %d exceeds available data");
             ensureSize(size);
             if (lastSize == size) {
                 boolean equalsLastString = true;
@@ -114,6 +115,7 @@ public final class StringParser extends Parser {
         @Override
         public Object parse(RecordingInput input) throws IOException {
             int size = input.readInt();
+            input.require(size, "String size %d exceeds available data");
             ensureSize(size);
             if (lastSize == size) {
                 boolean equalsLastString = true;
