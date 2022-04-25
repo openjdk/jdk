@@ -2204,6 +2204,20 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
         new_limit = new CMoveINode(adj_bool, adj_limit, adj_max, TypeInt::INT);
       }
       register_new_node(new_limit, ctrl);
+      if (loop_head->unrolled_count() == 1) {
+        // The Opaque2 node created above (in the case of the first unrolling) hides the type of the loop limit.
+        // As a result, if the iv Phi constant folds (because it captured the iteration range), the exit test won't
+        // constant fold and the graph contains a broken counted loop.
+        const Type* new_limit_t;
+        if (stride_con > 0) {
+          new_limit_t = TypeInt::make(min_jint, limit_type->_hi, limit_type->_widen);
+        } else {
+          assert(stride_con < 0, "stride can't be 0");
+          new_limit_t = TypeInt::make(limit_type->_lo, max_jint, limit_type->_widen);
+        }
+        new_limit = new CastIINode(new_limit, new_limit_t);
+        register_new_node(new_limit, ctrl);
+      }
     }
 
     assert(new_limit != NULL, "");
