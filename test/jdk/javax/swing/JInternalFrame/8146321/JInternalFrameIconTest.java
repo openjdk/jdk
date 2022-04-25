@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
  * @key headful
  * @bug 8146321 8151282
  * @summary verifies JInternalFrame Icon and ImageIcon
- * @library ../../regtesthelpers
- * @build Util
  * @run main JInternalFrameIconTest
  */
 import java.io.File;
@@ -139,6 +137,7 @@ public class JInternalFrameIconTest {
                 frame.getContentPane().setLayout(new BorderLayout());
                 frame.getContentPane().add(desktopPane, "Center");
                 frame.setSize(500, 500);
+                frame.setUndecorated(true);
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
                 frame.toFront();
@@ -182,6 +181,7 @@ public class JInternalFrameIconTest {
                 frame.getContentPane().setLayout(new BorderLayout());
                 frame.getContentPane().add(desktopPane, "Center");
                 frame.setSize(500, 500);
+                frame.setUndecorated(true);
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
                 frame.toFront();
@@ -225,7 +225,7 @@ public class JInternalFrameIconTest {
             String error ="[" + lookAndFeelString
                     + "] : ERROR: icon and imageIcon not same.";
             errorString += error;
-            System.err.println(error);
+            System.out.println(error);
         } else {
             System.out.println("[" + lookAndFeelString
                     + "] : SUCCESS: icon and imageIcon same.");
@@ -254,14 +254,15 @@ public class JInternalFrameIconTest {
                     int red2 = (color2 >> 16) & 0x000000FF;
                     int green2 = (color2 >> 8) & 0x000000FF;
                     int blue2 = (color2) & 0x000000FF;
-                    if (red1 != red2 || green1 != green2 || blue1 != blue2) {
+                    if ((Math.abs(red1 - red2) > colorTolerance)
+                            || (Math.abs(green1 - green2) > colorTolerance)
+                            || (Math.abs(blue1 - blue2) > colorTolerance)) {
                         ++mismatchCounter;
-                        if ((Math.abs(red1 - red2) > colorTolerance)
-                                || (Math.abs(green1 - green2) > colorTolerance)
-                                || (Math.abs(blue1 - blue2) > colorTolerance)) {
-
+                        System.out.println("x " + x + " y " + y +
+                           " red1 " + red1 + " red2 " + red2 +
+                           " green1 " + green1 + " green2 " + green2 +
+                           " blue1 " + blue1 + " blue2 " + blue2);
                             flag = false;
-                        }
                     }
                 }
             }
