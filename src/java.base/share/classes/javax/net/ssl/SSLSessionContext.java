@@ -106,8 +106,7 @@ public interface SSLSessionContext {
      *
      * @see #getSessionTimeout
      */
-    void setSessionTimeout(int seconds)
-                 throws IllegalArgumentException;
+    void setSessionTimeout(int seconds);
 
     /**
      * Returns the timeout limit of <code>SSLSession</code> objects grouped
@@ -150,8 +149,7 @@ public interface SSLSessionContext {
      *
      * @see #getSessionCacheSize
      */
-    void setSessionCacheSize(int size)
-                 throws IllegalArgumentException;
+    void setSessionCacheSize(int size);
 
     /**
      * Returns the size of the cache used for storing <code>SSLSession</code>
