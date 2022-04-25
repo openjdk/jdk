@@ -868,31 +868,33 @@ REDUCE_LOGIC_OP_2L(eor, Xor, eor )
 dnl
 
 // ------------------------------ Vector insert ---------------------------------
+dnl VECTOR_INSERT_I($1,        $2,                     $3,          $4,   $5)
+dnl VECTOR_INSERT_I(rule_name, vector_length_in_bytes, reg_variant, vreg, ireg)
 define(`VECTOR_INSERT_I', `
-instruct insert`'ifelse($2, I, $2$3, $3)(ifelse($1, 8, vecD, vecX) dst, ifelse($1, 8, vecD, vecX) src, ifelse($2, I, iRegIorL2I, iRegL) val, immI idx)
+instruct $1($4 dst, $4 src, $5 val, immI idx)
 %{
-  predicate(ifelse($2, L, n->bottom_type()->is_vect()->element_basic_type() == T_LONG,
+  predicate(ifelse($3, D, n->bottom_type()->is_vect()->element_basic_type() == T_LONG,
             (n->bottom_type()->is_vect()->element_basic_type() == T_BYTE ||
              n->bottom_type()->is_vect()->element_basic_type() == T_SHORT ||
              n->bottom_type()->is_vect()->element_basic_type() == T_INT)));
   match(Set dst (VectorInsert (Binary src val) idx));
   ins_cost(2 * INSN_COST);
-  format %{ "orr    $dst, T$1B, $src, $src\n\t"
-            "mov    $dst, ifelse($2, I, B/H/S, D), $idx, $val\t# insert$2 into vector($3)" %}
+  format %{ "orr    $dst, T$2B, $src, $src\n\t"
+            "mov    $dst, $3, $idx, $val\t`#' insert into vector ($3)" %}
   ins_encode %{
     if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
-      __ orr(as_FloatRegister($dst$$reg), __ T$1B,
+      __ orr(as_FloatRegister($dst$$reg), __ T$2B,
              as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
     }
-    __ mov(as_FloatRegister($dst$$reg), __ ifelse($2, I, elemType_to_regVariant(Matcher::vector_element_basic_type(this)), D),
+    __ mov(as_FloatRegister($dst$$reg), __ ifelse($3, D, D, elemType_to_regVariant(Matcher::vector_element_basic_type(this))),
            $idx$$constant, $val$$Register);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-dnl             $1  $2 $3
-VECTOR_INSERT_I(8,  I, D)
-VECTOR_INSERT_I(16, I, X)
-VECTOR_INSERT_I(16, L, 2L)
+dnl             $1        $2  $3     $4    $5
+VECTOR_INSERT_I(insertID, 8,  B/H/S, vecD, iRegIorL2I)
+VECTOR_INSERT_I(insertIX, 16, B/H/S, vecX, iRegIorL2I)
+VECTOR_INSERT_I(insert2L, 16, D,     vecX, iRegL)
 dnl
 define(`VECTOR_INSERT_F', `
 instruct insert$3`'(vec$2 dst, vec$2 src, vReg$1 val, immI idx)

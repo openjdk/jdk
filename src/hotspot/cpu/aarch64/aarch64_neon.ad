@@ -1712,7 +1712,7 @@ instruct insertID(vecD dst, vecD src, iRegIorL2I val, immI idx)
   match(Set dst (VectorInsert (Binary src val) idx));
   ins_cost(2 * INSN_COST);
   format %{ "orr    $dst, T8B, $src, $src\n\t"
-            "mov    $dst, B/H/S, $idx, $val\t# insertI into vector(D)" %}
+            "mov    $dst, B/H/S, $idx, $val\t# insert into vector (B/H/S)" %}
   ins_encode %{
     if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
       __ orr(as_FloatRegister($dst$$reg), __ T8B,
@@ -1732,7 +1732,7 @@ instruct insertIX(vecX dst, vecX src, iRegIorL2I val, immI idx)
   match(Set dst (VectorInsert (Binary src val) idx));
   ins_cost(2 * INSN_COST);
   format %{ "orr    $dst, T16B, $src, $src\n\t"
-            "mov    $dst, B/H/S, $idx, $val\t# insertI into vector(X)" %}
+            "mov    $dst, B/H/S, $idx, $val\t# insert into vector (B/H/S)" %}
   ins_encode %{
     if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
       __ orr(as_FloatRegister($dst$$reg), __ T16B,
@@ -1750,7 +1750,7 @@ instruct insert2L(vecX dst, vecX src, iRegL val, immI idx)
   match(Set dst (VectorInsert (Binary src val) idx));
   ins_cost(2 * INSN_COST);
   format %{ "orr    $dst, T16B, $src, $src\n\t"
-            "mov    $dst, D, $idx, $val\t# insertL into vector(2L)" %}
+            "mov    $dst, D, $idx, $val\t# insert into vector (D)" %}
   ins_encode %{
     if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
       __ orr(as_FloatRegister($dst$$reg), __ T16B,
