@@ -80,6 +80,8 @@ class JvmtiDeferredUpdates;
 class ThreadClosure;
 class ICRefillVerifier;
 
+class JVMCIRuntime;
+
 class Metadata;
 class ResourceArea;
 
@@ -940,6 +942,9 @@ class JavaThread: public Thread {
     address   _alternate_call_target;
   } _jvmci;
 
+  // The JVMCIRuntime in a JVMCI shared library
+  JVMCIRuntime* _libjvmci_runtime;
+
   // Support for high precision, thread sensitive counters in JVMCI compiled code.
   jlong*    _jvmci_counters;
 
@@ -1219,6 +1224,12 @@ class JavaThread: public Thread {
 
   virtual bool in_retryable_allocation() const    { return _in_retryable_allocation; }
   void set_in_retryable_allocation(bool b)        { _in_retryable_allocation = b; }
+
+  JVMCIRuntime* libjvmci_runtime() const          { return _libjvmci_runtime; }
+  void set_libjvmci_runtime(JVMCIRuntime* rt) {
+    assert((_libjvmci_runtime == nullptr && rt != nullptr) || (_libjvmci_runtime != nullptr && rt == nullptr), "must be");
+    _libjvmci_runtime = rt;
+  }
 #endif // INCLUDE_JVMCI
 
   // Exception handling for compiled methods
@@ -1347,7 +1358,7 @@ class JavaThread: public Thread {
   // Checked JNI: is the programmer required to check for exceptions, if so specify
   // which function name. Returning to a Java frame should implicitly clear the
   // pending check, this is done for Native->Java transitions (i.e. user JNI code).
-  // VM->Java transistions are not cleared, it is expected that JNI code enclosed
+  // VM->Java transitions are not cleared, it is expected that JNI code enclosed
   // within ThreadToNativeFromVM makes proper exception checks (i.e. VM internal).
   bool is_pending_jni_exception_check() const { return _pending_jni_exception_check_fn != NULL; }
   void clear_pending_jni_exception_check() { _pending_jni_exception_check_fn = NULL; }

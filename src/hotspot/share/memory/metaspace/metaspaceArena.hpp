@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -67,7 +67,7 @@ struct ArenaStats;
 //
 //
 
-// When the current chunk is used up, MetaspaceArena requestes a new chunk from
+// When the current chunk is used up, MetaspaceArena requests a new chunk from
 //  the associated ChunkManager.
 //
 // MetaspaceArena also keeps a FreeBlocks structure to manage memory blocks which
