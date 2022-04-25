@@ -191,7 +191,7 @@ public abstract sealed class Reference<T>
     /* High-priority thread to enqueue pending References
      */
     private static class ReferenceHandler extends Thread {
-        private static final boolean DEBUG = true;
+
         private static void ensureClassInitialized(Class<?> clazz) {
             try {
                 Class.forName(clazz.getName(), true, clazz.getClassLoader());
@@ -204,7 +204,7 @@ public abstract sealed class Reference<T>
             // pre-load and initialize Cleaner class so that we don't
             // get into trouble later in the run loop if there's
             // memory shortage while loading/initializing it lazily.
-            if (!DEBUG) ensureClassInitialized(Cleaner.class);
+            ensureClassInitialized(Cleaner.class);
         }
 
         ReferenceHandler(ThreadGroup g, String name) {
@@ -212,7 +212,6 @@ public abstract sealed class Reference<T>
         }
 
         public void run() {
-            if (DEBUG) ensureClassInitialized(Cleaner.class);
             while (true) {
                 processPendingReferences();
             }
