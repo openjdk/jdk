@@ -214,9 +214,9 @@ bool CompilationPolicy::force_comp_at_level_simple(const methodHandle& method) {
 }
 
 CompLevel CompilationPolicy::comp_level(Method* method) {
-  CompiledMethod *nm = method->code();
-  if (nm != NULL && nm->is_in_use()) {
-    return (CompLevel)nm->comp_level();
+  CodeBlob *nm = method->blob();
+  if (nm != NULL && nm->is_compiled() && nm->as_compiled_method()->is_in_use()) {
+    return (CompLevel)nm->as_compiled_method()->comp_level();
   }
   return CompLevel_none;
 }

@@ -80,6 +80,7 @@ struct CodeBlobType {
 class CodeBlobLayout;
 class OptimizedEntryBlob; // for as_optimized_entry_blob()
 class JavaFrameAnchor; // for OptimizedEntryBlob::jfa_for_frame
+class mhmethod;
 
 class CodeBlob {
   friend class VMStructs;
@@ -148,7 +149,8 @@ public:
   virtual bool is_vtable_blob() const                 { return false; }
   virtual bool is_method_handles_adapter_blob() const { return false; }
   virtual bool is_compiled() const                    { return false; }
-  virtual bool is_optimized_entry_blob() const                  { return false; }
+  virtual bool is_optimized_entry_blob() const        { return false; }
+  virtual bool is_mhmethod() const                    { return false; }
 
   inline bool is_compiled_by_c1() const    { return _type == compiler_c1; };
   inline bool is_compiled_by_c2() const    { return _type == compiler_c2; };
@@ -163,6 +165,7 @@ public:
   CompiledMethod* as_compiled_method()         { assert(is_compiled(), "must be compiled"); return (CompiledMethod*) this; }
   CodeBlob* as_codeblob_or_null() const        { return (CodeBlob*) this; }
   OptimizedEntryBlob* as_optimized_entry_blob() const             { assert(is_optimized_entry_blob(), "must be entry blob"); return (OptimizedEntryBlob*) this; }
+  mhmethod* as_mhmethod()                      { assert(is_mhmethod(), "must be mhmethod"); return (mhmethod*) this; }
 
   // Boundaries
   address header_begin() const        { return (address) this; }

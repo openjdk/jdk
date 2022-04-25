@@ -134,7 +134,7 @@ void Method::deallocate_contents(ClassLoaderData* loader_data) {
   MetadataFactory::free_metadata(loader_data, method_counters());
   clear_method_counters();
   // The nmethod will be gone when we get here.
-  if (code() != NULL) _code = NULL;
+  if (code() != NULL) _blob = _code = NULL;
 }
 
 void Method::release_C_heap_structures() {
@@ -1155,6 +1155,7 @@ void Method::clear_code() {
   _from_interpreted_entry = _i2i_entry;
   OrderAccess::storestore();
   _code = NULL;
+  _blob = NULL;
 }
 
 void Method::unlink_code(CompiledMethod *compare) {
@@ -1181,6 +1182,7 @@ void Method::unlink_code() {
 void Method::unlink_method() {
   Arguments::assert_is_dumping_archive();
   _code = NULL;
+  _blob = NULL;
   _adapter = NULL;
   _i2i_entry = NULL;
   _from_compiled_entry = NULL;
@@ -1206,6 +1208,7 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
     return;
   }
   assert( _code == NULL, "nothing compiled yet" );
+  assert( _blob == NULL, "nothing compiled yet" );
 
   // Setup interpreter entrypoint
   assert(this == h_method(), "wrong h_method()" );
@@ -1262,10 +1265,11 @@ void Method::restore_unshareable_info(TRAPS) {
 }
 
 address Method::from_compiled_entry_no_trampoline() const {
-  CompiledMethod *code = Atomic::load_acquire(&_code);
-  if (code) {
-    return code->verified_entry_point();
+  CodeBlob *code = Atomic::load_acquire(&_code);
+  if (code != nullptr && code->is_compiled()) {
+    return code->as_compiled_method()->verified_entry_point();
   } else {
+    assert(code == nullptr || !code->is_mhmethod(), "unexpected MH intrinsic");
     return adapter()->get_c2i_entry();
   }
 }
@@ -1288,12 +1292,21 @@ address Method::verified_code_entry() {
 // Not inline to avoid circular ref.
 bool Method::check_code() const {
   // cached in a register or local.  There's a race on the value of the field.
-  CompiledMethod *code = Atomic::load_acquire(&_code);
-  return code == NULL || (code->method() == NULL) || (code->method() == (Method*)this && !code->is_osr_method());
+  CodeBlob *blob = Atomic::load_acquire(&_code);
+  if (blob == nullptr) {
+    return true;
+  } else if (blob->is_compiled()) {
+    CompiledMethod* cm = blob->as_compiled_method();
+    return (cm->method() == nullptr) || (cm->method() == this && !cm->is_osr_method());
+  } else {
+    assert(blob->is_mhmethod(), "must be mhmethod");
+    mhmethod* mhm = blob->as_mhmethod();
+    return (mhm->method() == nullptr) || (mhm->method() == this);
+  }
 }
 
 // Install compiled code.  Instantly it can execute.
-void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
+void Method::set_code(const methodHandle& mh, CodeBlob *code) {
   assert_lock_strong(CompiledMethod_lock);
   assert( code, "use clear_code to remove code" );
   assert( mh->check_code(), "" );
@@ -1303,9 +1316,10 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
   // These writes must happen in this order, because the interpreter will
   // directly jump to from_interpreted_entry which jumps to an i2c adapter
   // which jumps to _from_compiled_entry.
-  mh->_code = code;             // Assign before allowing compiled code to exec
+  mh->_code = code->as_compiled_method_or_null(); // Assign before allowing compiled code to exec
+  mh->_blob = code;
 
-  int comp_level = code->comp_level();
+  int comp_level = code->is_compiled() ? code->as_compiled_method()->comp_level() : CompLevel_none;
   // In theory there could be a race here. In practice it is unlikely
   // and not worth worrying about.
   if (comp_level > mh->highest_comp_level()) {
@@ -1313,7 +1327,12 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
   }
 
   OrderAccess::storestore();
-  mh->_from_compiled_entry = code->verified_entry_point();
+  if (code->is_compiled()) {
+    mh->_from_compiled_entry = code->as_compiled_method()->verified_entry_point();
+  }
+  else {
+    mh->_from_compiled_entry = code->code_begin();
+  }
   OrderAccess::storestore();
   // Instantly compiled code can execute.
   if (!mh->is_method_handle_intrinsic())
@@ -2387,9 +2406,9 @@ void Method::print_on(outputStream* st) const {
       }
     }
   }
-  if (code() != NULL) {
+  if (blob() != NULL) {
     st->print   (" - compiled code: ");
-    code()->print_value_on(st);
+    blob()->print_value_on(st);
   }
   if (is_native()) {
     st->print_cr(" - native function:   " INTPTR_FORMAT, p2i(native_function()));
@@ -2420,7 +2439,7 @@ void Method::print_value_on(outputStream* st) const {
   method_holder()->print_value_on(st);
   if (WizardMode) st->print("#%d", _vtable_index);
   if (WizardMode) st->print("[%d,%d]", size_of_parameters(), max_locals());
-  if (WizardMode && code() != NULL) st->print(" ((nmethod*)%p)", code());
+  if (WizardMode && blob() != NULL) st->print(" ((nmethod*)%p)", blob());
 }
 
 // LogTouchedMethods and PrintTouchedMethods

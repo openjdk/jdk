@@ -739,18 +739,42 @@ static void gen_special_dispatch(MacroAssembler* masm,
                                                  receiver_reg, member_reg, /*for_compiler_entry:*/ true);
 }
 
+CodeBlob* SharedRuntime::generate_mhi_wrapper(MacroAssembler* masm,
+                                              const methodHandle& method,
+                                              int compile_id,
+                                              BasicType* in_sig_bt,
+                                              VMRegPair* in_regs,
+                                              BasicType ret_type) {
+  assert(method->is_method_handle_intrinsic(), "must be MethodHandle method");
+
+  vmIntrinsics::ID iid = method->intrinsic_id();
+  intptr_t start = (intptr_t)__ pc();
+  gen_special_dispatch(masm,
+                       method,
+                       in_sig_bt,
+                       in_regs);
+  int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
+  __ flush();
+  int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
+  return mhmethod::new_mhmethod(method,
+                               compile_id,
+                               masm->code(),
+                               frame_complete,
+                               stack_slots / VMRegImpl::slots_per_word);
+}
+
 // ---------------------------------------------------------------------------
 // Generate a native wrapper for a given method.  The method takes arguments
 // in the Java compiled code convention, marshals them to the native
 // convention (handlizes oops, etc), transitions to native, makes the call,
 // returns to java state (possibly blocking), unhandlizes any result and
 // returns.
-CompiledMethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
-                                                       const methodHandle& method,
-                                                       int compile_id,
-                                                       BasicType* in_sig_bt,
-                                                       VMRegPair* in_regs,
-                                                       BasicType ret_type) {
+nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
+                                                const methodHandle& method,
+                                                int compile_id,
+                                                BasicType* in_sig_bt,
+                                                VMRegPair* in_regs,
+                                                BasicType ret_type) {
   assert(!method->is_method_handle_intrinsic(), "must not be MethodHandle method");
   // Arguments for JNI method include JNIEnv and Class if static
 
@@ -1311,32 +1335,6 @@ CompiledMethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                      in_ByteSize(method_is_static ? klass_offset : receiver_offset),
                                      in_ByteSize(lock_slot_offset * VMRegImpl::stack_slot_size),
                                      oop_maps);
-}
-
-CompiledMethod* SharedRuntime::generate_mhi_wrapper(MacroAssembler* masm,
-                                                    const methodHandle& method,
-                                                    int compile_id,
-                                                    BasicType* in_sig_bt,
-                                                    VMRegPair* in_regs,
-                                                    BasicType ret_type) {
-  assert(method->is_method_handle_intrinsic(), "must be MethodHandle method");
-
-  vmIntrinsics::ID iid = method->intrinsic_id();
-  intptr_t start = (intptr_t)__ pc();
-  int vep_offset = ((intptr_t)__ pc()) - start;
-  gen_special_dispatch(masm,
-                       method,
-                       in_sig_bt,
-                       in_regs);
-  int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
-  __ flush();
-  int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
-  return mhmethod::new_mhmethod(method,
-                               compile_id,
-                               masm->code(),
-                               vep_offset,
-                               frame_complete,
-                               stack_slots / VMRegImpl::slots_per_word);
 }
 
 // this function returns the adjust size (in number of words) to a c2i adapter

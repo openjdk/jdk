@@ -320,7 +320,7 @@ bool CompiledIC::is_call_to_compiled() const {
   // method is guaranteed to still exist, since we only remove methods after all inline caches
   // has been cleaned up
   CodeBlob* cb = CodeCache::find_blob_unsafe(ic_destination());
-  bool is_monomorphic = (cb != NULL && cb->is_compiled());
+  bool is_monomorphic = (cb != NULL && (cb->is_compiled() || cb->is_mhmethod()));
   // Check that the cached_value is a klass for non-optimized monomorphic calls
   // This assertion is invalid for compiler1: a call that does not look optimized (no static stub) can be used
   // for calling directly to vep without using the inline cache (i.e., cached_value == NULL).
@@ -460,7 +460,7 @@ bool CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
     bool static_bound = info.is_optimized() || (info.cached_metadata() == NULL);
 #ifdef ASSERT
     CodeBlob* cb = CodeCache::find_blob_unsafe(info.entry());
-    assert (cb != NULL && cb->is_compiled(), "must be compiled!");
+    assert (cb != NULL && (cb->is_compiled() || cb->is_mhmethod()), "must be compiled!");
 #endif /* ASSERT */
 
     // This is MT safe if we come from a clean-cache and go through a
@@ -511,33 +511,38 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
                                            bool static_bound,
                                            CompiledICInfo& info,
                                            TRAPS) {
-  CompiledMethod* method_code = method->code();
+  CodeBlob* blob = method->blob();
 
   address entry = NULL;
-  if (method_code != NULL && method_code->is_in_use() && !method_code->is_unloading()) {
-    assert(method_code->is_compiled(), "must be compiled");
-    // Call to compiled code
-    //
-    // Note: the following problem exists with Compiler1:
-    //   - at compile time we may or may not know if the destination is final
-    //   - if we know that the destination is final (is_optimized), we will emit
-    //     an optimized virtual call (no inline cache), and need a Method* to make
-    //     a call to the interpreter
-    //   - if we don't know if the destination is final, we emit a standard
-    //     virtual call, and use CompiledICHolder to call interpreted code
-    //     (no static call stub has been generated)
-    //   - In the case that we here notice the call is static bound we
-    //     convert the call into what looks to be an optimized virtual call,
-    //     but we must use the unverified entry point (since there will be no
-    //     null check on a call when the target isn't loaded).
-    //     This causes problems when verifying the IC because
-    //     it looks vanilla but is optimized. Code in is_call_to_interpreted
-    //     is aware of this and weakens its asserts.
-    if (is_optimized) {
-      entry      = method_code->verified_entry_point();
-    } else {
-      entry      = method_code->entry_point();
+  if (blob != nullptr && blob->is_compiled()) {
+    CompiledMethod* method_code = blob->as_compiled_method();
+    if (method_code->is_in_use() && !method_code->is_unloading()) {
+      // Call to compiled code
+      //
+      // Note: the following problem exists with Compiler1:
+      //   - at compile time we may or may not know if the destination is final
+      //   - if we know that the destination is final (is_optimized), we will emit
+      //     an optimized virtual call (no inline cache), and need a Method* to make
+      //     a call to the interpreter
+      //   - if we don't know if the destination is final, we emit a standard
+      //     virtual call, and use CompiledICHolder to call interpreted code
+      //     (no static call stub has been generated)
+      //   - In the case that we here notice the call is static bound we
+      //     convert the call into what looks to be an optimized virtual call,
+      //     but we must use the unverified entry point (since there will be no
+      //     null check on a call when the target isn't loaded).
+      //     This causes problems when verifying the IC because
+      //     it looks vanilla but is optimized. Code in is_call_to_interpreted
+      //     is aware of this and weakens its asserts.
+      if (is_optimized) {
+        entry      = method_code->verified_entry_point();
+      } else {
+        entry      = method_code->entry_point();
+      }
     }
+  } else if (blob != nullptr) {
+    assert(blob->is_mhmethod(), "must be mhmethod");
+    entry      = blob->code_begin();
   }
   if (entry != NULL) {
     // Call to near compiled code.
@@ -548,7 +553,7 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
       info.set_interpreter_entry(method()->get_c2i_entry(), method());
     } else {
       // Use icholder entry
-      assert(method_code == NULL || method_code->is_compiled(), "must be compiled");
+      assert(blob == NULL || blob->is_compiled(), "must be compiled");
       CompiledICHolder* holder = new CompiledICHolder(method(), receiver_klass);
       info.set_icholder_entry(method()->get_c2i_unverified_entry(), holder);
     }
@@ -638,11 +643,14 @@ void CompiledStaticCall::set(const StaticCallInfo& info) {
 // Compute settings for a CompiledStaticCall. Since we might have to set
 // the stub when calling to the interpreter, we need to return arguments.
 void CompiledStaticCall::compute_entry(const methodHandle& m, StaticCallInfo& info) {
-  CompiledMethod* m_code = m->code();
+  CodeBlob* blob = m->blob();
   info._callee = m;
-  if (m_code != NULL && m_code->is_in_use() && !m_code->is_unloading()) {
+  if (blob != nullptr && blob->is_compiled() && blob->as_compiled_method()->is_in_use() && !blob->as_compiled_method()->is_unloading()) {
     info._to_interpreter = false;
-    info._entry  = m_code->verified_entry_point();
+    info._entry  = blob->as_compiled_method()->verified_entry_point();
+  } else if (blob != nullptr && blob->is_mhmethod()) {
+    info._to_interpreter = false;
+    info._entry  = blob->code_begin();
   } else {
     // Callee is interpreted code.  In any case entering the interpreter
     // puts a converter-frame on the stack to save arguments.

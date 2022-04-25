@@ -1707,8 +1707,11 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
   tempst.print(" in ");
   CodeBlob* blob = CodeCache::find_blob(exception_pc);
   if (blob->is_compiled()) {
-    CompiledMethod* cm = blob->as_compiled_method_or_null();
+    CompiledMethod* cm = blob->as_compiled_method();
     cm->method()->print_value_on(&tempst);
+  } else if (blob->is_mhmethod()) {
+    mhmethod* mhm = blob->as_mhmethod();
+    mhm->method()->print_value_on(&tempst);
   } else if (blob->is_runtime_stub()) {
     tempst.print("<runtime-stub>");
   } else {

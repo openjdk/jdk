@@ -2328,14 +2328,14 @@ nmethodLocker::nmethodLocker(address pc) {
 // Only JvmtiDeferredEvent::compiled_method_unload_event()
 // should pass zombie_ok == true.
 void nmethodLocker::lock_nmethod(CompiledMethod* cm, bool zombie_ok) {
-  if (cm == NULL || !cm->is_nmethod())  return;
+  if (cm == NULL)  return;
   nmethod* nm = cm->as_nmethod();
   Atomic::inc(&nm->_lock_count);
   assert(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method: %p", nm);
 }
 
 void nmethodLocker::unlock_nmethod(CompiledMethod* cm) {
-  if (cm == NULL || !cm->is_nmethod())  return;
+  if (cm == NULL)  return;
   nmethod* nm = cm->as_nmethod();
   Atomic::dec(&nm->_lock_count);
   assert(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
@@ -3575,13 +3575,14 @@ const char* nmethod::jvmci_name() {
 
 mhmethod::mhmethod(
   Method* method,
-  CompilerType type,
   int mhmethod_size,
   int compile_id,
-  CodeOffsets* offsets,
+  int frame_complete,
   CodeBuffer* code_buffer,
   int frame_size):
-  CompiledMethod(method, "native mhmethod", type, mhmethod_size, sizeof(mhmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, nullptr, false),
+  CodeBlob("native mhmethod", compiler_none, CodeBlobLayout((address) this, mhmethod_size, sizeof(mhmethod), code_buffer), code_buffer,
+           frame_complete, frame_size, nullptr, false),
+  _method(method),
   _compile_id(compile_id) {
   {
     int deoptimize_offset    = 0;
@@ -3590,17 +3591,8 @@ mhmethod::mhmethod(
     debug_only(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
 
-    init_defaults();
-
     assert(code_buffer->total_oop_size() == 0, "unexpected oop");
     assert(code_buffer->total_metadata_size() == 0, "unexpected metadata");
-    _entry_point             = code_begin() + offsets->value(CodeOffsets::Entry);
-    _verified_entry_point    = code_begin() + offsets->value(CodeOffsets::Verified_Entry);
-    _pc_desc_container.reset_to(NULL);
-
-    _scopes_data_begin = (address) this + _data_offset;
-    _deopt_handler_begin = (address) this + deoptimize_offset;
-    _deopt_mh_handler_begin = (address) this + deoptimize_mh_offset;
 
     code_buffer->copy_code_and_locs_to(this);
 
@@ -3627,14 +3619,6 @@ mhmethod::mhmethod(
     } else {
       print(); // print the header part only.
     }
-#if defined(SUPPORT_DATA_STRUCTS)
-    if (AbstractDisassembler::show_structs()) {
-      if (PrintRelocations) {
-        print_relocations();
-        tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
-      }
-    }
-#endif
     if (xtty != NULL) {
       xtty->tail("print_native_mhmethod");
     }
@@ -3644,7 +3628,6 @@ mhmethod::mhmethod(
 mhmethod* mhmethod::new_mhmethod(const methodHandle& method,
   int compile_id,
   CodeBuffer *code_buffer,
-  int vep_offset,
   int frame_complete,
   int frame_size) {
   code_buffer->finalize_oop_references(method);
@@ -3654,12 +3637,9 @@ mhmethod* mhmethod::new_mhmethod(const methodHandle& method,
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     int native_mhmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(mhmethod));
 
-    CodeOffsets offsets;
-    offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
-    offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
     nm = new (native_mhmethod_size, CompLevel_none)
-    mhmethod(method(), compiler_none, native_mhmethod_size,
-             compile_id, &offsets,
+    mhmethod(method(), native_mhmethod_size,
+             compile_id, frame_complete,
              code_buffer, frame_size);
   }
 
@@ -3676,89 +3656,10 @@ void* mhmethod::operator new(size_t size, int mhmethod_size, int comp_level) thr
   return CodeCache::allocate(mhmethod_size, CodeBlobType::NonNMethod);
 }
 
-// This is called at the end of the strong tracing/marking phase of a
-// GC to unload an mhmethod if it contains otherwise unreachable
-// oops.
-
-void mhmethod::do_unloading(bool unloading_occurred) {
-  // Make sure the oop's ready to receive visitors
-  assert(!is_zombie() && !is_unloaded(),
-         "should not call follow on zombie or unloaded mhmethod");
-
-  {
-    guarantee(unload_nmethod_caches(unloading_occurred),
-              "Should not need transition stubs");
-  }
-}
-
-void mhmethod::init_defaults() {
-  _state                      = not_installed;
-}
-
-void mhmethod::metadata_do(MetadataClosure* f) {
-  // Visit the metadata section
-  assert(metadata_begin() == metadata_end(), "unexpected metadata");
-
-  // Visit metadata not embedded in the other places.
-  assert(_method != nullptr, "no method");
-  f->do_metadata(_method);
-}
-
-CompiledStaticCall* mhmethod::compiledStaticCall_at(Relocation* call_site) const {
-  return CompiledDirectStaticCall::at(call_site);
-}
-
-CompiledStaticCall* mhmethod::compiledStaticCall_at(address call_site) const {
-  return CompiledDirectStaticCall::at(call_site);
-}
-
-CompiledStaticCall* mhmethod::compiledStaticCall_before(address return_addr) const {
-  return CompiledDirectStaticCall::before(return_addr);
-}
-
-NativeCallWrapper* mhmethod::call_wrapper_at(address call) const {
-  return new DirectNativeCallWrapper((NativeCall*) call);
-}
-
-NativeCallWrapper* mhmethod::call_wrapper_before(address return_pc) const {
-  return new DirectNativeCallWrapper(nativeCall_before(return_pc));
-}
-
-address mhmethod::call_instruction_address(address pc) const {
-  if (NativeCall::is_call_before(pc)) {
-    NativeCall *ncall = nativeCall_before(pc);
-    return ncall->instruction_address();
-  }
-  return NULL;
-}
-
-bool mhmethod::make_in_use() {
-  signed char new_state = in_use;
-#ifdef ASSERT
-  if (new_state != unloaded) {
-    assert_lock_strong(CompiledMethod_lock);
-  }
-#endif
-  for (;;) {
-    signed char old_state = Atomic::load(&_state);
-    if (old_state >= new_state) {
-      // Ensure monotonicity of transitions.
-      return false;
-    }
-    if (Atomic::cmpxchg(&_state, old_state, new_state) == old_state) {
-      return true;
-    }
-  }
-}
-
 void mhmethod::log_identity(xmlStream* log) const {
   log->print(" compile_id='%d'", compile_id());
-  const char* nm_kind = compile_kind();
-  if (nm_kind != NULL)  log->print(" compile_kind='%s'", nm_kind);
+  log->print(" compile_kind='c2n'");
   log->print(" compiler='%s'", compiler_name());
-  if (TieredCompilation) {
-    log->print(" level='%d'", comp_level());
-  }
 }
 
 void mhmethod::print() const {
@@ -3771,16 +3672,12 @@ void mhmethod::print(outputStream* st) const {
 
   st->print("Compiled method ");
 
-  st->print("(n/a) ");
-
   print_on(st, NULL);
 
   if (WizardMode) {
     st->print("((mhmethod*) " INTPTR_FORMAT ") ", p2i(this));
     st->print(" for method " INTPTR_FORMAT , p2i(method()));
-    st->print(" { ");
-    st->print_cr("%s ", state());
-    st->print_cr("}:");
+    st->print(":");
   }
   if (size              () > 0) st->print_cr(" total in heap  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(this),
@@ -3790,10 +3687,6 @@ void mhmethod::print(outputStream* st) const {
                                              p2i(relocation_begin()),
                                              p2i(relocation_end()),
                                              relocation_size());
-  if (consts_size       () > 0) st->print_cr(" constants      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                             p2i(consts_begin()),
-                                             p2i(consts_end()),
-                                             consts_size());
   if (insts_size        () > 0) st->print_cr(" main code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                              p2i(insts_begin()),
                                              p2i(insts_end()),
@@ -3812,24 +3705,6 @@ void mhmethod::print_on(outputStream* st, const char* msg) const {
   }
 }
 
-#if defined(SUPPORT_DATA_STRUCTS)
-
-void mhmethod::print_pcs() {
-  ResourceMark m;       // in case methods get printed via debugger
-  tty->print_cr("pc-bytecode offsets: <list empty>");
-}
-
-#ifndef PRODUCT  // RelocIterator does support printing only then.
-void mhmethod::print_relocations() {
-  ResourceMark m;       // in case methods get printed via the debugger
-  tty->print_cr("relocations:");
-  RelocIterator iter(this);
-  iter.print();
-}
-#endif  // PRODUCT
-
-#endif // SUPPORT_DATA_STRUCTS
-
 #define LOG_OFFSET(log, name)                    \
   if (p2i(name##_end()) - p2i(name##_begin())) \
     log->print(" " XSTR(name) "_offset='" INTX_FORMAT "'"    , \
@@ -3845,7 +3720,6 @@ void mhmethod::log_new_mhmethod() const {
     xtty->print(" address='" INTPTR_FORMAT "'", p2i(this));
 
     LOG_OFFSET(xtty, relocation);
-    LOG_OFFSET(xtty, consts);
     LOG_OFFSET(xtty, insts);
 
     xtty->method(method());
@@ -3857,25 +3731,12 @@ void mhmethod::log_new_mhmethod() const {
 #undef LOG_OFFSET
 
 void mhmethod::verify() {
-
-  // Hmm. OSR methods can be deopted but not marked as zombie or not_entrant
-  // seems odd.
-
-  if (is_zombie() || is_not_entrant() || is_unloaded())
-    return;
-
   // Make sure all the entry points are correctly aligned for patching.
-  NativeJump::check_verified_entry_alignment(entry_point(), verified_entry_point());
-
-  // assert(oopDesc::is_oop(method()), "must be valid");
+  NativeJump::check_verified_entry_alignment(code_begin(), code_begin());
 
   ResourceMark rm;
 
   if (!CodeCache::contains((void*)this)) {
     fatal("mhmethod at " INTPTR_FORMAT " not in zone", p2i(this));
-  }
-
-  if (!is_native_method()) {
-    fatal("should be native method");
   }
 }

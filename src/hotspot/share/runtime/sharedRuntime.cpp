@@ -549,7 +549,7 @@ address SharedRuntime::get_poll_stub(address pc) {
   guarantee(cb != NULL && cb->is_compiled(), "safepoint polling: pc must refer to an nmethod");
 
   // Look up the relocation information
-  assert(((CompiledMethod*)cb)->is_at_poll_or_poll_return(pc),
+  assert(cb->as_compiled_method()->is_at_poll_or_poll_return(pc),
     "safepoint polling: type must be poll");
 
 #ifdef ASSERT
@@ -871,7 +871,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* current,
           // 2. Inline-cache check in nmethod, or
           // 3. Implicit null exception in nmethod
 
-          if (!cb->is_compiled()) {
+          if (!cb->is_compiled() && !cb->is_mhmethod()) {
             bool is_in_blob = cb->is_adapter_blob() || cb->is_method_handles_adapter_blob();
             if (!is_in_blob) {
               // Allow normal crash reporting to handle this
@@ -883,29 +883,31 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* current,
           }
 
           // Otherwise, it's a compiled method.  Consult its exception handlers.
-          CompiledMethod* cm = (CompiledMethod*)cb;
-          if (cm->inlinecache_check_contains(pc)) {
-            // exception happened inside inline-cache check code
-            // => the nmethod is not yet active (i.e., the frame
-            // is not set up yet) => use return address pushed by
-            // caller => don't push another return address
-            Events::log_exception(current, "NullPointerException in IC check " INTPTR_FORMAT, p2i(pc));
-            return StubRoutines::throw_NullPointerException_at_call_entry();
-          }
+          if (cb->is_compiled()) {
+            CompiledMethod* cm = cb->as_compiled_method();
 
-          if (cm->method()->is_method_handle_intrinsic()) {
+            if (cm->inlinecache_check_contains(pc)) {
+              // exception happened inside inline-cache check code
+              // => the nmethod is not yet active (i.e., the frame
+              // is not set up yet) => use return address pushed by
+              // caller => don't push another return address
+              Events::log_exception(current, "NullPointerException in IC check " INTPTR_FORMAT, p2i(pc));
+              return StubRoutines::throw_NullPointerException_at_call_entry();
+            }
+
+#ifndef PRODUCT
+            _implicit_null_throws++;
+#endif
+            target_pc = cm->continuation_for_implicit_null_exception(pc);
+            // If there's an unexpected fault, target_pc might be NULL,
+            // in which case we want to fall through into the normal
+            // error handling code.
+          } else {
+            assert(cb->as_mhmethod()->method()->is_method_handle_intrinsic(), "should be MH adapter");
             // exception happened inside MH dispatch code, similar to a vtable stub
             Events::log_exception(current, "NullPointerException in MH adapter " INTPTR_FORMAT, p2i(pc));
             return StubRoutines::throw_NullPointerException_at_call_entry();
           }
-
-#ifndef PRODUCT
-          _implicit_null_throws++;
-#endif
-          target_pc = cm->continuation_for_implicit_null_exception(pc);
-          // If there's an unexpected fault, target_pc might be NULL,
-          // in which case we want to fall through into the normal
-          // error handling code.
         }
 
         break; // fall through
@@ -1262,19 +1264,19 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
 
   // Make sure the callee nmethod does not get deoptimized and removed before
   // we are done patching the code.
-  CompiledMethod* callee = callee_method->code();
+  CodeBlob* callee = callee_method->blob();
 
   if (callee != NULL) {
-    assert(callee->is_compiled(), "must be nmethod for patching");
+    assert(callee->is_compiled() || callee->is_mhmethod(), "must be nmethod or mhmethod for patching");
   }
 
-  if (callee != NULL && !callee->is_in_use()) {
+  if (callee != NULL && callee->is_compiled() && !callee->as_compiled_method()->is_in_use()) {
     // Patch call site to C2I adapter if callee nmethod is deoptimized or unloaded.
     callee = NULL;
   }
-  nmethodLocker nl_callee(callee);
+  nmethodLocker nl_callee((callee != NULL && callee->is_compiled()) ? callee->as_compiled_method() : nullptr);
 #ifdef ASSERT
-  address dest_entry_point = callee == NULL ? 0 : callee->entry_point(); // used below
+  address dest_entry_point = callee == NULL ? 0 : (callee->is_compiled() ? callee->as_compiled_method()->entry_point() : callee->code_begin()); // used below
 #endif
 
   if (is_virtual) {
@@ -1282,8 +1284,8 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
     bool static_bound = call_info.resolved_method()->can_be_statically_bound();
     Klass* klass = invoke_code == Bytecodes::_invokehandle ? NULL : receiver->klass();
     CompiledIC::compute_monomorphic_entry(callee_method, klass,
-                     is_optimized, static_bound, virtual_call_info,
-                     CHECK_false);
+                    is_optimized, static_bound, virtual_call_info,
+                    CHECK_false);
   } else {
     // static call
     CompiledStaticCall::compute_entry(callee_method, static_call_info);
@@ -1302,14 +1304,14 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
     // which may happen when multiply alive nmethod (tiered compilation)
     // will be supported.
     if (!callee_method->is_old() &&
-        (callee == NULL || (callee->is_in_use() && callee_method->code() == callee))) {
+        (callee == NULL || ((!callee->is_compiled() || callee->as_compiled_method()->is_in_use()) && callee_method->blob() == callee))) {
       NoSafepointVerifier nsv;
 #ifdef ASSERT
       // We must not try to patch to jump to an already unloaded method.
       if (dest_entry_point != 0) {
         CodeBlob* cb = CodeCache::find_blob(dest_entry_point);
-        assert((cb != NULL) && cb->is_compiled() && (((CompiledMethod*)cb) == callee),
-               "should not call unloaded nmethod");
+        assert((cb != NULL) && (cb->is_compiled() || cb->is_mhmethod()) && (cb == callee),
+              "should not call unloaded nmethod");
       }
 #endif
       if (is_virtual) {
@@ -1381,7 +1383,7 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
                Bytecodes::name(invoke_code));
     callee_method->print_short_name(tty);
     tty->print_cr(" at pc: " INTPTR_FORMAT " to code: " INTPTR_FORMAT,
-                  p2i(caller_frame.pc()), p2i(callee_method->code()));
+                  p2i(caller_frame.pc()), p2i(callee_method->blob()));
   }
 #endif
 
@@ -3007,7 +3009,7 @@ bool AdapterHandlerEntry::compare_code(AdapterHandlerEntry* other) {
  */
 void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   ResourceMark rm;
-  CompiledMethod* nm = NULL;
+  CodeBlob* nm = NULL;
 
   assert(method->is_native(), "must be native");
   assert(method->is_method_handle_intrinsic() ||
@@ -3064,7 +3066,9 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       if (nm != NULL) {
         {
           MutexLocker pl(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
-          if (nm->make_in_use()) {
+          if (nm->is_nmethod() && nm->as_nmethod()->make_in_use()) {
+            method->set_code(method, nm);
+          } else if (nm->is_mhmethod()) {
             method->set_code(method, nm);
           }
         }
@@ -3080,16 +3084,14 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
 
 
   // Install the generated code.
-  if (nm != NULL) {
+  if (nm != NULL && nm->is_compiled()) {
     const char *msg = method->is_static() ? "(static)" : "";
-    CompileTask::print_ul(nm, msg);
+    CompileTask::print_ul(nm->as_compiled_method(), msg);
     if (PrintCompilation) {
       ttyLocker ttyl;
-      CompileTask::print(tty, nm, msg);
+      CompileTask::print(tty, nm->as_compiled_method(), msg);
     }
-    if (nm->is_nmethod()) {
-      nm->as_nmethod()->post_compiled_method_load_event();
-    }
+    nm->as_nmethod()->post_compiled_method_load_event();
   }
 }
 

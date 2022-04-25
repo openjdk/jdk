@@ -1334,7 +1334,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
   }
 }
 
-nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
+CodeBlob* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        int comp_level,
                                        const methodHandle& hot_method, int hot_count,
                                        CompileTask::CompileReason compile_reason,
@@ -1349,12 +1349,12 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
   // CompileBroker::compile_method can trap and can have pending async exception.
-  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
+  CodeBlob* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
   DirectivesStack::release(directive);
   return nm;
 }
 
-nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
+CodeBlob* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                          int comp_level,
                                          const methodHandle& hot_method, int hot_count,
                                          CompileTask::CompileReason compile_reason,
@@ -1383,10 +1383,10 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
-    CompiledMethod* method_code = method->code();
-    if (method_code != NULL && method_code->is_nmethod()) {
+    CodeBlob* method_code = method->blob();
+    if (method_code != NULL && (method_code->is_nmethod() || method_code->is_mhmethod())) {
       if (compilation_is_complete(method, osr_bci, comp_level)) {
-        return (nmethod*) method_code;
+        return method_code;
       }
     }
     if (method->is_not_compilable(comp_level)) {
@@ -1487,12 +1487,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // return requested nmethod
   // We accept a higher level osr method
   if (osr_bci == InvocationEntryBci) {
-    CompiledMethod* code = method->code();
-    if (code == NULL) {
-      return (nmethod*) code;
-    } else {
-      return code->as_nmethod_or_null();
-    }
+    return method->blob();
   }
   return method->lookup_osr_nmethod_for(osr_bci, comp_level, false);
 }
@@ -1517,9 +1512,14 @@ bool CompileBroker::compilation_is_complete(const methodHandle& method,
     if (method->is_not_compilable(comp_level)) {
       return true;
     } else {
-      CompiledMethod* result = method->code();
-      if (result == NULL) return false;
-      return comp_level == result->comp_level();
+      CodeBlob* result = method->blob();
+      if (result != nullptr && result->is_compiled()) {
+        return comp_level == result->as_compiled_method()->comp_level();
+      } else if (result != nullptr && result->is_mhmethod()) {
+        return comp_level == CompLevel_none;
+      } else {
+        return false;
+      }
     }
   }
 }

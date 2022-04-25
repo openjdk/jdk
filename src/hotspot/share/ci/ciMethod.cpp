@@ -1124,8 +1124,9 @@ int ciMethod::code_size_for_inlining() {
 int ciMethod::instructions_size() {
   if (_instructions_size == -1) {
     GUARDED_VM_ENTRY(
-                     CompiledMethod* code = get_Method()->code();
-                     if (code != NULL && (code->comp_level() == CompLevel_full_optimization)) {
+                     CodeBlob* blob = get_Method()->blob();
+                     CompiledMethod* code = (blob != nullptr && blob->is_compiled()) ? blob->as_compiled_method() : nullptr;
+                     if (code != NULL &&  (code->comp_level() == CompLevel_full_optimization)) {
                        _instructions_size = code->insts_end() - code->verified_entry_point();
                      } else {
                        _instructions_size = 0;
@@ -1139,9 +1140,11 @@ int ciMethod::instructions_size() {
 // ciMethod::log_nmethod_identity
 void ciMethod::log_nmethod_identity(xmlStream* log) {
   GUARDED_VM_ENTRY(
-    CompiledMethod* code = get_Method()->code();
-    if (code != NULL) {
-      code->log_identity(log);
+    CodeBlob* code = get_Method()->blob();
+    if (code != NULL && code->is_nmethod()) {
+      code->as_compiled_method()->log_identity(log);
+    } else if (code != NULL && code->is_mhmethod()) {
+      code->as_mhmethod()->log_identity(log);
     }
   )
 }

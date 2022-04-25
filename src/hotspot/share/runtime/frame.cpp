@@ -247,7 +247,7 @@ bool frame::should_be_deoptimized() const {
   if (_deopt_state == is_deoptimized ||
       !is_compiled_frame() ) return false;
   assert(_cb != NULL && _cb->is_compiled(), "must be an nmethod");
-  CompiledMethod* nm = (CompiledMethod *)_cb;
+  CompiledMethod* nm = (_cb != nullptr) ? _cb->as_compiled_method() : nullptr;
   if (TraceDependencies) {
     tty->print("checking (%s) ", nm->is_marked_for_deoptimization() ? "true" : "false");
     nm->print_value_on(tty);
@@ -264,7 +264,7 @@ bool frame::should_be_deoptimized() const {
 
 bool frame::can_be_deoptimized() const {
   if (!is_compiled_frame()) return false;
-  CompiledMethod* nm = (CompiledMethod*)_cb;
+  CompiledMethod* nm = (_cb != nullptr) ? _cb->as_compiled_method() : nullptr;
 
   if( !nm->can_be_deoptimized() )
     return false;
@@ -280,7 +280,7 @@ void frame::deoptimize(JavaThread* thread) {
 
   // If the call site is a MethodHandle call site use the MH deopt
   // handler.
-  CompiledMethod* cm = (CompiledMethod*) _cb;
+  CompiledMethod* cm = (_cb != nullptr) ? _cb->as_compiled_method() : nullptr;
   address deopt = cm->is_method_handle_return(pc()) ?
                         cm->deopt_mh_handler_begin() :
                         cm->deopt_handler_begin();
@@ -601,7 +601,7 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
     } else if (_cb->is_buffer_blob()) {
       st->print("v  ~BufferBlob::%s", ((BufferBlob *)_cb)->name());
     } else if (_cb->is_compiled()) {
-      CompiledMethod* cm = (CompiledMethod*)_cb;
+      CompiledMethod* cm = (_cb != nullptr) ? _cb->as_compiled_method() : nullptr;
       Method* m = cm->method();
       if (m != NULL) {
         if (cm->is_nmethod()) {
@@ -1208,7 +1208,7 @@ void frame::describe(FrameValues& values, int frame_no) {
     values.describe(-1, info_address, err_msg("#%d entry frame", frame_no), 2);
   } else if (is_compiled_frame()) {
     // For now just label the frame
-    CompiledMethod* cm = (CompiledMethod*)cb();
+    CompiledMethod* cm = (cb() != nullptr) ? cb()->as_compiled_method() : nullptr;
     values.describe(-1, info_address,
                     FormatBuffer<1024>("#%d nmethod " INTPTR_FORMAT " for method J %s%s", frame_no,
                                        p2i(cm),

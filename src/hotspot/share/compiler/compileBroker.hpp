@@ -296,7 +296,7 @@ public:
   static void compilation_init_phase1(JavaThread* THREAD);
   static void compilation_init_phase2();
   static void init_compiler_thread_log();
-  static nmethod* compile_method(const methodHandle& method,
+  static CodeBlob* compile_method(const methodHandle& method,
                                  int osr_bci,
                                  int comp_level,
                                  const methodHandle& hot_method,
@@ -304,7 +304,7 @@ public:
                                  CompileTask::CompileReason compile_reason,
                                  TRAPS);
 
-  static nmethod* compile_method(const methodHandle& method,
+  static CodeBlob* compile_method(const methodHandle& method,
                                    int osr_bci,
                                    int comp_level,
                                    const methodHandle& hot_method,

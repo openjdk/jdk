@@ -801,117 +801,46 @@ class nmethodLocker : public StackObj {
   }
 };
 
-class mhmethod : public CompiledMethod {
+class mhmethod : public CodeBlob {
  public:
   static mhmethod* new_mhmethod(const methodHandle& method,
                               int compile_id,
                               CodeBuffer *code_buffer,
-                              int vep_offset,
                               int frame_complete,
                               int frame_size);
 
-  bool  is_in_use() const                   { assert(_state <= in_use,      "invalid state"); return true;  }
-  bool  is_not_entrant() const              { assert(_state != not_entrant, "invalid state"); return false; }
-  bool  is_alive() const                    { assert(_state < unloaded,     "invalid state"); return true;  }
-  bool  is_zombie() const                   { assert(_state != zombie,      "invalid state"); return false; }
-  bool  is_unloaded() const                 { assert(_state != not_entrant, "invalid state"); return false; }
+  bool  is_compiled() const                 { return false; }
+  bool  is_mhmethod() const                 { return true; }
 
-  int   comp_level() const                  { return CompLevel_none; }
-  int   compile_id() const                  { return _compile_id; }
+  bool  is_not_entrant()  const             { return false; }
+  bool  is_alive()        const             { return true;  }
+  bool  is_zombie()       const             { return false; }
+  bool  is_unloaded()     const             { return false; }
 
-  address verified_entry_point() const      { return _verified_entry_point;    } // if klass is correct
+  Method* method()      const               { return _method; }
+  int     compile_id()  const               { return _compile_id; }
+
+  void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f)   { /* nothing to do */ }
+
   void log_identity(xmlStream* log) const;
-  void log_state_change() const             { Unimplemented(); }
-  bool make_not_used()                      { assert(false, "invalid transition"); return false; }
-  bool make_not_entrant()                   { assert(false, "invalid transition"); return false; }
-  bool make_entrant()                       { assert(false, "invalid transition"); return false; }
-  bool make_zombie()                        { assert(false, "invalid transition"); return false; }
-  void make_unloaded()                      { assert(false, "invalid transition"); }
-
-  address entry_point() const               { return _entry_point;             } // normal entry point
-  bool is_osr_method() const                { return false; }
-  int  osr_entry_bci() const                { assert(is_osr_method(), "wrong kind of mhmethod"); return InvocationEntryBci; }
-
-  // boundaries for different parts
-  address scopes_data_end             () const    { return           header_begin() + _data_offset          ; }
-  PcDesc* scopes_pcs_begin            () const    { return (PcDesc*)(header_begin() + _data_offset)         ; }
-  PcDesc* scopes_pcs_end              () const    { return (PcDesc*)(header_begin() + _data_offset)         ; }
-  address consts_begin                () const    { return           header_begin() + _data_offset          ; }
-  address consts_end                  () const    { return           code_begin()                           ; }
-  address stub_begin                  () const    { return           header_begin() + _data_offset          ; }
-  address stub_end                    () const    { return           header_begin() + _data_offset          ; }
-  address exception_begin             () const    { return           header_begin()                         ; }
-  address unwind_handler_begin        () const    { return NULL                                             ; }
-  oop*    oops_begin                  () const    { return (oop*)   (header_begin() + _data_offset)         ; }
-  oop*    oops_end                    () const    { return (oop*)   (header_begin() + _data_offset)         ; }
-
-  Metadata** metadata_begin           () const    { return (Metadata**)  (header_begin() + _data_offset)    ; }
-  Metadata** metadata_end             () const    { return (Metadata**)  _scopes_data_begin                 ; }
-
-  RuntimeStub** native_invokers_begin () const    { return (RuntimeStub**)(header_begin() + _data_offset)   ; }
-  RuntimeStub** native_invokers_end   () const    { return (RuntimeStub**)(header_begin() + _data_offset)   ; }
-  address handler_table_begin         () const    { return           header_begin() + _data_offset          ; }
-  address handler_table_end           () const    { return           header_begin() + _data_offset          ; }
-  address nul_chk_table_begin         () const    { return           header_begin() + _data_offset          ; }
-  address nul_chk_table_end           () const    { return           header_begin() + _data_offset          ; }
-
-  void    set_original_pc(const frame* fr, address pc)  { *orig_pc_addr(fr) = pc;   }
-  address get_original_pc(const frame* fr)              { return *orig_pc_addr(fr); }
-
-  oop         oop_at(int index)           const   { assert(index == 0, "invalid index"); return nullptr     ; }
-  Metadata*   metadata_at(int index)      const   { assert(index == 0, "invalid index"); return nullptr     ; }
-  oop*        oop_addr_at(int index)      const   { assert(false, "unreachable"); return nullptr; }
-  Metadata**  metadata_addr_at(int index) const   { assert(false, "unreachable"); return nullptr; }
-
-  bool can_convert_to_zombie()                          { assert(false, "unreachable"); return false; }
-  const char* compile_kind() const                      { return "c2n";  }
-  int get_state() const                                 { return _state; }
-
-  bool is_dependent_on_method(Method* dependee)         { return false; }
-
-  NativeCallWrapper* call_wrapper_at(address call)          const;
-  NativeCallWrapper* call_wrapper_before(address return_pc) const;
-  address call_instruction_address(address pc)              const;
-
-  CompiledStaticCall* compiledStaticCall_at(Relocation* call_site)  const;
-  CompiledStaticCall* compiledStaticCall_at(address addr)           const;
-  CompiledStaticCall* compiledStaticCall_before(address addr)       const;
-
-  bool make_in_use();
-
-  bool is_unloading()                             { return false; }
-  void do_unloading(bool unloading_occurred);
-
-  void metadata_do(MetadataClosure* f);
 
   void print() const;
   void print_on(outputStream* st) const           { CodeBlob::print_on(st); }
-
-#if defined(SUPPORT_DATA_STRUCTS)
-  // print output in opt build for disassembler library
-  void print_relocations()                        PRODUCT_RETURN;
-  void print_pcs();
-#else
-  void print_pcs()                                { }
-#endif
-
-  void flush()                                    { assert(false, "never flush"); }
-
 
  private:
   void* operator new(size_t size, int mhmethod_size, int comp_level) throw();
 
   mhmethod(Method* method,
-            CompilerType type,
-            int mhmethod_size,
-            int compile_id,
-            CodeOffsets* offsets,
-            CodeBuffer *code_buffer,
-            int frame_size);
+           int mhmethod_size,
+           int compile_id,
+           int frame_complete,
+           CodeBuffer *code_buffer,
+           int frame_size);
 
-  void init_defaults();
+  address insts_begin () const  { return           code_begin()                           ; }
+  address insts_end   () const  { return           header_begin() + _data_offset          ; }
 
-  address* orig_pc_addr(const frame* fr)  {  return (address*) ((address)fr->unextended_sp()); }
+  int insts_size() const    { return header_begin() + _data_offset - code_begin(); }
 
   void verify();
 
@@ -920,13 +849,9 @@ class mhmethod : public CompiledMethod {
 
   void log_new_mhmethod() const;
 
-  // offsets for entry points
-  address _entry_point;                   // entry point with class check
-  address _verified_entry_point;          // entry point without class check
+  Method*   _method;
 
   int _compile_id;
-
-  volatile signed char _state;
 };
 
 #endif // SHARE_CODE_NMETHOD_HPP

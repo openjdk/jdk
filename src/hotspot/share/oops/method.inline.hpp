@@ -45,8 +45,13 @@ inline void Method::set_method_data(MethodData* data) {
 }
 
 inline CompiledMethod* volatile Method::code() const {
-  assert( check_code(), "" );
+  assert(check_code(), "" );
   return Atomic::load_acquire(&_code);
+}
+
+inline CodeBlob* volatile Method::blob() const {
+  assert(check_code(), "" );
+  return Atomic::load_acquire(&_blob);
 }
 
 // Write (bci, line number) pair to stream
@@ -82,7 +87,7 @@ inline void CompressedLineNumberWriteStream::write_pair(int bci, int line) {
   write_pair_inline(bci, line);
 }
 
-inline bool Method::has_compiled_code() const { return code() != NULL; }
+inline bool Method::has_compiled_code() const { return blob() != NULL; }
 
 inline bool Method::is_empty_method() const {
   return  code_size() == 1
