@@ -716,6 +716,7 @@ public:
     Block* _tail;    // Tail of loop
     bool   _irreducible;
     LocalSet _def_locals;
+    int _profiled_count;
 
     ciTypeFlow* outer() const { return head()->outer(); }
     bool at_insertion_point(Loop* lp, Loop* current);
@@ -724,7 +725,7 @@ public:
     Loop(Block* head, Block* tail) :
       _parent(NULL), _sibling(NULL), _child(NULL),
       _head(head),   _tail(tail),
-      _irreducible(false), _def_locals() {}
+      _irreducible(false), _def_locals(), _profiled_count(-1) {}
 
     Loop* parent()  const { return _parent; }
     Loop* sibling() const { return _sibling; }
@@ -759,6 +760,8 @@ public:
     bool is_irreducible() const { return _irreducible; }
 
     bool is_root() const { return _tail->pre_order() == max_jint; }
+
+    int profiled_count();
 
     void print(outputStream* st = tty, int indent = 0) const PRODUCT_RETURN;
   };
@@ -915,8 +918,6 @@ private:
 
   // Create the block map, which indexes blocks in pre_order.
   void map_blocks();
-
-  int profiled_count(ciTypeFlow::Loop* loop);
 
 public:
   // Perform type inference flow analysis.
