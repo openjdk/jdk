@@ -2204,6 +2204,20 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
         new_limit = new CMoveINode(adj_bool, adj_limit, adj_max, TypeInt::INT);
       }
       register_new_node(new_limit, ctrl);
+      if (loop_head->unrolled_count() == 1) {
+        // The Opaque2 node created above (in the case of the first unrolling) hides the type of the loop limit.
+        // As a result, if the iv Phi constant folds (because it captured the iteration range), the exit test won't
+        // constant fold and the graph contains a broken counted loop.
+        const Type* new_limit_t;
+        if (stride_con > 0) {
+          new_limit_t = TypeInt::make(min_jint, limit_type->_hi, limit_type->_widen);
+        } else {
+          assert(stride_con < 0, "stride can't be 0");
+          new_limit_t = TypeInt::make(limit_type->_lo, max_jint, limit_type->_widen);
+        }
+        new_limit = new CastIINode(new_limit, new_limit_t);
+        register_new_node(new_limit, ctrl);
+      }
     }
 
     assert(new_limit != NULL, "");
@@ -3588,6 +3602,8 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
     } else if (policy_unswitching(phase)) {
       phase->do_unswitching(this, old_new);
       return false; // need to recalculate idom data
+    } else if (phase->duplicate_loop_backedge(this, old_new)) {
+      return false;
     } else if (_head->is_LongCountedLoop()) {
       phase->create_loop_nest(this, old_new);
     }
@@ -3615,6 +3631,9 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
       // completely unroll this loop and it will no longer be a loop.
       phase->do_maximally_unroll(this, old_new);
       return true;
+    }
+    if (StressDuplicateBackedge && phase->duplicate_loop_backedge(this, old_new)) {
+      return false;
     }
   }
 
