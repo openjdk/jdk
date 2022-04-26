@@ -247,17 +247,14 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         // Document declared parameters for which tag documentation is available
         // (either directly or inherited) in order of their declaration.
         Content result = writer.getOutputInstance();
-        var first = true;
         for (int i = 0; i < formalParameters.size(); i++) {
             ParamTree dt = tagOfPosition.get(Integer.toString(i));
             if (dt != null) {
                 result.add(processParamTag(e, kind, writer, dt,
-                        ch.getParameterName(dt), first));
-                first = false;
+                        ch.getParameterName(dt), result.isEmpty()));
             } else if (writer.configuration().utils.isMethod(e)) {
                 result.add(getInheritedTagletOutput(kind, e, writer,
-                        formalParameters.get(i), i, first));
-                first = false;
+                        formalParameters.get(i), i, result.isEmpty()));
             }
         }
         if (paramTags.size() > tagOfPosition.size()) {
@@ -266,8 +263,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             for (ParamTree dt : paramTags) {
                 if (!tagOfPosition.containsValue(dt)) {
                     result.add(processParamTag(e, kind, writer, dt,
-                            ch.getParameterName(dt), first));
-                    first = false;
+                            ch.getParameterName(dt), result.isEmpty()));
                 }
             }
         }
