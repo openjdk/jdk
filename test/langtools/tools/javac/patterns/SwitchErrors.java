@@ -244,4 +244,14 @@ public class SwitchErrors {
             case CharSequence cs: break;
         }
     }
+    void primitiveToReference(int i) {
+        switch (i) {
+            case Integer j: break;
+        }
+    }
+    void referenceToPrimitive(Integer i) {
+        switch (i) {
+            case int j: break;
+        }
+    }
 }

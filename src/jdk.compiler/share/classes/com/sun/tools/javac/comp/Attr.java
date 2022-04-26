@@ -1693,6 +1693,7 @@ public class Attr extends JCTree.Visitor {
             List<Type> coveredTypesForConstants = List.nil();
             boolean hasDefault = false;           // Is there a default label?
             boolean hasTotalPattern = false;      // Is there a total pattern?
+            boolean lastPatternErroneous = false; // Has the last pattern erroneous type?
             boolean hasNullPattern = false;       // Is there a null pattern?
             CaseTree.CaseKind caseKind = null;
             boolean wasError = false;
@@ -1797,7 +1798,8 @@ public class Attr extends JCTree.Visitor {
                         boolean unconditional = TreeInfo.unrefinedCaseLabel(pat);
                         boolean isTotal = unconditional &&
                                           !patternType.isErroneous() &&
-                                          types.isSubtype(types.erasure(seltype), patternType);
+                                          types.isSubtype(types.boxedTypeOrType(types.erasure(seltype)),
+                                                          patternType);
                         if (isTotal) {
                             if (hasTotalPattern) {
                                 log.error(pat.pos(), Errors.DuplicateTotalPattern);
@@ -1806,6 +1808,7 @@ public class Attr extends JCTree.Visitor {
                             }
                             hasTotalPattern = true;
                         }
+                        lastPatternErroneous = patternType.isErroneous();
                         checkCaseLabelDominated(pat.pos(), coveredTypesForPatterns, patternType);
                         if (!patternType.isErroneous()) {
                             coveredTypesForConstants = coveredTypesForConstants.prepend(patternType);
@@ -1836,10 +1839,12 @@ public class Attr extends JCTree.Visitor {
                 chk.checkSwitchCaseStructure(cases);
             }
             if (switchTree.hasTag(SWITCH)) {
-                ((JCSwitch) switchTree).hasTotalPattern = hasDefault || hasTotalPattern;
+                ((JCSwitch) switchTree).hasTotalPattern =
+                        hasDefault || hasTotalPattern || lastPatternErroneous;
                 ((JCSwitch) switchTree).patternSwitch = patternSwitch;
             } else if (switchTree.hasTag(SWITCH_EXPRESSION)) {
-                ((JCSwitchExpression) switchTree).hasTotalPattern = hasDefault || hasTotalPattern;
+                ((JCSwitchExpression) switchTree).hasTotalPattern =
+                        hasDefault || hasTotalPattern || lastPatternErroneous;
                 ((JCSwitchExpression) switchTree).patternSwitch = patternSwitch;
             } else {
                 Assert.error(switchTree.getTag().name());
@@ -4148,6 +4153,10 @@ public class Attr extends JCTree.Visitor {
         if (!types.isCastable(exprType, pattType, warner)) {
             chk.basicHandler.report(pos,
                     diags.fragment(Fragments.InconvertibleTypes(exprType, pattType)));
+            return false;
+        } else if (exprType.isPrimitive() ^ pattType.isPrimitive()) {
+            chk.basicHandler.report(pos,
+                    diags.fragment(Fragments.NotApplicableTypes(exprType, pattType)));
             return false;
         } else if (warner.hasLint(LintCategory.UNCHECKED)) {
             log.error(pos,
