@@ -153,7 +153,7 @@ final class MemberName implements Member, Cloneable {
             } else if (type instanceof Object[] typeInfo) {
                 Class<?>[] ptypes = (Class<?>[]) typeInfo[1];
                 Class<?> rtype = (Class<?>) typeInfo[0];
-                MethodType res = MethodType.makeImpl(rtype, ptypes, true);
+                MethodType res = MethodType.methodType(rtype, ptypes, true);
                 type = res;
             }
             // Make sure type is a MethodType for racing threads.

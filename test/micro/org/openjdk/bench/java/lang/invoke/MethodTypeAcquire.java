@@ -24,11 +24,14 @@ package org.openjdk.bench.java.lang.invoke;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.invoke.MethodType;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +42,9 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
+@Warmup(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Fork(3)
 public class MethodTypeAcquire {
 
     private MethodType pTypes;
@@ -69,6 +75,16 @@ public class MethodTypeAcquire {
     }
 
     @Benchmark
+    public MethodType testGenericObject() {
+        return MethodType.genericMethodType(1);
+    }
+
+    @Benchmark
+    public MethodType testObjectObject() {
+        return MethodType.methodType(Object.class, Object.class);
+    }
+
+    @Benchmark
     public MethodType testSinglePType() {
         return MethodType.methodType(void.class, int.class);
     }
@@ -76,6 +92,16 @@ public class MethodTypeAcquire {
     @Benchmark
     public MethodType testMultiPType() {
         return MethodType.methodType(void.class, A.class, B.class);
+    }
+
+    @Benchmark
+    public MethodType testMultiPType_ObjectAndA() {
+        return MethodType.methodType(Object.class, Object.class, Object.class, Object.class, Object.class, A.class, B.class);
+    }
+
+    @Benchmark
+    public MethodType testMultiPType_ObjectOnly() {
+        return MethodType.methodType(Object.class, Object.class, Object.class, Object.class, Object.class, Object.class, Object.class);
     }
 
     @Benchmark
