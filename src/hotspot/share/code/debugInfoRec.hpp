@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ class DebugInformationRecorder: public ResourceObj {
   void end_safepoint(int pc_offset)      { end_scopes(pc_offset, true); }
   void end_non_safepoint(int pc_offset)  { end_scopes(pc_offset, false); }
 
-  // helper fuctions for describe_scope to enable sharing
+  // helper functions for describe_scope to enable sharing
   DebugToken* create_scope_values(GrowableArray<ScopeValue*>* values);
   DebugToken* create_monitor_values(GrowableArray<MonitorValue*>* monitors);
 

@@ -24,6 +24,6 @@
  */
 
 /**
- *  Provides a factory for constructing links.
+ * Provides a factory for constructing links.
  */
 package jdk.javadoc.internal.doclets.toolkit.util.links;

@@ -23,7 +23,7 @@
 # questions.
 #
 
-include GensrcCommonJdk.gmk
+include GensrcCommon.gmk
 
 ################################################################################
 #

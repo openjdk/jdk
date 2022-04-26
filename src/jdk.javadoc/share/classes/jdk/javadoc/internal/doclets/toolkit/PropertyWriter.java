@@ -30,7 +30,6 @@ import javax.lang.model.element.ExecutableElement;
 /**
  * The interface for writing property output.
  */
-
 public interface PropertyWriter extends MemberWriter {
 
     /**

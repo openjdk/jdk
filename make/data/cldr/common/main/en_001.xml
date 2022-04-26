@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -58,6 +58,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/r</pattern>
+							<datetimeSkeleton>rMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -65,7 +66,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<availableFormats>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM r</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, d MMM r(U)</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d MMM r</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">d MMMM r(U)</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">E, d MMMM r(U)</dateFormatItem>
 						<dateFormatItem id="M">LL</dateFormatItem>
 						<dateFormatItem id="Md">dd/MM</dateFormatItem>
 						<dateFormatItem id="MEd">E, dd/MM</dateFormatItem>
@@ -74,12 +77,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="UMd">dd/MM/U</dateFormatItem>
 						<dateFormatItem id="UMMMd">d MMM U</dateFormatItem>
-						<dateFormatItem id="yMd">dd/MM/r</dateFormatItem>
 						<dateFormatItem id="yyyyM">MM/r</dateFormatItem>
 						<dateFormatItem id="yyyyMd">dd/MM/r</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">E, dd/MM/r</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM r</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd">E, d MMM r(U)</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, d MMM r</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMd">d MMMM r(U)</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMEd">E, d MMMM r(U)</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Md">
@@ -145,6 +149,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -157,6 +162,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E, h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="GyMd">dd/MM/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
 						<dateFormatItem id="M">LL</dateFormatItem>
@@ -252,6 +258,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="9">Sept</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="9">Sept</month>
+						</monthWidth>
+					</monthContext>
+				</months>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
@@ -296,6 +314,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y</pattern>
+							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -304,6 +323,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E, h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E, h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
 						<dateFormatItem id="Md">dd/MM</dateFormatItem>
@@ -855,11 +875,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MVR">
 				<displayName count="other">Maldivian rufiyaa</displayName>
 			</currency>
-			<currency type="PHP">
-				<displayName>Philippine Peso</displayName>
-				<displayName count="one">Philippine peso</displayName>
-				<displayName count="other">Philippine pesos</displayName>
-			</currency>
 			<currency type="RUB">
 				<displayName>Russian Rouble</displayName>
 				<displayName count="one">Russian rouble</displayName>
@@ -964,6 +979,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="energy-kilowatt-hour">
 				<unitPattern count="one">{0} kilowatt-hour</unitPattern>
 			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kilowatt-hour per 100 kilometres</displayName>
+				<unitPattern count="one">{0} kilowatt-hour per 100 kilometres</unitPattern>
+				<unitPattern count="other">{0} kilowatt-hours per 100 kilometres</unitPattern>
+			</unit>
 			<unit type="graphics-pixel-per-centimeter">
 				<displayName>pixels per centimetre</displayName>
 				<unitPattern count="one">{0} pixel per centimetre</unitPattern>
@@ -973,9 +993,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dots per centimetre</displayName>
 				<unitPattern count="one">{0} dot per centimetre</unitPattern>
 				<unitPattern count="other">{0} dots per centimetre</unitPattern>
-			</unit>
-			<unit type="graphics-dot">
-				<unitPattern count="other">{0} dots</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="other">{0} earth radii</unitPattern>
@@ -1043,9 +1060,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>stone</displayName>
 				<unitPattern count="one">{0} stone</unitPattern>
 				<unitPattern count="other">{0} stone</unitPattern>
-			</unit>
-			<unit type="mass-grain">
-				<unitPattern count="other">{0} grains</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
 				<displayName>millimetres of mercury</displayName>
@@ -1154,18 +1168,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>dessertspoon</displayName>
 				<unitPattern count="one">{0} dessertspoon</unitPattern>
 				<unitPattern count="other">{0} dessertspoons</unitPattern>
-			</unit>
-			<unit type="volume-drop">
-				<unitPattern count="other">{0} drops</unitPattern>
-			</unit>
-			<unit type="volume-dram">
-				<unitPattern count="other">{0} drams</unitPattern>
-			</unit>
-			<unit type="volume-jigger">
-				<unitPattern count="other">{0} jiggers</unitPattern>
-			</unit>
-			<unit type="volume-pinch">
-				<unitPattern count="other">{0} pinches</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
 				<displayName>quart</displayName>
@@ -1349,6 +1351,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="area-square-meter">
 				<displayName draft="contributed">metres²</displayName>
 			</unit>
+			<unit type="concentr-karat">
+				<displayName>carat</displayName>
+				<unitPattern count="one">{0}ct</unitPattern>
+				<unitPattern count="other">{0}ct</unitPattern>
+			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mg/dl</displayName>
 				<unitPattern count="one">{0}mg/dl</unitPattern>
@@ -1442,6 +1449,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}gal</unitPattern>
 				<unitPattern count="other">{0}gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>fl oz</displayName>
+				<unitPattern count="one">{0}fl oz</unitPattern>
+				<unitPattern count="other">{0}fl oz</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>US dsp</displayName>
+				<unitPattern count="one">{0}US dsp</unitPattern>
+				<unitPattern count="other">{0}US dsp</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dsp</displayName>
+				<unitPattern count="one">{0}dsp</unitPattern>
+				<unitPattern count="other">{0}dsp</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<unitPattern count="other">{0}jiggers</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt</displayName>
+				<unitPattern count="one">{0}qt</unitPattern>
+				<unitPattern count="other">{0}qt</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

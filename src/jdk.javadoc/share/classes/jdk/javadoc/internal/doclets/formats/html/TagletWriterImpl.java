@@ -81,7 +81,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewFlagProvider;
 /**
  * The taglet writer that writes HTML.
  */
-
 public class TagletWriterImpl extends TagletWriter {
     /**
      * A class that provides the information about the enclosing context for

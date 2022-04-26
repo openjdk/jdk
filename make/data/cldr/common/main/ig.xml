@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -35,7 +35,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ce">Chechen</language>
 			<language type="ceb">Cebụanọ</language>
 			<language type="chr">Cheroke</language>
-			<language type="ckb" alt="menu">Kurdish ọsote</language>
+			<language type="ckb">Kurdish ọsote</language>
 			<language type="ckb" alt="variant">Kurdish ọzọ</language>
 			<language type="co">Kọsịan</language>
 			<language type="cs">Cheekị</language>
@@ -689,21 +689,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y G</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1000,21 +1004,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/M/yy</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -2345,10 +2353,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Oge Okpomọkụ Yekaterinburg</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>Oge Yukon</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
+		<minimumGroupingDigits>1</minimumGroupingDigits>
 		<symbols numberSystem="arab">
 			<decimal>٫</decimal>
 			<group>٬</group>
@@ -2681,7 +2694,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="JPY">
 				<displayName>Yen Japan</displayName>
 				<displayName count="other">Yen Japan</displayName>
-				<symbol draft="contributed">¥</symbol>
+				<symbol>¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>Ego Shilling obodo Kenya</displayName>
@@ -2723,6 +2736,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="LRD">
 				<displayName>Ego Dollar obodo Liberia</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName>This is not a translation</displayName>
+				<displayName count="other">This is not a translation</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName>Ego Dinar obodo Libya</displayName>
@@ -2923,7 +2940,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="USD">
 				<displayName>Dollar US</displayName>
 				<displayName count="other">Dollars US</displayName>
-				<symbol draft="contributed">$</symbol>
+				<symbol>$</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName>Ego Peso obodo Uruguay</displayName>
@@ -2982,7 +2999,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="other" draft="contributed">ubochi {0}</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">ubochi {0}</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Si uzo aka nri {0}</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>

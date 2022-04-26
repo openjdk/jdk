@@ -563,13 +563,13 @@ final class HttpsClient extends HttpClient
                 if (isDefaultHostnameVerifier) {
                     // If the HNV is the default from HttpsURLConnection, we
                     // will do the spoof checks in SSLSocket.
-                    SSLParameters paramaters = s.getSSLParameters();
-                    paramaters.setEndpointIdentificationAlgorithm("HTTPS");
+                    SSLParameters parameters = s.getSSLParameters();
+                    parameters.setEndpointIdentificationAlgorithm("HTTPS");
                     // host has been set previously for SSLSocketImpl
                     if (!(s instanceof SSLSocketImpl)) {
-                        paramaters.setServerNames(List.of(new SNIHostName(host)));
+                        parameters.setServerNames(List.of(new SNIHostName(host)));
                     }
-                    s.setSSLParameters(paramaters);
+                    s.setSSLParameters(parameters);
 
                     needToCheckSpoofing = false;
                 }
