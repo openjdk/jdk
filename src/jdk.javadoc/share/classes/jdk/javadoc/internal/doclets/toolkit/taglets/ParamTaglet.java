@@ -206,7 +206,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                                      List<? extends ParamTree> paramTags,
                                      List<? extends Element> formalParameters,
                                      TagletWriter writer) {
-        Map<String, ParamTree> documented = new HashMap<>();
+        Map<String, ParamTree> tagOfPosition = new HashMap<>();
         Messages messages = writer.configuration().getMessages();
         CommentHelper ch = writer.configuration().utils.getCommentHelper(e);
         if (!paramTags.isEmpty()) {
@@ -224,7 +224,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                 }
                 String position = positionOfName.get(name);
                 if (position != null) {
-                    if (documented.containsKey(position)) {
+                    if (tagOfPosition.containsKey(position)) {
                         String key = switch (kind) {
                             case PARAMETER -> "doclet.Parameters_dup_warn";
                             case TYPE_PARAMETER -> "doclet.TypeParameters_dup_warn";
@@ -232,7 +232,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                         };
                         messages.warning(ch.getDocTreePath(dt), key, paramName);
                     } else {
-                        documented.put(position, dt);
+                        tagOfPosition.put(position, dt);
                     }
                 }
             }
@@ -241,7 +241,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         // (either directly or inherited) in order of their declaration.
         Content result = writer.getOutputInstance();
         for (int i = 0; i < formalParameters.size(); i++) {
-            ParamTree dt = documented.get(String.valueOf(i));
+            ParamTree dt = tagOfPosition.get(String.valueOf(i));
             if (dt != null) {
                 result.add(processParamTag(e, kind, writer, dt,
                         ch.getParameterName(dt), result.isEmpty()));
@@ -250,11 +250,11 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                         formalParameters.get(i), i, result.isEmpty()));
             }
         }
-        if (paramTags.size() > documented.size()) {
+        if (paramTags.size() > tagOfPosition.size()) {
             // Generate documentation for remaining taglets that do not match a declared parameter.
             // These are erroneous but we generate them anyway.
             for (ParamTree dt : paramTags) {
-                if (!documented.containsValue(dt)) {
+                if (!tagOfPosition.containsValue(dt)) {
                     result.add(processParamTag(e, kind, writer, dt,
                             ch.getParameterName(dt), result.isEmpty()));
                 }
