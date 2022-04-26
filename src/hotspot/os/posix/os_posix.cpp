@@ -551,6 +551,7 @@ void os::Posix::print_user_info(outputStream* st) {
 
 // Print all active locale categories, one line each
 void os::Posix::print_active_locale(outputStream* st) {
+  st->print_cr("Active Locale:");
   // Posix is quiet about how exactly LC_ALL is implemented.
   // Just print it out too, in case LC_ALL is held separately
   // from the individual categories.
@@ -572,7 +573,7 @@ void os::Posix::print_active_locale(outputStream* st) {
   for (int i = 0; categories[i].c != -1; i ++) {
     const char* locale = setlocale(categories[i].c, NULL);
     st->print_cr("%s=%s", categories[i].name,
-                 ((locale != NULL) ? locale : ""));
+                 ((locale != NULL) ? locale : "<unknown>"));
   }
 }
 
