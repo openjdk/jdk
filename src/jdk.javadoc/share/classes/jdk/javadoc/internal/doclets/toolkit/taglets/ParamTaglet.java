@@ -152,7 +152,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                                     List<? extends Element> formalParameters,
                                     List<? extends ParamTree> paramTags) {
         Content result = writer.getOutputInstance();
-        result.add(processParamTags(holder, kind, paramTags, formalParameters, writer));
+        result.add(convertParams(holder, kind, paramTags, formalParameters, writer));
         return result;
     }
 
@@ -197,11 +197,11 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      *
      * @param kind the kind of <em>all</em> parameters in the lists
      */
-    private Content processParamTags(Element e,
-                                     ParamKind kind,
-                                     List<? extends ParamTree> paramTags,
-                                     List<? extends Element> formalParameters,
-                                     TagletWriter writer) {
+    private Content convertParams(Element e,
+                                  ParamKind kind,
+                                  List<? extends ParamTree> paramTags,
+                                  List<? extends Element> formalParameters,
+                                  TagletWriter writer) {
         Map<String, ParamTree> tagOfPosition = new HashMap<>();
         Messages messages = writer.configuration().getMessages();
         CommentHelper ch = writer.configuration().utils.getCommentHelper(e);
