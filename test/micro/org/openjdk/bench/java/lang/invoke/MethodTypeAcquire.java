@@ -49,6 +49,9 @@ public class MethodTypeAcquire {
 
     private MethodType pTypes;
 
+    private Class<?> objectType = Object.class;
+
+    private Class<?> otherType = A.class;
     @Setup
     public void setup() {
         pTypes = MethodType.methodType(A.class, B.class);
@@ -85,6 +88,11 @@ public class MethodTypeAcquire {
     }
 
     @Benchmark
+    public MethodType testObjectObject_NonConst() {
+        return MethodType.methodType(objectType, objectType);
+    }
+
+    @Benchmark
     public MethodType testSinglePType() {
         return MethodType.methodType(void.class, int.class);
     }
@@ -100,8 +108,18 @@ public class MethodTypeAcquire {
     }
 
     @Benchmark
+    public MethodType testMultiPType_ObjectAndA_NonConst() {
+        return MethodType.methodType(objectType, objectType, objectType, objectType, objectType, otherType, otherType);
+    }
+
+    @Benchmark
     public MethodType testMultiPType_ObjectOnly() {
         return MethodType.methodType(Object.class, Object.class, Object.class, Object.class, Object.class, Object.class, Object.class);
+    }
+
+    @Benchmark
+    public MethodType testMultiPType_ObjectOnly_NonConst() {
+        return MethodType.methodType(objectType, objectType, objectType, objectType, objectType, objectType, objectType);
     }
 
     @Benchmark
