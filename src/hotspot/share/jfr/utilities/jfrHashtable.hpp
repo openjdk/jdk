@@ -92,9 +92,6 @@ class JfrBasicHashtable : public CHeapObj<mtTracing> {
     entry->set_next(NULL);
     --_number_of_entries;
   }
-  void free_buckets() {
-    FREE_C_HEAP_ARRAY(Bucket, _buckets);
-  }
   TableEntry* bucket(size_t i) { return _buckets[i].get_entry();}
   TableEntry** bucket_addr(size_t i) { return _buckets[i].entry_addr(); }
   uintptr_t table_size() const { return _table_size; }
@@ -147,10 +144,6 @@ class HashTableHost : public JfrBasicHashtable<T> {
   typedef Entry<T, IdType> HashEntry;
   HashTableHost(size_t size = 0) : JfrBasicHashtable<T>(size == 0 ? TABLE_SIZE : size, sizeof(HashEntry)), _callback(new Callback()) {}
   HashTableHost(Callback* cb, size_t size = 0) : JfrBasicHashtable<T>(size == 0 ? TABLE_SIZE : size, sizeof(HashEntry)), _callback(cb) {}
-  ~HashTableHost() {
-    this->clear_entries();
-    this->free_buckets();
-  }
 
   // direct insert assumes non-existing entry
   HashEntry& put(uintptr_t hash, const T& data);
@@ -179,7 +172,6 @@ class HashTableHost : public JfrBasicHashtable<T> {
 
   size_t cardinality() const { return this->number_of_entries(); }
   bool has_entries() const { return this->cardinality() > 0; }
-  void clear_entries();
 
   // removal and deallocation
   void free_entry(HashEntry* entry) {
@@ -247,21 +239,6 @@ void HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::iterate_entry(Functo
       entry = (const HashEntry*)entry->next();
     }
   }
-}
-
-template <typename T, typename IdType, template <typename, typename> class Entry, typename Callback, size_t TABLE_SIZE>
-void HashTableHost<T, IdType, Entry, Callback, TABLE_SIZE>::clear_entries() {
-  for (size_t i = 0; i < this->table_size(); ++i) {
-    HashEntry** bucket = (HashEntry**)this->bucket_addr(i);
-    HashEntry* entry = *bucket;
-    while (entry != NULL) {
-      HashEntry* entry_to_remove = entry;
-      entry = (HashEntry*)entry->next();
-      this->free_entry(entry_to_remove);
-    }
-    *bucket = NULL;
-  }
-  assert(this->number_of_entries() == 0, "should have removed all entries");
 }
 
 template <typename T, typename IdType, template <typename, typename> class Entry, typename Callback, size_t TABLE_SIZE>

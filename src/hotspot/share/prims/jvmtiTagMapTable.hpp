@@ -75,7 +75,6 @@ private:
 
 public:
   JvmtiTagMapTable();
-  ~JvmtiTagMapTable();
 
   JvmtiTagMapEntry* find(oop obj);
   JvmtiTagMapEntry* add(oop obj, jlong tag);

@@ -46,7 +46,6 @@ class G1CodeRootSetTable : public Hashtable<nmethod*, mtGC> {
 
  public:
   G1CodeRootSetTable(int size) : Hashtable<nmethod*, mtGC>(size, sizeof(Entry)), _purge_next(NULL) {}
-  ~G1CodeRootSetTable();
 
   // Needs to be protected by locks
   bool add(nmethod* nm);

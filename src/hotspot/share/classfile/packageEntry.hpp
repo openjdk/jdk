@@ -272,7 +272,6 @@ private:
 
 public:
   PackageEntryTable(int table_size);
-  ~PackageEntryTable();
 
   PackageEntry* bucket(int i) {
     return (PackageEntry*)Hashtable<Symbol*, mtModule>::bucket(i);

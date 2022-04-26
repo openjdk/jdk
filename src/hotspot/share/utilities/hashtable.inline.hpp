@@ -59,6 +59,7 @@ template <MEMFLAGS F> inline BasicHashtable<F>::BasicHashtable(int table_size, i
 }
 
 template <MEMFLAGS F> inline BasicHashtable<F>::~BasicHashtable() {
+  free_entries();
   free_buckets();
 }
 

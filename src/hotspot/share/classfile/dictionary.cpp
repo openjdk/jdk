@@ -65,18 +65,6 @@ Dictionary::Dictionary(ClassLoaderData* loader_data,
     _resizable(resizable), _needs_resizing(false), _loader_data(loader_data) {
 };
 
-Dictionary::~Dictionary() {
-  DictionaryEntry* probe = NULL;
-  for (int index = 0; index < table_size(); index++) {
-    for (DictionaryEntry** p = bucket_addr(index); *p != NULL; ) {
-      probe = *p;
-      *p = probe->next();
-      free_entry(probe);
-    }
-  }
-  assert(number_of_entries() == 0, "should have removed all entries");
-}
-
 DictionaryEntry* Dictionary::new_entry(unsigned int hash, InstanceKlass* klass) {
   DictionaryEntry* entry = (DictionaryEntry*)Hashtable<InstanceKlass*, mtClass>::new_entry(hash, klass);
   entry->release_set_pd_set(NULL);

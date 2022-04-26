@@ -359,6 +359,7 @@ ModuleEntryTable::~ModuleEntryTable() {
       }
       BasicHashtable<mtModule>::free_entry(to_remove);
     }
+    *bucket_addr(i) = NULL;
   }
   assert(number_of_entries() == 0, "should have removed all entries");
 }

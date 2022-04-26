@@ -54,7 +54,6 @@ class Dictionary : public Hashtable<InstanceKlass*, mtClass> {
 public:
   Dictionary(ClassLoaderData* loader_data, int table_size, bool resizable = false);
   Dictionary(ClassLoaderData* loader_data, int table_size, HashtableBucket<mtClass>* t, int number_of_entries, bool resizable = false);
-  ~Dictionary();
 
   static bool does_any_dictionary_needs_resizing();
   bool resize_if_needed();

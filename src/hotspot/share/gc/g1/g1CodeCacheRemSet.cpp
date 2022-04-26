@@ -60,18 +60,6 @@ void G1CodeRootSetTable::remove_entry(Entry* e, Entry* previous) {
   free_entry(e);
 }
 
-G1CodeRootSetTable::~G1CodeRootSetTable() {
-  for (int index = 0; index < table_size(); ++index) {
-    for (Entry* e = bucket(index); e != NULL; ) {
-      Entry* to_remove = e;
-      // read next before freeing.
-      e = e->next();
-      BasicHashtable<mtGC>::free_entry(to_remove);
-    }
-  }
-  assert(number_of_entries() == 0, "should have removed all entries");
-}
-
 bool G1CodeRootSetTable::add(nmethod* nm) {
   if (!contains(nm)) {
     Entry* e = new_entry(nm);

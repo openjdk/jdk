@@ -53,22 +53,7 @@ JvmtiTagMapTable::JvmtiTagMapTable()
 void JvmtiTagMapTable::clear() {
   // Clear this table
   log_debug(jvmti, table)("JvmtiTagMapTable cleared");
-  for (int i = 0; i < table_size(); ++i) {
-    for (JvmtiTagMapEntry* m = bucket(i); m != NULL;) {
-      JvmtiTagMapEntry* entry = m;
-      // read next before freeing.
-      m = m->next();
-      free_entry(entry);
-    }
-    JvmtiTagMapEntry** p = bucket_addr(i);
-    *p = NULL; // clear out buckets.
-  }
-  assert(number_of_entries() == 0, "should have removed all entries");
-}
-
-JvmtiTagMapTable::~JvmtiTagMapTable() {
-  clear();
-  // base class ~BasicHashtable deallocates the buckets.
+  free_entries();
 }
 
 // Entries are C_Heap allocated

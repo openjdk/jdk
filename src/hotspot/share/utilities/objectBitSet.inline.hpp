@@ -56,18 +56,6 @@ ObjectBitSet<F>::~ObjectBitSet() {
 }
 
 template<MEMFLAGS F>
-ObjectBitSet<F>::BitMapFragmentTable::~BitMapFragmentTable() {
-  for (int index = 0; index < BasicHashtable<F>::table_size(); index ++) {
-    Entry* e = bucket(index);
-    while (e != nullptr) {
-      Entry* tmp = e;
-      e = e->next();
-      BasicHashtable<F>::free_entry(tmp);
-    }
-  }
-}
-
-template<MEMFLAGS F>
 inline typename ObjectBitSet<F>::BitMapFragmentTable::Entry* ObjectBitSet<F>::BitMapFragmentTable::bucket(int i) const {
   return (Entry*)BasicHashtable<F>::bucket(i);
 }

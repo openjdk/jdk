@@ -68,6 +68,18 @@ template <MEMFLAGS F> inline void BasicHashtable<F>::free_entry(BasicHashtableEn
   JFR_ONLY(_stats_rate.remove();)
 }
 
+template <MEMFLAGS F> void BasicHashtable<F>::free_entries() {
+  for (int index = 0; index < table_size(); index ++) {
+    BasicHashtableEntry<F>* entry = bucket(index);
+    while (entry != nullptr) {
+      BasicHashtableEntry<F>* to_delete = entry;
+      entry = entry->next();
+      free_entry(to_delete);
+    }
+    *bucket_addr(index) = NULL;
+  }
+  assert(number_of_entries() == 0, "should have removed all entries");
+}
 
 template <MEMFLAGS F> void BasicHashtable<F>::free_buckets() {
   FREE_C_HEAP_ARRAY(HashtableBucket, _buckets);
