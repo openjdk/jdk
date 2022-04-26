@@ -2795,8 +2795,8 @@ instruct populateindex(vReg dst, iRegIorL2I src1, immI src2) %{
   ins_cost(SVE_COST);
   format %{ "sve_index $dst, $src1, $src2\t # populate index (sve)" %}
   ins_encode %{
-    int size = type2aelembytes(this->bottom_type()->is_vect()->element_basic_type());
-    __ sve_index(as_FloatRegister($dst$$reg), __ elemBytes_to_regVariant(size),
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_index(as_FloatRegister($dst$$reg), __ elemType_to_regVariant(bt),
                  as_Register($src1$$reg), $src2$$constant);
   %}
   ins_pipe(pipe_slow);
