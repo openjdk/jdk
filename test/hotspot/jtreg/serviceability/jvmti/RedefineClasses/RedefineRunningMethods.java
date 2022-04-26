@@ -145,13 +145,11 @@ public class RedefineRunningMethods {
             String s = new String("some garbage");
             System.gc();
         }
-/*
-        TODO uncomment, should be join added to orginal test?
         t1.join();
         t2.join();
         t3.join();
         t1v.join();
         t2v.join();
- */
+
     }
 }

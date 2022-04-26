@@ -76,10 +76,10 @@ inline bool stackChunkOopDesc::try_set_flags(uint8_t prev_flags, uint8_t new_fla
   return jdk_internal_vm_StackChunk::try_set_flags(this, prev_flags, new_flags);
 }
 
-inline int stackChunkOopDesc::max_size() const          { return jdk_internal_vm_StackChunk::maxSize(as_oop()); }
-inline void stackChunkOopDesc::set_max_size(int value)  {
+inline int stackChunkOopDesc::max_thawing_size() const          { return jdk_internal_vm_StackChunk::maxThawingSize(as_oop()); }
+inline void stackChunkOopDesc::set_max_thawing_size(int value)  {
   assert(value >= 0, "size must be >= 0");
-  jdk_internal_vm_StackChunk::set_maxSize(this, (jint)value);
+  jdk_internal_vm_StackChunk::set_maxThawingSize(this, (jint)value);
 }
 
 inline oop stackChunkOopDesc::cont() const              { return UseCompressedOops ? cont<narrowOop>() : cont<oop>(); /* jdk_internal_vm_StackChunk::cont(as_oop()); */ }
@@ -117,7 +117,10 @@ inline intptr_t* stackChunkOopDesc::from_offset(int offset) const {
 }
 
 inline bool stackChunkOopDesc::is_empty() const {
-  return sp() >= stack_size() - argsize();
+  assert(sp() <= stack_size(), "");
+  assert((sp() == stack_size()) == (sp() >= stack_size() - argsize()),
+    "sp: %d size: %d argsize: %d", sp(), stack_size(), argsize());
+  return sp() == stack_size();
 }
 
 inline bool stackChunkOopDesc::is_in_chunk(void* p) const {
@@ -151,8 +154,11 @@ inline void stackChunkOopDesc::clear_flags() {
   set_flags(0);
 }
 
-inline bool stackChunkOopDesc::has_mixed_frames() const            { return is_flag(FLAG_HAS_INTERPRETED_FRAMES); }
-inline void stackChunkOopDesc::set_has_mixed_frames(bool value)    { set_flag(FLAG_HAS_INTERPRETED_FRAMES, value); }
+inline bool stackChunkOopDesc::has_mixed_frames() const { return is_flag(FLAG_HAS_INTERPRETED_FRAMES); }
+inline void stackChunkOopDesc::set_has_mixed_frames(bool value) {
+  assert((flags() & ~FLAG_HAS_INTERPRETED_FRAMES) == 0, "other flags should not be set");
+  set_flag(FLAG_HAS_INTERPRETED_FRAMES, value);
+}
 
 inline bool stackChunkOopDesc::is_gc_mode() const                  { return is_flag(FLAG_GC_MODE); }
 inline bool stackChunkOopDesc::is_gc_mode_acquire() const          { return is_flag_acquire(FLAG_GC_MODE); }
@@ -307,8 +313,8 @@ inline void stackChunkOopDesc::copy_from_stack_to_chunk(intptr_t* from, intptr_t
     p2i(to), to - start_address(), relative_base() - to, p2i(to + size), to + size - start_address(),
     relative_base() - (to + size), size, size << LogBytesPerWord);
 
-  assert(to >= start_address(), "");
-  assert(to + size <= end_address(), "");
+  assert(to >= start_address(), "Chunk underflow");
+  assert(to + size <= end_address(), "Chunk overflow");
 
   memcpy(to, from, size << LogBytesPerWord);
 }

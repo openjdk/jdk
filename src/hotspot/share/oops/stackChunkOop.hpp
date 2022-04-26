@@ -51,6 +51,8 @@ private:
   template <BarrierType barrier> friend class DoBarriersStackClosure;
 
   // Chunk flags.
+  // FLAG_HAS_INTERPRETED_FRAMES actually means "thaw slow because of some content-based chunk condition"
+  // It is set whenever we freeze slow, but generally signifies there might be interpreted/deoptimized/stub frames
   static const uint8_t FLAG_HAS_INTERPRETED_FRAMES = 1 << 0;
   static const uint8_t FLAG_CLAIM_RELATIVIZE = 1 << 1; // Only one thread claims relativization of derived pointers
   static const uint8_t FLAG_NOTIFY_RELATIVIZE = 1 << 2; // Someone is waiting for relativization to complete
@@ -86,8 +88,8 @@ public:
   inline void set_flags(uint8_t value);
   inline void release_set_flags(uint8_t value);
 
-  inline int max_size() const;
-  inline void set_max_size(int value);
+  inline int max_thawing_size() const;
+  inline void set_max_thawing_size(int value);
 
   inline oop cont() const;
   template<typename P> inline oop cont() const;

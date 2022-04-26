@@ -178,6 +178,35 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * <p> Unless otherwise specified, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be thrown.
  *
+ * @implNote
+ * In the JDK Reference Implementation, the virtual thread scheduler may be configured
+ * with the following system properties:
+ * <table class="striped">
+ * <caption style="display:none:">System properties</caption>
+ *   <thead>
+ *   <tr>
+ *     <th scope="col">System property</th>
+ *     <th scope="col">Description</th>
+ *   </tr>
+ *   </thead>
+ *   <tbody>
+ *   <tr>
+ *     <th scope="row">
+ *       {@systemProperty jdk.virtualThreadScheduler.parallelism}
+ *     </th>
+ *     <td> The number of platform threads available for scheduling virtual
+ *       threads. It defaults to the number of available processors. </td>
+ *   </tr>
+ *   <tr>
+ *     <th scope="row">
+ *       {@systemProperty jdk.virtualThreadScheduler.maxPoolSize}
+ *     </th>
+ *     <td> The maximum number of platform threads available to the scheduler.
+ *       It defaults to 256. </td>
+ *   </tr>
+ *   </tbody>
+ * </table>
+ *
  * @since   1.0
  */
 public class Thread implements Runnable {

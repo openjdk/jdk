@@ -19,32 +19,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef CPU_X86_CONTINUATIONENTRY_X86_INLINE_HPP
-#define CPU_X86_CONTINUATIONENTRY_X86_INLINE_HPP
+#include "jni.h"
 
-#include "runtime/continuationEntry.hpp"
-
-#include "runtime/frame.inline.hpp"
-#include "runtime/registerMap.hpp"
-#include "utilities/macros.hpp"
-
-inline frame ContinuationEntry::to_frame() const {
-  static CodeBlob* cb = CodeCache::find_blob_fast(entry_pc());
-  assert(cb != nullptr, "");
-  assert(cb->as_compiled_method()->method()->is_continuation_enter_intrinsic(), "");
-  return frame(entry_sp(), entry_sp(), entry_fp(), entry_pc(), cb);
+JNIEXPORT jint JNICALL
+Java_Basic_nativeBar(JNIEnv* env, jclass klass, jint x) {
+    jmethodID nativeBaz = (*env)->GetStaticMethodID(env, klass, "nativeBaz", "(I)I");
+    jint r = (*env)->CallStaticIntMethod(env, klass, nativeBaz, x+1);
+    return r + 1;
 }
-
-inline intptr_t* ContinuationEntry::entry_fp() const {
-  return (intptr_t*)((address)this + size());
-}
-
-inline void ContinuationEntry::update_register_map(RegisterMap* map) const {
-  intptr_t** fp = (intptr_t**)(bottom_sender_sp() - frame::sender_sp_offset);
-  frame::update_map_with_saved_link(map, fp);
-}
-
-#endif // CPU_X86_CONTINUATIONENTRY_X86_INLINE_HPP

@@ -281,25 +281,21 @@ bool Continuation::unpin(JavaThread* current) {
   return ce->unpin();
 }
 
-bool Continuation::fix_continuation_bottom_sender(JavaThread* thread, const frame& callee,
-                                                  address* sender_pc, intptr_t** sender_sp) {
-  if (thread != nullptr && is_return_barrier_entry(*sender_pc)) {
-    ContinuationEntry* ce = get_continuation_entry_for_sp(thread,
-          callee.is_interpreted_frame() ? callee.interpreter_frame_last_sp() : callee.unextended_sp());
-    assert(ce != nullptr, "callee.unextended_sp(): " INTPTR_FORMAT, p2i(callee.unextended_sp()));
+frame Continuation::continuation_bottom_sender(JavaThread* thread, const frame& callee, intptr_t* sender_sp) {
+  assert (thread != nullptr, "");
+  ContinuationEntry* ce = get_continuation_entry_for_sp(thread,
+        callee.is_interpreted_frame() ? callee.interpreter_frame_last_sp() : callee.unextended_sp());
+  assert(ce != nullptr, "callee.unextended_sp(): " INTPTR_FORMAT, p2i(callee.unextended_sp()));
 
-    log_develop_debug(continuations)("fix_continuation_bottom_sender: "
-                                  "[" JLONG_FORMAT "] [%d]", java_tid(thread), thread->osthread()->thread_id());
-    log_develop_trace(continuations)("sender_pc: " INTPTR_FORMAT " -> " INTPTR_FORMAT, p2i(*sender_pc), p2i(ce->entry_pc()));
-    log_develop_trace(continuations)("sender_sp: " INTPTR_FORMAT " -> " INTPTR_FORMAT, p2i(*sender_sp), p2i(ce->entry_sp()));
+  log_develop_debug(continuations)("continuation_bottom_sender: [" JLONG_FORMAT "] [%d] callee: " INTPTR_FORMAT
+    " sender_sp: " INTPTR_FORMAT,
+    java_tid(thread), thread->osthread()->thread_id(), p2i(callee.sp()), p2i(sender_sp));
 
-    *sender_pc = ce->entry_pc();
-    *sender_sp = ce->entry_sp();
-    // We DO NOT fix FP. It could contain an oop that has changed on the stack, and its location should be OK anyway
-
-    return true;
+  frame entry = ce->to_frame();
+  if (callee.is_interpreted_frame()) {
+    entry.set_sp(sender_sp); // sp != unextended_sp
   }
-  return false;
+  return entry;
 }
 
 address Continuation::get_top_return_pc_post_barrier(JavaThread* thread, address pc) {

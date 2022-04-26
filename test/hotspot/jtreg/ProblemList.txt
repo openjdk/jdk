@@ -111,8 +111,6 @@ applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
 
-runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java#id0 8272791 generic-all
-
 #############################################################################
 
 # :hotspot_serviceability
@@ -185,10 +183,7 @@ vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEa
 # fails with StackOverflowError on Windows
 serviceability/jvmti/GetLocalVariable/GetLocalWithoutSuspendTest.java        8279663 windows-all
 
-# timeout when testing with virtual threads
-serviceability/jvmti/events/FramePop/framepop02/framepop02.java#id1          8283818 generic-all
-
-# stratum mismatch
+# stratum mismatch, test running with the wrong class path
 vmTestbase/vm/mlvm/indy/func/jdi/breakpointOtherStratum/Test.java            8276713 generic-all
 vmTestbase/vm/mlvm/meth/func/jdi/breakpointOtherStratum/Test.java            8276713 generic-all
 
@@ -196,5 +191,4 @@ vmTestbase/vm/mlvm/meth/func/jdi/breakpointOtherStratum/Test.java            827
 runtime/Thread/StopAtExit.java                                               8283610 generic-all
 
 # test issues that don't reproduce in jdk repo
-gc/metaspace/TestPerfCountersAndMemoryPools.java                             8278109 generic-all
 vmTestbase/gc/gctests/ReferencesGC/ReferencesGC.java                         8284234 generic-all

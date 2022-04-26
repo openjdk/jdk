@@ -82,8 +82,10 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
     assert((intptr_t*)f.at(frame::interpreter_frame_last_sp_offset) == nullptr
       || f.unextended_sp() == (intptr_t*)f.at(frame::interpreter_frame_last_sp_offset), "");
     int locals = f.interpreter_frame_method()->max_locals();
+    // If the caller.is_empty(), i.e. we're freezing into an empty chunk, then we set
+    // the chunk's argsize in finalize_freeze and make room for it above the unextended_sp
     bool overlap_caller = caller.is_interpreted_frame() || caller.is_empty();
-    fp = caller.unextended_sp() - (locals + frame::sender_sp_offset) + (overlap_caller ?  ContinuationHelper::InterpretedFrame::stack_argsize(f) : 0);
+    fp = caller.unextended_sp() - (locals + frame::sender_sp_offset) + (overlap_caller ? ContinuationHelper::InterpretedFrame::stack_argsize(f) : 0);
     sp = fp - (f.fp() - f.unextended_sp());
     assert(sp <= fp, "");
     assert(fp <= caller.unextended_sp(), "");
@@ -102,6 +104,8 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
     int fsize = FKind::size(f);
     sp = caller.unextended_sp() - fsize;
     if (caller.is_interpreted_frame()) {
+      // If the caller is interpreted, our stackargs are not supposed to overlap with it
+      // so we make more room by moving sp down by argsize
       int argsize = FKind::stack_argsize(f);
       sp -= argsize;
     }
@@ -172,6 +176,9 @@ inline void FreezeBase::patch_pd(frame& hf, const frame& caller) {
     assert(!caller.is_empty(), "");
     patch_callee_link_relative(caller, caller.fp());
   } else {
+    // If we're the bottom-most frame frozen in this freeze, the caller might have stayed frozen in the chunk,
+    // and its oop-containing fp fixed. We've now just overwritten it, so we must patch it back to its value
+    // as read from the chunk.
     patch_callee_link(caller, caller.fp());
   }
 }
@@ -212,9 +219,11 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     assert(frame_sp == unextended_sp, "");
     caller.set_sp(fp + frame::sender_sp_offset);
     frame f(frame_sp, frame_sp, fp, hf.pc());
-    // it's set again later in derelativize_interpreted_frame_metadata, but we need to set the locals now so that we'll have the frame's bottom
+    // it's set again later in set_interpreter_frame_bottom, but we need to set the locals now so that
+    // we could call ContinuationHelper::InterpretedFrame::frame_bottom
     intptr_t offset = *hf.addr_at(frame::interpreter_frame_locals_offset);
-    assert((int)offset == locals + frame::sender_sp_offset - 1, "");
+    assert((int)offset == frame::sender_sp_offset + locals - 1, "");
+    // derelativize locals
     *(intptr_t**)f.addr_at(frame::interpreter_frame_locals_offset) = fp + offset;
     return f;
   } else {

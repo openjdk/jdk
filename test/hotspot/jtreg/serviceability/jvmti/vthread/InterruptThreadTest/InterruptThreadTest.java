@@ -33,29 +33,34 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class InterruptThreadTest {
     private static final String AGENT_LIB = "InterruptThreadTest";
     final Object lock = new Object();
-    final AtomicBoolean isJNITestingCompleted = new AtomicBoolean(false);
 
     native boolean testJvmtiFunctionsInJNICall(Thread vthread);
 
+    volatile private boolean target_is_ready = false;
     private boolean iterrupted = false;
 
     final Runnable pinnedTask = () -> {
         synchronized (lock) {
-            do {
-                try {
-                    lock.wait(1);
-                } catch (InterruptedException ie) {
-                    System.err.println("Virtual thread was interrupted as expected");
-                    iterrupted = true;
-                }
-            } while (!isJNITestingCompleted.get());
+            try {
+                target_is_ready = true;
+                lock.wait();
+            } catch (InterruptedException ie) {
+                 System.err.println("Virtual thread was interrupted as expected");
+                 iterrupted = true;
+            }
         }
     };
 
     void runTest() throws Exception {
         Thread vthread = Thread.ofVirtual().name("VThread").start(pinnedTask);
+
+        // wait for target virtual thread to reach the expected waiting state
+        while (!target_is_ready) {
+           synchronized (lock) {
+              lock.wait(1);
+            }
+        }
         testJvmtiFunctionsInJNICall(vthread);
-        isJNITestingCompleted.set(true);
         vthread.join();
         if (!iterrupted) {
             throw new RuntimeException("Failed: Virtual thread was not interrupted!");

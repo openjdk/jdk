@@ -6529,6 +6529,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ cbnz(r0, pinned);
 
+    // We've succeeded, set sp to the ContinuationEntry
     __ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
     __ mov(sp, rscratch1);
     continuation_enter_cleanup(masm);

@@ -2013,10 +2013,10 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, UseContinuationFastPath, true,                              \
           "Use fast-path frame walking in continuations")                   \
                                                                             \
-  product(intx, ExtentLocalCacheSize, 16,                                    \
+  product(intx, ExtentLocalCacheSize, 16,                                   \
           "Size of the cache for scoped values")                            \
            range(0, max_intx)                                               \
-           constraint(ExtentLocalCacheSizeConstraintFunc, AtParse)           \
+           constraint(ExtentLocalCacheSizeConstraintFunc, AtParse)          \
                                                                             \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
                "Run periodic metaspace verifications (0 - none, "           \

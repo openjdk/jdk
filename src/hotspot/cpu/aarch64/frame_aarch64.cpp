@@ -159,6 +159,12 @@ bool frame::safe_for_sender(JavaThread *thread) {
       sender_pc = pauth_strip_verifiable((address) *(sender_sp-1), (address)saved_fp);
     }
 
+    if (Continuation::is_return_barrier_entry(sender_pc)) {
+      // If our sender_pc is the return barrier, then our "real" sender is the continuation entry
+      frame s = Continuation::continuation_bottom_sender(thread, *this, sender_sp);
+      sender_sp = s.sp();
+      sender_pc = s.pc();
+    }
 
     // If the potential sender is the interpreter then we can do some more checking
     if (Interpreter::contains(sender_pc)) {
@@ -447,7 +453,7 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
     if (map->walk_cont()) { // about to walk into an h-stack
       return Continuation::top_frame(*this, map);
     } else {
-      Continuation::fix_continuation_bottom_sender(map->thread(), *this, &sender_pc, &unextended_sp);
+      return Continuation::continuation_bottom_sender(map->thread(), *this, sender_sp);
     }
   }
 

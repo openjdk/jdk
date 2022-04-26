@@ -454,7 +454,7 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
     if (map->walk_cont()) { // about to walk into an h-stack
       return Continuation::top_frame(*this, map);
     } else {
-      Continuation::fix_continuation_bottom_sender(map->thread(), *this, &sender_pc, &l_sender_sp);
+      return Continuation::continuation_bottom_sender(map->thread(), *this, l_sender_sp);
     }
   }
 

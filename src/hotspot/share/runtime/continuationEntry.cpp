@@ -104,6 +104,7 @@ bool ContinuationEntry::assert_entry_frame_laid_out(JavaThread* thread) {
 
   if (pc != StubRoutines::cont_returnBarrier()) {
     CodeBlob* cb = pc != nullptr ? CodeCache::find_blob(pc) : nullptr;
+    assert(cb != nullptr, "sp: " INTPTR_FORMAT " pc: " INTPTR_FORMAT, p2i(sp), p2i(pc));
     assert(cb->as_compiled_method()->method()->is_continuation_enter_intrinsic(), "");
   }
 

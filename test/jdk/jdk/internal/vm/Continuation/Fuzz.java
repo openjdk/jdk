@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key randomness
  * @summary Fuzz tests for jdk.internal.vm.Continuation
  * @modules java.base/jdk.internal.vm
  *
@@ -65,7 +66,7 @@ import sun.hotspot.WhiteBox;
 public class Fuzz implements Runnable {
     static final boolean VERIFY_STACK = true; // could add significant time
     static final boolean FILE    = true;
-    static final boolean RANDOM  = false;
+    static final boolean RANDOM  = true;
     static final boolean VERBOSE = false;
 
     static final int COMPILATION_TIMEOUT = 5_000; // ms

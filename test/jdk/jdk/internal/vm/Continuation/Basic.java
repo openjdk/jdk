@@ -323,54 +323,6 @@ public class Basic {
         return Integer.parseInt(r)+1;
     }
 
-    // @Test
-    public void testPinnedNative() {
-        // pinning due to native method
-        final AtomicReference<Continuation.Pinned> res = new AtomicReference<>();
-
-        Continuation cont = new Continuation(FOO, ()-> {
-            nativeFoo(1);
-        }) {
-            @Override
-            protected void onPinned(Continuation.Pinned reason) {
-                res.set(reason);
-            }
-        };
-
-        cont.run();
-        assertEquals(res.get(), Continuation.Pinned.NATIVE);
-    }
-
-    static double nativeFoo(int a) {
-        try {
-            long x = 8;
-            String s = "yyy";
-            return Bar.x; // load the class
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        }
-    }
-
-    // use a class initializer to have a native method on the stack
-    class Bar {
-        static {
-            nativeBar(5);
-        }
-
-        static String nativeBar(long b) {
-            double x = 9.99;
-            String s = "zzz";
-            assert Continuation.isPinned(FOO);
-            boolean res = Continuation.yield(FOO);
-            assert res == false;
-
-            long r = b+1;
-            return "" + r;
-        }
-
-        static int x = 5;
-    }
-
     @Test
     public void testPinnedCriticalSection() {
         // pinning due to critical section
@@ -401,5 +353,49 @@ public class Basic {
             Continuation.unpin();
         }
         return Integer.parseInt(r)+1;
+    }
+
+    @Test
+    public void testPinnedNative() {
+        // pinning due to native method
+        final AtomicReference<Continuation.Pinned> res = new AtomicReference<>();
+
+        Continuation cont = new Continuation(FOO, ()-> {
+            nativeFoo(1);
+        }) {
+            @Override
+            protected void onPinned(Continuation.Pinned reason) {
+                res.set(reason);
+            }
+        };
+
+        cont.run();
+        assertEquals(res.get(), Continuation.Pinned.NATIVE);
+    }
+
+    static double nativeFoo(int a) {
+        try {
+            int x = 8;
+            String s = "yyy";
+            return nativeBar(x);
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    static int nativeBaz(int b) {
+        double x = 9.99;
+        String s = "zzz";
+        assert Continuation.isPinned(FOO);
+        boolean res = Continuation.yield(FOO);
+        assert res == false;
+
+        return b+1;
+    }
+
+    private static native int nativeBar(int x);
+
+    static {
+        System.loadLibrary("BasicJNI");
     }
 }
