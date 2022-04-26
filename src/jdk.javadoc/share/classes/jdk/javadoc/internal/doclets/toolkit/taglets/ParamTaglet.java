@@ -127,32 +127,19 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         Utils utils = writer.configuration().utils;
         if (utils.isExecutableElement(holder)) {
             ExecutableElement member = (ExecutableElement) holder;
-            Content output = getTagletOutput(member, ParamKind.TYPE_PARAMETER,
+            Content output = convertParams(member, ParamKind.TYPE_PARAMETER,
                     utils.getTypeParamTrees(member), member.getTypeParameters(), writer);
-            output.add(getTagletOutput(member, ParamKind.PARAMETER,
+            output.add(convertParams(member, ParamKind.PARAMETER,
                     utils.getParamTrees(member), member.getParameters(), writer));
             return output;
         } else {
             TypeElement typeElement = (TypeElement) holder;
-            Content output = getTagletOutput(typeElement, ParamKind.TYPE_PARAMETER,
+            Content output = convertParams(typeElement, ParamKind.TYPE_PARAMETER,
                     utils.getTypeParamTrees(typeElement), typeElement.getTypeParameters(), writer);
-            output.add(getTagletOutput(typeElement, ParamKind.RECORD_COMPONENT,
+            output.add(convertParams(typeElement, ParamKind.RECORD_COMPONENT,
                     utils.getParamTrees(typeElement), typeElement.getRecordComponents(), writer));
             return output;
         }
-    }
-
-    /**
-     * Returns a {@code Content} representation of a list of {@code ParamTree}.
-     * Tries to inherit the param tags that are missing.
-     */
-    private Content getTagletOutput(Element holder, ParamKind kind,
-                                    List<? extends ParamTree> paramTags,
-                                    List<? extends Element> formalParameters,
-                                    TagletWriter writer) {
-        Content result = writer.getOutputInstance();
-        result.add(convertParams(holder, kind, paramTags, formalParameters, writer));
-        return result;
     }
 
     /**
