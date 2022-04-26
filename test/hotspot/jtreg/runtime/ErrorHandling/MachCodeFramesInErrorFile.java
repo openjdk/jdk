@@ -71,7 +71,7 @@ public class MachCodeFramesInErrorFile {
                 crashInJava1(10);
             } else {
                 assert args[0].equals("crashInVM");
-                // AIX does not prohibit low address reads
+                // Low address reads are allowed on PPC
                 crashInNative1(Platform.isPPC() ? -1 : 10);
             }
         }
