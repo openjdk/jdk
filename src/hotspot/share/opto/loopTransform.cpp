@@ -974,6 +974,9 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       case Op_RoundD: body_size += 30; break;
       case Op_RoundVF: body_size += 30; break;
       case Op_RoundVD: body_size += 30; break;
+      case Op_CountTrailingZerosV:
+      case Op_CountLeadingZerosV:
+      case Op_ReverseV:
       case Op_PopCountVI:
       case Op_PopCountVL: {
         const TypeVect* vt = n->bottom_type()->is_vect();

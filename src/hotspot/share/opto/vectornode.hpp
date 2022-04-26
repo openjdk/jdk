@@ -93,7 +93,7 @@ class VectorNode : public TypeNode {
   static bool is_type_transition_short_to_int(Node* n);
   static bool is_type_transition_to_int(Node* n);
   static bool is_muladds2i(Node* n);
-  static bool is_vpopcnt_long(Node* n);
+  static bool is_type_transition_long_to_int(Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
@@ -768,6 +768,37 @@ public:
   virtual int Opcode() const;
 };
 
+//------------------------------CompressVNode--------------------------------------
+// Vector compress
+class CompressVNode: public VectorNode {
+ public:
+  CompressVNode(Node* vec, Node* mask, const TypeVect* vt) :
+      VectorNode(vec, mask, vt) {
+    init_class_id(Class_CompressV);
+  }
+  virtual int Opcode() const;
+};
+
+class CompressMNode: public VectorNode {
+ public:
+  CompressMNode(Node* mask, const TypeVect* vt) :
+      VectorNode(mask, vt) {
+    init_class_id(Class_CompressM);
+  }
+  virtual int Opcode() const;
+};
+
+//------------------------------ExpandVNode--------------------------------------
+// Vector expand
+class ExpandVNode: public VectorNode {
+ public:
+  ExpandVNode(Node* vec, Node* mask, const TypeVect* vt) :
+      VectorNode(vec, mask, vt) {
+    init_class_id(Class_ExpandV);
+  }
+  virtual int Opcode() const;
+};
+
 //================================= M E M O R Y ===============================
 
 //------------------------------LoadVectorNode---------------------------------
@@ -1384,7 +1415,6 @@ class VectorBlendNode : public VectorNode {
  public:
   VectorBlendNode(Node* vec1, Node* vec2, Node* mask)
     : VectorNode(vec1, vec2, mask, vec1->bottom_type()->is_vect()) {
-    // assert(mask->is_VectorMask(), "VectorBlendNode requires that third argument be a mask");
   }
 
   virtual int Opcode() const;
@@ -1665,5 +1695,37 @@ public:
 
   virtual int Opcode() const;
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+class CountLeadingZerosVNode : public VectorNode {
+ public:
+  CountLeadingZerosVNode(Node* in, const TypeVect* vt)
+  : VectorNode(in, vt) {}
+
+  virtual int Opcode() const;
+};
+
+class CountTrailingZerosVNode : public VectorNode {
+ public:
+  CountTrailingZerosVNode(Node* in, const TypeVect* vt)
+  : VectorNode(in, vt) {}
+
+  virtual int Opcode() const;
+};
+
+class ReverseVNode : public VectorNode {
+public:
+  ReverseVNode(Node* in, const TypeVect* vt)
+  : VectorNode(in, vt) {}
+
+  virtual int Opcode() const;
+};
+
+class ReverseBytesVNode : public VectorNode {
+public:
+  ReverseBytesVNode(Node* in, const TypeVect* vt)
+  : VectorNode(in, vt) {}
+
+  virtual int Opcode() const;
 };
 #endif // SHARE_OPTO_VECTORNODE_HPP

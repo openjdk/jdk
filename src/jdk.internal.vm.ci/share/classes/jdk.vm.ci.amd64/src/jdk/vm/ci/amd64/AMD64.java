@@ -221,6 +221,8 @@ public class AMD64 extends Architecture {
         AVX512_VBMI,
         HV,
         SERIALIZE,
+        GFNI,
+        AVX512_BITALG,
     }
 
     private final EnumSet<CPUFeature> features;

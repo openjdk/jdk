@@ -176,6 +176,9 @@ class VectorUnboxNode;
 class VectorSet;
 class VectorReinterpretNode;
 class ShiftVNode;
+class ExpandVNode;
+class CompressVNode;
+class CompressMNode;
 
 
 #ifndef OPTO_DU_ITERATOR_ASSERT
@@ -707,6 +710,9 @@ public:
         DEFINE_CLASS_ID(VectorUnbox, Vector, 1)
         DEFINE_CLASS_ID(VectorReinterpret, Vector, 2)
         DEFINE_CLASS_ID(ShiftV, Vector, 3)
+        DEFINE_CLASS_ID(CompressV, Vector, 4)
+        DEFINE_CLASS_ID(ExpandV, Vector, 5)
+        DEFINE_CLASS_ID(CompressM, Vector, 6)
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
       DEFINE_CLASS_ID(CatchProj, Proj, 0)
@@ -776,11 +782,13 @@ public:
     Flag_has_call                    = 1 << 10,
     Flag_is_reduction                = 1 << 11,
     Flag_is_scheduled                = 1 << 12,
-    Flag_is_expensive                = 1 << 13,
-    Flag_is_predicated_vector        = 1 << 14,
-    Flag_for_post_loop_opts_igvn     = 1 << 15,
-    Flag_is_removed_by_peephole      = 1 << 16,
-    _last_flag                       = Flag_is_removed_by_peephole
+    Flag_has_vector_mask_set         = 1 << 13,
+    Flag_is_expensive                = 1 << 14,
+    Flag_is_predicated_vector        = 1 << 15,
+    Flag_for_post_loop_opts_igvn     = 1 << 16,
+    Flag_is_removed_by_peephole      = 1 << 17,
+    Flag_is_predicated_using_blend   = 1 << 18,
+    _last_flag                       = Flag_is_predicated_using_blend
   };
 
   class PD;
@@ -936,7 +944,10 @@ public:
   DEFINE_CLASS_QUERY(Vector)
   DEFINE_CLASS_QUERY(VectorMaskCmp)
   DEFINE_CLASS_QUERY(VectorUnbox)
-  DEFINE_CLASS_QUERY(VectorReinterpret);
+  DEFINE_CLASS_QUERY(VectorReinterpret)
+  DEFINE_CLASS_QUERY(CompressV)
+  DEFINE_CLASS_QUERY(ExpandV)
+  DEFINE_CLASS_QUERY(CompressM)
   DEFINE_CLASS_QUERY(LoadVector)
   DEFINE_CLASS_QUERY(LoadVectorGather)
   DEFINE_CLASS_QUERY(StoreVector)
@@ -993,6 +1004,11 @@ public:
   bool is_reduction() const { return (_flags & Flag_is_reduction) != 0; }
 
   bool is_predicated_vector() const { return (_flags & Flag_is_predicated_vector) != 0; }
+
+  bool is_predicated_using_blend() const { return (_flags & Flag_is_predicated_using_blend) != 0; }
+
+  // The node is a CountedLoopEnd with a mask annotation so as to emit a restore context
+  bool has_vector_mask_set() const { return (_flags & Flag_has_vector_mask_set) != 0; }
 
   // Used in lcm to mark nodes that have scheduled
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }

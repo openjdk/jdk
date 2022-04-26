@@ -3411,6 +3411,21 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     break;
   }
 
+  case Op_ReverseBytesV:
+  case Op_ReverseV: {
+    if ((uint)n->in(1)->Opcode() == nop) {
+      if (n->is_predicated_vector() && n->in(1)->is_predicated_vector() &&
+          n->in(2) == n->in(1)->in(2)) {
+        // Node (Node X , Mask) Mask => X
+        n->subsume_by(n->in(1)->in(1), this);
+      } else if (!n->is_predicated_using_blend() && !n->in(1)->is_predicated_using_blend()) {
+        // Node (Node X) =>  X
+        n->subsume_by(n->in(1)->in(1), this);
+      }
+    }
+    break;
+  }
+
   case Op_Proj: {
     if (OptimizeStringConcat || IncrementalInline) {
       ProjNode* proj = n->as_Proj();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021, 2022, THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package compiler.vectorapi;
 
+import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.vector.*;
 import java.nio.ByteOrder;
 
@@ -40,13 +41,15 @@ public class TestIntrinsicBailOut {
   static final VectorSpecies<Double> SPECIES256 = DoubleVector.SPECIES_256;
   static byte[] a = new byte[512];
   static byte[] r = new byte[512];
+  static MemorySegment msa = MemorySegment.ofArray(a);
+  static MemorySegment msr = MemorySegment.ofArray(r);
 
   static void test() {
-    DoubleVector av = DoubleVector.fromByteArray(SPECIES256, a, 0, ByteOrder.BIG_ENDIAN);
-    av.intoByteArray(r, 0, ByteOrder.BIG_ENDIAN);
+    DoubleVector av = DoubleVector.fromMemorySegment(SPECIES256, msa, 0, ByteOrder.BIG_ENDIAN);
+    av.intoMemorySegment(msr, 0, ByteOrder.BIG_ENDIAN);
 
-    DoubleVector bv = DoubleVector.fromByteArray(SPECIES256, a, 32, ByteOrder.LITTLE_ENDIAN);
-    bv.intoByteArray(r, 32, ByteOrder.LITTLE_ENDIAN);
+    DoubleVector bv = DoubleVector.fromMemorySegment(SPECIES256, msa, 32, ByteOrder.LITTLE_ENDIAN);
+    bv.intoMemorySegment(msr, 32, ByteOrder.LITTLE_ENDIAN);
   }
 
   public static void main(String[] args) {

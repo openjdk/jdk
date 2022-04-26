@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,21 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import jdk.incubator.vector.*;
-import jdk.internal.vm.annotation.ForceInline;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
-import jdk.incubator.vector.VectorShape;
-import jdk.incubator.vector.VectorSpecies;
+
+import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.vector.*;
 import jdk.internal.vm.annotation.ForceInline;
 
 /*
@@ -43,7 +40,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * @requires vm.gc.Z
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation
- * @run testng/othervm -XX:CompileCommand=compileonly,jdk/incubator/vector/ByteVector.fromByteBuffer
+ * @run testng/othervm -XX:CompileCommand=compileonly,jdk/incubator/vector/ByteVector.fromMemorySegment
  *      -XX:-TieredCompilation -XX:CICompilerCount=1 -XX:+UseZGC -Xbatch -Xmx256m VectorRebracket128Test
  */
 
@@ -124,8 +121,10 @@ public class VectorRebracket128Test {
 
     @ForceInline
     static <E,F>
-    void testVectorRebracket(VectorSpecies<E> a, VectorSpecies<F> b, byte[] input, byte[] output) {
-        Vector<E> av = a.fromByteArray(input, 0, ByteOrder.nativeOrder());
+    void testVectorRebracket(VectorSpecies<E> a, VectorSpecies<F> b,
+                             byte[] input, byte[] output,
+                             MemorySegment msInput, MemorySegment msOutput) {
+        Vector<E> av = a.fromMemorySegment(msInput, 0, ByteOrder.nativeOrder());
         int block;
         assert(input.length == output.length);
 
@@ -139,7 +138,7 @@ public class VectorRebracket128Test {
 
         int part = 0;
         Vector<F> bv = av.reinterpretShape(b, part);
-        bv.intoByteArray(output, 0, ByteOrder.nativeOrder());
+        bv.intoMemorySegment(msOutput, 0, ByteOrder.nativeOrder());
         // in-place copy, no resize
         expected = input;
         origin = 0;
@@ -152,10 +151,12 @@ public class VectorRebracket128Test {
     static void testRebracket128(IntFunction<byte[]> fa) {
         byte[] barr = fa.apply(128/Byte.SIZE);
         byte[] bout = new byte[barr.length];
+        MemorySegment msin = MemorySegment.ofArray(barr);
+        MemorySegment msout = MemorySegment.ofArray(bout);
         for (int i = 0; i < NUM_ITER; i++) {
-            testVectorRebracket(bspec128, bspec128, barr, bout);
-            testVectorRebracket(bspec128, sspec128, barr, bout);
-            testVectorRebracket(bspec128, ispec128, barr, bout);
+            testVectorRebracket(bspec128, bspec128, barr, bout, msin, msout);
+            testVectorRebracket(bspec128, sspec128, barr, bout, msin, msout);
+            testVectorRebracket(bspec128, ispec128, barr, bout, msin, msout);
         }
     }
 

@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
@@ -213,10 +214,11 @@ public class VectorReshapeHelper {
     }
 
     @ForceInline
-    public static void vectorExpandShrink(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp, byte[] input, byte[] output) {
-        isp.fromByteArray(input, 0, ByteOrder.nativeOrder())
+    public static void vectorExpandShrink(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp,
+                                          MemorySegment input, MemorySegment output) {
+        isp.fromMemorySegment(input, 0, ByteOrder.nativeOrder())
                 .reinterpretShape(osp, 0)
-                .intoByteArray(output, 0, ByteOrder.nativeOrder());
+                .intoMemorySegment(output, 0, ByteOrder.nativeOrder());
     }
 
     public static void runExpandShrinkHelper(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp) throws Throwable {
@@ -225,13 +227,15 @@ public class VectorReshapeHelper {
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
         var testMethod = MethodHandles.lookup().findStatic(caller,
                 testMethodName,
-                MethodType.methodType(void.class, byte.class.arrayType(), byte.class.arrayType()));
+                MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class));
         byte[] input = new byte[isp.vectorByteSize()];
         byte[] output = new byte[osp.vectorByteSize()];
+        MemorySegment msInput = MemorySegment.ofArray(input);
+        MemorySegment msOutput = MemorySegment.ofArray(output);
         for (int iter = 0; iter < INVOCATIONS; iter++) {
             random.nextBytes(input);
 
-            testMethod.invokeExact(input, output);
+            testMethod.invokeExact(msInput, msOutput);
 
             for (int i = 0; i < osp.vectorByteSize(); i++) {
                 int expected = i < isp.vectorByteSize() ? input[i] : 0;
@@ -242,11 +246,12 @@ public class VectorReshapeHelper {
     }
 
     @ForceInline
-    public static void vectorDoubleExpandShrink(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp, byte[] input, byte[] output) {
-        isp.fromByteArray(input, 0, ByteOrder.nativeOrder())
+    public static void vectorDoubleExpandShrink(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp,
+                                                MemorySegment input, MemorySegment output) {
+        isp.fromMemorySegment(input, 0, ByteOrder.nativeOrder())
                 .reinterpretShape(osp, 0)
                 .reinterpretShape(isp, 0)
-                .intoByteArray(output, 0, ByteOrder.nativeOrder());
+                .intoMemorySegment(output, 0, ByteOrder.nativeOrder());
     }
 
     public static void runDoubleExpandShrinkHelper(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp) throws Throwable {
@@ -255,13 +260,15 @@ public class VectorReshapeHelper {
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
         var testMethod = MethodHandles.lookup().findStatic(caller,
                 testMethodName,
-                MethodType.methodType(void.class, byte.class.arrayType(), byte.class.arrayType()));
+                MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class));
         byte[] input = new byte[isp.vectorByteSize()];
         byte[] output = new byte[isp.vectorByteSize()];
+        MemorySegment msInput = MemorySegment.ofArray(input);
+        MemorySegment msOutput = MemorySegment.ofArray(output);
         for (int iter = 0; iter < INVOCATIONS; iter++) {
             random.nextBytes(input);
 
-            testMethod.invokeExact(input, output);
+            testMethod.invokeExact(msInput, msOutput);
 
             for (int i = 0; i < isp.vectorByteSize(); i++) {
                 int expected = i < osp.vectorByteSize() ? input[i] : 0;

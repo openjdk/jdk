@@ -32,5 +32,7 @@
  * @moduleGraph
  */
 module jdk.incubator.vector {
+    requires transitive jdk.incubator.foreign;
+
     exports jdk.incubator.vector;
 }

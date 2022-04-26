@@ -721,6 +721,10 @@ inline bool is_integral_type(BasicType t) {
   return is_subword_type(t) || t == T_INT || t == T_LONG;
 }
 
+inline bool is_non_subword_integral_type(BasicType t) {
+  return t == T_INT || t == T_LONG;
+}
+
 inline bool is_floating_point_type(BasicType t) {
   return (t == T_FLOAT || t == T_DOUBLE);
 }

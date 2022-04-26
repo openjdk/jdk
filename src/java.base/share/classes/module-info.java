@@ -157,7 +157,8 @@ module java.base {
         jdk.net,
         jdk.incubator.foreign;
     exports jdk.internal.access.foreign to
-        jdk.incubator.foreign;
+        jdk.incubator.foreign,
+        jdk.incubator.vector;
     exports jdk.internal.event to
         jdk.jfr;
     exports jdk.internal.jimage to

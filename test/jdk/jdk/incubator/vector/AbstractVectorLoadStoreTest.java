@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,4 +51,15 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
                         .order(ByteOrder.nativeOrder());
             })
     );
+
+    static final List<IntFunction<MemorySegment>> MEMORY_SEGMENT_GENERATORS = List.of(
+            withToString("HMS", (int s) -> {
+                return MemorySegment.allocateNative(s, ResourceScope.newImplicitScope());
+            }),
+            withToString("DMS", (int s) -> {
+                byte[] b = new byte[s];
+                return MemorySegment.ofArray(b);
+            })
+    );
+
 }

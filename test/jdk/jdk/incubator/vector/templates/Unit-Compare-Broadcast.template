@@ -15,7 +15,6 @@
         }
     }
 
-
     @Test(dataProvider = "$type$CompareOpMaskProvider")
     static void [[TEST]]$vectorteststype$BroadcastMaskedSmokeTest(IntFunction<$type$[]> fa,
                                 IntFunction<$type$[]> fb, IntFunction<boolean[]> fm) {
@@ -52,7 +51,6 @@
             }
         }
     }
-
 
     @Test(dataProvider = "$type$CompareOpMaskProvider")
     static void [[TEST]]$vectorteststype$BroadcastLongMaskedSmokeTest(IntFunction<$type$[]> fa,

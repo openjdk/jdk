@@ -4,7 +4,3 @@
 [[KERNEL]]
         assertBroadcastArraysEquals(r, a);
     }
-
-
-
-

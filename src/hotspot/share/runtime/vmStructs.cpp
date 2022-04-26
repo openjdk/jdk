@@ -1776,6 +1776,8 @@
   declare_c2_type(FmaVFNode, VectorNode)                                  \
   declare_c2_type(CMoveVFNode, VectorNode)                                \
   declare_c2_type(CMoveVDNode, VectorNode)                                \
+  declare_c2_type(CompressVNode, VectorNode)                              \
+  declare_c2_type(ExpandVNode, VectorNode)                                \
   declare_c2_type(MulReductionVDNode, ReductionNode)                      \
   declare_c2_type(DivVFNode, VectorNode)                                  \
   declare_c2_type(DivVDNode, VectorNode)                                  \
@@ -1866,6 +1868,8 @@
   declare_c2_type(VectorUnboxNode, VectorNode)                            \
   declare_c2_type(VectorReinterpretNode, VectorNode)                      \
   declare_c2_type(VectorMaskCastNode, VectorNode)                         \
+  declare_c2_type(CountLeadingZerosVNode, VectorNode)                     \
+  declare_c2_type(CountTrailingZerosVNode, VectorNode)                    \
   declare_c2_type(MaskAllNode, VectorNode)                                \
   declare_c2_type(AndVMaskNode, VectorNode)                               \
   declare_c2_type(OrVMaskNode, VectorNode)                                \
