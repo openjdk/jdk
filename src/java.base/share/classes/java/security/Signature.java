@@ -988,11 +988,11 @@ public abstract class Signature extends SignatureSpi {
     }
 
     /**
-     * Initializes this signature engine with the specified parameter set.
+     * Initializes this signature engine with the specified parameter values.
      *
-     * @param params the parameters
+     * @param params the parameter values
      *
-     * @throws    InvalidAlgorithmParameterException if the given parameters
+     * @throws InvalidAlgorithmParameterException if the given parameter values
      * are inappropriate for this signature engine
      *
      * @see #getParameters
@@ -1005,17 +1005,18 @@ public abstract class Signature extends SignatureSpi {
     /**
      * Returns the parameters used with this signature object.
      *
-     * <p> If this signature has been initialized with parameters
-     * (by calling {@link #setParameter(AlgorithmParameterSpec)} or
-     * {@link #setParameter(String, Object)}) and the underlying signature
-     * implementation supports returning the parameters as
-     * {@code AlgorithmParameters}, this method returns the same parameters.
-     * If the parameters were not set, this method may return a combination
-     * of default and randomly generated parameter values if the
-     * underlying signature implementation supports it and can successfully
-     * generate them. Otherwise, {@code null} is returned.
+     * <p>The returned parameters may be the same that were used to initialize
+     * this signature, or may contain additional default or random parameter
+     * values used by the underlying signature implementation if the underlying
+     * signature implementation supports returning the parameters as
+     * {@code AlgorithmParameters}. If the required
+     * parameters were not supplied and the underlying signature implementation
+     * can generate the parameter values, it will be returned. Otherwise,
+     * {@code null} is returned.
      *
      * @return the parameters used with this signature, or {@code null}
+     * @throws UnsupportedOperationException if the underlying provider
+     *         implementation has not overridden this method
      *
      * @see #setParameter(AlgorithmParameterSpec)
      * @since 1.4
@@ -1507,7 +1508,9 @@ public abstract class Signature extends SignatureSpi {
         protected byte[] engineSign() throws SignatureException {
             try {
                 return cipher.doFinal();
-            } catch (IllegalBlockSizeException | BadPaddingException e) {
+            } catch (IllegalBlockSizeException e) {
+                throw new SignatureException("doFinal() failed", e);
+            } catch (BadPaddingException e) {
                 throw new SignatureException("doFinal() failed", e);
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -392,19 +392,17 @@ public abstract class SignatureSpi {
      * <p>This method is overridden by providers to return the parameters
      * used with this signature engine.
      *
-     * <p> If this signature engine has been initialized with parameters
-     * (by calling {@link #engineSetParameter(AlgorithmParameterSpec)} or
-     * {@link #engineSetParameter(String, Object)}) and the underlying signature
-     * implementation supports returning the parameters as
-     * {@code AlgorithmParameters}, this method returns the same parameters.
-     * If the parameters were not set, this method may return a combination
-     * of default and randomly generated parameter values if the
-     * underlying signature implementation supports it and can successfully
-     * generate them. Otherwise, {@code null} is returned.
+     * <p>The returned parameters may be the same that were used to initialize
+     * this signature, or may contain additional default or random parameter
+     * values used by the underlying signature implementation if the underlying
+     * signature implementation supports returning the parameters as
+     * {@code AlgorithmParameters}. If the required parameters were not supplied
+     * and the underlying signature implementation can generate the parameter
+     * values, it will be returned. Otherwise, {@code null} is returned.
      *
      * @return the parameters used with this signature engine, or {@code null}
      *
-     * @throws    UnsupportedOperationException if this method is
+     * @throws UnsupportedOperationException if this method is
      * not overridden by a provider
      * @since 1.4
      */
