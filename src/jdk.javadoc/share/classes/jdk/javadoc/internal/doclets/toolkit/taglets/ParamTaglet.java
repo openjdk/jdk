@@ -62,21 +62,19 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Given a list of parameters, return a name/rank number map.
-     * If the list is null, then null is returned.
-     * @param params The list of parameters (from type or executable member) to
-     *               check.
-     * @return a name-rank number map.
+     * Given a list of parameters, returns a name-position map.
+     * @param params the list of parameters from a type or an executable member
+     * @return a name-position map
      */
-    private static Map<String, String> getRankMap(Utils utils, List<? extends Element> params) {
-        HashMap<String, String> result = new HashMap<>();
-        int rank = 0;
+    private static Map<String, String> mapNameToPosition(Utils utils, List<? extends Element> params) {
+        Map<String, String> result = new HashMap<>();
+        int position = 0;
         for (Element e : params) {
             String name = utils.isTypeParameterElement(e)
                     ? utils.getTypeName(e.asType(), false)
                     : utils.getSimpleName(e);
-            result.put(name, String.valueOf(rank));
-            rank++;
+            result.put(name, String.valueOf(position));
+            position++;
         }
         return result;
     }
@@ -111,10 +109,10 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         List<? extends Element> parameters = input.isTypeVariableParamTag
                 ? md.getTypeParameters()
                 : md.getParameters();
-        Map<String, String> rankMap = getRankMap(utils, parameters);
+        Map<String, String> positionOfName = mapNameToPosition(utils, parameters);
         for (ParamTree tag : tags) {
             String paramName = ch.getParameterName(tag);
-            if (rankMap.containsKey(paramName) && rankMap.get(paramName).equals((input.tagId))) {
+            if (positionOfName.containsKey(paramName) && positionOfName.get(paramName).equals((input.tagId))) {
                 output.holder = input.element;
                 output.holderTag = tag;
                 output.inlineTags = ch.getBody(tag);
@@ -171,12 +169,12 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                                              Element holder,
                                              TagletWriter writer,
                                              Element param,
-                                             int rank,
+                                             int position,
                                              boolean isFirst) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
         Input input = new DocFinder.Input(writer.configuration().utils, holder, this,
-                Integer.toString(rank), kind == ParamKind.TYPE_PARAMETER);
+                Integer.toString(position), kind == ParamKind.TYPE_PARAMETER);
         DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
         if (!inheritedDoc.inlineTags.isEmpty()) {
             String lname = kind != ParamKind.TYPE_PARAMETER
@@ -209,11 +207,11 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         Messages messages = writer.configuration().getMessages();
         CommentHelper ch = writer.configuration().utils.getCommentHelper(e);
         if (!paramTags.isEmpty()) {
-            Map<String, String> rankMap = getRankMap(writer.configuration().utils, formalParameters);
+            Map<String, String> positionOfName = mapNameToPosition(writer.configuration().utils, formalParameters);
             for (ParamTree dt : paramTags) {
                 String name = ch.getParameterName(dt);
                 String paramName = kind == ParamKind.TYPE_PARAMETER ? "<" + name + ">" : name;
-                if (!rankMap.containsKey(name)) {
+                if (!positionOfName.containsKey(name)) {
                     String key = switch (kind) {
                         case PARAMETER -> "doclet.Parameters_warn";
                         case TYPE_PARAMETER -> "doclet.TypeParameters_warn";
@@ -221,9 +219,9 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                     };
                     messages.warning(ch.getDocTreePath(dt), key, paramName);
                 }
-                String rank = rankMap.get(name);
-                if (rank != null) {
-                    if (documented.containsKey(rank)) {
+                String position = positionOfName.get(name);
+                if (position != null) {
+                    if (documented.containsKey(position)) {
                         String key = switch (kind) {
                             case PARAMETER -> "doclet.Parameters_dup_warn";
                             case TYPE_PARAMETER -> "doclet.TypeParameters_dup_warn";
@@ -231,7 +229,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                         };
                         messages.warning(ch.getDocTreePath(dt), key, paramName);
                     } else {
-                        documented.put(rank, dt);
+                        documented.put(position, dt);
                     }
                 }
             }
