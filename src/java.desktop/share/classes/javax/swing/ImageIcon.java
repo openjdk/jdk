@@ -439,28 +439,28 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @param y the Y coordinate of the icon's top-left corner
      */
     public synchronized void paintIcon(Component c, Graphics g, int x, int y) {
-        Object oldHint = null;
-        boolean hintChanged = false;
+        boolean iconDrawn = false;
         ImageObserver observer = imageObserver != null ? imageObserver : c;
         if (image instanceof MultiResolutionImage) {
-            Image variant = ((MultiResolutionImage) image).getResolutionVariant(this.width, this.height);
-            if (variant.getHeight(observer) != height || variant.getWidth(observer) != width) {
-                if (g instanceof Graphics2D) {
-                    Graphics2D g2d = (Graphics2D) g;
-                    RenderingHints rh = g2d.getRenderingHints();
-                    oldHint = rh.get(RenderingHints.KEY_INTERPOLATION);
-                    if (!RenderingHints.VALUE_INTERPOLATION_BICUBIC.equals(oldHint)) {
-                        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                                RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                        hintChanged = true;
-                    }
+            if (g instanceof Graphics2D) {
+                int scaledWidth = (int) (width * ((Graphics2D)g).getTransform().getScaleX());
+                int scaledHeight = (int) (height * ((Graphics2D)g).getTransform().getScaleY());
+                Image variant = ((MultiResolutionImage) image).getResolutionVariant(scaledWidth,
+                        scaledHeight);
+                if (variant.getHeight(observer) != scaledHeight ||
+                        variant.getWidth(observer) != scaledWidth) {
+                    Graphics2D g2d = (Graphics2D) g.create(x, y, width, height);
+                    g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                            RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                    g2d.drawImage(image, 0, 0, observer);
+                    g2d.dispose();
+                    iconDrawn = true;
                 }
             }
         }
-        g.drawImage(image, x, y, observer);
-        if (hintChanged) {
-            ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                    oldHint == null ? RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR : oldHint);
+
+        if (!iconDrawn){
+            g.drawImage(image, x, y, observer);
         }
     }
 
