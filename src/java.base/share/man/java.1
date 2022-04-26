@@ -1491,8 +1491,8 @@ direct\-buffer allocations.
 Append the letter \f[CB]k\f[R] or \f[CB]K\f[R] to indicate kilobytes,
 \f[CB]m\f[R] or \f[CB]M\f[R] to indicate megabytes, or \f[CB]g\f[R] or
 \f[CB]G\f[R] to indicate gigabytes.
-By default, the size is set to 0, meaning that the JVM chooses the size
-for NIO direct\-buffer allocations automatically.
+If not set, the flag is ignored and the JVM chooses the size for NIO
+direct\-buffer allocations automatically.
 .RS
 .PP
 The following examples illustrate how to set the NIO size to 1024 KB in
