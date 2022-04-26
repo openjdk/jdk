@@ -1931,6 +1931,18 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         if (can_reshape && igvn != NULL) {
           igvn->_worklist.push(r);
         }
+        if (n != nullptr && n->is_reduction()) {
+          for (unsigned i = 1; i < n->req(); i++) {
+            if (n->in(i) == this) {
+              // Reduction nodes that are both input and output to a phi node
+              // stop being reductions when the dependency cycle is broken, as
+              // per the definition used in PhaseIdealLoop::mark_reductions().
+              n->remove_flag(Node::Flag_is_reduction);
+              assert(r->is_CountedLoop(), "reduction node within a non-counted loop");
+              r->as_CountedLoop()->clear_has_reductions();
+            }
+          }
+        }
         // Nuke it down
         set_req_X(j, top, phase);
         progress = this;        // Record progress

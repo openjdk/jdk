@@ -108,6 +108,7 @@ public:
 
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
   void mark_has_reductions() { _loop_flags |= HasReductions; }
+  void clear_has_reductions() { _loop_flags &= ~HasReductions; }
   void mark_was_slp() { _loop_flags |= WasSlpAnalyzed; }
   void mark_passed_slp() { _loop_flags |= PassedSlpAnalysis; }
   void mark_do_unroll_only() { _loop_flags |= DoUnrollOnly; }
@@ -777,6 +778,11 @@ public:
   bool is_innermost() { return is_loop() && _child == NULL; }
 
   void remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *phase);
+
+#ifdef ASSERT
+  // Tell whether the body contains nodes marked as reductions.
+  bool has_reduction_nodes() const;
+#endif // ASSERT
 
 #ifndef PRODUCT
   void dump_head() const;       // Dump loop head only
