@@ -48,6 +48,8 @@ package java.util;
  * If the calling method is interested in retrieving the named property
  * then it would have to test the element to see if it is a proxy class.
  *
+ * @param <T> the type of {@code EventListener} being wrapped
+ *
  * @since 1.4
  */
 public abstract class EventListenerProxy<T extends EventListener>

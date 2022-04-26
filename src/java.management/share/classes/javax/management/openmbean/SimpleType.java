@@ -55,6 +55,9 @@ import javax.management.ObjectName;
  * In other words, its methods <code>getClassName</code>, <code>getTypeName</code> and <code>getDescription</code>
  * all return the same string value <i>className</i>.
  *
+ * @param <T> the Java type that instances described by this type must
+ * have.
+ *
  * @since 1.5
  */
 public final class SimpleType<T> extends OpenType<T> {

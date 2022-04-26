@@ -49,6 +49,8 @@ package java.util;
  * adapt an {@code Enumeration} to an {@code Iterator} by using the
  * {@link #asIterator} method.
  *
+ * @param <E> the type of elements returned by this enumeration
+ *
  * @see     java.util.Iterator
  * @see     java.io.SequenceInputStream
  * @see     java.util.Enumeration#nextElement()

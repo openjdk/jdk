@@ -34,6 +34,7 @@ package java.security;
  * used only for computations that throw checked exceptions;
  * computations that do not throw
  * checked exceptions should use {@code PrivilegedAction} instead.
+ * @param <T> the type of the result of running the computation
  *
  * @since 1.2
  * @see AccessController

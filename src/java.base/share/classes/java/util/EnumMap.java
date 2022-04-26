@@ -71,6 +71,9 @@ import jdk.internal.access.SharedSecrets;
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
+ * @param <K> the enum type of keys maintained by this map
+ * @param <V> the type of mapped values
+ *
  * @author Josh Bloch
  * @see EnumSet
  * @since 1.5

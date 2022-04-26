@@ -40,6 +40,7 @@ import static java.lang.ClassValue.ClassValueMap.probeBackupLocations;
  * table for each class encountered at a message send call site,
  * it can use a {@code ClassValue} to cache information needed to
  * perform the message send quickly, for each class encountered.
+ * @param <T> type of the derived value
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */

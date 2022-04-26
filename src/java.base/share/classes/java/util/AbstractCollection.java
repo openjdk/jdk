@@ -54,6 +54,8 @@ import jdk.internal.util.ArraysSupport;
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
+ * @param <E> the type of elements in this collection
+ *
  * @author  Josh Bloch
  * @author  Neal Gafter
  * @see Collection

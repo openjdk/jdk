@@ -421,6 +421,9 @@ public interface Map<K, V> {
      * var entries = map.entrySet().stream().map(Map.Entry::copyOf).toList()
      * }</pre>
      *
+     * @param <K> the type of the key
+     * @param <V> the type of the value
+     *
      * @see Map#entrySet()
      * @since 1.2
      */

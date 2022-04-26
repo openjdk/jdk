@@ -49,6 +49,8 @@ package java.util;
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
+ * @param <E> the type of elements returned by this list iterator
+ *
  * @author  Josh Bloch
  * @see Collection
  * @see List

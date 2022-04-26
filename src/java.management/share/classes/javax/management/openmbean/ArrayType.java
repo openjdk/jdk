@@ -92,6 +92,8 @@ import java.lang.reflect.Array;
  * ArrayType<String[][][]> a19 = new ArrayType<String[][][]>(1, a18);
  * }</pre>
  *
+ * @param <T> the Java type that instances described by this type must
+ * have.
  *
  * @since 1.5
  */

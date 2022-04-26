@@ -39,6 +39,9 @@ package java.util;
  * <strong>NOTE: This class is obsolete.  New implementations should
  * implement the Map interface, rather than extending this class.</strong>
  *
+ * @param <K> the type of keys
+ * @param <V> the type of mapped values
+ *
  * @see     java.util.Map
  * @see     java.lang.Object#equals(java.lang.Object)
  * @see     java.lang.Object#hashCode()

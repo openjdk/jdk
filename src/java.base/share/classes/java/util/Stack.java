@@ -42,6 +42,8 @@ package java.util;
  * <pre>   {@code
  *   Deque<Integer> stack = new ArrayDeque<Integer>();}</pre>
  *
+ * @param <E> Type of component elements
+ *
  * @author  Jonathan Payne
  * @since   1.0
  */

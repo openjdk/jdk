@@ -99,6 +99,8 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  *     System.out.println(rng.nextLong());
  * }
  *
+ * @param <T> type of created random generator
+ *
  * @since 17
  *
  * @see java.util.random

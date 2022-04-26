@@ -70,6 +70,8 @@ import java.util.Enumeration;
   * @author Rosanna Lee
   * @author Scott Seligman
   *
+  * @param <T> the type of elements returned by this enumeration
+  *
   * @see Context#list
   * @see Context#listBindings
   * @see javax.naming.directory.DirContext#search

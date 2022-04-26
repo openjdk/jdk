@@ -48,6 +48,7 @@ public interface WatchEvent<T> {
 
     /**
      * An event kind, for the purposes of identification.
+     * @param <T> the type of the context value
      *
      * @since 1.7
      * @see StandardWatchEventKinds

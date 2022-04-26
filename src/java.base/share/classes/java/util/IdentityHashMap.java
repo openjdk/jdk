@@ -130,6 +130,9 @@ import jdk.internal.access.SharedSecrets;
  * and operation mixes, this class will yield better performance than
  * {@link HashMap}, which uses <i>chaining</i> rather than linear-probing.
  *
+ * @param <K> the type of keys maintained by this map
+ * @param <V> the type of mapped values
+ *
  * @see     System#identityHashCode(Object)
  * @see     Object#hashCode()
  * @see     Collection

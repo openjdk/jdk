@@ -69,6 +69,7 @@ import java.util.function.Supplier;
  * instance is accessible; after a thread goes away, all of its copies of
  * thread-local instances are subject to garbage collection (unless other
  * references to these copies exist).
+ * @param <T> the type of the thread local's value
  *
  * @author  Josh Bloch and Doug Lea
  * @since   1.2

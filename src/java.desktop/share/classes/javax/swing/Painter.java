@@ -58,6 +58,8 @@ import java.awt.Graphics2D;
  *
  * <p>This interface makes no guarantees of threadsafety.</p>
  *
+ * @param <T> type of the configuration parameter
+ *
  * @author rbair
  * @since 1.7
  */

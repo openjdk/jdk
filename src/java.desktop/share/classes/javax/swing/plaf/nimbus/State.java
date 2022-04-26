@@ -69,6 +69,8 @@ import javax.swing.plaf.synth.SynthConstants;
  *         }
  *     }
  * </code></pre>
+ *
+ * @param <T> type of component whose state is to be queried
  */
 public abstract class State<T extends JComponent>{
     static final Map<String, StandardState> standardStates = new HashMap<String, StandardState>(7);
