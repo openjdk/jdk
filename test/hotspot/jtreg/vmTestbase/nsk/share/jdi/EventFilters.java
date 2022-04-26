@@ -337,6 +337,7 @@ public class EventFilters
         if (event.toString().contains("JFR request timer"))
             return true;
 
+        // Filter out any carrier thread that starts while running the test.
         if (event.toString().contains("ForkJoinPool"))
             return true;
 
