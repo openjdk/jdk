@@ -399,6 +399,14 @@ static inline bool target_needs_far_branch(address addr) {
   return !CodeCache::is_non_nmethod(addr);
 }
 
+static inline bool target_needs_trampoline(Address entry) {
+  // Java method call target can have different compiled versions of a method: C2 or C1.
+  // If CodeCache size > 128M, such calls must have reserved trampolines for the case:
+  // C2 compiled method calls C1 compiled method.
+  return  (entry.rspec().type() == relocInfo::runtime_call_type) ? target_needs_far_branch(entry.target())
+                                                                 : MacroAssembler::far_branches();
+}
+
 void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
@@ -568,8 +576,14 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
          || entry.rspec().type() == relocInfo::static_call_type
          || entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
 
+  bool need_trampoline = target_needs_trampoline(entry);
+
+  if (!need_trampoline && UseNewCode) {
+    tty->print_cr("Saved %d", (int)(NativeInstruction::instruction_size + NativeCallTrampolineStub::instruction_size));
+  }
+
   // We need a trampoline if branches are far.
-  if (far_branches()) {
+  if (need_trampoline) {
     bool in_scratch_emit_size = false;
 #ifdef COMPILER2
     // We don't want to emit a trampoline if C2 is generating dummy
@@ -590,7 +604,7 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
 
   if (cbuf) cbuf->set_insts_mark();
   relocate(entry.rspec());
-  if (!far_branches()) {
+  if (!need_trampoline) {
     bl(entry.target());
   } else {
     bl(pc());
