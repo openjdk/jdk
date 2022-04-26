@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8015854
- * @requires (os.family == "mac")
  * @summary Tests HTML image as JButton text for unwanted padding on macOS Aqua LAF
  * @run main HtmlButtonImageTest
  */
@@ -41,6 +40,7 @@ import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
 
@@ -60,19 +60,25 @@ public final class HtmlButtonImageTest {
     private static final int maxX = centerX + (SQUARE_WIDTH / 2);
     private static final int maxY = centerY + (SQUARE_HEIGHT / 2);
 
+    private static boolean supportedLaf;
+
     public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");
         testDir = Path.of(System.getProperty("test.classes", "."));
         generateRedSquare();
 
-        SwingUtilities.invokeAndWait(HtmlButtonImageTest::createButton);
-        SwingUtilities.invokeAndWait(HtmlButtonImageTest::paintButton);
+        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+            if(supportedLaf) {
+                SwingUtilities.invokeAndWait(HtmlButtonImageTest::createButton);
+                SwingUtilities.invokeAndWait(HtmlButtonImageTest::paintButton);
 
-        testImageCentering(image.getRGB(centerX, centerY),
-                image.getRGB(minX, minY),
-                image.getRGB(minX, maxY),
-                image.getRGB(maxX, minY),
-                image.getRGB(maxX, maxY));
+                testImageCentering(image.getRGB(centerX, centerY),
+                        image.getRGB(minX, minY),
+                        image.getRGB(minX, maxY),
+                        image.getRGB(maxX, minY),
+                        image.getRGB(maxX, maxY));
+            }
+        }
     }
 
     private static void generateRedSquare() throws IOException {
@@ -110,6 +116,15 @@ public final class HtmlButtonImageTest {
                 throw new RuntimeException("HTML image not centered in button");
             }
         }
-        System.out.println("Passed");
+    }
+
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+            supportedLaf = true;
+        } catch (UnsupportedLookAndFeelException | ClassNotFoundException |
+                InstantiationException | IllegalAccessException e) {
+            supportedLaf = false;
+        }
     }
 }
