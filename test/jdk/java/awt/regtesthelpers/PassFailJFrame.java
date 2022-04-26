@@ -24,7 +24,6 @@
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Frame;
-import java.awt.HeadlessException;
 import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -47,15 +46,37 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
 
 public class PassFailJFrame {
 
-    private final static CountDownLatch latch = new CountDownLatch(1);
+    private static final String TITLE = "Test Instruction Frame";
+    private static final long TEST_TIMEOUT = 5;
+    private static final int ROWS = 10;
+    private static final int COLUMNS = 40;
+
+    private static final List<Frame> frameList = new ArrayList<>();
+    private static final Timer timer = new Timer(0, null);
+    private static final CountDownLatch latch = new CountDownLatch(1);
+
     private static volatile boolean failed;
     private static volatile boolean timeout;
     private static volatile String testFailedReason;
     private static JFrame frame;
-    private static final List<Frame> frameList = new ArrayList<>();
-    private static final Timer timer = new Timer(0, null);
 
     public enum Position {HORIZONTAL, VERTICAL}
+
+    public PassFailJFrame(String instructions) throws InterruptedException,
+            InvocationTargetException {
+        this(instructions, TEST_TIMEOUT);
+    }
+
+    public PassFailJFrame(String instructions, long testTimeOut) throws
+            InterruptedException, InvocationTargetException {
+        this(TITLE, instructions, testTimeOut);
+    }
+
+    public PassFailJFrame(String title, String instructions,
+                          long testTimeOut) throws InterruptedException,
+            InvocationTargetException {
+        this(title, instructions, testTimeOut, ROWS, COLUMNS);
+    }
 
     /**
      * Constructs a JFrame with a given title & serves as test instructional
@@ -65,48 +86,48 @@ public class PassFailJFrame {
      * on the 'Fail' button and the reason for the failure should be
      * specified in the JDialog JTextArea.
      *
-     * @param title                title of the Frame.
-     * @param instructions         specified instruction that user should follow.
-     * @param rows                 number of visible rows of the JTextArea where the
-     *                             instruction is show.
-     * @param columns              Number of columns of the instructional
-     *                             JTextArea
-     * @param testTimeOutInMinutes timeout of the test where time is specified in
-     *                             minutes.
-     * @throws HeadlessException         HeadlessException
-     * @throws InterruptedException      exception thrown for invokeAndWait
-     * @throws InvocationTargetException exception thrown for invokeAndWait
+     * @param title        title of the Frame.
+     * @param instructions the instruction for the tester on how to test
+     *                     and what is expected (pass) and what is not
+     *                     expected (fail).
+     * @param testTimeOut  test timeout where time is specified in minutes.
+     * @param rows         number of visible rows of the JTextArea where the
+     *                     instruction is show.
+     * @param columns      Number of columns of the instructional
+     *                     JTextArea
+     * @throws InterruptedException      exception thrown when thread is
+     *                                   interrupted
+     * @throws InvocationTargetException if an exception is thrown while
+     *                                   creating the test instruction frame on
+     *                                   EDT
      */
-    public PassFailJFrame(String title, String instructions,
-                          int rows, int columns,
-                          int testTimeOutInMinutes) throws HeadlessException,
-            InterruptedException, InvocationTargetException {
-
+    public PassFailJFrame(String title, String instructions, long testTimeOut,
+                          int rows, int columns) throws InterruptedException,
+            InvocationTargetException {
         if (isEventDispatchThread()) {
-            createUI(title, instructions, rows, columns, testTimeOutInMinutes);
+            createUI(title, instructions, testTimeOut, rows, columns);
         } else {
-            invokeAndWait(() -> createUI(title, instructions, rows, columns,
-                    testTimeOutInMinutes));
+            invokeAndWait(() -> createUI(title, instructions, testTimeOut,
+                    rows, columns));
         }
     }
 
     private static void createUI(String title, String instructions,
-                                 int rows, int columns,
-                                 int timeoutInMinutes) {
+                                 long testTimeOut, int rows, int columns) {
         frame = new JFrame(title);
         frame.setLayout(new BorderLayout());
         JTextArea instructionsText = new JTextArea(instructions, rows, columns);
         instructionsText.setEditable(false);
         instructionsText.setLineWrap(true);
 
-        long testTimeout = TimeUnit.MINUTES.toMillis(timeoutInMinutes);
+        long tTimeout = TimeUnit.MINUTES.toMillis(testTimeOut);
 
         final JLabel testTimeoutLabel = new JLabel(String.format("Test " +
-                "timeout: %s", convertMillisToTimeStr(testTimeout)), JLabel.CENTER);
+                "timeout: %s", convertMillisToTimeStr(tTimeout)), JLabel.CENTER);
         final long startTime = System.currentTimeMillis();
         timer.setDelay(1000);
         timer.addActionListener((e) -> {
-            long leftTime = testTimeout - (System.currentTimeMillis() - startTime);
+            long leftTime = tTimeout - (System.currentTimeMillis() - startTime);
             if ((leftTime < 0) || failed) {
                 timer.stop();
                 testFailedReason = "Failure Reason:\n"
@@ -151,7 +172,6 @@ public class PassFailJFrame {
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-
         frameList.add(frame);
     }
 
@@ -171,8 +191,10 @@ public class PassFailJFrame {
      * the specified timeoutMinutes period and the test gets timeout.
      * Note: This method should be called from main() thread
      *
-     * @throws InterruptedException      if the thread is interrupted
-     * @throws InvocationTargetException exception thrown for invokeAndWait
+     * @throws InterruptedException      exception thrown when thread is
+     *                                   interrupted
+     * @throws InvocationTargetException if an exception is thrown while
+     *                                   disposing of frames on EDT
      */
     public void awaitAndCheck() throws InterruptedException, InvocationTargetException {
         if (isEventDispatchThread()) {
@@ -271,6 +293,29 @@ public class PassFailJFrame {
      */
     public static synchronized void addTestFrame(Frame testFrame) {
         frameList.add(testFrame);
+    }
+
+    /**
+     * Forcibly pass the test.
+     * <p>The sample usage:
+     * <pre><code>
+     *      PrinterJob pj = PrinterJob.getPrinterJob();
+     *      if (pj == null || pj.getPrintService() == null) {
+     *          System.out.println(""Printer not configured or available.");
+     *          PassFailJFrame.forcePass();
+     *      }
+     * </code></pre>
+     */
+    public static void forcePass() {
+        latch.countDown();
+    }
+
+    /**
+     *  Forcibly fail the test.
+     */
+    public static void forceFail() {
+        failed = true;
+        latch.countDown();
     }
 }
 

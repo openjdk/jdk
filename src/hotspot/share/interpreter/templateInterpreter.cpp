@@ -287,7 +287,7 @@ address TemplateInterpreter::deopt_entry(TosState state, int length) {
 }
 
 //------------------------------------------------------------------------------------------------------------------------
-// Suport for invokes
+// Support for invokes
 
 int TemplateInterpreter::TosState_as_index(TosState state) {
   assert( state < number_of_states , "Invalid state in TosState_as_index");

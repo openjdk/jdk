@@ -1828,6 +1828,10 @@ public class Check {
             return;
         }
 
+        if (shouldCheckPreview(m, other, origin)) {
+            checkPreview(tree.pos(), m, other);
+        }
+
         Type mt = types.memberType(origin.type, m);
         Type ot = types.memberType(origin.type, other);
         // Error if overriding result type is different
@@ -1902,6 +1906,23 @@ public class Check {
         }
     }
     // where
+        private boolean shouldCheckPreview(MethodSymbol m, MethodSymbol other, ClassSymbol origin) {
+            if (m.owner != origin ||
+                //performance - only do the expensive checks when the overridden method is a Preview API:
+                (other.flags() & PREVIEW_API) == 0) {
+                return false;
+            }
+
+            for (Symbol s : types.membersClosure(origin.type, false).getSymbolsByName(m.name)) {
+                if (m != s && m.overrides(s, origin, types, false)) {
+                    //only produce preview warnings or errors if "m" immediatelly overrides "other"
+                    //without intermediate overriding methods:
+                    return s == other;
+                }
+            }
+
+            return false;
+        }
         private boolean isDeprecatedOverrideIgnorable(MethodSymbol m, ClassSymbol origin) {
             // If the method, m, is defined in an interface, then ignore the issue if the method
             // is only inherited via a supertype and also implemented in the supertype,
