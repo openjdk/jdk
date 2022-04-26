@@ -75,23 +75,23 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             String target = ch.getParameterName(tag);
             for (int i = 0; i < parameters.size(); i++) {
                 Element e = parameters.get(i);
-                String pname = input.isTypeVariableParamTag
+                String candidate = input.isTypeVariableParamTag
                         ? utils.getTypeName(e.asType(), false)
                         : utils.getSimpleName(e);
-                if (pname.equals(target)) {
+                if (candidate.equals(target)) {
                     input.tagId = Integer.toString(i);
                     break;
                 }
             }
         }
-        ExecutableElement md = (ExecutableElement) input.element;
-        CommentHelper ch = utils.getCommentHelper(md);
+        ExecutableElement ee = (ExecutableElement) input.element;
+        CommentHelper ch = utils.getCommentHelper(ee);
         List<? extends ParamTree> tags = input.isTypeVariableParamTag
-                ? utils.getTypeParamTrees(md)
-                : utils.getParamTrees(md);
+                ? utils.getTypeParamTrees(ee)
+                : utils.getParamTrees(ee);
         List<? extends Element> parameters = input.isTypeVariableParamTag
-                ? md.getTypeParameters()
-                : md.getParameters();
+                ? ee.getTypeParameters()
+                : ee.getParameters();
         Map<String, String> positionOfName = mapNameToPosition(utils, parameters);
         for (ParamTree tag : tags) {
             String paramName = ch.getParameterName(tag);
@@ -234,12 +234,12 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                 Integer.toString(position), kind == ParamKind.TYPE_PARAMETER);
         DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
         if (!inheritedDoc.inlineTags.isEmpty()) {
-            String lname = kind != ParamKind.TYPE_PARAMETER
+            String name = kind != ParamKind.TYPE_PARAMETER
                     ? utils.getSimpleName(param)
                     : utils.getTypeName(param.asType(), false);
             Content content = convertParam(inheritedDoc.holder, kind, writer,
                     (ParamTree) inheritedDoc.holderTag,
-                    lname, isFirst);
+                    name, isFirst);
             result.add(content);
         }
         return result;

@@ -64,29 +64,29 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     @Override
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
         Utils utils = input.utils;
-        Element exception;
+        Element target;
         CommentHelper ch = utils.getCommentHelper(input.element);
         if (input.tagId == null) {
-            exception = input.docTreeInfo.docTree() instanceof ThrowsTree tt
+            target = input.docTreeInfo.docTree() instanceof ThrowsTree tt
                     ? ch.getException(tt) : null;
-            input.tagId = exception == null
+            input.tagId = target == null
                     ? ch.getExceptionName(input.docTreeInfo.docTree()).getSignature()
-                    : utils.getFullyQualifiedName(exception);
+                    : utils.getFullyQualifiedName(target);
         } else {
-            exception = input.utils.findClass(input.element, input.tagId);
+            target = input.utils.findClass(input.element, input.tagId);
         }
 
         for (ThrowsTree tt : input.utils.getThrowsTrees(input.element)) {
-            Element exc = ch.getException(tt);
-            if (exc != null && (input.tagId.equals(utils.getSimpleName(exc)) ||
-                    (input.tagId.equals(utils.getFullyQualifiedName(exc))))) {
+            Element candidate = ch.getException(tt);
+            if (candidate != null && (input.tagId.equals(utils.getSimpleName(candidate)) ||
+                    (input.tagId.equals(utils.getFullyQualifiedName(candidate))))) {
                 output.holder = input.element;
                 output.holderTag = tt;
                 output.inlineTags = ch.getBody(output.holderTag);
                 output.tagList.add(tt);
-            } else if (exception != null && exc != null &&
-                    utils.isTypeElement(exc) && utils.isTypeElement(exception) &&
-                    utils.isSubclassOf((TypeElement) exc, (TypeElement) exception)) {
+            } else if (target != null && candidate != null &&
+                    utils.isTypeElement(candidate) && utils.isTypeElement(target) &&
+                    utils.isSubclassOf((TypeElement) candidate, (TypeElement) target)) {
                 output.tagList.add(tt);
             }
         }
