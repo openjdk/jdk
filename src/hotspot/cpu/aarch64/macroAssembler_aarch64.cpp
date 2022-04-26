@@ -578,10 +578,6 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
 
   bool need_trampoline = target_needs_trampoline(entry);
 
-  if (!need_trampoline && UseNewCode) {
-    tty->print_cr("Saved %d", (int)(NativeInstruction::instruction_size + NativeCallTrampolineStub::instruction_size));
-  }
-
   // We need a trampoline if branches are far.
   if (need_trampoline) {
     bool in_scratch_emit_size = false;
