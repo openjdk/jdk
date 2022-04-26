@@ -97,7 +97,16 @@ JfrSymbolTable::~JfrSymbolTable() {
 
 void JfrSymbolTable::clear() {
   assert(_symbols != NULL, "invariant");
+  if (_symbols->has_entries()) {
+    _symbols->clear_entries();
+  }
+  assert(!_symbols->has_entries(), "invariant");
+
   assert(_strings != NULL, "invariant");
+  if (_strings->has_entries()) {
+    _strings->clear_entries();
+  }
+  assert(!_strings->has_entries(), "invariant");
 
   _symbol_list = NULL;
   _id_counter = 1;
