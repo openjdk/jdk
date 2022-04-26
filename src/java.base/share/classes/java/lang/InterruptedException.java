@@ -32,10 +32,10 @@ package java.lang;
  * thread has been interrupted, and if so, to immediately throw
  * this exception.  The following code can be used to achieve
  * this effect:
- * <pre>
- *  if (Thread.interrupted())  // Clears interrupted status!
- *      throw new InterruptedException();
- * </pre>
+ * {@snippet:
+ * if (Thread.interrupted())  // Clears interrupted status!
+ *     throw new InterruptedException();
+ * }
  *
  * @author  Frank Yellin
  * @see     java.lang.Object#wait()
