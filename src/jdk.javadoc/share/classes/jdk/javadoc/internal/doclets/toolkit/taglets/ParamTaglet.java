@@ -69,9 +69,6 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      * @return a name-rank number map.
      */
     private static Map<String, String> getRankMap(Utils utils, List<? extends Element> params) {
-        if (params == null) {
-            return null;
-        }
         HashMap<String, String> result = new HashMap<>();
         int rank = 0;
         for (Element e : params) {
@@ -94,7 +91,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             List<? extends Element> parameters = input.isTypeVariableParamTag
                     ? ee.getTypeParameters()
                     : ee.getParameters();
-            String target = ch.getParameterName(input.docTreeInfo.docTree());
+            String target = ch.getParameterName((ParamTree) input.docTreeInfo.docTree());
             for (int i = 0; i < parameters.size(); i++) {
                 Element e = parameters.get(i);
                 String pname = input.isTypeVariableParamTag
@@ -108,14 +105,14 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         }
         ExecutableElement md = (ExecutableElement) input.element;
         CommentHelper ch = utils.getCommentHelper(md);
-        List<? extends DocTree> tags = input.isTypeVariableParamTag
+        List<? extends ParamTree> tags = input.isTypeVariableParamTag
                 ? utils.getTypeParamTrees(md)
                 : utils.getParamTrees(md);
         List<? extends Element> parameters = input.isTypeVariableParamTag
                 ? md.getTypeParameters()
                 : md.getParameters();
         Map<String, String> rankMap = getRankMap(utils, parameters);
-        for (DocTree tag : tags) {
+        for (ParamTree tag : tags) {
             String paramName = ch.getParameterName(tag);
             if (rankMap.containsKey(paramName) && rankMap.get(paramName).equals((input.tagId))) {
                 output.holder = input.element;
