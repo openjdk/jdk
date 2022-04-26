@@ -143,15 +143,8 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Given an array of {@code @param DocTree}s, return its string representation.
-     * Try to inherit the param tags that are missing.
-     *
-     * @param holder            the element that holds the param tags.
-     * @param writer            the TagletWriter that will write this tag.
-     * @param formalParameters  The array of parameters (from type or executable
-     *                          member) to check.
-     *
-     * @return the content representation of these {@code @param DocTree}s.
+     * Returns a {@code Content} representation of a list of {@code ParamTree}.
+     * Tries to inherit the param tags that are missing.
      */
     private Content getTagletOutput(ParamKind kind,
                                     Element holder,
@@ -164,7 +157,8 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Try to inherit documentation for a specific parameter.
+     * Tries to inherit documentation for a specific parameter (element).
+     * If unsuccessful, the returned content is empty.
      */
     private Content getInheritedTagletOutput(ParamKind kind,
                                              Element holder,
@@ -181,7 +175,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             String lname = kind != ParamKind.TYPE_PARAMETER
                     ? utils.getSimpleName(param)
                     : utils.getTypeName(param.asType(), false);
-            Content content = processParamTag(inheritedDoc.holder, kind, writer,
+            Content content = convertParam(inheritedDoc.holder, kind, writer,
                     (ParamTree) inheritedDoc.holderTag,
                     lname, isFirst);
             result.add(content);
@@ -201,12 +195,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      * <p> This method warns about {@code @param} tags that do not map to
      * parameter elements and param tags that are duplicated. </p>
      *
-     * @param e the element
-     * @param kind the kind of all parameters in the lists
-     * @param paramTags the list of {@code ParamTree}
-     * @param formalParameters the list of parameter elements
-     * @param writer the TagletWriter that will write this tag
-     * @return the {@code Content} representation
+     * @param kind the kind of <em>all</em> parameters in the lists
      */
     private Content processParamTags(Element e,
                                      ParamKind kind,
@@ -250,7 +239,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         for (int i = 0; i < formalParameters.size(); i++) {
             ParamTree dt = tagOfPosition.get(Integer.toString(i));
             if (dt != null) {
-                result.add(processParamTag(e, kind, writer, dt,
+                result.add(convertParam(e, kind, writer, dt,
                         ch.getParameterName(dt), result.isEmpty()));
             } else if (writer.configuration().utils.isMethod(e)) {
                 result.add(getInheritedTagletOutput(kind, e, writer,
@@ -262,7 +251,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             // These are erroneous but we generate them anyway.
             for (ParamTree dt : paramTags) {
                 if (!tagOfPosition.containsValue(dt)) {
-                    result.add(processParamTag(e, kind, writer, dt,
+                    result.add(convertParam(e, kind, writer, dt,
                             ch.getParameterName(dt), result.isEmpty()));
                 }
             }
@@ -271,24 +260,15 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Convert an individual {@code ParamTree} to {@code Content}.
-     *
-     * @param e               the owner element
-     * @param kind            the kind of param tag
-     * @param writer          the taglet writer for output writing.
-     * @param paramTag        the tag whose inline tags will be printed.
-     * @param name            the name of the parameter.  We can't rely on
-     *                        the name in the param tag because we might be
-     *                        inheriting documentation.
-     * @param isFirstParam    true if this is the first param tag being printed.
-     *
+     * Converts an individual {@code ParamTree} to {@code Content}, which is
+     * prepended with the header if the parameter is first in the list.
      */
-    private Content processParamTag(Element e,
-                                    ParamKind kind,
-                                    TagletWriter writer,
-                                    ParamTree paramTag,
-                                    String name,
-                                    boolean isFirstParam) {
+    private Content convertParam(Element e,
+                                 ParamKind kind,
+                                 TagletWriter writer,
+                                 ParamTree paramTag,
+                                 String name,
+                                 boolean isFirstParam) {
         Content result = writer.getOutputInstance();
         if (isFirstParam) {
             result.add(writer.getParamHeader(kind));
