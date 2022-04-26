@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
+import jdk.security.jarsigner.JarSigner;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.SecurityTools;
@@ -57,7 +58,7 @@ import static org.testng.Assert.*;
 
 /**
  * @test
- * @bug 8217375
+ * @bug 8217375 8267319
  * @library /test/lib
  * @modules jdk.jartool/sun.security.tools.jarsigner
  * @run testng/timeout=1200 PreserveRawManifestEntryAndDigest
@@ -87,6 +88,8 @@ public class PreserveRawManifestEntryAndDigest {
     static final String KEYSTORE_FILENAME = "test.jks";
     static final String FILENAME_INITIAL_CONTENTS = "initial-contents";
     static final String FILENAME_UPDATED_CONTENTS = "updated-contents";
+    private static final String DEF_DIGEST_STR =
+            JarSigner.Builder.getDefaultDigestAlgorithm() + "-Digest";
 
     /**
      * @see sun.security.tools.jarsigner.Main#run
@@ -373,9 +376,9 @@ public class PreserveRawManifestEntryAndDigest {
             ZipEntry eb = zip.getEntry("META-INF/B.SF");
             Manifest sfb = new Manifest(zip.getInputStream(eb));
             if (assertMainAttrsDigestsUnchanged) {
-                String mainAttrsDigKey =
-                        (digestalg != null ? digestalg : "SHA-256") +
-                        "-Digest-Manifest-Main-Attributes";
+                String mainAttrsDigKey = (digestalg != null ?
+                        (digestalg + "-Digest") : DEF_DIGEST_STR) +
+                        "-Manifest-Main-Attributes";
                 assertEquals(sfa.getMainAttributes().getValue(mainAttrsDigKey),
                              sfb.getMainAttributes().getValue(mainAttrsDigKey));
             }
@@ -418,8 +421,9 @@ public class PreserveRawManifestEntryAndDigest {
                 "Name: " + FILENAME_INITIAL_CONTENTS.substring(0, 1) + "\r\n" +
                 " " + FILENAME_INITIAL_CONTENTS.substring(1, 8) + "\r\n" +
                 " " + FILENAME_INITIAL_CONTENTS.substring(8) + "\r\n" +
-                "SHA-256-Digest: " + m.getAttributes(FILENAME_INITIAL_CONTENTS)
-                        .getValue("SHA-256-Digest") + "\r\n" +
+                DEF_DIGEST_STR + ": " +
+                m.getAttributes(FILENAME_INITIAL_CONTENTS)
+                        .getValue(DEF_DIGEST_STR) + "\r\n" +
                 "\r\n"
             ).getBytes(UTF_8);
         });
@@ -442,7 +446,7 @@ public class PreserveRawManifestEntryAndDigest {
     public void arbitraryLineBreaksHeader() throws Exception {
         test("arbitraryLineBreaksHeader", m -> {
             String digest = m.getAttributes(FILENAME_INITIAL_CONTENTS)
-                    .getValue("SHA-256-Digest");
+                    .getValue(DEF_DIGEST_STR);
             return (
                 Name.MANIFEST_VERSION + ": 1.0\r\n" +
                 "Created-By: " +
@@ -455,7 +459,7 @@ public class PreserveRawManifestEntryAndDigest {
                 " line breaks.\r\n" +
                 "\r\n" +
                 "Name: " + FILENAME_INITIAL_CONTENTS + "\r\n" +
-                "SHA-256-Digest: " + digest.substring(0, 11) + "\r\n" +
+                DEF_DIGEST_STR + ": " + digest.substring(0, 11) + "\r\n" +
                 " " + digest.substring(11) + "\r\n" +
                 "\r\n"
             ).getBytes(UTF_8);
@@ -491,7 +495,7 @@ public class PreserveRawManifestEntryAndDigest {
      * <li>simulate a manifest as it would have been written by a JDK before 11
      * by re-positioning line breaks at 70 bytes (which makes a difference by
      * digests that grow headers longer than 70 characters such as SHA-512 as
-     * opposed to default SHA-256, long file names, or manual editing)</li>
+     * opposed to default SHA-384, long file names, or manual editing)</li>
      * <li>add a new file to the jar</li>
      * <li>sign the jar with a JDK 11 or 12 with a different signer</li>
      * </ol><p>&rarr;
@@ -787,8 +791,8 @@ public class PreserveRawManifestEntryAndDigest {
         // with either digest or digestWorkaround has been checked by test
         // before.
         assertEquals(abSigFilesEqual(jarFilename, sf -> sf.getMainAttributes()
-                        .getValue("SHA-256-Digest-Manifest-Main-Attributes")),
-                     expectUnchangedDigests);
+                    .getValue(DEF_DIGEST_STR + "-Manifest-Main-Attributes")),
+                expectUnchangedDigests);
     }
 
     /**
@@ -817,7 +821,7 @@ public class PreserveRawManifestEntryAndDigest {
                 replaceTrailingLineBreaksManipulation(trailingSeq));
 
         assertTrue(abSigFilesEqual(jarFilename, sf -> sf.getAttributes(
-                FILENAME_INITIAL_CONTENTS).getValue("SHA-256-Digest")));
+                FILENAME_INITIAL_CONTENTS).getValue(DEF_DIGEST_STR)));
     }
 
     /**
@@ -857,7 +861,7 @@ public class PreserveRawManifestEntryAndDigest {
         });
 
         assertTrue(abSigFilesEqual(jarFilename, sf -> sf.getAttributes(
-                FILENAME_INITIAL_CONTENTS).getValue("SHA-256-Digest")));
+                FILENAME_INITIAL_CONTENTS).getValue(DEF_DIGEST_STR)));
     }
 
     /**
@@ -886,7 +890,7 @@ public class PreserveRawManifestEntryAndDigest {
         });
 
         assertTrue(abSigFilesEqual(jarFilename, sf -> sf.getAttributes(
-                FILENAME_INITIAL_CONTENTS).getValue("SHA-256-Digest")));
+                FILENAME_INITIAL_CONTENTS).getValue(DEF_DIGEST_STR)));
     }
 
     /**
@@ -917,7 +921,7 @@ public class PreserveRawManifestEntryAndDigest {
                 null, true, true);
 
         assertTrue(abSigFilesEqual(jarFilename, sf -> sf.getAttributes(
-                        FILENAME_INITIAL_CONTENTS).getValue("SHA-256-Digest")));
+                        FILENAME_INITIAL_CONTENTS).getValue(DEF_DIGEST_STR)));
     }
 
     /**
@@ -957,7 +961,7 @@ public class PreserveRawManifestEntryAndDigest {
         });
 
         assertTrue(abSigFilesEqual(jarFilename, sf -> sf.getAttributes(
-                FILENAME_INITIAL_CONTENTS).getValue("SHA-256-Digest")));
+                FILENAME_INITIAL_CONTENTS).getValue(DEF_DIGEST_STR)));
     }
 
     /**
@@ -993,7 +997,7 @@ public class PreserveRawManifestEntryAndDigest {
         }, null, true, true);
 
         assertTrue(abSigFilesEqual(jarFilename, sf -> sf.getAttributes(
-                FILENAME_INITIAL_CONTENTS).getValue("SHA-256-Digest")));
+                FILENAME_INITIAL_CONTENTS).getValue(DEF_DIGEST_STR)));
     }
 
     String manifestToString(Manifest mf) {

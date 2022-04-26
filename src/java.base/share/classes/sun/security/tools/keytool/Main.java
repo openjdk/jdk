@@ -1917,6 +1917,8 @@ public final class Main {
                     keysize = SecurityProviderConstants.DEF_EC_KEY_SIZE;
                 } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
                     keysize = SecurityProviderConstants.DEF_RSA_KEY_SIZE;
+                } else if ("RSASSA-PSS".equalsIgnoreCase(keyAlgName)) {
+                    keysize = SecurityProviderConstants.DEF_RSASSA_PSS_KEY_SIZE;
                 } else if ("DSA".equalsIgnoreCase(keyAlgName)) {
                     keysize = SecurityProviderConstants.DEF_DSA_KEY_SIZE;
                 } else if ("EdDSA".equalsIgnoreCase(keyAlgName)) {
@@ -2253,6 +2255,9 @@ public final class Main {
                 out.println(mf);
                 dumpCert(cert, out);
             } else if (debug) {
+                for (var attr : keyStore.getEntry(alias, null).getAttributes()) {
+                    System.out.println("Attribute " + attr.getName() + ": " + attr.getValue());
+                }
                 out.println(cert.toString());
             } else {
                 out.println("trustedCertEntry, ");
@@ -2420,7 +2425,7 @@ public final class Main {
         /*
          * Information display rule of -importkeystore
          * 1. inside single, shows failure
-         * 2. inside all, shows sucess
+         * 2. inside all, shows success
          * 3. inside all where there is a failure, prompt for continue
          * 4. at the final of all, shows summary
          */

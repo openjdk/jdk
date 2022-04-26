@@ -145,7 +145,7 @@ bool JNIHandles::is_global_weak_cleared(jweak handle) {
 
 void JNIHandles::destroy_global(jobject handle) {
   if (handle != NULL) {
-    assert(!is_jweak(handle), "wrong method for detroying jweak");
+    assert(!is_jweak(handle), "wrong method for destroying jweak");
     oop* oop_ptr = jobject_ptr(handle);
     NativeAccess<>::oop_store(oop_ptr, (oop)NULL);
     global_handles()->release(oop_ptr);

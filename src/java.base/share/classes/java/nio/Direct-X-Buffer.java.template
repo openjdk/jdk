@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,11 @@ import jdk.internal.ref.Cleaner;
 import sun.nio.ch.DirectBuffer;
 
 
+#if[rw]
+sealed
+#else[rw]
+final
+#end[rw]
 class Direct$Type$Buffer$RW$$BO$
 #if[rw]
     extends {#if[byte]?Mapped$Type$Buffer:$Type$Buffer}
@@ -44,6 +49,9 @@ class Direct$Type$Buffer$RW$$BO$
     extends Direct$Type$Buffer$BO$
 #end[rw]
     implements DirectBuffer
+#if[rw]
+    permits Direct$Type$BufferR$BO$
+#end[rw]
 {
 
 #if[rw]

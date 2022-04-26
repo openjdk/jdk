@@ -71,7 +71,7 @@ private:
   const char *_constraint;
 
 public:
-  // cmpstr does string comparisions.  hashstr computes a key.
+  // cmpstr does string comparisons.  hashstr computes a key.
   ProductionState(AdlArena *arena) : _production(cmpstr, hashstr, arena) { initialize(); };
   ~ProductionState() { };
 

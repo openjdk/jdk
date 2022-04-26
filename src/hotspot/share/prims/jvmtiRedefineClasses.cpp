@@ -1222,7 +1222,7 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
 
 
 // Find new constant pool index value for old constant pool index value
-// by seaching the index map. Returns zero (0) if there is no mapped
+// by searching the index map. Returns zero (0) if there is no mapped
 // value for the old constant pool index.
 int VM_RedefineClasses::find_new_index(int old_index) {
   if (_index_map_count == 0) {
@@ -1248,7 +1248,7 @@ int VM_RedefineClasses::find_new_index(int old_index) {
 
 
 // Find new bootstrap specifier index value for old bootstrap specifier index
-// value by seaching the index map. Returns unused index (-1) if there is
+// value by searching the index map. Returns unused index (-1) if there is
 // no mapped value for the old bootstrap specifier index.
 int VM_RedefineClasses::find_new_operand_index(int old_index) {
   if (_operands_index_map_count == 0) {

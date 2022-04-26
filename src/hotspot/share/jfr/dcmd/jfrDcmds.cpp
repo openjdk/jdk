@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ static void handle_dcmd_result(outputStream* output,
   const bool startup = DCmd_Source_Internal == source;
   if (HAS_PENDING_EXCEPTION) {
     handle_pending_exception(output, startup, PENDING_EXCEPTION);
-    // Don't clear excption on startup, JVM should fail initialization.
+    // Don't clear exception on startup, JVM should fail initialization.
     if (!startup) {
       CLEAR_PENDING_EXCEPTION;
     }
@@ -379,13 +379,13 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr("  globalbuffercount  (Optional) Number of global buffers. This option is a legacy");
   out->print_cr("                     option: change the memorysize parameter to alter the number of");
   out->print_cr("                     global buffers. This value cannot be changed once JFR has been");
-  out->print_cr("                     initalized. (STRING, default determined by the value for");
+  out->print_cr("                     initialized. (STRING, default determined by the value for");
   out->print_cr("                     memorysize)");
   out->print_cr("");
   out->print_cr("  globalbuffersize   (Optional) Size of the global buffers, in bytes. This option is a");
   out->print_cr("                     legacy option: change the memorysize parameter to alter the size");
   out->print_cr("                     of the global buffers. This value cannot be changed once JFR has");
-  out->print_cr("                     been initalized. (STRING, default determined by the value for");
+  out->print_cr("                     been initialized. (STRING, default determined by the value for");
   out->print_cr("                     memorysize)");
   out->print_cr("");
   out->print_cr("  maxchunksize       (Optional) Maximum size of an individual data chunk in bytes if");

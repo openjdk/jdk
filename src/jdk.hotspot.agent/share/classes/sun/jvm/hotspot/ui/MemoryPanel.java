@@ -31,12 +31,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.*;
-import java.util.*;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.table.*;
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.ui.*;
 import sun.jvm.hotspot.utilities.PointerFinder;
 import sun.jvm.hotspot.utilities.PointerLocation;
 
@@ -219,8 +217,7 @@ public class MemoryPanel extends JPanel {
               String str = (String)t.getTransferData(DataFlavor.stringFlavor);
               handleImport(c, str);
               return true;
-            } catch (UnsupportedFlavorException ufe) {
-            } catch (IOException ioe) {
+            } catch (UnsupportedFlavorException | IOException e) {
             }
           }
 

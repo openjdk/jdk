@@ -373,6 +373,15 @@ static inline bool can_reserve_executable_memory(void) {
 #define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); }
 //#define PRINT_MAPPINGS
 
+// Release a range allocated with reserve_multiple carefully, to not trip mapping
+// asserts on Windows in os::release_memory()
+static void carefully_release_multiple(address start, int num_stripes, size_t stripe_len) {
+  for (int stripe = 0; stripe < num_stripes; stripe++) {
+    address q = start + (stripe * stripe_len);
+    EXPECT_TRUE(os::release_memory((char*)q, stripe_len));
+  }
+}
+
 #ifndef _AIX // JDK-8257041
 // Reserve an area consisting of multiple mappings
 //  (from multiple calls to os::reserve_memory)
@@ -385,25 +394,34 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   const bool exec_supported = can_reserve_executable_memory();
 #endif
 
-  size_t total_range_len = num_stripes * stripe_len;
-  // Reserve a large contiguous area to get the address space...
-  address p = (address)os::reserve_memory(total_range_len);
-  EXPECT_NE(p, (address)NULL);
-  // .. release it...
-  EXPECT_TRUE(os::release_memory((char*)p, total_range_len));
-  // ... re-reserve in the same spot multiple areas...
-  for (int stripe = 0; stripe < num_stripes; stripe++) {
-    address q = p + (stripe * stripe_len);
-    // Commit, alternatingly with or without exec permission,
-    //  to prevent kernel from folding these mappings.
+  address p = NULL;
+  for (int tries = 0; tries < 256 && p == NULL; tries ++) {
+    size_t total_range_len = num_stripes * stripe_len;
+    // Reserve a large contiguous area to get the address space...
+    p = (address)os::reserve_memory(total_range_len);
+    EXPECT_NE(p, (address)NULL);
+    // .. release it...
+    EXPECT_TRUE(os::release_memory((char*)p, total_range_len));
+    // ... re-reserve in the same spot multiple areas...
+    for (int stripe = 0; stripe < num_stripes; stripe++) {
+      address q = p + (stripe * stripe_len);
+      // Commit, alternatingly with or without exec permission,
+      //  to prevent kernel from folding these mappings.
 #ifdef __APPLE__
-    const bool executable = exec_supported ? (stripe % 2 == 0) : false;
+      const bool executable = exec_supported ? (stripe % 2 == 0) : false;
 #else
-    const bool executable = stripe % 2 == 0;
+      const bool executable = stripe % 2 == 0;
 #endif
-    q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len, executable);
-    EXPECT_NE(q, (address)NULL);
-    EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable));
+      q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len, executable);
+      if (q == NULL) {
+        // Someone grabbed that area concurrently. Cleanup, then retry.
+        tty->print_cr("reserve_multiple: retry (%d)...", stripe);
+        carefully_release_multiple(p, stripe, stripe_len);
+        p = NULL;
+      } else {
+        EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable));
+      }
+    }
   }
   return p;
 }
@@ -426,14 +444,6 @@ static address reserve_one_commit_multiple(int num_stripes, size_t stripe_len) {
 }
 
 #ifdef _WIN32
-// Release a range allocated with reserve_multiple carefully, to not trip mapping
-// asserts on Windows in os::release_memory()
-static void carefully_release_multiple(address start, int num_stripes, size_t stripe_len) {
-  for (int stripe = 0; stripe < num_stripes; stripe++) {
-    address q = start + (stripe * stripe_len);
-    EXPECT_TRUE(os::release_memory((char*)q, stripe_len));
-  }
-}
 struct NUMASwitcher {
   const bool _b;
   NUMASwitcher(bool v): _b(UseNUMAInterleaving) { UseNUMAInterleaving = v; }

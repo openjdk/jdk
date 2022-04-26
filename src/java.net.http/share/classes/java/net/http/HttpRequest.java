@@ -292,6 +292,10 @@ public abstract class HttpRequest {
         /**
          * Builds and returns an {@link HttpRequest}.
          *
+         * @implSpec This method returns a new {@code HttpRequest} each time it is
+         * invoked. Once built, the {@code HttpRequest} is immutable and can be
+         * sent multiple times.
+         *
          * @return a new {@code HttpRequest}
          * @throws IllegalStateException if a URI has not been set
          */

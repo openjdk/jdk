@@ -440,7 +440,9 @@ mh.invokeExact(System.out, "Hello, world.");
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
-public abstract class MethodHandle implements Constable {
+public abstract sealed class MethodHandle implements Constable
+    permits NativeMethodHandle, DirectMethodHandle,
+            DelegatingMethodHandle, BoundMethodHandle {
 
     /**
      * Internal marker interface which distinguishes (to the Java compiler)
