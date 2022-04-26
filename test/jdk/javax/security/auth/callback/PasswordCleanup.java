@@ -28,6 +28,7 @@
  */
 
 import javax.security.auth.callback.PasswordCallback;
+import java.util.Arrays;
 import java.util.WeakHashMap;
 
 public final class PasswordCleanup {
@@ -47,7 +48,7 @@ public final class PasswordCleanup {
         PasswordCallback passwordCallback =
                 new PasswordCallback("Password: ", false);
         passwordCallback.setPassword("ThisIsAPassword".toCharArray());
-        passwordCallback.clearPassword();
+
         weakHashMap.put(passwordCallback, null);
         passwordCallback = null;
 
@@ -60,9 +61,17 @@ public final class PasswordCleanup {
         PasswordCallback passwordCallback =
                 new PasswordCallback("Password: ", false);
         passwordCallback.setPassword("ThisIsAPassword".toCharArray());
+        char[] originPassword = passwordCallback.getPassword();
 
         // Use password clear method.
         passwordCallback.clearPassword();
+
+        // Check that the password is cleared.
+        char[] clearedPassword = passwordCallback.getPassword();
+        if (Arrays.equals(originPassword, clearedPassword)) {
+            throw new RuntimeException(
+                "PasswordCallback.clearPassword() does not clear passwords");
+        }
 
         weakHashMap.put(passwordCallback, null);
         passwordCallback = null;
@@ -80,7 +89,8 @@ public final class PasswordCleanup {
 
         // Check if the object has been collected.
         if (weakHashMap.size() > 0) {
-            throw new RuntimeException("GSSName object is not released");
+            throw new RuntimeException(
+                "PasswordCallback object is not released");
         }
     }
 }
