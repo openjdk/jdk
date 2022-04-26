@@ -15141,6 +15141,30 @@ instruct convL2D_reg_reg(vRegD dst, iRegL src) %{
   ins_pipe(fp_l2d);
 %}
 
+instruct round_double_reg(iRegLNoSp dst, vRegD src, vRegD ftmp, rFlagsReg cr)
+%{
+  match(Set dst (RoundD src));
+  effect(TEMP_DEF dst, TEMP ftmp, KILL cr);
+  format %{ "java_round_double $dst,$src"%}
+  ins_encode %{
+    __ java_round_double($dst$$Register, as_FloatRegister($src$$reg),
+                         as_FloatRegister($ftmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct round_float_reg(iRegINoSp dst, vRegF src, vRegF ftmp, rFlagsReg cr)
+%{
+  match(Set dst (RoundF src));
+  effect(TEMP_DEF dst, TEMP ftmp, KILL cr);
+  format %{ "java_round_float $dst,$src"%}
+  ins_encode %{
+    __ java_round_float($dst$$Register, as_FloatRegister($src$$reg),
+                        as_FloatRegister($ftmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // stack <-> reg and reg <-> reg shuffles with no conversion
 
 instruct MoveF2I_stack_reg(iRegINoSp dst, stackSlotF src) %{
