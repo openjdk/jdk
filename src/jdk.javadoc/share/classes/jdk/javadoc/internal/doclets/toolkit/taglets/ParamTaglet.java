@@ -191,8 +191,13 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     /**
      * Returns a {@code Content} representation of a list of {@code ParamTree}.
      *
-     * Warns about {@code @param} tags that do not map to parameter elements
-     * and param tags that are duplicated.
+     * <p> This method:
+     * <ul>
+     *   <li> correlates ParamTree with Element by name
+     *   <li> warns about {@code @param} tags that do not map to parameter
+     *        elements and param tags that are duplicated
+     * </ul>
+     * </p>
      *
      * @param e the element
      * @param kind the kind of all parameters in the lists
