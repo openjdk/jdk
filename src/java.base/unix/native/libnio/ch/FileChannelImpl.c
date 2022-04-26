@@ -30,7 +30,6 @@
 #include <unistd.h>
 
 #if defined(__linux__)
-#include <dlfcn.h>
 #include <sys/sendfile.h>
 #elif defined(_AIX)
 #include <string.h>
@@ -48,15 +47,8 @@
 #include "nio.h"
 #include "nio_util.h"
 #include "sun_nio_ch_FileChannelImpl.h"
-#include "java_lang_Long.h"
+#include "java_lang_Integer.h"
 #include <assert.h>
-
-#if defined(__linux__)
-typedef ssize_t copy_file_range_func(int fd_in, off64_t *off_in,
-                                     int fd_out, off64_t *off_out,
-                                     size_t len, unsigned int flags);
-static copy_file_range_func* my_copy_file_range_func = NULL;
-#endif
 
 static jfieldID chan_fd;        /* jobject 'fd' in sun.nio.ch.FileChannelImpl */
 
@@ -65,9 +57,6 @@ Java_sun_nio_ch_FileChannelImpl_initIDs(JNIEnv *env, jclass clazz)
 {
     jlong pageSize = sysconf(_SC_PAGESIZE);
     chan_fd = (*env)->GetFieldID(env, clazz, "fd", "Ljava/io/FileDescriptor;");
-#if defined(__linux__)
-    my_copy_file_range_func = (copy_file_range_func*)dlsym(RTLD_DEFAULT, "copy_file_range");
-#endif
     return pageSize;
 }
 
@@ -180,14 +169,7 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 
 #if defined(__linux__)
     off64_t offset = (off64_t)position;
-    jlong n;
-    if (my_copy_file_range_func != NULL) {
-        size_t len = (size_t)count;
-        n = my_copy_file_range_func(srcFD, &offset, dstFD, NULL, len, 0);
-        if (n >= 0)
-            return n;
-    }
-    n = sendfile64(dstFD, srcFD, &offset, (size_t)count);
+    jlong n = sendfile64(dstFD, srcFD, &offset, (size_t)count);
     if (n < 0) {
         if (errno == EAGAIN)
             return IOS_UNAVAILABLE;
@@ -245,8 +227,8 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
     result = send_file(&dstFD, &sf_iobuf, SF_SYNC_CACHE);
 
     /* AIX send_file() will return 0 when this operation complete successfully,
-     * return 1 when partial bytes transfered and return -1 when an error has
-     * Occured.
+     * return 1 when partial bytes transferred and return -1 when an error has
+     * occurred.
      */
     if (result == -1) {
         if (errno == EWOULDBLOCK)
@@ -270,14 +252,12 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 #endif
 }
 
-JNIEXPORT jlong JNICALL
+JNIEXPORT jint JNICALL
 Java_sun_nio_ch_FileChannelImpl_maxDirectTransferSize0(JNIEnv* env, jobject this)
 {
 #if defined(LINUX)
-    return my_copy_file_range_func != NULL ?
-           java_lang_Long_MAX_VALUE : // maximum value of type ssize_t
-           0x7ffff000;                // 2,147,479,552 maximum for sendfile()
+    return 0x7ffff000; // 2,147,479,552 maximum for sendfile()
 #else
-    return java_lang_Long_MAX_VALUE;
+    return java_lang_Integer_MAX_VALUE;
 #endif
 }

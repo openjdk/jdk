@@ -55,8 +55,6 @@ public class TransferToChannel {
     // for a good test
     private static final int CHUNK_SIZE = 1024 * 9;
 
-    // This should be the same values as FCOPYFILE_THRESHOLD in
-    // the Unix version of FileChannelImpl.c.
     private static final int MIN_DIRECT_TRANSFER_SIZE = 512000;
 
     private static File file;

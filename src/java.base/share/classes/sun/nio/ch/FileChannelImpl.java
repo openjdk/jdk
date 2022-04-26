@@ -66,7 +66,7 @@ public class FileChannelImpl
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
     // Maximum direct transfer size
-    private static final long MAX_DIRECT_TRANSFER_SIZE;
+    private static final int MAX_DIRECT_TRANSFER_SIZE;
 
     // Used to make native read and write calls
     private final FileDispatcher nd;
@@ -489,7 +489,7 @@ public class FileChannelImpl
     //
     private static volatile boolean fileSupported = true;
 
-    private long transferToDirectlyInternal(long position, long count,
+    private long transferToDirectlyInternal(long position, int icount,
                                             WritableByteChannel target,
                                             FileDescriptor targetFD)
         throws IOException
@@ -505,7 +505,7 @@ public class FileChannelImpl
             if (!isOpen())
                 return -1;
             do {
-                n = transferTo0(fd, position, count, targetFD);
+                n = transferTo0(fd, position, icount, targetFD);
             } while ((n == IOStatus.INTERRUPTED) && isOpen());
             if (n == IOStatus.UNSUPPORTED_CASE) {
                 if (target instanceof SinkChannelImpl)
@@ -526,7 +526,7 @@ public class FileChannelImpl
         }
     }
 
-    private long transferToDirectly(long position, long count,
+    private long transferToDirectly(long position, int icount,
                                     WritableByteChannel target)
         throws IOException
     {
@@ -563,14 +563,14 @@ public class FileChannelImpl
             synchronized (positionLock) {
                 long pos = position();
                 try {
-                    return transferToDirectlyInternal(position, count,
+                    return transferToDirectlyInternal(position, icount,
                                                       target, targetFD);
                 } finally {
                     position(pos);
                 }
             }
         } else {
-            return transferToDirectlyInternal(position, count, target, targetFD);
+            return transferToDirectlyInternal(position, icount, target, targetFD);
         }
     }
 
@@ -697,9 +697,9 @@ public class FileChannelImpl
 
         // Attempt a direct transfer, if the kernel supports it, limiting
         // the number of bytes according to which platform
-        long dcount = Math.min(count, MAX_DIRECT_TRANSFER_SIZE);
+        int icount = (int)Math.min(count, MAX_DIRECT_TRANSFER_SIZE);
         long n;
-        if ((n = transferToDirectly(position, dcount, target)) >= 0)
+        if ((n = transferToDirectly(position, icount, target)) >= 0)
             return n;
 
         // Attempt a mapped transfer, but only to trusted channel types
@@ -1385,7 +1385,7 @@ public class FileChannelImpl
                                            long count, FileDescriptor dst);
 
     // Retrieves the maximum size of a transfer
-    private static native long maxDirectTransferSize0();
+    private static native int maxDirectTransferSize0();
 
     // Caches fieldIDs
     private static native long initIDs();
