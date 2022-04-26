@@ -36,27 +36,6 @@ public final class PasswordCleanup {
             new WeakHashMap<>();
 
     public static void main(String[] args) throws Exception {
-        // Test password clearing at finalization.
-        clearAtCollection();
-
-        // Test password clearing with the specific method.
-        clearWithMethod();
-    }
-
-    private static void clearAtCollection() throws Exception {
-        // Create an object
-        PasswordCallback passwordCallback =
-                new PasswordCallback("Password: ", false);
-        passwordCallback.setPassword("ThisIsAPassword".toCharArray());
-
-        weakHashMap.put(passwordCallback, null);
-        passwordCallback = null;
-
-        // Check the clearing
-        checkClearing();
-    }
-
-    private static void clearWithMethod() throws Exception {
         // Create an object
         PasswordCallback passwordCallback =
                 new PasswordCallback("Password: ", false);
@@ -73,21 +52,19 @@ public final class PasswordCleanup {
                 "PasswordCallback.clearPassword() does not clear passwords");
         }
 
+        // Check if the PasswordCallback object could be collected.
         weakHashMap.put(passwordCallback, null);
         passwordCallback = null;
 
-        // Check the clearing
-        checkClearing();
-    }
-
-    private static void checkClearing() throws Exception {
         // Wait to trigger the cleanup.
         for (int i = 0; i < 10 && weakHashMap.size() != 0; i++) {
             System.gc();
             Thread.sleep(100);
         }
 
-        // Check if the object has been collected.
+        // Check if the object has been collected.  The collection will not 
+        // happen if the cleaner implementation in PasswordCallback is bound 
+        // to the PasswordCallback object.
         if (weakHashMap.size() > 0) {
             throw new RuntimeException(
                 "PasswordCallback object is not released");
