@@ -189,14 +189,17 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Given an array of {@code @param DocTree}s representing this
-     * tag, return its string representation.  Print a warning for param
-     * tags that do not map to parameters.  Print a warning for param
-     * tags that are duplicated.
+     * Returns a {@code Content} representation of a list of {@code ParamTree}.
      *
-     * @param paramTags the array of {@code @param DocTree} to convert.
-     * @param writer the TagletWriter that will write this tag.
-     * @return the Content representation of this {@code @param DocTree}.
+     * Warns about {@code @param} tags that do not map to parameter elements
+     * and param tags that are duplicated.
+     *
+     * @param e the element
+     * @param kind the kind of all parameters in the lists
+     * @param paramTags the list of {@code ParamTree}
+     * @param formalParameters the list of parameter elements
+     * @param writer the TagletWriter that will write this tag
+     * @return the {@code Content} representation
      */
     private Content processParamTags(Element e,
                                      ParamKind kind,
