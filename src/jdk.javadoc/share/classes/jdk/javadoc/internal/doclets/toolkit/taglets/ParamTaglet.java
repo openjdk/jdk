@@ -191,13 +191,14 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     /**
      * Returns a {@code Content} representation of a list of {@code ParamTree}.
      *
-     * <p> This method:
-     * <ul>
-     *   <li> correlates ParamTree with Element by name
-     *   <li> warns about {@code @param} tags that do not map to parameter
-     *        elements and param tags that are duplicated
-     * </ul>
-     * </p>
+     * <p> This method correlates {@code ParamTree} with {@code Element} by
+     * name. Once it's done, a particular {@code ParamTree} is addressed by the
+     * position (index) of the correlated {@code Element} in the list of formal
+     * parameter elements. This is needed for documentation inheritance as
+     * an inherited parameter may be named differently. </p>
+     *
+     * <p> This method warns about {@code @param} tags that do not map to
+     * parameter elements and param tags that are duplicated. </p>
      *
      * @param e the element
      * @param kind the kind of all parameters in the lists
@@ -242,7 +243,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                 }
             }
         }
-        // Document declared parameters for which taglet documentation is available
+        // Document declared parameters for which tag documentation is available
         // (either directly or inherited) in order of their declaration.
         Content result = writer.getOutputInstance();
         for (int i = 0; i < formalParameters.size(); i++) {
@@ -256,7 +257,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             }
         }
         if (paramTags.size() > tagOfPosition.size()) {
-            // Generate documentation for remaining taglets that do not match a declared parameter.
+            // Generate documentation for remaining tags that do not match a declared parameter.
             // These are erroneous but we generate them anyway.
             for (ParamTree dt : paramTags) {
                 if (!tagOfPosition.containsValue(dt)) {
@@ -269,7 +270,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Convert the individual ParamTag into Content.
+     * Convert an individual {@code ParamTree} to {@code Content}.
      *
      * @param e               the owner element
      * @param kind            the kind of param tag
