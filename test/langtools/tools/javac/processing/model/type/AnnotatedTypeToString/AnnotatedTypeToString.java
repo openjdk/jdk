@@ -24,7 +24,9 @@
 /*
  * @test
  * @bug 8284220
- * @summary Tests DeclaredType.toString with type annotations present
+ * @summary Tests DeclaredType.toString with type annotations present, for example that '@A
+ * Map.Entry' is printed as 'java.util.@A Map.Entry' (and not '@A java.util.Map.Entry' or
+ * 'java.util.@A Entry').
  * @library /tools/javac/lib
  * @build AnnotatedTypeToString JavacTestingAbstractProcessor ExpectedToString
  * @compile -processor AnnotatedTypeToString -proc:only Test.java
@@ -39,6 +41,10 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
+/**
+ * Verify that the toString representation of the types of elements annotated with {@code
+ * ExpectedToString} matches the expected string representation in the annotation.
+ */
 @SupportedAnnotationTypes("p.ExpectedToString")
 public class AnnotatedTypeToString extends JavacTestingAbstractProcessor {
 
