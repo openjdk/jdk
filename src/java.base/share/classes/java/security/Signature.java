@@ -1508,9 +1508,7 @@ public abstract class Signature extends SignatureSpi {
         protected byte[] engineSign() throws SignatureException {
             try {
                 return cipher.doFinal();
-            } catch (IllegalBlockSizeException e) {
-                throw new SignatureException("doFinal() failed", e);
-            } catch (BadPaddingException e) {
+            } catch (IllegalBlockSizeException | BadPaddingException e) {
                 throw new SignatureException("doFinal() failed", e);
             }
         }
