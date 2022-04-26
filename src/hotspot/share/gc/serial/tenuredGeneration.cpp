@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ void TenuredGeneration::compute_new_size_inner() {
   if (ShrinkHeapInSteps) {
     // Always reset '_shrink_factor' if the heap is shrunk in steps.
     // If we shrink the heap in this iteration, '_shrink_factor' will
-    // be recomputed based on the old value further down in this fuction.
+    // be recomputed based on the old value further down in this function.
     _shrink_factor = 0;
   }
 
