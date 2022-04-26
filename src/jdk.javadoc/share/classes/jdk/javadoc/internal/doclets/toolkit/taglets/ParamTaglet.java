@@ -61,24 +61,6 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         super(DocTree.Kind.PARAM, false, EnumSet.of(Location.TYPE, Location.CONSTRUCTOR, Location.METHOD));
     }
 
-    /**
-     * Given a list of parameters, returns a name-position map.
-     * @param params the list of parameters from a type or an executable member
-     * @return a name-position map
-     */
-    private static Map<String, String> mapNameToPosition(Utils utils, List<? extends Element> params) {
-        Map<String, String> result = new HashMap<>();
-        int position = 0;
-        for (Element e : params) {
-            String name = utils.isTypeParameterElement(e)
-                    ? utils.getTypeName(e.asType(), false)
-                    : utils.getSimpleName(e);
-            result.put(name, Integer.toString(position));
-            position++;
-        }
-        return result;
-    }
-
     @Override
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
         Utils utils = input.utils;
@@ -122,6 +104,24 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         }
     }
 
+    /**
+     * Given a list of parameters, returns a name-position map.
+     * @param params the list of parameters from a type or an executable member
+     * @return a name-position map
+     */
+    private static Map<String, String> mapNameToPosition(Utils utils, List<? extends Element> params) {
+        Map<String, String> result = new HashMap<>();
+        int position = 0;
+        for (Element e : params) {
+            String name = utils.isTypeParameterElement(e)
+                    ? utils.getTypeName(e.asType(), false)
+                    : utils.getSimpleName(e);
+            result.put(name, Integer.toString(position));
+            position++;
+        }
+        return result;
+    }
+
     @Override
     public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
@@ -153,33 +153,6 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                                     List<? extends ParamTree> paramTags) {
         Content result = writer.getOutputInstance();
         result.add(convertParams(holder, kind, paramTags, formalParameters, writer));
-        return result;
-    }
-
-    /**
-     * Tries to inherit documentation for a specific parameter (element).
-     * If unsuccessful, the returned content is empty.
-     */
-    private Content getInheritedTagletOutput(ParamKind kind,
-                                             Element holder,
-                                             TagletWriter writer,
-                                             Element param,
-                                             int position,
-                                             boolean isFirst) {
-        Utils utils = writer.configuration().utils;
-        Content result = writer.getOutputInstance();
-        Input input = new DocFinder.Input(writer.configuration().utils, holder, this,
-                Integer.toString(position), kind == ParamKind.TYPE_PARAMETER);
-        DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
-        if (!inheritedDoc.inlineTags.isEmpty()) {
-            String lname = kind != ParamKind.TYPE_PARAMETER
-                    ? utils.getSimpleName(param)
-                    : utils.getTypeName(param.asType(), false);
-            Content content = convertParam(inheritedDoc.holder, kind, writer,
-                    (ParamTree) inheritedDoc.holderTag,
-                    lname, isFirst);
-            result.add(content);
-        }
         return result;
     }
 
@@ -255,6 +228,33 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                             ch.getParameterName(dt), result.isEmpty()));
                 }
             }
+        }
+        return result;
+    }
+
+    /**
+     * Tries to inherit documentation for a specific parameter (element).
+     * If unsuccessful, the returned content is empty.
+     */
+    private Content getInheritedTagletOutput(ParamKind kind,
+                                             Element holder,
+                                             TagletWriter writer,
+                                             Element param,
+                                             int position,
+                                             boolean isFirst) {
+        Utils utils = writer.configuration().utils;
+        Content result = writer.getOutputInstance();
+        Input input = new DocFinder.Input(writer.configuration().utils, holder, this,
+                Integer.toString(position), kind == ParamKind.TYPE_PARAMETER);
+        DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
+        if (!inheritedDoc.inlineTags.isEmpty()) {
+            String lname = kind != ParamKind.TYPE_PARAMETER
+                    ? utils.getSimpleName(param)
+                    : utils.getTypeName(param.asType(), false);
+            Content content = convertParam(inheritedDoc.holder, kind, writer,
+                    (ParamTree) inheritedDoc.holderTag,
+                    lname, isFirst);
+            result.add(content);
         }
         return result;
     }
