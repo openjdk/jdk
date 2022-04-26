@@ -570,6 +570,52 @@ instruct vcvt2Dto2F(vecD dst, vecX src)
   ins_pipe(pipe_class_default);
 %}
 
+
+instruct vroundvecD2Fto2I(vecD dst, vecD src, vecD tmp1, vecD tmp2, vecD tmp3)
+%{
+  predicate(UseSVE == 0 &&
+            n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  match(Set dst (RoundVF src));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  format %{ "vround  $dst, T2S, $src\t# round vecD 2F to 2I vector" %}
+  ins_encode %{
+    __ vector_round_neon(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                         as_FloatRegister($tmp1$$reg), as_FloatRegister($tmp2$$reg),
+                         as_FloatRegister($tmp3$$reg), __ T2S);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vroundvecX4Fto4I(vecX dst, vecX src, vecX tmp1, vecX tmp2, vecX tmp3)
+%{
+  predicate(UseSVE == 0 &&
+            n->as_Vector()->length() == 4 && n->bottom_type()->is_vect()->element_basic_type() == T_INT);
+  match(Set dst (RoundVF src));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  format %{ "vround  $dst, T4S, $src\t# round vecX 4F to 4I vector" %}
+  ins_encode %{
+    __ vector_round_neon(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                         as_FloatRegister($tmp1$$reg), as_FloatRegister($tmp2$$reg),
+                         as_FloatRegister($tmp3$$reg), __ T4S);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vroundvecX2Dto2L(vecX dst, vecX src, vecX tmp1, vecX tmp2, vecX tmp3)
+%{
+  predicate(UseSVE == 0 &&
+            n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_LONG);
+  match(Set dst (RoundVD src));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  format %{ "vround  $dst, T2D, $src\t# round vecX 2D to 2L vector" %}
+  ins_encode %{
+    __ vector_round_neon(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                         as_FloatRegister($tmp1$$reg), as_FloatRegister($tmp2$$reg),
+                         as_FloatRegister($tmp3$$reg), __ T2D);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // ------------------------------ Reduction -------------------------------
 
 instruct reduce_add8B(iRegINoSp dst, iRegIorL2I isrc, vecD vsrc, vecD tmp)
