@@ -44,6 +44,8 @@ import java.util.Objects;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 
+import static java.awt.EventQueue.invokeAndWait;
+
 /*
  * @test
  * @bug 6531728
@@ -78,7 +80,7 @@ public class ClippedImages {
                 a) the positions of the red/blue circles on the corners
                 b) that numerical text on the image is displayed similarly
                 e) that the green quadrilaterals match on-screen
-                f) that the rendering is clipped at the default (typically1 inch)
+                f) that the rendering is clipped at the default (typically 1 inch)
                 margins of the page.
 
                 The test PASSES if the onscreen and printed rendering match
@@ -86,7 +88,7 @@ public class ClippedImages {
 
             PassFailJFrame passFailJFrame = new PassFailJFrame("Test " +
                     "Instruction", instruction, 15);
-            createTestUI();
+            invokeAndWait(ClippedImages::createTestUI);
             passFailJFrame.awaitAndCheck();
 
         } else {
@@ -400,7 +402,6 @@ class ClippedImageCanvas extends Component implements Printable, Pageable {
         drawImage(g, dxa, dya, dxd, dyd, sxc, syc, sxb, syb);
 
         g.translate(-3*incX, incY);
-        /******/
 
         /* sA + sD -> dD + dA */
         drawImage(g, dxd, dyd, dxa, dya, sxa, sya, sxd, syd);
@@ -418,7 +419,6 @@ class ClippedImageCanvas extends Component implements Printable, Pageable {
         drawImage(g, dxd, dyd, dxa, dya, sxc, syc, sxb, syb);
 
         g.translate(-3*incX, incY);
-        /******/
 
         /* sA + sD -> dB + dC */
         drawImage(g, dxb, dyb, dxc, dyc, sxa, sya, sxd, syd);
@@ -436,7 +436,6 @@ class ClippedImageCanvas extends Component implements Printable, Pageable {
         drawImage(g, dxb, dyb, dxc, dyc, sxc, syc, sxb, syb);
 
         g.translate(-3*incX, incY);
-        /******/
 
 
         /* sA + sD -> dC + dB */
