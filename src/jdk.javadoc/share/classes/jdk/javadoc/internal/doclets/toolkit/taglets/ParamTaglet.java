@@ -83,19 +83,20 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
         Utils utils = input.utils;
         if (input.tagId == null) {
-            input.isTypeVariableParamTag = ((ParamTree) input.docTreeInfo.docTree()).isTypeParameter();
+            var tag = (ParamTree) input.docTreeInfo.docTree();
+            input.isTypeVariableParamTag = tag.isTypeParameter();
             ExecutableElement ee = (ExecutableElement) input.docTreeInfo.element();
             CommentHelper ch = utils.getCommentHelper(ee);
             List<? extends Element> parameters = input.isTypeVariableParamTag
                     ? ee.getTypeParameters()
                     : ee.getParameters();
-            String target = ch.getParameterName((ParamTree) input.docTreeInfo.docTree());
+            String target = ch.getParameterName(tag);
             for (int i = 0; i < parameters.size(); i++) {
                 Element e = parameters.get(i);
                 String pname = input.isTypeVariableParamTag
                         ? utils.getTypeName(e.asType(), false)
                         : utils.getSimpleName(e);
-                if (pname.contentEquals(target)) {
+                if (pname.equals(target)) {
                     input.tagId = Integer.toString(i);
                     break;
                 }
@@ -112,7 +113,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         Map<String, String> positionOfName = mapNameToPosition(utils, parameters);
         for (ParamTree tag : tags) {
             String paramName = ch.getParameterName(tag);
-            if (positionOfName.containsKey(paramName) && positionOfName.get(paramName).equals((input.tagId))) {
+            if (positionOfName.containsKey(paramName) && positionOfName.get(paramName).equals(input.tagId)) {
                 output.holder = input.element;
                 output.holderTag = tag;
                 output.inlineTags = ch.getBody(tag);
@@ -163,7 +164,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Try to get the inherited taglet documentation for a specific parameter.
+     * Try to inherit documentation for a specific parameter.
      */
     private Content getInheritedTagletOutput(ParamKind kind,
                                              Element holder,
