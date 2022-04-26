@@ -73,7 +73,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             String name = utils.isTypeParameterElement(e)
                     ? utils.getTypeName(e.asType(), false)
                     : utils.getSimpleName(e);
-            result.put(name, String.valueOf(position));
+            result.put(name, Integer.toString(position));
             position++;
         }
         return result;
@@ -96,7 +96,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                         ? utils.getTypeName(e.asType(), false)
                         : utils.getSimpleName(e);
                 if (pname.contentEquals(target)) {
-                    input.tagId = String.valueOf(i);
+                    input.tagId = Integer.toString(i);
                     break;
                 }
             }
@@ -246,7 +246,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         // (either directly or inherited) in order of their declaration.
         Content result = writer.getOutputInstance();
         for (int i = 0; i < formalParameters.size(); i++) {
-            ParamTree dt = tagOfPosition.get(String.valueOf(i));
+            ParamTree dt = tagOfPosition.get(Integer.toString(i));
             if (dt != null) {
                 result.add(processParamTag(e, kind, writer, dt,
                         ch.getParameterName(dt), result.isEmpty()));
