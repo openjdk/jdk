@@ -1075,8 +1075,13 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
       (n_blk->is_LongCountedLoop() && n->Opcode() == Op_AddL)) {
     return n;
   }
+  // Pushing a shift through the iv Phi can get in the way of addressing optimizations or range check elimination
+  if (n_blk->is_BaseCountedLoop() && n->Opcode() == Op_LShift(n_blk->as_BaseCountedLoop()->bt()) &&
+      n->in(1) == n_blk->as_BaseCountedLoop()->phi()) {
+    return n;
+  }
 
-  // Check for having no control input; not pinned.  Allow
+// Check for having no control input; not pinned.  Allow
   // dominating control.
   if (n->in(0)) {
     Node *dom = idom(n_blk);

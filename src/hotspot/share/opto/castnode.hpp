@@ -118,6 +118,7 @@ public:
     init_class_id(Class_CastLL);
   }
 
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegL; }
 };
