@@ -25,6 +25,7 @@
  * @test
  * @bug 8284490
  * @summary Remove finalizer method in java.security.jgss
+ * @requires os.family != "windows"
  * @library /test/lib
  * @compile -XDignore.symbol.file Cleaners.java
  * @run main/othervm Cleaners launcher
@@ -38,7 +39,6 @@ import java.util.Arrays;
 import java.util.Set;
 
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.Proc;
 import org.ietf.jgss.Oid;
 import sun.security.krb5.Config;
@@ -86,11 +86,10 @@ public class Cleaners {
                 kdc.writeKtab(KTAB_S, false, SERVER);
                 kdc.writeKtab(KTAB_B, false, BACKEND);
                 kdc.kinit(USER, "ccache");
-                if (!Platform.isWindows()) {
-                    Files.setPosixFilePermissions(Paths.get("ccache"),
-                            Set.of(PosixFilePermission.OWNER_READ,
-                                    PosixFilePermission.OWNER_WRITE));
-                }
+                Files.setPosixFilePermissions(Paths.get("ccache"),
+                        Set.of(PosixFilePermission.OWNER_READ,
+                                PosixFilePermission.OWNER_WRITE));
+
                 Proc pc = proc("client")
                         .env("KRB5CCNAME", "FILE:ccache")
                         .env("KRB5_KTNAME", "none") // Do not try system ktab if ccache fails
@@ -108,11 +107,11 @@ public class Cleaners {
                 ps.println(pc.readData()); // wrap msg
                 ps.println(pc.readData()); // mic msg
 
-
                 // Server and backend
                 pb.println(ps.readData()); // AP-REQ
                 ps.println(pb.readData()); // wrap msg
                 ps.println(pb.readData()); // mic msg
+
                 ensureCleanersCalled(pc);
                 ensureCleanersCalled(ps);
                 ensureCleanersCalled(pb);
@@ -172,7 +171,7 @@ public class Cleaners {
                 .args(type)
                 .debug(type)
                 .env("KRB5_CONFIG", CONF)
-                .env("KRB5_TRACE", Platform.isWindows() ? "CON" : "/dev/stderr")
+                .env("KRB5_TRACE", "/dev/stderr")
                 .prop("sun.security.jgss.native", "true")
                 .prop("javax.security.auth.useSubjectCredsOnly", "false")
                 .prop("sun.security.nativegss.debug", "true");
