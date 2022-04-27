@@ -45,7 +45,10 @@ import static org.testng.Assert.*;
 
 // NOTE: avoid using TestNG's assertEquals/assertNotEquals directly on two Map instances,
 // as its logic for testing collections equality is suspect. Use checkContents() to assert
-// that a map's entrySet contains exactly the expected mappings.
+// that a map's entrySet contains exactly the expected mappings. In most cases, keys and
+// values should be compared by identity, not equality. However, the identities of Map.Entry
+// instances from an IdentityHashSet are not guaranteed; the keys and values they contain
+// should be compared for identity though.
 
 // TODO remove(k, v)
 // TODO replace(k, v1, v2)
