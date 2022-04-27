@@ -32,9 +32,6 @@
  *          for InetAdress 0.0.0.0 and ::0
  * @run main PingThis
  * @run main/othervm -Djava.net.preferIPv4Stack=true PingThis
- * @bug 8280498
- * @summary InetAddress ::0 is not valid, InetAddress 0.0.0.0 only responds
- *          when an external device reacts to 0.0.0.0
  */
 
 import java.net.Inet6Address;
@@ -49,6 +46,10 @@ import jdk.test.lib.net.IPSupport;
 public class PingThis {
     public static void main(String args[]) throws Exception {
         osname = System.getProperty("os.name")
+        /*
+         * On AIX InetAddress ::0 is not valid, InetAddress 0.0.0.0 only responds
+         *          when an external device reacts to 0.0.0.0
+         */
         if (osname.startsWith("Windows") || osname.startsWith("AIX")) {
             return;
         }
