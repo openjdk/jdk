@@ -34,6 +34,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Spliterator;
 import java.util.stream.Stream;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
@@ -368,9 +369,9 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * this case, or when no overlap occurs, {@code null} is returned.
      *
      * @param other the segment to test for an overlap with this segment.
-     * @return a slice of this segment, or {@code null} if no overlap occurs.
+     * @return a slice of this segment (where overlapping occurs).
      */
-    MemorySegment asOverlappingSlice(MemorySegment other);
+    Optional<MemorySegment> asOverlappingSlice(MemorySegment other);
 
     /**
      * Returns the offset, in bytes, of the provided segment, relative to this

@@ -1018,7 +1018,7 @@ public abstract class FileChannel
      *
      * @throws IllegalArgumentException
      *         If {@code offset < 0}, {@code size < 0} or
-     *         {@code offset + size < 0}.
+     *         {@code offset + size} overflows the range of {@code long}.
      *
      * @throws IllegalStateException
      *         If the {@code session} is not

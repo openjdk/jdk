@@ -87,9 +87,9 @@ public class TestSegmentOverlap {
         var sOther = s1.isNative() ? OtherSegmentFactory.HEAP.factory.get()
                 : OtherSegmentFactory.NATIVE.factory.get();
         out.format("testBasic s1:%s, s2:%s, sOther:%s\n", s1, s2, sOther);
-        assertNull(s1.asOverlappingSlice(s2));
-        assertNull(s2.asOverlappingSlice(s1));
-        assertNull(s1.asOverlappingSlice(sOther));
+        assertTrue(s1.asOverlappingSlice(s2).isEmpty());
+        assertTrue(s2.asOverlappingSlice(s1).isEmpty());
+        assertTrue(s1.asOverlappingSlice(sOther).isEmpty());
     }
 
     @Test(dataProvider="segmentFactories")
@@ -97,15 +97,15 @@ public class TestSegmentOverlap {
         var s1 = segmentSupplier.get();
         var s2 = s1.asReadOnly();
         out.format("testIdentical s1:%s, s2:%s\n", s1, s2);
-        assertEquals(s1.asOverlappingSlice(s2).byteSize(), s1.byteSize());
-        assertEquals(s1.asOverlappingSlice(s2).session(), s1.session());
+        assertEquals(s1.asOverlappingSlice(s2).get().byteSize(), s1.byteSize());
+        assertEquals(s1.asOverlappingSlice(s2).get().session(), s1.session());
 
-        assertEquals(s2.asOverlappingSlice(s1).byteSize(), s2.byteSize());
-        assertEquals(s2.asOverlappingSlice(s1).session(), s2.session());
+        assertEquals(s2.asOverlappingSlice(s1).get().byteSize(), s2.byteSize());
+        assertEquals(s2.asOverlappingSlice(s1).get().session(), s2.session());
 
         if (s1.isNative()) {
-            assertEquals(s1.asOverlappingSlice(s2).address(), s1.address());
-            assertEquals(s2.asOverlappingSlice(s1).address(), s2.address());
+            assertEquals(s1.asOverlappingSlice(s2).get().address(), s1.address());
+            assertEquals(s2.asOverlappingSlice(s1).get().address(), s2.address());
         }
     }
 
@@ -116,17 +116,17 @@ public class TestSegmentOverlap {
         for (int offset = 0 ; offset < 4 ; offset++) {
             MemorySegment slice = s1.asSlice(offset);
             out.format("testSlices s1:%s, s2:%s, slice:%s, offset:%d\n", s1, s2, slice, offset);
-            assertEquals(s1.asOverlappingSlice(slice).byteSize(), s1.byteSize() - offset);
-            assertEquals(s1.asOverlappingSlice(slice).session(), s1.session());
+            assertEquals(s1.asOverlappingSlice(slice).get().byteSize(), s1.byteSize() - offset);
+            assertEquals(s1.asOverlappingSlice(slice).get().session(), s1.session());
 
-            assertEquals(slice.asOverlappingSlice(s1).byteSize(), slice.byteSize());
-            assertEquals(slice.asOverlappingSlice(s1).session(), slice.session());
+            assertEquals(slice.asOverlappingSlice(s1).get().byteSize(), slice.byteSize());
+            assertEquals(slice.asOverlappingSlice(s1).get().session(), slice.session());
 
             if (s1.isNative()) {
-                assertEquals(s1.asOverlappingSlice(slice).address(), s1.address().addOffset(offset));
-                assertEquals(slice.asOverlappingSlice(s1).address(), slice.address());
+                assertEquals(s1.asOverlappingSlice(slice).get().address(), s1.address().addOffset(offset));
+                assertEquals(slice.asOverlappingSlice(s1).get().address(), slice.address());
             }
-            assertNull(s2.asOverlappingSlice(slice));
+            assertTrue(s2.asOverlappingSlice(slice).isEmpty());
         }
     }
 

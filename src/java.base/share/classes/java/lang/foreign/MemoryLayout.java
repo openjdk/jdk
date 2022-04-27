@@ -83,7 +83,7 @@ import jdk.internal.javac.PreviewFeature;
  * always has the same size in bits, regardless of the platform in which it is used. For derived layouts, the size is computed
  * as follows:
  * <ul>
- *     <li>for a sequence layout <em>S</em> whose element layout is <em>E</em> and size is L,
+ *     <li>for a sequence layout <em>S</em> whose element layout is <em>E</em> and size is <em>L</em>,
  *     the size of <em>S</em> is that of <em>E</em>, multiplied by <em>L</em></li>
  *     <li>for a group layout <em>G</em> with member layouts <em>M1</em>, <em>M2</em>, ... <em>Mn</em> whose sizes are
  *     <em>S1</em>, <em>S2</em>, ... <em>Sn</em>, respectively, the size of <em>G</em> is either <em>S1 + S2 + ... + Sn</em> or

@@ -36,18 +36,18 @@ import jdk.internal.javac.PreviewFeature;
  * with a memory session can only be accessed while the memory session is {@linkplain #isAlive() alive},
  * and by the {@linkplain #ownerThread() thread} associated with the memory session (if any).
  * <p>
- * Memory sessions can be closed, either implicitly (e.g. when a session is no longer reachable), or explicitly.
- * When a memory session is closed, it is no longer {@linkplain #isAlive() alive}, and subsequent operations on resources
- * associated with that session (e.g. attempting to access a {@link MemorySegment} instance) will fail with {@link IllegalStateException}.
+ * Memory sessions can be closed. When a memory session is closed, it is no longer {@linkplain #isAlive() alive},
+ * and subsequent operations on resources associated with that session (e.g. attempting to access a {@link MemorySegment} instance)
+ * will fail with {@link IllegalStateException}.
  * <p>
  * A memory session is associated with one or more {@linkplain #addCloseAction(Runnable) close actions}. Close actions
  * can be used to specify the cleanup code that must run when a given resource (or set of resources) is no longer in use.
- * When a memory session is closed (either explicitly, or implicitly), the {@linkplain #addCloseAction(Runnable) close actions}
+ * When a memory session is closed, the {@linkplain #addCloseAction(Runnable) close actions}
  * associated with that session are executed (in unspecified order). For instance, closing the memory session associated with
  * one or more {@linkplain MemorySegment#allocateNative(long, long, MemorySession) native memory segments} results in releasing
  * the off-heap memory associated with said segments.
  * <p>
- * The {@linkplain #global() global session} is a memory session that cannot be closed, either explicitly or implicitly.
+ * The {@linkplain #global() global session} is a memory session that cannot be closed.
  * As a result, resources associated with the global session are never released. Examples of resources associated with
  * the global memory session are {@linkplain MemorySegment#ofArray(int[]) heap segments}.
  *
@@ -60,18 +60,18 @@ import jdk.internal.javac.PreviewFeature;
  * they are assigned an {@linkplain #ownerThread() owner thread}, typically the thread which initiated the creation operation.
  * After creating a confined memory session, only the owner thread will be allowed to directly manipulate the resources
  * associated with this memory session. Any attempt to perform resource access from a thread other than the
- * owner thread will result in a runtime failure.
+ * owner thread will fail with {@link IllegalStateException}.
  * <p>
  * Shared memory sessions, on the other hand, have no owner thread; as such, resources associated with shared memory sessions
  * can be accessed by multiple threads. This might be useful when multiple threads need to access the same resource concurrently
  * (e.g. in the case of parallel processing).
  *
- * <h2>Deterministic deallocation</h2>
+ * <h2>Closeable memory sessions</h2>
  *
  * When a session is associated with off-heap resources, it is often desirable for said resources to be released in a timely fashion,
  * rather than waiting for the session to be deemed <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>
  * by the garbage collector. In this scenario, a client might consider using a {@linkplain #isCloseable() <em>closeable</em>} memory session.
- * Closeable memory sessions are memory sessions that can be {@linkplain MemorySession#close() closed} explicitly, as demonstrated
+ * Closeable memory sessions are memory sessions that can be {@linkplain MemorySession#close() closed} deterministically, as demonstrated
  * in the following example:
  *
  * {@snippet lang=java :
@@ -86,17 +86,17 @@ import jdk.internal.javac.PreviewFeature;
  * When the session is {@linkplain #close() closed} (above, this is done implicitly, using the <em>try-with-resources construct</em>),
  * all memory allocated within the session will be released
  * <p>
- * Closeable memory sessions, while powerful, must be used with caution. Clients must remember to
- * {@linkplain MemorySession#close() close} a closeable memory session explicitly, when the session
- * is no longer in use. A failure to do so might result in memory leaks. To mitigate this problem,
- * closeable memory sessions can be associated with a {@link Cleaner} instance, so that they are also closed automatically,
- * once the session instance becomes <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>.
+ * Closeable memory sessions, while powerful, must be used with caution. Closeable memory sessions must be closed
+ * when no longer in use, either explicitly (by calling the {@link #close} method), or implicitly (by wrapping the use of
+ * a closeable memory session in a <em>try-with-resources construct</em>). A failure to do so might result in memory leaks.
+ * To mitigate this problem, closeable memory sessions can be associated with a {@link Cleaner} instance,
+ * so that they are also closed automatically, once the session instance becomes <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>.
  * This can be useful to allow for predictable, deterministic resource deallocation, while still preventing accidental
- * native memory leaks. In case a managed memory session is closed explicitly, no further action will be taken when
+ * native memory leaks. In case a client closes a memory session managed by a cleaner, no further action will be taken when
  * the session becomes unreachable; that is, {@linkplain #addCloseAction(Runnable) close actions} associated with a
  * memory session, whether managed or not, are called <em>exactly once</em>.
  *
- * <h2>Restricting access to memory sessions</h2>
+ * <h2>Non-closeable views</h2>
  *
  * There are situations in which it might not be desirable for a memory session to be reachable from one or
  * more resources associated with it. For instance, an API might create a private memory session, and allocate
@@ -135,7 +135,7 @@ public sealed interface MemorySession extends AutoCloseable, SegmentAllocator pe
     boolean isAlive();
 
     /**
-     * {@return {@code true}, if this session can be {@linkplain #close() closed} explicitly}
+     * {@return {@code true}, if this session is a closeable memory session}.
      */
     boolean isCloseable();
 
@@ -193,8 +193,9 @@ public sealed interface MemorySession extends AutoCloseable, SegmentAllocator pe
 
     /**
      * Compares the specified object with this memory session for equality. Returns {@code true} if and only if the specified
-     * object is also a memory session, and it refers to the same memory session as this memory session. This method
-     * is especially useful when operating on {@linkplain #asNonCloseable() non-closeable} session views.
+     * object is also a memory session, and it refers to the same memory session as this memory session.
+     * {@linkplain #asNonCloseable() A non-closeable view} {@code V} of a memory session {@code S} is considered
+     * equal to {@code S}.
      *
      * @param that the object to be compared for equality with this memory session.
      * @return {@code true} if the specified object is equal to this memory session.

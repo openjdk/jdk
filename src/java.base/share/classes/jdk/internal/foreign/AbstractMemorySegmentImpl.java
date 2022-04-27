@@ -252,7 +252,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     }
 
     @Override
-    public final MemorySegment asOverlappingSlice(MemorySegment other) {
+    public final Optional<MemorySegment> asOverlappingSlice(MemorySegment other) {
         AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
         if (base() == that.base()) {  // both either native or heap
             final long thisStart = this.min();
@@ -263,10 +263,10 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
             if (thisStart < thatEnd && thisEnd > thatStart) {  //overlap occurs
                 long offsetToThat = this.segmentOffset(that);
                 long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
-                return asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat));
+                return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     @Override

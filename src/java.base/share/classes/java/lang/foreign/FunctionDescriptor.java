@@ -67,7 +67,7 @@ public sealed class FunctionDescriptor permits FunctionDescriptor.VariadicFuncti
     }
 
     /**
-     * {@return the argument layouts associated with this function descriptor}.
+     * {@return the argument layouts associated with this function descriptor (as an immutable list)}.
      */
     public List<MemoryLayout> argumentLayouts() {
         return Collections.unmodifiableList(argLayouts);

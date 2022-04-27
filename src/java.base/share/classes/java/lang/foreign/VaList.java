@@ -43,9 +43,9 @@ import jdk.internal.reflect.Reflection;
  * A variable argument list is a stateful cursor used to iterate over a set of arguments. A variable argument list
  * can be passed by reference e.g. to a {@linkplain Linker#downcallHandle(FunctionDescriptor) downcall method handle}.
  * <p>
- * Per the C specification (see C standard 6.5.2.2 Function calls - item 6),
+ * Per the C specification (see C99 standard 6.5.2.2 Function calls - item 6),
  * arguments to variadic calls are erased by way of 'default argument promotions',
- * which erases integral types by way of integer promotion (see C standard 6.3.1.1 - item 2),
+ * which erases integral types by way of integer promotion (see C99 standard 6.3.1.1 - item 2),
  * and which erases all {@code float} arguments to {@code double}.
  * <p>
  * As such, this interface only supports reading {@code int}, {@code double},
