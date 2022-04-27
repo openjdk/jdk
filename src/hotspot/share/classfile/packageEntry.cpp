@@ -174,6 +174,25 @@ PackageEntryTable::PackageEntryTable(int table_size)
 {
 }
 
+PackageEntryTable::~PackageEntryTable() {
+  // Walk through all buckets and all entries in each bucket,
+  // freeing each entry.
+  for (int i = 0; i < table_size(); ++i) {
+    for (PackageEntry* p = bucket(i); p != NULL;) {
+      PackageEntry* to_remove = p;
+      // read next before freeing.
+      p = p->next();
+
+      // Clean out the C heap allocated qualified exports list first before freeing the entry
+      to_remove->delete_qualified_exports();
+      to_remove->name()->decrement_refcount();
+
+      BasicHashtable<mtModule>::free_entry(to_remove);
+    }
+    *bucket_addr(i) = NULL;
+  }
+  assert(number_of_entries() == 0, "should have removed all entries");
+}
 #if INCLUDE_CDS_JAVA_HEAP
 typedef ResourceHashtable<
   const PackageEntry*,

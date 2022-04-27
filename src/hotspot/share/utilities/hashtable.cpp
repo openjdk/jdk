@@ -69,9 +69,13 @@ template <MEMFLAGS F> inline void BasicHashtable<F>::free_entry(BasicHashtableEn
 }
 
 template <MEMFLAGS F> void BasicHashtable<F>::free_entries() {
-  for (int index = 0; index < table_size(); index ++) {
+  if (number_of_entries() == 0) {
+    return;
+  }
+
+  for (int index = 0; index < table_size(); index++) {
     BasicHashtableEntry<F>* entry = bucket(index);
-    while (entry != nullptr) {
+    while (entry != NULL) {
       BasicHashtableEntry<F>* to_delete = entry;
       entry = entry->next();
       free_entry(to_delete);

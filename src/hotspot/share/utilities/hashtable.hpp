@@ -158,7 +158,7 @@ protected:
     --_number_of_entries;
   }
 
-  // Free contents in this hashtable
+  // Free all entries in this hashtable
   void free_entries();
 
   // Free the buckets in this hashtable
