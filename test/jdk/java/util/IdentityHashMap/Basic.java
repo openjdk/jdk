@@ -21,14 +21,19 @@
  * questions.
  */
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.IdentityHashMap;
 import java.util.Set;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
+import java.util.stream.IntStream;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import static java.util.Map.entry;
 import static org.testng.Assert.*;
 
 /*
@@ -39,36 +44,82 @@ import static org.testng.Assert.*;
  */
 
 // NOTE: avoid using TestNG's assertEquals/assertNotEquals directly on two Map instances,
-// as its logic for testing collections equality is suspect. Use assertTrue(map2.equals(map))
-// or similar, as this file has tests for the equals() method.
+// as its logic for testing collections equality is suspect. Use checkContents() to assert
+// that a map's entrySet contains exactly the expected mappings.
 
-// TODO add tests using null keys and values
-// TODO extract utility methods for comparing contents
 // TODO remove(k, v)
 // TODO replace(k, v1, v2)
+// TODO add tests using null keys and values
+// TODO view collections iterators
+// TODO Map.Entry::setValue
 
 public class Basic {
+    /*
+     * Helpers
+     */
+
     record Box(int i) {
         Box(Box other) {
             this(other.i());
         }
     }
 
-    Predicate<Box> isIdenticalBox(Box b1) {
-        return b2 -> b1 == b2;
-    }
+    // Checks that a collection contains exactly the given elements and no others, using the
+    // provided predicate for equivalence. Checking is performed both using contains() on the
+    // collection and by simple array searching. The latter is O(N^2) so is suitable only for
+    // small arrays. No two of the given elements can be equivalent according to the predicate.
 
-    Predicate<Map.Entry<Box, Box>> hasIdenticalKeyValue(Map.Entry<Box, Box> e1) {
-        return e2 -> e1.getKey() == e2.getKey() && e1.getValue() == e2.getValue();
-    }
+    @SafeVarargs
+    private <E> void checkContents(Collection<E> c, BiPredicate<E,E> p, E... given) {
+        @SuppressWarnings("unchecked")
+        E[] contents = (E[]) c.toArray();
 
-    <T> int indexOf(T[] array, Predicate<T> pred) {
-        for (int i = 0; i < array.length; i++) {
-            if (pred.test(array[i]))
-                return i;
+        assertEquals(c.size(), given.length);
+        assertEquals(contents.length, given.length);
+        final int LEN = given.length;
+
+        for (E e : given) {
+            assertTrue(c.contains(e));
         }
-        return -1;
+
+        // Fill indexes array with position of a given element in the contents array,
+        // or -1 if the given element cannot be found.
+
+        int[] indexes = new int[LEN];
+
+        outer:
+        for (int i = 0; i < LEN; i++) {
+            for (int j = 0; j < LEN; j++) {
+                if (p.test(given[i], contents[j])) {
+                    indexes[i] = j;
+                    continue outer;
+                }
+            }
+            indexes[i] = -1;
+        }
+
+        // If every given element matches a distinct element in the contents array,
+        // the sorted indexes array will be the sequence [0..LEN-1].
+
+        Arrays.sort(indexes);
+        assertEquals(indexes, IntStream.range(0, LEN).toArray());
     }
+
+    // Checks that the collection contains the given boxes, by identity.
+    private void checkElements(Collection<Box> c, Box... given) {
+        checkContents(c, (b1, b2) -> b1 == b2, given);
+    }
+
+    // Checks that the collection contains entries that have identical keys and values.
+    // The entries themselves are not checked for identity.
+    @SafeVarargs
+    private void checkEntries(Collection<Map.Entry<Box, Box>> c, Map.Entry<Box, Box>... given) {
+        checkContents(c, (e1, e2) -> e1.getKey() == e2.getKey() && e1.getValue() == e2.getValue(), given);
+    }
+
+    /*
+     * Setup
+     */
 
     final Box k1a = new Box(17);
     final Box k1b = new Box(17); // equals but != k1a
@@ -93,6 +144,10 @@ public class Basic {
         map2.put(k1b, v1b);
         map2.put(k2,  v2);
     }
+
+    /*
+     * Tests
+     */
 
     // containsKey
     // containsValue
@@ -179,26 +234,15 @@ public class Basic {
     @Test
     public void testKeySet() {
         Set<Box> keySet = map.keySet();
-
-        assertTrue(keySet.contains(k1a));
-        assertTrue(keySet.contains(k1b));
-        assertTrue(keySet.contains(k2));
+        checkElements(keySet, k1a, k1b, k2);
         assertFalse(keySet.contains(new Box(k1a)));
-
-        Box[] array = keySet.toArray(Box[]::new);
-        int[] indexes = {
-            indexOf(array, isIdenticalBox(k1a)),
-            indexOf(array, isIdenticalBox(k1b)),
-            indexOf(array, isIdenticalBox(k2))
-        };
-        Arrays.sort(indexes);
-        assertTrue(Arrays.equals(new int[] { 0, 1, 2 }, indexes));
     }
 
     @Test
     public void testKeySetNoRemove() {
         Set<Box> keySet = map.keySet();
         keySet.remove(new Box(k1a));
+        checkElements(keySet, k1a, k1b, k2);
         assertTrue(keySet.equals(map2.keySet()));
         assertTrue(map.equals(map2));
     }
@@ -207,45 +251,23 @@ public class Basic {
     public void testKeySetRemove() {
         Set<Box> keySet = map.keySet();
         keySet.remove(k1a);
-
-        assertEquals(keySet.size(), 2);
-        assertTrue(keySet.contains(k1b));
-        assertTrue(keySet.contains(k2));
-
-        assertEquals(map.size(), 2);
-        assertTrue(map.entrySet().contains(Map.entry(k1b, v1b)));
-        assertTrue(map.entrySet().contains(Map.entry(k2,  v2)));
+        checkElements(keySet, k1b, k2);
+        checkEntries(map.entrySet(), entry(k1b, v1b),
+                                     entry(k2, v2));
     }
 
     @Test
     public void testValues() {
         Collection<Box> values = map.values();
-
-        assertTrue(values.contains(v1a));
-        assertTrue(values.contains(v1b));
-        assertTrue(values.contains(v2));
+        checkElements(values, v1a, v1b, v2);
         assertFalse(values.contains(new Box(v1a)));
-
-        Box[] array = values.toArray(Box[]::new);
-        int[] indexes = {
-            indexOf(array, isIdenticalBox(v1a)),
-            indexOf(array, isIdenticalBox(v1b)),
-            indexOf(array, isIdenticalBox(v2))
-        };
-        Arrays.sort(indexes);
-        assertTrue(Arrays.equals(new int[] { 0, 1, 2 }, indexes));
     }
 
     @Test
     public void testValuesNoRemove() {
         Collection<Box> values = map.values();
         values.remove(new Box(v1a));
-
-        assertEquals(values.size(), 3);
-        assertTrue(values.contains(v1a));
-        assertTrue(values.contains(v1b));
-        assertTrue(values.contains(v2));
-
+        checkElements(values, v1a, v1b, v2);
         assertTrue(map.equals(map2));
     }
 
@@ -253,45 +275,34 @@ public class Basic {
     public void testValuesRemove() {
         Collection<Box> values = map.values();
         values.remove(v1a);
-
-        assertEquals(values.size(), 2);
-        assertTrue(values.contains(v1b));
-        assertTrue(values.contains(v2));
-
-        assertEquals(map.size(), 2);
-        assertTrue(map.entrySet().contains(Map.entry(k1b, v1b)));
-        assertTrue(map.entrySet().contains(Map.entry(k2,  v2)));
+        checkElements(values, v1b, v2);
+        checkEntries(map.entrySet(), entry(k1b, v1b),
+                                     entry(k2, v2));
     }
 
     @Test
     public void testEntrySet() {
         Set<Map.Entry<Box,Box>> entrySet = map.entrySet();
 
-        assertTrue(entrySet.contains(Map.entry(k1a, v1a)));
-        assertTrue(entrySet.contains(Map.entry(k1b, v1b)));
-        assertTrue(entrySet.contains(Map.entry(k2, v2)));
-        assertFalse(entrySet.contains(Map.entry(new Box(k1a), v1a)));
-        assertFalse(entrySet.contains(Map.entry(k1b, new Box(v1b))));
-        assertFalse(entrySet.contains(Map.entry(new Box(k2), new Box(v2))));
+        assertFalse(entrySet.contains(entry(new Box(k1a), v1a)));
+        assertFalse(entrySet.contains(entry(k1b, new Box(v1b))));
+        assertFalse(entrySet.contains(entry(new Box(k2), new Box(v2))));
 
-        @SuppressWarnings("unchecked")
-        Map.Entry<Box, Box>[] array = entrySet.toArray(Map.Entry[]::new);
-        int[] indexes = {
-            indexOf(array, hasIdenticalKeyValue(Map.entry(k1a, v1a))),
-            indexOf(array, hasIdenticalKeyValue(Map.entry(k1b, v1b))),
-            indexOf(array, hasIdenticalKeyValue(Map.entry(k2,  v2))),
-        };
-        Arrays.sort(indexes);
-        assertTrue(Arrays.equals(new int[] { 0, 1, 2 }, indexes));
+        checkEntries(entrySet, entry(k1a, v1a),
+                               entry(k1b, v1b),
+                               entry(k2, v2));
     }
 
     @Test
     public void testEntrySetNoRemove() {
         Set<Map.Entry<Box, Box>> entrySet = map.entrySet();
-        entrySet.remove(Map.entry(new Box(k1a), v1a));
-        entrySet.remove(Map.entry(k1a, new Box(v1a)));
+        entrySet.remove(entry(new Box(k1a), v1a));
+        entrySet.remove(entry(k1a, new Box(v1a)));
         assertTrue(entrySet.equals(map2.entrySet()));
         assertTrue(map.equals(map2));
+        checkEntries(entrySet, entry(k1a, v1a),
+                               entry(k1b, v1b),
+                               entry(k2, v2));
     }
 
     @Test
@@ -299,13 +310,11 @@ public class Basic {
         Set<Map.Entry<Box, Box>> entrySet = map.entrySet();
         entrySet.remove(Map.entry(k1a, v1a));
 
-        assertEquals(entrySet.size(), 2);
-        assertTrue(entrySet.contains(Map.entry(k1b, v1b)));
-        assertTrue(entrySet.contains(Map.entry(k2,  v2)));
+        checkEntries(entrySet, entry(k1b, v1b),
+                               entry(k2, v2));
 
-        assertEquals(map.size(), 2);
-        assertTrue(map.entrySet().contains(Map.entry(k1b, v1b)));
-        assertTrue(map.entrySet().contains(Map.entry(k2,  v2)));
+        checkEntries(map.entrySet(), entry(k1b, v1b),
+                                     entry(k2, v2));
     }
 
     // put
@@ -315,11 +324,10 @@ public class Basic {
         Box newVal = new Box(v1a);
         map.put(newKey, newVal);
 
-        assertEquals(map.size(), 4);
-        assertTrue(map.entrySet().contains(Map.entry(k1a, v1a)));
-        assertTrue(map.entrySet().contains(Map.entry(k1b, v1b)));
-        assertTrue(map.entrySet().contains(Map.entry(k2, v2)));
-        assertTrue(map.entrySet().contains(Map.entry(newKey, newVal)));
+        checkEntries(map.entrySet(), entry(k1a, v1a),
+                                     entry(k1b, v1b),
+                                     entry(k2, v2),
+                                     entry(newKey, newVal));
     }
 
     // put
@@ -328,10 +336,9 @@ public class Basic {
         Box newVal = new Box(v1a);
         map.put(k1a, newVal);
 
-        assertEquals(map.size(), 3);
-        assertTrue(map.entrySet().contains(Map.entry(k1a, newVal)));
-        assertTrue(map.entrySet().contains(Map.entry(k1b, v1b)));
-        assertTrue(map.entrySet().contains(Map.entry(k2, v2)));
+        checkEntries(map.entrySet(), entry(k1a, newVal),
+                                     entry(k1b, v1b),
+                                     entry(k2, v2));
     }
 
     // putAll
@@ -343,34 +350,39 @@ public class Basic {
         var argMap = new IdentityHashMap<Box, Box>();
         argMap.put(newKey, newVal); // new entry
         argMap.put(k1b, newValB);   // will overwrite value
-
         map.putAll(argMap);
 
-        assertEquals(map.size(), 4);
-        assertTrue(map.entrySet().contains(Map.entry(k1a, v1a)));
-        assertTrue(map.entrySet().contains(Map.entry(k1b, newValB)));
-        assertTrue(map.entrySet().contains(Map.entry(k2, v2)));
-        assertTrue(map.entrySet().contains(Map.entry(newKey, newVal)));
+        checkEntries(map.entrySet(), entry(k1a, v1a),
+                                     entry(k1b, newValB),
+                                     entry(k2, v2),
+                                     entry(newKey, newVal));
     }
 
     // putIfAbsent
     @Test
     public void testPutIfAbsent() {
         map.putIfAbsent(k1a, new Box(v1a)); // no-op
-        assertTrue(map.equals(map2));
 
-        map.putIfAbsent(new Box(k1a), new Box(v1a)); // adds new entry
-        assertFalse(map.equals(map2));
-        assertEquals(map.size(), 4);
+        checkEntries(map.entrySet(), entry(k1a, v1a),
+                                     entry(k1b, v1b),
+                                     entry(k2, v2));
+
+        Box newKey = new Box(k1a);
+        Box newVal = new Box(v1a);
+        map.putIfAbsent(newKey, newVal); // adds new entry
+
+        checkEntries(map.entrySet(), entry(k1a, v1a),
+                                     entry(k1b, v1b),
+                                     entry(k2, v2),
+                                     entry(newKey, newVal));
     }
 
     // remove(Object)
     @Test
     public void testRemoveKey() {
         map.remove(k1b);
-        assertEquals(map.size(), 2);
-        assertTrue(map.entrySet().contains(Map.entry(k1a, v1a)));
-        assertTrue(map.entrySet().contains(Map.entry(k2, v2)));
+        checkEntries(map.entrySet(), entry(k1a, v1a),
+                                     entry(k2, v2));
     }
 
     // AN: key absent, remappingFunction returns null
@@ -378,8 +390,9 @@ public class Basic {
     public void testComputeAN() {
         Box newKey = new Box(k1a);
         map.compute(newKey, (k, v) -> null);
-        assertEquals(map.size(), 3);
-        assertFalse(map.containsKey(newKey));
+        checkEntries(map.entrySet(), entry(k1a, v1a),
+                                     entry(k1b, v1b),
+                                     entry(k2, v2));
     }
 
     // AV: key absent, remappingFunction returns non-null value
@@ -388,16 +401,18 @@ public class Basic {
         Box newKey = new Box(k1a);
         Box newVal = new Box(v1a);
         map.compute(newKey, (k, v) -> newVal);
-        assertEquals(map.size(), 4);
-        assertTrue(map.get(newKey) == newVal);
+        checkEntries(map.entrySet(), entry(k1a, v1a),
+                                     entry(k1b, v1b),
+                                     entry(k2, v2),
+                                     entry(newKey, newVal));
     }
 
     // PN: key present, remappingFunction returns null
     @Test
     public void testComputePN() {
         map.compute(k1a, (k, v) -> null);
-        assertEquals(map.size(), 2);
-        assertFalse(map.containsKey(k1a));
+        checkEntries(map.entrySet(), entry(k1b, v1b),
+                                     entry(k2, v2));
     }
 
     // PV: key present, remappingFunction returns non-null value
@@ -405,8 +420,9 @@ public class Basic {
     public void testComputePV() {
         Box newVal = new Box(v1a);
         map.compute(k1a, (k, v) -> newVal);
-        assertEquals(map.size(), 3);
-        assertTrue(map.get(k1a) == newVal);
+        checkEntries(map.entrySet(), entry(k1a, newVal),
+                                     entry(k1b, v1b),
+                                     entry(k2, v2));
     }
 
     @Test
@@ -416,8 +432,10 @@ public class Basic {
         Box newVal = new Box(v1a);
         map.computeIfAbsent(newKey, k -> { called[0] = true; return newVal; });
         assertTrue(called[0]);
-        assertEquals(map.size(), 4);
-        assertTrue(map.get(newKey) == newVal);
+        checkEntries(map.entrySet(), entry(k1a, v1a),
+                                     entry(k1b, v1b),
+                                     entry(k2, v2),
+                                     entry(newKey, newVal));
     }
 
     @Test
@@ -425,7 +443,9 @@ public class Basic {
         boolean[] called = new boolean[1];
         map.computeIfAbsent(k1a, k -> { called[0] = true; return null; });
         assertFalse(called[0]);
-        assertTrue(map2.equals(map));
+        checkEntries(map.entrySet(), entry(k1a, v1a),
+                                     entry(k1b, v1b),
+                                     entry(k2, v2));
     }
 
     @Test
@@ -434,8 +454,9 @@ public class Basic {
         Box newKey = new Box(k1a);
         map.computeIfAbsent(newKey, k -> { called[0] = true; return null; });
         assertTrue(called[0]);
-        assertEquals(map.size(), 3);
-        assertFalse(map.containsKey(newKey));
+        checkEntries(map.entrySet(), entry(k1a, v1a),
+                                     entry(k1b, v1b),
+                                     entry(k2, v2));
     }
 
     @Test
@@ -444,8 +465,9 @@ public class Basic {
         Box newVal = new Box(v1a);
         map.computeIfPresent(k1a, (k, v) -> { called[0] = true; return newVal; });
         assertTrue(called[0]);
-        assertEquals(map.size(), 3);
-        assertTrue(map.get(k1a) == newVal);
+        checkEntries(map.entrySet(), entry(k1a, newVal),
+                                     entry(k1b, v1b),
+                                     entry(k2, v2));
     }
 
     @Test
@@ -453,7 +475,9 @@ public class Basic {
         boolean[] called = new boolean[1];
         map.computeIfPresent(new Box(k1a), (k, v) -> { called[0] = true; return null; });
         assertFalse(called[0]);
-        assertTrue(map2.equals(map));
+        checkEntries(map.entrySet(), entry(k1a, v1a),
+                                     entry(k1b, v1b),
+                                     entry(k2, v2));
     }
 
     @Test
@@ -461,8 +485,8 @@ public class Basic {
         boolean[] called = new boolean[1];
         map.computeIfPresent(k1a, (k, v) -> { called[0] = true; return null; });
         assertTrue(called[0]);
-        assertEquals(map.size(), 2);
-        assertFalse(map.containsKey(k1a));
+        checkEntries(map.entrySet(), entry(k1b, v1b),
+                                     entry(k2, v2));
     }
 
     @Test
@@ -472,58 +496,51 @@ public class Basic {
         Box newVal = new Box(v1a);
         map.merge(newKey, newVal, (v1, v2) -> { called[0] = true; return newVal; });
         assertFalse(called[0]);
-        assertEquals(map.size(), 4);
-        assertTrue(map.get(newKey) == newVal);
+        checkEntries(map.entrySet(), entry(k1a, v1a),
+                                     entry(k1b, v1b),
+                                     entry(k2, v2),
+                                     entry(newKey, newVal));
     }
 
     @Test
     public void testMergePresent() {
         boolean[] called = new boolean[1];
-        Box newVal = new Box(47);
-        map.merge(k1a, newVal, (v1, v2) -> { called[0] = true; return new Box(v1.i + v2.i); });
+        Box val2 = new Box(47);
+        Box[] mergedVal = new Box[1];
+        map.merge(k1a, val2, (v1, v2) -> {
+            called[0] = true;
+            mergedVal[0] = new Box(v1.i + v2.i);
+            return mergedVal[0];
+        });
+
         assertTrue(called[0]);
-        assertEquals(map.size(), 3);
-        assertTrue(map.get(k1a).equals(new Box(v1a.i() + newVal.i())));
+        checkEntries(map.entrySet(), entry(k1a, mergedVal[0]),
+                                     entry(k1b, v1b),
+                                     entry(k2, v2));
     }
 
     @Test
     public void testForEach() {
         @SuppressWarnings("unchecked")
-        Map.Entry<Box, Box>[] entries = (Map.Entry<Box, Box>[]) new Map.Entry<?,?>[3];
-        int[] index = new int[1];
-
-        map.forEach((k, v) -> entries[index[0]++] = Map.entry(k, v));
-
-        int[] indexes = {
-            indexOf(entries, hasIdenticalKeyValue(Map.entry(k1a, v1a))),
-            indexOf(entries, hasIdenticalKeyValue(Map.entry(k1b, v1b))),
-            indexOf(entries, hasIdenticalKeyValue(Map.entry(k2,  v2))),
-        };
-        Arrays.sort(indexes);
-        assertTrue(Arrays.equals(new int[] { 0, 1, 2 }, indexes));
+        List<Map.Entry<Box, Box>> entries = new ArrayList<>();
+        map.forEach((k, v) -> entries.add(entry(k, v)));
+        checkEntries(entries, entry(k1a, v1a),
+                              entry(k1b, v1b),
+                              entry(k2, v2));
     }
 
     @Test
     public void testReplaceAll() {
-        @SuppressWarnings("unchecked")
-        Map.Entry<Box, Box>[] replacements = (Map.Entry<Box, Box>[]) new Map.Entry<?,?>[3];
-        int[] index = new int[1];
+        List<Map.Entry<Box, Box>> replacements = new ArrayList<>();
 
         map.replaceAll((k, v) -> {
             Box v1 = new Box(v);
-            replacements[index[0]++] = Map.entry(k, v1);
+            replacements.add(entry(k, v1));
             return v1;
         });
 
         @SuppressWarnings("unchecked")
-        Map.Entry<Box, Box>[] members = (Map.Entry<Box, Box>[]) map.entrySet().toArray(Map.Entry[]::new);
-
-        int[] indexes = {
-            indexOf(members, hasIdenticalKeyValue(replacements[0])),
-            indexOf(members, hasIdenticalKeyValue(replacements[1])),
-            indexOf(members, hasIdenticalKeyValue(replacements[2])),
-        };
-        Arrays.sort(indexes);
-        assertTrue(Arrays.equals(new int[] { 0, 1, 2 }, indexes));
+        var replacementArray = (Map.Entry<Box, Box>[]) replacements.toArray(Map.Entry[]::new);
+        checkEntries(map.entrySet(), replacementArray);
     }
 }
