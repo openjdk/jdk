@@ -38,9 +38,14 @@ import static org.testng.Assert.*;
  * @run testng Basic
  */
 
-// TODO need this? @modules java.base/java.util:open
-// TODO add tests using null
-// TODO copy constructor instead of k3 and v3 (key and value not in map)?
+// NOTE: avoid using TestNG's assertEquals/assertNotEquals directly on two Map instances,
+// as its logic for testing collections equality is suspect. Use assertTrue(map2.equals(map))
+// or similar, as this file has tests for the equals() method.
+
+// TODO add tests using null keys and values
+// TODO extract utility methods for comparing contents
+// TODO remove(k, v)
+// TODO replace(k, v1, v2)
 
 public class Basic {
     record Box(int i) {
@@ -191,6 +196,28 @@ public class Basic {
     }
 
     @Test
+    public void testKeySetNoRemove() {
+        Set<Box> keySet = map.keySet();
+        keySet.remove(new Box(k1a));
+        assertTrue(keySet.equals(map2.keySet()));
+        assertTrue(map.equals(map2));
+    }
+
+    @Test
+    public void testKeySetRemove() {
+        Set<Box> keySet = map.keySet();
+        keySet.remove(k1a);
+
+        assertEquals(keySet.size(), 2);
+        assertTrue(keySet.contains(k1b));
+        assertTrue(keySet.contains(k2));
+
+        assertEquals(map.size(), 2);
+        assertTrue(map.entrySet().contains(Map.entry(k1b, v1b)));
+        assertTrue(map.entrySet().contains(Map.entry(k2,  v2)));
+    }
+
+    @Test
     public void testValues() {
         Collection<Box> values = map.values();
 
@@ -207,6 +234,33 @@ public class Basic {
         };
         Arrays.sort(indexes);
         assertTrue(Arrays.equals(new int[] { 0, 1, 2 }, indexes));
+    }
+
+    @Test
+    public void testValuesNoRemove() {
+        Collection<Box> values = map.values();
+        values.remove(new Box(v1a));
+
+        assertEquals(values.size(), 3);
+        assertTrue(values.contains(v1a));
+        assertTrue(values.contains(v1b));
+        assertTrue(values.contains(v2));
+
+        assertTrue(map.equals(map2));
+    }
+
+    @Test
+    public void testValuesRemove() {
+        Collection<Box> values = map.values();
+        values.remove(v1a);
+
+        assertEquals(values.size(), 2);
+        assertTrue(values.contains(v1b));
+        assertTrue(values.contains(v2));
+
+        assertEquals(map.size(), 2);
+        assertTrue(map.entrySet().contains(Map.entry(k1b, v1b)));
+        assertTrue(map.entrySet().contains(Map.entry(k2,  v2)));
     }
 
     @Test
@@ -229,6 +283,29 @@ public class Basic {
         };
         Arrays.sort(indexes);
         assertTrue(Arrays.equals(new int[] { 0, 1, 2 }, indexes));
+    }
+
+    @Test
+    public void testEntrySetNoRemove() {
+        Set<Map.Entry<Box, Box>> entrySet = map.entrySet();
+        entrySet.remove(Map.entry(new Box(k1a), v1a));
+        entrySet.remove(Map.entry(k1a, new Box(v1a)));
+        assertTrue(entrySet.equals(map2.entrySet()));
+        assertTrue(map.equals(map2));
+    }
+
+    @Test
+    public void testEntrySetRemove() {
+        Set<Map.Entry<Box, Box>> entrySet = map.entrySet();
+        entrySet.remove(Map.entry(k1a, v1a));
+
+        assertEquals(entrySet.size(), 2);
+        assertTrue(entrySet.contains(Map.entry(k1b, v1b)));
+        assertTrue(entrySet.contains(Map.entry(k2,  v2)));
+
+        assertEquals(map.size(), 2);
+        assertTrue(map.entrySet().contains(Map.entry(k1b, v1b)));
+        assertTrue(map.entrySet().contains(Map.entry(k2,  v2)));
     }
 
     // put
@@ -296,14 +373,157 @@ public class Basic {
         assertTrue(map.entrySet().contains(Map.entry(k2, v2)));
     }
 
-    // compute
-    // computeIfAbsent
-    // computeIfPresent
-    // forEach
-    // merge
-    // replaceAll
+    // AN: key absent, remappingFunction returns null
+    @Test
+    public void testComputeAN() {
+        Box newKey = new Box(k1a);
+        map.compute(newKey, (k, v) -> null);
+        assertEquals(map.size(), 3);
+        assertFalse(map.containsKey(newKey));
+    }
 
-    // TODO liach:
-    // remove(k, v) // elsewhere
-    // replace(k, v1, v2) // elsewhere
+    // AV: key absent, remappingFunction returns non-null value
+    @Test
+    public void testComputeAV() {
+        Box newKey = new Box(k1a);
+        Box newVal = new Box(v1a);
+        map.compute(newKey, (k, v) -> newVal);
+        assertEquals(map.size(), 4);
+        assertTrue(map.get(newKey) == newVal);
+    }
+
+    // PN: key present, remappingFunction returns null
+    @Test
+    public void testComputePN() {
+        map.compute(k1a, (k, v) -> null);
+        assertEquals(map.size(), 2);
+        assertFalse(map.containsKey(k1a));
+    }
+
+    // PV: key present, remappingFunction returns non-null value
+    @Test
+    public void testComputePV() {
+        Box newVal = new Box(v1a);
+        map.compute(k1a, (k, v) -> newVal);
+        assertEquals(map.size(), 3);
+        assertTrue(map.get(k1a) == newVal);
+    }
+
+    @Test
+    public void testComputeIfAbsentIsCalled() {
+        boolean[] called = new boolean[1];
+        Box newKey = new Box(k1a);
+        Box newVal = new Box(v1a);
+        map.computeIfAbsent(newKey, k -> { called[0] = true; return newVal; });
+        assertTrue(called[0]);
+        assertEquals(map.size(), 4);
+        assertTrue(map.get(newKey) == newVal);
+    }
+
+    @Test
+    public void testComputeIfAbsentNotCalled() {
+        boolean[] called = new boolean[1];
+        map.computeIfAbsent(k1a, k -> { called[0] = true; return null; });
+        assertFalse(called[0]);
+        assertTrue(map2.equals(map));
+    }
+
+    @Test
+    public void testComputeIfAbsentNullReturn() {
+        boolean[] called = new boolean[1];
+        Box newKey = new Box(k1a);
+        map.computeIfAbsent(newKey, k -> { called[0] = true; return null; });
+        assertTrue(called[0]);
+        assertEquals(map.size(), 3);
+        assertFalse(map.containsKey(newKey));
+    }
+
+    @Test
+    public void testComputeIfPresentIsCalled() {
+        boolean[] called = new boolean[1];
+        Box newVal = new Box(v1a);
+        map.computeIfPresent(k1a, (k, v) -> { called[0] = true; return newVal; });
+        assertTrue(called[0]);
+        assertEquals(map.size(), 3);
+        assertTrue(map.get(k1a) == newVal);
+    }
+
+    @Test
+    public void testComputeIfPresentNotCalled() {
+        boolean[] called = new boolean[1];
+        map.computeIfPresent(new Box(k1a), (k, v) -> { called[0] = true; return null; });
+        assertFalse(called[0]);
+        assertTrue(map2.equals(map));
+    }
+
+    @Test
+    public void testComputeIfPresentNullReturn() {
+        boolean[] called = new boolean[1];
+        map.computeIfPresent(k1a, (k, v) -> { called[0] = true; return null; });
+        assertTrue(called[0]);
+        assertEquals(map.size(), 2);
+        assertFalse(map.containsKey(k1a));
+    }
+
+    @Test
+    public void testMergeAbsent() {
+        boolean[] called = new boolean[1];
+        Box newKey = new Box(k1a);
+        Box newVal = new Box(v1a);
+        map.merge(newKey, newVal, (v1, v2) -> { called[0] = true; return newVal; });
+        assertFalse(called[0]);
+        assertEquals(map.size(), 4);
+        assertTrue(map.get(newKey) == newVal);
+    }
+
+    @Test
+    public void testMergePresent() {
+        boolean[] called = new boolean[1];
+        Box newVal = new Box(47);
+        map.merge(k1a, newVal, (v1, v2) -> { called[0] = true; return new Box(v1.i + v2.i); });
+        assertTrue(called[0]);
+        assertEquals(map.size(), 3);
+        assertTrue(map.get(k1a).equals(new Box(v1a.i() + newVal.i())));
+    }
+
+    @Test
+    public void testForEach() {
+        @SuppressWarnings("unchecked")
+        Map.Entry<Box, Box>[] entries = (Map.Entry<Box, Box>[]) new Map.Entry<?,?>[3];
+        int[] index = new int[1];
+
+        map.forEach((k, v) -> entries[index[0]++] = Map.entry(k, v));
+
+        int[] indexes = {
+            indexOf(entries, isIdenticalEntry(Map.entry(k1a, v1a))),
+            indexOf(entries, isIdenticalEntry(Map.entry(k1b, v1b))),
+            indexOf(entries, isIdenticalEntry(Map.entry(k2,  v2))),
+        };
+        Arrays.sort(indexes);
+        assertTrue(Arrays.equals(new int[] { 0, 1, 2 }, indexes));
+    }
+
+    @Test
+    public void testReplaceAll() {
+        @SuppressWarnings("unchecked")
+        Map.Entry<Box, Box>[] replacements = (Map.Entry<Box, Box>[]) new Map.Entry<?,?>[3];
+        int[] index = new int[1];
+
+        map.replaceAll((k, v) -> {
+            Box v1 = new Box(v);
+            replacements[index[0]++] = Map.entry(k, v1);
+            return v1;
+        });
+
+        @SuppressWarnings("unchecked")
+        Map.Entry<Box, Box>[] members = (Map.Entry<Box, Box>[]) map.entrySet().toArray(Map.Entry[]::new);
+
+        int[] indexes = {
+            indexOf(members, isIdenticalEntry(replacements[0])),
+            indexOf(members, isIdenticalEntry(replacements[1])),
+            indexOf(members, isIdenticalEntry(replacements[2])),
+        };
+        Arrays.sort(indexes);
+        assertTrue(Arrays.equals(new int[] { 0, 1, 2 }, indexes));
+    }
 }
