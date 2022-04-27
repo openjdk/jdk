@@ -245,7 +245,7 @@ public:
     }
   }
 
-  static bool apply(int i, int b, CompLevel cur_level, const methodHandle& method) {
+  static bool apply(const methodHandle& method, CompLevel cur_level, int i, int b) {
     double k = 1;
     switch(cur_level) {
     case CompLevel_none:
@@ -285,7 +285,7 @@ public:
     }
   }
 
-  static bool apply(int i, int b, CompLevel cur_level, const methodHandle& method) {
+  static bool apply(const methodHandle& method, CompLevel cur_level, int i, int b) {
     double k = 1;
     switch(cur_level) {
     case CompLevel_none:
@@ -909,6 +909,9 @@ bool CompilationPolicy::should_create_mdo(const methodHandle& method, CompLevel 
   if (cur_level != CompLevel_none || force_comp_at_level_simple(method) || CompilationModeFlag::quick_only() || !ProfileInterpreter) {
     return false;
   }
+  if (is_old(method())) {
+    return true;
+  }
   int i = method->invocation_count();
   int b = method->backedge_count();
   double k = Tier0ProfilingStartPercentage / 100.0;
@@ -1014,7 +1017,7 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
         // If we were at full profile level, would we switch to full opt?
         if (common<Predicate>(method, CompLevel_full_profile, disable_feedback) == CompLevel_full_optimization) {
           next_level = CompLevel_full_optimization;
-        } else if (!CompilationModeFlag::disable_intermediate() && Predicate::apply(i, b, cur_level, method)) {
+        } else if (!CompilationModeFlag::disable_intermediate() && Predicate::apply(method, cur_level, i, b)) {
           // C1-generated fully profiled code is about 30% slower than the limited profile
           // code that has only invocation and backedge counters. The observation is that
           // if C2 queue is large enough we can spend too much time in the fully profiled code
@@ -1040,7 +1043,7 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
             if (mdo->would_profile()) {
               if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
                                        Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
-                                       Predicate::apply(i, b, cur_level, method))) {
+                                       Predicate::apply(method, cur_level, i, b))) {
                 next_level = CompLevel_full_profile;
               }
             } else {
@@ -1050,7 +1053,7 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
             // If there is no MDO we need to profile
             if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
                                      Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
-                                     Predicate::apply(i, b, cur_level, method))) {
+                                     Predicate::apply(method, cur_level, i, b))) {
               next_level = CompLevel_full_profile;
             }
           }
@@ -1063,7 +1066,7 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
             if (mdo->would_profile() || CompilationModeFlag::disable_intermediate()) {
               int mdo_i = mdo->invocation_count_delta();
               int mdo_b = mdo->backedge_count_delta();
-              if (Predicate::apply(mdo_i, mdo_b, cur_level, method)) {
+              if (Predicate::apply(method, cur_level, mdo_i, mdo_b)) {
                 next_level = CompLevel_full_optimization;
               }
             } else {
@@ -1083,7 +1086,7 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
 // Determine if a method should be compiled with a normal entry point at a different level.
 CompLevel CompilationPolicy::call_event(const methodHandle& method, CompLevel cur_level, Thread* thread) {
   CompLevel osr_level = MIN2((CompLevel) method->highest_osr_comp_level(), common<LoopPredicate>(method, cur_level, true));
-  CompLevel next_level = common<CallPredicate>(method, cur_level);
+  CompLevel next_level = common<CallPredicate>(method, cur_level, is_old(method()));
 
   // If OSR method level is greater than the regular method level, the levels should be
   // equalized by raising the regular method level in order to avoid OSRs during each
