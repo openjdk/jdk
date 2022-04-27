@@ -98,7 +98,7 @@ public class Basic {
     // containsValue
     // size
     @Test
-    public void testContainsSize() {
+    public void testSizeContainsKeyValue() {
         assertEquals(map.size(), 3);
 
         assertTrue(map.containsKey(k1a));
@@ -135,7 +135,7 @@ public class Basic {
     // clear
     // isEmpty
     @Test
-    public void testClear() {
+    public void testClearEmpty() {
         assertFalse(map.isEmpty());
         map.clear();
         assertTrue(map.isEmpty());
@@ -161,7 +161,7 @@ public class Basic {
 
     // equals
     @Test
-    public void testNotEqualsKey() {
+    public void testEqualsDifferentKey() {
         map2.remove(k1a);
         map2.put(new Box(k1a), v1a);
         assertFalse(map.equals(map2));
@@ -170,7 +170,7 @@ public class Basic {
 
     // equals
     @Test
-    public void testNotEqualsValue() {
+    public void testEqualsDifferentValue() {
         map2.put(k1a, new Box(v1a));
         assertFalse(map.equals(map2));
         assertFalse(map2.equals(map));
