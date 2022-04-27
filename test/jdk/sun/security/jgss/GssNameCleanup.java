@@ -30,6 +30,7 @@
 import java.util.WeakHashMap;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
+import org.ietf.jgss.GSSException;
 
 public final class GssNameCleanup {
     private final static WeakHashMap<GSSName, ?> whm = new WeakHashMap<>();
@@ -43,9 +44,17 @@ public final class GssNameCleanup {
 
         // Create an object
         GSSManager manager = GSSManager.getInstance();
-        GSSName name = manager.createName("u1", GSSName.NT_USER_NAME);
-        whm.put(name, null);
-        name = null;
+        try {
+            GSSName name =
+                manager.createName("u1", GSSName.NT_USER_NAME);
+            whm.put(name, null);
+            name = null;
+        } catch (GSSException gsse) {
+            // createName() could fail if the local default realm
+            // cannot be located.  Just ignore the test case for
+            // such circumstances.
+            System.out.println("Ignore this test case: " + gsse);
+        }
 
         // Wait to trigger the cleanup.
         for (int i = 0; i < 10 && whm.size() > 0; i++) {
