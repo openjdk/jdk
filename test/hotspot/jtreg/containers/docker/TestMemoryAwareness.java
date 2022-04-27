@@ -50,7 +50,7 @@ public class TestMemoryAwareness {
         }
 
         Common.prepareWhiteBox();
-        DockerTestUtils.buildJdkDockerImage(imageName, "Dockerfile-BasicTest", "jdk-docker");
+        DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
             testMemoryLimit("100m", "104857600");
@@ -66,15 +66,23 @@ public class TestMemoryAwareness {
 
             testOperatingSystemMXBeanAwareness(
                 "100M", Integer.toString(((int) Math.pow(2, 20)) * 100),
-                "150M", Integer.toString(((int) Math.pow(2, 20)) * (150 - 100))
+                "150M", Integer.toString(((int) Math.pow(2, 20)) * (150 - 100)),
+                true
             );
             testOperatingSystemMXBeanAwareness(
                 "128M", Integer.toString(((int) Math.pow(2, 20)) * 128),
-                "256M", Integer.toString(((int) Math.pow(2, 20)) * (256 - 128))
+                "256M", Integer.toString(((int) Math.pow(2, 20)) * (256 - 128)),
+                true
             );
             testOperatingSystemMXBeanAwareness(
                 "1G", Integer.toString(((int) Math.pow(2, 20)) * 1024),
-                "1500M", Integer.toString(((int) Math.pow(2, 20)) * (1500 - 1024))
+                "1500M", Integer.toString(((int) Math.pow(2, 20)) * (1500 - 1024)),
+                true
+            );
+            testOperatingSystemMXBeanAwareness(
+                "1G", Integer.toString(((int) Math.pow(2, 20)) * 1024),
+                "1500M", Integer.toString(0),
+                false
             );
         } finally {
             if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
@@ -137,7 +145,7 @@ public class TestMemoryAwareness {
     }
 
     private static void testOperatingSystemMXBeanAwareness(String memoryAllocation, String expectedMemory,
-            String swapAllocation, String expectedSwap) throws Exception {
+            String swapAllocation, String expectedSwap, boolean isUseSwap) throws Exception {
         Common.logNewTestCase("Check OperatingSystemMXBean");
 
         DockerRunOptions opts = Common.newOpts(imageName, "CheckOperatingSystemMXBean")
@@ -149,6 +157,12 @@ public class TestMemoryAwareness {
             // diagnostics
             .addJavaOpts("--add-exports")
             .addJavaOpts("java.base/jdk.internal.platform=ALL-UNNAMED");
+
+        if (!isUseSwap) {
+            opts.addDockerOpts("--memory-swappiness", "0");
+        } else {
+            opts.addDockerOpts("--memory-swappiness", "60");
+        }
 
         OutputAnalyzer out = DockerTestUtils.dockerRunJava(opts);
         out.shouldHaveExitValue(0)
