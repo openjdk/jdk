@@ -2548,6 +2548,8 @@ run:
         SET_STACK_OBJECT(ts->earlyret_oop(), 0);
         MORE_STACK(1);
         break;
+      default:
+        ShouldNotReachHere();
     }
 
     ts->clr_earlyret_value();
