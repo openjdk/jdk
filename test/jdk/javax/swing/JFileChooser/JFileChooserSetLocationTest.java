@@ -22,6 +22,7 @@
  */
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.HeadlessException;
 import java.awt.Point;
 import java.awt.Robot;
@@ -97,11 +98,15 @@ public class JFileChooserSetLocationTest {
                 robot.waitForIdle();
 
                 AtomicReference<Point> pt = new AtomicReference<>();
-                SwingUtilities.invokeAndWait(
-                        () -> pt.set(panel.getLocationOnScreen()));
-                Point panel_loc = pt.get();
-                xIn = (panel_loc.x + panel.getSize().width) / 2;
-                yIn = (panel_loc.y + panel.getSize().height) / 2;
+                AtomicReference<Dimension> dim = new AtomicReference<>();
+                SwingUtilities.invokeAndWait(() -> {
+                    pt.set(panel.getLocationOnScreen());
+                    dim.set(panel.getSize());
+                });
+                Point panelLoc = pt.get();
+                Dimension panelDim = dim.get();
+                xIn = (panelLoc.x + panelDim.width) / 2;
+                yIn = (panelLoc.y + panelDim.height) / 2;
 
                 Point dest = getCenterPointOf(btn);
 
