@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,8 @@ import jdk.internal.vm.vector.VectorSupport;
  * {@code floatToIntBits(x)}.  Otherwise, the value is just {@code x}.
  *
  * <li>{@code ESIZE} &mdash; the size in bytes of the operand type
+ *
+ * <li>{@code EMASK} &mdash; the bit mask of the operand type, where {@code EMASK=(1<<ESIZE*8)-1}
  *
  * <li>{@code intVal}, {@code byteVal}, etc. &mdash; the operand of a
  * conversion, with the indicated type
@@ -548,12 +550,7 @@ public abstract class VectorOperators {
     public static final /*bitwise*/ Binary LSHL = binary("LSHL", "<<", VectorSupport.VECTOR_OP_LSHIFT, VO_SHIFT);
     /** Produce {@code a>>(n&(ESIZE*8-1))}.  Integral only. */
     public static final /*bitwise*/ Binary ASHR = binary("ASHR", ">>", VectorSupport.VECTOR_OP_RSHIFT, VO_SHIFT);
-    /** Produce {@code a>>>(n&(ESIZE*8-1))}  (see details for attention).  Integral only.
-     * <p>
-     * For operand types {@code byte} and {@code short} the operation behaves as if the operand is first implicitly widened
-     * to an {@code int} value with {@code (a & ((1 << ESIZE) - 1))} the result of which is then applied as the operand to this
-     * operation, the result of the operation is then narrowed from {@code int} to the operand type using an explicit cast.
-     */
+    /** Produce {@code (a&EMASK)>>>(n&(ESIZE*8-1))}.  Integral only. */
     public static final /*bitwise*/ Binary LSHR = binary("LSHR", ">>>", VectorSupport.VECTOR_OP_URSHIFT, VO_SHIFT);
     /** Produce {@code rotateLeft(a,n)}.  Integral only. */
     public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT);
