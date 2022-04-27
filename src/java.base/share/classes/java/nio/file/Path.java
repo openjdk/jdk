@@ -350,7 +350,7 @@ public interface Path
      *
      * @param  extension
      *         the extension to replace this path's current extension;
-     *         if non-empty, may not contain a leading or trailing dot 
+     *         if non-empty, may not contain a leading or trailing dot
      *         but is not otherwise checked for validity
      *
      * @return a new path equal to this path but with extension replaced by
