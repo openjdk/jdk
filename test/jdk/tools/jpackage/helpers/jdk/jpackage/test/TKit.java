@@ -237,6 +237,13 @@ final public class TKit {
         trace("Done");
     }
 
+    public static void traceFileContents(Path path, String label) throws IOException {
+        assertFileExists(path);
+        trace(String.format("Dump [%s] %s...", path, label));
+        Files.readAllLines(path).forEach(TKit::trace);
+        trace("Done");
+    }
+
     public static void createPropertiesFile(Path propsFilename,
             Map.Entry<String, String>... props) {
         createPropertiesFile(propsFilename, List.of(props));

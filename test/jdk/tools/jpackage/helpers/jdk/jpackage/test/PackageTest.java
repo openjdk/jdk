@@ -324,6 +324,13 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
+    public PackageTest addHelloAppInitializer(String javaAppDesc) {
+        addInitializer(
+                cmd -> new HelloApp(JavaAppDesc.parse(javaAppDesc)).addTo(cmd),
+                "HelloApp");
+        return this;
+    }
+
     public final static class Group extends RunnablePackageTest {
         public Group(PackageTest... tests) {
             handlers = Stream.of(tests)
@@ -365,12 +372,6 @@ public final class PackageTest extends RunnablePackageTest {
     @Override
     protected void runAction(Action... action) {
         throw new UnsupportedOperationException();
-    }
-
-    private void addHelloAppInitializer(String javaAppDesc) {
-        addInitializer(
-                cmd -> new HelloApp(JavaAppDesc.parse(javaAppDesc)).addTo(cmd),
-                "HelloApp");
     }
 
     private List<Consumer<Action>> createPackageTypeHandlers() {
@@ -600,6 +601,11 @@ public final class PackageTest extends RunnablePackageTest {
                 }
             }
 
+            if (LauncherAsServiceVerifier.SUPPORTED_PACKAGES.contains(
+                    cmd.packageType())) {
+                LauncherAsServiceVerifier.verify(cmd);
+            }
+
             cmd.assertAppLayout();
 
             installVerifiers.forEach(v -> v.accept(cmd));
@@ -608,15 +614,24 @@ public final class PackageTest extends RunnablePackageTest {
         private void verifyRootCountInUnpackedPackage(JPackageCommand cmd,
                 Path unpackedDir) {
 
+            final boolean withServices = !cmd.isRuntime()
+                    && !LauncherAsServiceVerifier.getLaunchersAsServices(cmd).isEmpty();
+
             final long expectedRootCount;
             if (WINDOWS.contains(cmd.packageType())) {
                 // On Windows it is always two entries:
                 // installation home directory and MSI file
                 expectedRootCount = 2;
+            } else if (withServices && MAC_PKG.equals(cmd.packageType())) {
+                expectedRootCount = 2;
             } else if (LINUX.contains(cmd.packageType())) {
                 Set<Path> roots = new HashSet<>();
                 roots.add(Path.of("/").resolve(Path.of(cmd.getArgumentValue(
                         "--install-dir", () -> "/opt")).getName(0)));
+                if (withServices) {
+                    // /lib/systemd
+                    roots.add(Path.of("/lib"));
+                }
                 if (cmd.hasArgument("--license-file")) {
                     switch (cmd.packageType()) {
                         case LINUX_RPM -> {
@@ -671,6 +686,11 @@ public final class PackageTest extends RunnablePackageTest {
                 TKit.assertPathExists(appLayout.runtimeDirectory(), false);
             } else {
                 TKit.assertPathExists(appInstallDir, false);
+            }
+
+            if (LauncherAsServiceVerifier.SUPPORTED_PACKAGES.contains(
+                    cmd.packageType())) {
+                LauncherAsServiceVerifier.verifyUninstalled(cmd);
             }
 
             uninstallVerifiers.forEach(v -> v.accept(cmd));
