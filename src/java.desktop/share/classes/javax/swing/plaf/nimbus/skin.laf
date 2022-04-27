@@ -268,7 +268,7 @@
       </uiComponent>
       <uiComponent opaque="false" type="javax.swing.JButton" name="Button" ui="ButtonUI" subregion="false">
          <stateTypes/>
-         <contentMargins top="6" bottom="6" left="0" right="0"/>
+         <contentMargins top="6" bottom="6" left="14" right="14"/>
          <style>
             <textForeground/>
             <textBackground/>
