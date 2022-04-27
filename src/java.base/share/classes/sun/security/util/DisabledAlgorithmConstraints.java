@@ -951,6 +951,9 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
     }
 
     private boolean cachedCheckAlgorithm(String algorithm) {
+        if (algorithm == null || algorithm.isEmpty()) {
+            throw new IllegalArgumentException("No algorithm name specified");
+        }
         Map<String, Boolean> cache;
         if ((cache = cacheRef.get()) == null) {
             synchronized (this) {
