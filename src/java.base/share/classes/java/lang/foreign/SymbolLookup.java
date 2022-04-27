@@ -39,6 +39,7 @@ import java.lang.invoke.MethodHandles;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 /**
  * An object that may be used to look up symbols in one or more loaded libraries. A symbol lookup allows for searching
@@ -115,14 +116,7 @@ public interface SymbolLookup {
     @CallerSensitive
     static SymbolLookup libraryLookup(String name, MemorySession session) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
-        Objects.requireNonNull(name);
-        Objects.requireNonNull(session);
-        RawNativeLibraries nativeLibraries = RawNativeLibraries.newInstance(MethodHandles.lookup());
-        NativeLibrary library = nativeLibraries.load(name);
-        if (library == null) {
-            throw new IllegalArgumentException("Cannot open library: " + name);
-        }
-        return libraryLookup(nativeLibraries, library, session);
+        return libraryLookup(name, RawNativeLibraries::load, session);
     }
 
     /**
@@ -144,17 +138,18 @@ public interface SymbolLookup {
     @CallerSensitive
     static SymbolLookup libraryLookup(Path path, MemorySession session) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
-        Objects.requireNonNull(path);
-        Objects.requireNonNull(session);
-        RawNativeLibraries nativeLibraries = RawNativeLibraries.newInstance(MethodHandles.lookup());
-        NativeLibrary library = nativeLibraries.load(path);
-        if (library == null) {
-            throw new IllegalArgumentException("Cannot open library: " + path);
-        }
-        return libraryLookup(nativeLibraries, library, session);
+        return libraryLookup(path, RawNativeLibraries::load, session);
     }
 
-    private static SymbolLookup libraryLookup(RawNativeLibraries nativeLibraries, NativeLibrary library, MemorySession session) {
+    private static <Z> SymbolLookup libraryLookup(Z libDesc, BiFunction<RawNativeLibraries, Z, NativeLibrary> loadLibraryFunc, MemorySession session) {
+        Objects.requireNonNull(libDesc);
+        Objects.requireNonNull(session);
+        // attempt to load native library from path or name
+        RawNativeLibraries nativeLibraries = RawNativeLibraries.newInstance(MethodHandles.lookup());
+        NativeLibrary library = loadLibraryFunc.apply(nativeLibraries, libDesc);
+        if (library == null) {
+            throw new IllegalArgumentException("Cannot open library: " + libDesc);
+        }
         // register hook to unload library when session is closed
         MemorySessionImpl.toSessionImpl(session).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
