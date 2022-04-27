@@ -65,38 +65,37 @@ package java.security.spec;
 public class MGF1ParameterSpec implements AlgorithmParameterSpec {
 
     /**
-     * The <code>MGF1ParameterSpec</code> which uses a "SHA-1" message digest.
+     * The {@code MGF1ParameterSpec} uses a "SHA-1" message digest.
      */
     public static final MGF1ParameterSpec SHA1 =
         new MGF1ParameterSpec("SHA-1");
 
     /**
-     * The <code>MGF1ParameterSpec</code> which uses a "SHA-224" message digest.
+     * The {@code MGF1ParameterSpec} uses a "SHA-224" message digest.
      */
     public static final MGF1ParameterSpec SHA224 =
         new MGF1ParameterSpec("SHA-224");
 
     /**
-     * The <code>MGF1ParameterSpec</code> which uses a "SHA-256" message digest.
+     * The {@code MGF1ParameterSpec} uses a "SHA-256" message digest.
      */
     public static final MGF1ParameterSpec SHA256 =
         new MGF1ParameterSpec("SHA-256");
 
     /**
-     * The <code>MGF1ParameterSpec</code> which uses a "SHA-384" message digest.
+     * The {@code MGF1ParameterSpec} uses a "SHA-384" message digest.
      */
     public static final MGF1ParameterSpec SHA384 =
         new MGF1ParameterSpec("SHA-384");
 
     /**
-     * The <code>MGF1ParameterSpec</code> which uses a "SHA-512" message digest.
+     * The {@code MGF1ParameterSpec} uses a "SHA-512" message digest.
      */
     public static final MGF1ParameterSpec SHA512 =
         new MGF1ParameterSpec("SHA-512");
 
     /**
-     * The <code>MGF1ParameterSpec</code> which uses a "SHA-512/224"
-     * message digest.
+     * The {@code MGF1ParameterSpec} uses a "SHA-512/224" message digest.
      *
      * @since 11
      */
@@ -104,8 +103,7 @@ public class MGF1ParameterSpec implements AlgorithmParameterSpec {
         new MGF1ParameterSpec("SHA-512/224");
 
     /**
-     * The <code>MGF1ParameterSpec</code> which uses a "SHA-512/256"
-     * message digest.
+     * The {@code MGF1ParameterSpec} uses a "SHA-512/256" message digest.
      *
      * @since 11
      */
@@ -113,8 +111,7 @@ public class MGF1ParameterSpec implements AlgorithmParameterSpec {
         new MGF1ParameterSpec("SHA-512/256");
 
     /**
-     * The <code>MGF1ParameterSpec</code> which uses a "SHA3-224"
-     * message digest.
+     * The {@code MGF1ParameterSpec} uses a "SHA3-224" message digest.
      *
      * @since 16
      */
@@ -122,8 +119,7 @@ public class MGF1ParameterSpec implements AlgorithmParameterSpec {
         new MGF1ParameterSpec("SHA3-224");
 
     /**
-     * The <code>MGF1ParameterSpec</code> which uses a "SHA3-256"
-     * message digest.
+     * The {@code MGF1ParameterSpec} uses a "SHA3-256" message digest.
      *
      * @since 16
      */
@@ -131,8 +127,7 @@ public class MGF1ParameterSpec implements AlgorithmParameterSpec {
         new MGF1ParameterSpec("SHA3-256");
 
     /**
-     * The <code>MGF1ParameterSpec</code> which uses a "SHA3-384"
-     * message digest.
+     * The {@code MGF1ParameterSpec} uses a "SHA3-384" message digest.
      *
      * @since 16
      */
@@ -140,8 +135,7 @@ public class MGF1ParameterSpec implements AlgorithmParameterSpec {
         new MGF1ParameterSpec("SHA3-384");
 
     /**
-     * The <code>MGF1ParameterSpec</code> which uses a "SHA3-512"
-     * message digest.
+     * The {@code MGF1ParameterSpec} uses a "SHA3-512" message digest.
      *
      * @since 16
      */
