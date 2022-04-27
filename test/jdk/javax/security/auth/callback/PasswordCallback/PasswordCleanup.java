@@ -24,17 +24,13 @@
 /*
  * @test
  * @bug 8284910
- * @summary Buffer clean in PasswordCallback
+ * @summary Check that PasswordCallback.clearPassword() clears the password
  */
 
 import javax.security.auth.callback.PasswordCallback;
 import java.util.Arrays;
-import java.util.WeakHashMap;
 
 public final class PasswordCleanup {
-    private final static WeakHashMap<PasswordCallback, ?> weakHashMap =
-            new WeakHashMap<>();
-
     public static void main(String[] args) throws Exception {
         // Create an object
         PasswordCallback passwordCallback =
@@ -50,24 +46,6 @@ public final class PasswordCleanup {
         if (Arrays.equals(originPassword, clearedPassword)) {
             throw new RuntimeException(
                 "PasswordCallback.clearPassword() does not clear passwords");
-        }
-
-        // Check if the PasswordCallback object could be collected.
-        weakHashMap.put(passwordCallback, null);
-        passwordCallback = null;
-
-        // Wait to trigger the cleanup.
-        for (int i = 0; i < 10 && weakHashMap.size() != 0; i++) {
-            System.gc();
-            Thread.sleep(100);
-        }
-
-        // Check if the object has been collected.  The collection will not 
-        // happen if the cleaner implementation in PasswordCallback is bound 
-        // to the PasswordCallback object.
-        if (weakHashMap.size() > 0) {
-            throw new RuntimeException(
-                "PasswordCallback object is not released");
         }
     }
 }
