@@ -337,14 +337,14 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
 
     _promotion_failed_info.register_copy_failure(obj->size());
 
+    ContinuationGCSupport::transform_stack_chunk(obj);
+
     push_contents(obj);
 
     // Save the markWord of promotion-failed objs in _preserved_marks for later
     // restoration. This way we don't have to walk the young-gen to locate
     // these promotion-failed objs.
     _preserved_marks->push_always(obj, obj_mark);
-
-    ContinuationGCSupport::transform_stack_chunk(obj);
   }  else {
     // We lost, someone else "owns" this object
     guarantee(obj->is_forwarded(), "Object must be forwarded if the cas failed.");

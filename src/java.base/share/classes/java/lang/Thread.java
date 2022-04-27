@@ -3063,7 +3063,7 @@ public class Thread implements Runnable {
     int threadLocalRandomSecondarySeed;
 
     /** The thread container that this thread is in */
-    @Stable private volatile ThreadContainer container;
+    @Stable private ThreadContainer container;
     ThreadContainer threadContainer() {
         return container;
     }

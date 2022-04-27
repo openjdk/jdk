@@ -77,6 +77,7 @@ public class strace001 {
             "java.lang.Thread.currentCarrierThread",
             "java.lang.Thread.currentThread",
             "java.lang.Thread.threadContainer",
+            "jdk.internal.misc.Blocker.currentCarrierThread",
             "jdk.internal.misc.Blocker.end",
             "nsk.stress.strace.strace001Thread.run",
             "nsk.stress.strace.strace001Thread.recursiveMethod"

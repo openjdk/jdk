@@ -30,6 +30,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/vmError.hpp"
 
 namespace AccessInternal {
   // VM_Version::supports_cx8() is a surrogate for 'supports atomic long memory ops'.
@@ -207,6 +208,10 @@ namespace AccessInternal {
 
 #ifdef ASSERT
   void check_access_thread_state() {
+    if (VMError::is_error_reported()) {
+      return;
+    }
+
     Thread* thread = Thread::current();
     if (!thread->is_Java_thread()) {
       return;

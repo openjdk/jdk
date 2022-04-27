@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Test that HTTP connections can be interrupted
+ * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} InterruptHttp.java
  * @run main/othervm --enable-preview InterruptHttp
  */
@@ -39,17 +40,25 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
+import jdk.test.lib.net.URIBuilder;
 
 public class InterruptHttp {
 
     public static void main(String[] args) throws Exception {
-        try (Server server = new Server()) {
+        try (Server server = new Server().start()) {
             AtomicReference<Exception> exception = new AtomicReference<>();
+
+            // http://host:port/hello
+            URL url = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(server.port())
+                    .path("/hello")
+                    .toURL();
 
             // start thread to connect to server
             Thread thread = Thread.ofVirtual().start(() -> {
                 try {
-                    URL url = new URL(server.address() + "/hello");
                     try (InputStream in = url.openStream()) { }
                 } catch (Exception e) {
                     exception.set(e);
@@ -80,13 +89,15 @@ public class InterruptHttp {
     static class Server implements Closeable {
         private final ServerSocket listener;
         private final List<Socket> connections = new CopyOnWriteArrayList<>();
-        private final String address;
 
         Server() throws IOException {
             InetAddress lb = InetAddress.getLoopbackAddress();
             listener = new ServerSocket(0, -1, lb);
-            address = "http://" + lb.getHostAddress() + ":" + listener.getLocalPort();
+        }
+
+        Server start() {
             Thread.ofVirtual().start(this::run);
+            return this;
         }
 
         private void run() {
@@ -106,8 +117,8 @@ public class InterruptHttp {
             return connections.size();
         }
 
-        String address() {
-            return address;
+        int port() {
+            return listener.getLocalPort();
         }
 
         @Override

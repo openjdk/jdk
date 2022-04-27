@@ -23,9 +23,12 @@
 
 /* @test
  * @summary Test JNI IsVirtualThread
+ * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} IsVirtualThread.java
  * @run main/native/othervm --enable-preview IsVirtualThread
  */
+
+import jdk.test.lib.Asserts;
 
 import java.util.concurrent.locks.LockSupport;
 
@@ -56,10 +59,7 @@ public class IsVirtualThread {
         System.out.println("test: " + thread);
         boolean isVirtual = isVirtualThread(thread);
         boolean expected = thread.isVirtual();
-        if (isVirtual != expected) {
-            throw new RuntimeException("JNI IsVirtualThread returned " + isVirtual
-                    + ", expected " + expected);
-        }
+        Asserts.assertEQ(expected, isVirtual, "JNI IsVirtualThread() not equals to Thread.isVirtual()");
     }
 
     private static native boolean isVirtualThread(Thread thread);

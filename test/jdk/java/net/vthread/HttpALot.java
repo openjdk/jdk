@@ -25,6 +25,8 @@
  * @test
  * @summary Stress test the HTTP protocol handler and HTTP server
  * @requires vm.debug != true
+ * @modules jdk.httpserver
+ * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} HttpALot.java
  * @run main/othervm/timeout=600
  *     --enable-preview
@@ -44,6 +46,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
 
 public class HttpALot {
 
@@ -71,8 +74,12 @@ public class HttpALot {
         });
 
         // URL for hello service
-        var address = server.getAddress();
-        URL url = new URL("http://" + address.getHostName() + ":" + address.getPort() + "/hello");
+        URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(server.getAddress().getPort())
+                .path("/hello")
+                .toURL();
 
         // go
         server.start();

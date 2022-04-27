@@ -146,6 +146,7 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      *         SecurityManager#checkWrite(java.lang.String)} method denies write
      *         access to the file or {@link java.lang.management.ManagementPermission
      *         ManagementPermission("control")} is denied
+     * @throws UnsupportedOperationException if this operation is not supported
      * @since 19
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)

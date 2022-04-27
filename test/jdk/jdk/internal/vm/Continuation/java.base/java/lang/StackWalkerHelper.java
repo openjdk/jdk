@@ -71,13 +71,9 @@ public final class StackWalkerHelper {
     public static boolean equals(StackFrame a, StackFrame b) {
         if ( !(Objects.equals(a.getClassName(),     b.getClassName())
             && Objects.equals(a.getMethodName(),    b.getMethodName())
-            // && Objects.equals(a.getByteCodeIndex(), b.getByteCodeIndex()) // TODO !!!!
-            // && Objects.equals(a.getContinuationScopeName(), b.getContinuationScopeName())
             )) {
             System.out.println("XXXX\ta: " + a + " a.bci: " + a.getByteCodeIndex() + " a.toSTE: " + a.toStackTraceElement()
                                + "\n\tb: " + b + " b.bci: " + b.getByteCodeIndex() + " b.toSTE: " + b.toStackTraceElement());
-            // System.out.println("XXXX\ta: " + a + " a.scope: " + a.getContinuationScopeName() + " a.bci: " + a.getByteCodeIndex() + " a.toSTE: " + a.toStackTraceElement()
-            //                    + "\n\tb: " + b + " b.scope: " + b.getContinuationScopeName() + " b.bci: " + b.getByteCodeIndex() + " b.toSTE: " + b.toStackTraceElement());
             return false;
         }
         try {
@@ -88,7 +84,7 @@ public final class StackWalkerHelper {
             return false;
         }
         } catch(UnsupportedOperationException e) {}
-        // assert Objects.equals(a.toStackTraceElement(), b.toStackTraceElement()) : "a" + a.toStackTraceElement() + " b: " + b.toStackTraceElement();
+
         if (!Objects.equals(a.toStackTraceElement(), b.toStackTraceElement()))
             return false;
 
