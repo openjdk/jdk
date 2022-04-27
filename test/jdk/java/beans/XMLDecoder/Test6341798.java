@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.Locale;
 import static java.util.Locale.ENGLISH;
 
 public class Test6341798 {
-    private static final Locale TURKISH = new Locale("tr");
+    private static final Locale TURKISH = Locale.of("tr");
 
     private static final String DATA
             = "<java>\n"

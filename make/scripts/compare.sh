@@ -1122,7 +1122,7 @@ if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "-?" ] || [ "$1" = "/h" ] || [ "$1
     echo "-names              Compare the file names and directory structure"
     echo "-perms              Compare the permission bits on all files and directories"
     echo "-types              Compare the output of the file command on all files"
-    echo "-general            Compare the files not convered by the specialized comparisons"
+    echo "-general            Compare the files not covered by the specialized comparisons"
     echo "-zips               Compare the contents of all zip files and files in them"
     echo "-zips-names         Compare the file names inside all zip files"
     echo "-jars               Compare the contents of all jar files"

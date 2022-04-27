@@ -40,6 +40,7 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_s390.inline.hpp"
 
@@ -218,7 +219,7 @@ int LIR_Assembler::emit_unwind_handler() {
     __ lgr_if_needed(exception_oop_callee_saved, Z_EXC_OOP); // Preserve the exception.
   }
 
-  // Preform needed unlocking.
+  // Perform needed unlocking.
   MonitorExitStub* stub = NULL;
   if (method()->is_synchronized()) {
     // Runtime1::monitorexit_id expects lock address in Z_R1_scratch.
@@ -2991,7 +2992,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       __ z_bru(next);
     }
   } else {
-    __ asm_assert_ne("unexpect null obj", __LINE__);
+    __ asm_assert_ne("unexpected null obj", __LINE__);
   }
 
   __ bind(update);

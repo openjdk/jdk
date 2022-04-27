@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -358,7 +358,7 @@ void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
 
-  Symbol* signature = vmSymbols::serializePropertiesToByteArray_signature();
+  Symbol* signature = vmSymbols::void_byte_array_signature();
   JavaCalls::call_static(&result,
                          ik,
                          vmSymbols::serializePropertiesToByteArray_name(),
@@ -695,7 +695,7 @@ void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
     char comma[2] = {0,0};
 
     // Leave default values on Agent.class side and pass only
-    // agruments explicitly set by user. All arguments passed
+    // arguments explicitly set by user. All arguments passed
     // to jcmd override properties with the same name set by
     // command line with -D or by managmenent.properties
     // file.

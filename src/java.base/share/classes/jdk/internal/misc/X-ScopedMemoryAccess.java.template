@@ -315,8 +315,8 @@ public class ScopedMemoryAccess {
 
     // ByteBuffer vector access ops
 
-    // Buffer access constants, to be initalized when required.
-    // Avoids a null value for NIO_ACCESS, due to class initalization dependencies
+    // Buffer access constants, to be initialized when required.
+    // Avoids a null value for NIO_ACCESS, due to class initialization dependencies
     static final class BufferAccess {
         // Buffer.address
         static final long BUFFER_ADDRESS

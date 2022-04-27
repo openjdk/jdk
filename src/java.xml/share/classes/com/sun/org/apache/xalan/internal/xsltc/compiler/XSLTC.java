@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,7 +21,6 @@
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
 import com.sun.org.apache.bcel.internal.classfile.JavaClass;
-import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xml.internal.dtm.DTM;
@@ -47,8 +46,8 @@ import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlFeatures;
-import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
+import jdk.xml.internal.XMLSecurityManager;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
@@ -58,7 +57,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author John Howard (johnh@schemasoft.com)
- * @LastModified: Nov 2021
+ * @LastModified: Jan 2022
  */
 public final class XSLTC {
 
@@ -508,7 +507,10 @@ public final class XSLTC {
             }
         }
         catch (Exception e) {
-            /*if (_debug)*/ e.printStackTrace();
+            if (_debug) e.printStackTrace();
+            if (ErrorMsg.XPATH_LIMIT.equals(e.getMessage())) {
+                return !_parser.errorsFound();
+            }
             _parser.reportError(Constants.FATAL, new ErrorMsg(ErrorMsg.JAXP_COMPILE_ERR, e));
         }
         catch (Error e) {

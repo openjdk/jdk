@@ -522,10 +522,6 @@ public abstract sealed class VarHandle implements Constable
         return new UnsupportedOperationException();
     }
 
-    boolean isDirect() {
-        return true;
-    }
-
     VarHandle asDirect() {
         return this;
     }
@@ -2066,11 +2062,23 @@ public abstract sealed class VarHandle implements Constable
         return accessModeType(accessMode.at.ordinal());
     }
 
+    /**
+     * Validates that the given access descriptors method type matches up with
+     * the access mode of this VarHandle, then returns if this is a direct
+     * method handle. These operations were grouped together to slightly
+     * improve efficiency during startup/warmup.
+     *
+     * @return true if this is a direct VarHandle, false if it's an indirect
+     *         VarHandle.
+     * @throws WrongMethodTypeException if there's an access type mismatch
+     */
     @ForceInline
-    final void checkExactAccessMode(VarHandle.AccessDescriptor ad) {
+    boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
         if (exact && accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
             throwWrongMethodTypeException(ad);
         }
+        // return true unless overridden in an IndirectVarHandle
+        return true;
     }
 
     @DontInline
@@ -2081,10 +2089,13 @@ public abstract sealed class VarHandle implements Constable
 
     @ForceInline
     final MethodType accessModeType(int accessTypeOrdinal) {
-        TypesAndInvokers tis = getTypesAndInvokers();
-        MethodType mt = tis.methodType_table[accessTypeOrdinal];
+        MethodType[] mtTable = methodTypeTable;
+        if (mtTable == null) {
+            mtTable = methodTypeTable = new MethodType[VarHandle.AccessType.COUNT];
+        }
+        MethodType mt = mtTable[accessTypeOrdinal];
         if (mt == null) {
-            mt = tis.methodType_table[accessTypeOrdinal] =
+            mt = mtTable[accessTypeOrdinal] =
                     accessModeTypeUncached(accessTypeOrdinal);
         }
         return mt;
@@ -2159,34 +2170,24 @@ public abstract sealed class VarHandle implements Constable
     }
 
     @Stable
-    TypesAndInvokers typesAndInvokers;
+    MethodType[] methodTypeTable;
 
-    static class TypesAndInvokers {
-        final @Stable
-        MethodType[] methodType_table = new MethodType[VarHandle.AccessType.COUNT];
-
-        final @Stable
-        MethodHandle[] methodHandle_table = new MethodHandle[AccessMode.COUNT];
-    }
-
-    @ForceInline
-    private final TypesAndInvokers getTypesAndInvokers() {
-        TypesAndInvokers tis = typesAndInvokers;
-        if (tis == null) {
-            tis = typesAndInvokers = new TypesAndInvokers();
-        }
-        return tis;
-    }
+    @Stable
+    MethodHandle[] methodHandleTable;
 
     @ForceInline
     MethodHandle getMethodHandle(int mode) {
-        TypesAndInvokers tis = getTypesAndInvokers();
-        MethodHandle mh = tis.methodHandle_table[mode];
+        MethodHandle[] mhTable = methodHandleTable;
+        if (mhTable == null) {
+            mhTable = methodHandleTable = new MethodHandle[AccessMode.COUNT];
+        }
+        MethodHandle mh = mhTable[mode];
         if (mh == null) {
-            mh = tis.methodHandle_table[mode] = getMethodHandleUncached(mode);
+            mh = mhTable[mode] = getMethodHandleUncached(mode);
         }
         return mh;
     }
+
     private final MethodHandle getMethodHandleUncached(int mode) {
         MethodType mt = accessModeType(AccessMode.values()[mode]).
                 insertParameterTypes(0, VarHandle.class);

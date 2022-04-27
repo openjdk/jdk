@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * A taglet that represents the {@code @return} and {@code {@return }} tags.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
 
@@ -99,7 +94,7 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
         List<? extends ReturnTree> tags = utils.getReturnTrees(holder);
 
         // Make sure we are not using @return tag on method with void return type.
-        TypeMirror returnType = utils.getReturnType(writer.getCurrentPageElement(), (ExecutableElement)holder);
+        TypeMirror returnType = utils.getReturnType(writer.getCurrentPageElement(), (ExecutableElement) holder);
         if (returnType != null && utils.isVoid(returnType)) {
             if (!tags.isEmpty()) {
                 messages.warning(holder, "doclet.Return_tag_on_void_method");
