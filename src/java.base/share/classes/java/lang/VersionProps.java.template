@@ -109,6 +109,10 @@ class VersionProps {
         props.put("java.class.version", CLASSFILE_MAJOR_MINOR);
 
         props.put("java.specification.version", VERSION_SPECIFICATION);
+
+        // Uncomment next props.put call after the first maintenance review for a
+        // platform specification is done and update MR number, initializing to 1
+        // props.put("java.specification.maintenance.version", /* MR number */);
         props.put("java.specification.name", "Java Platform API Specification");
         props.put("java.specification.vendor", "Oracle Corporation");
 
