@@ -462,6 +462,29 @@ class SVEBinaryImmOp(Instruction):
         return (formatStr
                 % tuple([Instruction.astr(self)] + Regs + [self.immed]))
 
+class SVEComparisonWithZero(Instruction):
+     def __init__(self, arg):
+          Instruction.__init__(self, "fcm")
+          self.condition = arg
+          self.dest = OperandFactory.create('p').generate()
+          self.reg = SVEVectorRegister().generate()
+          self._width = RegVariant(2, 3)
+          self.preg = OperandFactory.create('P').generate()
+
+     def generate(self):
+          return Instruction.generate(self)
+
+     def cstr(self):
+          return ("%s(%s, %s, %s, %s, %s, 0.0);"
+                  % ("__ sve_" + self._name, "Assembler::" + self.condition,
+                     str(self.dest), self._width.cstr(), str(self.preg), str(self.reg)))
+
+     def astr(self):
+          val = ("%s%s\t%s%s, %s/z, %s%s, #0.0"
+                 % (self._name, self.condition.lower(), str(self.dest), self._width.astr(),
+                    str(self.preg), str(self.reg), self._width.astr()))
+          return val
+
 class MultiOp():
 
     def multipleForms(self):
@@ -1444,6 +1467,8 @@ generate(FloatConvertOp, [["fcvtzsw", "fcvtzs", "ws"], ["fcvtzs", "fcvtzs", "xs"
                           ["fcvtzdw", "fcvtzs", "wd"], ["fcvtzd", "fcvtzs", "xd"],
                           ["scvtfws", "scvtf", "sw"], ["scvtfs", "scvtf", "sx"],
                           ["scvtfwd", "scvtf", "dw"], ["scvtfd", "scvtf", "dx"],
+                          ["fcvtassw", "fcvtas", "ws"], ["fcvtasd", "fcvtas", "xd"],
+                          ["fcvtmssw", "fcvtms", "ws"], ["fcvtmsd", "fcvtms", "xd"],
                           ["fmovs", "fmov", "ws"], ["fmovd", "fmov", "xd"],
                           ["fmovs", "fmov", "sw"], ["fmovd", "fmov", "dx"]])
 
@@ -1590,6 +1615,8 @@ generate(ThreeRegNEONOp,
           ["fcmge", "fcmge", "2D"],
           ])
 
+generate(SVEComparisonWithZero, ["EQ", "GT", "GE", "LT", "LE", "NE"])
+
 generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",                "ccmn\txzr, xzr, #3, LE"],
                         ["ccmnw",  "__ ccmnw(zr, zr, 5u, Assembler::EQ);",               "ccmn\twzr, wzr, #5, EQ"],
                         ["ccmp",   "__ ccmp(zr, 1, 4u, Assembler::NE);",                 "ccmp\txzr, 1, #4, NE"],
@@ -1613,8 +1640,12 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["umov",   "__ umov(r0, v1, __ H, 2);",                          "umov\tw0, v1.h[2]"],
                         ["umov",   "__ umov(r0, v1, __ B, 3);",                          "umov\tw0, v1.b[3]"],
                         ["fmov",   "__ fmovhid(r0, v1);",                                "fmov\tx0, v1.d[1]"],
+                        ["fmov",   "__ fmovs(v9, __ T2S, 0.5f);",                        "fmov\tv9.2s, 0.5"],
+                        ["fmov",   "__ fmovd(v14, __ T2D, 0.5f);",                       "fmov\tv14.2d, 0.5"],
                         ["ld1",    "__ ld1(v31, v0, __ T2D, Address(__ post(r1, r0)));", "ld1\t{v31.2d, v0.2d}, [x1], x0"],
-                        ["fcvtzs", "__ fcvtzs(v0, __ T4S, v1);",                         "fcvtzs\tv0.4s, v1.4s"],
+                        ["fcvtzs", "__ fcvtzs(v0, __ T2S, v1);",                         "fcvtzs\tv0.2s, v1.2s"],
+                        ["fcvtas", "__ fcvtas(v2, __ T4S, v3);",                         "fcvtas\tv2.4s, v3.4s"],
+                        ["fcvtms", "__ fcvtms(v4, __ T2D, v5);",                         "fcvtms\tv4.2d, v5.2d"],
                         # SVE instructions
                         ["cpy",     "__ sve_cpy(z0, __ S, p0, v1);",                      "mov\tz0.s, p0/m, s1"],
                         ["cpy",     "__ sve_cpy(z0, __ B, p0, 127, true);",               "mov\tz0.b, p0/m, 127"],
@@ -1780,11 +1811,7 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["uzp2",    "__ sve_uzp2(p0, __ D, p0, p1);",                     "uzp2\tp0.d, p0.d, p1.d"],
                         ["punpklo", "__ sve_punpklo(p1, p0);",                            "punpklo\tp1.h, p0.b"],
                         ["punpkhi", "__ sve_punpkhi(p1, p0);",                            "punpkhi\tp1.h, p0.b"],
-                        # SVE2 instructions
-                        ["bext",    "__ sve_bext(z16, __ B, z16, z17);",                  "bext\tz16.b, z16.b, z17.b"],
-                        ["bext",    "__ sve_bext(z16, __ H, z16, z17);",                  "bext\tz16.h, z16.h, z17.h"],
-                        ["bext",    "__ sve_bext(z16, __ S, z16, z17);",                  "bext\tz16.s, z16.s, z17.s"],
-                        ["bext",    "__ sve_bext(z16, __ D, z16, z17);",                  "bext\tz16.d, z16.d, z17.d"],
+                        ["ext",     "__ sve_ext(z17, z16, 63);",                          "ext\tz17.b, z17.b, z16.b, #63"],
 ])
 
 print "\n// FloatImmediateOp"
@@ -1867,6 +1894,8 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["bic", "ZZZ"],
                        ["uzp1", "ZZZ"],
                        ["uzp2", "ZZZ"],
+                       # SVE2 instructions
+                       ["bext", "ZZZ"],
                       ])
 
 generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],
