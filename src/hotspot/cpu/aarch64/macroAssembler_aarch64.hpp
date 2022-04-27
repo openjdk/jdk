@@ -432,7 +432,7 @@ class MacroAssembler: public Assembler {
 
 #define WRAP(INSN)                                                            \
   void INSN(Register Rd, Register Rn, Register Rm, Register Ra) {             \
-    if ((VM_Version::features() & VM_Version::CPU_A53MAC) && Ra != zr)        \
+    if (VM_Version::supports_a53mac() && Ra != zr)                            \
       nop();                                                                  \
     Assembler::INSN(Rd, Rn, Rm, Ra);                                          \
   }
@@ -468,7 +468,7 @@ public:
   void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
   void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
 
-  static RegSet call_clobbered_registers();
+  static RegSet call_clobbered_gp_registers();
 
   void push_p(PRegSet regs, Register stack) { if (regs.bits()) push_p(regs.bits(), stack); }
   void pop_p(PRegSet regs, Register stack) { if (regs.bits()) pop_p(regs.bits(), stack); }
@@ -476,7 +476,7 @@ public:
   // Push and pop everything that might be clobbered by a native
   // runtime call except rscratch1 and rscratch2.  (They are always
   // scratch, so we don't have to protect them.)  Only save the lower
-  // 64 bits of each vector register. Additonal registers can be excluded
+  // 64 bits of each vector register. Additional registers can be excluded
   // in a passed RegSet.
   void push_call_clobbered_registers_except(RegSet exclude);
   void pop_call_clobbered_registers_except(RegSet exclude);
@@ -508,7 +508,7 @@ public:
 
   void movptr(Register r, uintptr_t imm64);
 
-  void mov(FloatRegister Vd, SIMD_Arrangement T, uint32_t imm32);
+  void mov(FloatRegister Vd, SIMD_Arrangement T, uint64_t imm64);
 
   void mov(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {
     orr(Vd, T, Vn, Vn);
@@ -657,7 +657,7 @@ public:
   // incrementl/decrementl
 
   // for aarch64 the proper convention would be to use
-  // increment/decrement for 64 bit operatons and
+  // increment/decrement for 64 bit operations and
   // incrementw/decrementw for 32 bit operations. so when porting
   // x86_64 code we can leave calls to increment/decrement as is,
   // replace incrementq/decrementq with increment/decrement and
@@ -962,13 +962,27 @@ public:
   // Debugging
 
   // only if +VerifyOops
-  void verify_oop(Register reg, const char* s = "broken oop");
-  void verify_oop_addr(Address addr, const char * s = "broken oop addr");
+  void _verify_oop(Register reg, const char* s, const char* file, int line);
+  void _verify_oop_addr(Address addr, const char * s, const char* file, int line);
+
+  void _verify_oop_checked(Register reg, const char* s, const char* file, int line) {
+    if (VerifyOops) {
+      _verify_oop(reg, s, file, line);
+    }
+  }
+  void _verify_oop_addr_checked(Address reg, const char* s, const char* file, int line) {
+    if (VerifyOops) {
+      _verify_oop_addr(reg, s, file, line);
+    }
+  }
 
 // TODO: verify method and klass metadata (compare against vptr?)
   void _verify_method_ptr(Register reg, const char * msg, const char * file, int line) {}
   void _verify_klass_ptr(Register reg, const char * msg, const char * file, int line){}
 
+#define verify_oop(reg) _verify_oop_checked(reg, "broken oop " #reg, __FILE__, __LINE__)
+#define verify_oop_msg(reg, msg) _verify_oop_checked(reg, "broken oop " #reg ", " #msg, __FILE__, __LINE__)
+#define verify_oop_addr(addr) _verify_oop_addr_checked(addr, "broken oop addr " #addr, __FILE__, __LINE__)
 #define verify_method_ptr(reg) _verify_method_ptr(reg, "broken method " #reg, __FILE__, __LINE__)
 #define verify_klass_ptr(reg) _verify_klass_ptr(reg, "broken klass " #reg, __FILE__, __LINE__)
 
@@ -1011,12 +1025,12 @@ public:
   // Various forms of CAS
 
   void cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
-                          Label &suceed, Label *fail);
+                          Label &succeed, Label *fail);
   void cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
-                  Label &suceed, Label *fail);
+                  Label &succeed, Label *fail);
 
   void cmpxchgw(Register oldv, Register newv, Register addr, Register tmp,
-                  Label &suceed, Label *fail);
+                  Label &succeed, Label *fail);
 
   void atomic_add(Register prev, RegisterOrConstant incr, Register addr);
   void atomic_addw(Register prev, RegisterOrConstant incr, Register addr);
@@ -1072,13 +1086,18 @@ public:
     return ReservedCodeCacheSize > branch_range;
   }
 
+  // Check if branches to the the non nmethod section require a far jump
+  static bool codestub_branch_needs_far_jump() {
+    return CodeCache::max_distance_to_non_nmethod() > branch_range;
+  }
+
   // Jumps that can reach anywhere in the code cache.
   // Trashes tmp.
   void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
-  void far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
+  int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
 
-  static int far_branch_size() {
-    if (far_branches()) {
+  static int far_codestub_branch_size() {
+    if (codestub_branch_needs_far_jump()) {
       return 3 * 4;  // adrp, add, br
     } else {
       return 4;
@@ -1098,11 +1117,11 @@ public:
 
   void movoop(Register dst, jobject obj, bool immediate = false);
 
-  // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.
+  // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
   void kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp, Register tmp2, Register tmp3);
-  // CRC32 code for java.util.zip.CRC32C::updateBytes() instrinsic.
+  // CRC32 code for java.util.zip.CRC32C::updateBytes() intrinsic.
   void kernel_crc32c(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp, Register tmp2, Register tmp3);
@@ -1124,7 +1143,7 @@ public:
   void wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned imm,
                              add_sub_imm_insn insn1,
                              add_sub_reg_insn insn2);
-  // Seperate vsn which sets the flags
+  // Separate vsn which sets the flags
   void wrap_adds_subs_imm_insn(Register Rd, Register Rn, unsigned imm,
                              add_sub_imm_insn insn1,
                              add_sub_reg_insn insn2);
@@ -1228,13 +1247,13 @@ public:
   address read_polling_page(Register r, relocInfo::relocType rtype);
   void get_polling_page(Register dest, relocInfo::relocType rtype);
 
-  // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.
+  // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
   void update_byte_crc32(Register crc, Register val, Register table);
   void update_word_crc32(Register crc, Register v, Register tmp,
         Register table0, Register table1, Register table2, Register table3,
         bool upper = false);
 
-  address has_negatives(Register ary1, Register len, Register result);
+  address count_positives(Register ary1, Register len, Register result);
 
   address arrays_equals(Register a1, Register a2, Register result, Register cnt1,
                         Register tmp1, Register tmp2, Register tmp3, int elem_size);

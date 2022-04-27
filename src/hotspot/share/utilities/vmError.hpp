@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -122,7 +122,7 @@ class VMError : public AllStatic {
   static void check_failing_cds_access(outputStream* st, const void* siginfo);
 
   // Timeout handling.
-  // Hook functions for platform dependend functionality:
+  // Hook functions for platform dependent functionality:
   static void reporting_started();
   static void interrupt_reporting_thread();
 

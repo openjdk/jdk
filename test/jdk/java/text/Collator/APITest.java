@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class APITest extends CollatorTest {
         }
 
         logln("Create junk collation: ");
-        Locale abcd = new Locale("ab", "CD", "");
+        Locale abcd = Locale.of("ab", "CD");
         Collator junk = null;
         try {
             junk = Collator.getInstance(abcd);
@@ -145,7 +145,7 @@ public class APITest extends CollatorTest {
             errln("Default collation creation failed.");
         }
         Collator col2 = null;
-        Locale dk = new Locale("da", "DK", "");
+        Locale dk = Locale.of("da", "DK");
         try {
             col2 = Collator.getInstance(dk);
         } catch (Exception bar) {

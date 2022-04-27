@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,9 +189,8 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
   }
 
   MergeMemNode* mem = phase->transform(MergeMemNode::make(in_mem))->as_MergeMem();
-  PhaseIterGVN* igvn = phase->is_IterGVN();
-  if (igvn != NULL) {
-    igvn->_worklist.push(mem);
+  if (can_reshape) {
+    phase->is_IterGVN()->_worklist.push(mem);
   }
 
   if (!inst_src->klass_is_exact()) {
@@ -294,9 +293,17 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     uint header = arrayOopDesc::base_offset_in_bytes(dest_elem);
 
     src_offset = Compile::conv_I2X_index(phase, src_offset, ary_src->size());
-    dest_offset = Compile::conv_I2X_index(phase, dest_offset, ary_dest->size());
-    if (src_offset->is_top() || dest_offset->is_top()) {
+    if (src_offset->is_top()) {
       // Offset is out of bounds (the ArrayCopyNode will be removed)
+      return false;
+    }
+    dest_offset = Compile::conv_I2X_index(phase, dest_offset, ary_dest->size());
+    if (dest_offset->is_top()) {
+      // Offset is out of bounds (the ArrayCopyNode will be removed)
+      if (can_reshape) {
+        // record src_offset, so it can be deleted later (if it is dead)
+        phase->is_IterGVN()->_worklist.push(src_offset);
+      }
       return false;
     }
 
@@ -316,9 +323,6 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     disjoint_bases = true;
 
-    adr_src  = phase->transform(new AddPNode(base_src, base_src, src_offset));
-    adr_dest = phase->transform(new AddPNode(base_dest, base_dest, dest_offset));
-
     BasicType elem = ary_src->klass()->as_array_klass()->element_type()->basic_type();
     if (is_reference_type(elem)) {
       elem = T_OBJECT;
@@ -329,7 +333,10 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
       return false;
     }
 
-    // The address is offseted to an aligned address where a raw copy would start.
+    adr_src  = phase->transform(new AddPNode(base_src, base_src, src_offset));
+    adr_dest = phase->transform(new AddPNode(base_dest, base_dest, dest_offset));
+
+    // The address is offsetted to an aligned address where a raw copy would start.
     // If the clone copy is decomposed into load-stores - the address is adjusted to
     // point at where the array starts.
     const Type* toff = phase->type(src_offset);
@@ -566,6 +573,8 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (!prepare_array_copy(phase, can_reshape,
                           adr_src, base_src, adr_dest, base_dest,
                           copy_type, value_type, disjoint_bases)) {
+    assert(adr_src == NULL, "no node can be left behind");
+    assert(adr_dest == NULL, "no node can be left behind");
     return NULL;
   }
 
@@ -629,6 +638,10 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   if (!finish_transform(phase, can_reshape, ctl, mem)) {
+    if (can_reshape) {
+      // put in worklist, so that if it happens to be dead it is removed
+      phase->is_IterGVN()->_worklist.push(mem);
+    }
     return NULL;
   }
 

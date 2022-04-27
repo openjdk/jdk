@@ -122,12 +122,6 @@ import com.sun.tools.javac.util.Log;
  * The current implementation/workaround is to write errors and warnings to the "error"
  * stream and notes to the "output" stream.
  *
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- *
  * @see java.util.ResourceBundle
  * @see java.text.MessageFormat
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,7 @@ bool ConnectionGraph::compute_escape() {
         oop_fields_worklist.append(ptn->as_Field());
       }
     }
-    // Collect some interesting nodes for futher use.
+    // Collect some interesting nodes for further use.
     switch (n->Opcode()) {
       case Op_MergeMem:
         // Collect all MergeMem nodes to add memory slices for
@@ -635,7 +635,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       break;
     }
     case Op_AryEq:
-    case Op_HasNegatives:
+    case Op_CountPositives:
     case Op_StrComp:
     case Op_StrEquals:
     case Op_StrIndexOf:
@@ -773,7 +773,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
       break;
     }
     case Op_AryEq:
-    case Op_HasNegatives:
+    case Op_CountPositives:
     case Op_StrComp:
     case Op_StrEquals:
     case Op_StrIndexOf:
@@ -1554,7 +1554,7 @@ void ConnectionGraph::add_field_uses_to_worklist(FieldNode* field) {
     add_fields_to_worklist(field, base);
     // Check if the base was source object of arraycopy and go over arraycopy's
     // destination objects since values stored to a field of source object are
-    // accessable by uses (loads) of fields of destination objects.
+    // accessible by uses (loads) of fields of destination objects.
     if (base->arraycopy_src()) {
       for (UseIterator j(base); j.has_next(); j.next()) {
         PointsToNode* arycp = j.get();
@@ -3344,7 +3344,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           memnode_worklist.append_if_missing(use);
         } else if (!(op == Op_CmpP || op == Op_Conv2B ||
               op == Op_CastP2X || op == Op_StoreCM ||
-              op == Op_FastLock || op == Op_AryEq || op == Op_StrComp || op == Op_HasNegatives ||
+              op == Op_FastLock || op == Op_AryEq || op == Op_StrComp ||
+              op == Op_CountPositives ||
               op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
               op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
               op == Op_SubTypeCheck ||
@@ -3475,7 +3476,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.append_if_missing(use);
         } else if (!(BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use) ||
-              op == Op_AryEq || op == Op_StrComp || op == Op_HasNegatives ||
+              op == Op_AryEq || op == Op_StrComp || op == Op_CountPositives ||
               op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
               op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar)) {
           n->dump();

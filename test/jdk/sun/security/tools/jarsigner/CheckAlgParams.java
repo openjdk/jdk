@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8277474
+ * @bug 8277474 8283665
  * @summary jarsigner -verify should check if the algorithm parameters of
  *          its signature algorithm use disabled or legacy algorithms
  * @library /test/lib
@@ -56,29 +56,29 @@ public class CheckAlgParams {
                 .shouldHaveExitValue(0);
 
         Files.writeString(Files.createFile(Paths.get(JAVA_SECURITY_FILE)),
-                "jdk.jar.disabledAlgorithms=SHA256\n" +
+                "jdk.jar.disabledAlgorithms=SHA384\n" +
                 "jdk.security.legacyAlgorithms=\n");
 
         SecurityTools.jarsigner("-verify signeda.jar " +
                 "-J-Djava.security.properties=" +
                 JAVA_SECURITY_FILE +
                 " -keystore ks -storepass changeit -verbose -debug")
-                .shouldMatch("Digest algorithm: SHA-256.*(disabled)")
-                .shouldMatch("Signature algorithm: RSASSA-PSS using PSSParameterSpec.*hashAlgorithm=SHA-256.*(disabled)")
+                .shouldMatch("Digest algorithm: SHA-384.*(disabled)")
+                .shouldMatch("Signature algorithm: RSASSA-PSS using PSSParameterSpec.*hashAlgorithm=SHA-384.*(disabled)")
                 .shouldContain("The jar will be treated as unsigned")
                 .shouldHaveExitValue(0);
 
         Files.deleteIfExists(Paths.get(JAVA_SECURITY_FILE));
         Files.writeString(Files.createFile(Paths.get(JAVA_SECURITY_FILE)),
                 "jdk.jar.disabledAlgorithms=\n" +
-                "jdk.security.legacyAlgorithms=SHA256\n");
+                "jdk.security.legacyAlgorithms=SHA384\n");
 
         SecurityTools.jarsigner("-verify signeda.jar " +
                 "-J-Djava.security.properties=" +
                 JAVA_SECURITY_FILE +
                 " -keystore ks -storepass changeit -verbose -debug")
-                .shouldMatch("Digest algorithm: SHA-256.*(weak)")
-                .shouldMatch("Signature algorithm: RSASSA-PSS using PSSParameterSpec.*hashAlgorithm=SHA-256.*(weak)")
+                .shouldMatch("Digest algorithm: SHA-384.*(weak)")
+                .shouldMatch("Signature algorithm: RSASSA-PSS using PSSParameterSpec.*hashAlgorithm=SHA-384.*(weak)")
                 .shouldNotContain("The jar will be treated as unsigned")
                 .shouldHaveExitValue(0);
     }
