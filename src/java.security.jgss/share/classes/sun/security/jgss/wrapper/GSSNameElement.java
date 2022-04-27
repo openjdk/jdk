@@ -51,7 +51,7 @@ import javax.security.auth.kerberos.ServicePermission;
 public class GSSNameElement implements GSSNameSpi {
     private final Cleaner.Cleanable cleanable;
 
-    long pName = 0; // Pointer to the gss_name_t structure
+    final long pName; // Pointer to the gss_name_t structure
     private String printableName;
     private Oid printableType;
     final private GSSLibStub cStub;
@@ -96,6 +96,7 @@ public class GSSNameElement implements GSSNameSpi {
 
     private GSSNameElement() {
         printableName = "<DEFAULT ACCEPTOR>";
+        pName = 0;
         cleanable = null;
         cStub = null;
     }
@@ -292,9 +293,8 @@ public class GSSNameElement implements GSSNameSpi {
     }
 
     public void dispose() {
-        if (pName != 0 && cleanable != null) {
+        if (cleanable != null) {
             cleanable.clean();
-            pName = 0;
         }
     }
 
