@@ -887,53 +887,55 @@ REDUCE_LOGIC_OP_2L(eor, Xor, eor )
 dnl
 
 // ------------------------------ Vector insert ---------------------------------
+dnl VECTOR_INSERT_I($1,        $2,                     $3,          $4,   $5)
+dnl VECTOR_INSERT_I(rule_name, vector_length_in_bytes, reg_variant, vreg, ireg)
 define(`VECTOR_INSERT_I', `
-instruct insert$1$2`'(vec$3 dst, vec$3 src, iReg$4`'ORL2I($4) val, immI idx)
+instruct $1($4 dst, $4 src, $5 val, immI idx)
 %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($2));
+  predicate(ifelse($3, D, n->bottom_type()->is_vect()->element_basic_type() == T_LONG,
+            (n->bottom_type()->is_vect()->element_basic_type() == T_BYTE ||
+             n->bottom_type()->is_vect()->element_basic_type() == T_SHORT ||
+             n->bottom_type()->is_vect()->element_basic_type() == T_INT)));
   match(Set dst (VectorInsert (Binary src val) idx));
-  ins_cost(INSN_COST);
-  format %{ "orr    $dst, T$5, $src, $src\n\t"
-            "mov    $dst, iTYPE2SIMD($2), $idx, $val\t# insert into vector($1$2)" %}
+  ins_cost(2 * INSN_COST);
+  format %{ "orr    $dst, T$2B, $src, $src\n\t"
+            "mov    $dst, $3, $idx, $val\t`#' insert into vector ($3)" %}
   ins_encode %{
     if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
-      __ orr(as_FloatRegister($dst$$reg), __ T$5,
+      __ orr(as_FloatRegister($dst$$reg), __ T$2B,
              as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
     }
-    __ mov(as_FloatRegister($dst$$reg), __ iTYPE2SIMD($2), $idx$$constant, $val$$Register);
+    __ mov(as_FloatRegister($dst$$reg), __ ifelse($3, D, D, elemType_to_regVariant(Matcher::vector_element_basic_type(this))),
+           $idx$$constant, $val$$Register);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-dnl             $1  $2 $3 $4 $5
-VECTOR_INSERT_I(8,  B, D, I, 8B)
-VECTOR_INSERT_I(16, B, X, I, 16B)
-VECTOR_INSERT_I(4,  S, D, I, 8B)
-VECTOR_INSERT_I(8,  S, X, I, 16B)
-VECTOR_INSERT_I(2,  I, D, I, 8B)
-VECTOR_INSERT_I(4,  I, X, I, 16B)
-VECTOR_INSERT_I(2,  L, X, L, 16B)
+dnl             $1        $2  $3     $4    $5
+VECTOR_INSERT_I(insertID, 8,  B/H/S, vecD, iRegIorL2I)
+VECTOR_INSERT_I(insertIX, 16, B/H/S, vecX, iRegIorL2I)
+VECTOR_INSERT_I(insert2L, 16, D,     vecX, iRegL)
 dnl
 define(`VECTOR_INSERT_F', `
-instruct insert$1`'(vec$2 dst, vec$2 src, vReg$3 val, immI idx)
+instruct insert$3`'(vec$2 dst, vec$2 src, vReg$1 val, immI idx)
 %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($3));
+  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($1));
   match(Set dst (VectorInsert (Binary src val) idx));
-  ins_cost(INSN_COST);
+  ins_cost(2 * INSN_COST);
   effect(TEMP_DEF dst);
-  format %{ "orr    $dst, T$4, $src, $src\n\t"
-            "ins    $dst, $5, $val, $idx, 0\t# insert into vector($1)" %}
+  format %{ "orr    $dst, ifelse($2, D, T8B, T16B), $src, $src\n\t"
+            "ins    $dst, ifelse($1, F, S, D), $val, $idx, 0\t# insert into vector($3)" %}
   ins_encode %{
-    __ orr(as_FloatRegister($dst$$reg), __ T$4,
+    __ orr(as_FloatRegister($dst$$reg), __ ifelse($2, D, T8B, T16B),
            as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
-    __ ins(as_FloatRegister($dst$$reg), __ $5,
+    __ ins(as_FloatRegister($dst$$reg), __ ifelse($1, F, S, D),
            as_FloatRegister($val$$reg), $idx$$constant, 0);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-dnl             $1  $2 $3 $4   $5
-VECTOR_INSERT_F(2F, D, F, 8B,  S)
-VECTOR_INSERT_F(4F, X, F, 16B, S)
-VECTOR_INSERT_F(2D, X, D, 16B, D)
+dnl             $1 $2 $3
+VECTOR_INSERT_F(F, D, 2F)
+VECTOR_INSERT_F(F, X, 4F)
+VECTOR_INSERT_F(D, X, 2D)
 dnl
 
 // ------------------------------ Vector extract ---------------------------------
@@ -966,8 +968,15 @@ instruct extract$1$2`'(vReg$2 dst, vec$3 src, immI idx)
   ins_cost(INSN_COST);
   format %{ "ins   $dst, $4, $src, 0, $idx\t# extract from vector($1$2)" %}
   ins_encode %{
-    __ ins(as_FloatRegister($dst$$reg), __ $4,
-           as_FloatRegister($src$$reg), 0, $idx$$constant);
+    if ((0 == $idx$$constant) &&
+        (as_FloatRegister($dst$$reg) == as_FloatRegister($src$$reg))) {
+      /* empty */
+    } else if ($idx$$constant == 0) {
+      __ ifelse($2, F, fmovs, fmovd)(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg));
+    } else {
+      __ ins(as_FloatRegister($dst$$reg), __ $4,
+             as_FloatRegister($src$$reg), 0, $idx$$constant);
+    }
   %}
   ins_pipe(pipe_class_default);
 %}')dnl
