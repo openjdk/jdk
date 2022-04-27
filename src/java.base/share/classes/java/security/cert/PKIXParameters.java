@@ -336,10 +336,10 @@ public class PKIXParameters implements CertPathParameters {
      * {@link #addCertPathChecker addCertPathChecker} or {@link
      * #setCertPathCheckers setCertPathCheckers} methods).
      * <p>
-     * However, if a {@code PKIXRevocationChecker} is passed in as a parameter
-     * via the {@code addCertPathChecker} or {@code setCertPathCheckers}
-     * methods, it will be used to check revocation irrespective of the setting
-     * of the RevocationEnabled flag.
+     * Note that when a {@code PKIXRevocationChecker} is passed in as a
+     * parameter via the {@code addCertPathChecker} or
+     * {@code setCertPathCheckers} methods, it will be used to check
+     * revocation irrespective of the setting of the RevocationEnabled flag.
      *
      * @param val the new value of the RevocationEnabled flag
      */
