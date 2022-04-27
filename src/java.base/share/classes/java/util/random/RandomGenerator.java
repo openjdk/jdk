@@ -498,7 +498,7 @@ public interface RandomGenerator {
      * @return a pseudorandom {@code float} value between zero (inclusive) and one (exclusive)
      *
      * @implSpec The default implementation uses the {@link Float#PRECISION}
-     * high-order bits from a call to {@link RandomGenerator#nextInt() nextInt}().
+     * high-order bits from a call to {@link RandomGenerator#nextInt() nextInt()}.
      */
     default float nextFloat() {
         return (nextInt() >>> (Float.SIZE - Float.PRECISION)) * 0x1.0p-24f;
@@ -564,7 +564,7 @@ public interface RandomGenerator {
      *         and one (exclusive)
      *
      * @implSpec The default implementation uses the {@link Double#PRECISION}
-     * high-order bits from a call to {@link RandomGenerator#nextLong nextLong}().
+     * high-order bits from a call to {@link RandomGenerator#nextLong() nextLong()}.
      */
     default double nextDouble() {
         return (nextLong() >>> (Double.SIZE - Double.PRECISION)) * 0x1.0p-53;
