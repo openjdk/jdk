@@ -1811,6 +1811,7 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["uzp2",    "__ sve_uzp2(p0, __ D, p0, p1);",                     "uzp2\tp0.d, p0.d, p1.d"],
                         ["punpklo", "__ sve_punpklo(p1, p0);",                            "punpklo\tp1.h, p0.b"],
                         ["punpkhi", "__ sve_punpkhi(p1, p0);",                            "punpkhi\tp1.h, p0.b"],
+                        ["ext",     "__ sve_ext(z17, z16, 63);",                          "ext\tz17.b, z17.b, z16.b, #63"],
 ])
 
 print "\n// FloatImmediateOp"

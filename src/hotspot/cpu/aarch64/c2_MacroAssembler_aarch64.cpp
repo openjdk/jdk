@@ -960,10 +960,10 @@ void C2_MacroAssembler::bytemask_compress(Register dst) {
 // in dst, at most the first 64 lane elements.
 // Clobbers: rscratch1
 void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
-                                         FloatRegister vtmp1, FloatRegister vtmp2, PRegister pgtmp) {
-  assert(pgtmp->is_governing(), "This register has to be a governing predicate register.");
+                                         FloatRegister vtmp1, FloatRegister vtmp2) {
   assert(lane_cnt <= 64 && is_power_of_2(lane_cnt), "Unsupported lane count");
   assert_different_registers(dst, rscratch1);
+  assert_different_registers(vtmp1, vtmp2);
 
   Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
 
@@ -981,7 +981,7 @@ void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType 
   // Repeat on higher bytes and join the results.
   // Compress 8 bytes in each iteration.
   for (int idx = 1; idx < (lane_cnt / 8); idx++) {
-    idx == 1 ? fmovhid(rscratch1, vtmp1) : sve_extract(rscratch1, D, pgtmp, vtmp1, idx);
+    sve_extract_integral(rscratch1, D, vtmp1, idx, /* is_signed */ false, vtmp2);
     bytemask_compress(rscratch1);
     orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
   }
@@ -1268,6 +1268,21 @@ void C2_MacroAssembler::sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, i
   }
 }
 
+// Extract a scalar element from an sve vector at position 'idx'.
+// The input elements in src are expected to be of integral type.
+void C2_MacroAssembler::sve_extract_integral(Register dst, SIMD_RegVariant size, FloatRegister src, int idx,
+                                             bool is_signed, FloatRegister vtmp) {
+  assert(UseSVE > 0 && size != Q, "unsupported");
+  assert(!(is_signed && size == D), "signed extract (D) not supported.");
+  if (regVariant_to_elemBits(size) * idx < 128) { // generate lower cost NEON instruction
+    is_signed ? smov(dst, src, size, idx) : umov(dst, src, size, idx);
+  } else {
+    sve_orr(vtmp, src, src);
+    sve_ext(vtmp, vtmp, idx << size);
+    is_signed ? smov(dst, vtmp, size, 0) : umov(dst, vtmp, size, 0);
+  }
+}
+
 // java.lang.Math::round intrinsics
 
 void C2_MacroAssembler::vector_round_neon(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
@@ -1337,4 +1352,3 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
   sve_fcvtzs(dst, T, ptrue, dst, T);
   // result in dst
 }
-
