@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ WEPOLL_EXPORT int epoll_wait(HANDLE ephnd,
 #define WIN32_LEAN_AND_MEAN
 
 #undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
+#define _WIN32_WINNT 0x0601
 
 #include <winsock2.h>
 #include <ws2tcpip.h>

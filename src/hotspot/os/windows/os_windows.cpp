@@ -23,7 +23,8 @@
  */
 
 // Must be at least Windows Vista or Server 2008 to use InitOnceExecuteOnce
-#define _WIN32_WINNT 0x0600
+// we define the macro for Windows 7 APIs to be on the same level with JDK libs
+#define _WIN32_WINNT 0x0601
 
 // no precompiled headers
 #include "jvm.h"
