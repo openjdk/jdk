@@ -66,15 +66,15 @@ public class TestMemoryAwareness {
 
             testOperatingSystemMXBeanAwareness(
                 "100M", Integer.toString(((int) Math.pow(2, 20)) * 100),
-                    "150M", Integer.toString(((int) Math.pow(2, 20)) * (150 - 100))
+                "150M", Integer.toString(((int) Math.pow(2, 20)) * (150 - 100))
             );
             testOperatingSystemMXBeanAwareness(
                 "128M", Integer.toString(((int) Math.pow(2, 20)) * 128),
-                    "256M", Integer.toString(((int) Math.pow(2, 20)) * (256 - 128))
+                "256M", Integer.toString(((int) Math.pow(2, 20)) * (256 - 128))
             );
             testOperatingSystemMXBeanAwareness(
                 "1G", Integer.toString(((int) Math.pow(2, 20)) * 1024),
-                    "1500M", Integer.toString(((int) Math.pow(2, 20)) * (1500 - 1024))
+                "1500M", Integer.toString(((int) Math.pow(2, 20)) * (1500 - 1024))
             );
         } finally {
             if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
