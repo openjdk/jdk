@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8284910
- * @summary Check that the cleaner is not bound to the PasswordCallback object. 
+ * @summary Check that the cleaner is not bound to the PasswordCallback object
  */
 
 import javax.security.auth.callback.PasswordCallback;
