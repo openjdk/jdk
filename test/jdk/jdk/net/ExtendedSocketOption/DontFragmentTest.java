@@ -38,7 +38,10 @@ import static jdk.net.ExtendedSocketOptions.IP_DONTFRAGMENT;
 
 public class DontFragmentTest {
 
+    private static boolean isMacos;
+
     public static void main(String[] args) throws IOException {
+        isMacos = System.getProperty("os.name").equals("Mac OS X");
         testDatagramChannel();
         StandardProtocolFamily fam = args[0].equals("ipv4") ? INET : INET6;
         System.out.println("Family = " + fam);
@@ -55,10 +58,32 @@ public class DontFragmentTest {
         }
     }
 
+    /**
+     * Returns true if the option is supported, false if not supported.
+     * Throws exception if it is not supported, but should be
+     */
+    static boolean checkSupported(DatagramChannel c1) throws IOException {
+        boolean supported = c1.supportedOptions().contains(IP_DONTFRAGMENT);
+
+        if (!isMacos && !supported) {
+            throw new RuntimeException("IP_DONTFRAGMENT should be supported");
+        }
+        return supported;
+    }
+
+    static boolean checkSupported(DatagramSocket c1) throws IOException {
+        boolean supported = c1.supportedOptions().contains(IP_DONTFRAGMENT);
+
+        if (!isMacos && !supported) {
+            throw new RuntimeException("IP_DONTFRAGMENT should be supported");
+        }
+        return supported;
+    }
+
     public static void testDatagramChannel() throws IOException {
         try (DatagramChannel c1 = DatagramChannel.open()) {
 
-            if (!c1.supportedOptions().contains(IP_DONTFRAGMENT)) {
+            if (!checkSupported(c1)) {
                 return;
             }
             if (c1.getOption(IP_DONTFRAGMENT)) {
@@ -78,7 +103,7 @@ public class DontFragmentTest {
     public static void testDatagramChannel(String[] args, ProtocolFamily fam) throws IOException {
         try (DatagramChannel c1 = DatagramChannel.open(fam)) {
 
-            if (!c1.supportedOptions().contains(IP_DONTFRAGMENT)) {
+            if (!checkSupported(c1)) {
                 return;
             }
             if (c1.getOption(IP_DONTFRAGMENT)) {
@@ -96,7 +121,7 @@ public class DontFragmentTest {
     }
 
     public static void testDatagramSocket(DatagramSocket c1) throws IOException {
-        if (!c1.supportedOptions().contains(IP_DONTFRAGMENT)) {
+        if (!checkSupported(c1)) {
             return;
         }
         if (c1.getOption(IP_DONTFRAGMENT)) {
