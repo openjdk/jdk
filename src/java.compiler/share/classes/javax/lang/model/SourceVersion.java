@@ -131,7 +131,7 @@ public enum SourceVersion {
      * JSR 175: A Metadata Facility for the Java&trade; Programming Language</a>
      * @see <a href="https://jcp.org/en/jsr/detail?id=201">
      * JSR 201: Extending the Java&trade; Programming Language with Enumerations,
-     * Autoboxing, Enhanced for loops and Static</a>
+     * Autoboxing, Enhanced for loops and Static Import</a>
      */
     RELEASE_5,
 
