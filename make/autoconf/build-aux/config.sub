@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,13 @@ fi
 # Allow msys2
 if echo $* | grep pc-msys >/dev/null ; then
     echo $*
+    exit
+fi
+
+# Canonicalize for riscv64 which autoconf-config.sub doesn't handle
+if echo $* | grep '^riscv64-linux' >/dev/null ; then
+    result=`echo $@ | sed 's/^riscv64-linux/riscv64-unknown-linux/'`
+    echo $result
     exit
 fi
 
