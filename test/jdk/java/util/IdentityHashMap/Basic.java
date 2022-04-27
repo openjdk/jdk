@@ -58,7 +58,7 @@ public class Basic {
         return b2 -> b1 == b2;
     }
 
-    Predicate<Map.Entry<Box, Box>> isIdenticalEntry(Map.Entry<Box, Box> e1) {
+    Predicate<Map.Entry<Box, Box>> hasIdenticalKeyValue(Map.Entry<Box, Box> e1) {
         return e2 -> e1.getKey() == e2.getKey() && e1.getValue() == e2.getValue();
     }
 
@@ -277,9 +277,9 @@ public class Basic {
         @SuppressWarnings("unchecked")
         Map.Entry<Box, Box>[] array = entrySet.toArray(Map.Entry[]::new);
         int[] indexes = {
-            indexOf(array, isIdenticalEntry(Map.entry(k1a, v1a))),
-            indexOf(array, isIdenticalEntry(Map.entry(k1b, v1b))),
-            indexOf(array, isIdenticalEntry(Map.entry(k2,  v2))),
+            indexOf(array, hasIdenticalKeyValue(Map.entry(k1a, v1a))),
+            indexOf(array, hasIdenticalKeyValue(Map.entry(k1b, v1b))),
+            indexOf(array, hasIdenticalKeyValue(Map.entry(k2,  v2))),
         };
         Arrays.sort(indexes);
         assertTrue(Arrays.equals(new int[] { 0, 1, 2 }, indexes));
@@ -495,9 +495,9 @@ public class Basic {
         map.forEach((k, v) -> entries[index[0]++] = Map.entry(k, v));
 
         int[] indexes = {
-            indexOf(entries, isIdenticalEntry(Map.entry(k1a, v1a))),
-            indexOf(entries, isIdenticalEntry(Map.entry(k1b, v1b))),
-            indexOf(entries, isIdenticalEntry(Map.entry(k2,  v2))),
+            indexOf(entries, hasIdenticalKeyValue(Map.entry(k1a, v1a))),
+            indexOf(entries, hasIdenticalKeyValue(Map.entry(k1b, v1b))),
+            indexOf(entries, hasIdenticalKeyValue(Map.entry(k2,  v2))),
         };
         Arrays.sort(indexes);
         assertTrue(Arrays.equals(new int[] { 0, 1, 2 }, indexes));
@@ -519,9 +519,9 @@ public class Basic {
         Map.Entry<Box, Box>[] members = (Map.Entry<Box, Box>[]) map.entrySet().toArray(Map.Entry[]::new);
 
         int[] indexes = {
-            indexOf(members, isIdenticalEntry(replacements[0])),
-            indexOf(members, isIdenticalEntry(replacements[1])),
-            indexOf(members, isIdenticalEntry(replacements[2])),
+            indexOf(members, hasIdenticalKeyValue(replacements[0])),
+            indexOf(members, hasIdenticalKeyValue(replacements[1])),
+            indexOf(members, hasIdenticalKeyValue(replacements[2])),
         };
         Arrays.sort(indexes);
         assertTrue(Arrays.equals(new int[] { 0, 1, 2 }, indexes));
