@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.invoke.ConstantBootstraps;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.StringConcatFactory;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.List;
@@ -54,14 +55,16 @@ import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.vm.ci.hotspot.HotSpotObjectConstant;
+import jdk.vm.ci.hotspot.HotSpotConstantPool;
 import jdk.vm.ci.meta.ConstantPool;
+import jdk.vm.ci.meta.ConstantPool.BootstrapMethodInvocation;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCI;
 
 /**
- * Tests support for Dynamic constants.
+ * Tests support for Dynamic constants and {@link jdk.vm.ci.meta.ConstantPool#lookupBootstrapMethodInvocation}.
  *
  * @see "https://openjdk.java.net/jeps/309"
  * @see "https://bugs.openjdk.java.net/browse/JDK-8177279"
@@ -145,13 +148,14 @@ public class TestDynamicConstant implements Opcodes {
             Handle invokeHandle = new Handle(H_INVOKESTATIC, constantBootstrapsClassInternalName, "invoke", invokeSig, false);
 
             String desc = type.getDescriptor();
+            ConstantDynamic condy;
             if (condyType == CondyType.CALL_DIRECT_BSM) {
                 // Example: int TestDynamicConstant.getIntBSM(MethodHandles.Lookup l, String name,
                 // Class<?> type)
                 String sig = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)" + desc;
                 Handle handle = new Handle(H_INVOKESTATIC, testClassInternalName, getter + "BSM", sig, false);
 
-                ConstantDynamic condy = new ConstantDynamic("const", desc, handle);
+                condy = new ConstantDynamic("const", desc, handle);
                 MethodVisitor run = cw.visitMethod(PUBLIC_STATIC, "run", "()" + desc, null, null);
                 run.visitLdcInsn(condy);
                 run.visitInsn(type.getOpcode(IRETURN));
@@ -161,7 +165,7 @@ public class TestDynamicConstant implements Opcodes {
                 // Example: int TestDynamicConstant.getInt()
                 Handle handle = new Handle(H_INVOKESTATIC, testClassInternalName, getter, "()" + desc, false);
 
-                ConstantDynamic condy = new ConstantDynamic("const", desc, invokeHandle, handle);
+                condy = new ConstantDynamic("const", desc, invokeHandle, handle);
                 MethodVisitor run = cw.visitMethod(PUBLIC_STATIC, "run", "()" + desc, null, null);
                 run.visitLdcInsn(condy);
                 run.visitInsn(type.getOpcode(IRETURN));
@@ -177,6 +181,7 @@ public class TestDynamicConstant implements Opcodes {
 
                 ConstantDynamic condy1 = new ConstantDynamic("const1", desc, invokeHandle, handle1);
                 ConstantDynamic condy2 = new ConstantDynamic("const2", desc, invokeHandle, handle2, condy1, condy1);
+                condy = condy2;
 
                 MethodVisitor run = cw.visitMethod(PUBLIC_STATIC, "run", "()" + desc, null, null);
                 run.visitLdcInsn(condy2);
@@ -184,6 +189,18 @@ public class TestDynamicConstant implements Opcodes {
                 run.visitMaxs(0, 0);
                 run.visitEnd();
             }
+
+            MethodVisitor concat = cw.visitMethod(PUBLIC_STATIC, "concat", "()Ljava/lang/String;", null, null);
+            String sig = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;";
+            Handle handle = new Handle(H_INVOKESTATIC, Type.getInternalName(StringConcatFactory.class), "makeConcatWithConstants", sig, false);
+            String recipe = "var arg=\u0001, const arg=\u0002";
+            Object[] bsmArgs = {recipe};
+            concat.visitLdcInsn(condy);
+            concat.visitInvokeDynamicInsn("do_concat", "(" + desc + ")Ljava/lang/String;", handle, bsmArgs);
+            concat.visitInsn(ARETURN);
+            concat.visitMaxs(0, 0);
+            concat.visitEnd();
+
             cw.visitEnd();
             return cw.toByteArray();
         }
@@ -234,6 +251,10 @@ public class TestDynamicConstant implements Opcodes {
                         String.class,
                         List.class
         };
+
+        Method getTagAt = HotSpotConstantPool.class.getDeclaredMethod("getTagAt", int.class);
+        getTagAt.setAccessible(true);
+
         for (Class<?> type : types) {
             for (CondyType condyType : CondyType.values()) {
                 TestGenerator e = new TestGenerator(type, condyType);
@@ -241,8 +262,6 @@ public class TestDynamicConstant implements Opcodes {
                 Method m = testClass.getDeclaredMethod("run");
                 ResolvedJavaMethod run = metaAccess.lookupJavaMethod(m);
                 ConstantPool cp = run.getConstantPool();
-                Method getTagAt = cp.getClass().getDeclaredMethod("getTagAt", int.class);
-                getTagAt.setAccessible(true);
                 Object lastConstant = null;
                 for (int cpi = 1; cpi < cp.length(); cpi++) {
                     String tag = String.valueOf(getTagAt.invoke(cp, cpi));
@@ -262,6 +281,39 @@ public class TestDynamicConstant implements Opcodes {
                     actual = ((HotSpotObjectConstant) lastConstant).asObject(type);
                 }
                 Assert.assertEquals(actual, expect, m + ":");
+
+                testLookupBootstrapMethodInvocation(condyType, metaAccess, testClass, getTagAt);
+            }
+        }
+    }
+
+    /**
+     * Tests {@link jdk.vm.ci.meta.ConstantPool#lookupBootstrapMethodInvocation}.
+     */
+    private void testLookupBootstrapMethodInvocation(CondyType condyType, MetaAccessProvider metaAccess, Class<?> testClass, Method getTagAt) throws Throwable {
+        Method m = testClass.getDeclaredMethod("concat");
+        ResolvedJavaMethod concat = metaAccess.lookupJavaMethod(m);
+        ConstantPool cp = concat.getConstantPool();
+        Object lastConstant = null;
+        for (int cpi = 1; cpi < cp.length(); cpi++) {
+            String tag = String.valueOf(getTagAt.invoke(cp, cpi));
+            BootstrapMethodInvocation bsmi = cp.lookupBootstrapMethodInvocation(cpi, -1);
+            if (tag.equals("InvokeDynamic") || tag.equals("Dynamic")) {
+                Assert.assertNotNull(bsmi);
+                String bsm = bsmi.getMethod().format("%H.%n");
+                if (tag.equals("InvokeDynamic")) {
+                    Assert.assertTrue(bsmi.isInvokeDynamic());
+                    Assert.assertEquals(bsm, "java.lang.invoke.StringConcatFactory.makeConcatWithConstants");
+                } else {
+                    Assert.assertFalse(bsmi.isInvokeDynamic());
+                    if (condyType == CondyType.CALL_DIRECT_BSM) {
+                        Assert.assertTrue(bsm.startsWith("jdk.vm.ci.hotspot.test.TestDynamicConstant.get") && bsm.endsWith("BSM"), bsm);
+                    } else {
+                        Assert.assertEquals(bsm, "java.lang.invoke.ConstantBootstraps.invoke");
+                    }
+                }
+            } else {
+                Assert.assertNull(bsmi, String.valueOf(bsmi));
             }
         }
     }
