@@ -648,9 +648,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             if (attr.getSuffix() != null) {
                 try {
                     return info.get(attr.getSuffix());
-                } catch (IOException e) {
-                    throw new CertificateParsingException(e.toString());
-                } catch (CertificateException e) {
+                } catch (IOException | CertificateException e) {
                     throw new CertificateParsingException(e.toString());
                 }
             } else {
@@ -971,7 +969,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     }
 
     /**
-     * Gets the DER encoded certificate informations, the
+     * Gets the DER encoded certificate information, the
      * <code>tbsCertificate</code> from this certificate.
      * This can be used to verify the signature independently.
      *
@@ -1773,7 +1771,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     /************************************************************/
 
     /*
-     * Cert is a SIGNED ASN.1 macro, a three elment sequence:
+     * Cert is a SIGNED ASN.1 macro, a three element sequence:
      *
      *  - Data to be signed (ToBeSigned) -- the "raw" cert
      *  - Signature algorithm (SigAlgId)

@@ -55,7 +55,7 @@ public:
          Memory,                // Chunk of memory is being loaded from
          Address,               // Actually address, derived from base
          ValueIn,               // Value to store
-         OopStore               // Preceeding oop store, only in StoreCM
+         OopStore               // Preceding oop store, only in StoreCM
   };
   typedef enum { unordered = 0,
                  acquire,       // Load has to acquire or be succeeded by MemBarAcquire.
@@ -774,7 +774,7 @@ public:
 //------------------------------StoreCMNode-----------------------------------
 // Store card-mark byte to memory for CM
 // The last StoreCM before a SafePoint must be preserved and occur after its "oop" store
-// Preceeding equivalent StoreCMs may be eliminated.
+// Preceding equivalent StoreCMs may be eliminated.
 class StoreCMNode : public StoreNode {
  private:
   virtual uint hash() const { return StoreNode::hash() + _oop_alias_idx; }
@@ -1173,7 +1173,7 @@ public:
 
 //------------------------------MemBar-----------------------------------------
 // There are different flavors of Memory Barriers to match the Java Memory
-// Model.  Monitor-enter and volatile-load act as Aquires: no following ref
+// Model.  Monitor-enter and volatile-load act as Acquires: no following ref
 // can be moved to before them.  We insert a MemBar-Acquire after a FastLock or
 // volatile-load.  Monitor-exit and volatile-store act as Release: no
 // preceding ref can be moved to after them.  We insert a MemBar-Release
@@ -1254,7 +1254,7 @@ public:
 
 // "Acquire" - no following ref can move before (but earlier refs can
 // follow, like an early Load stalled in cache).  Requires multi-cpu
-// visibility.  Inserted independ of any load, as required
+// visibility.  Inserted independent of any load, as required
 // for intrinsic Unsafe.loadFence().
 class LoadFenceNode: public MemBarNode {
 public:

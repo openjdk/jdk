@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,10 +133,10 @@ class InstanceKlass: public Klass {
   friend class CompileReplay;
 
  public:
-  static const KlassID ID = InstanceKlassID;
+  static const KlassKind Kind = InstanceKlassKind;
 
  protected:
-  InstanceKlass(const ClassFileParser& parser, KlassID id = ID);
+  InstanceKlass(const ClassFileParser& parser, KlassKind kind = Kind);
 
  public:
   InstanceKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
@@ -148,7 +148,7 @@ class InstanceKlass: public Klass {
     loaded,                             // loaded and inserted in class hierarchy (but not linked yet)
     linked,                             // successfully linked/verified (but not initialized yet)
     being_initialized,                  // currently running class initializer
-    fully_initialized,                  // initialized (successfull final state)
+    fully_initialized,                  // initialized (successful final state)
     initialization_error                // error happened during initialization
   };
 

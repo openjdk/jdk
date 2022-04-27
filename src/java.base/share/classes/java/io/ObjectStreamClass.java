@@ -80,7 +80,7 @@ import static java.io.ObjectStreamField.*;
  *      <cite>Java Object Serialization Specification,</cite> Section 4, "Class Descriptors"</a>
  * @since   1.1
  */
-public class ObjectStreamClass implements Serializable {
+public final class ObjectStreamClass implements Serializable {
 
     /** serialPersistentFields value indicating no serializable fields */
     public static final ObjectStreamField[] NO_FIELDS =
