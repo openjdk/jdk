@@ -266,12 +266,27 @@ class InternalAddress: public Address {
 class Assembler : public AbstractAssembler {
 public:
 
-  enum { instruction_size = 4 };
+  enum {
+    instruction_size = 4,
+    compressed_instruction_size = 2,
+  };
+
+  // instruction must start at passed address
+  static bool is_compressed_instr(address instr) {
+    if (UseRVC && (((uint16_t *)instr)[0] & 0b11) != 0b11) {
+      // 16-bit instructions end with 0b00, 0b01, and 0b10
+      return true;
+    }
+    // 32-bit instructions end with 0b11
+    return false;
+  }
 
   //---<  calculate length of instruction  >---
   // We just use the values set above.
   // instruction must start at passed address
-  static unsigned int instr_len(unsigned char *instr) { return instruction_size; }
+  static unsigned int instr_len(address instr) {
+    return is_compressed_instr(instr) ? compressed_instruction_size : instruction_size;
+  }
 
   //---<  longest instructions  >---
   static unsigned int instr_maxlen() { return instruction_size; }
