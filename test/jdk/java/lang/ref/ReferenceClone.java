@@ -47,7 +47,9 @@ public class ReferenceClone {
         CloneableReference ref = new CloneableReference(o);
         try {
             ref.clone();
-        } catch (CloneNotSupportedException e) {}
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException("CloneableReference::clone should not throw CloneNotSupportedException");
+        }
     }
 
     private void assertCloneNotSupported(CloneableRef ref) {
