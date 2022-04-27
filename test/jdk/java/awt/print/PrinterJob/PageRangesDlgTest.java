@@ -34,6 +34,7 @@ import javax.print.attribute.standard.PageRanges;
 /*
  * @test
  * @bug 8061267
+ * @key printer
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary The specified page range should be displayed in the dialog
