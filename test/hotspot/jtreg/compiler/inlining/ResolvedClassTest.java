@@ -25,7 +25,7 @@
  * @test
  * @bug 8279515
  *
- * @requires vm.flagless
+ * @requires vm.flagless & vm.compiler1.enabled & vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  *
