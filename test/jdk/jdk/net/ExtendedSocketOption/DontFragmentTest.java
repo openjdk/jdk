@@ -23,8 +23,10 @@
 
 /*
  * @test
- * @bug 8243099
+ * @bug 8243099 8285671
  * @modules jdk.net
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main/othervm DontFragmentTest ipv4
  * @run main/othervm DontFragmentTest ipv6
  */
@@ -32,6 +34,7 @@
 import java.io.IOException;
 import java.net.*;
 import java.nio.channels.*;
+import jdk.test.lib.Platform;
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static jdk.net.ExtendedSocketOptions.IP_DONTFRAGMENT;
@@ -41,7 +44,7 @@ public class DontFragmentTest {
     private static boolean isMacos;
 
     public static void main(String[] args) throws IOException {
-        isMacos = System.getProperty("os.name").equals("Mac OS X");
+        isMacos = Platform.isOSX();
         testDatagramChannel();
         StandardProtocolFamily fam = args[0].equals("ipv4") ? INET : INET6;
         System.out.println("Family = " + fam);
