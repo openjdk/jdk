@@ -400,11 +400,22 @@ static inline bool target_needs_far_branch(address addr) {
 }
 
 static inline bool target_needs_trampoline(Address entry) {
-  // Java method call target can have different compiled versions of a method: C2 or C1.
-  // If CodeCache size > 128M, such calls must have reserved trampolines for the case:
-  // C2 compiled method calls C1 compiled method.
-  return  (entry.rspec().type() == relocInfo::runtime_call_type) ? target_needs_far_branch(entry.target())
-                                                                 : MacroAssembler::far_branches();
+  if (entry.rspec().type() == relocInfo::runtime_call_type) {
+    // Runtime calls are statically bound.
+    // Once they are generated neither a caller nor a callee address cannot be changed.
+    // Check whether a far branch is needed to reach the target.
+    return target_needs_far_branch(entry.target());
+  } else {
+    assert(entry.rspec().type() == relocInfo::opt_virtual_call_type
+           || entry.rspec().type() == relocInfo::static_call_type
+           || entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type: not Java method call");
+    // Other calls are Java calls.
+    // A callee address can be changed at any time as a result of
+    // callee deoptimization or the callee being C1 compiled has become C2 compiled.
+    // If CodeCache size > 128M, such calls must have reserved trampolines for cases
+    // when a new callee address out of 128M range.
+    return MacroAssembler::far_branches();
+  }
 }
 
 void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {

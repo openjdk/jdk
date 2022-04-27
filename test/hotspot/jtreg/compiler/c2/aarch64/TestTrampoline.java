@@ -52,19 +52,17 @@ public class TestTrampoline {
         command.add("-XX:+UnlockDiagnosticVMOptions");
         command.add("-Xbatch");
         command.add("-XX:CompileCommand=print," + testClassName + "::" + "test");
+        // ReservedCodeCacheSize=130M causes generation of trampolines.
         // As the non-nmethod segment is put between other two segments,
-        // ReservedCodeCacheSize=240M guarantees no trampolines for runtime calls to the non-nmethod segment.
-        command.add("-XX:ReservedCodeCacheSize=240M");
+        // runtime calls will be within 128M range.
+        // So there is no need for trampolines for runtime calls.
+        command.add("-XX:ReservedCodeCacheSize=130M");
+        command.add("-XX:+SegmentedCodeCache");
         command.add(testClassName);
-
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(command);
-
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
-
         analyzer.shouldHaveExitValue(0);
-
         System.out.println(analyzer.getOutput());
-
         checkOutput(analyzer);
     }
 
