@@ -860,8 +860,6 @@ public enum HtmlStyle {
      * The class of the UI element to copy snippet content to the clipboard.
      */
     snippetCopy,
-	
-	refList, // TEMP location, for now
 
     /**
      * The class of text highlighted with the type {@code bold}.
@@ -980,6 +978,11 @@ public enum HtmlStyle {
      * the package uses page.
      */
     packageUses,
+
+    /**
+     * The class for the list of references to an external specification.
+     */
+    refList,
 
     /**
      * The class of a {@code section} element for a package in the serialized
