@@ -607,7 +607,7 @@ public:
   // point to a new object and may become externally visible.
   static StoreNode* make(PhaseGVN& gvn, Node* c, Node* mem, Node* adr,
                          const TypePtr* at, Node* val, BasicType bt,
-                         MemOrd mo = MemNode::unordered, bool require_atomic_access = false);
+                         MemOrd mo, bool require_atomic_access = false);
 
   virtual uint hash() const;    // Check the type
 

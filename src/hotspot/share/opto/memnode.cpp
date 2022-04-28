@@ -3157,7 +3157,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
     Node* adr = new AddPNode(dest, dest, phase->MakeConX(offset));
     adr = phase->transform(adr);
     const TypePtr* atp = TypeRawPtr::BOTTOM;
-    mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT);
+    mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
     mem = phase->transform(mem);
     offset += BytesPerInt;
   }
@@ -3216,7 +3216,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
     Node* adr = new AddPNode(dest, dest, phase->MakeConX(done_offset));
     adr = phase->transform(adr);
     const TypePtr* atp = TypeRawPtr::BOTTOM;
-    mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT);
+    mem = StoreNode::make(*phase, ctl, mem, adr, atp, phase->zerocon(T_INT), T_INT, MemNode::unordered);
     mem = phase->transform(mem);
     done_offset += BytesPerInt;
   }
@@ -4240,14 +4240,14 @@ InitializeNode::coalesce_subword_stores(intptr_t header_size,
       ++new_long;
       off[nst] = offset;
       st[nst++] = StoreNode::make(*phase, ctl, zmem, adr, atp,
-                                  phase->longcon(con), T_LONG);
+                                  phase->longcon(con), T_LONG, MemNode::unordered);
     } else {
       // Omit either if it is a zero.
       if (con0 != 0) {
         ++new_int;
         off[nst]  = offset;
         st[nst++] = StoreNode::make(*phase, ctl, zmem, adr, atp,
-                                    phase->intcon(con0), T_INT);
+                                    phase->intcon(con0), T_INT, MemNode::unordered);
       }
       if (con1 != 0) {
         ++new_int;
@@ -4255,7 +4255,7 @@ InitializeNode::coalesce_subword_stores(intptr_t header_size,
         adr = make_raw_address(offset, phase);
         off[nst]  = offset;
         st[nst++] = StoreNode::make(*phase, ctl, zmem, adr, atp,
-                                    phase->intcon(con1), T_INT);
+                                    phase->intcon(con1), T_INT, MemNode::unordered);
       }
     }
 

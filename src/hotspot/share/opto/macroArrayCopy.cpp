@@ -959,7 +959,7 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
         // Store a zero to the immediately preceding jint:
         Node* x1 = transform_later(new AddXNode(start, MakeConX(-bump_bit)) );
         Node* p1 = basic_plus_adr(dest, x1);
-        mem = StoreNode::make(_igvn, ctrl, mem, p1, adr_type, intcon(0), T_INT);
+        mem = StoreNode::make(_igvn, ctrl, mem, p1, adr_type, intcon(0), T_INT, MemNode::unordered);
         mem = transform_later(mem);
       }
     }
@@ -1019,7 +1019,8 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
                          TypeInt::INT, T_INT, MemNode::unordered, LoadNode::DependsOnlyOnTest,
                          false /*require_atomic_access*/, false /*unaligned*/, is_mismatched));
       Node* st = transform_later(
-          StoreNode::make(_igvn, *ctrl, (*mem)->memory_at(d_alias_idx), dptr, adr_type, sval, T_INT));
+          StoreNode::make(_igvn, *ctrl, (*mem)->memory_at(d_alias_idx), dptr, adr_type,
+                          sval, T_INT, MemNode::unordered));
       if (is_mismatched) {
         st->as_Store()->set_mismatched_access();
       }
