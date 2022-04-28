@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 public class VectorReshapeHelper {
     public static final int INVOCATIONS = 10_000;
@@ -105,7 +106,7 @@ public class VectorReshapeHelper {
 
     public static <T, U> void runCastHelper(VectorOperators.Conversion<T, U> castOp,
                                             VectorSpecies<T> isp, VectorSpecies<U> osp) throws Throwable {
-        var random = RandomGenerator.getDefault();
+        var random = Utils.getRandomInstance();
         boolean isUnsignedCast = castOp.name().startsWith("ZERO");
         String testMethodName = VectorSpeciesPair.makePair(isp, osp, isUnsignedCast).format();
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
@@ -219,7 +220,7 @@ public class VectorReshapeHelper {
     }
 
     public static void runExpandShrinkHelper(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp) throws Throwable {
-        var random = RandomGenerator.getDefault();
+        var random = Utils.getRandomInstance();
         String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
         var testMethod = MethodHandles.lookup().findStatic(caller,
@@ -249,7 +250,7 @@ public class VectorReshapeHelper {
     }
 
     public static void runDoubleExpandShrinkHelper(VectorSpecies<Byte> isp, VectorSpecies<Byte> osp) throws Throwable {
-        var random = RandomGenerator.getDefault();
+        var random = Utils.getRandomInstance();
         String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
         var testMethod = MethodHandles.lookup().findStatic(caller,
@@ -278,7 +279,7 @@ public class VectorReshapeHelper {
     }
 
     public static <T, U> void runRebracketHelper(VectorSpecies<T> isp, VectorSpecies<U> osp) throws Throwable {
-        var random = RandomGenerator.getDefault();
+        var random = Utils.getRandomInstance();
         String testMethodName = VectorSpeciesPair.makePair(isp, osp).format();
         var caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
         var testMethod = MethodHandles.lookup().findStatic(caller,

@@ -66,7 +66,7 @@ void AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& 
   }
 }
 
-// LogMessageBuffer consists of a multiple-part/multiple-line messsage.
+// LogMessageBuffer consists of a multiple-part/multiple-line message.
 // The lock here guarantees its integrity.
 void AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
   AsyncLogLocker locker;

@@ -3256,7 +3256,7 @@ public final class String
             icoder |= delimiter.coder();
         }
         // assert len > 0L; // max: (long) Integer.MAX_VALUE << 32
-        // following loop wil add max: (long) Integer.MAX_VALUE * Integer.MAX_VALUE to len
+        // following loop will add max: (long) Integer.MAX_VALUE * Integer.MAX_VALUE to len
         // so len can overflow at most once
         for (int i = 0; i < size; i++) {
             var el = elements[i];
@@ -4521,7 +4521,8 @@ public final class String
             this.coder = LATIN1;
             this.value = Arrays.copyOfRange(val, 0, length);
         } else {
-            if (COMPACT_STRINGS) {
+            // only try to compress val if some characters were deleted.
+            if (COMPACT_STRINGS && asb.maybeLatin1) {
                 byte[] buf = StringUTF16.compress(val, 0, length);
                 if (buf != null) {
                     this.coder = LATIN1;

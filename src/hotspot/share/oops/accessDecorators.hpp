@@ -131,7 +131,7 @@ const DecoratorSet MO_DECORATOR_MASK = MO_UNORDERED | MO_RELAXED |
 // === Barrier Strength Decorators ===
 // * AS_RAW: The access will translate into a raw memory access, hence ignoring all semantic concerns
 //   except memory ordering and compressed oops. This will bypass runtime function pointer dispatching
-//   in the pipeline and hardwire to raw accesses without going trough the GC access barriers.
+//   in the pipeline and hardwire to raw accesses without going through the GC access barriers.
 //  - Accesses on oop* translate to raw memory accesses without runtime checks
 //  - Accesses on narrowOop* translate to encoded/decoded memory accesses without runtime checks
 //  - Accesses on HeapWord* translate to a runtime check choosing one of the above

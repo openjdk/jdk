@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,7 +29,7 @@
 #include "utilities/ostream.hpp"
 
 typedef enum {
-  VMGUESTLIB_ERROR_SUCCESS = 0, // no error occured
+  VMGUESTLIB_ERROR_SUCCESS = 0, // no error occurred
   VMGUESTLIB_ERROR_OTHER,
   VMGUESTLIB_ERROR_NOT_RUNNING_IN_VM,
   VMGUESTLIB_ERROR_NOT_ENABLED,

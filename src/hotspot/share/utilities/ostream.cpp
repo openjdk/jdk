@@ -746,7 +746,7 @@ void defaultStream::start_log() {
       outputStream *text = xs->text();
       for (SystemProperty* p = Arguments::system_properties(); p != NULL; p = p->next()) {
         assert(p->key() != NULL, "p->key() is NULL");
-        if (p->is_readable()) {
+        if (p->readable()) {
           // Print in two stages to avoid problems with long
           // keys/values.
           text->print_raw(p->key());
