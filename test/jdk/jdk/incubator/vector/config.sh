@@ -24,8 +24,8 @@
 # questions.
 #
 
-JDK_SRC_HOME="$(git rev-parse --show-toplevel)"
-VECTORTESTS_HOME="$JDK_SRC_HOME/test/jdk/jdk/incubator/vector/"
+VECTORTESTS_HOME="$(pwd)"
+JDK_SRC_HOME="./../../../../../"
 JAVA="${JAVA_HOME}/bin/java"
 JAVAC="${JAVA_HOME}/bin/javac"
 BUILDLOG_FILE="./build.log"
@@ -35,15 +35,11 @@ SPP_CLASSNAME="build.tools.spp.Spp"
 SEPARATOR=":"
 TYPEPREFIX=""
 TEMPLATE_FILE="unit_tests.template"
-TESTNG_JAR="${TESTNG_PLUGIN}/plugins/org.testng.source_6.13.1.r201712040515.jar"
-TESTNG_RUN_JAR="${TESTNG_PLUGIN}/plugins/org.testng_6.13.1.r201712040515.jar"
-JCOMMANDER_JAR="${TESTNG_PLUGIN}/plugins/com.beust.jcommander_1.72.0.jar"
 TEST_ITER_COUNT=100
 
 PERF_TEMPLATE_FILE="perf_tests.template"
 PERF_SCALAR_TEMPLATE_FILE="perf_scalar_tests.template"
-PERF_DEST="$JDK_SRC_HOME/test/micro/org/openjdk/bench/jdk/incubator/vector/operation"
-
+PERF_DEST="benchmark/src/main/java/benchmark/jdk/incubator/vector/"
 
 function Log () {
   if [ $1 == true ]; then
