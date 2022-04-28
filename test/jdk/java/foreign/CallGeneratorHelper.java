@@ -150,15 +150,21 @@ public class CallGeneratorHelper extends NativeTestHelper {
             if (this == STRUCT) {
                 long offset = 0L;
                 List<MemoryLayout> layouts = new ArrayList<>();
+                long align = 0;
                 for (StructFieldType field : fields) {
                     MemoryLayout l = field.layout();
-                    long padding = offset % l.bitSize();
+                    long padding = offset % l.bitAlignment();
                     if (padding != 0) {
                         layouts.add(MemoryLayout.paddingLayout(padding));
                         offset += padding;
                     }
                     layouts.add(l.withName("field" + offset));
+                    align = Math.max(align, l.bitAlignment());
                     offset += l.bitSize();
+                }
+                long padding = offset % align;
+                if (padding != 0) {
+                    layouts.add(MemoryLayout.paddingLayout(padding));
                 }
                 return MemoryLayout.structLayout(layouts.toArray(new MemoryLayout[0]));
             } else {
