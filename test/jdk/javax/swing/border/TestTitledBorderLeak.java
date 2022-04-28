@@ -57,6 +57,7 @@ public class TestTitledBorderLeak {
                 frame[i] = new JFrame("Borders");
                 JPanel panel = new JPanel();
                 panel.add(label);
+                frame[i].setContentPane(panel);
             }
         });
         if (TOTAL_TITLEDBORDER != weakRefArrTB.size()) {
