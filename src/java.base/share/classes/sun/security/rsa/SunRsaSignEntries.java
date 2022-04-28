@@ -55,7 +55,7 @@ public final class SunRsaSignEntries {
 
         // start populating content using the specified provider
         // common attribute map
-        HashMap<String, String> attrs = HashMap.newHashMap(3);
+        HashMap<String, String> attrs = HashMap.newHashMap(1);
         attrs.put("SupportedKeyClasses",
                 "java.security.interfaces.RSAPublicKey" +
                 "|java.security.interfaces.RSAPrivateKey");
