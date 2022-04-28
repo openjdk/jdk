@@ -315,6 +315,12 @@ void cleanup_graphics_config_data(AwtGraphicsConfigDataPtr awt_data) {
         if (awt_data->color_data->awt_icmLUT != NULL) {
             free(awt_data->color_data->awt_icmLUT);
         }
+        if (awt_data->color_data->awt_Colors != NULL) {
+            free(awt_data->color_data->awt_Colors);
+        }
+        if (awt_data->color_data->img_grays != NULL) {
+            free(awt_data->color_data->img_grays);
+        }
         free(awt_data->color_data);
         awt_data->color_data = NULL;
     }
