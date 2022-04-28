@@ -25,12 +25,15 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -50,8 +53,10 @@ import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.SnippetTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.ThrowsTree;
+import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreePath;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
@@ -74,6 +79,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewFlagProvider;
@@ -356,6 +362,20 @@ public class TagletWriterImpl extends TagletWriter {
                 HtmlTree.DD(seeList));
     }
 
+    String textOf(List<? extends DocTree> trees) {
+        return trees.stream()
+                .filter(dt -> dt instanceof TextTree)
+                .map(dt -> ((TextTree) dt).getBody().trim())
+                .collect(Collectors.joining(" "));
+    }
+
+    private void appendSeparatorIfNotEmpty(ContentBuilder body) {
+        if (!body.isEmpty()) {
+            body.add(", ");
+            body.add(DocletConstants.NL);
+        }
+    }
+
     @Override
     public Content simpleBlockTagOutput(Element element, List<? extends DocTree> simpleTags, String header) {
         CommentHelper ch = utils.getCommentHelper(element);
@@ -481,6 +501,54 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @Override
+    public Content specTagOutput(Element holder, List<? extends SpecTree> specTags) {
+        ContentBuilder body = new ContentBuilder();
+        for (SpecTree st : specTags) {
+            appendSeparatorIfNotEmpty(body);
+            body.add(specTagToContent(holder, st));
+        }
+        if (body.isEmpty())
+            return body;
+
+        return new ContentBuilder(
+                HtmlTree.DT(contents.externalSpecifications),
+                HtmlTree.DD(body));
+    }
+
+    private Content specTagToContent(Element holder, SpecTree specTree) {
+        String specTreeURI = specTree.getURI().getBody();
+        List<? extends DocTree> specTreeLabel = specTree.getTitle();
+        Content label = htmlWriter.commentTagsToContent(specTree, holder, specTreeLabel, isFirstSentence);
+        return getExternalSpecContent(holder, specTree, specTreeURI, textOf(specTreeLabel), label);
+    }
+
+    Content getExternalSpecContent(Element holder, DocTree docTree, String uri, String searchText, Content title) {
+        URI specURI;
+        try {
+            // Use the canonical title of the spec if one is available
+            specURI = new URI(uri);
+        } catch (URISyntaxException e) {
+            CommentHelper ch = utils.getCommentHelper(holder);
+            DocTreePath dtp = ch.getDocTreePath(docTree);
+            htmlWriter.messages.error(dtp, "doclet.Invalid_URI", e.getMessage());
+            specURI = null;
+        }
+
+        Content titleWithAnchor = createAnchorAndSearchIndex(holder,
+                searchText,
+                title,
+                resources.getText("doclet.External_Specification"),
+                docTree);
+
+        if (specURI == null) {
+            return titleWithAnchor;
+        } else {
+            return HtmlTree.A(htmlWriter.resolveExternalSpecURI(specURI), titleWithAnchor);
+        }
+
+    }
+
+    @Override
     protected Content systemPropertyTagOutput(Element element, SystemPropertyTree tag) {
         String tagText = tag.getPropertyName().toString();
         return HtmlTree.CODE(createAnchorAndSearchIndex(element, tagText,
@@ -572,13 +640,22 @@ public class TagletWriterImpl extends TagletWriter {
         return htmlWriter.getCurrentPageElement();
     }
 
+    public HtmlDocletWriter getHtmlWriter() {
+        return htmlWriter;
+    }
+
     private Content createAnchorAndSearchIndex(Element element, String tagText, String desc, DocTree tree) {
+        return createAnchorAndSearchIndex(element, tagText, Text.of(tagText), desc, tree);
+    }
+
+    @SuppressWarnings("preview")
+    private Content createAnchorAndSearchIndex(Element element, String tagText, Content tagContent, String desc, DocTree tree) {
         Content result = null;
         if (context.isFirstSentence && context.inSummary || context.inTags.contains(DocTree.Kind.INDEX)) {
-            result = Text.of(tagText);
+            result = tagContent;
         } else {
             HtmlId id = HtmlIds.forText(tagText, htmlWriter.indexAnchorTable);
-            result = HtmlTree.SPAN(id, HtmlStyle.searchTagResult, Text.of(tagText));
+            result = HtmlTree.SPAN(id, HtmlStyle.searchTagResult, tagContent);
             if (options.createIndex() && !tagText.isEmpty()) {
                 String holder = new SimpleElementVisitor14<String, Void>() {
 

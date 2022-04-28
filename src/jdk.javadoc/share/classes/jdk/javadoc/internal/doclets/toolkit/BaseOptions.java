@@ -30,6 +30,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -294,6 +297,12 @@ public abstract class BaseOptions {
      * The specified amount of space between tab stops.
      */
     private int sourceTabSize;
+
+    /**
+     * Argument for command-line option {@code --spec-base-URI}.
+     * The base URI for relative URIs in {@code @spec} tags.
+     */
+    private URI specBaseURI;
 
     /**
      * Value for command-line option {@code --override-methods summary}
@@ -662,6 +671,46 @@ public abstract class BaseOptions {
                     public boolean process(String opt, List<String> args) {
                         allowScriptInComments = true;
                         return true;
+                    }
+                },
+
+                new Option(resources, "--spec-base-uri", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        String arg = args.get(0);
+                        try {
+                            if (!arg.endsWith("/")) {
+                                // to ensure that URI.resolve works as expected
+                                arg += "/";
+                            }
+                            specBaseURI = new URI(arg);
+                            return true;
+                        } catch (URISyntaxException e) {
+                            config.reporter.print(ERROR,
+                                    config.getDocResources().getText("doclet.Invalid_URI",
+                                            e.getMessage()));
+                            return false;
+                        }
+                    }
+                },
+
+                new Option(resources, "--spec-base-uri", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        String arg = args.get(0);
+                        try {
+                            if (!arg.endsWith("/")) {
+                                // to ensure that URI.resolve works as expected
+                                arg += "/";
+                            }
+                            specBaseURI = new URI(arg);
+                            return true;
+                        } catch (URISyntaxException e) {
+                            config.reporter.print(ERROR,
+                                    config.getDocResources().getText("doclet.Invalid_URI",
+                                            e.getMessage()));
+                            return false;
+                        }
                     }
                 },
 
@@ -1043,6 +1092,14 @@ public abstract class BaseOptions {
      */
     public int sourceTabSize() {
         return sourceTabSize;
+    }
+
+    /**
+     * Argument for command-line option {@code --spec-base-URI}.
+     * The base URI for relative URIs in {@code @spec} tags.
+     */
+    public URI specBaseURI() {
+        return specBaseURI;
     }
 
     /**

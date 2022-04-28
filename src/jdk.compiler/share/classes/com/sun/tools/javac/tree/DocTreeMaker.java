@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ import com.sun.tools.javac.tree.DCTree.DCSerialData;
 import com.sun.tools.javac.tree.DCTree.DCSerialField;
 import com.sun.tools.javac.tree.DCTree.DCSince;
 import com.sun.tools.javac.tree.DCTree.DCSnippet;
+import com.sun.tools.javac.tree.DCTree.DCSpec;
 import com.sun.tools.javac.tree.DCTree.DCStartElement;
 import com.sun.tools.javac.tree.DCTree.DCSummary;
 import com.sun.tools.javac.tree.DCTree.DCSystemProperty;
@@ -410,6 +411,13 @@ public class DocTreeMaker implements DocTreeFactory {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCSince newSinceTree(List<? extends DocTree> text) {
         DCSince tree = new DCSince(cast(text));
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCSpec newSpecTree(TextTree url, List<? extends DocTree> title) {
+        DCSpec tree = new DCSpec((DCText) url, cast(title));
         tree.pos = pos;
         return tree;
     }

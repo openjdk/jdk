@@ -230,7 +230,7 @@ public class DocFinder {
             input.taglet.inherit(input, output);
         }
 
-        if (!output.inlineTags.isEmpty()) {
+        if (isNonEmpty(output.inlineTags)) {
             return output;
         }
         output.isValidInheritDocTag = false;
@@ -243,7 +243,7 @@ public class DocFinder {
                 inheritedSearchInput.element = overriddenMethod;
                 output = search(configuration, inheritedSearchInput);
                 output.isValidInheritDocTag = true;
-                if (!output.inlineTags.isEmpty()) {
+                if (isNonEmpty(output.inlineTags)) {
                     return output;
                 }
             }
@@ -254,7 +254,7 @@ public class DocFinder {
                 inheritedSearchInput.element = implementedMethod;
                 output = search(configuration, inheritedSearchInput);
                 output.isValidInheritDocTag = true;
-                if (!output.inlineTags.isEmpty()) {
+                if (isNonEmpty(output.inlineTags)) {
                     return output;
                 }
             }
@@ -265,11 +265,15 @@ public class DocFinder {
                 inheritedSearchInput.element = superclass;
                 output = search(configuration, inheritedSearchInput);
                 output.isValidInheritDocTag = true;
-                if (!output.inlineTags.isEmpty()) {
+                if (isNonEmpty(output.inlineTags)) {
                     return output;
                 }
             }
         }
         return output;
+    }
+
+    private static boolean isNonEmpty(List<? extends DocTree> list) {
+        return list != null && !list.isEmpty();
     }
 }

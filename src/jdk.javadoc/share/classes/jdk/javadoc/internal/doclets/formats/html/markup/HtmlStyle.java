@@ -721,6 +721,11 @@ public enum HtmlStyle {
     docFilePage,
 
     /**
+     * The class of the {@code body} element for the "external specifications" page.
+     */
+    externalSpecsPage,
+
+    /**
      * The class of the {@code body} element for the "help" page.
      */
     helpPage,
@@ -855,6 +860,8 @@ public enum HtmlStyle {
      * The class of the UI element to copy snippet content to the clipboard.
      */
     snippetCopy,
+	
+	refList, // TEMP location, for now
 
     /**
      * The class of text highlighted with the type {@code bold}.
