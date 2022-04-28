@@ -198,6 +198,8 @@ import java.util.concurrent.locks.LockSupport;
  * sensible to serialize tasks only before or after, but not during,
  * execution. Serialization is not relied on during execution itself.
  *
+ * @param <V> the type of the result of the task
+ *
  * @since 1.7
  * @author Doug Lea
  */

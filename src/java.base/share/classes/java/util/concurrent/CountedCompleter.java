@@ -420,6 +420,8 @@ import java.lang.invoke.VarHandle;
  * new HeaderBuilder(p, ...).fork();
  * new BodyBuilder(p, ...).fork();}</pre>
  *
+ * @param <T> the type of the result of the completer
+ *
  * @since 1.8
  * @author Doug Lea
  */

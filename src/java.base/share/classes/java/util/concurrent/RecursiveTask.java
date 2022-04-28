@@ -62,6 +62,8 @@ package java.util.concurrent;
  * minimum granularity size (for example 10 here) for which you always
  * sequentially solve rather than subdividing.
  *
+ * @param <V> the type of the result of the task
+ *
  * @since 1.7
  * @author Doug Lea
  */
