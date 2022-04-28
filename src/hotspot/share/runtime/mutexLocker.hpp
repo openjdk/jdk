@@ -151,7 +151,8 @@ extern Mutex*   CodeHeapStateAnalytics_lock;     // lock print functions against
 extern Monitor* ContinuationRelativize_lock;
 
 #if INCLUDE_JVMCI
-extern Monitor* JVMCI_lock;                      // Monitor to control initialization of JVMCI
+extern Monitor* JVMCI_lock;                      // protects global JVMCI critical sections
+extern Monitor* JVMCIRuntime_lock;               // protects critical sections for a specific JVMCIRuntime object
 #endif
 
 extern Mutex*   Bootclasspath_lock;
