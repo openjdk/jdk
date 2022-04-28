@@ -108,7 +108,6 @@ public:
 
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
   void mark_has_reductions() { _loop_flags |= HasReductions; }
-  void clear_has_reductions() { _loop_flags &= ~HasReductions; }
   void mark_was_slp() { _loop_flags |= WasSlpAnalyzed; }
   void mark_passed_slp() { _loop_flags |= PassedSlpAnalysis; }
   void mark_do_unroll_only() { _loop_flags |= DoUnrollOnly; }
