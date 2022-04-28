@@ -28,7 +28,7 @@
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary To test tray icon scaling with on-the-fly DPI/Scale changes on Windows
- * @run main TrayIconScalingTest
+ * @run main/manual TrayIconScalingTest
  * @requires (os.family=="windows")
  */
 
