@@ -160,12 +160,10 @@ public class WeakAlg {
 
         kt("-list")
                 .shouldContain("Warning:")
-                .shouldNotMatch("<x>.*SHA1withRSA.*will be disabled")
                 .shouldMatch("<x>.*SHA1withRSA.*considered a security risk")
                 .shouldMatch("<y>.*1024-bit RSA key.*will be disabled");
         kt("-list -v")
                 .shouldContain("Warning:")
-                .shouldNotMatch("<x>.*SHA1withRSA.*will be disabled")
                 .shouldMatch("<x>.*SHA1withRSA.*considered a security risk")
                 .shouldContain("SHA1withRSA (weak)")
                 .shouldMatch("<y>.*1024-bit RSA key.*will be disabled")
@@ -180,19 +178,15 @@ public class WeakAlg {
                 .shouldNotContain("Warning"); // new sigalg is not weak
         gencert("z-x", "-sigalg SHA1withRSA")
                 .shouldContain("Warning:")
-                .shouldNotMatch("The generated certificate.*SHA1withRSA.*will be disabled")
                 .shouldMatch("The generated certificate.*SHA1withRSA.*considered a security risk");
 
         checkWeakCertReq("x", "-sigalg SHA1withRSA", "SHA1withRSA");
         gencert("z-x", "")
                 .shouldContain("Warning:")
-                .shouldNotMatch("The certificate request.*SHA1withRSA.*will be disabled")
                 .shouldMatch("The certificate request.*SHA1withRSA.*considered a security risk");
         gencert("z-x", "-sigalg SHA1withRSA")
                 .shouldContain("Warning:")
-                .shouldNotMatch("The certificate request.*SHA1withRSA.*will be disabled")
                 .shouldMatch("The certificate request.*SHA1withRSA.*considered a security risk")
-                .shouldNotMatch("The generated certificate.*SHA1withRSA.*will be disabled")
                 .shouldMatch("The generated certificate.*SHA1withRSA.*considered a security risk");
 
         checkWeakCertReq("y", "", "1024-bit RSA key");
@@ -204,7 +198,6 @@ public class WeakAlg {
         checkWeakCertReq("z", "", "nowarn");
         gencert("x-z", "")
                 .shouldContain("Warning:")
-                .shouldNotMatch("The issuer.*SHA1withRSA.*will be disabled")
                 .shouldMatch("The issuer.*SHA1withRSA.*considered a security risk");
 
         // but the new cert is not weak
@@ -743,7 +736,6 @@ public class WeakAlg {
                 break;
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
-                        .shouldNotMatch("The generated certificate.*" + bad + ".*will be disabled")
                         .shouldMatch("The generated certificate.*" + bad + ".*considered a security risk");
                 break;
             case "1024-bit RSA key":
@@ -759,7 +751,6 @@ public class WeakAlg {
                 break;
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
-                        .shouldNotMatch("The certificate.*" + bad + ".*will be disabled")
                         .shouldMatch("The certificate.*" + bad + ".*considered a security risk");
                 break;
             case "1024-bit RSA key":
@@ -775,7 +766,6 @@ public class WeakAlg {
                 break;
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
-                        .shouldNotMatch("The certificate.*" + bad + ".*will be disabled")
                         .shouldMatch("The certificate.*" + bad + ".*considered a security risk");
                 break;
             case "1024-bit RSA key":
@@ -791,7 +781,6 @@ public class WeakAlg {
                 break;
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
-                        .shouldNotMatch("The certificate.*" + bad + ".*will be disabled")
                         .shouldMatch("The certificate.*" + bad + ".*considered a security risk");
                 break;
             case "1024-bit RSA key":
@@ -807,7 +796,6 @@ public class WeakAlg {
                 break;
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
-                        .shouldNotMatch("The certificate.*" + bad + ".*will be disabled")
                         .shouldMatch("The certificate.*" + bad + ".*considered a security risk");
                 break;
             case "1024-bit RSA key":
@@ -826,7 +814,6 @@ public class WeakAlg {
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
                         .shouldContain(bad + " (weak)")
-                        .shouldNotMatch("The certificate.*" + bad + ".*will be disabled")
                         .shouldMatch("The certificate.*" + bad + ".*considered a security risk");
                 break;
             case "1024-bit RSA key":
@@ -844,7 +831,6 @@ public class WeakAlg {
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
                         .shouldContain(bad + " (weak)")
-                        .shouldNotMatch("The certificate.*" + bad + ".*will be disabled")
                         .shouldMatch("The certificate.*" + bad + ".*considered a security risk");
                 break;
             case "1024-bit RSA key":
@@ -866,7 +852,6 @@ public class WeakAlg {
                 break;
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
-                        .shouldNotMatch("The generated CRL.*" + bad + ".*will be disabled")
                         .shouldMatch("The generated CRL.*" + bad + ".*considered a security risk");
                 break;
             case "1024-bit RSA key":
@@ -884,7 +869,6 @@ public class WeakAlg {
                 break;
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
-                        .shouldNotMatch("The CRL.*" + bad + ".*will be disabled")
                         .shouldMatch("The CRL.*" + bad + ".*considered a security risk")
                         .shouldContain("Verified by " + alias + " in keystore")
                         .shouldContain(bad + " (weak)");
@@ -908,7 +892,6 @@ public class WeakAlg {
                 break;
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
-                        .shouldNotMatch("The generated certificate request.*" + bad + ".*will be disabled")
                         .shouldMatch("The generated certificate request.*" + bad + ".*considered a security risk");
                 break;
             case "1024-bit RSA key":
@@ -925,7 +908,6 @@ public class WeakAlg {
                 break;
             case "SHA1withRSA":
                 oa.shouldContain("Warning")
-                        .shouldNotMatch("The certificate request.*" + bad + ".*will be disabled")
                         .shouldMatch("The certificate request.*" + bad + ".*considered a security risk")
                         .shouldContain(bad + " (weak)");
                 break;

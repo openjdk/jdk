@@ -63,6 +63,7 @@ import java.util.Base64;
 
 import sun.security.pkcs12.PKCS12KeyStore;
 import sun.security.provider.certpath.CertPathConstraintsParameters;
+import sun.security.util.ConstraintsParameters;
 import sun.security.util.ECKeySizeParameterSpec;
 import sun.security.util.KeyUtil;
 import sun.security.util.NamedCurve;
@@ -1857,6 +1858,8 @@ public final class Main {
                     keysize = 56;
                 } else if ("DESede".equalsIgnoreCase(keyAlgName)) {
                     keysize = 168;
+                } else if ("RC2".equalsIgnoreCase(keyAlgName)) {
+                    keysize = 128;
                 } else {
                     throw new Exception(rb.getString
                         ("Please.provide.keysize.for.secret.key.generation"));
@@ -1872,10 +1875,10 @@ public final class Main {
             System.err.println(form.format(source));
         }
 
-        CertPathConstraintsParameters cpcp =
-                new CertPathConstraintsParameters(secKey, null, null, null);
+        SecretKeyConstraintsParameters skcp =
+                new SecretKeyConstraintsParameters(secKey);
         checkWeakConstraint(rb.getString("the.generated.secretkey"),
-                keyAlgName, cpcp);
+                keyAlgName, skcp);
 
         if (keyPass == null) {
             keyPass = promptForKeyPass(alias, null, storePass);
@@ -2194,8 +2197,9 @@ public final class Main {
             try {
                 SecretKey secKey = (SecretKey) keyStore.getKey(alias, storePass);
                 String secKeyAlg = secKey.getAlgorithm();
-                cpcp = new CertPathConstraintsParameters(secKey, null, null, null);
-                checkWeakConstraint(label, secKeyAlg, cpcp);
+                SecretKeyConstraintsParameters skcp =
+                        new SecretKeyConstraintsParameters(secKey);
+                checkWeakConstraint(label, secKeyAlg, skcp);
             } catch (UnrecoverableKeyException e) {
                 // skip
             }
@@ -2511,9 +2515,9 @@ public final class Main {
                 keyStore.setEntry(newAlias, entry, pp);
                 try {
                     Key key = keyStore.getKey(newAlias, newPass);
-                    CertPathConstraintsParameters cpcp =
-                            new CertPathConstraintsParameters(key, null, null, null);
-                    checkWeakConstraint("<" + newAlias + ">", key.getAlgorithm(), cpcp);
+                    SecretKeyConstraintsParameters skcp =
+                            new SecretKeyConstraintsParameters(key);
+                    checkWeakConstraint("<" + newAlias + ">", key.getAlgorithm(), skcp);
                 } catch (UnrecoverableKeyException e) {
                     // skip
                 }
@@ -5033,10 +5037,10 @@ public final class Main {
     }
 
     private void checkWeakConstraint(String label, String algName,
-            CertPathConstraintsParameters cpcp) {
+            ConstraintsParameters cp) {
         // Do not check disabled algorithms for symmetric key based algorithms for now
         try {
-            LEGACY_CHECK.permits(algName, cpcp, false);
+            LEGACY_CHECK.permits(algName, cp, false);
         } catch (CertPathValidatorException e) {
             weakWarnings.add(String.format(
                     rb.getString("key.algorithm.weak"), label, algName));
@@ -5239,6 +5243,38 @@ public final class Main {
         if (output != null) return output;
         tinyHelp();
         return null;    // Useless, tinyHelp() already exits.
+    }
+
+    private static class SecretKeyConstraintsParameters implements ConstraintsParameters {
+        private final Key key;
+        public SecretKeyConstraintsParameters(Key key) {
+            this.key = key;
+        }
+
+        @Override
+        public boolean anchorIsJdkCA() {
+            return false;
+        }
+
+        @Override
+        public Set<Key> getKeys() {
+            return null;
+        }
+
+        @Override
+        public Date getDate() {
+            return null;
+        }
+
+        @Override
+        public String getVariant() {
+            return null;
+        }
+
+        @Override
+        public String extendedExceptionMsg() {
+            return null;
+        }
     }
 }
 

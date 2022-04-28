@@ -159,7 +159,6 @@ public class ReadJar {
                 .shouldContain("Certificate #1:")
                 .shouldContain("Certificate #2:")
                 .shouldContain("Signer #2:")
-                .shouldNotMatch("The certificate #.* of signer #.*" + "uses the SHA1withRSA.*will be disabled")
                 .shouldMatch("The certificate #.* of signer #.*" + "uses the SHA1withRSA.*considered a security risk")
                 .shouldMatch("The certificate #.* of signer #.*" + "uses a 512-bit RSA key.*is disabled")
                 .shouldHaveExitValue(0);
