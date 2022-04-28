@@ -733,8 +733,10 @@ public final class System {
      *     the {@linkplain Runtime.Version#feature feature} element of the
      *     {@linkplain Runtime#version() runtime version}</td></tr>
      * <tr><th scope="row">{@systemProperty java.specification.maintenance.version}</th>
-     *     <td>Java Runtime Environment specification maintenance version, optional when
-               the specification being implemented has not had a maintenance update</td></tr>
+     *     <td>Java Runtime Environment specification maintenance version, defined only
+     *         when the specification implemented by this runtime has undergone a
+     *         <a href="https://jcp.org/en/procedures/jcp2#3.6.4">maintenance
+     *         release</a> <em>(optional)</em></td></tr>
      * <tr><th scope="row">{@systemProperty java.specification.vendor}</th>
      *     <td>Java Runtime Environment specification  vendor</td></tr>
      * <tr><th scope="row">{@systemProperty java.specification.name}</th>
