@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8231880 8231258
+ * @bug 8231880 8231258 8285515
  * @library /test/lib
  * @summary Test DatagramChannel bound to specific address/ephemeral port after disconnect
  * @run testng/othervm AfterDisconnect
