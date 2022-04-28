@@ -32,6 +32,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
@@ -563,13 +564,17 @@ extern "C" {
 JNIEXPORT
 void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 
-  JavaThread* thread = JavaThread::current_or_null();
+  // Can't use thread_from_jni_environment as it may also perform a VM exit check that is unsafe to
+  // do from this context.
+  Thread* raw_thread = Thread::current_or_null_safe();
 
-  if (trace->env_id == NULL || thread == NULL || thread->is_terminated() || thread->is_exiting()) {
+  if (trace->env_id == NULL || raw_thread == NULL || !raw_thread->is_Java_thread() || ((JavaThread*)raw_thread)->is_exiting()) {
     // bad env_id, thread has exited or thread is exiting
     trace->num_frames = ticks_thread_exit; // -8
     return;
   }
+
+  JavaThread* thread = (JavaThread*)raw_thread;
 
   if (thread->in_deopt_handler()) {
     // thread is in the deoptimization handler so return no frames
@@ -577,6 +582,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     return;
   }
 
+  // This is safe now as the thread has not terminated and so no VM exit check occurs.
   assert(thread == JavaThread::thread_from_jni_environment(trace->env_id),
          "AsyncGetCallTrace must be called by the current interrupted thread");
 
