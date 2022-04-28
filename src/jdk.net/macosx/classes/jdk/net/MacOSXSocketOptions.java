@@ -44,6 +44,11 @@ class MacOSXSocketOptions extends PlatformSocketOptions {
     }
 
     @Override
+    boolean ipDontFragmentSupported() {
+        return ipDontFragmentSupported0();
+    }
+
+    @Override
     void setTcpkeepAliveProbes(int fd, final int value) throws SocketException {
         setTcpkeepAliveProbes0(fd, value);
     }
@@ -108,6 +113,8 @@ class MacOSXSocketOptions extends PlatformSocketOptions {
     private static native boolean getIpDontFragment0(int fd) throws SocketException;
     private static native long getSoPeerCred0(int fd) throws SocketException;
     private static native boolean keepAliveOptionsSupported0();
+    private static native boolean ipDontFragmentSupported0();
+
     static {
         if (System.getSecurityManager() == null) {
             System.loadLibrary("extnet");
