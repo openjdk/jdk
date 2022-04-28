@@ -399,25 +399,6 @@ static inline bool target_needs_far_branch(address addr) {
   return !CodeCache::is_non_nmethod(addr);
 }
 
-static inline bool target_needs_trampoline(Address entry) {
-  if (entry.rspec().type() == relocInfo::runtime_call_type) {
-    // Runtime calls are statically bound.
-    // Once they are generated neither a caller nor a callee address cannot be changed.
-    // Check whether a far branch is needed to reach the target.
-    return target_needs_far_branch(entry.target());
-  } else {
-    assert(entry.rspec().type() == relocInfo::opt_virtual_call_type
-           || entry.rspec().type() == relocInfo::static_call_type
-           || entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type: not Java method call");
-    // Other calls are Java calls.
-    // A callee address can be changed at any time as a result of
-    // callee deoptimization or the callee being C1 compiled has become C2 compiled.
-    // If CodeCache size > 128M, such calls must have reserved trampolines for cases
-    // when a new callee address out of 128M range.
-    return MacroAssembler::far_branches();
-  }
-}
-
 void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
@@ -579,15 +560,23 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
 
 // Maybe emit a call via a trampoline.  If the code cache is small
 // trampolines won't be emitted.
-
 address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
   assert(JavaThread::current()->is_Compiler_thread(), "just checking");
   assert(entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::opt_virtual_call_type
          || entry.rspec().type() == relocInfo::static_call_type
          || entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
+  assert(CodeCache::contains(entry.target()), "target outside CodeCache");
 
-  bool need_trampoline = target_needs_trampoline(entry);
+  // Runtime calls are statically bound.
+  // Once they are generated a call site cannot be changed.
+  // Use target_needs_far_branch to check whether a far branch is needed.
+  // For Java calls a callee can be changed at any time as a result of
+  // callee deoptimization or the callee being C1 compiled has become C2 compiled.
+  // If CodeCache size > 128M, such Java calls must have reserved trampolines for cases
+  // when a new callee address out of 128M range.
+  bool need_trampoline = (entry.rspec().type() == relocInfo::runtime_call_type) ?
+      target_needs_far_branch(entry.target()) : far_branches();
 
   // We need a trampoline if branches are far.
   if (need_trampoline) {
