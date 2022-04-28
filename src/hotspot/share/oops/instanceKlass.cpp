@@ -438,7 +438,7 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
   InstanceKlass* ik;
 
   // Allocation
-  if (parser.is_java_lang_ref_Reference_subclass()) {
+  if (parser.is_instance_ref_klass()) {
     // reference
     ik = new (loader_data, size, THREAD) InstanceRefKlass(parser);
   } else if (class_name == vmSymbols::java_lang_Class()) {

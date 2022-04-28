@@ -561,6 +561,7 @@ class ClassFileParser {
   const InstanceKlass* super_klass() const { return _super_klass; }
 
   ReferenceType super_reference_type() const;
+  bool is_instance_ref_klass() const;
   bool is_java_lang_ref_Reference_subclass() const;
 
   AccessFlags access_flags() const { return _access_flags; }
