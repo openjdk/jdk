@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,22 +57,19 @@ public class TestTitledBorderLeak {
                 frame[i] = new JFrame("Borders");
                 JPanel panel = new JPanel();
                 panel.add(label);
-                frame[i].setContentPane(panel);
-                frame[i].setVisible(true);
-
             }
         });
         if (TOTAL_TITLEDBORDER != weakRefArrTB.size()) {
             System.err.println("TOTAL_TITLEDBORDER != weakRefArrTB.size()");
         }
-        Thread.sleep(3000);
+        Thread.sleep(1000);
         SwingUtilities.invokeAndWait(() -> {
             for (int i = 0; i < TOTAL_TITLEDBORDER; i++) {
                 frame[i].dispose();
                 frame[i] = null;
             }
         });
-        Thread.sleep(3000);
+        Thread.sleep(1000);
         attemptGCTitledBorder();
         if (TOTAL_TITLEDBORDER != getCleanedUpTitledBorderCount()) {
             throw new RuntimeException("Expected Total TitledBorder to be freed : " + TOTAL_TITLEDBORDER +
@@ -85,7 +82,6 @@ public class TestTitledBorderLeak {
         // Attempt gc GC_ATTEMPTS times
         for (int i = 0; i < GC_ATTEMPTS; i++) {
             System.gc();
-            System.runFinalization();
             if (getCleanedUpTitledBorderCount() == TOTAL_TITLEDBORDER) {
                 break;
             }
