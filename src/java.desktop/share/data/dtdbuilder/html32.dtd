@@ -80,7 +80,7 @@
 <!ENTITY % HTML.HotJava "INCLUDE"
 	-- HotJava specific extensions to the default HTML 3.2 DTD -->
 
-<!-- Currently we are using the the HTML.3.2.Conflict entity to work around
+<!-- Currently we are using the HTML.3.2.Conflict entity to work around
      a bug in the DTD parser where the first declaration of an ENTITY/ELEMENT
      or ATTLIST is not taking precedence over subsequent declarations of the same
      item.  Therefore we need to explicitly "IGNORE" subsequent declarations 
