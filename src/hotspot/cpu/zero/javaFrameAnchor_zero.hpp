@@ -73,7 +73,7 @@
     return true;
   }
 
-  void make_walkable(JavaThread* thread) {
+  void make_walkable(Thread* thread) {
     // nothing to do
   }
 
