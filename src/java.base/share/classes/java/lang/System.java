@@ -736,7 +736,12 @@ public final class System {
      *     <td>Java Runtime Environment specification maintenance version, defined only
      *         when the specification implemented by this runtime has undergone a
      *         <a href="https://jcp.org/en/procedures/jcp2#3.6.4">maintenance
-     *         release</a> <em>(optional)</em></td></tr>
+     *         release</a> <em>(optional)</em>.
+     *         After a first maintenance release, this property will
+     *         have the value {@code "1"}, after a second maintenance
+     *         release, this property will have the value {@code "2"},
+     *         and so on.
+     *         </td></tr>
      * <tr><th scope="row">{@systemProperty java.specification.vendor}</th>
      *     <td>Java Runtime Environment specification  vendor</td></tr>
      * <tr><th scope="row">{@systemProperty java.specification.name}</th>
