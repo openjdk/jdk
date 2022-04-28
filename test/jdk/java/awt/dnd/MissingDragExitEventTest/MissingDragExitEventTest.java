@@ -45,6 +45,9 @@ import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
@@ -59,23 +62,26 @@ public class MissingDragExitEventTest {
     private static boolean MOUSE_ENTERED;
     private static boolean MOUSE_EXIT_TD;
     private static boolean MOUSE_EXIT;
-    private static int SIZE = 300;
+    private static int SIZE = 100;
+    private static CountDownLatch dropCompleteLatch = new CountDownLatch(1);
 
     private static void initAndShowUI() {
         frame = new JFrame("Test frame");
-
+        frame.setUndecorated(true);
         frame.setSize(SIZE, SIZE);
         frame.setLocationRelativeTo(null);
         final JTextArea jta = new JTextArea();
         jta.setBackground(Color.RED);
         frame.add(jta);
         jta.setText("1234567890");
-        jta.setFont(jta.getFont().deriveFont(150f));
+        jta.setFont(jta.getFont().deriveFont(50f));
         jta.setDragEnabled(true);
         jta.selectAll();
         jta.setDropTarget(new DropTarget(jta, DnDConstants.ACTION_COPY,
                                          new TestdropTargetListener()));
         jta.addMouseListener(new TestMouseAdapter());
+        frame.pack();
+        frame.setAlwaysOnTop(true);
         frame.setVisible(true);
     }
 
@@ -92,9 +98,10 @@ public class MissingDragExitEventTest {
                     initAndShowUI();
                 }
             });
-
-            final Point inside = new Point(frame.getLocationOnScreen());
-            inside.translate(20, SIZE / 2);
+            final AtomicReference<Point> insidePoint = new AtomicReference<>();
+            SwingUtilities.invokeAndWait(() -> insidePoint.set(frame.getLocationOnScreen()));
+            final Point inside = insidePoint.get();
+            inside.translate(20,20);
             final Point outer = new Point(inside);
             outer.translate(-40, 0);
             r.mouseMove(inside.x, inside.y);
@@ -107,8 +114,10 @@ public class MissingDragExitEventTest {
             } finally {
                 r.mouseRelease(InputEvent.BUTTON1_MASK);
             }
-            sleep(r);
 
+            if(!dropCompleteLatch.await(10, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Waited too long, but the drop is not completed");
+            }
             if (FAILED || !MOUSE_ENTERED || !MOUSE_ENTERED_DT || !MOUSE_EXIT
                     || !MOUSE_EXIT_TD) {
                 throw new RuntimeException("Failed");
@@ -118,14 +127,6 @@ public class MissingDragExitEventTest {
                 frame.dispose();
             }
         }
-    }
-
-    private static void sleep(Robot robot) {
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException ignored) {
-        }
-        robot.waitForIdle();
     }
 
     static class TestdropTargetListener extends DropTargetAdapter {
@@ -140,10 +141,6 @@ public class MissingDragExitEventTest {
             }
             inside = true;
             MOUSE_ENTERED_DT = true;
-            try {
-                Thread.sleep(10000); // we should have time to leave a component
-            } catch (InterruptedException ignored) {
-            }
         }
 
         @Override
@@ -162,6 +159,7 @@ public class MissingDragExitEventTest {
             }
             inside = false;
             MOUSE_EXIT_TD = true;
+            System.out.println("Drag exit");
         }
 
         @Override
@@ -171,6 +169,8 @@ public class MissingDragExitEventTest {
                 Thread.dumpStack();
             }
             inside = false;
+            System.out.println("Drop complete");
+            dropCompleteLatch.countDown();
         }
     }
 

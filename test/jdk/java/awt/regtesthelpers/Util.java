@@ -318,20 +318,12 @@ public final class Util {
             throw new IllegalArgumentException("invalid mouse button");
         }
 
-        boolean autoDelaySet = false;
-        if(robot.getAutoDelay() == 0) {
-            robot.setAutoDelay(100);
-            autoDelaySet = true;
-        }
         robot.mouseMove(startPoint.x, startPoint.y);
         robot.mousePress(button);
         try {
             mouseMove(robot, startPoint, endPoint);
         } finally {
             robot.mouseRelease(button);
-            if(autoDelaySet) {
-                robot.setAutoDelay(0);
-            }
         }
     }
 
