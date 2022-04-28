@@ -1296,8 +1296,9 @@ Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt) {
   if (raw_type == NULL) {
     is_mismatched = true; // conservatively match all non-raw accesses as mismatched
   }
-  bool require_atomic_access = (Opcode() == Op_LoadL && ((LoadLNode*)this)->require_atomic_access()) ||
-                               (Opcode() == Op_LoadD && ((LoadDNode*)this)->require_atomic_access());
+  const int op = Opcode();
+  bool require_atomic_access = (op == Op_LoadL && ((LoadLNode*)this)->require_atomic_access()) ||
+                               (op == Op_LoadD && ((LoadDNode*)this)->require_atomic_access());
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
                         raw_adr_type(), rt, bt, _mo, _control_dependency,
                         require_atomic_access, is_unaligned_access(), is_mismatched);
@@ -1318,8 +1319,9 @@ bool StoreNode::has_reinterpret_variant(const Type* vt) {
 Node* StoreNode::convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt) {
   BasicType bt = vt->basic_type();
   assert(has_reinterpret_variant(vt), "no reinterpret variant: %s %s", Name(), type2name(bt));
-  bool require_atomic_access = (Opcode() == Op_StoreL && ((StoreLNode*)this)->require_atomic_access()) ||
-                               (Opcode() == Op_StoreD && ((StoreDNode*)this)->require_atomic_access());
+  const int op = Opcode();
+  bool require_atomic_access = (op == Op_StoreL && ((StoreLNode*)this)->require_atomic_access()) ||
+                               (op == Op_StoreD && ((StoreDNode*)this)->require_atomic_access());
   StoreNode* st = StoreNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
                                   raw_adr_type(), val, bt, _mo, require_atomic_access);
 
