@@ -162,7 +162,7 @@ AC_DEFUN([BASIC_CHECK_MAKE_OUTPUT_SYNC],
 [
   # Check if make supports the output sync option and if so, setup using it.
   UTIL_ARG_WITH(NAME: output-sync, TYPE: literal,
-      VALID_VALUES: [none recurse line target], DEFAULT: recurse,
+      VALID_VALUES: [none recurse line target], DEFAULT: none,
       OPTIONAL: true, ENABLED_DEFAULT: true,
       ENABLED_RESULT: OUTPUT_SYNC_SUPPORTED,
       CHECKING_MSG: [for make --output-sync value],
