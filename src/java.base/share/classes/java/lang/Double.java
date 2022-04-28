@@ -668,6 +668,7 @@ public final class Double extends Number
      * @return  {@code true} if the value of the argument is NaN;
      *          {@code false} otherwise.
      */
+    @IntrinsicCandidate
     public static boolean isNaN(double v) {
         return (v != v);
     }
@@ -680,6 +681,7 @@ public final class Double extends Number
      * @return  {@code true} if the value of the argument is positive
      *          infinity or negative infinity; {@code false} otherwise.
      */
+    @IntrinsicCandidate
     public static boolean isInfinite(double v) {
         return (v == POSITIVE_INFINITY) || (v == NEGATIVE_INFINITY);
     }
@@ -694,6 +696,7 @@ public final class Double extends Number
      * floating-point value, {@code false} otherwise.
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static boolean isFinite(double d) {
         return Math.abs(d) <= Double.MAX_VALUE;
     }

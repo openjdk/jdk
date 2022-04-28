@@ -4698,3 +4698,101 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
 }
 #endif
 
+void C2_MacroAssembler::float_class_check(int opcode, Register dst, XMMRegister src, Register temp) {
+
+  int32_t POS_INF = 0x7f800000;
+  int32_t KILL_SIGN_MASK = 0x7fffffff;
+
+  movdl(temp, src);
+  andl(temp, KILL_SIGN_MASK);
+  cmpl(temp, POS_INF);
+  switch (opcode) {
+    case Op_IsFiniteF:
+      setb(Assembler::below, dst);
+      break;
+    case Op_IsInfiniteF: {
+      setb(Assembler::equal, dst);
+      break;
+    }
+    case Op_IsNaNF:
+       setb(Assembler::above, dst);
+       break;
+    default:
+      assert(false, "%s", NodeClassNames[opcode]);
+  }
+}
+
+void C2_MacroAssembler::float_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp) {
+  uint8_t imm8;
+  switch (opcode) {
+    case Op_IsFiniteF:
+      imm8 = 0x99;
+      break;
+    case Op_IsInfiniteF:
+      imm8 = 0x18;
+      break;
+    case Op_IsNaNF:
+       imm8 = 0x81;
+       break;
+    default:
+      assert(false, "%s", NodeClassNames[opcode]);
+  }
+  vfpclassss(tmp, src, imm8);
+  kmovbl(dst, tmp);
+  if (opcode == Op_IsFiniteF) {
+    xorl(dst, 0x00000001);
+  }
+}
+
+
+
+#ifdef _LP64
+void C2_MacroAssembler::double_class_check(int opcode, XMMRegister src, Register dst, Register temp,
+                                            Register temp1, Register temp2) {
+  int64_t POS_INF = 0x7ff0000000000000L;
+  int64_t KILL_SIGN_MASK = 0x7fffffffffffffffL;
+
+  movq(temp, src);
+  mov64(temp1, KILL_SIGN_MASK);
+  andq(temp, temp1);
+  mov64(temp2, POS_INF);
+  cmpq(temp, temp2);
+
+  switch (opcode) {
+    case Op_IsFiniteD:
+      setb(Assembler::below, dst);
+      break;
+    case Op_IsInfiniteD:
+      setb(Assembler::equal, dst);
+      break;
+    case Op_IsNaND:
+      setb(Assembler::above, dst);
+      break;
+    default:
+      assert(false, "%s", NodeClassNames[opcode]);
+  }
+}
+
+
+void C2_MacroAssembler::double_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp) {
+  uint8_t imm8;
+  switch (opcode) {
+    case Op_IsFiniteD:
+      imm8 = 0x99;
+      break;
+    case Op_IsInfiniteD:
+      imm8 = 0x18;
+      break;
+    case Op_IsNaND:
+       imm8 = 0x81;
+       break;
+    default:
+      assert(false, "%s", NodeClassNames[opcode]);
+  }
+  vfpclasssd(tmp, src, imm8);
+  kmovbl(dst, tmp);
+  if (opcode == Op_IsFiniteD) {
+    xorl(dst, 0x00000001);
+  }
+}
+#endif

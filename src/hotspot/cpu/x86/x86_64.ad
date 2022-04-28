@@ -11148,6 +11148,45 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
   ins_pipe( pipe_slow );
 %}
 
+instruct FloatClassCheck_reg_reg(rRegI dst, regF src, rRegI tmp, kReg ktmp, rFlagsReg cr)
+%{
+  match(Set dst (IsInfiniteF src));
+  match(Set dst (IsNaNF src));
+  match(Set dst (IsFiniteF src));
+  effect(TEMP tmp, TEMP ktmp, KILL cr);
+  format %{ "float_class_check $dst, $src" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    if (VM_Version::supports_avx512dq()) {
+      __ float_class_check_vfp(opcode, $dst$$Register, $src$$XMMRegister, $ktmp$$KRegister);
+    }
+    else {
+      __ float_class_check(opcode, $dst$$Register, $src$$XMMRegister, $tmp$$Register);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct DoubleClassCheck_reg_reg(rRegI dst, regD src, rRegL tmp, rRegL tmp1, rRegL tmp2, kReg ktmp, rFlagsReg cr)
+%{
+  match(Set dst (IsInfiniteD src));
+  match(Set dst (IsNaND src));
+  match(Set dst (IsFiniteD src));
+  effect(TEMP tmp, TEMP tmp1, TEMP tmp2, TEMP ktmp, KILL cr);
+  format %{ "double_class_check $dst, $src" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    if (VM_Version::supports_avx512dq()) {
+      __ double_class_check_vfp(opcode, $dst$$Register, $src$$XMMRegister, $ktmp$$KRegister);
+    }
+    else {
+      __ double_class_check(opcode, $src$$XMMRegister, $dst$$Register, $tmp$$Register,
+                $tmp1$$Register,  $tmp2$$Register);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // Fast clearing of an array
 // Small ClearArray non-AVX512.
 instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,

@@ -140,6 +140,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
+#include "opto/fpclassnode.hpp"
 #endif // COMPILER2
 
 // Note: the cross-product of (c1, c2, product, nonproduct, ...),
@@ -1845,6 +1846,7 @@
   declare_c2_type(CopySignFNode, Node)                                    \
   declare_c2_type(SignumDNode, Node)                                      \
   declare_c2_type(SignumFNode, Node)                                      \
+  declare_c2_type(IsInfiniteFNode, Node)                                  \
   declare_c2_type(LoadVectorGatherNode, LoadVectorNode)                   \
   declare_c2_type(StoreVectorScatterNode, StoreVectorNode)                \
   declare_c2_type(VectorLoadMaskNode, VectorNode)                         \
