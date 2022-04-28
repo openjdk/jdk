@@ -29,7 +29,6 @@ import java.security.Security;
 import java.security.*;
 import java.util.Objects;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.jca.GetInstance;
 
 /**
@@ -78,8 +77,8 @@ public class TrustManagerFactory {
     @SuppressWarnings("removal")
     public static String getDefaultAlgorithm() {
         String type;
-        type = GetPropertyAction.privilegedGetProperty(
-            "ssl.TrustManagerFactory.algorithm");
+        type = AccessController.doPrivileged((PrivilegedAction<String>) () ->
+            Security.getProperty( "ssl.TrustManagerFactory.algorithm"));
         if (type == null) {
             type = "SunX509";
         }

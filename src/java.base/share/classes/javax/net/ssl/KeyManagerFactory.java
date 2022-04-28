@@ -29,7 +29,6 @@ import java.security.Security;
 import java.security.*;
 import java.util.Objects;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.jca.GetInstance;
 
 /**
@@ -66,8 +65,8 @@ public class KeyManagerFactory {
     @SuppressWarnings("removal")
     public static String getDefaultAlgorithm() {
         String type;
-        type = GetPropertyAction.privilegedGetProperty(
-            "ssl.KeyManagerFactory.algorithm");
+        type = AccessController.doPrivileged((PrivilegedAction<String>) () ->
+            Security.getProperty("ssl.KeyManagerFactory.algorithm"));
         if (type == null) {
             type = "SunX509";
         }
