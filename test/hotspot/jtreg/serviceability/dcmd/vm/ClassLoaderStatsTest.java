@@ -175,7 +175,7 @@ class TestClass {
 
     static {
         try {
-            // Create a hidden class, keep reference in the case if GC happens
+            // Create a hidden non-strong class, keep reference in the case if GC happens
             byte[] klassBuf = readClassFile(DIR + File.separator + HCName);
             hc = defineHiddenClass(klassBuf);
         } catch (Throwable e) {
