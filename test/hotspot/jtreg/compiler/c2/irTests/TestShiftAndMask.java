@@ -344,7 +344,7 @@ public class TestShiftAndMask {
     public static int shiftMaskIntCheckIndex(int i, int length) {
         return Objects.checkIndex(i << 2, length) & 3; // transformed to: return 0;
     }
-    
+
     @Run(test = "shiftMaskIntCheckIndex")
     public static void shiftMaskIntCheckIndex_runner() {
         int i = RANDOM.nextInt((Integer.MAX_VALUE - 1) >> 2);
@@ -359,7 +359,7 @@ public class TestShiftAndMask {
     public static long shiftMaskLongCheckIndex(long i, long length) {
         return Objects.checkIndex(i << 2, length) & 3; // transformed to: return 0;
     }
-    
+
     @Run(test = "shiftMaskLongCheckIndex")
     public static void shiftMaskLongCheckIndex_runner() {
         long i = RANDOM.nextInt((Integer.MAX_VALUE - 1) >> 2);
