@@ -1171,6 +1171,19 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # name, an exception will be thrown when the property is used.
 # If the property is not set or empty, a default value will be used.
 #
+# For compatibility, the system property "keystore.pkcs12.legacy" can be set
+# which will override the properties defined here with weaker algorithms.
+# This system property is equivalent to
+#   -Dkeystore.pkcs12.certProtectionAlgorithm=PBEWithSHA1AndRC2_40
+#   -Dkeystore.pkcs12.keyProtectionAlgorithm=PBEWithSHA1AndDESede
+#   -Dkeystore.pkcs12.macAlgorithm=HmacPBESHA1
+#   -Dkeystore.pkcs12.certPbeIterationCount=50000
+#   -Dkeystore.pkcs12.keyPbeIterationCount=50000
+#   -Dkeystore.pkcs12.macIterationCount=100000
+# This system property should be used at your own risk. Please note there is
+# no value defined for this system property, i.e. "-Dkeystore.pkcs12.legacy"
+# has the same effect as "-Dkeystore.pkcs12.legacy=<any value>".
+#
 # Note: These properties are currently used by the JDK Reference implementation.
 # They are not guaranteed to be examined and used by other implementations.
 
