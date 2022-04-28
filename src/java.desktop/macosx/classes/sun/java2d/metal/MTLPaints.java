@@ -47,8 +47,7 @@ abstract class MTLPaints {
      * Holds all registered implementations, using the corresponding
      * SunGraphics2D.PAINT_* constant as the hash key.
      */
-    private static Map<Integer, MTLPaints> impls =
-            new HashMap<Integer, MTLPaints>(4, 1.0f);
+    private static Map<Integer, MTLPaints> impls = HashMap.newHashMap(4);
 
     static {
         impls.put(SunGraphics2D.PAINT_GRADIENT, new Gradient());

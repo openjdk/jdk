@@ -62,7 +62,7 @@ public class SunDisplayChanger {
     // It is asserted that the most common case is to have one GraphicsDevice
     // and one top-level Window.
     private Map<DisplayChangedListener, Void> listeners =
-        Collections.synchronizedMap(new WeakHashMap<DisplayChangedListener, Void>(1));
+        Collections.synchronizedMap(WeakHashMap.newWeakHashMap(1));
 
     public SunDisplayChanger() {}
 

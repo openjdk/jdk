@@ -64,7 +64,7 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      */
     private MediaSizeName mediaName;
 
-    private static HashMap<MediaSizeName, MediaSize> mediaMap = new HashMap<>(100, 10);
+    private static HashMap<MediaSizeName, MediaSize> mediaMap = new HashMap<>(100);
 
     private static Vector<MediaSize> sizeVector = new Vector<>(100, 10);
 

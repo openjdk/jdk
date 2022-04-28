@@ -48,7 +48,7 @@ final class PrimitiveTypeMap {
         return map.get(name);
     }
 
-    private static final Map<String, Class<?>> map = new HashMap<String, Class<?>>(9);
+    private static final Map<String, Class<?>> map = HashMap.newHashMap(9);
 
     static {
         map.put(boolean.class.getName(), boolean.class);

@@ -329,13 +329,13 @@ public abstract class DataTransferer {
     public SortedMap<Long, DataFlavor> getFormatsForFlavors(DataFlavor[] flavors,
                                                             FlavorTable map)
     {
-        Map<Long,DataFlavor> formatMap = new HashMap<>(flavors.length);
-        Map<Long,DataFlavor> textPlainMap = new HashMap<>(flavors.length);
+        Map<Long,DataFlavor> formatMap = HashMap.newHashMap(flavors.length);
+        Map<Long,DataFlavor> textPlainMap = HashMap.newHashMap(flavors.length);
         // Maps formats to indices that will be used to sort the formats
         // according to the preference order.
         // Larger index value corresponds to the more preferable format.
-        Map<Long, Integer> indexMap = new HashMap<>(flavors.length);
-        Map<Long, Integer> textPlainIndexMap = new HashMap<>(flavors.length);
+        Map<Long, Integer> indexMap = HashMap.newHashMap(flavors.length);
+        Map<Long, Integer> textPlainIndexMap = HashMap.newHashMap(flavors.length);
 
         int currentIndex = 0;
 
@@ -409,7 +409,7 @@ public abstract class DataTransferer {
      * when converting to the DataFlavor.
      */
     public Map<DataFlavor, Long> getFlavorsForFormats(long[] formats, FlavorTable map) {
-        Map<DataFlavor, Long> flavorMap = new HashMap<>(formats.length);
+        Map<DataFlavor, Long> flavorMap = HashMap.newHashMap(formats.length);
         Set<AbstractMap.SimpleEntry<Long, DataFlavor>> mappingSet = new HashSet<>(formats.length);
         Set<DataFlavor> flavorSet = new HashSet<>(formats.length);
 
