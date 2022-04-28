@@ -98,6 +98,7 @@ class VectorNode : public TypeNode {
   static bool is_scalar_rotate(Node* n);
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
   static bool is_vector_integral_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate);
+  static bool is_populate_index_supported(BasicType bt);
   static bool is_invariant_vector(Node* n);
   static bool is_all_ones_vector(Node* n);
   static bool is_vector_bitwise_not_pattern(Node* n);
@@ -1101,6 +1102,13 @@ class ReplicateFNode : public VectorNode {
 class ReplicateDNode : public VectorNode {
  public:
   ReplicateDNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
+  virtual int Opcode() const;
+};
+
+//======================Populate_Indices_into_a_Vector=========================
+class PopulateIndexNode : public VectorNode {
+ public:
+  PopulateIndexNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
