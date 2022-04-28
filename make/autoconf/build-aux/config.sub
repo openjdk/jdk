@@ -46,9 +46,9 @@ if echo $* | grep pc-msys >/dev/null ; then
     exit
 fi
 
-# Canonicalize for riscv64 which autoconf-config.sub doesn't handle
-if echo $* | grep '^riscv64-linux' >/dev/null ; then
-    result=`echo $@ | sed 's/^riscv64-linux/riscv64-unknown-linux/'`
+# Canonicalize for riscv which autoconf-config.sub doesn't handle
+if echo $* | grep '^riscv\(32\|64\)-linux' >/dev/null ; then
+    result=`echo $@ | sed 's/linux/unknown-linux/'`
     echo $result
     exit
 fi
@@ -85,4 +85,3 @@ result=`echo $result | sed "s/^arm-/aarch64-/"`
 
 echo $result
 exit $exitcode
-
