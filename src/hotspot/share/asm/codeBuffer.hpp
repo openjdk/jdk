@@ -27,6 +27,7 @@
 
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -251,11 +252,12 @@ class CodeSection {
   void relocate(address at, RelocationHolder const& rspec, int format = 0);
   void relocate(address at,    relocInfo::relocType rtype, int format = 0, jint method_index = 0);
 
-  // alignment requirement for starting offset
-  // Requirements are that the instruction area and the
-  // stubs area must start on CodeEntryAlignment, and
-  // the ctable on sizeof(jdouble)
-  int alignment() const             { return MAX2((int)sizeof(jdouble), (int)CodeEntryAlignment); }
+  // internal code sections alignment
+  int alignment() const {
+    // TODO: move InteriorEntryAlignment to common c1/c2 header
+    int code_entry_aliginment = (int) COMPILER2_PRESENT(InteriorEntryAlignment) NOT_COMPILER2(CodeEntryAlignment);
+    return MAX2((int)sizeof(jdouble), code_entry_aliginment);
+  }
 
   // Slop between sections, used only when allocating temporary BufferBlob buffers.
   static csize_t end_slop()         { return MAX2((int)sizeof(jdouble), (int)CodeEntryAlignment); }
