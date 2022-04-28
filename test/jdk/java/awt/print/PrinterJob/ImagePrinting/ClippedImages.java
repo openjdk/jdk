@@ -49,6 +49,7 @@ import static java.awt.EventQueue.invokeAndWait;
 /*
  * @test
  * @bug 6531728
+ * @key printer
  * @library ../../../regtesthelpers
  * @build PassFailJFrame
  * @summary Test printing of images which need to have src area clipped
