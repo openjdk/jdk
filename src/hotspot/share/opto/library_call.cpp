@@ -527,6 +527,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_reverseBytes_s:
   case vmIntrinsics::_reverseBytes_c:           return inline_number_methods(intrinsic_id());
 
+  case vmIntrinsics::_compress_i:
+  case vmIntrinsics::_compress_l:
+  case vmIntrinsics::_expand_i:
+  case vmIntrinsics::_expand_l:                 return inline_bitshuffle_methods(intrinsic_id());
+
   case vmIntrinsics::_divideUnsigned_i:
   case vmIntrinsics::_divideUnsigned_l:
   case vmIntrinsics::_remainderUnsigned_i:
@@ -2188,6 +2193,24 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
   case vmIntrinsics::_reverseBytes_i:           n = new ReverseBytesINode( 0,   arg);  break;
   case vmIntrinsics::_reverseBytes_l:           n = new ReverseBytesLNode( 0,   arg);  break;
   default:  fatal_unexpected_iid(id);  break;
+  }
+  set_result(_gvn.transform(n));
+  return true;
+}
+
+//--------------------------inline_bitshuffle_methods-----------------------------
+// inline int Integer.compress(int, int)
+// inline int Integer.expand(int, int)
+// inline long Long.compress(long, long)
+// inline long Long.expand(long, long)
+bool LibraryCallKit::inline_bitshuffle_methods(vmIntrinsics::ID id) {
+  Node* n = NULL;
+  switch (id) {
+    case vmIntrinsics::_compress_i:  n = new CompressBitsNode(argument(0), argument(1), TypeInt::INT); break;
+    case vmIntrinsics::_expand_i:    n = new ExpandBitsNode(argument(0),  argument(1), TypeInt::INT); break;
+    case vmIntrinsics::_compress_l:  n = new CompressBitsNode(argument(0), argument(2), TypeLong::LONG); break;
+    case vmIntrinsics::_expand_l:    n = new ExpandBitsNode(argument(0), argument(2), TypeLong::LONG); break;
+    default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
   return true;

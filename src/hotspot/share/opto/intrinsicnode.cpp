@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "opto/addnode.hpp"
+#include "opto/mulnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/phaseX.hpp"
 
@@ -112,3 +114,102 @@ SignumFNode* SignumFNode::make(PhaseGVN& gvn, Node* in) {
   return new SignumFNode(in, gvn.makecon(TypeF::ZERO), gvn.makecon(TypeF::ONE));
 }
 
+Node* CompressBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* src = in(1);
+  Node* mask = in(2);
+  if (bottom_type()->isa_int()) {
+    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->is_int()->is_con()) {
+      // compress(x, 1 << n) == (x >> n & 1)
+      if (phase->type(mask->in(1))->higher_equal(TypeInt::ONE)) {
+        Node* rshift = phase->transform(new RShiftINode(in(1), mask->in(2)));
+        return new AndINode(rshift, phase->makecon(TypeInt::ONE));
+      // compress(x, -1 << n) == x >>> n
+      } else if (phase->type(mask->in(1))->higher_equal(TypeInt::MINUS_1)) {
+        return new URShiftINode(in(1), mask->in(2));
+      }
+    }
+    // compress(expand(x, m), m) == x & compress(m, m)
+    if (src->Opcode() == Op_ExpandBits &&
+        src->in(2) == mask) {
+      Node* compr = phase->transform(new CompressBitsNode(mask, mask, TypeInt::INT));
+      return new AndINode(compr, src->in(1));
+    }
+  } else {
+    assert(bottom_type()->isa_long(), "");
+    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->is_long()->is_con()) {
+      // compress(x, 1 << n) == (x >> n & 1)
+      if (phase->type(mask->in(1))->higher_equal(TypeLong::ONE)) {
+        Node* rshift = phase->transform(new RShiftLNode(in(1), mask->in(2)));
+        return new AndLNode(rshift, phase->makecon(TypeLong::ONE));
+      // compress(x, -1 << n) == x >>> n
+      } else if (phase->type(mask->in(1))->higher_equal(TypeLong::MINUS_1)) {
+        return new URShiftLNode(in(1), mask->in(2));
+      }
+    }
+    // compress(expand(x, m), m) == x & compress(m, m)
+    if (src->Opcode() == Op_ExpandBits &&
+        src->in(2) == mask) {
+      Node* compr = phase->transform(new CompressBitsNode(mask, mask, TypeLong::LONG));
+      return new AndLNode(compr, src->in(1));
+    }
+  }
+  return NULL;
+}
+
+Node* compress_expand_identity(PhaseGVN* phase, Node* n) {
+  BasicType bt = n->bottom_type()->array_element_basic_type();
+  // compress(x, 0) == 0
+  if(phase->type(n->in(2))->higher_equal(TypeInteger::zero(bt))) return n->in(2);
+  // compress(x, -1) == x
+  if(phase->type(n->in(2))->higher_equal(TypeInteger::minus_1(bt))) return n->in(1);
+  return n;
+}
+
+Node* CompressBitsNode::Identity(PhaseGVN* phase) {
+  return compress_expand_identity(phase, this);
+}
+
+
+Node* ExpandBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  Node* src = in(1);
+  Node* mask = in(2);
+  if (bottom_type()->isa_int()) {
+    if (mask->Opcode() == Op_LShiftI && phase->type(mask->in(1))->is_int()->is_con()) {
+      // expand(x, 1 << n) == (x & 1) << n
+      if (phase->type(mask->in(1))->higher_equal(TypeInt::ONE)) {
+        Node* andnode = phase->transform(new AndINode(in(1), phase->makecon(TypeInt::ONE)));
+        return new LShiftINode(andnode, mask->in(2));
+      // expand(x, -1 << n) == x << n
+      } else if (phase->type(mask->in(1))->higher_equal(TypeInt::MINUS_1)) {
+        return new LShiftINode(in(1), mask->in(2));
+      }
+    }
+    // expand(compress(x, m), m) == x & m
+    if (src->Opcode() == Op_CompressBits &&
+        src->in(2) == mask) {
+      return new AndINode(src->in(1), mask);
+    }
+  } else {
+    assert(bottom_type()->isa_long(), "");
+    if (mask->Opcode() == Op_LShiftL && phase->type(mask->in(1))->is_long()->is_con()) {
+      // expand(x, 1 << n) == (x & 1) << n
+      if (phase->type(mask->in(1))->higher_equal(TypeLong::ONE)) {
+        Node* andnode = phase->transform(new AndLNode(in(1), phase->makecon(TypeLong::ONE)));
+        return new LShiftLNode(andnode, mask->in(2));
+      // expand(x, -1 << n) == x << n
+      } else if (phase->type(mask->in(1))->higher_equal(TypeLong::MINUS_1)) {
+        return new LShiftLNode(in(1), mask->in(2));
+      }
+    }
+    // expand(compress(x, m), m) == x & m
+    if (src->Opcode() == Op_CompressBits &&
+        src->in(2) == mask) {
+      return new AndLNode(src->in(1), mask);
+    }
+  }
+  return NULL;
+}
+
+Node* ExpandBitsNode::Identity(PhaseGVN* phase) {
+  return compress_expand_identity(phase, this);
+}

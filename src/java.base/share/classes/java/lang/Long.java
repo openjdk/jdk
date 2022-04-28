@@ -1978,7 +1978,7 @@ public final class Long extends Number
      * @see #expand
      * @since 19
      */
-    // @IntrinsicCandidate
+    @IntrinsicCandidate
     public static long compress(long i, long mask) {
         // See Hacker's Delight (2nd ed) section 7.4 Compress, or Generalized Extract
 
@@ -2066,7 +2066,7 @@ public final class Long extends Number
      * @see #compress
      * @since 19
      */
-    // @IntrinsicCandidate
+    @IntrinsicCandidate
     public static long expand(long i, long mask) {
         // Save original mask
         long originalMask = mask;

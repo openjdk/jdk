@@ -1839,7 +1839,7 @@ public final class Integer extends Number
      * @see #expand
      * @since 19
      */
-    // @IntrinsicCandidate
+    @IntrinsicCandidate
     public static int compress(int i, int mask) {
         // See Hacker's Delight (2nd ed) section 7.4 Compress, or Generalized Extract
 
@@ -1927,7 +1927,7 @@ public final class Integer extends Number
      * @see #compress
      * @since 19
      */
-    // @IntrinsicCandidate
+    @IntrinsicCandidate
     public static int expand(int i, int mask) {
         // Save original mask
         int originalMask = mask;
