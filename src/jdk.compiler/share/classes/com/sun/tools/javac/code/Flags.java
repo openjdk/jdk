@@ -309,12 +309,6 @@ public class Flags {
     public static final long NAME_FILLED = 1L<<52; //ParamSymbols only
 
     /**
-     * Flag to indicate the given MethodSymbol is a method from java.lang.Object transferred to an
-     * interface, which does not declare the method explicitly.
-     */
-    public static final long OBJECT_METHOD_IN_INTERFACE = 1L<<52; // MethodSymbols
-
-    /**
      * Flag to indicate the given ModuleSymbol is a system module.
      */
     public static final long SYSTEM_MODULE = 1L<<53; //ModuleSymbols only
