@@ -434,104 +434,97 @@ void PhaseChaitin::Register_Allocate() {
   }
 
   GrowableArray<Block_List> regions;
-  if (C->method() != NULL && !C->is_osr_compilation() && !C->has_irreducible_loop() && UseNewCode) {
-//    ResourceMark rm;
-    stringStream ss;
-    C->method()->print_short_name(&ss);
-    if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress") || UseNewCode2) {
+  if (!C->is_osr_compilation() && !C->has_irreducible_loop() && UseNewCode) {
 //      _cfg._root_loop->dump_tree();
-      CFGLoop* loop = _cfg._root_loop;
-      CFGLoop* most_frequent = NULL;
-      do {
-        for (;;) {
-          CFGLoop* next = loop->_child;
-          if (next == NULL) {
-            break;
-          }
-          loop = next;
+    CFGLoop* loop = _cfg._root_loop;
+    GrowableArray<CFGLoop*> leaf_loops;
+    do {
+      for (;;) {
+        CFGLoop* next = loop->_child;
+        if (next == NULL) {
+          break;
         }
-//        tty->print_cr("XXX %d %d", loop->id(), loop->depth());
-        if (loop->_child == NULL /*&& loop->depth() == 3*/) {
-          GrowableArray<CFGElement*> blocks = loop->_members;
-          bool skip = false;
-          for (int i = 0; i < blocks.length() && !skip; ++i) {
-            Block* block = blocks.at(i)->as_Block();
-            for (uint j = 0; j < block->_num_succs && !skip; ++j) {
-              Block* succ = block->_succs[j];
-              if (succ->_loop != loop) {
-                for (uint k = 1; k < succ->end_idx() && !skip; ++k) {
-                  Node* n = succ->get_node(k);
-                  if (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
-                    skip = true;
-                  }
+        loop = next;
+      }
+      if (loop->_child == NULL && loop != _cfg._root_loop) {
+        GrowableArray<CFGElement*> blocks = loop->_members;
+        bool skip = false;
+        for (int i = 0; i < blocks.length() && !skip; ++i) {
+          Block* block = blocks.at(i)->as_Block();
+          for (uint j = 0; j < block->_num_succs && !skip; ++j) {
+            Block* succ = block->_succs[j];
+            if (succ->_loop != loop) {
+              for (uint k = 1; k < succ->end_idx() && !skip; ++k) {
+                Node* n = succ->get_node(k);
+                if (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
+                  skip = true;
                 }
               }
             }
-//            block->dump();
-          }
-          if (!skip) {
-            if (most_frequent == NULL) {
-              most_frequent = loop;
-            } else if (loop->trip_count() > most_frequent->trip_count()) {
-              most_frequent = loop;
-            }
           }
         }
-        for (;;) {
-          CFGLoop* next = loop->_sibling;
-          if (next != NULL) {
-            loop = next;
-            break;
-          }
-          loop = loop->_parent;
-          if (loop == NULL) {
-            break;
-          }
-//          tty->print_cr("XXX %d", loop->id());
+        if (!skip) {
+          leaf_loops.push(loop);
         }
-      } while (loop != NULL);
-      if (most_frequent != NULL && most_frequent != _cfg._root_loop) {
-//        tty->print_cr("XXX most frequent: %d", most_frequent->id());
-        GrowableArray<CFGElement*> blocks = most_frequent->_members;
-        Block_List region;
-        for (int i = 0; i < blocks.length(); ++i) {
-          Block* block = blocks.at(i)->as_Block();
-          block->_region = 1;
-          region.push(block);
-        }
-        regions.push(region);
       }
-      Block_List region;
-      for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
-        Block* block = _cfg.get_block(i);
-//        block->dump();
-        if (block->_region == 0) {
-          region.push(block);
-          for (uint j = 0; j < block->_num_succs; ++j) {
-            Block* s = block->_succs[j];
-            if (s->_region == 1) {
-              assert(block->_num_succs == 1, "");
-              block->_next_region = 1;
-            }
-          }
-          for (uint j = 1; j < block->num_preds(); ++j) {
-            Block* p = _cfg.get_block_for_node(block->pred(j));
-            if (p->_region == 1) {
-              assert(block->num_preds() == 2, "");
-              block->_prev_region = 1;
-            }
-          }
+      for (;;) {
+        CFGLoop* next = loop->_sibling;
+        if (next != NULL) {
+          loop = next;
+          break;
         }
+        loop = loop->_parent;
+        if (loop == NULL) {
+          break;
+        }
+      }
+    } while (loop != NULL);
+    leaf_loops.sort([](CFGLoop** l1, CFGLoop** l2) {
+        if ((*l1)->_freq < (*l2)->_freq) return -1;
+        else if ((*l1)->_freq > (*l2)->_freq) return 1;
+        return 0;
+    });
+    for (int i = 0; i < leaf_loops.length(); ++i) {
+      GrowableArray<CFGElement*> blocks = leaf_loops.at(i)->_members;
+      Block_List region;
+      for (int j = 0; j < blocks.length(); ++j) {
+        Block* block = blocks.at(j)->as_Block();
+        block->_region = i+1;
+        region.push(block);
       }
       regions.push(region);
     }
+    Block_List region;
+    for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
+      Block* block = _cfg.get_block(i);
+//        block->dump();
+      if (block->_region == 0) {
+        region.push(block);
+        for (uint j = 0; j < block->_num_succs; ++j) {
+          Block* s = block->_succs[j];
+          if (s->_region == 1) {
+            assert(block->_num_succs == 1, "");
+            block->_next_region = 1;
+          }
+        }
+        for (uint j = 1; j < block->num_preds(); ++j) {
+          Block* p = _cfg.get_block_for_node(block->pred(j));
+          if (p->_region == 1) {
+            assert(block->num_preds() == 2, "");
+            block->_prev_region = 1;
+          }
+        }
+      }
+    }
+    regions.push(region);
   }
   if (regions.length() == 0) {
     regions.push(_cfg._blocks);
   }
 
   for (int region = regions.length()-1; region >= 0; region--) {
-    if (UseNewCode3) {
+    _trip_cnt = 0;
+    if (UseNewCode3 ) {
       tty->print_cr("XXX region = %d - %d %d", region, sizeof(LRG), offset_of(LRG, _mask));
       for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
         Block* block = _cfg.get_block(i);
@@ -762,7 +755,7 @@ void PhaseChaitin::Register_Allocate() {
       _was_up_in_prev_region.clear();
       bool dump = UseNewCode3;
       if (dump) {
-        tty->print_cr("XXXXX after region = %d - %d/%d", region, offset_of(LRG, _reg), sizeof(LRG));
+        tty->print_cr("XXXXX after region = %d - %d/%d", region, offset_of(LRG, _mask), sizeof(LRG));
       }
       for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
         Block* block = _cfg.get_block(i);
