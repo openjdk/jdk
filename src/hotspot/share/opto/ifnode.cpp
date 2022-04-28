@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
         } else if( v->Opcode() == Op_CastII ) {
           tty->print_cr("Phi has CastII use");
         } else {
-          tty->print_cr("Phi has use I cant be bothered with");
+          tty->print_cr("Phi has use I can't be bothered with");
         }
         */
       }
@@ -739,7 +739,7 @@ bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
 // Do this If and the dominating If share a region?
 bool IfNode::has_shared_region(ProjNode* proj, ProjNode*& success, ProjNode*& fail) {
   ProjNode* otherproj = proj->other_if_proj();
-  Node* otherproj_ctrl_use = otherproj->unique_ctrl_out();
+  Node* otherproj_ctrl_use = otherproj->unique_ctrl_out_or_null();
   RegionNode* region = (otherproj_ctrl_use != NULL && otherproj_ctrl_use->is_Region()) ? otherproj_ctrl_use->as_Region() : NULL;
   success = NULL;
   fail = NULL;
@@ -1724,7 +1724,7 @@ Node* IfProjNode::Identity(PhaseGVN* phase) {
     if (in(0)->is_BaseCountedLoopEnd()) {
       // CountedLoopEndNode may be eliminated by if subsuming, replace CountedLoopNode with LoopNode to
       // avoid mismatching between CountedLoopNode and CountedLoopEndNode in the following optimization.
-      Node* head = unique_ctrl_out();
+      Node* head = unique_ctrl_out_or_null();
       if (head != NULL && head->is_BaseCountedLoop() && head->in(LoopNode::LoopBackControl) == this) {
         Node* new_head = new LoopNode(head->in(LoopNode::EntryControl), this);
         phase->is_IterGVN()->register_new_node_with_optimizer(new_head);
@@ -1786,7 +1786,7 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
   Node* old_if_f = iff->proj_out(false);
   Node* old_if_t = iff->proj_out(true);
 
-  // CountedLoopEnds want the back-control test to be TRUE, irregardless of
+  // CountedLoopEnds want the back-control test to be TRUE, regardless of
   // whether they are testing a 'gt' or 'lt' condition.  The 'gt' condition
   // happens in count-down loops
   if (iff->is_BaseCountedLoopEnd())  return NULL;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ import sun.nio.ch.DefaultSelectorProvider;
  *    // optionally configure multicast TTL; the TTL defines the scope of a
  *    // multicast datagram, for example, confining it to host local (0) or
  *    // link local (1) etc...
- *    int ttl = ...; // a number betwen 0 and 255
+ *    int ttl = ...; // a number between 0 and 255
  *    sender.setOption(StandardSocketOptions.IP_MULTICAST_TTL, ttl);
  *
  *    // send a packet to a multicast group
@@ -1353,9 +1353,7 @@ public class DatagramSocket implements java.io.Closeable {
         Throwable cause = e.getCause();
         if (cause instanceof SocketException)
             return (SocketException) cause;
-        SocketException se = new SocketException(e.getMessage());
-        se.initCause(e);
-        return se;
+        return new SocketException(e.getMessage(), e);
     }
 
     /**

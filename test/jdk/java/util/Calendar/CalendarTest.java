@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -974,7 +974,7 @@ public class CalendarTest extends IntlTest {
 
         try {
             for (int j = 0; j < lt.length; j++) {
-                Locale l = new Locale(lt[j][0], lt[j][1]);
+                Locale l = Locale.of(lt[j][0], lt[j][1]);
                 TimeZone z = TimeZone.getTimeZone(lt[j][2]);
                 Locale.setDefault(l);
                 TimeZone.setDefault(z);

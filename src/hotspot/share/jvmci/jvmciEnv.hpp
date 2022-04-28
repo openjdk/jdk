@@ -251,7 +251,7 @@ public:
   jint get_int_at(JVMCIPrimitiveArray array, int index);
   void put_int_at(JVMCIPrimitiveArray array, int index, jint value);
 
-  long get_long_at(JVMCIPrimitiveArray array, int index);
+  jlong get_long_at(JVMCIPrimitiveArray array, int index);
   void put_long_at(JVMCIPrimitiveArray array, int index, jlong value);
 
   void copy_bytes_to(JVMCIPrimitiveArray src, jbyte* dest, int offset, jsize length);
@@ -392,10 +392,13 @@ public:
   JVMCIObject new_HotSpotStackFrameReference(JVMCI_TRAPS);
   JVMCIObject new_JVMCIError(JVMCI_TRAPS);
 
-  jlong make_handle(const Handle& obj);
-  oop resolve_handle(jlong objectHandle);
+  // Makes a handle to a HotSpot heap object. These handles are
+  // individually reclaimed by JVMCIRuntime::destroy_oop_handle and
+  // bulk reclaimed by JVMCIRuntime::release_and_clear_globals.
+  jlong make_oop_handle(const Handle& obj);
+  oop resolve_oop_handle(jlong oopHandle);
 
-  // These are analagous to the JNI routines
+  // These are analogous to the JNI routines
   JVMCIObject make_local(JVMCIObject object);
   void destroy_local(JVMCIObject object);
 

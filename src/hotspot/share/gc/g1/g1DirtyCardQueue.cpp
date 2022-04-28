@@ -66,12 +66,11 @@ static uint par_ids_start() { return 0; }
 
 G1DirtyCardQueueSet::G1DirtyCardQueueSet(BufferNode::Allocator* allocator) :
   PtrQueueSet(allocator),
-  _primary_refinement_thread(NULL),
+  _refinement_notification_thread(nullptr),
   _num_cards(0),
   _completed(),
   _paused(),
   _free_ids(par_ids_start(), num_par_ids()),
-  _process_cards_threshold(ProcessCardsThresholdNever),
   _max_cards(MaxCardsUnlimited),
   _padded_max_cards(MaxCardsUnlimited),
   _detached_refinement_stats()
@@ -118,6 +117,10 @@ void G1DirtyCardQueueSet::handle_zero_index_for_thread(Thread* t) {
   G1BarrierSet::dirty_card_queue_set().handle_zero_index(queue);
 }
 
+size_t G1DirtyCardQueueSet::num_cards() const {
+  return Atomic::load(&_num_cards);
+}
+
 void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
   assert(cbn != NULL, "precondition");
   // Increment _num_cards before adding to queue, so queue removal doesn't
@@ -130,9 +133,8 @@ void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
     GlobalCounter::CriticalSection cs(Thread::current());
     _completed.push(*cbn);
   }
-  if ((new_num_cards > process_cards_threshold()) &&
-      (_primary_refinement_thread != NULL)) {
-    _primary_refinement_thread->activate();
+  if (_refinement_notification_thread != nullptr) {
+    _refinement_notification_thread->notify(new_num_cards);
   }
 }
 
@@ -320,13 +322,6 @@ void G1DirtyCardQueueSet::abandon_completed_buffers() {
     buffers_to_delete = bn->next();
     bn->set_next(NULL);
     deallocate_buffer(bn);
-  }
-}
-
-void G1DirtyCardQueueSet::notify_if_necessary() {
-  if ((_primary_refinement_thread != NULL) &&
-      (num_cards() > process_cards_threshold())) {
-    _primary_refinement_thread->activate();
   }
 }
 

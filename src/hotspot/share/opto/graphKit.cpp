@@ -526,7 +526,7 @@ void GraphKit::uncommon_trap_if_should_post_on_exceptions(Deoptimization::DeoptR
 }
 
 //------------------------------builtin_throw----------------------------------
-void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
+void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
   bool must_throw = true;
 
   // If this particular condition has not yet happened at this
@@ -1201,7 +1201,7 @@ Node* GraphKit::array_ideal_length(AllocateArrayNode* alloc,
   if (replace_length_in_map == false || map()->find_edge(length) >= 0) {
     Node* ccast = alloc->make_ideal_length(oop_type, &_gvn);
     if (ccast != length) {
-      // do not transfrom ccast here, it might convert to top node for
+      // do not transform ccast here, it might convert to top node for
       // negative array length and break assumptions in parsing stage.
       _gvn.set_type_bottom(ccast);
       record_for_igvn(ccast);
@@ -1620,7 +1620,7 @@ Node* GraphKit::access_store_at(Node* obj,
 }
 
 Node* GraphKit::access_load_at(Node* obj,   // containing obj
-                               Node* adr,   // actual adress to store val at
+                               Node* adr,   // actual address to store val at
                                const TypePtr* adr_type,
                                const Type* val_type,
                                BasicType bt,
@@ -1638,7 +1638,7 @@ Node* GraphKit::access_load_at(Node* obj,   // containing obj
   }
 }
 
-Node* GraphKit::access_load(Node* adr,   // actual adress to load val at
+Node* GraphKit::access_load(Node* adr,   // actual address to load val at
                             const Type* val_type,
                             BasicType bt,
                             DecoratorSet decorators) {
@@ -3334,7 +3334,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
           bool is_aastore = (java_bc() == Bytecodes::_aastore);
           Deoptimization::DeoptReason reason = is_aastore ?
             Deoptimization::Reason_array_check : Deoptimization::Reason_class_check;
-          builtin_throw(reason, makecon(TypeKlassPtr::make(objtp->klass())));
+          builtin_throw(reason);
           return top();
         } else if (!too_many_traps_or_recompiles(Deoptimization::Reason_null_assert)) {
           return null_assert(obj);
@@ -3419,7 +3419,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
         bool is_aastore = (java_bc() == Bytecodes::_aastore);
         Deoptimization::DeoptReason reason = is_aastore ?
           Deoptimization::Reason_array_check : Deoptimization::Reason_class_check;
-        builtin_throw(reason, load_object_klass(not_null_obj));
+        builtin_throw(reason);
       }
     } else {
       (*failure_control) = not_subtype_ctrl;

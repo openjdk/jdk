@@ -42,13 +42,9 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.URICertStoreParameters;
 
 
-import java.security.interfaces.ECKey;
-import java.security.interfaces.EdECKey;
 import java.security.spec.ECParameterSpec;
 import java.text.Collator;
 import java.text.MessageFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
@@ -826,9 +822,7 @@ public final class Main {
         if (providerClasses != null) {
             ClassLoader cl = null;
             if (pathlist != null) {
-                String path = null;
-                path = PathList.appendPath(
-                        path, System.getProperty("java.class.path"));
+                String path = System.getProperty("java.class.path");
                 path = PathList.appendPath(
                         path, System.getProperty("env.class.path"));
                 path = PathList.appendPath(path, pathlist);
@@ -1290,6 +1284,7 @@ public final class Main {
             kssave = true;
         } else if (command == LIST) {
             if (storePass == null
+                    && !protectedPath
                     && !KeyStoreUtil.isWindowsKeyStore(storetype)
                     && !isPasswordlessKeyStore) {
                 printNoIntegrityWarning();
@@ -1689,6 +1684,7 @@ public final class Main {
         throws Exception
     {
         if (storePass == null
+                && !protectedPath
                 && !KeyStoreUtil.isWindowsKeyStore(storetype)
                 && !isPasswordlessKeyStore) {
             printNoIntegrityWarning();
@@ -1921,6 +1917,8 @@ public final class Main {
                     keysize = SecurityProviderConstants.DEF_EC_KEY_SIZE;
                 } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
                     keysize = SecurityProviderConstants.DEF_RSA_KEY_SIZE;
+                } else if ("RSASSA-PSS".equalsIgnoreCase(keyAlgName)) {
+                    keysize = SecurityProviderConstants.DEF_RSASSA_PSS_KEY_SIZE;
                 } else if ("DSA".equalsIgnoreCase(keyAlgName)) {
                     keysize = SecurityProviderConstants.DEF_DSA_KEY_SIZE;
                 } else if ("EdDSA".equalsIgnoreCase(keyAlgName)) {
@@ -2020,7 +2018,7 @@ public final class Main {
                     ("Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for"));
             Object[] source = {
                     groupName == null ? keysize : KeyUtil.getKeySize(privKey),
-                    fullDisplayAlgName(privKey),
+                    KeyUtil.fullDisplayAlgName(privKey),
                     newCert.getSigAlgName(),
                     signerAlias,
                     validity,
@@ -2031,7 +2029,7 @@ public final class Main {
                     ("Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for"));
             Object[] source = {
                     groupName == null ? keysize : KeyUtil.getKeySize(privKey),
-                    fullDisplayAlgName(privKey),
+                    KeyUtil.fullDisplayAlgName(privKey),
                     newCert.getSigAlgName(),
                     validity,
                     x500Name};
@@ -2257,6 +2255,9 @@ public final class Main {
                 out.println(mf);
                 dumpCert(cert, out);
             } else if (debug) {
+                for (var attr : keyStore.getEntry(alias, null).getAttributes()) {
+                    System.out.println("Attribute " + attr.getName() + ": " + attr.getValue());
+                }
                 out.println(cert.toString());
             } else {
                 out.println("trustedCertEntry, ");
@@ -2424,7 +2425,7 @@ public final class Main {
         /*
          * Information display rule of -importkeystore
          * 1. inside single, shows failure
-         * 2. inside all, shows sucess
+         * 2. inside all, shows success
          * 3. inside all where there is a failure, prompt for continue
          * 4. at the final of all, shows summary
          */
@@ -3562,24 +3563,10 @@ public final class Main {
         }
     }
 
-    private String fullDisplayAlgName(Key key) {
-        String result = key.getAlgorithm();
-        if (key instanceof ECKey) {
-            ECParameterSpec paramSpec = ((ECKey) key).getParams();
-            if (paramSpec instanceof NamedCurve) {
-                NamedCurve nc = (NamedCurve)paramSpec;
-                result += " (" + nc.getNameAndAliases()[0] + ")";
-            }
-        } else if (key instanceof EdECKey) {
-            result = ((EdECKey) key).getParams().getName();
-        }
-        return result;
-    }
-
     private String withWeakConstraint(Key key,
             CertPathConstraintsParameters cpcp) {
         int kLen = KeyUtil.getKeySize(key);
-        String displayAlg = fullDisplayAlgName(key);
+        String displayAlg = KeyUtil.fullDisplayAlgName(key);
         try {
             DISABLED_CHECK.permits(key.getAlgorithm(), cpcp, true);
         } catch (CertPathValidatorException e) {
@@ -4926,17 +4913,6 @@ public final class Main {
                                 "Unable.to.parse.denyAfter.string.in.exception.message"));
                     }
 
-                    SimpleDateFormat formatter = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
-                    Date dateObj = null;
-                    try {
-                        dateObj = formatter.parse(denyAfterDate);
-                    } catch (ParseException e2) {
-                        throw new Exception(rb.getString(
-                                "Unable.to.parse.denyAfter.string.in.exception.message"));
-                    }
-                    formatter = new SimpleDateFormat("yyyy-MM-dd");
-                    denyAfterDate = formatter.format(dateObj);
-
                     weakWarnings.add(String.format(
                             rb.getString("whose.sigalg.usagesignedjar"), label, sigAlg,
                             denyAfterDate));
@@ -4959,13 +4935,13 @@ public final class Main {
                     weakWarnings.add(String.format(
                             rb.getString("whose.key.weak"), label,
                             String.format(rb.getString("key.bit"),
-                            KeyUtil.getKeySize(key), fullDisplayAlgName(key))));
+                            KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
                 }
             } catch (CertPathValidatorException e) {
                 weakWarnings.add(String.format(
                         rb.getString("whose.key.disabled"), label,
                         String.format(rb.getString("key.bit"),
-                        KeyUtil.getKeySize(key), fullDisplayAlgName(key))));
+                        KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
             }
         }
     }
@@ -4986,12 +4962,12 @@ public final class Main {
                 weakWarnings.add(String.format(
                     rb.getString("whose.key.disabled"), label,
                     String.format(rb.getString("key.bit"),
-                    KeyUtil.getKeySize(key), fullDisplayAlgName(key))));
+                    KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
             } else if (!LEGACY_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
                 weakWarnings.add(String.format(
                     rb.getString("whose.key.weak"), label,
                     String.format(rb.getString("key.bit"),
-                    KeyUtil.getKeySize(key), fullDisplayAlgName(key))));
+                    KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
             }
         }
     }

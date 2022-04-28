@@ -107,7 +107,7 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
 
   // Update compaction values.
   _compaction_top += size;
-  _current_region->alloc_block_in_bot(_compaction_top - size, _compaction_top);
+  _current_region->update_bot_for_block(_compaction_top - size, _compaction_top);
 }
 
 void G1FullGCCompactionPoint::add(HeapRegion* hr) {

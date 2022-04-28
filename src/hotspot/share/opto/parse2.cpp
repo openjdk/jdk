@@ -194,7 +194,7 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
         // If we have already recompiled with the range-check-widening
         // heroic optimization turned off, then we must really be throwing
         // range check exceptions.
-        builtin_throw(Deoptimization::Reason_range_check, idx);
+        builtin_throw(Deoptimization::Reason_range_check);
       }
     }
   }
@@ -1332,7 +1332,7 @@ bool Parse::seems_never_taken(float prob) const {
 // True if the comparison seems to be the kind that will not change its
 // statistics from true to false.  See comments in adjust_map_after_if.
 // This question is only asked along paths which are already
-// classifed as untaken (by seems_never_taken), so really,
+// classified as untaken (by seems_never_taken), so really,
 // if a path is never taken, its controlling comparison is
 // already acting in a stable fashion.  If the comparison
 // seems stable, we will put an expensive uncommon trap
@@ -1802,7 +1802,7 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
 
 //------------------------------do_one_bytecode--------------------------------
 // Parse this bytecode, and alter the Parsers JVM->Node mapping
-void Parse::do_one_bytecode() {
+void Parse::do_one_bytecode_common() {
   Node *a, *b, *c, *d;          // Handy temps
   BoolTest::mask btest;
   int i;
@@ -1865,33 +1865,33 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_bipush:   push(intcon(iter().get_constant_u1())); break;
   case Bytecodes::_sipush:   push(intcon(iter().get_constant_u2())); break;
   case Bytecodes::_aconst_null: push(null());  break;
+
   case Bytecodes::_ldc:
   case Bytecodes::_ldc_w:
-  case Bytecodes::_ldc2_w:
-    // If the constant is unresolved, run this BC once in the interpreter.
-    {
-      ciConstant constant = iter().get_constant();
-      if (!constant.is_valid() ||
-          (constant.basic_type() == T_OBJECT &&
-           !constant.as_object()->is_loaded())) {
-        int index = iter().get_constant_pool_index();
-        constantTag tag = iter().get_constant_pool_tag(index);
-        uncommon_trap(Deoptimization::make_trap_request
-                      (Deoptimization::Reason_unloaded,
-                       Deoptimization::Action_reinterpret,
-                       index),
-                      NULL, tag.internal_name());
-        break;
-      }
-      assert(constant.basic_type() != T_OBJECT || constant.as_object()->is_instance(),
-             "must be java_mirror of klass");
+  case Bytecodes::_ldc2_w: {
+    ciConstant constant = iter().get_constant();
+    if (constant.is_loaded()) {
       const Type* con_type = Type::make_from_constant(constant);
       if (con_type != NULL) {
         push_node(con_type->basic_type(), makecon(con_type));
       }
-    }
+    } else {
+      // If the constant is unresolved or in error state, run this BC in the interpreter.
+      if (iter().is_in_error()) {
+        uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
+                                                        Deoptimization::Action_none),
+                      NULL, "constant in error state", true /* must_throw */);
 
+      } else {
+        int index = iter().get_constant_pool_index();
+        uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unloaded,
+                                                        Deoptimization::Action_reinterpret,
+                                                        index),
+                      NULL, "unresolved constant", false /* must_throw */);
+      }
+    }
     break;
+  }
 
   case Bytecodes::_aload_0:
     push( local(0) );
@@ -2750,16 +2750,4 @@ void Parse::do_one_bytecode() {
     tty->print("\nUnhandled bytecode %s\n", Bytecodes::name(bc()) );
     ShouldNotReachHere();
   }
-
-#ifndef PRODUCT
-  if (C->should_print_igv(1)) {
-    IdealGraphPrinter* printer = C->igv_printer();
-    char buffer[256];
-    jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
-    bool old = printer->traverse_outs();
-    printer->set_traverse_outs(true);
-    printer->print_method(buffer, 4);
-    printer->set_traverse_outs(old);
-  }
-#endif
 }

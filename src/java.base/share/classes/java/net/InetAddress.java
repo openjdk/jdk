@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectInputStream.GetField;
 import java.io.ObjectOutputStream;
 import java.io.ObjectOutputStream.PutField;
+import java.io.Serializable;
 import java.lang.annotation.Native;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
@@ -223,7 +224,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * @see     java.net.InetAddress#getLocalHost()
  * @since 1.0
  */
-public class InetAddress implements java.io.Serializable {
+public sealed class InetAddress implements Serializable permits Inet4Address, Inet6Address {
 
     /**
      * Specify the address family: Internet Protocol, Version 4
@@ -410,6 +411,9 @@ public class InetAddress implements java.io.Serializable {
 
     // Native method to check if IPv4 is available
     private static native boolean isIPv4Available();
+
+    // Native method to check if IPv6 is available
+    private static native boolean isIPv6Supported();
 
     /**
      * The {@code RuntimePermission("inetAddressResolverProvider")} is
@@ -1269,7 +1273,8 @@ public class InetAddress implements java.io.Serializable {
 
     static {
         // create the impl
-        impl = InetAddressImplFactory.create();
+        impl = isIPv6Supported() ?
+                new Inet6AddressImpl() : new Inet4AddressImpl();
 
         // impl must be initialized before calling this method
         PLATFORM_LOOKUP_POLICY = initializePlatformLookupPolicy();
@@ -1769,16 +1774,6 @@ public class InetAddress implements java.io.Serializable {
         return impl.anyLocalAddress();
     }
 
-    /**
-     * Initializes an empty InetAddress.
-     */
-    @java.io.Serial
-    private void readObjectNoData () {
-        if (getClass().getClassLoader() != null) {
-            throw new SecurityException ("invalid address type");
-        }
-    }
-
     private static final jdk.internal.misc.Unsafe UNSAFE
             = jdk.internal.misc.Unsafe.getUnsafe();
     private static final long FIELDS_OFFSET
@@ -1794,9 +1789,6 @@ public class InetAddress implements java.io.Serializable {
     @java.io.Serial
     private void readObject (ObjectInputStream s) throws
                          IOException, ClassNotFoundException {
-        if (getClass().getClassLoader() != null) {
-            throw new SecurityException ("invalid address type");
-        }
         GetField gf = s.readFields();
         String host = (String)gf.get("hostName", null);
         int address = gf.get("address", 0);
@@ -1830,28 +1822,11 @@ public class InetAddress implements java.io.Serializable {
      * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
-    private void writeObject (ObjectOutputStream s) throws
-                        IOException {
-        if (getClass().getClassLoader() != null) {
-            throw new SecurityException ("invalid address type");
-        }
+    private void writeObject (ObjectOutputStream s) throws IOException {
         PutField pf = s.putFields();
         pf.put("hostName", holder().getHostName());
         pf.put("address", holder().getAddress());
         pf.put("family", holder().getFamily());
         s.writeFields();
     }
-}
-
-/*
- * Simple factory to create the impl
- */
-class InetAddressImplFactory {
-
-    static InetAddressImpl create() {
-        return isIPv6Supported() ?
-                new Inet6AddressImpl() : new Inet4AddressImpl();
-    }
-
-    static native boolean isIPv6Supported();
 }

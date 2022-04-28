@@ -1,4 +1,4 @@
-.\" Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -120,15 +120,12 @@ local security policies should be considered before you start the
 \f[CB]jstatd\f[R] process, particularly in production environments or on
 networks that aren\[aq]t secure.
 .PP
-The \f[CB]jstatd\f[R] server installs an instance of
-\f[CB]RMISecurityPolicy\f[R] when no other security manager is installed,
-and therefore, requires a security policy file to be specified.
-The policy file must conform to Default Policy Implementation and Policy
-File Syntax.
+For security purposes, the \f[CB]jstatd\f[R] server uses an RMI
+ObjectInputFilter to allow only essential classes to be deserialized.
 .PP
-If your security concerns can\[aq]t be addressed with a customized
-policy file, then the safest action is to not run the \f[CB]jstatd\f[R]
-server and use the \f[CB]jstat\f[R] and \f[CB]jps\f[R] tools locally.
+If your security concerns can\[aq]t be addressed, then the safest action
+is to not run the \f[CB]jstatd\f[R] server and use the \f[CB]jstat\f[R] and
+\f[CB]jps\f[R] tools locally.
 However, when using \f[CB]jps\f[R] to get a list of instrumented JVMs, the
 list will not include any JVMs running in docker containers.
 .SH REMOTE INTERFACE
@@ -149,7 +146,7 @@ This example assumes that no other server is bound to the default RMI
 registry port (port \f[CB]1099\f[R]).
 .RS
 .PP
-\f[CB]jstatd\ \-J\-Djava.security.policy=all.policy\f[R]
+\f[CB]jstatd\f[R]
 .RE
 .SH EXTERNAL RMI REGISTRY
 .PP
@@ -159,7 +156,7 @@ registry.
 .nf
 \f[CB]
 rmiregistry&
-jstatd\ \-J\-Djava.security.policy=all.policy
+jstatd
 \f[R]
 .fi
 .PP
@@ -169,7 +166,7 @@ registry server on port \f[CB]2020\f[R].
 .nf
 \f[CB]
 jrmiregistry\ 2020&
-jstatd\ \-J\-Djava.security.policy=all.policy\ \-p\ 2020
+jstatd\ \-p\ 2020
 \f[R]
 .fi
 .PP
@@ -180,7 +177,7 @@ registry server on port \f[CB]2020\f[R] and JMX connector bound to port
 .nf
 \f[CB]
 jrmiregistry\ 2020&
-jstatd\ \-J\-Djava.security.policy=all.policy\ \-p\ 2020\ \-r\ 2021
+jstatd\ \-p\ 2020\ \-r\ 2021
 \f[R]
 .fi
 .PP
@@ -191,7 +188,7 @@ registry on port 2020 that\[aq]s bound to
 .nf
 \f[CB]
 rmiregistry\ 2020&
-jstatd\ \-J\-Djava.security.policy=all.policy\ \-p\ 2020\ \-n\ AlternateJstatdServerName
+jstatd\ \-p\ 2020\ \-n\ AlternateJstatdServerName
 \f[R]
 .fi
 .SH STOP THE CREATION OF AN IN\-PROCESS RMI REGISTRY
@@ -203,7 +200,7 @@ If an RMI registry isn\[aq]t running, then an error message is
 displayed.
 .RS
 .PP
-\f[CB]jstatd\ \-J\-Djava.security.policy=all.policy\ \-nr\f[R]
+\f[CB]jstatd\ \-nr\f[R]
 .RE
 .SH ENABLE RMI LOGGING
 .PP
@@ -213,5 +210,5 @@ This technique is useful as a troubleshooting aid or for monitoring
 server activities.
 .RS
 .PP
-\f[CB]jstatd\ \-J\-Djava.security.policy=all.policy\ \-J\-Djava.rmi.server.logCalls=true\f[R]
+\f[CB]jstatd\ \-J\-Djava.rmi.server.logCalls=true\f[R]
 .RE

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,7 +290,7 @@ abstract class MethodHandleImpl {
         BoundMethodHandle mh = target.rebind();
 
         // Match each unique conversion to the positions at which it is to be applied
-        var convSpecMap = new HashMap<Object, int[]>(((4 * convCount) / 3) + 1);
+        HashMap<Object, int[]> convSpecMap = HashMap.newHashMap(convCount);
         for (int i = 0; i < convSpecs.length - MH_RECEIVER_OFFSET; i++) {
             Object convSpec = convSpecs[i];
             if (convSpec == null) continue;
@@ -323,7 +323,7 @@ abstract class MethodHandleImpl {
                 for (int pos : positions) {
                     ptypes[pos - 1] = newType;
                 }
-                midType = MethodType.makeImpl(midType.rtype(), ptypes, true);
+                midType = MethodType.methodType(midType.rtype(), ptypes, true);
             }
             LambdaForm form2;
             if (positions.length > 1) {
@@ -448,10 +448,10 @@ abstract class MethodHandleImpl {
         return new AsVarargsCollector(target, arrayType);
     }
 
-    private static final class AsVarargsCollector extends DelegatingMethodHandle {
+    static final class AsVarargsCollector extends DelegatingMethodHandle {
         private final MethodHandle target;
         private final Class<?> arrayType;
-        private @Stable MethodHandle asCollectorCache;
+        private MethodHandle asCollectorCache;
 
         AsVarargsCollector(MethodHandle target, Class<?> arrayType) {
             this(target.type(), target, arrayType);
@@ -705,7 +705,7 @@ abstract class MethodHandleImpl {
      * Behavior in counting and non-counting states is determined by lambda forms produced by
      * countingFormProducer & nonCountingFormProducer respectively.
      */
-    static class CountingWrapper extends DelegatingMethodHandle {
+    static final class CountingWrapper extends DelegatingMethodHandle {
         private final MethodHandle target;
         private int count;
         private Function<MethodHandle, LambdaForm> countingFormProducer;
@@ -1299,7 +1299,7 @@ abstract class MethodHandleImpl {
     }
 
     /** This subclass allows a wrapped method handle to be re-associated with an arbitrary member name. */
-    private static final class WrappedMember extends DelegatingMethodHandle {
+    static final class WrappedMember extends DelegatingMethodHandle {
         private final MethodHandle target;
         private final MemberName member;
         private final Class<?> callerClass;

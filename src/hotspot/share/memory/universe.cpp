@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,12 +194,6 @@ oop Universe::java_mirror(BasicType t) {
 // Used by CDS dumping
 void Universe::replace_mirror(BasicType t, oop new_mirror) {
   Universe::_mirrors[t].replace(new_mirror);
-}
-
-void Universe::basic_type_classes_do(void f(Klass*)) {
-  for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
-    f(_typeArrayKlassObjs[i]);
-  }
 }
 
 void Universe::basic_type_classes_do(KlassClosure *closure) {
@@ -1227,7 +1221,7 @@ void LatestMethodCache::init(Klass* k, Method* m) {
   }
 #ifndef PRODUCT
   else {
-    // sharing initilization should have already set up _klass
+    // sharing initialization should have already set up _klass
     assert(_klass != NULL, "just checking");
   }
 #endif
@@ -1254,6 +1248,7 @@ bool Universe::release_fullgc_alot_dummy() {
     if (_fullgc_alot_dummy_next >= fullgc_alot_dummy_array->length()) {
       // No more dummies to release, release entire array instead
       _fullgc_alot_dummy_array.release(Universe::vm_global());
+      _fullgc_alot_dummy_array = OopHandle(); // NULL out OopStorage pointer.
       return false;
     }
 
