@@ -3632,8 +3632,9 @@ public class Lower extends TreeTranslator {
         if (cases.stream().flatMap(c -> c.labels.stream()).noneMatch(p -> p.hasTag(Tag.DEFAULTCASELABEL))) {
             Type exception = matchException ? syms.matchExceptionType
                                             : syms.incompatibleClassChangeErrorType;
-            JCThrow thr = make.Throw(makeNewClass(exception,
-                                                  List.nil()));
+            List<JCExpression> params = matchException ? List.of(makeNull(), makeNull())
+                                                       : List.nil();
+            JCThrow thr = make.Throw(makeNewClass(exception, params));
             JCCase c = make.Case(JCCase.STATEMENT, List.of(make.DefaultCaseLabel()), List.of(thr), null);
             cases = cases.prepend(c);
         }

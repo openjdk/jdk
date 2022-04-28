@@ -50,36 +50,6 @@ public final class MatchException extends RuntimeException {
     private static final long serialVersionUID = 0L;
 
     /**
-     * Constructs an {@code MatchException} with no detail message.
-     */
-    public MatchException() {
-        super();
-    }
-
-    /**
-     * Constructs an {@code MatchException} with the specified
-     * detail message.
-     *
-     * @param  message the detail message (which is saved for later retrieval
-     *         by the {@link #getMessage()} method).
-     */
-    public MatchException(String message) {
-        super(message);
-    }
-
-    /**
-     * Constructs an {@code MatchException} with the specified cause.
-     *
-     * @param  cause the cause (which is saved for later retrieval by the
-     *         {@link #getCause()} method). (A {@code null} value is
-     *         permitted, and indicates that the cause is nonexistent or
-     *         unknown.)
-     */
-    public MatchException(Throwable cause) {
-        super(cause);
-    }
-
-    /**
      * Constructs an {@code MatchException} with the specified detail message and
      * cause.
      *
