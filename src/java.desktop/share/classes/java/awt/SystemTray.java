@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.event.ActionListener;
 import java.awt.peer.SystemTrayPeer;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import javax.swing.SwingUtilities;
 import java.util.Vector;
 
 import sun.awt.AWTAccessor;
@@ -284,6 +285,24 @@ public class SystemTray {
         }
         firePropertyChange("trayIcons", oldArray, newArray);
     }
+
+    // updateTrayIcons method called from native side
+    // when WM_POSCHANGING msg received
+    static void updateTrayIcons() {
+        SwingUtilities.invokeLater(()->{
+            TrayIcon[] trayIconList = null;
+            trayIconList = systemTray.getTrayIcons();
+
+            if (trayIconList == null || trayIconList.length == 0) {
+                // no tray icons present so do nothing
+                return;
+            }
+            for (TrayIcon trayIcon: trayIconList) {
+                trayIcon.updateNotify();
+            }
+        });
+    }
+
 
     /**
      * Removes the specified {@code TrayIcon} from the

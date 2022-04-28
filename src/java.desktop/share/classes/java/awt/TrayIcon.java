@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.AWTAccessor;
 import sun.awt.HeadlessToolkit;
-import java.util.EventObject;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 
@@ -706,6 +705,13 @@ public class TrayIcon {
             }
         }
         peer.setToolTip(tooltip);
+    }
+
+    void updateNotify() {
+        TrayIconPeer peer = this.peer;
+        if (peer != null) {
+            peer.updateImage();
+        }
     }
 
     void removeNotify() {

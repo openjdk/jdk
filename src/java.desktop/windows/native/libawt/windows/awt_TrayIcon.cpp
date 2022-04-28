@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,6 +221,26 @@ void AwtTrayIcon::InitNID(UINT uID)
     m_nid.uVersion = NOTIFYICON_VERSION;
 }
 
+// trayicon update handler called when Screen scale changes
+void AwtTrayIcon::UpdateTrayIconHandler()
+{
+        jmethodID updateTrayFn;
+        jclass systemTrayClass;
+
+        JNIEnv *env =(JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+        systemTrayClass = env->FindClass("java/awt/SystemTray");
+
+        if (systemTrayClass != NULL) {
+             updateTrayFn = env->GetStaticMethodID(
+                         systemTrayClass, "updateTrayIcons", "()V");
+             if (updateTrayFn != NULL) {
+                 env->CallStaticVoidMethod(systemTrayClass,
+                          updateTrayFn);
+             }
+             env->DeleteLocalRef(systemTrayClass);
+        }
+}
+
 BOOL AwtTrayIcon::SendTrayMessage(DWORD dwMessage)
 {
     return Shell_NotifyIcon(dwMessage, (PNOTIFYICONDATA)&m_nid);
@@ -236,6 +256,13 @@ LRESULT CALLBACK AwtTrayIcon::TrayWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 
     switch(uMsg)
     {
+         // calling update handler on Windows position change
+         // (generated when DPI changes)
+        case WM_WINDOWPOSCHANGING:
+            if (hwnd == AwtTrayIcon::sm_msgWindow) {
+                AwtTrayIcon::UpdateTrayIconHandler();
+            }
+            break;
         case WM_CREATE:
             // Fix for CR#6369062
             s_msgTaskbarCreated = ::RegisterWindowMessage(TEXT("TaskbarCreated"));

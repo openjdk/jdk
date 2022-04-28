@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,7 @@ public:
     static void DestroyMessageWindow();
 
     static HBITMAP CreateBMP(HWND hW,int* imageData,int nSS, int nW, int nH);
+    static void UpdateTrayIconHandler();
 
     // methods called on Toolkit thread
     static void _SetToolTip(void *param);
