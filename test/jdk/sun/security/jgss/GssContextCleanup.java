@@ -53,6 +53,7 @@ public final class GssContextCleanup {
         // Wait to trigger the cleanup.
         for (int i = 0; i < 10 && whm.size() > 0; i++) {
             System.gc();
+            Thread.sleep(100);
         }
 
         // Check if the object has been collected.
