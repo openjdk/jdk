@@ -43,19 +43,19 @@ import java.util.ArrayList;
 public class TrayIconScalingTest {
 
     private static final String INSTRUCTIONS =
-            "This test case checks the scaling of tray icons for on-the-fly\nDPI/Scale changes on Windows.\n\n" +
+            "This test case checks the scaling of tray icons for\non-the-fly DPI/Scale changes on Windows\n\n" +
                     "STEPS: \n\n" +
-                    "1. When you run this test check the system tray area on windows," +
+                    "1. When you run this test check the system tray area on\nwindows," +
                     " a white multi-resolution image (MRI) icon should be visible.\n\n"+
                     "2. Navigate to Settings > System > Display and change the" +
-                    " display scale by selecting any value from Scale & Layout dropdown.\n\n"+
-                    "3. On scale changes observe the white tray icon, if there is NO\ndistortion then press PASS.\n\n";
+                    " display scale by selecting any value from Scale & Layout\ndropdown\n\n"+
+                    "3. On scale changes observe the white tray icon, if there is NO distortion then press PASS\n\n";
 
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
         PassFailJFrame passFailJFrame = new PassFailJFrame("TrayIcon " +
-                "Test Instructions", INSTRUCTIONS, 8, 20, 40);
+                "Test Instructions", INSTRUCTIONS, 5, 19, 35);
         createAndShowGUI();
         passFailJFrame.awaitAndCheck();
     }
