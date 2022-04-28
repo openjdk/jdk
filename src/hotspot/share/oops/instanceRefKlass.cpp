@@ -52,7 +52,7 @@ static ReferenceType determine_reference_type(const ClassFileParser& parser) {
     return rt;
   }
 
-  // Bootstrapping: this is either of the four direct subclasses of java.lang.ref.Reference
+  // Bootstrapping: this is one of the direct subclasses of java.lang.ref.Reference
   const Symbol* const name = parser.class_name();
   return reference_subclass_name_to_type(name);
 }
