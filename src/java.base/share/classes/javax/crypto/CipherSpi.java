@@ -300,9 +300,10 @@ public abstract class CipherSpi {
      *
      * <p>The returned parameters may be the same that were used to initialize
      * this cipher, or may contain additional default or random parameter
-     * values used by the underlying cipher implementation if this cipher can
-     * successfully generate the required parameter values when not supplied.
-     * Otherwise, {@code null} is returned.
+     * values used by the underlying cipher implementation. If the required
+     * parameters were not supplied and the underlying cipher implementation
+     * can generate the parameter values, it will be returned. Otherwise,
+     * {@code null} is returned.
      *
      * @return the parameters used with this cipher, or {@code null}
      */
