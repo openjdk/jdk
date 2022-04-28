@@ -67,27 +67,29 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         Element target;
         CommentHelper ch = utils.getCommentHelper(input.element);
         if (input.tagId == null) {
-            target = input.docTreeInfo.docTree() instanceof ThrowsTree tt
-                    ? ch.getException(tt) : null;
+            var tag = (ThrowsTree) input.docTreeInfo.docTree();
+            target = ch.getException(tag);
             input.tagId = target == null
-                    ? ch.getExceptionName(input.docTreeInfo.docTree()).getSignature()
+                    ? ch.getExceptionName(tag).getSignature()
                     : utils.getFullyQualifiedName(target);
         } else {
             target = input.utils.findClass(input.element, input.tagId);
         }
 
-        for (ThrowsTree tt : input.utils.getThrowsTrees(input.element)) {
-            Element candidate = ch.getException(tt);
+        // TODO warn if target == null as we cannot guarantee type-match, but at most FQN-match.
+
+        for (ThrowsTree tag : input.utils.getThrowsTrees(input.element)) {
+            Element candidate = ch.getException(tag);
             if (candidate != null && (input.tagId.equals(utils.getSimpleName(candidate)) ||
                     (input.tagId.equals(utils.getFullyQualifiedName(candidate))))) {
                 output.holder = input.element;
-                output.holderTag = tt;
+                output.holderTag = tag;
                 output.inlineTags = ch.getBody(output.holderTag);
-                output.tagList.add(tt);
+                output.tagList.add(tag);
             } else if (target != null && candidate != null &&
                     utils.isTypeElement(candidate) && utils.isTypeElement(target) &&
                     utils.isSubclassOf((TypeElement) candidate, (TypeElement) target)) {
-                output.tagList.add(tt);
+                output.tagList.add(tag);
             }
         }
     }
