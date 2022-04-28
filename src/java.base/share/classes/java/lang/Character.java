@@ -744,8 +744,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
          * 0.75 - the default load factor of HashMap
          */
         private static final int NUM_ENTITIES = 737;
-        private static Map<String, UnicodeBlock> map =
-                new HashMap<>((int)(NUM_ENTITIES / 0.75f + 1.0f));
+        private static Map<String, UnicodeBlock> map = HashMap.newHashMap(NUM_ENTITIES);
 
         /**
          * Creates a UnicodeBlock with the given identifier name.
@@ -5286,7 +5285,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         /**
          * Unicode script "Unknown".
          */
-        UNKNOWN;
+        UNKNOWN; // must be the last enum constant for calculating the size of "aliases" hash map.
 
         private static final int[] scriptStarts = {
             0x0000,   // 0000..0040; COMMON
@@ -8572,7 +8571,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
 
         private static final HashMap<String, Character.UnicodeScript> aliases;
         static {
-            aliases = new HashMap<>((int)(162 / 0.75f + 1.0f));
+            aliases = HashMap.newHashMap(UNKNOWN.ordinal() + 1);
             aliases.put("ADLM", ADLAM);
             aliases.put("AGHB", CAUCASIAN_ALBANIAN);
             aliases.put("AHOM", AHOM);

@@ -341,7 +341,7 @@ bool VectorNode::is_vector_rotate_supported(int vopc, uint vlen, BasicType bt) {
 
   // If target does not support variable shift operations then no point
   // in creating a rotate vector node since it will not be disintegratable.
-  // Adding a pessimistic check to avoid complex pattern mathing which
+  // Adding a pessimistic check to avoid complex pattern matching which
   // may not be full proof.
   if (!Matcher::supports_vector_variable_shifts()) {
      return false;
@@ -393,6 +393,11 @@ bool VectorNode::is_vector_integral_negate_supported(int opc, uint vlen, BasicTy
     }
   }
   return false;
+}
+
+bool VectorNode::is_populate_index_supported(BasicType bt) {
+  int vlen = Matcher::max_vector_size(bt);
+  return Matcher::match_rule_supported_vector(Op_PopulateIndex, vlen, bt);
 }
 
 bool VectorNode::is_shift_opcode(int opc) {

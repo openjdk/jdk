@@ -145,6 +145,8 @@ import java.util.function.Function;
  * enables interoperability among different implementations of this
  * interface by providing a common conversion type.
  *
+ * @param <T> the type of values the stage produces or consumes
+ *
  * @author Doug Lea
  * @since 1.8
  */

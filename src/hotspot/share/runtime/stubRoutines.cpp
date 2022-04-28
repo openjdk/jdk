@@ -31,8 +31,8 @@
 #include "prims/vectorSupport.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timerTrace.hpp"
-#include "runtime/safefetch.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #ifdef COMPILER2
@@ -167,13 +167,6 @@ address StubRoutines::_dlibm_sin_cos_huge = NULL;
 address StubRoutines::_dlibm_reduce_pi04l = NULL;
 address StubRoutines::_dlibm_tan_cot_huge = NULL;
 address StubRoutines::_dtan = NULL;
-
-address StubRoutines::_safefetch32_entry                 = NULL;
-address StubRoutines::_safefetch32_fault_pc              = NULL;
-address StubRoutines::_safefetch32_continuation_pc       = NULL;
-address StubRoutines::_safefetchN_entry                  = NULL;
-address StubRoutines::_safefetchN_fault_pc               = NULL;
-address StubRoutines::_safefetchN_continuation_pc        = NULL;
 
 address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{NULL}, {NULL}};
 address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{NULL}, {NULL}};

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ void PLAB::flush_and_retire_stats(PLABStats* stats) {
 
   // Since we have flushed the stats we need to clear  the _allocated and _wasted
   // fields in case somebody retains an instance of this over GCs. Not doing so
-  // will artifically inflate the values in the statistics.
+  // will artificially inflate the values in the statistics.
   _allocated   = 0;
   _wasted      = 0;
   _undo_wasted = 0;
