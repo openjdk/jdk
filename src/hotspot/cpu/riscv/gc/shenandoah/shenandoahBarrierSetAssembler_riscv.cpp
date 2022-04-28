@@ -187,7 +187,7 @@ void ShenandoahBarrierSetAssembler::resolve_forward_pointer(MacroAssembler* masm
   __ bind(is_null);
 }
 
-// IMPORTANT: This must preserve all registers, even t0 and t1, except those explicitely
+// IMPORTANT: This must preserve all registers, even t0 and t1, except those explicitly
 // passed in.
 void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp) {
   assert(ShenandoahLoadRefBarrier || ShenandoahCASBarrier, "Should be enabled");
@@ -499,7 +499,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   // If success, then we are done.
   __ beq(expected, t1, success);
 
-  // Step2: CAS failed, check the forwared pointer.
+  // Step2: CAS failed, check the forwarded pointer.
   __ mv(t0, t1);
 
   if (is_narrow) {

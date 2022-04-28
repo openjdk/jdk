@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -342,7 +342,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   __ add2reg(arg_c, BytesPerWord);
   __ z_bru(loop_start);
 
-  // Method exit, all arguments proocessed.
+  // Method exit, all arguments processed.
   __ bind(loop_end);
   __ z_lmg(Z_R10, Z_R13, frame::z_abi_160_size, Z_SP); // restore registers before frame is popped.
   __ pop_frame();

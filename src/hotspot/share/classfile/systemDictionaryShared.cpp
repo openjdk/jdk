@@ -171,7 +171,7 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   // Get the package entry.
   PackageEntry* pkg_entry = CDSProtectionDomain::get_package_entry_from_class(ik, class_loader);
 
-  // Load and check super/interfaces, restore unsharable info
+  // Load and check super/interfaces, restore unshareable info
   InstanceKlass* shared_klass = load_shared_class(ik, class_loader, protection_domain,
                                                   cfs, pkg_entry, THREAD);
   if (shared_klass == NULL || HAS_PENDING_EXCEPTION) {
@@ -1023,7 +1023,7 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
   //   - loader1 = X->class_loader()
   //   - loader2 = S->class_loader()
   //   - loader1 != loader2
-  //   - M's paramater(s) include an object type T
+  //   - M's parameter(s) include an object type T
   // We require that
   //   - whenever loader1 and loader2 try to
   //     resolve the type T, they must always resolve to
@@ -1105,7 +1105,7 @@ bool SystemDictionaryShared::check_linking_constraints(Thread* current, Instance
             log.print(" succeeded]");
         }
       }
-      return true; // for all recorded constraints added successully.
+      return true; // for all recorded constraints added successfully.
     }
   }
   if (log.is_enabled()) {
