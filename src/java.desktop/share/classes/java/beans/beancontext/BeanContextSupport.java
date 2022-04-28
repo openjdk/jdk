@@ -1319,7 +1319,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      */
 
     protected synchronized void initialize() {
-        children     = HashMap.newHashMap(serializable + 1);
+        children     = new HashMap<>(serializable + 1);
         bcmListeners = new ArrayList<>(1);
 
         childPCL = new PropertyChangeListener() {

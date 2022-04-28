@@ -1445,7 +1445,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
          * XRender.
          */
         gtkAAFontSettingsCond = SwingUtilities2.isLocalDisplay();
-        aaTextInfo = HashMap.newHashMap(2);
+        aaTextInfo = new HashMap<>(2);
         SwingUtilities2.putAATextInfo(gtkAAFontSettingsCond, aaTextInfo);
     }
 

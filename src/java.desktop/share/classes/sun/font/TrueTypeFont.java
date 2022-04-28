@@ -1320,7 +1320,7 @@ public class TrueTypeFont extends FileFont {
             return;
         }
 
-        Map<String, Short> map = HashMap.newHashMap(151);
+        Map<String, Short> map = new HashMap<>(200);
 
         // the following statements are derived from the langIDMap
         // in src/windows/native/java/lang/java_props_md.c using the following

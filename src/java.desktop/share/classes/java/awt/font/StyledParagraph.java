@@ -456,7 +456,10 @@ final class StyledParagraph {
                 }
 
                 if (imStyles != null) {
-                    HashMap<Attribute, Object> newStyles = new HashMap<>(oldStyles);
+                    HashMap<Attribute, Object>
+                        newStyles = new HashMap<>(5, (float)0.9);
+                    newStyles.putAll(oldStyles);
+
                     newStyles.putAll(imStyles);
 
                     return newStyles;

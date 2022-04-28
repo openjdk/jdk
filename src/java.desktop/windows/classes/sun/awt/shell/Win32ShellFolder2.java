@@ -1104,7 +1104,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                                 }
 
                                 if (newIcon2 != null) {
-                                    Map<Integer, Image> bothIcons = HashMap.newHashMap(2);
+                                    Map<Integer, Image> bothIcons = new HashMap<>(2);
                                     bothIcons.put(getLargeIcon ? LARGE_ICON_SIZE : SMALL_ICON_SIZE, newIcon);
                                     bothIcons.put(getLargeIcon ? SMALL_ICON_SIZE : LARGE_ICON_SIZE, newIcon2);
                                     newIcon = new MultiResolutionIconImage(getLargeIcon ? LARGE_ICON_SIZE

@@ -244,7 +244,7 @@ public final class TextAttribute extends Attribute {
 
     // table of all instances in this class, used by readResolve
     private static final Map<String, TextAttribute>
-            instanceMap = HashMap.newHashMap(23);
+            instanceMap = new HashMap<String, TextAttribute>(29);
 
     // For access from java.text.Bidi
     static {

@@ -45,7 +45,8 @@ abstract class D3DPaints {
      * Holds all registered implementations, using the corresponding
      * SunGraphics2D.PAINT_* constant as the hash key.
      */
-    private static Map<Integer, D3DPaints> impls = HashMap.newHashMap(4);
+    private static Map<Integer, D3DPaints> impls =
+        new HashMap<Integer, D3DPaints>(4, 1.0f);
 
     static {
         impls.put(SunGraphics2D.PAINT_GRADIENT, new Gradient());

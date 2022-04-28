@@ -441,8 +441,8 @@ public final class X11FontManager extends FcFontManager {
          * will typically not ever need to initialise it so it can be null.
          */
         xFontDirsMap = null;
-        xlfdMap = HashMap.newHashMap(1);
-        fontNameMap = HashMap.newHashMap(1);
+        xlfdMap = new HashMap<>(1);
+        fontNameMap = new HashMap<>(1);
     }
 
     private static String getX11FontName(String platName) {

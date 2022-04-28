@@ -130,7 +130,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
 
     public void initialize() {
         super.initialize();
-        services     = HashMap.newHashMap(serializable + 1);
+        services     = new HashMap<>(serializable + 1);
         bcsListeners = new ArrayList<>(1);
     }
 
@@ -300,7 +300,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
             BeanContextServiceProvider          delegateProvider; // proxy
             int                                 delegateRefs;
 
-            HashMap<Object, BeanContextServiceRevokedListener> requestors = HashMap.newHashMap(1);
+            HashMap<Object, BeanContextServiceRevokedListener> requestors = new HashMap<>(1);
         }
 
         /*
@@ -340,7 +340,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
             BCSSCServiceClassRef serviceClassRef = null;
 
             if (serviceClasses == null)
-                serviceClasses = HashMap.newHashMap(1);
+                serviceClasses = new HashMap<>(1);
             else
                 serviceClassRef = serviceClasses.get(serviceClass);
 
@@ -362,13 +362,13 @@ public class      BeanContextServicesSupport extends BeanContextSupport
             Map<Object , BCSSCServiceRef> services   = null;
 
             if (serviceRequestors == null) {
-                serviceRequestors = HashMap.newHashMap(1);
+                serviceRequestors = new HashMap<>(1);
             } else {
                 services = serviceRequestors.get(requestor);
             }
 
             if (services == null) {
-                services = HashMap.newHashMap(1);
+                services = new HashMap<>(1);
 
                 serviceRequestors.put(requestor, services);
             } else

@@ -95,17 +95,17 @@ final class WInputMethod extends InputMethodAdapter
         HashMap<TextAttribute,Object> map;
 
         // UNSELECTED_RAW_TEXT_HIGHLIGHT
-        map = HashMap.newHashMap(1);
+        map = new HashMap<>(1);
         map.put(TextAttribute.INPUT_METHOD_UNDERLINE, TextAttribute.UNDERLINE_LOW_DOTTED);
         styles[0] = Collections.unmodifiableMap(map);
 
         // SELECTED_RAW_TEXT_HIGHLIGHT
-        map = HashMap.newHashMap(1);
+        map = new HashMap<>(1);
         map.put(TextAttribute.INPUT_METHOD_UNDERLINE, TextAttribute.UNDERLINE_LOW_GRAY);
         styles[1] = Collections.unmodifiableMap(map);
 
         // UNSELECTED_CONVERTED_TEXT_HIGHLIGHT
-        map = HashMap.newHashMap(1);
+        map = new HashMap<>(1);
         map.put(TextAttribute.INPUT_METHOD_UNDERLINE, TextAttribute.UNDERLINE_LOW_DOTTED);
         styles[2] = Collections.unmodifiableMap(map);
 

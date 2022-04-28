@@ -158,7 +158,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
     private static final RecyclableSingleton<Map<Hit, ScrollBarPart>> hitToPressedPartMap = new RecyclableSingleton<Map<Hit,ScrollBarPart>>(){
         @Override
         protected Map<Hit, ScrollBarPart> getInstance() {
-            final Map<Hit, ScrollBarPart> map = HashMap.newHashMap(7);
+            final Map<Hit, ScrollBarPart> map = new HashMap<Hit, ScrollBarPart>(7);
             map.put(ScrollBarHit.ARROW_MAX, ScrollBarPart.ARROW_MAX);
             map.put(ScrollBarHit.ARROW_MIN, ScrollBarPart.ARROW_MIN);
             map.put(ScrollBarHit.ARROW_MAX_INSIDE, ScrollBarPart.ARROW_MAX_INSIDE);

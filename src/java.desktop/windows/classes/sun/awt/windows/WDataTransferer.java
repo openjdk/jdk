@@ -102,7 +102,7 @@ final class WDataTransferer extends DataTransferer {
     private static final Map <String, Long> predefinedClipboardNameMap;
     static {
         Map <String,Long> tempMap =
-                HashMap.newHashMap(predefinedClipboardNames.length);
+                new HashMap <> (predefinedClipboardNames.length, 1.0f);
         for (int i = 1; i < predefinedClipboardNames.length; i++) {
             tempMap.put(predefinedClipboardNames[i], Long.valueOf(i));
         }

@@ -83,7 +83,7 @@ public class ClipboardTransferable implements Transferable {
                 // Since the SystemFlavorMap will specify many DataFlavors
                 // which map to the same format, we should cache data as we
                 // read it.
-                Map<Long, Object> cached_data = HashMap.newHashMap(formats.length);
+                Map<Long, Object> cached_data = new HashMap<>(formats.length, 1.0f);
                 DataTransferer.getInstance()
                         .getFlavorsForFormats(formats, SunClipboard.getDefaultFlavorTable())
                         .entrySet()

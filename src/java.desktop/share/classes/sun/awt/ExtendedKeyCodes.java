@@ -36,7 +36,8 @@ public class ExtendedKeyCodes {
      * or higher.
      */
      // Keycodes declared in KeyEvent.java with corresponding Unicode values.
-     private static final HashMap<Integer, Integer> regularKeyCodesMap = HashMap.newHashMap(98);
+     private static final HashMap<Integer, Integer>  regularKeyCodesMap =
+                                          new HashMap<Integer,Integer>(98, 1.0f);
 
      // Keycodes derived from Unicode values. Here should be collected codes
      // for characters appearing on the primary layer of at least one

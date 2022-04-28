@@ -66,8 +66,8 @@ public class CDataTransferer extends DataTransferer {
     };
 
     static {
-        Map<String, Long> nameMap = HashMap.newHashMap(predefinedClipboardNames.length);
-        Map<Long, String> formatMap = HashMap.newHashMap(predefinedClipboardNames.length);
+        Map<String, Long> nameMap = new HashMap<>(predefinedClipboardNames.length, 1.0f);
+        Map<Long, String> formatMap = new HashMap<>(predefinedClipboardNames.length, 1.0f);
         for (int i = 1; i < predefinedClipboardNames.length; i++) {
             nameMap.put(predefinedClipboardNames[i], (long) i);
             formatMap.put((long) i, predefinedClipboardNames[i]);

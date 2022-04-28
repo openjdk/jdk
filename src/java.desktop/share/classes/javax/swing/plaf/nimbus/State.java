@@ -71,7 +71,7 @@ import javax.swing.plaf.synth.SynthConstants;
  * </code></pre>
  */
 public abstract class State<T extends JComponent>{
-    static final Map<String, StandardState> standardStates = HashMap.newHashMap(7);
+    static final Map<String, StandardState> standardStates = new HashMap<String, StandardState>(7);
     static final State<JComponent> Enabled = new StandardState(SynthConstants.ENABLED);
     static final State<JComponent> MouseOver = new StandardState(SynthConstants.MOUSE_OVER);
     static final State<JComponent> Pressed = new StandardState(SynthConstants.PRESSED);
