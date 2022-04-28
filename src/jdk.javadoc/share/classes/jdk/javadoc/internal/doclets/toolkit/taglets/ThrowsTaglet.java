@@ -92,68 +92,6 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         }
     }
 
-    /**
-     * Add links for exceptions that are declared but not documented.
-     */
-    private Content linkToUndocumentedDeclaredExceptions(List<? extends TypeMirror> declaredExceptionTypes,
-                                                         Set<String> alreadyDocumented,
-                                                         TagletWriter writer) {
-        Utils utils = writer.configuration().utils;
-        Content result = writer.getOutputInstance();
-        //Add links to the exceptions declared but not documented.
-        for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
-            TypeElement te = utils.asTypeElement(declaredExceptionType);
-            if (te != null &&
-                    !alreadyDocumented.contains(declaredExceptionType.toString()) &&
-                    !alreadyDocumented.contains(utils.getFullyQualifiedName(te, false))) {
-                if (alreadyDocumented.isEmpty()) {
-                    result.add(writer.getThrowsHeader());
-                }
-                result.add(writer.throwsTagOutput(declaredExceptionType));
-                alreadyDocumented.add(utils.getSimpleName(te));
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Inherit throws documentation for exceptions that were declared but not
-     * documented.
-     */
-    private Content inheritThrowsDocumentation(Element holder,
-                                               List<? extends TypeMirror> declaredExceptionTypes,
-                                               Set<String> alreadyDocumented,
-                                               Map<String, TypeMirror> typeSubstitutions,
-                                               TagletWriter writer) {
-        Utils utils = writer.configuration().utils;
-        Content result = writer.getOutputInstance();
-        if (utils.isMethod(holder)) {
-            Map<List<? extends ThrowsTree>, ExecutableElement> declaredExceptionTags = new LinkedHashMap<>();
-            for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
-                Input input = new DocFinder.Input(utils, holder, this,
-                        utils.getTypeName(declaredExceptionType, false));
-                DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
-                if (inheritedDoc.tagList.isEmpty()) {
-                    String typeName = utils.getTypeName(declaredExceptionType, true);
-                    input = new DocFinder.Input(utils, holder, this, typeName);
-                    inheritedDoc = DocFinder.search(writer.configuration(), input);
-                }
-                if (!inheritedDoc.tagList.isEmpty()) {
-                    if (inheritedDoc.holder == null) {
-                        inheritedDoc.holder = holder;
-                    }
-                    List<? extends ThrowsTree> inheritedTags = inheritedDoc.tagList.stream()
-                            .map(t -> (ThrowsTree) t)
-                            .toList();
-                    declaredExceptionTags.put(inheritedTags, (ExecutableElement) inheritedDoc.holder);
-                }
-            }
-            result.add(throwsTagsOutput(declaredExceptionTags, writer, alreadyDocumented,
-                    typeSubstitutions, false));
-        }
-        return result;
-    }
-
     @Override
     public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
@@ -176,6 +114,32 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 thrownTypes, alreadyDocumented, typeSubstitutions, writer));
         result.add(linkToUndocumentedDeclaredExceptions(thrownTypes, alreadyDocumented, writer));
         return result;
+    }
+
+    /**
+     * Returns a map of substitutions for a list of thrown types with the original type-variable
+     * name as key and the instantiated type as value. If no types need to be substituted
+     * an empty map is returned.
+     * @param declaredThrownTypes the originally declared thrown types.
+     * @param instantiatedThrownTypes the thrown types in the context of the current type.
+     * @return map of declared to instantiated thrown types or an empty map.
+     */
+    private Map<String, TypeMirror> getSubstitutedThrownTypes(Types types,
+                                                              List<? extends TypeMirror> declaredThrownTypes,
+                                                              List<? extends TypeMirror> instantiatedThrownTypes) {
+        if (!instantiatedThrownTypes.equals(declaredThrownTypes)) {
+            Map<String, TypeMirror> map = new HashMap<>();
+            Iterator<? extends TypeMirror> i1 = instantiatedThrownTypes.iterator();
+            Iterator<? extends TypeMirror> i2 = declaredThrownTypes.iterator();
+            while (i1.hasNext() && i2.hasNext()) {
+                TypeMirror t1 = i1.next();
+                TypeMirror t2 = i2.next();
+                if (!types.isSameType(t1, t2))
+                    map.put(t2.toString(), t1);
+            }
+            return map;
+        }
+        return Map.of();
     }
 
     /**
@@ -226,28 +190,64 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Returns a map of substitutions for a list of thrown types with the original type-variable
-     * name as key and the instantiated type as value. If no types need to be substituted
-     * an empty map is returned.
-     * @param declaredThrownTypes the originally declared thrown types.
-     * @param instantiatedThrownTypes the thrown types in the context of the current type.
-     * @return map of declared to instantiated thrown types or an empty map.
+     * Inherit throws documentation for exceptions that were declared but not
+     * documented.
      */
-    private Map<String, TypeMirror> getSubstitutedThrownTypes(Types types,
-                                                              List<? extends TypeMirror> declaredThrownTypes,
-                                                              List<? extends TypeMirror> instantiatedThrownTypes) {
-        if (!instantiatedThrownTypes.equals(declaredThrownTypes)) {
-            Map<String, TypeMirror> map = new HashMap<>();
-            Iterator<? extends TypeMirror> i1 = instantiatedThrownTypes.iterator();
-            Iterator<? extends TypeMirror> i2 = declaredThrownTypes.iterator();
-            while (i1.hasNext() && i2.hasNext()) {
-                TypeMirror t1 = i1.next();
-                TypeMirror t2 = i2.next();
-                if (!types.isSameType(t1, t2))
-                    map.put(t2.toString(), t1);
+    private Content inheritThrowsDocumentation(Element holder,
+                                               List<? extends TypeMirror> declaredExceptionTypes,
+                                               Set<String> alreadyDocumented,
+                                               Map<String, TypeMirror> typeSubstitutions,
+                                               TagletWriter writer) {
+        Utils utils = writer.configuration().utils;
+        Content result = writer.getOutputInstance();
+        if (utils.isMethod(holder)) {
+            Map<List<? extends ThrowsTree>, ExecutableElement> declaredExceptionTags = new LinkedHashMap<>();
+            for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
+                Input input = new DocFinder.Input(utils, holder, this,
+                        utils.getTypeName(declaredExceptionType, false));
+                DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
+                if (inheritedDoc.tagList.isEmpty()) {
+                    String typeName = utils.getTypeName(declaredExceptionType, true);
+                    input = new DocFinder.Input(utils, holder, this, typeName);
+                    inheritedDoc = DocFinder.search(writer.configuration(), input);
+                }
+                if (!inheritedDoc.tagList.isEmpty()) {
+                    if (inheritedDoc.holder == null) {
+                        inheritedDoc.holder = holder;
+                    }
+                    List<? extends ThrowsTree> inheritedTags = inheritedDoc.tagList.stream()
+                            .map(t -> (ThrowsTree) t)
+                            .toList();
+                    declaredExceptionTags.put(inheritedTags, (ExecutableElement) inheritedDoc.holder);
+                }
             }
-            return map;
+            result.add(throwsTagsOutput(declaredExceptionTags, writer, alreadyDocumented,
+                    typeSubstitutions, false));
         }
-        return Map.of();
+        return result;
+    }
+
+    /**
+     * Add links for exceptions that are declared but not documented.
+     */
+    private Content linkToUndocumentedDeclaredExceptions(List<? extends TypeMirror> declaredExceptionTypes,
+                                                         Set<String> alreadyDocumented,
+                                                         TagletWriter writer) {
+        Utils utils = writer.configuration().utils;
+        Content result = writer.getOutputInstance();
+        //Add links to the exceptions declared but not documented.
+        for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
+            TypeElement te = utils.asTypeElement(declaredExceptionType);
+            if (te != null &&
+                    !alreadyDocumented.contains(declaredExceptionType.toString()) &&
+                    !alreadyDocumented.contains(utils.getFullyQualifiedName(te, false))) {
+                if (alreadyDocumented.isEmpty()) {
+                    result.add(writer.getThrowsHeader());
+                }
+                result.add(writer.throwsTagOutput(declaredExceptionType));
+                alreadyDocumented.add(utils.getSimpleName(te));
+            }
+        }
+        return result;
     }
 }
