@@ -283,12 +283,12 @@ class UnixPath implements Path {
 
         // verify the extension contains neither a leading nor trailing dot
         if (!extension.isEmpty()) {
-            if (extension.indexOf('.') == 0 ||
-                extension.lastIndexOf('.') == extension.length() - 1)
+            if (extension.charAt(0) == '.' ||
+                extension.charAt(extension.length() - 1) == '.')
                 throw new IllegalArgumentException("leading or trailing dot");
         }
 
-        String thisExtension = getExtension(null);
+        String thisExtension = getExtension().orElse(null);
 
         // if this path has no extension, append that provided
         if (thisExtension == null) {
