@@ -4103,6 +4103,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ReplicateL")==0 ||
         strcmp(opType,"ReplicateF")==0 ||
         strcmp(opType,"ReplicateD")==0 ||
+        strcmp(opType,"PopulateIndex")==0 ||
         strcmp(opType,"AddReductionVI")==0 ||
         strcmp(opType,"AddReductionVL")==0 ||
         strcmp(opType,"AddReductionVF")==0 ||
@@ -4228,7 +4229,7 @@ bool MatchRule::is_vector() const {
     "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
     "RShiftVB","RShiftVS","RShiftVI","RShiftVL",
     "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
-    "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD", "ReverseV", "ReverseBytesV",
+    "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD","ReverseV","ReverseBytesV",
     "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
     "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
     "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
@@ -4237,7 +4238,7 @@ bool MatchRule::is_vector() const {
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X",
     "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
     "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
-    "FmaVD","FmaVF","PopCountVI", "PopCountVL", "VectorLongToMask",
+    "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
     "CountLeadingZerosV", "CountTrailingZerosV",
     // Next are vector mask ops.
     "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",

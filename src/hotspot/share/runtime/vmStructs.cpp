@@ -1813,6 +1813,7 @@
   declare_c2_type(ReplicateLNode, VectorNode)                             \
   declare_c2_type(ReplicateFNode, VectorNode)                             \
   declare_c2_type(ReplicateDNode, VectorNode)                             \
+  declare_c2_type(PopulateIndexNode, VectorNode)                          \
   declare_c2_type(PackNode, VectorNode)                                   \
   declare_c2_type(PackBNode, PackNode)                                    \
   declare_c2_type(PackSNode, PackNode)                                    \

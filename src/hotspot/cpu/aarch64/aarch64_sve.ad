@@ -5456,6 +5456,21 @@ instruct loadconB(vReg dst, immI0 src) %{
   ins_pipe(pipe_slow);
 %}
 
+// -------------------------- Populate Index to a Vector --------------------------
+
+instruct populateindex(vReg dst, iRegIorL2I src1, immI src2) %{
+  predicate(UseSVE > 0);
+  match(Set dst (PopulateIndex src1 src2));
+  ins_cost(SVE_COST);
+  format %{ "sve_index $dst, $src1, $src2\t # populate index (sve)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_index(as_FloatRegister($dst$$reg), __ elemType_to_regVariant(bt),
+                 as_Register($src1$$reg), $src2$$constant);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // Intrisics for String.indexOf(char)
 
 
