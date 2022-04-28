@@ -52,7 +52,7 @@ import java.io.IOException;
  * performed using the path obtained by resolving the given relative path
  * against the <i>original path</i> of the directory (irrespective of if the
  * directory is moved since it was opened).
- * @param <T> the type of path
+ * @param <T> The type of element returned by the iterator
  *
  * @since   1.7
  */
