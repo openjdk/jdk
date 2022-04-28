@@ -425,7 +425,7 @@ public:
 
   // Emit an illegal instruction that's known to trap, with 32 read-only CSR
   // to choose as the input operand.
-  // Acording to the RISC-V Assembly Programmer's Manual, a de facto implementation
+  // According to the RISC-V Assembly Programmer's Manual, a de facto implementation
   // of this instruction is the UNIMP pseduo-instruction, 'CSRRW x0, cycle, x0',
   // attempting to write zero to a read-only CSR 'cycle' (0xC00).
   // RISC-V ISAs provide a set of up to 32 read-only CSR registers 0xC00-0xC1F,
