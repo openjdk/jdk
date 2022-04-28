@@ -111,14 +111,13 @@ void LogMessageBuffer::vwrite(LogLevelType level, const char* fmt, va_list args)
     va_list copy;
     va_copy(copy, args);
     int ret = os::vsnprintf(current_buffer_position, remaining_buffer_length, fmt, copy);
+    va_end(copy);
     assert(ret >= 0, "Log message buffer issue.");
     if (ret < 0) {
       // Encoding error occurred, bail.
-      va_end(copy);
       return;
     }
     written += (size_t)ret + 1;
-    va_end(copy);
     if (written > _message_buffer_capacity - _message_buffer_size) {
       assert(attempts == 0, "Second attempt should always have a sufficiently large buffer (resized to fit).");
       grow(_message_buffer, _message_buffer_capacity, _message_buffer_size + written);
