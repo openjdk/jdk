@@ -298,13 +298,13 @@ public class TestSpecTag extends JavadocTester {
                 /** Class C. */
                 public class C {
                     private C() { }
-                    
+
                     /**
                      * Method m1.
                      * @spec http://example.com/index.html first
                      */
                      public void m1() { }
-                     
+
                     /**
                      * Method m2.
                      * @spec http://example.com/index.html second
@@ -339,13 +339,13 @@ public class TestSpecTag extends JavadocTester {
                 /** Class C. */
                 public class C {
                     private C() { }
-                    
+
                     /**
                      * Method m1.
                      * @spec http://example.com/index1.html Example Title
                      */
                      public void m1() { }
-                     
+
                     /**
                      * Method m2.
                      * @spec http://example.com/index2.html Example Title

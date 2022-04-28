@@ -399,8 +399,8 @@ public class TestMetadata extends JavadocTester {
                     """
                         /** Class pA.CA. */
                         package pA; public class CA {
-                            /** 
-                             * First sentence. 
+                            /**
+                             * First sentence.
                              * @spec http://example.com example reference
                              */
                             @Deprecated public static final int ZERO = 0;
@@ -424,9 +424,9 @@ public class TestMetadata extends JavadocTester {
                             /** Class mA/pA.CA. */
                             package pA;
                             public class CA {
-                                /** 
-                                 * First sentence. 
-                                 * @spec http://example.com example reference 
+                                /**
+                                 * First sentence.
+                                 * @spec http://example.com example reference
                                  */
                                 @Deprecated public static int ZERO = 0;
                             }
