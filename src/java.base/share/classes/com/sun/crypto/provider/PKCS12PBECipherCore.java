@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,15 +44,9 @@ import javax.security.auth.DestroyFailedException;
  * @see javax.crypto.CipherSpi
  */
 final class PKCS12PBECipherCore {
-
-    // TBD: replace CipherCore with a CipherSpi object to simplify maintenance
-
-    private CipherCore cipher;
-    private int blockSize;
-    private int keySize;
-    private int keyLength; // in bits
-    private String algo = null;
-    private String pbeAlgo = null;
+    private final int keySize; // in bytes
+    private final String algo;
+    private final String pbeAlgo;
     private byte[] salt = null;
     private int iCount = 0;
 
@@ -171,63 +165,23 @@ final class PKCS12PBECipherCore {
         System.arraycopy(src, 0, dst, off + start, len - off);
     }
 
-    PKCS12PBECipherCore(String symmCipherAlg, int defKeySize)
+    PKCS12PBECipherCore(String symmCipherAlg, int keySizeInBits)
         throws NoSuchAlgorithmException {
 
         algo = symmCipherAlg;
-        keyLength = defKeySize * 8;
         if (algo.equals("RC4")) {
-            pbeAlgo = "PBEWithSHA1AndRC4_" + keyLength;
+            pbeAlgo = "PBEWithSHA1AndRC4_" + keySizeInBits;
         } else {
-            SymmetricCipher symmCipher = null;
             if (algo.equals("DESede")) {
-                symmCipher = new DESedeCrypt();
                 pbeAlgo = "PBEWithSHA1AndDESede";
-                keyLength = 112; // effective key length
             } else if (algo.equals("RC2")) {
-                symmCipher = new RC2Crypt();
-                pbeAlgo = "PBEWithSHA1AndRC2_" + keyLength;
+                pbeAlgo = "PBEWithSHA1AndRC2_" + keySizeInBits;
             } else {
                 throw new NoSuchAlgorithmException("No Cipher implementation " +
                        "for PBEWithSHA1And" + algo);
             }
-            blockSize = symmCipher.getBlockSize();
-            cipher = new CipherCore(symmCipher, blockSize);
-            cipher.setMode("CBC");
-            try {
-                cipher.setPadding("PKCS5Padding");
-            } catch (NoSuchPaddingException nspe) {
-                // should not happen
-            }
         }
-        keySize = defKeySize;
-    }
-
-    void implSetMode(String mode) throws NoSuchAlgorithmException {
-        if ((mode != null) && (!mode.equalsIgnoreCase("CBC"))) {
-            throw new NoSuchAlgorithmException("Invalid cipher mode: "
-                                               + mode);
-        }
-    }
-
-    void implSetPadding(String padding) throws NoSuchPaddingException {
-        if ((padding != null) &&
-            (!padding.equalsIgnoreCase("PKCS5Padding"))) {
-            throw new NoSuchPaddingException("Invalid padding scheme: " +
-                                             padding);
-        }
-    }
-
-    int implGetBlockSize() {
-        return blockSize;
-    }
-
-    int implGetOutputSize(int inLen) {
-        return cipher.getOutputSize(inLen);
-    }
-
-    byte[] implGetIV() {
-        return cipher.getIV();
+        keySize = keySizeInBits >> 3;
     }
 
     AlgorithmParameters implGetParameters() {
@@ -257,15 +211,8 @@ final class PKCS12PBECipherCore {
     }
 
     void implInit(int opmode, Key key, AlgorithmParameterSpec params,
-                  SecureRandom random) throws InvalidKeyException,
-        InvalidAlgorithmParameterException {
-        implInit(opmode, key, params, random, null);
-    }
-
-    void implInit(int opmode, Key key, AlgorithmParameterSpec params,
-                  SecureRandom random, CipherSpi cipherImpl)
-                      throws InvalidKeyException,
-        InvalidAlgorithmParameterException {
+                  SecureRandom random, CipherSpi cipher)
+        throws InvalidKeyException, InvalidAlgorithmParameterException {
         char[] passwdChars = null;
         salt = null;
         iCount = 0;
@@ -351,16 +298,23 @@ final class PKCS12PBECipherCore {
             Arrays.fill(derivedKey, (byte)0);
 
             try {
-                if (cipherImpl != null && cipherImpl instanceof ARCFOURCipher) {
-                    ((ARCFOURCipher) cipherImpl).engineInit(opmode, cipherKey, random);
-
+                if (cipher instanceof ARCFOURCipher rc4) {
+                    rc4.engineInit(opmode, cipherKey, random);
                 } else {
                     byte[] derivedIv = derive(passwdChars, salt, iCount, 8,
                             CIPHER_IV);
-                    IvParameterSpec ivSpec = new IvParameterSpec(derivedIv, 0, 8);
+                    IvParameterSpec ivSpec = new IvParameterSpec(derivedIv, 0,
+                            8);
 
                     // initialize the underlying cipher
-                    cipher.init(opmode, cipherKey, ivSpec, random);
+                    if (cipher instanceof RC2Cipher rc2) {
+                        rc2.engineInit(opmode, cipherKey, ivSpec, random);
+                    } else if (cipher instanceof DESedeCipher tripleDes) {
+                        tripleDes.engineInit(opmode, cipherKey, ivSpec, random);
+                    } else {
+                        throw new ProviderException("Unsupported cipher impl: "
+                                + cipher);
+                    }
                 }
             } finally {
                 try {
@@ -375,13 +329,7 @@ final class PKCS12PBECipherCore {
     }
 
     void implInit(int opmode, Key key, AlgorithmParameters params,
-                  SecureRandom random)
-        throws InvalidKeyException, InvalidAlgorithmParameterException {
-        implInit(opmode, key, params, random, null);
-    }
-
-    void implInit(int opmode, Key key, AlgorithmParameters params,
-                  SecureRandom random, CipherSpi cipherImpl)
+                  SecureRandom random, CipherSpi cipher)
         throws InvalidKeyException, InvalidAlgorithmParameterException {
         AlgorithmParameterSpec paramSpec = null;
         if (params != null) {
@@ -392,86 +340,58 @@ final class PKCS12PBECipherCore {
                     "requires PBE parameters");
             }
         }
-        implInit(opmode, key, paramSpec, random, cipherImpl);
+        implInit(opmode, key, paramSpec, random, cipher);
     }
 
-    void implInit(int opmode, Key key, SecureRandom random)
+    void implInit(int opmode, Key key, SecureRandom random, CipherSpi cipher)
         throws InvalidKeyException {
-        implInit(opmode, key, random, null);
-    }
-
-    void implInit(int opmode, Key key, SecureRandom random,
-        CipherSpi cipherImpl) throws InvalidKeyException {
         try {
             implInit(opmode, key, (AlgorithmParameterSpec) null, random,
-                cipherImpl);
+                    cipher);
         } catch (InvalidAlgorithmParameterException iape) {
             throw new InvalidKeyException("requires PBE parameters");
         }
     }
 
-    byte[] implUpdate(byte[] in, int inOff, int inLen) {
-        return cipher.update(in, inOff, inLen);
-    }
-
-    int implUpdate(byte[] in, int inOff, int inLen, byte[] out, int outOff)
-        throws ShortBufferException {
-        return cipher.update(in, inOff, inLen, out, outOff);
-    }
-
-    byte[] implDoFinal(byte[] in, int inOff, int inLen)
-        throws IllegalBlockSizeException, BadPaddingException {
-        return cipher.doFinal(in, inOff, inLen);
-    }
-
-    int implDoFinal(byte[] in, int inOff, int inLen, byte[] out, int outOff)
-        throws ShortBufferException, IllegalBlockSizeException,
-               BadPaddingException {
-        return cipher.doFinal(in, inOff, inLen, out, outOff);
-    }
-
     int implGetKeySize(Key key) throws InvalidKeyException {
-        return keyLength;
-    }
-
-    byte[] implWrap(Key key) throws IllegalBlockSizeException,
-        InvalidKeyException {
-        return cipher.wrap(key);
-    }
-
-    Key implUnwrap(byte[] wrappedKey, String wrappedKeyAlgorithm,
-                   int wrappedKeyType)
-        throws InvalidKeyException, NoSuchAlgorithmException {
-        return cipher.unwrap(wrappedKey, wrappedKeyAlgorithm,
-                             wrappedKeyType);
+        return keySize << 3; // in bits
     }
 
     public static final class PBEWithSHA1AndDESede extends CipherSpi {
         private final PKCS12PBECipherCore core;
+        private final DESedeCipher cipher;
+
         public PBEWithSHA1AndDESede() throws NoSuchAlgorithmException {
-            core = new PKCS12PBECipherCore("DESede", 24);
+            cipher = new DESedeCipher();
+            try {
+                cipher.engineSetMode("CBC");
+                cipher.engineSetPadding("PKCS5Padding");
+            } catch (NoSuchPaddingException nspe) {
+                // should never happen
+            }
+            core = new PKCS12PBECipherCore("DESede", 192);
         }
         protected byte[] engineDoFinal(byte[] in, int inOff, int inLen)
             throws IllegalBlockSizeException, BadPaddingException {
-            return core.implDoFinal(in, inOff, inLen);
+            return cipher.engineDoFinal(in, inOff, inLen);
         }
         protected int engineDoFinal(byte[] in, int inOff, int inLen,
                                     byte[] out, int outOff)
             throws ShortBufferException, IllegalBlockSizeException,
                    BadPaddingException {
-            return core.implDoFinal(in, inOff, inLen, out, outOff);
+            return cipher.engineDoFinal(in, inOff, inLen, out, outOff);
         }
         protected int engineGetBlockSize() {
-            return core.implGetBlockSize();
+            return cipher.engineGetBlockSize();
         }
         protected byte[] engineGetIV() {
-            return core.implGetIV();
+            return cipher.engineGetIV();
         }
         protected int engineGetKeySize(Key key) throws InvalidKeyException {
-            return core.implGetKeySize(key);
+            return 112; // effective key size
         }
         protected int engineGetOutputSize(int inLen) {
-            return core.implGetOutputSize(inLen);
+            return cipher.engineGetOutputSize(inLen);
         }
         protected AlgorithmParameters engineGetParameters() {
             return core.implGetParameters();
@@ -480,148 +400,183 @@ final class PKCS12PBECipherCore {
                                   AlgorithmParameterSpec params,
                                   SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-            core.implInit(opmode, key, params, random);
+            core.implInit(opmode, key, params, random, cipher);
         }
         protected void engineInit(int opmode, Key key,
                                   AlgorithmParameters params,
                                   SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-            core.implInit(opmode, key, params, random);
+            core.implInit(opmode, key, params, random, cipher);
         }
         protected void engineInit(int opmode, Key key, SecureRandom random)
             throws InvalidKeyException {
-            core.implInit(opmode, key, random);
+            core.implInit(opmode, key, random, cipher);
         }
         protected void engineSetMode(String mode)
             throws NoSuchAlgorithmException {
-            core.implSetMode(mode);
+            if (!"CBC".equalsIgnoreCase(mode)) {
+                throw new NoSuchAlgorithmException("Unsupported mode: " + mode);
+            }
         }
         protected void engineSetPadding(String paddingScheme)
             throws NoSuchPaddingException {
-            core.implSetPadding(paddingScheme);
+            if (!"PKCS5Padding".equalsIgnoreCase(paddingScheme)) {
+                throw new NoSuchPaddingException("Unsupported padding: " +
+                        paddingScheme);
+            }
         }
         protected Key engineUnwrap(byte[] wrappedKey,
                                    String wrappedKeyAlgorithm,
                                    int wrappedKeyType)
             throws InvalidKeyException, NoSuchAlgorithmException {
-            return core.implUnwrap(wrappedKey, wrappedKeyAlgorithm,
+            return cipher.engineUnwrap(wrappedKey, wrappedKeyAlgorithm,
                                    wrappedKeyType);
         }
         protected byte[] engineUpdate(byte[] in, int inOff, int inLen) {
-            return core.implUpdate(in, inOff, inLen);
+            return cipher.engineUpdate(in, inOff, inLen);
         }
         protected int engineUpdate(byte[] in, int inOff, int inLen,
                                    byte[] out, int outOff)
             throws ShortBufferException {
-            return core.implUpdate(in, inOff, inLen, out, outOff);
+            return cipher.engineUpdate(in, inOff, inLen, out, outOff);
         }
         protected byte[] engineWrap(Key key)
             throws IllegalBlockSizeException, InvalidKeyException {
-            return core.implWrap(key);
+            return cipher.engineWrap(key);
         }
     }
 
-    public static final class PBEWithSHA1AndRC2_40 extends CipherSpi {
+    static class PBEWithSHA1AndRC2 extends CipherSpi {
         private final PKCS12PBECipherCore core;
+        private final RC2Cipher cipher;
+
+        public PBEWithSHA1AndRC2(int keysize) throws NoSuchAlgorithmException {
+            core = new PKCS12PBECipherCore("RC2", keysize);
+            cipher = new RC2Cipher();
+            try {
+                cipher.engineSetMode("CBC");
+                cipher.engineSetPadding("PKCS5Padding");
+            } catch (NoSuchPaddingException nspe) {
+                // should never happen
+            }
+        }
+        protected byte[] engineDoFinal(byte[] in, int inOff, int inLen)
+            throws IllegalBlockSizeException, BadPaddingException {
+            return cipher.engineDoFinal(in, inOff, inLen);
+        }
+        protected int engineDoFinal(byte[] in, int inOff, int inLen,
+                                    byte[] out, int outOff)
+            throws ShortBufferException, IllegalBlockSizeException,
+                   BadPaddingException {
+            return cipher.engineDoFinal(in, inOff, inLen, out, outOff);
+        }
+        protected int engineGetBlockSize() {
+            return cipher.engineGetBlockSize();
+        }
+        protected byte[] engineGetIV() {
+            return cipher.engineGetIV();
+        }
+        protected int engineGetKeySize(Key key) throws InvalidKeyException {
+            return core.implGetKeySize(key);
+        }
+        protected int engineGetOutputSize(int inLen) {
+            return cipher.engineGetOutputSize(inLen);
+        }
+        protected AlgorithmParameters engineGetParameters() {
+            return core.implGetParameters();
+        }
+        protected void engineInit(int opmode, Key key,
+                                  AlgorithmParameterSpec params,
+                                  SecureRandom random)
+            throws InvalidKeyException, InvalidAlgorithmParameterException {
+            core.implInit(opmode, key, params, random, cipher);
+
+        }
+        protected void engineInit(int opmode, Key key,
+                                  AlgorithmParameters params,
+                                  SecureRandom random)
+            throws InvalidKeyException, InvalidAlgorithmParameterException {
+            core.implInit(opmode, key, params, random, cipher);
+        }
+        protected void engineInit(int opmode, Key key, SecureRandom random)
+            throws InvalidKeyException {
+            core.implInit(opmode, key, random, cipher);
+        }
+        protected void engineSetMode(String mode)
+            throws NoSuchAlgorithmException {
+            if (!"CBC".equalsIgnoreCase(mode)) {
+                throw new NoSuchAlgorithmException("Unsupported mode: " + mode);
+            }
+        }
+        protected void engineSetPadding(String paddingScheme)
+            throws NoSuchPaddingException {
+            if (!"PKCS5Padding".equalsIgnoreCase(paddingScheme)) {
+                throw new NoSuchPaddingException("Unsupported padding: " +
+                        paddingScheme);
+            }
+        }
+        protected Key engineUnwrap(byte[] wrappedKey,
+                                   String wrappedKeyAlgorithm,
+                                   int wrappedKeyType)
+            throws InvalidKeyException, NoSuchAlgorithmException {
+            return cipher.engineUnwrap(wrappedKey, wrappedKeyAlgorithm,
+                                   wrappedKeyType);
+        }
+        protected byte[] engineUpdate(byte[] in, int inOff, int inLen) {
+            return cipher.engineUpdate(in, inOff, inLen);
+        }
+        protected int engineUpdate(byte[] in, int inOff, int inLen,
+                                   byte[] out, int outOff)
+            throws ShortBufferException {
+            return cipher.engineUpdate(in, inOff, inLen, out, outOff);
+        }
+        protected byte[] engineWrap(Key key)
+            throws IllegalBlockSizeException, InvalidKeyException {
+            return cipher.engineWrap(key);
+        }
+    }
+
+    public static final class PBEWithSHA1AndRC2_40 extends PBEWithSHA1AndRC2 {
         public PBEWithSHA1AndRC2_40() throws NoSuchAlgorithmException {
-            core = new PKCS12PBECipherCore("RC2", 5);
-        }
-        protected byte[] engineDoFinal(byte[] in, int inOff, int inLen)
-            throws IllegalBlockSizeException, BadPaddingException {
-            return core.implDoFinal(in, inOff, inLen);
-        }
-        protected int engineDoFinal(byte[] in, int inOff, int inLen,
-                                    byte[] out, int outOff)
-            throws ShortBufferException, IllegalBlockSizeException,
-                   BadPaddingException {
-            return core.implDoFinal(in, inOff, inLen, out, outOff);
-        }
-        protected int engineGetBlockSize() {
-            return core.implGetBlockSize();
-        }
-        protected byte[] engineGetIV() {
-            return core.implGetIV();
-        }
-        protected int engineGetKeySize(Key key) throws InvalidKeyException {
-            return core.implGetKeySize(key);
-        }
-        protected int engineGetOutputSize(int inLen) {
-            return core.implGetOutputSize(inLen);
-        }
-        protected AlgorithmParameters engineGetParameters() {
-            return core.implGetParameters();
-        }
-        protected void engineInit(int opmode, Key key,
-                                  AlgorithmParameterSpec params,
-                                  SecureRandom random)
-            throws InvalidKeyException, InvalidAlgorithmParameterException {
-            core.implInit(opmode, key, params, random);
-        }
-        protected void engineInit(int opmode, Key key,
-                                  AlgorithmParameters params,
-                                  SecureRandom random)
-            throws InvalidKeyException, InvalidAlgorithmParameterException {
-            core.implInit(opmode, key, params, random);
-        }
-        protected void engineInit(int opmode, Key key, SecureRandom random)
-            throws InvalidKeyException {
-            core.implInit(opmode, key, random);
-        }
-        protected void engineSetMode(String mode)
-            throws NoSuchAlgorithmException {
-            core.implSetMode(mode);
-        }
-        protected void engineSetPadding(String paddingScheme)
-            throws NoSuchPaddingException {
-            core.implSetPadding(paddingScheme);
-        }
-        protected Key engineUnwrap(byte[] wrappedKey,
-                                   String wrappedKeyAlgorithm,
-                                   int wrappedKeyType)
-            throws InvalidKeyException, NoSuchAlgorithmException {
-            return core.implUnwrap(wrappedKey, wrappedKeyAlgorithm,
-                                   wrappedKeyType);
-        }
-        protected byte[] engineUpdate(byte[] in, int inOff, int inLen) {
-            return core.implUpdate(in, inOff, inLen);
-        }
-        protected int engineUpdate(byte[] in, int inOff, int inLen,
-                                   byte[] out, int outOff)
-            throws ShortBufferException {
-            return core.implUpdate(in, inOff, inLen, out, outOff);
-        }
-        protected byte[] engineWrap(Key key)
-            throws IllegalBlockSizeException, InvalidKeyException {
-            return core.implWrap(key);
+            super(40);
         }
     }
 
-    public static final class PBEWithSHA1AndRC2_128 extends CipherSpi {
-        private final PKCS12PBECipherCore core;
+    public static final class PBEWithSHA1AndRC2_128 extends PBEWithSHA1AndRC2 {
         public PBEWithSHA1AndRC2_128() throws NoSuchAlgorithmException {
-            core = new PKCS12PBECipherCore("RC2", 16);
+            super(128);
+        }
+    }
+
+    static class PBEWithSHA1AndRC4 extends CipherSpi {
+        private final PKCS12PBECipherCore core;
+        private final ARCFOURCipher cipher;
+
+        public PBEWithSHA1AndRC4(int keysize) throws NoSuchAlgorithmException {
+            core = new PKCS12PBECipherCore("RC4", keysize);
+            cipher = new ARCFOURCipher();
         }
         protected byte[] engineDoFinal(byte[] in, int inOff, int inLen)
             throws IllegalBlockSizeException, BadPaddingException {
-            return core.implDoFinal(in, inOff, inLen);
+            return cipher.engineDoFinal(in, inOff, inLen);
         }
         protected int engineDoFinal(byte[] in, int inOff, int inLen,
                                     byte[] out, int outOff)
             throws ShortBufferException, IllegalBlockSizeException,
                    BadPaddingException {
-            return core.implDoFinal(in, inOff, inLen, out, outOff);
+            return cipher.engineDoFinal(in, inOff, inLen, out, outOff);
         }
         protected int engineGetBlockSize() {
-            return core.implGetBlockSize();
+            return cipher.engineGetBlockSize();
         }
         protected byte[] engineGetIV() {
-            return core.implGetIV();
+            return cipher.engineGetIV();
         }
         protected int engineGetKeySize(Key key) throws InvalidKeyException {
             return core.implGetKeySize(key);
         }
         protected int engineGetOutputSize(int inLen) {
-            return core.implGetOutputSize(inLen);
+            return cipher.engineGetOutputSize(inLen);
         }
         protected AlgorithmParameters engineGetParameters() {
             return core.implGetParameters();
@@ -630,210 +585,60 @@ final class PKCS12PBECipherCore {
                                   AlgorithmParameterSpec params,
                                   SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-            core.implInit(opmode, key, params, random);
+            core.implInit(opmode, key, params, random, cipher);
         }
         protected void engineInit(int opmode, Key key,
                                   AlgorithmParameters params,
                                   SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-            core.implInit(opmode, key, params, random);
+            core.implInit(opmode, key, params, random, cipher);
         }
         protected void engineInit(int opmode, Key key, SecureRandom random)
             throws InvalidKeyException {
-            core.implInit(opmode, key, random);
+            core.implInit(opmode, key, random, cipher);
         }
         protected void engineSetMode(String mode)
             throws NoSuchAlgorithmException {
-            core.implSetMode(mode);
+            if (!"ECB".equalsIgnoreCase(mode)) {
+                throw new NoSuchAlgorithmException("Unsupported mode: " + mode);
+            }
         }
         protected void engineSetPadding(String paddingScheme)
             throws NoSuchPaddingException {
-            core.implSetPadding(paddingScheme);
+            if (!"NoPadding".equalsIgnoreCase(paddingScheme)) {
+                throw new NoSuchPaddingException("Unsupported padding: " +
+                        paddingScheme);
+            }
         }
         protected Key engineUnwrap(byte[] wrappedKey,
                                    String wrappedKeyAlgorithm,
                                    int wrappedKeyType)
             throws InvalidKeyException, NoSuchAlgorithmException {
-            return core.implUnwrap(wrappedKey, wrappedKeyAlgorithm,
+            return cipher.engineUnwrap(wrappedKey, wrappedKeyAlgorithm,
                                    wrappedKeyType);
         }
         protected byte[] engineUpdate(byte[] in, int inOff, int inLen) {
-            return core.implUpdate(in, inOff, inLen);
+            return cipher.engineUpdate(in, inOff, inLen);
         }
         protected int engineUpdate(byte[] in, int inOff, int inLen,
                                    byte[] out, int outOff)
             throws ShortBufferException {
-            return core.implUpdate(in, inOff, inLen, out, outOff);
+            return cipher.engineUpdate(in, inOff, inLen, out, outOff);
         }
         protected byte[] engineWrap(Key key)
             throws IllegalBlockSizeException, InvalidKeyException {
-            return core.implWrap(key);
+            return cipher.engineWrap(key);
         }
     }
 
-    public static final class PBEWithSHA1AndRC4_40 extends CipherSpi {
-        private static final int RC4_KEYSIZE = 5;
-        private final PKCS12PBECipherCore core;
-        private final ARCFOURCipher cipher;
-
+    public static final class PBEWithSHA1AndRC4_40 extends PBEWithSHA1AndRC4 {
         public PBEWithSHA1AndRC4_40() throws NoSuchAlgorithmException {
-            core = new PKCS12PBECipherCore("RC4", RC4_KEYSIZE);
-            cipher = new ARCFOURCipher();
-        }
-        protected byte[] engineDoFinal(byte[] in, int inOff, int inLen)
-            throws IllegalBlockSizeException, BadPaddingException {
-            return cipher.engineDoFinal(in, inOff, inLen);
-        }
-        protected int engineDoFinal(byte[] in, int inOff, int inLen,
-                                    byte[] out, int outOff)
-            throws ShortBufferException, IllegalBlockSizeException,
-                   BadPaddingException {
-            return cipher.engineDoFinal(in, inOff, inLen, out, outOff);
-        }
-        protected int engineGetBlockSize() {
-            return cipher.engineGetBlockSize();
-        }
-        protected byte[] engineGetIV() {
-            return cipher.engineGetIV();
-        }
-        protected int engineGetKeySize(Key key) throws InvalidKeyException {
-            return RC4_KEYSIZE;
-        }
-        protected int engineGetOutputSize(int inLen) {
-            return cipher.engineGetOutputSize(inLen);
-        }
-        protected AlgorithmParameters engineGetParameters() {
-            return core.implGetParameters();
-        }
-        protected void engineInit(int opmode, Key key,
-                                  AlgorithmParameterSpec params,
-                                  SecureRandom random)
-            throws InvalidKeyException, InvalidAlgorithmParameterException {
-            core.implInit(opmode, key, params, random, cipher);
-        }
-        protected void engineInit(int opmode, Key key,
-                                  AlgorithmParameters params,
-                                  SecureRandom random)
-            throws InvalidKeyException, InvalidAlgorithmParameterException {
-            core.implInit(opmode, key, params, random, cipher);
-        }
-        protected void engineInit(int opmode, Key key, SecureRandom random)
-            throws InvalidKeyException {
-            core.implInit(opmode, key, random, cipher);
-        }
-        protected void engineSetMode(String mode)
-            throws NoSuchAlgorithmException {
-            if (mode.equalsIgnoreCase("ECB") == false) {
-                throw new NoSuchAlgorithmException("Unsupported mode " + mode);
-            }
-        }
-        protected void engineSetPadding(String paddingScheme)
-            throws NoSuchPaddingException {
-            if (paddingScheme.equalsIgnoreCase("NoPadding") == false) {
-                throw new NoSuchPaddingException("Padding must be NoPadding");
-            }
-        }
-        protected Key engineUnwrap(byte[] wrappedKey,
-                                   String wrappedKeyAlgorithm,
-                                   int wrappedKeyType)
-            throws InvalidKeyException, NoSuchAlgorithmException {
-            return cipher.engineUnwrap(wrappedKey, wrappedKeyAlgorithm,
-                                   wrappedKeyType);
-        }
-        protected byte[] engineUpdate(byte[] in, int inOff, int inLen) {
-            return cipher.engineUpdate(in, inOff, inLen);
-        }
-        protected int engineUpdate(byte[] in, int inOff, int inLen,
-                                   byte[] out, int outOff)
-            throws ShortBufferException {
-            return cipher.engineUpdate(in, inOff, inLen, out, outOff);
-        }
-        protected byte[] engineWrap(Key key)
-            throws IllegalBlockSizeException, InvalidKeyException {
-            return cipher.engineWrap(key);
+            super(40);
         }
     }
-
-    public static final class PBEWithSHA1AndRC4_128 extends CipherSpi {
-        private static final int RC4_KEYSIZE = 16;
-        private final PKCS12PBECipherCore core;
-        private final ARCFOURCipher cipher;
-
+    public static final class PBEWithSHA1AndRC4_128 extends PBEWithSHA1AndRC4 {
         public PBEWithSHA1AndRC4_128() throws NoSuchAlgorithmException {
-            core = new PKCS12PBECipherCore("RC4", RC4_KEYSIZE);
-            cipher = new ARCFOURCipher();
-        }
-        protected byte[] engineDoFinal(byte[] in, int inOff, int inLen)
-            throws IllegalBlockSizeException, BadPaddingException {
-            return cipher.engineDoFinal(in, inOff, inLen);
-        }
-        protected int engineDoFinal(byte[] in, int inOff, int inLen,
-                                    byte[] out, int outOff)
-            throws ShortBufferException, IllegalBlockSizeException,
-                   BadPaddingException {
-            return cipher.engineDoFinal(in, inOff, inLen, out, outOff);
-        }
-        protected int engineGetBlockSize() {
-            return cipher.engineGetBlockSize();
-        }
-        protected byte[] engineGetIV() {
-            return cipher.engineGetIV();
-        }
-        protected int engineGetKeySize(Key key) throws InvalidKeyException {
-            return RC4_KEYSIZE;
-        }
-        protected int engineGetOutputSize(int inLen) {
-            return cipher.engineGetOutputSize(inLen);
-        }
-        protected AlgorithmParameters engineGetParameters() {
-            return core.implGetParameters();
-        }
-        protected void engineInit(int opmode, Key key,
-                                  AlgorithmParameterSpec params,
-                                  SecureRandom random)
-            throws InvalidKeyException, InvalidAlgorithmParameterException {
-            core.implInit(opmode, key, params, random, cipher);
-        }
-        protected void engineInit(int opmode, Key key,
-                                  AlgorithmParameters params,
-                                  SecureRandom random)
-            throws InvalidKeyException, InvalidAlgorithmParameterException {
-            core.implInit(opmode, key, params, random, cipher);
-        }
-        protected void engineInit(int opmode, Key key, SecureRandom random)
-            throws InvalidKeyException {
-            core.implInit(opmode, key, random, cipher);
-        }
-        protected void engineSetMode(String mode)
-            throws NoSuchAlgorithmException {
-            if (mode.equalsIgnoreCase("ECB") == false) {
-                throw new NoSuchAlgorithmException("Unsupported mode " + mode);
-            }
-        }
-        protected void engineSetPadding(String paddingScheme)
-            throws NoSuchPaddingException {
-            if (paddingScheme.equalsIgnoreCase("NoPadding") == false) {
-                throw new NoSuchPaddingException("Padding must be NoPadding");
-            }
-        }
-        protected Key engineUnwrap(byte[] wrappedKey,
-                                   String wrappedKeyAlgorithm,
-                                   int wrappedKeyType)
-            throws InvalidKeyException, NoSuchAlgorithmException {
-            return cipher.engineUnwrap(wrappedKey, wrappedKeyAlgorithm,
-                                   wrappedKeyType);
-        }
-        protected byte[] engineUpdate(byte[] in, int inOff, int inLen) {
-            return cipher.engineUpdate(in, inOff, inLen);
-        }
-        protected int engineUpdate(byte[] in, int inOff, int inLen,
-                                   byte[] out, int outOff)
-            throws ShortBufferException {
-            return cipher.engineUpdate(in, inOff, inLen, out, outOff);
-        }
-        protected byte[] engineWrap(Key key)
-            throws IllegalBlockSizeException, InvalidKeyException {
-            return cipher.engineWrap(key);
+            super(128);
         }
     }
 }

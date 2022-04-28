@@ -166,6 +166,24 @@ abstract class PBES2Core extends CipherSpi {
         }
     }
 
+    private static byte[] check(byte[] salt)
+        throws InvalidAlgorithmParameterException {
+        if (salt != null && salt.length < 8) {
+            throw new InvalidAlgorithmParameterException(
+                    "Salt must be at least 8 bytes long");
+        }
+        return salt;
+    }
+
+    private static int check(int iCount)
+        throws InvalidAlgorithmParameterException {
+        if (iCount < 0) {
+            throw new InvalidAlgorithmParameterException(
+                    "Iteration count must be a positive number");
+        }
+        return iCount == 0? DEFAULT_COUNT : iCount;
+    }
+
     protected void engineInit(int opmode, Key key,
                               AlgorithmParameterSpec params,
                               SecureRandom random)
@@ -184,89 +202,59 @@ abstract class PBES2Core extends CipherSpi {
                 throw new InvalidKeyException("Missing password");
             }
 
-            // TBD: consolidate the salt, ic and IV parameter checks below
+            boolean doEncrypt = ((opmode == Cipher.ENCRYPT_MODE) ||
+                        (opmode == Cipher.WRAP_MODE));
 
-            // Extract salt and iteration count from the key, if present
-            if (key instanceof javax.crypto.interfaces.PBEKey) {
-                salt = ((javax.crypto.interfaces.PBEKey)key).getSalt();
-                if (salt != null && salt.length < 8) {
-                    throw new InvalidAlgorithmParameterException(
-                            "Salt must be at least 8 bytes long");
-                }
-                iCount = ((javax.crypto.interfaces.PBEKey)key).getIterationCount();
-                if (iCount == 0) {
-                    iCount = DEFAULT_COUNT;
-                } else if (iCount < 0) {
-                    throw new InvalidAlgorithmParameterException(
-                            "Iteration count must be a positive number");
-                }
-            }
-
-            // Extract salt, iteration count and IV from the params, if present
-            if (params == null) {
-                if (salt == null) {
-                    // generate random salt and use default iteration count
-                    salt = new byte[DEFAULT_SALT_LENGTH];
-                    random.nextBytes(salt);
-                    iCount = DEFAULT_COUNT;
-                }
-                if ((opmode == Cipher.ENCRYPT_MODE) ||
-                        (opmode == Cipher.WRAP_MODE)) {
-                    // generate random IV
-                    byte[] ivBytes = new byte[blkSize];
-                    random.nextBytes(ivBytes);
-                    ivSpec = new IvParameterSpec(ivBytes);
-                }
-            } else {
-                if (!(params instanceof PBEParameterSpec)) {
-                    throw new InvalidAlgorithmParameterException
-                            ("Wrong parameter type: PBE expected");
-                }
-                // salt and iteration count from the params take precedence
-                byte[] specSalt = ((PBEParameterSpec) params).getSalt();
-                if (specSalt != null && specSalt.length < 8) {
-                    throw new InvalidAlgorithmParameterException(
-                            "Salt must be at least 8 bytes long");
-                }
-                salt = specSalt;
-                int specICount = ((PBEParameterSpec) params).getIterationCount();
-                if (specICount == 0) {
-                    specICount = DEFAULT_COUNT;
-                } else if (specICount < 0) {
-                    throw new InvalidAlgorithmParameterException(
-                            "Iteration count must be a positive number");
-                }
-                iCount = specICount;
-
-                AlgorithmParameterSpec specParams =
-                        ((PBEParameterSpec) params).getParameterSpec();
-                if (specParams != null) {
-                    if (specParams instanceof IvParameterSpec) {
-                        ivSpec = (IvParameterSpec)specParams;
-                    } else {
-                        throw new InvalidAlgorithmParameterException(
-                                "Wrong parameter type: IV expected");
-                    }
-                } else if ((opmode == Cipher.ENCRYPT_MODE) ||
-                        (opmode == Cipher.WRAP_MODE)) {
+            // Extract from the supplied PBE params, if present
+            if (params instanceof PBEParameterSpec pbeParams) {
+                // salt should be non-null per PBEParameterSpec
+                salt = check(pbeParams.getSalt());
+                iCount = check(pbeParams.getIterationCount());
+                AlgorithmParameterSpec ivParams = pbeParams.getParameterSpec();
+                if (ivParams instanceof IvParameterSpec iv) {
+                    ivSpec = iv;
+                } else if (ivParams == null && doEncrypt) {
                     // generate random IV
                     byte[] ivBytes = new byte[blkSize];
                     random.nextBytes(ivBytes);
                     ivSpec = new IvParameterSpec(ivBytes);
                 } else {
                     throw new InvalidAlgorithmParameterException(
-                            "Missing parameter type: IV expected");
+                            "Wrong parameter type: IV expected");
                 }
+            } else if (params == null && doEncrypt) {
+                // Try extracting from the key, if present
+                if (key instanceof javax.crypto.interfaces.PBEKey pbeKey) {
+                    salt = check(pbeKey.getSalt()); // may be null
+                    iCount = check(pbeKey.getIterationCount()); // may be 0
+                }
+                if (salt == null) {
+                    // generate random salt
+                    salt = new byte[DEFAULT_SALT_LENGTH];
+                    random.nextBytes(salt);
+                }
+                if (iCount == 0) {
+                    // use default iteration count
+                    iCount = DEFAULT_COUNT;
+                }
+                //if (ivSpec == null) { // old behavior always generate
+                    // generate random IV
+                    byte[] ivBytes = new byte[blkSize];
+                    random.nextBytes(ivBytes);
+                    ivSpec = new IvParameterSpec(ivBytes);
+                //}
+            } else {
+                throw new InvalidAlgorithmParameterException
+                        ("Wrong parameter type: PBE expected");
             }
-
             passwdChars = new char[passwdBytes.length];
             for (int i = 0; i < passwdChars.length; i++)
                 passwdChars[i] = (char) (passwdBytes[i] & 0x7f);
 
             pbeSpec = new PBEKeySpec(passwdChars, salt, iCount, keyLength);
+        } finally {
             // password char[] was cloned in PBEKeySpec constructor,
             // so we can zero it out here
-        } finally {
             if (passwdChars != null) Arrays.fill(passwdChars, '\0');
             if (passwdBytes != null) Arrays.fill(passwdBytes, (byte)0x00);
         }
