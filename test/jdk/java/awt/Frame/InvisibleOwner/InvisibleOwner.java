@@ -155,8 +155,8 @@ public class InvisibleOwner {
             // 2. Try to click it - event should be delivered to the
             // helper frame, not the invisible frame.
             robot.mouseMove(C_X, C_Y);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(1000);
 
             if (invisibleOwnerClicked) {
