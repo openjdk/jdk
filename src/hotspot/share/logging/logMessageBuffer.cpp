@@ -112,9 +112,9 @@ void LogMessageBuffer::vwrite(LogLevelType level, const char* fmt, va_list args)
     va_copy(copy, args);
     int ret = os::vsnprintf(current_buffer_position, remaining_buffer_length, fmt, copy);
     va_end(copy);
-    assert(ret >= 0, "Log message buffer issue.");
+    assert(ret >= 0, "Log message buffer issue");
     if (ret < 0) {
-      // Encoding error occurred, bail.
+      this->write(level, "%s", "Log message buffer issue");
       return;
     }
     written += (size_t)ret + 1;
