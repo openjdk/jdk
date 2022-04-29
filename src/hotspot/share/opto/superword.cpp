@@ -2525,6 +2525,13 @@ bool SuperWord::output() {
         Node* in2 = vector_opd(p, 2);
         vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+      } else if (opc == Op_SignumF || opc == Op_SignumD) {
+        assert(n->req() == 4, "four inputs expected");
+        Node* in = vector_opd(p, 1);
+        Node* zero = vector_opd(p, 2);
+        Node* one = vector_opd(p, 3);
+        vn = VectorNode::make(opc, in, zero, one, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (n->req() == 3 && !is_cmov_pack(p)) {
         // Promote operands to vector
         Node* in1 = NULL;
