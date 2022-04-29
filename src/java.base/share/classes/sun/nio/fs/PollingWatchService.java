@@ -115,7 +115,7 @@ class PollingWatchService
             throw new IllegalArgumentException("No events to register");
 
         // Extended modifiers may be used to specify the sensitivity level
-        int sensitivity = 10;
+        int sensitivity = 1;
         if (modifiers.length > 0) {
             for (WatchEvent.Modifier modifier: modifiers) {
                 if (modifier == null)
@@ -308,7 +308,7 @@ class PollingWatchService
                 // create the periodic task
                 Runnable thunk = new Runnable() { public void run() { poll(); }};
                 this.poller = scheduledExecutor
-                    .scheduleAtFixedRate(thunk, period, period, TimeUnit.SECONDS);
+                    .scheduleAtFixedRate(thunk, 1 /*init wait*/, period, TimeUnit.SECONDS);
             }
         }
 
