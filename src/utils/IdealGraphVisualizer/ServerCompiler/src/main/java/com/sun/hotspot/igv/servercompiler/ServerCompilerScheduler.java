@@ -25,7 +25,6 @@
 package com.sun.hotspot.igv.servercompiler;
 
 import com.sun.hotspot.igv.data.InputBlock;
-import com.sun.hotspot.igv.data.InputBlockEdge;
 import com.sun.hotspot.igv.data.InputEdge;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
@@ -37,7 +36,6 @@ import org.openide.util.lookup.ServiceProvider;
 import com.ibm.wala.util.graph.Graph;
 import com.ibm.wala.util.graph.impl.SlowSparseNumberedGraph;
 import com.ibm.wala.util.graph.dominators.Dominators;
-import com.ibm.wala.util.graph.traverse.DFS;
 
 /**
  *
@@ -48,16 +46,29 @@ public class ServerCompilerScheduler implements Scheduler {
 
     private static class Node {
 
+        public static final String WARNING_BLOCK_PROJECTION_WITH_MULTIPLE_SUCCS = "Block projection with multiple successors";
+        public static final String WARNING_PHI_INPUT_WITHOUT_REGION = "Phi input without associated region";
+        public static final String WARNING_REGION_WITHOUT_CONTROL_INPUT = "Region without control input";
+        public static final String WARNING_PHI_WITH_REGIONLESS_INPUTS = "Phi node with input nodes without associated region";
+        public static final String WARNING_NOT_MARKED_WITH_BLOCK_START = "Region not marked with is_block_start";
+        public static final String WARNING_CFG_AND_INPUT_TO_PHI = "CFG node is a phi input";
+        public static final String WARNING_PHI_NON_DOMINATING_INPUTS = "Phi input that does not dominate the phi's input block";
+
         public InputNode inputNode;
         public Set<Node> succs = new HashSet<>();
         public List<Node> preds = new ArrayList<>();
+        // Index of each predecessor.
         public List<Character> predIndices = new ArrayList<>();
+        public List<String> warnings;
         public InputBlock block;
         public boolean isBlockProjection;
         public boolean isBlockStart;
         public boolean isCFG;
-
         public int rank; // Rank for local scheduling priority.
+
+        // Empty constructor for creating dummy CFG nodes without associated
+        // input nodes.
+        public Node() {}
 
         public Node(InputNode n) {
             inputNode = n;
@@ -85,8 +96,18 @@ public class ServerCompilerScheduler implements Scheduler {
             }
         }
 
+        public void addWarning(String msg) {
+            if (warnings == null) {
+                warnings = new ArrayList<>();
+            }
+            warnings.add(msg);
+        }
+
         @Override
         public String toString() {
+            if (inputNode == null) {
+                return "(dummy node)";
+            }
             return inputNode.getProperties().get("idx") + " " + inputNode.getProperties().get("name");
         }
     }
@@ -94,6 +115,9 @@ public class ServerCompilerScheduler implements Scheduler {
     private Collection<Node> nodes;
     private Map<InputNode, Node> inputNodeToNode;
     private Vector<InputBlock> blocks;
+    // CFG successors of each CFG node, excluding self edges.
+    Map<Node, List<Node>> controlSuccs = new HashMap<>();
+    // Nodes reachable in backward traversal from root.
     private Map<InputBlock, InputBlock> dominatorMap;
     private static final Comparator<InputEdge> edgeComparator = new Comparator<InputEdge>() {
 
@@ -102,12 +126,6 @@ public class ServerCompilerScheduler implements Scheduler {
             return o1.getToIndex() - o2.getToIndex();
         }
     };
-    // Data structures for compact error reporting.
-    private Set<Node> blockProjectionsWithMultipleSuccs;
-    private Set<Node> phiInputsWithoutRegion;
-    private Set<Node> regionsWithoutControlInput;
-    private Set<Node> phisWithRegionlessInputs;
-    private int blockCount;
 
     public void buildBlocks() {
 
@@ -120,8 +138,6 @@ public class ServerCompilerScheduler implements Scheduler {
         Stack<Node> stack = new Stack<>();
         Set<Node> visited = new HashSet<>();
         Map<InputBlock, Set<Node>> terminators = new HashMap<>();
-        // Pre-compute control successors of each node, excluding self edges.
-        Map<Node, List<Node>> controlSuccs = new HashMap<>();
         for (Node n : nodes) {
             if (n.isCFG) {
                 List<Node> nControlSuccs = new ArrayList<>();
@@ -137,7 +153,7 @@ public class ServerCompilerScheduler implements Scheduler {
         }
         stack.add(root);
         // Start from 1 to follow the style of compiler-generated CFGs.
-        blockCount = 1;
+        int blockCount = 1;
         InputBlock rootBlock = null;
 
         // Traverse the control-flow subgraph forwards, starting from the root.
@@ -189,7 +205,22 @@ public class ServerCompilerScheduler implements Scheduler {
                             // (dead) 'Safepoint' nodes.
                             s.block = block;
                             blockTerminators.add(s);
-                            for (Node ps : controlSuccs.get(s)) {
+                            List<Node> projSuccs = controlSuccs.get(s);
+                            if (projSuccs.size() > 1) {
+                                s.addWarning(Node.WARNING_BLOCK_PROJECTION_WITH_MULTIPLE_SUCCS);
+                            }
+                            // If s has only one CFG successor ss (regular
+                            // case), there is a node pinned to s, and ss has
+                            // multiple CFG predecessors, insert a block between
+                            // s and ss. This is done by adding a dummy CFG node
+                            // that has no correspondence in the input graph.
+                            if (projSuccs.size() == 1 &&
+                                s.succs.stream().anyMatch(ss -> pinnedNode(ss) == s) &&
+                                projSuccs.get(0).preds.stream().filter(ssp -> ssp.isCFG).count() > 1) {
+                                stack.push(insertDummyCFGNode(s, projSuccs.get(0)));
+                                continue;
+                            }
+                            for (Node ps : projSuccs) {
                                 stack.push(ps);
                             }
                         } else {
@@ -240,6 +271,24 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
+    // Create a dummy CFG node (without correspondence in the input graph) and
+    // insert it between p and s.
+    private Node insertDummyCFGNode(Node p, Node s) {
+        // Create in-between node.
+        Node n = new Node();
+        n.preds.add(p);
+        n.succs.add(s);
+        controlSuccs.put(n, Arrays.asList(s));
+        n.isCFG = true;
+        // Update predecessor node p.
+        p.succs.remove(s);
+        p.succs.add(n);
+        controlSuccs.put(p, Arrays.asList(n));
+        // Update successor node s.
+        Collections.replaceAll(s.preds, p, n);
+        return n;
+    }
+
     private String getBlockName(InputNode n) {
         return n.getProperties().get("block");
     }
@@ -271,11 +320,6 @@ public class ServerCompilerScheduler implements Scheduler {
                     "The control-flow graph will not be approximated.");
                 return null;
             }
-            blockProjectionsWithMultipleSuccs = new HashSet<>();
-            phiInputsWithoutRegion = new HashSet<>();
-            regionsWithoutControlInput = new HashSet<>();
-            phisWithRegionlessInputs = new HashSet<>();
-
             buildUpGraph();
             markCFGNodes();
             connectOrphansAndWidows();
@@ -283,7 +327,6 @@ public class ServerCompilerScheduler implements Scheduler {
             schedulePinned();
             buildDominators();
             scheduleLatest();
-            renameBlocks();
 
             InputBlock noBlock = null;
             for (InputNode n : graph.getNodes()) {
@@ -299,8 +342,8 @@ public class ServerCompilerScheduler implements Scheduler {
             }
 
             scheduleLocal();
-            buildDominators(); // check() uses dominator info.
             check();
+            reportWarnings();
 
             return blocks;
         }
@@ -398,11 +441,42 @@ public class ServerCompilerScheduler implements Scheduler {
         return schedule;
     }
 
+    // Return latest block that dominates all successors of n, or null if any
+    // successor is not yet scheduled.
+    private InputBlock commonDominatorOfSuccessors(Node n, Set<Node> reachable) {
+        InputBlock block = null;
+        for (Node s : n.succs) {
+            if (!reachable.contains(s)) {
+                // Unreachable successors should not affect the schedule.
+                continue;
+            }
+            if (s.block == null) {
+                // Successor is not yet scheduled, wait for it.
+                return null;
+            } else if (isPhi(s)) {
+                // Move inputs above their source blocks.
+                boolean foundSourceBlock = false;
+                for (InputBlock srcBlock : sourceBlocks(n, s)) {
+                    foundSourceBlock = true;
+                    block = getCommonDominator(block, srcBlock);
+                }
+                if (!foundSourceBlock) {
+                    // Can happen due to inconsistent phi-region pairs.
+                    block = s.block;
+                    n.addWarning(Node.WARNING_PHI_INPUT_WITHOUT_REGION);
+                }
+            } else {
+                // Common case, update current block to also dominate s.
+                block = getCommonDominator(block, s.block);
+            }
+        }
+        return block;
+    }
+
     private void scheduleLatest() {
 
         // Mark all nodes reachable in backward traversal from root
         Set<Node> reachable = reachableNodes();
-
         Set<Node> unscheduled = new HashSet<>();
         for (Node n : this.nodes) {
             if (n.block == null && reachable.contains(n)) {
@@ -415,42 +489,7 @@ public class ServerCompilerScheduler implements Scheduler {
 
             Set<Node> newUnscheduled = new HashSet<>();
             for (Node n : unscheduled) {
-
-                InputBlock block = null;
-
-                for (Node s : n.succs) {
-                    if (reachable.contains(s)) {
-                        if (s.block == null) {
-                            block = null;
-                            break;
-                        } else {
-                            if (isPhi(s)) {
-                                // Move inputs above their source blocks.
-                                boolean found = false;
-                                for (InputBlock srcBlock : sourceBlocks(n, s)) {
-                                    found = true;
-                                    if (block == null) {
-                                        block = srcBlock;
-                                    } else {
-                                        block = getCommonDominator(block, srcBlock);
-                                    }
-                                }
-                                if (!found) {
-                                    // Can happen due to inconsistent phi-region pairs.
-                                    block = s.block;
-                                    phiInputsWithoutRegion.add(n); // For error reporting.
-                                } else {
-                                    block = getCommonDominator(block, s.block);
-                                }
-                            } else if (block == null) {
-                                block = s.block;
-                            } else {
-                                block = getCommonDominator(block, s.block);
-                            }
-                        }
-                    }
-                }
-
+                InputBlock block = commonDominatorOfSuccessors(n, reachable);
                 if (block != null) {
                     n.block = block;
                     block.addNode(n.inputNode.getId());
@@ -467,7 +506,6 @@ public class ServerCompilerScheduler implements Scheduler {
             }
         }
 
-        // Finally, schedule unreachable nodes.
         Set<Node> curReachable = new HashSet<>(reachable);
         for (Node n : curReachable) {
             if (n.block != null) {
@@ -481,7 +519,7 @@ public class ServerCompilerScheduler implements Scheduler {
 
     }
 
-    // Recomputes the input array of the given node, including empty slots.
+    // Recompute the input array of the given node, including empty slots.
     private Node[] inputArray(Node n) {
         Node[] inputs = new Node[Collections.max(n.predIndices) + 1];
         for (int i = 0; i < n.preds.size(); i++) {
@@ -490,7 +528,7 @@ public class ServerCompilerScheduler implements Scheduler {
         return inputs;
     }
 
-    // Finds the blocks from which node in flows into phi.
+    // Find the blocks from which node 'in' flows into 'phi'.
     private Set<InputBlock> sourceBlocks(Node in, Node phi) {
         Node reg = phi.preds.get(0);
         assert (reg != null);
@@ -505,10 +543,10 @@ public class ServerCompilerScheduler implements Scheduler {
                     if (regInputs[i].isCFG) {
                         srcBlocks.add(regInputs[i].block);
                     } else {
-                        regionsWithoutControlInput.add(reg); // For error reporting.
+                        reg.addWarning(Node.WARNING_REGION_WITHOUT_CONTROL_INPUT);
                     }
                 } else {
-                    phisWithRegionlessInputs.add(phi); // For error reporting.
+                    phi.addWarning(Node.WARNING_PHI_WITH_REGIONLESS_INPUTS);
                 }
             }
         }
@@ -549,6 +587,12 @@ public class ServerCompilerScheduler implements Scheduler {
         if (ba == bb) {
             return ba;
         }
+        if (ba == null) {
+            return bb;
+        }
+        if (bb == null) {
+            return ba;
+        }
         Set<InputBlock> visited = new HashSet<>();
         while (ba != null) {
             visited.add(ba);
@@ -566,19 +610,11 @@ public class ServerCompilerScheduler implements Scheduler {
         return null;
     }
 
-    // Schedule nodes pinned to region-like nodes in their blocks.
-    // Schedule nodes pinned to block projections (e.g. IfTrue) in:
-    // - the projection's successor block,  if the successor block has only one
-    //                                      predecessor;
-    // - a new block created in between,    if the successor block has multiple
-    //                                      predecessors, forming a critical
-    //                                      edge (projection, successor).
+    // Schedule nodes pinned to region-like nodes in the same block. Schedule
+    // nodes pinned to block projections s in their successor block ss.
+    // buildBlocks() guarantees that s is the only predecessor of ss.
     public void schedulePinned() {
-
         Set<Node> reachable = reachableNodes();
-        // Map from critical edges in the initial CFG to splitter blocks.
-        Map<InputBlockEdge, InputBlock> splitBlockMap = new HashMap<>();
-
         for (Node n : nodes) {
             if (!reachable.contains(n) ||
                 n.block != null) {
@@ -592,49 +628,8 @@ public class ServerCompilerScheduler implements Scheduler {
             if (ctrlIn.isBlockProjection) {
                 // Block projections should not have successors in their block:
                 // if n is pinned to a block projection, push it downwards.
-                assert (ctrlIn.succs.size() > 0);
-                Node ctrlSucc = null;
-                int ctrlSuccs = 0;
-                for (Node s : ctrlIn.succs) {
-                    if (s.isCFG) {
-                        ctrlSucc = s;
-                        ctrlSuccs++;
-                    }
-                }
-                if (ctrlSuccs == 1) {
-                    // Regular case (block projections only have one control
-                    // successor in well-formed graphs).
-                    int ctrlSuccPreds = 0;
-                    for (Node p : ctrlSucc.preds) {
-                        if (isControl(p)) {
-                            ctrlSuccPreds++;
-                        }
-                    }
-                    if (ctrlSuccPreds == 1) {
-                        // The successor block ctrlSucc has only one
-                        // predecessor: schedule n in ctrlSucc.
-                        block = ctrlSucc.block;
-                    } else {
-                        // The successor block ctrlSucc has multiple
-                        // predecessors, forming a critical edge: schedule n in
-                        // a new block created in between ctrlIn and ctrlSucc.
-                        InputBlock p = ctrlIn.block, s = ctrlSucc.block;
-                        InputBlockEdge criticalEdge = new InputBlockEdge(p, s, "");
-                        InputBlock split = splitBlockMap.get(criticalEdge);
-                        if (split == null) {
-                            // (p, s) form a critical edge: split it here.
-                            split = graph.addBlock(Integer.toString(blockCount + 1));
-                            graph.removeBlockEdge(p, s);
-                            graph.addBlockEdge(p, split);
-                            graph.addBlockEdge(split, s);
-                            blocks.add(split);
-                            blockCount++;
-                            splitBlockMap.put(criticalEdge, split);
-                        }
-                        block = split;
-                    }
-                } else {
-                    blockProjectionsWithMultipleSuccs.add(ctrlIn); // For error reporting.
+                if (controlSuccs.get(ctrlIn).size() == 1) {
+                    block = controlSuccs.get(ctrlIn).get(0).block;
                 }
             }
             n.block = block;
@@ -642,7 +637,7 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
-    // Returns the control node to which n is pinned, or null if none.
+    // Return the control node to which 'n' is pinned, or null if none.
     public Node pinnedNode(Node n) {
         if (n.preds.isEmpty()) {
             return null;
@@ -651,7 +646,6 @@ public class ServerCompilerScheduler implements Scheduler {
         if (!isControl(ctrlIn)) {
             return null;
         }
-        // n is pinned to ctrlIn.
         return ctrlIn;
     }
 
@@ -661,7 +655,16 @@ public class ServerCompilerScheduler implements Scheduler {
             return;
         }
 
-        Graph<InputBlock> CFG = makeCFG();
+        Graph<InputBlock> CFG = SlowSparseNumberedGraph.make();
+        for (InputBlock b : blocks) {
+            CFG.addNode(b);
+        }
+        for (InputBlock p : blocks) {
+            for (InputBlock s : p.getSuccessors()) {
+                CFG.addEdge(p, s);
+            }
+        }
+
         InputBlock root = findRoot().block;
         Dominators<InputBlock> D = Dominators.make(CFG, root);
 
@@ -673,66 +676,6 @@ public class ServerCompilerScheduler implements Scheduler {
             }
             dominatorMap.put(b, idom);
         }
-    }
-
-    // Rename blocks by reverse post-order traversal, to accomodate new blocks.
-    private void renameBlocks() {
-
-        Graph<InputBlock> CFG = makeCFG();
-        InputBlock root = findRoot().block;
-        List<InputBlock> roots = new ArrayList<InputBlock>(1);
-        roots.add(root);
-        // Start from the Root node block if there are multiple root blocks.
-        for (InputBlock b : blocks) {
-            if (b != root && CFG.getPredNodeCount(b) == 0) {
-                roots.add(b);
-            }
-        }
-
-        blockCount = 0;
-        Map<String, String> namePerm = new HashMap<>(blocks.size());
-        for (InputBlock r : roots) {
-            SortedSet<InputBlock> dfsSet = DFS.sortByDepthFirstOrder(CFG, r);
-            InputBlock[] dfs = dfsSet.toArray(new InputBlock[dfsSet.size()]);
-            for (int i = dfs.length - 1; i >= 0; i--) {
-                InputBlock b = dfs[i];
-                namePerm.put(b.getName(), Integer.toString(blockCount + 1));
-                blockCount++;
-            }
-        }
-
-        graph.permuteBlockNames(namePerm);
-        dominatorMap = null;
-    }
-
-    // Build an auxiliary CFG from the WALA libraries for analysis.
-    private Graph<InputBlock> makeCFG() {
-        Graph<InputBlock> CFG = SlowSparseNumberedGraph.make();
-        for (InputBlock b : blocks) {
-            CFG.addNode(b);
-        }
-        for (InputBlock p : blocks) {
-            for (InputBlock s : p.getSuccessors()) {
-                CFG.addEdge(p, s);
-            }
-        }
-        return CFG;
-    }
-
-    // Whether b1 dominates b2.
-    private boolean dominates(InputBlock b1, InputBlock b2) {
-        InputBlock bi = b2;
-        do {
-            if (bi.equals(b1)) {
-                return true;
-            }
-            bi = dominatorMap.get(bi);
-        } while (bi != null);
-        return false;
-    }
-
-    private boolean isRegion(Node n) {
-        return n.inputNode.getProperties().get("name").equals("Region");
     }
 
     private static boolean isOtherBlockStart(Node n) {
@@ -751,6 +694,10 @@ public class ServerCompilerScheduler implements Scheduler {
         return hasName(n, "Parm");
     }
 
+    private static boolean isRegion(Node n) {
+        return hasName(n, "Region");
+    }
+
     private static boolean hasName(Node n, String name) {
         String nodeName = n.inputNode.getProperties().get("name");
         if (nodeName == null) {
@@ -761,6 +708,18 @@ public class ServerCompilerScheduler implements Scheduler {
 
     private static boolean isControl(Node n) {
         return n.inputNode.getProperties().get("category").equals("control");
+    }
+
+    // Whether b1 dominates b2. Used only for checking the schedule.
+    private boolean dominates(InputBlock b1, InputBlock b2) {
+        InputBlock bi = b2;
+        do {
+            if (bi.equals(b1)) {
+                return true;
+            }
+            bi = dominatorMap.get(bi);
+        } while (bi != null);
+        return false;
     }
 
     private Node findRoot() {
@@ -788,13 +747,12 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
+    // Find all nodes reachable in backward traversal from root.
     private Set<Node> reachableNodes() {
         Node root = findRoot();
-        if(root == null) {
+        if (root == null) {
             assert false : "No root found!";
-            return null;
         }
-        // Mark all nodes reachable in backward traversal from root
         Set<Node> reachable = new HashSet<>();
         reachable.add(root);
         Stack<Node> stack = new Stack<>();
@@ -923,85 +881,69 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
-    // Check invariants in the input graph and in the output schedule. Warn the
-    // user rather than crashing, for robustness (an inaccuracy in the schedule
-    // approximation should not disable all other IGV functionality).
+    // Check invariants in the input graph and in the output schedule, and add
+    // warnings to nodes where the invariants do not hold.
     public void check() {
-
         Set<Node> reachable = reachableNodes();
-        Set<Node> notMarkedWithBlockStart = new HashSet<>();
-        Set<Node> cfgAndInputToPhi = new HashSet<>();
-        Set<Node> phiNonDominatingInputs = new HashSet<>();
         for (Node n : nodes) {
-
             // Check that region nodes are well-formed.
             if (isRegion(n) && !n.isBlockStart) {
-                notMarkedWithBlockStart.add(n);
+                n.addWarning(Node.WARNING_NOT_MARKED_WITH_BLOCK_START);
             }
-
-            // Check that phi nodes are well-formed. If they are, check that
-            // their inputs are scheduled above their source nodes.
-            if (isPhi(n)) {
-                if (!reachable.contains(n)) { // Dead phi.
+            if (!isPhi(n)) {
+                continue;
+            }
+            if (!reachable.contains(n)) { // Dead phi.
+                continue;
+            }
+            // Check that phi nodes and their inputs are well-formed.
+            for (int i = 1; i < n.preds.size(); i++) {
+                Node in = n.preds.get(i);
+                if (in.isCFG) {
+                    // This can happen for nodes misclassified as CFG, for
+                    // example x64's 'rep_stos'.
+                    in.addWarning(Node.WARNING_CFG_AND_INPUT_TO_PHI);
                     continue;
                 }
-                for (int i = 1; i < n.preds.size(); i++) {
-                    Node in = n.preds.get(i);
-                    if (in.isCFG) {
-                        // This can happen for nodes misclassified as CFG,
-                        // for example x64's 'rep_stos'.
-                        cfgAndInputToPhi.add(in);
-                        continue;
-                    }
-                    for (InputBlock b : sourceBlocks(in, n)) {
-                        Node ctrlIn = pinnedNode(in);
-                        if (ctrlIn != null && ctrlIn.isBlockProjection) {
-                            // If the input is pinned to a projection, it has
-                            // been pushed downwards, skip check.
-                            continue;
-                        }
-                        if (!dominates(graph.getBlock(in.inputNode), b)) {
-                            phiNonDominatingInputs.add(in);
-                        }
+                for (InputBlock b : sourceBlocks(in, n)) {
+                    if (!dominates(graph.getBlock(in.inputNode), b)) {
+                        in.addWarning(Node.WARNING_PHI_NON_DOMINATING_INPUTS);
                     }
                 }
             }
         }
+    }
 
-        if (!blockProjectionsWithMultipleSuccs.isEmpty()) {
-            ErrorManager.getDefault().log(ErrorManager.WARNING,
-                blockProjectionsWithMultipleSuccs + " have multiple successors, " +
-                "this might affect the quality of the approximated schedule.");
+    // Report potential and actual innacuracies in the schedule approximation.
+    // IGV tries to warn, rather than crashing, for robustness: an inaccuracy in
+    // the schedule approximation or an inconsistency in the input graph should
+    // not disable all IGV functionality, and debugging inconsistent graphs is a
+    // key use case of IGV. Warns are reported visually for each node (if the
+    // corresponding filter is active) and textually in the IGV log.
+    public void reportWarnings() {
+        Map<String, Set<Node>> nodesPerWarning = new HashMap<>();
+        for (Node n : nodes) {
+            if (n.warnings == null || n.warnings.isEmpty()) {
+                continue;
+            }
+            for (String warning : n.warnings) {
+                if (!nodesPerWarning.containsKey(warning)) {
+                    nodesPerWarning.put(warning, new HashSet<Node>());
+                }
+                nodesPerWarning.get(warning).add(n);
+            }
+            // Attach warnings to each node as a property to be shown in the
+            // graph views.
+            String nodeWarnings = String.join("; ", n.warnings);
+            n.inputNode.getProperties().setProperty("warnings", nodeWarnings);
         }
-        if (!phiInputsWithoutRegion.isEmpty()) {
-            ErrorManager.getDefault().log(ErrorManager.WARNING,
-                phiInputsWithoutRegion + " are phi inputs without associated regions, "
-                + "this might affect the quality of the approximated schedule.");
-        }
-        if (!regionsWithoutControlInput.isEmpty()) {
-            ErrorManager.getDefault().log(ErrorManager.WARNING,
-                regionsWithoutControlInput + " have no control input, "
-                + "this might affect the quality of the approximated schedule.");
-        }
-        if (!phisWithRegionlessInputs.isEmpty()) {
-            ErrorManager.getDefault().log(ErrorManager.WARNING,
-                phisWithRegionlessInputs + " have input nodes without asociated region, "
-                + "this might affect the quality of the approximated schedule.");
-        }
-        if (!notMarkedWithBlockStart.isEmpty()) {
-            ErrorManager.getDefault().log(ErrorManager.WARNING,
-                notMarkedWithBlockStart + " are not marked with is_block_start, " +
-                "this might affect the quality of the approximated schedule.");
-        }
-        if (!cfgAndInputToPhi.isEmpty()) {
-            ErrorManager.getDefault().log(ErrorManager.WARNING,
-                cfgAndInputToPhi + " are CFG nodes and phi inputs, " +
-                "this might affect the quality of the approximated schedule.");
-        }
-        if (!phiNonDominatingInputs.isEmpty()) {
-            ErrorManager.getDefault().log(ErrorManager.WARNING,
-                "inaccurate schedule: " + phiNonDominatingInputs +
-                " are phi inputs but do not dominate the phi's input block.");
+        // Report warnings textually.
+        for (Map.Entry<String, Set<Node>> entry : nodesPerWarning.entrySet()) {
+            String warning = entry.getKey();
+            Set<Node> nodes = entry.getValue();
+            String nodeList = nodes.toString().replace("[", "(").replace("]", ")");
+            String message = warning + " " + nodeList;
+            ErrorManager.getDefault().log(ErrorManager.WARNING, message);
         }
     }
 

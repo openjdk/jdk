@@ -85,10 +85,6 @@ public class InputBlock {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public List<InputNode> getNodes() {
         return Collections.unmodifiableList(nodes);
     }
@@ -120,10 +116,6 @@ public class InputBlock {
         if (!successors.contains(b)) {
             successors.add(b);
         }
-    }
-
-    void removeSuccessor(InputBlock b) {
-        successors.remove(b);
     }
 
     void setArtificial(boolean artificial) {
