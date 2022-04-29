@@ -119,7 +119,7 @@ JavaCallWrapper::~JavaCallWrapper() {
   // State has been restored now make the anchor frame visible for the profiler.
   // Do this after the transition because this allows us to put an assert
   // the Java->vm transition which checks to see that stack is not walkable
-  // on sparc/ia64 which will catch violations of the reseting of last_Java_frame
+  // on sparc/ia64 which will catch violations of the resetting of last_Java_frame
   // invariants (i.e. _flags always cleared on return to Java)
 
   _thread->frame_anchor()->copy(&_anchor);
@@ -374,7 +374,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
   // Find receiver
   Handle receiver = (!method->is_static()) ? args->receiver() : Handle();
 
-  // When we reenter Java, we need to reenable the reserved/yellow zone which
+  // When we reenter Java, we need to re-enable the reserved/yellow zone which
   // might already be disabled when we are in VM.
   thread->stack_overflow_state()->reguard_stack_if_needed();
 

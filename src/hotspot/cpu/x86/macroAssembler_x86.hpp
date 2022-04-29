@@ -540,7 +540,7 @@ public:
   // Push and pop everything that might be clobbered by a native
   // runtime call.
   // Only save the lower 64 bits of each vector register.
-  // Additonal registers can be excluded in a passed RegSet.
+  // Additional registers can be excluded in a passed RegSet.
   void push_call_clobbered_registers_except(RegSet exclude, bool save_fpu = true);
   void pop_call_clobbered_registers_except(RegSet exclude, bool restore_fpu = true);
 
@@ -855,14 +855,14 @@ public:
 
   // Jumps
 
-  // NOTE: these jumps tranfer to the effective address of dst NOT
+  // NOTE: these jumps transfer to the effective address of dst NOT
   // the address contained by dst. This is because this is more natural
   // for jumps/calls.
   void jump(AddressLiteral dst);
   void jump_cc(Condition cc, AddressLiteral dst);
 
   // 32bit can do a case table jump in one instruction but we no longer allow the base
-  // to be installed in the Address class. This jump will tranfers to the address
+  // to be installed in the Address class. This jump will transfer to the address
   // contained in the location described by entry (not the address of entry)
   void jump(ArrayAddress entry);
 

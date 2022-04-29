@@ -775,7 +775,7 @@ void InstanceKlass::eager_initialize_impl() {
     if (old_state != _init_state)
       set_init_state(old_state);
   } else {
-    // linking successfull, mark class as initialized
+    // linking successful, mark class as initialized
     set_init_state(fully_initialized);
     fence_and_clear_init_lock();
     // trace

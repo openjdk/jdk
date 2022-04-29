@@ -475,7 +475,7 @@ class SuperWord : public ResourceObj {
   int get_iv_adjustment(MemNode* mem);
   // Can the preloop align the reference to position zero in the vector?
   bool ref_is_alignable(SWPointer& p);
-  // rebuild the graph so all loads in different iterations of cloned loop become dependant on phi node (in _do_vector_loop only)
+  // rebuild the graph so all loads in different iterations of cloned loop become dependent on phi node (in _do_vector_loop only)
   bool hoist_loads_in_graph();
   // Test whether MemNode::Memory dependency to the same load but in the first iteration of this loop is coming from memory phi
   // Return false if failed
