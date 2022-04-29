@@ -49,7 +49,7 @@ final class Poly1305 {
     private static final int TAG_LENGTH = 16;
 
     private static final IntegerFieldModuloP ipl1305
-            = IntegerPolynomial.Holder.P1305;
+            = IntegerPolynomial1305.ONE;
 
     private byte[] keyBytes;
     private final byte[] block = new byte[BLOCK_LENGTH];

@@ -259,8 +259,8 @@ public class EdDSAParameters {
 
     static {
         // set up Ed25519
-        IntegerFieldModuloP ed25519Field = IntegerPolynomial.Holder.P25519;
-        IntegerFieldModuloP ed25519OrderField = IntegerPolynomial.Holder.PO25519;
+        IntegerFieldModuloP ed25519Field = IntegerPolynomial25519.ONE;
+        IntegerFieldModuloP ed25519OrderField = Curve25519OrderField.ONE;
         BigInteger biD = new BigInteger("3709570593466943934313808350875" +
                 "4565189542113879843219016388785533085940283555");
         ImmutableIntegerModuloP d = ed25519Field.getElement(biD);
@@ -280,8 +280,8 @@ public class EdDSAParameters {
         namedParams.put(name, oid, bits, params);
 
         // set up Ed448
-        IntegerFieldModuloP ed448Field = IntegerPolynomial.Holder.P448;
-        IntegerFieldModuloP ed448OrderField = IntegerPolynomial.Holder.PO448;
+        IntegerFieldModuloP ed448Field = IntegerPolynomial448.ONE;
+        IntegerFieldModuloP ed448OrderField = Curve448OrderField.ONE;
         biD = ed448Field.getSize().subtract(new BigInteger("39081"));
         d = ed448Field.getElement(biD);
         baseX = new BigInteger("224580040295924300187604334" +

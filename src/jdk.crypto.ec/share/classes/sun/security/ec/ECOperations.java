@@ -56,15 +56,15 @@ public class ECOperations {
     }
 
     static final Map<BigInteger, IntegerFieldModuloP> fields = Map.of(
-        IntegerPolynomialP256.MODULUS, IntegerPolynomial.Holder.P256,
-        IntegerPolynomialP384.MODULUS, IntegerPolynomial.Holder.P384,
-        IntegerPolynomialP521.MODULUS, IntegerPolynomial.Holder.P521
+        IntegerPolynomialP256.MODULUS, IntegerPolynomialP256.ONE,
+        IntegerPolynomialP384.MODULUS, IntegerPolynomialP384.ONE,
+        IntegerPolynomialP521.MODULUS, IntegerPolynomialP521.ONE
     );
 
     static final Map<BigInteger, IntegerFieldModuloP> orderFields = Map.of(
-        P256OrderField.MODULUS, IntegerPolynomial.Holder.PO256,
-        P384OrderField.MODULUS, IntegerPolynomial.Holder.PO384,
-        P521OrderField.MODULUS, IntegerPolynomial.Holder.PO521
+        P256OrderField.MODULUS, P256OrderField.ONE,
+        P384OrderField.MODULUS, P384OrderField.ONE,
+        P521OrderField.MODULUS, P521OrderField.ONE
     );
 
     public static Optional<ECOperations> forParameters(ECParameterSpec params) {

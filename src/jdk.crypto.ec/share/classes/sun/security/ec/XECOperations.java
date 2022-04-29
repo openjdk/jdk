@@ -30,7 +30,6 @@ import sun.security.util.math.ImmutableIntegerModuloP;
 import sun.security.util.math.IntegerModuloP;
 import sun.security.util.math.MutableIntegerModuloP;
 import sun.security.util.math.SmallValue;
-import sun.security.util.math.intpoly.IntegerPolynomial;
 import sun.security.util.math.intpoly.IntegerPolynomial25519;
 import sun.security.util.math.intpoly.IntegerPolynomial448;
 
@@ -187,10 +186,10 @@ public class XECOperations {
     private static IntegerFieldModuloP getIntegerFieldModulo(BigInteger p) {
 
         if (p.equals(IntegerPolynomial25519.MODULUS)) {
-            return IntegerPolynomial.Holder.P25519;
+            return IntegerPolynomial25519.ONE;
         }
         else if (p.equals(IntegerPolynomial448.MODULUS)) {
-            return IntegerPolynomial.Holder.P448;
+            return IntegerPolynomial448.ONE;
         }
 
         throw new ProviderException("Unsupported prime: " + p.toString());

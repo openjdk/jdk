@@ -27,17 +27,17 @@
  * @summary Test proper operation of integer field arithmetic
  * @modules java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
  * @build BigIntegerModuloP
- * @run main TestIntegerModuloP P25519 32 0
- * @run main TestIntegerModuloP P448 56 1
- * @run main TestIntegerModuloP P1305 16 2
- * @run main TestIntegerModuloP P256 32 5
- * @run main TestIntegerModuloP P384 48 6
- * @run main TestIntegerModuloP P521 66 7
- * @run main TestIntegerModuloP PO256 32 8
- * @run main TestIntegerModuloP PO384 48 9
- * @run main TestIntegerModuloP PO521 66 10
- * @run main TestIntegerModuloP PO25519 32 11
- * @run main TestIntegerModuloP PO448 56 12
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomial25519 32 0
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomial448 56 1
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomial1305 16 2
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomialP256 32 5
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomialP384 48 6
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.IntegerPolynomialP521 66 7
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.P256OrderField 32 8
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.P384OrderField 48 9
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.P521OrderField 66 10
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.Curve25519OrderField 32 11
+ * @run main TestIntegerModuloP sun.security.util.math.intpoly.Curve448OrderField 56 12
  */
 
 import sun.security.util.math.*;
@@ -118,13 +118,14 @@ public class TestIntegerModuloP {
 
     public static void main(String[] args) {
 
-        String fieldName = args[0];
+        String className = args[0];
         final int length = Integer.parseInt(args[1]);
         int seed = Integer.parseInt(args[2]);
 
         try {
+            Class<?> clazz = Class.forName(className);
             IntegerFieldModuloP field = (IntegerFieldModuloP)
-                    IntegerPolynomial.Holder.class.getDeclaredField(fieldName).get(null);
+                    clazz.getDeclaredField("ONE").get(null);
 
             setUpFunctions(field, length);
 

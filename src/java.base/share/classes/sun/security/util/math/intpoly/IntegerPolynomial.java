@@ -70,23 +70,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             Curve25519OrderField,
             Curve448OrderField {
 
-    public final class Holder {
-        // EC
-        public static final IntegerPolynomial P256 = new IntegerPolynomialP256();
-        public static final IntegerPolynomial P384 = new IntegerPolynomialP384();
-        public static final IntegerPolynomial P521 = new IntegerPolynomialP521();
-        public static final IntegerPolynomial PO256 = new P256OrderField();
-        public static final IntegerPolynomial PO384 = new P384OrderField();
-        public static final IntegerPolynomial PO521 = new P521OrderField();
-        // XEC or EdDSA
-        public static final IntegerPolynomial P25519 = new IntegerPolynomial25519();
-        public static final IntegerPolynomial P448 = new IntegerPolynomial448();
-        public static final IntegerPolynomial PO25519 = new Curve25519OrderField();
-        public static final IntegerPolynomial PO448 = new Curve448OrderField();
-        // Poly1305
-        public static final IntegerPolynomial P1305 = new IntegerPolynomial1305();
-    }
-
     protected static final BigInteger TWO = BigInteger.valueOf(2);
 
     protected final int numLimbs;
