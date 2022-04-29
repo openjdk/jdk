@@ -892,8 +892,9 @@ enum SSLCipher {
                     byte[] sequence) throws GeneralSecurityException {
                 int len = bb.remaining();
                 int pos;
-                // Do in-place with the ct buffer if it's not read-only
                 ByteBuffer pt;
+
+                // Do in-place with the bb buffer if it's not read-only
                 if (!bb.isReadOnly()) {
                     pt = bb.duplicate();
                     pos = bb.position();
@@ -901,6 +902,7 @@ enum SSLCipher {
                     pt = ByteBuffer.allocate(bb.remaining());
                     pos = 0;
                 }
+
                 try {
                     if (len != cipher.update(bb, pt)) {
                         // catch BouncyCastle buffering error
@@ -1079,9 +1081,10 @@ enum SSLCipher {
                     }
                 }
                 // decryption
-                int pos;
-                // Do in-place with the ct buffer if it's not read-only
                 ByteBuffer pt;
+                int pos;
+
+                // Do in-place with the bb buffer if it's not read-only
                 if (!bb.isReadOnly()) {
                     pt = bb.duplicate();
                     pos = bb.position();
@@ -1089,6 +1092,7 @@ enum SSLCipher {
                     pt = ByteBuffer.allocate(cipheredLength);
                     pos = 0;
                 }
+
                 try {
                     if (cipheredLength != cipher.update(bb, pt)) {
                         // catch BouncyCastle buffering error
@@ -1353,9 +1357,10 @@ enum SSLCipher {
                 }
 
                 // decryption
-                int pos;
-                // Do in-place with the ct buffer if it's not read-only
                 ByteBuffer pt;
+                int pos;
+
+                // Do in-place with the bb buffer if it's not read-only
                 if (!bb.isReadOnly()) {
                     pt = bb.duplicate();
                     pos = bb.position();
@@ -1672,10 +1677,10 @@ enum SSLCipher {
 
                 // DON'T decrypt the nonce_explicit for AEAD mode. The buffer
                 // position has moved out of the nonce_explicit range.
-
-                int len, pos;
-                // Do in-place with the ct buffer if it's not read-only
                 ByteBuffer pt;
+                int len, pos;
+
+                // Do in-place with the bb buffer if it's not read-only
                 if (!bb.isReadOnly()) {
                     pt = bb.duplicate();
                     pos = bb.position();
@@ -1683,6 +1688,7 @@ enum SSLCipher {
                     pt = ByteBuffer.allocate(bb.remaining());
                     pos = 0;
                 }
+
                 try {
                     len = cipher.doFinal(bb, pt);
                 } catch (IllegalBlockSizeException ibse) {
@@ -1954,9 +1960,10 @@ enum SSLCipher {
                                         contentType, bb.remaining(), sn);
                 cipher.updateAAD(aad);
 
-                int len, pos;
-                // Do in-place with the ct buffer if it's not read-only
                 ByteBuffer pt;
+                int len, pos;
+
+                // Do in-place with the bb buffer if it's not read-only
                 if (!bb.isReadOnly()) {
                     pt = bb.duplicate();
                     pos = bb.position();
@@ -1964,6 +1971,7 @@ enum SSLCipher {
                     pt = ByteBuffer.allocate(bb.remaining());
                     pos = 0;
                 }
+
                 try {
                     len = cipher.doFinal(bb, pt);
                 } catch (IllegalBlockSizeException ibse) {
@@ -2235,10 +2243,10 @@ enum SSLCipher {
 
                 // DON'T decrypt the nonce_explicit for AEAD mode. The buffer
                 // position has moved out of the nonce_explicit range.
-
-                int len, pos;
-                // Do in-place with the ct buffer if it's not read-only
                 ByteBuffer pt;
+                int len, pos;
+
+                // Do in-place with the bb buffer if it's not read-only
                 if (!bb.isReadOnly()) {
                     pt = bb.duplicate();
                     pos = bb.position();
@@ -2246,6 +2254,7 @@ enum SSLCipher {
                     pt = ByteBuffer.allocate(bb.remaining());
                     pos = 0;
                 }
+
                 try {
                     len = cipher.doFinal(bb, pt);
                 } catch (IllegalBlockSizeException ibse) {
@@ -2513,9 +2522,10 @@ enum SSLCipher {
                                         contentType, bb.remaining(), sn);
                 cipher.updateAAD(aad);
 
-                 int len, pos;
-                // Do in-place with the ct buffer if it's not read-only
                 ByteBuffer pt;
+                int len, pos;
+
+                // Do in-place with the bb buffer if it's not read-only
                 if (!bb.isReadOnly()) {
                     pt = bb.duplicate();
                     pos = bb.position();
@@ -2523,6 +2533,7 @@ enum SSLCipher {
                     pt = ByteBuffer.allocate(bb.remaining());
                     pos = 0;
                 }
+
                 try {
                     len = cipher.doFinal(bb, pt);
                 } catch (IllegalBlockSizeException ibse) {
