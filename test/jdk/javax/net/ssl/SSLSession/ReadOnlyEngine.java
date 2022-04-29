@@ -40,6 +40,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.Security;
 import java.util.concurrent.ExecutorService;
@@ -61,25 +62,26 @@ public class ReadOnlyEngine {
 
     SSLEngine server;
     SSLEngine client;
-    static ExecutorService executor = Executors.newSingleThreadExecutor();
+    final static ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    HandshakeStatus doHandshake(SSLEngine engine, ByteBuffer in, ByteBuffer out) {
+    HandshakeStatus doHandshake(SSLEngine engine, ByteBuffer src,
+        ByteBuffer dst) {
         HandshakeStatus status;
         status = engine.getHandshakeStatus();
         while (status != SSLEngineResult.HandshakeStatus.FINISHED &&
             status != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
-            out.clear();
+            dst.clear();
             switch (status) {
                 case NEED_UNWRAP:
                     try {
-                        return receive(engine, in, out);
+                        return receive(engine, src, dst);
                     } catch (SSLException e) {
                         e.printStackTrace();
                     }
                     break;
                 case NEED_WRAP:
                     try {
-                        return send(engine, in, out);
+                        return send(engine, src, dst);
                     } catch (SSLException e) {
                         e.printStackTrace();
                     }
@@ -96,21 +98,24 @@ public class ReadOnlyEngine {
                 case NOT_HANDSHAKING:
                     break;
                 default:
-                    throw new IllegalStateException("Invalid SSL status: " + status);
+                    throw new IllegalStateException("Invalid SSL status: " +
+                        status);
             }
         }
         return status;
     }
 
-    HandshakeStatus send(SSLEngine engine, ByteBuffer in, ByteBuffer out) throws SSLException {
-        SSLEngineResult status = engine.wrap(in, out);
-        out.flip();
+    HandshakeStatus send(SSLEngine engine, ByteBuffer src, ByteBuffer dst)
+        throws SSLException {
+        SSLEngineResult status = engine.wrap(src, dst);
+        dst.flip();
         return status.getHandshakeStatus();
     }
 
-    HandshakeStatus receive(SSLEngine engine, ByteBuffer in, ByteBuffer out) throws SSLException {
-        SSLEngineResult status = engine.unwrap(in, out);
-        out.flip();
+    HandshakeStatus receive(SSLEngine engine, ByteBuffer src, ByteBuffer dst)
+        throws SSLException {
+        SSLEngineResult status = engine.unwrap(src, dst);
+        dst.flip();
         return status.getHandshakeStatus();
     }
 
@@ -146,30 +151,64 @@ public class ReadOnlyEngine {
         HandshakeStatus statusClient, statusServer;
         client.beginHandshake();
         server.beginHandshake();
+
+        // Do TLS handshake
         do {
             statusClient = doHandshake(client, out, in);
             statusServer = doHandshake(server, in, out);
-        }
-        while ((statusClient != HandshakeStatus.FINISHED && statusClient != HandshakeStatus.NOT_HANDSHAKING)
-            || (statusServer != HandshakeStatus.FINISHED && statusServer != HandshakeStatus.NOT_HANDSHAKING));
+        } while (statusClient != HandshakeStatus.NOT_HANDSHAKING ||
+            statusServer != HandshakeStatus.NOT_HANDSHAKING);
 
-        System.err.println("done");
+        // Read NST
+        in.clear();
+        receive(client, out, in);
 
+        System.out.println("done");
+
+        // Send bytes from the client and make sure the server receives the same
         in.clear();
         out.clear();
-        in.put("FISH".getBytes()).flip();
+        String testString = "ASDF";
+        in.put(testString.getBytes()).flip();
+        String testResult;
+        System.out.println("1: Client send: " + testString);
         send(client, in.asReadOnlyBuffer(), out);
         in.clear();
         receive(server, out.asReadOnlyBuffer(), in);
+        testResult = StandardCharsets.UTF_8.decode(in.duplicate()).toString();
+        System.out.println("1: Server receive: " + testResult);
+        if (!testString.equalsIgnoreCase(testResult)) {
+            throw new Exception("unequal");
+        }
+
+        // Send bytes from the server and make sure the client receives the same
+        out.clear();
+        in.clear();
+        System.out.println("2: Server send: " + testString);
+        in.put(testString.getBytes()).flip();
+        send(server, in, out);
+        in.clear();
+        receive(client, out, in);
+        testResult = StandardCharsets.UTF_8.decode(in.duplicate()).toString();
+        System.out.println("2: Client receive: " + testResult);
+        if (!testString.equalsIgnoreCase(testResult)) {
+            throw new Exception("not equal");
+        }
     }
 
     public static void main(String[] args) throws Exception {
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
-        new ReadOnlyEngine(SSLContext.getInstance("TLSv1.3"), "TLS_AES_256_GCM_SHA384");
-        new ReadOnlyEngine(SSLContext.getInstance("TLSv1.3"), "TLS_CHACHA20_POLY1305_SHA256");
-        new ReadOnlyEngine(SSLContext.getInstance("TLSv1.2"), "TLS_RSA_WITH_AES_128_GCM_SHA256");
-        new ReadOnlyEngine(SSLContext.getInstance("TLSv1.2"), "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256");
-        new ReadOnlyEngine(SSLContext.getInstance("TLSv1.1"), "TLS_RSA_WITH_AES_128_CBC_SHA");
-        new ReadOnlyEngine(SSLContext.getInstance("TLSv1"), "TLS_RSA_WITH_AES_128_CBC_SHA");
+        new ReadOnlyEngine(SSLContext.getInstance("TLSv1.3"),
+            "TLS_AES_256_GCM_SHA384");
+        new ReadOnlyEngine(SSLContext.getInstance("TLSv1.3"),
+            "TLS_CHACHA20_POLY1305_SHA256");
+        new ReadOnlyEngine(SSLContext.getInstance("TLSv1.2"),
+            "TLS_RSA_WITH_AES_128_GCM_SHA256");
+        new ReadOnlyEngine(SSLContext.getInstance("TLSv1.2"),
+            "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256");
+        new ReadOnlyEngine(SSLContext.getInstance("TLSv1.1"),
+            "TLS_RSA_WITH_AES_128_CBC_SHA");
+        new ReadOnlyEngine(SSLContext.getInstance("TLSv1"),
+            "TLS_RSA_WITH_AES_128_CBC_SHA");
     }
 }
