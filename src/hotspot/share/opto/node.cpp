@@ -1890,10 +1890,15 @@ void print_bfs(Node* root, const uint max_distance, Node* target, const char* fi
       current->dump();                                     // node dump
       current = (Node*)parent[current];
     }
-    tty->print("  0");
-    print_node_idx(NULL);
-    tty->print("  %s ", category(root));
-    root->dump();
+    tty->print("  0");                      // distance
+    if (print_blocks) {
+      print_node_block(root);               // block
+    }
+    if (print_old) {
+      print_node_idx(old_node(root));       // old node
+    }
+    tty->print("  %s ", category(root));    // direction and category
+    root->dump();                           // node dump
   }
 }
 
