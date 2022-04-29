@@ -65,7 +65,7 @@ public:
   // Always walkable
   bool walkable(void) { return true; }
   // Never any thing to do since we are always walkable and can find address of return addresses
-  void make_walkable() { }
+  void make_walkable(JavaThread* thread) { }
 
   intptr_t* last_Java_sp(void) const             { return _last_Java_sp; }
 

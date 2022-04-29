@@ -515,7 +515,7 @@ bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_except
   assert(Thread::current() == _handshakee, "should call from _handshakee");
   assert(!_handshakee->is_terminated(), "should not be a terminated thread");
 
-  _handshakee->frame_anchor()->make_walkable();
+  _handshakee->frame_anchor()->make_walkable(_handshakee);
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
 

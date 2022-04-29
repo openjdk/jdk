@@ -720,7 +720,7 @@ frame::frame(void* sp, void* fp, void* pc) {
 
 #endif
 
-void JavaFrameAnchor::make_walkable() {
+void JavaFrameAnchor::make_walkable(JavaThread* thread) {
   // last frame set?
   if (last_Java_sp() == NULL) return;
   // already walkable?

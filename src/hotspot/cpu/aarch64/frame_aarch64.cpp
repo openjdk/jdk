@@ -836,11 +836,12 @@ frame::frame(void* sp, void* fp, void* pc) {
 
 #endif
 
-void JavaFrameAnchor::make_walkable() {
+void JavaFrameAnchor::make_walkable(JavaThread* thread) {
   // last frame set?
   if (last_Java_sp() == NULL) return;
   // already walkable?
   if (walkable()) return;
+  vmassert(Thread::current() == (Thread*)thread, "not current thread");
   vmassert(last_Java_sp() != NULL, "not called from Java code?");
   vmassert(last_Java_pc() == NULL, "already walkable");
   capture_last_Java_pc();

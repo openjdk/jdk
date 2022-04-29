@@ -113,7 +113,7 @@ class ThreadStateTransition : public StackObj {
       thread->check_possible_safepoint();
 
       // Once we are in native/blocked vm expects stack to be walkable
-      thread->frame_anchor()->make_walkable();
+      thread->frame_anchor()->make_walkable(thread);
       OrderAccess::storestore(); // Keep thread_state change and make_walkable() separate.
       thread->set_thread_state(to);
     }
