@@ -48,7 +48,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
 import jdk.test.lib.Platform;
 
 import com.sun.management.UnixOperatingSystemMXBean;
@@ -387,14 +386,14 @@ public final class FileUtils {
      * @param to the newly added line, can be multiple lines or empty. Cannot be null.
      * @throws IOException
      */
-    public static void patch(Path path, int fromLine, int toLine, List<String> from, String to) throws IOException {
+    public static void patch(Path path, int fromLine, int toLine, String from, String to) throws IOException {
         var lines = Files.readAllLines(path);
         if (from != null) {
             var removed = "";
             for (int i = fromLine; i <= toLine; i++) {
                 removed += lines.remove(fromLine - 1).trim();
             }
-            var froms = from.stream()
+            var froms = Arrays.asList(from.split(System.lineSeparator())).stream()
                     .map(String::trim)
                     .collect(Collectors.joining());
             if (!removed.equals(froms)) {
