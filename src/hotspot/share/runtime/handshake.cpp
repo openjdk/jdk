@@ -79,7 +79,6 @@ class HandshakeOperation : public CHeapObj<mtThread> {
   int32_t pending_threads()        { return Atomic::load(&_pending_threads); }
   const char* name()               { return _handshake_cl->name(); }
   bool is_async()                  { return _handshake_cl->is_async(); }
-  bool is_async_installer()        { return _handshake_cl->is_async_installer(); }
   bool is_suspend()                { return _handshake_cl->is_suspend(); }
   bool is_async_exception()        { return _handshake_cl->is_async_exception(); }
   bool is_ThreadDeath()            { return _handshake_cl->is_ThreadDeath(); }
@@ -319,10 +318,6 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
   // Only actually execute the operation for non terminated threads.
   if (!thread->is_terminated()) {
     _handshake_cl->do_thread(thread);
-  } else {
-    if (_handshake_cl->is_async_installer()) {
-      _handshake_cl->do_cleanup();
-    }
   }
 
   if (start_time_ns != 0) {
@@ -429,29 +424,6 @@ void Handshake::execute(AsyncHandshakeClosure* hs_cl, JavaThread* target) {
   target->handshake_state()->add_operation(op);
 }
 
-HandshakeState::HandshakeState(JavaThread* target) :
-  _handshakee(target),
-  _queue(),
-  _lock(Monitor::nosafepoint, "HandshakeState_lock"),
-  _active_handshaker(),
-  _async_exceptions_blocked(false),
-  _suspended(false),
-  _async_suspend_handshake(false)
-{
-}
-
-void HandshakeState::add_operation(HandshakeOperation* op) {
-  // Adds are done lock free and so is arming.
-  _queue.push(op);
-  SafepointMechanism::arm_local_poll_release(_handshakee);
-}
-
-bool HandshakeState::operation_pending(HandshakeOperation* op) {
-  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-  MatchOp mo(op);
-  return _queue.contains(mo);
-}
-
 // Filters
 static bool non_self_executable_filter(HandshakeOperation* op) {
   return !op->is_async();
@@ -467,6 +439,39 @@ static bool is_ThreadDeath_filter(HandshakeOperation* op) {
 }
 static bool no_suspend_no_async_exception_filter(HandshakeOperation* op) {
   return !op->is_suspend() && !op->is_async_exception();
+}
+static bool all_ops_filter(HandshakeOperation* op) {
+  return true;
+}
+
+HandshakeState::HandshakeState(JavaThread* target) :
+  _handshakee(target),
+  _queue(),
+  _lock(Monitor::nosafepoint, "HandshakeState_lock"),
+  _active_handshaker(),
+  _async_exceptions_blocked(false),
+  _suspended(false),
+  _async_suspend_handshake(false) {
+}
+
+HandshakeState::~HandshakeState() {
+  while (has_operation()) {
+    HandshakeOperation* op = _queue.pop(all_ops_filter);
+    guarantee(op->is_async(), "Only async operations may still be present on queue");
+    delete op;
+  }
+}
+
+void HandshakeState::add_operation(HandshakeOperation* op) {
+  // Adds are done lock free and so is arming.
+  _queue.push(op);
+  SafepointMechanism::arm_local_poll_release(_handshakee);
+}
+
+bool HandshakeState::operation_pending(HandshakeOperation* op) {
+  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  MatchOp mo(op);
+  return _queue.contains(mo);
 }
 
 HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool check_async_exception) {
@@ -494,17 +499,6 @@ bool HandshakeState::has_async_exception_operation(bool ThreadDeath_only) {
     return _queue.peek(async_exception_filter) != NULL;
   } else {
     return _queue.peek(is_ThreadDeath_filter) != NULL;
-  }
-}
-
-void HandshakeState::clean_async_exception_operation() {
-  while (has_async_exception_operation(/* ThreadDeath_only */ false)) {
-    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-
-    HandshakeOperation* op;
-    op = _queue.peek(async_exception_filter);
-    remove_op(op);
-    delete op;
   }
 }
 

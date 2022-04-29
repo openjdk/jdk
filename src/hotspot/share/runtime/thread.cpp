@@ -1375,26 +1375,17 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
       // implementation specific clean-up by calling Thread.exit(). We prevent any
       // asynchronous exceptions from being delivered while in Thread.exit()
       // to ensure the clean-up is not corrupted.
-      {
-        NoAsyncExceptionDeliveryMark _no_async(this);
+      NoAsyncExceptionDeliveryMark _no_async(this);
 
-        EXCEPTION_MARK;
-        JavaValue result(T_VOID);
-        Klass* thread_klass = vmClasses::Thread_klass();
-        JavaCalls::call_virtual(&result,
-                                threadObj, thread_klass,
-                                vmSymbols::exit_method_name(),
-                                vmSymbols::void_method_signature(),
-                                THREAD);
-        CLEAR_PENDING_EXCEPTION;
-      }
-
-      // If we have an async exception pending at this point, then it was
-      // queued up while NoAsyncExceptionDeliveryMark was active above so
-      // it could not be processed by this target thread.
-      if (has_async_exception_condition(/* ThreadDeath_only */ false)) {
-        handshake_state()->clean_async_exception_operation();
-      }
+      EXCEPTION_MARK;
+      JavaValue result(T_VOID);
+      Klass* thread_klass = vmClasses::Thread_klass();
+      JavaCalls::call_virtual(&result,
+                              threadObj, thread_klass,
+                              vmSymbols::exit_method_name(),
+                              vmSymbols::void_method_signature(),
+                              THREAD);
+      CLEAR_PENDING_EXCEPTION;
     }
 
     // notify JVMTI
@@ -1679,13 +1670,13 @@ class InstallAsyncExceptionHandshake : public HandshakeClosure {
 public:
   InstallAsyncExceptionHandshake(AsyncExceptionHandshake* aeh) :
     HandshakeClosure("InstallAsyncException"), _aeh(aeh) {}
-  virtual bool is_async_installer()                { return true; }
-  void do_cleanup() {
+  ~InstallAsyncExceptionHandshake() {
     delete _aeh;
   }
   void do_thread(Thread* thr) {
     JavaThread* target = JavaThread::cast(thr);
     target->install_async_exception(_aeh);
+    _aeh = nullptr;
   }
 };
 

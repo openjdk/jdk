@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8167108 8266130 8283467 8285507
+ * @bug 8167108 8266130 8283467 8284632
  * @summary Stress test JVM/TI StopThread() at thread exit.
  * @requires vm.jvmti
  * @run main/othervm/native -agentlib:StopAtExit StopAtExit
@@ -80,15 +80,6 @@ public class StopAtExit extends Thread {
         while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
             count++;
 
-            Throwable myException;
-            if ((count % 1) == 1) {
-              // Throw RuntimeException before ThreadDeath since a
-              // ThreadDeath can also be queued up when there's already
-              // a non-ThreadDeath async execution queued up.
-              myException = new RuntimeException();
-            } else {
-              myException = new ThreadDeath();
-            }
             int retCode;
             StopAtExit thread = new StopAtExit();
             thread.start();
@@ -98,7 +89,20 @@ public class StopAtExit extends Thread {
                 // Tell the worker thread to race to the exit and the
                 // JVM/TI StopThread() calls will come in during thread exit.
                 thread.exitSyncObj.countDown();
+                long inner_count = 0;
                 while (true) {
+                    inner_count++;
+
+                    // Throw RuntimeException before ThreadDeath since a
+                    // ThreadDeath can also be queued up when there's already
+                    // a non-ThreadDeath async execution queued up.
+                    Throwable myException;
+                    if ((inner_count % 1) == 1) {
+                        myException = new RuntimeException();
+                    } else {
+                        myException = new ThreadDeath();
+                    }
+
                     retCode = stopThread(thread, myException);
 
                     if (retCode == JVMTI_ERROR_THREAD_NOT_ALIVE) {
@@ -134,7 +138,7 @@ public class StopAtExit extends Thread {
             }
             // This JVM/TI StopThread() happens after the join() so it
             // should do nothing, but let's make sure.
-            retCode = stopThread(thread, myException);
+            retCode = stopThread(thread, new ThreadDeath());
 
             if (retCode != JVMTI_ERROR_THREAD_NOT_ALIVE) {
                 throw new RuntimeException("thread " + thread.getName()
