@@ -1312,7 +1312,16 @@ bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
   // assert(independent(s1, s2) == true, "check independent");
   if (s1->req() > 1 && !s1->is_Store() && !s1->is_Load()) {
     for (uint i = 1; i < s1->req(); i++) {
-      if (s1->in(i)->Opcode() != s2->in(i)->Opcode()) return false;
+      Node* s1_in = s1->in(i);
+      Node* s2_in = s2->in(i);
+      if (s1_in->is_Phi() && s2_in->is_Add() && s2_in->in(1) == s1_in) {
+        // Special handling for expressions with loop iv, like "b[i] = a[i] * i".
+        // In this case, one node has an input from the tripcount iv and another
+        // node has an input from iv plus an offset.
+        if (!s1_in->as_Phi()->is_tripcount(T_INT)) return false;
+      } else {
+        if (s1_in->Opcode() != s2_in->Opcode()) return false;
+      }
     }
   }
   return true;
@@ -2516,6 +2525,13 @@ bool SuperWord::output() {
         Node* in2 = vector_opd(p, 2);
         vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+      } else if (opc == Op_SignumF || opc == Op_SignumD) {
+        assert(n->req() == 4, "four inputs expected");
+        Node* in = vector_opd(p, 1);
+        Node* zero = vector_opd(p, 2);
+        Node* one = vector_opd(p, 3);
+        vn = VectorNode::make(opc, in, zero, one, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (n->req() == 3 && !is_cmov_pack(p)) {
         // Promote operands to vector
         Node* in1 = NULL;
@@ -2837,6 +2853,23 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     vlen = cl->slp_max_unroll();
   }
 
+  // Insert index population operation
+  if (opd == iv()) {
+    BasicType p0_bt = velt_basic_type(p0);
+    BasicType iv_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
+    const TypeVect* vt = TypeVect::make(iv_bt, vlen);
+    Node* vn = new PopulateIndexNode(iv(), _igvn.intcon(1), vt);
+#ifdef ASSERT
+    if (TraceNewVectors) {
+      tty->print("new Vector node: ");
+      vn->dump();
+    }
+#endif
+    _igvn.register_new_node_with_optimizer(vn);
+    _phase->set_ctrl(vn, _phase->get_ctrl(opd));
+    return vn;
+  }
+
   if (same_inputs(p, opd_idx)) {
     if (opd->is_Vector() || opd->is_LoadVector()) {
       assert(((opd_idx != 2) || !VectorNode::is_shift(p0)), "shift's count can't be vector");
@@ -2847,7 +2880,6 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
       return opd; // input is matching vector
     }
     if ((opd_idx == 2) && VectorNode::is_shift(p0)) {
-      Compile* C = _phase->C;
       Node* cnt = opd;
       // Vector instructions do not mask shift count, do it here.
       juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
@@ -3008,10 +3040,25 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
   Node* def = use->in(u_idx);
   Node_List* d_pk = my_pack(def);
   if (d_pk == NULL) {
-    // check for scalar promotion
     Node* n = u_pk->at(0)->in(u_idx);
-    for (uint i = 1; i < u_pk->size(); i++) {
-      if (u_pk->at(i)->in(u_idx) != n) return false;
+    if (n == iv()) {
+      // check for index population
+      BasicType bt = velt_basic_type(use);
+      if (!VectorNode::is_populate_index_supported(bt)) return false;
+      for (uint i = 1; i < u_pk->size(); i++) {
+        // We can create a vector filled with iv indices if all other nodes
+        // in use pack have inputs of iv plus node index.
+        Node* use_in = u_pk->at(i)->in(u_idx);
+        if (!use_in->is_Add() || use_in->in(1) != n) return false;
+        const TypeInt* offset_t = use_in->in(2)->bottom_type()->is_int();
+        if (offset_t == NULL || !offset_t->is_con() ||
+            offset_t->get_con() != (jint) i) return false;
+      }
+    } else {
+      // check for scalar promotion
+      for (uint i = 1; i < u_pk->size(); i++) {
+        if (u_pk->at(i)->in(u_idx) != n) return false;
+      }
     }
     return true;
   }
