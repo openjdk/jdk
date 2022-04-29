@@ -63,7 +63,7 @@ public:
   }
 
   bool walkable(void)                            { return _last_Java_sp != NULL && _last_Java_pc != NULL; }
-  void make_walkable(Thread* thread);
+  void make_walkable();
 
   intptr_t* last_Java_sp(void) const             { return _last_Java_sp; }
 

@@ -73,7 +73,7 @@
     return true;
   }
 
-  void make_walkable(Thread* thread) {
+  void make_walkable() {
     // nothing to do
   }
 

@@ -355,7 +355,7 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
   // Since we are walking the stack now this nested anchor is obviously walkable
   // even if it wasn't when it was stacked.
-  jfa->make_walkable(Thread::current());
+  jfa->make_walkable();
   map->clear();
   assert(map->include_argument_oops(), "should be set by clear");
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
@@ -832,12 +832,11 @@ frame::frame(void* sp, void* fp, void* pc) {
 
 #endif
 
-void JavaFrameAnchor::make_walkable(Thread* thread) {
+void JavaFrameAnchor::make_walkable() {
   // last frame set?
   if (last_Java_sp() == NULL) return;
   // already walkable?
   if (walkable()) return;
-  vmassert(Thread::current() == thread, "not current thread");
   vmassert(last_Java_sp() != NULL, "not called from Java code?");
   vmassert(last_Java_pc() == NULL, "already walkable");
   _last_Java_pc = (address)_last_Java_sp[-1];
