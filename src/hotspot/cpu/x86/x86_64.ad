@@ -11376,8 +11376,7 @@ instruct rep_stos_large_evex(rcx_RegL cnt, rdi_RegP base, legRegD tmp, kReg ktmp
 instruct rep_stos_im(immL cnt, rRegP base, regD tmp, rRegI zero, kReg ktmp, Universe dummy, rFlagsReg cr)
 %{
   predicate(!((ClearArrayNode*)n)->is_large() &&
-              ((UseAVX > 2) && VM_Version::supports_avx512vlbw()) &&
-              n->in(2)->get_long() < 256 /* rough limit to prevent overflowing scratch buffer */);
+              ((UseAVX > 2) && VM_Version::supports_avx512vlbw()));
   match(Set dummy (ClearArray cnt base));
   ins_cost(100);
   effect(TEMP tmp, TEMP zero, TEMP ktmp, KILL cr);
