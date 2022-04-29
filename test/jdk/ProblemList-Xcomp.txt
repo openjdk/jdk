@@ -27,5 +27,4 @@
 #
 #############################################################################
 
-java/lang/Integer/Unsigned.java 8284635 generic-all
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all

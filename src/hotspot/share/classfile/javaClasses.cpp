@@ -2510,7 +2510,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
       assert(skip_fillInStackTrace_check, "logic error in backtrace filtering");
 
       // skip <init> methods of the exception class and superclasses
-      // This is simlar to classic VM.
+      // This is similar to classic VM.
       if (method->name() == vmSymbols::object_initializer_name() &&
           throwable->is_a(method->method_holder())) {
         continue;
@@ -3011,7 +3011,7 @@ void java_lang_reflect_Method::serialize_offsets(SerializeClosure* f) {
 Handle java_lang_reflect_Method::create(TRAPS) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
   Klass* klass = vmClasses::reflect_Method_klass();
-  // This class is eagerly initialized during VM initialization, since we keep a refence
+  // This class is eagerly initialized during VM initialization, since we keep a reference
   // to one of the methods
   assert(InstanceKlass::cast(klass)->is_initialized(), "must be initialized");
   return InstanceKlass::cast(klass)->allocate_instance_handle(THREAD);

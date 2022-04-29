@@ -24,6 +24,7 @@ package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
@@ -34,12 +35,10 @@ import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Tests unsigned division and modulus methods in java.lang.Integer
- */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Fork(1)
 public class IntegerDivMod {
 
     RandomGenerator randomGenerator;
@@ -60,9 +59,34 @@ public class IntegerDivMod {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             dividends[i] = rng.nextInt();
             int divisor = rng.nextInt();
-            if (divisorType.equals("positive")) divisor = Math.abs(divisor);
-            else if (divisorType.equals("negative")) divisor = -Math.abs(divisor);
+            if (divisorType.equals("positive")) {
+                divisor = Math.abs(divisor);
+            } else if (divisorType.equals("negative")) {
+                divisor = -Math.abs(divisor);
+            }
             divisors[i] = divisor;
+        }
+    }
+
+    @Benchmark
+    public void testDivide() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            quotients[i] = dividends[i] / divisors[i];
+        }
+    }
+
+    @Benchmark
+    public void testDivideKnownPositive() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            quotients[i] = dividends[i] / Math.max(1, divisors[i]);
+        }
+    }
+
+    @Benchmark
+    public void testDivideHoistedDivisor() {
+        int x = divisors[0];
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            quotients[i] = dividends[i] / x;
         }
     }
 
@@ -91,8 +115,4 @@ public class IntegerDivMod {
         quotients[i] = Integer.divideUnsigned(dividend, divisor);
         remainders[i] = Integer.remainderUnsigned(dividend, divisor);
     }
-
 }
-
-
-

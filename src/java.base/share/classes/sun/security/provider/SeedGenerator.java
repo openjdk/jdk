@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ package sun.security.provider;
  * <p>
  * These values are gathered in the background by a daemon thread
  * thus allowing the system to continue performing it's different
- * activites, which in turn add entropy to the random seed.
+ * activities, which in turn add entropy to the random seed.
  * <p>
  * The class also gathers miscellaneous system information, some
  * machine dependent, some not. This information is then hashed together

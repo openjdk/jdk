@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,7 +214,7 @@ public final class CRC32C implements Checksum {
     private static int updateBytes(int crc, byte[] b, int off, int end) {
 
         // Do only byte reads for arrays so short they can't be aligned
-        // or if bytes are stored with a larger witdh than one byte.,%
+        // or if bytes are stored with a larger width than one byte.,%
         if (end - off >= 8 && Unsafe.ARRAY_BYTE_INDEX_SCALE == 1) {
 
             // align on 8 bytes

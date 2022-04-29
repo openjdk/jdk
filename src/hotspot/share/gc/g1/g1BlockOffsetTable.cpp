@@ -92,53 +92,39 @@ void G1BlockOffsetTablePart::update() {
   assert(next_addr == limit, "Should stop the scan at the limit.");
 }
 
-// The arguments follow the normal convention of denoting
-// a right-open interval: [start, end)
-void G1BlockOffsetTablePart::set_remainder_to_point_to_start(HeapWord* start, HeapWord* end) {
-  assert(start < end, "precondition");
-  // Write the backskip value for each region.
-  //
-  //    offset
-  //    card             2nd                       3rd
-  //     | +- 1st        |                         |
-  //     v v             v                         v
-  //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+     +-+-+-+-+-+-+-+-+-+-+-
-  //    |x|0|0|0|0|0|0|0|1|1|1|1|1|1| ... |1|1|1|1|2|2|2|2|2|2| ...
-  //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+     +-+-+-+-+-+-+-+-+-+-+-
-  //    11              19                        75
-  //      12
-  //
-  //    offset card is the card that points to the start of an object
-  //      x - offset value of offset card
-  //    1st - start of first logarithmic region
-  //      0 corresponds to logarithmic value N_words + 0 and 2**(3 * 0) = 1
-  //    2nd - start of second logarithmic region
-  //      1 corresponds to logarithmic value N_words + 1 and 2**(3 * 1) = 8
-  //    3rd - start of third logarithmic region
-  //      2 corresponds to logarithmic value N_words + 2 and 2**(3 * 2) = 64
-  //
-  //    integer below the block offset entry is an example of
-  //    the index of the entry
-  //
-  //    Given an address,
-  //      Find the index for the address
-  //      Find the block offset table entry
-  //      Convert the entry to a back slide
-  //        (e.g., with today's, offset = 0x81 =>
-  //          back slip = 2**(3*(0x81 - N_words)) = 2**3) = 8
-  //      Move back N (e.g., 8) entries and repeat with the
-  //        value of the new entry
-  //
-  size_t start_card = _bot->index_for(start);
-  size_t end_card = _bot->index_for(end-1);
-  assert(start ==_bot->address_for_index(start_card), "Precondition");
-  assert(end ==_bot->address_for_index(end_card)+BOTConstants::card_size_in_words(), "Precondition");
-  set_remainder_to_point_to_start_incl(start_card, end_card); // closed interval
-}
-
-// Unlike the normal convention in this code, the argument here denotes
-// a closed, inclusive interval: [start_card, end_card], cf set_remainder_to_point_to_start()
-// above.
+// Write the backskip value for each region.
+//
+//    offset
+//    card             2nd                       3rd
+//     | +- 1st        |                         |
+//     v v             v                         v
+//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+     +-+-+-+-+-+-+-+-+-+-+-
+//    |x|0|0|0|0|0|0|0|1|1|1|1|1|1| ... |1|1|1|1|2|2|2|2|2|2| ...
+//    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+     +-+-+-+-+-+-+-+-+-+-+-
+//    11              19                        75
+//      12
+//
+//    offset card is the card that points to the start of an object
+//      x - offset value of offset card
+//    1st - start of first logarithmic region
+//      0 corresponds to logarithmic value N_words + 0 and 2**(3 * 0) = 1
+//    2nd - start of second logarithmic region
+//      1 corresponds to logarithmic value N_words + 1 and 2**(3 * 1) = 8
+//    3rd - start of third logarithmic region
+//      2 corresponds to logarithmic value N_words + 2 and 2**(3 * 2) = 64
+//
+//    integer below the block offset entry is an example of
+//    the index of the entry
+//
+//    Given an address,
+//      Find the index for the address
+//      Find the block offset table entry
+//      Convert the entry to a back slide
+//        (e.g., with today's, offset = 0x81 =>
+//          back slip = 2**(3*(0x81 - N_words)) = 2**3) = 8
+//      Move back N (e.g., 8) entries and repeat with the
+//        value of the new entry
+//
 void G1BlockOffsetTablePart::set_remainder_to_point_to_start_incl(size_t start_card, size_t end_card) {
   assert(start_card <= end_card, "precondition");
   assert(start_card > _bot->index_for(_hr->bottom()), "Cannot be first card");
@@ -240,11 +226,7 @@ void G1BlockOffsetTablePart::update_for_block_work(HeapWord* blk_start,
 
   // Are there more cards left to be updated?
   if (index + 1 <= end_index) {
-    HeapWord* rem_st  = _bot->address_for_index(index + 1);
-    // Calculate rem_end this way because end_index
-    // may be the last valid index in the covered region.
-    HeapWord* rem_end = _bot->address_for_index(end_index) + BOTConstants::card_size_in_words();
-    set_remainder_to_point_to_start(rem_st, rem_end);
+    set_remainder_to_point_to_start_incl(index + 1, end_index);
   }
 
 #ifdef ASSERT
