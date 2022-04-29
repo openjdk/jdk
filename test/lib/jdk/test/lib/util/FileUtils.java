@@ -380,7 +380,7 @@ public final class FileUtils {
     /**
      * Patches a part of a file.
      * @param path of file
-     * @param fromLine the first line to patch. This is the number you see in an editor, 1-based.
+     * @param fromLine the first line to patch. This is the number you see in an editor, 1-based, inclusive.
      * @param toLine the last line to patch. This is the number you see in an editor, inclusive.
      * @param from the lines to remove, used to ensure the correct lines are removed. Ignored if null.
      * @param to the newly added line, can be multiple lines or empty. Cannot be null.
@@ -393,7 +393,7 @@ public final class FileUtils {
             for (int i = fromLine; i <= toLine; i++) {
                 removed += lines.remove(fromLine - 1).trim();
             }
-            var froms = Arrays.asList(from.split(System.lineSeparator())).stream()
+            var froms = from.lines()
                     .map(String::trim)
                     .collect(Collectors.joining());
             if (!removed.equals(froms)) {
