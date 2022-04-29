@@ -212,7 +212,7 @@ class MacroAssembler: public Assembler {
 
   inline void movw(Register Rd, Register Rn) {
     if (Rd == sp || Rn == sp) {
-      addw(Rd, Rn, 0U);
+      Assembler::addw(Rd, Rn, 0U);
     } else {
       orrw(Rd, zr, Rn);
     }
@@ -221,7 +221,7 @@ class MacroAssembler: public Assembler {
     assert(Rd != r31_sp && Rn != r31_sp, "should be");
     if (Rd == Rn) {
     } else if (Rd == sp || Rn == sp) {
-      add(Rd, Rn, 0U);
+      Assembler::add(Rd, Rn, 0U);
     } else {
       orr(Rd, zr, Rn);
     }
@@ -877,6 +877,10 @@ public:
   // Round up to a power of two
   void round_to(Register reg, int modulus);
 
+  // java.lang.Math::round intrinsics
+  void java_round_double(Register dst, FloatRegister src, FloatRegister ftmp);
+  void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp);
+
   // allocation
   void eden_allocate(
     Register obj,                      // result: pointer to object after successful allocation
@@ -962,13 +966,27 @@ public:
   // Debugging
 
   // only if +VerifyOops
-  void verify_oop(Register reg, const char* s = "broken oop");
-  void verify_oop_addr(Address addr, const char * s = "broken oop addr");
+  void _verify_oop(Register reg, const char* s, const char* file, int line);
+  void _verify_oop_addr(Address addr, const char * s, const char* file, int line);
+
+  void _verify_oop_checked(Register reg, const char* s, const char* file, int line) {
+    if (VerifyOops) {
+      _verify_oop(reg, s, file, line);
+    }
+  }
+  void _verify_oop_addr_checked(Address reg, const char* s, const char* file, int line) {
+    if (VerifyOops) {
+      _verify_oop_addr(reg, s, file, line);
+    }
+  }
 
 // TODO: verify method and klass metadata (compare against vptr?)
   void _verify_method_ptr(Register reg, const char * msg, const char * file, int line) {}
   void _verify_klass_ptr(Register reg, const char * msg, const char * file, int line){}
 
+#define verify_oop(reg) _verify_oop_checked(reg, "broken oop " #reg, __FILE__, __LINE__)
+#define verify_oop_msg(reg, msg) _verify_oop_checked(reg, "broken oop " #reg ", " #msg, __FILE__, __LINE__)
+#define verify_oop_addr(addr) _verify_oop_addr_checked(addr, "broken oop addr " #addr, __FILE__, __LINE__)
 #define verify_method_ptr(reg) _verify_method_ptr(reg, "broken method " #reg, __FILE__, __LINE__)
 #define verify_klass_ptr(reg) _verify_klass_ptr(reg, "broken klass " #reg, __FILE__, __LINE__)
 
@@ -1126,16 +1144,16 @@ public:
 
   // If a constant does not fit in an immediate field, generate some
   // number of MOV instructions and then perform the operation
-  void wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned imm,
+  void wrap_add_sub_imm_insn(Register Rd, Register Rn, uint64_t imm,
                              add_sub_imm_insn insn1,
                              add_sub_reg_insn insn2);
   // Separate vsn which sets the flags
-  void wrap_adds_subs_imm_insn(Register Rd, Register Rn, unsigned imm,
+  void wrap_adds_subs_imm_insn(Register Rd, Register Rn, uint64_t imm,
                              add_sub_imm_insn insn1,
                              add_sub_reg_insn insn2);
 
 #define WRAP(INSN)                                                      \
-  void INSN(Register Rd, Register Rn, unsigned imm) {                   \
+  void INSN(Register Rd, Register Rn, uint64_t imm) {                   \
     wrap_add_sub_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN); \
   }                                                                     \
                                                                         \
@@ -1157,7 +1175,7 @@ public:
 
 #undef WRAP
 #define WRAP(INSN)                                                      \
-  void INSN(Register Rd, Register Rn, unsigned imm) {                   \
+  void INSN(Register Rd, Register Rn, uint64_t imm) {                   \
     wrap_adds_subs_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN); \
   }                                                                     \
                                                                         \

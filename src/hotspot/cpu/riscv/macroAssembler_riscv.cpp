@@ -324,7 +324,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 void MacroAssembler::get_vm_result(Register oop_result, Register java_thread) {
   ld(oop_result, Address(java_thread, JavaThread::vm_result_offset()));
   sd(zr, Address(java_thread, JavaThread::vm_result_offset()));
-  verify_oop(oop_result, "broken oop in call_VM_base");
+  verify_oop_msg(oop_result, "broken oop in call_VM_base");
 }
 
 void MacroAssembler::get_vm_result_2(Register metadata_result, Register java_thread) {
@@ -362,7 +362,7 @@ void MacroAssembler::clinit_barrier(Register klass, Register tmp, Label* L_fast_
   }
 }
 
-void MacroAssembler::verify_oop(Register reg, const char* s) {
+void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, int line) {
   if (!VerifyOops) { return; }
 
   // Pass register number to verify_oop_subroutine
@@ -370,7 +370,7 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   {
     ResourceMark rm;
     stringStream ss;
-    ss.print("verify_oop: %s: %s", reg->name(), s);
+    ss.print("verify_oop: %s: %s (%s:%d)", reg->name(), s, file, line);
     b = code_string(ss.as_string());
   }
   BLOCK_COMMENT("verify_oop {");
@@ -378,7 +378,10 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   push_reg(RegSet::of(ra, t0, t1, c_rarg0), sp);
 
   mv(c_rarg0, reg); // c_rarg0 : x10
-  li(t0, (uintptr_t)(address)b);
+  // The length of the instruction sequence emitted should be independent
+  // of the value of the local char buffer address so that the size of mach
+  // nodes for scratch emit and normal emit matches.
+  mv(t0, (address)b);
 
   // call indirectly to solve generation ordering problem
   int32_t offset = 0;
@@ -391,7 +394,7 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   BLOCK_COMMENT("} verify_oop");
 }
 
-void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
+void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* file, int line) {
   if (!VerifyOops) {
     return;
   }
@@ -400,7 +403,7 @@ void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
   {
     ResourceMark rm;
     stringStream ss;
-    ss.print("verify_oop_addr: %s", s);
+    ss.print("verify_oop_addr: %s (%s:%d)", s, file, line);
     b = code_string(ss.as_string());
   }
   BLOCK_COMMENT("verify_oop_addr {");
@@ -414,7 +417,10 @@ void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
     ld(x10, addr);
   }
 
-  li(t0, (uintptr_t)(address)b);
+  // The length of the instruction sequence emitted should be independent
+  // of the value of the local char buffer address so that the size of mach
+  // nodes for scratch emit and normal emit matches.
+  mv(t0, (address)b);
 
   // call indirectly to solve generation ordering problem
   int32_t offset = 0;
@@ -529,17 +535,9 @@ void MacroAssembler::resolve_jobject(Register value, Register thread, Register t
 }
 
 void MacroAssembler::stop(const char* msg) {
-  address ip = pc();
-  pusha();
-  // The length of the instruction sequence emitted should be independent
-  // of the values of msg and ip so that the size of mach nodes for scratch
-  // emit and normal emit matches.
-  mv(c_rarg0, (address)msg);
-  mv(c_rarg1, (address)ip);
-  mv(c_rarg2, sp);
-  mv(c_rarg3, CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
-  jalr(c_rarg3);
-  ebreak();
+  BLOCK_COMMENT(msg);
+  illegal_instruction(Assembler::csr::time);
+  emit_int64((uintptr_t)msg);
 }
 
 void MacroAssembler::unimplemented(const char* what) {
@@ -569,24 +567,14 @@ void MacroAssembler::emit_static_call_stub() {
 void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        int number_of_arguments,
                                        Label *retaddr) {
-  call_native_base(entry_point, retaddr);
-}
-
-void MacroAssembler::call_native(address entry_point, Register arg_0) {
-  pass_arg0(this, arg_0);
-  call_native_base(entry_point);
-}
-
-void MacroAssembler::call_native_base(address entry_point, Label *retaddr) {
-  Label E, L;
   int32_t offset = 0;
-  push_reg(0x80000040, sp);   // push << t0 & xmethod >> to sp
+  push_reg(RegSet::of(t0, xmethod), sp);   // push << t0 & xmethod >> to sp
   movptr_with_offset(t0, entry_point, offset);
   jalr(x1, t0, offset);
   if (retaddr != NULL) {
     bind(*retaddr);
   }
-  pop_reg(0x80000040, sp);   // pop << t0 & xmethod >> from sp
+  pop_reg(RegSet::of(t0, xmethod), sp);   // pop << t0 & xmethod >> from sp
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, int number_of_arguments) {
@@ -1121,18 +1109,6 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude) {
   addi(sp, sp, wordSize * 20);
 
   pop_reg(RegSet::of(x7) + RegSet::range(x10, x17) + RegSet::range(x28, x31) - exclude, sp);
-}
-
-// Push all the integer registers, except zr(x0) & sp(x2) & gp(x3) & tp(x4).
-void MacroAssembler::pusha() {
-  CompressibleRegion cr(this);
-  push_reg(0xffffffe2, sp);
-}
-
-// Pop all the integer registers, except zr(x0) & sp(x2) & gp(x3) & tp(x4).
-void MacroAssembler::popa() {
-  CompressibleRegion cr(this);
-  pop_reg(0xffffffe2, sp);
 }
 
 void MacroAssembler::push_CPU_state(bool save_vectors, int vector_size_in_bytes) {
@@ -1827,7 +1803,7 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
 
 // Algorithm must match CompressedOops::encode.
 void MacroAssembler::encode_heap_oop(Register d, Register s) {
-  verify_oop(s, "broken oop in encode_heap_oop");
+  verify_oop_msg(s, "broken oop in encode_heap_oop");
   if (CompressedOops::base() == NULL) {
     if (CompressedOops::shift() != 0) {
       assert (LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
@@ -1985,7 +1961,7 @@ void  MacroAssembler::decode_heap_oop(Register d, Register s) {
     shadd(d, s, xheapbase, d, LogMinObjAlignmentInBytes);
     bind(done);
   }
-  verify_oop(d, "broken oop in decode_heap_oop");
+  verify_oop_msg(d, "broken oop in decode_heap_oop");
 }
 
 void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
@@ -2940,9 +2916,7 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   // with the call instruction at insts_call_instruction_offset in the
   // instructions code-section.
 
-  // make sure 4 byte aligned here, so that the destination address would be
-  // 8 byte aligned after 3 instructions
-  // when we reach here we may get a 2-byte alignment so need to align it
+  // Make sure the address of destination 8-byte aligned after 3 instructions.
   align(wordSize, NativeCallTrampolineStub::data_offset);
 
   relocate(trampoline_stub_Relocation::spec(code()->insts()->start() +
