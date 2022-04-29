@@ -273,11 +273,16 @@ public:
 
   // instruction must start at passed address
   static bool is_compressed_instr(address instr) {
+    // The RISC-V ISA Manual, Section 'Base Instruction-Length Encoding':
+    // Instructions are stored in memory as a sequence of 16-bit little-endian parcels, regardless of
+    // memory system endianness. Parcels forming one instruction are stored at increasing halfword
+    // addresses, with the lowest-addressed parcel holding the lowest-numbered bits in the instruction
+    // specification.
     if (UseRVC && (((uint16_t *)instr)[0] & 0b11) != 0b11) {
-      // 16-bit instructions end with 0b00, 0b01, and 0b10
+      // 16-bit instructions' lowest two bits are 0b00, 0b01, and 0b10
       return true;
     }
-    // 32-bit instructions end with 0b11
+    // 32-bit instructions' lowest two bits are 0b11
     return false;
   }
 
