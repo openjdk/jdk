@@ -84,10 +84,5 @@ public class WeakSecretKeyTest {
                 .shouldMatch("<deskey> uses the DES/CBC algorithm.*considered a security risk")
                 .shouldMatch("<newentry> uses the PBEWithMD5AndDES algorithm.*considered a security risk")
                 .shouldHaveExitValue(0);
-
-        SecurityTools.keytool("-keystore ks.p12 -storepass changeit " +
-                "-genseckey -keyalg RC2 -alias rc2key")
-                .shouldMatch("NoSuchAlgorithmException: unrecognized algorithm name: RC2")
-                .shouldHaveExitValue(1);
     }
 }
