@@ -45,7 +45,7 @@ import jdk.test.lib.net.IPSupport;
 
 public class PingThis {
     public static void main(String args[]) throws Exception {
-        osname = System.getProperty("os.name")
+        osname = System.getProperty("os.name");
         /*
          * On AIX InetAddress ::0 is not valid, InetAddress 0.0.0.0 only responds
          *          when an external device reacts to 0.0.0.0
