@@ -737,8 +737,8 @@ public final class System {
      *         when the specification implemented by this runtime has undergone a
      *         <a href="https://jcp.org/en/procedures/jcp2#3.6.4">maintenance
      *         release</a> <em>(optional)</em>.
-     *         After a first maintenance release, this property will
-     *         have the value {@code "1"}, after a second maintenance
+     *         After a first maintenance release this property will
+     *         have the value {@code "1"}; after a second maintenance
      *         release, this property will have the value {@code "2"},
      *         and so on.
      *         </td></tr>
