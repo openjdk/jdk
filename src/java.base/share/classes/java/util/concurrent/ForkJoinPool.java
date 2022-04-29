@@ -158,7 +158,8 @@ import jdk.internal.misc.Unsafe;
  * {@linkplain Thread#getContextClassLoader() thread context class loader}.
  * In addition, if a {@link SecurityManager} is present, then
  * the common pool uses a factory supplying threads that have no
- * {@link Permissions} enabled.
+ * {@link Permissions} enabled, and are not guaranteed to preserve
+ * the values of {@link java.lang.ThreadLocal} variables across tasks.
  *
  * Upon any error in establishing these settings, default parameters
  * are used. It is possible to disable or limit the use of threads in
@@ -263,8 +264,8 @@ public class ForkJoinPool extends AbstractExecutorService {
      * uses masking, not mod, for indexing a power-of-two-sized array,
      * enforces memory ordering, supports resizing, and possibly
      * signals waiting workers to start scanning (described below),
-     * which requires that even internal usages to strictly order
-     * accesses (using a form of lock release).
+     * which requires even internal usages to strictly order accesses
+     * (using a form of lock release).
      *
      * The pop operation (always performed by owner) is of the form:
      *   if ((task = getAndSet(q.array, (q.top-1) % length, null)) != null)
@@ -328,7 +329,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      *    contention, when possible, non-owners avoid reading the
      *    "top" index at all, and instead use array reads, including
      *    one-ahead reads to check whether to repoll, relying on the
-     *    fact that an non-empty queue does not have two null slots in
+     *    fact that a non-empty queue does not have two null slots in
      *    a row, except in cases (resizes and shifts) that can be
      *    detected with a secondary recheck.
      *
@@ -360,7 +361,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Insertion of tasks in shared mode requires a lock. We use only
      * a simple spinlock because submitters encountering a busy queue
      * move to a different position to use or create other queues.
-     * They (spin) block only when registering new queues, and less
+     * They (spin) block when registering new queues, and less
      * often in tryRemove and helpComplete.  The lock needed for
      * external queues is generalized (as field "access") for
      * operations on owned queues that require a fully-fenced write
@@ -445,7 +446,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * (actually stack, represented by the lower 32bit subfield of
      * ctl).  Released workers are those known to be scanning for
      * and/or running tasks. Unreleased ("available") workers are
-     * recorded in the ctl stack. These workers are made available for
+     * recorded in the ctl stack. These workers are made eligible for
      * signalling by enqueuing in ctl (see method awaitWork).  The
      * "queue" is a form of Treiber stack. This is ideal for
      * activating threads in most-recently used order, and improves
@@ -520,7 +521,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * small computations involving only a few workers.
      *
      * Scanning. Method scan performs top-level scanning for (and
-     * execution of) tasks by polling a pseodo-random permutation of
+     * execution of) tasks by polling a pseudo-random permutation of
      * the array (by starting at a random index, and using a constant
      * cyclically exhaustive stride.) It uses the same basic polling
      * method as WorkQueue.poll(), but restarts with a different
@@ -1207,7 +1208,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                         access = 0;
                     else {
                         top = s;
-                        releaseAccess();
+                        access = 0;
                         return true;
                     }
                 }
@@ -1567,8 +1568,8 @@ public class ForkJoinPool extends AbstractExecutorService {
         try {
             if (runState >= 0 &&  // avoid construction if terminating
                 fac != null && (wt = fac.newThread(this)) != null) {
-                wt.start();
-                //                container.start(wt); // for loom
+                wt.start();       // replace with following line for loom
+                //                container.start(wt);
                 return true;
             }
         } catch (Throwable rex) {
@@ -1965,9 +1966,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             active    = (short)(c >>> RC_SHIFT),
             total     = (short)(c >>> TC_SHIFT),
             sp        = (int)c & ~INACTIVE;
-        if (runState < 0)                              // terminating
-            return -1;
-        else if (sp != 0 && active <= pc) {            // activate idle worker
+        if (sp != 0 && active <= pc) {                 // activate idle worker
             WorkQueue[] qs; WorkQueue v; int i;
             if (ctl == c && (qs = queues) != null &&
                 qs.length > (i = sp & SMASK) && (v = qs[i]) != null) {
@@ -2026,10 +2025,10 @@ public class ForkJoinPool extends AbstractExecutorService {
             if ((s = task.status) < 0)
                 return s;
             if (!rescan && sctl == (sctl = ctl)) {
-                if ((s = tryCompensate(sctl, timed)) >= 0)
-                    return s;                              // block
                 if (runState < 0)
                     return 0;
+                if ((s = tryCompensate(sctl, timed)) >= 0)
+                    return s;                              // block
             }
             rescan = false;
             int n = ((qs = queues) == null) ? 0 : qs.length, m = n - 1;
@@ -2101,12 +2100,10 @@ public class ForkJoinPool extends AbstractExecutorService {
             if ((s = w.helpComplete(task, owned, 0)) < 0)
                 return s;
             if (!rescan && sctl == (sctl = ctl)) {
-                if (!owned)
+                if (!owned || runState < 0)
                     return 0;
                 if ((s = tryCompensate(sctl, timed)) >= 0)
                     return s;
-                if (runState < 0)
-                    return 0;
             }
             rescan = false;
             int n = ((qs = queues) == null) ? 0 : qs.length, m = n - 1;

@@ -85,14 +85,18 @@ public class ForkJoinWorkerThread extends Thread {
 
     /**
      * Creates a ForkJoinWorkerThread operating in the given thread group and
-     * pool.
+     * pool, and with the given policy for preserving ThreadLocals.
      *
      * @param group if non-null, the thread group for this thread
      * @param pool the pool this thread works in
+     * @param preserveThreadLocals if true, always preserve the values of
+     * ThreadLocal variables across tasks; otherwise they may be cleared.
      * @throws NullPointerException if pool is null
+     * @since 19
      */
-    protected ForkJoinWorkerThread(ThreadGroup group, ForkJoinPool pool) {
-        this(group, pool, false, false);
+    protected ForkJoinWorkerThread(ThreadGroup group, ForkJoinPool pool,
+                                   boolean preserveThreadLocals) {
+        this(group, pool, false, !preserveThreadLocals);
     }
 
     /**

@@ -166,8 +166,9 @@ public interface Future<V> {
      * Returns the computed result, without waiting.
      *
      * <p> This method is for cases where the caller knows that the task has
-     * already completed successfully, for example a filter-map of a stream of
-     * Future objects where the filter matches tasks that completed successfully.
+     * already completed successfully, for example when filtering a stream
+     * of Future objects for the successful tasks and using a mapping
+     * operation to obtain a stream of results.
      * {@snippet lang=java :
      *     results = futures.stream()
      *                .filter(f -> f.state() == Future.State.SUCCESS)
@@ -300,4 +301,3 @@ public interface Future<V> {
         }
     }
 }
-
