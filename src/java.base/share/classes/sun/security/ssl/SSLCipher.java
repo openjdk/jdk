@@ -1073,13 +1073,12 @@ enum SSLCipher {
                 int cipheredLength = bb.remaining();
                 int tagLen = signer.macAlg().size;
                 if (tagLen != 0) {
-                    if (!sanityCheck(tagLen, bb.remaining())) {
+                    if (!sanityCheck(tagLen, cipheredLength)) {
                         reservedBPE = new BadPaddingException(
                                 "ciphertext sanity check failed");
                     }
                 }
                 // decryption
-                int len = bb.remaining();
                 int pos;
                 // Do in-place with the ct buffer if it's not read-only
                 ByteBuffer pt;
@@ -1087,11 +1086,11 @@ enum SSLCipher {
                     pt = bb.duplicate();
                     pos = bb.position();
                 } else {
-                    pt = ByteBuffer.allocate(bb.remaining());
+                    pt = ByteBuffer.allocate(cipheredLength);
                     pos = 0;
                 }
                 try {
-                    if (len != cipher.update(bb, pt)) {
+                    if (cipheredLength != cipher.update(bb, pt)) {
                         // catch BouncyCastle buffering error
                         throw new RuntimeException(
                                 "Unexpected number of plaintext bytes");
@@ -1109,10 +1108,10 @@ enum SSLCipher {
                 }
 
                 // remove the block padding
-                int blockSize = cipher.getBlockSize();
                 pt.position(pos);
                 try {
-                    removePadding(pt, tagLen, blockSize, protocolVersion);
+                    removePadding(pt, tagLen, cipher.getBlockSize(),
+                        protocolVersion);
                 } catch (BadPaddingException bpe) {
                     if (reservedBPE == null) {
                         reservedBPE = bpe;
@@ -1347,14 +1346,13 @@ enum SSLCipher {
                 int cipheredLength = bb.remaining();
                 int tagLen = signer.macAlg().size;
                 if (tagLen != 0) {
-                    if (!sanityCheck(tagLen, bb.remaining())) {
+                    if (!sanityCheck(tagLen, cipheredLength)) {
                         reservedBPE = new BadPaddingException(
                                 "ciphertext sanity check failed");
                     }
                 }
 
                 // decryption
-                int len = bb.remaining();
                 int pos;
                 // Do in-place with the ct buffer if it's not read-only
                 ByteBuffer pt;
@@ -1362,12 +1360,12 @@ enum SSLCipher {
                     pt = bb.duplicate();
                     pos = bb.position();
                 } else {
-                    pt = ByteBuffer.allocate(bb.remaining());
+                    pt = ByteBuffer.allocate(cipheredLength);
                     pos = 0;
                 }
 
                 try {
-                    if (len != cipher.update(bb, pt)) {
+                    if (cipheredLength != cipher.update(bb, pt)) {
                         // catch BouncyCastle buffering error
                         throw new RuntimeException(
                                 "Unexpected number of plaintext bytes");
@@ -1382,8 +1380,6 @@ enum SSLCipher {
                     SSLLogger.fine("Padded plaintext after DECRYPTION",
                         pt.duplicate().position(pos));
                 }
-
-                //bb.position(pos);
 
                 // Ignore the explicit nonce.
                 int blockSize = cipher.getBlockSize();
@@ -1952,7 +1948,6 @@ enum SSLCipher {
                     throw new RuntimeException(
                                 "invalid key or spec in GCM mode", ikae);
                 }
-
                 // Update the additional authentication data, using the
                 // implicit sequence number of the authenticator.
                 byte[] aad = authenticator.acquireAuthenticationBytes(
@@ -1981,8 +1976,8 @@ enum SSLCipher {
                     throw new RuntimeException("Cipher buffering error in " +
                         "JCE provider " + cipher.getProvider().getName(), sbe);
                 }
-                pt.position(pos);
                 // reset the limit to the end of the decrypted data
+                pt.position(pos);
                 pt.limit(pos + len);
 
                 // remove inner plaintext padding
