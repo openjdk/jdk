@@ -10565,9 +10565,8 @@ instruct ShouldNotReachHere() %{
   format %{ "#@ShouldNotReachHere" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(&_masm);
     if (is_reachable()) {
-      __ halt();
+      __ stop(_halt_reason);
     }
   %}
 

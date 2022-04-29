@@ -354,7 +354,7 @@ void os::print_context(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, sizeof(char));
+  print_instructions(st, pc, UseRVC ? sizeof(char) : 4/*non-compressed native instruction size*/);
   st->cr();
 }
 
