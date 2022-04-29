@@ -279,10 +279,10 @@ public:
     // addresses, with the lowest-addressed parcel holding the lowest-numbered bits in the instruction
     // specification.
     if (UseRVC && (((uint16_t *)instr)[0] & 0b11) != 0b11) {
-      // 16-bit instructions' lowest two bits are 0b00, 0b01, and 0b10
+      // 16-bit instructions have their lowest two bits equal to 0b00, 0b01, or 0b10
       return true;
     }
-    // 32-bit instructions' lowest two bits are 0b11
+    // 32-bit instructions have their lowest two bits set to 0b11
     return false;
   }
 
