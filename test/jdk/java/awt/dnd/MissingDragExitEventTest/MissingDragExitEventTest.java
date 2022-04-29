@@ -32,9 +32,14 @@
  * @author Sergey Bylokhov
  */
 
+import test.java.awt.regtesthelpers.Util;
+
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetAdapter;
@@ -44,15 +49,15 @@ import java.awt.dnd.DropTargetEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
-
-import test.java.awt.regtesthelpers.Util;
 
 public class MissingDragExitEventTest {
 
@@ -101,31 +106,49 @@ public class MissingDragExitEventTest {
             final AtomicReference<Point> insidePoint = new AtomicReference<>();
             SwingUtilities.invokeAndWait(() -> insidePoint.set(frame.getLocationOnScreen()));
             final Point inside = insidePoint.get();
-            inside.translate(20,20);
+            inside.translate(2,20);
             final Point outer = new Point(inside);
-            outer.translate(-40, 0);
+            outer.translate(-20, 0);
             r.mouseMove(inside.x, inside.y);
-            r.mousePress(InputEvent.BUTTON1_MASK);
+            r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             try {
                 for (int i = 0; i < 3; ++i) {
                     Util.mouseMove(r, inside, outer);
                     Util.mouseMove(r, outer, inside);
                 }
             } finally {
-                r.mouseRelease(InputEvent.BUTTON1_MASK);
+                r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             }
 
-            if(!dropCompleteLatch.await(10, TimeUnit.SECONDS)) {
-                throw new RuntimeException("Waited too long, but the drop is not completed");
+            if (!dropCompleteLatch.await(10, TimeUnit.SECONDS)) {
+                captureScreen(r);
+                throw new RuntimeException(
+                        "Waited too long, but the drop is not completed");
             }
-            if (FAILED || !MOUSE_ENTERED || !MOUSE_ENTERED_DT || !MOUSE_EXIT
-                    || !MOUSE_EXIT_TD) {
+            if (FAILED || !MOUSE_ENTERED || !MOUSE_ENTERED_DT || !MOUSE_EXIT ||
+                !MOUSE_EXIT_TD) {
+                System.out.println(
+                        "Events, FAILED = " + FAILED + ", MOUSE_ENTERED = " +
+                        MOUSE_ENTERED + ", MOUSE_ENTERED_DT = " +
+                        MOUSE_ENTERED_DT + ", MOUSE_EXIT = " + MOUSE_EXIT +
+                        ", MOUSE_EXIT_TD = " + MOUSE_EXIT_TD);
+                captureScreen(r);
                 throw new RuntimeException("Failed");
             }
         } finally {
             if (frame != null) {
                 frame.dispose();
             }
+        }
+    }
+
+    private static void captureScreen(Robot r) {
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        try {
+            ImageIO.write(r.createScreenCapture(
+                    new Rectangle(0, 0, screenSize.width, screenSize.height)),
+                          "png", new File("FailedScreenImage.png"));
+        } catch (IOException ignore) {
         }
     }
 
@@ -190,6 +213,7 @@ public class MissingDragExitEventTest {
 
         @Override
         public void mouseExited(final MouseEvent e) {
+            System.out.println( "Mouse exit");
             if (!inside) {
                 FAILED = true;
                 Thread.dumpStack();
