@@ -48,11 +48,7 @@ a
 b
 c""";
         // 1st line has a space character
-        String sabc = """
- 
-a
-b
-c""";
+        String sabc = " " + System.lineSeparator() + abc;
         String xyz = """
 x
 y
