@@ -49,13 +49,16 @@ public class TransferToChannel {
 
     private static final Random RAND = RandomFactory.getRandom();
 
-    private static final int FILE_SIZE = 1000*1024;
-
     // Chunk size should be larger than FileChannelImpl.TRANSFER_SIZE (8192)
     // for a good test
-    private static final int CHUNK_SIZE = 1024 * 9;
+    private static final int CHUNK_SIZE = 9*1024;
 
-    private static final int MIN_DIRECT_TRANSFER_SIZE = 512000;
+    // File size should be a value much larger than CHUNK_SIZE
+    private static final int FILE_SIZE = 1000*1024;
+
+    // The minimum direct transfer size should be less than the file size
+    // but still substantial
+    private static final int MIN_DIRECT_TRANSFER_SIZE = FILE_SIZE/2;
 
     private static File file;
     private static File outFile;
@@ -121,9 +124,8 @@ public class TransferToChannel {
             void checkData(byte[] incoming, int size) {
                 byte[] expected = new byte[size];
                 rand.nextBytes(expected);
-                for (int i=0; i<size; i++)
-                    if (incoming[i] != expected[i])
-                        throw new RuntimeException("Data corrupted");
+                if (!Arrays.equals(incoming, expected))
+                    throw new RuntimeException("Data corrupted");
             }
         };
         while (remainingBytes > 0) {
@@ -154,21 +156,23 @@ public class TransferToChannel {
 
     private static void transferFileDirectly() throws Exception {
         outFile.delete();
-        FileOutputStream fos = new FileOutputStream(outFile);
-        FileChannel out = fos.getChannel();
-
         final long size = in.size();
         final long position = RAND.nextInt((int)size - MIN_DIRECT_TRANSFER_SIZE);
-        assert out.position() == 0;
-        long pos = position;
-        while (pos < size) {
-            long bytesTransferred = in.transferTo(pos, Long.MAX_VALUE, out);
-            if (bytesTransferred >= 0)
-                pos += bytesTransferred;
-            else
-                throw new Exception("transfer failed");
+        try (FileOutputStream fos = new FileOutputStream(outFile);
+             FileChannel out = fos.getChannel()) {
+
+            assert out.position() == 0;
+            long pos = position;
+            while (pos < size) {
+                long bytesTransferred = in.transferTo(pos, Long.MAX_VALUE, out);
+                if (bytesTransferred >= 0)
+                    pos += bytesTransferred;
+                else {
+                    throw new Exception("transfer failed at " + pos +
+                        " / " + size);
+                }
+            }
         }
-        out.close();
 
         byte[] expected = Files.readAllBytes(file.toPath());
         byte[] actual = Files.readAllBytes(outFile.toPath());

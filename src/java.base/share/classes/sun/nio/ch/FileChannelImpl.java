@@ -1379,8 +1379,8 @@ public class FileChannelImpl
     // Removes an existing mapping
     private static native int unmap0(long address, long length);
 
-    // Transfers from src to dst, or returns IOStatus.UNSUPPORTED (-4)
-    // or IOStatus.UNSUPPORTED_CASE (-6) if kernel can't do that
+    // Transfers from src to dst, or returns IOStatus.UNSUPPORTED (-4) or
+    // IOStatus.UNSUPPORTED_CASE (-6) if the kernel does not support it
     private static native long transferTo0(FileDescriptor src, long position,
                                            long count, FileDescriptor dst);
 
