@@ -43,8 +43,8 @@ public class DefaultRemoveReplaceTest {
     private static final Box THREE = new Box(3);
 
     static {
-        Assert.assertEquals(ONE, ANOTHER_ONE);
-        Assert.assertNotSame(ONE, ANOTHER_ONE);
+        Assert.assertEquals(ANOTHER_ONE, ONE);
+        Assert.assertNotSame(ANOTHER_ONE, ONE);
     }
 
     @DataProvider
@@ -55,7 +55,7 @@ public class DefaultRemoveReplaceTest {
         map.put(ONE, SIX);
         map.put(ANOTHER_ONE, null);
 
-        Assert.assertEquals(4, map.size());
+        Assert.assertEquals(map.size(), 4);
 
         return new Object[][] {
                 { map }
@@ -72,7 +72,7 @@ public class DefaultRemoveReplaceTest {
         Assert.assertFalse(map.containsKey(seven));
         Assert.assertTrue(map.containsValue(ONE));
         Assert.assertFalse(map.containsValue(fakeThree));
-        Assert.assertEquals(4, map.size());
+        Assert.assertEquals(map.size(), 4);
     }
 
     @Test(dataProvider = "makeMap")
@@ -86,7 +86,7 @@ public class DefaultRemoveReplaceTest {
         Assert.assertFalse(map.containsKey(fakeThree));
         Assert.assertTrue(map.containsValue(ONE));
         Assert.assertFalse(map.containsValue(seven));
-        Assert.assertEquals(4, map.size());
+        Assert.assertEquals(map.size(), 4);
     }
 
     @Test(dataProvider = "makeMap")
@@ -97,11 +97,11 @@ public class DefaultRemoveReplaceTest {
 
         // Make sure false return has no side effects
         Assert.assertTrue(map.containsKey(THREE));
-        Assert.assertSame(ONE, map.get(THREE));
+        Assert.assertSame(map.get(THREE), ONE);
         Assert.assertTrue(map.containsValue(ONE));
         Assert.assertFalse(map.containsValue(seven));
         Assert.assertFalse(map.containsValue(fakeOne));
-        Assert.assertEquals(4, map.size());
+        Assert.assertEquals(map.size(), 4);
     }
 
     @Test(dataProvider = "makeMap")
@@ -111,11 +111,11 @@ public class DefaultRemoveReplaceTest {
 
         // Check aftereffects
         Assert.assertTrue(map.containsKey(ANOTHER_ONE));
-        Assert.assertSame(seven, map.get(ANOTHER_ONE));
+        Assert.assertSame(map.get(ANOTHER_ONE), seven);
         Assert.assertTrue(map.containsValue(seven));
         Assert.assertFalse(map.containsValue(null));
         Assert.assertTrue(map.containsValue(seven));
-        Assert.assertEquals(4, map.size());
+        Assert.assertEquals(map.size(), 4);
     }
 
     @Test(dataProvider = "makeMap")
@@ -125,9 +125,9 @@ public class DefaultRemoveReplaceTest {
         // Make sure false return has no side effects
         Assert.assertTrue(map.containsKey(THREE));
         Assert.assertTrue(map.containsValue(SIX));
-        Assert.assertSame(SIX, map.get(ONE));
-        Assert.assertSame(ONE, map.get(THREE));
-        Assert.assertEquals(4, map.size());
+        Assert.assertSame(map.get(ONE), SIX);
+        Assert.assertSame(map.get(THREE), ONE);
+        Assert.assertEquals(map.size(), 4);
     }
 
     @Test(dataProvider = "makeMap")
@@ -137,10 +137,10 @@ public class DefaultRemoveReplaceTest {
 
         // Make sure false return has no side effects
         Assert.assertTrue(map.containsKey(null));
-        Assert.assertSame(THREE, map.get(null));
+        Assert.assertSame(map.get(null), THREE);
         Assert.assertTrue(map.containsValue(THREE));
         Assert.assertFalse(map.containsValue(fakeThree));
-        Assert.assertEquals(4, map.size());
+        Assert.assertEquals(map.size(), 4);
     }
 
     @Test(dataProvider = "makeMap")
@@ -154,6 +154,6 @@ public class DefaultRemoveReplaceTest {
         Assert.assertTrue(map.containsValue(null));
         Assert.assertNull(map.get(ONE));
         Assert.assertNull(map.get(ANOTHER_ONE));
-        Assert.assertEquals(3, map.size());
+        Assert.assertEquals(map.size(), 3);
     }
 }
