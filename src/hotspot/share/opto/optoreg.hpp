@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ class OptoReg {
 // world, notably flags. [ But by design there is "space" in the VMReg world
 // for such registers they just may not be concrete ]. So if we were to use VMRegPair
 // then the VMReg world would have to have a representation for these registers
-// so that a OptoReg->VMReg->OptoReg would reproduce ther original OptoReg. As it
+// so that a OptoReg->VMReg->OptoReg would reproduce the original OptoReg. As it
 // stands if you convert a flag (condition code) to a VMReg you will get VMRegImpl::Bad
 // and converting that will return OptoReg::Bad losing the identity of the OptoReg.
 
