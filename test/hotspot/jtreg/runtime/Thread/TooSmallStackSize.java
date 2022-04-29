@@ -219,7 +219,8 @@ public class TooSmallStackSize {
         checkMinStackAllowed("-XX:VMThreadStackSize=", VMThreadStackSizeString, "0");
     }
 
-    static String shadowSizes[] = { null, "20", "30" };
+    // aarch64 StackShadowPage size range is 25-55
+    static String shadowSizes[] = { null, "30", "40" };
     public static void main(java.lang.String[] unused) throws Exception {
         for (String sz : shadowSizes) {
             testShadowSize = sz;
