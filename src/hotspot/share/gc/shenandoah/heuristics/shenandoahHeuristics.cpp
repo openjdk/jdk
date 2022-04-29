@@ -331,8 +331,14 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
                        byte_size_in_proper_unit(alloc_budget_evac_and_update),
                        proper_unit_for_byte_size(alloc_budget_evac_and_update),
                        byte_size_in_proper_unit(potential_evac_supplement), proper_unit_for_byte_size(potential_evac_supplement));
+  } else {
+    // we're going to skip evacuation and update refs because we reclaimed sufficient amounts of immediate garbage.
+    heap->shenandoah_policy()->record_abbreviated_cycle();
   }
-  // else, we're going to skip evacuation and update refs because we reclaimed sufficient amounts of immediate garbage.
+
+  if (collection_set->has_old_regions()) {
+    heap->shenandoah_policy()->record_mixed_cycle();
+  }
 
   size_t cset_percent = (total_garbage == 0) ? 0 : (collection_set->garbage() * 100 / total_garbage);
   size_t collectable_garbage = collection_set->garbage() + immediate_garbage;

@@ -31,6 +31,8 @@
 
 ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _success_concurrent_gcs(0),
+  _mixed_gcs(0),
+  _abbreviated_cycles(0),
   _success_old_gcs(0),
   _interrupted_old_gcs(0),
   _success_degenerated_gcs(0),
@@ -85,6 +87,14 @@ void ShenandoahCollectorPolicy::record_success_concurrent() {
   _success_concurrent_gcs++;
 }
 
+void ShenandoahCollectorPolicy::record_mixed_cycle() {
+  _mixed_gcs++;
+}
+
+void ShenandoahCollectorPolicy::record_abbreviated_cycle() {
+  _abbreviated_cycles++;
+}
+
 void ShenandoahCollectorPolicy::record_success_old() {
   _success_old_gcs++;
 }
@@ -121,7 +131,8 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   out->print_cr("Under allocation pressure, concurrent cycles may cancel, and either continue cycle");
   out->print_cr("under stop-the-world pause or result in stop-the-world Full GC. Increase heap size,");
   out->print_cr("tune GC heuristics, set more aggressive pacing delay, or lower allocation rate");
-  out->print_cr("to avoid Degenerated and Full GC cycles.");
+  out->print_cr("to avoid Degenerated and Full GC cycles. Abbreviated cycles are those which found");
+  out->print_cr("enough regions with no live objects to skip evacuation.");
   out->cr();
 
   out->print_cr(SIZE_FORMAT_W(5) " Successful Concurrent GCs",         _success_concurrent_gcs);
@@ -130,6 +141,7 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   out->cr();
 
   out->print_cr(SIZE_FORMAT_W(5) " Completed Old GCs",                 _success_old_gcs);
+  out->print_cr("  " SIZE_FORMAT_W(5) " mixed",                        _mixed_gcs);
   out->print_cr("  " SIZE_FORMAT_W(5) " interruptions",                _interrupted_old_gcs);
   out->cr();
 
@@ -142,6 +154,9 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
     }
   }
   out->print_cr("  " SIZE_FORMAT_W(5) " upgraded to Full GC",          _alloc_failure_degenerated_upgrade_to_full);
+  out->cr();
+
+  out->print_cr(SIZE_FORMAT_W(5) " Abbreviated GCs",                   _abbreviated_cycles);
   out->cr();
 
   out->print_cr(SIZE_FORMAT_W(5) " Full GCs",                          _success_full_gcs + _alloc_failure_degenerated_upgrade_to_full);
