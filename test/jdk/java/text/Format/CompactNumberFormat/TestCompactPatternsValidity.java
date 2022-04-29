@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8177552 8217254 8251499
+ * @bug 8177552 8217254 8251499 8281317
  * @summary Checks the validity of compact number patterns specified through
  *          CompactNumberFormat constructor
  * @run testng/othervm TestCompactPatternsValidity
@@ -101,8 +101,9 @@ public class TestCompactPatternsValidity {
             {COMPACT_PATTERN5, List.of(100, 1000, 30000), List.of("100", "1K", "K3")},
             {COMPACT_PATTERN6, List.of(20.99, 1000, 30000), List.of("21", ".1K", ".30K")},
             {COMPACT_PATTERN7, List.of(100, 1000, new BigInteger("12345678987654321")), List.of("100", "1K,", "12345678987654K,")},
-            {COMPACT_PATTERN8, List.of(new BigInteger("223565686837667632"), new BigDecimal("12322456774334.89766"), 30000, 3456.78),
-                    List.of("223566T", "12T", "30K", "3K")},
+            {COMPACT_PATTERN8, List.of(new BigInteger("223565686837667632"), new BigDecimal("12322456774334.89766"), 30000, 3456.78,
+                    new BigInteger("999999999999"), new BigDecimal("999999999999.0"), 999_999, 999_999_999),
+                    List.of("223566T", "12T", "30K", "3K", "1T", "1T", "1M", "1B")},
             {COMPACT_PATTERN9, List.of(new BigInteger("223566000000000000"), new BigDecimal("12345678987654567"), 30000, 3000),
                     List.of("223,566,000,000,000,000", "12,345,678,987,654,567", "30,000", "3,000")},
             {COMPACT_PATTERN10, List.of(new BigInteger("100000000000000000"), new BigInteger("10000000000000000000"), new BigDecimal("555555555555555555555.89766"), 30000),
@@ -110,7 +111,8 @@ public class TestCompactPatternsValidity {
             {COMPACT_PATTERN11, List.of(20.99, -20.99, 1000, -1000, 30000, -30000, new BigInteger("12345678987654321"), new BigInteger("-12345678987654321")),
                     List.of("21", "-21", "elfu 1", "elfu -1", "elfu 30", "elfu -30", "milioni 12345678988", "milioni -12345678988")},
             {COMPACT_PATTERN12, List.of(0, 500, -500, 30000, -3000, 5000000), List.of("0", "H5H", "H-5H", "30K", "3K-", "H50G")},
-            {COMPACT_PATTERN13, List.of(1000, new BigInteger("10000000000000000000")), List.of("Thousand", "BeyondLong")},
+            {COMPACT_PATTERN13, List.of(1000, new BigInteger("10000000000000000000"), new BigDecimal("9999999999999999999.9")),
+                    List.of("Thousand", "BeyondLong", "BeyondLong")},
         };
     }
 

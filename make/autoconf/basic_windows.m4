@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -184,6 +184,16 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   else
     AC_MSG_RESULT([unknown])
     AC_MSG_WARN([It seems that your find utility is non-standard.])
+  fi
+
+  if test "x$GIT" != x && test -e $TOPDIR/.git; then
+    git_autocrlf=`$GIT config core.autocrlf`
+    if test "x$git_autocrlf" != x && test "x$git_autocrlf" != "xfalse"; then
+      AC_MSG_NOTICE([Your git configuration does not set core.autocrlf to false.])
+      AC_MSG_NOTICE([If you checked out this code using that setting, the build WILL fail.])
+      AC_MSG_NOTICE([To correct, run "git config --global core.autocrlf false" and re-clone the repo.])
+      AC_MSG_WARN([Code is potentially incorrectly cloned. HIGH RISK of build failure!])
+    fi
   fi
 ])
 

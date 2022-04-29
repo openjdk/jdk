@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -648,9 +648,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             if (attr.getSuffix() != null) {
                 try {
                     return info.get(attr.getSuffix());
-                } catch (IOException e) {
-                    throw new CertificateParsingException(e.toString());
-                } catch (CertificateException e) {
+                } catch (IOException | CertificateException e) {
                     throw new CertificateParsingException(e.toString());
                 }
             } else {
@@ -971,7 +969,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     }
 
     /**
-     * Gets the DER encoded certificate informations, the
+     * Gets the DER encoded certificate information, the
      * <code>tbsCertificate</code> from this certificate.
      * This can be used to verify the signature independently.
      *
@@ -1584,6 +1582,17 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
                     throw new RuntimeException("name cannot be encoded", ioe);
                 }
                 nameEntry.add(derOut.toByteArray());
+                if (name.getType() == GeneralNameInterface.NAME_ANY
+                        && name instanceof OtherName oname) {
+                    nameEntry.add(oname.getOID().toString());
+                    byte[] nameValue = oname.getNameValue();
+                    try {
+                        String v = new DerValue(nameValue).getAsString();
+                        nameEntry.add(v == null ? nameValue : v);
+                    } catch (IOException ioe) {
+                        nameEntry.add(nameValue);
+                    }
+                }
                 break;
             }
             newNames.add(Collections.unmodifiableList(nameEntry));
@@ -1762,7 +1771,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
     /************************************************************/
 
     /*
-     * Cert is a SIGNED ASN.1 macro, a three elment sequence:
+     * Cert is a SIGNED ASN.1 macro, a three element sequence:
      *
      *  - Data to be signed (ToBeSigned) -- the "raw" cert
      *  - Signature algorithm (SigAlgId)

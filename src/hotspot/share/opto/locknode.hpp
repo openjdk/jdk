@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public:
   Node* box_node() const { return in(2); }
   void  set_box_node(Node* box) { set_req(2, box); }
 
-  // FastLock and FastUnlockNode do not hash, we need one for each correspoding
+  // FastLock and FastUnlockNode do not hash, we need one for each corresponding
   // LockNode/UnLockNode to avoid creating Phi's.
   virtual uint hash() const ;                  // { return NO_HASH; }
   virtual uint size_of() const;
@@ -113,7 +113,7 @@ public:
   Node* box_node() const { return in(2); }
 
 
-  // FastLock and FastUnlockNode do not hash, we need one for each correspoding
+  // FastLock and FastUnlockNode do not hash, we need one for each corresponding
   // LockNode/UnLockNode to avoid creating Phi's.
   virtual uint hash() const ;                  // { return NO_HASH; }
   virtual bool cmp( const Node &n ) const ;    // Always fail, except on self

@@ -2279,7 +2279,7 @@ void G1CollectedHeap::object_iterate_parallel(ObjectClosure* cl, uint worker_id,
 }
 
 void G1CollectedHeap::keep_alive(oop obj) {
-  G1BarrierSet::enqueue(obj);
+  G1BarrierSet::enqueue_preloaded(obj);
 }
 
 void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
@@ -2405,7 +2405,6 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
                                        const VerifyOption vo) const {
   switch (vo) {
   case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj, hr);
-  case VerifyOption_G1UseNextMarking: return is_obj_ill(obj, hr);
   case VerifyOption_G1UseFullMarking: return is_obj_dead_full(obj, hr);
   default:                            ShouldNotReachHere();
   }
@@ -2416,7 +2415,6 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
                                        const VerifyOption vo) const {
   switch (vo) {
   case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj);
-  case VerifyOption_G1UseNextMarking: return is_obj_ill(obj);
   case VerifyOption_G1UseFullMarking: return is_obj_dead_full(obj);
   default:                            ShouldNotReachHere();
   }
@@ -3313,6 +3311,13 @@ HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
     return _hrm.allocate_free_regions_starting_at(index, 1);
   }
   return NULL;
+}
+
+void G1CollectedHeap::mark_evac_failure_object(const oop obj, uint worker_id) const {
+  // All objects failing evacuation are live. What we'll do is
+  // that we'll update the prev marking info so that they are
+  // all under PTAMS and explicitly marked.
+  _cm->par_mark_in_prev_bitmap(obj);
 }
 
 // Optimized nmethod scanning

@@ -58,14 +58,18 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     }
 
     public InputBlockEdge addBlockEdge(InputBlock left, InputBlock right) {
-        InputBlockEdge edge = new InputBlockEdge(left, right);
+        return addBlockEdge(left, right, null);
+    }
+
+    public InputBlockEdge addBlockEdge(InputBlock left, InputBlock right, String label) {
+        InputBlockEdge edge = new InputBlockEdge(left, right, label);
         blockEdges.add(edge);
         left.addSuccessor(right);
         return edge;
     }
 
     public void removeBlockEdge(InputBlock left, InputBlock right) {
-        InputBlockEdge edge = new InputBlockEdge(left, right);
+        InputBlockEdge edge = new InputBlockEdge(left, right, "");
         blockEdges.remove(edge);
         left.removeSuccessor(right);
     }
@@ -146,6 +150,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
 
     public void clearBlocks() {
         blocks.clear();
+        blockEdges.clear();
         nodeToBlock.clear();
     }
 
@@ -174,7 +179,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
             assert nodes.get(n.getId()) == n;
             if (!scheduledNodes.contains(n)) {
                 if (noBlock == null) {
-                    noBlock = this.addBlock("(no block)");
+                    noBlock = addArtificialBlock();
                 }
                 noBlock.addNode(n.getId());
             }
@@ -274,6 +279,12 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         }
 
         return sb.toString();
+    }
+
+    public InputBlock addArtificialBlock() {
+        InputBlock b = addBlock("(no block)");
+        b.setArtificial(true);
+        return b;
     }
 
     public InputBlock addBlock(String name) {

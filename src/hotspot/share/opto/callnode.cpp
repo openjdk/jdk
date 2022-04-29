@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -906,7 +906,7 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
       {
         // For Control (fallthrough) and I_O (catch_all_index) we have CatchProj -> Catch -> Proj
         projs->fallthrough_proj = pn;
-        const Node *cn = pn->unique_ctrl_out();
+        const Node* cn = pn->unique_ctrl_out_or_null();
         if (cn != NULL && cn->is_Catch()) {
           ProjNode *cpn = NULL;
           for (DUIterator_Fast kmax, k = cn->fast_outs(kmax); k < kmax; k++) {
@@ -1363,7 +1363,7 @@ void SafePointNode::set_local(JVMState* jvms, uint idx, Node *c) {
   if (in(loc)->is_top() && idx > 0 && !c->is_top() ) {
     // If current local idx is top then local idx - 1 could
     // be a long/double that needs to be killed since top could
-    // represent the 2nd half ofthe long/double.
+    // represent the 2nd half of the long/double.
     uint ideal = in(loc -1)->ideal_reg();
     if (ideal == Op_RegD || ideal == Op_RegL) {
       // set other (low index) half to top
@@ -1414,7 +1414,7 @@ Node* SafePointNode::Identity(PhaseGVN* phase) {
 
   // If you have back to back safepoints, remove one
   if (in(TypeFunc::Control)->is_SafePoint()) {
-    Node* out_c = unique_ctrl_out();
+    Node* out_c = unique_ctrl_out_or_null();
     // This can be the safepoint of an outer strip mined loop if the inner loop's backedge was removed. Replacing the
     // outer loop's safepoint could confuse removal of the outer loop.
     if (out_c != NULL && !out_c->is_OuterStripMinedLoopEnd()) {
@@ -1567,20 +1567,17 @@ SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
                                                      Node* alloc,
 #endif
                                                      uint first_index,
-                                                     uint n_fields,
-                                                     bool is_auto_box) :
+                                                     uint n_fields) :
   TypeNode(tp, 1), // 1 control input -- seems required.  Get from root.
   _first_index(first_index),
-  _n_fields(n_fields),
-  _is_auto_box(is_auto_box)
+  _n_fields(n_fields)
 #ifdef ASSERT
   , _alloc(alloc)
 #endif
 {
 #ifdef ASSERT
   if (!alloc->is_Allocate()
-      && !(alloc->Opcode() == Op_VectorBox)
-      && (!alloc->is_CallStaticJava() || !alloc->as_CallStaticJava()->is_boxing_method())) {
+      && !(alloc->Opcode() == Op_VectorBox)) {
     alloc->dump();
     assert(false, "unexpected call node");
   }
@@ -1755,7 +1752,7 @@ uint LockNode::size_of() const { return sizeof(*this); }
 //
 // Either of these cases subsumes the simple case of sequential control flow
 //
-// Addtionally we can eliminate versions without the else case:
+// Additionally we can eliminate versions without the else case:
 //
 //   s();
 //   if (p)

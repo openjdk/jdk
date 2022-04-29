@@ -28,7 +28,7 @@
 //----------REGISTER DEFINITION BLOCK------------------------------------------
 // This information is used by the matcher and the register allocator to
 // describe individual registers and classes of registers within the target
-// archtecture.
+// architecture.
 
 register %{
 //----------Architecture Description Register Definitions----------------------
@@ -488,7 +488,7 @@ reg_def R31_H   (  NS,  NS, Op_RegI, 31, r31_sp->as_VMReg()->next());
 // Special Registers
 // ----------------------------
 
-// the AArch64 CSPR status flag register is not directly acessible as
+// the AArch64 CSPR status flag register is not directly accessible as
 // instruction operand. the FPSR status flag register is a system
 // register which can be written/read using MSR/MRS but again does not
 // appear as an operand (a code identifying the FSPR occurs as an
@@ -1199,9 +1199,6 @@ reg_class gov_pr (
     // P7, non-allocatable, preserved with all elements preset to TRUE.
 );
 
-reg_class p0_reg(P0);
-reg_class p1_reg(P1);
-
 // Singleton class for condition codes
 reg_class int_flags(RFLAGS);
 
@@ -1282,12 +1279,12 @@ class HandlerImpl {
   static int emit_deopt_handler(CodeBuffer& cbuf);
 
   static uint size_exception_handler() {
-    return MacroAssembler::far_branch_size();
+    return MacroAssembler::far_codestub_branch_size();
   }
 
   static uint size_deopt_handler() {
     // count one adr and one far branch instruction
-    return 4 * NativeInstruction::instruction_size;
+    return NativeInstruction::instruction_size + MacroAssembler::far_codestub_branch_size();
   }
 };
 
@@ -1313,6 +1310,9 @@ public:
 
   // predicate controlling translation of CompareAndSwapX
   bool needs_acquiring_load_exclusive(const Node *load);
+
+  // Assert that the given node is not a variable shift.
+  bool assert_not_var_shift(const Node* n);
 
   // predicate controlling addressing modes
   bool size_fits_all_mem_uses(AddPNode* addp, int shift);
@@ -1508,7 +1508,7 @@ source %{
   // node sequence to a normal volatile get because of the
   // introduction of some CPUOrder memory barriers to bracket the
   // Load. However, but the same basic skeleton of a LoadX feeding a
-  // MemBarAcquire, possibly thorugh an optional DecodeN, is still
+  // MemBarAcquire, possibly through an optional DecodeN, is still
   // present
   //
   //   MemBarCPUOrder
@@ -1728,6 +1728,12 @@ bool needs_acquiring_load_exclusive(const Node *n)
   return true;
 }
 
+// Assert that the given node is not a variable shift.
+bool assert_not_var_shift(const Node* n) {
+  assert(!n->as_ShiftV()->is_var_shift(), "illegal variable shift");
+  return true;
+}
+
 #define __ _masm.
 
 // advance declarations for helper functions to convert register
@@ -1856,6 +1862,10 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   if (C->output()->need_stack_bang(framesize))
     st->print("# stack bang size=%d\n\t", framesize);
 
+  if (VM_Version::use_rop_protection()) {
+    st->print("ldr zr, [lr]\n\t");
+    st->print("pacia  lr, rfp\n\t");
+  }
   if (framesize < ((1 << 9) + 2 * wordSize)) {
     st->print("sub  sp, sp, #%d\n\t", framesize);
     st->print("stp  rfp, lr, [sp, #%d]", framesize - 2 * wordSize);
@@ -1963,6 +1973,10 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("mov  rscratch1, #%d\n\t", framesize - 2 * wordSize);
     st->print("add  sp, sp, rscratch1\n\t");
     st->print("ldp  lr, rfp, [sp],#%d\n\t", (2 * wordSize));
+  }
+  if (VM_Version::use_rop_protection()) {
+    st->print("autia lr, rfp\n\t");
+    st->print("ldr zr, [lr]\n\t");
   }
 
   if (do_polling() && C->is_method_compilation()) {
@@ -2384,7 +2398,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
   __ adr(lr, __ pc());
   __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
-  assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
+  assert(__ offset() - offset == (int) size_deopt_handler(), "overflow");
   __ end_a_stub();
   return offset;
 }
@@ -2779,6 +2793,10 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
     mstack.push(m->in(AddPNode::Base), Pre_Visit);
     return true;
   }
+  return false;
+}
+
+bool Parse::do_one_bytecode_targeted() {
   return false;
 }
 
@@ -3204,8 +3222,18 @@ encode %{
                  rscratch1, stlrb);
   %}
 
+  enc_class aarch64_enc_stlrb0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlrb);
+  %}
+
   enc_class aarch64_enc_stlrh(iRegI src, memory mem) %{
     MOV_VOLATILE(as_Register($src$$reg), $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlrh);
+  %}
+
+  enc_class aarch64_enc_stlrh0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
                  rscratch1, stlrh);
   %}
 
@@ -3214,6 +3242,10 @@ encode %{
                  rscratch1, stlrw);
   %}
 
+  enc_class aarch64_enc_stlrw0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlrw);
+  %}
 
   enc_class aarch64_enc_ldarsbw(iRegI dst, memory mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -3301,6 +3333,11 @@ encode %{
       src_reg = rscratch2;
     }
     MOV_VOLATILE(src_reg, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlr);
+  %}
+
+  enc_class aarch64_enc_stlr0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
                  rscratch1, stlr);
   %}
 
@@ -4084,10 +4121,10 @@ encode %{
 //         Region 6-7 is determined per call site.
 // Note 2: If the calling convention leaves holes in the incoming argument
 //         area, those holes are owned by SELF.  Holes in the outgoing area
-//         are owned by the CALLEE.  Holes should not be nessecary in the
+//         are owned by the CALLEE.  Holes should not be necessary in the
 //         incoming area, as the Java calling convention is completely under
 //         the control of the AD file.  Doubles can be sorted and packed to
-//         avoid holes.  Holes in the outgoing arguments may be nessecary for
+//         avoid holes.  Holes in the outgoing arguments may be necessary for
 //         varargs C calling conventions.
 // Note 3: Region 0-3 is even aligned, with pad2 as needed.  Region 3-5 is
 //         even aligned with pad0 as needed.
@@ -5681,24 +5718,6 @@ operand pReg()
 operand pRegGov()
 %{
   constraint(ALLOC_IN_RC(gov_pr));
-  match(RegVectMask);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand pRegGov_P0()
-%{
-  constraint(ALLOC_IN_RC(p0_reg));
-  match(RegVectMask);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand pRegGov_P1()
-%{
-  constraint(ALLOC_IN_RC(p1_reg));
   match(RegVectMask);
   op_cost(0);
   format %{ %}
@@ -8296,6 +8315,18 @@ instruct storeB_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
   ins_pipe(pipe_class_memory);
 %}
 
+instruct storeimmB0_volatile(immI0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreB mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrb  zr, $mem\t# byte" %}
+
+  ins_encode(aarch64_enc_stlrb0(mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
 // Store Char/Short
 instruct storeC_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
 %{
@@ -8305,6 +8336,18 @@ instruct storeC_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
   format %{ "stlrh  $src, $mem\t# short" %}
 
   ins_encode(aarch64_enc_stlrh(src, mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeimmC0_volatile(immI0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreC mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrh  zr, $mem\t# short" %}
+
+  ins_encode(aarch64_enc_stlrh0(mem));
 
   ins_pipe(pipe_class_memory);
 %}
@@ -8323,6 +8366,18 @@ instruct storeI_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
   ins_pipe(pipe_class_memory);
 %}
 
+instruct storeimmI0_volatile(immI0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem(StoreI mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrw  zr, $mem\t# int" %}
+
+  ins_encode(aarch64_enc_stlrw0(mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
 // Store Long (64 bit signed)
 instruct storeL_volatile(iRegL src, /* sync_memory*/indirect mem)
 %{
@@ -8332,6 +8387,18 @@ instruct storeL_volatile(iRegL src, /* sync_memory*/indirect mem)
   format %{ "stlr  $src, $mem\t# int" %}
 
   ins_encode(aarch64_enc_stlr(src, mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeimmL0_volatile(immL0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreL mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlr  zr, $mem\t# int" %}
+
+  ins_encode(aarch64_enc_stlr0(mem));
 
   ins_pipe(pipe_class_memory);
 %}
@@ -8349,6 +8416,18 @@ instruct storeP_volatile(iRegP src, /* sync_memory*/indirect mem)
   ins_pipe(pipe_class_memory);
 %}
 
+instruct storeimmP0_volatile(immP0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreP mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlr  zr, $mem\t# ptr" %}
+
+  ins_encode(aarch64_enc_stlr0(mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
 // Store Compressed Pointer
 instruct storeN_volatile(iRegN src, /* sync_memory*/indirect mem)
 %{
@@ -8358,6 +8437,18 @@ instruct storeN_volatile(iRegN src, /* sync_memory*/indirect mem)
   format %{ "stlrw  $src, $mem\t# compressed ptr" %}
 
   ins_encode(aarch64_enc_stlrw(src, mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeimmN0_volatile(immN0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreN mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrw  zr, $mem\t# compressed ptr" %}
+
+  ins_encode(aarch64_enc_stlrw0(mem));
 
   ins_pipe(pipe_class_memory);
 %}
@@ -11507,6 +11598,108 @@ instruct regI_not_reg(iRegINoSp dst,
   %}
 
   ins_pipe(ialu_reg);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegI_reg_URShift_reg(iRegINoSp dst,
+                              immI0 zero, iRegIorL2I src1, immI src2) %{
+  match(Set dst (SubI zero (URShiftI src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "negw  $dst, $src1, LSR $src2" %}
+
+  ins_encode %{
+    __ negw(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::LSR, $src2$$constant & 0x1f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegI_reg_RShift_reg(iRegINoSp dst,
+                              immI0 zero, iRegIorL2I src1, immI src2) %{
+  match(Set dst (SubI zero (RShiftI src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "negw  $dst, $src1, ASR $src2" %}
+
+  ins_encode %{
+    __ negw(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::ASR, $src2$$constant & 0x1f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegI_reg_LShift_reg(iRegINoSp dst,
+                              immI0 zero, iRegIorL2I src1, immI src2) %{
+  match(Set dst (SubI zero (LShiftI src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "negw  $dst, $src1, LSL $src2" %}
+
+  ins_encode %{
+    __ negw(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::LSL, $src2$$constant & 0x1f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegL_reg_URShift_reg(iRegLNoSp dst,
+                              immL0 zero, iRegL src1, immI src2) %{
+  match(Set dst (SubL zero (URShiftL src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "neg  $dst, $src1, LSR $src2" %}
+
+  ins_encode %{
+    __ neg(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::LSR, $src2$$constant & 0x3f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegL_reg_RShift_reg(iRegLNoSp dst,
+                              immL0 zero, iRegL src1, immI src2) %{
+  match(Set dst (SubL zero (RShiftL src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "neg  $dst, $src1, ASR $src2" %}
+
+  ins_encode %{
+    __ neg(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::ASR, $src2$$constant & 0x3f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegL_reg_LShift_reg(iRegLNoSp dst,
+                              immL0 zero, iRegL src1, immI src2) %{
+  match(Set dst (SubL zero (LShiftL src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "neg  $dst, $src1, LSL $src2" %}
+
+  ins_encode %{
+    __ neg(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::LSL, $src2$$constant & 0x3f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
 %}
 
 // This pattern is automatically generated from aarch64_ad.m4
@@ -16683,7 +16876,7 @@ instruct partialSubtypeCheckVsZero(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, 
 instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2, rFlagsReg cr)
 %{
-  predicate((UseSVE == 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU));
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -16693,7 +16886,7 @@ instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 c
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
-                      fnoreg, fnoreg, fnoreg, pnoreg, pnoreg, StrIntrinsicNode::UU);
+                      fnoreg, fnoreg, fnoreg, StrIntrinsicNode::UU);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16701,7 +16894,7 @@ instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 c
 instruct string_compareL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2, rFlagsReg cr)
 %{
-  predicate((UseSVE == 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL));
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -16710,7 +16903,7 @@ instruct string_compareL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 c
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
-                      fnoreg, fnoreg, fnoreg, pnoreg, pnoreg, StrIntrinsicNode::LL);
+                      fnoreg, fnoreg, fnoreg, StrIntrinsicNode::LL);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16719,7 +16912,7 @@ instruct string_compareUL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
                         vRegD_V0 vtmp1, vRegD_V1 vtmp2, vRegD_V2 vtmp3, rFlagsReg cr)
 %{
-  predicate((UseSVE == 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL));
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL vtmp1, KILL vtmp2, KILL vtmp3,
          USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
@@ -16730,7 +16923,7 @@ instruct string_compareUL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
                       $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
-                      $vtmp3$$FloatRegister, pnoreg, pnoreg, StrIntrinsicNode::UL);
+                      $vtmp3$$FloatRegister, StrIntrinsicNode::UL);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16739,7 +16932,7 @@ instruct string_compareLU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
                         vRegD_V0 vtmp1, vRegD_V1 vtmp2, vRegD_V2 vtmp3, rFlagsReg cr)
 %{
-  predicate((UseSVE == 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU));
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL vtmp1, KILL vtmp2, KILL vtmp3,
          USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
@@ -16750,7 +16943,7 @@ instruct string_compareLU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
                       $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
-                      $vtmp3$$FloatRegister, pnoreg, pnoreg, StrIntrinsicNode::LU);
+                      $vtmp3$$FloatRegister,StrIntrinsicNode::LU);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16993,13 +17186,13 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct has_negatives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg cr)
+instruct count_positives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg cr)
 %{
-  match(Set result (HasNegatives ary1 len));
+  match(Set result (CountPositives ary1 len));
   effect(USE_KILL ary1, USE_KILL len, KILL cr);
-  format %{ "has negatives byte[] $ary1,$len -> $result" %}
+  format %{ "count positives byte[] $ary1,$len -> $result" %}
   ins_encode %{
-    address tpc = __ has_negatives($ary1$$Register, $len$$Register, $result$$Register);
+    address tpc = __ count_positives($ary1$$Register, $len$$Register, $result$$Register);
     if (tpc == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
@@ -17155,7 +17348,7 @@ instruct tlsLoadP(thread_RegP dst)
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch ( incI_iReg movI );
 //   // require that the destination register of the increment
 //   // match the destination register of the move

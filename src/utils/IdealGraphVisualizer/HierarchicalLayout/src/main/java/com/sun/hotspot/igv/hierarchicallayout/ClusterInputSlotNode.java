@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class ClusterInputSlotNode implements Vertex {
 
             public Point getRelativePosition() {
                 Point p = new Point(thisNode.getPosition());
-                p.x += ClusterNode.BORDER;
+                p.x += blockNode.getBorder();
                 p.y = 0;
                 return p;
             }
@@ -142,4 +142,5 @@ public class ClusterInputSlotNode implements Vertex {
     public int compareTo(Vertex o) {
         return toString().compareTo(o.toString());
     }
+
 }

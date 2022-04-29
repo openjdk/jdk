@@ -166,10 +166,9 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
   assert(header_version[JVM_IDENT_MAX-1] == 0, "must be");
 }
 
-FileMapInfo::FileMapInfo(const char* full_path, bool is_static) {
-  memset((void*)this, 0, sizeof(FileMapInfo));
-  _full_path = full_path;
-  _is_static = is_static;
+FileMapInfo::FileMapInfo(const char* full_path, bool is_static) :
+  _is_static(is_static), _file_open(false), _is_mapped(false), _fd(-1), _file_offset(0),
+  _full_path(full_path), _base_archive_name(nullptr), _header(nullptr) {
   if (_is_static) {
     assert(_current_info == NULL, "must be singleton"); // not thread safe
     _current_info = this;
@@ -177,8 +176,6 @@ FileMapInfo::FileMapInfo(const char* full_path, bool is_static) {
     assert(_dynamic_archive_info == NULL, "must be singleton"); // not thread safe
     _dynamic_archive_info = this;
   }
-  _file_offset = 0;
-  _file_open = false;
 }
 
 FileMapInfo::~FileMapInfo() {
@@ -189,6 +186,11 @@ FileMapInfo::~FileMapInfo() {
     assert(_dynamic_archive_info == this, "must be singleton"); // not thread safe
     _dynamic_archive_info = NULL;
   }
+
+  if (_header != nullptr) {
+    os::free(_header);
+  }
+
   if (_file_open) {
     ::close(_fd);
   }
@@ -1108,6 +1110,9 @@ public:
   }
 
   ~FileHeaderHelper() {
+    if (_header != nullptr) {
+      FREE_C_HEAP_ARRAY(char, _header);
+    }
     if (_fd != -1) {
       ::close(_fd);
     }
@@ -1754,7 +1759,7 @@ MapArchiveResult FileMapInfo::map_regions(int regions[], int num_regions, char* 
     FileMapRegion* si = space_at(idx);
     DEBUG_ONLY(if (last_region != NULL) {
         // Ensure that the OS won't be able to allocate new memory spaces between any mapped
-        // regions, or else it would mess up the simple comparision in MetaspaceObj::is_shared().
+        // regions, or else it would mess up the simple comparison in MetaspaceObj::is_shared().
         assert(si->mapped_base() == last_region->mapped_end(), "must have no gaps");
       }
       last_region = si;)
@@ -1994,7 +1999,7 @@ void FileMapInfo::map_or_load_heap_regions() {
     } else if (HeapShared::can_load()) {
       success = HeapShared::load_heap_regions(this);
     } else {
-      log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC or UseSerialGC are required.");
+      log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC or UseParallelGC are required.");
     }
   }
 
@@ -2168,6 +2173,15 @@ void FileMapInfo::map_heap_regions_impl() {
   assert(is_aligned(relocated_closed_heap_region_bottom, HeapRegion::GrainBytes),
          "must be");
 
+  if (_heap_pointers_need_patching) {
+    char* bitmap_base = map_bitmap_region();
+    if (bitmap_base == NULL) {
+      log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
+      _heap_pointers_need_patching = false;
+      return;
+    }
+  }
+
   // Map the closed heap regions: GC does not write into these regions.
   if (map_heap_regions(MetaspaceShared::first_closed_heap_region,
                        MetaspaceShared::max_num_closed_heap_regions,
@@ -2297,9 +2311,7 @@ void FileMapInfo::patch_heap_embedded_pointers() {
 void FileMapInfo::patch_heap_embedded_pointers(MemRegion* regions, int num_regions,
                                                int first_region_idx) {
   char* bitmap_base = map_bitmap_region();
-  if (bitmap_base == NULL) {
-    return;
-  }
+  assert(bitmap_base != NULL, "must have already been mapped");
   for (int i=0; i<num_regions; i++) {
     FileMapRegion* si = space_at(i + first_region_idx);
     HeapShared::patch_embedded_pointers(
@@ -2320,6 +2332,11 @@ void FileMapInfo::fixup_mapped_heap_regions() {
            "Null closed_heap_regions array with non-zero count");
     G1CollectedHeap::heap()->fill_archive_regions(closed_heap_regions,
                                                   num_closed_heap_regions);
+    // G1 marking uses the BOT for object chunking during marking in
+    // G1CMObjArrayProcessor::process_slice(); for this reason we need to
+    // initialize the BOT for closed archive regions too.
+    G1CollectedHeap::heap()->populate_archive_regions_bot_part(closed_heap_regions,
+                                                               num_closed_heap_regions);
   }
 
   // do the same for mapped open archive heap regions
@@ -2332,11 +2349,6 @@ void FileMapInfo::fixup_mapped_heap_regions() {
     // fast G1BlockOffsetTablePart::block_start operations for any given address
     // within the open archive regions when trying to find start of an object
     // (e.g. during card table scanning).
-    //
-    // This is only needed for open archive regions but not the closed archive
-    // regions, because objects in closed archive regions never reference objects
-    // outside the closed archive regions and they are immutable. So we never
-    // need their BOT during garbage collection.
     G1CollectedHeap::heap()->populate_archive_regions_bot_part(open_heap_regions,
                                                                num_open_heap_regions);
   }

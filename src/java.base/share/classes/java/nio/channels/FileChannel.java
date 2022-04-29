@@ -996,7 +996,9 @@ public abstract class FileChannel
      * required then a region starting at zero, and no smaller than the
      * expected maximum size of the file, should be locked.  The zero-argument
      * {@link #lock()} method simply locks a region of size {@link
-     * Long#MAX_VALUE}.
+     * Long#MAX_VALUE}.  If the {@code position} is non-negative and the
+     * {@code size} is zero, then a lock of size
+     * {@code Long.MAX_VALUE - position} is returned.
      *
      * <p> Some operating systems do not support shared locks, in which case a
      * request for a shared lock is automatically converted into a request for
@@ -1014,7 +1016,10 @@ public abstract class FileChannel
      *
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
-     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
+     *         A value of zero means to lock all bytes from the specified
+     *         starting position to the end of the file, regardless of whether
+     *         the file is subsequently extended or truncated
      *
      * @param  shared
      *         {@code true} to request a shared lock, in which case this
@@ -1123,7 +1128,9 @@ public abstract class FileChannel
      * required then a region starting at zero, and no smaller than the
      * expected maximum size of the file, should be locked.  The zero-argument
      * {@link #tryLock()} method simply locks a region of size {@link
-     * Long#MAX_VALUE}.
+     * Long#MAX_VALUE}.  If the {@code position} is non-negative and the
+     * {@code size} is zero, then a lock of size
+     * {@code Long.MAX_VALUE - position} is returned.
      *
      * <p> Some operating systems do not support shared locks, in which case a
      * request for a shared lock is automatically converted into a request for
@@ -1141,7 +1148,10 @@ public abstract class FileChannel
      *
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
-     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
+     *         A value of zero means to lock all bytes from the specified
+     *         starting position to the end of the file, regardless of whether
+     *         the file is subsequently extended or truncated
      *
      * @param  shared
      *         {@code true} to request a shared lock,

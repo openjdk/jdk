@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ public class AboutDialog extends InternalDialog {
             Highlighter hilite = helpLink.getHighlighter();
             Document doc = helpLink.getDocument();
             String text = doc.getText(0, doc.getLength());
-            int pos = text.indexOf(urlStr, 0);
+            int pos = text.indexOf(urlStr);
             hilite.addHighlight(pos, pos + urlStr.length(), new HighlightPainter());
         } catch (BadLocationException e) {
             // ignore

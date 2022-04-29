@@ -213,7 +213,7 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
 
   // Malloc allocation site comparison
   void diff_malloc_sites() const;
-  // Virutal memory reservation site comparison
+  // Virtual memory reservation site comparison
   void diff_virtual_memory_sites() const;
 
   // New malloc allocation site in recent baseline

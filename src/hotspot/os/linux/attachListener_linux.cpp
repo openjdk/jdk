@@ -28,7 +28,6 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "services/attachListener.hpp"
-#include "services/dtraceAttacher.hpp"
 
 #include <unistd.h>
 #include <signal.h>
@@ -286,7 +285,7 @@ LinuxAttachOperation* LinuxAttachListener::read_request(int s) {
         str_count++;
 
         // The first string is <ver> so check it now to
-        // check for protocol mis-match
+        // check for protocol mismatch
         if (str_count == 1) {
           if ((strlen(buf) != strlen(ver_str)) ||
               (atoi(buf) != ATTACH_PROTOCOL_VER)) {

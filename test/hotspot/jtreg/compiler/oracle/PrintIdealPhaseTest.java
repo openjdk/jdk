@@ -27,7 +27,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requires vm.debug == true & vm.compiler2.enabled
+ * @requires vm.debug == true & vm.compiler2.enabled & vm.compMode != "Xcomp"
  * @run driver compiler.oracle.PrintIdealPhaseTest
  */
 
@@ -77,6 +77,7 @@ public class PrintIdealPhaseTest {
         options.add("-XX:+PrintCompilation");
         options.add("-XX:LogFile="+logFile);
         options.add("-XX:+IgnoreUnrecognizedVMOptions");
+        options.add("-XX:CompileCommand=dontinline," + getTestClass() + "::test");
         options.add("-XX:CompileCommand=PrintIdealPhase," + getTestClass() + "::test," + cmdPhases);
         options.add(getTestClass());
 

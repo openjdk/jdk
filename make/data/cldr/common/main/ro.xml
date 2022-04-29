@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -245,6 +245,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kea">kabuverdianu</language>
 			<language type="kfo">koro</language>
 			<language type="kg">congoleză</language>
+			<language type="kgp" draft="contributed">kaingang</language>
 			<language type="kha">khasi</language>
 			<language type="kho">khotaneză</language>
 			<language type="khq">koyra chiini</language>
@@ -285,6 +286,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">lezghian</language>
 			<language type="lg">ganda</language>
 			<language type="li">limburgheză</language>
+			<language type="lij" draft="contributed">liguriană</language>
 			<language type="lkt">lakota</language>
 			<language type="ln">lingala</language>
 			<language type="lo">laoțiană</language>
@@ -403,6 +405,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="raj">rajasthani</language>
 			<language type="rap">rapanui</language>
 			<language type="rar">rarotongan</language>
+			<language type="rhg" draft="contributed">rohingya</language>
 			<language type="rm">romanșă</language>
 			<language type="rn">kirundi</language>
 			<language type="ro">română</language>
@@ -550,41 +553,64 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">zaza</language>
 		</languages>
 		<scripts>
+			<script type="Aghb" draft="contributed">albaneză caucaziană</script>
+			<script type="Ahom" draft="contributed">ahom</script>
 			<script type="Arab">arabă</script>
 			<script type="Arab" alt="variant">persano-arabă</script>
 			<script type="Aran" draft="contributed">nastaaliq</script>
+			<script type="Armi" draft="contributed">aramaică imperială</script>
 			<script type="Armn">armeană</script>
+			<script type="Avst" draft="contributed">avestică</script>
 			<script type="Bali">balineză</script>
+			<script type="Bass" draft="contributed">bassa vah</script>
 			<script type="Beng">bengaleză</script>
+			<script type="Bhks" draft="contributed">bhaiksuki</script>
 			<script type="Bopo">bopomofo</script>
+			<script type="Brah" draft="contributed">brahmanică</script>
 			<script type="Brai">braille</script>
+			<script type="Bugi" draft="contributed">bugineză</script>
+			<script type="Buhd" draft="contributed">buhidă</script>
 			<script type="Cans">silabică aborigenă canadiană unificată</script>
+			<script type="Cari" draft="contributed">cariană</script>
+			<script type="Chrs" draft="contributed">khorezmiană</script>
 			<script type="Copt">coptă</script>
+			<script type="Cpmn" draft="contributed">cipro-minoană</script>
 			<script type="Cprt">cipriotă</script>
 			<script type="Cyrl">chirilică</script>
 			<script type="Cyrs">chirilică slavonă bisericească veche</script>
 			<script type="Deva">devanagari</script>
+			<script type="Diak" draft="contributed">dives akuru</script>
+			<script type="Dogr" draft="contributed">dogra</script>
 			<script type="Dsrt">mormonă</script>
+			<script type="Dupl" draft="contributed">stenografie duployană</script>
 			<script type="Egyd">demotică egipteană</script>
 			<script type="Egyh">hieratică egipteană</script>
 			<script type="Egyp">hieroglife egiptene</script>
+			<script type="Elba" draft="contributed">elbasan</script>
+			<script type="Elym" draft="contributed">elimaică</script>
 			<script type="Ethi">etiopiană</script>
 			<script type="Geok">georgiană bisericească</script>
 			<script type="Geor">georgiană</script>
 			<script type="Glag">glagolitică</script>
+			<script type="Gonm" draft="contributed">masaram gondi</script>
 			<script type="Goth">gotică</script>
+			<script type="Gran" draft="contributed">grantha</script>
 			<script type="Grek">greacă</script>
 			<script type="Gujr">gujarati</script>
 			<script type="Guru">gurmukhi</script>
 			<script type="Hanb">hanb</script>
 			<script type="Hang">hangul</script>
 			<script type="Hani">han</script>
+			<script type="Hano" draft="contributed">hanunoo</script>
 			<script type="Hans">simplificată</script>
 			<script type="Hans" alt="stand-alone">han simplificată</script>
 			<script type="Hant">tradițională</script>
 			<script type="Hant" alt="stand-alone">han tradițională</script>
+			<script type="Hatr" draft="contributed">hatrană</script>
 			<script type="Hebr">ebraică</script>
 			<script type="Hira">hiragana</script>
+			<script type="Hluw" draft="contributed">hieroglife anatoliene</script>
+			<script type="Hmng" draft="contributed">pahawh hmong</script>
 			<script type="Hrkt">silabică japoneză</script>
 			<script type="Hung">maghiară veche</script>
 			<script type="Inds">indus</script>
@@ -593,38 +619,93 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Java">javaneză</script>
 			<script type="Jpan">japoneză</script>
 			<script type="Kana">katakana</script>
+			<script type="Khar" draft="contributed">kharosthi</script>
 			<script type="Khmr">khmeră</script>
+			<script type="Khoj" draft="contributed">khojki</script>
+			<script type="Kits" draft="contributed">litere mici khitane</script>
 			<script type="Knda">kannada</script>
 			<script type="Kore">coreeană</script>
+			<script type="Kthi" draft="contributed">kaithi</script>
 			<script type="Laoo">laoțiană</script>
 			<script type="Latf">latină Fraktur</script>
 			<script type="Latg">latină gaelică</script>
 			<script type="Latn">latină</script>
 			<script type="Lina">lineară A</script>
 			<script type="Linb">lineară B</script>
+			<script type="Lyci" draft="contributed">liciană</script>
 			<script type="Lydi">lidiană</script>
+			<script type="Mahj" draft="contributed">mahajani</script>
+			<script type="Maka" draft="contributed">makasar</script>
+			<script type="Mani" draft="contributed">maniheeană</script>
+			<script type="Marc" draft="contributed">marchen</script>
 			<script type="Maya">hieroglife maya</script>
+			<script type="Medf" draft="contributed">medefaidrin</script>
+			<script type="Mend" draft="contributed">mende</script>
+			<script type="Merc" draft="contributed">meroitică cursivă</script>
+			<script type="Mero" draft="contributed">meroitică</script>
 			<script type="Mlym">malayalam</script>
+			<script type="Modi" draft="contributed">modi</script>
 			<script type="Mong">mongolă</script>
+			<script type="Mroo" draft="contributed">mro</script>
 			<script type="Mtei" draft="contributed">meitei mayek</script>
+			<script type="Mult" draft="contributed">multani</script>
 			<script type="Mymr">birmană</script>
+			<script type="Nand" draft="contributed">nandinagari</script>
+			<script type="Narb" draft="contributed">arabă veche din nord</script>
+			<script type="Nbat" draft="contributed">nabateeană</script>
+			<script type="Nshu" draft="contributed">nüshu</script>
+			<script type="Ogam" draft="contributed">ogham</script>
 			<script type="Olck" draft="contributed">ol chiki</script>
+			<script type="Orkh" draft="contributed">orhon</script>
 			<script type="Orya">oriya</script>
+			<script type="Osma" draft="contributed">osmanya</script>
+			<script type="Ougr" draft="contributed">uigură veche</script>
+			<script type="Palm" draft="contributed">palmirenă</script>
+			<script type="Pauc" draft="contributed">pau cin hau</script>
+			<script type="Perm" draft="contributed">permică veche</script>
+			<script type="Phag" draft="contributed">phags-pa</script>
+			<script type="Phli" draft="contributed">pahlavi pentru inscripții</script>
+			<script type="Phlp" draft="contributed">pahlavi pentru psaltire</script>
 			<script type="Phnx">feniciană</script>
+			<script type="Prti" draft="contributed">partă pentru inscripții</script>
 			<script type="Qaag" draft="contributed">zawgyi</script>
+			<script type="Rjng" draft="contributed">rejang</script>
 			<script type="Runr">runică</script>
+			<script type="Samr" draft="contributed">samariteană</script>
+			<script type="Sarb" draft="contributed">arabă veche din sud</script>
+			<script type="Sgnw" draft="contributed">scrierea simbolică</script>
+			<script type="Shaw" draft="contributed">savă</script>
+			<script type="Shrd" draft="contributed">sharadă</script>
+			<script type="Sidd" draft="contributed">siddham</script>
+			<script type="Sind" draft="contributed">khudawadi</script>
 			<script type="Sinh">singaleză</script>
+			<script type="Sogd" draft="contributed">sogdiană</script>
+			<script type="Sogo" draft="contributed">sogdiană veche</script>
+			<script type="Sora" draft="contributed">sora sompeng</script>
+			<script type="Soyo" draft="contributed">soyombo</script>
 			<script type="Syrc">siriacă</script>
 			<script type="Syrj">siriacă occidentală</script>
 			<script type="Syrn">siriacă orientală</script>
+			<script type="Tagb" draft="contributed">tagbanwa</script>
+			<script type="Takr" draft="contributed">takri</script>
 			<script type="Taml">tamilă</script>
+			<script type="Tang" draft="contributed">tangut</script>
 			<script type="Telu">telugu</script>
 			<script type="Tfng">berberă</script>
+			<script type="Tglg" draft="contributed">tagalog</script>
 			<script type="Thaa">thaana</script>
 			<script type="Thai">thailandeză</script>
 			<script type="Tibt">tibetană</script>
+			<script type="Tirh" draft="contributed">tirhuta</script>
+			<script type="Tnsa" draft="contributed">tangsa</script>
+			<script type="Toto" draft="contributed">toto</script>
+			<script type="Ugar" draft="contributed">ugaritică</script>
+			<script type="Vith" draft="contributed">vithkuqi</script>
+			<script type="Wara" draft="contributed">varang kshiti</script>
 			<script type="Xpeo">persană veche</script>
 			<script type="Xsux">cuneiformă sumero-akkadiană</script>
+			<script type="Yezi" draft="contributed">yazidită</script>
+			<script type="Zanb" draft="contributed">Piața Zanabazar</script>
 			<script type="Zinh">moștenită</script>
 			<script type="Zmth">notație matematică</script>
 			<script type="Zsye">emoji</script>
@@ -1136,23 +1217,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>...</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\--/]</parseLenient>
+			<parseLenient sample=":">[\:∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£">[£₤]</parseLenient>
+			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -1179,21 +1260,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="contributed">EEEE, d MMMM y G</pattern>
+							<datetimeSkeleton draft="contributed">GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="contributed">d MMMM y G</pattern>
+							<datetimeSkeleton draft="contributed">GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="contributed">dd.MM.y G</pattern>
+							<datetimeSkeleton draft="contributed">GyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern draft="contributed">dd.MM.y GGGGG</pattern>
+							<datetimeSkeleton draft="contributed">GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1636,21 +1721,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>dd.MM.y G</pattern>
+							<datetimeSkeleton>GyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd.MM.y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1689,6 +1778,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="contributed">dd.MM.y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
@@ -2155,43 +2245,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd.MM.y</pattern>
+							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern draft="contributed">HH:mm:ss zzzz</pattern>
+							<pattern>HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton draft="contributed">HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern draft="contributed">HH:mm:ss z</pattern>
+							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton draft="contributed">HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern draft="contributed">HH:mm:ss</pattern>
+							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton draft="contributed">HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern draft="contributed">HH:mm</pattern>
+							<pattern>HH:mm</pattern>
+							<datetimeSkeleton draft="contributed">HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -2230,6 +2328,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="contributed">dd.MM.y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
@@ -5850,32 +5949,37 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Ora de vară din Ekaterinburg</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard draft="contributed">Ora din Yukon</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
+			<native>latn</native>
 		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
+		<minimumGroupingDigits>1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>
 			<list>;</list>
 			<percentSign>%</percentSign>
-			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">-</minusSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
+			<timeSeparator>:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
+					<pattern>#,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="long">
@@ -6038,43 +6142,43 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">dirham din Emiratele Arabe Unite</displayName>
 				<displayName count="few">dirhami din Emiratele Arabe Unite</displayName>
 				<displayName count="other">dirhami din Emiratele Arabe Unite</displayName>
-				<symbol draft="contributed">AED</symbol>
+				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFN">
 				<displayName>afgani afgan</displayName>
 				<displayName count="one">afgani afgan</displayName>
 				<displayName count="few">afgani afgani</displayName>
 				<displayName count="other">afgani afgani</displayName>
-				<symbol draft="contributed">AFN</symbol>
+				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>lek</displayName>
 				<displayName count="one">lek</displayName>
 				<displayName count="few">lek</displayName>
 				<displayName count="other">lek</displayName>
-				<symbol draft="contributed">ALL</symbol>
+				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>dram armenesc</displayName>
 				<displayName count="one">dram armenesc</displayName>
 				<displayName count="few">drami armenești</displayName>
 				<displayName count="other">drami armenești</displayName>
-				<symbol draft="contributed">AMD</symbol>
+				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>gulden neerlandez antilez</displayName>
 				<displayName count="one">gulden neerlandez antilez</displayName>
 				<displayName count="few">guldeni neerlandezi antilezi</displayName>
 				<displayName count="other">guldeni neerlandezi antilezi</displayName>
-				<symbol draft="contributed">ANG</symbol>
+				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>kwanza angoleză</displayName>
 				<displayName count="one">kwanza angoleză</displayName>
 				<displayName count="few">kwanze angoleze</displayName>
 				<displayName count="other">kwanze angoleze</displayName>
-				<symbol draft="contributed">AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
+				<symbol>AOA</symbol>
+				<symbol alt="narrow">Kz</symbol>
 			</currency>
 			<currency type="ARP">
 				<displayName>peso argentinian (1983–1985)</displayName>
@@ -6087,8 +6191,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">peso argentinian</displayName>
 				<displayName count="few">pesos argentinieni</displayName>
 				<displayName count="other">pesos argentinieni</displayName>
-				<symbol draft="contributed">ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>ARS</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>șiling austriac</displayName>
@@ -6102,14 +6206,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">dolari australieni</displayName>
 				<displayName count="other">dolari australieni</displayName>
 				<symbol>AUD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>florin aruban</displayName>
 				<displayName count="one">florin aruban</displayName>
 				<displayName count="few">florini arubani</displayName>
 				<displayName count="other">florini arubani</displayName>
-				<symbol draft="contributed">AWG</symbol>
+				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName draft="contributed">manat azer (1993–2006)</displayName>
@@ -6119,7 +6223,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">manat azer</displayName>
 				<displayName count="few">manați azeri</displayName>
 				<displayName count="other">manați azeri</displayName>
-				<symbol draft="contributed">AZN</symbol>
+				<symbol>AZN</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName>dinar Bosnia-Herțegovina (1992–1994)</displayName>
@@ -6132,24 +6236,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">marcă convertibilă</displayName>
 				<displayName count="few">mărci convertibile</displayName>
 				<displayName count="other">mărci convertibile</displayName>
-				<symbol draft="contributed">BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
+				<symbol>BAM</symbol>
+				<symbol alt="narrow">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>dolar din Barbados</displayName>
 				<displayName count="one">dolar din Barbados</displayName>
 				<displayName count="few">dolari din Barbados</displayName>
 				<displayName count="other">dolari din Barbados</displayName>
-				<symbol draft="contributed">BBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BBD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>taka din Bangladesh</displayName>
 				<displayName count="one">taka din Bangladesh</displayName>
 				<displayName count="few">taka din Bangladesh</displayName>
 				<displayName count="other">taka din Bangladesh</displayName>
-				<symbol draft="contributed">BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
+				<symbol>BDT</symbol>
+				<symbol alt="narrow">৳</symbol>
 			</currency>
 			<currency type="BEC">
 				<displayName>franc belgian (convertibil)</displayName>
@@ -6174,45 +6278,45 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">leva</displayName>
 				<displayName count="few">leve</displayName>
 				<displayName count="other">leve</displayName>
-				<symbol draft="contributed">BGN</symbol>
+				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>dinar din Bahrain</displayName>
 				<displayName count="one">dinar din Bahrain</displayName>
 				<displayName count="few">dinari din Bahrain</displayName>
 				<displayName count="other">dinari din Bahrain</displayName>
-				<symbol draft="contributed">BHD</symbol>
+				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>franc burundez</displayName>
 				<displayName count="one">franc burundez</displayName>
 				<displayName count="few">franci burundezi</displayName>
 				<displayName count="other">franci burundezi</displayName>
-				<symbol draft="contributed">BIF</symbol>
+				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>dolar din Bermuda</displayName>
 				<displayName count="one">dolar din Bermuda</displayName>
 				<displayName count="few">dolari din Bermuda</displayName>
 				<displayName count="other">dolari din Bermuda</displayName>
-				<symbol draft="contributed">BMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BMD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>dolar din Brunei</displayName>
 				<displayName count="one">dolar din Brunei</displayName>
 				<displayName count="few">dolari din Brunei</displayName>
 				<displayName count="other">dolari Brunei</displayName>
-				<symbol draft="contributed">BND</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BND</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>boliviano</displayName>
 				<displayName count="one">boliviano</displayName>
 				<displayName count="few">boliviano</displayName>
 				<displayName count="other">boliviano</displayName>
-				<symbol draft="contributed">BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
+				<symbol>BOB</symbol>
+				<symbol alt="narrow">Bs</symbol>
 			</currency>
 			<currency type="BOP">
 				<displayName>peso bolivian</displayName>
@@ -6232,7 +6336,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">reali</displayName>
 				<displayName count="other">reali</displayName>
 				<symbol>BRL</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
+				<symbol alt="narrow">R$</symbol>
 			</currency>
 			<currency type="BRR">
 				<displayName>cruzeiro brazilian (1993–1994)</displayName>
@@ -6242,15 +6346,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">dolar din Bahamas</displayName>
 				<displayName count="few">dolari din Bahamas</displayName>
 				<displayName count="other">dolari din Bahamas</displayName>
-				<symbol draft="contributed">BSD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BSD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>ngultrum din Bhutan</displayName>
 				<displayName count="one">ngultrum din Bhutan</displayName>
 				<displayName count="few">ngultrum din Bhutan</displayName>
 				<displayName count="other">ngultrum din Bhutan</displayName>
-				<symbol draft="contributed">BTN</symbol>
+				<symbol>BTN</symbol>
 			</currency>
 			<currency type="BUK">
 				<displayName>kyat birman</displayName>
@@ -6260,16 +6364,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">pula Botswana</displayName>
 				<displayName count="few">pula Botswana</displayName>
 				<displayName count="other">pula Botswana</displayName>
-				<symbol draft="contributed">BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
+				<symbol>BWP</symbol>
+				<symbol alt="narrow">P</symbol>
 			</currency>
 			<currency type="BYN">
 				<displayName>rublă belarusă</displayName>
 				<displayName count="one">rublă belarusă</displayName>
 				<displayName count="few">ruble belaruse</displayName>
 				<displayName count="other">ruble belaruse</displayName>
-				<symbol draft="contributed">BYN</symbol>
-				<symbol alt="narrow" draft="contributed">р.</symbol>
+				<symbol>BYN</symbol>
+				<symbol alt="narrow">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>rublă belarusă (2000–2016)</displayName>
@@ -6283,8 +6387,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">dolar din Belize</displayName>
 				<displayName count="few">dolari din Belize</displayName>
 				<displayName count="other">dolari din Belize</displayName>
-				<symbol draft="contributed">BZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BZD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>dolar canadian</displayName>
@@ -6292,36 +6396,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">dolari canadieni</displayName>
 				<displayName count="other">dolari canadieni</displayName>
 				<symbol>CAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>franc congolez</displayName>
 				<displayName count="one">franc congolez</displayName>
 				<displayName count="few">franci congolezi</displayName>
 				<displayName count="other">franci congolezi</displayName>
-				<symbol draft="contributed">CDF</symbol>
+				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>franc elvețian</displayName>
 				<displayName count="one">franc elvețian</displayName>
 				<displayName count="few">franci elvețieni</displayName>
 				<displayName count="other">franci elvețieni</displayName>
-				<symbol draft="contributed">CHF</symbol>
+				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>peso chilian</displayName>
 				<displayName count="one">peso chilian</displayName>
 				<displayName count="few">pesos chilieni</displayName>
 				<displayName count="other">pesos chilieni</displayName>
-				<symbol draft="contributed">CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CLP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>yuan chinezesc (offshore)</displayName>
 				<displayName count="one">yuan chinezesc (offshore)</displayName>
 				<displayName count="few">yuani chinezești (offshore)</displayName>
 				<displayName count="other">yuani chinezești (offshore)</displayName>
-				<symbol draft="contributed">CNH</symbol>
+				<symbol>CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>yuan chinezesc</displayName>
@@ -6329,23 +6433,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">yuani chinezești</displayName>
 				<displayName count="other">yuani chinezești</displayName>
 				<symbol>CNY</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>peso columbian</displayName>
 				<displayName count="one">peso columbian</displayName>
 				<displayName count="few">pesos columbieni</displayName>
 				<displayName count="other">pesos columbieni</displayName>
-				<symbol draft="contributed">COP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>COP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>colón costarican</displayName>
 				<displayName count="one">colón costarican</displayName>
 				<displayName count="few">colóni costaricani</displayName>
 				<displayName count="other">colóni costaricani</displayName>
-				<symbol draft="contributed">CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
+				<symbol>CRC</symbol>
+				<symbol alt="narrow">₡</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName>dinar Serbia și Muntenegru (2002–2006)</displayName>
@@ -6358,23 +6462,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">peso cubanez convertibil</displayName>
 				<displayName count="few">pesos cubanezi convertibili</displayName>
 				<displayName count="other">pesos cubanezi convertibili</displayName>
-				<symbol draft="contributed">CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CUC</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>peso cubanez</displayName>
 				<displayName count="one">peso cubanez</displayName>
 				<displayName count="few">pesos cubanezi</displayName>
 				<displayName count="other">pesos cubanezi</displayName>
-				<symbol draft="contributed">CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CUP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>escudo din Capul Verde</displayName>
 				<displayName count="one">escudo din Capul Verde</displayName>
 				<displayName count="few">escudo din Capul Verde</displayName>
 				<displayName count="other">escudo din Capul Verde</displayName>
-				<symbol draft="contributed">CVE</symbol>
+				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName>liră cipriotă</displayName>
@@ -6387,8 +6491,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">coroană cehă</displayName>
 				<displayName count="few">coroane cehe</displayName>
 				<displayName count="other">coroane cehe</displayName>
-				<symbol draft="contributed">CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
+				<symbol>CZK</symbol>
+				<symbol alt="narrow">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>marcă est-germană</displayName>
@@ -6407,30 +6511,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">franc djiboutian</displayName>
 				<displayName count="few">franci djiboutieni</displayName>
 				<displayName count="other">franci djiboutieni</displayName>
-				<symbol draft="contributed">DJF</symbol>
+				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>coroană daneză</displayName>
 				<displayName count="one">coroană daneză</displayName>
 				<displayName count="few">coroane daneze</displayName>
 				<displayName count="other">coroane daneze</displayName>
-				<symbol draft="contributed">DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>DKK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>peso dominican</displayName>
 				<displayName count="one">peso dominican</displayName>
 				<displayName count="few">pesos dominicani</displayName>
 				<displayName count="other">pesos dominicani</displayName>
-				<symbol draft="contributed">DOP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>DOP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>dinar algerian</displayName>
 				<displayName count="one">dinar algerian</displayName>
 				<displayName count="few">dinari algerieni</displayName>
 				<displayName count="other">dinari algerieni</displayName>
-				<symbol draft="contributed">DZD</symbol>
+				<symbol>DZD</symbol>
 			</currency>
 			<currency type="ECS">
 				<displayName>sucre Ecuador</displayName>
@@ -6446,15 +6550,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">liră egipteană</displayName>
 				<displayName count="few">lire egiptene</displayName>
 				<displayName count="other">lire egiptene</displayName>
-				<symbol draft="contributed">EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
+				<symbol>EGP</symbol>
+				<symbol alt="narrow">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>nakfa eritreeană</displayName>
 				<displayName count="one">nakfa eritreeană</displayName>
 				<displayName count="few">nakfa eritreene</displayName>
 				<displayName count="other">nakfa eritreene</displayName>
-				<symbol draft="contributed">ERN</symbol>
+				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ESA">
 				<displayName>peseta spaniolă (cont A)</displayName>
@@ -6473,7 +6577,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">birr etiopian</displayName>
 				<displayName count="few">birri etiopieni</displayName>
 				<displayName count="other">birri etiopieni</displayName>
-				<symbol draft="contributed">ETB</symbol>
+				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>euro</displayName>
@@ -6481,7 +6585,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">euro</displayName>
 				<displayName count="other">euro</displayName>
 				<symbol>EUR</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
+				<symbol alt="narrow">€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName>marcă finlandeză</displayName>
@@ -6494,16 +6598,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">dolar fijian</displayName>
 				<displayName count="few">dolari fijieni</displayName>
 				<displayName count="other">dolari fijieni</displayName>
-				<symbol draft="contributed">FJD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>FJD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>liră din Insulele Falkland</displayName>
 				<displayName count="one">liră din Insulele Falkland</displayName>
 				<displayName count="few">lire din Insulele Falkland</displayName>
 				<displayName count="other">lire din Insulele Falkland</displayName>
-				<symbol draft="contributed">FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>FKP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>franc francez</displayName>
@@ -6517,16 +6621,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">lire sterline</displayName>
 				<displayName count="other">lire sterline</displayName>
 				<symbol>GBP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GEL">
 				<displayName>lari georgian</displayName>
 				<displayName count="one">lari georgian</displayName>
 				<displayName count="few">lari georgieni</displayName>
 				<displayName count="other">lari georgieni</displayName>
-				<symbol draft="contributed">GEL</symbol>
-				<symbol alt="narrow" draft="contributed">₾</symbol>
-				<symbol alt="variant" draft="contributed">₾</symbol>
+				<symbol>GEL</symbol>
+				<symbol alt="narrow">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>cedi Ghana (1979–2007)</displayName>
@@ -6536,30 +6639,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">cedi ghanez</displayName>
 				<displayName count="few">cedi ghanezi</displayName>
 				<displayName count="other">cedi ghanezi</displayName>
-				<symbol draft="contributed">GHS</symbol>
+				<symbol>GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>liră din Gibraltar</displayName>
 				<displayName count="one">liră din Gibraltar</displayName>
 				<displayName count="few">lire din Gibraltar</displayName>
 				<displayName count="other">lire Gibraltar</displayName>
-				<symbol draft="contributed">GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>GIP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>dalasi din Gambia</displayName>
 				<displayName count="one">dalasi din Gambia</displayName>
 				<displayName count="few">dalasi din Gambia</displayName>
 				<displayName count="other">dalasi din Gambia</displayName>
-				<symbol draft="contributed">GMD</symbol>
+				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>franc guineean</displayName>
 				<displayName count="one">franc guineean</displayName>
 				<displayName count="few">franci guineeni</displayName>
 				<displayName count="other">franci guineeni</displayName>
-				<symbol draft="contributed">GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
+				<symbol>GNF</symbol>
+				<symbol alt="narrow">FG</symbol>
 			</currency>
 			<currency type="GRD">
 				<displayName>drahmă grecească</displayName>
@@ -6572,8 +6675,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">quetzal guatemalez</displayName>
 				<displayName count="few">quetzali guatemalezi</displayName>
 				<displayName count="other">quetzali guatemalezi</displayName>
-				<symbol draft="contributed">GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
+				<symbol>GTQ</symbol>
+				<symbol alt="narrow">Q</symbol>
 			</currency>
 			<currency type="GWP">
 				<displayName>peso Guineea-Bissau</displayName>
@@ -6586,8 +6689,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">dolar guyanez</displayName>
 				<displayName count="few">dolari guyanezi</displayName>
 				<displayName count="other">dolari guyanezi</displayName>
-				<symbol draft="contributed">GYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>GYD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>dolar din Hong Kong</displayName>
@@ -6595,15 +6698,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">dolari din Hong Kong</displayName>
 				<displayName count="other">dolari din Hong Kong</displayName>
 				<symbol>HKD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>lempira honduriană</displayName>
 				<displayName count="one">lempiră honduriană</displayName>
 				<displayName count="few">lempire honduriene</displayName>
 				<displayName count="other">lempire honduriene</displayName>
-				<symbol draft="contributed">HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
+				<symbol>HNL</symbol>
+				<symbol alt="narrow">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>dinar croat</displayName>
@@ -6616,31 +6719,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kuna</displayName>
 				<displayName count="few">kuna</displayName>
 				<displayName count="other">kuna</displayName>
-				<symbol draft="contributed">HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
+				<symbol>HRK</symbol>
+				<symbol alt="narrow">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>gourde din Haiti</displayName>
 				<displayName count="one">gourde din Haiti</displayName>
 				<displayName count="few">gourde din Haiti</displayName>
 				<displayName count="other">gourde din Haiti</displayName>
-				<symbol draft="contributed">HTG</symbol>
+				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>forint</displayName>
 				<displayName count="one">forint</displayName>
 				<displayName count="few">forinți</displayName>
 				<displayName count="other">forinți</displayName>
-				<symbol draft="contributed">HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
+				<symbol>HUF</symbol>
+				<symbol alt="narrow">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>rupie indoneziană</displayName>
 				<displayName count="one">rupie indoneziană</displayName>
 				<displayName count="few">rupii indoneziene</displayName>
 				<displayName count="other">rupii indoneziene</displayName>
-				<symbol draft="contributed">IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
+				<symbol>IDR</symbol>
+				<symbol alt="narrow">Rp</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName>liră irlandeză</displayName>
@@ -6660,7 +6763,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">șecheli israelieni noi</displayName>
 				<displayName count="other">șecheli israelieni noi</displayName>
 				<symbol>ILS</symbol>
-				<symbol alt="narrow" draft="contributed">₪</symbol>
+				<symbol alt="narrow">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>rupie indiană</displayName>
@@ -6668,29 +6771,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">rupii indiene</displayName>
 				<displayName count="other">rupii indiene</displayName>
 				<symbol>INR</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
+				<symbol alt="narrow">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>dinar irakian</displayName>
 				<displayName count="one">dinar irakian</displayName>
 				<displayName count="few">dinari irakieni</displayName>
 				<displayName count="other">dinari irakieni</displayName>
-				<symbol draft="contributed">IQD</symbol>
+				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>rial iranian</displayName>
 				<displayName count="one">rial iranian</displayName>
 				<displayName count="few">riali iranieni</displayName>
 				<displayName count="other">riali iranieni</displayName>
-				<symbol draft="contributed">IRR</symbol>
+				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>coroană islandeză</displayName>
 				<displayName count="one">coroană islandeză</displayName>
 				<displayName count="few">coroane islandeze</displayName>
 				<displayName count="other">coroane islandeze</displayName>
-				<symbol draft="contributed">ISK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>ISK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>liră italiană</displayName>
@@ -6703,15 +6806,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">dolar jamaican</displayName>
 				<displayName count="few">dolari jamaicani</displayName>
 				<displayName count="other">dolari jamaicani</displayName>
-				<symbol draft="contributed">JMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>JMD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>dinar iordanian</displayName>
 				<displayName count="one">dinar iordanian</displayName>
 				<displayName count="few">dinari iordanieni</displayName>
 				<displayName count="other">dinari iordanieni</displayName>
-				<symbol draft="contributed">JOD</symbol>
+				<symbol>JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>yen japonez</displayName>
@@ -6719,45 +6822,45 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">yeni japonezi</displayName>
 				<displayName count="other">yeni japonezi</displayName>
 				<symbol>JPY</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>șiling kenyan</displayName>
 				<displayName count="one">șiling kenyan</displayName>
 				<displayName count="few">șilingi kenyeni</displayName>
 				<displayName count="other">șilingi kenyeni</displayName>
-				<symbol draft="contributed">KES</symbol>
+				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>som kârgâz</displayName>
 				<displayName count="one">som kârgâz</displayName>
 				<displayName count="few">somi kârgâzi</displayName>
 				<displayName count="other">somi kârgâzi</displayName>
-				<symbol draft="contributed">KGS</symbol>
+				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>riel cambodgian</displayName>
 				<displayName count="one">riel cambodgian</displayName>
 				<displayName count="few">rieli cambodgieni</displayName>
 				<displayName count="other">rieli cambodgieni</displayName>
-				<symbol draft="contributed">KHR</symbol>
-				<symbol alt="narrow" draft="contributed">៛</symbol>
+				<symbol>KHR</symbol>
+				<symbol alt="narrow">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>franc comorian</displayName>
 				<displayName count="one">franc comorian</displayName>
 				<displayName count="few">franci comorieni</displayName>
 				<displayName count="other">franci comorieni</displayName>
-				<symbol draft="contributed">KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
+				<symbol>KMF</symbol>
+				<symbol alt="narrow">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>won nord-coreean</displayName>
 				<displayName count="one">won nord-coreean</displayName>
 				<displayName count="few">woni nord-coreeni</displayName>
 				<displayName count="other">woni nord-coreeni</displayName>
-				<symbol draft="contributed">KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol>KPW</symbol>
+				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>won sud-coreean</displayName>
@@ -6765,65 +6868,68 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">woni sud-coreeni</displayName>
 				<displayName count="other">woni sud-coreeni</displayName>
 				<symbol>KRW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>dinar kuweitian</displayName>
 				<displayName count="one">dinar kuweitian</displayName>
 				<displayName count="few">dinari kuweitieni</displayName>
 				<displayName count="other">dinari kuweitieni</displayName>
-				<symbol draft="contributed">KWD</symbol>
+				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>dolar din Insulele Cayman</displayName>
 				<displayName count="one">dolar din Insulele Cayman</displayName>
 				<displayName count="few">dolari din Insulele Cayman</displayName>
 				<displayName count="other">dolari din Insulele Cayman</displayName>
-				<symbol draft="contributed">KYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>KYD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>tenge kazahă</displayName>
 				<displayName count="one">tenge kazahă</displayName>
 				<displayName count="few">tenge kazahe</displayName>
 				<displayName count="other">tenge kazahe</displayName>
-				<symbol draft="contributed">KZT</symbol>
-				<symbol alt="narrow" draft="contributed">₸</symbol>
+				<symbol>KZT</symbol>
+				<symbol alt="narrow">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>kip laoțian</displayName>
 				<displayName count="one">kip laoțian</displayName>
 				<displayName count="few">kipi laoțieni</displayName>
 				<displayName count="other">kipi laoțieni</displayName>
-				<symbol draft="contributed">LAK</symbol>
-				<symbol alt="narrow" draft="contributed">₭</symbol>
+				<symbol>LAK</symbol>
+				<symbol alt="narrow">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>liră libaneză</displayName>
 				<displayName count="one">liră libaneză</displayName>
 				<displayName count="few">lire libaneze</displayName>
 				<displayName count="other">lire libaneze</displayName>
-				<symbol draft="contributed">LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
+				<symbol>LBP</symbol>
+				<symbol alt="narrow">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>rupie srilankeză</displayName>
 				<displayName count="one">rupie srilankeză</displayName>
 				<displayName count="few">rupii srilankeze</displayName>
 				<displayName count="other">rupii srilankeze</displayName>
-				<symbol draft="contributed">LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>LKR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>dolar liberian</displayName>
 				<displayName count="one">dolar liberian</displayName>
 				<displayName count="few">dolari liberieni</displayName>
 				<displayName count="other">dolari liberieni</displayName>
-				<symbol draft="contributed">LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>LRD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName draft="contributed">loti lesothian</displayName>
+				<displayName count="one" draft="contributed">maloti leshotieni</displayName>
+				<displayName count="few" draft="contributed">maloti leshotieni</displayName>
+				<displayName count="other" draft="contributed">maloti leshotieni</displayName>
 			</currency>
 			<currency type="LTL">
 				<displayName>litu lituanian</displayName>
@@ -6868,14 +6974,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">dinar libian</displayName>
 				<displayName count="few">dinari libieni</displayName>
 				<displayName count="other">dinari libieni</displayName>
-				<symbol draft="contributed">LYD</symbol>
+				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>dirham marocan</displayName>
 				<displayName count="one">dirham marocan</displayName>
 				<displayName count="few">dirhami marocani</displayName>
 				<displayName count="other">dirhami marocani</displayName>
-				<symbol draft="contributed">MAD</symbol>
+				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName>franc marocan</displayName>
@@ -6888,15 +6994,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">leu moldovenesc</displayName>
 				<displayName count="few">lei moldovenești</displayName>
 				<displayName count="other">lei moldovenești</displayName>
-				<symbol draft="contributed">MDL</symbol>
+				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>ariary malgaș</displayName>
 				<displayName count="one">ariary malgaș</displayName>
 				<displayName count="few">ariary malgași</displayName>
 				<displayName count="other">ariary malgași</displayName>
-				<symbol draft="contributed">MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
+				<symbol>MGA</symbol>
+				<symbol alt="narrow">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>franc Madagascar</displayName>
@@ -6909,7 +7015,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">denar</displayName>
 				<displayName count="few">denari</displayName>
 				<displayName count="other">denari</displayName>
-				<symbol draft="contributed">MKD</symbol>
+				<symbol>MKD</symbol>
 			</currency>
 			<currency type="MLF">
 				<displayName>franc Mali</displayName>
@@ -6922,23 +7028,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kyat din Myanmar</displayName>
 				<displayName count="few">kyați din Myanmar</displayName>
 				<displayName count="other">kyați din Myanmar</displayName>
-				<symbol draft="contributed">MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
+				<symbol>MMK</symbol>
+				<symbol alt="narrow">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>tugrik mongol</displayName>
 				<displayName count="one">tugrik mongol</displayName>
 				<displayName count="few">tugrici mongoli</displayName>
 				<displayName count="other">tugrici mongoli</displayName>
-				<symbol draft="contributed">MNT</symbol>
-				<symbol alt="narrow" draft="contributed">₮</symbol>
+				<symbol>MNT</symbol>
+				<symbol alt="narrow">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>pataca din Macao</displayName>
 				<displayName count="one">pataca din Macao</displayName>
 				<displayName count="few">pataca din Macao</displayName>
 				<displayName count="other">pataca din Macao</displayName>
-				<symbol draft="contributed">MOP</symbol>
+				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>ouguiya mauritană (1973–2017)</displayName>
@@ -6952,7 +7058,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">ouguiya mauritană</displayName>
 				<displayName count="few">ouguiya mauritane</displayName>
 				<displayName count="other">ouguiya mauritane</displayName>
-				<symbol draft="contributed">MRU</symbol>
+				<symbol>MRU</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>liră malteză</displayName>
@@ -6965,22 +7071,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">rupie mauritiană</displayName>
 				<displayName count="few">rupii mauritiene</displayName>
 				<displayName count="other">rupii mauritiene</displayName>
-				<symbol draft="contributed">MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>MUR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>rufiyaa maldiviană</displayName>
 				<displayName count="one">rufiyaa maldiviană</displayName>
 				<displayName count="few">rufiyaa maldiviene</displayName>
 				<displayName count="other">rufiyaa maldiviene</displayName>
-				<symbol draft="contributed">MVR</symbol>
+				<symbol>MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>kwacha malawiană</displayName>
 				<displayName count="one">kwacha malawiană</displayName>
 				<displayName count="few">kwache malawiene</displayName>
 				<displayName count="other">kwache malawiene</displayName>
-				<symbol draft="contributed">MWK</symbol>
+				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>peso mexican</displayName>
@@ -6988,7 +7094,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">pesos mexicani</displayName>
 				<displayName count="other">pesos mexicani</displayName>
 				<symbol>MXN</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="MXP">
 				<displayName>peso mexican de argint (1861–1992)</displayName>
@@ -7001,8 +7107,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">ringgit malaiezian</displayName>
 				<displayName count="few">ringgit malaiezieni</displayName>
 				<displayName count="other">ringgit malaiezieni</displayName>
-				<symbol draft="contributed">MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
+				<symbol>MYR</symbol>
+				<symbol alt="narrow">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>escudo Mozambic</displayName>
@@ -7015,23 +7121,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">metical mozambican</displayName>
 				<displayName count="few">metical mozambicani</displayName>
 				<displayName count="other">metical mozambicani</displayName>
-				<symbol draft="contributed">MZN</symbol>
+				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>dolar namibian</displayName>
 				<displayName count="one">dolar namibian</displayName>
 				<displayName count="few">dolari namibieni</displayName>
 				<displayName count="other">dolari namibieni</displayName>
-				<symbol draft="contributed">NAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>NAD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>naira nigeriană</displayName>
 				<displayName count="one">naira nigeriană</displayName>
 				<displayName count="few">naire nigeriene</displayName>
 				<displayName count="other">naire nigeriene</displayName>
-				<symbol draft="contributed">NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
+				<symbol>NGN</symbol>
+				<symbol alt="narrow">₦</symbol>
 			</currency>
 			<currency type="NIC">
 				<displayName>cordoba nicaraguană (1988–1991)</displayName>
@@ -7041,8 +7147,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">córdoba oro</displayName>
 				<displayName count="few">córdobe oro</displayName>
 				<displayName count="other">córdobe oro</displayName>
-				<symbol draft="contributed">NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
+				<symbol>NIO</symbol>
+				<symbol alt="narrow">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>gulden olandez</displayName>
@@ -7055,16 +7161,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">coroană norvegiană</displayName>
 				<displayName count="few">coroane norvegiene</displayName>
 				<displayName count="other">coroane norvegiene</displayName>
-				<symbol draft="contributed">NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>NOK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>rupie nepaleză</displayName>
 				<displayName count="one">rupie nepaleză</displayName>
 				<displayName count="few">rupii nepaleze</displayName>
 				<displayName count="other">rupii nepaleze</displayName>
-				<symbol draft="contributed">NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>NPR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>dolar neozeelandez</displayName>
@@ -7072,21 +7178,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">dolari neozeelandezi</displayName>
 				<displayName count="other">dolari neozeelandezi</displayName>
 				<symbol>NZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>rial omanez</displayName>
 				<displayName count="one">rial omanez</displayName>
 				<displayName count="few">riali omanezi</displayName>
 				<displayName count="other">riali omanezi</displayName>
-				<symbol draft="contributed">OMR</symbol>
+				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>balboa panameză</displayName>
 				<displayName count="one">balboa panameză</displayName>
 				<displayName count="few">balboa panameze</displayName>
 				<displayName count="other">balboa panameze</displayName>
-				<symbol draft="contributed">PAB</symbol>
+				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName>inti peruvian</displayName>
@@ -7096,7 +7202,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">sol</displayName>
 				<displayName count="few">soli</displayName>
 				<displayName count="other">soli</displayName>
-				<symbol draft="contributed">PEN</symbol>
+				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName>sol peruvian (1863–1965)</displayName>
@@ -7109,31 +7215,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kina din Papua-Noua Guinee</displayName>
 				<displayName count="few">kina din Papua-Noua Guinee</displayName>
 				<displayName count="other">kina din Papua-Noua Guinee</displayName>
-				<symbol draft="contributed">PGK</symbol>
+				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>peso filipinez</displayName>
 				<displayName count="one">peso filipinez</displayName>
 				<displayName count="few">pesos filipinezi</displayName>
 				<displayName count="other">pesos filipinezi</displayName>
-				<symbol draft="contributed">PHP</symbol>
-				<symbol alt="narrow" draft="contributed">₱</symbol>
+				<symbol>PHP</symbol>
+				<symbol alt="narrow">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>rupie pakistaneză</displayName>
 				<displayName count="one">rupie pakistaneză</displayName>
 				<displayName count="few">rupii pakistaneze</displayName>
 				<displayName count="other">rupii pakistaneze</displayName>
-				<symbol draft="contributed">PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>PKR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>zlot</displayName>
 				<displayName count="one">zlot</displayName>
 				<displayName count="few">zloți</displayName>
 				<displayName count="other">zloți</displayName>
-				<symbol draft="contributed">PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
+				<symbol>PLN</symbol>
+				<symbol alt="narrow">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName>zlot polonez (1950–1995)</displayName>
@@ -7146,15 +7252,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">guarani</displayName>
 				<displayName count="few">guarani</displayName>
 				<displayName count="other">guarani</displayName>
-				<symbol draft="contributed">PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
+				<symbol>PYG</symbol>
+				<symbol alt="narrow">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>rial qatarian</displayName>
 				<displayName count="one">rial qatarian</displayName>
 				<displayName count="few">riali qatarieni</displayName>
 				<displayName count="other">riali qatarieni</displayName>
-				<symbol draft="contributed">QAR</symbol>
+				<symbol>QAR</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName>dolar rhodesian</displayName>
@@ -7173,53 +7279,53 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">leu românesc</displayName>
 				<displayName count="few">lei românești</displayName>
 				<displayName count="other">lei românești</displayName>
-				<symbol draft="contributed">RON</symbol>
-				<symbol alt="narrow" draft="contributed">lei</symbol>
+				<symbol>RON</symbol>
+				<symbol alt="narrow">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>dinar sârbesc</displayName>
 				<displayName count="one">dinar sârbesc</displayName>
 				<displayName count="few">dinari sârbești</displayName>
 				<displayName count="other">dinari sârbești</displayName>
-				<symbol draft="contributed">RSD</symbol>
+				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>rublă rusească</displayName>
 				<displayName count="one">rublă rusească</displayName>
 				<displayName count="few">ruble rusești</displayName>
 				<displayName count="other">ruble rusești</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
+				<symbol>RUB</symbol>
+				<symbol alt="narrow">₽</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>franc rwandez</displayName>
 				<displayName count="one">franc rwandez</displayName>
 				<displayName count="few">franci rwandezi</displayName>
 				<displayName count="other">franci rwandezi</displayName>
-				<symbol draft="contributed">RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
+				<symbol>RWF</symbol>
+				<symbol alt="narrow">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>rial saudit</displayName>
 				<displayName count="one">rial saudit</displayName>
 				<displayName count="few">riali saudiți</displayName>
 				<displayName count="other">riali saudiți</displayName>
-				<symbol draft="contributed">SAR</symbol>
+				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>dolar din Insulele Solomon</displayName>
 				<displayName count="one">dolar din Insulele Solomon</displayName>
 				<displayName count="few">dolari din Insulele Solomon</displayName>
 				<displayName count="other">dolari din Insulele Solomon</displayName>
-				<symbol draft="contributed">SBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SBD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>rupie din Seychelles</displayName>
 				<displayName count="one">rupie din Seychelles</displayName>
 				<displayName count="few">rupii din Seychelles</displayName>
 				<displayName count="other">rupii din Seychelles</displayName>
-				<symbol draft="contributed">SCR</symbol>
+				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName>dinar sudanez</displayName>
@@ -7232,7 +7338,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">liră sudaneză</displayName>
 				<displayName count="few">lire sudaneze</displayName>
 				<displayName count="other">lire sudaneze</displayName>
-				<symbol draft="contributed">SDG</symbol>
+				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>liră sudaneză (1957–1998)</displayName>
@@ -7245,24 +7351,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">coroană suedeză</displayName>
 				<displayName count="few">coroane suedeze</displayName>
 				<displayName count="other">coroane suedeze</displayName>
-				<symbol draft="contributed">SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>SEK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>dolar singaporez</displayName>
 				<displayName count="one">dolar singaporez</displayName>
 				<displayName count="few">dolari singaporezi</displayName>
 				<displayName count="other">dolari singaporezi</displayName>
-				<symbol draft="contributed">SGD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SGD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>liră Insula Sf. Elena</displayName>
 				<displayName count="one">liră Insula Sf. Elena</displayName>
 				<displayName count="few">lire Insula Sf. Elena</displayName>
 				<displayName count="other">lire Insula Sf. Elena</displayName>
-				<symbol draft="contributed">SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SHP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SIT">
 				<displayName>tolar sloven</displayName>
@@ -7281,22 +7387,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">leone din Sierra Leone</displayName>
 				<displayName count="few">leoni din Sierra Leone</displayName>
 				<displayName count="other">leoni din Sierra Leone</displayName>
-				<symbol draft="contributed">SLL</symbol>
+				<symbol>SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>șiling somalez</displayName>
 				<displayName count="one">șiling somalez</displayName>
 				<displayName count="few">șilingi somalezi</displayName>
 				<displayName count="other">șilingi somalezi</displayName>
-				<symbol draft="contributed">SOS</symbol>
+				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>dolar surinamez</displayName>
 				<displayName count="one">dolar surinamez</displayName>
 				<displayName count="few">dolari surinamezi</displayName>
 				<displayName count="other">dolari surinamezi</displayName>
-				<symbol draft="contributed">SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SRD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>gulden Surinam</displayName>
@@ -7309,8 +7415,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">liră din Sudanul de Sud</displayName>
 				<displayName count="few">lire din Sudanul de Sud</displayName>
 				<displayName count="other">lire din Sudanul de Sud</displayName>
-				<symbol draft="contributed">SSP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SSP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>dobra Sao Tome și Principe (1977–2017)</displayName>
@@ -7324,8 +7430,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">dobra Sao Tome și Principe</displayName>
 				<displayName count="few">dobre Sao Tome și Principe</displayName>
 				<displayName count="other">dobre Sao Tome și Principe</displayName>
-				<symbol draft="contributed">STN</symbol>
-				<symbol alt="narrow" draft="contributed">Db</symbol>
+				<symbol>STN</symbol>
+				<symbol alt="narrow">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>rublă sovietică</displayName>
@@ -7344,23 +7450,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">liră siriană</displayName>
 				<displayName count="few">lire siriene</displayName>
 				<displayName count="other">lire siriene</displayName>
-				<symbol draft="contributed">SYP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SYP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>lilangeni din Swaziland</displayName>
 				<displayName count="one">lilangeni din Swaziland</displayName>
 				<displayName count="few">emalangeni din Swaziland</displayName>
 				<displayName count="other">emalangeni din Swaziland</displayName>
-				<symbol draft="contributed">SZL</symbol>
+				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>baht thailandez</displayName>
 				<displayName count="one">baht thailandez</displayName>
 				<displayName count="few">bahți thailandezi</displayName>
 				<displayName count="other">bahți thailandezi</displayName>
-				<symbol draft="contributed">THB</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
+				<symbol>THB</symbol>
+				<symbol alt="narrow">฿</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>rublă Tadjikistan</displayName>
@@ -7373,7 +7479,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">somoni tajdic</displayName>
 				<displayName count="few">somoni tadjici</displayName>
 				<displayName count="other">somoni tadjici</displayName>
-				<symbol draft="contributed">TJS</symbol>
+				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName draft="contributed">manat turkmen (1993–2009)</displayName>
@@ -7386,22 +7492,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">manat turkmen</displayName>
 				<displayName count="few">manat turkmeni</displayName>
 				<displayName count="other">manat turkmeni</displayName>
-				<symbol draft="contributed">TMT</symbol>
+				<symbol>TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>dinar tunisian</displayName>
 				<displayName count="one">dinar tunisian</displayName>
 				<displayName count="few">dinari tunisieni</displayName>
 				<displayName count="other">dinari tunisieni</displayName>
-				<symbol draft="contributed">TND</symbol>
+				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>pa’anga tongană</displayName>
 				<displayName count="one">pa’anga tongană</displayName>
 				<displayName count="few">pa’anga tongane</displayName>
 				<displayName count="other">pa’anga tongane</displayName>
-				<symbol draft="contributed">TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
+				<symbol>TOP</symbol>
+				<symbol alt="narrow">T$</symbol>
 			</currency>
 			<currency type="TRL">
 				<displayName>liră turcească (1922–2005)</displayName>
@@ -7414,17 +7520,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">liră turcească</displayName>
 				<displayName count="few">lire turcești</displayName>
 				<displayName count="other">lire turcești</displayName>
-				<symbol draft="contributed">TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
+				<symbol>TRY</symbol>
+				<symbol alt="narrow">₺</symbol>
+				<symbol alt="variant">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>dolar din Trinidad și Tobago</displayName>
 				<displayName count="one">dolar din Trinidad și Tobago</displayName>
 				<displayName count="few">dolari din Trinidad și Tobago</displayName>
 				<displayName count="other">dolari din Trinidad și Tobago</displayName>
-				<symbol draft="contributed">TTD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>TTD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>dolar nou din Taiwan</displayName>
@@ -7432,22 +7538,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">dolari noi din Taiwan</displayName>
 				<displayName count="other">dolari noi Taiwan</displayName>
 				<symbol>TWD</symbol>
-				<symbol alt="narrow" draft="contributed">NT$</symbol>
+				<symbol alt="narrow">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>șiling tanzanian</displayName>
 				<displayName count="one">șiling tanzanian</displayName>
 				<displayName count="few">șilingi tanzanieni</displayName>
 				<displayName count="other">șilingi tanzanieni</displayName>
-				<symbol draft="contributed">TZS</symbol>
+				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>grivnă</displayName>
 				<displayName count="one">grivnă</displayName>
 				<displayName count="few">grivne</displayName>
 				<displayName count="other">grivne</displayName>
-				<symbol draft="contributed">UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
+				<symbol>UAH</symbol>
+				<symbol alt="narrow">₴</symbol>
 			</currency>
 			<currency type="UAK">
 				<displayName>carboavă ucraineană</displayName>
@@ -7466,7 +7572,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">șiling ugandez</displayName>
 				<displayName count="few">șilingi ugandezi</displayName>
 				<displayName count="other">șilingi ugandezi</displayName>
-				<symbol draft="contributed">UGX</symbol>
+				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>dolar american</displayName>
@@ -7474,7 +7580,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">dolari americani</displayName>
 				<displayName count="other">dolari americani</displayName>
 				<symbol>USD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="USN">
 				<displayName>dolar american (ziua următoare)</displayName>
@@ -7499,15 +7605,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">peso uruguayan</displayName>
 				<displayName count="few">pesos uruguayeni</displayName>
 				<displayName count="other">pesos uruguayeni</displayName>
-				<symbol draft="contributed">UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>UYU</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>sum Uzbekistan</displayName>
 				<displayName count="one">sum Uzbekistan</displayName>
 				<displayName count="few">sum Uzbekistan</displayName>
 				<displayName count="other">sum Uzbekistan</displayName>
-				<symbol draft="contributed">UZS</symbol>
+				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName>bolivar Venezuela (1871–2008)</displayName>
@@ -7528,7 +7634,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">bolívar soberano</displayName>
 				<displayName count="few">bolívari soberano</displayName>
 				<displayName count="other">bolívari soberano</displayName>
-				<symbol draft="contributed">VES</symbol>
+				<symbol>VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>dong vietnamez</displayName>
@@ -7536,28 +7642,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">dongi vietnamezi</displayName>
 				<displayName count="other">dongi vietnamezi</displayName>
 				<symbol>VND</symbol>
-				<symbol alt="narrow" draft="contributed">₫</symbol>
+				<symbol alt="narrow">₫</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>vatu din Vanuatu</displayName>
 				<displayName count="one">vatu din Vanuatu</displayName>
 				<displayName count="few">vatu din Vanuatu</displayName>
 				<displayName count="other">vatu din Vanuatu</displayName>
-				<symbol draft="contributed">VUV</symbol>
+				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>tala samoană</displayName>
 				<displayName count="one">tala samoană</displayName>
 				<displayName count="few">tala samoane</displayName>
 				<displayName count="other">tala samoană</displayName>
-				<symbol draft="contributed">WST</symbol>
+				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>franc CFA BEAC</displayName>
 				<displayName count="one">franc CFA BEAC</displayName>
 				<displayName count="few">franci CFA BEAC</displayName>
 				<displayName count="other">franci CFA central-africani</displayName>
-				<symbol draft="contributed">FCFA</symbol>
+				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName>argint</displayName>
@@ -7583,7 +7689,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">dolari est-caraibi</displayName>
 				<displayName count="other">dolari est-caraibi</displayName>
 				<symbol>XCD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>drepturi speciale de tragere</displayName>
@@ -7615,7 +7721,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">franc CFP</displayName>
 				<displayName count="few">franci CFP</displayName>
 				<displayName count="other">franci CFP</displayName>
-				<symbol draft="contributed">CFPF</symbol>
+				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XPT">
 				<displayName>platină</displayName>
@@ -7640,7 +7746,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">rial yemenit</displayName>
 				<displayName count="few">riali yemeniți</displayName>
 				<displayName count="other">riali yemeniți</displayName>
-				<symbol draft="contributed">YER</symbol>
+				<symbol>YER</symbol>
 			</currency>
 			<currency type="YUD">
 				<displayName>dinar iugoslav greu</displayName>
@@ -7668,8 +7774,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">rand sud-african</displayName>
 				<displayName count="few">ranzi sud-africani</displayName>
 				<displayName count="other">ranzi sud-africani</displayName>
-				<symbol draft="contributed">ZAR</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
+				<symbol>ZAR</symbol>
+				<symbol alt="narrow">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>kwacha zambian (1968–2012)</displayName>
@@ -7682,8 +7788,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">kwacha zambian</displayName>
 				<displayName count="few">kwache zambiene</displayName>
 				<displayName count="other">kwache zambiene</displayName>
-				<symbol draft="contributed">ZMW</symbol>
-				<symbol alt="narrow" draft="contributed">ZK</symbol>
+				<symbol>ZMW</symbol>
+				<symbol alt="narrow">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>zair nou</displayName>
@@ -7716,6 +7822,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pluralMinimalPairs count="other">{0} de zile</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="one">Faceți virajul nr. {0} la dreapta.</ordinalMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Faceți virajul al {0}-lea la dreapta.</ordinalMinimalPairs>
+			<caseMinimalPairs case="genitive">… ale (celor) {0} …</caseMinimalPairs>
+			<caseMinimalPairs case="nominative">{0} este/sunt …</caseMinimalPairs>
+			<genderMinimalPairs gender="feminine">O {0} costă 5 €.</genderMinimalPairs>
+			<genderMinimalPairs gender="masculine">Un {0} costă 5 €, doi costă 9 €.</genderMinimalPairs>
+			<genderMinimalPairs gender="neuter">Un {0} costă 5 €, două costă 9 €.</genderMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -7808,85 +7919,159 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern>{0} pe {1}</compoundUnitPattern>
 			</compoundUnit>
 			<compoundUnit type="power2">
-				<compoundUnitPattern1 count="one">{0} pătrat/ă</compoundUnitPattern1>
-				<compoundUnitPattern1 count="few">{0} pătrați/pătrate</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0} pătrați/pătrate</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0} pătrat</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="genitive">{0} pătrat</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="feminine">{0} pătrată</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="feminine" case="genitive">{0} pătrată</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="masculine">{0} pătrat</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="masculine" case="genitive">{0} pătrat</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">{0} pătrate</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" case="genitive">{0} pătrate</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" gender="feminine">{0} pătrate</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" gender="feminine" case="genitive">{0} pătrate</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" gender="masculine">{0} pătrați</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" gender="masculine" case="genitive">{0} pătrați</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} pătrate</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="genitive">{0} pătrate</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="feminine">{0} pătrate</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="feminine" case="genitive">{0} pătrate</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="masculine">{0} pătrați</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="masculine" case="genitive">{0} pătrați</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1 count="one">{0} cub</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="genitive">{0} cub</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="feminine">{0} cubică</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="feminine" case="genitive">{0} cubică</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="masculine">{0} cub</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="masculine" case="genitive">{0} cub</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few">{0} cubi</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0} cubi</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" case="genitive">{0} cubice</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" gender="feminine">{0} cubice</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" gender="feminine" case="genitive">{0} cubice</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" gender="masculine">{0} cubi</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" gender="masculine" case="genitive">{0} cubice</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0} cubice</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="genitive">{0} cubice</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="feminine">{0} cubice</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="feminine" case="genitive">{0} cubice</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="masculine">{0} cubice</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="masculine" case="genitive">{0} cubice</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}-{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
+				<gender>feminine</gender>
 				<displayName>forță g</displayName>
 				<unitPattern count="one">{0} forță g</unitPattern>
+				<unitPattern count="one" case="genitive">{0} forță g</unitPattern>
 				<unitPattern count="few">{0} forță g</unitPattern>
+				<unitPattern count="few" case="genitive">{0} forță g</unitPattern>
 				<unitPattern count="other">{0} forță g</unitPattern>
+				<unitPattern count="other" case="genitive">{0} forță g</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
+				<gender>masculine</gender>
 				<displayName>metri pe secundă la pătrat</displayName>
 				<unitPattern count="one">{0} metru pe secundă la pătrat</unitPattern>
+				<unitPattern count="one" case="genitive">unui metru pe secundă la pătrat</unitPattern>
 				<unitPattern count="few">{0} metri pe secundă la pătrat</unitPattern>
+				<unitPattern count="few" case="genitive">{0} metri pe secundă la pătrat</unitPattern>
 				<unitPattern count="other">{0} de metri pe secundă la pătrat</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de metri pe secundă la pătrat</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
+				<gender>feminine</gender>
 				<displayName>revoluție</displayName>
 				<unitPattern count="one">{0} revoluție</unitPattern>
+				<unitPattern count="one" case="genitive">unei revoluții</unitPattern>
 				<unitPattern count="few">{0} revoluții</unitPattern>
+				<unitPattern count="few" case="genitive">{0} revoluții</unitPattern>
 				<unitPattern count="other">{0} de revoluții</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de revoluții</unitPattern>
 			</unit>
 			<unit type="angle-radian">
+				<gender>masculine</gender>
 				<displayName>radiani</displayName>
 				<unitPattern count="one">{0} radian</unitPattern>
+				<unitPattern count="one" case="genitive">unui radian</unitPattern>
 				<unitPattern count="few">{0} radiani</unitPattern>
+				<unitPattern count="few" case="genitive">{0} radiani</unitPattern>
 				<unitPattern count="other">{0} de radiani</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de radiani</unitPattern>
 			</unit>
 			<unit type="angle-degree">
+				<gender>neuter</gender>
 				<displayName>grade</displayName>
 				<unitPattern count="one">{0} grad</unitPattern>
+				<unitPattern count="one" case="genitive">unui grad</unitPattern>
 				<unitPattern count="few">{0} grade</unitPattern>
+				<unitPattern count="few" case="genitive">{0} grade</unitPattern>
 				<unitPattern count="other">{0} de grade</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de grade</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<gender>neuter</gender>
 				<displayName>minute de arc</displayName>
 				<unitPattern count="one">{0} minut de arc</unitPattern>
+				<unitPattern count="one" case="genitive">unui minut de arc</unitPattern>
 				<unitPattern count="few">{0} minute de arc</unitPattern>
+				<unitPattern count="few" case="genitive">{0} minute de arc</unitPattern>
 				<unitPattern count="other">{0} de minute de arc</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de minute de arc</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<gender>feminine</gender>
 				<displayName>secunde de arc</displayName>
 				<unitPattern count="one">{0} secundă de arc</unitPattern>
+				<unitPattern count="one" case="genitive">unei secunde de arc</unitPattern>
 				<unitPattern count="few">{0} secunde de arc</unitPattern>
+				<unitPattern count="few" case="genitive">{0} secunde de arc</unitPattern>
 				<unitPattern count="other">{0} de secunde de arc</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de secunde de arc</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<gender>masculine</gender>
 				<displayName>kilometri pătrați</displayName>
 				<unitPattern count="one">{0} kilometru pătrat</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilometru pătrat</unitPattern>
 				<unitPattern count="few">{0} kilometri pătrați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilometri pătrați</unitPattern>
 				<unitPattern count="other">{0} de kilometri pătrați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilometri pătrați</unitPattern>
 				<perUnitPattern>{0} pe kilometru pătrat</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<gender>neuter</gender>
 				<displayName>hectare</displayName>
 				<unitPattern count="one">{0} hectar</unitPattern>
+				<unitPattern count="one" case="genitive">unui hectar</unitPattern>
 				<unitPattern count="few">{0} hectare</unitPattern>
+				<unitPattern count="few" case="genitive">{0} hectare</unitPattern>
 				<unitPattern count="other">{0} de hectare</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de hectare</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<gender>masculine</gender>
 				<displayName>metri pătrați</displayName>
 				<unitPattern count="one">{0} metru pătrat</unitPattern>
+				<unitPattern count="one" case="genitive">unui metru pătrat</unitPattern>
 				<unitPattern count="few">{0} metri pătrați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} metri pătrați</unitPattern>
 				<unitPattern count="other">{0} de metri pătrați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de metri pătrați</unitPattern>
 				<perUnitPattern>{0} pe metru pătrat</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
+				<gender>masculine</gender>
 				<displayName>centimetri pătrați</displayName>
 				<unitPattern count="one">{0} centimetru pătrat</unitPattern>
+				<unitPattern count="one" case="genitive">unui centimetru pătrat</unitPattern>
 				<unitPattern count="few">{0} centimetri pătrați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} centimetri pătrați</unitPattern>
 				<unitPattern count="other">{0} de centimetri pătrați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de centimetri pătrați</unitPattern>
 				<perUnitPattern>{0} pe centimetru pătrat</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -7928,10 +8113,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de dunami</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
-				<displayName>karate</displayName>
-				<unitPattern count="one">{0} karată</unitPattern>
-				<unitPattern count="few">{0} karate</unitPattern>
-				<unitPattern count="other">{0} de karate</unitPattern>
+				<gender>neuter</gender>
+				<displayName>carate</displayName>
+				<unitPattern count="one">{0} carat</unitPattern>
+				<unitPattern count="one" case="genitive">unui carat</unitPattern>
+				<unitPattern count="few">{0} carate</unitPattern>
+				<unitPattern count="few" case="genitive">{0} carate</unitPattern>
+				<unitPattern count="other">{0} de carate</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de carate</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>miligrame pe decilitru</displayName>
@@ -7940,51 +8129,92 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de miligrame pe decilitru</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
+				<gender>masculine</gender>
 				<displayName>milimoli pe litru</displayName>
 				<unitPattern count="one">{0} milimol pe litru</unitPattern>
+				<unitPattern count="one" case="genitive">unui milimol pe litru</unitPattern>
 				<unitPattern count="few">{0} milimoli pe litru</unitPattern>
+				<unitPattern count="few" case="genitive">{0} milimoli pe litru</unitPattern>
 				<unitPattern count="other">{0} de milimoli pe litru</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de milimoli pe litru</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<gender>masculine</gender>
+				<unitPattern count="one" draft="contributed">{0} de itemi</unitPattern>
+				<unitPattern count="one" case="genitive">unui item</unitPattern>
+				<unitPattern count="few">{0} itemi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} itemi</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} itemi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de itemi</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
+				<gender>feminine</gender>
 				<displayName>părți pe milion</displayName>
 				<unitPattern count="one">{0} parte pe milion</unitPattern>
+				<unitPattern count="one" case="genitive">unei părți pe milion</unitPattern>
 				<unitPattern count="few">{0} părți pe milion</unitPattern>
+				<unitPattern count="few" case="genitive">{0} părți pe milion</unitPattern>
 				<unitPattern count="other">{0} de părți pe milion</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de părți pe milion</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
+				<gender>neuter</gender>
 				<displayName>procent</displayName>
 				<unitPattern count="one">{0} procent</unitPattern>
+				<unitPattern count="one" case="genitive">unui procent</unitPattern>
 				<unitPattern count="few">{0} procente</unitPattern>
+				<unitPattern count="few" case="genitive">{0} procente</unitPattern>
 				<unitPattern count="other">{0} de procente</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de procente</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<displayName>‰</displayName>
-				<unitPattern count="one">la mie</unitPattern>
-				<unitPattern count="few">{0} la mie</unitPattern>
-				<unitPattern count="other">{0} la mie</unitPattern>
+				<gender>feminine</gender>
+				<displayName>promilă</displayName>
+				<unitPattern count="one">{0} promilă</unitPattern>
+				<unitPattern count="one" case="genitive">unei promile</unitPattern>
+				<unitPattern count="few">{0} promile</unitPattern>
+				<unitPattern count="few" case="genitive">{0} promile</unitPattern>
+				<unitPattern count="other">{0} de promile</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de promile</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
+				<gender>feminine</gender>
 				<unitPattern count="one">{0} la zece mii</unitPattern>
+				<unitPattern count="one" case="genitive">unei părți la zece mii</unitPattern>
 				<unitPattern count="few">{0} la zece mii</unitPattern>
+				<unitPattern count="few" case="genitive">{0} părți la zece mii</unitPattern>
 				<unitPattern count="other">{0} la zece mii</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de părți la zece mii</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
+				<gender>masculine</gender>
 				<displayName>moli</displayName>
 				<unitPattern count="one">{0} mol</unitPattern>
+				<unitPattern count="one" case="genitive">unui mol</unitPattern>
 				<unitPattern count="few">{0} moli</unitPattern>
+				<unitPattern count="few" case="genitive">{0} moli</unitPattern>
 				<unitPattern count="other">{0} de moli</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de moli</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
+				<gender>masculine</gender>
 				<displayName>litri pe kilometru</displayName>
 				<unitPattern count="one">{0} litru pe kilometru</unitPattern>
+				<unitPattern count="one" case="genitive">unui litru pe kilometru</unitPattern>
 				<unitPattern count="few">{0} litri pe kilometru</unitPattern>
+				<unitPattern count="few" case="genitive">{0} litri pe kilometru</unitPattern>
 				<unitPattern count="other">{0} de litri pe kilometru</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de litri pe kilometru</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
+				<gender>masculine</gender>
 				<displayName>litri la suta de kilometri</displayName>
 				<unitPattern count="one">{0} litru la suta de kilometri</unitPattern>
+				<unitPattern count="one" case="genitive">unui litru la suta de kilometri</unitPattern>
 				<unitPattern count="few">{0} litri la suta de kilometri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} litri la suta de kilometri</unitPattern>
 				<unitPattern count="other">{0} de litri la suta de kilometri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de litri la suta de kilometri</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mile pe galon</displayName>
@@ -7999,173 +8229,281 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de mile pe galon imperial</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
+				<gender>masculine</gender>
 				<displayName>petabyți</displayName>
 				<unitPattern count="one">{0} petabyte</unitPattern>
+				<unitPattern count="one" case="genitive">unui petabyte</unitPattern>
 				<unitPattern count="few">{0} petabyți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} petabyți</unitPattern>
 				<unitPattern count="other">{0} de petabyți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de petabyți</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
+				<gender>masculine</gender>
 				<displayName>terabyți</displayName>
 				<unitPattern count="one">{0} terabyte</unitPattern>
+				<unitPattern count="one" case="genitive">unui terabyte</unitPattern>
 				<unitPattern count="few">{0} terabyți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} terabyți</unitPattern>
 				<unitPattern count="other">{0} de terabyți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de terabyți</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<gender>masculine</gender>
 				<displayName>terabiți</displayName>
 				<unitPattern count="one">{0} terabit</unitPattern>
+				<unitPattern count="one" case="genitive">unui terabit</unitPattern>
 				<unitPattern count="few">{0} terabiți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} terabiți</unitPattern>
 				<unitPattern count="other">{0} de terabiți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de terabiți</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
+				<gender>masculine</gender>
 				<displayName>gigabyți</displayName>
 				<unitPattern count="one">{0} gigabyte</unitPattern>
+				<unitPattern count="one" case="genitive">unui gigabyte</unitPattern>
 				<unitPattern count="few">{0} gigabyți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} gigabyți</unitPattern>
 				<unitPattern count="other">{0} de gigabyți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de gigabyți</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
+				<gender>masculine</gender>
 				<displayName>gigabiți</displayName>
 				<unitPattern count="one">{0} gigabit</unitPattern>
+				<unitPattern count="one" case="genitive">unui gigabit</unitPattern>
 				<unitPattern count="few">{0} gigabiți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} gigabiți</unitPattern>
 				<unitPattern count="other">{0} de gigabiți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de gigabiți</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
+				<gender>masculine</gender>
 				<displayName>megabyți</displayName>
 				<unitPattern count="one">{0} megabyte</unitPattern>
+				<unitPattern count="one" case="genitive">unui megabyte</unitPattern>
 				<unitPattern count="few">{0} megabyți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megabyți</unitPattern>
 				<unitPattern count="other">{0} de megabyți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de megabyți</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
+				<gender>masculine</gender>
 				<displayName>megabiți</displayName>
 				<unitPattern count="one">{0} megabit</unitPattern>
+				<unitPattern count="one" case="genitive">unui megabit</unitPattern>
 				<unitPattern count="few">{0} megabiți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megabiți</unitPattern>
 				<unitPattern count="other">{0} de megabiți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de megabiți</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
+				<gender>masculine</gender>
 				<displayName>kilobyți</displayName>
 				<unitPattern count="one">{0} kilobyte</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilobyte</unitPattern>
 				<unitPattern count="few">{0} kilobyți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilobyți</unitPattern>
 				<unitPattern count="other">{0} de kilobyți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilobyți</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
+				<gender>masculine</gender>
 				<displayName>kilobiți</displayName>
 				<unitPattern count="one">{0} kilobit</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilobit</unitPattern>
 				<unitPattern count="few">{0} kilobiți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilobiți</unitPattern>
 				<unitPattern count="other">{0} de kilobiți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilobiți</unitPattern>
 			</unit>
 			<unit type="digital-byte">
+				<gender>masculine</gender>
 				<displayName>byți</displayName>
 				<unitPattern count="one">{0} byte</unitPattern>
+				<unitPattern count="one" case="genitive">unui byte</unitPattern>
 				<unitPattern count="few">{0} byți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} byți</unitPattern>
 				<unitPattern count="other">{0} de byți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de byți</unitPattern>
 			</unit>
 			<unit type="digital-bit">
+				<gender>masculine</gender>
 				<displayName>biți</displayName>
 				<unitPattern count="one">{0} bit</unitPattern>
+				<unitPattern count="one" case="genitive">unui bit</unitPattern>
 				<unitPattern count="few">{0} biți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} biți</unitPattern>
 				<unitPattern count="other">{0} de biți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de biți</unitPattern>
 			</unit>
 			<unit type="duration-century">
+				<gender>neuter</gender>
 				<displayName>secole</displayName>
 				<unitPattern count="one">{0} secol</unitPattern>
+				<unitPattern count="one" case="genitive">unui secol</unitPattern>
 				<unitPattern count="few">{0} secole</unitPattern>
+				<unitPattern count="few" case="genitive">{0} secole</unitPattern>
 				<unitPattern count="other">{0} de secole</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de secole</unitPattern>
 			</unit>
 			<unit type="duration-decade">
+				<gender>neuter</gender>
 				<displayName>decenii</displayName>
 				<unitPattern count="one">{0} deceniu</unitPattern>
+				<unitPattern count="one" case="genitive">unui deceniu</unitPattern>
 				<unitPattern count="few">{0} decenii</unitPattern>
+				<unitPattern count="few" case="genitive">{0} decenii</unitPattern>
 				<unitPattern count="other">{0} de decenii</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de decenii</unitPattern>
 			</unit>
 			<unit type="duration-year">
+				<gender>masculine</gender>
 				<displayName>ani</displayName>
 				<unitPattern count="one">{0} an</unitPattern>
+				<unitPattern count="one" case="genitive">unui an</unitPattern>
 				<unitPattern count="few">{0} ani</unitPattern>
+				<unitPattern count="few" case="genitive">{0} ani</unitPattern>
 				<unitPattern count="other">{0} de ani</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de ani</unitPattern>
 				<perUnitPattern>{0} pe an</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
+				<gender>feminine</gender>
 				<displayName>luni</displayName>
 				<unitPattern count="one">{0} lună</unitPattern>
+				<unitPattern count="one" case="genitive">unei luni</unitPattern>
 				<unitPattern count="few">{0} luni</unitPattern>
+				<unitPattern count="few" case="genitive">{0} luni</unitPattern>
 				<unitPattern count="other">{0} de luni</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de luni</unitPattern>
 				<perUnitPattern>{0} pe lună</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
+				<gender>feminine</gender>
 				<displayName>săptămâni</displayName>
 				<unitPattern count="one">{0} săptămână</unitPattern>
+				<unitPattern count="one" case="genitive">unei săptămâni</unitPattern>
 				<unitPattern count="few">{0} săptămâni</unitPattern>
+				<unitPattern count="few" case="genitive">{0} săptămâni</unitPattern>
 				<unitPattern count="other">{0} de săptămâni</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de săptămâni</unitPattern>
 				<perUnitPattern>{0} pe săptămână</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
+				<gender>feminine</gender>
 				<displayName>zile</displayName>
 				<unitPattern count="one">{0} zi</unitPattern>
+				<unitPattern count="one" case="genitive">unei zile</unitPattern>
 				<unitPattern count="few">{0} zile</unitPattern>
+				<unitPattern count="few" case="genitive">{0} zile</unitPattern>
 				<unitPattern count="other">{0} de zile</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de zile</unitPattern>
 				<perUnitPattern>{0} pe zi</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
+				<gender>feminine</gender>
 				<displayName>ore</displayName>
 				<unitPattern count="one">{0} oră</unitPattern>
+				<unitPattern count="one" case="genitive">unei ore</unitPattern>
 				<unitPattern count="few">{0} ore</unitPattern>
+				<unitPattern count="few" case="genitive">{0} ore</unitPattern>
 				<unitPattern count="other">{0} de ore</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de ore</unitPattern>
 				<perUnitPattern>{0} pe oră</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
+				<gender>neuter</gender>
 				<displayName>minute</displayName>
 				<unitPattern count="one">{0} minut</unitPattern>
+				<unitPattern count="one" case="genitive">unui minut</unitPattern>
 				<unitPattern count="few">{0} minute</unitPattern>
+				<unitPattern count="few" case="genitive">{0} minute</unitPattern>
 				<unitPattern count="other">{0} de minute</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de minute</unitPattern>
 				<perUnitPattern>{0} pe minut</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
+				<gender>feminine</gender>
 				<displayName>secunde</displayName>
 				<unitPattern count="one">{0} secundă</unitPattern>
+				<unitPattern count="one" case="genitive">unei secunde</unitPattern>
 				<unitPattern count="few">{0} secunde</unitPattern>
+				<unitPattern count="few" case="genitive">{0} secunde</unitPattern>
 				<unitPattern count="other">{0} de secunde</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de secunde</unitPattern>
 				<perUnitPattern>{0} pe secundă</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
+				<gender>feminine</gender>
 				<displayName>milisecunde</displayName>
 				<unitPattern count="one">{0} milisecundă</unitPattern>
+				<unitPattern count="one" case="genitive">unei milisecunde</unitPattern>
 				<unitPattern count="few">{0} milisecunde</unitPattern>
+				<unitPattern count="few" case="genitive">{0} milisecunde</unitPattern>
 				<unitPattern count="other">{0} de milisecunde</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de milisecunde</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
+				<gender>feminine</gender>
 				<displayName>microsecunde</displayName>
 				<unitPattern count="one">{0} microsecundă</unitPattern>
+				<unitPattern count="one" case="genitive">unei microsecunde</unitPattern>
 				<unitPattern count="few">{0} microsecunde</unitPattern>
+				<unitPattern count="few" case="genitive">{0} microsecunde</unitPattern>
 				<unitPattern count="other">{0} de microsecunde</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de microsecunde</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<gender>feminine</gender>
 				<displayName>nanosecunde</displayName>
 				<unitPattern count="one">{0} nanosecundă</unitPattern>
+				<unitPattern count="one" case="genitive">unei nanosecunde</unitPattern>
 				<unitPattern count="few">{0} nanosecunde</unitPattern>
+				<unitPattern count="few" case="genitive">{0} nanosecunde</unitPattern>
 				<unitPattern count="other">{0} de nanosecunde</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de nanosecunde</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
+				<gender>masculine</gender>
 				<displayName>amperi</displayName>
 				<unitPattern count="one">{0} amper</unitPattern>
+				<unitPattern count="one" case="genitive">unui amper</unitPattern>
 				<unitPattern count="few">{0} amperi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} amperi</unitPattern>
 				<unitPattern count="other">{0} de amperi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de amperi</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
+				<gender>masculine</gender>
 				<displayName>miliamperi</displayName>
 				<unitPattern count="one">{0} miliamper</unitPattern>
+				<unitPattern count="one" case="genitive">unui miliamper</unitPattern>
 				<unitPattern count="few">{0} miliamperi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} miliamperi</unitPattern>
 				<unitPattern count="other">{0} de miliamperi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de miliamperi</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
+				<gender>masculine</gender>
 				<displayName>ohmi</displayName>
 				<unitPattern count="one">{0} ohm</unitPattern>
+				<unitPattern count="one" case="genitive">unui ohm</unitPattern>
 				<unitPattern count="few">{0} ohmi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} ohmi</unitPattern>
 				<unitPattern count="other">{0} de ohmi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de ohmi</unitPattern>
 			</unit>
 			<unit type="electric-volt">
+				<gender>masculine</gender>
 				<displayName>volți</displayName>
 				<unitPattern count="one">{0} volt</unitPattern>
+				<unitPattern count="one" case="genitive">unui volt</unitPattern>
 				<unitPattern count="few">{0} volți</unitPattern>
+				<unitPattern count="few" case="genitive">{0} volți</unitPattern>
 				<unitPattern count="other">{0} de volți</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de volți</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>kilocalorii</displayName>
@@ -8174,10 +8512,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de kilocalorii</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
+				<gender>feminine</gender>
 				<displayName>calorii</displayName>
 				<unitPattern count="one">{0} calorie</unitPattern>
+				<unitPattern count="one" case="genitive">unei calorii</unitPattern>
 				<unitPattern count="few">{0} calorii</unitPattern>
+				<unitPattern count="few" case="genitive">{0} calorii</unitPattern>
 				<unitPattern count="other">{0} de calorii</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de calorii</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>kilocalorii</displayName>
@@ -8186,22 +8528,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de kilocalorii</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<gender>masculine</gender>
 				<displayName>kilojouli</displayName>
 				<unitPattern count="one">{0} kilojoule</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilojoule</unitPattern>
 				<unitPattern count="few">{0} kilojouli</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilojouli</unitPattern>
 				<unitPattern count="other">{0} de kilojouli</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilojouli</unitPattern>
 			</unit>
 			<unit type="energy-joule">
+				<gender>masculine</gender>
 				<displayName>jouli</displayName>
 				<unitPattern count="one">{0} joule</unitPattern>
+				<unitPattern count="one" case="genitive">unui joule</unitPattern>
 				<unitPattern count="few">{0} jouli</unitPattern>
+				<unitPattern count="few" case="genitive">{0} jouli</unitPattern>
 				<unitPattern count="other">{0} de jouli</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de jouli</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<gender>masculine</gender>
 				<displayName>kilowați-oră</displayName>
 				<unitPattern count="one">kilowatt-oră</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilowatt-oră</unitPattern>
 				<unitPattern count="few">{0} kilowați-oră</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilowați-oră</unitPattern>
 				<unitPattern count="other">{0} de kilowați-oră</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilowați-oră</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>electronvolți</displayName>
@@ -8228,55 +8582,98 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de livre-forță</unitPattern>
 			</unit>
 			<unit type="force-newton">
+				<gender>masculine</gender>
 				<displayName>newtoni</displayName>
 				<unitPattern count="one">{0} newton</unitPattern>
+				<unitPattern count="one" case="genitive">unui newton</unitPattern>
 				<unitPattern count="few">{0} newtoni</unitPattern>
+				<unitPattern count="few" case="genitive">{0} newtoni</unitPattern>
 				<unitPattern count="other">{0} de newtoni</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de newtoni</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<gender>masculine</gender>
+				<displayName>kilowatt-oră per 100 kilometri</displayName>
+				<unitPattern count="one">{0} kilowatt-oră per 100 kilometri</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilowatt-oră per 100 kilometri</unitPattern>
+				<unitPattern count="few">{0} kilowați-oră per 100 kilometri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilowați-oră per 100 kilometri</unitPattern>
+				<unitPattern count="other">{0} kilowați-oră per 100 kilometri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilowați-oră per 100 kilometri</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
+				<gender>masculine</gender>
 				<displayName>gigahertz</displayName>
 				<unitPattern count="one">{0} gigahertz</unitPattern>
+				<unitPattern count="one" case="genitive">unui gigahertz</unitPattern>
 				<unitPattern count="few">{0} gigahertzi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} gigahertzi</unitPattern>
 				<unitPattern count="other">{0} de gigahertzi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de gigahertzi</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
+				<gender>masculine</gender>
 				<displayName>megahertz</displayName>
 				<unitPattern count="one">{0} megahertz</unitPattern>
+				<unitPattern count="one" case="genitive">unui megahertz</unitPattern>
 				<unitPattern count="few">{0} megahertzi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megahertzi</unitPattern>
 				<unitPattern count="other">{0} de megahertzi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de megahertzi</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
+				<gender>masculine</gender>
 				<displayName>kilohertz</displayName>
 				<unitPattern count="one">{0} kilohertz</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilohertz</unitPattern>
 				<unitPattern count="few">{0} kilohertzi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilohertzi</unitPattern>
 				<unitPattern count="other">{0} de kilohertzi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilohertzi</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
+				<gender>masculine</gender>
 				<displayName>hertz</displayName>
 				<unitPattern count="one">{0} hertz</unitPattern>
+				<unitPattern count="one" case="genitive">unui hertz</unitPattern>
 				<unitPattern count="few">{0} hertzi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} hertzi</unitPattern>
 				<unitPattern count="other">{0} de hertzi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de hertzi</unitPattern>
 			</unit>
 			<unit type="graphics-em">
+				<gender>masculine</gender>
 				<displayName>em tipografic</displayName>
 			</unit>
 			<unit type="graphics-pixel">
+				<gender>masculine</gender>
 				<displayName>pixeli</displayName>
 				<unitPattern count="one">{0} pixel</unitPattern>
+				<unitPattern count="one" case="genitive">unui pixel</unitPattern>
 				<unitPattern count="few">{0} pixeli</unitPattern>
+				<unitPattern count="few" case="genitive">{0} pixeli</unitPattern>
 				<unitPattern count="other">{0} de pixeli</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de pixeli</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
+				<gender>masculine</gender>
 				<displayName>megapixeli</displayName>
 				<unitPattern count="one">{0} megapixel</unitPattern>
+				<unitPattern count="one" case="genitive">unui megapixel</unitPattern>
 				<unitPattern count="few">{0} megapixeli</unitPattern>
-				<unitPattern count="other">{0} de megapixel</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megapixeli</unitPattern>
+				<unitPattern count="other">{0} de megapixeli</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de megapixeli</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<gender>masculine</gender>
 				<displayName>pixeli pe centimetru</displayName>
 				<unitPattern count="one">{0} pixel pe centimetru</unitPattern>
+				<unitPattern count="one" case="genitive">unui pixel pe centimetru</unitPattern>
 				<unitPattern count="few">{0} pixeli pe centimetru</unitPattern>
+				<unitPattern count="few" case="genitive">{0} pixeli pe centimetru</unitPattern>
 				<unitPattern count="other">{0} de pixeli pe centimetru</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de pixeli pe centimetru</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
 				<displayName>pixeli pe inch</displayName>
@@ -8309,55 +8706,87 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de raze terestre</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
+				<gender>masculine</gender>
 				<displayName>kilometri</displayName>
 				<unitPattern count="one">{0} kilometru</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilometru</unitPattern>
 				<unitPattern count="few">{0} kilometri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilometri</unitPattern>
 				<unitPattern count="other">{0} de kilometri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilometri</unitPattern>
 				<perUnitPattern>{0} pe kilometru</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
+				<gender>masculine</gender>
 				<displayName>metri</displayName>
 				<unitPattern count="one">{0} metru</unitPattern>
+				<unitPattern count="one" case="genitive">unui metru</unitPattern>
 				<unitPattern count="few">{0} metri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} metri</unitPattern>
 				<unitPattern count="other">{0} de metri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de metri</unitPattern>
 				<perUnitPattern>{0} pe metru</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
+				<gender>masculine</gender>
 				<displayName>decimetri</displayName>
 				<unitPattern count="one">{0} decimetru</unitPattern>
+				<unitPattern count="one" case="genitive">unui decimetru</unitPattern>
 				<unitPattern count="few">{0} decimetri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} decimetri</unitPattern>
 				<unitPattern count="other">{0} de decimetri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de decimetri</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
+				<gender>masculine</gender>
 				<displayName>centimetri</displayName>
 				<unitPattern count="one">{0} centimetru</unitPattern>
+				<unitPattern count="one" case="genitive">unui centimetru</unitPattern>
 				<unitPattern count="few">{0} centimetri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} centimetri</unitPattern>
 				<unitPattern count="other">{0} de centimetri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de centimetri</unitPattern>
 				<perUnitPattern>{0} pe centimetru</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
+				<gender>masculine</gender>
 				<displayName>milimetri</displayName>
 				<unitPattern count="one">{0} milimetru</unitPattern>
+				<unitPattern count="one" case="genitive">unui milimetru</unitPattern>
 				<unitPattern count="few">{0} milimetri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} milimetri</unitPattern>
 				<unitPattern count="other">{0} de milimetri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de milimetri</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
+				<gender>masculine</gender>
 				<displayName>micrometri</displayName>
 				<unitPattern count="one">{0} micrometru</unitPattern>
+				<unitPattern count="one" case="genitive">unui micrometru</unitPattern>
 				<unitPattern count="few">{0} micrometri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} micrometri</unitPattern>
 				<unitPattern count="other">{0} de micrometri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de micrometri</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<gender>masculine</gender>
 				<displayName>nanometri</displayName>
 				<unitPattern count="one">{0} nanometru</unitPattern>
+				<unitPattern count="one" case="genitive">unui nanometru</unitPattern>
 				<unitPattern count="few">{0} nanometri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} nanometri</unitPattern>
 				<unitPattern count="other">{0} de nanometri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de nanometri</unitPattern>
 			</unit>
 			<unit type="length-picometer">
+				<gender>masculine</gender>
 				<displayName>picometri</displayName>
 				<unitPattern count="one">{0} picometru</unitPattern>
+				<unitPattern count="one" case="genitive">unui picometru</unitPattern>
 				<unitPattern count="few">{0} picometri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} picometri</unitPattern>
 				<unitPattern count="other">{0} de picometri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de picometri</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>mile</displayName>
@@ -8422,10 +8851,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de mile nautice</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
+				<gender>feminine</gender>
 				<displayName>milă scandinavă</displayName>
 				<unitPattern count="one">{0} milă scandinavă</unitPattern>
+				<unitPattern count="one" case="genitive">unei mile scandinave</unitPattern>
 				<unitPattern count="few">{0} mile scandinave</unitPattern>
+				<unitPattern count="few" case="genitive">{0} mile scandinave</unitPattern>
 				<unitPattern count="other">{0} de mile scandinave</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de mile scandinave</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>puncte</displayName>
@@ -8440,22 +8873,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de raze solare</unitPattern>
 			</unit>
 			<unit type="light-lux">
+				<gender>masculine</gender>
 				<displayName>lucși</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
+				<unitPattern count="one" case="genitive">unui lux</unitPattern>
 				<unitPattern count="few">{0} lucși</unitPattern>
+				<unitPattern count="few" case="genitive">{0} lucși</unitPattern>
 				<unitPattern count="other">{0} de lucși</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de lucși</unitPattern>
 			</unit>
 			<unit type="light-candela">
+				<gender>feminine</gender>
 				<displayName>candelă</displayName>
 				<unitPattern count="one">{0} candelă</unitPattern>
+				<unitPattern count="one" case="genitive">unei candele</unitPattern>
 				<unitPattern count="few">{0} candele</unitPattern>
+				<unitPattern count="few" case="genitive">{0} candele</unitPattern>
 				<unitPattern count="other">{0} de candele</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de candele</unitPattern>
 			</unit>
 			<unit type="light-lumen">
+				<gender>masculine</gender>
 				<displayName>lumen</displayName>
 				<unitPattern count="one">{0} lumen</unitPattern>
+				<unitPattern count="one" case="genitive">unui lumen</unitPattern>
 				<unitPattern count="few">{0} lumeni</unitPattern>
+				<unitPattern count="few" case="genitive">{0} lumeni</unitPattern>
 				<unitPattern count="other">{0} de lumeni</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de lumeni</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>luminozități solare</displayName>
@@ -8464,36 +8909,56 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de luminozități solare</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
+				<gender>feminine</gender>
 				<displayName>tone</displayName>
 				<unitPattern count="one">{0} tonă</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} tonă</unitPattern>
 				<unitPattern count="few">{0} tone</unitPattern>
+				<unitPattern count="few" case="genitive" draft="contributed">{0} tone</unitPattern>
 				<unitPattern count="other">{0} de tone</unitPattern>
+				<unitPattern count="other" case="genitive" draft="contributed">{0} de tone</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
+				<gender>neuter</gender>
 				<displayName>kilograme</displayName>
 				<unitPattern count="one">{0} kilogram</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} kilogram</unitPattern>
 				<unitPattern count="few">{0} kilograme</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilograme</unitPattern>
 				<unitPattern count="other">{0} de kilograme</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilograme</unitPattern>
 				<perUnitPattern>{0} per kilogram</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
+				<gender>neuter</gender>
 				<displayName>grame</displayName>
 				<unitPattern count="one">{0} gram</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} gram</unitPattern>
 				<unitPattern count="few">{0} grame</unitPattern>
+				<unitPattern count="few" case="genitive">{0} grame</unitPattern>
 				<unitPattern count="other">{0} de grame</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de grame</unitPattern>
 				<perUnitPattern>{0} per gram</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
+				<gender>neuter</gender>
 				<displayName>miligrame</displayName>
 				<unitPattern count="one">{0} miligram</unitPattern>
+				<unitPattern count="one" case="genitive">unui miligram</unitPattern>
 				<unitPattern count="few">{0} miligrame</unitPattern>
+				<unitPattern count="few" case="genitive">{0} miligrame</unitPattern>
 				<unitPattern count="other">{0} de miligrame</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de miligrame</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
+				<gender>neuter</gender>
 				<displayName>micrograme</displayName>
 				<unitPattern count="one">{0} microgram</unitPattern>
+				<unitPattern count="one" case="genitive">unui microgram</unitPattern>
 				<unitPattern count="few">{0} micrograme</unitPattern>
+				<unitPattern count="few" case="genitive">{0} micrograme</unitPattern>
 				<unitPattern count="other">{0} de micrograme</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de micrograme</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>tone scurte</displayName>
@@ -8528,10 +8993,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de uncii monetare</unitPattern>
 			</unit>
 			<unit type="mass-carat">
+				<gender>neuter</gender>
 				<displayName>carate</displayName>
 				<unitPattern count="one">{0} carat</unitPattern>
+				<unitPattern count="one" case="genitive" draft="contributed">{0} carat</unitPattern>
 				<unitPattern count="few">{0} carate</unitPattern>
+				<unitPattern count="few" case="genitive">{0} carate</unitPattern>
 				<unitPattern count="other">{0} de carate</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de carate</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>daltoni</displayName>
@@ -8558,34 +9027,54 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de boabe</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<gender>masculine</gender>
 				<displayName>gigawați</displayName>
 				<unitPattern count="one">{0} gigawatt</unitPattern>
+				<unitPattern count="one" case="genitive">unui gigawatt</unitPattern>
 				<unitPattern count="few">{0} gigawați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} gigawați</unitPattern>
 				<unitPattern count="other">{0} de gigawați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de gigawați</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<gender>masculine</gender>
 				<displayName>megawați</displayName>
 				<unitPattern count="one">{0} megawatt</unitPattern>
+				<unitPattern count="one" case="genitive">unui megawatt</unitPattern>
 				<unitPattern count="few">{0} megawați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megawați</unitPattern>
 				<unitPattern count="other">{0} de megawați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de megawați</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<gender>masculine</gender>
 				<displayName>kilowați</displayName>
 				<unitPattern count="one">{0} kilowatt</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilowatt</unitPattern>
 				<unitPattern count="few">{0} kilowați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilowați</unitPattern>
 				<unitPattern count="other">{0} de kilowați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilowați</unitPattern>
 			</unit>
 			<unit type="power-watt">
+				<gender>masculine</gender>
 				<displayName>wați</displayName>
 				<unitPattern count="one">{0} watt</unitPattern>
+				<unitPattern count="one" case="genitive">unui watt</unitPattern>
 				<unitPattern count="few">{0} wați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} wați</unitPattern>
 				<unitPattern count="other">{0} de wați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de wați</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<gender>masculine</gender>
 				<displayName>miliwați</displayName>
 				<unitPattern count="one">{0} miliwatt</unitPattern>
+				<unitPattern count="one" case="genitive">unui miliwatt</unitPattern>
 				<unitPattern count="few">{0} miliwați</unitPattern>
+				<unitPattern count="few" case="genitive">{0} miliwați</unitPattern>
 				<unitPattern count="other">{0} de miliwați</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de miliwați</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>cai putere</displayName>
@@ -8612,58 +9101,94 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de inchi coloană de mercur</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
+				<gender>masculine</gender>
 				<displayName>bari</displayName>
 				<unitPattern count="one">{0} bar</unitPattern>
+				<unitPattern count="one" case="genitive">unui bar</unitPattern>
 				<unitPattern count="few">{0} bari</unitPattern>
+				<unitPattern count="few" case="genitive">{0} bari</unitPattern>
 				<unitPattern count="other">{0} de bari</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de bari</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<gender>masculine</gender>
 				<displayName>milibari</displayName>
 				<unitPattern count="one">{0} milibar</unitPattern>
+				<unitPattern count="one" case="genitive">unui milibar</unitPattern>
 				<unitPattern count="few">{0} milibari</unitPattern>
+				<unitPattern count="few" case="genitive">{0} milibari</unitPattern>
 				<unitPattern count="other">{0} de milibari</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de milibari</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
+				<gender>feminine</gender>
 				<displayName>atmosfere</displayName>
 				<unitPattern count="one">{0} atmosferă</unitPattern>
+				<unitPattern count="one" case="genitive">unei atmosfere</unitPattern>
 				<unitPattern count="few">{0} atmosfere</unitPattern>
+				<unitPattern count="few" case="genitive">{0} atmosfere</unitPattern>
 				<unitPattern count="other">{0} de atmosfere</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de atmosfere</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
+				<gender>masculine</gender>
 				<displayName>pascali</displayName>
 				<unitPattern count="one">{0} pascal</unitPattern>
+				<unitPattern count="one" case="genitive">unui pascal</unitPattern>
 				<unitPattern count="few">{0} pascali</unitPattern>
+				<unitPattern count="few" case="genitive">{0} pascali</unitPattern>
 				<unitPattern count="other">{0} de pascali</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de pascali</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<gender>masculine</gender>
 				<displayName>hectopascali</displayName>
 				<unitPattern count="one">{0} hectopascal</unitPattern>
+				<unitPattern count="one" case="genitive">unui hectopascal</unitPattern>
 				<unitPattern count="few">{0} hectopascali</unitPattern>
+				<unitPattern count="few" case="genitive">{0} hectopascali</unitPattern>
 				<unitPattern count="other">{0} de hectopascali</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de hectopascali</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
+				<gender>masculine</gender>
 				<displayName>kilopascali</displayName>
 				<unitPattern count="one">{0} kilopascal</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilopascal</unitPattern>
 				<unitPattern count="few">{0} kilopascali</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilopascali</unitPattern>
 				<unitPattern count="other">{0} de kilopascali</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilopascali</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
+				<gender>masculine</gender>
 				<displayName>megapascali</displayName>
 				<unitPattern count="one">{0} megapascal</unitPattern>
+				<unitPattern count="one" case="genitive">unui megapascal</unitPattern>
 				<unitPattern count="few">{0} megapascali</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megapascali</unitPattern>
 				<unitPattern count="other">{0} de megapascali</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de megapascali</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
+				<gender>masculine</gender>
 				<displayName>kilometri pe oră</displayName>
 				<unitPattern count="one">{0} kilometru pe oră</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilometru pe oră</unitPattern>
 				<unitPattern count="few">{0} kilometri pe oră</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilometri pe oră</unitPattern>
 				<unitPattern count="other">{0} de kilometri pe oră</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilometri pe oră</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<gender>masculine</gender>
 				<displayName>metri pe secundă</displayName>
 				<unitPattern count="one">{0} metru pe secundă</unitPattern>
+				<unitPattern count="one" case="genitive">unui metru pe secundă</unitPattern>
 				<unitPattern count="few">{0} metri pe secundă</unitPattern>
+				<unitPattern count="few" case="genitive">{0} metri pe secundă</unitPattern>
 				<unitPattern count="other">{0} de metri pe secundă</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de metri pe secundă</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>mile pe oră</displayName>
@@ -8678,16 +9203,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de noduri</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
+				<gender>neuter</gender>
 				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="few">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
+				<unitPattern count="one">{0} grad</unitPattern>
+				<unitPattern count="one" case="genitive">unui grad</unitPattern>
+				<unitPattern count="few">{0} grade</unitPattern>
+				<unitPattern count="few" case="genitive">{0} grade</unitPattern>
+				<unitPattern count="other">{0} de grade</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de grade</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
+				<gender>neuter</gender>
 				<displayName>grade Celsius</displayName>
 				<unitPattern count="one">{0} grad Celsius</unitPattern>
+				<unitPattern count="one" case="genitive">unui grad Celsius</unitPattern>
 				<unitPattern count="few">{0} grade Celsius</unitPattern>
+				<unitPattern count="few" case="genitive">{0} grade Celsius</unitPattern>
 				<unitPattern count="other">{0} de grade Celsius</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de grade Celsius</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>grade Fahrenheit</displayName>
@@ -8696,10 +9229,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de grade Fahrenheit</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
+				<gender>masculine</gender>
 				<displayName>kelvini</displayName>
 				<unitPattern count="one">{0} kelvin</unitPattern>
+				<unitPattern count="one" case="genitive">unui kelvin</unitPattern>
 				<unitPattern count="few">{0} kelvini</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kelvini</unitPattern>
 				<unitPattern count="other">{0} de kelvini</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kelvini</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>livră-forță picioare</displayName>
@@ -8708,29 +9245,45 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de livră-forță picioare</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<gender>masculine</gender>
 				<displayName>newton-metri</displayName>
 				<unitPattern count="one">{0} newton metru</unitPattern>
+				<unitPattern count="one" case="genitive">unui newton metru</unitPattern>
 				<unitPattern count="few">{0} newton metri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} newton metri</unitPattern>
 				<unitPattern count="other">{0} de newton metri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de newton metri</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
+				<gender>masculine</gender>
 				<displayName>kilometri cubi</displayName>
 				<unitPattern count="one">{0} kilometru cub</unitPattern>
+				<unitPattern count="one" case="genitive">unui kilometru cub</unitPattern>
 				<unitPattern count="few">{0} kilometri cubi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilometri cubi</unitPattern>
 				<unitPattern count="other">{0} de kilometri cubi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de kilometri cubi</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<gender>masculine</gender>
 				<displayName>metri cubi</displayName>
 				<unitPattern count="one">{0} metru cub</unitPattern>
+				<unitPattern count="one" case="genitive">unui metru cub</unitPattern>
 				<unitPattern count="few">{0} metri cubi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} metri cubi</unitPattern>
 				<unitPattern count="other">{0} de metri cubi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de metri cubi</unitPattern>
 				<perUnitPattern>{0} pe metru cub</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
+				<gender>masculine</gender>
 				<displayName>centimetri cubi</displayName>
 				<unitPattern count="one">{0} centimetru cub</unitPattern>
+				<unitPattern count="one" case="genitive">unui centimetru cub</unitPattern>
 				<unitPattern count="few">{0} centimetri cubi</unitPattern>
+				<unitPattern count="few" case="genitive">{0} centimetri cubi</unitPattern>
 				<unitPattern count="other">{0} de centimetri cubi</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de centimetri cubi</unitPattern>
 				<perUnitPattern>{0} pe centimetru cub</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -8758,53 +9311,85 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de inchi cubici</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
+				<gender>masculine</gender>
 				<displayName>megalitri</displayName>
 				<unitPattern count="one">{0} megalitru</unitPattern>
+				<unitPattern count="one" case="genitive">unui megalitru</unitPattern>
 				<unitPattern count="few">{0} megalitri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} megalitri</unitPattern>
 				<unitPattern count="other">{0} megalitri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} megalitri</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
+				<gender>masculine</gender>
 				<displayName>hectolitri</displayName>
 				<unitPattern count="one">{0} hectolitru</unitPattern>
+				<unitPattern count="one" case="genitive">unui hectolitru</unitPattern>
 				<unitPattern count="few">{0} hectolitri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} hectolitri</unitPattern>
 				<unitPattern count="other">{0} de hectolitri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de hectolitri</unitPattern>
 			</unit>
 			<unit type="volume-liter">
+				<gender>masculine</gender>
 				<displayName>litri</displayName>
 				<unitPattern count="one">{0} litru</unitPattern>
+				<unitPattern count="one" case="genitive">unui litru</unitPattern>
 				<unitPattern count="few">{0} litri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} litri</unitPattern>
 				<unitPattern count="other">{0} de litri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de litri</unitPattern>
 				<perUnitPattern>{0} pe litru</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
+				<gender>masculine</gender>
 				<displayName>decilitri</displayName>
 				<unitPattern count="one">{0} decilitru</unitPattern>
+				<unitPattern count="one" case="genitive">unui decilitru</unitPattern>
 				<unitPattern count="few">{0} decilitri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} decilitri</unitPattern>
 				<unitPattern count="other">{0} de decilitri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de decilitri</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
+				<gender>masculine</gender>
 				<displayName>centilitri</displayName>
 				<unitPattern count="one">{0} centilitru</unitPattern>
+				<unitPattern count="one" case="genitive">unui centilitru</unitPattern>
 				<unitPattern count="few">{0} centilitri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} centilitri</unitPattern>
 				<unitPattern count="other">{0} de centilitri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de centilitri</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
+				<gender>masculine</gender>
 				<displayName>mililitri</displayName>
 				<unitPattern count="one">{0} mililitru</unitPattern>
+				<unitPattern count="one" case="genitive">unui mililitru</unitPattern>
 				<unitPattern count="few">{0} mililitri</unitPattern>
+				<unitPattern count="few" case="genitive">{0} mililitri</unitPattern>
 				<unitPattern count="other">{0} de mililitri</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de mililitri</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
+				<gender>feminine</gender>
 				<displayName>pinte metrice</displayName>
 				<unitPattern count="one">{0} pintă metrică</unitPattern>
+				<unitPattern count="one" case="genitive">unei pinte metrice</unitPattern>
 				<unitPattern count="few">{0} pinte metrice</unitPattern>
+				<unitPattern count="few" case="genitive">{0} pinte metrice</unitPattern>
 				<unitPattern count="other">{0} de pinte metrice</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de pinte metrice</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
+				<gender>feminine</gender>
 				<displayName>căni metrice</displayName>
 				<unitPattern count="one">{0} cană metrică</unitPattern>
+				<unitPattern count="one" case="genitive">unei căni metrice</unitPattern>
 				<unitPattern count="few">{0} căni metrice</unitPattern>
+				<unitPattern count="few" case="genitive">{0} căni metrice</unitPattern>
 				<unitPattern count="other">{0} de căni metrice</unitPattern>
+				<unitPattern count="other" case="genitive">{0} de căni metrice</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>acru-picioare</displayName>
@@ -8887,7 +9472,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de linguri de desert</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
-				<displayName>Lingură de desert imperială</displayName>
+				<displayName>lingură de desert imperială</displayName>
 				<unitPattern count="one">{0} lingură de desert imperială</unitPattern>
 				<unitPattern count="few">{0} linguri de desert imperiale</unitPattern>
 				<unitPattern count="other">{0} de linguri de desert imperiale</unitPattern>
@@ -9127,6 +9712,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mmol/l</unitPattern>
 				<unitPattern count="few">{0} mmol/l</unitPattern>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<unitPattern count="one" draft="contributed">{0} de itemi</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} itemi</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} de itemi</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
@@ -9407,6 +9997,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} N</unitPattern>
 				<unitPattern count="other">{0} N</unitPattern>
 			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100 km</displayName>
+				<unitPattern count="one">{0} kWh/100 km</unitPattern>
+				<unitPattern count="few">{0} kWh/100 km</unitPattern>
+				<unitPattern count="other">{0} kWh/100 km</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
 				<unitPattern count="one">{0} GHz</unitPattern>
@@ -9445,6 +10041,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} dpc</unitPattern>
 				<unitPattern count="few">{0} dpc</unitPattern>
 				<unitPattern count="other">{0} dpc</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="one">{0} dpi</unitPattern>
+				<unitPattern count="few">{0} dpi</unitPattern>
+				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName>pct.</displayName>
@@ -9994,6 +10596,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} vârfuri</unitPattern>
 				<unitPattern count="other">{0} de vârfuri</unitPattern>
 			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt imp.</displayName>
+				<unitPattern count="one">{0} qt imp.</unitPattern>
+				<unitPattern count="few">{0} qt imp.</unitPattern>
+				<unitPattern count="other">{0} qt imp.</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>direcție</displayName>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
@@ -10087,6 +10695,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} m/s²</unitPattern>
 			</unit>
 			<unit type="angle-degree">
+				<displayName draft="contributed">grad</displayName>
 				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
 				<unitPattern count="few" draft="contributed">{0}°</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
@@ -10107,6 +10716,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} km²</unitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<displayName draft="contributed">hectar</displayName>
 				<unitPattern count="one" draft="contributed">{0} ha</unitPattern>
 				<unitPattern count="few" draft="contributed">{0} ha</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ha</unitPattern>
@@ -10115,6 +10725,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0} m²</unitPattern>
 				<unitPattern count="few" draft="contributed">{0} m²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} m²</unitPattern>
+				<perUnitPattern draft="contributed">{0}/m²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<perUnitPattern draft="contributed">{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<unitPattern count="one" draft="contributed">{0} mi²</unitPattern>
@@ -10122,6 +10736,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} mi²</unitPattern>
 			</unit>
 			<unit type="area-acre">
+				<displayName draft="contributed">acru</displayName>
 				<unitPattern count="one" draft="contributed">{0} ac.</unitPattern>
 				<unitPattern count="few" draft="contributed">{0} ac.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ac.</unitPattern>
@@ -10131,17 +10746,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" draft="contributed">{0} ft²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ft²</unitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName draft="contributed">dunam</displayName>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>carat</displayName>
+			</unit>
+			<unit type="concentr-item">
+				<unitPattern count="one" draft="contributed">{0} item</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} itemi</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} itemi</unitPattern>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="few">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
+			<unit type="concentr-permille">
+				<unitPattern count="one">{0} ‰</unitPattern>
+				<unitPattern count="few">{0} ‰</unitPattern>
+				<unitPattern count="other">{0} ‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<unitPattern count="one">{0} ‱</unitPattern>
+				<unitPattern count="few">{0} ‱</unitPattern>
+				<unitPattern count="other">{0} ‱</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100 km</displayName>
 				<unitPattern count="one">{0} l/100 km</unitPattern>
 				<unitPattern count="few">{0} l/100 km</unitPattern>
 				<unitPattern count="other">{0} l/100 km</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName draft="contributed">mi/gal</displayName>
+				<unitPattern count="one" draft="contributed">{0} mi/gal</unitPattern>
+				<unitPattern count="few">{0} mi/gal</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mi/gal</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName draft="contributed">sec.</displayName>
@@ -10215,6 +10857,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0} ns</unitPattern>
 				<unitPattern count="few" draft="contributed">{0} ns</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ns</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName draft="contributed">lbf</displayName>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100 km</displayName>
+				<unitPattern count="one">{0}kWh/100 km</unitPattern>
+				<unitPattern count="few">{0} kWh/100 km</unitPattern>
+				<unitPattern count="other">{0}kWh/100 km</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName draft="contributed">px</displayName>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="one">{0} dpi</unitPattern>
+				<unitPattern count="few">{0} dpi</unitPattern>
+				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -10310,6 +10970,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0} ua</unitPattern>
 				<unitPattern count="few" draft="contributed">{0} ua</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ua</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName draft="contributed">furlong</displayName>
+			</unit>
+			<unit type="length-fathom">
+				<displayName draft="contributed">fathom</displayName>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName draft="contributed">mn</displayName>
@@ -10486,6 +11152,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" draft="contributed">{0} K</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} K</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName draft="contributed">lbf⋅ft</displayName>
+			</unit>
 			<unit type="volume-cubic-kilometer">
 				<unitPattern count="one" draft="contributed">{0} km³</unitPattern>
 				<unitPattern count="few" draft="contributed">{0} km³</unitPattern>
@@ -10501,6 +11170,57 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} l</unitPattern>
 				<unitPattern count="few">{0} l</unitPattern>
 				<unitPattern count="other">{0} l</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName draft="contributed">baniță</displayName>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<unitPattern count="one" draft="contributed">{0} gal im</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} gal im</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} gal im</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName draft="contributed">pintă</displayName>
+			</unit>
+			<unit type="volume-cup">
+				<displayName draft="contributed">cană</displayName>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<unitPattern count="one" draft="contributed">{0} fl oz im</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} fl oz im</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fl oz im</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName draft="contributed">baril</displayName>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName draft="contributed">dsp im</displayName>
+				<unitPattern count="one" draft="contributed">dsp im</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} dsp im</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} dsp im</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<unitPattern count="one" draft="contributed">{0} pic.</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} pic.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} pic.</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName draft="contributed">dr fl</displayName>
+				<unitPattern count="one" draft="contributed">{0} dr fl</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} dr fl</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} dr fl</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName draft="contributed">vf.</displayName>
+				<unitPattern count="one" draft="contributed">{0} vf.</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} vf.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} vf.</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt im</displayName>
+				<unitPattern count="one">{0} qt im</unitPattern>
+				<unitPattern count="few">{0} qt im</unitPattern>
+				<unitPattern count="other">{0} qt im</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>direcție</displayName>

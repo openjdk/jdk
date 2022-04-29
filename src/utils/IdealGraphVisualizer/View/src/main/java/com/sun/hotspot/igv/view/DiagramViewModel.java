@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package com.sun.hotspot.igv.view;
 
 import com.sun.hotspot.igv.data.*;
+import com.sun.hotspot.igv.data.services.Scheduler;
 import com.sun.hotspot.igv.difference.Difference;
 import com.sun.hotspot.igv.filter.CustomFilter;
 import com.sun.hotspot.igv.filter.FilterChain;
@@ -34,6 +35,7 @@ import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.RangeSliderModel;
 import java.awt.Color;
 import java.util.*;
+import org.openide.util.Lookup;
 
 /**
  *
@@ -56,8 +58,11 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private ChangedEvent<DiagramViewModel> viewChangedEvent;
     private ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent;
     private ChangedEvent<DiagramViewModel> viewPropertiesChangedEvent;
+    private boolean showSea;
     private boolean showBlocks;
+    private boolean showCFG;
     private boolean showNodeHull;
+    private boolean showEmptyBlocks;
     private boolean hideDuplicates;
     private ChangedListener<FilterChain> filterChainChangedListener = new ChangedListener<FilterChain>() {
 
@@ -102,8 +107,12 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         this.onScreenNodes = newModel.onScreenNodes;
         viewChanged |= (selectedNodes != newModel.selectedNodes);
         this.selectedNodes = newModel.selectedNodes;
+        viewPropertiesChanged |= (showSea != newModel.showSea);
+        this.showSea = newModel.showSea;
         viewPropertiesChanged |= (showBlocks != newModel.showBlocks);
         this.showBlocks = newModel.showBlocks;
+        viewPropertiesChanged |= (showCFG != newModel.showCFG);
+        this.showCFG = newModel.showCFG;
         viewPropertiesChanged |= (showNodeHull != newModel.showNodeHull);
         this.showNodeHull = newModel.showNodeHull;
 
@@ -122,6 +131,15 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         }
     }
 
+    public boolean getShowSea() {
+        return showSea;
+    }
+
+    public void setShowSea(boolean b) {
+        showSea = b;
+        viewPropertiesChangedEvent.fire();
+    }
+
     public boolean getShowBlocks() {
         return showBlocks;
     }
@@ -131,12 +149,30 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         viewPropertiesChangedEvent.fire();
     }
 
+    public boolean getShowCFG() {
+        return showCFG;
+    }
+
+    public void setShowCFG(boolean b) {
+        showCFG = b;
+        viewPropertiesChangedEvent.fire();
+    }
+
     public boolean getShowNodeHull() {
         return showNodeHull;
     }
 
     public void setShowNodeHull(boolean b) {
         showNodeHull = b;
+        viewPropertiesChangedEvent.fire();
+    }
+
+    public boolean getShowEmptyBlocks() {
+        return showEmptyBlocks;
+    }
+
+    public void setShowEmptyBlocks(boolean b) {
+        showEmptyBlocks = b;
         viewPropertiesChangedEvent.fire();
     }
 
@@ -164,8 +200,11 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public DiagramViewModel(Group g, FilterChain filterChain, FilterChain sequenceFilterChain) {
         super(Arrays.asList("default"));
 
-        this.showBlocks = false;
+        this.showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
+        this.showBlocks = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES;
+        this.showCFG = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH;
         this.showNodeHull = true;
+        this.showEmptyBlocks = true;
         this.group = g;
         filterGraphs();
         assert filterChain != null;
@@ -406,9 +445,17 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public Diagram getDiagramToView() {
 
         if (diagram == null) {
-            diagram = Diagram.createDiagram(getGraphToView(),
+            InputGraph graph = getGraphToView();
+            if (graph.getBlocks().isEmpty()) {
+                Scheduler s = Lookup.getDefault().lookup(Scheduler.class);
+                graph.clearBlocks();
+                s.schedule(graph);
+                graph.ensureNodesInBlocks();
+            }
+            diagram = Diagram.createDiagram(graph,
                                             Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
-                                            Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT));
+                                            Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),
+                                            Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
             getFilterChain().apply(diagram, getSequenceFilterChain());
             if (getFirstPosition() != getSecondPosition()) {
                 CustomFilter f = new CustomFilter(
@@ -420,6 +467,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
            }
         }
 
+        diagram.setCFG(getShowCFG());
         return diagram;
     }
 

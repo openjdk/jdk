@@ -206,6 +206,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         // following two tests:
         //   -Xshare:auto -XX:SharedArchiveFile=top.jsa, but base does not exist.
 
+      if (!isUseSharedSpacesDisabled()) {
         new File(baseArchiveName).delete();
 
         startTest("10. -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=" + topArchiveName);
@@ -227,5 +228,6 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
             .assertNormalExit(output -> {
                 output.shouldContain("VM warning: -XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded");
             });
+      }
     }
 }

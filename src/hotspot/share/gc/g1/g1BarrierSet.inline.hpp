@@ -28,10 +28,34 @@
 #include "gc/g1/g1BarrierSet.hpp"
 
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/shared/accessBarrierSupport.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.hpp"
+
+inline void G1BarrierSet::enqueue_preloaded(oop pre_val) {
+  // Nulls should have been already filtered.
+  assert(oopDesc::is_oop(pre_val, true), "Error");
+
+  G1SATBMarkQueueSet& queue_set = G1BarrierSet::satb_mark_queue_set();
+  if (!queue_set.is_active()) return;
+
+  SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(Thread::current());
+  queue_set.enqueue_known_active(queue, pre_val);
+}
+
+template <class T>
+inline void G1BarrierSet::enqueue(T* dst) {
+  G1SATBMarkQueueSet& queue_set = G1BarrierSet::satb_mark_queue_set();
+  if (!queue_set.is_active()) return;
+
+  T heap_oop = RawAccess<MO_RELAXED>::oop_load(dst);
+  if (!CompressedOops::is_null(heap_oop)) {
+    SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(Thread::current());
+    queue_set.enqueue_known_active(queue, CompressedOops::decode_not_null(heap_oop));
+  }
+}
 
 template <DecoratorSet decorators, typename T>
 inline void G1BarrierSet::write_ref_field_pre(T* field) {
@@ -40,10 +64,7 @@ inline void G1BarrierSet::write_ref_field_pre(T* field) {
     return;
   }
 
-  T heap_oop = RawAccess<MO_RELAXED>::oop_load(field);
-  if (!CompressedOops::is_null(heap_oop)) {
-    enqueue(CompressedOops::decode_not_null(heap_oop));
-  }
+  enqueue(field);
 }
 
 template <DecoratorSet decorators, typename T>
@@ -55,7 +76,7 @@ inline void G1BarrierSet::write_ref_field_post(T* field, oop new_val) {
   }
 }
 
-inline void G1BarrierSet::enqueue_if_weak(DecoratorSet decorators, oop value) {
+inline void G1BarrierSet::enqueue_preloaded_if_weak(DecoratorSet decorators, oop value) {
   assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Reference strength must be known");
   // Loading from a weak or phantom reference needs enqueueing, as
   // the object may not have been reachable (part of the snapshot)
@@ -65,7 +86,7 @@ inline void G1BarrierSet::enqueue_if_weak(DecoratorSet decorators, oop value) {
   const bool needs_enqueue     = (!peek && !on_strong_oop_ref);
 
   if (needs_enqueue && value != NULL) {
-    enqueue(value);
+    enqueue_preloaded(value);
   }
 }
 
@@ -74,7 +95,7 @@ template <typename T>
 inline oop G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_load_not_in_heap(T* addr) {
   oop value = ModRef::oop_load_not_in_heap(addr);
-  enqueue_if_weak(decorators, value);
+  enqueue_preloaded_if_weak(decorators, value);
   return value;
 }
 
@@ -83,7 +104,7 @@ template <typename T>
 inline oop G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_load_in_heap(T* addr) {
   oop value = ModRef::oop_load_in_heap(addr);
-  enqueue_if_weak(decorators, value);
+  enqueue_preloaded_if_weak(decorators, value);
   return value;
 }
 
@@ -91,7 +112,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 inline oop G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_load_in_heap_at(oop base, ptrdiff_t offset) {
   oop value = ModRef::oop_load_in_heap_at(base, offset);
-  enqueue_if_weak(AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset), value);
+  enqueue_preloaded_if_weak(AccessBarrierSupport::resolve_possibly_unknown_oop_ref_strength<decorators>(base, offset), value);
   return value;
 }
 
