@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,15 +56,15 @@ public class ECOperations {
     }
 
     static final Map<BigInteger, IntegerFieldModuloP> fields = Map.of(
-        IntegerPolynomialP256.MODULUS, new IntegerPolynomialP256(),
-        IntegerPolynomialP384.MODULUS, new IntegerPolynomialP384(),
-        IntegerPolynomialP521.MODULUS, new IntegerPolynomialP521()
+        IntegerPolynomialP256.MODULUS, IntegerPolynomial.Holder.P256,
+        IntegerPolynomialP384.MODULUS, IntegerPolynomial.Holder.P384,
+        IntegerPolynomialP521.MODULUS, IntegerPolynomial.Holder.P521
     );
 
     static final Map<BigInteger, IntegerFieldModuloP> orderFields = Map.of(
-        P256OrderField.MODULUS, new P256OrderField(),
-        P384OrderField.MODULUS, new P384OrderField(),
-        P521OrderField.MODULUS, new P521OrderField()
+        P256OrderField.MODULUS, IntegerPolynomial.Holder.PO256,
+        P384OrderField.MODULUS, IntegerPolynomial.Holder.PO384,
+        P521OrderField.MODULUS, IntegerPolynomial.Holder.PO521
     );
 
     public static Optional<ECOperations> forParameters(ECParameterSpec params) {

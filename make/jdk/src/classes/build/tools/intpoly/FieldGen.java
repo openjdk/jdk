@@ -634,7 +634,7 @@ public class FieldGen {
         }
         int termIndex = 0;
 
-        result.appendLine("public " + params.getClassName() + "() {");
+        result.appendLine(params.getClassName() + "() {");
         result.appendLine();
         result.appendLine("    super(BITS_PER_LIMB, NUM_LIMBS, MAX_ADDS, MODULUS);");
         result.appendLine();
@@ -822,6 +822,16 @@ public class FieldGen {
         result.decrIndent();
         result.appendLine("}");
 
+        // Use grade-school multiplication with a simple squaring optimization.
+        // Multiply into primitives to avoid the temporary array allocation.
+        // This is equivalent to the following code:
+        //  long[] c = new long[2 * NUM_LIMBS - 1];
+        //  for(int i = 0; i < NUM_LIMBS; i++) {
+        //      c[2 * i] = a[i] * a[i];
+        //      for(int j = i + 1; j < NUM_LIMBS; j++) {
+        //          c[i + j] += 2 * a[i] * a[j]
+        //      }
+        //  }
         result.appendLine("@Override");
         result.appendLine("protected void square(long[] a, long[] r) {");
         result.incrIndent();
