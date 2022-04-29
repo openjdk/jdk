@@ -640,8 +640,7 @@ jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
 #
 # Legacy cryptographic algorithms and key lengths.
 #
-# In some environments, a certain algorithm or key length may be undesirable
-# but is not yet disabled.
+# In some environments, a certain algorithm or key length may be undesirable.
 #
 # Tools such as keytool and jarsigner may emit warnings when these legacy
 # algorithms are used. See the man pages for those tools for more information.
