@@ -339,6 +339,16 @@ public:
                               AddressLiteral new_mxcsr, Register scratch, int vec_enc);
 #endif
 
+  void udivI(Register rax, Register divisor, Register rdx);
+  void umodI(Register rax, Register divisor, Register rdx);
+  void udivmodI(Register rax, Register divisor, Register rdx, Register tmp);
+
+#ifdef _LP64
+  void udivL(Register rax, Register divisor, Register rdx);
+  void umodL(Register rax, Register divisor, Register rdx);
+  void udivmodL(Register rax, Register divisor, Register rdx, Register tmp);
+#endif
+
   void evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
                   bool merge, BasicType bt, int vlen_enc);
 
@@ -352,16 +362,6 @@ public:
                                AddressLiteral mask, Register rtmp, int vec_enc);
 
   void vector_reverse_byte(BasicType bt, XMMRegister dst, XMMRegister src, Register rtmp, int vec_enc);
-
-  void udivI(Register rax, Register divisor, Register rdx);
-  void umodI(Register rax, Register divisor, Register rdx);
-  void udivmodI(Register rax, Register divisor, Register rdx, Register tmp);
-
-#ifdef _LP64
-  void udivL(Register rax, Register divisor, Register rdx);
-  void umodL(Register rax, Register divisor, Register rdx);
-  void udivmodL(Register rax, Register divisor, Register rdx, Register tmp);
-#endif
 
   void vector_popcount_int(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                            XMMRegister xtmp2, Register rtmp, int vec_enc);
@@ -417,4 +417,9 @@ public:
   void vector_count_trailing_zeros_avx(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                        XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp, int vec_enc);
 
+  void vector_signum_avx(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
+                         XMMRegister xtmp1, int vec_enc);
+
+  void vector_signum_evex(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
+                          KRegister ktmp1, int vec_enc);
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

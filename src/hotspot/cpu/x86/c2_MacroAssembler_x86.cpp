@@ -4485,6 +4485,48 @@ void C2_MacroAssembler::vector_compress_expand(int opcode, XMMRegister dst, XMMR
 }
 #endif
 
+void C2_MacroAssembler::vector_signum_evex(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
+                                           KRegister ktmp1, int vec_enc) {
+  if (opcode == Op_SignumVD) {
+    vsubpd(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    evcmppd(ktmp1, k0, src, zero, Assembler::LT_OQ, vec_enc);
+    evblendmpd(dst, ktmp1, one, dst, true, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    evcmppd(ktmp1, k0, src, zero, Assembler::EQ_UQ, vec_enc);
+    evblendmpd(dst, ktmp1, dst, src, true, vec_enc);
+  } else {
+    assert(opcode == Op_SignumVF, "");
+    vsubps(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    evcmpps(ktmp1, k0, src, zero, Assembler::LT_OQ, vec_enc);
+    evblendmps(dst, ktmp1, one, dst, true, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    evcmpps(ktmp1, k0, src, zero, Assembler::EQ_UQ, vec_enc);
+    evblendmps(dst, ktmp1, dst, src, true, vec_enc);
+  }
+}
+
+void C2_MacroAssembler::vector_signum_avx(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
+                                          XMMRegister xtmp1, int vec_enc) {
+  if (opcode == Op_SignumVD) {
+    vsubpd(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    vblendvpd(dst, one, dst, src, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    vcmppd(xtmp1, src, zero, Assembler::EQ_UQ, vec_enc);
+    vblendvpd(dst, dst, src, xtmp1, vec_enc);
+  } else {
+    assert(opcode == Op_SignumVF, "");
+    vsubps(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    vblendvps(dst, one, dst, src, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    vcmpps(xtmp1, src, zero, Assembler::EQ_UQ, vec_enc);
+    vblendvps(dst, dst, src, xtmp1, vec_enc);
+  }
+}
+
 void C2_MacroAssembler::vector_maskall_operation(KRegister dst, Register src, int mask_len) {
   if (VM_Version::supports_avx512bw()) {
     if (mask_len > 32) {

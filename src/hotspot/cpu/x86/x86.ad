@@ -1929,6 +1929,12 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    case Op_SignumVD:
+    case Op_SignumVF:
+      if (UseAVX < 1) {
+        return false;
+      }
+      break;
     case Op_PopCountVI:
     case Op_PopCountVL: {
         if (!is_pop_count_instr_target(bt) &&
@@ -6147,6 +6153,36 @@ instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr)
   ins_encode %{
     int opcode = this->ideal_Opcode();
     __ signum_fp(opcode, $dst$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister, $scratch$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct signumV_reg_avx(vec dst, vec src, vec zero, vec one, vec xtmp1) %{
+  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_length_in_bytes(n) <= 32);
+  match(Set dst (SignumVF src (Binary zero one)));
+  match(Set dst (SignumVD src (Binary zero one)));
+  effect(TEMP dst, TEMP xtmp1);
+  format %{ "vector_signum_avx $dst, $src\t! using $xtmp1 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vec_enc = vector_length_encoding(this);
+    __ vector_signum_avx(opcode, $dst$$XMMRegister, $src$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister,
+                         $xtmp1$$XMMRegister, vec_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct signumV_reg_evex(vec dst, vec src, vec zero, vec one, kReg ktmp1) %{
+  predicate(VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n) == 64);
+  match(Set dst (SignumVF src (Binary zero one)));
+  match(Set dst (SignumVD src (Binary zero one)));
+  effect(TEMP dst, TEMP ktmp1);
+  format %{ "vector_signum_evex $dst, $src\t! using $ktmp1 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vec_enc = vector_length_encoding(this);
+    __ vector_signum_evex(opcode, $dst$$XMMRegister, $src$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister,
+                          $ktmp1$$KRegister, vec_enc);
   %}
   ins_pipe( pipe_slow );
 %}

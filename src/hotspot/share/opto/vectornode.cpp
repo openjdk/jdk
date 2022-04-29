@@ -262,6 +262,10 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_CountTrailingZerosI:
   case Op_CountTrailingZerosL:
     return Op_CountTrailingZerosV;
+  case Op_SignumF:
+    return Op_SignumVF;
+  case Op_SignumD:
+    return Op_SignumVD;
 
   default:
     return 0; // Unimplemented
@@ -673,6 +677,8 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, Node* n3, const TypeV
   switch (vopc) {
   case Op_FmaVD: return new FmaVDNode(n1, n2, n3, vt);
   case Op_FmaVF: return new FmaVFNode(n1, n2, n3, vt);
+  case Op_SignumVD: return new SignumVDNode(n1, n2, n3, vt);
+  case Op_SignumVF: return new SignumVFNode(n1, n2, n3, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return NULL;
