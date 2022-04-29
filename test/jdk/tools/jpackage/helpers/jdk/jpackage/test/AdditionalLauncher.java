@@ -76,6 +76,10 @@ public class AdditionalLauncher {
         return this;
     }
 
+    final public AdditionalLauncher setLauncherAsService() {
+        return addRawProperties(LAUNCHER_AS_SERVICE);
+    }
+
     final public AdditionalLauncher addRawProperties(
             Map.Entry<String, String>... v) {
         return addRawProperties(List.of(v));
@@ -338,7 +342,13 @@ public class AdditionalLauncher {
                         "--java-options"))).stream().map(
                         str -> resolveVariables(cmd, str)).toList());
 
-        appVerifier.executeAndVerifyOutput();
+        if (!rawProperties.contains(LAUNCHER_AS_SERVICE)) {
+            appVerifier.executeAndVerifyOutput();
+        } else if (!cmd.isPackageUnpacked(String.format(
+                "Not verifying contents of test output file for [%s] launcher",
+                launcherPath))) {
+            appVerifier.verifyOutput();
+        }
     }
 
     public static final class PropertyFile {
@@ -394,4 +404,6 @@ public class AdditionalLauncher {
     private Boolean withShortcut;
 
     private final static Path NO_ICON = Path.of("");
+    private final static Map.Entry<String, String> LAUNCHER_AS_SERVICE = Map.entry(
+            "launcher-as-service", "true");
 }
