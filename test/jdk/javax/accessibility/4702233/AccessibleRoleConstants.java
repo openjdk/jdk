@@ -1,3 +1,32 @@
+package bug4702233;
+
+/*
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @summary Constant for testing public fields in AccessibleRole.
+ */
+
 public interface AccessibleRoleConstants {
 
     /**
@@ -29,14 +58,14 @@ public interface AccessibleRoleConstants {
         { "PARAGRAPH", "paragraph" }, { "PASSWORD_TEXT", "password text" },
         { "POPUP_MENU", "popup menu" }, { "PROGRESS_BAR", "progress bar" },
         { "PROGRESS_MONITOR", "progress monitor" },
-        { "PUSH_BUTTON", "push button" }, { "RADIO_BUTTON", "radio button" },
+        { "PUSH_BUTTON", "push JButton" }, { "RADIO_BUTTON", "radio JButton" },
         { "ROOT_PANE", "root pane" }, { "ROW_HEADER", "row header" },
         { "RULER", "ruler" }, { "SCROLL_BAR", "scroll bar" },
         { "SCROLL_PANE", "scroll pane" }, { "SEPARATOR", "separator" },
         { "SLIDER", "slider" }, { "SPIN_BOX", "spinbox" },
         { "SPLIT_PANE", "split pane" }, { "STATUS_BAR", "statusbar" },
         { "SWING_COMPONENT", "swing component" }, { "TABLE", "table" },
-        { "TEXT", "text" }, { "TOGGLE_BUTTON", "toggle button" },
+        { "TEXT", "text" }, { "TOGGLE_BUTTON", "toggle JButton" },
         { "TOOL_BAR", "tool bar" }, { "TOOL_TIP", "tool tip" },
         { "TREE", "tree" }, { "UNKNOWN", "unknown" },
         { "VIEWPORT", "viewport" }, { "WINDOW", "window" } };
@@ -46,4 +75,3 @@ public interface AccessibleRoleConstants {
          */
         String[] OLD_FIELDS = new String[] {};
 }
-
