@@ -45,6 +45,7 @@ import gc.g1.plab.lib.LogParser;
 import gc.g1.plab.lib.PLABUtils;
 import gc.g1.plab.lib.PlabInfo;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -72,7 +73,7 @@ public class TestPLABPromotion {
     private static final int PLAB_SIZE_HIGH = 65536;
     private static final int OBJECT_SIZE_SMALL = 10;
     private static final int OBJECT_SIZE_MEDIUM = 100;
-    private static final int OBJECT_SIZE_HIGH = 3258;
+    private static final int OBJECT_SIZE_HIGH = Platform.is64bit() ? 3266 : 3258;
     private static final int GC_NUM_SMALL = 1;
     private static final int GC_NUM_MEDIUM = 3;
     private static final int GC_NUM_HIGH = 7;

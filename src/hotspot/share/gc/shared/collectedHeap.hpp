@@ -154,7 +154,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
                                  bool* gc_overhead_limit_was_exceeded) = 0;
 
   // Filler object utilities.
-  static inline size_t filler_array_hdr_size();
   static inline size_t filler_array_min_size();
 
   static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);

@@ -2142,7 +2142,7 @@ C2V_VMENTRY_0(jint, arrayBaseOffset, (JNIEnv* env, jobject, jobject kind))
     JVMCI_THROW_0(NullPointerException);
   }
   BasicType type = JVMCIENV->kindToBasicType(JVMCIENV->wrap(kind), JVMCI_CHECK_0);
-  return arrayOopDesc::header_size(type) * HeapWordSize;
+  return arrayOopDesc::base_offset_in_bytes(type);
 C2V_END
 
 C2V_VMENTRY_0(jint, arrayIndexScale, (JNIEnv* env, jobject, jobject kind))

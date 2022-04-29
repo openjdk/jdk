@@ -48,29 +48,9 @@ class objArrayOopDesc : public arrayOopDesc {
   }
 
 private:
-  // Give size of objArrayOop in HeapWords minus the header
-  static int array_size(int length) {
-    const uint OopsPerHeapWord = HeapWordSize/heapOopSize;
-    assert(OopsPerHeapWord >= 1 && (HeapWordSize % heapOopSize == 0),
-           "Else the following (new) computation would be in error");
-    uint res = ((uint)length + OopsPerHeapWord - 1)/OopsPerHeapWord;
-#ifdef ASSERT
-    // The old code is left in for sanity-checking; it'll
-    // go away pretty soon. XXX
-    // Without UseCompressedOops, this is simply:
-    // oop->length() * HeapWordsPerOop;
-    // With narrowOops, HeapWordsPerOop is 1/2 or equal 0 as an integer.
-    // The oop elements are aligned up to wordSize
-    const uint HeapWordsPerOop = heapOopSize/HeapWordSize;
-    uint old_res;
-    if (HeapWordsPerOop > 0) {
-      old_res = length * HeapWordsPerOop;
-    } else {
-      old_res = align_up((uint)length, OopsPerHeapWord)/OopsPerHeapWord;
-    }
-    assert(res == old_res, "Inconsistency between old and new.");
-#endif  // ASSERT
-    return res;
+  // Give size of objArrayOop in bytes minus the header
+  static size_t array_size_in_bytes(int length) {
+    return (size_t)length * heapOopSize;
   }
 
  public:
@@ -90,16 +70,15 @@ private:
   oop atomic_compare_exchange_oop(int index, oop exchange_value, oop compare_value);
 
   // Sizing
-  static int header_size()    { return arrayOopDesc::header_size(T_OBJECT); }
   size_t object_size()        { return object_size(length()); }
 
   static size_t object_size(int length) {
     // This returns the object size in HeapWords.
-    uint asz = array_size(length);
-    uint osz = align_object_size(header_size() + asz);
-    assert(osz >= asz,   "no overflow");
-    assert((int)osz > 0, "no overflow");
-    return (size_t)osz;
+    size_t asz = array_size_in_bytes(length);
+    size_t size_words = align_up(base_offset_in_bytes() + asz, HeapWordSize) / HeapWordSize;
+    size_t osz = align_object_size(size_words);
+    assert(osz < max_jint, "no overflow");
+    return osz;
   }
 
   Klass* element_klass();

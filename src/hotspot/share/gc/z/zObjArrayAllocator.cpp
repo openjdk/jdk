@@ -43,14 +43,15 @@ oop ZObjArrayAllocator::finish(HeapWord* mem) const {
   // A max segment size of 64K was chosen because microbenchmarking
   // suggested that it offered a good trade-off between allocation
   // time and time-to-safepoint
-  const size_t segment_max = ZUtils::bytes_to_words(64 * K);
-  const size_t skip = arrayOopDesc::header_size(ArrayKlass::cast(_klass)->element_type());
-  size_t remaining = _word_size - skip;
+  const size_t segment_max = 64 * K;
+  const size_t skip = arrayOopDesc::base_offset_in_bytes(ArrayKlass::cast(_klass)->element_type());
+  size_t byte_size = _word_size * BytesPerWord;
+  size_t remaining = byte_size - skip;
 
   while (remaining > 0) {
     // Clear segment
     const size_t segment = MIN2(remaining, segment_max);
-    Copy::zero_to_words(mem + (_word_size - remaining), segment);
+    Copy::zero_to_bytes(((char*)mem) + (byte_size - remaining), segment);
     remaining -= segment;
 
     if (remaining > 0) {

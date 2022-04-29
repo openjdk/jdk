@@ -304,14 +304,15 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
     // Zero array here if the caller is deoptimized.
     const size_t size = TypeArrayKlass::cast(array_type)->oop_size(result);
     BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
-    const size_t hs = arrayOopDesc::header_size(elem_type);
+    const size_t hs_bytes = arrayOopDesc::base_offset_in_bytes(elem_type);
     // Align to next 8 bytes to avoid trashing arrays's length.
-    const size_t aligned_hs = align_object_offset(hs);
+    const size_t aligned_hs_bytes = align_up(hs_bytes, BytesPerLong);
     HeapWord* obj = cast_from_oop<HeapWord*>(result);
-    if (aligned_hs > hs) {
-      Copy::zero_to_words(obj+hs, aligned_hs-hs);
+    if (aligned_hs_bytes > hs_bytes) {
+      Copy::zero_to_bytes(obj + hs_bytes, aligned_hs_bytes - hs_bytes);
     }
     // Optimized zeroing.
+    const size_t aligned_hs = aligned_hs_bytes / HeapWordSize;
     Copy::fill_to_aligned_words(obj+aligned_hs, size-aligned_hs);
   }
 
