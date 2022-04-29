@@ -30,13 +30,16 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.DialogTypeSelection;
 import javax.print.attribute.standard.PageRanges;
+import jtreg.SkippedException;
 
 /*
  * @test
  * @bug 8061267
  * @key printer
  * @library /java/awt/regtesthelpers
+ * @library /java/awt/jtreg
  * @build PassFailJFrame
+ * @build SkippedException
  * @summary The specified page range should be displayed in the dialog
  * @run main/manual PageRangesDlgTest
  */
@@ -79,9 +82,8 @@ public class PageRangesDlgTest implements Printable {
             passFailJFrame.awaitAndCheck();
 
         } else {
-            System.out.println("Printer not configured or available."
+            throw new SkippedException("Printer not configured or available."
                     + " Test cannot continue.");
-            PassFailJFrame.forcePass();
         }
     }
 
