@@ -972,6 +972,7 @@ Java_sun_font_FontConfigManager_getFontConfig
         FcChar8 **family, **styleStr, **fullname, **file;
         jarray fcFontArr = NULL;
         FcCharSet *unionCharset = NULL;
+        FcCharSet *prevUnionCharset = NULL;
 
         fcCompFontObj = (*env)->GetObjectArrayElement(env, fcCompFontArray, i);
         fcNameStr =
@@ -1105,11 +1106,11 @@ Java_sun_font_FontConfigManager_getFontConfig
             } else {
                 if ((*FcCharSetSubtractCount)(charset, unionCharset)
                     > minGlyphs) {
-                    FcCharSet *currentUnionSet = unionCharset;
-                    unionCharset = (* FcCharSetUnion)(currentUnionSet, charset);
-                    if (currentUnionSet != charset) {
-                        (*FcCharSetDestroy)(currentUnionSet);
+                    unionCharset = (* FcCharSetUnion)(unionCharset, charset);
+                    if (prevUnionCharset != NULL) {
+                      (*FcCharSetDestroy)(prevUnionCharset);
                     }
+                    prevUnionCharset = unionCharset;
                 } else {
                     continue;
                 }
@@ -1126,6 +1127,11 @@ Java_sun_font_FontConfigManager_getFontConfig
             if (fontCount == 254) {
                 break; // CompositeFont will only use up to 254 slots from here.
             }
+        }
+
+        // Release last instance of CharSet union
+        if (prevUnionCharset != NULL) {
+          (*FcCharSetDestroy)(prevUnionCharset);
         }
 
         /* Once we get here 'fontCount' is the number of returned fonts
