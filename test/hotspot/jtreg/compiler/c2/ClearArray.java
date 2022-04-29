@@ -37,10 +37,10 @@ package compiler.c2;
 
 public class ClearArray {
 
-    static int[] STATIC;
+    static long[] STATIC;
 
     static void foo() {
-        STATIC = new int[4096];
+        STATIC = new long[2048 - 1];
     }
 
     public static void main(String[] args) {
