@@ -73,6 +73,8 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
   bool start_young_cycle();
   bool start_global_cycle();
 
+  bool should_unload_classes();
+
   ShenandoahSharedFlag _heap_changed;
   ShenandoahControlThread* _control_thread;
   ShenandoahHeuristics* _young_heuristics;
