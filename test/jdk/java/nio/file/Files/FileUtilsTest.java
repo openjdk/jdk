@@ -55,8 +55,8 @@ y
 z""";
         var sList = Arrays.asList(" ");
         var aList = Arrays.asList(a);
-        var abcList = Arrays.asList(abc.split(System.lineSeparator()));
-        var sabcList = Arrays.asList(sabc.split(System.lineSeparator()));
+        var abcList = abc.lines().toList();
+        var sabcList = sabc.lines().toList();
         // Replace with same line
         test(aList, 1, 1, null, a, a);
         // Replace with different line
