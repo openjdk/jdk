@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8171319 8177569 8182879 8172404 8255552
+ * @bug 8171319 8177569 8182879 8172404
  * @summary keytool should print out warnings when reading or generating
   *         cert/cert req using weak algorithms
  * @library /test/lib

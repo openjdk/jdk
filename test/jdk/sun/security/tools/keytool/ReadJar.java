@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6890872 8168882 8257722 8255552
+ * @bug 6890872 8168882 8257722
  * @summary keytool -printcert to recognize signed jar files
  * @library /test/lib
  * @build jdk.test.lib.SecurityTools
