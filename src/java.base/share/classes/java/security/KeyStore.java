@@ -565,7 +565,7 @@ public class KeyStore {
             }
 
             this.attributes =
-                    Set.copyOf(attributes);
+                Collections.unmodifiableSet(new HashSet<>(attributes));
         }
 
         /**
@@ -684,7 +684,7 @@ public class KeyStore {
             }
             this.sKey = secretKey;
             this.attributes =
-                    Set.copyOf(attributes);
+                Collections.unmodifiableSet(new HashSet<>(attributes));
         }
 
         /**
@@ -767,7 +767,7 @@ public class KeyStore {
             }
             this.cert = trustedCert;
             this.attributes =
-                    Set.copyOf(attributes);
+                Collections.unmodifiableSet(new HashSet<>(attributes));
         }
 
         /**
@@ -1700,7 +1700,7 @@ public class KeyStore {
      *
      * @since 9
      */
-    public static KeyStore getInstance(File file, char[] password)
+    public static final KeyStore getInstance(File file, char[] password)
         throws KeyStoreException, IOException, NoSuchAlgorithmException,
             CertificateException {
         return getInstance(file, password, null, true);
@@ -1756,14 +1756,14 @@ public class KeyStore {
      *
      * @since 9
      */
-    public static KeyStore getInstance(File file,
+    public static final KeyStore getInstance(File file,
         LoadStoreParameter param) throws KeyStoreException, IOException,
             NoSuchAlgorithmException, CertificateException {
         return getInstance(file, null, param, false);
     }
 
     // Used by getInstance(File, char[]) & getInstance(File, LoadStoreParameter)
-    private static KeyStore getInstance(File file, char[] password,
+    private static final KeyStore getInstance(File file, char[] password,
         LoadStoreParameter param, boolean hasPassword)
             throws KeyStoreException, IOException, NoSuchAlgorithmException,
                 CertificateException {

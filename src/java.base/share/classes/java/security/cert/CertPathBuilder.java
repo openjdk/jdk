@@ -316,7 +316,7 @@ public class CertPathBuilder {
      * by the {@code certpathbuilder.type} security property, or the string
      * {@literal "PKIX"} if no such property exists.
      */
-    public static String getDefaultType() {
+    public static final String getDefaultType() {
         @SuppressWarnings("removal")
         String cpbtype =
             AccessController.doPrivileged((PrivilegedAction<String>) () ->

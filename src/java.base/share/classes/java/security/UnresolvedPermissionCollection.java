@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,10 @@ implements java.io.Serializable
         // Add permission to map. NOTE: cannot use lambda for
         // remappingFunction parameter until JDK-8076596 is fixed.
         perms.compute(unresolvedPermission.getName(),
-                (key, oldValue) -> {
+            new java.util.function.BiFunction<>() {
+                @Override
+                public List<UnresolvedPermission> apply(String key,
+                                        List<UnresolvedPermission> oldValue) {
                     if (oldValue == null) {
                         List<UnresolvedPermission> v =
                             new CopyOnWriteArrayList<>();
@@ -93,6 +96,7 @@ implements java.io.Serializable
                         return oldValue;
                     }
                 }
+            }
         );
     }
 

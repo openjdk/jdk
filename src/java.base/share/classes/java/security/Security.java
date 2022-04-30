@@ -240,7 +240,7 @@ public final class Security {
                 // Is there a match if we do a case-insensitive property name
                 // comparison? Let's try ...
                 for (Enumeration<Object> e = prov.keys();
-                     e.hasMoreElements(); ) {
+                                e.hasMoreElements(); ) {
                     matchKey = (String)e.nextElement();
                     if (key.equalsIgnoreCase(matchKey)) {
                         prop = prov.getProperty(matchKey);
@@ -269,7 +269,7 @@ public final class Security {
             // Is there a match if we do a case-insensitive property name
             // comparison? Let's try ...
             for (Enumeration<Object> e = provider.keys();
-                 e.hasMoreElements(); ) {
+                                e.hasMoreElements(); ) {
                 String matchKey = (String)e.nextElement();
                 if (key.equalsIgnoreCase(matchKey)) {
                     prop = provider.getProperty(matchKey);
@@ -611,8 +611,8 @@ public final class Security {
 
         // Returns all installed providers
         // if the selection criteria is null.
-        if (allProviders == null) {
-            return null;
+        if ((keySet == null) || (allProviders == null)) {
+            return allProviders;
         }
 
         boolean firstSearch = true;
