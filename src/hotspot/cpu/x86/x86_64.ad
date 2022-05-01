@@ -4201,9 +4201,9 @@ operand cmpOpU()
     equal(0x4, "e");
     not_equal(0x5, "ne");
     less(0x2, "b");
-    greater_equal(0x3, "nb");
+    greater_equal(0x3, "ae");
     less_equal(0x6, "be");
-    greater(0x7, "nbe");
+    greater(0x7, "a");
     overflow(0x0, "o");
     no_overflow(0x1, "no");
   %}
@@ -4216,15 +4216,16 @@ operand cmpOpUCF() %{
   predicate(n->as_Bool()->_test._test == BoolTest::lt ||
             n->as_Bool()->_test._test == BoolTest::ge ||
             n->as_Bool()->_test._test == BoolTest::le ||
-            n->as_Bool()->_test._test == BoolTest::gt);
+            n->as_Bool()->_test._test == BoolTest::gt ||
+            n->in(1)->in(1) == n->in(1)->in(2));
   format %{ "" %}
   interface(COND_INTER) %{
-    equal(0x4, "e");
-    not_equal(0x5, "ne");
+    equal(0xb, "np");
+    not_equal(0xa, "p");
     less(0x2, "b");
-    greater_equal(0x3, "nb");
+    greater_equal(0x3, "ae");
     less_equal(0x6, "be");
-    greater(0x7, "nbe");
+    greater(0x7, "a");
     overflow(0x0, "o");
     no_overflow(0x1, "no");
   %}
@@ -4234,16 +4235,17 @@ operand cmpOpUCF() %{
 // Floating comparisons that can be fixed up with extra conditional jumps
 operand cmpOpUCF2() %{
   match(Bool);
-  predicate(n->as_Bool()->_test._test == BoolTest::ne ||
-            n->as_Bool()->_test._test == BoolTest::eq);
+  predicate((n->as_Bool()->_test._test == BoolTest::ne ||
+             n->as_Bool()->_test._test == BoolTest::eq) &&
+            n->in(1)->in(1) != n->in(1)->in(2));
   format %{ "" %}
   interface(COND_INTER) %{
     equal(0x4, "e");
     not_equal(0x5, "ne");
     less(0x2, "b");
-    greater_equal(0x3, "nb");
+    greater_equal(0x3, "ae");
     less_equal(0x6, "be");
-    greater(0x7, "nbe");
+    greater(0x7, "a");
     overflow(0x0, "o");
     no_overflow(0x1, "no");
   %}
@@ -6970,6 +6972,34 @@ instruct cmovI_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
   %}
 %}
 
+instruct cmovI_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
+
+  ins_cost(200); // XXX
+  format %{ "cmovpl  $dst, $src\n\t"
+            "cmovnel $dst, $src" %}
+  ins_encode %{
+    __ cmovl(Assembler::parity, $dst$$Register, $src$$Register);
+    __ cmovl(Assembler::notEqual, $dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
+instruct cmovI_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  match(Set dst (CMoveI (Binary cop cr) (Binary src dst)));
+
+  ins_cost(200); // XXX
+  format %{ "cmovpl  $dst, $src\n\t"
+            "cmovnel $dst, $src" %}
+  ins_encode %{
+    __ cmovl(Assembler::parity, $dst$$Register, $src$$Register);
+    __ cmovl(Assembler::notEqual, $dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
 // Conditional move
 instruct cmovI_mem(cmpOp cop, rFlagsReg cr, rRegI dst, memory src) %{
   match(Set dst (CMoveI (Binary cop cr) (Binary dst (LoadI src))));
@@ -7037,6 +7067,34 @@ instruct cmovN_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegN dst, rRegN src) %{
   %}
 %}
 
+instruct cmovN_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegN dst, rRegN src) %{
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
+
+  ins_cost(200); // XXX
+  format %{ "cmovpl  $dst, $src\n\t"
+            "cmovnel $dst, $src" %}
+  ins_encode %{
+    __ cmovl(Assembler::parity, $dst$$Register, $src$$Register);
+    __ cmovl(Assembler::notEqual, $dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
+instruct cmovN_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegN dst, rRegN src) %{
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  match(Set dst (CMoveN (Binary cop cr) (Binary src dst)));
+
+  ins_cost(200); // XXX
+  format %{ "cmovpl  $dst, $src\n\t"
+            "cmovnel $dst, $src" %}
+  ins_encode %{
+    __ cmovl(Assembler::parity, $dst$$Register, $src$$Register);
+    __ cmovl(Assembler::notEqual, $dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
 // Conditional move
 instruct cmovP_reg(rRegP dst, rRegP src, rFlagsReg cr, cmpOp cop)
 %{
@@ -7069,6 +7127,34 @@ instruct cmovP_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
   expand %{
     cmovP_regU(cop, cr, dst, src);
   %}
+%}
+
+instruct cmovP_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
+
+  ins_cost(200); // XXX
+  format %{ "cmovpq  $dst, $src\n\t"
+            "cmovneq $dst, $src" %}
+  ins_encode %{
+    __ cmovq(Assembler::parity, $dst$$Register, $src$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
+instruct cmovP_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  match(Set dst (CMoveP (Binary cop cr) (Binary src dst)));
+
+  ins_cost(200); // XXX
+  format %{ "cmovpq  $dst, $src\n\t"
+            "cmovneq $dst, $src" %}
+  ins_encode %{
+    __ cmovq(Assembler::parity, $dst$$Register, $src$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
 %}
 
 // DISABLED: Requires the ADLC to emit a bottom_type call that
@@ -7140,6 +7226,34 @@ instruct cmovL_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
   expand %{
     cmovL_regU(cop, cr, dst, src);
   %}
+%}
+
+instruct cmovL_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
+  match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
+
+  ins_cost(200); // XXX
+  format %{ "cmovpq  $dst, $src\n\t"
+            "cmovneq $dst, $src" %}
+  ins_encode %{
+    __ cmovq(Assembler::parity, $dst$$Register, $src$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
+%}
+
+instruct cmovL_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
+  predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  match(Set dst (CMoveL (Binary cop cr) (Binary src dst)));
+
+  ins_cost(200); // XXX
+  format %{ "cmovpq  $dst, $src\n\t"
+            "cmovneq $dst, $src" %}
+  ins_encode %{
+    __ cmovq(Assembler::parity, $dst$$Register, $src$$Register);
+    __ cmovq(Assembler::notEqual, $dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_cmov_reg);
 %}
 
 instruct cmovL_memU(cmpOpU cop, rFlagsRegU cr, rRegL dst, memory src)

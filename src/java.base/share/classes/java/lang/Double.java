@@ -681,7 +681,7 @@ public final class Double extends Number
      *          infinity or negative infinity; {@code false} otherwise.
      */
     public static boolean isInfinite(double v) {
-        return (v == POSITIVE_INFINITY) || (v == NEGATIVE_INFINITY);
+        return Math.abs(v) == POSITIVE_INFINITY;
     }
 
     /**
@@ -695,7 +695,7 @@ public final class Double extends Number
      * @since 1.8
      */
     public static boolean isFinite(double d) {
-        return Math.abs(d) <= Double.MAX_VALUE;
+        return Math.abs(d) < POSITIVE_INFINITY;
     }
 
     /**
