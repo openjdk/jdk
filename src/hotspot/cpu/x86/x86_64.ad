@@ -10504,11 +10504,12 @@ instruct and_cmpLTMask(rRegI p, rRegI q, rRegI y, rFlagsReg cr)
 
 //---------- FP Instructions------------------------------------------------
 
+// Really expensive, avoid
 instruct cmpF_cc_reg(rFlagsRegU cr, regF src1, regF src2)
 %{
   match(Set cr (CmpF src1 src2));
 
-  ins_cost(145);
+  ins_cost(500);
   format %{ "ucomiss $src1, $src2\n\t"
             "jnp,s   exit\n\t"
             "pushfq\t# saw NaN, set CF\n\t"
@@ -10533,24 +10534,6 @@ instruct cmpF_cc_reg_CF(rFlagsRegUCF cr, regF src1, regF src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpF_cc_mem(rFlagsRegU cr, regF src1, memory src2)
-%{
-  match(Set cr (CmpF src1 (LoadF src2)));
-
-  ins_cost(145);
-  format %{ "ucomiss $src1, $src2\n\t"
-            "jnp,s   exit\n\t"
-            "pushfq\t# saw NaN, set CF\n\t"
-            "andq    [rsp], #0xffffff2b\n\t"
-            "popfq\n"
-    "exit:" %}
-  ins_encode %{
-    __ ucomiss($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp_fixup(_masm);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct cmpF_cc_memCF(rFlagsRegUCF cr, regF src1, memory src2) %{
   match(Set cr (CmpF src1 (LoadF src2)));
 
@@ -10558,23 +10541,6 @@ instruct cmpF_cc_memCF(rFlagsRegUCF cr, regF src1, memory src2) %{
   format %{ "ucomiss $src1, $src2" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$Address);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct cmpF_cc_imm(rFlagsRegU cr, regF src, immF con) %{
-  match(Set cr (CmpF src con));
-
-  ins_cost(145);
-  format %{ "ucomiss $src, [$constantaddress]\t# load from constant table: float=$con\n\t"
-            "jnp,s   exit\n\t"
-            "pushfq\t# saw NaN, set CF\n\t"
-            "andq    [rsp], #0xffffff2b\n\t"
-            "popfq\n"
-    "exit:" %}
-  ins_encode %{
-    __ ucomiss($src$$XMMRegister, $constantaddress($con));
-    emit_cmpfp_fixup(_masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10589,11 +10555,12 @@ instruct cmpF_cc_immCF(rFlagsRegUCF cr, regF src, immF con) %{
   ins_pipe(pipe_slow);
 %}
 
+// Really expensive, avoid
 instruct cmpD_cc_reg(rFlagsRegU cr, regD src1, regD src2)
 %{
   match(Set cr (CmpD src1 src2));
 
-  ins_cost(145);
+  ins_cost(500);
   format %{ "ucomisd $src1, $src2\n\t"
             "jnp,s   exit\n\t"
             "pushfq\t# saw NaN, set CF\n\t"
@@ -10618,24 +10585,6 @@ instruct cmpD_cc_reg_CF(rFlagsRegUCF cr, regD src1, regD src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpD_cc_mem(rFlagsRegU cr, regD src1, memory src2)
-%{
-  match(Set cr (CmpD src1 (LoadD src2)));
-
-  ins_cost(145);
-  format %{ "ucomisd $src1, $src2\n\t"
-            "jnp,s   exit\n\t"
-            "pushfq\t# saw NaN, set CF\n\t"
-            "andq    [rsp], #0xffffff2b\n\t"
-            "popfq\n"
-    "exit:" %}
-  ins_encode %{
-    __ ucomisd($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp_fixup(_masm);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct cmpD_cc_memCF(rFlagsRegUCF cr, regD src1, memory src2) %{
   match(Set cr (CmpD src1 (LoadD src2)));
 
@@ -10643,23 +10592,6 @@ instruct cmpD_cc_memCF(rFlagsRegUCF cr, regD src1, memory src2) %{
   format %{ "ucomisd $src1, $src2" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$Address);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct cmpD_cc_imm(rFlagsRegU cr, regD src, immD con) %{
-  match(Set cr (CmpD src con));
-
-  ins_cost(145);
-  format %{ "ucomisd $src, [$constantaddress]\t# load from constant table: double=$con\n\t"
-            "jnp,s   exit\n\t"
-            "pushfq\t# saw NaN, set CF\n\t"
-            "andq    [rsp], #0xffffff2b\n\t"
-            "popfq\n"
-    "exit:" %}
-  ins_encode %{
-    __ ucomisd($src$$XMMRegister, $constantaddress($con));
-    emit_cmpfp_fixup(_masm);
   %}
   ins_pipe(pipe_slow);
 %}
