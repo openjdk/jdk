@@ -36,17 +36,17 @@
 class G1SegmentedArraySegment {
   const uint _slot_size;
   const uint _num_slots;
-  const MEMFLAGS _mem_flag;
   G1SegmentedArraySegment* volatile _next;
   // Index into the next free slot to allocate into. Full if equal (or larger)
   // to _num_slots (can be larger because we atomically increment this value and
   // check only afterwards if the allocation has been successful).
   uint volatile _next_allocate;
+  const MEMFLAGS _mem_flag;
 
   char* _bottom;  // Actual data.
   // Do not add class member variables beyond this point
 
-  static size_t header_size() { return align_up(offset_of(G1SegmentedArraySegment, _bottom), DEFAULT_CACHE_LINE_SIZE); }
+  static size_t header_size() { return align_up(offset_of(G1SegmentedArraySegment, _bottom) + sizeof(_bottom), DEFAULT_CACHE_LINE_SIZE); }
 
   static size_t payload_size(uint slot_size, uint num_slots) {
     // The cast (size_t) is required to guard against overflow wrap around.
