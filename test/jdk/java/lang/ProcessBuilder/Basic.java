@@ -27,7 +27,7 @@
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
- *      8067796 8224905 8263729 8265173 8272600 8231297 8282219
+ *      8067796 8224905 8263729 8265173 8272600 8231297 8282219 8285517
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
@@ -600,13 +600,9 @@ public class Basic {
             // If round trip conversion works, should be able to set env vars
             // correctly in child.
             String nativeEncoding = System.getProperty("native.encoding");
-            String fileEncoding = System.getProperty("file.encoding");
-            Charset cs;
-            if (nativeEncoding != null && !nativeEncoding.equals(fileEncoding)) {
-                cs = Charset.forName(nativeEncoding);
-            } else {
-                cs = Charset.defaultCharset();
-            }
+            Charset cs = nativeEncoding != null ?
+                Charset.forName(nativeEncoding, Charset.defaultCharset())
+                : Charset.defaultCharset();
             if (new String(tested.getBytes(cs), cs).equals(tested)) {
                 out.println("Testing " + encoding + " environment values");
                 ProcessBuilder pb = new ProcessBuilder();

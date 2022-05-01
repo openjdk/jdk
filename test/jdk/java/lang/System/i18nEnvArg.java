@@ -25,6 +25,9 @@
  * @test
  * @bug 8285517
  * @summary System.getenv() and argument don't return locale dependent data by JEP400
+ * @requires (os.family == "linux")
+ * @library /test/lib
+ * @build jdk.test.lib.process.*
  * @run main i18nEnvArg
  */
 
@@ -34,42 +37,34 @@ import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.HexFormat;
+import java.util.List;
 import java.util.Map;
-import java.util.StringJoiner;
+import jdk.test.lib.process.ProcessTools;
 
 public class i18nEnvArg {
-    final static String text = "\u6F22\u5B57";
-    final static String javeExe = System.getProperty("java.home")
-        + File.separator
-        + "bin"
-        + File.separator
-        + "java";
-    final static int maxSize = 4096;
+    final static String EUC_JP_TEXT = "\u6F22\u5B57";
 
+    /*
+     * Generates test process which runs with ja_JP.eucjp locale
+     */
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder(javeExe,
-            "-classpath",
-            System.getProperty("java.class.path"),
-            "i18nEnvArg$Start");
-        pb.redirectErrorStream(true);
+        var cmds = List.of("i18nEnvArg$Start");
+        var pb = ProcessTools.createTestJvm(cmds);
         Map<String, String> environ = pb.environment();
         environ.clear();
         environ.put("LANG", "ja_JP.eucjp");
-        Process p = pb.start();
-        InputStream is = p.getInputStream();
-        byte[] ba = new byte[maxSize];
-        ByteBuffer bb = ByteBuffer.wrap(ba);
-        int ch;
-        while((ch = is.read()) != -1) {
-            bb.put((byte)ch);
-        }
-        int rc = p.waitFor();
-        if (bb.position() > 0) {
-            throw new Exception(new String(ba, 0, bb.position()));
-        }
+        ProcessTools.executeProcess(pb)
+            .outputTo(System.out)
+            .errorTo(System.err)
+            .shouldHaveExitValue(0);
     }
 
     public static class Start {
+        /*
+         * Checks OS is Linux and OS has ja_JP.eucjp locale or not.
+         * Sets EUC_JP's environment variable and argunments against ProcessBuilder
+         */
         public static void main(String[] args) throws Exception {
             String nativeEncoding = System.getProperty("native.encoding");
             Charset dcs = nativeEncoding == null ?
@@ -79,41 +74,47 @@ public class i18nEnvArg {
             if (!dcs.equals(cs)) {
                 return;
             }
+            String javeExe = System.getProperty("java.home") +
+                File.separator +
+                "bin" +
+                File.separator +
+                "java";
             ProcessBuilder pb = new ProcessBuilder(javeExe,
                 "--add-opens=java.base/java.lang=ALL-UNNAMED",
                 "-classpath",
                 System.getProperty("java.class.path"),
                 "i18nEnvArg$Verify",
-                text);
+                EUC_JP_TEXT);
             pb.redirectErrorStream(true);
             Map<String, String> environ = pb.environment();
             environ.clear();
             environ.put("LANG", "ja_JP.eucjp");
-            environ.put(text, text);
+            environ.put(EUC_JP_TEXT, EUC_JP_TEXT);
             Process p = pb.start();
             InputStream is = p.getInputStream();
-            byte[] ba = new byte[maxSize];
-            ByteBuffer bb = ByteBuffer.wrap(ba);
-            int ch;
-            while((ch = is.read()) != -1) {
-                bb.put((byte)ch);
-            }
+            byte[] ba = is.readAllBytes();
             int rc = p.waitFor();
-            System.out.write(ba, 0, bb.position());
+            if (ba.length > 0)
+                throw new Exception(new String(ba));
         }
     }
 
     public static class Verify {
+        private final static int maxSize = 4096;
+        /*
+         * Verify environment variable and argument are encoded by Linux's eucjp or not
+         */
         public static void main(String[] args) throws Exception {
             Charset cs = Charset.forName("x-euc-jp-linux");
-            byte[] kanji = (text + "=" + text).getBytes(cs);
-            String s = System.getenv(text);
-            if (!text.equals(s)) {
-                throw new Exception("getenv() returns unexpected data");
+            byte[] euc = (EUC_JP_TEXT + "=" + EUC_JP_TEXT).getBytes(cs);
+            byte[] eucjp = "LANG=ja_JP.eucjp".getBytes(cs);
+            String s = System.getenv(EUC_JP_TEXT);
+            if (!EUC_JP_TEXT.equals(s)) {
+                System.out.println("getenv() returns unexpected data");
             }
-            if (!text.equals(args[0])) {
+            if (!EUC_JP_TEXT.equals(args[0])) {
                 System.out.print("Unexpected argument was received: ");
-                for(char ch : text.toCharArray()) {
+                for(char ch : EUC_JP_TEXT.toCharArray()) {
                    System.out.printf("\\u%04X", (int)ch);
                 }
                 System.out.print("<->");
@@ -123,33 +124,24 @@ public class i18nEnvArg {
                 System.out.println();
             }
             Class<?> cls = Class.forName("java.lang.ProcessEnvironment");
-            Method enviorn_mid = cls.getDeclaredMethod("environ");
-            enviorn_mid.setAccessible(true);
-            byte[][] environ = (byte[][]) enviorn_mid.invoke(null,
+            Method environ_mid = cls.getDeclaredMethod("environ");
+            environ_mid.setAccessible(true);
+            byte[][] environ = (byte[][]) environ_mid.invoke(null,
                 (Object[])null);
+            HexFormat hf = HexFormat.of().withUpperCase().withPrefix("\\x");
             byte[] ba = new byte[maxSize];
-            StringJoiner sj = new StringJoiner(", ");
             for(int i = 0; i < environ.length; i += 2) {
                 ByteBuffer bb = ByteBuffer.wrap(ba);
                 bb.put(environ[i]);
                 bb.put((byte)'=');
                 bb.put(environ[i+1]);
                 byte[] envb = Arrays.copyOf(ba, bb.position());
-                if (Arrays.equals(kanji, envb)) return;
-                StringBuilder sb = new StringBuilder();
-                for(byte b : envb) {
-                    if (b == 0x5C) {
-                        sb.append("\\x5C");
-                    } else if (b >= 0x20 && b <= 0x7F) {
-                        sb.append((char)b);
-                    } else {
-                        sb.append(String.format("\\x%02X", (int)b & 0xFF));
-                    }
+                if (Arrays.equals(eucjp, envb)) continue;
+                if (!Arrays.equals(euc, envb)) {
+                    System.out.println("Unexpected environment variables: " +
+                        hf.formatHex(envb));
                 }
-                sj.add(sb.toString());
             }
-            System.out.println("Unexpected environment variables: "
-                + sj.toString());
         }
     }
 }
