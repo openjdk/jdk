@@ -87,7 +87,7 @@ public class ForkJoinPool19Test extends JSR166TestCase {
         p.shutdown();
     }
 
- 
+
     /*
      * Some test methods adapted from RecursiveAction
      */
