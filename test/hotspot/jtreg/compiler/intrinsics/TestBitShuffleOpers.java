@@ -25,7 +25,7 @@
  * @test
  * @bug 8285281
  * @key randomness
- * @summary To test various tansforms added for bit COMPRESS_BITS and EXPAND_BITS operations
+ * @summary To test various transforms added for bit COMPRESS_BITS and EXPAND_BITS operations
  * @requires vm.compiler2.enabled
  * @requires vm.cpu.features ~= ".*bmi2.*"
  * @requires os.simpleArch == "x64"
@@ -229,7 +229,72 @@ public class TestBitShuffleOpers {
             test12(rl, al, bl);
         }
     }
-    // ===================================================== //
+
+    // ================ Compress/ExpandBits Vanilla ================= //
+
+    @Test
+    @IR(counts = {"CompressBits", " > 0 "})
+    public void test13(int[] ri, int[] ai, int[] bi) {
+        for (int i = 0; i < ri.length; i++) {
+           ri[i] = Integer.compress(ai[i], bi[i]);
+        }
+    }
+
+    @Run(test = {"test13"}, mode = RunMode.STANDALONE)
+    public void kernel_test13() {
+        for (int i = 0; i < 10000; i++) {
+            test13(ri, ai, bi);
+        }
+        verifyCompressInt(ri, ai, bi);
+    }
+
+    @Test
+    @IR(counts = {"CompressBits", " > 0 "})
+    public void test14(long[] rl, long[] al, long[] bl) {
+        for (int i = 0; i < rl.length; i++) {
+           rl[i] = Long.compress(al[i], bl[i]);
+        }
+    }
+
+    @Run(test = {"test14"}, mode = RunMode.STANDALONE)
+    public void kernel_test14() {
+        for (int i = 0; i < 10000; i++) {
+            test14(rl, al, bl);
+        }
+        verifyCompressLong(rl, al, bl);
+    }
+
+    @Test
+    @IR(counts = {"ExpandBits", " > 0 "})
+    public void test15(int[] ri, int[] ai, int[] bi) {
+        for (int i = 0; i < ri.length; i++) {
+           ri[i] = Integer.expand(ai[i], bi[i]);
+        }
+    }
+
+    @Run(test = {"test15"}, mode = RunMode.STANDALONE)
+    public void kernel_test15() {
+        for (int i = 0; i < 10000; i++) {
+            test15(ri, ai, bi);
+        }
+        verifyExpandInt(ri, ai, bi);
+    }
+
+    @Test
+    @IR(counts = {"ExpandBits", " > 0 "})
+    public void test16(long[] rl, long[] al, long[] bl) {
+        for (int i = 0; i < rl.length; i++) {
+           rl[i] = Long.expand(al[i], bl[i]);
+        }
+    }
+
+    @Run(test = {"test16"}, mode = RunMode.STANDALONE)
+    public void kernel_test16() {
+        for (int i = 0; i < 10000; i++) {
+            test16(rl, al, bl);
+        }
+        verifyExpandLong(rl, al, bl);
+    }
 
     private static final Random R = Utils.getRandomInstance();
 
@@ -256,6 +321,106 @@ public class TestBitShuffleOpers {
         }
     }
 
+    static void verifyExpandInt(int [] actual_res, int [] inp_arr, int [] mask_arr) {
+        assert inp_arr.length == mask_arr.length && inp_arr.length == actual_res.length;
+        int [] exp_res = new int[inp_arr.length];
+        for (int i = 0 ; i < inp_arr.length; i++) {
+            int exp = 0;
+            int src = inp_arr[i];
+            int mask = mask_arr[i];
+            for(int j = 0, k = 0; j < Integer.SIZE; j++) {
+                if ((mask & 0x1) == 1) {
+                    exp |= (src & 0x1) <<  j;
+                    src >>= 1;
+                }
+                mask >>= 1;
+            }
+            exp_res[i] = exp;
+        }
+
+        for(int i = 0; i < actual_res.length; i++) {
+            if (actual_res[i] != exp_res[i]) {
+                throw new Error("expand_int: src = " + inp_arr[i] + " mask = " + mask_arr[i] +
+                                " acutal = " + actual_res[i] + " expected = " + exp_res[i]);
+            }
+        }
+    }
+
+    static void verifyExpandLong(long [] actual_res, long [] inp_arr, long [] mask_arr) {
+        assert inp_arr.length == mask_arr.length && inp_arr.length == actual_res.length;
+        long [] exp_res = new long[inp_arr.length];
+        for (int i = 0 ; i < inp_arr.length; i++) {
+            long exp = 0;
+            long src = inp_arr[i];
+            long mask = mask_arr[i];
+            for(int j = 0, k = 0; j < Long.SIZE; j++) {
+                if ((mask & 0x1) == 1) {
+                    exp |= (src & 0x1) <<  j;
+                    src >>= 1;
+                }
+                mask >>= 1;
+            }
+            exp_res[i] = exp;
+        }
+
+        for(int i = 0; i < actual_res.length; i++) {
+            if (actual_res[i] != exp_res[i]) {
+                throw new Error("expand_long: src = " + inp_arr[i] + " mask = " + mask_arr[i] +
+                                " acutal = " + actual_res[i] + " expected = " + exp_res[i]);
+            }
+        }
+    }
+
+    static void verifyCompressInt(int [] actual_res, int [] inp_arr, int [] mask_arr) {
+        assert inp_arr.length == mask_arr.length && inp_arr.length == actual_res.length;
+        int [] exp_res = new int[inp_arr.length];
+        for (int i = 0 ; i < inp_arr.length; i++) {
+            int exp = 0;
+            int src = inp_arr[i];
+            int mask = mask_arr[i];
+            for(int j = 0, k = 0; j < Integer.SIZE; j++) {
+                if ((mask & 0x1) == 1) {
+                    exp |= (src & 0x1) <<  k++;
+                }
+                mask >>= 1;
+                src >>= 1;
+            }
+            exp_res[i] = exp;
+        }
+
+        for(int i = 0; i < actual_res.length; i++) {
+            if (actual_res[i] != exp_res[i]) {
+                throw new Error("compress_int: src = " + inp_arr[i] + " mask = " + mask_arr[i] +
+                                " acutal = " + actual_res[i] + " expected = " + exp_res[i]);
+            }
+        }
+    }
+
+    static void verifyCompressLong(long [] actual_res, long [] inp_arr, long [] mask_arr) {
+        assert inp_arr.length == mask_arr.length && inp_arr.length == actual_res.length;
+        long [] exp_res = new long[inp_arr.length];
+        for (int i = 0 ; i < inp_arr.length; i++) {
+            long exp = 0;
+            long src = inp_arr[i];
+            long mask = mask_arr[i];
+            for(int j = 0, k = 0; j < Long.SIZE; j++) {
+                if ((mask & 0x1) == 1) {
+                    exp |= (src & 0x1) <<  k++;
+                }
+                mask >>= 1;
+                src >>= 1;
+            }
+            exp_res[i] = exp;
+        }
+
+        for(int i = 0; i < actual_res.length; i++) {
+            if (actual_res[i] != exp_res[i]) {
+                throw new Error("compress_long: src = " + inp_arr[i] + " mask = " + mask_arr[i] +
+                                " acutal = " + actual_res[i] + " expected = " + exp_res[i]);
+            }
+        }
+    }
+
     // ===================================================== //
 
     static final int SIZE = 512;
@@ -274,8 +439,6 @@ public class TestBitShuffleOpers {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                   "-XX:UseAVX=3",
-                                   "--add-modules=jdk.incubator.vector",
                                    "-XX:CompileThresholdScaling=0.3");
     }
 }
