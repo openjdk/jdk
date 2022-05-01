@@ -246,6 +246,7 @@ Java_sun_print_CUPSPrinter_getCupsDefaultPrinters(JNIEnv *env,
     for (i = 0; i < num_dests; i++) {
             utf_str = JNU_NewStringPlatform(env, dests[i].name);
             if (utf_str == NULL) {
+                (*env)->ExceptionClear(env);
                 for (j = i - 1; j >= 0; j--) {
                     utf_str = (*env)->GetObjectArrayElement(env, nameArray, j);
                     (*env)->SetObjectArrayElement(env, nameArray, j, NULL);
