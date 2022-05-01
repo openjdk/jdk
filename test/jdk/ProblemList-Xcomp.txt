@@ -32,7 +32,4 @@ java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
 ############################################################################
 # Loom
 
-####
-## Test problems, not loom regressions but not reproduced in jdk
-
 java/lang/ref/ReferenceEnqueue.java                    8284236 generic-all

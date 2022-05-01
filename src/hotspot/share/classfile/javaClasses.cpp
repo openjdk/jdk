@@ -2532,7 +2532,7 @@ class BacktraceBuilder: public StackObj {
     _index++;
   }
 
-  void set_has_hidden_top_frame(TRAPS) {
+  void set_has_hidden_top_frame() {
     if (!_has_hidden_top_frame) {
       // It would be nice to add java/lang/Boolean::TRUE here
       // to indicate that this backtrace has a hidden top frame.
@@ -2888,7 +2888,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHand
       if (skip_hidden) {
         if (total_count == 0) {
           // The top frame will be hidden from the stack trace.
-          bt.set_has_hidden_top_frame(CHECK);
+          bt.set_has_hidden_top_frame();
         }
         continue;
       }
@@ -4878,8 +4878,6 @@ public:
       mirror->bool_field_put(fd->offset(), _use_unaligned_access);
     } else if (fd->name() == vmSymbols::data_cache_line_flush_size_name()) {
       mirror->int_field_put(fd->offset(), _data_cache_line_flush_size);
-    } else if (fd->name() == vmSymbols::scoped_cache_shift_name()) {
-      mirror->int_field_put(fd->offset(), ExtentLocalCacheSize ? exact_log2(ExtentLocalCacheSize) : -1);
     } else {
       assert(false, "unexpected UnsafeConstants field");
     }

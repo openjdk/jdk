@@ -370,6 +370,9 @@ void ThreadService::reset_contention_time_stat(JavaThread* thread) {
 
 // Find deadlocks involving raw monitors, object monitors and concurrent locks
 // if concurrent_locks is true.
+// We skip virtual thread carriers under the assumption that the current scheduler, ForkJoinPool,
+// doesn't hold any locks while mounting a virtual thread, so any owned monitor (or j.u.c., lock for that matter)
+// on that JavaThread must be owned by the virtual thread, and we don't support deadlock detection for virtual threads.
 DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, bool concurrent_locks) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
@@ -385,6 +388,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
   // Initialize the depth-first-number for each JavaThread.
   JavaThreadIterator jti(t_list);
   for (JavaThread* jt = jti.first(); jt != NULL; jt = jti.next()) {
+    if (jt->is_vthread_mounted()) continue;
     jt->set_depth_first_number(-1);
   }
 
@@ -392,6 +396,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
   DeadlockCycle* last = NULL;
   DeadlockCycle* cycle = new DeadlockCycle();
   for (JavaThread* jt = jti.first(); jt != NULL; jt = jti.next()) {
+    if (jt->is_vthread_mounted()) continue;
     if (jt->depth_first_number() >= 0) {
       // this thread was already visited
       continue;
@@ -466,7 +471,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
         }
       }
 
-      if (currentThread == NULL) {
+      if (currentThread == NULL || currentThread->is_vthread_mounted()) {
         // No dependency on another thread
         break;
       }

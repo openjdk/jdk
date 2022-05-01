@@ -78,7 +78,7 @@ static void write_checkpoint_header(u1* pos, int64_t size, jlong time, u4 checkp
   JfrBigEndianWriter be_writer(pos, sizeof(JfrCheckpointEntry));
   be_writer.write(size);
   be_writer.write(time);
-  be_writer.write<int64_t>(0);
+  be_writer.write(JfrTicks::now().value() - time);
   be_writer.write(checkpoint_type);
   be_writer.write(type_count);
   assert(be_writer.is_valid(), "invariant");

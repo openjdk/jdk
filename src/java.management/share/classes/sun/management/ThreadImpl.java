@@ -439,12 +439,11 @@ public class ThreadImpl implements ThreadMXBean {
     /**
      * Returns an array of thread identifiers for the threads in the given
      * array. Returns {@code null} if {@code threads} is null or the array
-     * of threads only includes carrier threads.
+     * of threads is empty.
      */
     private long[] threadsToIds(Thread[] threads) {
         if (threads != null) {
             long[] tids = Stream.of(threads)
-                    .filter(t -> !(t instanceof jdk.internal.misc.CarrierThread))
                     .mapToLong(Thread::threadId)
                     .toArray();
             if (tids.length > 0) {

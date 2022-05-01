@@ -525,7 +525,6 @@
   template(data_cache_line_flush_size_name,           "DATA_CACHE_LINE_FLUSH_SIZE")               \
   template(during_unsafe_access_name,                 "during_unsafe_access")                     \
   template(checkIndex_name,                           "checkIndex")                               \
-  template(scoped_cache_shift_name,                   "SCOPED_CACHE_SHIFT")                       \
   template(jfr_epoch_name,                            "jfr_epoch")                                \
   template(maxThawingSize_name,                       "maxThawingSize")                           \
                                                                                                   \

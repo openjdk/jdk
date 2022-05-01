@@ -101,10 +101,10 @@ public class ThreadContainers {
             ThreadContainer parent = container.enclosingScope(ThreadContainer.class);
             if (parent != null)
                 return parent;
-            if ((parent = ThreadContainers.container(owner)) != null)
+            if ((parent = container(owner)) != null)
                 return parent;
         }
-        ThreadContainer root = ThreadContainers.root();
+        ThreadContainer root = root();
         return (container != root) ? root : null;
     }
 
@@ -136,10 +136,16 @@ public class ThreadContainers {
     /**
      * Returns the thread container that the given Thread is in or the root
      * container if not started in a container.
+     * @throws IllegalStateException if the thread has not been started
      */
     public static ThreadContainer container(Thread thread) {
-        ThreadContainer container = JLA.threadContainer(thread);
-        return (container != null) ? container : root();
+        // thread container is set when the thread is started
+        if (thread.isAlive() || thread.getState() == Thread.State.TERMINATED) {
+            ThreadContainer container = JLA.threadContainer(thread);
+            return (container != null) ? container : root();
+        } else {
+            throw new IllegalStateException("Thread not started");
+        }
     }
 
     /**
@@ -195,22 +201,13 @@ public class ThreadContainers {
             super(true);
         }
         @Override
-        public String name() {
-            return "<root>";
-        }
-        @Override
-        public Thread owner() {
-            return null;
-        }
-        @Override
         public ThreadContainer parent() {
             return null;
         }
         @Override
         public String toString() {
-            return name();
+            return "<root>";
         }
-
         @Override
         public StackableScope previous() {
             return null;
@@ -246,7 +243,8 @@ public class ThreadContainers {
             }
             @Override
             public Stream<Thread> threads() {
-                return Stream.concat(platformThreads(), VTHREADS.stream());
+                return Stream.concat(platformThreads(),
+                                     VTHREADS.stream().filter(Thread::isAlive));
             }
         }
 

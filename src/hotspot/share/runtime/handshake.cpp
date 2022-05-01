@@ -464,13 +464,6 @@ static bool no_suspend_no_async_exception_filter(HandshakeOperation* op) {
   return !op->is_suspend() && !op->is_async_exception();
 }
 
-bool HandshakeState::non_self_queue_filter(HandshakeOperation* op) {
-  if (op->_handshake_cl->can_be_processed_by(Thread::current())) {
-    return !op->is_async();
-  }
-  return false;
-}
-
 HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool check_async_exception) {
   assert(_handshakee == Thread::current(), "Must be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");

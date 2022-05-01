@@ -37,21 +37,9 @@ public abstract class ThreadContainer extends StackableScope {
      * @param shared true for a shared container, false for a container
      * owned by the current thread
      */
-    ThreadContainer(boolean shared) {
+    protected ThreadContainer(boolean shared) {
         super(shared);
     }
-
-    /**
-     * Creates a ThreadContainer owned by the current thread.
-     */
-    protected ThreadContainer() {
-        super(false);
-    }
-
-    /**
-     * Return the container name, null if not named.
-     */
-    public abstract String name();
 
     /**
      * Returns the parent of this container or null if this is the root container.
@@ -75,19 +63,30 @@ public abstract class ThreadContainer extends StackableScope {
     }
 
     /**
-     * Returns a stream of the threads in this container.
+     * Returns a stream of the live threads in this container.
      */
     public abstract Stream<Thread> threads();
 
     /**
-     * Invoked when a thread is started in the container
+     * Invoked by Thread::start before the given Thread is started.
      */
-    public abstract void onStart(Thread thread);
+    public void onStart(Thread thread) {
+        // do nothing
+    }
 
     /**
-     * Invoked when thread in container terminates.
+     * Invoked when a Thread terminates or starting it fails.
+     *
+     * For a platform thread, this method is invoked by the thread itself when it
+     * terminates. For a virtual thread, this method is invoked on its carrier
+     * after the virtual thread has terminated.
+     *
+     * If starting the Thread failed then this method is invoked on the thread
+     * that invoked onStart.
      */
-    public abstract void onExit(Thread thread);
+    public void onExit(Thread thread) {
+        // do nothing
+    }
 
     /**
      * The extent locals captured when the thread container was created.

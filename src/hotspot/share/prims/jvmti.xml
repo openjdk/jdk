@@ -1139,7 +1139,7 @@ jvmtiEnv *jvmti;
         <externallink id="../api/java.base/java/lang/Thread.html#platform-threads">platform thread</externallink>
         or <externallink id="../api/java.base/java/lang/Thread.html#virtual-threads">virtual thread</externallink>.
         Some functions are not supported on virtual threads and return
-        <code>JVMTI_ERROR_INVALID_THREAD</code> when called with a reference
+        <code>JVMTI_ERROR_UNSUPPORTED_OPERATION</code> when called with a reference
         to a virtual thread.
     </intro>
 
@@ -15356,6 +15356,15 @@ typedef void (JNICALL *jvmtiEventVMInit)
         - Add new error JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED
           that can be returned by RedefineClasses and RetransformClasses.
   </change>
+  <change date="15 June 2018" version="11.0.0">
+      Support for Low Overhead Heap Sampling:
+       - Add new capability:
+         - can_generate_sampled_object_alloc_events
+       - Add new function:
+         - SetHeapSamplingInterval
+       - Add new event type:
+         - JVMTI_EVENT_SAMPLED_OBJECT_ALLOC
+  </change>
   <change date="20 May 2019" version="13.0.0">
       Minor spec update for the capability "can_redefine_any_class".
       It now says:
@@ -15384,6 +15393,19 @@ typedef void (JNICALL *jvmtiEventVMInit)
   </change>
   <change date="8 June 2021" version="17.0.0">
       Minor update to deprecate Heap functions 1.0.
+  </change>
+  <change date="27 April 2022" version="19.0.0">
+      Support for virtual threads:
+       - Add new capability:
+         - can_support_virtual_threads
+       - Add new functions:
+         - SuspendAllVirtualThreads
+         - ResumeAllVirtualThreads
+       - Add new event types:
+         - JVMTI_EVENT_VIRTUAL_THREAD_START
+         - JVMTI_EVENT_VIRTUAL_THREAD_END
+       - Add new error code:
+         - JVMTI_ERROR_UNSUPPORTED_OPERATION
   </change>
 </changehistory>
 

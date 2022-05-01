@@ -58,6 +58,13 @@ class JavaThread;
 
 class Continuation : AllStatic {
 public:
+
+  enum thaw_kind {
+    thaw_top = 0,
+    thaw_return_barrier = 1,
+    thaw_exception = 2,
+  };
+
   static void init();
 
   static address freeze_entry();

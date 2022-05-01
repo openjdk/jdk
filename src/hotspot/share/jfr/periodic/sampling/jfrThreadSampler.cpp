@@ -164,7 +164,7 @@ void OSThreadSampler::do_task(const os::SuspendedThreadTaskContext& context) {
     OSThreadSamplerCallback cb(*this, context);
     os::ThreadCrashProtection crash_protection;
     if (!crash_protection.call(cb)) {
-      log_debug(jfr)("Thread method sampler crashed");
+      log_error(jfr)("Thread method sampler crashed");
     }
   } else {
     protected_task(context);

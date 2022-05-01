@@ -140,9 +140,10 @@ public class JfrEvents {
                 Thread thread = factory.newThread(LockSupport::park);
                 thread.start();
 
-                // give time for thread to park
-                boolean terminated = thread.join(Duration.ofMillis(500));
-                assertFalse(terminated);
+                // wait for thread to park
+                while (thread.getState() != Thread.State.WAITING) {
+                    Thread.sleep(10);
+                }
 
                 // shutdown scheduler
                 pool.shutdown();

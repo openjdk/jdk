@@ -289,6 +289,63 @@ public final class ProcessTools {
         return createJavaProcessBuilder(command.toArray(String[]::new));
     }
 
+    /*
+      Convert arguments for tests running with virtual threads main wrapper
+      When test is executed with process wrapper the line is changed from
+      java <jvm-args> <test-class> <test-args>
+      to
+      java --enable-preview <jvm-args> jdk.test.lib.process.ProcessTools <wrapper-name> <test-class> <test-args>
+     */
+    private static List<String> addMainWrapperArgs(String mainWrapper, List<String> command) {
+
+        boolean useModules = command.contains("-m");
+        if (useModules) {
+            return command;
+        }
+
+        ArrayList<String> args = new ArrayList<>();
+        final String[] doubleWordArgs = {"-cp", "-classpath", "--add-opens", "--class-path", "--upgrade-module-path",
+                "--add-modules", "-d", "--add-exports", "--patch-module", "--module-path"};
+
+        if (mainWrapper.equalsIgnoreCase("virtual")) {
+            args.add("--enable-preview");
+        }
+
+        boolean expectSecondArg = false;
+        boolean isWrapperClassAdded = false;
+        for (String cmd : command) {
+            if (isWrapperClassAdded) {
+                args.add(cmd);
+                continue;
+            }
+
+            if (expectSecondArg) {
+                expectSecondArg = false;
+                args.add(cmd);
+                continue;
+            }
+            for (String dWArg : doubleWordArgs) {
+                if (cmd.equals(dWArg)) {
+                    expectSecondArg = true;
+                    args.add(cmd);
+                    break;
+                }
+            }
+            if (expectSecondArg) {
+                continue;
+            }
+            if (cmd.startsWith("-")) {
+                args.add(cmd);
+                continue;
+            }
+            args.add("jdk.test.lib.process.ProcessTools");
+            args.add(mainWrapper);
+            isWrapperClassAdded = true;
+            args.add(cmd);
+        }
+        return args;
+    }
+
     /**
      * Create ProcessBuilder using the java launcher from the jdk to be tested.
      *
@@ -304,56 +361,9 @@ public final class ProcessTools {
         args.add("-cp");
         args.add(System.getProperty("java.class.path"));
 
-        boolean noModule = true;
-        for (String cmd: command) {
-            if (cmd.equals("-m")) {
-                noModule = false;
-                break;
-            }
-        }
-
-        String[] doubleWordArgs = {"-cp", "-classpath", "--add-opens", "--class-path", "--upgrade-module-path",
-                                   "--add-modules", "-d", "--add-exports", "--patch-module", "--module-path"};
-
-        // When test is executed with process wrapper the line is changed to
-        // java <jvm-args> jdk.test.lib.process.ProcessTools <test-class>
         String mainWrapper = System.getProperty("main.wrapper");
-        if (noModule && mainWrapper != null) {
-            if (mainWrapper.equalsIgnoreCase("virtual")) {
-                args.add("--enable-preview");
-            }
-            boolean skipNext = false;
-            boolean added = false;
-            for (String cmd : command) {
-                if (added) {
-                    args.add(cmd);
-                    continue;
-                }
-
-                if (skipNext) {
-                    skipNext = false;
-                    args.add(cmd);
-                    continue;
-                }
-                for (String dWArg : doubleWordArgs) {
-                    if (cmd.equals(dWArg)) {
-                        skipNext = true;
-                        args.add(cmd);
-                        break;
-                    }
-                }
-                if (skipNext) {
-                    continue;
-                }
-                if (cmd.startsWith("-")) {
-                    args.add(cmd);
-                    continue;
-                }
-                args.add("jdk.test.lib.process.ProcessTools");
-                args.add(mainWrapper);
-                added = true;
-                args.add(cmd);
-            }
+        if (mainWrapper != null) {
+            args.addAll(addMainWrapperArgs(mainWrapper, Arrays.asList(command)));
         } else {
             Collections.addAll(args, command);
         }

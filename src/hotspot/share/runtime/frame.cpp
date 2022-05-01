@@ -1139,7 +1139,9 @@ bool frame::is_deoptimized_frame() const {
   return false;
 }
 
-void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, DerivedOopClosure* df, DerivedPointerIterationMode derived_mode, const RegisterMap* map, bool use_interpreter_oop_map_cache) const {
+void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf,
+                             DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
+                             const RegisterMap* map, bool use_interpreter_oop_map_cache) const {
 #ifndef PRODUCT
   // simulate GC crash here to dump java thread in error report
   if (CrashGCForDumpingJavaThread) {

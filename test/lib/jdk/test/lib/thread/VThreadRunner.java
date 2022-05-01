@@ -58,7 +58,7 @@ public class VThreadRunner {
 
     /**
      * Run a task in a virtual thread and wait for it to terminate.
-     * If the task completse with an exception then it is thrown by this method.
+     * If the task completes with an exception then it is thrown by this method.
      * If the task throws an Error then it is wrapped in an RuntimeException.
      *
      * @param name thread name, can be null
@@ -105,7 +105,7 @@ public class VThreadRunner {
 
     /**
      * Run a task in a virtual thread and wait for it to terminate.
-     * If the task completse with an exception then it is thrown by this method.
+     * If the task completes with an exception then it is thrown by this method.
      * If the task throws an Error then it is wrapped in an RuntimeException.
      *
      * @param name thread name, can be null
@@ -118,7 +118,7 @@ public class VThreadRunner {
 
     /**
      * Run a task in a virtual thread and wait for it to terminate.
-     * If the task completse with an exception then it is thrown by this method.
+     * If the task completes with an exception then it is thrown by this method.
      * If the task throws an Error then it is wrapped in an RuntimeException.
      *
      * @param characteristics thread characteristics
@@ -131,7 +131,7 @@ public class VThreadRunner {
 
     /**
      * Run a task in a virtual thread and wait for it to terminate.
-     * If the task completse with an exception then it is thrown by this method.
+     * If the task completes with an exception then it is thrown by this method.
      * If the task throws an Error then it is wrapped in an RuntimeException.
      *
      * @param task the task to run

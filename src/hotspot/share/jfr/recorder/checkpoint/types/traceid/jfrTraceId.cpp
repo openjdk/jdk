@@ -26,10 +26,8 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
-#include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "oops/access.inline.hpp"
 #include "oops/arrayKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -40,7 +38,6 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/exceptions.hpp"
 
 // returns updated value
 static traceid atomic_inc(traceid volatile* const dest, traceid stride = 1) {

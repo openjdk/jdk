@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,7 +45,7 @@ package jdk.internal.misc;
  * any class that uses them.
  */
 
-public final class UnsafeConstants {
+final class UnsafeConstants {
 
     /**
      * This constructor is private because the class is not meant to
@@ -112,21 +112,11 @@ public final class UnsafeConstants {
 
     static final int DATA_CACHE_LINE_FLUSH_SIZE;
 
-    /**
-     * The exact log (base 2) of the number of lines in the Scoped cache.
-     *
-     * @implNote
-     * The actual value for this field is injected by the JVM.
-     */
-
-    public static final int SCOPED_CACHE_SHIFT;
-
     static {
         ADDRESS_SIZE0 = 0;
         PAGE_SIZE = 0;
         BIG_ENDIAN = false;
         UNALIGNED_ACCESS = false;
         DATA_CACHE_LINE_FLUSH_SIZE = 0;
-        SCOPED_CACHE_SHIFT = -1;
     }
 }

@@ -1747,10 +1747,27 @@ public class ThreadAPI {
     }
 
     /**
-     * Test Thread::getState when thread is waiting in Object.wait.
+     * Test Thread::getState when thread is waiting for a monitor.
      */
     @Test
     public void testGetState6() throws Exception {
+        var thread = Thread.ofVirtual().unstarted(() -> {
+            synchronized (lock) { }
+        });
+        synchronized (lock) {
+            thread.start();
+            while (thread.getState() != Thread.State.BLOCKED) {
+                Thread.sleep(20);
+            }
+        }
+        thread.join();
+    }
+
+    /**
+     * Test Thread::getState when thread is waiting in Object.wait.
+     */
+    @Test
+    public void testGetState7() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
                 try { lock.wait(); } catch (InterruptedException e) { }
@@ -1767,7 +1784,7 @@ public class ThreadAPI {
      * Test Thread::getState when thread is terminated.
      */
     @Test
-    public void testGetState7() throws Exception {
+    public void testGetState8() throws Exception {
         var thread = Thread.ofVirtual().start(() -> { });
         thread.join();
         assertTrue(thread.getState() == Thread.State.TERMINATED);

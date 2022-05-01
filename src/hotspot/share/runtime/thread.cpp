@@ -1927,21 +1927,6 @@ void JavaThread::deoptimize_marked_methods() {
   }
 }
 
-void JavaThread::deoptimize_marked_methods_only_anchors() {
-  if (!has_last_Java_frame()) return;
-  bool java_callee = false;
-  StackFrameStream fst(this, false /* update */, true /* process_frames */);
-  for (; !fst.is_done(); fst.next()) {
-    if (fst.current()->should_be_deoptimized()) {
-      if (!java_callee) {
-        Deoptimization::deoptimize(this, *fst.current());
-      }
-    }
-    java_callee = fst.current()->is_compiled_frame();
-  }
-}
-
-
 #ifdef ASSERT
 void JavaThread::verify_frame_info() {
   assert((!has_last_Java_frame() && java_call_counter() == 0) ||

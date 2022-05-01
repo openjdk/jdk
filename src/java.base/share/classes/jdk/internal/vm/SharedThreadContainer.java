@@ -30,7 +30,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
@@ -42,55 +41,42 @@ import jdk.internal.access.SharedSecrets;
 public class SharedThreadContainer extends ThreadContainer implements AutoCloseable {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final VarHandle CLOSED;
+    private static final VarHandle VIRTUAL_THREADS;
     static {
         try {
             MethodHandles.Lookup l = MethodHandles.lookup();
-            CLOSED = l.findVarHandle(SharedThreadContainer.class, "closed", boolean.class);
+            CLOSED = l.findVarHandle(SharedThreadContainer.class,
+                    "closed", boolean.class);
+            VIRTUAL_THREADS = l.findVarHandle(SharedThreadContainer.class,
+                    "virtualThreads", Set.class);
         } catch (Exception e) {
             throw new InternalError(e);
         }
     }
 
-    private final ThreadContainer parent;
+    // name of container, used by toString
     private final String name;
 
-    // thread count, null if not tracking
+    // the number of threads in the container
     private final LongAdder threadCount;
 
-    // the virtual threads in the container, null if not tracking
-    private final Set<Thread> virtualThreads;
+    // the virtual threads in the container, created lazily
+    private volatile Set<Thread> virtualThreads;
 
-    // supplier of threads, can be set lazily.
-    private volatile Supplier<Stream<Thread>> threadsSupplier;
-
+    // the key for this container in the registry
     private volatile Object key;
+
+    // set to true when the container is closed
     private volatile boolean closed;
 
     /**
      * Initialize a new SharedThreadContainer.
-     * @param parent the (unowned) parent
      * @param name the container name, can be null
-     * @param trackThreads true to track threads
      */
-    private SharedThreadContainer(ThreadContainer parent, String name, boolean trackThreads) {
-        super(true);
-        this.parent = parent;
+    private SharedThreadContainer(String name) {
+        super(/*shared*/ true);
         this.name = name;
-        if (trackThreads) {
-            this.threadCount = new LongAdder();
-            this.virtualThreads = ConcurrentHashMap.newKeySet();
-        } else {
-            this.threadCount = null;
-            this.virtualThreads = null;
-        }
-    }
-
-    private static SharedThreadContainer create(ThreadContainer parent,
-                                                String name,
-                                                boolean trackThreads) {
-        var container = new SharedThreadContainer(parent, name, trackThreads);
-        container.key = ThreadContainers.registerContainer(container);
-        return container;
+        this.threadCount = new LongAdder();
     }
 
     /**
@@ -100,7 +86,10 @@ public class SharedThreadContainer extends ThreadContainer implements AutoClosea
     public static SharedThreadContainer create(ThreadContainer parent, String name) {
         if (parent.owner() != null)
             throw new IllegalArgumentException("parent has owner");
-        return create(parent, name, true);
+        var container = new SharedThreadContainer(name);
+        // register the container to allow discovery by serviceability tools
+        container.key = ThreadContainers.registerContainer(container);
+        return container;
     }
 
     /**
@@ -111,24 +100,6 @@ public class SharedThreadContainer extends ThreadContainer implements AutoClosea
         return create(ThreadContainers.root(), name);
     }
 
-    /**
-     * Creates a shared thread container with the given name. Its parent will be
-     * the root thread container. The container optionally tracks threads.
-     */
-    public static SharedThreadContainer create(String name, boolean trackThreads) {
-        return create(ThreadContainers.root(), name, trackThreads);
-    }
-
-    @Override
-    public ThreadContainer parent() {
-        return parent;
-    }
-
-    @Override
-    public String name() {
-        return name;
-    }
-
     @Override
     public Thread owner() {
         return null;
@@ -136,49 +107,46 @@ public class SharedThreadContainer extends ThreadContainer implements AutoClosea
 
     @Override
     public void onStart(Thread thread) {
-        if (virtualThreads != null && thread.isVirtual())
-            virtualThreads.add(thread);
-        if (threadCount != null)
-            threadCount.add(1L);
+        // virtual threads needs to be tracked
+        if (thread.isVirtual()) {
+            Set<Thread> vthreads = this.virtualThreads;
+            if (vthreads == null) {
+                vthreads = ConcurrentHashMap.newKeySet();
+                if (!VIRTUAL_THREADS.compareAndSet(this, null, vthreads)) {
+                    // lost the race
+                    vthreads = this.virtualThreads;
+                }
+            }
+            vthreads.add(thread);
+        }
+        threadCount.add(1L);
     }
 
     @Override
     public void onExit(Thread thread) {
-        if (threadCount != null)
-            threadCount.add(-1L);
-        if (virtualThreads != null && thread.isVirtual())
+        threadCount.add(-1L);
+        if (thread.isVirtual())
             virtualThreads.remove(thread);
     }
 
     @Override
     public long threadCount() {
-        if (threadCount != null) {
-            return threadCount.sum();
-        } else {
-            return threads().mapToLong(e -> 1L).sum();
-        }
-    }
-
-    /**
-     * Sets the object that enumerates the threads in the container.
-     */
-    public void threadsSupplier(Supplier<Stream<Thread>> threadsSupplier) {
-        this.threadsSupplier = Objects.requireNonNull(threadsSupplier);
+        return threadCount.sum();
     }
 
     @Override
     public Stream<Thread> threads() {
-        Supplier<Stream<Thread>> threadsSupplier = this.threadsSupplier;
-        if (threadsSupplier != null) {
-            return threadsSupplier.get();
+        // live platform threads in this container
+        Stream<Thread> platformThreads = Stream.of(JLA.getAllThreads())
+                .filter(t -> JLA.threadContainer(t) == this);
+        Set<Thread> vthreads = this.virtualThreads;
+        if (vthreads == null) {
+            // live platform threads only, no virtual threads
+            return platformThreads;
         } else {
-            Stream<Thread> platformThreads = Stream.of(JLA.getAllThreads())
-                    .filter(t -> JLA.threadContainer(t) == this);
-            if (virtualThreads == null) {
-                return platformThreads;
-            } else {
-                return Stream.concat(platformThreads, virtualThreads.stream());
-            }
+            // all live threads in this container
+            return Stream.concat(platformThreads,
+                                 vthreads.stream().filter(Thread::isAlive));
         }
     }
 
@@ -207,7 +175,6 @@ public class SharedThreadContainer extends ThreadContainer implements AutoClosea
     @Override
     public String toString() {
         String id = Objects.toIdentityString(this);
-        String name = name();
         if (name != null) {
             return name + "/" + id;
         } else {

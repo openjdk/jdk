@@ -112,7 +112,7 @@ public final class RecordedThread extends RecordedObject {
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
     public boolean isVirtual() {
-        return getTyped("isVirtual", Boolean.class, Boolean.FALSE);
+        return getTyped("virtual", Boolean.class, Boolean.FALSE);
     }
 
 }

@@ -554,6 +554,8 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
+jdk/net/ExtendedSocketOption/DontFragmentTest.java              8285515 macosx-all
+
 ############################################################################
 
 # jdk_nio
@@ -566,6 +568,12 @@ java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-a
 
 java/nio/channels/etc/PrintSupportedOptions.java                8285671 macosx-x64
 java/nio/channels/DatagramChannel/AfterDisconnect.java          8285671 macosx-x64
+
+java/nio/channels/DatagramChannel/AdaptorGetters.java           8285515 macosx-all
+java/nio/channels/DatagramChannel/AfterDisconnect.java          8285515 macosx-all
+java/nio/channels/DatagramChannel/ChangingAddress.java          8285515 macosx-all
+java/nio/channels/DatagramChannel/Disconnect.java               8285515 macosx-all
+java/nio/channels/DatagramChannel/SelectWhenRefused.java        8285515 macosx-all
 
 ############################################################################
 

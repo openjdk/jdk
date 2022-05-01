@@ -85,7 +85,7 @@ public class ExtentLocalContainer extends StackableScope {
                                    ExtentLocalContainer container) { }
 
     /**
-     * Returns a extent local bindings for the current thread.
+     * Returns the extent local bindings for the current thread.
      */
     public static BindingsSnapshot captureBindings() {
         return new BindingsSnapshot(JLA.extentLocalBindings(), latest());

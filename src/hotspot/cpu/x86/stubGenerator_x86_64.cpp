@@ -7531,9 +7531,9 @@ address generate_avx_ghash_processBlocks() {
     }
 
     // If we want, we can templatize thaw by kind, and have three different entries
-    if (exception)           __ movl(c_rarg1, (int32_t)2);
-    else if (return_barrier) __ movl(c_rarg1, (int32_t)1);
-    else                     __ movl(c_rarg1, (int32_t)0);
+    if (exception)           __ movl(c_rarg1, (int32_t)Continuation::thaw_exception);
+    else if (return_barrier) __ movl(c_rarg1, (int32_t)Continuation::thaw_return_barrier);
+    else                     __ movl(c_rarg1, (int32_t)Continuation::thaw_top);
 
     __ call_VM_leaf(Continuation::thaw_entry(), r15_thread, c_rarg1);
     __ movptr(rbx, rax); // rax is the sp of the yielding frame
@@ -7604,7 +7604,7 @@ address generate_avx_ghash_processBlocks() {
     __ movptr(c_rarg0, r15_thread);
   }
 
-  // Handle is dereferenced here using correct load constructs.
+  // The handle is dereferenced through a load barrier.
   static void jfr_epilogue(MacroAssembler* _masm) {
     __ reset_last_Java_frame(true);
     Label null_jobject;
@@ -7616,10 +7616,7 @@ address generate_avx_ghash_processBlocks() {
     __ bind(null_jobject);
   }
 
-  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
-  RuntimeStub* generate_jfr_write_checkpoint() {
-    const char* name = "jfr_write_checkpoint";
-
+  static RuntimeStub* generate_jfr_stub(const char* name, address entrypoint) {
     enum layout {
       rbp_off,
       rbpH_off,
@@ -7640,47 +7637,7 @@ address generate_avx_ghash_processBlocks() {
     int frame_complete = __ pc() - start;
     address the_pc = __ pc();
     jfr_prologue(the_pc, _masm);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
-    __ reset_last_Java_frame(true); // no epilogue, not returning anything
-    __ leave();
-    __ ret(0);
-
-    OopMap* map = new OopMap(framesize, 1); // rbp
-    oop_maps->add_gc_map(the_pc - start, map);
-
-    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-      RuntimeStub::new_runtime_stub(name, &code, frame_complete,
-                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                    oop_maps, false);
-    return stub;
-  }
-
-  // For c1: call the corresponding runtime routine, it returns a jobject handle to the event writer.
-  // The handle is dereferenced and the return value is the event writer oop.
-  RuntimeStub* generate_jfr_get_event_writer() {
-    const char* name = "jfr_get_event_writer";
-
-    enum layout {
-      rbp_off,
-      rbpH_off,
-      return_off,
-      return_off2,
-      framesize // inclusive of return address
-    };
-
-    int insts_size = 512;
-    int locs_size = 64;
-    CodeBuffer code(name, insts_size, locs_size);
-    OopMapSet* oop_maps = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-    MacroAssembler* _masm = masm;
-
-    address start = __ pc();
-    __ enter();
-    int frame_complete = __ pc() - start;
-    address the_pc = __ pc();
-    jfr_prologue(the_pc, _masm);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::event_writer), 1);
+    __ call_VM_leaf(entrypoint, 1);
     jfr_epilogue(_masm);
     __ leave();
     __ ret(0);
@@ -7693,6 +7650,21 @@ address generate_avx_ghash_processBlocks() {
                                     (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                     oop_maps, false);
     return stub;
+  }
+
+  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
+  // It returns a jobject handle to the event writer.
+  // The handle is dereferenced and the return value is the event writer oop.
+  RuntimeStub* generate_jfr_write_checkpoint() {
+    return generate_jfr_stub("jfr_write_checkpoint",
+                              CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint));
+  }
+
+  // For c1: call the corresponding runtime routine, it returns a jobject handle to the event writer.
+  // The handle is dereferenced and the return value is the event writer oop.
+  RuntimeStub* generate_jfr_get_event_writer() {
+    return generate_jfr_stub("jfr_get_event_writer",
+                              CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::event_writer));
   }
 
 #endif // INCLUDE_JFR

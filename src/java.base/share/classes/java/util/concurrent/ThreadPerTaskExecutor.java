@@ -36,13 +36,17 @@ import java.util.Set;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Stream;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import jdk.internal.vm.SharedThreadContainer;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.ThreadContainer;
+import jdk.internal.vm.ThreadContainers;
 
 /**
  * An ExecutorService that starts a new thread for each task. The number of
  * threads is unbounded.
  */
-class ThreadPerTaskExecutor implements ExecutorService {
+class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final Permission MODIFY_THREAD = new RuntimePermission("modifyThread");
     private static final VarHandle STATE;
     static {
@@ -54,11 +58,9 @@ class ThreadPerTaskExecutor implements ExecutorService {
         }
     }
 
+    private final ThreadFactory factory;
     private final Set<Thread> threads = ConcurrentHashMap.newKeySet();
     private final CountDownLatch terminationSignal = new CountDownLatch(1);
-
-    private final ThreadFactory factory;
-    private final SharedThreadContainer container;
 
     // states: RUNNING -> SHUTDOWN -> TERMINATED
     private static final int RUNNING    = 0;
@@ -66,22 +68,22 @@ class ThreadPerTaskExecutor implements ExecutorService {
     private static final int TERMINATED = 2;
     private volatile int state;
 
-    private ThreadPerTaskExecutor(ThreadFactory factory) {
-        this.factory = Objects.requireNonNull(factory);
-        String name = Objects.toIdentityString(this);
-        this.container = SharedThreadContainer.create(name, /*trackThreads*/ false);
-    }
+    // the key for this container in the registry
+    private volatile Object key;
 
-    private ThreadPerTaskExecutor setThreadsSupplier() {
-        container.threadsSupplier(this::threads);
-        return this;
+    private ThreadPerTaskExecutor(ThreadFactory factory) {
+        super(/*shared*/ true);
+        this.factory = Objects.requireNonNull(factory);
     }
 
     /**
      * Creates a thread-per-task executor that creates threads using the given factory.
      */
     static ThreadPerTaskExecutor create(ThreadFactory factory) {
-        return new ThreadPerTaskExecutor(factory).setThreadsSupplier();
+        var executor = new ThreadPerTaskExecutor(factory);
+        // register it to allow discovery by serviceability tools
+        executor.key = ThreadContainers.registerContainer(executor);
+        return executor;
     }
 
     /**
@@ -119,7 +121,7 @@ class ThreadPerTaskExecutor implements ExecutorService {
             terminationSignal.countDown();
 
             // remove from registry
-            container.close();
+            ThreadContainers.deregisterContainer(key);
         }
     }
 
@@ -135,8 +137,14 @@ class ThreadPerTaskExecutor implements ExecutorService {
         }
     }
 
-    private Stream<Thread> threads() {
-        return threads.stream();
+    @Override
+    public Stream<Thread> threads() {
+        return threads.stream().filter(Thread::isAlive);
+    }
+
+    @Override
+    public long threadCount() {
+        return threads.size();
     }
 
     @Override
@@ -238,7 +246,7 @@ class ThreadPerTaskExecutor implements ExecutorService {
         boolean started = false;
         try {
             if (state == RUNNING) {
-                container.start(thread);
+                JLA.start(thread, this);
                 started = true;
             }
         } finally {

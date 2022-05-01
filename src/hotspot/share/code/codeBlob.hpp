@@ -107,10 +107,10 @@ protected:
   address    _relocation_begin;
   address    _relocation_end;
 
-  bool       _is_compiled;
-
   ImmutableOopMapSet* _oop_maps;                 // OopMap for this CodeBlob
   bool                _caller_must_gc_arguments;
+
+  bool                _is_compiled;
 
   const char*         _name;
   S390_ONLY(int       _ctable_offset;)
@@ -125,8 +125,12 @@ protected:
   }
 #endif // not PRODUCT
 
-  CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled = false);
-  CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled = false);
+  CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset,
+           int frame_size, ImmutableOopMapSet* oop_maps,
+           bool caller_must_gc_arguments, bool compiled = false);
+  CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset,
+           int frame_size, OopMapSet* oop_maps,
+           bool caller_must_gc_arguments, bool compiled = false);
 public:
   // Only used by unit test.
   CodeBlob() : _type(compiler_none) {}

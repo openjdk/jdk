@@ -74,9 +74,6 @@ compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-all
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 compiler/codecache/TestStressCodeBuffers.java 8272094 generic-aarch64
 
-# fixed in main line for jdk-19+20
-compiler/intrinsics/sha/cli/TestUseSHA256IntrinsicsOptionOnUnsupportedCPU.java 8285266  linux-aarch64
-
 
 #############################################################################
 
@@ -180,15 +177,7 @@ vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEa
 
 # Loom
 
-# fails with StackOverflowError on Windows
-serviceability/jvmti/GetLocalVariable/GetLocalWithoutSuspendTest.java        8279663 windows-all
-
-# stratum mismatch, test running with the wrong class path
-vmTestbase/vm/mlvm/indy/func/jdi/breakpointOtherStratum/Test.java            8276713 generic-all
-vmTestbase/vm/mlvm/meth/func/jdi/breakpointOtherStratum/Test.java            8276713 generic-all
-
 # obsolete test using Thread.stop
 runtime/Thread/StopAtExit.java                                               8283610 generic-all
 
-# test issues that don't reproduce in jdk repo
-vmTestbase/gc/gctests/ReferencesGC/ReferencesGC.java                         8284234 generic-all
+runtime/Thread/TooSmallStackSize.java                                        8285832 windows-x64

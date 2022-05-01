@@ -26,16 +26,16 @@
 package jdk.jfr.events;
 
 import jdk.jfr.Category;
-import jdk.jfr.Description;
+import jdk.jfr.Experimental;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.internal.MirrorEvent;
 
-@Category({"Java Runtime"})
-@Label("Virtual thread start")
+@Category("Java Application")
+@Label("Virtual Thread Start")
 @Name("jdk.VirtualThreadStart")
-@Description("Virtual thread start")
 @MirrorEvent(className = "jdk.internal.event.VirtualThreadStartEvent")
+@Experimental
 public final class VirtualThreadStartEvent extends AbstractJDKEvent {
 
     @Label("Thread Id")

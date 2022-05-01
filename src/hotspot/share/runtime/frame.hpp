@@ -459,10 +459,14 @@ class frame {
   void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f) const;
 
   // Iteration of oops
-  void oops_do_internal(OopClosure* f, CodeBlobClosure* cf, DerivedOopClosure* df, DerivedPointerIterationMode derived_mode, const RegisterMap* map, bool use_interpreter_oop_map_cache) const;
+  void oops_do_internal(OopClosure* f, CodeBlobClosure* cf,
+                        DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
+                        const RegisterMap* map, bool use_interpreter_oop_map_cache) const;
 
   void oops_entry_do(OopClosure* f, const RegisterMap* map) const;
-  void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, DerivedOopClosure* df, DerivedPointerIterationMode derived_mode, const RegisterMap* map) const;
+  void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf,
+                         DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
+                         const RegisterMap* map) const;
   int adjust_offset(Method* method, int index); // helper for above fn
  public:
   // Memory management
@@ -476,8 +480,16 @@ class frame {
 #endif
     oops_do_internal(f, cf, NULL, dpim, map, true);
   }
-  void oops_do(OopClosure* f, CodeBlobClosure* cf, DerivedOopClosure* df, const RegisterMap* map) { oops_do_internal(f, cf, df, DerivedPointerIterationMode::_ignore, map, true); }
-  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map, DerivedPointerIterationMode derived_mode) const { oops_do_internal(f, cf, NULL, derived_mode, map, true); }
+
+  void oops_do(OopClosure* f, CodeBlobClosure* cf, DerivedOopClosure* df, const RegisterMap* map) {
+    oops_do_internal(f, cf, df, DerivedPointerIterationMode::_ignore, map, true);
+  }
+
+  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
+               DerivedPointerIterationMode derived_mode) const {
+    oops_do_internal(f, cf, NULL, derived_mode, map, true);
+  }
+
   void nmethods_do(CodeBlobClosure* cf) const;
 
   // RedefineClasses support for finding live interpreted methods on the stack

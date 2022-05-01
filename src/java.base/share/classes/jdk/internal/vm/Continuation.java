@@ -46,7 +46,7 @@ import jdk.internal.access.SharedSecrets;
  */
 public class Continuation {
     private static final Unsafe U = Unsafe.getUnsafe();
-    private static final boolean PRESERVE_SCOPE_LOCAL_CACHE;
+    private static final boolean PRESERVE_EXTENT_LOCAL_CACHE;
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     static {
         PreviewFeatures.ensureEnabled();
@@ -54,7 +54,7 @@ public class Continuation {
         StackChunk.init(); // ensure StackChunk class is initialized
 
         String value = GetPropertyAction.privilegedGetProperty("jdk.preserveExtentLocalCache");
-        PRESERVE_SCOPE_LOCAL_CACHE = (value == null) || Boolean.parseBoolean(value);
+        PRESERVE_EXTENT_LOCAL_CACHE = (value == null) || Boolean.parseBoolean(value);
     }
 
     private static final VarHandle MOUNTED;
@@ -269,7 +269,7 @@ public class Continuation {
                     postYieldCleanup();
 
                     unmount();
-                    if (PRESERVE_SCOPE_LOCAL_CACHE) {
+                    if (PRESERVE_EXTENT_LOCAL_CACHE) {
                         extentLocalCache = JLA.extentLocalCache();
                     } else {
                         extentLocalCache = null;

@@ -27,21 +27,23 @@ package jdk.jfr.events;
 
 import jdk.jfr.Category;
 import jdk.jfr.Description;
+import jdk.jfr.Experimental;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.internal.MirrorEvent;
 
-@Category({"Java Runtime"})
-@Label("Virtual thread submit task failed")
+@Category({"Java Development Kit", "Threading"})
+@Label("Virtual Thread Submit Failed")
 @Name("jdk.VirtualThreadSubmitFailed")
 @Description("Submit of task for virtual thread failed")
 @MirrorEvent(className = "jdk.internal.event.VirtualThreadSubmitFailedEvent")
+@Experimental
 public final class VirtualThreadSubmitFailedEvent extends AbstractJDKEvent {
 
     @Label("Thread Id")
     public long javaThreadId;
 
-    @Label("Exception message")
+    @Label("Exception Message")
     public String exceptionMessage;
 
 }

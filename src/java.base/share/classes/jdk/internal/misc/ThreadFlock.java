@@ -453,7 +453,7 @@ public class ThreadFlock implements AutoCloseable {
     }
 
     /**
-     * {@return a stream of the threads in this flock}
+     * {@return a stream of the live threads in this flock}
      * The elements of the stream are threads that were started in this flock
      * but have not terminated. The stream will reflect the set of threads in the
      * flock at some point at or since the creation of the stream. It may or may
@@ -461,7 +461,7 @@ public class ThreadFlock implements AutoCloseable {
      * stream.
      */
     public Stream<Thread> threads() {
-        return threads.stream();
+        return threads.stream().filter(Thread::isAlive);
     }
 
     /**
@@ -508,6 +508,7 @@ public class ThreadFlock implements AutoCloseable {
         private boolean closing;
 
         ThreadContainerImpl(ThreadFlock flock) {
+            super(/*shared*/ false);
             this.flock = flock;
         }
 
@@ -563,10 +564,6 @@ public class ThreadFlock implements AutoCloseable {
             }
         }
 
-        @Override
-        public String name() {
-            return flock.name();
-        }
         @Override
         public long threadCount() {
             return flock.threadCount();

@@ -608,7 +608,6 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   if (Continuation::is_continuation_enterSpecial(deopt_sender)) {
     ContinuationEntry::from_frame(deopt_sender)->set_argsize(0);
   }
-  // if (Continuation::is_cont_barrier_frame(deoptee)) tty->print_cr("WOWEE Continuation::is_cont_barrier_frame(deoptee)");
 
   assert(CodeCache::find_blob_unsafe(frame_pcs[0]) != NULL, "bad pc");
 

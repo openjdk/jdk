@@ -590,17 +590,13 @@ public interface ThreadMXBean extends PlatformManagedObject {
     public void setThreadCpuTimeEnabled(boolean enable);
 
     /**
-     * Finds cycles of threads that are in deadlock waiting to acquire
-     * object monitors. That is, threads that are blocked waiting to enter a
-     * synchronization block or waiting to reenter a synchronization block
-     * after an {@link Object#wait Object.wait} call,
-     * where each thread owns one monitor while
-     * trying to obtain another monitor already held by another thread
-     * in a cycle.
-     * This method returns the IDs of the platform threads that are in
-     * deadlock. The IDs of virtual threads that are in deadlock are not
-     * included. The IDs of platform threads that are in a cycle with
-     * virtual threads may or may not be included.
+     * Finds cycles of platform threads that are in deadlock waiting to acquire
+     * object monitors. That is, platform threads that are blocked waiting to
+     * enter a synchronization block or waiting to reenter a synchronization block
+     * after an {@link Object#wait Object.wait} call, where each platform thread
+     * owns one monitor while trying to obtain another monitor already held by
+     * another platform thread in a cycle. Cycles that include virtual threads
+     * are not found by this method.
      * <p>
      * More formally, a thread is <em>monitor deadlocked</em> if it is
      * part of a cycle in the relation "is waiting for an object monitor
@@ -645,14 +641,10 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * Finds cycles of platform threads that are in deadlock waiting to
      * acquire object monitors or
      * <a href="LockInfo.html#OwnableSynchronizer">ownable synchronizers</a>.
-     * Threads are <em>deadlocked</em> in a cycle waiting for a lock of
-     * these two types if each thread owns one lock while
-     * trying to acquire another lock already held
-     * by another thread in the cycle.
-     * This method returns the IDs of the platform threads that are in
-     * deadlock. The IDs of virtual threads that are in deadlock are not
-     * included. The IDs of platform threads that are in a cycle with
-     * virtual threads may or may not be included.
+     * Platform threads are <em>deadlocked</em> in a cycle waiting for a lock of
+     * these two types if each thread owns one lock while trying to acquire
+     * another lock already held by another platform thread in the cycle.
+     * Cycles that include virtual threads are not found by this method.
      * <p>
      * This method is designed for troubleshooting use, but not for
      * synchronization control.  It might be an expensive operation.

@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @summary Test ThredMXBean.findDeadlockedThreads with deadlocked virtual threads
+ * @summary Test ThredMXBean.findMonitorDeadlockedThreads with cycles of
+ *   platform and virtual threads in deadlock
  * @compile --enable-preview -source ${jdk.version} VirtualThreadDeadlocks.java
  * @run main/othervm --enable-preview VirtualThreadDeadlocks PP
  * @run main/othervm --enable-preview VirtualThreadDeadlocks PV
@@ -71,35 +72,32 @@ public class VirtualThreadDeadlocks {
         System.out.println("thread2 => " + thread2);
 
         System.out.println("Waiting for thread1 and thread2 to deadlock ...");
-        Thread.sleep(2000);
+        awaitBlocked(thread1);
+        awaitBlocked(thread2);
 
         ThreadMXBean bean = ManagementFactory.getPlatformMXBean(ThreadMXBean.class);
-        long[] deadlockedThreads = bean.findDeadlockedThreads();
-        if (deadlockedThreads != null)
-            Arrays.sort(deadlockedThreads);
-        System.out.println("findDeadlockedThreads => " + Arrays.toString(deadlockedThreads));
+        long[] deadlockedThreads = sorted(bean.findMonitorDeadlockedThreads());
+        System.out.println("findMonitorDeadlockedThreads => " + Arrays.toString(deadlockedThreads));
 
-        long[] expectedThreads = platformThreadsToIds(thread1, thread2);
+        // deadlocks involving virtual threads are not detected
+        long[] expectedThreads = (!thread1.isVirtual() && !thread2.isVirtual())
+            ? sorted(thread1.threadId(), thread2.threadId())
+            : null;
+
         System.out.println("expected => " + Arrays.toString(expectedThreads));
 
         if (!Arrays.equals(deadlockedThreads, expectedThreads))
             throw new RuntimeException("Unexpected result");
     }
 
-    /**
-     * Return an array of the thread identifiers of the platform threads in the
-     * given array. Returns null if there are no platform threads.
-     */
-    static long[] platformThreadsToIds(Thread... threads) {
-        long[] tids = Stream.of(threads)
-                .filter(t -> !t.isVirtual())
-                .mapToLong(Thread::threadId)
-                .toArray();
-        if (tids.length == 0) {
-            return null;
-        } else {
-            Arrays.sort(tids);
-            return tids;
+    private static void awaitBlocked(Thread thread) throws InterruptedException {
+        while (thread.getState() != Thread.State.BLOCKED) {
+            Thread.sleep(10);
         }
+    }
+
+    private static long[] sorted(long... array) {
+        if (array != null) Arrays.sort(array);
+        return array;
     }
 }

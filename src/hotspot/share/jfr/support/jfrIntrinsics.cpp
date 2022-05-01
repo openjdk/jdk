@@ -58,7 +58,7 @@ void* JfrIntrinsicSupport::event_writer(JavaThread* jt) {
   return JfrJavaEventWriter::event_writer(jt);
 }
 
-void JfrIntrinsicSupport::write_checkpoint(JavaThread* jt) {
+void* JfrIntrinsicSupport::write_checkpoint(JavaThread* jt) {
   DEBUG_ONLY(assert_precondition(jt);)
   assert(JfrThreadLocal::is_vthread(jt), "invariant");
   const u2 vthread_thread_local_epoch = JfrThreadLocal::vthread_epoch(jt);
@@ -68,12 +68,14 @@ void JfrIntrinsicSupport::write_checkpoint(JavaThread* jt) {
     // and suspended the thread. As part of taking a sample, it updated
     // the vthread object and the thread local "for us". We are good.
     DEBUG_ONLY(assert_epoch_identity(jt, current_epoch);)
-    return;
+    ThreadInVMfromJava transition(jt);
+    return JfrJavaEventWriter::event_writer(jt);
   }
   const traceid vthread_tid = JfrThreadLocal::vthread_id(jt);
   // Transition before reading the epoch generation anew, now as _thread_in_vm. Can safepoint here.
   ThreadInVMfromJava transition(jt);
   JfrThreadLocal::set_vthread_epoch(jt, vthread_tid, ThreadIdAccess::current_epoch());
+  return JfrJavaEventWriter::event_writer(jt);
 }
 
 void JfrIntrinsicSupport::load_barrier(const Klass* klass) {

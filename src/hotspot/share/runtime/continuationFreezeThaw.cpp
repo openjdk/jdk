@@ -45,6 +45,7 @@
 #include "oops/stackChunkOop.inline.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationHelper.inline.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
@@ -211,14 +212,8 @@ const char* freeze_result_names[6] = {
 static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoint);
 template<typename ConfigT> static inline int freeze_internal(JavaThread* current, intptr_t* const sp);
 
-enum thaw_kind {
-  thaw_top = 0,
-  thaw_return_barrier = 1,
-  thaw_exception = 2,
-};
-
 static inline int prepare_thaw_internal(JavaThread* thread, bool return_barrier);
-template<typename ConfigT> static inline intptr_t* thaw_internal(JavaThread* thread, const thaw_kind kind);
+template<typename ConfigT> static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::thaw_kind kind);
 
 
 // Entry point to freeze. Transitions are handled manually
@@ -245,7 +240,7 @@ static JRT_LEAF(intptr_t*, thaw(JavaThread* thread, int kind))
   // JRT_ENTRY instead?
   ResetNoHandleMark rnhm;
 
-  return ConfigT::thaw(thread, (thaw_kind)kind);
+  return ConfigT::thaw(thread, (Continuation::thaw_kind)kind);
 JRT_END
 
 JVM_ENTRY(jint, CONT_isPinned0(JNIEnv* env, jobject cont_scope)) {
@@ -267,7 +262,7 @@ public:
     return freeze_internal<SelfT>(thread, sp);
   }
 
-  static intptr_t* thaw(JavaThread* thread, thaw_kind kind) {
+  static intptr_t* thaw(JavaThread* thread, Continuation::thaw_kind kind) {
     return thaw_internal<SelfT>(thread, kind);
   }
 };
@@ -333,8 +328,8 @@ template<typename Event> void FreezeThawJfrInfo::post_jfr_event(Event* e, oop co
   if (e->should_commit()) {
     log_develop_trace(continuations)("JFR event: iframes: %d size: %d", _e_num_interpreted_frames, _e_size);
     e->set_carrierThread(JFR_JVM_THREAD_ID(jt));
-    e->set_contClass(continuation->klass());
-    e->set_numIFrames(_e_num_interpreted_frames);
+    e->set_continuationClass(continuation->klass());
+    e->set_interpretedFrames(_e_num_interpreted_frames);
     e->set_size(_e_size);
     e->commit();
   }
@@ -1637,12 +1632,12 @@ public:
            && !PreserveFramePointer;
   }
 
-  inline intptr_t* thaw(thaw_kind kind);
+  inline intptr_t* thaw(Continuation::thaw_kind kind);
   NOINLINE intptr_t* thaw_fast(stackChunkOop chunk);
 };
 
 template <typename ConfigT>
-inline intptr_t* Thaw<ConfigT>::thaw(thaw_kind kind) {
+inline intptr_t* Thaw<ConfigT>::thaw(Continuation::thaw_kind kind) {
   verify_continuation(_cont.continuation());
   assert(!jdk_internal_vm_Continuation::done(_cont.continuation()), "");
   assert(!_cont.is_empty(), "");
@@ -1653,7 +1648,7 @@ inline intptr_t* Thaw<ConfigT>::thaw(thaw_kind kind) {
 
   _barriers = chunk->requires_barriers();
   return (LIKELY(can_thaw_fast(chunk))) ? thaw_fast(chunk)
-                                        : thaw_slow(chunk, kind != thaw_top);
+                                        : thaw_slow(chunk, kind != Continuation::thaw_top);
 }
 
 class ReconstructedStack : public StackObj {
@@ -2212,7 +2207,7 @@ void ThawBase::push_return_frame(frame& f) { // see generate_cont_thaw
 // returns new top sp
 // called after preparations (stack overflow check and making room)
 template<typename ConfigT>
-static inline intptr_t* thaw_internal(JavaThread* thread, const thaw_kind kind) {
+static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::thaw_kind kind) {
   assert(thread == JavaThread::current(), "Must be current thread");
 
   CONT_JFR_ONLY(EventContinuationThaw event;)
