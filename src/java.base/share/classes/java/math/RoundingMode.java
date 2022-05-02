@@ -96,6 +96,9 @@ package java.math;
  *
  * @see     BigDecimal
  * @see     MathContext
+ * @see <a href="https://standards.ieee.org/ieee/754/6210/">
+ *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ *
  * @author  Josh Bloch
  * @author  Mike Cowlishaw
  * @author  Joseph D. Darcy
