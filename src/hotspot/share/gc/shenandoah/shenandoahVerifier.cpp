@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahObjectUtils.inline.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -97,7 +98,7 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      if (is_instance_ref_klass(obj->klass())) {
+      if (is_instance_ref_klass(ShenandoahObjectUtils::klass(obj))) {
         obj = ShenandoahForwarding::get_forwardee(obj);
       }
       // Single threaded verification can use faster non-atomic stack and bitmap
@@ -124,7 +125,7 @@ private:
               "oop must be aligned");
 
     ShenandoahHeapRegion *obj_reg = _heap->heap_region_containing(obj);
-    Klass* obj_klass = obj->klass_or_null();
+    Klass* obj_klass = ShenandoahObjectUtils::klass(obj);
 
     // Verify that obj is not in dead space:
     {
@@ -139,11 +140,11 @@ private:
              "Object start should be within the region");
 
       if (!obj_reg->is_humongous()) {
-        check(ShenandoahAsserts::_safe_unknown, obj, (obj_addr + obj->size()) <= obj_reg->top(),
+        check(ShenandoahAsserts::_safe_unknown, obj, (obj_addr + ShenandoahObjectUtils::size(obj)) <= obj_reg->top(),
                "Object end should be within the region");
       } else {
         size_t humongous_start = obj_reg->index();
-        size_t humongous_end = humongous_start + (obj->size() >> ShenandoahHeapRegion::region_size_words_shift());
+        size_t humongous_end = humongous_start + (ShenandoahObjectUtils::size(obj) >> ShenandoahHeapRegion::region_size_words_shift());
         for (size_t idx = humongous_start + 1; idx < humongous_end; idx++) {
           check(ShenandoahAsserts::_safe_unknown, obj, _heap->get_region(idx)->is_humongous_continuation(),
                  "Humongous object is in continuation that fits it");
@@ -160,7 +161,7 @@ private:
           // skip
           break;
         case ShenandoahVerifier::_verify_liveness_complete:
-          Atomic::add(&_ld[obj_reg->index()], (uint) obj->size(), memory_order_relaxed);
+          Atomic::add(&_ld[obj_reg->index()], (uint) ShenandoahObjectUtils::size(obj), memory_order_relaxed);
           // fallthrough for fast failure for un-live regions:
         case ShenandoahVerifier::_verify_liveness_conservative:
           check(ShenandoahAsserts::_safe_oop, obj, obj_reg->has_live(),
@@ -201,7 +202,7 @@ private:
       HeapWord *fwd_addr = cast_from_oop<HeapWord *>(fwd);
       check(ShenandoahAsserts::_safe_oop, obj, fwd_addr < fwd_reg->top(),
              "Forwardee start should be within the region");
-      check(ShenandoahAsserts::_safe_oop, obj, (fwd_addr + fwd->size()) <= fwd_reg->top(),
+      check(ShenandoahAsserts::_safe_oop, obj, (fwd_addr + ShenandoahObjectUtils::size(fwd)) <= fwd_reg->top(),
              "Forwardee end should be within the region");
 
       oop fwd2 = ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
@@ -304,7 +305,8 @@ public:
    */
   void verify_oops_from(oop obj) {
     _loc = obj;
-    obj->oop_iterate(this);
+    Klass* klass = ShenandoahObjectUtils::klass(obj);
+    obj->oop_iterate_backwards(this, klass);
     _loc = NULL;
   }
 
@@ -584,7 +586,7 @@ public:
 
     // Verify everything reachable from that object too, hopefully realizing
     // everything was already marked, and never touching further:
-    if (!is_instance_ref_klass(obj->klass())) {
+    if (!is_instance_ref_klass(ShenandoahObjectUtils::klass(obj))) {
       cl.verify_oops_from(obj);
       (*processed)++;
     }

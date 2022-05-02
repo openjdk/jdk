@@ -184,6 +184,9 @@ class ObjectSynchronizer : AllStatic {
   static intptr_t identity_hash_value_for(Handle obj);
   static intptr_t FastHashCode(Thread* current, oop obj);
 
+  // Read mark-word and spin-wait as long as INFLATING is observed.
+  static markWord read_stable_mark(oop obj);
+
   static markWord stable_mark(oop obj);
 
   // java.lang.Thread support

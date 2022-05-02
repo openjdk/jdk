@@ -950,7 +950,7 @@ public:
 
   void do_object(oop p) {
     shenandoah_assert_marked(NULL, p);
-    if (!p->is_forwarded()) {
+    if (!ShenandoahForwarding::is_forwarded(p)) {
       _heap->evacuate_object(p, _thread);
     }
   }
@@ -1238,7 +1238,10 @@ private:
         // There may be dead oops in weak roots in concurrent root phase, do not touch them.
         return;
       }
-      obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+
+      // We must not expose from-space oops to the rest of runtime, or else it
+      // will call klass() on it, which might fail because of unexpected header.
+      obj = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
 
       assert(oopDesc::is_oop(obj), "must be a valid oop");
       if (!_bitmap->is_marked(obj)) {
@@ -1294,6 +1297,7 @@ void ShenandoahHeap::object_iterate(ObjectClosure* cl) {
   while (! oop_stack.is_empty()) {
     oop obj = oop_stack.pop();
     assert(oopDesc::is_oop(obj), "must be a valid oop");
+    shenandoah_assert_not_in_cset_except(NULL, obj, cancelled_gc());
     cl->do_object(obj);
     obj->oop_iterate(&oops);
   }

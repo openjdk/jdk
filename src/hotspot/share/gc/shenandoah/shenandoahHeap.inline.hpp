@@ -41,6 +41,7 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahObjectUtils.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -296,7 +297,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
-  size_t size = p->size();
+  size_t size = ShenandoahObjectUtils::size(p);
 
   assert(!heap_region_containing(p)->is_humongous(), "never evacuate humongous objects");
 
@@ -513,7 +514,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     oop obj = cast_to_oop(cs);
     assert(oopDesc::is_oop(obj), "sanity");
     assert(ctx->is_marked(obj), "object expected to be marked");
-    size_t size = obj->size();
+    size_t size = ShenandoahObjectUtils::size(obj);
     cl->do_object(obj);
     cs += size;
   }
