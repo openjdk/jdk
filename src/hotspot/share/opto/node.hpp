@@ -1190,6 +1190,7 @@ public:
 public:
   Node* find(int idx, bool only_ctrl = false); // Search the graph for the given idx.
   Node* find_ctrl(int idx); // Search control ancestors for the given idx.
+  void print_bfs (const uint max_distance, Node* target, const char* filter); // Print BFS traversal
   void dump() const { dump("\n"); }  // Print this node.
   void dump(const char* suffix, bool mark = false, outputStream *st = tty) const; // Print this node.
   void dump(int depth) const;        // Print this node, recursively to depth d

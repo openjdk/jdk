@@ -1609,12 +1609,12 @@ Node* find_ctrl(const int idx) {
 
 int print_bfs_cmp(const Node* n1, const Node* n2) { return n1 != n2; }
 // Call this from debugger:
-// BFS traversal of graph, starting at a root node
-// root: staring point of BFS
-// max_distance: maximal distance from root BFS visits
+// BFS traversal of graph, starting at node this
+// this: staring point of BFS
+// max_distance: maximal distance from this BFS visits
 // target:
 //   if NULL: print all nodes visited during BFS
-//   else: find shortest path from root to target, via BFS and backtracking
+//   else: find shortest path from this to target, via BFS and backtracking
 // filter:
 //   if NULL: no filtering
 //   else: use combination of these characters
@@ -1630,35 +1630,34 @@ int print_bfs_cmp(const Node* n1, const Node* n2) { return n1 != n2; }
 //     B: print scheduling blocks (if available)
 //
 // examples:
-//   print_bfs(if, 10, 0, "+cxo")
+//   if->print_bfs(10, 0, "+cxo")
 //     starting at if node, traverse inputs recursively
 //     only along control (mixed and other can also be control)
-//   print_bfs(phi, 5, 0, "-dxo")
+//   phi->print_bfs(5, 0, "-dxo")
 //     starting at phi node, traverse outputs recursively
 //     only along data (mixed and other can also have data flow)
-//   print_bfs(x, 10, y, 0)
+//   x->print_bfs(10, y, 0)
 //     find shortest path from x to y, along any edge or node
 //     will not find a path if it is longer than 10
 //     useful to find how x and y are related
-//   print_bfs(find_node(385), 3, 0, "cdmox+#OB")
+//   find_node(385)->print_bfs(3, 0, "cdmox+#OB")
 //     find inputs of node 385, up to 3 nodes up (+)
 //     traverse all nodes (cdmox), use colors (#)
 //     display old nodes and blocks, if they exist
 //     this is very useful to start at
 //
 // output columns:
-//   distance: distance to root in BFS traversal
+//   distance: distance to this in BFS traversal
 //   block:    block in which the node has been scheduled (head(), _idom->head(), _dom_depth)
 //   old:      old IR node - before matching
-//   parent:   parent node - one distance closer to root
+//   parent:   parent node - one distance closer to this
 //   direction and node type
 //   dump
-void print_bfs(Node* root, const uint max_distance, Node* target, const char* filter) {
-  assert(root != NULL, "root argument cannot be NULL");
+void Node::print_bfs(const uint max_distance, Node* target, const char* filter) {
   if (target == NULL) {
     tty->print("No target: perform BFS.\n");
   } else {
-    tty->print("Find shortest path: %d -> %d.\n", root->_idx, target->_idx);
+    tty->print("Find shortest path: %d -> %d.\n", this->_idx, target->_idx);
   }
   bool traverse_inputs = false;
   if (filter == NULL || strstr(filter, "+") != NULL) {
@@ -1703,8 +1702,8 @@ void print_bfs(Node* root, const uint max_distance, Node* target, const char* fi
 
   // data structures
   Node_List worklist; // BFS queue
-  Dict parent((CmpKey)&print_bfs_cmp, hashkey);   // node -> parent (one step closer to root)
-  Dict distance((CmpKey)&print_bfs_cmp, hashkey); // node -> distance to root
+  Dict parent((CmpKey)&print_bfs_cmp, hashkey);   // node -> parent (one step closer to this)
+  Dict distance((CmpKey)&print_bfs_cmp, hashkey); // node -> distance to this
 
   auto is_visit = [&] (Node* n) {
     const Type *t = n->bottom_type();
@@ -1795,7 +1794,7 @@ void print_bfs(Node* root, const uint max_distance, Node* target, const char* fi
     parent.Insert(n, p);
     distance.Insert(n, (void*)d);
   };
-  worklist_push(root, root, 0);
+  worklist_push(this, this, 0);
 
   if (target == NULL) {
     // BFS header
@@ -1892,15 +1891,17 @@ void print_bfs(Node* root, const uint max_distance, Node* target, const char* fi
     }
     tty->print("  0");                      // distance
     if (print_blocks) {
-      print_node_block(root);               // block
+      print_node_block(this);               // block
     }
     if (print_old) {
-      print_node_idx(old_node(root));       // old node
+      print_node_idx(old_node(this));       // old node
     }
-    tty->print("  %s ", category(root));    // direction and category
-    root->dump();                           // node dump
+    tty->print("  %s ", category(this));    // direction and category
+    this->dump();                           // node dump
   }
 }
+
+
 
 //------------------------------find_ctrl--------------------------------------
 // Find an ancestor to this node in the control history with given _idx
