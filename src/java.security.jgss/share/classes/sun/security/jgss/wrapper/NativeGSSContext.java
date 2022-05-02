@@ -235,7 +235,7 @@ class NativeGSSContext implements GSSContextSpi {
     // Constructor for imported context
     // Warning: called by NativeUtil.c
     NativeGSSContext(long pCtxt, GSSLibStub stub) throws GSSException {
-        assert(pContext != 0);
+        assert(pCtxt != 0);
         pContext = pCtxt;
         cStub = stub;
 

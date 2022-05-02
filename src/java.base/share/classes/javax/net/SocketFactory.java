@@ -213,7 +213,7 @@ public abstract class SocketFactory
     /**
      * Creates a socket and connect it to the specified remote address
      * on the specified remote port.  The socket will also be bound
-     * to the local address and port suplied.  The socket is configured using
+     * to the local address and port supplied.  The socket is configured using
      * the socket options established for this factory.
      * <p>
      * If there is a security manager, its <code>checkConnect</code>
