@@ -54,7 +54,7 @@ public class BasicToolTipUI extends ToolTipUI
      * The space between strings.
      */
     public static final int padSpaceBetweenStrings = 12;
-    private String acceleratorDelimiter;
+
     /**
      * Global <code>PropertyChangeListener</code> that
      * <code>createPropertyChangeListener</code> returns.
@@ -86,8 +86,7 @@ public class BasicToolTipUI extends ToolTipUI
         installListeners(c);
 
         tip = (JToolTip)c;
-        acceleratorDelimiter = UIManager.getString( "MenuItem.acceleratorDelimiter" );
-        if ( acceleratorDelimiter == null ) { acceleratorDelimiter = "-"; }
+
     }
 
     public void uninstallUI(JComponent c) {
@@ -179,7 +178,7 @@ public class BasicToolTipUI extends ToolTipUI
 
         String accelString = getAcceleratorString(tip);
         FontMetrics accelMetrics = SwingUtilities2.getFontMetrics(c, g, font);
-        int accelSpacing = calcAccelSpacing(c, accelMetrics, accelString);
+        int accelSpacing = calcAcceleratorSpacing(c, accelMetrics, accelString);
 
         Insets insets = ((JToolTip)c).getInsets();
         Rectangle paintTextR = new Rectangle(
@@ -240,71 +239,35 @@ public class BasicToolTipUI extends ToolTipUI
 
         String key = getAcceleratorString((JToolTip)c);
         if (!key.isEmpty()) {
-            prefSize.width += calcAccelSpacing(c, c.getFontMetrics(font), key);
+            prefSize.width += calcAcceleratorSpacing(c, c.getFontMetrics(font), key);
         }
 
         return prefSize;
     }
 
-    private int calcAccelSpacing(JComponent c, FontMetrics fm, String accel) {
-        return accel.isEmpty()
-                ? 0
-                : padSpaceBetweenStrings +
-                SwingUtilities2.stringWidth(c, fm, accel);
-    }
-
-
     /**
-     * If the accelerator is hidden, the method returns {@code true},
-     * otherwise, returns {@code false}.
-     *
-     * @return {@code true} if the accelerator is hidden.
+     * get Accelerator String
+     * @param tip JToolTip Object
+     * @return Accelerator String
      */
-    protected boolean isAcceleratorHidden() {
-        Boolean b = (Boolean)UIManager.get("ToolTip.hideAccelerator");
-        return b != null && b.booleanValue();
-    }
-
-    private String getAcceleratorString(JToolTip tip) {
+    public String getAcceleratorString(JToolTip tip) {
         this.tip = tip;
 
-        String retValue = getAcceleratorString();
+        String retValue = super.getAcceleratorString(tip);
 
         this.tip = null;
         return retValue;
     }
 
     /**
-     * Returns the accelerator string.
-     *
-     * @return the accelerator string.
+     * get Accelerator String
+     * @return Accelerator String
      */
-
     public String getAcceleratorString() {
-        if (tip == null || isAcceleratorHidden()) {
-            return "";
-        }
-        JComponent comp = tip.getComponent();
-        if (!(comp instanceof AbstractButton)) {
-            return "";
-        }
 
-        KeyStroke[] keys = comp.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).keys();
-        if (keys == null) {
-            return "";
-        }
+        String retValue = super.getAcceleratorString(this.tip);
 
-        String controlKeyStr = "";
-
-        for (int i = 0; i < keys.length; i++) {
-            int mod = keys[i].getModifiers();
-            controlKeyStr = KeyEvent.getKeyModifiersText(mod) +
-                    acceleratorDelimiter +
-                    KeyEvent.getKeyText(keys[i].getKeyCode());
-            break;
-        }
-
-        return controlKeyStr;
+        return retValue;
     }
 
     public Dimension getMinimumSize(JComponent c) {
