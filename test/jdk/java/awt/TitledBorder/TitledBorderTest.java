@@ -32,6 +32,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
@@ -51,6 +52,10 @@ public class TitledBorderTest {
   public static JFrame frame;
   public static JPanel parentPanel;
   public static JPanel childPanel;
+  public static BufferedImage buff;
+  public static Color highlight = Color.BLACK;
+  public static Color shadow = Color.WHITE;
+  public static double scaling = 1.5;
 
   public static void main(String[] args) throws Exception {
     try {
@@ -62,61 +67,40 @@ public class TitledBorderTest {
 
     Robot robot = new Robot();
 
-    BufferedImage buff = new BufferedImage(frame.getWidth()*2,
-            frame.getHeight()*2, BufferedImage.TYPE_INT_ARGB);
+    buff = new BufferedImage(frame.getWidth()*((int) Math.ceil(scaling)),
+            frame.getHeight()*((int) Math.ceil(scaling)), BufferedImage.TYPE_INT_ARGB);
     Graphics2D graph = buff.createGraphics();
-    graph.scale(1.5, 1.5);
+    graph.scale(scaling, scaling);
     frame.paint(graph);
     graph.dispose();
 
     robot.waitForIdle();
-    int testFail = 0;
-    for (int i = 15; i < 25 && testFail == 0; i++) {
-      for (int j = 80; j < 100; j++) {
-        if (buff.getRGB(i, j) == -0x5F5F60) {
-          System.out.println(i + " " + j + " Color " + buff.getRGB(i, j));
-          testFail = 1;
-          break;
-        }
-      }
-    }
-
-    for (int i = 15; i < 25 && testFail == 1; i++) {
-      for (int j = 150; j < 170; j++) {
-        if (buff.getRGB(i, j) == -0x5F5F60) {
-          System.out.println(i + " " + j + " Color " + buff.getRGB(i, j));
-          testFail = 2;
-          break;
-        }
-      }
-    }
-
-    for (int i = 20; i < 30 && testFail == 2; i++) {
-      for (int j = 230; j < 250; j++) {
-        if (buff.getRGB(i, j) == -0x5F5F60) {
-          System.out.println(i + " " + j + " Color " + buff.getRGB(i, j));
-          testFail = 3;
-          break;
-        }
-      }
-    }
-
-    for (int i = 20; i < 30 && testFail == 3; i++) {
-      for (int j = 320; j < 340; j++) {
-        if (buff.getRGB(i, j) == -0x5F5F60) {
-          System.out.println(i + " " + j + " Color " + buff.getRGB(i, j));
-          testFail = 4;
-          break;
-        }
-      }
-    }
-
-    if (testFail < 4) {
-      saveImage(buff, "test.png");
-      throw new RuntimeException("Border was clipped or overdrawn.");
-    }
+    checkBorder(15, 70, 20, 80, highlight);
+    checkBorder(18, 120, 23, 130, highlight);
+    checkBorder(20, 170, 25, 180, highlight);
+    checkBorder(22, 220, 28, 230, highlight);
 
     frame.dispose();
+  }
+
+  private static void checkBorder(int x1, int y1, int x2, int y2, Color color) throws RuntimeException {
+    for (int j = y1; j < y2; j++) {
+      int thickness = 0;
+      for (int i = x1; i < x2; i++) {
+        if (buff.getRGB(i, j) == color.getRGB()) thickness++;
+      }
+      if(thickness > Math.floor(scaling)) {
+        System.out.println(y1 + " " + y2 + " " + thickness);
+        saveImage(buff, "test.png");
+        frame.dispose();
+        throw new RuntimeException("Border drawn too thick.");
+      } else if(thickness < Math.floor(scaling)) {
+        System.out.println(y1 + " " + y2 + " " + thickness);
+        saveImage(buff, "test.png");
+        frame.dispose();
+        throw new RuntimeException("BorderLayout was clipped or overdrawn.");
+      }
+    }
   }
 
   private static void createAndShowGUI() {
@@ -132,7 +116,7 @@ public class TitledBorderTest {
       parentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5 + i, 5, 5));
 
       childPanel = new JPanel(new BorderLayout());
-      childPanel.setBorder(BorderFactory.createTitledBorder("Title " + i));
+      childPanel.setBorder(BorderFactory.createEtchedBorder(shadow, highlight));
       childPanel.add(new JCheckBox(), BorderLayout.CENTER);
 
       parentPanel.add(childPanel, BorderLayout.CENTER);
