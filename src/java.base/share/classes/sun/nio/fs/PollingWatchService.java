@@ -310,7 +310,7 @@ class PollingWatchService
                 // update the events
                 this.events = events;
 
-                // create the periodic task with initialDelay set to the default sensitivity
+                // create the periodic task with initialDelay set to the specified constant
                 Runnable thunk = new Runnable() { public void run() { poll(); }};
                 this.poller = scheduledExecutor
                     .scheduleAtFixedRate(thunk, POLLING_INIT_DELAY, period, TimeUnit.SECONDS);
