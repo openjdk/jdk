@@ -1724,18 +1724,10 @@ void PhaseChaitin::fixup_spills() {
           // Transform node
           MachNode *cisc = mach->cisc_version(stk_offset)->as_Mach();
           cisc->set_req(inp,fp);          // Base register is frame pointer
-#ifdef ASSERT
-          if( !( cisc->oper_input_base() > 1 && mach->oper_input_base() <= 1 ) ) {
-            // debug printing if we cannot put in a memory edge
-            mach->dump();
-            cisc->dump();
-            src->dump();
-            printf("spilling %d %d\n",cisc->oper_input_base(),mach->oper_input_base());
-	  }
-#endif
-          assert( mach->oper_input_base() <= 1, "mach node should not have had memory edge");
-          assert( cisc->oper_input_base() == 2, "Only adding one edge");
-          cisc->ins_req(1,src);              // Add the memory edge
+          if( cisc->oper_input_base() > 1 && mach->oper_input_base() <= 1 ) {
+            assert( cisc->oper_input_base() == 2, "Only adding one edge");
+            cisc->ins_req(1,src);         // Requires a memory edge
+          }
           block->map_node(cisc, j);          // Insert into basic block
           n->subsume_by(cisc, C); // Correct graph
           //

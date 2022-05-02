@@ -10993,104 +10993,113 @@ instruct convL2I_reg_reg(rRegI dst, rRegL src)
 %}
 
 
-instruct MoveF2I_mem_reg(rRegI dst, memory mem) %{
-  match(Set dst (MoveF2I (LoadF mem)));
+instruct MoveF2I_stack_reg(rRegI dst, stackSlotF src) %{
+  match(Set dst (MoveF2I src));
+  effect(DEF dst, USE src);
 
   ins_cost(125);
-  format %{ "movl    $dst, $mem\t# MoveF2I_mem_reg" %}
+  format %{ "movl    $dst, $src\t# MoveF2I_stack_reg" %}
   ins_encode %{
-    __ movl($dst$$Register, $mem$$Address);
+    __ movl($dst$$Register, Address(rsp, $src$$disp));
   %}
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct MoveI2F_mem_reg(regF dst, memory mem) %{
-  match(Set dst (MoveI2F (LoadI mem)));
+instruct MoveI2F_stack_reg(regF dst, stackSlotI src) %{
+  match(Set dst (MoveI2F src));
+  effect(DEF dst, USE src);
 
   ins_cost(125);
-  format %{ "movss   $dst, $mem\t# MoveI2F_mem_reg" %}
+  format %{ "movss   $dst, $src\t# MoveI2F_stack_reg" %}
   ins_encode %{
-    __ movflt($dst$$XMMRegister, $mem$$Address);
+    __ movflt($dst$$XMMRegister, Address(rsp, $src$$disp));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct MoveD2L_mem_reg(rRegL dst, memory mem) %{
-  match(Set dst (MoveD2L (LoadD mem)));
+instruct MoveD2L_stack_reg(rRegL dst, stackSlotD src) %{
+  match(Set dst (MoveD2L src));
+  effect(DEF dst, USE src);
 
   ins_cost(125);
-  format %{ "movq    $dst, $mem\t# MoveD2L_mem_reg" %}
+  format %{ "movq    $dst, $src\t# MoveD2L_stack_reg" %}
   ins_encode %{
-    __ movq($dst$$Register, $mem$$Address);
+    __ movq($dst$$Register, Address(rsp, $src$$disp));
   %}
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct MoveL2D_mem_reg_partial(regD dst, memory mem) %{
+instruct MoveL2D_stack_reg_partial(regD dst, stackSlotL src) %{
   predicate(!UseXmmLoadAndClearUpper);
-  match(Set dst (MoveL2D (LoadL mem)));
+  match(Set dst (MoveL2D src));
+  effect(DEF dst, USE src);
 
   ins_cost(125);
-  format %{ "movlpd  $dst, $mem\t# MoveL2D_mem_reg" %}
+  format %{ "movlpd  $dst, $src\t# MoveL2D_stack_reg" %}
   ins_encode %{
-    __ movdbl($dst$$XMMRegister, $mem$$Address);
+    __ movdbl($dst$$XMMRegister, Address(rsp, $src$$disp));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct MoveL2D_mem_reg(regD dst, memory mem) %{
+instruct MoveL2D_stack_reg(regD dst, stackSlotL src) %{
   predicate(UseXmmLoadAndClearUpper);
-  match(Set dst (MoveL2D (LoadL mem)));
+  match(Set dst (MoveL2D src));
+  effect(DEF dst, USE src);
 
   ins_cost(125);
-  format %{ "movsd   $dst, $mem\t# MoveL2D_mem_reg" %}
+  format %{ "movsd   $dst, $src\t# MoveL2D_stack_reg" %}
   ins_encode %{
-    __ movdbl($dst$$XMMRegister, $mem$$Address);
+    __ movdbl($dst$$XMMRegister, Address(rsp, $src$$disp));
   %}
   ins_pipe(pipe_slow);
 %}
 
 
-instruct MoveF2I_reg_mem(memory mem, regF src) %{
-  match(Set mem (StoreI mem (MoveF2I src)));
+instruct MoveF2I_reg_stack(stackSlotI dst, regF src) %{
+  match(Set dst (MoveF2I src));
+  effect(DEF dst, USE src);
 
   ins_cost(95); // XXX
-  format %{ "movss   $mem, $src\t# MoveF2I_reg_mem" %}
+  format %{ "movss   $dst, $src\t# MoveF2I_reg_stack" %}
   ins_encode %{
-    __ movflt($mem$$Address, $src$$XMMRegister);
+    __ movflt(Address(rsp, $dst$$disp), $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct MoveI2F_reg_mem(memory mem, rRegI src) %{
-  match(Set mem (StoreF mem (MoveI2F src)));
+instruct MoveI2F_reg_stack(stackSlotF dst, rRegI src) %{
+  match(Set dst (MoveI2F src));
+  effect(DEF dst, USE src);
 
   ins_cost(100);
-  format %{ "movl    $mem, $src\t# MoveI2F_reg_mem" %}
+  format %{ "movl    $dst, $src\t# MoveI2F_reg_stack" %}
   ins_encode %{
-    __ movl($mem$$Address, $src$$Register);
+    __ movl(Address(rsp, $dst$$disp), $src$$Register);
   %}
   ins_pipe( ialu_mem_reg );
 %}
 
-instruct MoveD2L_reg_mem(memory mem, regD src) %{
-  match(Set mem (StoreL mem (MoveD2L src)));
+instruct MoveD2L_reg_stack(stackSlotL dst, regD src) %{
+  match(Set dst (MoveD2L src));
+  effect(DEF dst, USE src);
 
   ins_cost(95); // XXX
-  format %{ "movsd   $mem, $src\t# MoveL2D_reg_mem" %}
+  format %{ "movsd   $dst, $src\t# MoveL2D_reg_stack" %}
   ins_encode %{
-    __ movdbl($mem$$Address, $src$$XMMRegister);
+    __ movdbl(Address(rsp, $dst$$disp), $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct MoveL2D_reg_mem(memory mem, rRegL src) %{
-  match(Set mem (StoreD mem (MoveL2D src)));
+instruct MoveL2D_reg_stack(stackSlotD dst, rRegL src) %{
+  match(Set dst (MoveL2D src));
+  effect(DEF dst, USE src);
 
   ins_cost(100);
-  format %{ "movq    $mem, $src\t# MoveL2D_reg_mem" %}
+  format %{ "movq    $dst, $src\t# MoveL2D_reg_stack" %}
   ins_encode %{
-    __ movq($mem$$Address, $src$$Register);
+    __ movq(Address(rsp, $dst$$disp), $src$$Register);
   %}
   ins_pipe(ialu_mem_reg);
 %}
