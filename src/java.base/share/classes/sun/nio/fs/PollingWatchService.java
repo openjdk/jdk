@@ -61,6 +61,8 @@ import java.util.concurrent.TimeUnit;
 class PollingWatchService
     extends AbstractWatchService
 {
+    private static final int DEFAULT_POLLING_INTERVAL = 1;
+
     // map of registrations
     private final Map<Object, PollingWatchKey> map = new HashMap<>();
 
@@ -115,7 +117,7 @@ class PollingWatchService
             throw new IllegalArgumentException("No events to register");
 
         // Extended modifiers may be used to specify the sensitivity level
-        int sensitivity = 1;
+        int sensitivity = DEFAULT_POLLING_INTERVAL;
         if (modifiers.length > 0) {
             for (WatchEvent.Modifier modifier: modifiers) {
                 if (modifier == null)
@@ -247,6 +249,9 @@ class PollingWatchService
      * directory and queue keys when entries are added, modified, or deleted.
      */
     private class PollingWatchKey extends AbstractWatchKey {
+
+        private static final int POLLING_INIT_DELAY = 1;
+
         private final Object fileKey;
 
         // current event set
@@ -308,7 +313,7 @@ class PollingWatchService
                 // create the periodic task
                 Runnable thunk = new Runnable() { public void run() { poll(); }};
                 this.poller = scheduledExecutor
-                    .scheduleAtFixedRate(thunk, 1 /*init wait*/, period, TimeUnit.SECONDS);
+                    .scheduleAtFixedRate(thunk, POLLING_INIT_DELAY, period, TimeUnit.SECONDS);
             }
         }
 
