@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -416,6 +416,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="raj">라자스탄어</language>
 			<language type="rap">라파뉴이</language>
 			<language type="rar">라로통가어</language>
+			<language type="rhg">로힝야어</language>
 			<language type="rm">로만시어</language>
 			<language type="rn">룬디어</language>
 			<language type="ro">루마니아어</language>
@@ -768,7 +769,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="155">서유럽</territory>
 			<territory type="202">사하라 사막 이남 아프리카</territory>
 			<territory type="419">라틴 아메리카</territory>
-			<territory type="AC">어센션 섬</territory>
+			<territory type="AC">어센션섬</territory>
 			<territory type="AD">안도라</territory>
 			<territory type="AE">아랍에미리트</territory>
 			<territory type="AF">아프가니스탄</territory>
@@ -1267,23 +1268,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\--/]</parseLenient>
+			<parseLenient sample=":">[\:∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£">[£₤]</parseLenient>
+			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -1553,21 +1554,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>U년 MMM d일 EEEE</pattern>
+							<datetimeSkeleton>UMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>U년 MMM d일</pattern>
+							<datetimeSkeleton>UMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>y. M. d.</pattern>
+							<datetimeSkeleton>yMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>y. M. d.</pattern>
+							<datetimeSkeleton>yMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1587,6 +1592,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMMd">r년 MMM d일</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">r년(U년) MMM d일 (E)</dateFormatItem>
 						<dateFormatItem id="GyMMMEEEEd">r년(U년) MMM d일 EEEE</dateFormatItem>
+						<dateFormatItem id="GyMMMM">r년(U년) MMMM</dateFormatItem>
+						<dateFormatItem id="GyMMMMd">r년(U년) MMMM d일</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd">r년(U년) MMMM d일 (E)</dateFormatItem>
 						<dateFormatItem id="h">a h시</dateFormatItem>
 						<dateFormatItem id="H">H시</dateFormatItem>
 						<dateFormatItem id="hm">a h:mm</dateFormatItem>
@@ -1619,6 +1627,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyMMMEd">r년(U년) MMM d일 (E)</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEEEEd">r년(U년) MMM d일 EEEE</dateFormatItem>
 						<dateFormatItem id="yyyyMMMM">r년(U년) MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMd">r년(U년) MMMM d일</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMEd">r년(U년) MMMM d일(E)</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">r년(U년) QQQ</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">r년(U년) QQQQ</dateFormatItem>
 					</availableFormats>
@@ -1966,21 +1976,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>U년 MMM d일 EEEE</pattern>
+							<datetimeSkeleton>UMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>U년 MMM d일</pattern>
+							<datetimeSkeleton>UMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>y. M. d.</pattern>
+							<datetimeSkeleton>yMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>y. M. d.</pattern>
+							<datetimeSkeleton>yMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -2058,21 +2072,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>G y년 M월 d일 EEEE</pattern>
+							<datetimeSkeleton>GyMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>G y년 M월 d일</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>G y. M. d.</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>G y. M. d.</pattern>
+							<datetimeSkeleton>GyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -2112,6 +2130,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y년</dateFormatItem>
+						<dateFormatItem id="GyMd">GGGGG y/M/d</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y년 M월</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y년 M월 d일</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y년 M월 d일 (E)</dateFormatItem>
@@ -2415,13 +2434,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="sat">토</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun" draft="contributed">일</day>
-							<day type="mon" draft="contributed">월</day>
-							<day type="tue" draft="contributed">화</day>
-							<day type="wed" draft="contributed">수</day>
-							<day type="thu" draft="contributed">목</day>
-							<day type="fri" draft="contributed">금</day>
-							<day type="sat" draft="contributed">토</day>
+							<day type="sun">일</day>
+							<day type="mon">월</day>
+							<day type="tue">화</day>
+							<day type="wed">수</day>
+							<day type="thu">목</day>
+							<day type="fri">금</day>
+							<day type="sat">토</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">일요일</day>
@@ -2453,13 +2472,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="sat">토</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun" draft="contributed">일</day>
-							<day type="mon" draft="contributed">월</day>
-							<day type="tue" draft="contributed">화</day>
-							<day type="wed" draft="contributed">수</day>
-							<day type="thu" draft="contributed">목</day>
-							<day type="fri" draft="contributed">금</day>
-							<day type="sat" draft="contributed">토</day>
+							<day type="sun">일</day>
+							<day type="mon">월</day>
+							<day type="tue">화</day>
+							<day type="wed">수</day>
+							<day type="thu">목</day>
+							<day type="fri">금</day>
+							<day type="sat">토</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">일요일</day>
@@ -2604,21 +2623,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>y년 M월 d일 EEEE</pattern>
+							<datetimeSkeleton>yMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>y년 M월 d일</pattern>
+							<datetimeSkeleton>yMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>y. M. d.</pattern>
+							<datetimeSkeleton>yMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>yy. M. d.</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -2626,21 +2649,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>a h시 m분 s초 zzzz</pattern>
+							<datetimeSkeleton>ahmszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>a h시 m분 s초 z</pattern>
+							<datetimeSkeleton>ahmsz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>a h:mm:ss</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>a h:mm</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -2680,6 +2707,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">(E) a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="EHms">(E) HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y년</dateFormatItem>
+						<dateFormatItem id="GyMd">GGGGG y/M/d</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y년 MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y년 MMM d일</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y년 MMM d일 (E)</dateFormatItem>
@@ -6165,36 +6193,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>예카테린부르크 하계 표준시</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>유콘 시간</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
+			<native>latn</native>
 		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
+		<minimumGroupingDigits>1</minimumGroupingDigits>
 		<symbols numberSystem="arab">
 			<plusSign draft="contributed">‏+</plusSign>
 			<minusSign draft="contributed">‏-</minusSign>
 		</symbols>
 		<symbols numberSystem="latn">
-			<decimal draft="contributed">.</decimal>
-			<group draft="contributed">,</group>
+			<decimal>.</decimal>
+			<group>,</group>
 			<list>;</list>
 			<percentSign>%</percentSign>
-			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">-</minusSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
+			<timeSeparator>:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
+					<pattern>#,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="long">
@@ -6278,7 +6311,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="AED">
 				<displayName>아랍에미리트 디르함</displayName>
 				<displayName count="other">아랍에미리트 디르함</displayName>
-				<symbol draft="contributed">AED</symbol>
+				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFA">
 				<displayName>아프가니 (1927–2002)</displayName>
@@ -6286,28 +6319,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="AFN">
 				<displayName>아프가니스탄 아프가니</displayName>
 				<displayName count="other">아프가니스탄 아프가니</displayName>
-				<symbol draft="contributed">AFN</symbol>
+				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>알바니아 레크</displayName>
 				<displayName count="other">알바니아 레크</displayName>
-				<symbol draft="contributed">ALL</symbol>
+				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>아르메니아 드람</displayName>
 				<displayName count="other">아르메니아 드람</displayName>
-				<symbol draft="contributed">AMD</symbol>
+				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>네덜란드령 안틸레스 길더</displayName>
 				<displayName count="other">네덜란드령 안틸레스 길더</displayName>
-				<symbol draft="contributed">ANG</symbol>
+				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>앙골라 콴자</displayName>
 				<displayName count="other">앙골라 콴자</displayName>
-				<symbol draft="contributed">AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
+				<symbol>AOA</symbol>
+				<symbol alt="narrow">Kz</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>앙골라 콴자 (1977–1990)</displayName>
@@ -6333,8 +6366,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ARS">
 				<displayName>아르헨티나 페소</displayName>
 				<displayName count="other">아르헨티나 페소</displayName>
-				<symbol draft="contributed">ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>ARS</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>호주 실링</displayName>
@@ -6342,13 +6375,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="AUD">
 				<displayName>호주 달러</displayName>
 				<displayName count="other">호주 달러</displayName>
-				<symbol draft="contributed">AU$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>AU$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>아루바 플로린</displayName>
 				<displayName count="other">아루바 플로린</displayName>
-				<symbol draft="contributed">AWG</symbol>
+				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName>아제르바이젠 마나트(1993–2006)</displayName>
@@ -6356,7 +6389,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="AZN">
 				<displayName>아제르바이잔 마나트</displayName>
 				<displayName count="other">아제르바이잔 마나트</displayName>
-				<symbol draft="contributed">AZN</symbol>
+				<symbol>AZN</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName>보스니아-헤르체고비나 디나르</displayName>
@@ -6364,8 +6397,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BAM">
 				<displayName>보스니아-헤르체고비나 태환 마르크</displayName>
 				<displayName count="other">보스니아-헤르체고비나 태환 마르크</displayName>
-				<symbol draft="contributed">BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
+				<symbol>BAM</symbol>
+				<symbol alt="narrow">KM</symbol>
 			</currency>
 			<currency type="BAN">
 				<displayName draft="contributed">보스니아-헤르체고비나 신디나르 (1994–1997)</displayName>
@@ -6373,14 +6406,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BBD">
 				<displayName>바베이도스 달러</displayName>
 				<displayName count="other">바베이도스 달러</displayName>
-				<symbol draft="contributed">BBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BBD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>방글라데시 타카</displayName>
 				<displayName count="other">방글라데시 타카</displayName>
-				<symbol draft="contributed">BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
+				<symbol>BDT</symbol>
+				<symbol alt="narrow">৳</symbol>
 			</currency>
 			<currency type="BEC">
 				<displayName>벨기에 프랑 (태환)</displayName>
@@ -6400,7 +6433,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BGN">
 				<displayName>불가리아 레프</displayName>
 				<displayName count="other">불가리아 레프</displayName>
-				<symbol draft="contributed">BGN</symbol>
+				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BGO">
 				<displayName draft="contributed">불가리아 렛 (1879–1952)</displayName>
@@ -6408,30 +6441,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BHD">
 				<displayName>바레인 디나르</displayName>
 				<displayName count="other">바레인 디나르</displayName>
-				<symbol draft="contributed">BHD</symbol>
+				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>부룬디 프랑</displayName>
 				<displayName count="other">부룬디 프랑</displayName>
-				<symbol draft="contributed">BIF</symbol>
+				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>버뮤다 달러</displayName>
 				<displayName count="other">버뮤다 달러</displayName>
-				<symbol draft="contributed">BMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BMD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>부루나이 달러</displayName>
 				<displayName count="other">부루나이 달러</displayName>
-				<symbol draft="contributed">BND</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BND</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>볼리비아노</displayName>
 				<displayName count="other">볼리비아노</displayName>
-				<symbol draft="contributed">BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
+				<symbol>BOB</symbol>
+				<symbol alt="narrow">Bs</symbol>
 			</currency>
 			<currency type="BOL">
 				<displayName draft="contributed">볼리비아 볼리비아노 (1863–1963)</displayName>
@@ -6454,8 +6487,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BRL">
 				<displayName>브라질 레알</displayName>
 				<displayName count="other">브라질 레알</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
+				<symbol>R$</symbol>
+				<symbol alt="narrow">R$</symbol>
 			</currency>
 			<currency type="BRN">
 				<displayName>브라질 크루자두 노보</displayName>
@@ -6469,13 +6502,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BSD">
 				<displayName>바하마 달러</displayName>
 				<displayName count="other">바하마 달러</displayName>
-				<symbol draft="contributed">BSD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BSD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>부탄 눌투눔</displayName>
 				<displayName count="other">부탄 눌투눔</displayName>
-				<symbol draft="contributed">BTN</symbol>
+				<symbol>BTN</symbol>
 			</currency>
 			<currency type="BUK">
 				<displayName>버마 차트</displayName>
@@ -6483,8 +6516,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BWP">
 				<displayName>보츠와나 폴라</displayName>
 				<displayName count="other">보츠와나 폴라</displayName>
-				<symbol draft="contributed">BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
+				<symbol>BWP</symbol>
+				<symbol alt="narrow">P</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName>벨라루스 신권 루블 (1994–1999)</displayName>
@@ -6492,8 +6525,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BYN">
 				<displayName>벨라루스 루블</displayName>
 				<displayName count="other">벨라루스 루블</displayName>
-				<symbol draft="contributed">BYN</symbol>
-				<symbol alt="narrow" draft="contributed">р.</symbol>
+				<symbol>BYN</symbol>
+				<symbol alt="narrow">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>벨라루스 루블 (2000–2016)</displayName>
@@ -6503,19 +6536,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="BZD">
 				<displayName>벨리즈 달러</displayName>
 				<displayName count="other">벨리즈 달러</displayName>
-				<symbol draft="contributed">BZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BZD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>캐나다 달러</displayName>
 				<displayName count="other">캐나다 달러</displayName>
-				<symbol draft="contributed">CA$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CA$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>콩고 프랑 콩골라스</displayName>
 				<displayName count="other">콩고 프랑 콩골라스</displayName>
-				<symbol draft="contributed">CDF</symbol>
+				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHE">
 				<displayName>유로 (WIR)</displayName>
@@ -6523,7 +6556,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="CHF">
 				<displayName>스위스 프랑</displayName>
 				<displayName count="other">스위스 프랑</displayName>
-				<symbol draft="contributed">CHF</symbol>
+				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CHW">
 				<displayName>프랑 (WIR)</displayName>
@@ -6537,25 +6570,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="CLP">
 				<displayName>칠레 페소</displayName>
 				<displayName count="other">칠레 페소</displayName>
-				<symbol draft="contributed">CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CLP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>중국 위안화(역외)</displayName>
 				<displayName count="other">중국 위안화(역외)</displayName>
-				<symbol draft="contributed">CNH</symbol>
+				<symbol>CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>중국 위안화</displayName>
 				<displayName count="other">중국 위안화</displayName>
-				<symbol draft="contributed">CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol>CN¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>콜롬비아 페소</displayName>
 				<displayName count="other">콜롬비아 페소</displayName>
-				<symbol draft="contributed">COP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>COP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="COU">
 				<displayName draft="contributed">콜롬비아 실가 단위</displayName>
@@ -6563,8 +6596,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="CRC">
 				<displayName>코스타리카 콜론</displayName>
 				<displayName count="other">코스타리카 콜론</displayName>
-				<symbol draft="contributed">CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
+				<symbol>CRC</symbol>
+				<symbol alt="narrow">₡</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName>고 세르비아 디나르</displayName>
@@ -6575,19 +6608,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="CUC">
 				<displayName>쿠바 태환 페소</displayName>
 				<displayName count="other">쿠바 태환 페소</displayName>
-				<symbol draft="contributed">CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CUC</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>쿠바 페소</displayName>
 				<displayName count="other">쿠바 페소</displayName>
-				<symbol draft="contributed">CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CUP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>카보베르데 에스쿠도</displayName>
 				<displayName count="other">카보베르데 에스쿠도</displayName>
-				<symbol draft="contributed">CVE</symbol>
+				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName>싸이프러스 파운드</displayName>
@@ -6595,8 +6628,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="CZK">
 				<displayName>체코 공화국 코루나</displayName>
 				<displayName count="other">체코 공화국 코루나</displayName>
-				<symbol draft="contributed">CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
+				<symbol>CZK</symbol>
+				<symbol alt="narrow">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>동독 오스트마르크</displayName>
@@ -6607,24 +6640,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="DJF">
 				<displayName>지부티 프랑</displayName>
 				<displayName count="other">지부티 프랑</displayName>
-				<symbol draft="contributed">DJF</symbol>
+				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>덴마크 크로네</displayName>
 				<displayName count="other">덴마크 크로네</displayName>
-				<symbol draft="contributed">DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>DKK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>도미니카 페소</displayName>
 				<displayName count="other">도미니카 페소</displayName>
-				<symbol draft="contributed">DOP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>DOP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>알제리 디나르</displayName>
 				<displayName count="other">알제리 디나르</displayName>
-				<symbol draft="contributed">DZD</symbol>
+				<symbol>DZD</symbol>
 			</currency>
 			<currency type="ECS">
 				<displayName>에쿠아도르 수크레</displayName>
@@ -6638,13 +6671,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="EGP">
 				<displayName>이집트 파운드</displayName>
 				<displayName count="other">이집트 파운드</displayName>
-				<symbol draft="contributed">EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
+				<symbol>EGP</symbol>
+				<symbol alt="narrow">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>에리트리아 나크파</displayName>
 				<displayName count="other">에리트리아 나크파</displayName>
-				<symbol draft="contributed">ERN</symbol>
+				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ESA">
 				<displayName>스페인 페세타(예금)</displayName>
@@ -6658,13 +6691,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ETB">
 				<displayName>에티오피아 비르</displayName>
 				<displayName count="other">에티오피아 비르</displayName>
-				<symbol draft="contributed">ETB</symbol>
+				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>유로</displayName>
 				<displayName count="other">유로</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
+				<symbol>€</symbol>
+				<symbol alt="narrow">€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName>핀란드 마르카</displayName>
@@ -6672,14 +6705,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="FJD">
 				<displayName>피지 달러</displayName>
 				<displayName count="other">피지 달러</displayName>
-				<symbol draft="contributed">FJD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>FJD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>포클랜드제도 파운드</displayName>
 				<displayName count="other">포클랜드제도 파운드</displayName>
-				<symbol draft="contributed">FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>FKP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>프랑스 프랑</displayName>
@@ -6687,8 +6720,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="GBP">
 				<displayName>영국 파운드</displayName>
 				<displayName count="other">영국 파운드</displayName>
-				<symbol draft="contributed">£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>£</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GEK">
 				<displayName>그루지야 지폐 라리트</displayName>
@@ -6696,9 +6729,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="GEL">
 				<displayName>조지아 라리</displayName>
 				<displayName count="other">조지아 라리</displayName>
-				<symbol draft="contributed">GEL</symbol>
-				<symbol alt="narrow" draft="contributed">₾</symbol>
-				<symbol alt="variant" draft="contributed">₾</symbol>
+				<symbol>GEL</symbol>
+				<symbol alt="narrow">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>가나 시디 (1979–2007)</displayName>
@@ -6706,24 +6738,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="GHS">
 				<displayName>가나 시디</displayName>
 				<displayName count="other">가나 시디</displayName>
-				<symbol draft="contributed">GHS</symbol>
+				<symbol>GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>지브롤터 파운드</displayName>
 				<displayName count="other">지브롤터 파운드</displayName>
-				<symbol draft="contributed">GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>GIP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>감비아 달라시</displayName>
 				<displayName count="other">감비아 달라시</displayName>
-				<symbol draft="contributed">GMD</symbol>
+				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>기니 프랑</displayName>
 				<displayName count="other">기니 프랑</displayName>
-				<symbol draft="contributed">GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
+				<symbol>GNF</symbol>
+				<symbol alt="narrow">FG</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>기니 시리</displayName>
@@ -6737,8 +6769,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="GTQ">
 				<displayName>과테말라 케트살</displayName>
 				<displayName count="other">과테말라 케트살</displayName>
-				<symbol draft="contributed">GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
+				<symbol>GTQ</symbol>
+				<symbol alt="narrow">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>포르투갈령 기니 에스쿠도</displayName>
@@ -6749,20 +6781,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="GYD">
 				<displayName>가이아나 달러</displayName>
 				<displayName count="other">가이아나 달러</displayName>
-				<symbol draft="contributed">GYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>GYD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>홍콩 달러</displayName>
 				<displayName count="other">홍콩 달러</displayName>
-				<symbol draft="contributed">HK$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>HK$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>온두라스 렘피라</displayName>
 				<displayName count="other">온두라스 렘피라</displayName>
-				<symbol draft="contributed">HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
+				<symbol>HNL</symbol>
+				<symbol alt="narrow">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>크로아티아 디나르</displayName>
@@ -6770,25 +6802,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="HRK">
 				<displayName>크로아티아 쿠나</displayName>
 				<displayName count="other">크로아티아 쿠나</displayName>
-				<symbol draft="contributed">HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
+				<symbol>HRK</symbol>
+				<symbol alt="narrow">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>하이티 구르드</displayName>
 				<displayName count="other">하이티 구르드</displayName>
-				<symbol draft="contributed">HTG</symbol>
+				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>헝가리 포린트</displayName>
 				<displayName count="other">헝가리 포린트</displayName>
-				<symbol draft="contributed">HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
+				<symbol>HUF</symbol>
+				<symbol alt="narrow">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>인도네시아 루피아</displayName>
 				<displayName count="other">인도네시아 루피아</displayName>
-				<symbol draft="contributed">IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
+				<symbol>IDR</symbol>
+				<symbol alt="narrow">Rp</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName>아일랜드 파운드</displayName>
@@ -6799,30 +6831,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ILS">
 				<displayName>이스라엘 신권 세켈</displayName>
 				<displayName count="other">이스라엘 신권 세켈</displayName>
-				<symbol draft="contributed">₪</symbol>
-				<symbol alt="narrow" draft="contributed">₪</symbol>
+				<symbol>₪</symbol>
+				<symbol alt="narrow">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>인도 루피</displayName>
 				<displayName count="other">인도 루피</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
+				<symbol>₹</symbol>
+				<symbol alt="narrow">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>이라크 디나르</displayName>
 				<displayName count="other">이라크 디나르</displayName>
-				<symbol draft="contributed">IQD</symbol>
+				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>이란 리얄</displayName>
 				<displayName count="other">이란 리얄</displayName>
-				<symbol draft="contributed">IRR</symbol>
+				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>아이슬란드 크로나</displayName>
 				<displayName count="other">아이슬란드 크로나</displayName>
-				<symbol draft="contributed">ISK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>ISK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>이탈리아 리라</displayName>
@@ -6830,47 +6862,47 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="JMD">
 				<displayName>자메이카 달러</displayName>
 				<displayName count="other">자메이카 달러</displayName>
-				<symbol draft="contributed">JMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>JMD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>요르단 디나르</displayName>
 				<displayName count="other">요르단 디나르</displayName>
-				<symbol draft="contributed">JOD</symbol>
+				<symbol>JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>일본 엔화</displayName>
 				<displayName count="other">일본 엔화</displayName>
-				<symbol draft="contributed">JP¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol>JP¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>케냐 실링</displayName>
 				<displayName count="other">케냐 실링</displayName>
-				<symbol draft="contributed">KES</symbol>
+				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>키르기스스탄 솜</displayName>
 				<displayName count="other">키르기스스탄 솜</displayName>
-				<symbol draft="contributed">KGS</symbol>
+				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>캄보디아 리얄</displayName>
 				<displayName count="other">캄보디아 리얄</displayName>
-				<symbol draft="contributed">KHR</symbol>
-				<symbol alt="narrow" draft="contributed">៛</symbol>
+				<symbol>KHR</symbol>
+				<symbol alt="narrow">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>코모르 프랑</displayName>
 				<displayName count="other">코모르 프랑</displayName>
-				<symbol draft="contributed">KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
+				<symbol>KMF</symbol>
+				<symbol alt="narrow">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>조선 민주주의 인민 공화국 원</displayName>
 				<displayName count="other">조선 민주주의 인민 공화국 원</displayName>
-				<symbol draft="contributed">KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol>KPW</symbol>
+				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KRH">
 				<displayName draft="contributed">대한민국 환 (1953–1962)</displayName>
@@ -6878,52 +6910,53 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="KRW">
 				<displayName>대한민국 원</displayName>
 				<displayName count="other">대한민국 원</displayName>
-				<symbol draft="contributed">₩</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol>₩</symbol>
+				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>쿠웨이트 디나르</displayName>
 				<displayName count="other">쿠웨이트 디나르</displayName>
-				<symbol draft="contributed">KWD</symbol>
+				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>케이맨 제도 달러</displayName>
 				<displayName count="other">케이맨 제도 달러</displayName>
-				<symbol draft="contributed">KYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>KYD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>카자흐스탄 텐게</displayName>
 				<displayName count="other">카자흐스탄 텐게</displayName>
-				<symbol draft="contributed">KZT</symbol>
-				<symbol alt="narrow" draft="contributed">₸</symbol>
+				<symbol>KZT</symbol>
+				<symbol alt="narrow">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>라오스 키프</displayName>
 				<displayName count="other">라오스 키프</displayName>
-				<symbol draft="contributed">LAK</symbol>
-				<symbol alt="narrow" draft="contributed">₭</symbol>
+				<symbol>LAK</symbol>
+				<symbol alt="narrow">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>레바논 파운드</displayName>
 				<displayName count="other">레바논 파운드</displayName>
-				<symbol draft="contributed">LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
+				<symbol>LBP</symbol>
+				<symbol alt="narrow">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>스리랑카 루피</displayName>
 				<displayName count="other">스리랑카 루피</displayName>
-				<symbol draft="contributed">LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>LKR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>라이베리아 달러</displayName>
 				<displayName count="other">라이베리아 달러</displayName>
-				<symbol draft="contributed">LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>LRD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>레소토 로티</displayName>
+				<displayName count="other">레소토 로티</displayName>
 			</currency>
 			<currency type="LTL">
 				<displayName>리투아니아 리타</displayName>
@@ -6953,12 +6986,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="LYD">
 				<displayName>리비아 디나르</displayName>
 				<displayName count="other">리비아 디나르</displayName>
-				<symbol draft="contributed">LYD</symbol>
+				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>모로코 디렘</displayName>
 				<displayName count="other">모로코 디렘</displayName>
-				<symbol draft="contributed">MAD</symbol>
+				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName>모로코 프랑</displayName>
@@ -6972,13 +7005,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MDL">
 				<displayName>몰도바 레이</displayName>
 				<displayName count="other">몰도바 레이</displayName>
-				<symbol draft="contributed">MDL</symbol>
+				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>마다가스카르 아리아리</displayName>
 				<displayName count="other">마다가스카르 아리아리</displayName>
-				<symbol draft="contributed">MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
+				<symbol>MGA</symbol>
+				<symbol alt="narrow">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>마다가스카르 프랑</displayName>
@@ -6986,7 +7019,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MKD">
 				<displayName>마케도니아 디나르</displayName>
 				<displayName count="other">마케도니아 디나르</displayName>
-				<symbol draft="contributed">MKD</symbol>
+				<symbol>MKD</symbol>
 			</currency>
 			<currency type="MLF">
 				<displayName>말리 프랑</displayName>
@@ -6994,19 +7027,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MMK">
 				<displayName>미얀마 키얏</displayName>
 				<displayName count="other">미얀마 키얏</displayName>
-				<symbol draft="contributed">MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
+				<symbol>MMK</symbol>
+				<symbol alt="narrow">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>몽골 투그릭</displayName>
 				<displayName count="other">몽골 투그릭</displayName>
-				<symbol draft="contributed">MNT</symbol>
-				<symbol alt="narrow" draft="contributed">₮</symbol>
+				<symbol>MNT</symbol>
+				<symbol alt="narrow">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>마카오 파타카</displayName>
 				<displayName count="other">마카오 파타카</displayName>
-				<symbol draft="contributed">MOP</symbol>
+				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>모리타니 우기야 (1973–2017)</displayName>
@@ -7016,7 +7049,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MRU">
 				<displayName>모리타니 우기야</displayName>
 				<displayName count="other">모리타니 우기야</displayName>
-				<symbol draft="contributed">MRU</symbol>
+				<symbol>MRU</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>몰타 리라</displayName>
@@ -7027,24 +7060,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MUR">
 				<displayName>모리셔스 루피</displayName>
 				<displayName count="other">모리셔스 루피</displayName>
-				<symbol draft="contributed">MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>MUR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>몰디브 제도 루피아</displayName>
 				<displayName count="other">몰디브 제도 루피아</displayName>
-				<symbol draft="contributed">MVR</symbol>
+				<symbol>MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>말라위 콰쳐</displayName>
 				<displayName count="other">말라위 콰쳐</displayName>
-				<symbol draft="contributed">MWK</symbol>
+				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>멕시코 페소</displayName>
 				<displayName count="other">멕시코 페소</displayName>
-				<symbol draft="contributed">MX$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>MX$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="MXP">
 				<displayName>멕시코 실버 페소 (1861–1992)</displayName>
@@ -7055,8 +7088,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MYR">
 				<displayName>말레이시아 링깃</displayName>
 				<displayName count="other">말레이시아 링깃</displayName>
-				<symbol draft="contributed">MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
+				<symbol>MYR</symbol>
+				<symbol alt="narrow">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>모잠비크 에스쿠도</displayName>
@@ -7067,19 +7100,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MZN">
 				<displayName>모잠비크 메티칼</displayName>
 				<displayName count="other">모잠비크 메티칼</displayName>
-				<symbol draft="contributed">MZN</symbol>
+				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>나미비아 달러</displayName>
 				<displayName count="other">나미비아 달러</displayName>
-				<symbol draft="contributed">NAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>NAD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>니제르 나이라</displayName>
 				<displayName count="other">니제르 나이라</displayName>
-				<symbol draft="contributed">NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
+				<symbol>NGN</symbol>
+				<symbol alt="narrow">₦</symbol>
 			</currency>
 			<currency type="NIC">
 				<displayName>니카라과 코르도바</displayName>
@@ -7087,8 +7120,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="NIO">
 				<displayName>니카라과 코르도바 오로</displayName>
 				<displayName count="other">니카라과 코르도바 오로</displayName>
-				<symbol draft="contributed">NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
+				<symbol>NIO</symbol>
+				<symbol alt="narrow">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>네델란드 길더</displayName>
@@ -7096,30 +7129,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="NOK">
 				<displayName>노르웨이 크로네</displayName>
 				<displayName count="other">노르웨이 크로네</displayName>
-				<symbol draft="contributed">NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>NOK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>네팔 루피</displayName>
 				<displayName count="other">네팔 루피</displayName>
-				<symbol draft="contributed">NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>NPR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>뉴질랜드 달러</displayName>
 				<displayName count="other">뉴질랜드 달러</displayName>
-				<symbol draft="contributed">NZ$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>NZ$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>오만 리얄</displayName>
 				<displayName count="other">오만 리얄</displayName>
-				<symbol draft="contributed">OMR</symbol>
+				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>파나마 발보아</displayName>
 				<displayName count="other">파나마 발보아</displayName>
-				<symbol draft="contributed">PAB</symbol>
+				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName>페루 인티</displayName>
@@ -7127,7 +7160,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="PEN">
 				<displayName>페루 솔</displayName>
 				<displayName count="other">페루 솔</displayName>
-				<symbol draft="contributed">PEN</symbol>
+				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName>페루 솔 (1863–1965)</displayName>
@@ -7135,25 +7168,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="PGK">
 				<displayName>파푸아뉴기니 키나</displayName>
 				<displayName count="other">파푸아뉴기니 키나</displayName>
-				<symbol draft="contributed">PGK</symbol>
+				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>필리핀 페소</displayName>
 				<displayName count="other">필리핀 페소</displayName>
-				<symbol draft="contributed">PHP</symbol>
-				<symbol alt="narrow" draft="contributed">₱</symbol>
+				<symbol>PHP</symbol>
+				<symbol alt="narrow">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>파키스탄 루피</displayName>
 				<displayName count="other">파키스탄 루피</displayName>
-				<symbol draft="contributed">PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>PKR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>폴란드 즐로티</displayName>
 				<displayName count="other">폴란드 즐로티</displayName>
-				<symbol draft="contributed">PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
+				<symbol>PLN</symbol>
+				<symbol alt="narrow">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName>폴란드 즐로티 (1950–1995)</displayName>
@@ -7164,13 +7197,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="PYG">
 				<displayName>파라과이 과라니</displayName>
 				<displayName count="other">파라과이 과라니</displayName>
-				<symbol draft="contributed">PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
+				<symbol>PYG</symbol>
+				<symbol alt="narrow">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>카타르 리얄</displayName>
 				<displayName count="other">카타르 리얄</displayName>
-				<symbol draft="contributed">QAR</symbol>
+				<symbol>QAR</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName>로디지아 달러</displayName>
@@ -7181,19 +7214,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="RON">
 				<displayName>루마니아 레우</displayName>
 				<displayName count="other">루마니아 레우</displayName>
-				<symbol draft="contributed">RON</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
+				<symbol>RON</symbol>
+				<symbol alt="narrow">L</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>세르비아 디나르</displayName>
 				<displayName count="other">세르비아 디나르</displayName>
-				<symbol draft="contributed">RSD</symbol>
+				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>러시아 루블</displayName>
 				<displayName count="other">러시아 루블</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
+				<symbol>RUB</symbol>
+				<symbol alt="narrow">₽</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName>러시아 루블 (1991–1998)</displayName>
@@ -7201,24 +7234,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="RWF">
 				<displayName>르완다 프랑</displayName>
 				<displayName count="other">르완다 프랑</displayName>
-				<symbol draft="contributed">RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
+				<symbol>RWF</symbol>
+				<symbol alt="narrow">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>사우디아라비아 리얄</displayName>
 				<displayName count="other">사우디아라비아 리얄</displayName>
-				<symbol draft="contributed">SAR</symbol>
+				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>솔로몬 제도 달러</displayName>
 				<displayName count="other">솔로몬 제도 달러</displayName>
-				<symbol draft="contributed">SBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SBD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>세이셸 루피</displayName>
 				<displayName count="other">세이셸 루피</displayName>
-				<symbol draft="contributed">SCR</symbol>
+				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName>수단 디나르</displayName>
@@ -7226,7 +7259,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SDG">
 				<displayName>수단 파운드</displayName>
 				<displayName count="other">수단 파운드</displayName>
-				<symbol draft="contributed">SDG</symbol>
+				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>고 수단 파운드</displayName>
@@ -7234,20 +7267,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SEK">
 				<displayName>스웨덴 크로나</displayName>
 				<displayName count="other">스웨덴 크로나</displayName>
-				<symbol draft="contributed">SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>SEK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>싱가폴 달러</displayName>
 				<displayName count="other">싱가폴 달러</displayName>
-				<symbol draft="contributed">SGD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SGD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>세인트헬레나 파운드</displayName>
 				<displayName count="other">세인트헬레나 파운드</displayName>
-				<symbol draft="contributed">SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SHP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SIT">
 				<displayName>슬로베니아 톨라르</displayName>
@@ -7258,18 +7291,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SLL">
 				<displayName>시에라리온 리온</displayName>
 				<displayName count="other">시에라리온 리온</displayName>
-				<symbol draft="contributed">SLL</symbol>
+				<symbol>SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>소말리아 실링</displayName>
 				<displayName count="other">소말리아 실링</displayName>
-				<symbol draft="contributed">SOS</symbol>
+				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>수리남 달러</displayName>
 				<displayName count="other">수리남 달러</displayName>
-				<symbol draft="contributed">SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SRD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>수리남 길더</displayName>
@@ -7277,8 +7310,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SSP">
 				<displayName>남수단 파운드</displayName>
 				<displayName count="other">남수단 파운드</displayName>
-				<symbol draft="contributed">SSP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SSP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>상투메 프린시페 도브라 (1977–2017)</displayName>
@@ -7288,8 +7321,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="STN">
 				<displayName>상투메 프린시페 도브라</displayName>
 				<displayName count="other">상투메 프린시페 도브라</displayName>
-				<symbol draft="contributed">STN</symbol>
-				<symbol alt="narrow" draft="contributed">Db</symbol>
+				<symbol>STN</symbol>
+				<symbol alt="narrow">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>소련 루블</displayName>
@@ -7300,19 +7333,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SYP">
 				<displayName>시리아 파운드</displayName>
 				<displayName count="other">시리아 파운드</displayName>
-				<symbol draft="contributed">SYP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SYP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>스와질란드 릴랑게니</displayName>
 				<displayName count="other">스와질란드 릴랑게니</displayName>
-				<symbol draft="contributed">SZL</symbol>
+				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>태국 바트</displayName>
 				<displayName count="other">태국 바트</displayName>
-				<symbol draft="contributed">THB</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
+				<symbol>THB</symbol>
+				<symbol alt="narrow">฿</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>타지키스탄 루블</displayName>
@@ -7320,7 +7353,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="TJS">
 				<displayName>타지키스탄 소모니</displayName>
 				<displayName count="other">타지키스탄 소모니</displayName>
-				<symbol draft="contributed">TJS</symbol>
+				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName>투르크메니스탄 마나트 (1993–2009)</displayName>
@@ -7328,18 +7361,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="TMT">
 				<displayName>투르크메니스탄 마나트</displayName>
 				<displayName count="other">투르크메니스탄 마나트</displayName>
-				<symbol draft="contributed">TMT</symbol>
+				<symbol>TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>튀니지 디나르</displayName>
 				<displayName count="other">튀니지 디나르</displayName>
-				<symbol draft="contributed">TND</symbol>
+				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>통가 파앙가</displayName>
 				<displayName count="other">통가 파앙가</displayName>
-				<symbol draft="contributed">TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
+				<symbol>TOP</symbol>
+				<symbol alt="narrow">T$</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>티모르 에스쿠도</displayName>
@@ -7350,32 +7383,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="TRY">
 				<displayName>신 터키 리라</displayName>
 				<displayName count="other">신 터키 리라</displayName>
-				<symbol draft="contributed">TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
+				<symbol>TRY</symbol>
+				<symbol alt="narrow">₺</symbol>
+				<symbol alt="variant">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>트리니다드 토바고 달러</displayName>
 				<displayName count="other">트리니다드 토바고 달러</displayName>
-				<symbol draft="contributed">TTD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>TTD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>신 타이완 달러</displayName>
 				<displayName count="other">신 타이완 달러</displayName>
-				<symbol draft="contributed">NT$</symbol>
-				<symbol alt="narrow" draft="contributed">NT$</symbol>
+				<symbol>NT$</symbol>
+				<symbol alt="narrow">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>탄자니아 실링</displayName>
 				<displayName count="other">탄자니아 실링</displayName>
-				<symbol draft="contributed">TZS</symbol>
+				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>우크라이나 그리브나</displayName>
 				<displayName count="other">우크라이나 그리브나</displayName>
-				<symbol draft="contributed">UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
+				<symbol>UAH</symbol>
+				<symbol alt="narrow">₴</symbol>
 			</currency>
 			<currency type="UAK">
 				<displayName>우크라이나 카보바네츠</displayName>
@@ -7386,13 +7419,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="UGX">
 				<displayName>우간다 실링</displayName>
 				<displayName count="other">우간다 실링</displayName>
-				<symbol draft="contributed">UGX</symbol>
+				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>미국 달러</displayName>
 				<displayName count="other">미국 달러</displayName>
-				<symbol draft="contributed">US$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>US$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="USN">
 				<displayName>미국 달러(다음날)</displayName>
@@ -7409,13 +7442,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="UYU">
 				<displayName>우루과이 페소 우루과요</displayName>
 				<displayName count="other">우루과이 페소 우루과요</displayName>
-				<symbol draft="contributed">UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>UYU</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>우즈베키스탄 숨</displayName>
 				<displayName count="other">우즈베키스탄 숨</displayName>
-				<symbol draft="contributed">UZS</symbol>
+				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName>베네주엘라 볼리바르 (1871–2008)</displayName>
@@ -7429,13 +7462,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="VES">
 				<displayName>베네수엘라 볼리바르</displayName>
 				<displayName count="other">베네수엘라 볼리바르</displayName>
-				<symbol draft="contributed">VES</symbol>
+				<symbol>VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>베트남 동</displayName>
 				<displayName count="other">베트남 동</displayName>
-				<symbol draft="contributed">₫</symbol>
-				<symbol alt="narrow" draft="contributed">₫</symbol>
+				<symbol>₫</symbol>
+				<symbol alt="narrow">₫</symbol>
 			</currency>
 			<currency type="VNN">
 				<displayName draft="contributed">베트남 동 (1978–1985)</displayName>
@@ -7443,17 +7476,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="VUV">
 				<displayName>바누아투 바투</displayName>
 				<displayName count="other">바누아투 바투</displayName>
-				<symbol draft="contributed">VUV</symbol>
+				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>서 사모아 탈라</displayName>
 				<displayName count="other">서 사모아 탈라</displayName>
-				<symbol draft="contributed">WST</symbol>
+				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>중앙아프리카 CFA 프랑</displayName>
 				<displayName count="other">중앙아프리카 CFA 프랑</displayName>
-				<symbol draft="contributed">FCFA</symbol>
+				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName>은화</displayName>
@@ -7476,8 +7509,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="XCD">
 				<displayName>동카리브 달러</displayName>
 				<displayName count="other">동카리브 달러</displayName>
-				<symbol draft="contributed">EC$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>EC$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>특별인출권</displayName>
@@ -7494,7 +7527,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="XOF">
 				<displayName>서아프리카 CFA 프랑</displayName>
 				<displayName count="other">서아프리카 CFA 프랑</displayName>
-				<symbol draft="contributed">F CFA</symbol>
+				<symbol>F CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>팔라듐</displayName>
@@ -7502,7 +7535,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="XPF">
 				<displayName>CFP 프랑</displayName>
 				<displayName count="other">CFP 프랑</displayName>
-				<symbol draft="contributed">CFPF</symbol>
+				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XPT">
 				<displayName>백금</displayName>
@@ -7523,7 +7556,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="YER">
 				<displayName>예멘 리알</displayName>
 				<displayName count="other">예멘 리알</displayName>
-				<symbol draft="contributed">YER</symbol>
+				<symbol>YER</symbol>
 			</currency>
 			<currency type="YUD">
 				<displayName>유고슬라비아 동전 디나르</displayName>
@@ -7540,8 +7573,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ZAR">
 				<displayName>남아프리카 랜드</displayName>
 				<displayName count="other">남아프리카 랜드</displayName>
-				<symbol draft="contributed">ZAR</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
+				<symbol>ZAR</symbol>
+				<symbol alt="narrow">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>쟘비아 콰쳐 (1968–2012)</displayName>
@@ -7549,8 +7582,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="ZMW">
 				<displayName>잠비아 콰쳐</displayName>
 				<displayName count="other">잠비아 콰쳐</displayName>
-				<symbol draft="contributed">ZMW</symbol>
-				<symbol alt="narrow" draft="contributed">ZK</symbol>
+				<symbol>ZMW</symbol>
+				<symbol alt="narrow">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>자이르 신권 자이르</displayName>
@@ -7761,6 +7794,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>리터당 밀리몰</displayName>
 				<unitPattern count="other">리터당 {0}밀리몰</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>항목</displayName>
+				<unitPattern count="other">{0}개 항목</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0}ppm</unitPattern>
@@ -7947,6 +7984,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="force-newton">
 				<displayName>뉴턴</displayName>
 				<unitPattern count="other">{0}뉴턴</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>100킬로미터당 킬로와트시</displayName>
+				<unitPattern count="other">100킬로미터당 {0}킬로와트시</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>기가헤르츠</displayName>
@@ -8502,6 +8543,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>mmol/L</displayName>
 				<unitPattern count="other">{0}mmol/L</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>항목</displayName>
+				<unitPattern count="other">{0}개 항목</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="other">{0}ppm</unitPattern>
@@ -8689,6 +8734,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-newton">
 				<unitPattern count="other">{0}N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
+				<unitPattern count="other">{0}kWh/100km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -9155,302 +9204,316 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<displayName draft="contributed">g-force</displayName>
-				<unitPattern count="other" draft="contributed">{0}G</unitPattern>
+				<displayName>g-force</displayName>
+				<unitPattern count="other">{0}G</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
-				<displayName draft="contributed">m/s²</displayName>
-				<unitPattern count="other" draft="contributed">{0}m/s²</unitPattern>
+				<displayName>m/s²</displayName>
+				<unitPattern count="other">{0}m/s²</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<unitPattern count="other" draft="contributed">{0}′</unitPattern>
+				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<unitPattern count="other" draft="contributed">{0}″</unitPattern>
+				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
-				<unitPattern count="other" draft="contributed">{0}km²</unitPattern>
+				<unitPattern count="other">{0}km²</unitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<unitPattern count="other" draft="contributed">{0}ha</unitPattern>
+				<unitPattern count="other">{0}ha</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
-				<unitPattern count="other" draft="contributed">{0}m²</unitPattern>
+				<unitPattern count="other">{0}m²</unitPattern>
 			</unit>
 			<unit type="area-square-mile">
-				<unitPattern count="other" draft="contributed">{0}mi²</unitPattern>
+				<unitPattern count="other">{0}mi²</unitPattern>
 			</unit>
 			<unit type="area-acre">
-				<unitPattern count="other" draft="contributed">{0}ac</unitPattern>
+				<unitPattern count="other">{0}ac</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
-				<unitPattern count="other" draft="contributed">{0}ft²</unitPattern>
+				<unitPattern count="other">{0}ft²</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>ppm</displayName>
+				<unitPattern count="other">{0}ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="other">{0}%</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>‰</displayName>
+				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="other">{0}L/100km</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<displayName draft="contributed">C</displayName>
-				<unitPattern count="other" draft="contributed">{0}C</unitPattern>
+				<displayName>C</displayName>
+				<unitPattern count="other">{0}C</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>년</displayName>
 				<unitPattern count="other">{0}년</unitPattern>
-				<perUnitPattern draft="contributed">{0}/년</perUnitPattern>
+				<perUnitPattern>{0}/년</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>개월</displayName>
 				<unitPattern count="other">{0}개월</unitPattern>
-				<perUnitPattern draft="contributed">{0}/월</perUnitPattern>
+				<perUnitPattern>{0}/월</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>주</displayName>
 				<unitPattern count="other">{0}주</unitPattern>
-				<perUnitPattern draft="contributed">{0}/주</perUnitPattern>
+				<perUnitPattern>{0}/주</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>일</displayName>
 				<unitPattern count="other">{0}일</unitPattern>
-				<perUnitPattern draft="contributed">{0}/일</perUnitPattern>
+				<perUnitPattern>{0}/일</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>시간</displayName>
 				<unitPattern count="other">{0}시간</unitPattern>
-				<perUnitPattern draft="contributed">{0}/시간</perUnitPattern>
+				<perUnitPattern>{0}/시간</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>분</displayName>
 				<unitPattern count="other">{0}분</unitPattern>
-				<perUnitPattern draft="contributed">{0}/분</perUnitPattern>
+				<perUnitPattern>{0}/분</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>초</displayName>
 				<unitPattern count="other">{0}초</unitPattern>
-				<perUnitPattern draft="contributed">{0}/초</perUnitPattern>
+				<perUnitPattern>{0}/초</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ms</displayName>
 				<unitPattern count="other">{0}ms</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
-				<displayName draft="contributed">μs</displayName>
-				<unitPattern count="other" draft="contributed">{0}μs</unitPattern>
+				<displayName>μs</displayName>
+				<unitPattern count="other">{0}μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
-				<displayName draft="contributed">ns</displayName>
-				<unitPattern count="other" draft="contributed">{0}ns</unitPattern>
+				<displayName>ns</displayName>
+				<unitPattern count="other">{0}ns</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="other">{0}km</unitPattern>
-				<perUnitPattern draft="contributed">{0}/km</perUnitPattern>
+				<perUnitPattern>{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
 				<unitPattern count="other">{0}m</unitPattern>
-				<perUnitPattern draft="contributed">{0}/m</perUnitPattern>
+				<perUnitPattern>{0}/m</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
-				<displayName draft="contributed">dm</displayName>
-				<unitPattern count="other" draft="contributed">{0}dm</unitPattern>
+				<displayName>dm</displayName>
+				<unitPattern count="other">{0}dm</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>cm</displayName>
 				<unitPattern count="other">{0}cm</unitPattern>
-				<perUnitPattern draft="contributed">{0}/cm</perUnitPattern>
+				<perUnitPattern>{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>mm</displayName>
 				<unitPattern count="other">{0}mm</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName draft="contributed">μm</displayName>
-				<unitPattern count="other" draft="contributed">{0}μm</unitPattern>
+				<displayName>μm</displayName>
+				<unitPattern count="other">{0}μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
-				<displayName draft="contributed">nm</displayName>
-				<unitPattern count="other" draft="contributed">{0}nm</unitPattern>
+				<displayName>nm</displayName>
+				<unitPattern count="other">{0}nm</unitPattern>
 			</unit>
 			<unit type="length-picometer">
-				<displayName draft="contributed">pm</displayName>
-				<unitPattern count="other" draft="contributed">{0}pm</unitPattern>
+				<displayName>pm</displayName>
+				<unitPattern count="other">{0}pm</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName draft="contributed">mi</displayName>
-				<unitPattern count="other" draft="contributed">{0}mi</unitPattern>
+				<displayName>mi</displayName>
+				<unitPattern count="other">{0}mi</unitPattern>
 			</unit>
 			<unit type="length-yard">
-				<displayName draft="contributed">yd</displayName>
-				<unitPattern count="other" draft="contributed">{0}yd</unitPattern>
+				<displayName>yd</displayName>
+				<unitPattern count="other">{0}yd</unitPattern>
 			</unit>
 			<unit type="length-foot">
-				<displayName draft="contributed">ft</displayName>
-				<unitPattern count="other" draft="contributed">{0}′</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ft</perUnitPattern>
+				<displayName>ft</displayName>
+				<unitPattern count="other">{0}′</unitPattern>
+				<perUnitPattern>{0}/ft</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<displayName draft="contributed">in</displayName>
-				<unitPattern count="other" draft="contributed">{0}″</unitPattern>
-				<perUnitPattern draft="contributed">{0}/in</perUnitPattern>
+				<displayName>in</displayName>
+				<unitPattern count="other">{0}″</unitPattern>
+				<perUnitPattern>{0}/in</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
-				<displayName draft="contributed">pc</displayName>
-				<unitPattern count="other" draft="contributed">{0}pc</unitPattern>
+				<displayName>pc</displayName>
+				<unitPattern count="other">{0}pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
-				<displayName draft="contributed">ly</displayName>
-				<unitPattern count="other" draft="contributed">{0}ly</unitPattern>
+				<displayName>ly</displayName>
+				<unitPattern count="other">{0}ly</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
-				<displayName draft="contributed">au</displayName>
-				<unitPattern count="other" draft="contributed">{0}au</unitPattern>
+				<displayName>au</displayName>
+				<unitPattern count="other">{0}au</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">fur</displayName>
-				<unitPattern count="other" draft="contributed">{0}fur</unitPattern>
+				<displayName>fur</displayName>
+				<unitPattern count="other">{0}fur</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">fm</displayName>
-				<unitPattern count="other" draft="contributed">{0}fth</unitPattern>
+				<displayName>fm</displayName>
+				<unitPattern count="other">{0}fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
-				<displayName draft="contributed">nmi</displayName>
-				<unitPattern count="other" draft="contributed">{0}nmi</unitPattern>
+				<displayName>nmi</displayName>
+				<unitPattern count="other">{0}nmi</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<displayName draft="contributed">smi</displayName>
-				<unitPattern count="other" draft="contributed">{0}smi</unitPattern>
+				<displayName>smi</displayName>
+				<unitPattern count="other">{0}smi</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName draft="contributed">pt</displayName>
-				<unitPattern count="other" draft="contributed">{0}pt</unitPattern>
+				<displayName>pt</displayName>
+				<unitPattern count="other">{0}pt</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
-				<displayName draft="contributed">t</displayName>
-				<unitPattern count="other" draft="contributed">{0}t</unitPattern>
+				<displayName>t</displayName>
+				<unitPattern count="other">{0}t</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
 				<unitPattern count="other">{0}kg</unitPattern>
-				<perUnitPattern draft="contributed">{0}/kg</perUnitPattern>
+				<perUnitPattern>{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>g</displayName>
 				<unitPattern count="other">{0}g</unitPattern>
-				<perUnitPattern draft="contributed">{0}/g</perUnitPattern>
+				<perUnitPattern>{0}/g</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
-				<displayName draft="contributed">mg</displayName>
-				<unitPattern count="other" draft="contributed">{0}mg</unitPattern>
+				<displayName>mg</displayName>
+				<unitPattern count="other">{0}mg</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName draft="contributed">μg</displayName>
-				<unitPattern count="other" draft="contributed">{0}μg</unitPattern>
+				<displayName>μg</displayName>
+				<unitPattern count="other">{0}μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName draft="contributed">tn</displayName>
-				<unitPattern count="other" draft="contributed">{0}tn</unitPattern>
+				<displayName>tn</displayName>
+				<unitPattern count="other">{0}tn</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">st</displayName>
-				<unitPattern count="other" draft="contributed">{0}st</unitPattern>
+				<displayName>st</displayName>
+				<unitPattern count="other">{0}st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName draft="contributed">lb</displayName>
-				<unitPattern count="other" draft="contributed">{0}lb</unitPattern>
-				<perUnitPattern draft="contributed">{0}/lb</perUnitPattern>
+				<displayName>lb</displayName>
+				<unitPattern count="other">{0}lb</unitPattern>
+				<perUnitPattern>{0}/lb</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
-				<displayName draft="contributed">oz</displayName>
-				<unitPattern count="other" draft="contributed">{0}oz</unitPattern>
-				<perUnitPattern draft="contributed">{0}/oz</perUnitPattern>
+				<displayName>oz</displayName>
+				<unitPattern count="other">{0}oz</unitPattern>
+				<perUnitPattern>{0}/oz</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
-				<displayName draft="contributed">oz t</displayName>
-				<unitPattern count="other" draft="contributed">{0}oz t</unitPattern>
+				<displayName>oz t</displayName>
+				<unitPattern count="other">{0}oz t</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<displayName draft="contributed">CD</displayName>
-				<unitPattern count="other" draft="contributed">{0}CD</unitPattern>
+				<displayName>CD</displayName>
+				<unitPattern count="other">{0}CD</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
-				<unitPattern count="other" draft="contributed">{0}kW</unitPattern>
+				<unitPattern count="other">{0}kW</unitPattern>
 			</unit>
 			<unit type="power-watt">
-				<unitPattern count="other" draft="contributed">{0}W</unitPattern>
+				<unitPattern count="other">{0}W</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
-				<unitPattern count="other" draft="contributed">{0}HP</unitPattern>
+				<unitPattern count="other">{0}HP</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
-				<displayName draft="contributed">mmHg</displayName>
-				<unitPattern count="other" draft="contributed">{0}mmHg</unitPattern>
+				<displayName>mmHg</displayName>
+				<unitPattern count="other">{0}mmHg</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
-				<displayName draft="contributed">psi</displayName>
-				<unitPattern count="other" draft="contributed">{0}psi</unitPattern>
+				<displayName>psi</displayName>
+				<unitPattern count="other">{0}psi</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
-				<displayName draft="contributed">inHg</displayName>
-				<unitPattern count="other" draft="contributed">{0}&quot;Hg</unitPattern>
+				<displayName>inHg</displayName>
 			</unit>
 			<unit type="pressure-millibar">
-				<displayName draft="contributed">mbar</displayName>
-				<unitPattern count="other" draft="contributed">{0}mb</unitPattern>
+				<displayName>mbar</displayName>
+				<unitPattern count="other">{0}mb</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
-				<displayName draft="contributed">hPa</displayName>
-				<unitPattern count="other" draft="contributed">{0}hPa</unitPattern>
+				<displayName>hPa</displayName>
+				<unitPattern count="other">{0}hPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>
 				<unitPattern count="other">{0}km/h</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
-				<displayName draft="contributed">m/s</displayName>
-				<unitPattern count="other" draft="contributed">{0}m/s</unitPattern>
+				<displayName>m/s</displayName>
+				<unitPattern count="other">{0}m/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
-				<displayName draft="contributed">mi/h</displayName>
-				<unitPattern count="other" draft="contributed">{0}mph</unitPattern>
+				<displayName>mi/h</displayName>
+				<unitPattern count="other">{0}mph</unitPattern>
 			</unit>
 			<unit type="speed-knot">
-				<displayName draft="contributed">kn</displayName>
-				<unitPattern count="other" draft="contributed">{0}kn</unitPattern>
+				<displayName>kn</displayName>
+				<unitPattern count="other">{0}kn</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
-				<displayName draft="contributed">°</displayName>
-				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
+				<displayName>°</displayName>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
 				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
-				<displayName draft="contributed">°F</displayName>
-				<unitPattern count="other" draft="contributed">{0}°F</unitPattern>
+				<displayName>°F</displayName>
+				<unitPattern count="other">{0}°F</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
-				<displayName draft="contributed">K</displayName>
-				<unitPattern count="other" draft="contributed">{0}K</unitPattern>
+				<displayName>K</displayName>
+				<unitPattern count="other">{0}K</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
-				<unitPattern count="other" draft="contributed">{0}km³</unitPattern>
+				<unitPattern count="other">{0}km³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
-				<unitPattern count="other" draft="contributed">{0}mi³</unitPattern>
+				<unitPattern count="other">{0}mi³</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>ℓ</displayName>
 				<unitPattern count="other">{0}ℓ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dsp Imp</displayName>
+				<unitPattern count="other">{0}dsp-Imp</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>쪽</displayName>

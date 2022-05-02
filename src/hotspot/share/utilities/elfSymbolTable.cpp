@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ bool ElfSymbolTable::compare(const Elf_Sym* sym, address addr, int* stringtableI
     const Elf_Shdr* shdr = _section.section_header();
     address sym_addr;
     if (funcDescTable != NULL && funcDescTable->get_index() == sym->st_shndx) {
-      // We need to go another step trough the function descriptor table (currently PPC64 only)
+      // We need to go another step through the function descriptor table (currently PPC64 only)
       sym_addr = funcDescTable->lookup(sym->st_value);
     } else {
       sym_addr = (address)sym->st_value;

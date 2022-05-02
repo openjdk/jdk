@@ -1522,7 +1522,7 @@ const intx ObjectAlignmentInBytes = 8;
           "Stack space (bytes) required for JVM_InvokeMethod to complete")  \
                                                                             \
   /* code cache parameters                                    */            \
-  develop_pd(uintx, CodeCacheSegmentSize,                                   \
+  product_pd(uintx, CodeCacheSegmentSize, EXPERIMENTAL,                     \
           "Code cache segment size (in bytes) - smallest unit of "          \
           "allocation")                                                     \
           range(1, 1024)                                                    \
@@ -1703,7 +1703,8 @@ const intx ObjectAlignmentInBytes = 8;
   /* Properties for Java libraries  */                                      \
                                                                             \
   product(uint64_t, MaxDirectMemorySize, 0,                                 \
-          "Maximum total size of NIO direct-buffer allocations")            \
+          "Maximum total size of NIO direct-buffer allocations. "           \
+          "Ignored if not explicitly set.")                                 \
           range(0, max_jlong)                                               \
                                                                             \
   /* Flags used for temporary code during development  */                   \

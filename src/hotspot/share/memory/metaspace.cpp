@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -457,7 +457,7 @@ void MetaspaceGC::compute_new_size() {
     if (expand_bytes >= MinMetaspaceExpansion) {
       size_t new_capacity_until_GC = 0;
       bool succeeded = MetaspaceGC::inc_capacity_until_GC(expand_bytes, &new_capacity_until_GC);
-      assert(succeeded, "Should always succesfully increment HWM when at safepoint");
+      assert(succeeded, "Should always successfully increment HWM when at safepoint");
 
       Metaspace::tracer()->report_gc_threshold(capacity_until_GC,
                                                new_capacity_until_GC,
@@ -764,7 +764,7 @@ void Metaspace::global_initialize() {
 
     // If CompressedClassSpaceBaseAddress is set, we attempt to force-map class space to
     // the given address. This is a debug-only feature aiding tests. Due to the ASLR lottery
-    // this may fail, in which case the VM will exit after printing an appropiate message.
+    // this may fail, in which case the VM will exit after printing an appropriate message.
     // Tests using this switch should cope with that.
     if (CompressedClassSpaceBaseAddress != 0) {
       base = (address)CompressedClassSpaceBaseAddress;
@@ -777,7 +777,7 @@ void Metaspace::global_initialize() {
       rs = ReservedSpace(size, Metaspace::reserve_alignment(),
                          os::vm_page_size() /* large */, (char*)base);
       if (rs.is_reserved()) {
-        log_info(metaspace)("Sucessfully forced class space address to " PTR_FORMAT, p2i(base));
+        log_info(metaspace)("Successfully forced class space address to " PTR_FORMAT, p2i(base));
       } else {
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given, but reserving class space failed.",

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -35,16 +35,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fa_AF">darí</language>
 			<language type="fr_CA">francés canadiense</language>
 			<language type="fr_CH">francés suizo</language>
-			<language type="goh" draft="contributed">alemán de la alta edad antigua</language>
+			<language type="goh">alemán de la alta edad antigua</language>
 			<language type="grc">griego clásico</language>
 			<language type="gu">gujarati</language>
 			<language type="ht">haitiano</language>
 			<language type="kbd">cabardiano</language>
-			<language type="krc" draft="contributed">karachái-bálkaro</language>
+			<language type="krc">karachái-bálkaro</language>
+			<language type="ks">cachemiro</language>
 			<language type="lo">laosiano</language>
+			<language type="ml">malabar</language>
 			<language type="nl_BE">flamenco</language>
 			<language type="nr">ndebele del sur</language>
-			<language type="nso" draft="contributed">sesotho del norte</language>
+			<language type="nso">sesotho del norte</language>
 			<language type="pa">panyabí</language>
 			<language type="prg">prusiano antiguo</language>
 			<language type="ps" alt="variant">pashtún</language>
@@ -58,12 +60,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sw">swahili</language>
 			<language type="sw_CD">swahili (Congo)</language>
 			<language type="syr">siríaco</language>
-			<language type="tet" draft="contributed">tetun</language>
-			<language type="tyv" draft="contributed">tuvano</language>
+			<language type="tet">tetun</language>
+			<language type="tyv">tuvano</language>
 			<language type="ug" alt="variant">uighur</language>
-			<language type="wal" draft="contributed">walamo</language>
-			<language type="wuu" draft="contributed">wu</language>
-			<language type="xal" draft="contributed">calmuco</language>
+			<language type="wal">walamo</language>
+			<language type="wuu">wu</language>
+			<language type="xal">calmuco</language>
 			<language type="zh_Hans">chino simplificado</language>
 			<language type="zh_Hans" alt="long">chino mandarín simplificado</language>
 			<language type="zh_Hant">chino tradicional</language>
@@ -71,11 +73,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zun">zuni</language>
 		</languages>
 		<scripts>
-			<script type="Hanb">han con bopomofo</script>
+			<script type="Gujr">gujarati</script>
 			<script type="Hrkt">katakana o hiragana</script>
 			<script type="Laoo">lao</script>
 			<script type="Latn">latín</script>
-			<script type="Mlym">malayalam</script>
+			<script type="Mlym">malabar</script>
 			<script type="Olck" draft="contributed">ol chiki</script>
 		</scripts>
 		<territories>
@@ -110,21 +112,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<types>
 			<type key="calendar" type="islamic-rgsa">calendario islámico (Arabia Saudita)</type>
 			<type key="calendar" type="islamic-tbla">calendario islámico tabular</type>
-			<type key="colAlternate" type="non-ignorable" draft="contributed">ordenar símbolos</type>
-			<type key="colAlternate" type="shifted" draft="contributed">ordenar ignorando símbolos</type>
-			<type key="colBackwards" type="no" draft="contributed">ordenar acentos normalmente</type>
-			<type key="colBackwards" type="yes" draft="contributed">ordenar acentos con inversión</type>
-			<type key="colCaseFirst" type="lower" draft="contributed">ordenar empezando por minúsculas</type>
-			<type key="colCaseFirst" type="no" draft="contributed">ordenar siguiendo orden normal de mayúsculas y minúsculas</type>
-			<type key="colCaseFirst" type="upper" draft="contributed">ordenar empezando por mayúsculas</type>
-			<type key="colCaseLevel" type="no" draft="contributed">ordenar sin distinguir entre mayúsculas y minúsculas</type>
-			<type key="colCaseLevel" type="yes" draft="contributed">ordenar distinguiendo entre mayúsculas y minúsculas</type>
-			<type key="collation" type="compat" draft="contributed">orden anterior, para compatibilidad</type>
-			<type key="collation" type="eor" draft="contributed">reglas de orden europeas</type>
-			<type key="collation" type="phonebook" draft="contributed">orden de agenda telefónica</type>
-			<type key="numbers" type="tirh" draft="contributed">dígitos en tirh</type>
-			<type key="numbers" type="traditional" draft="contributed">números traducionales</type>
-			<type key="numbers" type="wara" draft="contributed">dígitos en Warang Citi</type>
+			<type key="colAlternate" type="non-ignorable">ordenar símbolos</type>
+			<type key="colAlternate" type="shifted">ordenar ignorando símbolos</type>
+			<type key="colBackwards" type="no">ordenar acentos normalmente</type>
+			<type key="colBackwards" type="yes">ordenar acentos con inversión</type>
+			<type key="colCaseFirst" type="lower">ordenar empezando por minúsculas</type>
+			<type key="colCaseFirst" type="no">ordenar siguiendo orden normal de mayúsculas y minúsculas</type>
+			<type key="colCaseFirst" type="upper">ordenar empezando por mayúsculas</type>
+			<type key="colCaseLevel" type="no">ordenar sin distinguir entre mayúsculas y minúsculas</type>
+			<type key="colCaseLevel" type="yes">ordenar distinguiendo entre mayúsculas y minúsculas</type>
+			<type key="collation" type="compat">orden anterior, para compatibilidad</type>
+			<type key="collation" type="eor">reglas de orden europeas</type>
+			<type key="collation" type="phonebook">orden de agenda telefónica</type>
+			<type key="numbers" type="tirh">dígitos en tirh</type>
+			<type key="numbers" type="traditional">números traducionales</type>
+			<type key="numbers" type="wara">dígitos en Warang Citi</type>
 		</types>
 		<codePatterns>
 			<codePattern type="script">Alfabeto: {0}</codePattern>
@@ -142,66 +144,66 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">Tout</month>
-							<month type="2" draft="contributed">Baba</month>
-							<month type="3" draft="contributed">Hator</month>
-							<month type="4" draft="contributed">Kiahk</month>
-							<month type="5" draft="contributed">Toba</month>
-							<month type="6" draft="contributed">Amshir</month>
-							<month type="7" draft="contributed">Baramhat</month>
-							<month type="8" draft="contributed">Baramouda</month>
-							<month type="9" draft="contributed">Bashans</month>
-							<month type="10" draft="contributed">Paona</month>
-							<month type="11" draft="contributed">Epep</month>
-							<month type="12" draft="contributed">Mesra</month>
-							<month type="13" draft="contributed">Nasie</month>
+							<month type="1">Tout</month>
+							<month type="2">Baba</month>
+							<month type="3">Hator</month>
+							<month type="4">Kiahk</month>
+							<month type="5">Toba</month>
+							<month type="6">Amshir</month>
+							<month type="7">Baramhat</month>
+							<month type="8">Baramouda</month>
+							<month type="9">Bashans</month>
+							<month type="10">Paona</month>
+							<month type="11">Epep</month>
+							<month type="12">Mesra</month>
+							<month type="13">Nasie</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">Tout</month>
-							<month type="2" draft="contributed">Baba</month>
-							<month type="3" draft="contributed">Hator</month>
-							<month type="4" draft="contributed">Kiahk</month>
-							<month type="5" draft="contributed">Toba</month>
-							<month type="6" draft="contributed">Amshir</month>
-							<month type="7" draft="contributed">Baramhat</month>
-							<month type="8" draft="contributed">Baramouda</month>
-							<month type="9" draft="contributed">Bashans</month>
-							<month type="10" draft="contributed">Paona</month>
-							<month type="11" draft="contributed">Epep</month>
-							<month type="12" draft="contributed">Mesra</month>
-							<month type="13" draft="contributed">Nasie</month>
+							<month type="1">Tout</month>
+							<month type="2">Baba</month>
+							<month type="3">Hator</month>
+							<month type="4">Kiahk</month>
+							<month type="5">Toba</month>
+							<month type="6">Amshir</month>
+							<month type="7">Baramhat</month>
+							<month type="8">Baramouda</month>
+							<month type="9">Bashans</month>
+							<month type="10">Paona</month>
+							<month type="11">Epep</month>
+							<month type="12">Mesra</month>
+							<month type="13">Nasie</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">Tout</month>
-							<month type="2" draft="contributed">Baba</month>
-							<month type="3" draft="contributed">Hator</month>
-							<month type="4" draft="contributed">Kiahk</month>
-							<month type="5" draft="contributed">Toba</month>
-							<month type="6" draft="contributed">Amshir</month>
-							<month type="7" draft="contributed">Baramhat</month>
-							<month type="8" draft="contributed">Baramouda</month>
-							<month type="9" draft="contributed">Bashans</month>
-							<month type="10" draft="contributed">Paona</month>
-							<month type="11" draft="contributed">Epep</month>
-							<month type="12" draft="contributed">Mesra</month>
-							<month type="13" draft="contributed">Nasie</month>
+							<month type="1">Tout</month>
+							<month type="2">Baba</month>
+							<month type="3">Hator</month>
+							<month type="4">Kiahk</month>
+							<month type="5">Toba</month>
+							<month type="6">Amshir</month>
+							<month type="7">Baramhat</month>
+							<month type="8">Baramouda</month>
+							<month type="9">Bashans</month>
+							<month type="10">Paona</month>
+							<month type="11">Epep</month>
+							<month type="12">Mesra</month>
+							<month type="13">Nasie</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">Tout</month>
-							<month type="2" draft="contributed">Baba</month>
-							<month type="3" draft="contributed">Hator</month>
-							<month type="4" draft="contributed">Kiahk</month>
-							<month type="5" draft="contributed">Toba</month>
-							<month type="6" draft="contributed">Amshir</month>
-							<month type="7" draft="contributed">Baramhat</month>
-							<month type="8" draft="contributed">Baramouda</month>
-							<month type="9" draft="contributed">Bashans</month>
-							<month type="10" draft="contributed">Paona</month>
-							<month type="11" draft="contributed">Epep</month>
-							<month type="12" draft="contributed">Mesra</month>
-							<month type="13" draft="contributed">Nasie</month>
+							<month type="1">Tout</month>
+							<month type="2">Baba</month>
+							<month type="3">Hator</month>
+							<month type="4">Kiahk</month>
+							<month type="5">Toba</month>
+							<month type="6">Amshir</month>
+							<month type="7">Baramhat</month>
+							<month type="8">Baramouda</month>
+							<month type="9">Bashans</month>
+							<month type="10">Paona</month>
+							<month type="11">Epep</month>
+							<month type="12">Mesra</month>
+							<month type="13">Nasie</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -221,11 +223,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d 'de' MMM 'de' y G</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>dd/MM/yy GGGGG</pattern>
+							<pattern>d/M/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -264,25 +268,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQ">QQQ 'de' y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatFallback>{0}–{1}</intervalFormatFallback>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">MM/y GGGGG – MM/y GGGGG</greatestDifference>
-							<greatestDifference id="M">MM/y – MM/y GGGGG</greatestDifference>
 							<greatestDifference id="y">MM/y – MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="G">dd/MM/y GGGGG – dd/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="M">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="y">dd/MM/y – dd/MM/y GGGGG</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="G">E dd/MM/y GGGGG – E dd/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E dd/MM/y – E dd/MM/y GGGGG</greatestDifference>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">d/M–d/M</greatestDifference>
+							<greatestDifference id="M">d/M–d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d">E, d/M–E, d/M</greatestDifference>
@@ -313,40 +308,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
-				<months>
-					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">ene.</month>
-							<month type="2" draft="contributed">feb.</month>
-							<month type="3" draft="contributed">mar.</month>
-							<month type="4" draft="contributed">abr.</month>
-							<month type="5" draft="contributed">may.</month>
-							<month type="6" draft="contributed">jun.</month>
-							<month type="7" draft="contributed">jul.</month>
-							<month type="8" draft="contributed">ago.</month>
-							<month type="9">sep.</month>
-							<month type="10" draft="contributed">oct.</month>
-							<month type="11" draft="contributed">nov.</month>
-							<month type="12" draft="contributed">dic.</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">ene.</month>
-							<month type="2" draft="contributed">feb.</month>
-							<month type="3" draft="contributed">mar.</month>
-							<month type="4" draft="contributed">abr.</month>
-							<month type="5" draft="contributed">may.</month>
-							<month type="6" draft="contributed">jun.</month>
-							<month type="7" draft="contributed">jul.</month>
-							<month type="8" draft="contributed">ago.</month>
-							<month type="9">sep.</month>
-							<month type="10" draft="contributed">oct.</month>
-							<month type="11" draft="contributed">nov.</month>
-							<month type="12" draft="contributed">dic.</month>
-						</monthWidth>
-					</monthContext>
-				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="narrow">
@@ -360,23 +321,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="contributed">dom.</day>
-							<day type="mon" draft="contributed">lun.</day>
-							<day type="tue" draft="contributed">mar.</day>
-							<day type="wed" draft="contributed">mié.</day>
-							<day type="thu" draft="contributed">jue.</day>
-							<day type="fri" draft="contributed">vie.</day>
-							<day type="sat" draft="contributed">sáb.</day>
-						</dayWidth>
 						<dayWidth type="narrow">
-							<day type="sun" draft="contributed">D</day>
-							<day type="mon" draft="contributed">L</day>
-							<day type="tue" draft="contributed">M</day>
+							<day type="sun">D</day>
+							<day type="mon">L</day>
+							<day type="tue">M</day>
 							<day type="wed">M</day>
-							<day type="thu" draft="contributed">J</day>
-							<day type="fri" draft="contributed">V</day>
-							<day type="sat" draft="contributed">S</day>
+							<day type="thu">J</day>
+							<day type="fri">V</day>
+							<day type="sat">S</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -401,17 +353,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern draft="contributed">EEEE, d 'de' MMMM 'de' y</pattern>
+							<pattern>EEEE, d 'de' MMMM 'de' y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern draft="contributed">d 'de' MMMM 'de' y</pattern>
+							<pattern>d 'de' MMMM 'de' y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern draft="contributed">d MMM y</pattern>
+							<pattern>d MMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -424,25 +376,39 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
+							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
@@ -450,7 +416,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -460,11 +426,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
+						<dateFormatItem id="Hmsvvvv">HH:mm:ss vvvv</dateFormatItem>
+						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="MMMdd">dd-MMM</dateFormatItem>
 						<dateFormatItem id="yMEd">E d/M/y</dateFormatItem>
-						<dateFormatItem id="yMMM">MMM 'de' y</dateFormatItem>
-						<dateFormatItem id="yMMMd">d 'de' MMM 'de' y</dateFormatItem>
-						<dateFormatItem id="yMMMEd">E, d 'de' MMM 'de' y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ 'de' y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
@@ -506,6 +473,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">h a–h a v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">d/M–d/M</greatestDifference>
+							<greatestDifference id="M">d/M–d/M</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d">E, d/M–E, d/M</greatestDifference>
 							<greatestDifference id="M">E, d/M–E, d/M</greatestDifference>
@@ -517,6 +488,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, d 'de' MMM – E, d 'de' MMM</greatestDifference>
 							<greatestDifference id="M">E, d 'de' MMM – E, d 'de' MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">M/y–M/y</greatestDifference>
+							<greatestDifference id="y">M/y–M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">d/M/y–d/M/y</greatestDifference>
+							<greatestDifference id="M">d/M/y–d/M/y</greatestDifference>
+							<greatestDifference id="y">d/M/y–d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
 							<greatestDifference id="d">E, d/M/y–E, d/M/y</greatestDifference>
@@ -546,70 +526,70 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">Tishri</month>
-							<month type="2" draft="contributed">Heshvan</month>
-							<month type="3" draft="contributed">Kislev</month>
-							<month type="4" draft="contributed">Tevet</month>
-							<month type="5" draft="contributed">Shevat</month>
-							<month type="6" draft="contributed">Adar I</month>
-							<month type="7" draft="contributed">Adar</month>
-							<month type="7" yeartype="leap" draft="contributed">Adar II</month>
-							<month type="8" draft="contributed">Nisan</month>
-							<month type="9" draft="contributed">Iyar</month>
-							<month type="10" draft="contributed">Sivan</month>
-							<month type="11" draft="contributed">Tamuz</month>
-							<month type="12" draft="contributed">Av</month>
-							<month type="13" draft="contributed">Elul</month>
+							<month type="1">Tishri</month>
+							<month type="2">Heshvan</month>
+							<month type="3">Kislev</month>
+							<month type="4">Tevet</month>
+							<month type="5">Shevat</month>
+							<month type="6">Adar I</month>
+							<month type="7">Adar</month>
+							<month type="7" yeartype="leap">Adar II</month>
+							<month type="8">Nisan</month>
+							<month type="9">Iyar</month>
+							<month type="10">Sivan</month>
+							<month type="11">Tamuz</month>
+							<month type="12">Av</month>
+							<month type="13">Elul</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">Tishri</month>
-							<month type="2" draft="contributed">Heshvan</month>
-							<month type="3" draft="contributed">Kislev</month>
-							<month type="4" draft="contributed">Tevet</month>
-							<month type="5" draft="contributed">Shevat</month>
-							<month type="6" draft="contributed">Adar I</month>
-							<month type="7" draft="contributed">Adar</month>
-							<month type="7" yeartype="leap" draft="contributed">Adar II</month>
-							<month type="8" draft="contributed">Nisan</month>
-							<month type="9" draft="contributed">Iyar</month>
-							<month type="10" draft="contributed">Sivan</month>
-							<month type="11" draft="contributed">Tamuz</month>
-							<month type="12" draft="contributed">Av</month>
-							<month type="13" draft="contributed">Elul</month>
+							<month type="1">Tishri</month>
+							<month type="2">Heshvan</month>
+							<month type="3">Kislev</month>
+							<month type="4">Tevet</month>
+							<month type="5">Shevat</month>
+							<month type="6">Adar I</month>
+							<month type="7">Adar</month>
+							<month type="7" yeartype="leap">Adar II</month>
+							<month type="8">Nisan</month>
+							<month type="9">Iyar</month>
+							<month type="10">Sivan</month>
+							<month type="11">Tamuz</month>
+							<month type="12">Av</month>
+							<month type="13">Elul</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">Tishri</month>
-							<month type="2" draft="contributed">Heshvan</month>
-							<month type="3" draft="contributed">Kislev</month>
-							<month type="4" draft="contributed">Tevet</month>
-							<month type="5" draft="contributed">Shevat</month>
-							<month type="6" draft="contributed">Adar I</month>
-							<month type="7" draft="contributed">Adar</month>
-							<month type="7" yeartype="leap" draft="contributed">Adar II</month>
-							<month type="8" draft="contributed">Nisan</month>
-							<month type="9" draft="contributed">Iyar</month>
-							<month type="10" draft="contributed">Sivan</month>
-							<month type="11" draft="contributed">Tamuz</month>
-							<month type="12" draft="contributed">av</month>
-							<month type="13" draft="contributed">elul</month>
+							<month type="1">Tishri</month>
+							<month type="2">Heshvan</month>
+							<month type="3">Kislev</month>
+							<month type="4">Tevet</month>
+							<month type="5">Shevat</month>
+							<month type="6">Adar I</month>
+							<month type="7">Adar</month>
+							<month type="7" yeartype="leap">Adar II</month>
+							<month type="8">Nisan</month>
+							<month type="9">Iyar</month>
+							<month type="10">Sivan</month>
+							<month type="11">Tamuz</month>
+							<month type="12">av</month>
+							<month type="13">elul</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">Tishri</month>
-							<month type="2" draft="contributed">Heshvan</month>
-							<month type="3" draft="contributed">Kislev</month>
-							<month type="4" draft="contributed">Tevet</month>
-							<month type="5" draft="contributed">Shevat</month>
-							<month type="6" draft="contributed">Adar I</month>
-							<month type="7" draft="contributed">Adar</month>
-							<month type="7" yeartype="leap" draft="contributed">Adar II</month>
-							<month type="8" draft="contributed">Nisan</month>
-							<month type="9" draft="contributed">Iyar</month>
-							<month type="10" draft="contributed">Sivan</month>
-							<month type="11" draft="contributed">Tamuz</month>
-							<month type="12" draft="contributed">Av</month>
-							<month type="13" draft="contributed">Elul</month>
+							<month type="1">Tishri</month>
+							<month type="2">Heshvan</month>
+							<month type="3">Kislev</month>
+							<month type="4">Tevet</month>
+							<month type="5">Shevat</month>
+							<month type="6">Adar I</month>
+							<month type="7">Adar</month>
+							<month type="7" yeartype="leap">Adar II</month>
+							<month type="8">Nisan</month>
+							<month type="9">Iyar</month>
+							<month type="10">Sivan</month>
+							<month type="11">Tamuz</month>
+							<month type="12">Av</month>
+							<month type="13">Elul</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -632,60 +612,60 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12">Phalguna</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">Chaitra</month>
-							<month type="2" draft="contributed">Vaisakha</month>
-							<month type="3" draft="contributed">Jyaistha</month>
-							<month type="4" draft="contributed">Asadha</month>
-							<month type="5" draft="contributed">Sravana</month>
-							<month type="6" draft="contributed">Bhadra</month>
-							<month type="7" draft="contributed">Asvina</month>
-							<month type="8" draft="contributed">Kartika</month>
-							<month type="9" draft="contributed">Agrahayana</month>
-							<month type="10" draft="contributed">Pausa</month>
-							<month type="11" draft="contributed">Magha</month>
-							<month type="12" draft="contributed">Phalguna</month>
+							<month type="1">Chaitra</month>
+							<month type="2">Vaisakha</month>
+							<month type="3">Jyaistha</month>
+							<month type="4">Asadha</month>
+							<month type="5">Sravana</month>
+							<month type="6">Bhadra</month>
+							<month type="7">Asvina</month>
+							<month type="8">Kartika</month>
+							<month type="9">Agrahayana</month>
+							<month type="10">Pausa</month>
+							<month type="11">Magha</month>
+							<month type="12">Phalguna</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">Chaitra</month>
-							<month type="2" draft="contributed">Vaisakha</month>
-							<month type="3" draft="contributed">Jyaistha</month>
-							<month type="4" draft="contributed">Asadha</month>
-							<month type="5" draft="contributed">Sravana</month>
-							<month type="6" draft="contributed">Bhadra</month>
-							<month type="7" draft="contributed">Asvina</month>
-							<month type="8" draft="contributed">Kartika</month>
-							<month type="9" draft="contributed">Agrahayana</month>
-							<month type="10" draft="contributed">Pausa</month>
-							<month type="11" draft="contributed">Magha</month>
-							<month type="12" draft="contributed">Phalguna</month>
+							<month type="1">Chaitra</month>
+							<month type="2">Vaisakha</month>
+							<month type="3">Jyaistha</month>
+							<month type="4">Asadha</month>
+							<month type="5">Sravana</month>
+							<month type="6">Bhadra</month>
+							<month type="7">Asvina</month>
+							<month type="8">Kartika</month>
+							<month type="9">Agrahayana</month>
+							<month type="10">Pausa</month>
+							<month type="11">Magha</month>
+							<month type="12">Phalguna</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">Chaitra</month>
-							<month type="2" draft="contributed">Vaisakha</month>
-							<month type="3" draft="contributed">Jyaistha</month>
-							<month type="4" draft="contributed">Asadha</month>
-							<month type="5" draft="contributed">Sravana</month>
-							<month type="6" draft="contributed">Bhadra</month>
-							<month type="7" draft="contributed">Asvina</month>
-							<month type="8" draft="contributed">Kartika</month>
-							<month type="9" draft="contributed">Agrahayana</month>
-							<month type="10" draft="contributed">Pausa</month>
-							<month type="11" draft="contributed">Magha</month>
-							<month type="12" draft="contributed">Phalguna</month>
+							<month type="1">Chaitra</month>
+							<month type="2">Vaisakha</month>
+							<month type="3">Jyaistha</month>
+							<month type="4">Asadha</month>
+							<month type="5">Sravana</month>
+							<month type="6">Bhadra</month>
+							<month type="7">Asvina</month>
+							<month type="8">Kartika</month>
+							<month type="9">Agrahayana</month>
+							<month type="10">Pausa</month>
+							<month type="11">Magha</month>
+							<month type="12">Phalguna</month>
 						</monthWidth>
 					</monthContext>
 				</months>
 				<eras>
 					<eraNames>
-						<era type="0" draft="contributed">Saka</era>
+						<era type="0">Saka</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0" draft="contributed">Saka</era>
+						<era type="0">Saka</era>
 					</eraAbbr>
 					<eraNarrow>
-						<era type="0" draft="contributed">Saka</era>
+						<era type="0">Saka</era>
 					</eraNarrow>
 				</eras>
 			</calendar>
@@ -693,62 +673,62 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">Muh.</month>
-							<month type="2" draft="contributed">Saf.</month>
-							<month type="3" draft="contributed">Rab. I</month>
-							<month type="4" draft="contributed">Rab. II</month>
-							<month type="5" draft="contributed">Jum. I</month>
-							<month type="6" draft="contributed">Jum. II</month>
-							<month type="7" draft="contributed">Raj.</month>
-							<month type="8" draft="contributed">Sha.</month>
-							<month type="9" draft="contributed">Ram.</month>
-							<month type="10" draft="contributed">Shaw.</month>
-							<month type="11" draft="contributed">Dhuʻl-Q.</month>
-							<month type="12" draft="contributed">Dhuʻl-H.</month>
+							<month type="1">Muh.</month>
+							<month type="2">Saf.</month>
+							<month type="3">Rab. I</month>
+							<month type="4">Rab. II</month>
+							<month type="5">Jum. I</month>
+							<month type="6">Jum. II</month>
+							<month type="7">Raj.</month>
+							<month type="8">Sha.</month>
+							<month type="9">Ram.</month>
+							<month type="10">Shaw.</month>
+							<month type="11">Dhuʻl-Q.</month>
+							<month type="12">Dhuʻl-H.</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">Muharram</month>
-							<month type="2" draft="contributed">Safar</month>
-							<month type="3" draft="contributed">Rabiʻ I</month>
-							<month type="4" draft="contributed">Rabiʻ II</month>
-							<month type="5" draft="contributed">Jumada I</month>
-							<month type="6" draft="contributed">Jumada II</month>
-							<month type="7" draft="contributed">Rajab</month>
-							<month type="8" draft="contributed">Shaʻban</month>
-							<month type="9" draft="contributed">Ramadan</month>
-							<month type="10" draft="contributed">Shawwal</month>
-							<month type="11" draft="contributed">Dhuʻl-Qiʻdah</month>
-							<month type="12" draft="contributed">Dhuʻl-Hijjah</month>
+							<month type="1">Muharram</month>
+							<month type="2">Safar</month>
+							<month type="3">Rabiʻ I</month>
+							<month type="4">Rabiʻ II</month>
+							<month type="5">Jumada I</month>
+							<month type="6">Jumada II</month>
+							<month type="7">Rajab</month>
+							<month type="8">Shaʻban</month>
+							<month type="9">Ramadan</month>
+							<month type="10">Shawwal</month>
+							<month type="11">Dhuʻl-Qiʻdah</month>
+							<month type="12">Dhuʻl-Hijjah</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">Muh.</month>
-							<month type="2" draft="contributed">Saf.</month>
-							<month type="3" draft="contributed">Rab. I</month>
-							<month type="4" draft="contributed">Rab. II</month>
-							<month type="5" draft="contributed">Jum. I</month>
-							<month type="6" draft="contributed">Jum. II</month>
-							<month type="7" draft="contributed">Raj.</month>
-							<month type="8" draft="contributed">Sha.</month>
-							<month type="9" draft="contributed">Ram.</month>
-							<month type="10" draft="contributed">Shaw.</month>
-							<month type="11" draft="contributed">Dhuʻl-Q.</month>
-							<month type="12" draft="contributed">Dhuʻl-H.</month>
+							<month type="1">Muh.</month>
+							<month type="2">Saf.</month>
+							<month type="3">Rab. I</month>
+							<month type="4">Rab. II</month>
+							<month type="5">Jum. I</month>
+							<month type="6">Jum. II</month>
+							<month type="7">Raj.</month>
+							<month type="8">Sha.</month>
+							<month type="9">Ram.</month>
+							<month type="10">Shaw.</month>
+							<month type="11">Dhuʻl-Q.</month>
+							<month type="12">Dhuʻl-H.</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">Muharram</month>
-							<month type="2" draft="contributed">Safar</month>
-							<month type="3" draft="contributed">Rabiʻ I</month>
-							<month type="4" draft="contributed">Rabiʻ II</month>
-							<month type="5" draft="contributed">Jumada I</month>
-							<month type="6" draft="contributed">Jumada II</month>
-							<month type="7" draft="contributed">Rajab</month>
-							<month type="8" draft="contributed">Shaʻban</month>
-							<month type="9" draft="contributed">Ramadan</month>
-							<month type="10" draft="contributed">Shawwal</month>
-							<month type="11" draft="contributed">Dhuʻl-Qiʻdah</month>
-							<month type="12" draft="contributed">Dhuʻl-Hijjah</month>
+							<month type="1">Muharram</month>
+							<month type="2">Safar</month>
+							<month type="3">Rabiʻ I</month>
+							<month type="4">Rabiʻ II</month>
+							<month type="5">Jumada I</month>
+							<month type="6">Jumada II</month>
+							<month type="7">Rajab</month>
+							<month type="8">Shaʻban</month>
+							<month type="9">Ramadan</month>
+							<month type="10">Shawwal</month>
+							<month type="11">Dhuʻl-Qiʻdah</month>
+							<month type="12">Dhuʻl-Hijjah</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -756,16 +736,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<calendar type="roc">
 				<eras>
 					<eraNames>
-						<era type="0" draft="contributed">antes de R.O.C.</era>
-						<era type="1" draft="contributed">R.O.C.</era>
+						<era type="0">antes de R.O.C.</era>
+						<era type="1">R.O.C.</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">antes de R.O.C.</era>
-						<era type="1" draft="contributed">R.O.C.</era>
+						<era type="1">R.O.C.</era>
 					</eraAbbr>
 					<eraNarrow>
-						<era type="0" draft="contributed">antes de R.O.C.</era>
-						<era type="1" draft="contributed">R.O.C.</era>
+						<era type="0">antes de R.O.C.</era>
+						<era type="1">R.O.C.</era>
 					</eraNarrow>
 				</eras>
 			</calendar>
@@ -788,6 +768,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="weekOfMonth-narrow">
 				<displayName>sem. del mes</displayName>
+			</field>
+			<field type="day-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">dentro de {0} día</relativeTimePattern>
+					<relativeTimePattern count="other">dentro de {0} días</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">hace {0} día</relativeTimePattern>
+					<relativeTimePattern count="other">hace {0} días</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">dentro de {0} día</relativeTimePattern>
+					<relativeTimePattern count="other">dentro de {0} días</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">hace {0} día</relativeTimePattern>
+					<relativeTimePattern count="other">hace {0} días</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="dayOfYear-short">
 				<displayName>día del año</displayName>
@@ -1010,7 +1010,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
+		<minimumGroupingDigits>1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
 			<group>,</group>
@@ -1082,28 +1082,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">florín de las Antillas Neerlandesas</displayName>
 				<displayName count="other">florines de las Antillas Neerlandesas</displayName>
 			</currency>
-			<currency type="BGN">
-				<displayName count="one">lev búlgaro</displayName>
-				<displayName count="other">leva búlgaros</displayName>
-			</currency>
 			<currency type="BMD">
 				<displayName>dólar de Bermudas</displayName>
 				<displayName count="one">dólar de Bermudas</displayName>
 				<displayName count="other">dólares de Bermudas</displayName>
 			</currency>
 			<currency type="EGP">
-				<symbol alt="narrow" draft="contributed">E£</symbol>
+				<symbol alt="narrow">E£</symbol>
 			</currency>
 			<currency type="EUR">
 				<symbol>EUR</symbol>
 			</currency>
 			<currency type="FKP">
-				<symbol alt="narrow" draft="contributed">FK£</symbol>
+				<symbol alt="narrow">FK£</symbol>
+			</currency>
+			<currency type="HTG">
+				<displayName>gourde haitiano</displayName>
+				<displayName count="one">gourde haitiano</displayName>
+				<displayName count="other">gourdes haitianos</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName>tenge kazajo</displayName>
+				<displayName count="one">tenge kazajo</displayName>
+				<displayName count="other">tengues kazajos</displayName>
 			</currency>
 			<currency type="MWK">
 				<displayName>kwacha malauí</displayName>
 				<displayName count="one">kwacha malauí</displayName>
-				<displayName count="other">kwachas malauís</displayName>
+				<displayName count="other">kwachas malauíes</displayName>
 			</currency>
 			<currency type="NIO">
 				<displayName>córdoba nicaragüense</displayName>
@@ -1111,10 +1117,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">córdobas nicaragüenses</displayName>
 			</currency>
 			<currency type="SSP">
-				<symbol alt="narrow" draft="contributed">SD£</symbol>
+				<symbol alt="narrow">SD£</symbol>
 			</currency>
 			<currency type="SYP">
-				<symbol alt="narrow" draft="contributed">S£</symbol>
+				<symbol alt="narrow">S£</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>baht tailandes</displayName>
@@ -1131,7 +1137,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">soms uzbekos</displayName>
 			</currency>
 			<currency type="VEF">
-				<symbol alt="narrow" draft="contributed">BsF</symbol>
+				<symbol alt="narrow">BsF</symbol>
 			</currency>
 			<currency type="VND">
 				<symbol>VND</symbol>
@@ -1330,9 +1336,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">G</displayName>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
-				<displayName draft="contributed">m/s²</displayName>
-				<unitPattern count="one" draft="contributed">{0}m/s²</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}m/s²</unitPattern>
+				<displayName>m/s²</displayName>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>metros²</displayName>
 			</unit>
 			<unit type="duration-year">
 				<displayName>a.</displayName>
@@ -1340,70 +1347,92 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}aa.</unitPattern>
 			</unit>
 			<unit type="duration-month">
+				<displayName>m.</displayName>
 				<unitPattern count="one">{0}m.</unitPattern>
 				<unitPattern count="other">{0}mm.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/m.</perUnitPattern>
+				<perUnitPattern>{0}/m.</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>sem.</displayName>
 				<unitPattern count="one">{0}sem.</unitPattern>
 				<unitPattern count="other">{0}sems.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/sem.</perUnitPattern>
+				<perUnitPattern>{0}/sem.</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>d.</displayName>
 				<unitPattern count="one">{0}d.</unitPattern>
 				<unitPattern count="other">{0}dd.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/d.</perUnitPattern>
+				<perUnitPattern>{0}/d.</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<unitPattern count="one">{0}m</unitPattern>
+				<unitPattern count="other">{0}m</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<unitPattern count="one">{0} kWh/100km</unitPattern>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>Mpx</displayName>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>ppcm</displayName>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>p</displayName>
+				<unitPattern count="one">{0}p</unitPattern>
+				<unitPattern count="other">{0}pt</unitPattern>
 			</unit>
 			<unit type="length-parsec">
-				<displayName draft="contributed">parsec</displayName>
+				<displayName>parsec</displayName>
 			</unit>
 			<unit type="length-light-year">
-				<displayName draft="contributed">aa. l.</displayName>
-				<unitPattern count="one" draft="contributed">{0}a. l.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}a.a. l.</unitPattern>
+				<displayName>aa. l.</displayName>
+				<unitPattern count="one">{0}a. l.</unitPattern>
+				<unitPattern count="other">{0}a.a. l.</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
-				<displayName draft="contributed">ua</displayName>
+				<displayName>ua</displayName>
+			</unit>
+			<unit type="length-nautical-mile">
+				<unitPattern count="one">{0}nmi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}M</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<unitPattern count="one">{0}mi esc.</unitPattern>
+				<unitPattern count="other">{0}mi esc.</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
-				<displayName draft="contributed">t</displayName>
-				<unitPattern count="one" draft="contributed">{0}t</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}t</unitPattern>
+				<displayName>t</displayName>
 			</unit>
 			<unit type="mass-milligram">
-				<displayName draft="contributed">mg</displayName>
-				<unitPattern count="one" draft="contributed">{0}mg</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}mg</unitPattern>
+				<displayName>mg</displayName>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName draft="contributed">μg</displayName>
-				<unitPattern count="one" draft="contributed">{0}μg</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}μg</unitPattern>
+				<displayName>μg</displayName>
 			</unit>
 			<unit type="mass-ton">
-				<displayName draft="contributed">ton</displayName>
-				<unitPattern count="one" draft="contributed">{0}ton</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ton</unitPattern>
+				<displayName>ton</displayName>
+				<unitPattern count="one">{0}ton</unitPattern>
+				<unitPattern count="other">{0}ton</unitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
-				<displayName draft="contributed">ozt</displayName>
-				<unitPattern count="one" draft="contributed">{0}ozt</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ozt</unitPattern>
+				<displayName>ozt</displayName>
+				<unitPattern count="one">{0}ozt</unitPattern>
+				<unitPattern count="other">{0}ozt</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<displayName draft="contributed">ct</displayName>
-				<unitPattern count="one" draft="contributed">{0}ct</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ct</unitPattern>
+				<displayName>ct</displayName>
 			</unit>
 			<unit type="speed-knot">
-				<displayName draft="contributed">kn</displayName>
-				<unitPattern count="one" draft="contributed">{0}kn</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}kn</unitPattern>
+				<displayName>kn</displayName>
 			</unit>
-			<unit type="volume-cup">
-				<unitPattern count="one">{0} tza.</unitPattern>
+			<unit type="volume-pint">
+				<displayName>pt</displayName>
+			</unit>
+			<unit type="volume-barrel">
+				<unitPattern count="one">{0}bbl</unitPattern>
+				<unitPattern count="other">{0}bbl</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,7 +353,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
         // In this implementation, two times of retransmits would be attempted
         // before backing off.  The back off is supported only if the packet
         // size is bigger than 256 bytes.
-        private int retransmits = 2;            // attemps of retransmits
+        private int retransmits = 2;            // attempts of retransmits
 
         void queueUpHandshake(byte[] buf,
                 int offset, int length) throws IOException {
@@ -623,7 +623,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
 
                 // shrink packet size
                 shrinkPacketSize();
-                retransmits = 2;        // attemps of retransmits
+                retransmits = 2;        // attempts of retransmits
             }
         }
 

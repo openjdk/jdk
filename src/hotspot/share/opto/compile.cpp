@@ -21,7 +21,6 @@
  * questions.
  *
  */
-
 #include "precompiled.hpp"
 #include "jvm_io.h"
 #include "asm/macroAssembler.hpp"
@@ -249,6 +248,7 @@ void Compile::print_statistics() {
   { ttyLocker ttyl;
     if (xtty != NULL)  xtty->head("statistics type='opto'");
     Parse::print_statistics();
+    PhaseStringOpts::print_statistics();
     PhaseCCP::print_statistics();
     PhaseRegAlloc::print_statistics();
     PhaseOutput::print_statistics();
@@ -548,7 +548,13 @@ void Compile::print_ideal_ir(const char* phase_name) {
                is_osr_compilation() ? " compile_kind='osr'" : "",
                phase_name);
   }
-  root()->dump(9999);
+  if (_output == nullptr) {
+    root()->dump(9999);
+  } else {
+    // Dump the node blockwise if we have a scheduling
+    _output->print_scheduling();
+  }
+
   if (xtty != NULL) {
     xtty->tail("ideal");
   }
@@ -624,7 +630,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _replay_inline_data(NULL),
                   _java_calls(0),
                   _inner_loops(0),
-                  _interpreter_frame_size(0)
+                  _interpreter_frame_size(0),
+                  _output(NULL)
 #ifndef PRODUCT
                   , _in_dump_cnt(0)
 #endif
@@ -898,6 +905,7 @@ Compile::Compile( ciEnv* ci_env,
     _java_calls(0),
     _inner_loops(0),
     _interpreter_frame_size(0),
+    _output(NULL),
 #ifndef PRODUCT
     _in_dump_cnt(0),
 #endif
@@ -1286,7 +1294,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
   // Process weird unsafe references.
   if (offset == Type::OffsetBot && (tj->isa_instptr() /*|| tj->isa_klassptr()*/)) {
-    assert(InlineUnsafeOps, "indeterminate pointers come only from unsafe ops");
+    assert(InlineUnsafeOps || StressReflectiveCode, "indeterminate pointers come only from unsafe ops");
     assert(!is_known_inst, "scalarizable allocation should not have unsafe references");
     tj = TypeOopPtr::BOTTOM;
     ptr = tj->ptr();
@@ -1829,7 +1837,7 @@ void Compile::inline_string_calls(bool parse_time) {
   {
     ResourceMark rm;
     print_method(PHASE_BEFORE_STRINGOPTS, 3);
-    PhaseStringOpts pso(initial_gvn(), for_igvn());
+    PhaseStringOpts pso(initial_gvn());
     print_method(PHASE_AFTER_STRINGOPTS, 3);
   }
 
@@ -3492,6 +3500,86 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
 
+  case Op_UModI:
+    if (UseDivMod) {
+      // Check if a%b and a/b both exist
+      Node* d = n->find_similar(Op_UDivI);
+      if (d) {
+        // Replace them with a fused unsigned divmod if supported
+        if (Matcher::has_match_rule(Op_UDivModI)) {
+          UDivModINode* divmod = UDivModINode::make(n);
+          d->subsume_by(divmod->div_proj(), this);
+          n->subsume_by(divmod->mod_proj(), this);
+        } else {
+          // replace a%b with a-((a/b)*b)
+          Node* mult = new MulINode(d, d->in(2));
+          Node* sub  = new SubINode(d->in(1), mult);
+          n->subsume_by(sub, this);
+        }
+      }
+    }
+    break;
+
+  case Op_UModL:
+    if (UseDivMod) {
+      // Check if a%b and a/b both exist
+      Node* d = n->find_similar(Op_UDivL);
+      if (d) {
+        // Replace them with a fused unsigned divmod if supported
+        if (Matcher::has_match_rule(Op_UDivModL)) {
+          UDivModLNode* divmod = UDivModLNode::make(n);
+          d->subsume_by(divmod->div_proj(), this);
+          n->subsume_by(divmod->mod_proj(), this);
+        } else {
+          // replace a%b with a-((a/b)*b)
+          Node* mult = new MulLNode(d, d->in(2));
+          Node* sub  = new SubLNode(d->in(1), mult);
+          n->subsume_by(sub, this);
+        }
+      }
+    }
+    break;
+
+  case Op_NoOvfModI:
+    if (UseDivMod) {
+      // Check if a%b and a/b both exist
+      Node* d = n->find_similar(Op_NoOvfDivI);
+      if (d) {
+        // Replace them with a fused divmod if supported
+        if (Matcher::has_match_rule(Op_NoOvfDivModI)) {
+          NoOvfDivModINode* divmod = NoOvfDivModINode::make(n);
+          d->subsume_by(divmod->div_proj(), this);
+          n->subsume_by(divmod->mod_proj(), this);
+        } else {
+          // replace a%b with a-((a/b)*b)
+          Node* mult = new MulINode(d, d->in(2));
+          Node* sub  = new SubINode(d->in(1), mult);
+          n->subsume_by(sub, this);
+        }
+      }
+    }
+    break;
+
+  case Op_NoOvfModL:
+    if (UseDivMod) {
+      // Check if a%b and a/b both exist
+      Node* d = n->find_similar(Op_NoOvfDivL);
+      if (d) {
+        // Replace them with a fused divmod if supported
+        if (Matcher::has_match_rule(Op_NoOvfDivModL)) {
+          NoOvfDivModLNode* divmod = NoOvfDivModLNode::make(n);
+          d->subsume_by(divmod->div_proj(), this);
+          n->subsume_by(divmod->mod_proj(), this);
+        } else {
+          // replace a%b with a-((a/b)*b)
+          Node* mult = new MulLNode(d, d->in(2));
+          Node* sub  = new SubLNode(d->in(1), mult);
+          n->subsume_by(sub, this);
+        }
+      }
+    }
+    break;
+
   case Op_LoadVector:
   case Op_StoreVector:
   case Op_LoadVectorGather:
@@ -3876,7 +3964,7 @@ bool Compile::final_graph_reshaping() {
 
 #ifdef IA32
   // If original bytecodes contained a mixture of floats and doubles
-  // check if the optimizer has made it homogenous, item (3).
+  // check if the optimizer has made it homogeneous, item (3).
   if (UseSSE == 0 &&
       frc.get_float_count() > 32 &&
       frc.get_double_count() == 0 &&
@@ -4243,7 +4331,7 @@ void Compile::print_inlining_stream_free() {
 }
 
 // The message about the current inlining is accumulated in
-// _print_inlining_stream and transfered into the _print_inlining_list
+// _print_inlining_stream and transferred into the _print_inlining_list
 // once we know whether inlining succeeds or not. For regular
 // inlining, messages are appended to the buffer pointed by
 // _print_inlining_idx in the _print_inlining_list. For late inlining,
@@ -4334,7 +4422,7 @@ void Compile::print_inlining_update_delayed(CallGenerator* cg) {
 }
 
 void Compile::print_inlining_assert_ready() {
-  assert(!_print_inlining || _print_inlining_stream->size() == 0, "loosing data");
+  assert(!_print_inlining || _print_inlining_stream->size() == 0, "losing data");
 }
 
 void Compile::process_print_inlining() {

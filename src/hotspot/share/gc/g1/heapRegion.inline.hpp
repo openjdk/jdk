@@ -242,7 +242,10 @@ inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size)
 
 inline void HeapRegion::note_start_of_marking() {
   _next_marked_bytes = 0;
-  _next_top_at_mark_start = top();
+  if (!is_closed_archive()) {
+    _next_top_at_mark_start = top();
+  }
+  assert(!is_closed_archive() || next_top_at_mark_start() == bottom(), "CA region's nTAMS must always be at bottom");
   _gc_efficiency = -1.0;
 }
 
@@ -328,16 +331,6 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
 
   // Find the obj that extends onto mr.start().
   HeapWord* cur = block_start(start);
-
-#ifdef ASSERT
-  {
-    assert(cur <= start,
-           "cur: " PTR_FORMAT ", start: " PTR_FORMAT, p2i(cur), p2i(start));
-    HeapWord* next = cur + block_size(cur);
-    assert(start < next,
-           "start: " PTR_FORMAT ", next: " PTR_FORMAT, p2i(start), p2i(next));
-  }
-#endif
 
   const G1CMBitMap* const bitmap = g1h->concurrent_mark()->prev_mark_bitmap();
   while (true) {

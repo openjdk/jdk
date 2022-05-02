@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -993,6 +993,8 @@ public class TTY implements EventNotifier {
                    token.startsWith("-ss") || token.startsWith("-oss") ) {
 
                 javaArgs = addArgument(javaArgs, token);
+            } else if (token.startsWith("-R")) {
+                javaArgs = addArgument(javaArgs, token.substring(2));
             } else if (token.equals("-tclassic")) {
                 usageError("Classic VM no longer supported.");
                 return;
