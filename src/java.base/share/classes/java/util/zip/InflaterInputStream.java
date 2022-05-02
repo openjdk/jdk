@@ -124,11 +124,11 @@ public class InflaterInputStream extends FilterInputStream {
     }
 
     /**
-     * Reads uncompressed data into an array of bytes. If {@code len} is not
-     * zero, the method will block until some input can be decompressed; otherwise,
-     * no bytes are read and {@code 0} is returned.
+     * Reads uncompressed data into an array of bytes, returning the number of inflated
+     * bytes. If {@code len} is not zero, the method will block until some input can be
+     * decompressed; otherwise, no bytes are read and {@code 0} is returned.
      * <p>
-     * If <i>n</i> denotes the returned number of inflated bytes, then {@code b[off]}
+     * If <i>n</i> denotes a nonzero number of inflated bytes to return, then {@code b[off]}
      * through {@code b[off+}<i>n</i>{@code -1]} will contain the uncompressed data. The
      * elements {@code b[off+}<i>n</i>{@code ]} through {@code b[off+}<i>len</i>{@code -1]}
      * are undefined (an implementation is free to change them during the inflate
