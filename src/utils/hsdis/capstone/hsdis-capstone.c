@@ -89,7 +89,7 @@ typedef struct {
   bool intel_syntax;
 } Options;
 
-static Options parse_options(const char* options) {
+static Options parse_options(const char* options, printf_callback_t printf_callback, void* printf_stream) {
   Options ops;
   // initialize with defaults
   ops.intel_syntax = false;
@@ -107,7 +107,7 @@ static Options parse_options(const char* options) {
       if (end == NULL) {
         end = strchr(cursor, '\0');
       }
-      printf("Unknown PrintAssembly option: %.*s\n", (int) (end - cursor), cursor);
+      print("Unknown PrintAssembly option: %.*s\n", (int) (end - cursor), cursor);
       cursor = end;
     }
   }
@@ -120,9 +120,9 @@ __declspec(dllexport)
 #endif
 void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
                                   unsigned char* buffer, uintptr_t length,
-                                  void* (*event_callback)(void*, const char*, void*),
+                                  event_callback_t event_callback,
                                   void* event_stream,
-                                  int (*printf_callback)(void*, const char*, ...),
+                                  printf_callback_t printf_callback,
                                   void* printf_stream,
                                   const char* options,
                                   int newline /* bool value for nice new line */) {
@@ -148,7 +148,7 @@ void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
     return NULL;
   }
 
-  Options ops = parse_options(options);
+  Options ops = parse_options(options, printf_callback, printf_stream);
   cs_option(cs_handle, CS_OPT_SYNTAX, ops.intel_syntax ? CS_OPT_SYNTAX_INTEL : CS_OPT_SYNTAX_ATT);
 
   cs_insn *insn;
