@@ -1670,9 +1670,13 @@ class InstallAsyncExceptionHandshake : public HandshakeClosure {
 public:
   InstallAsyncExceptionHandshake(AsyncExceptionHandshake* aeh) :
     HandshakeClosure("InstallAsyncException"), _aeh(aeh) {}
+  ~InstallAsyncExceptionHandshake() {
+    delete _aeh;
+  }
   void do_thread(Thread* thr) {
     JavaThread* target = JavaThread::cast(thr);
     target->install_async_exception(_aeh);
+    _aeh = nullptr;
   }
 };
 
