@@ -91,6 +91,8 @@ typedef struct {
 
 static Options parse_options(const char* options) {
   Options ops;
+  // initialize with defaults
+  ops.intel_syntax = false;
 
   const char* cursor = options;
   while (*cursor != '\0') {
