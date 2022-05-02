@@ -41,10 +41,11 @@ import javax.net.ssl.*;
  * Methods are defined final to ensure that they are not accidentally
  * overridden in SSLSocketImpl.
  *
- * There used to be a finalize() implementation, but decided that was
- * not needed.  The native resources are handled by the Socket Cleaner.
- * An application should close its sockets and not let them get garbage
- * collected without closing them.
+ * There used to be a finalize() implementation that sent close_notify's, but
+ * decided that was not needed.  An application should close its sockets and
+ * not let them get garbage collected without closing them.
+ *
+ * The underlying native resources are handled by the Socket Cleaner.
  *
  * @see javax.net.ssl.SSLSocket
  * @see SSLSocketImpl
