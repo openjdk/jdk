@@ -1720,11 +1720,11 @@ void print_bfs(Node* root, const uint max_distance, Node* target, const char* fi
       case Type::Category::Other:
         return traverse_other;
       case Type::Category::Undef:
-	n->dump();
-	assert(false, "category undef ??");
+        n->dump();
+        assert(false, "category undef ??");
       default:
-	n->dump();
-	assert(false, "not covered");
+        n->dump();
+        assert(false, "not covered");
     }
     return false;
   };
@@ -1732,21 +1732,21 @@ void print_bfs(Node* root, const uint max_distance, Node* target, const char* fi
     const Type *t = n->bottom_type();
     switch (t->category()) {
       case Type::Category::Data:
-        return use_color?"\u001b[34md\u001b[0m":"d";
+        return use_color ? "\u001b[34md\u001b[0m" : "d";
       case Type::Category::Memory:
-        return use_color?"\u001b[32mm\u001b[0m":"m";
+        return use_color ? "\u001b[32mm\u001b[0m" : "m";
       case Type::Category::Mixed:
-        return use_color?"\u001b[35mx\u001b[0m":"x";
+        return use_color ? "\u001b[35mx\u001b[0m" : "x";
       case Type::Category::Control:
-        return use_color?"\u001b[31mc\u001b[0m":"c";
+        return use_color ? "\u001b[31mc\u001b[0m" : "c";
       case Type::Category::Other:
-        return use_color?"\u001b[33mo\u001b[0m":"o";
+        return use_color ? "\u001b[33mo\u001b[0m" : "o";
       case Type::Category::Undef:
-	n->dump();
-	assert(false, "category undef ??");
+        n->dump();
+        assert(false, "category undef ??");
       default:
-	n->dump();
-	assert(false, "not covered");
+        n->dump();
+        assert(false, "not covered");
     }
     return "?";
   };
@@ -1765,16 +1765,16 @@ void print_bfs(Node* root, const uint max_distance, Node* target, const char* fi
     if (n == NULL) {
       sprintf(buf,"_");           // null
     } else if (C->node_arena()->contains(n)) {
-      sprintf(buf,"%d",n->_idx);  // new node
+      sprintf(buf, "%d", n->_idx);  // new node
     } else {
-      sprintf(buf,"o%d",n->_idx); // old node
+      sprintf(buf, "o%d", n->_idx); // old node
     }
-    tty->print("%6s",buf);
+    tty->print("%6s", buf);
   };
   auto print_node_block = [&] (Node* n) {
     Block* b = C->node_arena()->contains(n)
-	       ?C->cfg()->get_block_for_node(n)
-	       :NULL; // guard agains old nodes
+               ? C->cfg()->get_block_for_node(n)
+               : NULL; // guard agains old nodes
     if (b == NULL) {
       tty->print("     _");
       tty->print("     _");
@@ -1786,14 +1786,14 @@ void print_bfs(Node* root, const uint max_distance, Node* target, const char* fi
       } else {
         tty->print("     _");
       }
-      tty->print("%4d",b->_dom_depth);
+      tty->print("%4d", b->_dom_depth);
     }
   };
 
   auto worklist_push = [&] (Node* n, Node* p, const long d) {
     worklist.push(n);
-    parent.Insert(n,p);
-    distance.Insert(n,(void*)d);
+    parent.Insert(n, p);
+    distance.Insert(n, (void*)d);
   };
   worklist_push(root, root, 0);
 
@@ -1815,9 +1815,9 @@ void print_bfs(Node* root, const uint max_distance, Node* target, const char* fi
     // process next item
     Node* n = worklist.at(pos++);
     long d = abs((long)distance[n]);
-    const char* direction = ((long)distance[n]>=0)?"+":"-";
+    const char* direction = ((long)distance[n] >= 0) ? "+" : "-";
     if (target == NULL) {
-      tty->print("%3ld",d);                          // distance
+      tty->print("%3ld", d);                          // distance
       if (print_blocks) {
         print_node_block(n);                         // block
       }
@@ -1878,7 +1878,7 @@ void print_bfs(Node* root, const uint max_distance, Node* target, const char* fi
     tty->print("-------------------------------------\n");
     Node* current = target;
     while (current != (Node*)parent[current]) {
-      const char* direction = ((long)distance[current]>=0)?"+":"-";
+      const char* direction = ((long)distance[current] >=0 ) ? "+" : "-";
       tty->print("%3ld", abs((long)distance[current]));    // distance
       if (print_blocks) {
         print_node_block(current);                         // block
