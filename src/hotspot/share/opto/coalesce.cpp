@@ -825,6 +825,14 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   lrgs(lr1).set_degree( _phc._ifg->effective_degree(lr1) );
   lrgs(lr2).set_degree( 0 );
 
+  if (lrgs(lr1)._region <= _region) {
+    lrgs(lr1).set_prev_reg(lrgs(lr2).prev_reg());
+  } else if (lrgs(lr2)._region <= _region) {
+    // nothing
+  } else {
+    assert(lrgs(lr1).prev_reg() == lrgs(lr2).prev_reg(), "");
+  }
+
   // Join live ranges.  Merge larger into smaller.  Union lr2 into lr1 in the
   // union-find tree
   union_helper( lr1_node, lr2_node, lr1, lr2, src_def, dst_copy, src_copy, b, bindex );
@@ -838,10 +846,6 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   // being not-lo-degree, it can happen.  In any case the combined coalesced
   // live range better Simplify nicely.
   lrgs(lr1)._was_lo = 1;
-
-  if (dst_copy->_idx < (uint)_phc._node_regs.length()) {
-    _phc._node_regs.at_put_grow(dst_copy->_idx, _phc._node_regs.at(src_def->_idx));
-  }
 
   // kinda expensive to do all the time
   //tty->print_cr("warning: slow verify happening");

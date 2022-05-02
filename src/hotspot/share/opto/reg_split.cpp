@@ -514,6 +514,15 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
 //       Else, hoist LRG back up to register only (ie - split is also DEF)
 // We will compute a new maxlrg as we go
 uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List blocks, uint region) {
+  for (uint i = 0; i < _lrg_map.size(); i++) {
+    if (_lrg_map.live_range_id(i)) {
+      LRG &lrg = lrgs(_lrg_map.live_range_id(i));
+      if (lrg.alive() && lrg._region > (uint) region && !lrg._fat_proj) {
+        set1(i, lrg.prev_reg());
+      }
+    }
+  }
+
   Compile::TracePhase tp("regAllocSplit", &timers[_t_regAllocSplit]);
 
   // Free thread local resources used by this method on exit.
@@ -886,6 +895,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
       Node *n = b->get_node(insidx);
       // Find the defining Node's live range index
       uint defidx = _lrg_map.find_id(n);
+//      _node_regs.at_grow(n->_idx) = lrgs(defidx).prev_reg();
       uint cnt = n->req();
 
       if (n->is_Phi()) {
@@ -909,8 +919,12 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
             }
             assert( u, "at least 1 valid input expected" );
             if (i >= cnt) {    // Found one unique input
+//              assert(b->_region <= region, "");
               assert(_lrg_map.find_id(n) == _lrg_map.find_id(u), "should be the same lrg");
               n->replace_by(u); // Then replace with unique input
+              if (n->_idx < (uint)_node_regs.length()) {
+                _node_regs.at_put_grow(u->_idx, _node_regs.at(n->_idx));
+              }
               n->disconnect_inputs(C);
               b->remove_node(insidx);
               insidx--;
@@ -1022,7 +1036,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
       uint copyidx = n->is_Copy();
       // Remove coalesced copy from CFG
       if (copyidx && defidx == _lrg_map.live_range_id(n->in(copyidx))) {
+//        assert(b->_region <= region, "");
         n->replace_by( n->in(copyidx) );
+        _node_regs.at_put_grow(n->in(copyidx)->_idx, deflrg.prev_reg());
         n->set_req( copyidx, NULL );
         b->remove_node(insidx--);
         b->_ihrp_index--; // Adjust the point where we go hi-pressure

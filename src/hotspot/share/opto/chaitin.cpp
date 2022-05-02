@@ -753,7 +753,9 @@ void PhaseChaitin::Register_Allocate() {
     }
     if (regions.length() > 1) {
       _was_up_in_prev_region.clear();
-      bool dump = UseNewCode3;
+      stringStream ss;
+      C->method()->print_short_name(&ss);
+      bool dump = /*!strcmp(ss.as_string(), " com.sun.crypto.provider.AESCrypt::<clinit>") ||*/ UseNewCode3;
       if (dump) {
         tty->print_cr("XXXXX after region = %d - %d/%d", region, offset_of(LRG, _mask), sizeof(LRG));
       }
@@ -815,7 +817,11 @@ void PhaseChaitin::Register_Allocate() {
           LRG &lrg = lrgs(_lrg_map.live_range_id(i));
           if (lrg.alive() && lrg._region >= (uint) region && !lrg._fat_proj) {
             set1(i, lrg.reg());
+          } else {
+            set1(i, OptoReg::Bad);
           }
+        } else {
+          set1(i, OptoReg::Bad);
         }
       }
     }
@@ -1459,7 +1465,11 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
         }
         lrg.AND(rm);
         lrg._was_up_in_prev_region = 1;
+      } else {
+        lrg.set_prev_reg(OptoReg::Bad);
       }
+    } else {
+      lrg.set_prev_reg(OptoReg::Bad);
     }
     assert(!lrg._is_vector || !lrg._fat_proj, "sanity");
     if (lrg.num_regs() > 1 && !lrg._fat_proj) {
