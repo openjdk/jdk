@@ -1615,8 +1615,8 @@ int print_bfs_cmp(const Node* n1, const Node* n2) { return n1 != n2; }
 // target:
 //   if NULL: print all nodes visited during BFS
 //   else: find shortest path from this to target, via BFS and backtracking
-// filter:
-//   if NULL: no filtering
+// options:
+//   if NULL: same as "+-cmdxoOB"
 //   else: use combination of these characters
 //     +: traverse in-edges
 //     -: traverse out-edges
@@ -1653,58 +1653,50 @@ int print_bfs_cmp(const Node* n1, const Node* n2) { return n1 != n2; }
 //   parent:   parent node - one distance closer to this
 //   direction and node type
 //   dump
-void Node::print_bfs(const uint max_distance, Node* target, const char* filter) {
+void Node::print_bfs(const uint max_distance, Node* target, char const* options) {
+  // BFS or shortest path?
   if (target == NULL) {
     tty->print("No target: perform BFS.\n");
   } else {
     tty->print("Find shortest path: %d -> %d.\n", this->_idx, target->_idx);
   }
-  bool traverse_inputs = false;
-  if (filter == NULL || strstr(filter, "+") != NULL) {
-    traverse_inputs = true;
-  }
-  bool traverse_outputs = false;
-  if (filter == NULL || strstr(filter, "-") != NULL) {
-    traverse_outputs = true;
-  }
-  bool traverse_control = false;
-  if (filter == NULL || strstr(filter, "c") != NULL) {
-    traverse_control = true;
-  }
-  bool traverse_memory = false;
-  if (filter == NULL || strstr(filter, "m") != NULL) {
-    traverse_memory = true;
-  }
-  bool traverse_data = false;
-  if (filter == NULL || strstr(filter, "d") != NULL) {
-    traverse_data = true;
-  }
-  bool traverse_mixed = false;
-  if (filter == NULL || strstr(filter, "x") != NULL) {
-    traverse_mixed = true;
-  }
-  bool traverse_other = false;
-  if (filter == NULL || strstr(filter, "o") != NULL) {
-    traverse_other = true;
-  }
-  bool use_color = false;
-  if (filter != NULL && strstr(filter, "#") != NULL) {
-    use_color = true;
-  }
-  bool print_blocks = false;
-  if (filter == NULL || strstr(filter, "B") != NULL) {
-    print_blocks = true;
-  }
-  bool print_old = false;
-  if (filter == NULL || strstr(filter, "O") != NULL) {
-    print_old = true;
-  }
 
-  // data structures
+  // Parsing options
+  if (options == NULL) {
+    options = "+-cmdxoOB"; // default options
+  }
+  auto parse_options = [&] (bool &variable, const char* character) {
+    if (strstr(options, character) != NULL) {
+      variable = true;
+    }
+  };
+  bool traverse_inputs = false;
+  parse_options(traverse_inputs,  "+");
+  bool traverse_outputs = false;
+  parse_options(traverse_outputs, "-");
+  bool traverse_control = false;
+  parse_options(traverse_control, "c");
+  bool traverse_memory = false;
+  parse_options(traverse_memory,  "m");
+  bool traverse_data = false;
+  parse_options(traverse_data,    "d");
+  bool traverse_mixed = false;
+  parse_options(traverse_mixed,   "x");
+  bool traverse_other = false;
+  parse_options(traverse_other,   "o");
+  bool use_color = false;
+  parse_options(use_color,        "#");
+  bool print_blocks = false;
+  parse_options(print_blocks,     "B");
+  bool print_old = false;
+  parse_options(print_old,        "O");
+
+  // Data structures
   Node_List worklist; // BFS queue
   Dict parent((CmpKey)&print_bfs_cmp, hashkey);   // node -> parent (one step closer to this)
   Dict distance((CmpKey)&print_bfs_cmp, hashkey); // node -> distance to this
-
+  
+  // Filter node by type
   auto is_visit = [&] (Node* n) {
     const Type *t = n->bottom_type();
     switch (t->category()) {
@@ -1727,6 +1719,8 @@ void Node::print_bfs(const uint max_distance, Node* target, const char* filter) 
     }
     return false;
   };
+
+  // Get (colored) category string
   auto category = [&] (Node* n) {
     const Type *t = n->bottom_type();
     switch (t->category()) {
@@ -1749,9 +1743,12 @@ void Node::print_bfs(const uint max_distance, Node* target, const char* filter) 
     }
     return "?";
   };
+
   Compile* C = Compile::current();
   print_old &= (C->matcher() != NULL); // only show old if there are new
   print_blocks &= (C->cfg() != NULL); // only show blocks if available
+
+  // Get old node (for Mach nodes)
   auto old_node = [&] (Node* n) {
     if (C->matcher() == NULL || !C->node_arena()->contains(n)) {
       return (Node*)NULL;
@@ -1759,6 +1756,8 @@ void Node::print_bfs(const uint max_distance, Node* target, const char* filter) 
       return C->matcher()->find_old_node(n);
     }
   };
+
+  // print idx of node
   auto print_node_idx = [&] (Node* n) {
     char buf[30];
     if (n == NULL) {
@@ -1770,6 +1769,8 @@ void Node::print_bfs(const uint max_distance, Node* target, const char* filter) 
     }
     tty->print("%6s", buf);
   };
+
+  // print block associated with node
   auto print_node_block = [&] (Node* n) {
     Block* b = C->node_arena()->contains(n)
                ? C->cfg()->get_block_for_node(n)
@@ -1789,15 +1790,18 @@ void Node::print_bfs(const uint max_distance, Node* target, const char* filter) 
     }
   };
 
+  // add node to traversal queue
   auto worklist_push = [&] (Node* n, Node* p, const long d) {
     worklist.push(n);
     parent.Insert(n, p);
     distance.Insert(n, (void*)d);
   };
+
+  // initialize BFS at this
   worklist_push(this, this, 0);
 
+  // BFS header
   if (target == NULL) {
-    // BFS header
     tty->print("dis");
     if (print_blocks) {
       tty->print("  head  idom dep");
@@ -1809,14 +1813,16 @@ void Node::print_bfs(const uint max_distance, Node* target, const char* filter) 
     tty->print("-------------------------------------------\n");
   }
 
+  // BFS traversal
   uint pos = 0;
   while (pos < worklist.size()) {
     // process next item
     Node* n = worklist.at(pos++);
     long d = abs((long)distance[n]);
     const char* direction = ((long)distance[n] >= 0) ? "+" : "-";
+    // BFS: print n
     if (target == NULL) {
-      tty->print("%3ld", d);                          // distance
+      tty->print("%3ld", d);                         // distance
       if (print_blocks) {
         print_node_block(n);                         // block
       }
@@ -1873,7 +1879,7 @@ void Node::print_bfs(const uint max_distance, Node* target, const char* filter) 
     if(print_old) {
       tty->print("   old");
     }
-    tty->print("dir dump\n"); // backtrace header
+    tty->print(" dir dump\n"); // backtrace header
     tty->print("-------------------------------------\n");
     Node* current = target;
     while (current != (Node*)parent[current]) {
