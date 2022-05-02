@@ -4285,7 +4285,7 @@ jint os::init_2(void) {
 #endif
 
   // Check and sets minimum stack sizes against command line options
-  if (set_minimum_stack_sizes(_plaform_minimum_stack_allowed) == JNI_ERR) {
+  if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
 
