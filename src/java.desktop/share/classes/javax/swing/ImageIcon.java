@@ -328,6 +328,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
             try {
                 mTracker.waitForID(id, 0);
             } catch (InterruptedException e) {
+                System.out.println("INTERRUPTED while loading Image");
             }
             loadStatus = mTracker.statusID(id, false);
             mTracker.removeImage(image, id);
