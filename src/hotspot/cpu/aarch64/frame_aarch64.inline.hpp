@@ -55,7 +55,7 @@ inline void frame::init(intptr_t* sp, intptr_t* fp, address pc, bool forSignalHa
   _fp = fp;
   _pc = pc;
   assert(pc != NULL, "no pc?");
-if (!forSignalHandler) {
+  if (!forSignalHandler) {
     _cb = CodeCache::find_blob(pc);
   } else {
     _cb = CodeCache::find_blob_unsafe(pc);
