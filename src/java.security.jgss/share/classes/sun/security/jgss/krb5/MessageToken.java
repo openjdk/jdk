@@ -713,7 +713,7 @@ abstract class MessageToken extends Krb5Token {
     /**
      * Determine signing algorithm based on QOP.
      */
-    protected int getSgnAlg(int qop) {
+    protected int getSgnAlg(int qop) throws GSSException {
          // QOP ignored
          return cipherHelper.getSgnAlg();
     }
