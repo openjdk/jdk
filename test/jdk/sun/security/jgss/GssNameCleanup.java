@@ -25,6 +25,7 @@
  * @test
  * @bug 8284490
  * @summary Remove finalizer method in java.security.jgss
+ * @key intermittent
  * @run main/othervm GssNameCleanup
  */
 

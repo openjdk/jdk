@@ -25,6 +25,7 @@
  * @test
  * @bug 8284490
  * @summary Remove finalizer method in java.security.jgss
+ * @key intermittent
  * @requires os.family != "windows"
  * @library /test/lib
  * @compile -XDignore.symbol.file Cleaners.java
