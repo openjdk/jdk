@@ -79,6 +79,7 @@ compiler/codecache/TestStressCodeBuffers.java 8272094 generic-aarch64
 
 # :hotspot_gc
 
+gc/arguments/TestUseCompressedOopsFlagsWithUlimit.java 8285011 generic-all
 gc/epsilon/TestMemoryMXBeans.java 8206434 generic-all
 gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
 gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all

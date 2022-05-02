@@ -22,6 +22,9 @@
  */
 package jdk.vm.ci.meta;
 
+import java.lang.invoke.MethodType;
+import java.util.List;
+
 /**
  * Represents the runtime representation of the constant pool that is used by the compiler when
  * parsing bytecode. Provides methods to look up a constant pool entry without performing
@@ -83,6 +86,65 @@ public interface ConstantPool {
      * @throws ClassFormatError if the entry at {@code cpi} is not a method
      */
     JavaMethod lookupMethod(int cpi, int opcode);
+
+    /**
+     * The details for invoking a bootstrap method associated with a {@code CONSTANT_Dynamic_info}
+     * or {@code CONSTANT_InvokeDynamic_info} pool entry .
+     *
+     * @jvms 4.4.10 The {@code CONSTANT_Dynamic_info} and {@code CONSTANT_InvokeDynamic_info}
+     *       Structures
+     * @jvms 4.7.23 The {@code BootstrapMethods} Attribute
+     */
+    interface BootstrapMethodInvocation {
+        /**
+         * Gets the bootstrap method that will be invoked.
+         */
+        ResolvedJavaMethod getMethod();
+
+        /**
+         * Returns {@code true} if this bootstrap method invocation is for a
+         * {@code CONSTANT_InvokeDynamic_info} pool entry, {@code false} if it is for a
+         * {@code CONSTANT_Dynamic_info} entry.
+         */
+        boolean isInvokeDynamic();
+
+        /**
+         * Gets the name of the pool entry.
+         */
+        String getName();
+
+        /**
+         * Returns a reference to the {@link MethodType} ({@code this.isInvokeDynamic() == true}) or
+         * {@link Class} ({@code this.isInvokeDynamic() == false}) resolved for the descriptor of
+         * the pool entry.
+         */
+        JavaConstant getType();
+
+        /**
+         * Gets the static arguments with which the bootstrap method will be invoked.
+         *
+         * @jvms 5.4.3.6
+         */
+        List<JavaConstant> getStaticArguments();
+    }
+
+    /**
+     * Gets the details for invoking a bootstrap method associated with the
+     * {@code CONSTANT_Dynamic_info} or {@code CONSTANT_InvokeDynamic_info} pool entry {@code cpi}
+     * in the constant pool.
+     *
+     * @param cpi a constant pool index
+     * @param opcode the opcode of the instruction that has {@code cpi} as an operand or -1 if
+     *            {@code cpi} was not decoded from an instruction stream
+     * @return the bootstrap method invocation details or {@code null} if the entry at {@code cpi}
+     *         is not a {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info}
+     * @throws IllegalArgumentException if the bootstrap method invocation makes use of
+     *             {@code java.lang.invoke.BootstrapCallInfo}
+     * @jvms 4.7.23 The {@code BootstrapMethods} Attribute
+     */
+    default BootstrapMethodInvocation lookupBootstrapMethodInvocation(int cpi, int opcode) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Looks up a reference to a type. If {@code opcode} is non-negative, then resolution checks

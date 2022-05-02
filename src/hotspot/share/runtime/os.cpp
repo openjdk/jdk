@@ -73,6 +73,10 @@
 #include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#ifndef _WINDOWS
+# include <poll.h>
+#endif
+
 # include <signal.h>
 # include <errno.h>
 
@@ -642,7 +646,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   DEBUG_ONLY(check_crash_protection());
 
-  // On malloc(0), implementators of malloc(3) have the choice to return either
+  // On malloc(0), implementations of malloc(3) have the choice to return either
   // NULL or a unique non-NULL pointer. To unify libc behavior across our platforms
   // we chose the latter.
   size = MAX2((size_t)1, size);
@@ -689,7 +693,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
   DEBUG_ONLY(check_crash_protection());
 
-  // On realloc(p, 0), implementators of realloc(3) have the choice to return either
+  // On realloc(p, 0), implementers of realloc(3) have the choice to return either
   // NULL or a unique non-NULL pointer. To unify libc behavior across our platforms
   // we chose the latter.
   size = MAX2((size_t)1, size);
@@ -1415,6 +1419,35 @@ size_t os::page_size_for_region_aligned(size_t region_size, size_t min_pages) {
 
 size_t os::page_size_for_region_unaligned(size_t region_size, size_t min_pages) {
   return page_size_for_region(region_size, min_pages, false);
+}
+
+#ifndef MAX_PATH
+#define MAX_PATH    (2 * K)
+#endif
+
+void os::pause() {
+  char filename[MAX_PATH];
+  if (PauseAtStartupFile && PauseAtStartupFile[0]) {
+    jio_snprintf(filename, MAX_PATH, "%s", PauseAtStartupFile);
+  } else {
+    jio_snprintf(filename, MAX_PATH, "./vm.paused.%d", current_process_id());
+  }
+
+  int fd = ::open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+  if (fd != -1) {
+    struct stat buf;
+    ::close(fd);
+    while (::stat(filename, &buf) == 0) {
+#if defined(_WINDOWS)
+      Sleep(100);
+#else
+      (void)::poll(NULL, 0, 100);
+#endif
+    }
+  } else {
+    jio_fprintf(stderr,
+                "Could not open pause file '%s', continuing immediately.\n", filename);
+  }
 }
 
 static const char* errno_to_string (int e, bool short_text) {
