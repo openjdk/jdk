@@ -257,6 +257,13 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("NonNMethodCodeHeapSize");
         excludeTestMaxRange("CodeCacheExpansionSize");
 
+        /*
+         * Exclude CompileThresholdScaling from max range testing, because
+         * it is expected to print "outside the allowed range" warnings for
+         * the scaled flags
+         */
+        excludeTestMaxRange("CompileThresholdScaling");
+
         List<JVMOption> testSubset = getTestSubset(args);
 
         Asserts.assertGT(testSubset.size(), 0, "Options with ranges not found!");
