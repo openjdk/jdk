@@ -733,12 +733,17 @@ public final class System {
      *     the {@linkplain Runtime.Version#feature feature} element of the
      *     {@linkplain Runtime#version() runtime version}</td></tr>
      * <tr><th scope="row">{@systemProperty java.specification.maintenance.version}</th>
-     *     <td>Java Runtime Environment specification maintenance version, defined only
-     *         when the specification implemented by this runtime has undergone a
+     *     <td>Java Runtime Environment specification maintenance version, not defined
+     *         before the specification implemented by this runtime has undergone a
      *         <a href="https://jcp.org/en/procedures/jcp2#3.6.4">maintenance
      *         release</a> <em>(optional)</em>.
-     *         After a first maintenance release this property will
-     *         have the value {@code "1"}; after a second maintenance
+     *         When defined, the value of this property may be
+     *         interpreted as a positive integer.
+     *         The value indicates the latest maintenance release the
+     *         runtime is known to support. A later release may be
+     *         supported by the environment.
+     *         To indicate the first maintenance release this property will
+     *         have the value {@code "1"}; to indicate the second maintenance
      *         release, this property will have the value {@code "2"},
      *         and so on.
      *         </td></tr>
