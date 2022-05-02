@@ -102,9 +102,20 @@ import java.util.List;
  *   }
  * }}</pre>
  *
- * The following method shuts down an {@code ExecutorService} in two phases,
- * first by calling {@code shutdown} to reject incoming tasks, and then
- * calling {@code shutdownNow}, if necessary, to cancel any lingering tasks:
+ * An {@code ExecutorService} may also be established and closed
+ * (shutdown, blocking until terminated) as follows; illustrating with
+ * a different {@code Executors} factory method:
+ *
+ * <pre> {@code
+ * try (ExecutorService e =  Executors.newWorkStealingPool()) {
+ *   // submit or execute many tasks with e ...
+ * }}</pre>
+ *
+ * Further customization is also possible. For example, the following
+ * method shuts down an {@code ExecutorService} in two phases, first
+ * by calling {@code shutdown} to reject incoming tasks, and then
+ * calling {@code shutdownNow}, if necessary, to cancel any lingering
+ * tasks:
  *
  * <pre> {@code
  * void shutdownAndAwaitTermination(ExecutorService pool) {

@@ -719,7 +719,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * overridden by system properties, we use workers of subclass
      * InnocuousForkJoinWorkerThread when there is a SecurityManager
      * present. These workers have no permissions set, do not belong
-     * to any user-defined ThreadGroup, and erase all ThreadLocals
+     * to any user-defined ThreadGroup, and clear all ThreadLocals
      * after executing any top-level task.  The associated mechanics
      * may be JVM-dependent and must access particular Thread class
      * fields to achieve this effect.
@@ -883,7 +883,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     // {pool, workQueue}.config bits
     static final int FIFO         = 1 << 16;       // fifo queue or access mode
     static final int SRC          = 1 << 17;       // set when stealable
-    static final int INNOCUOUS    = 1 << 18;       // set for Innocuous workers
+    static final int CLEAR_TLS    = 1 << 18;       // set for Innocuous workers
     static final int TRIMMED      = 1 << 19;       // timed out while idle
     static final int ISCOMMON     = 1 << 20;       // set for common pool
     static final int PRESET_SIZE  = 1 << 21;       // size was set by property
@@ -1313,7 +1313,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             }
             nsteals += nstolen;
             source = 0;
-            if ((cfg & INNOCUOUS) != 0)
+            if ((cfg & CLEAR_TLS) != 0)
                 ThreadLocalRandom.eraseThreadLocals(Thread.currentThread());
         }
 
@@ -1449,10 +1449,10 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
 
         /**
-         * Callback from InnocuousForkJoinWorkerThread.onStart
+         * Called in constructors if ThreadLocals not preserved
          */
-        final void setInnocuous() {
-            config |= INNOCUOUS;
+        final void setClearThreadLocals() {
+            config |= CLEAR_TLS;
         }
 
         static {
@@ -2924,9 +2924,10 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return the previous parallelism level.
      * @throws IllegalArgumentException if size is less than 1 or
      *         greater than the maximum supported by this pool.
-     * @throws IllegalStateException if this is the{@link #commonPool()} and
-     *         parallelism level was set by System property
-     *         {@systemProperty java.util.concurrent.ForkJoinPool.common.parallelism}.
+     * @throws UnsupportedOperationException this is the{@link
+     *         #commonPool()} and parallelism level was set by System
+     *         property {@systemProperty
+     *         java.util.concurrent.ForkJoinPool.common.parallelism}.
      * @throws SecurityException if a security manager exists and
      *         the caller is not permitted to modify threads
      *         because it does not hold {@link
@@ -2937,7 +2938,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (size < 1 || size > MAX_CAP)
             throw new IllegalArgumentException();
         if ((config & PRESET_SIZE) != 0)
-            throw new IllegalStateException("Cannot override System property");
+            throw new UnsupportedOperationException("Cannot override System property");
         checkPermission();
         return getAndSetParallelism(size);
     }
