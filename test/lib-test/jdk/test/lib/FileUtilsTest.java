@@ -119,6 +119,6 @@ public class FileUtilsTest {
         } catch (IOException e) {
             // output is null
         }
-        Asserts.assertEQ(output, expected);
+        Asserts.assertEQ(output, (expected != null) ? expected.replaceAll("\n", System.lineSeparator()) : null);
     }
 }
