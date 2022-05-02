@@ -2004,14 +2004,14 @@ void os::PageSizes::print_on(outputStream* st) const {
 // To this, space for guard mechanisms is added, which depends on the
 // page size which again depends on the concrete system the VM is running
 // on. Space for libc guard pages is not included in this size.
-jint os::set_minimum_stack_sizes(size_t os_min_stack_allowed) {
+jint os::set_minimum_stack_sizes() {
 
   _java_thread_min_stack_allowed = _java_thread_min_stack_allowed +
                                    StackOverflow::stack_guard_zone_size() +
                                    StackOverflow::stack_shadow_zone_size();
 
   _java_thread_min_stack_allowed = align_up(_java_thread_min_stack_allowed, vm_page_size());
-  _java_thread_min_stack_allowed = MAX2(_java_thread_min_stack_allowed, os_min_stack_allowed);
+  _java_thread_min_stack_allowed = MAX2(_java_thread_min_stack_allowed, _os_min_stack_allowed);
 
   size_t stack_size_in_bytes = ThreadStackSize * K;
   if (stack_size_in_bytes != 0 &&
@@ -2035,7 +2035,7 @@ jint os::set_minimum_stack_sizes(size_t os_min_stack_allowed) {
                                        StackOverflow::stack_shadow_zone_size();
 
   _compiler_thread_min_stack_allowed = align_up(_compiler_thread_min_stack_allowed, vm_page_size());
-  _compiler_thread_min_stack_allowed = MAX2(_compiler_thread_min_stack_allowed, os_min_stack_allowed);
+  _compiler_thread_min_stack_allowed = MAX2(_compiler_thread_min_stack_allowed, _os_min_stack_allowed);
 
   stack_size_in_bytes = CompilerThreadStackSize * K;
   if (stack_size_in_bytes != 0 &&
@@ -2047,7 +2047,7 @@ jint os::set_minimum_stack_sizes(size_t os_min_stack_allowed) {
   }
 
   _vm_internal_thread_min_stack_allowed = align_up(_vm_internal_thread_min_stack_allowed, vm_page_size());
-  _vm_internal_thread_min_stack_allowed = MAX2(_vm_internal_thread_min_stack_allowed, os_min_stack_allowed);
+  _vm_internal_thread_min_stack_allowed = MAX2(_vm_internal_thread_min_stack_allowed, _os_min_stack_allowed);
 
   stack_size_in_bytes = VMThreadStackSize * K;
   if (stack_size_in_bytes != 0 &&

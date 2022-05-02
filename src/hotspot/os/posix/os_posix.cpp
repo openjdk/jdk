@@ -94,6 +94,9 @@ static jlong initial_time_count = 0;
 
 static int clock_tics_per_sec = 100;
 
+// Platform minimum stack allowed
+size_t os::_os_min_stack_allowed = PTHREAD_STACK_MIN;
+
 // Check core dump limit and report possible place where core can be found
 void os::check_dump_limit(char* buffer, size_t bufferSize) {
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {

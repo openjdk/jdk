@@ -4254,6 +4254,11 @@ size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
 size_t os::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
 #endif // _LP64
 
+// If stack_commit_size is 0, windows will reserve the default size,
+// but only commit a small portion of it.  This stack size is the size of this
+// current thread but is larger than we need for Java threads.
+// If -Xss is given to the launcher, it will pick 64K as default stack size and pass that.
+size_t os::_os_min_stack_allowed = 64 * K;
 
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
@@ -4279,14 +4284,8 @@ jint os::init_2(void) {
   __asm { fldcw fp_control_word }
 #endif
 
-  // If stack_commit_size is 0, windows will reserve the default size,
-  // but only commit a small portion of it.  This stack size is the size of this
-  // current thread but is larger than we need for Java threads.
-  // If -Xss is given to the launcher, it will pick 64K as default stack size and pass that.
-  size_t minimum_stack_size = 64*K;
-
   // Check and sets minimum stack sizes against command line options
-  if (set_minimum_stack_sizes(minimum_stack_size) == JNI_ERR) {
+  if (set_minimum_stack_sizes(_plaform_minimum_stack_allowed) == JNI_ERR) {
     return JNI_ERR;
   }
 
