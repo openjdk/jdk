@@ -195,6 +195,16 @@ public class OptimizeImplicitExceptions {
             return;
         }
 
+        // The following options are both develop, getBooleanVMFlag() returns NULL in product build.
+        // If they are set in debug build, disable them for more test stability.
+        if (WB.getBooleanVMFlag("DeoptimizeALot")) {
+            WB.setBooleanVMFlag("DeoptimizeALot", false);
+        }
+
+        if (WB.getBooleanVMFlag("DeoptimizeRandom")) {
+            WB.setBooleanVMFlag("DeoptimizeRandom", false);
+        }
+
         // Initialize global deopt counts to zero.
         for (ImplicitException impExcp : ImplicitException.values()) {
             oldDeoptCountReason.put(impExcp.getReason(), 0);
