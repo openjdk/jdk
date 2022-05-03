@@ -2407,10 +2407,6 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return RegMask();
 }
 
-bool Parse::do_one_bytecode_targeted() {
-  return false;
-}
-
 %}
 
 //----------ENCODING BLOCK-----------------------------------------------------
@@ -8857,26 +8853,10 @@ instruct mulL_reg_imm16(iRegLdst dst, iRegLsrc src1, immL16 src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Integer Division with Immediate -1: Negate.
-instruct divI_reg_immIvalueMinus1(iRegIdst dst, iRegIsrc src1, immI_minus1 src2) %{
-  match(Set dst (DivI src1 src2));
-  ins_cost(DEFAULT_COST);
-
-  format %{ "NEG     $dst, $src1 \t// /-1" %}
-  size(4);
-  ins_encode %{
-    __ neg($dst$$Register, $src1$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Integer Division with constant, but not -1.
-// We should be able to improve this by checking the type of src2.
-// It might well be that src2 is known to be positive.
-instruct divI_reg_regnotMinus1(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
-  match(Set dst (DivI src1 src2));
-  predicate(n->in(2)->find_int_con(-1) != -1); // src2 is a constant, but not -1
-  ins_cost(2*DEFAULT_COST);
+// Integer Division, but not min_jint / -1
+instruct noOvfDivI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+  match(Set dst (NoOvfDivI src1 src2));
+  ins_cost(3*DEFAULT_COST);
 
   format %{ "DIVW    $dst, $src1, $src2 \t// /not-1" %}
   size(4);
@@ -8886,56 +8866,10 @@ instruct divI_reg_regnotMinus1(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_bne_negI_reg(iRegIdst dst, flagsRegSrc crx, iRegIsrc src1) %{
-  effect(USE_DEF dst, USE src1, USE crx);
-  predicate(false);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $dst, neg($src1), $crx" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
-  size(8);
-  ins_encode %{
-    Label done;
-    __ bne($crx$$CondRegister, done);
-    __ neg($dst$$Register, $src1$$Register);
-    __ bind(done);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Integer Division with Registers not containing constants.
-instruct divI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
-  match(Set dst (DivI src1 src2));
-  ins_cost(10*DEFAULT_COST);
-
-  expand %{
-    immI16 imm %{ (int)-1 %}
-    flagsReg tmp1;
-    cmpI_reg_imm16(tmp1, src2, imm);          // check src2 == -1
-    divI_reg_regnotMinus1(dst, src1, src2);   // dst = src1 / src2
-    cmovI_bne_negI_reg(dst, tmp1, src1);      // cmove dst = neg(src1) if src2 == -1
-  %}
-%}
-
-// Long Division with Immediate -1: Negate.
-instruct divL_reg_immLvalueMinus1(iRegLdst dst, iRegLsrc src1, immL_minus1 src2) %{
-  match(Set dst (DivL src1 src2));
-  ins_cost(DEFAULT_COST);
-
-  format %{ "NEG     $dst, $src1 \t// /-1, long" %}
-  size(4);
-  ins_encode %{
-    __ neg($dst$$Register, $src1$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Long Division with constant, but not -1.
-instruct divL_reg_regnotMinus1(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
-  match(Set dst (DivL src1 src2));
-  predicate(n->in(2)->find_long_con(-1L) != -1L); // Src2 is a constant, but not -1.
-  ins_cost(2*DEFAULT_COST);
+// Long Division, but not min_jlong / -1
+instruct noOvfDivL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
+  match(Set dst (NoOvfDivL src1 src2));
+  ins_cost(3*DEFAULT_COST);
 
   format %{ "DIVD    $dst, $src1, $src2 \t// /not-1, long" %}
   size(4);
@@ -8945,71 +8879,31 @@ instruct divL_reg_regnotMinus1(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovL_bne_negL_reg(iRegLdst dst, flagsRegSrc crx, iRegLsrc src1) %{
-  effect(USE_DEF dst, USE src1, USE crx);
-  predicate(false);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVE   $dst, neg($src1), $crx" %}
-  // Worst case is branch + move + stop, no stop without scheduler.
-  size(8);
-  ins_encode %{
-    Label done;
-    __ bne($crx$$CondRegister, done);
-    __ neg($dst$$Register, $src1$$Register);
-    __ bind(done);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Long Division with Registers not containing constants.
-instruct divL_reg_reg_Ex(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
-  match(Set dst (DivL src1 src2));
-  ins_cost(10*DEFAULT_COST);
-
-  expand %{
-    immL16 imm %{ (int)-1 %}
-    flagsReg tmp1;
-    cmpL_reg_imm16(tmp1, src2, imm);          // check src2 == -1
-    divL_reg_regnotMinus1(dst, src1, src2);   // dst = src1 / src2
-    cmovL_bne_negL_reg(dst, tmp1, src1);      // cmove dst = neg(src1) if src2 == -1
-  %}
-%}
-
 // Integer Remainder with registers.
 instruct modI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
-  match(Set dst (ModI src1 src2));
-  ins_cost(10*DEFAULT_COST);
+  match(Set dst (NoOvfModI src1 src2));
+  ins_cost(5*DEFAULT_COST);
 
   expand %{
-    immI16 imm %{ (int)-1 %}
-    flagsReg tmp1;
+    iRegIdst tmp1;
     iRegIdst tmp2;
-    iRegIdst tmp3;
-    cmpI_reg_imm16(tmp1, src2, imm);           // check src2 == -1
-    divI_reg_regnotMinus1(tmp2, src1, src2);   // tmp2 = src1 / src2
-    cmovI_bne_negI_reg(tmp2, tmp1, src1);      // cmove tmp2 = neg(src1) if src2 == -1
-    mulI_reg_reg(tmp3, src2, tmp2);            // tmp3 = src2 * tmp2
-    subI_reg_reg(dst, src1, tmp3);             // dst = src1 - tmp3
+    noOvfDivI_reg_reg(tmp1, src1, src2);
+    mulI_reg_reg(tmp2, src2, tmp1);
+    subI_reg_reg(dst, src1, tmp2);
   %}
 %}
 
 // Long Remainder with registers
 instruct modL_reg_reg_Ex(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
-  match(Set dst (ModL src1 src2));
-  ins_cost(10*DEFAULT_COST);
+  match(Set dst (NoOvfModL src1 src2));
+  ins_cost(5*DEFAULT_COST);
 
   expand %{
-    immL16 imm %{ (int)-1 %}
-    flagsReg tmp1;
+    iRegLdst tmp1;
     iRegLdst tmp2;
-    iRegLdst tmp3;
-    cmpL_reg_imm16(tmp1, src2, imm);             // check src2 == -1
-    divL_reg_regnotMinus1(tmp2, src1, src2);     // tmp2 = src1 / src2
-    cmovL_bne_negL_reg(tmp2, tmp1, src1);        // cmove tmp2 = neg(src1) if src2 == -1
-    mulL_reg_reg(tmp3, src2, tmp2);              // tmp3 = src2 * tmp2
-    subL_reg_reg(dst, src1, tmp3);               // dst = src1 - tmp3
+    noOvfDivL_reg_reg(tmp1, src1, src2);
+    mulL_reg_reg(tmp2, src2, tmp1);
+    subL_reg_reg(dst, src1, tmp2);
   %}
 %}
 

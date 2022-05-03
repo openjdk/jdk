@@ -232,6 +232,8 @@ public final class ExtendedSocketOptions {
             platformSocketOptions.peerCredentialsSupported();
     private static final boolean incomingNapiIdOptSupported  =
             platformSocketOptions.incomingNapiIdSupported();
+    private static final boolean ipDontFragmentSupported  =
+            platformSocketOptions.ipDontFragmentSupported();
 
     private static final Set<SocketOption<?>> extendedOptions = options();
 
@@ -249,7 +251,9 @@ public final class ExtendedSocketOptions {
         if (peerCredentialsSupported) {
             options.add(SO_PEERCRED);
         }
-        options.add(IP_DONTFRAGMENT);
+        if (ipDontFragmentSupported) {
+            options.add(IP_DONTFRAGMENT);
+        }
         return Collections.unmodifiableSet(options);
     }
 
@@ -435,6 +439,10 @@ public final class ExtendedSocketOptions {
         }
 
         boolean keepAliveOptionsSupported() {
+            return false;
+        }
+
+        boolean ipDontFragmentSupported() {
             return false;
         }
 
