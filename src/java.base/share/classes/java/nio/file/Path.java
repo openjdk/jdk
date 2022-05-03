@@ -258,16 +258,21 @@ public interface Path
      * it is ignored.  If the extension cannot be determined, then an
      * {@link Optional#empty empty} {@code Optional} is returned. This will
      * occur if the path has zero elements ({@link #getFileName()} returns
-     * {@code null}), or the file name string does not contain a dot, only
-     * the first character is a dot, or the last character is a dot.
+     * {@code null}), or the file name string does not contain a dot, or only
+     * the first character is a dot. If the last character is a dot, the
+     * extension is the empty {@code String} {@code ""}.
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
      * <pre>{@code
      *     String name = getFileName().toString();
      *     int lastDot = name.lastIndexOf('.');
-     *     lastDot > 0 && lastDot < name.length() - 1 ?
-     *         Optional.of(name.substring(lastDot + 1)) : Optional.empty();
+     *     if (lastDot > 0)
+     *         lastDot == name.length() - 1) ?
+     *             Optional.of("") :
+     *             Optional.of(name.substring(lastDot + 1));
+     *     else
+     *         Optional.empty();
      * }</pre>
      *
      * @return  an {@code Optional} which either contains the file name of
@@ -288,9 +293,11 @@ public interface Path
         // Indeterminate if fileNameString is too short
         if (length > 2) {
             int lastDotIndex = fileNameString.lastIndexOf('.');
-            // Indeterminate if no dot or found at last or only the first index
-            if (lastDotIndex > 0 && lastDotIndex < length - 1) {
-                return Optional.of(fileNameString.substring(lastDotIndex + 1));
+            // Indeterminate if no dot or only at first index
+            if (lastDotIndex > 0) {
+                return lastDotIndex == length - 1 ?
+                    Optional.of("") : // empty string if last dot at last index
+                    Optional.of(fileNameString.substring(lastDotIndex + 1));
             }
         }
 
@@ -324,10 +331,12 @@ public interface Path
         if (ext.equals(thisExtension))
             return Optional.of(ext);
 
-        for (String e : extensions) {
-            Objects.requireNonNull(e);
-            if (e.equals(thisExtension))
-                return Optional.of(e);
+        if (extensions != null) {
+            for (String e : extensions) {
+                Objects.requireNonNull(e);
+                if (e.equals(thisExtension))
+                    return Optional.of(e);
+            }
         }
 
         return Optional.empty();
