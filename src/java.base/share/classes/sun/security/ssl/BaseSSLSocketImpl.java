@@ -42,8 +42,9 @@ import javax.net.ssl.*;
  * overridden in SSLSocketImpl.
  *
  * There used to be a finalize() implementation that sent close_notify's, but
- * decided that was not needed.  An application should close its sockets and
- * not let them get garbage collected without closing them.
+ * decided that was not needed.  Not closing properly is more properly an
+ * error condition that should be avoided.  Applications should close sockets
+ * and not rely on garbage collection.
  *
  * The underlying native resources are handled by the Socket Cleaner.
  *
