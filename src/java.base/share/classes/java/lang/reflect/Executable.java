@@ -211,7 +211,8 @@ public abstract sealed class Executable extends AccessibleObject
 
     /**
      * {@return an unmodifiable set of the {@linkplain AccessFlag
-     * access flags} for the executable represented by this object}
+     * access flags} for the executable represented by this object,
+     * possibly empty}
      *
      * @implSpec
      * Map this executable's {@linkplain #getModifiers() modifiers} to

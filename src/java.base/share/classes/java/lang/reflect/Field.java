@@ -213,7 +213,7 @@ class Field extends AccessibleObject implements Member {
 
     /**
      * {@return an unmodifiable set of the {@linkplain AccessFlag
-     * access flags} for this field}
+     * access flags} for this field, possibly empty}
      * @see #getModifiers()
      * @jvms 4.5 Fields
      * @since 19

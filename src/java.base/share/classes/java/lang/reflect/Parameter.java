@@ -164,7 +164,8 @@ public final class Parameter implements AnnotatedElement {
 
     /**
      * {@return an unmodifiable set of the {@linkplain AccessFlag
-     * access flags} for the parameter represented by this object}
+     * access flags} for the parameter represented by this object,
+     * possibly empty}
      *
      * @see #getModifiers()
      * @jvms 4.7.24 The MethodParameters Attribute

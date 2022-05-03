@@ -1319,7 +1319,7 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * {@return an unmodifiable set of the {@linkplain AccessFlag access
-     * flags} for this class}
+     * flags} for this class, possibly empty}
      * @see #getModifiers()
      * @jvms 4.1 The ClassFile Structure
      * @jvms 4.7.6 The InnerClasses Attribute

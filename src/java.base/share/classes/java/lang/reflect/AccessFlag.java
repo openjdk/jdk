@@ -41,7 +41,7 @@ import static java.util.Map.entry;
  * public}. In other cases, some language-level modifiers do
  * <em>not</em> have an access flag, such as {@code sealed} (JVMS
  * {@jvms 4.7.31}) and some access flags have no corresponding
- * modifier, such as {@linkplain SYNTHETIC synthetic}.
+ * modifier, such as {@linkplain #SYNTHETIC synthetic}.
  *
  * <p>The values for the constants representing the access and module
  * flags are taken from sections of <cite>The Java Virtual Machine
@@ -183,7 +183,7 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_ABSTRACT}, corresponding to the
-     * source modifier {@code link Modifier#ABSTRACT abstract}.
+     * source modifier {@link Modifier#ABSTRACT abstract}.
      */
     ABSTRACT(Modifier.ABSTRACT, true,
              Set.of(Location.CLASS, Location.METHOD, Location.INNER_CLASS)),
@@ -304,6 +304,7 @@ public enum AccessFlag {
      * Note that since these locations represent class file structures
      * rather than language structures many language structures, such
      * as constructors and interfaces, are <em>not</em> present.
+     * @since 19
      */
     public enum Location {
         /**
