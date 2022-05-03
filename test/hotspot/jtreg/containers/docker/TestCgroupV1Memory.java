@@ -72,7 +72,6 @@ public class TestCgroupV1Memory {
     }
 
     private static void testMemoryLimitWithSwappiness() throws Exception {
-        
         CgroupV1TestUtils.initSubSystem(SUB_SYSTEM_NAME, "memory.swappiness=0");
         OutputAnalyzer out = commonMemorySetting();
         out.shouldContain("Memory Limit: 50.00M")
@@ -97,6 +96,6 @@ public class TestCgroupV1Memory {
         OutputAnalyzer outputAnalyzer = CgroupV1TestUtils
                 .runJavaApp(subSystems, jvmOps , "PrintContainerInfo");
         return outputAnalyzer;
-    } 
+    }
 
 }
