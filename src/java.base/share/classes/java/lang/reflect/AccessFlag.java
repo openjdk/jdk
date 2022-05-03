@@ -80,7 +80,8 @@ import static java.util.Map.entry;
 public enum AccessFlag {
     /**
      * The access flag {@code ACC_PUBLIC}, corresponding to the source
-     * modifier {@link Modifier#PUBLIC public}.
+     * modifier {@link Modifier#PUBLIC public} with a mask value of
+     * {@code 0x0001}.
      */
     PUBLIC(Modifier.PUBLIC, true,
            Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
@@ -88,94 +89,109 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_PRIVATE}, corresponding to the
-     * source modifier {@link Modifier#PRIVATE private}.
+     * source modifier {@link Modifier#PRIVATE private} with a mask
+     * value of {@code 0x0002}.
      */
     PRIVATE(Modifier.PRIVATE, true,
             Set.of(Location.FIELD, Location.METHOD, Location.INNER_CLASS)),
 
     /**
      * The access flag {@code ACC_PROTECTED}, corresponding to the
-     * source modifier {@link Modifier#PROTECTED protected}.
+     * source modifier {@link Modifier#PROTECTED protected} with a mask
+     * value of {@code 0x0004}.
      */
     PROTECTED(Modifier.PROTECTED, true,
               Set.of(Location.FIELD, Location.METHOD, Location.INNER_CLASS)),
 
     /**
      * The access flag {@code ACC_STATIC}, corresponding to the source
-     * modifier {@link Modifier#STATIC static}.
+     * modifier {@link Modifier#STATIC static} with a mask value of
+     * {@code 0x0008}.
      */
     STATIC(Modifier.STATIC, true,
            Set.of(Location.FIELD, Location.METHOD, Location.INNER_CLASS)),
 
     /**
      * The access flag {@code ACC_FINAL}, corresponding to the source
-     * modifier {@link Modifier#FINAL final}.
+     * modifier {@link Modifier#FINAL final} with a mask
+     * value of {@code 0x0010}.
      */
     FINAL(Modifier.FINAL, true,
           Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
                  Location.INNER_CLASS, Location.METHOD_PARAMETER)),
 
     /**
-     * The access flag {@code ACC_SUPER}.
+     * The access flag {@code ACC_SUPER} with a mask value of {@code
+     * 0x0020}.
      */
     SUPER(0x0000_0020, false, Set.of(Location.CLASS)),
 
     /**
-     * The module flag {@code ACC_OPEN}.
+     * The module flag {@code ACC_OPEN} with a mask value of {@code
+     * 0x0020}.
      * @see java.lang.module.ModuleDescriptor#isOpen
      */
     OPEN(0x0000_0020, false, Set.of(Location.MODULE)),
 
     /**
-     * The module requires flag {@code ACC_TRANSITIVE}.
+     * The module requires flag {@code ACC_TRANSITIVE} with a mask
+     * value of {@code 0x0020}.
      * @see java.lang.module.ModuleDescriptor.Requires.Modifier#TRANSITIVE
      */
     TRANSITIVE(0x0000_0020, false, Set.of(Location.MODULE_REQUIRES)),
 
     /**
      * The access flag {@code ACC_SYNCHRONIZED}, corresponding to the
-     * source modifier {@link Modifier#SYNCHRONIZED synchronized}.
+     * source modifier {@link Modifier#SYNCHRONIZED synchronized} with
+     * a mask value of {@code 0x0020}.
      */
     SYNCHRONIZED(Modifier.SYNCHRONIZED, true, Set.of(Location.METHOD)),
 
     /**
-     * The module requires flag {@code ACC_STATIC_PHASE}.
+     * The module requires flag {@code ACC_STATIC_PHASE} with a mask
+     * value of {@code 0x0040}.
      * @see java.lang.module.ModuleDescriptor.Requires.Modifier#STATIC
      */
     STATIC_PHASE(0x0000_0040, false, Set.of(Location.MODULE_REQUIRES)),
 
      /**
       * The access flag {@code ACC_VOLATILE}, corresponding to the
-      * source modifier {@link Modifier#VOLATILE volatile}.
+      * source modifier {@link Modifier#VOLATILE volatile} with a mask
+      * value of {@code 0x0040}.
       */
     VOLATILE(Modifier.VOLATILE, true, Set.of(Location.FIELD)),
 
     /**
-     * The access flag {@code ACC_BRIDGE}
+     * The access flag {@code ACC_BRIDGE} with a mask value of {@code
+     * 0x0040}.
      * @see Method#isBridge()
      */
     BRIDGE(0x0000_0040, false, Set.of(Location.METHOD)),
 
     /**
      * The access flag {@code ACC_TRANSIENT}, corresponding to the
-     * source modifier {@link Modifier#TRANSIENT transient}.
+     * source modifier {@link Modifier#TRANSIENT transient} with a
+     * mask value of {@code 0x0080}.
      */
     TRANSIENT(Modifier.TRANSIENT, true, Set.of(Location.FIELD)),
 
     /**
-     * The access flag {@code ACC_VARARGS}.
+     * The access flag {@code ACC_VARARGS} with a mask value of {@code
+     * 0x0080}.
      * @see Executable#isVarArgs()
      */
     VARARGS(0x0000_0080, false, Set.of(Location.METHOD)),
 
     /**
      * The access flag {@code ACC_NATIVE}, corresponding to the source
-     * modifier {@link Modifier#NATIVE native}.
+     * modifier {@link Modifier#NATIVE native} with a mask value of {@code
+     * 0x0100}.
      */
     NATIVE(Modifier.NATIVE, true, Set.of(Location.METHOD)),
 
     /**
-     * The access flag {@code ACC_INTERFACE}.
+     * The access flag {@code ACC_INTERFACE} with a mask value of
+     * {@code 0x0200}.
      * @see Class#isInterface()
      */
     INTERFACE(Modifier.INTERFACE, false,
@@ -183,19 +199,22 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_ABSTRACT}, corresponding to the
-     * source modifier {@link Modifier#ABSTRACT abstract}.
+     * source modifier {@link Modifier#ABSTRACT abstract} with a mask
+     * value of {@code 0x0400}.
      */
     ABSTRACT(Modifier.ABSTRACT, true,
              Set.of(Location.CLASS, Location.METHOD, Location.INNER_CLASS)),
 
     /**
      * The access flag {@code ACC_STRICT}, corresponding to the source
-     * modifier {@link Modifier#STRICT strictfp}.
+     * modifier {@link Modifier#STRICT strictfp} with a mask value of
+     * {@code 0x0800}.
      */
     STRICT(Modifier.STRICT, true, Set.of(Location.METHOD)),
 
     /**
-     * The access flag {@code ACC_SYNTHETIC}.
+     * The access flag {@code ACC_SYNTHETIC} with a mask value of
+     * {@code 0x1000}.
      * @see Class#isSynthetic()
      * @see Executable#isSynthetic()
      * @see java.lang.module.ModuleDescriptor.Modifier#SYNTHETIC
@@ -207,21 +226,24 @@ public enum AccessFlag {
                      Location.MODULE_EXPORTS, Location.MODULE_OPENS)),
 
     /**
-     * The access flag {@code ACC_ANNOTATION}.
+     * The access flag {@code ACC_ANNOTATION} with a mask value of
+     * {@code 0x2000}.
      * @see Class#isAnnotation()
      */
     ANNOTATION(0x0000_2000, false,
                Set.of(Location.CLASS, Location.INNER_CLASS)),
 
     /**
-     * The access flag {@code ACC_ENUM}.
+     * The access flag {@code ACC_ENUM} with a mask value of {@code
+     * 0x4000}.
      * @see Class#isEnum()
      */
     ENUM(0x0000_4000, false,
          Set.of(Location.CLASS, Location.FIELD, Location.INNER_CLASS)),
 
     /**
-     * The access flag {@code ACC_MANDATED}.
+     * The access flag {@code ACC_MANDATED} with a mask value of
+     * {@code 0x8000}.
      */
     MANDATED(0x0000_8000, false,
              Set.of(Location.METHOD_PARAMETER,
@@ -229,7 +251,8 @@ public enum AccessFlag {
                     Location.MODULE_EXPORTS, Location.MODULE_OPENS)),
 
     /**
-     * The access flag {@code ACC_MODULE}.
+     * The access flag {@code ACC_MODULE} with a mask value of {@code
+     * 0x8000}.
      */
     MODULE(0x0000_8000, false, Set.of(Location.CLASS))
     ;
