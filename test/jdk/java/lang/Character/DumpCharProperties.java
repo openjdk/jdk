@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.*;
 import static java.lang.Character.*;
 
 public class DumpCharProperties {
-    final static Locale turkish = new Locale("tr");
+    final static Locale turkish = Locale.of("tr");
 
     static String charProps(int i) {
         String s = new String(new int[]{i},0,1);

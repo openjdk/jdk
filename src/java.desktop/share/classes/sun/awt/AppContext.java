@@ -391,7 +391,7 @@ public final class AppContext {
      * This method must be called from a Thread which is not contained
      * within this AppContext.
      *
-     * @exception  IllegalThreadStateException  if the current thread is
+     * @throws  IllegalThreadStateException  if the current thread is
      *                                    contained within this AppContext
      * @since      1.2
      */
@@ -660,7 +660,7 @@ public final class AppContext {
      * @param      value   the value.
      * @return     the previous value of the specified key in this
      *             AppContext, or {@code null} if it did not have one.
-     * @exception  NullPointerException  if the key or value is
+     * @throws  NullPointerException  if the key or value is
      *               {@code null}.
      * @see     #get(Object)
      * @since   1.2

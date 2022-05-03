@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1083,7 +1083,7 @@ void PhaseCFG::postalloc_expand(PhaseRegAlloc* _ra) {
         // Collect succs of old node in remove (for projections) and in succs (for
         // all other nodes) do _not_ collect projections in remove (but in succs)
         // in case the node is a call. We need the projections for calls as they are
-        // associated with registes (i.e. they are defs).
+        // associated with registers (i.e. they are defs).
         succs.clear();
         for (DUIterator k = n->outs(); n->has_out(k); k++) {
           if (n->out(k)->is_Proj() && !n->is_MachCall() && !n->is_MachBranch()) {

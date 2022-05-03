@@ -246,11 +246,14 @@ class CountedLoopNode : public BaseCountedLoopNode {
   // vector mapped unroll factor here
   int _slp_maximum_unroll_factor;
 
+  // The eventual count of vectorizable packs in slp
+  int _slp_vector_pack_count;
+
 public:
   CountedLoopNode(Node *entry, Node *backedge)
     : BaseCountedLoopNode(entry, backedge), _main_idx(0), _trip_count(max_juint),
       _unrolled_count_log2(0), _node_count_before_unroll(0),
-      _slp_maximum_unroll_factor(0) {
+      _slp_maximum_unroll_factor(0), _slp_vector_pack_count(0) {
     init_class_id(Class_CountedLoop);
     // Initialize _trip_count to the largest possible value.
     // Will be reset (lower) if the loop's trip count is known.
@@ -327,6 +330,8 @@ public:
   int  node_count_before_unroll()            { return _node_count_before_unroll; }
   void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
   int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
+  void set_slp_pack_count(int pack_count)    { _slp_vector_pack_count = pack_count; }
+  int  slp_pack_count() const                { return _slp_vector_pack_count; }
 
   virtual LoopNode* skip_strip_mined(int expect_skeleton = 1);
   OuterStripMinedLoopNode* outer_loop() const;
@@ -546,7 +551,8 @@ class LoopLimitNode : public Node {
 // Support for strip mining
 class OuterStripMinedLoopNode : public LoopNode {
 private:
-  CountedLoopNode* inner_loop() const;
+  static void fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* inner_cl, PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
+
 public:
   OuterStripMinedLoopNode(Compile* C, Node *entry, Node *backedge)
     : LoopNode(entry, backedge) {
@@ -562,6 +568,15 @@ public:
   virtual IfFalseNode* outer_loop_exit() const;
   virtual SafePointNode* outer_safepoint() const;
   void adjust_strip_mined_loop(PhaseIterGVN* igvn);
+
+  void remove_outer_loop_and_safepoint(PhaseIterGVN* igvn) const;
+
+  void transform_to_counted_loop(PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
+
+  static Node* register_new_node(Node* node, LoopNode* ctrl, PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
+
+  Node* register_control(Node* node, Node* loop, Node* idom, PhaseIterGVN* igvn,
+                         PhaseIdealLoop* iloop);
 };
 
 class OuterStripMinedLoopEndNode : public IfNode {
@@ -1265,15 +1280,15 @@ public:
   void mark_reductions( IdealLoopTree *loop );
 
   // Return true if exp is a constant times an induction var
-  bool is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType bt, bool* converted);
+  bool is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_scale, bool* p_short_scale, int depth = 0);
 
   bool is_iv(Node* exp, Node* iv, BasicType bt);
 
   // Return true if exp is a scaled induction var plus (or minus) constant
-  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scale, Node** p_offset, BasicType bt, bool* converted = NULL, int depth = 0);
+  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt, jlong* p_scale, Node** p_offset, bool* p_short_scale = NULL, int depth = 0);
   bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset) {
     jlong long_scale;
-    if (is_scaled_iv_plus_offset(exp, iv, &long_scale, p_offset, T_INT)) {
+    if (is_scaled_iv_plus_offset(exp, iv, T_INT, &long_scale, p_offset)) {
       int int_scale = checked_cast<int>(long_scale);
       if (p_scale != NULL) {
         *p_scale = int_scale;
@@ -1282,6 +1297,12 @@ public:
     }
     return false;
   }
+  // Helper for finding more complex matches to is_scaled_iv_plus_offset.
+  bool is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset2, Node* iv,
+                                      BasicType bt,
+                                      jlong* p_scale, Node** p_offset,
+                                      bool* p_short_scale, int depth);
+
 
   // Enum to determine the action to be performed in create_new_if_for_predicate() when processing phis of UCT regions.
   enum class UnswitchingAction {
@@ -1399,6 +1420,7 @@ public:
 
   // Partially peel loop up through last_peel node.
   bool partial_peel( IdealLoopTree *loop, Node_List &old_new );
+  bool duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old_new);
 
   // Create a scheduled list of nodes control dependent on ctrl set.
   void scheduled_nodelist( IdealLoopTree *loop, VectorSet& ctrl, Node_List &sched );
@@ -1445,8 +1467,8 @@ public:
   // "Nearly" because all Nodes have been cloned from the original in the loop,
   // but the fall-in edges to the Cmp are different.  Clone bool/Cmp pairs
   // through the Phi recursively, and return a Bool.
-  Node *clone_iff( PhiNode *phi, IdealLoopTree *loop );
-  CmpNode *clone_bool( PhiNode *phi, IdealLoopTree *loop );
+  Node* clone_iff(PhiNode* phi);
+  CmpNode* clone_bool(PhiNode* phi);
 
 
   // Rework addressing expressions to get the most loop-invariant stuff
@@ -1656,11 +1678,23 @@ public:
 
   bool safe_for_if_replacement(const Node* dom) const;
 
-  void strip_mined_nest_back_to_counted_loop(IdealLoopTree* loop, const BaseCountedLoopNode* head, Node* back_control,
-                                             IfNode*&exit_test, SafePointNode*&safepoint);
   void push_pinned_nodes_thru_region(IfNode* dom_if, Node* region);
 
   bool try_merge_identical_ifs(Node* n);
+
+  void clone_loop_body(const Node_List& body, Node_List &old_new, CloneMap* cm);
+
+  void fix_body_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
+                      IdealLoopTree* parent, bool partial);
+
+  void fix_ctrl_uses(const Node_List& body, const IdealLoopTree* loop, Node_List &old_new, CloneLoopMode mode,
+                Node* side_by_side_idom, CloneMap* cm, Node_List &worklist);
+
+  void fix_data_uses(Node_List& body, IdealLoopTree* loop, CloneLoopMode mode, IdealLoopTree* outer_loop,
+                     uint new_counter, Node_List& old_new, Node_List& worklist, Node_List*& split_if_set,
+                     Node_List*& split_bool_set, Node_List*& split_cex_set);
+
+  void finish_clone_loop(Node_List* split_if_set, Node_List* split_bool_set, Node_List* split_cex_set);
 };
 
 
@@ -1808,6 +1842,35 @@ public:
   void next();                                 // Advance to next loop tree
 
   IdealLoopTree* current() { return _curnt; }  // Return current value of iterator.
+};
+
+// Compute probability of reaching some CFG node from a fixed
+// dominating CFG node
+class PathFrequency {
+private:
+  Node* _dom; // frequencies are computed relative to this node
+  Node_Stack _stack;
+  GrowableArray<float> _freqs_stack; // keep track of intermediate result at regions
+  GrowableArray<float> _freqs; // cache frequencies
+  PhaseIdealLoop* _phase;
+
+  float check_and_truncate_frequency(float f) {
+    assert(f >= 0, "Incorrect frequency");
+    // We do not perform an exact (f <= 1) check
+    // this would be error prone with rounding of floats.
+    // Performing a check like (f <= 1+eps) would be of benefit,
+    // however, it is not evident how to determine such an eps,
+    // given that an arbitrary number of add/mul operations
+    // are performed on these frequencies.
+    return (f > 1) ? 1 : f;
+  }
+
+public:
+  PathFrequency(Node* dom, PhaseIdealLoop* phase)
+    : _dom(dom), _stack(0), _phase(phase) {
+  }
+
+  float to(Node* n);
 };
 
 #endif // SHARE_OPTO_LOOPNODE_HPP

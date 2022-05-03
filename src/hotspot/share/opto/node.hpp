@@ -149,6 +149,7 @@ class PhaseTransform;
 class PhaseValues;
 class PhiNode;
 class Pipeline;
+class PopulateIndexNode;
 class ProjNode;
 class RangeCheckNode;
 class RegMask;
@@ -176,12 +177,6 @@ class VectorUnboxNode;
 class VectorSet;
 class VectorReinterpretNode;
 class ShiftVNode;
-
-// The type of all node counts and indexes.
-// It must hold at least 16 bits, but must also be fast to load and store.
-// This type, if less than 32 bits, could limit the number of possible nodes.
-// (To make this type platform-specific, move to globalDefinitions_xxx.hpp.)
-typedef unsigned int node_idx_t;
 
 
 #ifndef OPTO_DU_ITERATOR_ASSERT
@@ -782,11 +777,10 @@ public:
     Flag_has_call                    = 1 << 10,
     Flag_is_reduction                = 1 << 11,
     Flag_is_scheduled                = 1 << 12,
-    Flag_has_vector_mask_set         = 1 << 13,
-    Flag_is_expensive                = 1 << 14,
-    Flag_is_predicated_vector        = 1 << 15,
-    Flag_for_post_loop_opts_igvn     = 1 << 16,
-    Flag_is_removed_by_peephole      = 1 << 17,
+    Flag_is_expensive                = 1 << 13,
+    Flag_is_predicated_vector        = 1 << 14,
+    Flag_for_post_loop_opts_igvn     = 1 << 15,
+    Flag_is_removed_by_peephole      = 1 << 16,
     _last_flag                       = Flag_is_removed_by_peephole
   };
 
@@ -1001,9 +995,6 @@ public:
 
   bool is_predicated_vector() const { return (_flags & Flag_is_predicated_vector) != 0; }
 
-  // The node is a CountedLoopEnd with a mask annotation so as to emit a restore context
-  bool has_vector_mask_set() const { return (_flags & Flag_has_vector_mask_set) != 0; }
-
   // Used in lcm to mark nodes that have scheduled
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }
 
@@ -1035,7 +1026,7 @@ public:
 
   // Return a node which is more "ideal" than the current node.
   // The invariants on this call are subtle.  If in doubt, read the
-  // treatise in node.cpp above the default implemention AND TEST WITH
+  // treatise in node.cpp above the default implementation AND TEST WITH
   // +VerifyIterativeGVN!
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
@@ -1153,7 +1144,12 @@ public:
 
   jlong get_integer_as_long(BasicType bt) const {
     const TypeInteger* t = find_integer_type(bt);
-    guarantee(t != NULL, "must be con");
+    guarantee(t != NULL && t->is_con(), "must be con");
+    return t->get_con_as_long(bt);
+  }
+  jlong find_integer_as_long(BasicType bt, jlong value_if_unknown) const {
+    const TypeInteger* t = find_integer_type(bt);
+    if (t == NULL || !t->is_con())  return value_if_unknown;
     return t->get_con_as_long(bt);
   }
   const TypePtr* get_ptr_type() const;
@@ -1851,6 +1847,14 @@ Op_IL(URShift)
 Op_IL(LShift)
 Op_IL(Xor)
 Op_IL(Cmp)
+
+inline int Op_ConIL(BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "only for int or longs");
+  if (bt == T_INT) {
+    return Op_ConI;
+  }
+  return Op_ConL;
+}
 
 inline int Op_Cmp_unsigned(BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "only for int or longs");

@@ -241,7 +241,7 @@ public class Test6909839 {
 
     static void testp() {
         Object a = new Object();
-        Object b = new Object();;
+        Object b = new Object();
         int total = 0;
         for (int i = 0 ; i < 10000; i++) {
             total += ((i % 4 != 0) ? a : b).hashCode();
@@ -251,7 +251,7 @@ public class Test6909839 {
 
     static void testup() {
         Object a = new Object();
-        Object b = new Object();;
+        Object b = new Object();
         int total = 0;
         for (int i = 0 ; i < 10000; i++) {
             int v = i % 4;
@@ -262,7 +262,7 @@ public class Test6909839 {
 
     static void testdp() {
         Object a = new Object();
-        Object b = new Object();;
+        Object b = new Object();
         int total = 0;
         for (int i = 0 ; i < 10000; i++) {
             int v = i % 4;
@@ -272,7 +272,7 @@ public class Test6909839 {
     }
     static void testfp() {
         Object a = new Object();
-        Object b = new Object();;
+        Object b = new Object();
         int total = 0;
         for (int i = 0 ; i < 10000; i++) {
             int v = i % 4;

@@ -753,8 +753,8 @@ Supported values for \f[I]key\f[R] are:
 .IP \[bu] 2
 \f[CB]all\f[R]: Enables all warnings.
 .IP \[bu] 2
-\f[CB]auxiliaryclass\f[R]: Warns about an auxiliary class that\[aq]s
-hidden in a source file, and is used from other files.
+\f[CB]auxiliaryclass\f[R]: Warns about an auxiliary class that is hidden
+in a source file, and is used from other files.
 .IP \[bu] 2
 \f[CB]cast\f[R]: Warns about the use of unnecessary casts.
 .IP \[bu] 2
@@ -778,6 +778,9 @@ switch statement to the next.
 \f[CB]finally\f[R]: Warns about \f[CB]finally\f[R] clauses that do not
 terminate normally.
 .IP \[bu] 2
+\f[CB]missing\-explicit\-ctor\f[R]: Warns about missing explicit
+constructors in public and protected classes in exported packages.
+.IP \[bu] 2
 \f[CB]module\f[R]: Warns about the module system\-related issues.
 .IP \[bu] 2
 \f[CB]opens\f[R]: Warns about the issues related to module opens.
@@ -789,8 +792,10 @@ options.
 .IP \[bu] 2
 \f[CB]overrides\f[R]: Warns about the issues related to method overrides.
 .IP \[bu] 2
-\f[CB]path\f[R]: Warns about the invalid path elements on the command l
-ine.
+\f[CB]path\f[R]: Warns about the invalid path elements on the command
+line.
+.IP \[bu] 2
+\f[CB]preview\f[R]: Warns about the use of preview language features.
 .IP \[bu] 2
 \f[CB]processing\f[R]: Warns about the issues related to annotation
 processing.
@@ -814,8 +819,17 @@ element.
 \f[CB]static\f[R]: Warns about the accessing a static member using an
 instance.
 .IP \[bu] 2
-\f[CB]try\f[R]: Warns about the issues relating to the use of try blocks (
-that is, try\-with\-resources).
+\f[CB]strictfp\f[R]: Warns about unnecessary use of the \f[CB]strictfp\f[R]
+modifier.
+.IP \[bu] 2
+\f[CB]synchronization\f[R]: Warns about synchronization attempts on
+instances of value\-based classes.
+.IP \[bu] 2
+\f[CB]text\-blocks\f[R]: Warns about inconsistent white space characters
+in text block indentation.
+.IP \[bu] 2
+\f[CB]try\f[R]: Warns about the issues relating to the use of try blocks
+(that is, try\-with\-resources).
 .IP \[bu] 2
 \f[CB]unchecked\f[R]: Warns about the unchecked operations.
 .IP \[bu] 2
