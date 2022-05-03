@@ -27,7 +27,6 @@ package java.lang.foreign;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.util.Optional;
 
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
@@ -41,7 +40,7 @@ import jdk.internal.reflect.Reflection;
 /**
  * A linker provides access to foreign functions from Java code, and access to Java code from foreign functions.
  * <p>
- * Foreign functions typically reside in shared libraries that can be loaded on-demand. Each shared library conforms to
+ * Foreign functions typically reside in libraries that can be loaded on-demand. Each library conforms to
  * a specific ABI (Application Binary Interface). An ABI is a set of calling conventions and data types associated with
  * the compiler, OS, and processor where the library was built. For example, a C compiler on Linux/x64 usually
  * builds libraries that conform to the SystemV ABI.
@@ -55,9 +54,14 @@ import jdk.internal.reflect.Reflection;
  * <li>A linker allows foreign functions to call Java method handles,
  * via the generation of {@linkplain #upcallStub(MethodHandle, FunctionDescriptor, MemorySession) upcall stubs}.</li>
  * </ul>
- *
+ * In addition, a linker provides a way to look up foreign functions in libraries that conform to the ABI. Each linker
+ * chooses a set of libraries that are commonly used on the OS and processor combination associated with the ABI.
+ * For example, a linker for Linux/x64 might choose two libraries: {@code libc} and {@code libm}. The functions in these
+ * libraries are exposed via a {@linkplain #defaultLookup() symbol lookup}.
+ * <p>
  * The {@link #nativeLinker()} method provides a linker for the ABI associated with the OS and processor where the Java runtime
- * is currently executing.
+ * is currently executing. This linker also provides access, via its {@linkplain #defaultLookup() default lookup},
+ * to the native libraries loaded with the Java runtime.
  *
  * <h2><a id = "downcall-method-handles">Downcall method handles</a></h2>
  *
@@ -144,7 +148,7 @@ import jdk.internal.reflect.Reflection;
  * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-public sealed interface Linker extends SymbolLookup permits Windowsx64Linker, SysVx64Linker, LinuxAArch64Linker, MacOsAArch64Linker {
+public sealed interface Linker permits Windowsx64Linker, SysVx64Linker, LinuxAArch64Linker, MacOsAArch64Linker {
 
     /**
      * Returns a linker for the ABI associated with the underlying native platform. The underlying native platform
@@ -181,6 +185,9 @@ public sealed interface Linker extends SymbolLookup permits Windowsx64Linker, Sy
      * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @apiNote It is not currently possible to obtain a linker for a different combination of OS and processor.
+     * @implNote The libraries exposed by the {@linkplain #defaultLookup() default lookup} associated with the returned
+     * linker are the native libraries loaded in the process where the Java runtime is currently executing. For example,
+     * on Linux, these libraries typically include {@code libc}, {@code libm} and {@code libdl}.
      *
      * @return a linker for the ABI associated with the OS and processor where the Java runtime is currently executing.
      * @throws UnsupportedOperationException if the underlying native platform is not supported.
@@ -264,12 +271,19 @@ public sealed interface Linker extends SymbolLookup permits Windowsx64Linker, Sy
     MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, MemorySession session);
 
     /**
-     * Look up a symbol in the set of standard libraries associated with this linker instance. The set of symbols
-     * available for lookup is unspecified, as it depends on the platform and on the operating system.
-     * @return a symbol in one of the standard libraries associated with this linker (if any).
+     * Returns a symbol lookup for symbols in a set of commonly used libraries.
+     * <p>
+     * Each {@link Linker} is responsible for choosing libraries that are widely recognized as useful on the OS
+     * and processor combination supported by the {@link Linker}. Accordingly, the precise set of symbols exposed by the
+     * symbol lookup is unspecified; it varies from one {@link Linker} to another.
+     * @implNote It is strongly recommended that the result of {@link #defaultLookup} exposes a set of symbols that is stable over time.
+     * Clients of {@link #defaultLookup()} are likely to fail if a symbol that was previously exposed by the symbol lookup is no longer exposed.
+     * <p>If an implementer provides {@link Linker} implementations for multiple OS and processor combinations, then it is strongly
+     * recommended that the result of {@link #defaultLookup()} exposes, as much as possible, a consistent set of symbols
+     * across all the OS and processor combinations.
+     * @return a symbol lookup for symbols in a set of commonly used libraries.
      */
-    @Override
-    Optional<MemorySegment> lookup(String name);
+    SymbolLookup defaultLookup();
 
     /**
      * {@return the downcall method handle {@linkplain MethodType type} associated with the given function descriptor}

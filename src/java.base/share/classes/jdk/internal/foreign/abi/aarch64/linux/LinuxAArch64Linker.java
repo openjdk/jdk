@@ -99,7 +99,7 @@ public final class LinuxAArch64Linker implements Linker {
     }
 
     @Override
-    public Optional<MemorySegment> lookup(String name) {
-        return SystemLookup.getInstance().lookup(name);
+    public SystemLookup defaultLookup() {
+        return SystemLookup.getInstance();
     }
 }

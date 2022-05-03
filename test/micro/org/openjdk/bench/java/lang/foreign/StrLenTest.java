@@ -74,7 +74,7 @@ public class StrLenTest extends CLayouts {
 
     static {
         Linker abi = Linker.nativeLinker();
-        STRLEN = abi.downcallHandle(abi.lookup("strlen").get(),
+        STRLEN = abi.downcallHandle(abi.defaultLookup().lookup("strlen").get(),
                 FunctionDescriptor.of(C_INT, C_POINTER));
     }
 

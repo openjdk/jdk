@@ -32,13 +32,12 @@ import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
 import java.lang.foreign.Linker;
-import java.lang.foreign.SymbolLookup;
 
 public class TestFallbackLookup {
     @Test
     void testBadSystemLookupRequest() {
         // we request a Linker, forcing OS name to be "Windows". This should trigger an exception when
         // attempting to load a non-existent ucrtbase.dll. Make sure that no error is generated at this stage.
-        assertTrue(Linker.nativeLinker().lookup("nonExistentSymbol").isEmpty());
+        assertTrue(Linker.nativeLinker().defaultLookup().lookup("nonExistentSymbol").isEmpty());
     }
 }
