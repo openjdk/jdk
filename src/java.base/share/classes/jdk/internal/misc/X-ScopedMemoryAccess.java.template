@@ -98,7 +98,7 @@ public class ScopedMemoryAccess {
         return theScopedMemoryAccess;
     }
 
-    public final static class ScopedAccessError extends Error {
+    public static final class ScopedAccessError extends Error {
         private ScopedAccessError() {
             super("Attempt to access an already released memory resource", null, false, false);
         }
