@@ -1607,7 +1607,7 @@ Node* find_ctrl(const int idx) {
   return Compile::current()->root()->find_ctrl(idx);
 }
 
-int print_bfs_cmp(const Node* n1, const Node* n2) { return n1 != n2; }
+//------------------------------print_bfs--------------------------------------
 // Call this from debugger:
 // BFS traversal of graph, starting at node this
 // this: staring point of BFS
@@ -1644,15 +1644,17 @@ int print_bfs_cmp(const Node* n1, const Node* n2) { return n1 != n2; }
 //     find inputs of node 385, up to 3 nodes up (+)
 //     traverse all nodes (cdmox), use colors (#)
 //     display old nodes and blocks, if they exist
-//     this is very useful to start at
+//     useful call to start with
 //
 // output columns:
 //   distance: distance to this in BFS traversal
-//   block:    block in which the node has been scheduled (head(), _idom->head(), _dom_depth)
+//   block:    block in which the node has been scheduled [head(), _idom->head(), _dom_depth]
 //   old:      old IR node - before matching
 //   parent:   parent node - one distance closer to this
-//   direction and node type
+//   edge:     input (+) or output (-)
+//   category: characters cmdxo from options string
 //   dump
+int print_bfs_cmp(const Node* n1, const Node* n2) { return n1 != n2; }
 void Node::print_bfs(const uint max_distance, Node* target, char const* options) {
   // BFS or shortest path?
   if (target == NULL) {
@@ -1691,11 +1693,6 @@ void Node::print_bfs(const uint max_distance, Node* target, char const* options)
   bool print_old = false;
   parse_options(print_old,        "O");
 
-  // Data structures
-  Node_List worklist; // BFS queue
-  Dict parent((CmpKey)&print_bfs_cmp, hashkey);   // node -> parent (one step closer to this)
-  Dict distance((CmpKey)&print_bfs_cmp, hashkey); // node -> distance to this
-  
   // Filter node by type
   auto is_visit = [&] (Node* n) {
     const Type *t = n->bottom_type();
@@ -1774,7 +1771,7 @@ void Node::print_bfs(const uint max_distance, Node* target, char const* options)
   auto print_node_block = [&] (Node* n) {
     Block* b = C->node_arena()->contains(n)
                ? C->cfg()->get_block_for_node(n)
-               : NULL; // guard agains old nodes
+               : NULL; // guard against old nodes
     if (b == NULL) {
       tty->print("     _");
       tty->print("     _");
@@ -1790,6 +1787,11 @@ void Node::print_bfs(const uint max_distance, Node* target, char const* options)
     }
   };
 
+  // Data structures
+  Node_List worklist; // BFS queue
+  Dict parent((CmpKey)&print_bfs_cmp, hashkey);   // node -> parent (one step closer to this)
+  Dict distance((CmpKey)&print_bfs_cmp, hashkey); // node -> distance to this
+ 
   // add node to traversal queue
   auto worklist_push = [&] (Node* n, Node* p, const long d) {
     worklist.push(n);
@@ -1797,41 +1799,61 @@ void Node::print_bfs(const uint max_distance, Node* target, char const* options)
     distance.Insert(n, (void*)d);
   };
 
-  // initialize BFS at this
-  worklist_push(this, this, 0);
+  auto print_header = [&] (bool print_parent) {
+    tty->print("dis");                          // distance
+    if (print_blocks) {
+      tty->print(" [head  idom  d]");           // block
+    }
+    if(print_old) {
+      tty->print("   old");                     // old node
+    }
+    if (print_parent) {
+      tty->print("   par");                     // parent
+    }
+    if (traverse_inputs && traverse_outputs) {
+      tty->print(" e");                         // edge
+    }
+    tty->print(" c dump\n");                    // category and dump
+    tty->print("---------------------------------------------\n");
+  };
+ 
+  auto print_node = [&] (Node* n, bool print_parent) {
+    tty->print("%3ld", abs((long)distance[n])); // distance
+    if (print_blocks) {
+      print_node_block(n);                      // block
+    }
+    if (print_old) {
+      print_node_idx(old_node(n));              // old node
+    }
+    if (print_parent) {
+      print_node_idx((Node*)parent[n]);         // parent
+    }
+    if (traverse_inputs && traverse_outputs) {
+      long dd = (long)distance[n];
+      const char* edge = (dd >=0 ) ? ((dd > 0) ? "+" : " " ) : "-";
+      tty->print(" %s", edge);                  // edge
+    }
+    tty->print(" %s ", category(n));            // category
+    n->dump();                                  // node dump
+  };
 
   // BFS header
   if (target == NULL) {
-    tty->print("dis");
-    if (print_blocks) {
-      tty->print("  head  idom dep");
-    }
-    if(print_old) {
-      tty->print("   old");
-    }
-    tty->print("   par dir dump\n");
-    tty->print("-------------------------------------------\n");
+    print_header(true);
   }
 
+  // initialize BFS at this
+  worklist_push(this, this, 0);
+ 
   // BFS traversal
   uint pos = 0;
   while (pos < worklist.size()) {
     // process next item
     Node* n = worklist.at(pos++);
     long d = abs((long)distance[n]);
-    const char* direction = ((long)distance[n] >= 0) ? "+" : "-";
     // BFS: print n
     if (target == NULL) {
-      tty->print("%3ld", d);                         // distance
-      if (print_blocks) {
-        print_node_block(n);                         // block
-      }
-      if (print_old) {
-        print_node_idx(old_node(n));                 // old node
-      }
-      print_node_idx((Node*)parent[n]);              // parent
-      tty->print(" %s%s ", direction, category(n));  // direction and category
-      n->dump();                                     // node dump
+      print_node(n, true);
     }
     if (n->is_Con()) {
       continue; // don't traverse through constant or top node
@@ -1872,42 +1894,15 @@ void Node::print_bfs(const uint max_distance, Node* target, char const* options)
     }
     tty->print("\nBacktrace target.\n");
     // backtrace header
-    tty->print("dis");
-    if (print_blocks) {
-      tty->print("  head  idom dep");
-    }
-    if(print_old) {
-      tty->print("   old");
-    }
-    tty->print(" dir dump\n"); // backtrace header
-    tty->print("-------------------------------------\n");
+    print_header(false);
     Node* current = target;
     while (current != (Node*)parent[current]) {
-      const char* direction = ((long)distance[current] >=0 ) ? "+" : "-";
-      tty->print("%3ld", abs((long)distance[current]));    // distance
-      if (print_blocks) {
-        print_node_block(current);                         // block
-      }
-      if (print_old) {
-        print_node_idx(old_node(current));                 // old node
-      }
-      tty->print(" %s%s ", direction, category(current));  // direction and category
-      current->dump();                                     // node dump
+      print_node(current, false);
       current = (Node*)parent[current];
     }
-    tty->print("  0");                      // distance
-    if (print_blocks) {
-      print_node_block(this);               // block
-    }
-    if (print_old) {
-      print_node_idx(old_node(this));       // old node
-    }
-    tty->print("  %s ", category(this));    // direction and category
-    this->dump();                           // node dump
+    print_node(this, false);
   }
 }
-
-
 
 //------------------------------find_ctrl--------------------------------------
 // Find an ancestor to this node in the control history with given _idx
