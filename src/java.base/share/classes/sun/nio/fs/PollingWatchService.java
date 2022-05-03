@@ -61,7 +61,7 @@ import java.util.concurrent.TimeUnit;
 class PollingWatchService
     extends AbstractWatchService
 {
-    private static final int DEFAULT_POLLING_INTERVAL = 1;
+    private static final int DEFAULT_POLLING_INTERVAL = 2;
 
     // map of registrations
     private final Map<Object, PollingWatchKey> map = new HashMap<>();
