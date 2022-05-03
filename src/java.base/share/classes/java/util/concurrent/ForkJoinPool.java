@@ -240,7 +240,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * reflecting the presence or absence of other contextual sync
      * provided by atomic and/or volatile accesses. Some methods (or
      * their primary loops) begin with an acquire fence or
-     * otherwise-unnecessary valatile read that amounts to an
+     * otherwise-unnecessary volatile read that amounts to an
      * acquiring read of "this" to cover all fields (which is
      * sometimes stronger than necessary, but less brittle). Some
      * constructions are intentionally racy because they use read
@@ -338,7 +338,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * available to try, and the presence or nature of screening steps
      * when only some kinds of tasks can be taken. When alternatives
      * (or failing) is an option, they uniformly give up after
-     * boundeed numbers of stalls and/or CAS failures, which reduces
+     * bounded numbers of stalls and/or CAS failures, which reduces
      * contention when too many workers are polling too few tasks.
      * Overall, in the aggregate, we ensure probabilistic
      * non-blockingness of work-stealing at least until checking
@@ -472,7 +472,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      *
      * WorkQueue field "phase" is used by both workers and the pool to
      * manage and track whether a worker is unsignalled (possibly
-     * blocked waiting for a signal), convienently using the sign bit
+     * blocked waiting for a signal), conveniently using the sign bit
      * to check.  When a worker is enqueued its phase field is set
      * negative. Note that phase field updates lag queue CAS releases;
      * seeing a negative phase does not guarantee that the worker is
@@ -2282,7 +2282,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param interruptible true if return on interrupt
      * @return positive if quiescent, negative if interrupted, else 0
      */
-    final static int helpQuiescePool(ForkJoinPool pool, long nanos,
+    static final int helpQuiescePool(ForkJoinPool pool, long nanos,
                                      boolean interruptible) {
         Thread t; ForkJoinPool p; ForkJoinWorkerThread wt;
         if ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread &&
