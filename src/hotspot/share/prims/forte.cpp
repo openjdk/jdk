@@ -32,7 +32,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
@@ -574,7 +573,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     return;
   }
 
-  JavaThread* thread = (JavaThread*)raw_thread;
+  JavaThread* thread = JavaThread::cast(raw_thread);
 
   if (thread->in_deopt_handler()) {
     // thread is in the deoptimization handler so return no frames
