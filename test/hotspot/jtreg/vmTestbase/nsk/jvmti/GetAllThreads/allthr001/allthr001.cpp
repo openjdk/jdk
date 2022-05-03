@@ -167,7 +167,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_OK;
 }
 
-void release(JNIEnv *env, jvmtiThreadInfo *info) {
+void releaseThreadInfo(JNIEnv *env, jvmtiThreadInfo *info) {
     jvmti->Deallocate((unsigned char *)info->name);
     if (info->thread_group != NULL) {
         env->DeleteLocalRef(info->thread_group);
@@ -180,7 +180,8 @@ void release(JNIEnv *env, jvmtiThreadInfo *info) {
 JNIEXPORT void checkInfo(JNIEnv *env, int ind) {
     jint threadsCount = -1;
     jthread *threads;
-    int i, j, found;
+    int i, j;
+    bool found;
     jvmtiError err;
     int expected = 0;
     jvmtiThreadInfo inf;
@@ -237,14 +238,14 @@ JNIEXPORT void checkInfo(JNIEnv *env, int ind) {
         if (printdump == JNI_TRUE) {
             printf(" >>> %s", inf.name);
         }
-        for (j = 0, found = 0; j < thrInfo[ind].unexpected.cnt && !found; j++) {
+        for (j = 0, found = false; j < thrInfo[ind].unexpected.cnt && !found; j++) {
             found = (inf.name != NULL && strcmp(inf.name, thrInfo[ind].unexpected.thrNames[j]) == 0);
         }
         if (found) {
             printf("Point %d: detected unexpected thread %s\n", ind, inf.name);
             result = STATUS_FAILED;
         }
-        release(env, &inf);
+        releaseThreadInfo(env, &inf);
     }
     if (printdump == JNI_TRUE) {
         printf("\n");
@@ -252,7 +253,7 @@ JNIEXPORT void checkInfo(JNIEnv *env, int ind) {
 
     // verify all expected threads are present
     for (i = 0; i < thrInfo[ind].expected.cnt; i++) {
-        for (j = 0, found = 0; j < threadsCount && !found; j++) {
+        for (j = 0, found = false; j < threadsCount && !found; j++) {
             err = jvmti->GetThreadInfo(threads[j], &inf);
             if (err != JVMTI_ERROR_NONE) {
                 printf("Failed to get thread info: %s (%d)\n",
@@ -261,7 +262,7 @@ JNIEXPORT void checkInfo(JNIEnv *env, int ind) {
                 return;
             }
             found = (inf.name != NULL && strcmp(inf.name, thrInfo[ind].expected.thrNames[j]) == 0);
-            release(env, &inf);
+            releaseThreadInfo(env, &inf);
         }
         if (!found) {
             printf("Point %d: thread %s not detected\n",
