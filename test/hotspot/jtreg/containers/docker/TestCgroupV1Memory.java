@@ -51,7 +51,6 @@ public class TestCgroupV1Memory {
             return;
         }
         if ("cgroupv1".equals(metrics.getProvider())) {
-            Common.prepareWhiteBox();
             CgroupV1TestUtils.createSubSystem(SUB_SYSTEM_PRE + SUB_SYSTEM_NAME);
 
             try {
