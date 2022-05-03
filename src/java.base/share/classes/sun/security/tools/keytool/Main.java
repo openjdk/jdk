@@ -1876,7 +1876,7 @@ public final class Main {
         SecretKeyConstraintsParameters skcp =
                 new SecretKeyConstraintsParameters(secKey);
         checkWeakConstraint(rb.getString("the.generated.secretkey"),
-                keyAlgName, skcp);
+                secKey, skcp);
 
         if (keyPass == null) {
             keyPass = promptForKeyPass(alias, null, storePass);
@@ -2194,12 +2194,19 @@ public final class Main {
 
             try {
                 SecretKey secKey = (SecretKey) keyStore.getKey(alias, storePass);
-                String secKeyAlg = secKey.getAlgorithm();
                 SecretKeyConstraintsParameters skcp =
                         new SecretKeyConstraintsParameters(secKey);
-                checkWeakConstraint(label, secKeyAlg, skcp);
+                checkWeakConstraint(label, secKey, skcp);
             } catch (UnrecoverableKeyException e) {
-                // skip
+                /*
+                 * UnrecoverableKeyException will be thrown for any secret key
+                 * entries that are protected by a different password than
+                 * storePass, and we will not be able to check the constraints.
+                 * This may occurs for keystores such as JCEKS. Note that this
+                 * is not really a new issue as details about secret key entries
+                 * other than the fact they exist as entries are not listed ,
+                 * presumably because we may not have the right password.
+                 */
             }
         } else if (keyStore.entryInstanceOf(alias, KeyStore.PrivateKeyEntry.class)) {
             if (verbose || rfc || debug) {
@@ -2515,7 +2522,7 @@ public final class Main {
                     Key key = keyStore.getKey(newAlias, newPass);
                     SecretKeyConstraintsParameters skcp =
                             new SecretKeyConstraintsParameters(key);
-                    checkWeakConstraint("<" + newAlias + ">", key.getAlgorithm(), skcp);
+                    checkWeakConstraint("<" + newAlias + ">", (SecretKey)key, skcp);
                 } catch (UnrecoverableKeyException e) {
                     // skip
                 }
@@ -5034,14 +5041,24 @@ public final class Main {
         }
     }
 
-    private void checkWeakConstraint(String label, String algName,
-            ConstraintsParameters cp) {
+    private void checkWeakConstraint(String label, SecretKey secKey,
+            SecretKeyConstraintsParameters skcp) {
         // Do not check disabled algorithms for symmetric key based algorithms for now
+        String secKeyAlg = secKey.getAlgorithm();
         try {
-            LEGACY_CHECK.permits(algName, cp, false);
+            LEGACY_CHECK.permits(secKeyAlg, skcp, true);
         } catch (CertPathValidatorException e) {
-            weakWarnings.add(String.format(
-                    rb.getString("key.algorithm.weak"), label, algName));
+            String eMessage = e.getMessage();
+            if (eMessage.contains("constraints check failed on keysize limits") &&
+                    e.getReason() == BasicReason.ALGORITHM_CONSTRAINED) {
+                weakWarnings.add(String.format(
+                        rb.getString("key.size.weak"), label,
+                        String.format(rb.getString("key.bit"),
+                        KeyUtil.getKeySize(secKey), secKeyAlg)));
+            } else {
+                weakWarnings.add(String.format(
+                        rb.getString("key.algorithm.weak"), label, secKeyAlg));
+            }
         }
     }
 
@@ -5245,7 +5262,7 @@ public final class Main {
 
     private static class SecretKeyConstraintsParameters implements ConstraintsParameters {
         private final Key key;
-        public SecretKeyConstraintsParameters(Key key) {
+        private SecretKeyConstraintsParameters(Key key) {
             this.key = key;
         }
 
@@ -5256,7 +5273,7 @@ public final class Main {
 
         @Override
         public Set<Key> getKeys() {
-            return null;
+            return (key == null) ? Set.of() : Set.of(key);
         }
 
         @Override

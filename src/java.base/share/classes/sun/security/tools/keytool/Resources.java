@@ -73,6 +73,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"Generated.keysize.bit.keyAlgName.secret.key",
                 "Generated {0}-bit {1} secret key"}, //-genseckey
         {"key.algorithm.weak", "%1$s uses the %2$s algorithm which is considered a security risk."},
+        {"key.size.weak", "%1$s uses a %2$s which is considered a security risk."},
         {"Imports.entries.from.a.JDK.1.1.x.style.identity.database",
                 "Imports entries from a JDK 1.1.x-style identity database"}, //-identitydb
         {"Imports.a.certificate.or.a.certificate.chain",

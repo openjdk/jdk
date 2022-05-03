@@ -31,7 +31,12 @@
 import jdk.test.lib.SecurityTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 public class WeakSecretKeyTest {
+
+    private static final String JAVA_SECURITY_FILE = "java.security";
 
     public static void main(String[] args) throws Exception {
         SecurityTools.keytool("-keystore ks.p12 -storepass changeit " +
@@ -63,7 +68,7 @@ public class WeakSecretKeyTest {
                 "-list -v")
                 .shouldContain("Warning")
                 .shouldMatch("<des3key> uses the DESede algorithm.*considered a security risk")
-                .shouldMatch("<deskey> uses the DES/CBC algorithm.*considered a security risk")
+                .shouldMatch("<deskey> uses the DES algorithm.*considered a security risk")
                 .shouldMatch("<newentry> uses the PBEWithMD5AndDES algorithm.*considered a security risk")
                 .shouldNotMatch("<aeskey> uses the AES algorithm.*considered a security risk")
                 .shouldHaveExitValue(0);
@@ -73,7 +78,7 @@ public class WeakSecretKeyTest {
                 "-deststoretype pkcs12 -srcstorepass changeit ")
                 .shouldContain("Warning")
                 .shouldMatch("<des3key> uses the DESede algorithm.*considered a security risk")
-                .shouldMatch("<deskey> uses the DES/CBC algorithm.*considered a security risk")
+                .shouldMatch("<deskey> uses the DES algorithm.*considered a security risk")
                 .shouldMatch("<newentry> uses the PBEWithMD5AndDES algorithm.*considered a security risk")
                 .shouldHaveExitValue(0);
 
@@ -81,8 +86,19 @@ public class WeakSecretKeyTest {
                 "-list -v")
                 .shouldContain("Warning")
                 .shouldMatch("<des3key> uses the DESede algorithm.*considered a security risk")
-                .shouldMatch("<deskey> uses the DES/CBC algorithm.*considered a security risk")
+                .shouldMatch("<deskey> uses the DES algorithm.*considered a security risk")
                 .shouldMatch("<newentry> uses the PBEWithMD5AndDES algorithm.*considered a security risk")
+                .shouldHaveExitValue(0);
+
+        Files.writeString(Files.createFile(Paths.get(JAVA_SECURITY_FILE)),
+                "jdk.security.legacyAlgorithms=AES keySize < 256\n");
+
+        SecurityTools.keytool("-keystore ks.p12 -storepass changeit " +
+                "-genseckey -keyalg AES -alias aeskey1 -keysize 128 " +
+                "-J-Djava.security.properties=" +
+                JAVA_SECURITY_FILE)
+                .shouldContain("Warning")
+                .shouldMatch("The generated secret key uses a 128-bit AES key.*considered a security risk")
                 .shouldHaveExitValue(0);
     }
 }
