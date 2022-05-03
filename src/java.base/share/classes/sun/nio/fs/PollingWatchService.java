@@ -61,6 +61,7 @@ import java.util.concurrent.TimeUnit;
 class PollingWatchService
     extends AbstractWatchService
 {
+    // Default time between polls (seconds)
     private static final int DEFAULT_POLLING_INTERVAL = 2;
 
     // map of registrations
@@ -250,6 +251,7 @@ class PollingWatchService
      */
     private class PollingWatchKey extends AbstractWatchKey {
 
+        // Wait between thread creation and first poll (seconds)
         private static final int POLLING_INIT_DELAY = 1;
 
         private final Object fileKey;
