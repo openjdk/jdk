@@ -54,27 +54,43 @@ import sun.security.util.Debug;
  */
 abstract class CKeyStore extends KeyStoreSpi {
 
+    public static final class KeyStoreLocation {
+
+        public static final KeyStoreLocation CURRENTUSER = new KeyStoreLocation(0);
+        public static final KeyStoreLocation LOCALMACHINE = new KeyStoreLocation(1);
+    
+        private int value;
+    
+        private KeyStoreLocation(int intValue) {
+            this.value = intValue;
+        }
+    
+        public int getIntValue() {
+            return value;
+        }
+    }    
+
     public static final class MY extends CKeyStore {
         public MY() {
-            super("MY", "CURRENTUSER");
+            super("MY", KeyStoreLocation.CURRENTUSER);
         }
     }
 
     public static final class ROOT extends CKeyStore {
         public ROOT() {
-            super("ROOT", "CURRENTUSER");
+            super("ROOT", KeyStoreLocation.CURRENTUSER);
         }
     }
 
     public static final class MYLocalMachine extends CKeyStore {
         public MYLocalMachine() {
-            super("MY", "LOCALMACHINE");
+            super("MY", KeyStoreLocation.LOCALMACHINE);
         }
     }
 
     public static final class ROOTLocalMachine extends CKeyStore {
         public ROOTLocalMachine() {
-            super("ROOT", "LOCALMACHINE");
+            super("ROOT", KeyStoreLocation.LOCALMACHINE);
         }
     }
 
@@ -234,11 +250,10 @@ abstract class CKeyStore extends KeyStoreSpi {
 
     /*
      * The keystore location.
-     * Case is not significant.
      */
-    private final String storeLocation;
+    private final KeyStoreLocation storeLocation;
 
-    CKeyStore(String storeName, String storeLocation) {
+    CKeyStore(String storeName, KeyStoreLocation storeLocation) {
         // Get the compatibility mode
         @SuppressWarnings("removal")
         String prop = AccessController.doPrivileged(
@@ -724,7 +739,7 @@ abstract class CKeyStore extends KeyStoreSpi {
         try {
 
             // Load keys and/or certificate chains
-            loadKeysOrCertificateChains(getName(), getLocation());
+            loadKeysOrCertificateChains(getName(), getLocationValue());
 
         } catch (KeyStoreException e) {
             throw new IOException(e);
@@ -850,8 +865,8 @@ abstract class CKeyStore extends KeyStoreSpi {
     /**
      * Returns the location of the keystore.
      */
-    private String getLocation() {
-        return storeLocation;
+    private int getLocationValue() {
+        return storeLocation.getIntValue();
     }
 
     /**
@@ -861,7 +876,7 @@ abstract class CKeyStore extends KeyStoreSpi {
      * @param location Location of keystore.
      */
     private native void loadKeysOrCertificateChains(String name,
-        String location) throws KeyStoreException;
+        int location) throws KeyStoreException;
 
     /**
      * Stores a DER-encoded certificate into the certificate store

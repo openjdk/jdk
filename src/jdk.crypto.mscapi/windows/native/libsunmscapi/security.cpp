@@ -59,6 +59,9 @@
 #define SIGNATURE_EXCEPTION "java/security/SignatureException"
 #define OUT_OF_MEMORY_ERROR "java/lang/OutOfMemoryError"
 
+#define KEYSTORE_LOCATION_CURRENTUSER  0
+#define KEYSTORE_LOCATION_LOCALMACHINE 1
+
 #define SS_CHECK(Status) \
         if (Status != ERROR_SUCCESS) { \
             ThrowException(env, SIGNATURE_EXCEPTION, Status); \
@@ -386,10 +389,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_PRNG_generateSeed
 /*
  * Class:     sun_security_mscapi_CKeyStore
  * Method:    loadKeysOrCertificateChains
- * Signature: (Ljava/lang/String;Ljava/lang/String;)V
+ * Signature: (Ljava/lang/String;I)V
  */
 JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateChains
-  (JNIEnv *env, jobject obj, jstring jCertStoreName, jstring jCertStoreLocation)
+  (JNIEnv *env, jobject obj, jstring jCertStoreName, jint jCertStoreLocation)
 {
     /**
      * Certificate in cert store has enhanced key usage extension
@@ -402,12 +405,10 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
      */
 
     const char* pszCertStoreName = NULL;
-    const char* pszCertStoreLocation = NULL;
     HCERTSTORE hCertStore = NULL;
     PCCERT_CONTEXT pCertContext = NULL;
     char* pszNameString = NULL; // certificate's friendly name
     DWORD cchNameString = 0;
-
 
     __try
     {
@@ -416,19 +417,17 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
             == NULL) {
             __leave;
         }
-        if ((pszCertStoreLocation = env->GetStringUTFChars(jCertStoreLocation, NULL))
-            == NULL) {
-            __leave;
-        }
 
-        if (strcmp(pszCertStoreLocation, "LOCALMACHINE") == 0)
-        {
+        if (jCertStoreLocation == KEYSTORE_LOCATION_CURRENTUSER) {
+            hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName);
+        }
+        else if (jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
             hCertStore = ::CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
                 CERT_SYSTEM_STORE_LOCAL_MACHINE, pszCertStoreName);
         }
-        else
-        {
-            hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName);
+        else {
+            PP("jCertStoreLocation is not a valid value");
+            __leave;
         }
 
         if (hCertStore == NULL) {
