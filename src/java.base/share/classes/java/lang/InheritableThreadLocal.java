@@ -43,6 +43,7 @@ package java.lang;
  * Thread#Thread(ThreadGroup,Runnable,String,long,boolean) thread}, it is
  * possible to <i>opt out</i> of receiving initial values for inheritable
  * thread-local variables.
+ * @param <T> the type of the inheritable thread local's value
  *
  * @author  Josh Bloch and Doug Lea
  * @see     ThreadLocal

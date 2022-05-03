@@ -131,8 +131,7 @@ public class ReferencesGC extends ThreadedGCTest {
                     holder[i] = null;
                 }
 
-                // WB.fullGC() is a lst ditch GC which should provoke
-                // unloading of references of all types
+                // WB.fullGC() is guaranteed to clear all kinds of weak references.
                 WhiteBox.getWhiteBox().fullGC();
                 if (!stresser.continueExecution()) {
                     break;

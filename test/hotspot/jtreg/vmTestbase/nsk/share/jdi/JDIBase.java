@@ -165,18 +165,21 @@ public class JDIBase {
             Event event = eventIterator.nextEvent();
             if (event instanceof ThreadStartEvent evt) {
                 if (evt.thread().name().equals(threadName)) {
+                    log2("Got ThreadStartEvent for '" + evt.thread().name());
                     break;
                 }
                 log2("Got ThreadStartEvent for '" + evt.thread().name()
                         + "' instead of '" + threadName + "', skipping");
             } else if (event instanceof ThreadDeathEvent evt) {
                 if (evt.thread().name().equals(threadName)) {
+                    log2("Got ThreadDeathEvent for '" + evt.thread().name());
                     break;
                 }
                 log2("Got ThreadDeathEvent for '" + evt.thread().name()
                         + "' instead of '" + threadName + "', skipping");
             } else {
                 // not ThreadStartEvent nor ThreadDeathEvent
+                log2("Did't get ThreadStartEvent or ThreadDeathEvent: " + event);
                 break;
             }
             eventSet.resume();
@@ -188,15 +191,22 @@ public class JDIBase {
     protected void breakpointForCommunication() throws JDITestRuntimeException {
 
         log2("breakpointForCommunication");
-        getEventSet();
+        while (true) {
+            getEventSet();
 
-        Event event = eventIterator.nextEvent();
-        if (event instanceof BreakpointEvent) {
-            bpEvent = (BreakpointEvent) event;
-            return;
+            Event event = eventIterator.nextEvent();
+            if (event instanceof BreakpointEvent) {
+                bpEvent = (BreakpointEvent) event;
+                return;
+            }
+
+            if (EventFilters.filtered(event)) {
+                // We filter out spurious ThreadStartEvents
+                continue;
+            }
+
+            throw new JDITestRuntimeException("** event '" + event + "' IS NOT a breakpoint **");
         }
-
-        throw new JDITestRuntimeException("** event '" + event + "' IS NOT a breakpoint **");
     }
 
     // Similar to breakpointForCommunication, but skips Locatable events from unexpected locations.
