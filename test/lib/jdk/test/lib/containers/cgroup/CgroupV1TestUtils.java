@@ -63,10 +63,9 @@ public class CgroupV1TestUtils {
     }
 
 
-    public static void initSubSystem(String subSystemName,String info) throws Exception {
-        OutputAnalyzer outputAnalyzer = execute("cgset", "-r", info, subSystemName);
-        System.out.println(outputAnalyzer.getOutput());
-
+    public static void initSubSystem(String subSystemName, String info) throws Exception {
+        execute("cgset", "-r", info, subSystemName)
+                .shouldHaveExitValue(0);
     }
 
     public static void deleteSubSystem(String subSystemName) throws Exception {
