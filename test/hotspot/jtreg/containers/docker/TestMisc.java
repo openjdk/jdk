@@ -57,7 +57,6 @@ public class TestMisc {
             testIsContainerized();
             testPrintContainerInfo();
             testPrintContainerInfoActiveProcessorCount();
-            testPrintContainerMemoryInfo("100M", "150M");
         } finally {
             DockerTestUtils.removeDockerImage(imageName);
         }
@@ -124,21 +123,6 @@ public class TestMisc {
         for (String s : expectedToContain) {
             out.shouldContain(s);
         }
-    }
-
-    private static void testPrintContainerMemoryInfo(String dockerMemLimit, String dockerSwapMemLimit)
-            throws Exception {
-        Common.logNewTestCase("Test print_container_info()");
-
-        DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo").addJavaOpts("-XshowSettings:system");
-        opts.addDockerOpts("--memory", dockerMemLimit, "--memory-swappiness", "0", "--memory-swap", dockerSwapMemLimit);
-        Common.addWhiteBoxOpts(opts);
-
-        OutputAnalyzer out = Common.run(opts);
-        System.out.println(out.getOutput());
-        out.shouldContain("Memory and Swap Limit is: 157286400")
-           .shouldContain("Memory and Swap Limit has been reset to 104857600 because of Swappiness is 0")
-           .shouldContain("Memory & Swap Limit: 100.00M");
     }
 
 }
