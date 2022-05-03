@@ -52,8 +52,7 @@ static jrawMonitorID counter_lock;
 
 /** callback functions **/
 void JNICALL
-NativeMethodBind(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
-                 jmethodID method, void *addr, void **new_addr) {
+NativeMethodBind(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, void *addr, void **new_addr) {
   jvmtiPhase phase;
   jvmtiError err;
   char *methNam, *methSig;
@@ -80,10 +79,8 @@ NativeMethodBind(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
     return;
   }
 
-  if ((strcmp(methNam, METHODS[0]) == 0) &&
-      (strcmp(methSig, METHODS[1]) == 0)) {
+  if ((strcmp(methNam, METHODS[0]) == 0) && (strcmp(methSig, METHODS[1]) == 0)) {
     bindEv[0]++;
-
     LOG("\tmethod: \"%s %s\"\n", methNam, methSig);
   }
 
@@ -104,7 +101,6 @@ NativeMethodBind(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
   }
 
   LOG("<<<<\n\n");
-
 }
 
 void JNICALL
@@ -113,14 +109,12 @@ VMDeath(jvmtiEnv *jvmti, JNIEnv *jni) {
 
   if (bindEv[0] != bindEv[1]) {
     result = STATUS_FAILED;
-    LOG(
-        "TEST FAILED: wrong NativeMethodBind events\n"
+    LOG("TEST FAILED: wrong NativeMethodBind events\n"
         "\tfor tested method \"%s %s\" bound with \"%s\":\n"
         "\tgot: %d\texpected: %d\n\n",
         METHODS[0], METHODS[1], CLASS_SIG, bindEv[0], bindEv[1]);
   } else {
-    LOG(
-        "CHECK PASSED: %d NativeMethodBind event(s)\n"
+    LOG("CHECK PASSED: %d NativeMethodBind event(s)\n"
         "\tfor tested method \"%s %s\" bound with \"%s\"\n"
         "\tas expected\n",
         bindEv[0], METHODS[0], METHODS[1], CLASS_SIG);
@@ -129,7 +123,6 @@ VMDeath(jvmtiEnv *jvmti, JNIEnv *jni) {
   if (result == STATUS_FAILED)
     exit(95 + STATUS_FAILED);
 }
-/************************/
 
 /* dummy method used only to provoke NativeMethodBind event */
 static void JNICALL
@@ -139,19 +132,16 @@ nativeMethod(JNIEnv *jni, jobject obj) {
 
 /* dummy method used only to provoke NativeMethodBind event */
 JNIEXPORT void JNICALL
-Java_nativemethbind03_registerNative(
-    JNIEnv *jni, jobject obj) {
+Java_nativemethbind03_registerNative(JNIEnv *jni, jobject obj) {
   jclass testedCls = NULL;
   JNINativeMethod meth;
 
   LOG("Inside the registerNative()\n"
-               "Finding class \"%s\" ...\n",
-               CLASS_SIG);
+      "Finding class \"%s\" ...\n", CLASS_SIG);
   testedCls = jni->FindClass(CLASS_SIG);
   if (testedCls == NULL) {
     result = STATUS_FAILED;
-    COMPLAIN("TEST FAILURE: unable to find class \"%s\"\n\n",
-                  CLASS_SIG);
+    COMPLAIN("TEST FAILURE: unable to find class \"%s\"\n\n", CLASS_SIG);
     return;
   }
 
@@ -160,34 +150,21 @@ Java_nativemethbind03_registerNative(
   meth.fnPtr = (void *) nativeMethod;
 
   LOG("Calling RegisterNatives() with \"%s %s\"\n"
-      "\tfor class \"%s\" ...\n",
-      METHODS[0], METHODS[1], CLASS_SIG);
+      "\tfor class \"%s\" ...\n", METHODS[0], METHODS[1], CLASS_SIG);
   if (jni->RegisterNatives(testedCls, &meth, 1) != 0) {
     result = STATUS_FAILED;
     COMPLAIN("TEST FAILURE: unable to RegisterNatives() \"%s %s\" for class \"%s\"\n\n",
-                  METHODS[0], METHODS[1], CLASS_SIG);
+             METHODS[0], METHODS[1], CLASS_SIG);
   }
 
-  LOG("Calling UnregisterNatives() for class \"%s\" ...\n",
-               CLASS_SIG);
+  LOG("Calling UnregisterNatives() for class \"%s\" ...\n", CLASS_SIG);
   if (jni->UnregisterNatives(testedCls) != 0) {
     result = STATUS_FAILED;
     COMPLAIN("TEST FAILURE: unable to UnregisterNatives() \"%c %c\" for class \"%s\"\n\n",
-                  METHODS[1][0], METHODS[1][1], CLASS_SIG);
+             METHODS[1][0], METHODS[1][1], CLASS_SIG);
   }
 }
 
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_nativemethbind03(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_nativemethbind03(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_nativemethbind03(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
@@ -206,7 +183,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   /* add capability to generate compiled method events */
   memset(&caps, 0, sizeof(jvmtiCapabilities));
   caps.can_generate_native_method_bind_events = 1;
-  // TODO Fix!!
+
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
@@ -230,15 +207,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
 
   LOG("setting event callbacks done\nenabling JVMTI events ...\n");
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_NATIVE_METHOD_BIND,
-                                        NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_VM_DEATH,
-                                        NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }

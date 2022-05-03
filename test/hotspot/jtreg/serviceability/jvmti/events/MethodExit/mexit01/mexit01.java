@@ -68,10 +68,10 @@ public class mexit01 {
     native static int init0();
 
     public static void main(String args[]) {
-        testVirtual();
-        testKernel();
+        testVirtualThread();
+        testPlatformThread();
     }
-    public static void testVirtual() {
+    public static void testVirtualThread() {
         Thread thread = Thread.startVirtualThread(() -> {
             init0();
             result = check();
@@ -87,7 +87,7 @@ public class mexit01 {
         }
     }
 
-    public static void testKernel() {
+    public static void testPlatformThread() {
         init0();
         result = check();
         if (result != 0) {

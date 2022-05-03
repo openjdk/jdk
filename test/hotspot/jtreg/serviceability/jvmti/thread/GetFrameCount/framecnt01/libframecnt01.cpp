@@ -45,8 +45,7 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
   jvmtiError err = jvmti_env->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-   LOG("(AddCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+   LOG("(AddCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 

@@ -53,8 +53,6 @@ static jthread* threads = NULL;
 static volatile int eventsReceived = 0;
 static jrawMonitorID eventsReceivedMtx = 0;
 
-/* ============================================================================= */
-
 static int find_threads_by_name(jvmtiEnv* jvmti, JNIEnv* jni,
                                 const char name[], int foundCount, jthread foundThreads[]);
 
@@ -62,198 +60,178 @@ static int find_threads_by_name(jvmtiEnv* jvmti, JNIEnv* jni,
 static void JNICALL
 agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
-    LOG("Wait for threads to start\n");
-    if (!agent_wait_for_sync(timeout))
-        return;
+  LOG("Wait for threads to start\n");
+  if (!agent_wait_for_sync(timeout))
+    return;
 
-    /* perform testing */
-    {
-        jvmtiError* results = NULL;
-        int i;
+  /* perform testing */
+  {
+    jvmtiError* results = NULL;
+    LOG("Allocate threads array: %d threads\n", threadsCount);
+    check_jvmti_status(jni, jvmti->Allocate((threadsCount * sizeof(jthread)),
+                                            (unsigned char**)&threads), "");
+    LOG("  ... allocated array: %p\n", (void*)threads);
 
-        LOG("Allocate threads array: %d threads\n", threadsCount);
-      check_jvmti_status(jni, jvmti->Allocate((threadsCount * sizeof(jthread)),
-                                              (unsigned char**)&threads), "");
-        LOG("  ... allocated array: %p\n", (void*)threads);
+    LOG("Allocate results array: %d threads\n", threadsCount);
+    check_jvmti_status(jni, jvmti->Allocate((threadsCount * sizeof(jvmtiError)),
+                                            (unsigned char**)&results), "");
+    LOG("  ... allocated array: %p\n", (void*)threads);
 
-        LOG("Allocate results array: %d threads\n", threadsCount);
-      check_jvmti_status(jni, jvmti->Allocate((threadsCount * sizeof(jvmtiError)),
-                                              (unsigned char**)&results), "");
-        LOG("  ... allocated array: %p\n", (void*)threads);
-
-        LOG("Find threads: %d threads\n", threadsCount);
-        if (find_threads_by_name(jvmti, jni, THREAD_NAME, threadsCount, threads) == 0) {
-          return;
-        }
-
-        LOG("Suspend threads list\n");
-        jvmtiError err = jvmti->SuspendThreadList(threadsCount, threads, results);
-        if (err != JVMTI_ERROR_NONE) {
-          set_agent_fail_status();
-          return;
-        }
-
-        LOG("Check threads results:\n");
-        for (i = 0; i < threadsCount; i++) {
-            LOG("  ... thread #%d: %s (%d)\n",
-                                i, TranslateError(results[i]), (int)results[i]);
-          if (results[i] != JVMTI_ERROR_NONE) {
-            set_agent_fail_status();
-          }
-        }
-
-        eventsReceived = 0;
-        LOG("Enable event: %s\n", "THREAD_END");
-        enable_events_notifications(jvmti, jni,JVMTI_ENABLE, EVENTS_COUNT, eventsList, NULL);
-
-        LOG("Let threads to run and finish\n");
-        if (!agent_resume_sync())
-            return;
-
-        LOG("Resume threads list\n");
-        err = jvmti->ResumeThreadList(threadsCount, threads, results);
-        if (err != JVMTI_ERROR_NONE) {
-          set_agent_fail_status();
-          return;
-        }
-
-        LOG("Check threads results:\n");
-        for (i = 0; i < threadsCount; i++) {
-            LOG("  ... thread #%d: %s (%d)\n",
-                                i, TranslateError(results[i]), (int)results[i]);
-          if (results[i] != JVMTI_ERROR_NONE) {
-            set_agent_fail_status();
-          }
-        }
-
-        LOG("Check that THREAD_END events received for timeout: %ld ms\n", (long)timeout);
-        {
-            jlong delta = 1000;
-            jlong time;
-            for (time = 0; time < timeout; time += delta) {
-                if (eventsReceived >= threadsCount)
-                    break;
-                sleep_sec(delta);
-            }
-
-            if (eventsReceived < threadsCount) {
-                COMPLAIN("Some threads have not ran and finished after resuming: %d threads\n",
-                                                        (threadsCount - eventsReceived));
-                set_agent_fail_status();
-            }
-        }
-
-        LOG("Disable event: %s\n", "THREAD_END");
-        enable_events_notifications(jvmti, jni, JVMTI_DISABLE, EVENTS_COUNT, eventsList, NULL);
-
-        LOG("Wait for thread to finish\n");
-        if (!agent_wait_for_sync(timeout))
-            return;
-
-        LOG("Delete threads references\n");
-        for (i = 0; i < threadsCount; i++) {
-            if (threads[i] != NULL)
-                jni->DeleteGlobalRef(threads[i]);
-        }
-
-        LOG("Deallocate threads array: %p\n", (void*)threads);
-      check_jvmti_status(jni, jvmti->Deallocate((unsigned char*)threads), "");
-
-        LOG("Deallocate results array: %p\n", (void*)results);
-      check_jvmti_status(jni, jvmti->Deallocate((unsigned char*)results), "");
+    LOG("Find threads: %d threads\n", threadsCount);
+    if (find_threads_by_name(jvmti, jni, THREAD_NAME, threadsCount, threads) == 0) {
+      return;
     }
 
-    LOG("Let debugee to finish\n");
-    if (!agent_resume_sync())
-        return;
-}
+    LOG("Suspend threads list\n");
+    jvmtiError err = jvmti->SuspendThreadList(threadsCount, threads, results);
+    if (err != JVMTI_ERROR_NONE) {
+      set_agent_fail_status();
+      return;
+    }
 
-/* ============================================================================= */
+    LOG("Check threads results:\n");
+    for (int i = 0; i < threadsCount; i++) {
+      LOG("  ... thread #%d: %s (%d)\n", i, TranslateError(results[i]), (int)results[i]);
+      if (results[i] != JVMTI_ERROR_NONE) {
+        set_agent_fail_status();
+      }
+    }
+
+    eventsReceived = 0;
+    LOG("Enable event: %s\n", "THREAD_END");
+    enable_events_notifications(jvmti, jni,JVMTI_ENABLE, EVENTS_COUNT, eventsList, NULL);
+
+    LOG("Let threads to run and finish\n");
+    if (!agent_resume_sync())
+      return;
+
+    LOG("Resume threads list\n");
+    err = jvmti->ResumeThreadList(threadsCount, threads, results);
+    if (err != JVMTI_ERROR_NONE) {
+      set_agent_fail_status();
+      return;
+    }
+
+    LOG("Check threads results:\n");
+    for (int i = 0; i < threadsCount; i++) {
+      LOG("  ... thread #%d: %s (%d)\n", i, TranslateError(results[i]), (int)results[i]);
+      if (results[i] != JVMTI_ERROR_NONE) {
+        set_agent_fail_status();
+      }
+    }
+
+    LOG("Check that THREAD_END events received for timeout: %ld ms\n", (long)timeout);
+    {
+      jlong delta = 1000;
+      jlong time;
+      for (time = 0; time < timeout; time += delta) {
+        if (eventsReceived >= threadsCount)
+          break;
+        sleep_sec(delta);
+      }
+
+      if (eventsReceived < threadsCount) {
+        COMPLAIN("Some threads have not ran and finished after resuming: %d threads\n", threadsCount - eventsReceived);
+        set_agent_fail_status();
+      }
+    }
+
+    LOG("Disable event: %s\n", "THREAD_END");
+    enable_events_notifications(jvmti, jni, JVMTI_DISABLE, EVENTS_COUNT, eventsList, NULL);
+
+    LOG("Wait for thread to finish\n");
+    if (!agent_wait_for_sync(timeout))
+      return;
+
+    LOG("Delete threads references\n");
+    for (int i = 0; i < threadsCount; i++) {
+      if (threads[i] != NULL)
+        jni->DeleteGlobalRef(threads[i]);
+    }
+
+    LOG("Deallocate threads array: %p\n", (void*)threads);
+    check_jvmti_status(jni, jvmti->Deallocate((unsigned char*)threads), "");
+
+    LOG("Deallocate results array: %p\n", (void*)results);
+    check_jvmti_status(jni, jvmti->Deallocate((unsigned char*)results), "");
+  }
+
+  LOG("Let debugee to finish\n");
+  if (!agent_resume_sync())
+      return;
+}
 
 /** Find threads whose name starts with specified name prefix. */
 static int find_threads_by_name(jvmtiEnv* jvmti, JNIEnv* jni,
                             const char name[], int foundCount, jthread foundThreads[]) {
-    jint count = 0;
-    jthread* threads = NULL;
+  jint count = 0;
+  jthread* threads = NULL;
 
-    size_t len = strlen(name);
-    int found = 0;
-    int i;
+  size_t len = strlen(name);
+  int found = 0;
 
-    for (i = 0; i < foundCount; i++) {
-        foundThreads[i] = NULL;
+  for (int i = 0; i < foundCount; i++) {
+    foundThreads[i] = NULL;
+  }
+
+  check_jvmti_status(jni, jvmti->GetAllThreads(&count, &threads), "Error in GetAllThreads");
+
+  found = 0;
+  for (int i = 0; i < count; i++) {
+    jvmtiThreadInfo info;
+
+    check_jvmti_status(jni, jvmti->GetThreadInfo(threads[i], &info), "");
+    if (info.name != NULL && strncmp(name, info.name, len) == 0) {
+      LOG("  ... found thread #%d: %p (%s)\n", found, threads[i], info.name);
+      if (found < foundCount)
+        foundThreads[found] = threads[i];
+      found++;
     }
+  }
 
-    check_jvmti_status(jni, jvmti->GetAllThreads(&count, &threads), "Error in GetAllThreads");
+  check_jvmti_status(jni, jvmti->Deallocate((unsigned char*)threads), "");
 
+  if (found != foundCount) {
+    COMPLAIN("Unexpected number of tested threads found:\n"
+                  "#   name:     %s\n"
+                  "#   found:    %d\n"
+                  "#   expected: %d\n",
+                  name, found, foundCount);
+    set_agent_fail_status();
+    return NSK_FALSE;
+  }
 
-    found = 0;
-    for (i = 0; i < count; i++) {
-        jvmtiThreadInfo info;
-
-        check_jvmti_status(jni, jvmti->GetThreadInfo(threads[i], &info), "");
-
-        if (info.name != NULL && strncmp(name, info.name, len) == 0) {
-            LOG("  ... found thread #%d: %p (%s)\n",
-                                    found, threads[i], info.name);
-            if (found < foundCount)
-                foundThreads[found] = threads[i];
-            found++;
-        }
-
+  LOG("Make global references for threads: %d threads\n", foundCount);
+  for (int i = 0; i < foundCount; i++) {
+    foundThreads[i] = (jthread) jni->NewGlobalRef(foundThreads[i]);
+    if ( foundThreads[i] == NULL) {
+      set_agent_fail_status();
+      return NSK_FALSE;
     }
+      LOG("  ... thread #%d: %p\n", i, foundThreads[i]);
+  }
 
-check_jvmti_status(jni, jvmti->Deallocate((unsigned char*)threads), "");
-
-    if (found != foundCount) {
-        COMPLAIN("Unexpected number of tested threads found:\n"
-                      "#   name:     %s\n"
-                      "#   found:    %d\n"
-                      "#   expected: %d\n",
-                      name, found, foundCount);
-        set_agent_fail_status();
-        return NSK_FALSE;
-    }
-
-    LOG("Make global references for threads: %d threads\n", foundCount);
-    for (i = 0; i < foundCount; i++) {
-      foundThreads[i] = (jthread) jni->NewGlobalRef(foundThreads[i]);
-      if ( foundThreads[i] == NULL) {
-        set_agent_fail_status();
-        return NSK_FALSE;
-      }
-        LOG("  ... thread #%d: %p\n", i, foundThreads[i]);
-    }
-
-    return NSK_TRUE;
+  return NSK_TRUE;
 }
-
-/* ============================================================================= */
 
 /** THREAD_END callback. */
 JNIEXPORT void JNICALL
 callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
-    int i = 0;
+  jvmtiError e = jvmti->RawMonitorEnter(eventsReceivedMtx);
+  check_jvmti_status(jni, e, "");
 
-    jvmtiError e = jvmti->RawMonitorEnter(eventsReceivedMtx);
-    check_jvmti_status(jni, e, "");
-
-    /* check if event is for tested thread */
-    for (i = 0; i < threadsCount; i++) {
-        if (thread != NULL &&
-                jni->IsSameObject(threads[i], thread)) {
-            LOG("  ... received THREAD_END event for thread #%d: %p\n",
-                                                                    i, (void*)thread);
-            eventsReceived++;
-            jvmti->RawMonitorExit(eventsReceivedMtx);
-            return;
-        }
+  /* check if event is for tested thread */
+  for (int i = 0; i < threadsCount; i++) {
+    if (thread != NULL && jni->IsSameObject(threads[i], thread)) {
+      LOG("  ... received THREAD_END event for thread #%d: %p\n", i, (void*)thread);
+      eventsReceived++;
+      jvmti->RawMonitorExit(eventsReceivedMtx);
+      return;
     }
-    jvmti->RawMonitorExit(eventsReceivedMtx);
-    LOG("  ... received THREAD_END event for unknown thread: %p\n", (void*)thread);
+  }
+  jvmti->RawMonitorExit(eventsReceivedMtx);
+  LOG("  ... received THREAD_END event for unknown thread: %p\n", (void*)thread);
 }
-
-/* ============================================================================= */
 
 jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEnv* jvmti = NULL;
@@ -288,22 +266,19 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     }
   }
 
-    eventsReceivedMtx = create_raw_monitor(jvmti, "eventsReceived");
-    // TODO set somhow
-    threadsCount = 10;
+  eventsReceivedMtx = create_raw_monitor(jvmti, "eventsReceived");
+  threadsCount = 10;
 
-    if (init_agent_data(jvmti, &agent_data) != JVMTI_ERROR_NONE) {
-      return JNI_ERR;
-    }
+  if (init_agent_data(jvmti, &agent_data) != JVMTI_ERROR_NONE) {
+    return JNI_ERR;
+  }
 
-    /* register agent proc and arg */
-    if (!set_agent_proc(agentProc, NULL)) {
-      return JNI_ERR;
-    }
+  /* register agent proc and arg */
+  if (!set_agent_proc(agentProc, NULL)) {
+    return JNI_ERR;
+  }
 
-    return JNI_OK;
+  return JNI_OK;
 }
-
-/* ============================================================================= */
 
 }

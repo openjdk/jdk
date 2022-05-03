@@ -77,7 +77,6 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thread, jmetho
 
   check_jvmti_status(jni, jvmti->GetMethodDeclaringClass(method, &klass), "GetMethodDeclaringClass failed.");
 
-
   LOG(">>> redefining class ...\n");
 
   class_def.klass = klass;
@@ -98,7 +97,6 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thread, jmetho
   if (!compare_stack_trace(jvmti_env, jni, thread, expected_frames, expected_number_of_stack_frames)) {
     jni->ThrowNew(jni->FindClass("java/lang/RuntimeException"), "Stacktrace differs from expected.");
   }
-
 }
 
 jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {

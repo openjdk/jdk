@@ -286,31 +286,22 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 }
 
 JNIEXPORT void JNICALL Java_framepop02_getReady(JNIEnv *jni, jclass cls) {
-  check_jvmti_status(jni,
-                     jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                                     JVMTI_EVENT_METHOD_ENTRY, NULL),
+  check_jvmti_status(jni, jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL),
                      "Error in SetEventNotificationMode");
-  check_jvmti_status(jni,
-                     jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_FRAME_POP, NULL),
+  check_jvmti_status(jni, jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, NULL),
                      "Error in SetEventNotificationMode");
   watch_events = JNI_TRUE;
 }
 
 JNIEXPORT void JNICALL Java_framepop02_check(JNIEnv *jni, jclass cls) {
   watch_events = JNI_FALSE;
-  check_jvmti_status(jni,
-                     jvmti->SetEventNotificationMode(JVMTI_DISABLE,
-                                        JVMTI_EVENT_FRAME_POP, NULL),
+  check_jvmti_status(jni, jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_FRAME_POP, NULL),
                      "Error in SetEventNotificationMode");
-  check_jvmti_status(jni,
-                     jvmti->SetEventNotificationMode(JVMTI_DISABLE,
-                                        JVMTI_EVENT_METHOD_ENTRY, NULL),
+  check_jvmti_status(jni, jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_METHOD_ENTRY, NULL),
                      "Error in SetEventNotificationMode");
 
   if (printdump == JNI_TRUE) {
-    LOG("%d threads, %d method entrys, %d frame pops, max depth = %d\n",
-           thr_count, push_count, pop_count, max_depth);
+    LOG("%d threads, %d method entrys, %d frame pops, max depth = %d\n", thr_count, push_count, pop_count, max_depth);
   }
 }
 

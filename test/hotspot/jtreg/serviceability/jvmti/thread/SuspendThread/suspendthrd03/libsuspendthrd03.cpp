@@ -28,16 +28,12 @@
 
 extern "C" {
 
-/* ============================================================================= */
-
 /* scaffold objects */
 static jlong timeout = 0;
 
 /* constant names */
 #define THREAD_NAME     "TestedThread"
 #define N_LATE_CALLS    10000
-
-/* ============================================================================= */
 
 /** Agent algorithm. */
 static void JNICALL
@@ -148,8 +144,6 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
   /* Second part of original agentProc test block ends here. */
 }
 
-/* ============================================================================= */
-
 jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEnv *jvmti = NULL;
 
@@ -181,7 +175,5 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
   return JNI_OK;
 }
-
-/* ============================================================================= */
 
 }

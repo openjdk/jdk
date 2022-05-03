@@ -58,7 +58,6 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
   {
     jthread *threads = NULL;
     jvmtiError *results = NULL;
-    int i;
 
     LOG("Allocate threads array: %d threads\n", threads_count);
     check_jvmti_status(jni, jvmti->Allocate((threads_count * sizeof(jthread)),
@@ -84,9 +83,8 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
     }
 
     LOG("Check threads results:\n");
-    for (i = 0; i < threads_count; i++) {
-      LOG("  ... thread #%d: %s (%d)\n",
-                   i, TranslateError(results[i]), (int) results[i]);
+    for (int i = 0; i < threads_count; i++) {
+      LOG("  ... thread #%d: %s (%d)\n", i, TranslateError(results[i]), (int) results[i]);
       if (results[i] != JVMTI_ERROR_NONE) {
         set_agent_fail_status();
       }
@@ -97,7 +95,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
       return;
 
     LOG("Get state vector for each thread\n");
-    for (i = 0; i < threads_count; i++) {
+    for (int i = 0; i < threads_count; i++) {
       jint state = 0;
 
       LOG("  thread #%d (%p):\n", i, (void *) threads[i]);
@@ -124,7 +122,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
       return;
 
     LOG("Delete threads references\n");
-    for (i = 0; i < threads_count; i++) {
+    for (int i = 0; i < threads_count; i++) {
       if (threads[i] != NULL)
         jni->DeleteGlobalRef(threads[i]);
     }

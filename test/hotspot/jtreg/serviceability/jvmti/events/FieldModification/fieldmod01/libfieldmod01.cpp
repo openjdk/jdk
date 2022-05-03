@@ -180,7 +180,6 @@ void JNICALL FieldModification(jvmtiEnv *jvmti, JNIEnv *jni,
   jclass cls;
   writable_watch_info watch;
   char *generic;
-  size_t i;
 
   eventsCount++;
   LOG(">>> retrieving modification watch info ...\n");
@@ -191,48 +190,38 @@ void JNICALL FieldModification(jvmtiEnv *jvmti, JNIEnv *jni,
   watch.is_static = (obj == NULL) ? JNI_TRUE : JNI_FALSE;
   err = jvmti->GetMethodDeclaringClass(method, &cls);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetMethodDeclaringClass) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetMethodDeclaringClass) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return;
   }
-  err = jvmti->GetClassSignature(cls,
-                                     &watch.m_cls, &generic);
+  err = jvmti->GetClassSignature(cls, &watch.m_cls, &generic);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetClassSignature) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetClassSignature) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return;
   }
-  err = jvmti->GetMethodName(method,
-                                 &watch.m_name, &watch.m_sig, &generic);
+  err = jvmti->GetMethodName(method, &watch.m_name, &watch.m_sig, &generic);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetMethodName) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetMethodName) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return;
   }
-  err = jvmti->GetClassSignature(field_klass,
-                                     &watch.f_cls, &generic);
+  err = jvmti->GetClassSignature(field_klass, &watch.f_cls, &generic);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetClassSignature) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetClassSignature) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return;
   }
-  err = jvmti->GetFieldName(field_klass, field,
-                                &watch.f_name, &watch.f_sig, &generic);
+  err = jvmti->GetFieldName(field_klass, field, &watch.f_name, &watch.f_sig, &generic);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetFieldName) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetFieldName) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return;
   }
 
   LOG(">>>      class: \"%s\"\n", watch.m_cls);
   LOG(">>>     method: \"%s%s\"\n", watch.m_name, watch.m_sig);
-  LOG(">>>   location: 0x%x%08x\n",
-         (jint)(watch.loc >> 32), (jint)watch.loc);
+  LOG(">>>   location: 0x%x%08x\n", (jint)(watch.loc >> 32), (jint)watch.loc);
   LOG(">>>  field cls: \"%s\"\n", watch.f_cls);
   LOG(">>>      field: \"%s:%s\"\n", watch.f_name, watch.f_sig);
   LOG(">>>     object: 0x%p\n", obj);
@@ -240,54 +229,40 @@ void JNICALL FieldModification(jvmtiEnv *jvmti, JNIEnv *jni,
   printValue(watch.val, watch.f_sig);
   LOG("\n");
 
-  for (i = 0; i < sizeof(watches)/sizeof(watch_info); i++) {
+  for (size_t i = 0; i < sizeof(watches)/sizeof(watch_info); i++) {
     if (watch.fid == watches[i].fid) {
-      if (watch.m_cls == NULL ||
-          strcmp(watch.m_cls, watches[i].m_cls) != 0) {
-        LOG("(watch#%" PRIuPTR ") wrong class: \"%s\", expected: \"%s\"\n",
-               i, watch.m_cls, watches[i].m_cls);
+      if (watch.m_cls == NULL || strcmp(watch.m_cls, watches[i].m_cls) != 0) {
+        LOG("(watch#%" PRIuPTR ") wrong class: \"%s\", expected: \"%s\"\n", i, watch.m_cls, watches[i].m_cls);
         result = STATUS_FAILED;
       }
-      if (watch.m_name == NULL ||
-          strcmp(watch.m_name, watches[i].m_name) != 0) {
-        LOG("(watch#%" PRIuPTR ") wrong method name: \"%s\"",
-               i, watch.m_name);
+      if (watch.m_name == NULL || strcmp(watch.m_name, watches[i].m_name) != 0) {
+        LOG("(watch#%" PRIuPTR ") wrong method name: \"%s\"", i, watch.m_name);
         LOG(", expected: \"%s\"\n", watches[i].m_name);
         result = STATUS_FAILED;
       }
-      if (watch.m_sig == NULL ||
-          strcmp(watch.m_sig, watches[i].m_sig) != 0) {
-        LOG("(watch#%" PRIuPTR ") wrong method sig: \"%s\"",
-               i, watch.m_sig);
+      if (watch.m_sig == NULL || strcmp(watch.m_sig, watches[i].m_sig) != 0) {
+        LOG("(watch#%" PRIuPTR ") wrong method sig: \"%s\"", i, watch.m_sig);
         LOG(", expected: \"%s\"\n", watches[i].m_sig);
         result = STATUS_FAILED;
       }
       if (watch.loc != watches[i].loc) {
-        LOG("(watch#%" PRIuPTR ") wrong location: 0x%x%08x",
-               i, (jint)(watch.loc >> 32), (jint)watch.loc);
-        LOG(", expected: 0x%x%08x\n",
-               (jint)(watches[i].loc >> 32), (jint)watches[i].loc);
+        LOG("(watch#%" PRIuPTR ") wrong location: 0x%x%08x", i, (jint)(watch.loc >> 32), (jint)watch.loc);
+        LOG(", expected: 0x%x%08x\n", (jint)(watches[i].loc >> 32), (jint)watches[i].loc);
         result = STATUS_FAILED;
       }
-      if (watch.f_name == NULL ||
-          strcmp(watch.f_name, watches[i].f_name) != 0) {
-        LOG("(watch#%" PRIuPTR ") wrong field name: \"%s\"",
-               i, watch.f_name);
+      if (watch.f_name == NULL || strcmp(watch.f_name, watches[i].f_name) != 0) {
+        LOG("(watch#%" PRIuPTR ") wrong field name: \"%s\"", i, watch.f_name);
         LOG(", expected: \"%s\"\n", watches[i].f_name);
         result = STATUS_FAILED;
       }
-      if (watch.f_sig == NULL ||
-          strcmp(watch.f_sig, watches[i].f_sig) != 0) {
-        LOG("(watch#%" PRIuPTR ") wrong field sig: \"%s\"",
-               i, watch.f_sig);
+      if (watch.f_sig == NULL || strcmp(watch.f_sig, watches[i].f_sig) != 0) {
+        LOG("(watch#%" PRIuPTR ") wrong field sig: \"%s\"", i, watch.f_sig);
         LOG(", expected: \"%s\"\n", watches[i].f_sig);
         result = STATUS_FAILED;
       }
       if (watch.is_static != watches[i].is_static) {
-        LOG("(watch#%" PRIuPTR ") wrong field type: %s", i,
-               (watch.is_static == JNI_TRUE) ? "static" : "instance");
-        LOG(", expected: %s\n",
-               (watches[i].is_static == JNI_TRUE) ? "static" : "instance");
+        LOG("(watch#%" PRIuPTR ") wrong field type: %s", i, (watch.is_static == JNI_TRUE) ? "static" : "instance");
+        LOG(", expected: %s\n", (watches[i].is_static == JNI_TRUE) ? "static" : "instance");
         result = STATUS_FAILED;
       }
       if (!isEqual((JNIEnv *)jni, watch.f_sig, watch.val, watches[i].val)) {
@@ -310,17 +285,6 @@ void JNICALL FieldModification(jvmtiEnv *jvmti, JNIEnv *jni,
   result = STATUS_FAILED;
 }
 
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_fieldmod01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_fieldmod01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_fieldmod01(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
@@ -339,15 +303,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(AddCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(AddCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
   err = jvmti->GetCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
@@ -355,16 +317,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.FieldModification = &FieldModification;
     err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     if (err != JVMTI_ERROR_NONE) {
-      LOG("(SetEventCallbacks) unexpected error: %s (%d)\n",
-             TranslateError(err), err);
+      LOG("(SetEventCallbacks) unexpected error: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;
     }
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                          JVMTI_EVENT_FIELD_MODIFICATION, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_MODIFICATION, NULL);
     if (err != JVMTI_ERROR_NONE) {
-      LOG("Failed to enable JVMTI_EVENT_FIELD_MODIFICATION: %s (%d)\n",
-             TranslateError(err), err);
+      LOG("Failed to enable JVMTI_EVENT_FIELD_MODIFICATION: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;
     }
   } else {
@@ -378,7 +337,6 @@ JNIEXPORT void JNICALL
 Java_fieldmod01_getReady(JNIEnv *jni, jclass klass, jobject obj1, jobject obj2, jobject arr1, jobject arr2) {
   jvmtiError err;
   jclass cls;
-  size_t i;
   jthread thread;
 
   err = jvmti->GetCurrentThread(&thread);
@@ -400,17 +358,14 @@ Java_fieldmod01_getReady(JNIEnv *jni, jclass klass, jobject obj1, jobject obj2, 
     result = STATUS_FAILED;
     return;
   }
-  for (i = 0; i < sizeof(watches)/sizeof(watch_info); i++) {
+  for (size_t i = 0; i < sizeof(watches)/sizeof(watch_info); i++) {
     if (watches[i].is_static == JNI_TRUE) {
-      watches[i].fid = jni->GetStaticFieldID(
-          cls, watches[i].f_name, watches[i].f_sig);
+      watches[i].fid = jni->GetStaticFieldID(cls, watches[i].f_name, watches[i].f_sig);
     } else {
-      watches[i].fid = jni->GetFieldID(
-          cls, watches[i].f_name, watches[i].f_sig);
+      watches[i].fid = jni->GetFieldID(cls, watches[i].f_name, watches[i].f_sig);
     }
     if (watches[i].fid == NULL) {
-      LOG("Cannot get field ID for \"%s:%s\"\n",
-             watches[i].f_name, watches[i].f_sig);
+      LOG("Cannot get field ID for \"%s:%s\"\n", watches[i].f_name, watches[i].f_sig);
       result = STATUS_FAILED;
       return;
     }
@@ -418,8 +373,7 @@ Java_fieldmod01_getReady(JNIEnv *jni, jclass klass, jobject obj1, jobject obj2, 
     if (err == JVMTI_ERROR_NONE) {
       eventsExpected++;
     } else {
-      LOG("(SetFieldModificationWatch#%" PRIuPTR ") unexpected error: %s (%d)\n",
-             i, TranslateError(err), err);
+      LOG("(SetFieldModificationWatch#%" PRIuPTR ") unexpected error: %s (%d)\n", i, TranslateError(err), err);
       result = STATUS_FAILED;
     }
   }
@@ -453,8 +407,7 @@ Java_fieldmod01_getReady(JNIEnv *jni, jclass klass, jobject obj1, jobject obj2, 
 JNIEXPORT jint JNICALL
 Java_fieldmod01_check(JNIEnv *jni, jclass clz) {
   if (eventsCount != eventsExpected) {
-    LOG("Wrong number of field modification events: %d, expected: %d\n",
-           eventsCount, eventsExpected);
+    LOG("Wrong number of field modification events: %d, expected: %d\n", eventsCount, eventsExpected);
     result = STATUS_FAILED;
   }
 
@@ -469,8 +422,7 @@ Java_fieldmod01_check(JNIEnv *jni, jclass clz) {
     if (err == JVMTI_ERROR_NONE) {
       eventsExpected++;
     } else {
-      LOG("(ClearFieldModificationWatch#%" PRIuPTR ") unexpected error: %s (%d)\n",
-             i, TranslateError(err), err);
+      LOG("(ClearFieldModificationWatch#%" PRIuPTR ") unexpected error: %s (%d)\n", i, TranslateError(err), err);
       result = STATUS_FAILED;
     }
   }

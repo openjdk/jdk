@@ -29,15 +29,11 @@
 
 extern "C" {
 
-/* ========================================================================== */
-
 /* scaffold objects */
 static jlong timeout = 0;
 
 /* test objects */
 static int eventsCount = 0;
-
-/* ========================================================================== */
 
 /* check if any VMObjectAlloc events received */
 static int checkVMObjectAllocEvents() {
@@ -55,8 +51,7 @@ static int checkVMObjectAllocEvents() {
 /* ========================================================================== */
 
 JNIEXPORT void JNICALL
-VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
-              jclass object_klass, jlong size) {
+VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object, jclass object_klass, jlong size) {
   char *signature, *generic;
   jvmtiError err;
 
@@ -78,8 +73,6 @@ VMObjectAlloc(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jobject object,
 
 }
 
-/* ========================================================================== */
-
 /* agent algorithm */
 static void JNICALL
 agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
@@ -98,20 +91,6 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     return;
 }
 
-/* ========================================================================== */
-
-/* agent library initialization */
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_vmobjalloc01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_vmobjalloc01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_vmobjalloc01(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEnv* jvmti = NULL;
   jvmtiCapabilities caps;
@@ -119,7 +98,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
   jint res;
 
-  timeout = 60000; // TODO Fix timeout
+  timeout = 60000;
   LOG("Timeout: %d msc\n", (int)timeout);
 
   /* create JVMTI environment */

@@ -65,17 +65,6 @@ void JNICALL ThreadEnd(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   }
 }
 
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_threadend01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_threadend01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_threadend01(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
   jint res;
@@ -89,8 +78,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   callbacks.ThreadEnd = &ThreadEnd;
   err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(SetEventCallbacks) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(SetEventCallbacks) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
@@ -113,37 +101,30 @@ Java_threadend01_getReady(JNIEnv *jni, jclass cls, jint i, jstring name) {
     return;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_THREAD_END, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, NULL);
   if (err == JVMTI_ERROR_NONE) {
     eventsExpected = i;
   } else {
-    LOG("Failed to enable JVMTI_EVENT_THREAD_END: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("Failed to enable JVMTI_EVENT_THREAD_END: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 }
 
 JNIEXPORT jint JNICALL
 Java_threadend01_check(JNIEnv *jni, jclass cls) {
-  jvmtiError err;
-
   if (jvmti == NULL) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE,
-                                        JVMTI_EVENT_THREAD_END, NULL);
+jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_END, NULL);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("Failed to disable JVMTI_EVENT_THREAD_END: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("Failed to disable JVMTI_EVENT_THREAD_END: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 
   if (eventsCount != eventsExpected) {
-    LOG("Wrong number of thread end events: %d, expected: %d\n",
-           eventsCount, eventsExpected);
+    LOG("Wrong number of thread end events: %d, expected: %d\n", eventsCount, eventsExpected);
     result = STATUS_FAILED;
   }
   return result;

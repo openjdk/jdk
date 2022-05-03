@@ -62,10 +62,10 @@ public class fieldmod02 {
     native static int check(Object obj);
 
     public static void main(String args[]) {
-        testKernel();
-        testVirtual();
+        testPlatformThread();
+        testVirtualThread();
     }
-    public static void testVirtual() {
+    public static void testVirtualThread() {
         Thread thread = Thread.startVirtualThread(() -> {
             fieldmod02a t = new fieldmod02a();
             getReady();
@@ -81,7 +81,7 @@ public class fieldmod02 {
             throw new RuntimeException("check failed with result " + result);
         }
     }
-    public static void testKernel() {
+    public static void testPlatformThread() {
         fieldmod02a t = new fieldmod02a();
         getReady();
         result = check(t);

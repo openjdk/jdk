@@ -28,8 +28,6 @@
 
 extern "C" {
 
-/* ============================================================================= */
-
 /* scaffold objects */
 static jlong timeout = 0;
 
@@ -53,70 +51,70 @@ static jthread testedThread = NULL;
 static void JNICALL
 agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
-    LOG("Wait for thread to start\n");
-    if (!agent_wait_for_sync(timeout))
-        return;
+  LOG("Wait for thread to start\n");
+  if (!agent_wait_for_sync(timeout))
+    return;
 
-    /* perform testing */
-    {
-        LOG("Find thread: %s\n", THREAD_NAME);
-        testedThread = find_thread_by_name(jvmti, jni,THREAD_NAME);
-        if (testedThread == NULL) {
-          return;
-        }
-        LOG("  ... found thread: %p\n", (void*)testedThread);
+  /* perform testing */
+  {
+    LOG("Find thread: %s\n", THREAD_NAME);
+    testedThread = find_thread_by_name(jvmti, jni,THREAD_NAME);
+    if (testedThread == NULL) {
+      return;
+    }
+    LOG("  ... found thread: %p\n", (void*)testedThread);
 
-        eventsReceived = 0;
-        LOG("Enable event: %s\n", "THREAD_END");
-        enable_events_notifications(jvmti, jni, JVMTI_ENABLE, EVENTS_COUNT, eventsList, NULL);
+    eventsReceived = 0;
+    LOG("Enable event: %s\n", "THREAD_END");
+    enable_events_notifications(jvmti, jni, JVMTI_ENABLE, EVENTS_COUNT, eventsList, NULL);
 
-        LOG("Suspend thread: %p\n", (void*)testedThread);
-        jvmtiError err = jvmti->SuspendThread(testedThread);
-        if (err != JVMTI_ERROR_NONE) {
-          set_agent_fail_status();
-          return;
-        }
-
-        LOG("Let thread to run and finish\n");
-        if (!agent_resume_sync())
-            return;
-
-        LOG("Resume thread: %p\n", (void*)testedThread);
-        err = jvmti->ResumeThread(testedThread);
-        if (err != JVMTI_ERROR_NONE) {
-          set_agent_fail_status();
-          return;
-        }
-
-        LOG("Check that THREAD_END event received for timeout: %ld ms\n", (long)timeout);
-        {
-            jlong delta = 1000;
-            jlong time;
-            for (time = 0; time < timeout; time += delta) {
-                if (eventsReceived > 0)
-                    break;
-                sleep_sec(delta);
-            }
-            if (eventsReceived <= 0) {
-                COMPLAIN("Thread has not run and finished after resuming\n");
-                set_agent_fail_status();
-            }
-        }
-
-        LOG("Disable event: %s\n", "THREAD_END");
-        enable_events_notifications(jvmti, jni,JVMTI_DISABLE, EVENTS_COUNT, eventsList, NULL);
-
-        LOG("Wait for thread to finish\n");
-        if (!agent_wait_for_sync(timeout))
-            return;
-
-        LOG("Delete thread reference\n");
-        jni->DeleteGlobalRef(testedThread);
+    LOG("Suspend thread: %p\n", (void*)testedThread);
+    jvmtiError err = jvmti->SuspendThread(testedThread);
+    if (err != JVMTI_ERROR_NONE) {
+      set_agent_fail_status();
+      return;
     }
 
-    LOG("Let debugee to finish\n");
+    LOG("Let thread to run and finish\n");
     if (!agent_resume_sync())
-        return;
+      return;
+
+    LOG("Resume thread: %p\n", (void*)testedThread);
+    err = jvmti->ResumeThread(testedThread);
+    if (err != JVMTI_ERROR_NONE) {
+      set_agent_fail_status();
+      return;
+    }
+
+    LOG("Check that THREAD_END event received for timeout: %ld ms\n", (long)timeout);
+    {
+      jlong delta = 1000;
+      jlong time;
+      for (time = 0; time < timeout; time += delta) {
+        if (eventsReceived > 0)
+          break;
+        sleep_sec(delta);
+      }
+      if (eventsReceived <= 0) {
+        COMPLAIN("Thread has not run and finished after resuming\n");
+        set_agent_fail_status();
+      }
+    }
+
+    LOG("Disable event: %s\n", "THREAD_END");
+    enable_events_notifications(jvmti, jni,JVMTI_DISABLE, EVENTS_COUNT, eventsList, NULL);
+
+    LOG("Wait for thread to finish\n");
+    if (!agent_wait_for_sync(timeout))
+      return;
+
+    LOG("Delete thread reference\n");
+    jni->DeleteGlobalRef(testedThread);
+  }
+
+  LOG("Let debugee to finish\n");
+  if (!agent_resume_sync())
+    return;
 }
 
 /* ============================================================================= */
@@ -124,13 +122,13 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 /** THREAD_END callback. */
 JNIEXPORT void JNICALL
 callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
-    /* check if event is for tested thread */
-    if (thread != NULL && jni->IsSameObject(testedThread, thread)) {
-        LOG("  ... received THREAD_END event for tested thread: %p\n", (void*)thread);
-        eventsReceived++;
-    } else {
-        LOG("  ... received THREAD_END event for unknown thread: %p\n", (void*)thread);
-    }
+  /* check if event is for tested thread */
+  if (thread != NULL && jni->IsSameObject(testedThread, thread)) {
+    LOG("  ... received THREAD_END event for tested thread: %p\n", (void*)thread);
+    eventsReceived++;
+  } else {
+    LOG("  ... received THREAD_END event for unknown thread: %p\n", (void*)thread);
+  }
 }
 
 /* ============================================================================= */
@@ -180,7 +178,5 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
   return JNI_OK;
 }
-
-/* ============================================================================= */
 
 }

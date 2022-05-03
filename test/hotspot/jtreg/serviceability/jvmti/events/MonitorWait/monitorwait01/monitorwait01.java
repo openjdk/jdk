@@ -64,7 +64,7 @@ public class monitorwait01 extends DebugeeClass {
         }
     }
 
-    static final long timeout = 60000; //TODO fix timeout milliseconds
+    static final long timeout = 60000;
 
     // run debuggee
     public int runIt(boolean isVirtual) {

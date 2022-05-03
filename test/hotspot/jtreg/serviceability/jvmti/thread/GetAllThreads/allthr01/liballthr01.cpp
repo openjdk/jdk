@@ -132,8 +132,7 @@ JNIEXPORT jboolean check_info(JNIEnv *jni, int idx) {
     }
 
     if (!found) {
-      LOG("Point %d: thread %s not detected\n",
-             idx, expected_thread_info[idx].thr_names[i]);
+      LOG("Point %d: thread %s not detected\n", idx, expected_thread_info[idx].thr_names[i]);
       result = JNI_FALSE;
     }
   }

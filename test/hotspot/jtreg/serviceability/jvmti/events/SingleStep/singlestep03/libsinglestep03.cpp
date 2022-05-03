@@ -92,10 +92,8 @@ ClassLoad(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jclass klass) {
   }
 
   if (sig != NULL && (strcmp(sig, CLASS_SIG) == 0)) {
-    LOG(
-        "ClassLoad event received for the class \"%s\"\n"
-        "\tsetting breakpoint ...\n",
-        sig);
+    LOG("ClassLoad event received for the class \"%s\"\n"
+        "\tsetting breakpoint ...\n", sig);
     setBP(jvmti, jni, klass);
   }
 }
@@ -113,8 +111,7 @@ VMDeath(jvmtiEnv *jvmti, JNIEnv *jni) {
 }
 
 void JNICALL
-Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jmethodID method,
-           jlocation loc) {
+Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jmethodID method, jlocation loc) {
   jclass klass;
   char *sig, *generic;
   jvmtiError err;
@@ -137,8 +134,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jmethodID method,
   }
 
   if (sig != NULL && (strcmp(sig, CLASS_SIG) == 0)) {
-    LOG("method declaring class \"%s\"\n\tenabling SingleStep events ...\n",
-                 sig);
+    LOG("method declaring class \"%s\"\n\tenabling SingleStep events ...\n", sig);
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, thr);
     if (err != JVMTI_ERROR_NONE) {
       result = STATUS_FAILED;
@@ -146,19 +142,16 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jmethodID method,
     }
   } else {
     result = STATUS_FAILED;
-    COMPLAIN("TEST FAILURE: unexpected breakpoint event in method of class \"%s\"\n\n",
-                  sig);
+    COMPLAIN("TEST FAILURE: unexpected breakpoint event in method of class \"%s\"\n\n", sig);
   }
 
 }
 
 void JNICALL
-SingleStep(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
-           jmethodID method, jlocation location) {
+SingleStep(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jlocation location) {
   jvmtiError err;
   jclass klass;
   char *sig, *generic, *methNam, *methSig;
-  int i;
 
   if (result == STATUS_FAILED) {
     return;
@@ -194,22 +187,20 @@ SingleStep(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
       return;
     }
 
-    for (i = 0; i < METH_NUM; i++) {
+    for (int i = 0; i < METH_NUM; i++) {
       if ((strcmp(methNam, METHODS[i][0]) == 0) &&
           (strcmp(methSig, METHODS[i][1]) == 0) &&
           (strcmp(sig, CLASS_SIG) == 0)) {
         stepEv[i][0]++;
 
         if (stepEv[i][1] == 1) {
-          LOG(
-              "CHECK PASSED: SingleStep event received for the method:\n"
+          LOG("CHECK PASSED: SingleStep event received for the method:\n"
               "\t \"%s %s\" of class \"%s\"\n"
               "\tas expected\n",
               methNam, methSig, sig);
         } else {
           result = STATUS_FAILED;
-          LOG(
-              "TEST FAILED: SingleStep event received for the method:\n"
+          LOG("TEST FAILED: SingleStep event received for the method:\n"
               "\t \"%s %s\" of class \"%s\"\n",
               methNam, methSig, sig);
         }
@@ -239,12 +230,10 @@ SingleStep(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
 
   LOG("<<<<\n\n");
 }
-/************************/
 
 /* dummy method used only to provoke SingleStep events */
 JNIEXPORT void JNICALL
-Java_singlestep03_anotherNativeMethod(
-    JNIEnv *jni, jobject obj, jint i) {
+Java_singlestep03_anotherNativeMethod(JNIEnv *jni, jobject obj, jint i) {
   LOG("inside the anotherNativeMethod()\n\n");
 }
 
@@ -277,17 +266,6 @@ JNIEXPORT jint JNICALL Java_singlestep03_check(JNIEnv *jni, jobject obj) {
   return result;
 }
 
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_singlestep03(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_singlestep03(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_singlestep03(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
@@ -305,15 +283,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   caps.can_generate_single_step_events = 1;
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(AddCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(AddCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
   err = jvmti->GetCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
   if (!caps.can_generate_single_step_events)

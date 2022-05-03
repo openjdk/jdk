@@ -60,10 +60,10 @@ public class framepop01 {
     native static int check();
 
     public static void main(String args[]) {
-        testVirtual();
-        testKernel();
+        testVirtualThread();
+        testPlatformThread();
     }
-    public static void testVirtual() {
+    public static void testVirtualThread() {
         Thread thread = Thread.startVirtualThread(() -> {
             result = check();
         });
@@ -77,7 +77,7 @@ public class framepop01 {
             throw new RuntimeException("check failed with result " + result);
         }
     }
-    public static void testKernel() {
+    public static void testPlatformThread() {
         result = check();
         if (result != 0) {
             throw new RuntimeException("check failed with result " + result);

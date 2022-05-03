@@ -51,8 +51,7 @@ void JNICALL ThreadStart(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
 
   err = jvmti->GetThreadInfo(thread, &inf);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetThreadInfo, start) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetThreadInfo, start) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 
@@ -69,8 +68,7 @@ void JNICALL ThreadEnd(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
 
   err = jvmti->GetThreadInfo(thread, &inf);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetThreadInfo, end) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetThreadInfo, end) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 
@@ -81,17 +79,6 @@ void JNICALL ThreadEnd(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   }
 }
 
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_threadstart03(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_threadstart03(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_threadstart03(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
   jint res;
@@ -106,8 +93,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   callbacks.ThreadEnd = &ThreadEnd;
   err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(SetEventCallbacks) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(SetEventCallbacks) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
@@ -137,23 +123,19 @@ Java_threadstart03_check(JNIEnv *jni, jclass cls, jthread thr, jstring name) {
 
   wait_lock = create_raw_monitor(jvmti, "_wait_lock");
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_THREAD_START, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
   if (err == JVMTI_ERROR_NONE) {
     startsExpected = 1;
   } else {
-    LOG("Failed to enable JVMTI_EVENT_THREAD_START: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("Failed to enable JVMTI_EVENT_THREAD_START: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_THREAD_END, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, NULL);
   if (err == JVMTI_ERROR_NONE) {
     endsExpected = 1;
   } else {
-    LOG("Failed to enable JVMTI_EVENT_THREAD_END: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("Failed to enable JVMTI_EVENT_THREAD_END: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 
@@ -161,11 +143,9 @@ Java_threadstart03_check(JNIEnv *jni, jclass cls, jthread thr, jstring name) {
 
   {
     RawMonitorLocker wait_locker(jvmti, jni, wait_lock);
-    err = jvmti->RunAgentThread(thr, threadProc,
-                                NULL, JVMTI_THREAD_MAX_PRIORITY);
+    err = jvmti->RunAgentThread(thr, threadProc, NULL, JVMTI_THREAD_MAX_PRIORITY);
     if (err != JVMTI_ERROR_NONE) {
-      LOG("(RunAgentThread) unexpected error: %s (%d)\n",
-             TranslateError(err), err);
+      LOG("(RunAgentThread) unexpected error: %s (%d)\n", TranslateError(err), err);
       result = STATUS_FAILED;
     }
     wait_locker.wait();
@@ -184,31 +164,25 @@ Java_threadstart03_check(JNIEnv *jni, jclass cls, jthread thr, jstring name) {
 
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE,
-                                        JVMTI_EVENT_THREAD_START, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_START, NULL);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("Failed to disable JVMTI_EVENT_THREAD_START: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("Failed to disable JVMTI_EVENT_THREAD_START: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE,
-                                        JVMTI_EVENT_THREAD_END, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_END, NULL);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("Failed to disable JVMTI_EVENT_THREAD_END: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("Failed to disable JVMTI_EVENT_THREAD_END: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 
   if (startsCount != startsExpected) {
-    LOG("Wrong number of thread start events: %d, expected: %d\n",
-           startsCount, startsExpected);
+    LOG("Wrong number of thread start events: %d, expected: %d\n", startsCount, startsExpected);
     result = STATUS_FAILED;
   }
 
   if (endsCount != endsExpected) {
-    LOG("Wrong number of thread end events: %d, expected: %d\n",
-           endsCount, endsExpected);
+    LOG("Wrong number of thread end events: %d, expected: %d\n", endsCount, endsExpected);
     result = STATUS_FAILED;
   }
 

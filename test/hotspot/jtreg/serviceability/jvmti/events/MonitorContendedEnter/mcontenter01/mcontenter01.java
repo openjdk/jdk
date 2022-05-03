@@ -68,7 +68,7 @@ public class mcontenter01 extends DebugeeClass {
 
     // run debuggee
     public int runIt(boolean isVirtual) {
-        timeout = 60000; // milliseconds TODO fix
+        timeout = 60000;
         System.out.println("Timeout = " + timeout + " msc.");
 
         mcontenter01Task task = new mcontenter01Task();

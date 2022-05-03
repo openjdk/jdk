@@ -146,17 +146,6 @@ void JNICALL FramePop(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread_obj, jmethodI
   eventsCount++;
 }
 
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_framepop01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_framepop01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_framepop01(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
@@ -229,14 +218,12 @@ Java_framepop01_check(JNIEnv *jni, jclass cls) {
     LOG("Failed to SetBreakpoint: %s (%d)\n", TranslateError(err), err);
     return STATUS_FAILED;
   }
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_FRAME_POP, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, NULL);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to enable JVMTI_EVENT_FRAME_POP event: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_BREAKPOINT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to enable BREAKPOINT event: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;

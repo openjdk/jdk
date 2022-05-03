@@ -31,22 +31,16 @@
 
 extern "C" {
 
-/* ============================================================================= */
-
 /* scaffold objects */
 static jvmtiEnv *jvmti = NULL;
 static jlong timeout = 0;
 
 static int eventCount = 0;
 
-/* ============================================================================= */
-
 JNIEXPORT void JNICALL
 cbThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
   eventCount++;
 }
-
-/* ============================================================================= */
 
 static int
 enableEvent(jvmtiEventMode enable, jvmtiEvent event) {
@@ -128,25 +122,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
 
 }
 
-/* ============================================================================= */
-
-/** Agent library initialization. */
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_threadend02(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_threadend02(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_threadend02(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
   jint res;
 
-  timeout = 60 * 1000; // TODO change timeout
+  timeout = 60 * 1000;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
   if (res != JNI_OK || jvmti == NULL) {

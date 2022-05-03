@@ -67,8 +67,7 @@ NativeMethodBind(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
     LOG("TEST FAILED: unable to get method name during NativeMethodBind callback\n\n");
     return;
   } else {
-    LOG("NativeMethodBind received for \"%s %s\"\n",
-                 methNam, methSig);
+    LOG("NativeMethodBind received for \"%s %s\"\n", methNam, methSig);
   }
 
   if (methNam != NULL) {
@@ -94,10 +93,8 @@ VMDeath(jvmtiEnv *jvmti, JNIEnv *jni) {
   LOG("VMDeath event received\n");
 
   if (wrongBindEv != 0) {
-    COMPLAIN(
-        "TEST FAILED: there are %d NativeMethodBind events\n"
-        "sent during non-start or non-live phase of the VM execution\n",
-        wrongBindEv);
+    COMPLAIN("TEST FAILED: there are %d NativeMethodBind events\n"
+             "sent during non-start or non-live phase of the VM execution\n", wrongBindEv);
   }
 
   if (result == STATUS_FAILED) {
@@ -110,21 +107,9 @@ VMDeath(jvmtiEnv *jvmti, JNIEnv *jni) {
 JNIEXPORT jint JNICALL
 Java_nativemethbind02_nativeMethod(JNIEnv *jni, jobject obj) {
   LOG("inside the nativeMethod()\n\n");
-
   return PASSED;
 }
 
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_nativemethbind02(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_nativemethbind02(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_nativemethbind02(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
@@ -136,7 +121,6 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-
   /* create a raw monitor */
   counter_lock = create_raw_monitor(jvmti, "_counter_lock");
 
@@ -144,7 +128,6 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   memset(&caps, 0, sizeof(jvmtiCapabilities));
   caps.can_generate_native_method_bind_events = 1;
 
-  // TODO Fix!!
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
@@ -167,15 +150,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
 
   LOG("setting event callbacks done\nenabling JVMTI events ...\n");
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_NATIVE_METHOD_BIND,
-                                        NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_VM_DEATH,
-                                        NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }

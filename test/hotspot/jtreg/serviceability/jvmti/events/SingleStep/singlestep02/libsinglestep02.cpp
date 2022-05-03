@@ -39,8 +39,7 @@ static jvmtiEnv *jvmti = NULL;
 
 /** callback functions **/
 void JNICALL
-SingleStep(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
-           jmethodID method, jlocation location) {
+SingleStep(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jlocation location) {
   jvmtiPhase phase;
   jvmtiError err;
 
@@ -62,10 +61,8 @@ VMDeath(jvmtiEnv *jvmti, JNIEnv *jni) {
   LOG("VMDeath event received\n");
 
   if (wrongStepEv != 0) {
-    LOG(
-        "TEST FAILED: there are %ld SingleStep events\n"
-        "sent during non-live phase of the VM execution\n",
-        wrongStepEv);
+    LOG("TEST FAILED: there are %ld SingleStep events\n"
+        "sent during non-live phase of the VM execution\n", wrongStepEv);
     jni->FatalError("Test Failed.");
   }
 
@@ -73,19 +70,7 @@ VMDeath(jvmtiEnv *jvmti, JNIEnv *jni) {
     jni->FatalError("Test Failed.");
   }
 }
-/************************/
 
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_singlestep02(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_singlestep02(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_singlestep02(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEventCallbacks callbacks;
   jvmtiCapabilities caps;
@@ -103,15 +88,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   caps.can_generate_single_step_events = 1;
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(AddCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(AddCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
   err = jvmti->GetCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
   if (!caps.can_generate_single_step_events) {

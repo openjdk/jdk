@@ -66,10 +66,10 @@ public class mentry02 {
     native static int check();
 
     public static void main(String args[]) {
-        testVirtual();
-        testKernel();
+        testVirtualThread();
+        testPlatformThread();
     }
-    public static void testVirtual() {
+    public static void testVirtualThread() {
         Thread thread = Thread.startVirtualThread(() -> {
             getReady(MAX_LOOP);
 
@@ -88,7 +88,7 @@ public class mentry02 {
             throw new RuntimeException("check failed with result " + result);
         }
     }
-    public static void testKernel() {
+    public static void testPlatformThread() {
         getReady(MAX_LOOP);
 
         for (int i = 0; i < MAX_LOOP; i++) {

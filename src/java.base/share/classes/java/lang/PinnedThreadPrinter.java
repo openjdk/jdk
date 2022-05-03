@@ -32,16 +32,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.stream.Collectors;
 import static java.lang.StackWalker.Option.*;
 
 /**
  * Helper class to print the virtual thread stack trace when pinned.
  *
- * The class maintains a mapping of Class object to the hashes of stack traces that are
- * pinned by code in that Class. This is used to avoid printing the same stack trace
- * many times.
+ * The class maintains a ClassValue with the hashes of stack traces that are pinned by
+ * code in that Class. This is used to avoid printing the same stack trace many times.
  */
 class PinnedThreadPrinter {
     static final StackWalker STACK_WALKER;
@@ -54,8 +52,12 @@ class PinnedThreadPrinter {
         STACK_WALKER = stackWalker;
     }
 
-    // maps a class to the hashes of stack traces pinned by that code in that class
-    private static final Map<Class<?>, Hashes> classToHashes = new WeakHashMap<>();
+    private static final ClassValue<Hashes> HASHES = new ClassValue<>() {
+        @Override
+        protected Hashes computeValue(Class<?> type) {
+            return new Hashes();
+        }
+    };
 
     @SuppressWarnings("serial")
     private static class Hashes extends LinkedHashMap<Integer, Boolean> {
@@ -101,11 +103,12 @@ class PinnedThreadPrinter {
             .filter(f -> (f.isNativeMethod() || f.getMonitors().length > 0))
             .map(LiveStackFrame::getDeclaringClass)
             .findFirst()
-            .ifPresent(key -> {
+            .ifPresent(klass -> {
                 int hash = hash(stack);
-                synchronized (classToHashes) {
+                Hashes hashes = HASHES.get(klass);
+                synchronized (hashes) {
                     // print the stack trace if not already seen
-                    if (classToHashes.computeIfAbsent(key, k -> new Hashes()).add(hash)) {
+                    if (hashes.add(hash)) {
                         printStackTrace(stack, out, printAll);
                     }
                 }

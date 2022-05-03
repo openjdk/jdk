@@ -49,11 +49,9 @@ static jrawMonitorID counter_lock;
 /* method to be redirected used to check the native method redirection
    through the NativeMethodBind event */
 JNIEXPORT void JNICALL
-Java_nativemethbind04_nativeMethod(
-    JNIEnv *jni, jobject obj) {
+Java_nativemethbind04_nativeMethod(JNIEnv *jni, jobject obj) {
   origCalls++;
-  LOG("inside the nativeMethod(): calls=%d\n",
-               origCalls);
+  LOG("inside the nativeMethod(): calls=%d\n", origCalls);
 }
 
 /* redirected method used to check the native method redirection
@@ -61,14 +59,12 @@ Java_nativemethbind04_nativeMethod(
 static void JNICALL
 redirNativeMethod(JNIEnv *jni, jobject obj) {
   redirCalls++;
-  LOG("inside the redirNativeMethod(): calls=%d\n",
-               redirCalls);
+  LOG("inside the redirNativeMethod(): calls=%d\n", redirCalls);
 }
 
 /** callback functions **/
 void JNICALL
-NativeMethodBind(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
-                 jmethodID method, void *addr, void **new_addr) {
+NativeMethodBind(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, void *addr, void **new_addr) {
   jvmtiPhase phase;
   jvmtiError err;
 
@@ -95,11 +91,9 @@ NativeMethodBind(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
     return;
   }
 
-  if ((strcmp(methNam, METHOD[0]) == 0) &&
-      (strcmp(methSig, METHOD[1]) == 0)) {
+  if ((strcmp(methNam, METHOD[0]) == 0) && (strcmp(methSig, METHOD[1]) == 0)) {
     LOG("\tmethod: \"%s %s\"\nRedirecting the method address from 0x%p to 0x%p ...\n",
-                 methNam, methSig, addr, (void *) redirNativeMethod);
-
+        methNam, methSig, addr, (void *) redirNativeMethod);
     *new_addr = (void *) redirNativeMethod;
   }
 
@@ -121,51 +115,31 @@ NativeMethodBind(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
   LOG("<<<<\n\n");
 
 }
-/************************/
 
 JNIEXPORT jint JNICALL
-Java_nativemethbind04_check(
-    JNIEnv *jni, jobject obj) {
+Java_nativemethbind04_check(JNIEnv *jni, jobject obj) {
 
   if (origCalls == 0) {
-    LOG(
-        "CHECK PASSED: original nativeMethod() to be redirected\n"
+    LOG("CHECK PASSED: original nativeMethod() to be redirected\n"
         "\thas not been invoked as expected\n");
   } else {
     result = STATUS_FAILED;
-    COMPLAIN(
-        "TEST FAILED: nativeMethod() has not been redirected by the NativeMethodBind:\n"
-        "\t%d calls\texpected: 0\n\n",
-        origCalls);
+    COMPLAIN("TEST FAILED: nativeMethod() has not been redirected by the NativeMethodBind:\n"
+             "\t%d calls\texpected: 0\n\n", origCalls);
   }
 
   if (redirCalls == 1) {
-    LOG(
-        "CHECK PASSED: nativeMethod() has been redirected by the NativeMethodBind:\n"
-        "\t%d calls of redirected method as expected\n",
-        redirCalls);
+    LOG("CHECK PASSED: nativeMethod() has been redirected by the NativeMethodBind:\n"
+        "\t%d calls of redirected method as expected\n", redirCalls);
   } else {
     result = STATUS_FAILED;
-    COMPLAIN(
-        "TEST FAILED: nativeMethod() has not been redirected by the NativeMethodBind:\n"
-        "\t%d calls of redirected method\texpected: 1\n\n",
-        redirCalls);
+    COMPLAIN("TEST FAILED: nativeMethod() has not been redirected by the NativeMethodBind:\n"
+             "\t%d calls of redirected method\texpected: 1\n\n", redirCalls);
   }
 
   return result;
 }
 
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_nativemethbind04(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_nativemethbind04(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_nativemethbind04(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
@@ -184,7 +158,6 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   memset(&caps, 0, sizeof(jvmtiCapabilities));
   caps.can_generate_native_method_bind_events = 1;
 
-  // TODO Fix!!
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
@@ -206,9 +179,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
 
   LOG("setting event callbacks done\nenabling JVMTI events ...\n");
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_NATIVE_METHOD_BIND,
-                                        NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }

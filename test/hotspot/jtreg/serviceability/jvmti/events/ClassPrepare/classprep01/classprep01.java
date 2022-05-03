@@ -63,11 +63,10 @@ public class classprep01 {
 
     static volatile int result;
     public static void main(String args[]) {
-        testKernel();
-        testVirtual();
+        testPlatformThread();
+        testVirtualThread();
     }
-    public static void testVirtual() {
-
+    public static void testVirtualThread() {
         Thread thread = Thread.startVirtualThread(() -> {
             getReady();
             new TestClassVirtual().run();
@@ -83,7 +82,7 @@ public class classprep01 {
             throw new RuntimeException("check failed with result " + result);
         }
     }
-    public static void testKernel() {
+    public static void testPlatformThread() {
         getReady();
         new TestClass().run();
         result = check();

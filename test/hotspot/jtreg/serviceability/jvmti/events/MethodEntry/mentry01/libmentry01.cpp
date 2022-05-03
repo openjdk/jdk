@@ -58,8 +58,7 @@ static entry_info entries[] = {
     { "chain", "()V", -1 }
 };
 
-void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni,
-                         jthread thread_obj, jmethodID method) {
+void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread_obj, jmethodID method) {
   jvmtiError err;
   char *cls_sig, *generic;
   writable_entry_info entry;
@@ -69,15 +68,13 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni,
 
   err = jvmti->GetMethodDeclaringClass(method, &cls);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetMethodDeclaringClass) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetMethodDeclaringClass) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return;
   }
   err = jvmti->GetClassSignature(cls, &cls_sig, &generic);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetClassSignature) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetClassSignature) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return;
   }
@@ -86,15 +83,13 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni,
 
     err = jvmti->GetMethodName(method, &entry.name, &entry.sig, &generic);
     if (err != JVMTI_ERROR_NONE) {
-      LOG("(GetMethodName) unexpected error: %s (%d)\n",
-             TranslateError(err), err);
+      LOG("(GetMethodName) unexpected error: %s (%d)\n", TranslateError(err), err);
       result = STATUS_FAILED;
       return;
     }
     err = jvmti->GetFrameLocation(thread_obj, 0, &mid, &entry.loc);
     if (err != JVMTI_ERROR_NONE) {
-      LOG("(GetFrameLocation) unexpected error: %s (%d)\n",
-             TranslateError(err), err);
+      LOG("(GetFrameLocation) unexpected error: %s (%d)\n", TranslateError(err), err);
       result = STATUS_FAILED;
       return;
     }
@@ -105,25 +100,19 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni,
     LOG(">>> ... done\n");
 
     if (eventsCount < sizeof(entries)/sizeof(entry_info)) {
-      if (entry.name == NULL ||
-          strcmp(entry.name, entries[eventsCount].name) != 0) {
-        LOG("(entry#%" PRIuPTR ") wrong method name: \"%s\"",
-               eventsCount, entry.name);
+      if (entry.name == NULL || strcmp(entry.name, entries[eventsCount].name) != 0) {
+        LOG("(entry#%" PRIuPTR ") wrong method name: \"%s\"", eventsCount, entry.name);
         LOG(", expected: \"%s\"\n", entries[eventsCount].name);
         result = STATUS_FAILED;
       }
-      if (entry.sig == NULL ||
-          strcmp(entry.sig, entries[eventsCount].sig) != 0) {
-        LOG("(entry#%" PRIuPTR ") wrong method sig: \"%s\"",
-               eventsCount, entry.sig);
+      if (entry.sig == NULL || strcmp(entry.sig, entries[eventsCount].sig) != 0) {
+        LOG("(entry#%" PRIuPTR ") wrong method sig: \"%s\"", eventsCount, entry.sig);
         LOG(", expected: \"%s\"\n", entries[eventsCount].sig);
         result = STATUS_FAILED;
       }
       if (entry.loc != entries[eventsCount].loc) {
-        LOG("(entry#%" PRIuPTR ") wrong location: %s",
-               eventsCount, jlong_to_string(entry.loc, buffer));
-        LOG(", expected: %s\n",
-               jlong_to_string(entries[eventsCount].loc, buffer));
+        LOG("(entry#%" PRIuPTR ") wrong location: %s", eventsCount, jlong_to_string(entry.loc, buffer));
+        LOG(", expected: %s\n", jlong_to_string(entries[eventsCount].loc, buffer));
         result = STATUS_FAILED;
       }
       jboolean isVirtual = jni->IsVirtualThread(thread_obj);
@@ -142,22 +131,10 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni,
   }
 }
 
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_mentry01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_mentry01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_mentry01(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
   jint res;
-
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
   if (res != JNI_OK || jvmti == NULL) {
@@ -171,15 +148,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(AddCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(AddCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
   err = jvmti->GetCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
@@ -187,8 +162,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.MethodEntry = &MethodEntry;
     err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     if (err != JVMTI_ERROR_NONE) {
-      LOG("(SetEventCallbacks) unexpected error: %s (%d)\n",
-             TranslateError(err), err);
+      LOG("(SetEventCallbacks) unexpected error: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;
     }
   } else {
@@ -214,8 +188,7 @@ Java_mentry01_enable(JNIEnv *jni, jclass cls) {
   }
   isVirtualExpected = jni->IsVirtualThread(thread);
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_METHOD_ENTRY, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL);
   if (err == JVMTI_ERROR_NONE) {
     eventsExpected = sizeof(entries)/sizeof(entry_info);
     eventsCount = 0;
@@ -227,9 +200,8 @@ Java_mentry01_enable(JNIEnv *jni, jclass cls) {
 
 JNIEXPORT jint JNICALL
 Java_mentry01_check(JNIEnv *jni, jclass cls) {
-  jmethodID mid;
 
-  mid = jni->GetStaticMethodID(cls, "dummy", "()V");
+  jmethodID mid = jni->GetStaticMethodID(cls, "dummy", "()V");
   if (mid == NULL) {
     LOG("Cannot find metod \"dummy()\"!\n");
     return STATUS_FAILED;
@@ -253,11 +225,9 @@ Java_mentry01_chain(JNIEnv *jni, jclass cls) {
     return;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE,
-                                        JVMTI_EVENT_METHOD_ENTRY, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_METHOD_ENTRY, NULL);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("Failed to disable JVMTI_EVENT_METHOD_ENTRY event: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("Failed to disable JVMTI_EVENT_METHOD_ENTRY event: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 }

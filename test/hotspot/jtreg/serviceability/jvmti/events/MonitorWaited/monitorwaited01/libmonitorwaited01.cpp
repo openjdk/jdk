@@ -30,8 +30,6 @@
 
 extern "C" {
 
-/* ========================================================================== */
-
 /* scaffold objects */
 static JNIEnv *jni = NULL;
 static jvmtiEnv *jvmti = NULL;
@@ -42,14 +40,11 @@ static jthread expected_thread = NULL;
 static jobject expected_object = NULL;
 static volatile int eventsCount = 0;
 
-/* ========================================================================== */
-
 void JNICALL
-MonitorWaited(jvmtiEnv *jvmti, JNIEnv *jni,
-              jthread thr, jobject obj, jboolean timed_out) {
+MonitorWaited(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jobject obj, jboolean timed_out) {
 
   LOG("MonitorWaited event:\n\tthread: %p, object: %p, timed_out: %s\n",
-               thr, obj, (timed_out == JNI_TRUE) ? "true" : "false");
+      thr, obj, (timed_out == JNI_TRUE) ? "true" : "false");
 
   print_thread_info(jvmti, jni, thr);
 
@@ -61,7 +56,7 @@ MonitorWaited(jvmtiEnv *jvmti, JNIEnv *jni,
     jni->FatalError("expected_object is NULL.");
   }
 
-/* check if event is for tested thread and for tested object */
+  /* check if event is for tested thread and for tested object */
   if (jni->IsSameObject(expected_thread, thr) &&
       jni->IsSameObject(expected_object, obj)) {
     eventsCount++;
@@ -75,10 +70,8 @@ MonitorWaited(jvmtiEnv *jvmti, JNIEnv *jni,
 /* ========================================================================== */
 
 static int prepare() {
-  jvmtiError err;
-
   /* enable MonitorWait event */
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAITED, NULL);
+  jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAITED, NULL);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Prepare: 11\n");
     return NSK_FALSE;
@@ -87,26 +80,19 @@ static int prepare() {
 }
 
 static int clean() {
-  jvmtiError err;
   /* disable MonitorWaited event */
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE,
-                                        JVMTI_EVENT_MONITOR_WAITED,
-                                        NULL);
+  jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_MONITOR_WAITED, NULL);
   if (err != JVMTI_ERROR_NONE) {
     set_agent_fail_status();
   }
   return NSK_TRUE;
 }
 
-/* ========================================================================== */
-
-/* agent algorithm
- */
 static void JNICALL
 agentProc(jvmtiEnv *jvmti, JNIEnv *agentJNI, void *arg) {
   jni = agentJNI;
 
-/* wait for initial sync */
+  /* wait for initial sync */
   if (!agent_wait_for_sync(timeout))
     return;
 
@@ -135,33 +121,18 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *agentJNI, void *arg) {
     return;
   }
 
-/* resume debugee after last sync */
+  /* resume debugee after last sync */
   if (!agent_resume_sync())
     return;
 }
 
-/* ========================================================================== */
-
-/* agent library initialization
- */
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_monitorwaited01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_monitorwaited01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_monitorwaited01(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiEventCallbacks callbacks;
   jvmtiError err;
   jint res;
 
-  timeout = 60000; //TODO fix
+  timeout = 60000;
   LOG("Timeout: %d msc\n", (int) timeout);
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);

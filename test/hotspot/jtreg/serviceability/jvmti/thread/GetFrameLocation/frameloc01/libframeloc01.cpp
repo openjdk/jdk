@@ -105,16 +105,12 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-
-
   callbacks.ExceptionCatch = &ExceptionCatch;
   err = jvmti_env->SetEventCallbacks(&callbacks, sizeof(callbacks));
   if (err != JVMTI_ERROR_NONE) {
     LOG("(SetEventCallbacks) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
-
-
   return JNI_OK;
 }
 
@@ -128,8 +124,7 @@ Java_frameloc01_getReady(JNIEnv *env, jclass cls, jclass klass) {
     return;
   }
 
-  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_EXCEPTION_CATCH, NULL);
+  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION_CATCH, NULL);
   if (err != JVMTI_ERROR_NONE) {
     LOG("(SetEventNotificationMode) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;

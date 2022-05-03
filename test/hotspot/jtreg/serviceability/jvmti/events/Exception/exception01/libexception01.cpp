@@ -82,7 +82,6 @@ Exception(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr,
   writable_exceptionInfo ex;
   jclass cls;
   char *generic;
-  size_t i;
 
   LOG(">>> retrieving Exception info ...\n");
 
@@ -101,53 +100,45 @@ Exception(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr,
   }
   err = jvmti->GetClassSignature(cls, &ex.t_cls, &generic);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetClassSignature#t) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetClassSignature#t) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return;
   }
   err = jvmti->GetMethodName(method, &ex.t_name, &ex.t_sig, &generic);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetMethodName#t) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetMethodName#t) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return;
   }
   ex.t_loc = location;
   err = jvmti->GetMethodDeclaringClass(catch_method, &cls);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetMethodDeclaringClass#c) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetMethodDeclaringClass#c) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return;
   }
   err = jvmti->GetClassSignature(cls, &ex.c_cls, &generic);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetClassSignature#c) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetClassSignature#c) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return;
   }
-  err = jvmti->GetMethodName(catch_method,
-                                 &ex.c_name, &ex.c_sig, &generic);
+  err = jvmti->GetMethodName(catch_method, &ex.c_name, &ex.c_sig, &generic);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetMethodName#c) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetMethodName#c) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return;
   }
   ex.c_loc = catch_location;
   LOG(">>> %s\n", ex.name);
   LOG(">>>   thrown at %s.%s%s:0x%x%08x\n",
-         ex.t_cls, ex.t_name, ex.t_sig,
-         (jint)(ex.t_loc >> 32), (jint)ex.t_loc);
+         ex.t_cls, ex.t_name, ex.t_sig, (jint)(ex.t_loc >> 32), (jint)ex.t_loc);
   LOG(">>>    catch at %s.%s%s:0x%x%08x\n",
-         ex.c_cls, ex.c_name, ex.c_sig,
-         (jint)(ex.c_loc >> 32), (jint)ex.c_loc);
+         ex.c_cls, ex.c_name, ex.c_sig, (jint)(ex.c_loc >> 32), (jint)ex.c_loc);
   LOG(">>> ... done\n");
 
-
-  for (i = 0; i < sizeof(exs)/sizeof(exceptionInfo); i++) {
+  bool found = false;
+  for (size_t i = 0; i < sizeof(exs)/sizeof(exceptionInfo); i++) {
     if (ex.name != NULL && strcmp(ex.name, exs[i].name) == 0
         && ex.t_cls != NULL && strcmp(ex.t_cls, exs[i].t_cls) == 0
         && ex.t_name != NULL && strcmp(ex.t_name, exs[i].t_name) == 0
@@ -163,33 +154,21 @@ Exception(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr,
       } else {
         eventsCount++;
       }
+      found = true;
       break;
     }
   }
-  if (i == sizeof(exs)/sizeof(exceptionInfo)) {
+  if (!found) {
     LOG("Unexpected exception event:\n");
     LOG("  %s\n", ex.name);
     LOG("    thrown at %s.%s%s:0x%x%08x\n",
-           ex.t_cls, ex.t_name, ex.t_sig,
-           (jint)(ex.t_loc >> 32), (jint)ex.t_loc);
+           ex.t_cls, ex.t_name, ex.t_sig, (jint)(ex.t_loc >> 32), (jint)ex.t_loc);
     LOG("     catch at %s.%s%s:0x%x%08x\n",
-           ex.c_cls, ex.c_name, ex.c_sig,
-           (jint)(ex.c_loc >> 32), (jint)ex.c_loc);
+           ex.c_cls, ex.c_name, ex.c_sig, (jint)(ex.c_loc >> 32), (jint)ex.c_loc);
     result = STATUS_FAILED;
   }
 }
 
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_exception01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_exception01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_exception01(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
   jint res;
@@ -207,15 +186,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
   err = jvmti_env->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(AddCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(AddCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
   err = jvmti_env->GetCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
@@ -223,8 +200,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.Exception = &Exception;
     err = jvmti_env->SetEventCallbacks(&callbacks, sizeof(callbacks));
     if (err != JVMTI_ERROR_NONE) {
-      LOG("(SetEventCallbacks) unexpected error: %s (%d)\n",
-             TranslateError(err), err);
+      LOG("(SetEventCallbacks) unexpected error: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;
     }
   } else {
@@ -245,7 +221,6 @@ Java_exception01_check(JNIEnv *jni, jclass cls) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
-
   clz = jni->FindClass("exception01c");
   if (clz == NULL) {
     LOG("Cannot find exception01c class!\n");
@@ -274,13 +249,11 @@ Java_exception01_check(JNIEnv *jni, jclass cls) {
     return STATUS_FAILED;
   }
 
-  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE,
-                                            JVMTI_EVENT_EXCEPTION, thread);
+  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION, thread);
   if (err == JVMTI_ERROR_NONE) {
     eventsExpected = sizeof(exs)/sizeof(exceptionInfo);
   } else {
-    LOG("Failed to enable JVMTI_EVENT_EXCEPTION: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("Failed to enable JVMTI_EVENT_EXCEPTION: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 
@@ -289,17 +262,14 @@ Java_exception01_check(JNIEnv *jni, jclass cls) {
 
   jni->CallStaticVoidMethod(clz, mid);
 
-  err = jvmti_env->SetEventNotificationMode(JVMTI_DISABLE,
-                                            JVMTI_EVENT_EXCEPTION, thread);
+  err = jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_EXCEPTION, thread);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("Failed to disable JVMTI_EVENT_EXCEPTION: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("Failed to disable JVMTI_EVENT_EXCEPTION: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 
   if (eventsCount != eventsExpected) {
-    LOG("Wrong number of exception events: %d, expected: %d\n",
-           eventsCount, eventsExpected);
+    LOG("Wrong number of exception events: %d, expected: %d\n", eventsCount, eventsExpected);
     result = STATUS_FAILED;
   }
   return result;

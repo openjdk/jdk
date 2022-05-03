@@ -74,9 +74,7 @@ public class resumethrdlst01 extends DebugeeClass {
 
     // run debuggee
     public int runIt(String argv[], PrintStream out) {
-        timeout =  60 * 1000; // milliseconds
-
-        // TODO set somehow
+        timeout =  60 * 1000;
         threads_count = 10;
 
         // create tested threads

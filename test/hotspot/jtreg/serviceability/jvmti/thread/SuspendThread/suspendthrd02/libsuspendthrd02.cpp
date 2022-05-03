@@ -28,8 +28,6 @@
 
 extern "C" {
 
-/* ============================================================================= */
-
 /* scaffold objects */
 static jlong timeout = 0;
 
@@ -49,8 +47,6 @@ static jvmtiEvent eventsList[EVENTS_COUNT] = {
 
 static volatile int eventsReceived = 0;
 static jthread testedThread = NULL;
-
-/* ============================================================================= */
 
 /** Agent algorithm. */
 static void JNICALL
@@ -122,22 +118,17 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
     return;
 }
 
-/* ============================================================================= */
-
 /** THREAD_END callback. */
 JNIEXPORT void JNICALL
 callbackThreadEnd(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   /* check if event is for tested thread */
-  if (thread != NULL &&
-      jni->IsSameObject(testedThread, thread)) {
+  if (thread != NULL && jni->IsSameObject(testedThread, thread)) {
     LOG("  ... received THREAD_END event for tested thread: %p\n", (void *) thread);
     eventsReceived++;
   } else {
     LOG("  ... received THREAD_END event for unknown thread: %p\n", (void *) thread);
   }
 }
-
-/* ============================================================================= */
 
 jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEnv *jvmti = NULL;
@@ -182,7 +173,5 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
   return JNI_OK;
 }
-
-/* ============================================================================= */
 
 }

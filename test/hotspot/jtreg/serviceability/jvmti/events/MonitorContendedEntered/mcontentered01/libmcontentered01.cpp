@@ -41,7 +41,6 @@ static jthread expected_thread = NULL;
 static jobject expected_object = NULL;
 static volatile int eventsCount = 0;
 
-/* ========================================================================== */
 
 /* Check GetPotentialCapabilities function
  */
@@ -124,8 +123,6 @@ static int clean() {
   return NSK_TRUE;
 }
 
-/* ========================================================================== */
-
 /* agent algorithm
  */
 static void JNICALL
@@ -145,7 +142,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *agentJNI, void *arg) {
   eventsCount = 0;
 
   /* resume debugee to catch MonitorContendedEntered event */
-  if (!((agent_resume_sync() == NSK_TRUE) && (agent_wait_for_sync(timeout) ==NSK_TRUE))) {
+  if (!((agent_resume_sync() == NSK_TRUE) && (agent_wait_for_sync(timeout) == NSK_TRUE))) {
     return;
   }
 
@@ -166,28 +163,13 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *agentJNI, void *arg) {
     return;
 }
 
-/* ========================================================================== */
-
-/* agent library initialization
- */
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_mcontentered01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_mcontentered01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_mcontentered01(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiEventCallbacks callbacks;
   jvmtiError err;
   jint res;
 
-  timeout = 60000; //TODO fix
+  timeout = 60000;
   LOG("Timeout: %d msc\n", (int) timeout);
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);

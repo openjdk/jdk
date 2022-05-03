@@ -59,24 +59,19 @@ static volatile int callbacksEnabled = NSK_TRUE;
 static jrawMonitorID agent_lock;
 
 static void initCounters() {
-  int i;
-
-  for (i = 0; i < METH_NUM; i++)
+  for (int i = 0; i < METH_NUM; i++) {
     bpEvents[i] = 0;
+  }
 }
 
 static void setBP(jvmtiEnv *jvmti, JNIEnv *jni, jclass klass) {
-  jmethodID mid;
-  jvmtiError err;
-  int i;
-
-  for (i = 0; i < METH_NUM; i++) {
-    mid = jni->GetMethodID(klass, METHODS[i][0], METHODS[i][1]);
+  for (int i = 0; i < METH_NUM; i++) {
+    jmethodID mid = jni->GetMethodID(klass, METHODS[i][0], METHODS[i][1]);
     if (mid == nullptr) {
       jni->FatalError("failed to get ID for the java method\n");
     }
 
-    err = jvmti->SetBreakpoint(mid, 0);
+    jvmtiError err = jvmti->SetBreakpoint(mid, 0);
     if (err != JVMTI_ERROR_NONE) {
       jni->FatalError("failed to set breakpoint\n");
     }
@@ -109,37 +104,30 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jloca
   jclass klass;
   char *clsSig, *generic, *methNam, *methSig;
   jvmtiThreadInfo thr_info;
-  jvmtiError err;
   int checkStatus = PASSED;
-  int i;
 
   LOG(">>>> Breakpoint event received\n");
 
-/* checking thread info */
-  err = jvmti->GetThreadInfo(thread, &thr_info);
+  /* checking thread info */
+  jvmtiError err = jvmti->GetThreadInfo(thread, &thr_info);
   if (err != JVMTI_ERROR_NONE) {
     result = STATUS_FAILED;
     LOG("TEST FAILED: unable to get thread info during Breakpoint callback\n\n");
     return;
   }
 
-  if (thr_info.name == NULL ||
-      strcmp(thr_info.name, THREAD_NAME) != 0) {
+  const char* thr_name = thr_info.name == NULL ? "NULL" : thr_info.name;
+  const char* thr_virtual_tag = jni->IsVirtualThread(thread) == JNI_TRUE ? "virtual" : "platform";
+  const char* thr_daemon_tag = thr_info.is_daemon == JNI_TRUE ? "deamon" : "user";
+  if (thr_info.name == NULL || strcmp(thr_info.name, THREAD_NAME) != 0) {
     result = checkStatus = STATUS_FAILED;
-    LOG(
-        "TEST FAILED: Breakpoint event with unexpected thread info:\n"
-        "\tname: \"%s\"\ttype: %s %s thread\n\n",
-        (thr_info.name == NULL) ? "NULL" : thr_info.name,
-        (jni->IsVirtualThread(thread) == JNI_TRUE) ? "virtual" : "kernel",
-        (thr_info.is_daemon == JNI_TRUE) ? "deamon" : "user");
+    LOG("TEST FAILED: Breakpoint event with unexpected thread info:\n");
+    LOG("\tname: \"%s\"\ttype: %s %s thread\n\n", thr_name, thr_virtual_tag, thr_daemon_tag);
   } else {
-    LOG("CHECK PASSED: thread name: \"%s\"\ttype: %s %s thread\n",
-           thr_info.name,        (jni->IsVirtualThread(thread) == JNI_TRUE) ? "virtual" : "kernel",
-        (thr_info.is_daemon == JNI_TRUE) ? "deamon" : "user");
+    LOG("CHECK PASSED: thread name: \"%s\"\ttype: %s %s thread\n", thr_info.name, thr_virtual_tag, thr_daemon_tag);
   }
 
-
-/* checking location */
+  /* checking location */
   if (location != 0) {
     result = checkStatus = STATUS_FAILED;
     LOG("TEST FAILED: Breakpoint event with unexpected location %ld:\n\n", (long) location);
@@ -147,7 +135,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jloca
     LOG("CHECK PASSED: location: %ld as expected\n", (long) location);
   }
 
-/* checking method info */
+  /* checking method info */
   err = jvmti->GetMethodDeclaringClass(method, &klass);
   if (err != JVMTI_ERROR_NONE) {
     result = checkStatus = STATUS_FAILED;
@@ -160,13 +148,9 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jloca
     LOG("TEST FAILED: unable to obtain a class signature during Breakpoint callback\n\n");
     return;
   }
-  if (clsSig == NULL ||
-      strcmp(clsSig, CLASS_SIG) != 0) {
+  if (clsSig == NULL || strcmp(clsSig, CLASS_SIG) != 0) {
     result = checkStatus = STATUS_FAILED;
-    LOG(
-        "TEST FAILED: Breakpoint event with unexpected class signature:\n"
-        "\t\"%s\"\n\n",
-        (clsSig == NULL) ? "NULL" : clsSig);
+    LOG("TEST FAILED: Breakpoint event with unexpected class signature: %s\n\n", (clsSig == NULL) ? "NULL" : clsSig);
   } else {
     LOG("CHECK PASSED: class signature: \"%s\"\n", clsSig);
   }
@@ -178,13 +162,14 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jmethodID method, jloca
     return;
   }
 
-  for (i = 0; i < METH_NUM; i++) {
+  for (int i = 0; i < METH_NUM; i++) {
     if (strcmp(methNam, METHODS[i][0]) == 0 &&
         strcmp(methSig, METHODS[i][1]) == 0) {
       LOG("CHECK PASSED: method name: \"%s\"\tsignature: \"%s\" %d\n", methNam, methSig, i);
       jboolean isVirtual = jni->IsVirtualThread(thread);
       if (isVirtual != METHODS_ATTRS[i]) {
-        LOG("TEST FAILED: IsVirtualThread check failed with unexpected result %d  when expected is %d\n", isVirtual, METHODS_ATTRS[i]);
+        LOG("TEST FAILED: IsVirtualThread check failed with unexpected result %d  when expected is %d\n",
+            isVirtual, METHODS_ATTRS[i]);
         result = checkStatus = STATUS_FAILED;
       }
       if (checkStatus == PASSED) {
@@ -219,29 +204,25 @@ VMDeath(jvmtiEnv *jvmti, JNIEnv *jni) {
   RawMonitorLocker rml(jvmti, jni, agent_lock);
   callbacksEnabled = NSK_FALSE;
 }
-/************************/
 
 JNIEXPORT jint JNICALL Java_breakpoint01_check(JNIEnv *jni, jobject obj) {
-  int i;
-
-  for (i = 0; i < METH_NUM; i++) {
+  for (int i = 0; i < METH_NUM; i++) {
     if (bpEvents[i] != 1) {
       result = STATUS_FAILED;
-      LOG(
-          "TEST FAILED: wrong number of Breakpoint events\n"
+      LOG("TEST FAILED: wrong number of Breakpoint events\n"
           "\tfor the method \"%s %s\":\n"
           "\t\tgot: %d\texpected: 1\n",
           METHODS[i][0], METHODS[i][1], bpEvents[i]);
     } else {
       LOG("CHECK PASSED: %d Breakpoint event(s) for the method \"%s %s\" as expected\n",
-             bpEvents[i], METHODS[i][0], METHODS[i][1]);
+          bpEvents[i], METHODS[i][0], METHODS[i][1]);
     }
   }
 
   return result;
 }
 
-jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
+jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
   jint res;
@@ -286,9 +267,8 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   LOG("setting event callbacks done\nenabling JVMTI events ...\n");
 
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL);
-  if (err != JVMTI_ERROR_NONE) {
+  if (err != JVMTI_ERROR_NONE)
     return JNI_ERR;
-  }
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
   if (err != JVMTI_ERROR_NONE)
     return JNI_ERR;
@@ -301,21 +281,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   LOG("enabling the events done\n\n");
 
   agent_lock = create_raw_monitor(jvmti, "agent_lock");
-
-  if (agent_lock == NULL) {
+  if (agent_lock == NULL)
     return JNI_ERR;
-  }
 
   return JNI_OK;
 }
-
-JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-  return Agent_Initialize(jvm, options, reserved);
-}
-
-JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM *jvm, char *options, void *reserved) {
-  return Agent_Initialize(jvm, options, reserved);
-}
-
 
 }

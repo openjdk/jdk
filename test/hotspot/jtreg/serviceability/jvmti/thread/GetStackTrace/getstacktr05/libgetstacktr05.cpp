@@ -123,7 +123,6 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-
   return JNI_OK;
 }
 

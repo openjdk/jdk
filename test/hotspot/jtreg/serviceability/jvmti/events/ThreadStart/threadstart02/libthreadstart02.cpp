@@ -109,13 +109,13 @@ VMInit                  | debug_agent                 |   ThreadStart
 
 static void JNICALL
 debug_agent(jvmtiEnv *jvmti, JNIEnv *jni, void *p) {
-//JNIEnv *jni = jni;
   jint thrStat;
   jobject temp;
 
-/* Notify VMInit callback as well as ThreadStart callback (if any)
- * that agent thread has been started
- */
+ /*
+  * Notify VMInit callback as well as ThreadStart callback (if any)
+  * that agent thread has been started
+  */
   {
     RawMonitorLocker agent_start_locker(jvmti, jni, agent_start_lock);
     agent_start_locker.notify_all();
@@ -129,19 +129,19 @@ debug_agent(jvmtiEnv *jvmti, JNIEnv *jni, void *p) {
   while (terminate_debug_agent != JNI_TRUE) {
 
     if (next_thread == NULL) {
-/* wait till new thread will be created and started */
+    /* wait till new thread will be created and started */
       thr_start_locker.wait();
     }
 
     if (next_thread != NULL) {
-/* hmm, why NewGlobalRef is called one more time???
- * next_thread = env->NewGlobalRef(next_thread);
- */
+    /* hmm, why NewGlobalRef is called one more time???
+     * next_thread = env->NewGlobalRef(next_thread);
+     */
       check_jvmti_status(jni, jvmti->SuspendThread(next_thread), "Failed to suspend thread");
 
       LOG(">>> [agent] thread#%d %s suspended ...\n", eventsCount, inf.name);
 
-/* these dummy calls provoke VM to hang */
+      /* these dummy calls provoke VM to hang */
       temp = jni->NewGlobalRef(next_thread);
       jni->DeleteGlobalRef(temp);
 
@@ -150,31 +150,29 @@ debug_agent(jvmtiEnv *jvmti, JNIEnv *jni, void *p) {
       LOG(">>> [agent] thread#%d %s resumed ...\n", eventsCount, inf.name);
 
       check_jvmti_status(jni, jvmti->GetThreadState(next_thread, &thrStat), "Failed to get thread state for");
-      }
-
-      LOG(">>> [agent] %s threadState=%s (%x)\n",
-                   inf.name, TranslateState(thrStat), thrStat);
-
-      if (thrStat & JVMTI_THREAD_STATE_SUSPENDED) {
-        COMPLAIN("[agent] \"%s\" was not resumed\n", inf.name);
-        jni->FatalError("[agent] could not recover");
-      }
-
-      jni->DeleteGlobalRef(next_thread);
-      next_thread = NULL;
-
-      /* Notify ThreadStart callback that thread has been resumed */
-
-      RawMonitorLocker thr_resume_locker(jvmti, jni, thr_resume_lock);
-      debug_agent_timed_out = JNI_FALSE;
-      thr_resume_locker.notify();
-
     }
 
-/*
- * We don't call RawMonitorExit(thr_start_lock) in the loop so we don't
- * lose any notify calls.
- */
+    LOG(">>> [agent] %s threadState=%s (%x)\n", inf.name, TranslateState(thrStat), thrStat);
+
+    if (thrStat & JVMTI_THREAD_STATE_SUSPENDED) {
+      COMPLAIN("[agent] \"%s\" was not resumed\n", inf.name);
+      jni->FatalError("[agent] could not recover");
+    }
+
+    jni->DeleteGlobalRef(next_thread);
+    next_thread = NULL;
+
+    /* Notify ThreadStart callback that thread has been resumed */
+
+    RawMonitorLocker thr_resume_locker(jvmti, jni, thr_resume_lock);
+    debug_agent_timed_out = JNI_FALSE;
+    thr_resume_locker.notify();
+  }
+
+  /*
+   * We don't call RawMonitorExit(thr_start_lock) in the loop so we don't
+   * lose any notify calls.
+   */
   LOG(">>> [agent] done.\n");
 }
 
@@ -184,16 +182,16 @@ void JNICALL ThreadStart(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
 
   LOG(">>> [ThreadStart hook] start\n");
 
-/* skip if thread is 'agent thread' */
+  /* skip if thread is 'agent thread' */
   if (jni->IsSameObject(agent_thread, thread) == JNI_TRUE) {
     LOG(">>> [ThreadStart hook] skip agent thread\n");
     LOG(">>> [ThreadStart hook] end\n");
     return;
   }
 
-/* wait till agent thread is started
- * (otherwise can fail while waiting on thr_resume_thread due to timeout)
- */
+  /* wait till agent thread is started
+   * (otherwise can fail while waiting on thr_resume_thread due to timeout)
+   */
   if (debug_agent_started != JNI_TRUE) {
     RawMonitorLocker agent_start_locker(jvmti, jni, agent_start_lock);
 
@@ -204,45 +202,44 @@ void JNICALL ThreadStart(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   }
 
 
-/* get JVMTI phase */
+  /* get JVMTI phase */
   check_jvmti_status(jni, jvmti->GetPhase(&phase), "[ThreadStart hook] Failed to get JVMTI phase");
 
-/* Acquire event lock,
- * so only one StartThread callback could be proceeded at the time
- */
+  /* Acquire event lock,
+   * so only one StartThread callback could be proceeded at the time
+   */
   RawMonitorLocker thr_event_locker(jvmti, jni, thr_event_lock);
 
   {
-/* Get thread name */
+    /* Get thread name */
     inf.name = (char *) "UNKNOWN";
     if (phase == JVMTI_PHASE_LIVE) {
-/* GetThreadInfo may only be called during the live phase */
+      /* GetThreadInfo may only be called during the live phase */
       check_jvmti_status(jni, jvmti->GetThreadInfo(thread, &inf), "GetThreadInfo failed.");
     }
 
     LOG(">>> [ThreadStart hook] thread#%d: %s\n", eventsCount, inf.name);
 
-/* Acquire thr_start_lock */
+    /* Acquire thr_start_lock */
 
-   check_jvmti_status(jni, jvmti->RawMonitorEnter(thr_start_lock), "RawMonitorEnter failed");
+    check_jvmti_status(jni, jvmti->RawMonitorEnter(thr_start_lock), "RawMonitorEnter failed");
 
-/* Acquire thr_resume_lock before we release thr_start_lock to prevent
- * debug agent from notifying us before we are ready.
-*/
-   check_jvmti_status(jni, jvmti->RawMonitorEnter(thr_resume_lock), "RawMonitorEnter failed");
+    /* Acquire thr_resume_lock before we release thr_start_lock to prevent
+     * debug agent from notifying us before we are ready.
+    */
+    check_jvmti_status(jni, jvmti->RawMonitorEnter(thr_resume_lock), "RawMonitorEnter failed");
 
 
-/* Store thread */
+    /* Store thread */
     next_thread = jni->NewGlobalRef(thread);
     debug_agent_timed_out = JNI_TRUE;
 
-/* Notify agent thread about new started thread and let agent thread to work with it */
+    /* Notify agent thread about new started thread and let agent thread to work with it */
     check_jvmti_status(jni, jvmti->RawMonitorNotify(thr_start_lock), "RawMonitorNotify failed");
-
 
     check_jvmti_status(jni, jvmti->RawMonitorExit(thr_start_lock), "RawMonitorExit failed");
 
-/* Wait till this started thread will be resumed by agent thread */
+    /* Wait till this started thread will be resumed by agent thread */
     check_jvmti_status(jni, jvmti->RawMonitorWait(thr_resume_lock, (jlong) WAIT_TIME), "");
 
     if (debug_agent_timed_out == JNI_TRUE) {
@@ -250,15 +247,13 @@ void JNICALL ThreadStart(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
       jni->FatalError("[ThreadStart hook] could not recover");
     }
 
-/* Release thr_resume_lock lock */
-      check_jvmti_status(jni, jvmti->RawMonitorExit(thr_resume_lock), "");
+    /* Release thr_resume_lock lock */
+    check_jvmti_status(jni, jvmti->RawMonitorExit(thr_resume_lock), "");
 
-/* check that thread is not in SUSPENDED state */
+    /* check that thread is not in SUSPENDED state */
     check_jvmti_status(jni, jvmti->GetThreadState(thread, &thrStat), "");
 
-
-    LOG(">>> [ThreadStart hook] threadState=%s (%x)\n",
-                 TranslateState(thrStat), thrStat);
+    LOG(">>> [ThreadStart hook] threadState=%s (%x)\n", TranslateState(thrStat), thrStat);
 
     if (thrStat & JVMTI_THREAD_STATE_SUSPENDED) {
       COMPLAIN("[ThreadStart hook] \"%s\" was self-suspended\n", inf.name);
@@ -280,7 +275,7 @@ void JNICALL VMInit(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr) {
   check_jvmti_status(jni, jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL),
     "Failed to enable JVMTI_EVENT_THREAD_START");
 
-/* Start agent thread */
+  /* Start agent thread */
   cls = jni->FindClass("java/lang/Thread");
   if (cls == NULL) {
     result = STATUS_FAILED;
@@ -309,10 +304,10 @@ void JNICALL VMInit(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr) {
     return;
   }
 
-/*
- * Grab agent_start_lock before launching debug_agent to prevent
- * debug_agent from notifying us before we are ready.
- */
+  /*
+   * Grab agent_start_lock before launching debug_agent to prevent
+   * debug_agent from notifying us before we are ready.
+   */
 
   RawMonitorLocker agent_start_locker(jvmti, jni, agent_start_lock);
 
@@ -327,17 +322,6 @@ void JNICALL VMDeath(jvmtiEnv *jvmti, JNIEnv *jni) {
   terminate_debug_agent = JNI_TRUE;
 }
 
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_threadstart02(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_threadstart02(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_threadstart02(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
   jvmtiError err;
@@ -347,7 +331,6 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
-
 
   err = jvmti->GetPotentialCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
@@ -371,12 +354,8 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
   /* create raw monitors */
   agent_start_lock = create_raw_monitor(jvmti, "_agent_start_lock");
-
-
   thr_event_lock = create_raw_monitor(jvmti, "_thr_event_lock");
-
   thr_start_lock = create_raw_monitor(jvmti, "_thr_start_lock");
-
   thr_resume_lock =   create_raw_monitor(jvmti, "_thr_resume_lock");
 
   callbacks.VMInit = &VMInit;
@@ -387,16 +366,14 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_VM_INIT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to disable JVMTI_EVENT_THREAD_START: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return JNI_ERR;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_VM_DEATH, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to disable JVMTI_EVENT_THREAD_END: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;

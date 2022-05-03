@@ -63,34 +63,28 @@ void JNICALL MethodExit(jvmtiEnv *jvmti, JNIEnv *jni,
 
   err = jvmti->GetMethodDeclaringClass(method, &cls);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetMethodDeclaringClass) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetMethodDeclaringClass) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return;
   }
   err = jvmti->GetClassSignature(cls, &cls_sig, &generic);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetClassSignature) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetClassSignature) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
     return;
   }
-  if (cls_sig != NULL &&
-      strcmp(cls_sig, "Lmexit02a;") == 0) {
+  if (cls_sig != NULL && strcmp(cls_sig, "Lmexit02a;") == 0) {
     LOG(">>> retrieving method exit info ...\n");
 
-    err = jvmti->GetMethodName(method,
-                                   &name, &sig, &generic);
+    err = jvmti->GetMethodName(method, &name, &sig, &generic);
     if (err != JVMTI_ERROR_NONE) {
-      LOG("(GetMethodName) unexpected error: %s (%d)\n",
-             TranslateError(err), err);
+      LOG("(GetMethodName) unexpected error: %s (%d)\n", TranslateError(err), err);
       result = STATUS_FAILED;
       return;
     }
     err = jvmti->GetFrameLocation(thread, 0, &mid, &loc);
     if (err != JVMTI_ERROR_NONE) {
-      LOG("(GetFrameLocation) unexpected error: %s (%d)\n",
-             TranslateError(err), err);
+      LOG("(GetFrameLocation) unexpected error: %s (%d)\n", TranslateError(err), err);
       result = STATUS_FAILED;
       return;
     }
@@ -106,32 +100,24 @@ void JNICALL MethodExit(jvmtiEnv *jvmti, JNIEnv *jni,
     }
 
     if (eventsCount < sizeof(exits)/sizeof(method_location_info)) {
-      if (cls_sig == NULL ||
-          strcmp(cls_sig, exits[eventsCount].cls_sig) != 0) {
-        LOG("(exit#%" PRIuPTR ") wrong class: \"%s\"",
-               eventsCount, cls_sig);
+      if (cls_sig == NULL || strcmp(cls_sig, exits[eventsCount].cls_sig) != 0) {
+        LOG("(exit#%" PRIuPTR ") wrong class: \"%s\"", eventsCount, cls_sig);
         LOG(", expected: \"%s\"\n", exits[eventsCount].cls_sig);
         result = STATUS_FAILED;
       }
-      if (name == NULL ||
-          strcmp(name, exits[eventsCount].name) != 0) {
-        LOG("(exit#%" PRIuPTR ") wrong method name: \"%s\"",
-               eventsCount, name);
+      if (name == NULL || strcmp(name, exits[eventsCount].name) != 0) {
+        LOG("(exit#%" PRIuPTR ") wrong method name: \"%s\"", eventsCount, name);
         LOG(", expected: \"%s\"\n", exits[eventsCount].name);
         result = STATUS_FAILED;
       }
-      if (sig == NULL ||
-          strcmp(sig, exits[eventsCount].sig) != 0) {
-        LOG("(exit#%" PRIuPTR ") wrong method sig: \"%s\"",
-               eventsCount, sig);
+      if (sig == NULL || strcmp(sig, exits[eventsCount].sig) != 0) {
+        LOG("(exit#%" PRIuPTR ") wrong method sig: \"%s\"", eventsCount, sig);
         LOG(", expected: \"%s\"\n", exits[eventsCount].sig);
         result = STATUS_FAILED;
       }
       if (loc != exits[eventsCount].loc) {
-        LOG("(exit#%" PRIuPTR ") wrong location: %s",
-               eventsCount, jlong_to_string(loc, buffer));
-        LOG(", expected: %s\n",
-               jlong_to_string(exits[eventsCount].loc, buffer));
+        LOG("(exit#%" PRIuPTR ") wrong location: %s", eventsCount, jlong_to_string(loc, buffer));
+        LOG(", expected: %s\n", jlong_to_string(exits[eventsCount].loc, buffer));
         result = STATUS_FAILED;
       }
     } else {
@@ -145,17 +131,6 @@ void JNICALL MethodExit(jvmtiEnv *jvmti, JNIEnv *jni,
   }
 }
 
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_mexit02(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_mexit02(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_mexit02(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
@@ -173,15 +148,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(AddCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(AddCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
   err = jvmti->GetCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
@@ -189,8 +162,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.MethodExit = &MethodExit;
     err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     if (err != JVMTI_ERROR_NONE) {
-      LOG("(SetEventCallbacks) unexpected error: %s (%d)\n",
-             TranslateError(err), err);
+      LOG("(SetEventCallbacks) unexpected error: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;
     }
   } else {
@@ -231,8 +203,7 @@ Java_mexit02_check(JNIEnv *jni, jclass cls) {
     return STATUS_FAILED;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_METHOD_EXIT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, NULL);
   if (err == JVMTI_ERROR_NONE) {
     eventsExpected = sizeof(exits)/sizeof(method_location_info);
     eventsCount = 0;
@@ -243,17 +214,14 @@ Java_mexit02_check(JNIEnv *jni, jclass cls) {
 
   jni->CallStaticVoidMethod(clz, mid);
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE,
-                                        JVMTI_EVENT_METHOD_EXIT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_METHOD_EXIT, NULL);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("Failed to disable JVMTI_EVENT_METHOD_EXIT event: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("Failed to disable JVMTI_EVENT_METHOD_EXIT event: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 
   if (eventsCount != eventsExpected) {
-    LOG("Wrong number of method exit events: %" PRIuPTR ", expected: %" PRIuPTR "\n",
-           eventsCount, eventsExpected);
+    LOG("Wrong number of method exit events: %" PRIuPTR ", expected: %" PRIuPTR "\n", eventsCount, eventsExpected);
     result = STATUS_FAILED;
   }
   return result;

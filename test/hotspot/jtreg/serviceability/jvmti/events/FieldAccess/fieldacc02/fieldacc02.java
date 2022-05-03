@@ -64,10 +64,10 @@ public class fieldacc02 {
     native static int check(Object obj);
 
     public static void main(String args[]) {
-        testKernel();
-        testVirtual();
+        testPlatformThread();
+        testVirtualThread();
     }
-    public static void testVirtual() {
+    public static void testVirtualThread() {
         Thread thread = Thread.startVirtualThread(() -> {
             fieldacc02a t = new fieldacc02a();
             getReady();
@@ -83,7 +83,7 @@ public class fieldacc02 {
             throw new RuntimeException("check failed with result " + result);
         }
     }
-    public static void testKernel() {
+    public static void testPlatformThread() {
         fieldacc02a t = new fieldacc02a();
         getReady();
         result = check(t);

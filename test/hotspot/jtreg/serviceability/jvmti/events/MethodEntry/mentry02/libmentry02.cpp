@@ -69,17 +69,6 @@ void JNICALL MethodExit(jvmtiEnv *jvmti, JNIEnv *jni,
   }
 }
 
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_mentry02(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_mentry02(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_mentry02(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jint res;
@@ -98,26 +87,22 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(AddCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(AddCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
   err = jvmti->GetCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
-  if (caps.can_generate_method_entry_events &&
-      caps.can_generate_method_exit_events) {
+  if (caps.can_generate_method_entry_events && caps.can_generate_method_exit_events) {
     callbacks.MethodEntry = &MethodEntry;
     callbacks.MethodExit = &MethodExit;
     err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     if (err != JVMTI_ERROR_NONE) {
-      LOG("(SetEventCallbacks) unexpected error: %s (%d)\n",
-             TranslateError(err), err);
+      LOG("(SetEventCallbacks) unexpected error: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;
     }
   } else {
@@ -151,25 +136,21 @@ Java_mentry02_getReady(JNIEnv *jni, jclass cls, jint i) {
     return;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_METHOD_ENTRY, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL);
   if (err == JVMTI_ERROR_NONE) {
     MethodEntriesCount = 0;
     MethodEntriesExpected = i;
   } else {
-    LOG("Failed to enable JVMTI_EVENT_METHOD_ENTRY event: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("Failed to enable JVMTI_EVENT_METHOD_ENTRY event: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_METHOD_EXIT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, NULL);
   if (err == JVMTI_ERROR_NONE) {
     MethodExitsCount = 0;
     MethodExitsExpected = i;
   } else {
-    LOG("Failed to enable JVMTI_EVENT_METHOD_EXIT event: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("Failed to enable JVMTI_EVENT_METHOD_EXIT event: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 }
@@ -182,8 +163,7 @@ Java_mentry02_check(JNIEnv *jni, jclass cls) {
     result = STATUS_FAILED;
   }
   if (MethodExitsCount != MethodExitsExpected) {
-    LOG("Wrong number of method exit events: %d, expected: %d\n",
-           MethodExitsCount, MethodExitsExpected);
+    LOG("Wrong number of method exit events: %d, expected: %d\n", MethodExitsCount, MethodExitsExpected);
     result = STATUS_FAILED;
   }
   return result;

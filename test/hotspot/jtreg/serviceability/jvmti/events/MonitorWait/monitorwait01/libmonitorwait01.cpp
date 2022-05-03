@@ -30,8 +30,6 @@
 
 extern "C" {
 
-/* ========================================================================== */
-
 /* scaffold objects */
 static JNIEnv *jni = NULL;
 static jvmtiEnv *jvmti = NULL;
@@ -41,8 +39,6 @@ static jlong timeout = 0;
 static jthread expected_thread = NULL;
 static jobject expected_object = NULL;
 static volatile int eventsCount = 0;
-
-/* ========================================================================== */
 
 void JNICALL
 MonitorWait(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jobject obj, jlong tout) {
@@ -73,10 +69,8 @@ MonitorWait(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jobject obj, jlong tout) 
 /* ========================================================================== */
 
 static int prepare() {
-  jvmtiError err;
-
   /* enable MonitorWait event */
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAIT, NULL);
+  jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAIT, NULL);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Prepare: 11\n");
     return NSK_FALSE;
@@ -85,26 +79,19 @@ static int prepare() {
 }
 
 static int clean() {
-  jvmtiError err;
   /* disable MonitorWait event */
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE,
-                                        JVMTI_EVENT_MONITOR_WAIT,
-                                        NULL);
+  jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_MONITOR_WAIT, NULL);
   if (err != JVMTI_ERROR_NONE) {
     set_agent_fail_status();
   }
   return NSK_TRUE;
 }
 
-/* ========================================================================== */
-
-/* agent algorithm
- */
 static void JNICALL
 agentProc(jvmtiEnv *jvmti, JNIEnv *agentJNI, void *arg) {
   jni = agentJNI;
 
-/* wait for initial sync */
+ /* wait for initial sync */
   if (!agent_wait_for_sync(timeout))
     return;
 
@@ -117,7 +104,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *agentJNI, void *arg) {
   eventsCount = 0;
 
   /* resume debugee to catch MonitorWait event */
-  if (!((agent_resume_sync() == NSK_TRUE) && (agent_wait_for_sync(timeout) ==NSK_TRUE))) {
+  if (!((agent_resume_sync() == NSK_TRUE) && (agent_wait_for_sync(timeout) == NSK_TRUE))) {
     return;
   }
 
@@ -133,33 +120,18 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *agentJNI, void *arg) {
     return;
   }
 
-/* resume debugee after last sync */
+  /* resume debugee after last sync */
   if (!agent_resume_sync())
     return;
 }
 
-/* ========================================================================== */
-
-/* agent library initialization
- */
-#ifdef STATIC_BUILD
-JNIEXPORT jint JNICALL Agent_OnLoad_monitorwait01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNICALL Agent_OnAttach_monitorwait01(JavaVM *jvm, char *options, void *reserved) {
-    return Agent_Initialize(jvm, options, reserved);
-}
-JNIEXPORT jint JNI_OnLoad_monitorwait01(JavaVM *jvm, char *options, void *reserved) {
-    return JNI_VERSION_1_8;
-}
-#endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiEventCallbacks callbacks;
   jvmtiError err;
   jint res;
 
-  timeout = 60000; //TODO fix
+  timeout = 60000;
   LOG("Timeout: %d msc\n", (int) timeout);
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
@@ -179,15 +151,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(AddCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(AddCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
   err = jvmti->GetCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetCapabilities) unexpected error: %s (%d)\n",
-           TranslateError(err), err);
+    LOG("(GetCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
 
@@ -224,7 +194,6 @@ JNIEXPORT void JNICALL Java_monitorwait01_setExpected(JNIEnv *jni, jobject clz, 
 
   return;
 }
-
 
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   return Agent_Initialize(jvm, options, reserved);
