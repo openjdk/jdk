@@ -82,10 +82,6 @@ class win32 {
  public:
   // Generic interface:
 
-  // Trace number of created threads
-  static          intx  _os_thread_limit;
-  static volatile intx  _os_thread_count;
-
   // Tells whether this is a server version of Windows
   static bool is_windows_server() { return _is_windows_server; }
 
