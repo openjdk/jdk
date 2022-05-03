@@ -1671,6 +1671,9 @@ public:
   InstallAsyncExceptionHandshake(AsyncExceptionHandshake* aeh) :
     HandshakeClosure("InstallAsyncException"), _aeh(aeh) {}
   ~InstallAsyncExceptionHandshake() {
+    // Usually InstallAsyncExceptionHandshake is executed by do_thread() below
+    // and _aeh is cleared. If InstallAsyncExceptionHandshake is not executed,
+    // then the non-null _aeh has to be deleted from here.
     delete _aeh;
   }
   void do_thread(Thread* thr) {
