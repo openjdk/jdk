@@ -147,9 +147,9 @@ jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
   } else {
     GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.swappiness",
                        "Swappiness is: " JULONG_FORMAT, JULONG_FORMAT, swappiness);
-    if(swappiness == 0) {
+    if (swappiness == 0) {
       jlong memlimit = read_memory_limit_in_bytes();
-      log_trace(os, container)("Memory and Swap Limit has been reset to " JULONG_FORMAT " because of Swappiness is 0", memlimit);
+      log_trace(os, container)("Memory and Swap Limit has been reset to " JULONG_FORMAT " because swappiness is 0", memlimit);
       return memlimit;
     }
     return (jlong)memswlimit;
