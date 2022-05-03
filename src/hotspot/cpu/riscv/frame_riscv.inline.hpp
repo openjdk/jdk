@@ -53,15 +53,7 @@ inline void frame::init(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc, bool for
   _fp = ptr_fp;
   _pc = pc;
   assert(pc != NULL, "no pc?");
-  if (!forSignalHandler) {
-    _cb = CodeCache::find_blob(pc);
-  } else {
-    _cb = CodeCache::find_blob_unsafe(pc);
-    // if the code blob appears to be non-entrant just ignore it
-    if (_cb != NULL && _cb->is_zombie()) {
-      _cb = NULL;
-    }
-  }
+  _cb = CodeCache::find_blob(pc, forSignalHandler);
   adjust_unextended_sp();
 
   address original_pc = CompiledMethod::get_deopt_original_pc(this);

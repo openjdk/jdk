@@ -646,6 +646,21 @@ bool CodeCache::contains(nmethod *nm) {
   return contains((void *)nm);
 }
 
+// Lookup that does not fail if you lookup a zombie method and for_signal_handler is true.
+// Be aware that the returned blob can become a zombie at any time later, though!
+CodeBlob* CodeCache::find_blob(void* pc, bool for_signal_handler) {
+  if (!for_signal_handler) {
+    return find_blob(pc);
+  } else {
+    CodeBlob* tmp = find_blob_unsafe(pc);
+    if (tmp != NULL && tmp->is_zombie()) {
+      // if the code blob appears to be non-entrant just ignore it
+      tmp = NULL;
+    }
+    return tmp;
+  }
+}
+
 // This method is safe to call without holding the CodeCache_lock, as long as a dead CodeBlob is not
 // looked up (i.e., one that has been marked for deletion). It only depends on the _segmap to contain
 // valid indices, which it will always do, as long as the CodeBlob is not in the process of being recycled.

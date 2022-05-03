@@ -35,15 +35,7 @@
 inline void frame::find_codeblob_and_set_pc_and_deopt_state(address pc, bool forSignalHandler) {
   assert(pc != NULL, "precondition: must have PC");
 
-  if (!forSignalHandler) {
-    _cb = CodeCache::find_blob(pc);
-  } else {
-    _cb = CodeCache::find_blob_unsafe(pc);
-    // if the code blob appears to be non-entrant just ignore it
-    if (_cb != NULL && _cb->is_zombie()) {
-      _cb = NULL;
-    }
-  }
+  _cb = CodeCache::find_blob(pc, forSignalHandler);
   _pc = pc;   // Must be set for get_deopt_original_pc().
 
   _fp = (intptr_t *) own_abi()->callers_sp;
