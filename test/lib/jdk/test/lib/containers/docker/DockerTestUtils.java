@@ -23,7 +23,6 @@
 
 package jdk.test.lib.containers.docker;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.FileVisitResult;
@@ -38,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
+import jdk.test.lib.containers.cgroup.CommandUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jtreg.SkippedException;
 
@@ -269,44 +269,9 @@ public class DockerTestUtils {
      * @throws Exception
      */
     public static OutputAnalyzer execute(String... command) throws Exception {
-
-        ProcessBuilder pb = new ProcessBuilder(command);
-        System.out.println("[COMMAND]\n" + Utils.getCommandLine(pb));
-
-        long started = System.currentTimeMillis();
-        Process p = pb.start();
-        long pid = p.pid();
-        OutputAnalyzer output = new OutputAnalyzer(p);
-
-        String stdoutLogFile = String.format("docker-stdout-%d.log", pid);
-        System.out.println("[ELAPSED: " + (System.currentTimeMillis() - started) + " ms]");
-        System.out.println("[STDERR]\n" + output.getStderr());
-        System.out.println("[STDOUT]\n" +
-                           trimLines(output.getStdout(),MAX_LINES_TO_COPY_FOR_CHILD_STDOUT));
-        System.out.printf("Child process STDOUT is trimmed to %d lines \n",
-                           MAX_LINES_TO_COPY_FOR_CHILD_STDOUT);
-        writeOutputToFile(output.getStdout(), stdoutLogFile);
-        System.out.println("Full child process STDOUT was saved to " + stdoutLogFile);
-
-        return output;
+        return CommandUtils.execute("docker-stdout-%d.log", MAX_LINES_TO_COPY_FOR_CHILD_STDOUT, command);
     }
 
-
-    private static void writeOutputToFile(String output, String fileName) throws Exception {
-        try (FileWriter fw = new FileWriter(fileName)) {
-            fw.write(output, 0, output.length());
-        }
-    }
-
-
-    private static String trimLines(String buffer, int nrOfLines) {
-        List<String> l = Arrays.asList(buffer.split("\\R"));
-        if (l.size() < nrOfLines) {
-            return buffer;
-        }
-
-        return String.join("\n", l.subList(0, nrOfLines));
-    }
 
 
     private static void generateDockerFile(Path dockerfile, String baseImage,
