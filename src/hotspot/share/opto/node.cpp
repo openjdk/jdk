@@ -1791,7 +1791,7 @@ void Node::print_bfs(const uint max_distance, Node* target, char const* options)
   Node_List worklist; // BFS queue
   Dict parent((CmpKey)&print_bfs_cmp, hashkey);   // node -> parent (one step closer to this)
   Dict distance((CmpKey)&print_bfs_cmp, hashkey); // node -> distance to this
- 
+
   // add node to traversal queue
   auto worklist_push = [&] (Node* n, Node* p, const long d) {
     worklist.push(n);
@@ -1816,7 +1816,7 @@ void Node::print_bfs(const uint max_distance, Node* target, char const* options)
     tty->print(" c dump\n");                    // category and dump
     tty->print("---------------------------------------------\n");
   };
- 
+
   auto print_node = [&] (Node* n, bool print_parent) {
     tty->print("%3ld", abs((long)distance[n])); // distance
     if (print_blocks) {
@@ -1844,7 +1844,7 @@ void Node::print_bfs(const uint max_distance, Node* target, char const* options)
 
   // initialize BFS at this
   worklist_push(this, this, 0);
- 
+
   // BFS traversal
   uint pos = 0;
   while (pos < worklist.size()) {
