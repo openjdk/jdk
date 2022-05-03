@@ -31,7 +31,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class CommandUtils {
 
-    public static OutputAnalyzer execute(String filename,int lineNumber,String... command) throws Exception {
+    public static OutputAnalyzer execute(String filename, int lineNumber, String... command) throws Exception {
 
         ProcessBuilder pb = new ProcessBuilder(command);
         System.out.println("[COMMAND]\n" + Utils.getCommandLine(pb));
