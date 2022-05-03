@@ -282,20 +282,22 @@ public class DockerTestUtils {
         System.out.println("[ELAPSED: " + (System.currentTimeMillis() - started) + " ms]");
         System.out.println("[STDERR]\n" + output.getStderr());
         System.out.println("[STDOUT]\n" +
-                trimLines(output.getStdout(), MAX_LINES_TO_COPY_FOR_CHILD_STDOUT));
+                           trimLines(output.getStdout(),MAX_LINES_TO_COPY_FOR_CHILD_STDOUT));
         System.out.printf("Child process STDOUT is trimmed to %d lines \n",
-                MAX_LINES_TO_COPY_FOR_CHILD_STDOUT);
+                           MAX_LINES_TO_COPY_FOR_CHILD_STDOUT);
         writeOutputToFile(output.getStdout(), stdoutLogFile);
         System.out.println("Full child process STDOUT was saved to " + stdoutLogFile);
 
         return output;
     }
 
+
     private static void writeOutputToFile(String output, String fileName) throws Exception {
         try (FileWriter fw = new FileWriter(fileName)) {
             fw.write(output, 0, output.length());
         }
     }
+
 
     private static String trimLines(String buffer, int nrOfLines) {
         List<String> l = Arrays.asList(buffer.split("\\R"));
