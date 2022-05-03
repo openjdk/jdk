@@ -566,14 +566,13 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
   // Can't use thread_from_jni_environment as it may also perform a VM exit check that is unsafe to
   // do from this context.
   Thread* raw_thread = Thread::current_or_null_safe();
+  JavaThread* thread;
 
-  if (trace->env_id == NULL || raw_thread == NULL || !raw_thread->is_Java_thread() || ((JavaThread*)raw_thread)->is_exiting()) {
+  if (trace->env_id == NULL || raw_thread == NULL || !raw_thread->is_Java_thread() || (thread = JavaThread::cast(raw_thread))->is_exiting()) {
     // bad env_id, thread has exited or thread is exiting
     trace->num_frames = ticks_thread_exit; // -8
     return;
   }
-
-  JavaThread* thread = JavaThread::cast(raw_thread);
 
   if (thread->in_deopt_handler()) {
     // thread is in the deoptimization handler so return no frames
