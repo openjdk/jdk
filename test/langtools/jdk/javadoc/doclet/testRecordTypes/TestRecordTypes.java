@@ -605,4 +605,41 @@ public class TestRecordTypes extends JavadocTester {
                     </ul>
                     </section>""");
     }
+
+    @Test
+    public void testPackageTree(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package p;
+                    /**
+                     * A point.
+                     * @param x the x coord
+                     * @param y the y coord
+                     */
+                    public record Point(int x, int y) { }""");
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-quiet", "-noindex", "--no-platform-links",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/package-tree.html", true,
+                """
+                    <section class="hierarchy">
+                    <h2 title="Record Class Hierarchy">Record Class Hierarchy</h2>
+                    <ul>
+                    <li class="circle">java.lang.Object
+                    <ul>
+                    <li class="circle">java.lang.Record
+                    <ul>
+                    <li class="circle">p.<a href="Point.html" class="type-name-link" title="class in p">Point</a></li>
+                    </ul>
+                    </li>
+                    </ul>
+                    </li>
+                    </ul>
+                    </section>""");
+    }
 }

@@ -60,7 +60,7 @@ import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.
  */
 public class ClassUseMapper {
 
-    private final ClassTree classtree;
+    private final ClassTree classTree;
 
     /**
      * Mapping of TypeElements to set of PackageElements used by that class.
@@ -192,19 +192,19 @@ public class ClassUseMapper {
     private final Utils utils;
     private final Comparators comparators;
 
-    public ClassUseMapper(BaseConfiguration configuration, ClassTree classtree) {
+    public ClassUseMapper(BaseConfiguration configuration, ClassTree classTree) {
         docEnv = configuration.docEnv;
         elementUtils = docEnv.getElementUtils();
         typeUtils = docEnv.getTypeUtils();
         utils = configuration.utils;
         comparators = utils.comparators;
-        this.classtree = classtree;
+        this.classTree = classTree;
         classToPackage = new TreeMap<>(comparators.makeClassUseComparator());
         // Map subclassing, subinterfacing implementing, ...
-        for (TypeElement te : classtree.baseClasses()) {
+        for (TypeElement te : classTree.classes().roots()) {
             subclasses(te);
         }
-        for (TypeElement intfc : classtree.baseInterfaces()) {
+        for (TypeElement intfc : classTree.interfaces().roots()) {
             // does subinterfacing as side-effect
             implementingClasses(intfc);
         }
@@ -285,7 +285,7 @@ public class ClassUseMapper {
         Collection<TypeElement> ret = classToSubclass.get(te);
         if (ret == null) {
             ret = new TreeSet<>(comparators.makeClassUseComparator());
-            Set<TypeElement> subs = classtree.subClasses(te);
+            Set<TypeElement> subs = classTree.subClasses(te);
             if (subs != null) {
                 ret.addAll(subs);
                 for (TypeElement sub : subs) {
@@ -304,7 +304,7 @@ public class ClassUseMapper {
         Collection<TypeElement> ret = classToSubinterface.get(te);
         if (ret == null) {
             ret = new TreeSet<>(comparators.makeClassUseComparator());
-            Set<TypeElement> subs = classtree.subInterfaces(te);
+            Set<TypeElement> subs = classTree.subInterfaces(te);
             if (subs != null) {
                 ret.addAll(subs);
                 for (TypeElement sub : subs) {
@@ -325,7 +325,7 @@ public class ClassUseMapper {
         Collection<TypeElement> ret = classToImplementingClass.get(te);
         if (ret == null) {
             ret = new TreeSet<>(comparators.makeClassUseComparator());
-            Set<TypeElement> impl = classtree.implementingClasses(te);
+            Set<TypeElement> impl = classTree.implementingClasses(te);
             if (impl != null) {
                 ret.addAll(impl);
                 for (TypeElement anImpl : impl) {
