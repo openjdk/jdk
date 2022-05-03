@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpHeaders;
+import java.util.LinkedList;
+
+import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.Http2Frame;
 
 // will be converted to a PushPromiseFrame in the writeLoop
@@ -33,6 +36,7 @@ class OutgoingPushPromise extends Http2Frame {
     final URI uri;
     final InputStream is;
     final int parentStream; // not the pushed streamid
+    private LinkedList<ContinuationFrame> continuations;
 
     public OutgoingPushPromise(int parentStream,
                                URI uri,
@@ -45,4 +49,17 @@ class OutgoingPushPromise extends Http2Frame {
         this.parentStream = parentStream;
     }
 
+    public void addContinuation(ContinuationFrame cf) {
+        if (continuations == null)
+            continuations = new LinkedList<>();
+        continuations.add(cf);
+    }
+
+    public boolean hasContinuations() {
+        return !continuations.isEmpty();
+    }
+
+    public LinkedList<ContinuationFrame> getContinuations() {
+        return continuations;
+    }
 }

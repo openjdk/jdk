@@ -22,6 +22,7 @@
  */
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
+import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.ErrorFrame;
 import jdk.internal.net.http.frame.FramesDecoder;
@@ -945,6 +946,12 @@ public class Http2TestServerConnection {
         nextPushStreamId += 2;
         pp.streamid(op.parentStream);
         writeFrame(pp);
+        if (pp.getFlags() != HeadersFrame.END_HEADERS && op.hasContinuations()) {
+            LinkedList<ContinuationFrame> continuations = new LinkedList<>(op.getContinuations());
+            while (!continuations.isEmpty()) {
+                writeFrame(continuations.pop());
+            }
+        }
         final InputStream ii = op.is;
         final BodyOutputStream oo = new BodyOutputStream(
                 promisedStreamid,

@@ -249,6 +249,9 @@ public class PushPromiseContinuation {
             testHeaders = testHeadersBuilder.build();
             // Create the Push Promise Frame
             OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, pushPromiseHeaders, content);
+            if (!cfs.isEmpty())
+                cfs.forEach(pp::addContinuation);
+
             // Indicates to the client that a continuation should be expected
             pp.setFlag(0x0);
 
@@ -256,10 +259,6 @@ public class PushPromiseContinuation {
                 // Schedule push promise and continuation for sending
                 conn.outputQ.put(pp);
                 System.err.println("Server: Scheduled a Push Promise to Send");
-                for (ContinuationFrame cf : cfs) {
-                    conn.outputQ.put(cf);
-                    System.err.println("Server: Scheduled a Continuation to Send");
-                }
             } catch (IOException ex) {
                 System.err.println("Server: pushPromise exception: " + ex);
             }
