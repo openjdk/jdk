@@ -278,7 +278,7 @@ public enum AccessFlag {
      *
      * @param mask bit mask of access flags
      * @param location context to interpret mask value
-     * @throw IllegalArgumentException if the mask contains bit
+     * @throws IllegalArgumentException if the mask contains bit
      * positions not support for the location in question
      */
     public static Set<AccessFlag> maskToAccessFlags(int mask, Location location) {
