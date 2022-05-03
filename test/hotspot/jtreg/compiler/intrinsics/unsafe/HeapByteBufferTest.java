@@ -45,6 +45,9 @@
  * @run main/othervm -Djdk.test.lib.random.seed=42
  *      -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:+OptoScheduling
  *      HeapByteBufferTest
+ * @run main/othervm
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:+OptoScheduling
+ *      HeapByteBufferTest
  */
 
 public class HeapByteBufferTest extends ByteBufferTest {
