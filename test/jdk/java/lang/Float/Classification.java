@@ -27,7 +27,7 @@ import jdk.test.lib.Asserts;
  * @test
  * @summary Verify isNan, isInfinite, isFinite
  * @bug 8285973
- * @lib /test/lib
+ * @library /test/lib
  * @run main/othervm Classification
  */
 public class Classification {
@@ -44,7 +44,7 @@ public class Classification {
         Asserts.assertFalse(Float.isNaN(Float.MIN_VALUE));
         Asserts.assertFalse(Float.isNaN(Float.MAX_VALUE));
         Asserts.assertFalse(Float.isNaN(Float.POSITIVE_INFINITY));
-        Asserts.assertFalse(Float.IsNaN(Float.NEGATIVE_INFINITY));
+        Asserts.assertFalse(Float.isNaN(Float.NEGATIVE_INFINITY));
     }
 
     static void testIsInfinite() {
