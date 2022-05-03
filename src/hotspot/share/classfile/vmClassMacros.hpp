@@ -50,6 +50,8 @@
 #define VM_CLASSES_DO(do_klass)                                                                                 \
   /* well-known classes */                                                                                      \
   do_klass(Object_klass,                                java_lang_Object                                      ) \
+  /* GC support, should be loaded as early as possible */                                                       \
+  do_klass(FillerObject_klass,                          jdk_internal_vm_FillerObject                          ) \
   do_klass(String_klass,                                java_lang_String                                      ) \
   do_klass(Class_klass,                                 java_lang_Class                                       ) \
   do_klass(Cloneable_klass,                             java_lang_Cloneable                                   ) \
@@ -183,8 +185,6 @@
   do_klass(vector_VectorMask_klass,                     jdk_internal_vm_vector_VectorMask                     ) \
   do_klass(vector_VectorShuffle_klass,                  jdk_internal_vm_vector_VectorShuffle                  ) \
                                                                                                                 \
-  /* GC support */                                                                                              \
-  do_klass(FillerObject_klass,                          jdk_internal_vm_FillerObject                          ) \
                                                                                                                 \
   /*end*/
 
