@@ -863,7 +863,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
         if (paramElement == null) {
             switch (env.currElement.getKind()) {
-                case CLASS, ENUM, INTERFACE, ANNOTATION_TYPE -> {
+                case CLASS, INTERFACE -> {
                     if (typaram) {
                         env.messages.error(REFERENCE, nameTree, "dc.param.name.not.found");
                     } else {
@@ -1121,17 +1121,12 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     private boolean isConstant(Element e) {
-        if (e == null)
+        if (e != null && e.getKind() == ElementKind.FIELD) {
+            Object value = ((VariableElement) e).getConstantValue();
+            return (value != null); // can't distinguish "not a constant" from "constant is null"
+        } else {
             return false;
-
-        return switch (e.getKind()) {
-            case FIELD -> {
-                Object value = ((VariableElement) e).getConstantValue();
-                yield (value != null); // can't distinguish "not a constant" from "constant is null"
-            }
-
-            default -> false;
-        };
+        }
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1168,15 +1163,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     private boolean isDefaultConstructor() {
-        return switch (env.currElement.getKind()) {
-            case CONSTRUCTOR -> {
-                // A synthetic default constructor has the same pos as the
-                // enclosing class
-                TreePath p = env.currPath;
-                yield env.getPos(p) == env.getPos(p.getParentPath());
-            }
-            default -> false;
-        };
+        if (env.currElement.getKind() == ElementKind.CONSTRUCTOR) {
+            // A synthetic default constructor has the same pos as the
+            // enclosing class
+            TreePath p = env.currPath;
+            return env.getPos(p) == env.getPos(p.getParentPath());
+        } else {
+            return false;
+        }
     }
 
     private boolean isDeclaredType() {
