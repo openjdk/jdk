@@ -265,19 +265,16 @@ public interface Path
      * @implSpec
      * The default implementation is equivalent for this path to:
      * <pre>{@code
-     *     String name = getFileName().toString();
-     *     int lastDot = name.lastIndexOf('.');
-     *     if (lastDot > 0)
-     *         lastDot == name.length() - 1) ?
-     *             Optional.of("") :
-     *             Optional.of(name.substring(lastDot + 1));
-     *     else
-     *         Optional.empty();
+     * if (lastDot <= 0)
+     *     return Optional.empty();
+     * return lastDot == name.length() - 1 ?
+     *     Optional.of("") :
+     *     Optional.of(name.substring(lastDot + 1));
      * }</pre>
      *
-     * @return  an {@code Optional} which either contains the file name of
-     *          this path, or is {@link Optional#empty empty} if the extension
-    *           is indeterminate
+     * @return  an {@code Optional} which either contains the file name
+     *          extension of this path, or is {@link Optional#empty empty}
+     *          if the extension is not found
      *
      * @since 19
      */
@@ -323,13 +320,13 @@ public interface Path
      * @since 19
      */
     default Optional<String> hasExtension(String ext, String... extensions) {
-        String thisExtension = getExtension().orElse(null);
-        if (thisExtension == null)
-            return Optional.empty();
-
         Objects.requireNonNull(ext);
-        if (ext.equals(thisExtension))
-            return Optional.of(ext);
+
+        Optional<String> extension = getExtension();
+        String thisExtension = null;
+        if (extension.isEmpty() ||
+            (thisExtension = extension.get()).equals(ext))
+            return extension;
 
         if (extensions != null) {
             for (String e : extensions) {
