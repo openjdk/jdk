@@ -1310,6 +1310,7 @@ public class TreeInfo {
         return switch (pat.getTag()) {
             case BINDINGPATTERN -> new PatternPrimaryType(pat.type);
             case PARENTHESIZEDPATTERN -> primaryPatternType(((JCParenthesizedPattern) pat).pattern);
+            case DECONSTRUCTIONPATTERN -> new PatternPrimaryType(((JCDeconstructionPattern) pat).type);
             default -> throw new AssertionError();
         };
     }

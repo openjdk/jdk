@@ -759,13 +759,13 @@ public class JavacParser implements Parser {
         return term(EXPR);
     }
 
-
     /** parses patterns.
      */
 
     public JCPattern parsePattern(int pos, JCModifiers mods, JCExpression parsedType) {
         JCPattern pattern;
         if (token.kind == LPAREN && parsedType == null) {
+            //parenthesized pattern:
             int startPos = token.pos;
             accept(LPAREN);
             JCPattern p = parsePattern(token.pos, null, null);
@@ -773,12 +773,45 @@ public class JavacParser implements Parser {
             pattern = toP(F.at(startPos).ParenthesizedPattern(p));
         } else {
             mods = mods != null ? mods : optFinal(0);
-            JCExpression e = parsedType == null ? term(TYPE | NOLAMBDA) : parsedType;
-            JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), e, null));
-            pattern = toP(F.at(pos).BindingPattern(var));
+            JCExpression e;
+            if (parsedType == null) {
+                if (token.kind == IDENTIFIER && token.name() == names.var) {
+                    nextToken();
+                    e = null;
+                } else {
+                    e = term(TYPE | NOLAMBDA);
+                }
+            } else {
+                e = parsedType;
+            }
+            if (token.kind == LPAREN) {
+                ListBuffer<JCPattern> nested = new ListBuffer<>();
+                if (!peekToken(RPAREN)) {
+                    do {
+                        nextToken();
+                        JCPattern nestedPattern = parsePattern(token.pos, null, null);
+                        nested.append(nestedPattern);
+                    } while (token.kind == COMMA);
+                } else {
+                    nextToken();
+                }
+                accept(RPAREN);
+                JCVariableDecl var;
+                if (token.kind == IDENTIFIER) {
+                    var = to(F.at(token.pos).VarDef(F.Modifiers(0), token.name(), e, null));
+                    nextToken();
+                } else {
+                    var = null;
+                }
+                pattern = toP(F.at(pos).DeconstructionPattern(e, nested.toList(), var));
+            } else {
+                JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), e, null));
+                pattern = toP(F.at(pos).BindingPattern(var));
+            }
         }
         return pattern;
     }
+
 
     /**
      * parses (optional) type annotations followed by a type. If the
@@ -970,6 +1003,23 @@ public class JavacParser implements Parser {
                     if (token.kind == IDENTIFIER) {
                         checkSourceLevel(token.pos, Feature.PATTERN_MATCHING_IN_INSTANCEOF);
                         pattern = parsePattern(patternPos, mods, type);
+                    } else if (token.kind == LPAREN) {
+                        checkSourceLevel(Feature.DECONSTRUCTION_PATTERNS);
+                        ListBuffer<JCPattern> nested = new ListBuffer<>();
+                        do {
+                            nextToken();
+                            JCPattern nestedPattern = parsePattern(token.pos, null, null);
+                            nested.append(nestedPattern);
+                        } while (token.kind == COMMA);
+                        accept(RPAREN);
+                        JCVariableDecl var;
+                        if (token.kind == IDENTIFIER) {
+                            var = to(F.at(token.pos).VarDef(F.Modifiers(0), token.name(), type, null));
+                            nextToken();
+                        } else {
+                            var = null;
+                        }
+                        pattern = toP(F.at(type).DeconstructionPattern(type, nested.toList(), var));
                     } else {
                         checkNoMods(typePos, mods.flags & ~Flags.DEPRECATED);
                         if (mods.annotations.nonEmpty()) {
@@ -3087,13 +3137,21 @@ public class JavacParser implements Parser {
     @SuppressWarnings("fallthrough")
     PatternResult analyzePattern(int lookahead) {
         int depth = 0;
+        int parentDepth = 0;
+        PatternResult pendingResult = PatternResult.EXPRESSION;
         while (true) {
             TokenKind token = S.token(lookahead).kind;
             switch (token) {
                 case BYTE: case SHORT: case INT: case LONG: case FLOAT:
                 case DOUBLE: case BOOLEAN: case CHAR: case VOID:
                 case ASSERT, ENUM, IDENTIFIER, UNDERSCORE:
-                    if (depth == 0 && peekToken(lookahead, LAX_IDENTIFIER)) return PatternResult.PATTERN;
+                    if (depth == 0 && peekToken(lookahead, LAX_IDENTIFIER)) {
+                        if (parentDepth == 0) {
+                            return PatternResult.PATTERN;
+                        } else {
+                            pendingResult = PatternResult.PATTERN;
+                        }
+                    }
                     break;
                 case DOT, QUES, EXTENDS, SUPER, COMMA: break;
                 case LT: depth++; break;
@@ -3102,8 +3160,9 @@ public class JavacParser implements Parser {
                 case GT:
                     depth--;
                     if (depth == 0) {
-                         return peekToken(lookahead, LAX_IDENTIFIER) ? PatternResult.PATTERN
-                                                          : PatternResult.EXPRESSION;
+                         return peekToken(lookahead, LAX_IDENTIFIER) ||
+                                peekToken(lookahead, tk -> tk == LPAREN) ? PatternResult.PATTERN
+                                                                         : PatternResult.EXPRESSION;
                     } else if (depth < 0) return PatternResult.EXPRESSION;
                     break;
                 case MONKEYS_AT:
@@ -3118,7 +3177,17 @@ public class JavacParser implements Parser {
                     } else {
                         return PatternResult.EXPRESSION;
                     }
-                default: return PatternResult.EXPRESSION;
+                case LPAREN:
+                    if (S.token(lookahead + 1).kind == RPAREN) {
+                        return parentDepth != 0 && S.token(lookahead + 2).kind == ARROW
+                                ? PatternResult.EXPRESSION
+                                : PatternResult.PATTERN;
+                    }
+                    parentDepth++; break;
+                case RPAREN: parentDepth--; break;
+                case ARROW: return parentDepth > 0 ? PatternResult.EXPRESSION
+                                                   : pendingResult;
+                default: return pendingResult;
             }
             lookahead++;
         }
