@@ -693,6 +693,9 @@ GetJavaProperties(JNIEnv* env)
                            &display_encoding);
 
             sprops.sun_jnu_encoding = getEncodingInternal(0);
+            if (sprops.sun_jnu_encoding == NULL) {
+                sprops.sun_jnu_encoding = "UTF-8";
+            }
             if (LANGIDFROMLCID(userDefaultLCID) == 0x0c04 && majorVersion == 6) {
                 // MS claims "Vista has built-in support for HKSCS-2004.
                 // All of the HKSCS-2004 characters have Unicode 4.1.
