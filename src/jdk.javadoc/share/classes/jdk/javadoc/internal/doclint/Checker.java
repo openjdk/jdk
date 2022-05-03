@@ -1226,15 +1226,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     void warnIfEmpty(DocTree tree, List<? extends DocTree> list) {
         for (DocTree d: list) {
-            switch (d.getKind()) {
-                case TEXT -> {
-                    if (hasNonWhitespace((TextTree) d))
-                        return;
-                }
-
-                default -> {
-                    return;
-                }
+            if (d.getKind() != DocTree.Kind.TEXT
+                    || hasNonWhitespace((TextTree) d)) {
+                return;
             }
         }
         env.messages.warning(MISSING, tree, "dc.empty", tree.getKind().tagName);
