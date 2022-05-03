@@ -1730,8 +1730,9 @@ void PhaseChaitin::fixup_spills() {
           } else {
             // There is no space reserved for a memory edge before the inputs for
             // instructions which have "stackSlotX" parameter instead of "memory".
-            // For example, "MoveF2I_stack_reg".
-            // In those cases, we add the memory edge after the inputs.
+            // For example, "MoveF2I_stack_reg". We always need a memory edge from
+            // src to cisc, else we might schedule cisc before src, loading from a
+            // spill location before storing the spill.
             cisc->add_prec(src);
           }
           block->map_node(cisc, j);          // Insert into basic block
