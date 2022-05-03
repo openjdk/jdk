@@ -1407,7 +1407,7 @@ public class HtmlDocletWriter {
     private boolean commentRemoved = false;
 
     /**
-     * Converts inline tags and text to Content, expanding the
+     * Converts inline tags and text to content, expanding the
      * inline tags along the way.  Called wherever text can contain
      * an inline tag, such as in comments or in free-form text arguments
      * to block tags.
@@ -1425,7 +1425,7 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Converts inline tags and text to Content, expanding the
+     * Converts inline tags and text to content, expanding the
      * inline tags along the way.  Called wherever text can contain
      * an inline tag, such as in comments or in free-form text arguments
      * to block tags.
@@ -1445,7 +1445,7 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Converts inline tags and text to Content, expanding the
+     * Converts inline tags and text to content, expanding the
      * inline tags along the way.  Called wherever text can contain
      * an inline tag, such as in comments or in free-form text arguments
      * to block tags.
