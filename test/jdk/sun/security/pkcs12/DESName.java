@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,33 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import jdk.test.lib.dcmd.*;
-import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
- * @bug 8165736 8252657
- * @comment muslc dlclose is a no-op, see 8285921
- * @requires !vm.musl
+ * @bug 8286024
  * @library /test/lib
- * @run testng AttachReturnError
+ * @summary PKCS12 keystore shows "DES/CBC" as the algorithm of a DES SecretKeyEntry
  */
-public class AttachReturnError extends AttachFailedTestBase {
-    @Override
-    public void run(CommandExecutor executor)  {
-        try {
-            String libpath = getSharedObjectPath("ReturnError");
-            OutputAnalyzer output = null;
 
-            // Check return code
-            output = executor.execute("JVMTI.agent_load " + libpath);
-            output.shouldContain("return code: -1");
+import jdk.test.lib.Asserts;
 
-            // Check loaded libraries
-            output = executor.execute("VM.dynlibs");
-            output.shouldNotContain(libpath);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+import javax.crypto.KeyGenerator;
+import java.security.Key;
+import java.security.KeyStore;
+
+public class DESName {
+    public static void main(String[] args) throws Exception {
+        char[] pass = "changeit".toCharArray();
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        ks.load(null, null);
+        KeyGenerator g = KeyGenerator.getInstance("DES");
+        Key k = g.generateKey();
+        Asserts.assertEQ(k.getAlgorithm(), "DES");
+        ks.setKeyEntry("d", k, pass, null);
+        k = ks.getKey("d", pass);
+        Asserts.assertEQ(k.getAlgorithm(), "DES");
     }
 }
