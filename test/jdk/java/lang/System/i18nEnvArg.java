@@ -21,18 +21,10 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8285517
- * @summary System.getenv() and argument don't return locale dependent data by JEP400
- * @requires (os.family == "linux")
- * @library /test/lib
- * @build jdk.test.lib.process.*
- * @run main i18nEnvArg
- */
-
 import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -46,57 +38,30 @@ public class i18nEnvArg {
     final static String EUC_JP_TEXT = "\u6F22\u5B57";
 
     /*
-     * Generates test process which runs with ja_JP.eucjp locale
+     * Checks OS is Linux and OS has ja_JP.eucjp locale or not.
+     * Sets EUC_JP's environment variable and argunments against ProcessBuilder
      */
     public static void main(String[] args) throws Exception {
-        var cmds = List.of("i18nEnvArg$Start");
+        String jnuEncoding = System.getProperty("sun.jnu.encoding");
+        Charset dcs = jnuEncoding != null
+            ? Charset.forName(jnuEncoding)
+            : Charset.defaultCharset();
+        Charset cs = Charset.forName("x-euc-jp-linux");
+        if (!dcs.equals(cs)) {
+            return;
+        }
+        var cmds = List.of("--add-opens=java.base/java.lang=ALL-UNNAMED",
+            "i18nEnvArg$Verify",
+            EUC_JP_TEXT);
         var pb = ProcessTools.createTestJvm(cmds);
         Map<String, String> environ = pb.environment();
         environ.clear();
         environ.put("LANG", "ja_JP.eucjp");
+        environ.put(EUC_JP_TEXT, EUC_JP_TEXT);
         ProcessTools.executeProcess(pb)
             .outputTo(System.out)
             .errorTo(System.err)
             .shouldHaveExitValue(0);
-    }
-
-    public static class Start {
-        /*
-         * Checks OS is Linux and OS has ja_JP.eucjp locale or not.
-         * Sets EUC_JP's environment variable and argunments against ProcessBuilder
-         */
-        public static void main(String[] args) throws Exception {
-            String nativeEncoding = System.getProperty("native.encoding");
-            Charset dcs = nativeEncoding == null ?
-                Charset.defaultCharset() :
-                Charset.forName(nativeEncoding);
-            Charset cs = Charset.forName("x-euc-jp-linux");
-            if (!dcs.equals(cs)) {
-                return;
-            }
-            String javeExe = System.getProperty("java.home") +
-                File.separator +
-                "bin" +
-                File.separator +
-                "java";
-            ProcessBuilder pb = new ProcessBuilder(javeExe,
-                "--add-opens=java.base/java.lang=ALL-UNNAMED",
-                "-classpath",
-                System.getProperty("java.class.path"),
-                "i18nEnvArg$Verify",
-                EUC_JP_TEXT);
-            pb.redirectErrorStream(true);
-            Map<String, String> environ = pb.environment();
-            environ.clear();
-            environ.put("LANG", "ja_JP.eucjp");
-            environ.put(EUC_JP_TEXT, EUC_JP_TEXT);
-            Process p = pb.start();
-            InputStream is = p.getInputStream();
-            byte[] ba = is.readAllBytes();
-            int rc = p.waitFor();
-            if (ba.length > 0)
-                throw new Exception(new String(ba));
-        }
     }
 
     public static class Verify {
@@ -109,19 +74,21 @@ public class i18nEnvArg {
             byte[] euc = (EUC_JP_TEXT + "=" + EUC_JP_TEXT).getBytes(cs);
             byte[] eucjp = "LANG=ja_JP.eucjp".getBytes(cs);
             String s = System.getenv(EUC_JP_TEXT);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintStream ps = new PrintStream(baos);
             if (!EUC_JP_TEXT.equals(s)) {
-                System.out.println("getenv() returns unexpected data");
+                ps.println("getenv() returns unexpected data");
             }
             if (!EUC_JP_TEXT.equals(args[0])) {
-                System.out.print("Unexpected argument was received: ");
+                ps.print("Unexpected argument was received: ");
                 for(char ch : EUC_JP_TEXT.toCharArray()) {
-                   System.out.printf("\\u%04X", (int)ch);
+                   ps.printf("\\u%04X", (int)ch);
                 }
-                System.out.print("<->");
+                ps.print("<->");
                 for(char ch : args[0].toCharArray()) {
-                   System.out.printf("\\u%04X", (int)ch);
+                   ps.printf("\\u%04X", (int)ch);
                 }
-                System.out.println();
+                ps.println();
             }
             Class<?> cls = Class.forName("java.lang.ProcessEnvironment");
             Method environ_mid = cls.getDeclaredMethod("environ");
@@ -138,9 +105,14 @@ public class i18nEnvArg {
                 byte[] envb = Arrays.copyOf(ba, bb.position());
                 if (Arrays.equals(eucjp, envb)) continue;
                 if (!Arrays.equals(euc, envb)) {
-                    System.out.println("Unexpected environment variables: " +
+                    ps.println("Unexpected environment variables: " +
                         hf.formatHex(envb));
                 }
+            }
+            byte[] err = baos.toByteArray();
+            if (err.length > 0) {
+                System.err.write(err);
+                System.exit(1);
             }
         }
     }

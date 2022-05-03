@@ -56,8 +56,9 @@ package java.lang;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
-import jdk.internal.util.StaticProperty;
 
 
 final class ProcessEnvironment
@@ -65,9 +66,15 @@ final class ProcessEnvironment
     private static final HashMap<Variable,Value> theEnvironment;
     private static final Map<String,String> theUnmodifiableEnvironment;
     static final int MIN_NAME_LENGTH = 0;
-    private static final Charset nativeCharset =
-        Charset.forName(StaticProperty.nativeEncoding(),
-                        Charset.defaultCharset());
+    private static final Charset jnuCharset;
+    static {
+        @SuppressWarnings("removal")
+        String jnuEncoding = AccessController.doPrivileged((PrivilegedAction<String>) ()
+            -> System.getProperty("sun.jnu.encoding"));
+        jnuCharset = jnuEncoding != null
+            ? Charset.forName(jnuEncoding, Charset.defaultCharset())
+            : Charset.defaultCharset();
+    }
 
     static {
         // We cache the C environment.  This means that subsequent calls
@@ -168,7 +175,7 @@ final class ProcessEnvironment
         }
 
         public static Variable valueOfQueryOnly(String str) {
-            return new Variable(str, str.getBytes(nativeCharset));
+            return new Variable(str, str.getBytes(jnuCharset));
         }
 
         public static Variable valueOf(String str) {
@@ -177,7 +184,7 @@ final class ProcessEnvironment
         }
 
         public static Variable valueOf(byte[] bytes) {
-            return new Variable(new String(bytes, nativeCharset), bytes);
+            return new Variable(new String(bytes, jnuCharset), bytes);
         }
 
         public int compareTo(Variable variable) {
@@ -201,7 +208,7 @@ final class ProcessEnvironment
         }
 
         public static Value valueOfQueryOnly(String str) {
-            return new Value(str, str.getBytes(nativeCharset));
+            return new Value(str, str.getBytes(jnuCharset));
         }
 
         public static Value valueOf(String str) {
@@ -210,7 +217,7 @@ final class ProcessEnvironment
         }
 
         public static Value valueOf(byte[] bytes) {
-            return new Value(new String(bytes, nativeCharset), bytes);
+            return new Value(new String(bytes, jnuCharset), bytes);
         }
 
         public int compareTo(Value value) {

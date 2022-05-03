@@ -599,9 +599,9 @@ public class Basic {
         try {
             // If round trip conversion works, should be able to set env vars
             // correctly in child.
-            String nativeEncoding = System.getProperty("native.encoding");
-            Charset cs = nativeEncoding != null ?
-                Charset.forName(nativeEncoding, Charset.defaultCharset())
+            String jnuEncoding = System.getProperty("sun.jnu.encoding");
+            Charset cs = jnuEncoding != null
+                ? Charset.forName(jnuEncoding, Charset.defaultCharset())
                 : Charset.defaultCharset();
             if (new String(tested.getBytes(cs), cs).equals(tested)) {
                 out.println("Testing " + encoding + " environment values");
