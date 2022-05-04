@@ -68,6 +68,8 @@ import jdk.internal.vm.vector.VectorSupport;
  *
  * <li>{@code ESIZE} &mdash; the size in bytes of the operand type
  *
+ * <li>{@code EMASK} &mdash; the bit mask of the operand type, where {@code EMASK=(1<<(ESIZE*8))-1}
+ *
  * <li>{@code intVal}, {@code byteVal}, etc. &mdash; the operand of a
  * conversion, with the indicated type
  * </ul>
@@ -558,7 +560,7 @@ public abstract class VectorOperators {
     public static final /*bitwise*/ Binary LSHL = binary("LSHL", "<<", VectorSupport.VECTOR_OP_LSHIFT, VO_SHIFT);
     /** Produce {@code a>>(n&(ESIZE*8-1))}.  Integral only. */
     public static final /*bitwise*/ Binary ASHR = binary("ASHR", ">>", VectorSupport.VECTOR_OP_RSHIFT, VO_SHIFT);
-    /** Produce {@code a>>>(n&(ESIZE*8-1))}.  Integral only. */
+    /** Produce {@code (a&EMASK)>>>(n&(ESIZE*8-1))}.  Integral only. */
     public static final /*bitwise*/ Binary LSHR = binary("LSHR", ">>>", VectorSupport.VECTOR_OP_URSHIFT, VO_SHIFT);
     /** Produce {@code rotateLeft(a,n)}.  Integral only. */
     public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT);
