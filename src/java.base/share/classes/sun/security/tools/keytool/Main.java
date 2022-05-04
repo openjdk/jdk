@@ -1846,8 +1846,7 @@ public final class Main {
             if (verbose) {
                 MessageFormat form = new MessageFormat(rb.getString(
                     "Generated.keyAlgName.secret.key"));
-                Object[] source =
-                    {useDefaultPBEAlgorithm ? "PBE" : secKey.getAlgorithm()};
+                Object[] source = { "PBE" };
                 System.err.println(form.format(source));
             }
         } else {
