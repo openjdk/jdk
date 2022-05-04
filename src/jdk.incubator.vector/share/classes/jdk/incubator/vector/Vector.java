@@ -2712,6 +2712,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * @param m the mask controlling the compression
      * @return the compressed lane elements of this vector
+     * @since 19
      */
     public abstract Vector<E> compress(VectorMask<E> m);
 
@@ -2731,6 +2732,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * @param m the mask controlling the compression
      * @return the expanded lane elements of this vector
+     * @since 19
      */
     public abstract Vector<E> expand(VectorMask<E> m);
 
@@ -3392,6 +3394,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *         not backed by a {@code byte[]} array.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
+     * @since 19
      */
     public abstract void intoMemorySegment(MemorySegment ms, long offset, ByteOrder bo);
 
@@ -3444,6 +3447,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *         not backed by a {@code byte[]} array.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
+     * @since 19
      */
     public abstract void intoMemorySegment(MemorySegment ms, long offset,
                                            ByteOrder bo, VectorMask<E> m);

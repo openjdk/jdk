@@ -178,6 +178,7 @@ public interface VectorSpecies<E> {
      * @throws IllegalArgumentException if the {@code length} is
      *         negative and the result would overflow to a positive value
      * @see Math#floorMod(long, int)
+     * @since 19
      */
     long loopBound(long length);
 
@@ -212,6 +213,7 @@ public interface VectorSpecies<E> {
      * @param limit the upper-bound (exclusive) of index range
      * @return a mask with out-of-range lanes unset
      * @see VectorMask#indexInRange(long, long)
+     * @since 19
      */
     VectorMask<E> indexInRange(long offset, long limit);
 
@@ -476,7 +478,7 @@ public interface VectorSpecies<E> {
     Vector<E> fromArray(Object a, int offset);
     // Defined when ETYPE is known.
 
-     /**
+    /**
      * Loads a vector of this species from a {@linkplain MemorySegment memory segment}
      * starting at an offset into the memory segment.
      * Bytes are composed into primitive lane elements according
@@ -499,6 +501,7 @@ public interface VectorSpecies<E> {
      *         for any lane {@code N} in the vector
      * @see IntVector#fromMemorySegment(VectorSpecies, jdk.incubator.foreign.MemorySegment, long, java.nio.ByteOrder)
      * @see FloatVector#fromMemorySegment(VectorSpecies, jdk.incubator.foreign.MemorySegment, long, java.nio.ByteOrder)
+     * @since 19
      */
     Vector<E> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo);
 

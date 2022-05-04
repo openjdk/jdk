@@ -500,6 +500,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * @param limit the upper-bound (exclusive) of index range
      * @return the original mask, with out-of-range lanes unset
      * @see VectorSpecies#indexInRange(long, long)
+     * @since 19
      */
     public abstract VectorMask<E> indexInRange(long offset, long limit);
 
@@ -661,6 +662,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * the true count of this mask.
      *
      * @return the compressed mask of this mask
+     * @since 19
      */
     public abstract VectorMask<E> compress();
 

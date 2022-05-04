@@ -2359,6 +2359,7 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     /**
      * {@inheritDoc} <!--workaround-->
+     * @since 19
      */
     @Override
     public abstract
@@ -2377,6 +2378,7 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     /**
      * {@inheritDoc} <!--workaround-->
+     * @since 19
      */
     @Override
     public abstract
@@ -3012,6 +3014,7 @@ public abstract class LongVector extends AbstractVector<Long> {
      *         not backed by a {@code byte[]} array.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
+     * @since 19
      */
     @ForceInline
     public static
@@ -3068,6 +3071,7 @@ public abstract class LongVector extends AbstractVector<Long> {
      *         not backed by a {@code byte[]} array.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
+     * @since 19
      */
     @ForceInline
     public static
@@ -3272,6 +3276,7 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     /**
      * {@inheritDoc} <!--workaround-->
+     * @since 19
      */
     @Override
     @ForceInline
@@ -3288,6 +3293,7 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     /**
      * {@inheritDoc} <!--workaround-->
+     * @since 19
      */
     @Override
     @ForceInline
