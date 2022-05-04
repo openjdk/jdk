@@ -87,7 +87,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 output.inlineTags = ch.getBody(output.holderTag);
                 output.tagList.add(tag);
             } else if (target != null && candidate != null &&
-                    utils.isTypeElement(candidate) && utils.isTypeElement(target) &&
+                    utils.isTypeElement(candidate) && utils.isTypeElement(target) && // FIXME: can they be anything else other than type elements?
                     utils.isSubclassOf((TypeElement) candidate, (TypeElement) target)) {
                 output.tagList.add(tag);
             }
@@ -108,7 +108,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         Map<List<? extends ThrowsTree>, ExecutableElement> tagsMap = new LinkedHashMap<>();
         tagsMap.put(utils.getThrowsTrees(execHolder), execHolder);
         Content result = writer.getOutputInstance();
-        HashSet<String> alreadyDocumented = new HashSet<>();
+        Set<String> alreadyDocumented = new HashSet<>();
         if (!tagsMap.isEmpty()) {
             result.add(throwsTagsOutput(tagsMap, writer, alreadyDocumented, typeSubstitutions, true));
         }
@@ -147,21 +147,21 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     /**
      * Returns the generated content for a collection of {@code @throws} tags.
      *
-     * @param throwTags         the collection of tags to be converted
+     * @param throwsTags        the collection of tags to be converted
      * @param writer            the taglet-writer used by the doclet
      * @param alreadyDocumented the set of exceptions that have already been documented
      * @param allowDuplicates   {@code true} if we allow duplicate tags to be documented
      * @return the generated content for the tags
      */
-    protected Content throwsTagsOutput(Map<List<? extends ThrowsTree>, ExecutableElement> throwTags,
+    protected Content throwsTagsOutput(Map<List<? extends ThrowsTree>, ExecutableElement> throwsTags,
                                        TagletWriter writer,
                                        Set<String> alreadyDocumented,
                                        Map<String, TypeMirror> typeSubstitutions,
                                        boolean allowDuplicates) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
-        if (!throwTags.isEmpty()) {
-            for (Entry<List<? extends ThrowsTree>, ExecutableElement> entry : throwTags.entrySet()) {
+        if (!throwsTags.isEmpty()) {
+            for (Entry<List<? extends ThrowsTree>, ExecutableElement> entry : throwsTags.entrySet()) {
                 CommentHelper ch = utils.getCommentHelper(entry.getValue());
                 Element e = entry.getValue();
                 for (ThrowsTree dt : entry.getKey()) {
