@@ -52,8 +52,8 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   return JNI_OK;
 }
 
-JNIEXPORT jboolean JNICALL Java_framecnt01_checkFrames0(JNIEnv *jni, jclass cls, jthread thread,
-                                                        jboolean suspend, jint expected_count) {
+JNIEXPORT jboolean JNICALL
+Java_framecnt01_checkFrames0(JNIEnv *jni, jclass cls, jthread thread, jboolean suspend, jint expected_count) {
   jboolean result = JNI_TRUE;
 
   if (suspend) {

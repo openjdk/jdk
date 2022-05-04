@@ -41,12 +41,12 @@ static int eventsCount = 0;
 static int eventsExpected = 0;
 static const char *prefix = NULL;
 
-void JNICALL ThreadStart(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
-  jvmtiError err;
+void JNICALL
+ThreadStart(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   jvmtiThreadInfo inf;
   char name[32];
 
-  err = jvmti->GetThreadInfo(thread, &inf);
+  jvmtiError err = jvmti->GetThreadInfo(thread, &inf);
   if (err != JVMTI_ERROR_NONE) {
     LOG("(GetThreadInfo#%d) unexpected error: %s (%d)\n", eventsCount, TranslateError(err), err);
     result = STATUS_FAILED;
@@ -65,7 +65,7 @@ void JNICALL ThreadStart(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   }
 }
 
-jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
+jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
   jint res;
 

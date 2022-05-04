@@ -52,7 +52,7 @@ public class CarrierThread extends ForkJoinWorkerThread {
     private boolean blocking;    // true if in blocking op
 
     public CarrierThread(ForkJoinPool pool) {
-        super(CARRIER_THREADGROUP, false, pool);
+        super(CARRIER_THREADGROUP, pool, true);
         U.putReference(this, CONTEXTCLASSLOADER, ClassLoader.getSystemClassLoader());
         U.putReference(this, INHERITABLETHREADLOCALS, null);
         U.putReferenceRelease(this, INHERITEDACCESSCONTROLCONTEXT, INNOCUOUS_ACC);

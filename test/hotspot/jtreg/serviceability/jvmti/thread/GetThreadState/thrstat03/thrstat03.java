@@ -38,14 +38,14 @@
  *     Ported from JVMDI.
  *
  * @library /test/lib
- * @run main/othervm/native -agentlib:thrstat03 thrstat03 5
+ * @compile --enable-preview -source ${jdk.version} thrstat03.java
+ * @run main/othervm/native --enable-preview  -agentlib:thrstat03 thrstat03 5
  */
 
 import java.io.PrintStream;
 
 public class thrstat03 {
 
-    final static int JCK_STATUS_BASE = 95;
     static final int NOT_STARTED = 0;
     static final int SLEEPING = 1;
     static final int ZOMBIE = 2;
@@ -57,10 +57,13 @@ public class thrstat03 {
     public static int waitTime = 2;
 
     public static void main(String args[]) {
+      test(Thread.ofPlatform().unstarted(new TestThread()));
+      test(Thread.ofVirtual().unstarted(new TestThread()));
+    }
+
+    public static void test(Thread t) {
 
         init(waitTime);
-
-        TestThread t = new TestThread();
 
         check(t, NOT_STARTED);
 
@@ -83,19 +86,19 @@ public class thrstat03 {
             throw new Error("Unexpected: " + e);
         }
 
-        if (!check(t, ZOMBIE)) {
+        if (!check(t, t.isVirtual() ? NOT_STARTED : ZOMBIE)) {
             throw new RuntimeException();
         }
     }
 
 
-    static class TestThread extends Thread {
+    static class TestThread implements Runnable {
         public void run() {
             synchronized (lock) {
                 lock.notify();
             }
             try {
-                sleep(waitTime*60000);
+                Thread.sleep(waitTime*60000);
             } catch (InterruptedException e) {
                 // OK, it's expected
             }

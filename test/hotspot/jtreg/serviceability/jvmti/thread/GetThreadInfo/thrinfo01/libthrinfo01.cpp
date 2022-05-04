@@ -63,8 +63,8 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   return JNI_OK;
 }
 
-JNIEXPORT jboolean JNICALL Java_thrinfo01_checkInfo0(JNIEnv *jni, jclass cls,
-                                                     jthread thread, jthreadGroup thread_group, jint expected_idx) {
+JNIEXPORT jboolean JNICALL
+Java_thrinfo01_checkInfo0(JNIEnv *jni, jclass cls, jthread thread, jthreadGroup thread_group, jint expected_idx) {
   jboolean result = JNI_TRUE;
   jvmtiThreadInfo inf;
 

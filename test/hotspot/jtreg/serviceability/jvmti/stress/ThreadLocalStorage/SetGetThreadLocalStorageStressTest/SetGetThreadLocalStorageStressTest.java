@@ -63,11 +63,11 @@ public class SetGetThreadLocalStorageStressTest extends DebugeeClass {
 
     public static void main(String argv[]) throws InterruptedException {
         int size = DEFAULT_ITERATIONS;
-        int kernelThreadNum = Runtime.getRuntime().availableProcessors() / 4;
+        int platformThreadNum = Runtime.getRuntime().availableProcessors() / 4;
         int virtualThreadNum = Runtime.getRuntime().availableProcessors();
 
-        if (kernelThreadNum == 0) {
-            kernelThreadNum = 2;
+        if (platformThreadNum == 0) {
+            platformThreadNum = 2;
         }
 
         if (argv.length > 0) {
@@ -79,11 +79,11 @@ public class SetGetThreadLocalStorageStressTest extends DebugeeClass {
 
         long uniqID = 0;
         for (int c = 0; c < size; c++) {
-            ArrayList<Thread> threads = new ArrayList<>(kernelThreadNum + virtualThreadNum);
-            for (int i = 0; i < kernelThreadNum; i++) {
+            ArrayList<Thread> threads = new ArrayList<>(platformThreadNum + virtualThreadNum);
+            for (int i = 0; i < platformThreadNum; i++) {
                 TaskMonitor task = new TaskMonitor();
                 threads.add(Thread.ofPlatform()
-                        .name("KernelThread-" + uniqID++)
+                        .name("PlatformThread-" + uniqID++)
                         .unstarted(task));
             }
 

@@ -73,7 +73,8 @@
  *       - enhanced descripton
  *
  * @library /test/lib
- * @run main/othervm/native -agentlib:thrstat01 thrstat01
+ * @compile --enable-preview -source ${jdk.version} thrstat01.java
+ * @run main/othervm/native --enable-preview -agentlib:thrstat01 thrstat01
  */
 
 public class thrstat01 {
@@ -92,7 +93,8 @@ public class thrstat01 {
 
     public static void main(String[] args) {
         thrstat01 t = new thrstat01();
-        t.meth();
+        t.meth(Thread.ofVirtual().name("tested_thread_thr1").unstarted(new TestedThreadThr1()));
+        t.meth(Thread.ofPlatform().name("tested_thread_thr1").unstarted(new TestedThreadThr1()));
     }
 
     // barriers for testing thread status values
@@ -100,9 +102,7 @@ public class thrstat01 {
     public static Object blockingMonitor = new Object();
     public static Lock endingMonitor = new Lock();
 
-    void meth() {
-        TestedThreadThr1 thr = new TestedThreadThr1("tested_thread_thr1");
-
+    void meth(Thread thr) {
         synchronized (blockingMonitor) {
             synchronized (startingMonitor) {
                 startingMonitor.val = 0;
@@ -137,10 +137,9 @@ public class thrstat01 {
     }
 }
 
-class TestedThreadThr1 extends Thread {
+class TestedThreadThr1 implements Runnable {
 
-    public TestedThreadThr1(String name) {
-        super(name);
+    public TestedThreadThr1() {
     }
 
     public void run() {

@@ -43,8 +43,11 @@ static jint state[] = {
     JVMTI_THREAD_STATE_IN_OBJECT_WAIT
 };
 
-void JNICALL VMInit(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thr) {
+void JNICALL
+VMInit(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thr) {
   jvmtiError err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
+  check_jvmti_status(jni, err, "Error in SetEventNotificationMode");
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
   check_jvmti_status(jni, err, "Error in SetEventNotificationMode");
 }
 
@@ -53,12 +56,11 @@ ThreadStart(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thread) {
 
   RawMonitorLocker rml = RawMonitorLocker(jvmti_env, jni, access_lock);
   jvmtiThreadInfo thread_info = get_thread_info(jvmti, jni, thread);
+  LOG(">>> ThreadStart: \"%s\"\n", thread_info.name);
 
   if (thread_info.name != NULL && strcmp(thread_info.name, "tested_thread_thr1") == 0) {
     tested_thread_thr1 = jni->NewGlobalRef(thread);
     LOG(">>> ThreadStart: \"%s\", 0x%p\n", thread_info.name, tested_thread_thr1);
-    jvmtiError err = jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_START, NULL);
-    check_jvmti_status(jni, err, "Error in SetEventNotificationMode");
   }
 }
 
@@ -77,9 +79,21 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   access_lock = create_raw_monitor(jvmti, "_access_lock");
   wait_lock = create_raw_monitor(jvmti, "_wait_lock");
 
+  jvmtiCapabilities caps;
+  memset(&caps, 0, sizeof(caps));
+  caps.can_support_virtual_threads = 1;
+
+  err = jvmti->AddCapabilities(&caps);
+  if (err != JVMTI_ERROR_NONE) {
+    LOG("error in JVMTI AddCapabilities: %d\n", err);
+    return JNI_ERR;
+  }
+
   jvmtiEventCallbacks callbacks;
   callbacks.VMInit = &VMInit;
   callbacks.ThreadStart = &ThreadStart;
+  callbacks.VirtualThreadStart = &ThreadStart;
+
   err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
   if (err != JVMTI_ERROR_NONE) {
     LOG("(SetEventCallbacks) unexpected error: %s (%d)\n", TranslateError(err), err);
@@ -99,7 +113,6 @@ JNIEXPORT jboolean JNICALL
 Java_thrstat01_checkStatus0(JNIEnv *jni, jclass cls, jint stat_ind) {
   jboolean result = JNI_TRUE;
   jint thread_state;
-  jint millis;
 
   LOG("native method checkStatus started\n");
 
@@ -108,9 +121,14 @@ Java_thrstat01_checkStatus0(JNIEnv *jni, jclass cls, jint stat_ind) {
     return JNI_FALSE;
   }
 
+  jvmtiThreadInfo thread_info = get_thread_info(jvmti, jni, tested_thread_thr1);
+  LOG("Testing thread: \"%s\"\n", thread_info.name);
+
   /* wait until thread gets an expected state */
-  for (millis = WAIT_START; millis < WAIT_TIME; millis <<= 1) {
+  for (jint millis = WAIT_START; millis < WAIT_TIME; millis <<= 1) {
     thread_state = get_thread_state(jvmti, jni, tested_thread_thr1);
+    LOG(">>> thread \"tested_thread_thr1\" (0x%p) state: %s (%d)\n", tested_thread_thr1, TranslateState(thread_state), thread_state);
+
     if ((thread_state & state[stat_ind]) != 0) {
       break;
     }

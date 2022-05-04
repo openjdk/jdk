@@ -160,7 +160,8 @@ import jdk.internal.vm.SharedThreadContainer;
  * {@linkplain Thread#getContextClassLoader() thread context class loader}.
  * In addition, if a {@link SecurityManager} is present, then
  * the common pool uses a factory supplying threads that have no
- * {@link Permissions} enabled.
+ * {@link Permissions} enabled, and are not guaranteed to preserve
+ * the values of {@link java.lang.ThreadLocal} variables across tasks.
  *
  * Upon any error in establishing these settings, default parameters
  * are used. It is possible to disable or limit the use of threads in
@@ -168,14 +169,13 @@ import jdk.internal.vm.SharedThreadContainer;
  * using a factory that may return {@code null}. However doing so may
  * cause unjoined tasks to never be executed.
  *
- * <p><b>Implementation notes:</b> This implementation restricts the
- * maximum number of running threads to 32767. Attempts to create
- * pools with greater than the maximum number result in
- * {@code IllegalArgumentException}.
- *
- * <p>This implementation rejects submitted tasks (that is, by throwing
- * {@link RejectedExecutionException}) only when the pool is shut down
- * or internal resources have been exhausted.
+ * @implNote This implementation restricts the maximum number of
+ * running threads to 32767. Attempts to create pools with greater
+ * than the maximum number result in {@code
+ * IllegalArgumentException}. Also, this implementation rejects
+ * submitted tasks (that is, by throwing {@link
+ * RejectedExecutionException}) only when the pool is shut down or
+ * internal resources have been exhausted.
  *
  * @since 1.7
  * @author Doug Lea
@@ -242,7 +242,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * reflecting the presence or absence of other contextual sync
      * provided by atomic and/or volatile accesses. Some methods (or
      * their primary loops) begin with an acquire fence or
-     * otherwise-unnecessary valatile read that amounts to an
+     * otherwise-unnecessary volatile read that amounts to an
      * acquiring read of "this" to cover all fields (which is
      * sometimes stronger than necessary, but less brittle). Some
      * constructions are intentionally racy because they use read
@@ -266,8 +266,8 @@ public class ForkJoinPool extends AbstractExecutorService {
      * uses masking, not mod, for indexing a power-of-two-sized array,
      * enforces memory ordering, supports resizing, and possibly
      * signals waiting workers to start scanning (described below),
-     * which requires that even internal usages to strictly order
-     * accesses (using a form of lock release).
+     * which requires even internal usages to strictly order accesses
+     * (using a form of lock release).
      *
      * The pop operation (always performed by owner) is of the form:
      *   if ((task = getAndSet(q.array, (q.top-1) % length, null)) != null)
@@ -331,7 +331,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      *    contention, when possible, non-owners avoid reading the
      *    "top" index at all, and instead use array reads, including
      *    one-ahead reads to check whether to repoll, relying on the
-     *    fact that an non-empty queue does not have two null slots in
+     *    fact that a non-empty queue does not have two null slots in
      *    a row, except in cases (resizes and shifts) that can be
      *    detected with a secondary recheck.
      *
@@ -340,7 +340,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * available to try, and the presence or nature of screening steps
      * when only some kinds of tasks can be taken. When alternatives
      * (or failing) is an option, they uniformly give up after
-     * boundeed numbers of stalls and/or CAS failures, which reduces
+     * bounded numbers of stalls and/or CAS failures, which reduces
      * contention when too many workers are polling too few tasks.
      * Overall, in the aggregate, we ensure probabilistic
      * non-blockingness of work-stealing at least until checking
@@ -363,7 +363,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Insertion of tasks in shared mode requires a lock. We use only
      * a simple spinlock because submitters encountering a busy queue
      * move to a different position to use or create other queues.
-     * They (spin) block only when registering new queues, and less
+     * They (spin) block when registering new queues, and less
      * often in tryRemove and helpComplete.  The lock needed for
      * external queues is generalized (as field "access") for
      * operations on owned queues that require a fully-fenced write
@@ -448,7 +448,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * (actually stack, represented by the lower 32bit subfield of
      * ctl).  Released workers are those known to be scanning for
      * and/or running tasks. Unreleased ("available") workers are
-     * recorded in the ctl stack. These workers are made available for
+     * recorded in the ctl stack. These workers are made eligible for
      * signalling by enqueuing in ctl (see method awaitWork).  The
      * "queue" is a form of Treiber stack. This is ideal for
      * activating threads in most-recently used order, and improves
@@ -523,7 +523,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * small computations involving only a few workers.
      *
      * Scanning. Method scan performs top-level scanning for (and
-     * execution of) tasks by polling a pseodo-random permutation of
+     * execution of) tasks by polling a pseudo-random permutation of
      * the array (by starting at a random index, and using a constant
      * cyclically exhaustive stride.) It uses the same basic polling
      * method as WorkQueue.poll(), but restarts with a different
@@ -721,7 +721,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * overridden by system properties, we use workers of subclass
      * InnocuousForkJoinWorkerThread when there is a SecurityManager
      * present. These workers have no permissions set, do not belong
-     * to any user-defined ThreadGroup, and erase all ThreadLocals
+     * to any user-defined ThreadGroup, and clear all ThreadLocals
      * after executing any top-level task.  The associated mechanics
      * may be JVM-dependent and must access particular Thread class
      * fields to achieve this effect.
@@ -885,7 +885,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     // {pool, workQueue}.config bits
     static final int FIFO         = 1 << 16;       // fifo queue or access mode
     static final int SRC          = 1 << 17;       // set when stealable
-    static final int INNOCUOUS    = 1 << 18;       // set for Innocuous workers
+    static final int CLEAR_TLS    = 1 << 18;       // set for Innocuous workers
     static final int TRIMMED      = 1 << 19;       // timed out while idle
     static final int ISCOMMON     = 1 << 20;       // set for common pool
     static final int PRESET_SIZE  = 1 << 21;       // size was set by property
@@ -981,7 +981,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm == null)
-                return new ForkJoinWorkerThread(null, pool, true);
+                return new ForkJoinWorkerThread(null, pool, true, false);
             else if (isCommon)
                 return newCommonWithACC(pool);
             else
@@ -1013,7 +1013,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             return AccessController.doPrivileged(
                 new PrivilegedAction<>() {
                     public ForkJoinWorkerThread run() {
-                        return new ForkJoinWorkerThread(null, pool, true);
+                        return new ForkJoinWorkerThread(null, pool, true, false);
                     }}, acc);
         }
 
@@ -1210,7 +1210,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                         access = 0;
                     else {
                         top = s;
-                        releaseAccess();
+                        access = 0;
                         return true;
                     }
                 }
@@ -1315,7 +1315,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             }
             nsteals += nstolen;
             source = 0;
-            if ((cfg & INNOCUOUS) != 0)
+            if ((cfg & CLEAR_TLS) != 0)
                 ThreadLocalRandom.eraseThreadLocals(Thread.currentThread());
         }
 
@@ -1451,10 +1451,10 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
 
         /**
-         * Callback from InnocuousForkJoinWorkerThread.onStart
+         * Called in constructors if ThreadLocals not preserved
          */
-        final void setInnocuous() {
-            config |= INNOCUOUS;
+        final void setClearThreadLocals() {
+            config |= CLEAR_TLS;
         }
 
         static {
@@ -1558,7 +1558,7 @@ public class ForkJoinPool extends AbstractExecutorService {
 
     /**
      * Tries to construct and start one worker. Assumes that total
-     * count has already been incremented as a reservation.  InvThreadokes
+     * count has already been incremented as a reservation.  Invokes
      * deregisterWorker on any failure.
      *
      * @return true if successful
@@ -1967,9 +1967,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             active    = (short)(c >>> RC_SHIFT),
             total     = (short)(c >>> TC_SHIFT),
             sp        = (int)c & ~INACTIVE;
-        if (runState < 0)                              // terminating
-            return -1;
-        else if (sp != 0 && active <= pc) {            // activate idle worker
+        if (sp != 0 && active <= pc) {                 // activate idle worker
             WorkQueue[] qs; WorkQueue v; int i;
             if (ctl == c && (qs = queues) != null &&
                 qs.length > (i = sp & SMASK) && (v = qs[i]) != null) {
@@ -2028,10 +2026,10 @@ public class ForkJoinPool extends AbstractExecutorService {
             if ((s = task.status) < 0)
                 return s;
             if (!rescan && sctl == (sctl = ctl)) {
-                if ((s = tryCompensate(sctl, timed)) >= 0)
-                    return s;                              // block
                 if (runState < 0)
                     return 0;
+                if ((s = tryCompensate(sctl, timed)) >= 0)
+                    return s;                              // block
             }
             rescan = false;
             int n = ((qs = queues) == null) ? 0 : qs.length, m = n - 1;
@@ -2103,12 +2101,10 @@ public class ForkJoinPool extends AbstractExecutorService {
             if ((s = w.helpComplete(task, owned, 0)) < 0)
                 return s;
             if (!rescan && sctl == (sctl = ctl)) {
-                if (!owned)
+                if (!owned || runState < 0)
                     return 0;
                 if ((s = tryCompensate(sctl, timed)) >= 0)
                     return s;
-                if (runState < 0)
-                    return 0;
             }
             rescan = false;
             int n = ((qs = queues) == null) ? 0 : qs.length, m = n - 1;
@@ -2287,7 +2283,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param interruptible true if return on interrupt
      * @return positive if quiescent, negative if interrupted, else 0
      */
-    final static int helpQuiescePool(ForkJoinPool pool, long nanos,
+    static final int helpQuiescePool(ForkJoinPool pool, long nanos,
                                      boolean interruptible) {
         Thread t; ForkJoinPool p; ForkJoinWorkerThread wt;
         if ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread &&
@@ -2922,14 +2918,17 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Applications include contexts in which the number of available
      * processors changes over time.
      *
+     * @implNote This implementation restricts the maximum number of
+     * running threads to 32767
+     *
      * @param size the target parallelism level
      * @return the previous parallelism level.
      * @throws IllegalArgumentException if size is less than 1 or
-     *         greater than the maximum supported by this
-     *         pool (currently 32767).
-     * @throws IllegalStateException if this is the{@link #commonPool()} and
-     *         parallelism level was set by System property
-     *         {@systemProperty java.util.concurrent.ForkJoinPool.common.parallelism}.
+     *         greater than the maximum supported by this pool.
+     * @throws UnsupportedOperationException this is the{@link
+     *         #commonPool()} and parallelism level was set by System
+     *         property {@systemProperty
+     *         java.util.concurrent.ForkJoinPool.common.parallelism}.
      * @throws SecurityException if a security manager exists and
      *         the caller is not permitted to modify threads
      *         because it does not hold {@link
@@ -2940,7 +2939,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (size < 1 || size > MAX_CAP)
             throw new IllegalArgumentException();
         if ((config & PRESET_SIZE) != 0)
-            throw new IllegalStateException("Cannot override System property");
+            throw new UnsupportedOperationException("Cannot override System property");
         checkPermission();
         return getAndSetParallelism(size);
     }

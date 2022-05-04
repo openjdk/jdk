@@ -71,14 +71,14 @@ public class ForkJoinWorkerThread extends Thread {
     /**
      * Full nonpublic constructor.
      */
-    ForkJoinWorkerThread(ThreadGroup group,
-                         boolean inheritInheritableThreadLocals,
-                         ForkJoinPool pool,
-                         boolean useSystemClassLoader) {
-        super(group, null, pool.nextWorkerThreadName(), 0L,
-                inheritInheritableThreadLocals);
+    ForkJoinWorkerThread(ThreadGroup group, ForkJoinPool pool,
+                         boolean useSystemClassLoader,
+                         boolean clearThreadLocals) {
+        super(group, null, pool.nextWorkerThreadName(), 0L, !clearThreadLocals);
         UncaughtExceptionHandler handler = (this.pool = pool).ueh;
         this.workQueue = new ForkJoinPool.WorkQueue(this, 0);
+        if (clearThreadLocals)
+            workQueue.setClearThreadLocals();
         super.setDaemon(true);
         if (handler != null)
             super.setUncaughtExceptionHandler(handler);
@@ -86,29 +86,23 @@ public class ForkJoinWorkerThread extends Thread {
             super.setContextClassLoader(ClassLoader.getSystemClassLoader());
     }
 
-    ForkJoinWorkerThread(ThreadGroup group, ForkJoinPool pool,
-                         boolean useSystemClassLoader) {
-        this(group, true, pool, useSystemClassLoader);
-    }
-
     /**
      * Creates a ForkJoinWorkerThread operating in the given thread group and
-     * pool. If the thread group is {@code null} then the thread group is chosen
-     * by the security manager or is set to the current thread's thread group.
-     * The ForkJoinWorkerThread optionally inherits the initial values for
-     * inheritable thread-local variables.
+     * pool, and with the given policy for preserving ThreadLocals.
      *
-     * @param group the thread group, can be null
-     * @param inheritInheritableThreadLocals {@code true} to inherit initial
-     * values for inheritable thread-locals from the constructing thread
+     * @param group if non-null, the thread group for this
+     * thread. Otherwise, the thread group is chosen by the security
+     * manager if present, else set to the current thread's thread
+     * group.
      * @param pool the pool this thread works in
+     * @param preserveThreadLocals if true, always preserve the values of
+     * ThreadLocal variables across tasks; otherwise they may be cleared.
      * @throws NullPointerException if pool is null
      * @since 19
      */
-    protected ForkJoinWorkerThread(ThreadGroup group,
-                                   boolean inheritInheritableThreadLocals,
-                                   ForkJoinPool pool) {
-        this(group, inheritInheritableThreadLocals, pool, false);
+    protected ForkJoinWorkerThread(ThreadGroup group, ForkJoinPool pool,
+                                   boolean preserveThreadLocals) {
+        this(group, pool, false, !preserveThreadLocals);
     }
 
     /**
@@ -118,7 +112,7 @@ public class ForkJoinWorkerThread extends Thread {
      * @throws NullPointerException if pool is null
      */
     protected ForkJoinWorkerThread(ForkJoinPool pool) {
-        this(null, true, pool, false);
+        this(null, pool, false, false);
     }
 
     /**
@@ -199,7 +193,7 @@ public class ForkJoinWorkerThread extends Thread {
     /**
      * A worker thread that has no permissions, is not a member of any
      * user-defined ThreadGroup, uses the system class loader as
-     * thread context class loader, and erases all ThreadLocals after
+     * thread context class loader, and clears all ThreadLocals after
      * running each top-level task.
      */
     static final class InnocuousForkJoinWorkerThread extends ForkJoinWorkerThread {
@@ -208,17 +202,13 @@ public class ForkJoinWorkerThread extends Thread {
         @SuppressWarnings("removal")
         private static final AccessControlContext innocuousACC;
         InnocuousForkJoinWorkerThread(ForkJoinPool pool) {
-            super(innocuousThreadGroup, pool, true);
+            super(innocuousThreadGroup, pool, true, true);
         }
 
         @Override @SuppressWarnings("removal")
         protected void onStart() {
-            ForkJoinPool.WorkQueue w = workQueue;
-            if (w != null)
-                w.setInnocuous();
             Thread t = Thread.currentThread();
             ThreadLocalRandom.setInheritedAccessControlContext(t, innocuousACC);
-            ThreadLocalRandom.eraseThreadLocals(t);
         }
 
         @Override // to silently fail

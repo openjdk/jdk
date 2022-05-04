@@ -37,77 +37,75 @@ static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
 jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-    jint res;
+  jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
-        printdump = JNI_TRUE;
-    }
+  if (options != NULL && strcmp(options, "printdump") == 0) {
+    printdump = JNI_TRUE;
+  }
 
-    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
-        LOG("Wrong result of a valid call to GetEnv!\n");
-        return JNI_ERR;
-    }
+  res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
+  if (res != JNI_OK || jvmti == NULL) {
+    LOG("Wrong result of a valid call to GetEnv!\n");
+    return JNI_ERR;
+  }
 
-    return JNI_OK;
+  return JNI_OK;
 }
 
 JNIEXPORT jint JNICALL
 Java_getstacktr02_check(JNIEnv *env, jclass cls, jthread thread) {
-    jvmtiError err;
-    jvmtiFrameInfo frame;
-    jint count;
+  jvmtiError err;
+  jvmtiFrameInfo frame;
+  jint count;
 
-    if (jvmti == NULL) {
+  if (jvmti == NULL) {
         LOG("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
-    }
+  }
 
-    if (printdump == JNI_TRUE) {
-        LOG(">>> Invalid thread check ...\n");
-    }
-    err = jvmti->GetStackTrace(cls, 0, 1, &frame, &count);
-    if (err != JVMTI_ERROR_INVALID_THREAD) {
-        LOG("Error expected: JVMTI_ERROR_INVALID_THREAD, got: %s (%d)\n",
-               TranslateError(err), err);
-        result = STATUS_FAILED;
-    }
+  if (printdump == JNI_TRUE) {
+    LOG(">>> Invalid thread check ...\n");
+  }
+  err = jvmti->GetStackTrace(cls, 0, 1, &frame, &count);
+  if (err != JVMTI_ERROR_INVALID_THREAD) {
+    LOG("Error expected: JVMTI_ERROR_INVALID_THREAD, got: %s (%d)\n", TranslateError(err), err);
+    result = STATUS_FAILED;
+  }
 
-    if (printdump == JNI_TRUE) {
-        LOG(">>> Illegal max_count argument check ...\n");
-    }
-    err = jvmti->GetStackTrace(thread, 0, -1, &frame, &count);
-    if (err != JVMTI_ERROR_ILLEGAL_ARGUMENT) {
-        LOG("Error expected: JVMTI_ERROR_ILLEGAL_ARGUMENT, got: %s (%d)\n",
-               TranslateError(err), err);
-        result = STATUS_FAILED;
-    }
+  if (printdump == JNI_TRUE) {
+    LOG(">>> Illegal max_count argument check ...\n");
+  }
+  err = jvmti->GetStackTrace(thread, 0, -1, &frame, &count);
+  if (err != JVMTI_ERROR_ILLEGAL_ARGUMENT) {
+    LOG("Error expected: JVMTI_ERROR_ILLEGAL_ARGUMENT, got: %s (%d)\n", TranslateError(err), err);
+    result = STATUS_FAILED;
+  }
 
-    if (printdump == JNI_TRUE) {
-        LOG(">>> (stack_buffer) null pointer check ...\n");
-    }
-    err = jvmti->GetStackTrace(thread, 0, 1, NULL, &count);
-    if (err != JVMTI_ERROR_NULL_POINTER) {
-        LOG("(stack_buffer) error expected: JVMTI_ERROR_NULL_POINTER,");
-        LOG(" got: %s (%d)\n", TranslateError(err), err);
-        result = STATUS_FAILED;
-    }
+  if (printdump == JNI_TRUE) {
+    LOG(">>> (stack_buffer) null pointer check ...\n");
+  }
+  err = jvmti->GetStackTrace(thread, 0, 1, NULL, &count);
+  if (err != JVMTI_ERROR_NULL_POINTER) {
+    LOG("(stack_buffer) error expected: JVMTI_ERROR_NULL_POINTER,");
+    LOG(" got: %s (%d)\n", TranslateError(err), err);
+    result = STATUS_FAILED;
+  }
 
-    if (printdump == JNI_TRUE) {
-        LOG(">>> (count_ptr) null pointer check ...\n");
-    }
-    err = jvmti->GetStackTrace(thread, 0, 1, &frame, NULL);
-    if (err != JVMTI_ERROR_NULL_POINTER) {
-        LOG("(count_ptr) error expected: JVMTI_ERROR_NULL_POINTER,");
-        LOG(" got: %s (%d)\n", TranslateError(err), err);
-        result = STATUS_FAILED;
-    }
+  if (printdump == JNI_TRUE) {
+    LOG(">>> (count_ptr) null pointer check ...\n");
+  }
+  err = jvmti->GetStackTrace(thread, 0, 1, &frame, NULL);
+  if (err != JVMTI_ERROR_NULL_POINTER) {
+    LOG("(count_ptr) error expected: JVMTI_ERROR_NULL_POINTER,");
+    LOG(" got: %s (%d)\n", TranslateError(err), err);
+    result = STATUS_FAILED;
+  }
 
-    if (printdump == JNI_TRUE) {
-        LOG(">>> ... done\n");
-    }
+  if (printdump == JNI_TRUE) {
+    LOG(">>> ... done\n");
+  }
 
-    return result;
+  return result;
 }
 
 }

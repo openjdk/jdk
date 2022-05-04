@@ -103,7 +103,8 @@ JNIEXPORT jboolean check_info(JNIEnv *jni, int idx) {
 
   LOG(" >>> Check point: %d\n", idx);
 
-  check_jvmti_status(jni, jvmti_env->GetAllThreads(&threads_count, &threads), "Failed in GetAllThreads");
+  jvmtiError err = jvmti_env->GetAllThreads(&threads_count, &threads);
+  check_jvmti_status(jni, err, "Failed in GetAllThreads");
 
   for (int i = 0; i < threads_count; i++) {
     if (!isThreadExpected(jvmti_env, threads[i])) {
@@ -144,13 +145,15 @@ JNIEXPORT jboolean check_info(JNIEnv *jni, int idx) {
 
 JNIEXPORT void Java_allthr01_startAgentThread(JNIEnv *jni) {
   RawMonitorLocker rml1 = RawMonitorLocker(jvmti_env, jni, starting_agent_thread_lock);
-  jvmtiError err = jvmti_env->RunAgentThread(create_jthread(jni), sys_thread, NULL,JVMTI_THREAD_NORM_PRIORITY);
+  jvmtiError err = jvmti_env->RunAgentThread(create_jthread(jni),
+                                             sys_thread, NULL,JVMTI_THREAD_NORM_PRIORITY);
   check_jvmti_status(jni, err, "Failed to run AgentThread");
   rml1.wait();
   LOG("Started Agent Thread\n");
 }
 
-JNIEXPORT void Java_allthr01_stopAgentThread(JNIEnv *jni) {
+JNIEXPORT void
+Java_allthr01_stopAgentThread(JNIEnv *jni) {
   RawMonitorLocker rml2 = RawMonitorLocker(jvmti_env, jni, stopping_agent_thread_lock);
   rml2.notify();
   LOG("Stopped Agent Thread\n");
@@ -158,11 +161,13 @@ JNIEXPORT void Java_allthr01_stopAgentThread(JNIEnv *jni) {
 
 
 
-JNIEXPORT void JNICALL Java_allthr01_setSysCnt(JNIEnv *env, jclass cls) {
+JNIEXPORT void JNICALL
+Java_allthr01_setSysCnt(JNIEnv *jni, jclass cls) {
   jint threadsCount = -1;
   jthread *threads;
 
-  check_jvmti_status(env, jvmti_env->GetAllThreads(&threadsCount, &threads), "Failed in GetAllThreads");
+  jvmtiError err = jvmti_env->GetAllThreads(&threadsCount, &threads);
+  check_jvmti_status(jni,err, "Failed in GetAllThreads");
 
   system_threads_count = threadsCount - 1;
 
@@ -173,7 +178,6 @@ JNIEXPORT void JNICALL Java_allthr01_setSysCnt(JNIEnv *env, jclass cls) {
   }
 
   LOG(" >>> number of system threads: %d\n", system_threads_count);
-
 }
 
 JNIEXPORT jboolean JNICALL

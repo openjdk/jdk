@@ -35,42 +35,41 @@ extern "C" {
 static jvmtiEnv *jvmti = NULL;
 static jint result = PASSED;
 
-jint  Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-    jint res;
+jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+  jint res;
 
-    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
-        LOG("Wrong result of a valid call to GetEnv !\n");
-        return JNI_ERR;
-    }
+  res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
+  if (res != JNI_OK || jvmti == NULL) {
+    LOG("Wrong result of a valid call to GetEnv !\n");
+    return JNI_ERR;
+  }
 
-    return JNI_OK;
+  return JNI_OK;
 }
 
-JNIEXPORT void JNICALL Java_framecnt02_checkFrames(JNIEnv *env, jclass cls,
-        jthread thr, jint thr_num) {
-    jvmtiError err;
-    jint frameCount;
+JNIEXPORT void JNICALL
+Java_framecnt02_checkFrames(JNIEnv *env, jclass cls, jthread thr, jint thr_num) {
+  jvmtiError err;
+  jint frameCount;
 
-    if (thr_num == 0) {
-        err = jvmti->GetFrameCount(thr, NULL);
-        if (err != JVMTI_ERROR_NULL_POINTER) {
-            LOG("Error expected: JVMTI_ERROR_NULL_POINTER, got: %s (%d)\n",
-                   TranslateError(err), err);
-            result = STATUS_FAILED;
-        }
-    } else {
-        err = jvmti->GetFrameCount(thr, &frameCount);
-        if (err != JVMTI_ERROR_THREAD_NOT_ALIVE) {
-            LOG("Error expected: JVMTI_ERROR_THREAD_NOT_ALIVE, got: %s (%d)\n",
-                   TranslateError(err), err);
-            result = STATUS_FAILED;
-        }
+  if (thr_num == 0) {
+    err = jvmti->GetFrameCount(thr, NULL);
+    if (err != JVMTI_ERROR_NULL_POINTER) {
+      LOG("Error expected: JVMTI_ERROR_NULL_POINTER, got: %s (%d)\n", TranslateError(err), err);
+      result = STATUS_FAILED;
     }
+  } else {
+    err = jvmti->GetFrameCount(thr, &frameCount);
+    if (err != JVMTI_ERROR_THREAD_NOT_ALIVE) {
+      LOG("Error expected: JVMTI_ERROR_THREAD_NOT_ALIVE, got: %s (%d)\n", TranslateError(err), err);
+      result = STATUS_FAILED;
+    }
+  }
 }
 
-JNIEXPORT jint JNICALL Java_framecnt02_getRes(JNIEnv *env, jclass cls) {
-    return result;
+JNIEXPORT jint JNICALL
+Java_framecnt02_getRes(JNIEnv *env, jclass cls) {
+  return result;
 }
 
 }

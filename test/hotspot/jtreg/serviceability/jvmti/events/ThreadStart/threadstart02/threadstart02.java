@@ -93,8 +93,7 @@ public class threadstart02 {
                 int i  = Integer.parseInt(args[0]);
                 waitTime = i;
             } catch (NumberFormatException ex) {
-                out.println("# Wrong argument \"" + args[0]
-                    + "\", the default value is used");
+                out.println("# Wrong argument \"" + args[0] + "\", the default value is used");
             }
         }
         out.println("# Waiting time = " + waitTime + " mins");

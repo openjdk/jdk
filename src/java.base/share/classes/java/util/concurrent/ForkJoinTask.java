@@ -1047,8 +1047,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
 
     /**
      * Tries to join this task, returning true if it completed
-     * (possibly exceptionally) before the given timeout and/or the
-     * the current thread has been interrupted, else false.
+     * (possibly exceptionally) before the given timeout and
+     * the current thread has not been interrupted.
      *
      * @param timeout the maximum time to wait
      * @param unit the time unit of the timeout argument

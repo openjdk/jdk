@@ -30,7 +30,7 @@ extern "C" {
 
 static jvmtiEnv *jvmti;
 
-jint  Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
   if (res != JNI_OK || jvmti == NULL) {
@@ -53,7 +53,8 @@ jint  Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 JNIEXPORT void JNICALL
 Java_contmon02_checkMonitor(JNIEnv *jni, jclass cls, jint point, jthread thread) {
   jobject monitor;
-  check_jvmti_status(jni, jvmti->GetCurrentContendedMonitor(thread, &monitor), "Error in GetCurrentContendedMonitor");
+  jvmtiError err = jvmti->GetCurrentContendedMonitor(thread, &monitor);
+  check_jvmti_status(jni, err, "Error in GetCurrentContendedMonitor");
   if (monitor != NULL) {
     LOG("(#%d) unexpected monitor object: 0x%p\n", point, monitor);
     fatal(jni, "GetCurrentContendedMonitor return unexpected monitor.");

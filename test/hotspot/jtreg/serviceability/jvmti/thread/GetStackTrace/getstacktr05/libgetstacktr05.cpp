@@ -56,7 +56,8 @@ static frame_info expected_virtual_frames[] = {
 };
 
 
-void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thread, jmethodID method, jlocation location) {
+void JNICALL
+Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thread, jmethodID method, jlocation location) {
   jint frame_count = 0;
 
   if (mid != method) {
@@ -81,8 +82,8 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thread, jmetho
 }
 
 
-void JNICALL SingleStep(jvmtiEnv *jvmti_env, JNIEnv *jni,
-                        jthread thread, jmethodID method, jlocation location) {
+void JNICALL
+SingleStep(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thread, jmethodID method, jlocation location) {
   set_event_notification_mode(jvmti, jni, JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, thread);
   frame_info *expected_frames = jni->IsVirtualThread(thread)
       ? expected_virtual_frames

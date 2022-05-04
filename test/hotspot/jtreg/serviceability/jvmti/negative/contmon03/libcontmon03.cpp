@@ -90,4 +90,3 @@ Java_contmon03_check(JNIEnv *env, jclass cls, jthread thread) {
 }
 
 }
-

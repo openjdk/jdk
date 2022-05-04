@@ -37,52 +37,52 @@ static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
 jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-    jint res;
+  jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
-        printdump = JNI_TRUE;
-    }
+  if (options != NULL && strcmp(options, "printdump") == 0) {
+    printdump = JNI_TRUE;
+  }
 
-    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
-        LOG("Wrong result of a valid call to GetEnv!\n");
-        return JNI_ERR;
-    }
+  res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
+  if (res != JNI_OK || jvmti == NULL) {
+    LOG("Wrong result of a valid call to GetEnv!\n");
+    return JNI_ERR;
+  }
 
-    return JNI_OK;
+  return JNI_OK;
 }
 
 JNIEXPORT jint JNICALL
 Java_thrstat04_check(JNIEnv *env, jclass cls, jthread thr) {
-    jvmtiError err;
-    jint thrState;
+  jvmtiError err;
+  jint thrState;
 
-    if (jvmti == NULL) {
-        LOG("JVMTI client was not properly loaded!\n");
-        return STATUS_FAILED;
-    }
+  if (jvmti == NULL) {
+    LOG("JVMTI client was not properly loaded!\n");
+    return STATUS_FAILED;
+  }
 
-    if (printdump == JNI_TRUE) {
-        LOG(">>> (threadStatePtr) null pointer check ...\n");
-    }
-    err = jvmti->GetThreadState(thr, NULL);
-    if (err != JVMTI_ERROR_NULL_POINTER) {
-        LOG("(threadStatePtr) error expected: JVMTI_ERROR_NULL_POINTER,\n");
-        LOG("           got: %s (%d)\n", TranslateError(err), err);
-        result = STATUS_FAILED;
-    }
+  if (printdump == JNI_TRUE) {
+    LOG(">>> (threadStatePtr) null pointer check ...\n");
+  }
+  err = jvmti->GetThreadState(thr, NULL);
+  if (err != JVMTI_ERROR_NULL_POINTER) {
+    LOG("(threadStatePtr) error expected: JVMTI_ERROR_NULL_POINTER,\n");
+    LOG("           got: %s (%d)\n", TranslateError(err), err);
+    result = STATUS_FAILED;
+  }
 
-    if (printdump == JNI_TRUE) {
-        LOG(">>> invalid thread check ...\n");
-    }
-    err = jvmti->GetThreadState(cls, &thrState);
-    if (err != JVMTI_ERROR_INVALID_THREAD) {
-        LOG("Error expected: JVMTI_ERROR_INVALID_THREAD,\n");
-        LOG("           got: %s (%d)\n", TranslateError(err), err);
-        result = STATUS_FAILED;
-    }
+  if (printdump == JNI_TRUE) {
+    LOG(">>> invalid thread check ...\n");
+  }
+  err = jvmti->GetThreadState(cls, &thrState);
+  if (err != JVMTI_ERROR_INVALID_THREAD) {
+    LOG("Error expected: JVMTI_ERROR_INVALID_THREAD,\n");
+    LOG("           got: %s (%d)\n", TranslateError(err), err);
+    result = STATUS_FAILED;
+  }
 
-    return result;
+  return result;
 }
 
 }

@@ -56,7 +56,8 @@
  * COMMENTS
  *
  * @library /test/lib
- * @run main/othervm/native -agentlib:thrstat05 thrstat05
+ * @compile --enable-preview -source ${jdk.version} thrstat05.java
+ * @run main/othervm/native --enable-preview -agentlib:thrstat05 thrstat05
  */
 
 
@@ -149,7 +150,7 @@ public class thrstat05 {
             case TS_NEW:
                 System.out.println("Main: Creating new thread");
                 testThread = new TestThread();
-                fRes = checkThreadState(testThread, state);
+                fRes = checkThreadState(testThread.thread, state);
                 testThread.start();
                 return fRes;
 
@@ -197,7 +198,7 @@ public class thrstat05 {
                 testThread.fRun = false;
                 do {
                     System.out.println("Main: Unparking the thread");
-                    LockSupport.unpark(testThread);
+                    LockSupport.unpark(testThread.thread);
 
                     if (!testThread.fInTest) {
                         break;
@@ -221,7 +222,7 @@ public class thrstat05 {
 
                 System.out.println("Main: Waiting for join");
                 testThread.join();
-                return checkThreadState(testThread, state);
+                return checkThreadState(testThread.thread, state);
         }
 
         return false;
@@ -233,10 +234,12 @@ public class thrstat05 {
             System.out.println("Main: Waiting for the thread to start the test");
             Thread.sleep(WAIT_TIME * 29 / 7); // Wait time should not be a multiple of WAIT_TIME
         }
-        return checkThreadState(testThread, state);
+        return checkThreadState(testThread.thread, state);
     }
 
-    class TestThread extends Thread {
+    class TestThread implements Runnable {
+
+        Thread thread;
 
         SynchronousQueue<Integer> taskQueue = new SynchronousQueue<>();
 
@@ -244,8 +247,20 @@ public class thrstat05 {
         public volatile boolean fInTest = false;
         public Object monitor = new Object();
 
+        TestThread() {
+            thread = Thread.ofPlatform().unstarted(this);
+        }
+
         public void sendTestState(int state) throws InterruptedException {
             taskQueue.put(state);
+        }
+
+        public void start() {
+           thread.start();
+        }
+
+        public void join() throws InterruptedException{
+            thread.join();
         }
 
         public int recvTestState() {

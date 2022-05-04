@@ -155,7 +155,6 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-
   /* add specific capabilities for suspending thread */
   jvmtiCapabilities suspendCaps;
   memset(&suspendCaps, 0, sizeof(suspendCaps));
@@ -163,7 +162,6 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   if (jvmti->AddCapabilities(&suspendCaps) != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
-
 
   if (init_agent_data(jvmti, &agent_data) != JVMTI_ERROR_NONE) {
     return JNI_ERR;

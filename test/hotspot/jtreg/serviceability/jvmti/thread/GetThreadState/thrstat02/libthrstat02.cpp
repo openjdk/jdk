@@ -50,7 +50,8 @@ void printStateFlags(jint flags) {
   LOG(" (0x%0x)\n", flags);
 }
 
-void JNICALL VMInit(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thr) {
+void JNICALL
+VMInit(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thr) {
   jvmtiError err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
   check_jvmti_status(jni, err, "Failed to enable THREAD_START event");
 }

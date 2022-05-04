@@ -40,6 +40,7 @@ import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 import java.util.concurrent.locks.Condition;
@@ -1317,7 +1318,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         this.threadFactory = threadFactory;
         this.handler = handler;
 
-        String name = getClass().getName() + "@" + System.identityHashCode(this);
+        String name = Objects.toIdentityString(this);
         this.container = SharedThreadContainer.create(name);
     }
 

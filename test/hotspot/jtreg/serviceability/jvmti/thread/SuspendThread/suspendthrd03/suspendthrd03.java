@@ -178,9 +178,6 @@ import jdk.test.lib.jvmti.DebugeeClass;
 
 import java.io.PrintStream;
 
-
-
-
 public class suspendthrd03 extends DebugeeClass {
 
     final static int N_THREADS = 10;
