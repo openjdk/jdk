@@ -120,7 +120,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
     /**
      * Returns a map of substitutions for a list of thrown types with the original type-variable
-     * name as key and the instantiated type as value. If no types need to be substituted
+     * name as a key and the instantiated type as a value. If no types need to be substituted
      * an empty map is returned.
      * @param declaredThrownTypes the originally declared thrown types.
      * @param instantiatedThrownTypes the thrown types in the context of the current type.
@@ -129,15 +129,15 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     private Map<String, TypeMirror> getSubstitutedThrownTypes(Types types,
                                                               List<? extends TypeMirror> declaredThrownTypes,
                                                               List<? extends TypeMirror> instantiatedThrownTypes) {
-        if (!instantiatedThrownTypes.equals(declaredThrownTypes)) {
+        if (!declaredThrownTypes.equals(instantiatedThrownTypes)) {
             Map<String, TypeMirror> map = new HashMap<>();
-            Iterator<? extends TypeMirror> i1 = instantiatedThrownTypes.iterator();
-            Iterator<? extends TypeMirror> i2 = declaredThrownTypes.iterator();
+            Iterator<? extends TypeMirror> i1 = declaredThrownTypes.iterator();
+            Iterator<? extends TypeMirror> i2 = instantiatedThrownTypes.iterator();
             while (i1.hasNext() && i2.hasNext()) {
                 TypeMirror t1 = i1.next();
                 TypeMirror t2 = i2.next();
                 if (!types.isSameType(t1, t2))
-                    map.put(t2.toString(), t1);
+                    map.put(t1.toString(), t2);
             }
             return map;
         }
