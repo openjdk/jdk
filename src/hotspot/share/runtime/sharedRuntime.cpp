@@ -1805,7 +1805,6 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
     //       we will wind up in the interprter (thru a c2i with c2).
     //
     address call_addr = NULL;
-    bool patch_call = false;
     {
       // Get call instruction under lock because another thread may be
       // busy patching it.
