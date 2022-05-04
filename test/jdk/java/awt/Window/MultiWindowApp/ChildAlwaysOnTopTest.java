@@ -42,6 +42,7 @@ import java.awt.image.BufferedImage;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import javax.imageio.ImageIO;
 
 import javax.swing.JDialog;
@@ -55,6 +56,14 @@ public class ChildAlwaysOnTopTest {
     private static Point point;
     private static Robot robot;
     private static int caseNo = 0;
+    private static String[] errorMsg= new String[] {
+            " Scenario 1 Failed: alwaysOnTop window is sent back by another" +
+                    " child window with setVisible().",
+            " Scenario 2 Failed: alwaysOnTop window is" +
+                    " sent back by another child window with toFront().",
+            " Scenario 3 Failed: Failed to unset alwaysOnTop ",
+    };
+    private static boolean errorFlag = false;
 
     public static void main(String[] args) throws Exception {
 
@@ -68,7 +77,7 @@ public class ChildAlwaysOnTopTest {
         System.out.println("Testing CASE 1: JDialog without parent/owner");
         caseNo = 1;
         test(null);
-        System.out.println("CASE 1 Passed");
+        System.out.println("CASE 1 Completed");
         System.out.println();
 
         // CASE 2 - JDialog with JFrame as owner
@@ -82,11 +91,11 @@ public class ChildAlwaysOnTopTest {
         } finally {
             f.dispose();
         }
-        System.out.println("CASE 2 Passed");
+        System.out.println("CASE 2 Completed");
         System.out.println();
 
         // CASE 3 - JDialog within another JDialog as owner
-        System.out.println("Testing CASE 3:Dialog within another" +
+        System.out.println("Testing CASE 3:Dialog within another"+
                 " JDialog as owner");
         caseNo = 3;
         f = new Frame();
@@ -99,10 +108,16 @@ public class ChildAlwaysOnTopTest {
         } finally {
             ((Frame)f.getParent()).dispose();
         }
-        System.out.println("CASE 3 Passed");
+        System.out.println("CASE 3 Completed");
         System.out.println();
 
-        System.out.println("All three cases passed !!");
+        if (!errorFlag) {
+            System.out.println("All three cases passed !!");
+        }
+        else {
+            throw new RuntimeException("One or more scenarios are failing. "+
+                    "Please check the saved screenshots.");
+        }
     }
 
     public static void test(Window parent) throws Exception {
@@ -150,21 +165,7 @@ public class ChildAlwaysOnTopTest {
                 win2.setVisible(true);
             });
 
-            robot.delay(300);
-            robot.waitForIdle();
-            Color color = robot.getPixelColor(point.x + 100, point.y + 100);
-
-            if (!color.equals(Color.GREEN)) {
-                SwingUtilities.invokeAndWait(()-> {
-                    System.out.println("Green Window Active?: "+ win1.isActive());
-                    System.out.println("Red Window Active? "+ win2.isActive());
-                });
-                saveScreenCapture(caseNo , 1);
-                throw new RuntimeException("Scenario 1: alwaysOnTop window is "+
-                        "sent back by another child window with setVisible(). "
-                        + color);
-            }
-            System.out.println(" >> Scenario 1 Passed");
+            checkTopWindow(caseNo, 1, Color.GREEN);
 
             /*---------------------------------------------------------------*/
 
@@ -179,21 +180,7 @@ public class ChildAlwaysOnTopTest {
                 }
             });
 
-            robot.delay(300);
-            robot.waitForIdle();
-            color = robot.getPixelColor(point.x + 100, point.y + 100);
-
-            if (!color.equals(Color.GREEN)) {
-                SwingUtilities.invokeAndWait(()-> {
-                    System.out.println("Green Window Active?: "+ win1.isActive());
-                    System.out.println("Red Window Active? "+ win2.isActive());
-                });
-                saveScreenCapture(caseNo , 2);
-                throw new RuntimeException("Scenario 2: alwaysOnTop window is" +
-                        " sent back by another child window with" +
-                        " toFront(). " + color);
-            }
-            System.out.println(" >> Scenario 2 Passed");
+            checkTopWindow(caseNo, 2, Color.GREEN);
 
             /*----------------------------------------------------------------*/
 
@@ -222,19 +209,8 @@ public class ChildAlwaysOnTopTest {
                 }
             });
 
-            robot.delay(500);
-            robot.waitForIdle();
-            color = robot.getPixelColor(point.x + 100, point.y + 100);
+            checkTopWindow(caseNo, 3, Color.RED);
 
-            if (!color.equals(Color.RED)) {
-                SwingUtilities.invokeAndWait(()-> {
-                    System.out.println("Green Window Active?: "+ win1.isActive());
-                    System.out.println("Red Window Active? "+ win2.isActive());
-                });
-                saveScreenCapture(caseNo , 3);
-                throw new RuntimeException("Scenario 3: Failed to unset alwaysOnTop " + color);
-            }
-            System.out.println(" >> Scenario 3 Passed");
         } finally {
             if (win1 != null) {
                 SwingUtilities.invokeAndWait(()-> win1.dispose());
@@ -242,6 +218,32 @@ public class ChildAlwaysOnTopTest {
             if (win2 != null) {
                 SwingUtilities.invokeAndWait(()-> win2.dispose());
             }
+        }
+    }
+    // to check if the current top window background color
+    // matches the expected color
+    private static void checkTopWindow(int caseNo, int scenarioNo,
+                                       Color expectedColor)
+            throws InterruptedException, InvocationTargetException {
+
+        robot.delay(500);
+        robot.waitForIdle();
+        Color actualColor = robot.getPixelColor(point.x + 100, point.y + 100);
+
+        saveScreenCapture(caseNo , scenarioNo);
+
+        if (!actualColor.equals(expectedColor)) {
+            errorFlag = true;
+            SwingUtilities.invokeAndWait(()-> {
+                System.out.println("Green Window Active?: "+ win1.isActive());
+                System.out.println("Red Window Active? "+ win2.isActive());
+            });
+            System.out.println("Case "+ caseNo + errorMsg[scenarioNo - 1]
+                    +" Expected Color: "+ expectedColor +" vs Actual Color: "
+                    + actualColor);
+        }
+        else {
+            System.out.println(" >> Scenario "+ scenarioNo +" Passed");
         }
     }
 
