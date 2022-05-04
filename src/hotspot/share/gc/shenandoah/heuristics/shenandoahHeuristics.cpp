@@ -410,12 +410,14 @@ void ShenandoahHeuristics::adjust_penalty(intx step) {
          "In range after adjustment: " INTX_FORMAT, _gc_time_penalties);
 }
 
-void ShenandoahHeuristics::record_success_concurrent() {
+void ShenandoahHeuristics::record_success_concurrent(bool abbreviated) {
   _degenerated_cycles_in_a_row = 0;
   _successful_cycles_in_a_row++;
 
-  _gc_time_history->add(time_since_last_gc());
-  _gc_times_learned++;
+  if (!(abbreviated && ShenandoahAdaptiveIgnoreShortCycles)) {
+    _gc_time_history->add(time_since_last_gc());
+    _gc_times_learned++;
+  }
 
   adjust_penalty(Concurrent_Adjust);
 }

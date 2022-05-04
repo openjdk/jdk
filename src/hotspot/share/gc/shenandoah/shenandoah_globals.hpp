@@ -170,6 +170,16 @@
           "Larger values give more weight to recent values.")               \
           range(0,1.0)                                                      \
                                                                             \
+  product(bool, ShenandoahAdaptiveIgnoreShortCycles, true, EXPERIMENTAL,    \
+          "The adaptive heuristic tracks a moving average of cycle "        \
+          "times in order to start a gc before memory is exhausted. "       \
+          "In some cases, Shenandoah may skip the evacuation and update "   \
+          "reference phases, resulting in a shorter cycle. These may skew " \
+          "the average cycle time downward and may cause the heuristic "    \
+          "to wait too long to start a cycle. Disabling this will have "    \
+          "the gc run less often, which will reduce CPU utilization, but"   \
+          "increase the risk of degenerated cycles.")                       \
+                                                                            \
   product(uintx, ShenandoahGuaranteedGCInterval, 5*60*1000, EXPERIMENTAL,   \
           "Many heuristics would guarantee a concurrent GC cycle at "       \
           "least with this interval. This is useful when large idle "       \

@@ -90,7 +90,7 @@ public:
 ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
   _mark(generation),
   _degen_point(ShenandoahDegenPoint::_degenerated_unset),
-  _mixed_evac (false),
+  _abbreviated(false),
   _do_old_gc_bootstrap(do_old_gc_bootstrap),
   _generation(generation) {
 }
@@ -214,7 +214,9 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   } else {
     // We chose not to evacuate because we found sufficient immediate garbage.
     vmop_entry_final_roots(heap->is_aging_cycle());
+    _abbreviated = true;
   }
+
   size_t old_available, young_available;
   {
     ShenandoahYoungGeneration* young_gen = heap->young_generation();

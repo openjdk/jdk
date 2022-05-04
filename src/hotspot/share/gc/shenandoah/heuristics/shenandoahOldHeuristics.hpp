@@ -129,7 +129,7 @@ public:
 
   virtual bool should_degenerate_cycle() override;
 
-  virtual void record_success_concurrent() override;
+  virtual void record_success_concurrent(bool abbreviated) override;
 
   virtual void record_success_degenerated() override;
 

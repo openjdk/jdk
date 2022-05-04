@@ -143,7 +143,7 @@ public:
 
   virtual bool should_degenerate_cycle();
 
-  virtual void record_success_concurrent();
+  virtual void record_success_concurrent(bool abbreviated);
 
   virtual void record_success_degenerated();
 

@@ -348,8 +348,8 @@ bool ShenandoahOldHeuristics::should_degenerate_cycle() {
   return _trigger_heuristic->should_degenerate_cycle();
 }
 
-void ShenandoahOldHeuristics::record_success_concurrent() {
-  _trigger_heuristic->record_success_concurrent();
+void ShenandoahOldHeuristics::record_success_concurrent(bool abbreviated) {
+  _trigger_heuristic->record_success_concurrent(abbreviated);
 }
 
 void ShenandoahOldHeuristics::record_success_degenerated() {

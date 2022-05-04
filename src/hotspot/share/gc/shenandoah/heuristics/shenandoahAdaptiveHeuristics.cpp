@@ -150,8 +150,8 @@ void ShenandoahAdaptiveHeuristics::record_cycle_start() {
   _allocation_rate.allocation_counter_reset();
 }
 
-void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
-  ShenandoahHeuristics::record_success_concurrent();
+void ShenandoahAdaptiveHeuristics::record_success_concurrent(bool abbreviated) {
+  ShenandoahHeuristics::record_success_concurrent(abbreviated);
 
   size_t available = ShenandoahHeap::heap()->free_set()->available();
 
