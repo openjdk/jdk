@@ -1172,7 +1172,7 @@ public final class Class<T> implements java.io.Serializable,
         return getInterfaces(true);
     }
 
-    Class<?>[] getInterfaces(boolean cloneArray) {
+    private Class<?>[] getInterfaces(boolean cloneArray) {
         ReflectionData<T> rd = reflectionData();
         if (rd == null) {
             // no cloning required
