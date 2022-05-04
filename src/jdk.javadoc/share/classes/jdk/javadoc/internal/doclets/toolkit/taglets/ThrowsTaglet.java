@@ -229,15 +229,11 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         return result;
     }
 
-    /**
-     * Add links for exceptions that are declared but not documented.
-     */
     private Content linkToUndocumentedDeclaredExceptions(List<? extends TypeMirror> declaredExceptionTypes,
                                                          Set<String> alreadyDocumented,
                                                          TagletWriter writer) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
-        //Add links to the exceptions declared but not documented.
         for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
             TypeElement te = utils.asTypeElement(declaredExceptionType);
             if (te != null &&
