@@ -1805,6 +1805,7 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
     //       we will wind up in the interprter (thru a c2i with c2).
     //
     address call_addr = NULL;
+    bool patch_call = false;
     {
       // Get call instruction under lock because another thread may be
       // busy patching it.
@@ -1817,6 +1818,8 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
     // CLEANUP - with lazy deopt shouldn't need this lock
     nmethodLocker nmlock(caller_nm);
 
+    // Check relocations for the matching call to 1) avoid false positives,
+    // and 2) determine the type.
     if (call_addr != NULL) {
       RelocIterator iter(caller_nm, call_addr, call_addr+1);
       int ret = iter.next(); // Get item
@@ -1829,10 +1832,13 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
                  iter.type() == relocInfo::opt_virtual_call_type
                 , "unexpected relocInfo. type");
         }
+        patch_call = true;
       } else {
-        assert(!UseInlineCaches, "relocation info. must exist for this address");
+        assert(!UseInlineCaches || caller_nm->is_compiled_by_jvmci(), "relocation info. must exist for this address");
       }
+    }
 
+    if (patch_call) {
       // Cleaning the inline cache will force a new resolve. This is more robust
       // than directly setting it to the new destination, since resolving of calls
       // is always done through the same code path. (experience shows that it
