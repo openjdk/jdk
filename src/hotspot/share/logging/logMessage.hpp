@@ -62,7 +62,6 @@ template <LogTagType T0, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTa
           LogTagType T3 = LogTag::__NO_TAG, LogTagType T4 = LogTag::__NO_TAG, LogTagType GuardTag = LogTag::__NO_TAG>
 class LogMessageImpl : public LogMessageBuffer {
  private:
-  LogImpl<T0, T1, T2, T3, T4, GuardTag> _log;
   bool _has_content;
 
  public:
@@ -76,7 +75,7 @@ class LogMessageImpl : public LogMessageBuffer {
   }
 
   void flush() {
-    _log.write(*this);
+    LogTagSetMapping<T0, T1, T2, T3, T4, GuardTag>::tagset().log(*this);
     reset();
   }
 
@@ -96,7 +95,7 @@ class LogMessageImpl : public LogMessageBuffer {
 
 #define LOG_LEVEL(level, name) \
   bool is_##name() const { \
-    return _log.is_level(LogLevel::level); \
+    return LogTagSetMapping<T0, T1, T2, T3, T4, GuardTag>::tagset().is_level(LogLevel::level); \
   }
   LOG_LEVEL_LIST
 #undef LOG_LEVEL
