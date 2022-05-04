@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,7 +329,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
 
         copyRuntimeFiles(params);
-        sign(params);
+
+        doSigning(params);
     }
 
     private void copyRuntimeFiles(Map<String, ? super Object> params)
@@ -355,7 +356,12 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
     }
 
-    private void sign(Map<String, ? super Object> params) throws IOException {
+    private void doSigning(Map<String, ? super Object> params)
+            throws IOException {
+
+        // signing or not, unsign first ...
+        unsignAppBundle(params, root);
+
         if (Optional.ofNullable(
                 SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.TRUE)) {
             try {
@@ -371,6 +377,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                         ENTITLEMENTS.fetchFrom(params));
             }
             restoreKeychainList(params);
+        } else if (Platform.isArmMac()) {
+            signAdHocAppBundle(params, root);
         }
     }
 
@@ -648,7 +656,58 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         IOUtils.exec(pb);
     }
 
-    static void signAppBundle(
+    private static void unsignAppBundle(Map<String, ? super Object> params,
+            Path appLocation) throws IOException {
+
+        // unsign all dylibs and executables
+        try (Stream<Path> stream = Files.walk(appLocation)) {
+            stream.peek(path -> { // fix permissions
+                try {
+                    Set<PosixFilePermission> pfp =
+                            Files.getPosixFilePermissions(path);
+                    if (!pfp.contains(PosixFilePermission.OWNER_WRITE)) {
+                        pfp = EnumSet.copyOf(pfp);
+                        pfp.add(PosixFilePermission.OWNER_WRITE);
+                        Files.setPosixFilePermissions(path, pfp);
+                    }
+                } catch (IOException e) {
+                    Log.verbose(e);
+                }
+            }).filter(p -> Files.isRegularFile(p) &&
+                      (Files.isExecutable(p) || p.toString().endsWith(".dylib"))
+                      && !(p.toString().contains("dylib.dSYM/Contents"))
+                     ).forEach(p -> {
+                // If p is a symlink then skip.
+                if (Files.isSymbolicLink(p)) {
+                    Log.verbose(MessageFormat.format(I18N.getString(
+                            "message.ignoring.symlink"), p.toString()));
+                } else {
+                    String launcherName = getLauncherName(params);
+                    if (launcherName != null) {
+                        if (p.toString().endsWith(launcherName)) {
+                            return;
+                        }
+                    }
+                    List<String> args = new ArrayList<>();
+                    args.addAll(Arrays.asList("/usr/bin/codesign",
+                            "--remove-signature", p.toString()));
+                    try {
+                        Set<PosixFilePermission> oldPermissions =
+                                Files.getPosixFilePermissions(p);
+                        p.toFile().setWritable(true, true);
+                        ProcessBuilder pb = new ProcessBuilder(args);
+                        IOUtils.exec(pb);
+                        Files.setPosixFilePermissions(p,oldPermissions);
+                    } catch (IOException ioe) {
+                        Log.verbose(ioe);
+                        return;
+                    }
+                }
+            });
+        }
+    }
+
+    private static void signAppBundle(
             Map<String, ? super Object> params, Path appLocation,
             String signingIdentity, String identifierPrefix, Path entitlements)
             throws IOException {
@@ -814,6 +873,138 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         }
 
         args.add(appLocation.toString());
+
+        ProcessBuilder pb =
+                new ProcessBuilder(args.toArray(new String[args.size()]));
+
+        IOUtils.exec(pb);
+    }
+
+    private static void signAdHocAppBundle(
+            Map<String, ? super Object> params, Path appLocation)
+            throws IOException {
+        AtomicReference<IOException> toThrow = new AtomicReference<>();
+        String appExecutable = "/Contents/MacOS/" + APP_NAME.fetchFrom(params);
+
+        // sign all dylibs and executables
+        try (Stream<Path> stream = Files.walk(appLocation)) {
+            stream.peek(path -> { // fix permissions
+                try {
+                    Set<PosixFilePermission> pfp =
+                            Files.getPosixFilePermissions(path);
+                    if (!pfp.contains(PosixFilePermission.OWNER_WRITE)) {
+                        pfp = EnumSet.copyOf(pfp);
+                        pfp.add(PosixFilePermission.OWNER_WRITE);
+                        Files.setPosixFilePermissions(path, pfp);
+                    }
+                } catch (IOException e) {
+                    Log.verbose(e);
+                }
+            }).filter(p -> Files.isRegularFile(p) &&
+                      (Files.isExecutable(p) || p.toString().endsWith(".dylib"))
+                      && !(p.toString().contains("dylib.dSYM/Contents"))
+                      && !(p.toString().endsWith(appExecutable))
+                     ).forEach(p -> {
+                // noinspection ThrowableResultOfMethodCallIgnored
+                if (toThrow.get() != null) return;
+
+                // If p is a symlink then skip the signing process.
+                if (Files.isSymbolicLink(p)) {
+                    Log.verbose(MessageFormat.format(I18N.getString(
+                            "message.ignoring.symlink"), p.toString()));
+                } else {
+                    // unsign everything before signing
+                    List<String> args = new ArrayList<>();
+                    args.addAll(Arrays.asList("/usr/bin/codesign",
+                            "--remove-signature", p.toString()));
+                    try {
+                        Set<PosixFilePermission> oldPermissions =
+                                Files.getPosixFilePermissions(p);
+                        p.toFile().setWritable(true, true);
+                        ProcessBuilder pb = new ProcessBuilder(args);
+                        // run quietly
+                        IOUtils.exec(pb, false, null, false,
+                                Executor.INFINITE_TIMEOUT, true);
+                        Files.setPosixFilePermissions(p,oldPermissions);
+                    } catch (IOException ioe) {
+                        Log.verbose(ioe);
+                        toThrow.set(ioe);
+                        return;
+                    }
+                    args = new ArrayList<>();
+                    args.addAll(Arrays.asList("/usr/bin/codesign",
+                            "-s", "-",
+                            "-vvvv",
+                            p.toString()));
+
+                    try {
+                        Set<PosixFilePermission> oldPermissions =
+                                Files.getPosixFilePermissions(p);
+                        p.toFile().setWritable(true, true);
+                        ProcessBuilder pb = new ProcessBuilder(args);
+                        // run quietly
+                        IOUtils.exec(pb, false, null, false,
+                                Executor.INFINITE_TIMEOUT, true);
+                        Files.setPosixFilePermissions(p, oldPermissions);
+                    } catch (IOException ioe) {
+                        toThrow.set(ioe);
+                    }
+                }
+            });
+        }
+        IOException ioe = toThrow.get();
+        if (ioe != null) {
+            throw ioe;
+        }
+
+        // sign all runtime and frameworks
+        Consumer<? super Path> signIdentifiedByPList = path -> {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            if (toThrow.get() != null) return;
+
+            try {
+                List<String> args = new ArrayList<>();
+                args.addAll(Arrays.asList("/usr/bin/codesign",
+                        "--force",
+                        "-s", "-",
+                        "-vvvv",
+                        path.toString()));
+                ProcessBuilder pb = new ProcessBuilder(args);
+
+                IOUtils.exec(pb);
+            } catch (IOException e) {
+                toThrow.set(e);
+            }
+        };
+
+        Path javaPath = appLocation.resolve("Contents/runtime");
+        if (Files.isDirectory(javaPath)) {
+            signIdentifiedByPList.accept(javaPath);
+
+            ioe = toThrow.get();
+            if (ioe != null) {
+                throw ioe;
+            }
+        }
+        Path frameworkPath = appLocation.resolve("Contents/Frameworks");
+        if (Files.isDirectory(frameworkPath)) {
+            try (var fileList = Files.list(frameworkPath)) {
+                fileList.forEach(signIdentifiedByPList);
+            }
+
+            ioe = toThrow.get();
+            if (ioe != null) {
+                throw ioe;
+            }
+        }
+
+        // sign the app itself
+        List<String> args = new ArrayList<>();
+        args.addAll(Arrays.asList("/usr/bin/codesign",
+                "--force",
+                "-s", "-",
+                "-vvvv",
+                appLocation.toString()));
 
         ProcessBuilder pb =
                 new ProcessBuilder(args.toArray(new String[args.size()]));
