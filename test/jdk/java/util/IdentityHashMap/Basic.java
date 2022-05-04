@@ -216,6 +216,14 @@ public class Basic {
         assertTrue(map.equals(map));
         assertTrue(map.equals(map2));
         assertTrue(map2.equals(map));
+
+        assertTrue(map.keySet().equals(map.keySet()));
+        assertTrue(map.keySet().equals(map2.keySet()));
+        assertTrue(map2.keySet().equals(map.keySet()));
+
+        assertTrue(map.entrySet().equals(map.entrySet()));
+        assertTrue(map.entrySet().equals(map2.entrySet()));
+        assertTrue(map2.entrySet().equals(map.entrySet()));
     }
 
     // equals
@@ -226,6 +234,12 @@ public class Basic {
 
         assertFalse(map.equals(map2));
         assertFalse(map2.equals(map));
+
+        assertFalse(map.keySet().equals(map2.keySet()));
+        assertFalse(map2.keySet().equals(map.keySet()));
+
+        assertFalse(map.entrySet().equals(map2.entrySet()));
+        assertFalse(map2.entrySet().equals(map.entrySet()));
     }
 
     // equals
@@ -235,6 +249,12 @@ public class Basic {
 
         assertFalse(map.equals(map2));
         assertFalse(map2.equals(map));
+
+        assertTrue(map.keySet().equals(map2.keySet()));
+        assertTrue(map2.keySet().equals(map.keySet()));
+
+        assertFalse(map.entrySet().equals(map2.entrySet()));
+        assertFalse(map2.entrySet().equals(map.entrySet()));
     }
 
     // equals
@@ -244,6 +264,12 @@ public class Basic {
 
         assertFalse(map.equals(map2));
         assertFalse(map2.equals(map));
+
+        assertFalse(map.keySet().equals(map2.keySet()));
+        assertFalse(map2.keySet().equals(map.keySet()));
+
+        assertFalse(map.entrySet().equals(map2.entrySet()));
+        assertFalse(map2.entrySet().equals(map.entrySet()));
     }
 
     // equals
@@ -255,6 +281,12 @@ public class Basic {
 
         assertFalse(map.equals(tmp));
         assertFalse(tmp.equals(map));
+
+        assertFalse(map.keySet().equals(tmp.keySet()));
+        assertFalse(tmp.keySet().equals(map.keySet()));
+
+        assertFalse(map.entrySet().equals(tmp.entrySet()));
+        assertFalse(tmp.entrySet().equals(map.entrySet()));
     }
 
     @Test
