@@ -89,6 +89,7 @@ public class TestDoubleVect {
       test_divv(a0, a1, -VALUE);
       test_diva(a0, a1, a3);
       test_negc(a0, a1);
+      test_signum(a0, a1);
       test_rint(a0, a1);
       test_ceil(a0, a1);
       test_floor(a0, a1);
@@ -426,6 +427,19 @@ public class TestDoubleVect {
         errn += verify("test_sqrt: ", i, a0[i], Math.sqrt((double)(ADD_INIT+i)));
       }
 
+      test_signum(a0, a1);
+      errn += verify("test_signum: ", 0, a0[0], (Double.NaN));
+      errn += verify("test_signum: ", 1, a0[1],  1.0);
+      errn += verify("test_signum: ", 2, a0[2], -1.0);
+      errn += verify("test_signum: ", 3, a0[3],  1.0);
+      errn += verify("test_signum: ", 4, a0[4],  1.0);
+      errn += verify("test_signum: ", 5, a0[5],  1.0);
+      errn += verify("test_signum: ", 6, a0[6],  0.0);
+      errn += verify("test_signum: ", 7, a0[7], -0.0);
+      for (int i=8; i<ARRLEN; i++) {
+        errn += verify("test_signum: ", i, a0[i], (double)(((double)(ADD_INIT+i)) > 0.0 ? 1.0 : -1.0));
+      }
+
       a1[6] = +0x1.fffffffffffffp-2;
       a1[7] = +0x1.0p-1;
       a1[8] = +0x1.0000000000001p-1;
@@ -592,6 +606,13 @@ public class TestDoubleVect {
 
     start = System.currentTimeMillis();
     for (int i=0; i<ITERS; i++) {
+      test_signum(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_signum_n: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
       test_sqrt(a0, a1);
     }
     end = System.currentTimeMillis();
@@ -690,6 +711,12 @@ public class TestDoubleVect {
   static void test_negc(double[] a0, double[] a1) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = (double)(-((double)a1[i]));
+    }
+  }
+
+  static void test_signum(double[] a0, double[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = Math.signum(a1[i]);
     }
   }
 
