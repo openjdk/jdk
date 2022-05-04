@@ -61,6 +61,8 @@ import java.util.concurrent.TimeUnit;
 class PollingWatchService
     extends AbstractWatchService
 {
+    // Wait between polling thread creation and first poll (seconds)
+    private static final int POLLING_INIT_DELAY = 1;
     // Default time between polls (seconds)
     private static final int DEFAULT_POLLING_INTERVAL = 2;
 
@@ -250,9 +252,6 @@ class PollingWatchService
      * directory and queue keys when entries are added, modified, or deleted.
      */
     private class PollingWatchKey extends AbstractWatchKey {
-
-        // Wait between thread creation and first poll (seconds)
-        private static final int POLLING_INIT_DELAY = 1;
 
         private final Object fileKey;
 
