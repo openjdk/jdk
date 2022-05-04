@@ -23,11 +23,6 @@
  * questions.
  */
 
-/* Access APIs for Windows 7 and above */
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0601
-#endif
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

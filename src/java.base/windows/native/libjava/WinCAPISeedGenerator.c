@@ -23,11 +23,6 @@
  * questions.
  */
 
-/* Need to define this to get CAPI functions included */
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0601
-#endif
-
 #include <windows.h>
 #include <wincrypt.h>
 #include <jni.h>
