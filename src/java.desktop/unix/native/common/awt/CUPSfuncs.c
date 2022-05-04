@@ -346,8 +346,9 @@ Java_sun_print_CUPSPrinter_getMedia(JNIEnv *env,
             unlink(filename);
             j2d_ppdClose(ppd);
             DPRINTF("CUPSfuncs::bad alloc new array\n", "")
-            (*env)->ExceptionClear(env);
-            JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
+            if (!(*env)->ExceptionCheck(env)) {
+                JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
+            }
             return NULL;
         }
 
@@ -358,7 +359,9 @@ Java_sun_print_CUPSPrinter_getMedia(JNIEnv *env,
                 unlink(filename);
                 j2d_ppdClose(ppd);
                 DPRINTF("CUPSfuncs::bad alloc new string ->text\n", "")
-                JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
+                if (!(*env)->ExceptionCheck(env)) {
+                    JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
+                }
                 return NULL;
             }
             (*env)->SetObjectArrayElement(env, nameArray, i*2, utf_str);
@@ -368,7 +371,9 @@ Java_sun_print_CUPSPrinter_getMedia(JNIEnv *env,
                 unlink(filename);
                 j2d_ppdClose(ppd);
                 DPRINTF("CUPSfuncs::bad alloc new string ->choice\n", "")
-                JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
+                if (!(*env)->ExceptionCheck(env)) {
+                    JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
+                }
                 return NULL;
             }
             (*env)->SetObjectArrayElement(env, nameArray, i*2+1, utf_str);
@@ -382,7 +387,9 @@ Java_sun_print_CUPSPrinter_getMedia(JNIEnv *env,
                 unlink(filename);
                 j2d_ppdClose(ppd);
                 DPRINTF("CUPSfuncs::bad alloc new string text\n", "")
-                JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
+                if (!(*env)->ExceptionCheck(env)) {
+                    JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
+                }
                 return NULL;
             }
             (*env)->SetObjectArrayElement(env, nameArray,
@@ -393,7 +400,9 @@ Java_sun_print_CUPSPrinter_getMedia(JNIEnv *env,
                 unlink(filename);
                 j2d_ppdClose(ppd);
                 DPRINTF("CUPSfuncs::bad alloc new string choice\n", "")
-                JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
+                if (!(*env)->ExceptionCheck(env)) {
+                    JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
+                }
                 return NULL;
             }
             (*env)->SetObjectArrayElement(env, nameArray,
