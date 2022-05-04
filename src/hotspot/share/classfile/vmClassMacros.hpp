@@ -50,8 +50,6 @@
 #define VM_CLASSES_DO(do_klass)                                                                                 \
   /* well-known classes */                                                                                      \
   do_klass(Object_klass,                                java_lang_Object                                      ) \
-  /* GC support, should be loaded as early as possible */                                                       \
-  do_klass(FillerObject_klass,                          jdk_internal_vm_FillerObject                          ) \
   do_klass(String_klass,                                java_lang_String                                      ) \
   do_klass(Class_klass,                                 java_lang_Class                                       ) \
   do_klass(Cloneable_klass,                             java_lang_Cloneable                                   ) \
@@ -60,6 +58,8 @@
   do_klass(System_klass,                                java_lang_System                                      ) \
   do_klass(Throwable_klass,                             java_lang_Throwable                                   ) \
   do_klass(Error_klass,                                 java_lang_Error                                       ) \
+  /* GC support, should be loaded as early as possible */                                                       \
+  do_klass(FillerObject_klass,                          jdk_internal_vm_FillerObject                          ) \
   do_klass(ThreadDeath_klass,                           java_lang_ThreadDeath                                 ) \
   do_klass(Exception_klass,                             java_lang_Exception                                   ) \
   do_klass(RuntimeException_klass,                      java_lang_RuntimeException                            ) \
