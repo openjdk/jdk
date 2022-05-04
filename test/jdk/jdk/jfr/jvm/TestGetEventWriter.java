@@ -65,15 +65,15 @@ import jdk.jfr.Recording;
  */
 public class TestGetEventWriter {
 
-    static class Testa extends jdk.jfr.Event {
+    static class InitializationEvent extends Event {
     }
 
     public static void main(String... args) throws Throwable {
         try (Recording r = new Recording()) {
-            // Unlocks access to jdk.jfr.internal.event
             r.start();
-            Testa t  = new Testa();
-            t.commit();
+            // Unlocks access to jdk.jfr.internal.event
+            InitializationEvent e  = new InitializationEvent();
+            e.commit();
         }
         // Make sure EventWriterFactory can be accessed.
         Class<?> clazz = Class.forName("jdk.jfr.internal.event.EventWriterFactory");
