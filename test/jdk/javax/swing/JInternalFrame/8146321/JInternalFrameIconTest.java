@@ -238,7 +238,7 @@ public class JInternalFrameIconTest {
 
         if (bufferedImage1.getWidth() == bufferedImage2.getWidth()
                 && bufferedImage1.getHeight() == bufferedImage2.getHeight()) {
-            final int colorTolerance = 25;
+            final int colorTolerance = 1;
             final int mismatchTolerance = (int) (0.1
                     * bufferedImage1.getWidth() * bufferedImage1.getHeight());
             int mismatchCounter = 0;
