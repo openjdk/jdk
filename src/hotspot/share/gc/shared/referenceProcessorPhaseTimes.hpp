@@ -52,7 +52,7 @@ class ReferenceProcessorPhaseTimes : public CHeapObj<mtGC> {
   // Total spent time for reference processing.
   double                   _total_time_ms;
 
-  size_t                   _ref_cleared[number_of_subclasses_of_ref];
+  size_t                   _ref_dropped[number_of_subclasses_of_ref];
   size_t                   _ref_discovered[number_of_subclasses_of_ref];
 
   bool                     _processing_is_mt;
@@ -83,7 +83,7 @@ public:
 
   void set_total_time_ms(double total_time_ms) { _total_time_ms = total_time_ms; }
 
-  void add_ref_cleared(ReferenceType ref_type, size_t count);
+  void add_ref_dropped(ReferenceType ref_type, size_t count);
   void set_ref_discovered(ReferenceType ref_type, size_t count);
   size_t ref_discovered(ReferenceType ref_type);
 

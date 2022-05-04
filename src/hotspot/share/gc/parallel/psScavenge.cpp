@@ -70,7 +70,6 @@
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
-HeapWord*                     PSScavenge::_to_space_top_before_gc = NULL;
 SpanSubjectToDiscoveryClosure PSScavenge::_span_based_discoverer;
 ReferenceProcessor*           PSScavenge::_ref_processor = NULL;
 PSCardTable*                  PSScavenge::_card_table = NULL;
@@ -163,13 +162,15 @@ public:
   }
 
   template <class T> void do_oop_work(T* p) {
-    assert (oopDesc::is_oop(RawAccess<IS_NOT_NULL>::oop_load(p)),
-            "expected an oop while scanning weak refs");
+#ifdef ASSERT
+    // Referent must be non-null and in from-space
+    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
+    assert(oopDesc::is_oop(obj), "referent must be an oop");
+    assert(PSScavenge::is_obj_in_young(obj), "must be in young-gen");
+    assert(!PSScavenge::is_obj_in_to_space(obj), "must be in from-space");
+#endif
 
-    // Weak refs may be visited more than once.
-    if (PSScavenge::should_scavenge(p, _to_space)) {
-      _promotion_manager->copy_and_push_safe_barrier</*promote_immediately=*/false>(p);
-    }
+    _promotion_manager->copy_and_push_safe_barrier</*promote_immediately=*/false>(p);
   }
   virtual void do_oop(oop* p)       { PSKeepAliveClosure::do_oop_work(p); }
   virtual void do_oop(narrowOop* p) { PSKeepAliveClosure::do_oop_work(p); }
@@ -284,37 +285,30 @@ class ScavengeRootsTask : public WorkerTask {
   PSOldGen* _old_gen;
   HeapWord* _gen_top;
   uint _active_workers;
-  bool _is_empty;
+  bool _is_old_gen_empty;
   TaskTerminator _terminator;
 
 public:
   ScavengeRootsTask(PSOldGen* old_gen,
-                    HeapWord* gen_top,
-                    uint active_workers,
-                    bool is_empty) :
+                    uint active_workers) :
       WorkerTask("ScavengeRootsTask"),
       _strong_roots_scope(active_workers),
       _subtasks(ParallelRootType::sentinel),
       _old_gen(old_gen),
-      _gen_top(gen_top),
+      _gen_top(old_gen->object_space()->top()),
       _active_workers(active_workers),
-      _is_empty(is_empty),
+      _is_old_gen_empty(old_gen->object_space()->is_empty()),
       _terminator(active_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth()) {
+    assert(_old_gen != NULL, "Sanity");
   }
 
   virtual void work(uint worker_id) {
+    assert(worker_id < _active_workers, "Sanity");
     ResourceMark rm;
 
-    if (!_is_empty) {
+    if (!_is_old_gen_empty) {
       // There are only old-to-young pointers if there are objects
       // in the old gen.
-
-      assert(_old_gen != NULL, "Sanity");
-      // There are no old-to-young pointers if the old gen is empty.
-      assert(!_old_gen->object_space()->is_empty(), "Should not be called is there is no work");
-      assert(_old_gen->object_space()->contains(_gen_top) || _gen_top == _old_gen->object_space()->top(), "Sanity");
-      assert(worker_id < ParallelGCThreads, "Sanity");
-
       {
         PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
         PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
@@ -365,12 +359,6 @@ bool PSScavenge::invoke_no_policy() {
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
 
   _gc_timer.register_gc_start();
-
-  TimeStamp scavenge_entry;
-  TimeStamp scavenge_midpoint;
-  TimeStamp scavenge_exit;
-
-  scavenge_entry.update();
 
   if (GCLocker::check_active_before_gc()) {
     return false;
@@ -443,8 +431,6 @@ bool PSScavenge::invoke_no_policy() {
            "Attempt to scavenge with live objects in to_space");
     young_gen->to_space()->clear(SpaceDecorator::Mangle);
 
-    save_to_space_top_before_gc();
-
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::clear();
 #endif
@@ -455,12 +441,6 @@ bool PSScavenge::invoke_no_policy() {
 
     // Reset our survivor overflow.
     set_survivor_overflow(false);
-
-    // We need to save the old top values before
-    // creating the promotion_manager. We pass the top
-    // values to the card_table, to prevent it from
-    // straying into the promotion labs.
-    HeapWord* old_top = old_gen->object_space()->top();
 
     const uint active_workers =
       WorkerPolicy::calc_active_workers(ParallelScavengeHeap::heap()->workers().max_workers(),
@@ -475,11 +455,9 @@ bool PSScavenge::invoke_no_policy() {
     {
       GCTraceTime(Debug, gc, phases) tm("Scavenge", &_gc_timer);
 
-      ScavengeRootsTask task(old_gen, old_top, active_workers, old_gen->object_space()->is_empty());
+      ScavengeRootsTask task(old_gen, active_workers);
       ParallelScavengeHeap::heap()->workers().run_task(&task);
     }
-
-    scavenge_midpoint.update();
 
     // Process reference objects discovered during scavenge
     {
@@ -685,12 +663,6 @@ bool PSScavenge::invoke_no_policy() {
   heap->print_heap_after_gc();
   heap->trace_heap_after_gc(&_gc_tracer);
 
-  scavenge_exit.update();
-
-  log_debug(gc, task, time)("VM-Thread " JLONG_FORMAT " " JLONG_FORMAT " " JLONG_FORMAT,
-                            scavenge_entry.ticks(), scavenge_midpoint.ticks(),
-                            scavenge_exit.ticks());
-
   AdaptiveSizePolicyOutput::print(size_policy, heap->total_collections());
 
   _gc_timer.register_gc_end();
@@ -700,19 +672,11 @@ bool PSScavenge::invoke_no_policy() {
   return !promotion_failure_occurred;
 }
 
-// This method iterates over all objects in the young generation,
-// removing all forwarding references. It then restores any preserved marks.
 void PSScavenge::clean_up_failed_promotion() {
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  PSYoungGen* young_gen = heap->young_gen();
-
-  RemoveForwardedPointerClosure remove_fwd_ptr_closure;
-  young_gen->object_iterate(&remove_fwd_ptr_closure);
-
   PSPromotionManager::restore_preserved_marks();
 
   // Reset the PromotionFailureALot counters.
-  NOT_PRODUCT(heap->reset_promotion_should_fail();)
+  NOT_PRODUCT(ParallelScavengeHeap::heap()->reset_promotion_should_fail();)
 }
 
 bool PSScavenge::should_attempt_scavenge() {
@@ -796,7 +760,7 @@ void PSScavenge::initialize() {
                            ParallelGCThreads,          // mt processing degree
                            ParallelGCThreads,          // mt discovery degree
                            false,                      // concurrent_discovery
-                           NULL);                      // header provides liveness info
+                           &_is_alive_closure);        // header provides liveness info
 
   // Cache the cardtable
   _card_table = heap->card_table();

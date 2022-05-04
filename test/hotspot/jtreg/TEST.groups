@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,10 @@ hotspot_gc = \
 # By design this group should include ALL tests under runtime sub-directory
 hotspot_runtime = \
   runtime
+
+hotspot_runtime_no_cds = \
+  runtime \
+  -runtime/cds
 
 hotspot_handshake = \
   runtime/handshake
@@ -126,6 +130,7 @@ hotspot_slow_compiler = \
   compiler/codegen/aes \
   compiler/codecache/stress \
   compiler/gcbarriers/PreserveFPRegistersTest.java \
+  resourcehogs/compiler \
   :hotspot_compiler_arraycopy
 
 tier1_compiler_1 = \
@@ -384,6 +389,8 @@ hotspot_cds = \
   runtime/cds/ \
   runtime/CompressedOops/
 
+hotspot_cds_only = \
+  runtime/cds/
 
 hotspot_appcds_dynamic = \
   runtime/cds/appcds/ \
@@ -405,6 +412,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/DumpClassList.java \
  -runtime/cds/appcds/DumpClassListWithLF.java \
+ -runtime/cds/appcds/DumpingWithNoCoops.java \
  -runtime/cds/appcds/ExtraSymbols.java \
  -runtime/cds/appcds/LambdaContainsOldInf.java \
  -runtime/cds/appcds/LambdaEagerInit.java \
@@ -421,6 +429,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/StaticArchiveWithLambda.java \
  -runtime/cds/appcds/TestCombinedCompressedFlags.java \
  -runtime/cds/appcds/TestEpsilonGCWithCDS.java \
+ -runtime/cds/appcds/TestParallelGCWithCDS.java \
  -runtime/cds/appcds/TestSerialGCWithCDS.java \
  -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/UnusedCPDuringDump.java \

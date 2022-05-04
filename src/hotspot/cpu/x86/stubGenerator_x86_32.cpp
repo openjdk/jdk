@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -587,6 +587,30 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
+
+  address generate_popcount_avx_lut(const char *stub_name) {
+    __ align64();
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data(0x02010100, relocInfo::none, 0);
+    __ emit_data(0x03020201, relocInfo::none, 0);
+    __ emit_data(0x03020201, relocInfo::none, 0);
+    __ emit_data(0x04030302, relocInfo::none, 0);
+    __ emit_data(0x02010100, relocInfo::none, 0);
+    __ emit_data(0x03020201, relocInfo::none, 0);
+    __ emit_data(0x03020201, relocInfo::none, 0);
+    __ emit_data(0x04030302, relocInfo::none, 0);
+    __ emit_data(0x02010100, relocInfo::none, 0);
+    __ emit_data(0x03020201, relocInfo::none, 0);
+    __ emit_data(0x03020201, relocInfo::none, 0);
+    __ emit_data(0x04030302, relocInfo::none, 0);
+    __ emit_data(0x02010100, relocInfo::none, 0);
+    __ emit_data(0x03020201, relocInfo::none, 0);
+    __ emit_data(0x03020201, relocInfo::none, 0);
+    __ emit_data(0x04030302, relocInfo::none, 0);
+    return start;
+  }
+
 
   address generate_iota_indices(const char *stub_name) {
     __ align(CodeEntryAlignment);
@@ -3296,7 +3320,7 @@ class StubGenerator: public StubCodeGenerator {
    *   rsp(8)   - byte* buf
    *   rsp(12)  - int length
    *
-   * Ouput:
+   * Output:
    *       rax   - int crc result
    */
   address generate_updateBytesCRC32() {
@@ -3352,7 +3376,7 @@ class StubGenerator: public StubCodeGenerator {
   *   rsp(16)  - table_start - optional (present only when doing a library_calll,
   *              not used by x86 algorithm)
   *
-  * Ouput:
+  * Output:
   *       rax  - int crc result
   */
   address generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
@@ -3628,40 +3652,6 @@ class StubGenerator: public StubCodeGenerator {
    return start;
 
  }
-
-  // Safefetch stubs.
-  void generate_safefetch(const char* name, int size, address* entry,
-                          address* fault_pc, address* continuation_pc) {
-    // safefetch signatures:
-    //   int      SafeFetch32(int*      adr, int      errValue);
-    //   intptr_t SafeFetchN (intptr_t* adr, intptr_t errValue);
-
-    StubCodeMark mark(this, "StubRoutines", name);
-
-    // Entry point, pc or function descriptor.
-    *entry = __ pc();
-
-    __ movl(rax, Address(rsp, 0x8));
-    __ movl(rcx, Address(rsp, 0x4));
-    // Load *adr into eax, may fault.
-    *fault_pc = __ pc();
-    switch (size) {
-      case 4:
-        // int32_t
-        __ movl(rax, Address(rcx, 0));
-        break;
-      case 8:
-        // int64_t
-        Unimplemented();
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-
-    // Return errValue or *adr.
-    *continuation_pc = __ pc();
-    __ ret(0);
-  }
 
   address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
@@ -3961,14 +3951,6 @@ class StubGenerator: public StubCodeGenerator {
         StubRoutines::_dtan = generate_libmTan();
       }
     }
-
-    // Safefetch stubs.
-    generate_safefetch("SafeFetch32", sizeof(int), &StubRoutines::_safefetch32_entry,
-                                                   &StubRoutines::_safefetch32_fault_pc,
-                                                   &StubRoutines::_safefetch32_continuation_pc);
-    StubRoutines::_safefetchN_entry           = StubRoutines::_safefetch32_entry;
-    StubRoutines::_safefetchN_fault_pc        = StubRoutines::_safefetch32_fault_pc;
-    StubRoutines::_safefetchN_continuation_pc = StubRoutines::_safefetch32_continuation_pc;
   }
 
   void generate_all() {
@@ -4003,6 +3985,11 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::x86::_vector_all_bits_set = generate_vector_mask("vector_all_bits_set", 0xFFFFFFFF);
     StubRoutines::x86::_vector_int_mask_cmp_bits = generate_vector_mask("vector_int_mask_cmp_bits", 0x00000001);
     StubRoutines::x86::_vector_iota_indices = generate_iota_indices("iota_indices");
+
+    if (UsePopCountInstruction && VM_Version::supports_avx2() && !VM_Version::supports_avx512_vpopcntdq()) {
+      // lut implementation influenced by counting 1s algorithm from section 5-1 of Hackers' Delight.
+      StubRoutines::x86::_vector_popcount_lut = generate_popcount_avx_lut("popcount_lut");
+    }
 
     // support for verify_oop (must happen after universe_init)
     StubRoutines::_verify_oop_subroutine_entry     = generate_verify_oop();

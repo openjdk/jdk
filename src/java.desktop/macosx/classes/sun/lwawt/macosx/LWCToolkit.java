@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -453,7 +453,7 @@ public final class LWCToolkit extends LWToolkit {
         desktopProperties.put("awt.multiClickInterval", getMultiClickTime());
 
         // These DnD properties must be set, otherwise Swing ends up spewing NPEs
-        // all over the place. The values came straight off of MToolkit.
+        // all over the place. The values came straight off of XToolkit.
         desktopProperties.put("DnD.Autoscroll.initialDelay", Integer.valueOf(50));
         desktopProperties.put("DnD.Autoscroll.interval", Integer.valueOf(50));
         desktopProperties.put("DnD.Autoscroll.cursorHysteresis", Integer.valueOf(5));

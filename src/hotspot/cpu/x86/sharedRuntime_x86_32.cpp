@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -965,7 +965,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   // require some stack space.  We grow the current (compiled) stack, then repack
   // the args.  We  finally end in a jump to the generic interpreter entry point.
   // On exit from the interpreter, the interpreter will restore our SP (lest the
-  // compiled code, which relys solely on SP and not EBP, get sick).
+  // compiled code, which relies solely on SP and not EBP, get sick).
 
   address c2i_unverified_entry = __ pc();
   Label skip_fixup;
@@ -1862,12 +1862,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
       __ cmpptr(Address(rbp, lock_slot_rbp_offset), (int32_t)NULL_WORD);
       __ jcc(Assembler::equal, done);
+    }
 
-      // Must save rax, if if it is live now because cmpxchg must use it
-      if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
-        save_native_result(masm, ret_type, stack_slots);
-      }
+    // Must save rax, if it is live now because cmpxchg must use it
+    if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
+      save_native_result(masm, ret_type, stack_slots);
+    }
 
+    if (!UseHeavyMonitors) {
       //  get old displaced header
       __ movptr(rbx, Address(rbp, lock_slot_rbp_offset));
 

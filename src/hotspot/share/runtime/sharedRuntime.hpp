@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "code/vmreg.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
@@ -282,7 +282,7 @@ class SharedRuntime: AllStatic {
   static jlong get_java_tid(Thread* thread);
 
 
-  // used by native wrappers to reenable yellow if overflow happened in native code
+  // used by native wrappers to re-enable yellow if overflow happened in native code
   static void reguard_yellow_pages();
 
   // Fill in the "X cannot be cast to a Y" message for ClassCastException

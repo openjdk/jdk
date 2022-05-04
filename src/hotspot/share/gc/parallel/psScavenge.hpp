@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
 
@@ -53,10 +53,6 @@ class PSScavenge: AllStatic {
    full_follows_scavenge
  };
 
-  // Saved value of to_space->top(), used to prevent objects in to_space from
-  // being rescanned.
-  static HeapWord* _to_space_top_before_gc;
-
  protected:
   // Flags/counters
   static SpanSubjectToDiscoveryClosure _span_based_discoverer;
@@ -79,9 +75,6 @@ class PSScavenge: AllStatic {
   static void clean_up_failed_promotion();
 
   static bool should_attempt_scavenge();
-
-  static HeapWord* to_space_top_before_gc() { return _to_space_top_before_gc; }
-  static inline void save_to_space_top_before_gc();
 
   // Private accessors
   static PSCardTable* const card_table()           { assert(_card_table != NULL, "Sanity"); return _card_table; }
@@ -141,6 +134,10 @@ class PSScavenge: AllStatic {
 
   inline static bool is_obj_in_young(HeapWord* o) {
     return o >= _young_generation_boundary;
+  }
+
+  static bool is_obj_in_to_space(oop o) {
+    return ParallelScavengeHeap::young_gen()->to_space()->contains(o);
   }
 };
 

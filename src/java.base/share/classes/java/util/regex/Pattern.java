@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,8 @@ import jdk.internal.util.ArraysSupport;
  * <tr><th style="vertical-align:top; font-weight:normal" id="any">{@code .}</th>
  *     <td headers="matches predef any">Any character (may or may not match <a href="#lt">line terminators</a>)</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="digit">{@code \d}</th>
- *     <td headers="matches predef digit">A digit: {@code [0-9]}</td></tr>
+ *     <td headers="matches predef digit">A digit: {@code [0-9]} if <a href="#UNICODE_CHARACTER_CLASS">
+ *  *         UNICODE_CHARACTER_CLASS</a> is not set. See <a href="#unicodesupport">Unicode Support</a>.</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_digit">{@code \D}</th>
  *     <td headers="matches predef non_digit">A non-digit: {@code [^0-9]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="horiz_white">{@code \h}</th>
@@ -167,7 +168,9 @@ import jdk.internal.util.ArraysSupport;
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_horiz_white">{@code \H}</th>
  *     <td headers="matches predef non_horiz_white">A non-horizontal whitespace character: {@code [^\h]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="white">{@code \s}</th>
- *     <td headers="matches predef white">A whitespace character: {@code [ \t\n\x0B\f\r]}</td></tr>
+ *     <td headers="matches predef white">A whitespace character: {@code [ \t\n\x0B\f\r]} if
+ *     <a href="#UNICODE_CHARACTER_CLASS"> UNICODE_CHARACTER_CLASS</a> is not set. See
+ *     <a href="#unicodesupport">Unicode Support</a>.</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_white">{@code \S}</th>
  *     <td headers="matches predef non_white">A non-whitespace character: {@code [^\s]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="vert_white">{@code \v}</th>
@@ -176,7 +179,8 @@ import jdk.internal.util.ArraysSupport;
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_vert_white">{@code \V}</th>
  *     <td headers="matches predef non_vert_white">A non-vertical whitespace character: {@code [^\v]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="word">{@code \w}</th>
- *     <td headers="matches predef word">A word character: {@code [a-zA-Z_0-9]}</td></tr>
+ *     <td headers="matches predef word">A word character: {@code [a-zA-Z_0-9]} if <a href="#UNICODE_CHARACTER_CLASS">
+ *         UNICODE_CHARACTER_CLASS</a> is not set. See <a href="#unicodesupport">Unicode Support</a>. </td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_word">{@code \W}</th>
  *     <td headers="matches predef non_word">A non-word character: {@code [^\w]}</td></tr>
  *
@@ -246,11 +250,12 @@ import jdk.internal.util.ArraysSupport;
  * <tr><th style="vertical-align:top; font-weight:normal" id="end_line">{@code $}</th>
  *     <td headers="matches bounds end_line">The end of a line</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="word_boundary">{@code \b}</th>
- *     <td headers="matches bounds word_boundary">A word boundary</td></tr>
+ *     <td headers="matches bounds word_boundary">A word boundary: {@code (?:(?<=\w)(?=\W)|(?<=\W)(?=\w))} (the location
+ *     where a non-word character abuts a word character)</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="grapheme_cluster_boundary">{@code \b{g}}</th>
  *     <td headers="matches bounds grapheme_cluster_boundary">A Unicode extended grapheme cluster boundary</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_word_boundary">{@code \B}</th>
- *     <td headers="matches bounds non_word_boundary">A non-word boundary</td></tr>
+ *     <td headers="matches bounds non_word_boundary">A non-word boundary: {@code [^\b]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="begin_input">{@code \A}</th>
  *     <td headers="matches bounds begin_input">The beginning of the input</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="end_prev_match">{@code \G}</th>
@@ -396,7 +401,7 @@ import jdk.internal.util.ArraysSupport;
  * <p> Backslashes within string literals in Java source code are interpreted
  * as required by
  * <cite>The Java Language Specification</cite>
- * as either Unicode escapes (section {@jls 3.3}) or other character escapes (section {@jls 3.10.6})
+ * as either Unicode escapes (section {@jls 3.3}) or other character escapes (section {@jls 3.10.6}).
  * It is therefore necessary to double backslashes in string
  * literals that represent regular expressions to protect them from
  * interpretation by the Java bytecode compiler.  The string literal
@@ -535,7 +540,7 @@ import jdk.internal.util.ArraysSupport;
  * that do not capture text and do not count towards the group total, or
  * <i>named-capturing</i> group.
  *
- * <h2> Unicode support </h2>
+ * <h2 id="unicodesupport"> Unicode support </h2>
  *
  * <p> This class is in conformance with Level 1 of <a
  * href="http://www.unicode.org/reports/tr18/"><i>Unicode Technical
@@ -1795,6 +1800,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (patternLength != cursor) {
                 if (peek() == ')') {
                     throw error("Unmatched closing ')'");
+                } else if (cursor == patternLength + 1 && temp[patternLength - 1] == '\\') {
+                    throw error("Unescaped trailing backslash");
                 } else {
                     throw error("Unexpected internal error");
                 }
@@ -2687,6 +2694,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                             else
                                 prev = right;
                         } else {
+                            if (curr == null)
+                                throw error("Bad intersection syntax");
                             prev = prev.and(curr);
                         }
                     } else {
@@ -3438,8 +3447,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
     private static final int countChars(CharSequence seq, int index,
                                         int lengthInCodePoints) {
         // optimization
-        if (lengthInCodePoints == 1 && !Character.isHighSurrogate(seq.charAt(index))) {
-            assert (index >= 0 && index < seq.length());
+        if (lengthInCodePoints == 1 && index >= 0 && index < seq.length() &&
+            !Character.isHighSurrogate(seq.charAt(index))) {
             return 1;
         }
         int length = seq.length();
@@ -4001,8 +4010,9 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 }
                 if (j < matcher.to)
                     return false;
+            } else {
+                matcher.hitEnd = true;
             }
-            matcher.hitEnd = true;
             return false;
         }
 
@@ -4898,7 +4908,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 if (count < cmax) {
                     // Let's check if we have already tried and failed
                     // at this starting position "i" in the past.
-                    // If yes, then just return false wihtout trying
+                    // If yes, then just return false without trying
                     // again, to stop the exponential backtracking.
                     if (posIndex != -1 &&
                         matcher.localsPos[posIndex].contains(i)) {
@@ -5056,14 +5066,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             int j = matcher.groups[groupIndex];
             int k = matcher.groups[groupIndex+1];
 
-            int groupSize = k - j;
+            int groupSizeChars = k - j; //Group size in chars
 
             // If the referenced group didn't match, neither can this
             if (j < 0)
                 return false;
 
             // If there isn't enough input left no match
-            if (i + groupSize > matcher.to) {
+            if (i + groupSizeChars > matcher.to) {
                 matcher.hitEnd = true;
                 return false;
             }
@@ -5071,7 +5081,13 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             // Check each new char to make sure it matches what the group
             // referenced matched last time around
             int x = i;
-            for (int index=0; index<groupSize; index++) {
+
+            // We set groupCodepoints to the number of chars
+            // in the given subsequence but this is an upper bound estimate
+            // we reduce by one if we spot 2-char codepoints.
+            int groupCodepoints = groupSizeChars;
+
+            for (int index=0; index<groupCodepoints; index++) {
                 int c1 = Character.codePointAt(seq, x);
                 int c2 = Character.codePointAt(seq, j);
                 if (c1 != c2) {
@@ -5089,9 +5105,15 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 }
                 x += Character.charCount(c1);
                 j += Character.charCount(c2);
+
+                if(c1 >= Character.MIN_SUPPLEMENTARY_CODE_POINT) {
+                    //Group size is guessed in terms of chars, but we need to
+                    //adjust if we spot a 2-char codePoint.
+                    groupCodepoints--;
+                }
             }
 
-            return next.match(matcher, i+groupSize, seq);
+            return next.match(matcher, i+groupSizeChars, seq);
         }
         boolean study(TreeInfo info) {
             info.maxValid = false;
@@ -5360,7 +5382,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
 
         boolean isWord(int ch) {
             return useUWORD ? CharPredicates.WORD().is(ch)
-                            : (ch == '_' || Character.isLetterOrDigit(ch));
+                            : CharPredicates.ASCII_WORD().is(ch);
         }
 
         int check(Matcher matcher, int i, CharSequence seq) {

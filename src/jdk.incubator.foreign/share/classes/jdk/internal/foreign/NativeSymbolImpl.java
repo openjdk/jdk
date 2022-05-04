@@ -28,11 +28,12 @@ package jdk.internal.foreign;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.ResourceScope;
+import jdk.internal.misc.ScopedMemoryAccess;
 
 public record NativeSymbolImpl(String name, MemoryAddress address, ResourceScope scope) implements NativeSymbol, Scoped {
     @Override
     public MemoryAddress address() {
-        ((ResourceScopeImpl)scope).checkValidState();
+        ((ResourceScopeImpl)scope).checkValidStateSlow();
         return address;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -526,7 +526,7 @@ void GraphKit::uncommon_trap_if_should_post_on_exceptions(Deoptimization::DeoptR
 }
 
 //------------------------------builtin_throw----------------------------------
-void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
+void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
   bool must_throw = true;
 
   // If this particular condition has not yet happened at this
@@ -1201,7 +1201,7 @@ Node* GraphKit::array_ideal_length(AllocateArrayNode* alloc,
   if (replace_length_in_map == false || map()->find_edge(length) >= 0) {
     Node* ccast = alloc->make_ideal_length(oop_type, &_gvn);
     if (ccast != length) {
-      // do not transfrom ccast here, it might convert to top node for
+      // do not transform ccast here, it might convert to top node for
       // negative array length and break assumptions in parsing stage.
       _gvn.set_type_bottom(ccast);
       record_for_igvn(ccast);
@@ -1535,14 +1535,7 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
   const TypePtr* adr_type = NULL; // debug-mode-only argument
   debug_only(adr_type = C->get_adr_type(adr_idx));
   Node* mem = memory(adr_idx);
-  Node* ld;
-  if (require_atomic_access && bt == T_LONG) {
-    ld = LoadLNode::make_atomic(ctl, mem, adr, adr_type, t, mo, control_dependency, unaligned, mismatched, unsafe, barrier_data);
-  } else if (require_atomic_access && bt == T_DOUBLE) {
-    ld = LoadDNode::make_atomic(ctl, mem, adr, adr_type, t, mo, control_dependency, unaligned, mismatched, unsafe, barrier_data);
-  } else {
-    ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, unaligned, mismatched, unsafe, barrier_data);
-  }
+  Node* ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, require_atomic_access, unaligned, mismatched, unsafe, barrier_data);
   ld = _gvn.transform(ld);
   if (((bt == T_OBJECT) && C->do_escape_analysis()) || C->eliminate_boxing()) {
     // Improve graph before escape analysis and boxing elimination.
@@ -1562,14 +1555,7 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
   const TypePtr* adr_type = NULL;
   debug_only(adr_type = C->get_adr_type(adr_idx));
   Node *mem = memory(adr_idx);
-  Node* st;
-  if (require_atomic_access && bt == T_LONG) {
-    st = StoreLNode::make_atomic(ctl, mem, adr, adr_type, val, mo);
-  } else if (require_atomic_access && bt == T_DOUBLE) {
-    st = StoreDNode::make_atomic(ctl, mem, adr, adr_type, val, mo);
-  } else {
-    st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo);
-  }
+  Node* st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo, require_atomic_access);
   if (unaligned) {
     st->as_Store()->set_unaligned_access();
   }
@@ -1620,7 +1606,7 @@ Node* GraphKit::access_store_at(Node* obj,
 }
 
 Node* GraphKit::access_load_at(Node* obj,   // containing obj
-                               Node* adr,   // actual adress to store val at
+                               Node* adr,   // actual address to store val at
                                const TypePtr* adr_type,
                                const Type* val_type,
                                BasicType bt,
@@ -1638,7 +1624,7 @@ Node* GraphKit::access_load_at(Node* obj,   // containing obj
   }
 }
 
-Node* GraphKit::access_load(Node* adr,   // actual adress to load val at
+Node* GraphKit::access_load(Node* adr,   // actual address to load val at
                             const Type* val_type,
                             BasicType bt,
                             DecoratorSet decorators) {
@@ -2350,9 +2336,9 @@ void GraphKit::round_double_arguments(ciMethod* dest_method) {
       const Type *targ = tf->domain()->field_at(j + TypeFunc::Parms);
       if (targ->basic_type() == T_DOUBLE) {
         // If any parameters are doubles, they must be rounded before
-        // the call, dstore_rounding does gvn.transform
+        // the call, dprecision_rounding does gvn.transform
         Node *arg = argument(j);
-        arg = dstore_rounding(arg);
+        arg = dprecision_rounding(arg);
         set_argument(j, arg);
       }
     }
@@ -2375,20 +2361,6 @@ Node* GraphKit::precision_rounding(Node* n) {
 
 // rounding for strict double precision conformance
 Node* GraphKit::dprecision_rounding(Node *n) {
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-#ifdef IA32
-    if (UseSSE < 2) {
-      return _gvn.transform(new RoundDoubleNode(0, n));
-    }
-#else
-    Unimplemented();
-#endif // IA32
-  }
-  return n;
-}
-
-// rounding for non-strict double stores
-Node* GraphKit::dstore_rounding(Node* n) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
 #ifdef IA32
     if (UseSSE < 2) {
@@ -2742,7 +2714,9 @@ void GraphKit::make_slow_call_ex(Node* call, ciInstanceKlass* ex_klass, bool sep
   // Make a catch node with just two handlers:  fall-through and catch-all
   Node* i_o  = _gvn.transform( new ProjNode(call, TypeFunc::I_O, separate_io_proj) );
   Node* catc = _gvn.transform( new CatchNode(control(), i_o, 2) );
-  Node* norm = _gvn.transform( new CatchProjNode(catc, CatchProjNode::fall_through_index, CatchProjNode::no_handler_bci) );
+  Node* norm = new CatchProjNode(catc, CatchProjNode::fall_through_index, CatchProjNode::no_handler_bci);
+  _gvn.set_type_bottom(norm);
+  C->record_for_igvn(norm);
   Node* excp = _gvn.transform( new CatchProjNode(catc, CatchProjNode::catch_all_index,    CatchProjNode::no_handler_bci) );
 
   { PreserveJVMState pjvms(this);
@@ -3346,7 +3320,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
           bool is_aastore = (java_bc() == Bytecodes::_aastore);
           Deoptimization::DeoptReason reason = is_aastore ?
             Deoptimization::Reason_array_check : Deoptimization::Reason_class_check;
-          builtin_throw(reason, makecon(TypeKlassPtr::make(objtp->klass())));
+          builtin_throw(reason);
           return top();
         } else if (!too_many_traps_or_recompiles(Deoptimization::Reason_null_assert)) {
           return null_assert(obj);
@@ -3431,7 +3405,7 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
         bool is_aastore = (java_bc() == Bytecodes::_aastore);
         Deoptimization::DeoptReason reason = is_aastore ?
           Deoptimization::Reason_array_check : Deoptimization::Reason_class_check;
-        builtin_throw(reason, load_object_klass(not_null_obj));
+        builtin_throw(reason);
       }
     } else {
       (*failure_control) = not_subtype_ctrl;
@@ -3983,20 +3957,28 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     initial_slow_test = initial_slow_test->as_Bool()->as_int_value(&_gvn);
   }
 
+  const TypeOopPtr* ary_type = _gvn.type(klass_node)->is_klassptr()->as_instance_type();
+  Node* valid_length_test = _gvn.intcon(1);
+  if (ary_type->klass()->is_array_klass()) {
+    BasicType bt = ary_type->klass()->as_array_klass()->element_type()->basic_type();
+    jint max = TypeAryPtr::max_array_length(bt);
+    Node* valid_length_cmp  = _gvn.transform(new CmpUNode(length, intcon(max)));
+    valid_length_test = _gvn.transform(new BoolNode(valid_length_cmp, BoolTest::le));
+  }
+
   // Create the AllocateArrayNode and its result projections
   AllocateArrayNode* alloc
     = new AllocateArrayNode(C, AllocateArrayNode::alloc_type(TypeInt::INT),
                             control(), mem, i_o(),
                             size, klass_node,
                             initial_slow_test,
-                            length);
+                            length, valid_length_test);
 
   // Cast to correct type.  Note that the klass_node may be constant or not,
   // and in the latter case the actual array type will be inexact also.
   // (This happens via a non-constant argument to inline_native_newArray.)
   // In any case, the value of klass_node provides the desired array type.
   const TypeInt* length_type = _gvn.find_int_type(length);
-  const TypeOopPtr* ary_type = _gvn.type(klass_node)->is_klassptr()->as_instance_type();
   if (ary_type->isa_aryptr() && length_type != NULL) {
     // Try to get a better type than POS for the size
     ary_type = ary_type->is_aryptr()->cast_to_size(length_type);

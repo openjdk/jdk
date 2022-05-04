@@ -302,15 +302,6 @@ public final class JVM {
     public native void setForceInstrumentation(boolean force);
 
     /**
-     * Turn on/off thread sampling.
-     *
-     * @param sampleThreads true if threads should be sampled, false otherwise.
-     *
-     * @throws IllegalStateException if state can't be changed.
-     */
-    public native void setSampleThreads(boolean sampleThreads) throws IllegalStateException;
-
-    /**
      * Turn on/off compressed integers.
      *
      * @param compressed true if compressed integers should be used, false

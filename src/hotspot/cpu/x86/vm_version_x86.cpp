@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -408,7 +408,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     intx saved_useavx = UseAVX;
     intx saved_usesse = UseSSE;
 
-    // If UseAVX is unitialized or is set by the user to include EVEX
+    // If UseAVX is uninitialized or is set by the user to include EVEX
     if (use_evex) {
       // check _cpuid_info.sef_cpuid7_ebx.bits.avx512f
       __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_offset())));
@@ -498,7 +498,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     VM_Version::set_cpuinfo_cont_addr(__ pc());
     // Returns here after signal. Save xmm0 to check it later.
 
-    // If UseAVX is unitialized or is set by the user to include EVEX
+    // If UseAVX is uninitialized or is set by the user to include EVEX
     if (use_evex) {
       // check _cpuid_info.sef_cpuid7_ebx.bits.avx512f
       __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_offset())));
@@ -1818,9 +1818,6 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(PrefetchScanIntervalInBytes)) {
     FLAG_SET_DEFAULT(PrefetchScanIntervalInBytes, 576);
   }
-  if (FLAG_IS_DEFAULT(PrefetchFieldsAhead)) {
-    FLAG_SET_DEFAULT(PrefetchFieldsAhead, 1);
-  }
 #endif
 
   if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&
@@ -1882,9 +1879,6 @@ void VM_Version::get_processor_features() {
     }
     if (PrefetchScanIntervalInBytes > 0) {
       log->print_cr("PrefetchScanIntervalInBytes %d", (int) PrefetchScanIntervalInBytes);
-    }
-    if (PrefetchFieldsAhead > 0) {
-      log->print_cr("PrefetchFieldsAhead %d", (int) PrefetchFieldsAhead);
     }
     if (ContendedPaddingWidth > 0) {
       log->print_cr("ContendedPaddingWidth %d", (int) ContendedPaddingWidth);
@@ -2148,7 +2142,7 @@ const char* const _family_id_intel[ExtendedFamilyIdLength_INTEL] = {
   "386",
   "486",
   "Pentium",
-  "Pentium Pro",   //or Pentium-M/Woodcrest depeding on model
+  "Pentium Pro",   //or Pentium-M/Woodcrest depending on model
   "",
   "",
   "",
@@ -2263,7 +2257,7 @@ const char* const _model_id_pentium_pro[] = {
   NULL
 };
 
-/* Brand ID is for back compability
+/* Brand ID is for back compatibility
  * Newer CPUs uses the extended brand string */
 const char* const _brand_id[] = {
   "",
@@ -2799,7 +2793,7 @@ int64_t VM_Version::max_qualified_cpu_freq_from_brand_string(void) {
     }
   }
   if (multiplier > 0) {
-    // Compute freqency (in Hz) from brand string.
+    // Compute frequency (in Hz) from brand string.
     if (brand_string[idx-3] == '.') { // if format is "x.xx"
       frequency =  (brand_string[idx-4] - '0') * multiplier;
       frequency += (brand_string[idx-2] - '0') * multiplier / 10;

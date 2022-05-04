@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1790,7 +1790,7 @@ public class Check {
             return;
         }
 
-        // Error if static method overrides instance method (JLS 8.4.6.2).
+        // Error if static method overrides instance method (JLS 8.4.8.2).
         if ((m.flags() & STATIC) != 0 &&
                    (other.flags() & STATIC) == 0) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree),
@@ -1800,7 +1800,7 @@ public class Check {
         }
 
         // Error if instance method overrides static or final
-        // method (JLS 8.4.6.1).
+        // method (JLS 8.4.8.1).
         if ((other.flags() & FINAL) != 0 ||
                  (m.flags() & STATIC) == 0 &&
                  (other.flags() & STATIC) != 0) {
@@ -1816,7 +1816,7 @@ public class Check {
             return;
         }
 
-        // Error if overriding method has weaker access (JLS 8.4.6.3).
+        // Error if overriding method has weaker access (JLS 8.4.8.3).
         if (protection(m.flags()) > protection(other.flags())) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree),
                       (other.flags() & AccessFlags) == 0 ?
@@ -1826,6 +1826,10 @@ public class Check {
                                                           asFlagSet(other.flags() & AccessFlags)));
             m.flags_field |= BAD_OVERRIDE;
             return;
+        }
+
+        if (shouldCheckPreview(m, other, origin)) {
+            checkPreview(tree.pos(), m, other);
         }
 
         Type mt = types.memberType(origin.type, m);
@@ -1902,6 +1906,23 @@ public class Check {
         }
     }
     // where
+        private boolean shouldCheckPreview(MethodSymbol m, MethodSymbol other, ClassSymbol origin) {
+            if (m.owner != origin ||
+                //performance - only do the expensive checks when the overridden method is a Preview API:
+                (other.flags() & PREVIEW_API) == 0) {
+                return false;
+            }
+
+            for (Symbol s : types.membersClosure(origin.type, false).getSymbolsByName(m.name)) {
+                if (m != s && m.overrides(s, origin, types, false)) {
+                    //only produce preview warnings or errors if "m" immediatelly overrides "other"
+                    //without intermediate overriding methods:
+                    return s == other;
+                }
+            }
+
+            return false;
+        }
         private boolean isDeprecatedOverrideIgnorable(MethodSymbol m, ClassSymbol origin) {
             // If the method, m, is defined in an interface, then ignore the issue if the method
             // is only inherited via a supertype and also implemented in the supertype,
@@ -3337,7 +3358,7 @@ public class Check {
 
     boolean annotationApplicable(JCAnnotation a, Symbol s) {
         Optional<Set<Name>> targets = getApplicableTargets(a, s);
-        /* the optional could be emtpy if the annotation is unknown in that case
+        /* the optional could be empty if the annotation is unknown in that case
          * we return that it is applicable and if it is erroneous that should imply
          * an error at the declaration site
          */

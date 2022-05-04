@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import javax.swing.SwingConstants;
+import sun.awt.OSInfo;
 
 /**
  * @author Michael Martak
@@ -252,13 +253,12 @@ public abstract class ShellFolder extends File {
 
     /**
      * Return a shell folder from a file object
-     * @exception FileNotFoundException if file does not exist
+     * @throws FileNotFoundException if file does not exist
      */
     public static ShellFolder getShellFolder(File file) throws FileNotFoundException {
         if (file instanceof ShellFolder) {
             return (ShellFolder)file;
         }
-
         if (!Files.exists(Paths.get(file.getPath()), LinkOption.NOFOLLOW_LINKS)) {
             throw new FileNotFoundException();
         }
@@ -295,7 +295,7 @@ public abstract class ShellFolder extends File {
      */
     public static File getNormalizedFile(File f) throws IOException {
         File canonical = f.getCanonicalFile();
-        if (f.equals(canonical)) {
+        if (f.equals(canonical) || OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
             // path of f doesn't contain symbolic links
             return canonical;
         }

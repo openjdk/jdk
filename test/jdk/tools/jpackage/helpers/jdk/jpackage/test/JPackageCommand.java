@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.internal.ApplicationLayout;
+import static jdk.jpackage.test.AdditionalLauncher.forEachAdditionalLauncher;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingFunction;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
@@ -242,6 +243,17 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
+    public JPackageCommand setInputToEmptyDirectory() {
+        if (Files.exists(inputDir())) {
+            try {
+                setArgumentValue("--input", TKit.createTempDirectory("input"));
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        return this;
+    }
+
     public JPackageCommand setFakeRuntime() {
         verifyMutable();
 
@@ -414,6 +426,28 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return unpackDir.resolve(TKit.removeRootFromAbsolutePath(path));
     }
 
+    /**
+     * Returns path to package file from the path in unpacked package directory
+     * or the given path if the package is not unpacked.
+     */
+    public Path pathToPackageFile(Path path) {
+        Path unpackDir = unpackedPackageDirectory();
+        if (unpackDir == null) {
+            if (!path.isAbsolute()) {
+                throw new IllegalArgumentException(String.format(
+                        "Path [%s] is not absolute", path));
+            }
+            return path;
+        }
+
+        if (!path.startsWith(unpackDir)) {
+            throw new IllegalArgumentException(String.format(
+                    "Path [%s] doesn't start with [%s] path", path, unpackDir));
+        }
+
+        return Path.of("/").resolve(unpackDir.relativize(path));
+    }
+
     Path unpackedPackageDirectory() {
         verifyIsOfType(PackageType.NATIVE);
         return getArgumentValue(UNPACKED_PATH_ARGNAME, () -> null, Path::of);
@@ -497,6 +531,18 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return appLauncherPath(null);
     }
 
+    /**
+     * Returns names of all additional launchers or empty list if none
+     * configured.
+     */
+    public List<String> addLauncherNames() {
+        List<String> names = new ArrayList<>();
+        forEachAdditionalLauncher(this, (launcherName, propFile) -> {
+            names.add(launcherName);
+        });
+        return names;
+    }
+
     private void verifyNotRuntime() {
         if (isRuntime()) {
             throw new IllegalArgumentException("Java runtime packaging");
@@ -537,9 +583,9 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             throw TKit.throwUnknownPlatformError();
         }
 
-        if (criticalRuntimeFiles.stream().filter(
-                v -> runtimeDir.resolve(v).toFile().exists()).findFirst().orElse(
-                        null) == null) {
+        if (!criticalRuntimeFiles.stream().anyMatch(v -> {
+            return runtimeDir.resolve(v).toFile().exists();
+        })) {
             // Fake runtime
             TKit.trace(String.format(
                     "%s because application runtime directory [%s] is incomplete",
@@ -738,7 +784,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
                                     appImageFileName));
                 }
             }
-        } else if (TKit.isOSX()) {
+        } else if (TKit.isOSX() && !isRuntime()) {
             TKit.assertFileExists(AppImageFile.getPathInAppImage(
                     appInstallationDirectory()));
         } else {
@@ -763,7 +809,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     JPackageCommand setUnpackedPackageLocation(Path path) {
         verifyIsOfType(PackageType.NATIVE);
-        setArgumentValue(UNPACKED_PATH_ARGNAME, path);
+        if (path != null) {
+            setArgumentValue(UNPACKED_PATH_ARGNAME, path);
+        } else {
+            removeArgumentWithValue(UNPACKED_PATH_ARGNAME);
+        }
         return this;
     }
 
@@ -786,6 +836,11 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public String getPrintableCommandLine() {
         return createExecutor().getPrintableCommandLine();
+    }
+
+    @Override
+    public String toString() {
+        return getPrintableCommandLine();
     }
 
     public void verifyIsOfType(Collection<PackageType> types) {

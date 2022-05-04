@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,8 +283,6 @@ final class CompilerToVM {
      */
     native HotSpotResolvedJavaMethodImpl lookupMethodInPool(HotSpotConstantPool constantPool, int cpi, byte opcode);
 
-    // TODO resolving JVM_CONSTANT_Dynamic
-
     /**
      * Ensures that the type referenced by the specified {@code JVM_CONSTANT_InvokeDynamic} entry at
      * index {@code cpi} in {@code constantPool} is loaded and initialized.
@@ -295,11 +293,33 @@ final class CompilerToVM {
     native void resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, int cpi);
 
     /**
-     * If {@code cpi} denotes an entry representing a
-     * <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.9">signature
-     * polymorphic</a> method, this method ensures that the type referenced by the entry is loaded
-     * and initialized. It {@code cpi} does not denote a signature polymorphic method, this method
-     * does nothing.
+     * Resolves the details for invoking the bootstrap method associated with the
+     * {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info} entry at {@code cpi} in
+     * {@code constant pool}.
+     *
+     * The return value encodes the details in an object array that is described by the pseudo Java
+     * object {@code info} below:
+     *
+     * <pre>
+     *     bsm_invocation = [
+     *         ResolvedJavaMethod[] method,
+     *         String name,
+     *         Object type,             // JavaConstant: reference to Class (condy) or MethodType (indy)
+     *         Object staticArguments,  // null: no static arguments
+     *                                  // JavaConstant: single static argument
+     *                                  // JavaConstant[]: multiple static arguments
+     *                                  // int[]: static arguments to be resolved via BootstrapCallInfo
+     *     ]
+     * </pre>
+     *
+     * @return bootstrap method invocation details as encoded above
+     */
+    native Object[] resolveBootstrapMethod(HotSpotConstantPool constantPool, int cpi);
+
+    /**
+     * If {@code cpi} denotes an entry representing a signature polymorphic method ({@jvms 2.9}),
+     * this method ensures that the type referenced by the entry is loaded and initialized. It
+     * {@code cpi} does not denote a signature polymorphic method, this method does nothing.
      */
     native void resolveInvokeHandleInPool(HotSpotConstantPool constantPool, int cpi);
 
@@ -378,22 +398,6 @@ final class CompilerToVM {
      *             metadata.
      */
     native int installCode(TargetDescription target, HotSpotCompiledCode compiledCode, InstalledCode code, long failedSpeculationsAddress, byte[] speculations);
-
-    /**
-     * Generates the VM metadata for some compiled code and copies them into {@code metaData}. This
-     * method does not install anything into the code cache.
-     *
-     * @param target the target where this code would be installed
-     * @param compiledCode the result of a compilation
-     * @param metaData the metadata is written to this object
-     * @return the outcome of the installation which will be one of
-     *         {@link HotSpotVMConfig#codeInstallResultOk},
-     *         {@link HotSpotVMConfig#codeInstallResultCacheFull},
-     *         {@link HotSpotVMConfig#codeInstallResultCodeTooLarge} or
-     *         {@link HotSpotVMConfig#codeInstallResultDependenciesFailed}.
-     * @throws JVMCIError if there is something wrong with the compiled code or the metadata
-     */
-    native int getMetadata(TargetDescription target, HotSpotCompiledCode compiledCode, HotSpotMetaData metaData);
 
     /**
      * Resets all compilation statistics.
@@ -689,14 +693,6 @@ final class CompilerToVM {
     native int methodDataProfileDataSize(long metaspaceMethodData, int position);
 
     /**
-     * Gets the fingerprint for a given Klass*.
-     *
-     * @param metaspaceKlass
-     * @return the value of the fingerprint (zero for arrays and synthetic classes).
-     */
-    native long getFingerprint(long metaspaceKlass);
-
-    /**
      * Return the amount of native stack required for the interpreter frames represented by
      * {@code frame}. This is used when emitting the stack banging code to ensure that there is
      * enough space for the frames during deoptimization.
@@ -849,7 +845,7 @@ final class CompilerToVM {
     /**
      * @see HotSpotJVMCIRuntime#translate(Object)
      */
-    native long translate(Object obj);
+    native long translate(Object obj, boolean callPostTranslation);
 
     /**
      * @see HotSpotJVMCIRuntime#unhand(Class, long)
@@ -935,12 +931,12 @@ final class CompilerToVM {
      * @param name name of current thread if in a native image otherwise {@code null}
      * @see HotSpotJVMCIRuntime#attachCurrentThread
      */
-    native boolean attachCurrentThread(byte[] name, boolean asDaemon);
+    native boolean attachCurrentThread(byte[] name, boolean asDaemon, long[] javaVMInfo);
 
     /**
-     * @see HotSpotJVMCIRuntime#detachCurrentThread()
+     * @see HotSpotJVMCIRuntime#detachCurrentThread
      */
-    native void detachCurrentThread();
+    native boolean detachCurrentThread(boolean release);
 
     /**
      * @see HotSpotJVMCIRuntime#exitHotSpot(int)

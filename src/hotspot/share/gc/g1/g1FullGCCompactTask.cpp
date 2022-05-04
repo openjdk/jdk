@@ -46,13 +46,23 @@ public:
     uint region_index = r->hrm_index();
     // Only for skip-compaction regions; early return otherwise.
     if (!_collector->is_skip_compacting(region_index)) {
-
       return false;
     }
-    assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold() ||
-         !r->is_starts_humongous() ||
-         _collector->mark_bitmap()->is_marked(cast_to_oop(r->bottom())),
-         "must be, otherwise reclaimed earlier");
+#ifdef ASSERT
+    if (r->is_humongous()) {
+      oop obj = cast_to_oop(r->humongous_start_region()->bottom());
+      assert(_collector->mark_bitmap()->is_marked(obj), "must be live");
+    } else if (r->is_open_archive()) {
+      bool is_empty = (_collector->live_words(r->hrm_index()) == 0);
+      assert(!is_empty, "should contain at least one live obj");
+    } else if (r->is_closed_archive()) {
+      // should early-return above
+      ShouldNotReachHere();
+    } else {
+      assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold(),
+             "should be quite full");
+    }
+#endif
     r->reset_skip_compacting_after_full_gc();
     return false;
   }

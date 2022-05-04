@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,7 +242,7 @@ int LIR_Assembler::emit_unwind_handler() {
   __ bind(_unwind_handler_entry);
   __ verify_not_null_oop(Rexception_obj);
 
-  // Preform needed unlocking
+  // Perform needed unlocking
   MonitorExitStub* stub = NULL;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::R0_opr);
@@ -641,7 +641,7 @@ void LIR_Assembler::stack2reg(LIR_Opr src, LIR_Opr dest, BasicType type) {
       case T_ARRAY:
       case T_ADDRESS:
       case T_METADATA: __ ldr(dest->as_register(), addr); break;
-      case T_FLOAT:    // used in floatToRawIntBits intrinsic implemenation
+      case T_FLOAT:    // used in floatToRawIntBits intrinsic implementation
       case T_INT:      __ ldr_u32(dest->as_register(), addr); break;
       default:
         ShouldNotReachHere();
@@ -1412,7 +1412,10 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
 }
 
 
-void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type) {
+void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type,
+                          LIR_Opr cmp_opr1, LIR_Opr cmp_opr2) {
+  assert(cmp_opr1 == LIR_OprFact::illegalOpr && cmp_opr2 == LIR_OprFact::illegalOpr, "unnecessary cmp oprs on arm");
+
   AsmCondition acond = al;
   AsmCondition ncond = nv;
   if (opr1 != opr2) {
@@ -1680,6 +1683,9 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     } else {
       assert(right->is_constant(), "must be");
       const uint c = (uint)right->as_constant_ptr()->as_jint();
+      if (!Assembler::is_arith_imm_in_range(c)) {
+        BAILOUT("illegal arithmetic operand");
+      }
       switch (code) {
         case lir_logic_and: __ and_32(res, lreg, c); break;
         case lir_logic_or:  __ orr_32(res, lreg, c); break;

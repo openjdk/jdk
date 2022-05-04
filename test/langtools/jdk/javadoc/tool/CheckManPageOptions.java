@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,19 @@ import java.util.stream.Collectors;
  * of the javadoc man page against the set of options declared in the source code.
  */
 public class CheckManPageOptions {
+    static class SourceDirNotFound extends Error { }
+
     public static void main(String... args) throws Exception {
-        new CheckManPageOptions().run(args);
+        try {
+            new CheckManPageOptions().run(args);
+        } catch (SourceDirNotFound e) {
+            System.err.println("NOTE: Cannot find src directory; test skipped");
+        }
     }
 
     static final PrintStream out = System.err;
 
-    List<String> MISSING_IN_MAN_PAGE = List.of();
+    List<String> MISSING_IN_MAN_PAGE = List.of("--date");
 
     void run(String... args) throws Exception {
         var file = args.length == 0 ? findDefaultFile() : Path.of(args[0]);
@@ -143,7 +149,7 @@ public class CheckManPageOptions {
             }
             dir = dir.getParent();
         }
-        throw new IllegalStateException("cannot find root dir");
+        throw new SourceDirNotFound();
     }
 
     List<String> getToolOptions() throws Error {

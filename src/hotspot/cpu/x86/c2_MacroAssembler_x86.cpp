@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,20 +46,6 @@ inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vle
       return Assembler::AVX_NoVec;
     }
   }
-}
-
-void C2_MacroAssembler::setvectmask(Register dst, Register src, KRegister mask) {
-  guarantee(PostLoopMultiversioning, "must be");
-  Assembler::movl(dst, 1);
-  Assembler::shlxl(dst, dst, src);
-  Assembler::decl(dst);
-  Assembler::kmovdl(mask, dst);
-  Assembler::movl(dst, src);
-}
-
-void C2_MacroAssembler::restorevectmask(KRegister mask) {
-  guarantee(PostLoopMultiversioning, "must be");
-  Assembler::knotwl(mask, k0);
 }
 
 #if INCLUDE_RTM_OPT
@@ -785,7 +771,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // thread needs to take no further action and can exit via the fast path (success).
   // If the re-acquire succeeds then pass control into the slow path.
   // As implemented, this latter mode is horrible because we generated more
-  // coherence traffic on the lock *and* artifically extended the critical section
+  // coherence traffic on the lock *and* artificially extended the critical section
   // length while by virtue of passing control into the slow path.
 
   // box is really RAX -- the following CMPXCHG depends on that binding
@@ -1493,6 +1479,26 @@ void C2_MacroAssembler::load_vector_mask(KRegister dst, XMMRegister src, XMMRegi
   }
 }
 
+void C2_MacroAssembler::load_vector(XMMRegister dst, Address src, int vlen_in_bytes) {
+  switch (vlen_in_bytes) {
+  case 4:  movdl(dst, src);   break;
+  case 8:  movq(dst, src);    break;
+  case 16: movdqu(dst, src);  break;
+  case 32: vmovdqu(dst, src); break;
+  case 64: evmovdquq(dst, src, Assembler::AVX_512bit); break;
+  default: ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::load_vector(XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch) {
+  if (reachable(src)) {
+    load_vector(dst, as_Address(src), vlen_in_bytes);
+  } else {
+    lea(rscratch, src);
+    load_vector(dst, Address(rscratch, 0), vlen_in_bytes);
+  }
+}
+
 void C2_MacroAssembler::load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes) {
   ExternalAddress addr(StubRoutines::x86::vector_iota_indices());
   if (vlen_in_bytes == 4) {
@@ -1927,7 +1933,6 @@ void C2_MacroAssembler::reduce8L(int opcode, Register dst, Register src1, XMMReg
 }
 
 void C2_MacroAssembler::genmask(KRegister dst, Register len, Register temp) {
-  assert(ArrayOperationPartialInlineSize > 0 && ArrayOperationPartialInlineSize <= 64, "invalid");
   mov64(temp, -1L);
   bzhiq(temp, temp, len);
   kmovql(dst, temp);
@@ -2189,84 +2194,6 @@ void C2_MacroAssembler::evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask
     default:
       assert(false,"Should not reach here.");
       break;
-  }
-}
-
-void C2_MacroAssembler::vpcmpu(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison,
-                            int vlen_in_bytes, XMMRegister vtmp1, XMMRegister vtmp2, Register scratch) {
-  int vlen_enc = vector_length_encoding(vlen_in_bytes*2);
-  switch (typ) {
-  case T_BYTE:
-    vpmovzxbw(vtmp1, src1, vlen_enc);
-    vpmovzxbw(vtmp2, src2, vlen_enc);
-    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::W, vlen_enc, scratch);
-    vpacksswb(dst, dst, dst, vlen_enc);
-    break;
-  case T_SHORT:
-    vpmovzxwd(vtmp1, src1, vlen_enc);
-    vpmovzxwd(vtmp2, src2, vlen_enc);
-    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::D, vlen_enc, scratch);
-    vpackssdw(dst, dst, dst, vlen_enc);
-    break;
-  case T_INT:
-    vpmovzxdq(vtmp1, src1, vlen_enc);
-    vpmovzxdq(vtmp2, src2, vlen_enc);
-    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::Q, vlen_enc, scratch);
-    vpermilps(dst, dst, 8, vlen_enc);
-    break;
-  default:
-    assert(false, "Should not reach here");
-  }
-  if (vlen_in_bytes == 16) {
-    vpermpd(dst, dst, 0x8, vlen_enc);
-  }
-}
-
-void C2_MacroAssembler::vpcmpu32(BasicType typ, XMMRegister dst, XMMRegister src1, XMMRegister src2, ComparisonPredicate comparison, int vlen_in_bytes,
-                              XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3, Register scratch) {
-  int vlen_enc = vector_length_encoding(vlen_in_bytes);
-  switch (typ) {
-  case T_BYTE:
-    vpmovzxbw(vtmp1, src1, vlen_enc);
-    vpmovzxbw(vtmp2, src2, vlen_enc);
-    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::W, vlen_enc, scratch);
-    vextracti128(vtmp1, src1, 1);
-    vextracti128(vtmp2, src2, 1);
-    vpmovzxbw(vtmp1, vtmp1, vlen_enc);
-    vpmovzxbw(vtmp2, vtmp2, vlen_enc);
-    vpcmpCCW(vtmp3, vtmp1, vtmp2, comparison, Assembler::W, vlen_enc, scratch);
-    vpacksswb(dst, dst, vtmp3, vlen_enc);
-    vpermpd(dst, dst, 0xd8, vlen_enc);
-    break;
-  case T_SHORT:
-    vpmovzxwd(vtmp1, src1, vlen_enc);
-    vpmovzxwd(vtmp2, src2, vlen_enc);
-    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::D, vlen_enc, scratch);
-    vextracti128(vtmp1, src1, 1);
-    vextracti128(vtmp2, src2, 1);
-    vpmovzxwd(vtmp1, vtmp1, vlen_enc);
-    vpmovzxwd(vtmp2, vtmp2, vlen_enc);
-    vpcmpCCW(vtmp3, vtmp1, vtmp2, comparison, Assembler::D,  vlen_enc, scratch);
-    vpackssdw(dst, dst, vtmp3, vlen_enc);
-    vpermpd(dst, dst, 0xd8, vlen_enc);
-    break;
-  case T_INT:
-    vpmovzxdq(vtmp1, src1, vlen_enc);
-    vpmovzxdq(vtmp2, src2, vlen_enc);
-    vpcmpCCW(dst, vtmp1, vtmp2, comparison, Assembler::Q, vlen_enc, scratch);
-    vpshufd(dst, dst, 8, vlen_enc);
-    vpermq(dst, dst, 8, vlen_enc);
-    vextracti128(vtmp1, src1, 1);
-    vextracti128(vtmp2, src2, 1);
-    vpmovzxdq(vtmp1, vtmp1, vlen_enc);
-    vpmovzxdq(vtmp2, vtmp2, vlen_enc);
-    vpcmpCCW(vtmp3, vtmp1, vtmp2, comparison, Assembler::Q,  vlen_enc, scratch);
-    vpshufd(vtmp3, vtmp3, 8, vlen_enc);
-    vpermq(vtmp3, vtmp3, 0x80, vlen_enc);
-    vpblendd(dst, dst, vtmp3, 0xf0, vlen_enc);
-    break;
-  default:
-    assert(false, "Should not reach here");
   }
 }
 
@@ -2985,7 +2912,7 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1, Regis
 
   bind(SCAN_TO_16_CHAR);
   cmpl(cnt1, stride);
-  jcc(Assembler::less, SCAN_TO_CHAR_INIT);//less than 16 entires left
+  jcc(Assembler::less, SCAN_TO_CHAR_INIT);//less than 16 entries left
   if (UseAVX < 2) {
     movdl(vec1, ch);
     pxor(vec2, vec2);
@@ -3432,18 +3359,19 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
 }
 
 // Search for Non-ASCII character (Negative byte value) in a byte array,
-// return true if it has any and false otherwise.
+// return the index of the first such character, otherwise the length
+// of the array segment searched.
 //   ..\jdk\src\java.base\share\classes\java\lang\StringCoding.java
 //   @IntrinsicCandidate
-//   private static boolean hasNegatives(byte[] ba, int off, int len) {
+//   public static int countPositives(byte[] ba, int off, int len) {
 //     for (int i = off; i < off + len; i++) {
 //       if (ba[i] < 0) {
-//         return true;
+//         return i - off;
 //       }
 //     }
-//     return false;
+//     return len;
 //   }
-void C2_MacroAssembler::has_negatives(Register ary1, Register len,
+void C2_MacroAssembler::count_positives(Register ary1, Register len,
   Register result, Register tmp1,
   XMMRegister vec1, XMMRegister vec2, KRegister mask1, KRegister mask2) {
   // rsi: byte array
@@ -3452,17 +3380,18 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
   ShortBranchVerifier sbv(this);
   assert_different_registers(ary1, len, result, tmp1);
   assert_different_registers(vec1, vec2);
-  Label TRUE_LABEL, FALSE_LABEL, DONE, COMPARE_CHAR, COMPARE_VECTORS, COMPARE_BYTE;
+  Label ADJUST, TAIL_ADJUST, DONE, TAIL_START, CHAR_ADJUST, COMPARE_CHAR, COMPARE_VECTORS, COMPARE_BYTE;
 
+  movl(result, len); // copy
   // len == 0
   testl(len, len);
-  jcc(Assembler::zero, FALSE_LABEL);
+  jcc(Assembler::zero, DONE);
 
   if ((AVX3Threshold == 0) && (UseAVX > 2) && // AVX512
     VM_Version::supports_avx512vlbw() &&
     VM_Version::supports_bmi2()) {
 
-    Label test_64_loop, test_tail;
+    Label test_64_loop, test_tail, BREAK_LOOP;
     Register tmp3_aliased = len;
 
     movl(tmp1, len);
@@ -3479,16 +3408,15 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
     // Check whether our 64 elements of size byte contain negatives
     evpcmpgtb(mask1, vec2, Address(ary1, len, Address::times_1), Assembler::AVX_512bit);
     kortestql(mask1, mask1);
-    jcc(Assembler::notZero, TRUE_LABEL);
+    jcc(Assembler::notZero, BREAK_LOOP);
 
     addptr(len, 64);
     jccb(Assembler::notZero, test_64_loop);
 
-
     bind(test_tail);
     // bail out when there is nothing to be done
     testl(tmp1, -1);
-    jcc(Assembler::zero, FALSE_LABEL);
+    jcc(Assembler::zero, DONE);
 
     // ~(~0 << len) applied up to two times (for 32-bit scenario)
 #ifdef _LP64
@@ -3525,21 +3453,30 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
 #endif
     evpcmpgtb(mask1, mask2, vec2, Address(ary1, 0), Assembler::AVX_512bit);
     ktestq(mask1, mask2);
-    jcc(Assembler::notZero, TRUE_LABEL);
+    jcc(Assembler::zero, DONE);
 
-    jmp(FALSE_LABEL);
+    bind(BREAK_LOOP);
+    // At least one byte in the last 64 bytes is negative.
+    // Set up to look at the last 64 bytes as if they were a tail
+    lea(ary1, Address(ary1, len, Address::times_1));
+    addptr(result, len);
+    // Ignore the very last byte: if all others are positive,
+    // it must be negative, so we can skip right to the 2+1 byte
+    // end comparison at this point
+    orl(result, 63);
+    movl(len, 63);
+    // Fallthru to tail compare
   } else {
-    movl(result, len); // copy
 
     if (UseAVX >= 2 && UseSSE >= 2) {
       // With AVX2, use 32-byte vector compare
-      Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
+      Label COMPARE_WIDE_VECTORS, BREAK_LOOP;
 
       // Compare 32-byte vectors
-      andl(result, 0x0000001f);  //   tail count (in bytes)
-      andl(len, 0xffffffe0);   // vector count (in bytes)
-      jccb(Assembler::zero, COMPARE_TAIL);
+      testl(len, 0xffffffe0);   // vector count (in bytes)
+      jccb(Assembler::zero, TAIL_START);
 
+      andl(len, 0xffffffe0);
       lea(ary1, Address(ary1, len, Address::times_1));
       negptr(len);
 
@@ -3550,30 +3487,42 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
       bind(COMPARE_WIDE_VECTORS);
       vmovdqu(vec1, Address(ary1, len, Address::times_1));
       vptest(vec1, vec2);
-      jccb(Assembler::notZero, TRUE_LABEL);
+      jccb(Assembler::notZero, BREAK_LOOP);
       addptr(len, 32);
-      jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
+      jccb(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
-      testl(result, result);
-      jccb(Assembler::zero, FALSE_LABEL);
+      testl(result, 0x0000001f);   // any bytes remaining?
+      jcc(Assembler::zero, DONE);
 
-      vmovdqu(vec1, Address(ary1, result, Address::times_1, -32));
-      vptest(vec1, vec2);
-      jccb(Assembler::notZero, TRUE_LABEL);
-      jmpb(FALSE_LABEL);
-
-      bind(COMPARE_TAIL); // len is zero
+      // Quick test using the already prepared vector mask
       movl(len, result);
+      andl(len, 0x0000001f);
+      vmovdqu(vec1, Address(ary1, len, Address::times_1, -32));
+      vptest(vec1, vec2);
+      jcc(Assembler::zero, DONE);
+      // There are zeros, jump to the tail to determine exactly where
+      jmpb(TAIL_START);
+
+      bind(BREAK_LOOP);
+      // At least one byte in the last 32-byte vector is negative.
+      // Set up to look at the last 32 bytes as if they were a tail
+      lea(ary1, Address(ary1, len, Address::times_1));
+      addptr(result, len);
+      // Ignore the very last byte: if all others are positive,
+      // it must be negative, so we can skip right to the 2+1 byte
+      // end comparison at this point
+      orl(result, 31);
+      movl(len, 31);
       // Fallthru to tail compare
     } else if (UseSSE42Intrinsics) {
       // With SSE4.2, use double quad vector compare
-      Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
+      Label COMPARE_WIDE_VECTORS, BREAK_LOOP;
 
       // Compare 16-byte vectors
-      andl(result, 0x0000000f);  //   tail count (in bytes)
-      andl(len, 0xfffffff0);   // vector count (in bytes)
-      jcc(Assembler::zero, COMPARE_TAIL);
+      testl(len, 0xfffffff0);   // vector count (in bytes)
+      jcc(Assembler::zero, TAIL_START);
 
+      andl(len, 0xfffffff0);
       lea(ary1, Address(ary1, len, Address::times_1));
       negptr(len);
 
@@ -3584,23 +3533,36 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
       bind(COMPARE_WIDE_VECTORS);
       movdqu(vec1, Address(ary1, len, Address::times_1));
       ptest(vec1, vec2);
-      jcc(Assembler::notZero, TRUE_LABEL);
+      jccb(Assembler::notZero, BREAK_LOOP);
       addptr(len, 16);
-      jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
+      jccb(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
-      testl(result, result);
-      jcc(Assembler::zero, FALSE_LABEL);
+      testl(result, 0x0000000f); // len is zero, any bytes remaining?
+      jcc(Assembler::zero, DONE);
 
-      movdqu(vec1, Address(ary1, result, Address::times_1, -16));
-      ptest(vec1, vec2);
-      jccb(Assembler::notZero, TRUE_LABEL);
-      jmpb(FALSE_LABEL);
-
-      bind(COMPARE_TAIL); // len is zero
+      // Quick test using the already prepared vector mask
       movl(len, result);
+      andl(len, 0x0000000f);   // tail count (in bytes)
+      movdqu(vec1, Address(ary1, len, Address::times_1, -16));
+      ptest(vec1, vec2);
+      jcc(Assembler::zero, DONE);
+      jmpb(TAIL_START);
+
+      bind(BREAK_LOOP);
+      // At least one byte in the last 16-byte vector is negative.
+      // Set up and look at the last 16 bytes as if they were a tail
+      lea(ary1, Address(ary1, len, Address::times_1));
+      addptr(result, len);
+      // Ignore the very last byte: if all others are positive,
+      // it must be negative, so we can skip right to the 2+1 byte
+      // end comparison at this point
+      orl(result, 15);
+      movl(len, 15);
       // Fallthru to tail compare
     }
   }
+
+  bind(TAIL_START);
   // Compare 4-byte vectors
   andl(len, 0xfffffffc); // vector count (in bytes)
   jccb(Assembler::zero, COMPARE_CHAR);
@@ -3611,34 +3573,45 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
   bind(COMPARE_VECTORS);
   movl(tmp1, Address(ary1, len, Address::times_1));
   andl(tmp1, 0x80808080);
-  jccb(Assembler::notZero, TRUE_LABEL);
+  jccb(Assembler::notZero, TAIL_ADJUST);
   addptr(len, 4);
-  jcc(Assembler::notZero, COMPARE_VECTORS);
+  jccb(Assembler::notZero, COMPARE_VECTORS);
 
-  // Compare trailing char (final 2 bytes), if any
+  // Compare trailing char (final 2-3 bytes), if any
   bind(COMPARE_CHAR);
+
   testl(result, 0x2);   // tail  char
   jccb(Assembler::zero, COMPARE_BYTE);
   load_unsigned_short(tmp1, Address(ary1, 0));
   andl(tmp1, 0x00008080);
-  jccb(Assembler::notZero, TRUE_LABEL);
-  subptr(result, 2);
+  jccb(Assembler::notZero, CHAR_ADJUST);
   lea(ary1, Address(ary1, 2));
 
   bind(COMPARE_BYTE);
   testl(result, 0x1);   // tail  byte
-  jccb(Assembler::zero, FALSE_LABEL);
+  jccb(Assembler::zero, DONE);
   load_unsigned_byte(tmp1, Address(ary1, 0));
-  andl(tmp1, 0x00000080);
-  jccb(Assembler::notEqual, TRUE_LABEL);
-  jmpb(FALSE_LABEL);
-
-  bind(TRUE_LABEL);
-  movl(result, 1);   // return true
+  testl(tmp1, 0x00000080);
+  jccb(Assembler::zero, DONE);
+  subptr(result, 1);
   jmpb(DONE);
 
-  bind(FALSE_LABEL);
-  xorl(result, result); // return false
+  bind(TAIL_ADJUST);
+  // there are negative bits in the last 4 byte block.
+  // Adjust result and check the next three bytes
+  addptr(result, len);
+  orl(result, 3);
+  lea(ary1, Address(ary1, len, Address::times_1));
+  jmpb(COMPARE_CHAR);
+
+  bind(CHAR_ADJUST);
+  // We are looking at a char + optional byte tail, and found that one
+  // of the bytes in the char is negative. Adjust the result, check the
+  // first byte and readjust if needed.
+  andl(result, 0xfffffffc);
+  testl(tmp1, 0x00000080); // little-endian, so lowest byte comes first
+  jccb(Assembler::notZero, DONE);
+  addptr(result, 1);
 
   // That's it
   bind(DONE);
@@ -3648,6 +3621,7 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
     vpxor(vec2, vec2);
   }
 }
+
 // Compare char[] or byte[] arrays aligned to 4 bytes or substrings.
 void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ary2,
                                       Register limit, Register result, Register chr,
@@ -4072,41 +4046,18 @@ void C2_MacroAssembler::masked_op(int ideal_opc, int mask_len, KRegister dst,
 }
 
 /*
- * Algorithm for vector D2L and F2I conversions:-
- * a) Perform vector D2L/F2I cast.
- * b) Choose fast path if none of the result vector lane contains 0x80000000 value.
- *    It signifies that source value could be any of the special floating point
- *    values(NaN,-Inf,Inf,Max,-Min).
- * c) Set destination to zero if source is NaN value.
- * d) Replace 0x80000000 with MaxInt if source lane contains a +ve value.
+ * Following routine handles special floating point values(NaN/Inf/-Inf/Max/Min) for casting operation.
+ * If src is NaN, the result is 0.
+ * If the src is negative infinity or any value less than or equal to the value of Integer.MIN_VALUE,
+ * the result is equal to the value of Integer.MIN_VALUE.
+ * If the src is positive infinity or any value greater than or equal to the value of Integer.MAX_VALUE,
+ * the result is equal to the value of Integer.MAX_VALUE.
  */
-
-void C2_MacroAssembler::vector_castD2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                            KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
-                                            Register scratch, int vec_enc) {
+void C2_MacroAssembler::vector_cast_float_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                            XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
+                                                            Register scratch, AddressLiteral float_sign_flip,
+                                                            int vec_enc) {
   Label done;
-  evcvttpd2qq(dst, src, vec_enc);
-  evmovdqul(xtmp1, k0, double_sign_flip, false, vec_enc, scratch);
-  evpcmpeqq(ktmp1, xtmp1, dst, vec_enc);
-  kortestwl(ktmp1, ktmp1);
-  jccb(Assembler::equal, done);
-
-  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
-  evcmppd(ktmp2, k0, src, src, Assembler::UNORD_Q, vec_enc);
-  evmovdquq(dst, ktmp2, xtmp2, true, vec_enc);
-
-  kxorwl(ktmp1, ktmp1, ktmp2);
-  evcmppd(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_UQ, vec_enc);
-  vpternlogq(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
-  evmovdquq(dst, ktmp1, xtmp2, true, vec_enc);
-  bind(done);
-}
-
-void C2_MacroAssembler::vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
-                                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
-                                           AddressLiteral float_sign_flip, Register scratch, int vec_enc) {
-  Label done;
-  vcvttps2dq(dst, src, vec_enc);
   vmovdqu(xtmp1, float_sign_flip, scratch, vec_enc);
   vpcmpeqd(xtmp2, dst, xtmp1, vec_enc);
   vptest(xtmp2, xtmp2, vec_enc);
@@ -4131,11 +4082,11 @@ void C2_MacroAssembler::vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMM
   bind(done);
 }
 
-void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                            KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
-                                            Register scratch, int vec_enc) {
+void C2_MacroAssembler::vector_cast_float_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                             XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                                                             Register scratch, AddressLiteral float_sign_flip,
+                                                             int vec_enc) {
   Label done;
-  vcvttps2dq(dst, src, vec_enc);
   evmovdqul(xtmp1, k0, float_sign_flip, false, vec_enc, scratch);
   Assembler::evpcmpeqd(ktmp1, k0, xtmp1, dst, vec_enc);
   kortestwl(ktmp1, ktmp1);
@@ -4150,6 +4101,162 @@ void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XM
   vpternlogd(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
   evmovdqul(dst, ktmp1, xtmp2, true, vec_enc);
   bind(done);
+}
+
+/*
+ * Following routine handles special floating point values(NaN/Inf/-Inf/Max/Min) for casting operation.
+ * If src is NaN, the result is 0.
+ * If the src is negative infinity or any value less than or equal to the value of Long.MIN_VALUE,
+ * the result is equal to the value of Long.MIN_VALUE.
+ * If the src is positive infinity or any value greater than or equal to the value of Long.MAX_VALUE,
+ * the result is equal to the value of Long.MAX_VALUE.
+ */
+void C2_MacroAssembler::vector_cast_double_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                              XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                                                              Register scratch, AddressLiteral double_sign_flip,
+                                                              int vec_enc) {
+  Label done;
+  evmovdqul(xtmp1, k0, double_sign_flip, false, vec_enc, scratch);
+  evpcmpeqq(ktmp1, xtmp1, dst, vec_enc);
+  kortestwl(ktmp1, ktmp1);
+  jccb(Assembler::equal, done);
+
+  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
+  evcmppd(ktmp2, k0, src, src, Assembler::UNORD_Q, vec_enc);
+  evmovdquq(dst, ktmp2, xtmp2, true, vec_enc);
+
+  kxorwl(ktmp1, ktmp1, ktmp2);
+  evcmppd(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_UQ, vec_enc);
+  vpternlogq(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
+  evmovdquq(dst, ktmp1, xtmp2, true, vec_enc);
+  bind(done);
+}
+
+/*
+ * Algorithm for vector D2L and F2I conversions:-
+ * a) Perform vector D2L/F2I cast.
+ * b) Choose fast path if none of the result vector lane contains 0x80000000 value.
+ *    It signifies that source value could be any of the special floating point
+ *    values(NaN,-Inf,Inf,Max,-Min).
+ * c) Set destination to zero if source is NaN value.
+ * d) Replace 0x80000000 with MaxInt if source lane contains a +ve value.
+ */
+
+void C2_MacroAssembler::vector_castD2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                            KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
+                                            Register scratch, int vec_enc) {
+  evcvttpd2qq(dst, src, vec_enc);
+  vector_cast_double_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, double_sign_flip, vec_enc);
+}
+
+void C2_MacroAssembler::vector_castF2I_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
+                                           AddressLiteral float_sign_flip, Register scratch, int vec_enc) {
+  vcvttps2dq(dst, src, vec_enc);
+  vector_cast_float_special_cases_avx(dst, src, xtmp1, xtmp2, xtmp3, xtmp4, scratch, float_sign_flip, vec_enc);
+}
+
+void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                            KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
+                                            Register scratch, int vec_enc) {
+  vcvttps2dq(dst, src, vec_enc);
+  vector_cast_float_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, float_sign_flip, vec_enc);
+}
+
+#ifdef _LP64
+void C2_MacroAssembler::vector_round_double_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                                 KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
+                                                 AddressLiteral new_mxcsr, Register scratch, int vec_enc) {
+  // Perform floor(val+0.5) operation under the influence of MXCSR.RC mode roundTowards -inf.
+  // and re-instantiate original MXCSR.RC mode after that.
+  ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
+  ldmxcsr(new_mxcsr, scratch);
+  mov64(scratch, julong_cast(0.5L));
+  evpbroadcastq(xtmp1, scratch, vec_enc);
+  vaddpd(xtmp1, src , xtmp1, vec_enc);
+  evcvtpd2qq(dst, xtmp1, vec_enc);
+  vector_cast_double_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, double_sign_flip, vec_enc);
+  ldmxcsr(mxcsr_std, scratch);
+}
+
+void C2_MacroAssembler::vector_round_float_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                                KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
+                                                AddressLiteral new_mxcsr, Register scratch, int vec_enc) {
+  // Perform floor(val+0.5) operation under the influence of MXCSR.RC mode roundTowards -inf.
+  // and re-instantiate original MXCSR.RC mode after that.
+  ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
+  ldmxcsr(new_mxcsr, scratch);
+  movl(scratch, jint_cast(0.5));
+  movq(xtmp1, scratch);
+  vbroadcastss(xtmp1, xtmp1, vec_enc);
+  vaddps(xtmp1, src , xtmp1, vec_enc);
+  vcvtps2dq(dst, xtmp1, vec_enc);
+  vector_cast_float_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, float_sign_flip, vec_enc);
+  ldmxcsr(mxcsr_std, scratch);
+}
+
+void C2_MacroAssembler::vector_round_float_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                               XMMRegister xtmp3, XMMRegister xtmp4, AddressLiteral float_sign_flip,
+                                               AddressLiteral new_mxcsr, Register scratch, int vec_enc) {
+  // Perform floor(val+0.5) operation under the influence of MXCSR.RC mode roundTowards -inf.
+  // and re-instantiate original MXCSR.RC mode after that.
+  ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
+  ldmxcsr(new_mxcsr, scratch);
+  movl(scratch, jint_cast(0.5));
+  movq(xtmp1, scratch);
+  vbroadcastss(xtmp1, xtmp1, vec_enc);
+  vaddps(xtmp1, src , xtmp1, vec_enc);
+  vcvtps2dq(dst, xtmp1, vec_enc);
+  vector_cast_float_special_cases_avx(dst, src, xtmp1, xtmp2, xtmp3, xtmp4, scratch, float_sign_flip, vec_enc);
+  ldmxcsr(mxcsr_std, scratch);
+}
+#endif
+
+void C2_MacroAssembler::vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
+                                             BasicType from_elem_bt, BasicType to_elem_bt) {
+  switch (from_elem_bt) {
+    case T_BYTE:
+      switch (to_elem_bt) {
+        case T_SHORT: vpmovzxbw(dst, src, vlen_enc); break;
+        case T_INT:   vpmovzxbd(dst, src, vlen_enc); break;
+        case T_LONG:  vpmovzxbq(dst, src, vlen_enc); break;
+        default: ShouldNotReachHere();
+      }
+      break;
+    case T_SHORT:
+      switch (to_elem_bt) {
+        case T_INT:  vpmovzxwd(dst, src, vlen_enc); break;
+        case T_LONG: vpmovzxwq(dst, src, vlen_enc); break;
+        default: ShouldNotReachHere();
+      }
+      break;
+    case T_INT:
+      assert(to_elem_bt == T_LONG, "");
+      vpmovzxdq(dst, src, vlen_enc);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
+                                   bool merge, BasicType bt, int vlen_enc) {
+  if (bt == T_INT) {
+    evpternlogd(dst, func, mask, src2, src3, merge, vlen_enc);
+  } else {
+    assert(bt == T_LONG, "");
+    evpternlogq(dst, func, mask, src2, src3, merge, vlen_enc);
+  }
+}
+
+void C2_MacroAssembler::evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, Address src3,
+                                   bool merge, BasicType bt, int vlen_enc) {
+  if (bt == T_INT) {
+    evpternlogd(dst, func, mask, src2, src3, merge, vlen_enc);
+  } else {
+    assert(bt == T_LONG, "");
+    evpternlogq(dst, func, mask, src2, src3, merge, vlen_enc);
+  }
 }
 
 #ifdef _LP64
@@ -4313,6 +4420,48 @@ void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister
 }
 #endif
 
+void C2_MacroAssembler::vector_signum_evex(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
+                                           KRegister ktmp1, int vec_enc) {
+  if (opcode == Op_SignumVD) {
+    vsubpd(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    evcmppd(ktmp1, k0, src, zero, Assembler::LT_OQ, vec_enc);
+    evblendmpd(dst, ktmp1, one, dst, true, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    evcmppd(ktmp1, k0, src, zero, Assembler::EQ_UQ, vec_enc);
+    evblendmpd(dst, ktmp1, dst, src, true, vec_enc);
+  } else {
+    assert(opcode == Op_SignumVF, "");
+    vsubps(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    evcmpps(ktmp1, k0, src, zero, Assembler::LT_OQ, vec_enc);
+    evblendmps(dst, ktmp1, one, dst, true, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    evcmpps(ktmp1, k0, src, zero, Assembler::EQ_UQ, vec_enc);
+    evblendmps(dst, ktmp1, dst, src, true, vec_enc);
+  }
+}
+
+void C2_MacroAssembler::vector_signum_avx(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
+                                          XMMRegister xtmp1, int vec_enc) {
+  if (opcode == Op_SignumVD) {
+    vsubpd(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    vblendvpd(dst, one, dst, src, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    vcmppd(xtmp1, src, zero, Assembler::EQ_UQ, vec_enc);
+    vblendvpd(dst, dst, src, xtmp1, vec_enc);
+  } else {
+    assert(opcode == Op_SignumVF, "");
+    vsubps(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    vblendvps(dst, one, dst, src, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    vcmpps(xtmp1, src, zero, Assembler::EQ_UQ, vec_enc);
+    vblendvps(dst, dst, src, xtmp1, vec_enc);
+  }
+}
+
 void C2_MacroAssembler::vector_maskall_operation(KRegister dst, Register src, int mask_len) {
   if (VM_Version::supports_avx512bw()) {
     if (mask_len > 32) {
@@ -4332,6 +4481,94 @@ void C2_MacroAssembler::vector_maskall_operation(KRegister dst, Register src, in
   }
 }
 
+
+//
+// Following is lookup table based popcount computation algorithm:-
+//       Index   Bit set count
+//     [ 0000 ->   0,
+//       0001 ->   1,
+//       0010 ->   1,
+//       0011 ->   2,
+//       0100 ->   1,
+//       0101 ->   2,
+//       0110 ->   2,
+//       0111 ->   3,
+//       1000 ->   1,
+//       1001 ->   2,
+//       1010 ->   3,
+//       1011 ->   3,
+//       1100 ->   2,
+//       1101 ->   3,
+//       1111 ->   4 ]
+//  a. Count the number of 1s in 4 LSB bits of each byte. These bits are used as
+//     shuffle indices for lookup table access.
+//  b. Right shift each byte of vector lane by 4 positions.
+//  c. Count the number of 1s in 4 MSB bits each byte. These bits are used as
+//     shuffle indices for lookup table access.
+//  d. Add the bitset count of upper and lower 4 bits of each byte.
+//  e. Unpack double words to quad words and compute sum of absolute difference of bitset
+//     count of all the bytes of a quadword.
+//  f. Perform step e. for upper 128bit vector lane.
+//  g. Pack the bitset count of quadwords back to double word.
+//  h. Unpacking and packing operations are not needed for 64bit vector lane.
+void C2_MacroAssembler::vector_popcount_int(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                            XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
+                                            int vec_enc) {
+  if (VM_Version::supports_avx512_vpopcntdq()) {
+    vpopcntd(dst, src, vec_enc);
+  } else {
+    assert((vec_enc == Assembler::AVX_512bit && VM_Version::supports_avx512bw()) || VM_Version::supports_avx2(), "");
+    movl(rtmp, 0x0F0F0F0F);
+    movdl(xtmp1, rtmp);
+    vpbroadcastd(xtmp1, xtmp1, vec_enc);
+    if (Assembler::AVX_512bit == vec_enc) {
+      evmovdqul(xtmp2, k0, ExternalAddress(StubRoutines::x86::vector_popcount_lut()), false, vec_enc, rtmp);
+    } else {
+      vmovdqu(xtmp2, ExternalAddress(StubRoutines::x86::vector_popcount_lut()), rtmp);
+    }
+    vpand(xtmp3, src, xtmp1, vec_enc);
+    vpshufb(xtmp3, xtmp2, xtmp3, vec_enc);
+    vpsrlw(dst, src, 4, vec_enc);
+    vpand(dst, dst, xtmp1, vec_enc);
+    vpshufb(dst, xtmp2, dst, vec_enc);
+    vpaddb(xtmp3, dst, xtmp3, vec_enc);
+    vpxor(xtmp1, xtmp1, xtmp1, vec_enc);
+    vpunpckhdq(dst, xtmp3, xtmp1, vec_enc);
+    vpsadbw(dst, dst, xtmp1, vec_enc);
+    vpunpckldq(xtmp2, xtmp3, xtmp1, vec_enc);
+    vpsadbw(xtmp2, xtmp2, xtmp1, vec_enc);
+    vpackuswb(dst, xtmp2, dst, vec_enc);
+  }
+}
+
+void C2_MacroAssembler::vector_popcount_long(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                             XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
+                                             int vec_enc) {
+  if (VM_Version::supports_avx512_vpopcntdq()) {
+    vpopcntq(dst, src, vec_enc);
+  } else if (vec_enc == Assembler::AVX_512bit) {
+    assert(VM_Version::supports_avx512bw(), "");
+    movl(rtmp, 0x0F0F0F0F);
+    movdl(xtmp1, rtmp);
+    vpbroadcastd(xtmp1, xtmp1, vec_enc);
+    evmovdqul(xtmp2, k0, ExternalAddress(StubRoutines::x86::vector_popcount_lut()), true, vec_enc, rtmp);
+    vpandq(xtmp3, src, xtmp1, vec_enc);
+    vpshufb(xtmp3, xtmp2, xtmp3, vec_enc);
+    vpsrlw(dst, src, 4, vec_enc);
+    vpandq(dst, dst, xtmp1, vec_enc);
+    vpshufb(dst, xtmp2, dst, vec_enc);
+    vpaddb(xtmp3, dst, xtmp3, vec_enc);
+    vpxorq(xtmp1, xtmp1, xtmp1, vec_enc);
+    vpsadbw(dst, xtmp3, xtmp1, vec_enc);
+  } else {
+    // We do not see any performance benefit of running
+    // above instruction sequence on 256 bit vector which
+    // can operate over maximum 4 long elements.
+    ShouldNotReachHere();
+  }
+  evpmovqd(dst, dst, vec_enc);
+}
+
 #ifndef _LP64
 void C2_MacroAssembler::vector_maskall_operation32(KRegister dst, Register src, KRegister tmp, int mask_len) {
   assert(VM_Version::supports_avx512bw(), "");
@@ -4339,3 +4576,167 @@ void C2_MacroAssembler::vector_maskall_operation32(KRegister dst, Register src, 
   kunpckdql(dst, tmp, tmp);
 }
 #endif
+
+void C2_MacroAssembler::udivI(Register rax, Register divisor, Register rdx) {
+  Label done;
+  Label neg_divisor_fastpath;
+  cmpl(divisor, 0);
+  jccb(Assembler::less, neg_divisor_fastpath);
+  xorl(rdx, rdx);
+  divl(divisor);
+  jmpb(done);
+  bind(neg_divisor_fastpath);
+  // Fastpath for divisor < 0:
+  // quotient = (dividend & ~(dividend - divisor)) >>> (Integer.SIZE - 1)
+  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
+  movl(rdx, rax);
+  subl(rdx, divisor);
+  if (VM_Version::supports_bmi1()) {
+    andnl(rax, rdx, rax);
+  } else {
+    notl(rdx);
+    andl(rax, rdx);
+  }
+  shrl(rax, 31);
+  bind(done);
+}
+
+void C2_MacroAssembler::umodI(Register rax, Register divisor, Register rdx) {
+  Label done;
+  Label neg_divisor_fastpath;
+  cmpl(divisor, 0);
+  jccb(Assembler::less, neg_divisor_fastpath);
+  xorl(rdx, rdx);
+  divl(divisor);
+  jmpb(done);
+  bind(neg_divisor_fastpath);
+  // Fastpath when divisor < 0:
+  // remainder = dividend - (((dividend & ~(dividend - divisor)) >> (Integer.SIZE - 1)) & divisor)
+  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
+  movl(rdx, rax);
+  subl(rax, divisor);
+  if (VM_Version::supports_bmi1()) {
+    andnl(rax, rax, rdx);
+  } else {
+    notl(rax);
+    andl(rax, rdx);
+  }
+  sarl(rax, 31);
+  andl(rax, divisor);
+  subl(rdx, rax);
+  bind(done);
+}
+
+void C2_MacroAssembler::udivmodI(Register rax, Register divisor, Register rdx, Register tmp) {
+  Label done;
+  Label neg_divisor_fastpath;
+
+  cmpl(divisor, 0);
+  jccb(Assembler::less, neg_divisor_fastpath);
+  xorl(rdx, rdx);
+  divl(divisor);
+  jmpb(done);
+  bind(neg_divisor_fastpath);
+  // Fastpath for divisor < 0:
+  // quotient = (dividend & ~(dividend - divisor)) >>> (Integer.SIZE - 1)
+  // remainder = dividend - (((dividend & ~(dividend - divisor)) >> (Integer.SIZE - 1)) & divisor)
+  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in
+  // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
+  movl(rdx, rax);
+  subl(rax, divisor);
+  if (VM_Version::supports_bmi1()) {
+    andnl(rax, rax, rdx);
+  } else {
+    notl(rax);
+    andl(rax, rdx);
+  }
+  movl(tmp, rax);
+  shrl(rax, 31); // quotient
+  sarl(tmp, 31);
+  andl(tmp, divisor);
+  subl(rdx, tmp); // remainder
+  bind(done);
+}
+
+#ifdef _LP64
+void C2_MacroAssembler::udivL(Register rax, Register divisor, Register rdx) {
+  Label done;
+  Label neg_divisor_fastpath;
+  cmpq(divisor, 0);
+  jccb(Assembler::less, neg_divisor_fastpath);
+  xorl(rdx, rdx);
+  divq(divisor);
+  jmpb(done);
+  bind(neg_divisor_fastpath);
+  // Fastpath for divisor < 0:
+  // quotient = (dividend & ~(dividend - divisor)) >>> (Long.SIZE - 1)
+  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
+  movq(rdx, rax);
+  subq(rdx, divisor);
+  if (VM_Version::supports_bmi1()) {
+    andnq(rax, rdx, rax);
+  } else {
+    notq(rdx);
+    andq(rax, rdx);
+  }
+  shrq(rax, 63);
+  bind(done);
+}
+
+void C2_MacroAssembler::umodL(Register rax, Register divisor, Register rdx) {
+  Label done;
+  Label neg_divisor_fastpath;
+  cmpq(divisor, 0);
+  jccb(Assembler::less, neg_divisor_fastpath);
+  xorq(rdx, rdx);
+  divq(divisor);
+  jmp(done);
+  bind(neg_divisor_fastpath);
+  // Fastpath when divisor < 0:
+  // remainder = dividend - (((dividend & ~(dividend - divisor)) >> (Long.SIZE - 1)) & divisor)
+  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
+  movq(rdx, rax);
+  subq(rax, divisor);
+  if (VM_Version::supports_bmi1()) {
+    andnq(rax, rax, rdx);
+  } else {
+    notq(rax);
+    andq(rax, rdx);
+  }
+  sarq(rax, 63);
+  andq(rax, divisor);
+  subq(rdx, rax);
+  bind(done);
+}
+
+void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, Register tmp) {
+  Label done;
+  Label neg_divisor_fastpath;
+  cmpq(divisor, 0);
+  jccb(Assembler::less, neg_divisor_fastpath);
+  xorq(rdx, rdx);
+  divq(divisor);
+  jmp(done);
+  bind(neg_divisor_fastpath);
+  // Fastpath for divisor < 0:
+  // quotient = (dividend & ~(dividend - divisor)) >>> (Long.SIZE - 1)
+  // remainder = dividend - (((dividend & ~(dividend - divisor)) >> (Long.SIZE - 1)) & divisor)
+  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in
+  // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
+  movq(rdx, rax);
+  subq(rax, divisor);
+  if (VM_Version::supports_bmi1()) {
+    andnq(rax, rax, rdx);
+  } else {
+    notq(rax);
+    andq(rax, rdx);
+  }
+  movq(tmp, rax);
+  shrq(rax, 63); // quotient
+  sarq(tmp, 63);
+  andq(tmp, divisor);
+  subq(rdx, tmp); // remainder
+  bind(done);
+}
+#endif
+

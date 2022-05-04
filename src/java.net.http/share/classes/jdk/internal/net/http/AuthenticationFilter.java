@@ -305,7 +305,7 @@ class AuthenticationFilter implements HeaderFilter {
         AuthInfo au = proxy ? exchange.proxyauth : exchange.serverauth;
         if (au == null) {
             // if no authenticator, let the user deal with 407/401
-            if (!exchange.client().authenticator().isPresent()) return null;
+            if (exchange.client().authenticator().isEmpty()) return null;
 
             PasswordAuthentication pw = getCredentials(authval, proxy, req);
             if (pw == null) {
@@ -331,7 +331,7 @@ class AuthenticationFilter implements HeaderFilter {
             }
 
             // if no authenticator, let the user deal with 407/401
-            if (!exchange.client().authenticator().isPresent()) return null;
+            if (exchange.client().authenticator().isEmpty()) return null;
 
             // try again
             PasswordAuthentication pw = getCredentials(authval, proxy, req);

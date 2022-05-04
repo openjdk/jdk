@@ -140,7 +140,7 @@ public:
 
   bool is_wide() const { return ( _pc == _was_wide ); }
 
-  // Does this instruction contain an index which refes into the CP cache?
+  // Does this instruction contain an index which refers into the CP cache?
   bool has_cache_index() const { return Bytecodes::uses_cp_cache(cur_bc_raw()); }
 
   int get_index_u1() const {
@@ -226,8 +226,11 @@ public:
   // constant.  Do not attempt to resolve it, since that would require
   // execution of Java code.  If it is not resolved, return an unloaded
   // object (ciConstant.as_object()->is_loaded() == false).
-  ciConstant get_constant();
+  ciConstant  get_constant();
   constantTag get_constant_pool_tag(int index) const;
+  BasicType   get_basic_type_for_constant_at(int index) const;
+
+  constantTag get_raw_pool_tag(int index) const;
 
   // True if the klass-using bytecode points to an unresolved klass
   bool is_unresolved_klass() const {
@@ -235,9 +238,28 @@ public:
     return tag.is_unresolved_klass();
   }
 
-  bool is_unresolved_klass_in_error() const {
-    constantTag tag = get_constant_pool_tag(get_klass_index());
-    return tag.is_unresolved_klass_in_error();
+  bool is_dynamic_constant() const {
+    assert(cur_bc() == Bytecodes::_ldc    ||
+           cur_bc() == Bytecodes::_ldc_w  ||
+           cur_bc() == Bytecodes::_ldc2_w, "not supported: %s", Bytecodes::name(cur_bc()));
+
+    int index = get_constant_pool_index();
+    constantTag tag = get_raw_pool_tag(index);
+    return tag.is_dynamic_constant() ||
+           tag.is_dynamic_constant_in_error();
+  }
+
+  bool is_in_error() const {
+    assert(cur_bc() == Bytecodes::_ldc    ||
+           cur_bc() == Bytecodes::_ldc_w  ||
+           cur_bc() == Bytecodes::_ldc2_w, "not supported: %s", Bytecodes::name(cur_bc()));
+
+    int index = get_constant_pool_index();
+    constantTag tag = get_constant_pool_tag(index);
+    return tag.is_unresolved_klass_in_error() ||
+           tag.is_method_handle_in_error()    ||
+           tag.is_method_type_in_error()      ||
+           tag.is_dynamic_constant_in_error();
   }
 
   // If this bytecode is one of get_field, get_static, put_field,

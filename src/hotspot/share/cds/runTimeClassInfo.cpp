@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +63,15 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
     InstanceKlass* n_h = info.nest_host();
     set_nest_host(n_h);
   }
+  if (_klass->has_archived_enum_objs()) {
+    int num = info.num_enum_klass_static_fields();
+    set_num_enum_klass_static_fields(num);
+    for (int i = 0; i < num; i++) {
+      int root_index = info.enum_klass_static_field(i);
+      set_enum_klass_static_field_root_index_at(i, root_index);
+    }
+  }
+
   ArchivePtrMarker::mark_pointer(&_klass);
 }
 

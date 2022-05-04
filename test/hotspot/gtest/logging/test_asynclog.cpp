@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +86,7 @@ LOG_LEVEL_LIST
 
   // stdout/stderr support
   bool write_to_file(const std::string& output) {
-    FILE* f = fopen(TestLogFileName, "w");
+    FILE* f = os::fopen(TestLogFileName, "w");
 
     if (f != NULL) {
       size_t sz = output.size();

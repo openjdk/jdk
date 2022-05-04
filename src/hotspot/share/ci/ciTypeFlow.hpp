@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,7 +368,7 @@ public:
 
     void overwrite_local_double_long(int index) {
       // Invalidate the previous local if it contains first half of
-      // a double or long value since it's seconf half is being overwritten.
+      // a double or long value since its second half is being overwritten.
       int prev_index = index - 1;
       if (prev_index >= 0 &&
           (is_double(type_at(local(prev_index))) ||
@@ -716,12 +716,16 @@ public:
     Block* _tail;    // Tail of loop
     bool   _irreducible;
     LocalSet _def_locals;
+    int _profiled_count;
+
+    ciTypeFlow* outer() const { return head()->outer(); }
+    bool at_insertion_point(Loop* lp, Loop* current);
 
   public:
     Loop(Block* head, Block* tail) :
       _parent(NULL), _sibling(NULL), _child(NULL),
       _head(head),   _tail(tail),
-      _irreducible(false), _def_locals() {}
+      _irreducible(false), _def_locals(), _profiled_count(-1) {}
 
     Loop* parent()  const { return _parent; }
     Loop* sibling() const { return _sibling; }
@@ -756,6 +760,8 @@ public:
     bool is_irreducible() const { return _irreducible; }
 
     bool is_root() const { return _tail->pre_order() == max_jint; }
+
+    int profiled_count();
 
     void print(outputStream* st = tty, int indent = 0) const PRODUCT_RETURN;
   };
@@ -795,7 +801,7 @@ private:
   bool can_trap(ciBytecodeStream& str);
 
   // Clone the loop heads. Returns true if any cloning occurred.
-  bool clone_loop_heads(Loop* lp, StateVector* temp_vector, JsrSet* temp_set);
+  bool clone_loop_heads(StateVector* temp_vector, JsrSet* temp_set);
 
   // Clone lp's head and replace tail's successors with clone.
   Block* clone_loop_head(Loop* lp, StateVector* temp_vector, JsrSet* temp_set);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,7 @@ public abstract class SunToolkit extends Toolkit
      * access to Xlib, OpenGL, etc.  However, these methods are implemented
      * in SunToolkit so that they can be called from shared code (e.g.
      * from the OGL pipeline) or from the X11 pipeline regardless of whether
-     * XToolkit or MToolkit is currently in use.  There are native macros
+     * XToolkit is currently in use.  There are native macros
      * (such as AWT_LOCK) defined in awt.h, so if the implementation of these
      * methods is changed, make sure it is compatible with the native macros.
      *
@@ -298,7 +298,7 @@ public abstract class SunToolkit extends Toolkit
      * Fetch the peer associated with the given target (as specified
      * in the peer creation method).  This can be used to determine
      * things like what the parent peer is.  If the target is null
-     * or the target can't be found (either because the a peer was
+     * or the target can't be found (either because the peer was
      * never created for it or the peer was disposed), a null will
      * be returned.
      */
@@ -1181,7 +1181,7 @@ public abstract class SunToolkit extends Toolkit
                 variant = AccessController.doPrivileged(
                                 new GetPropertyAction("user.variant", ""));
             }
-            startupLocale = new Locale(language, country, variant);
+            startupLocale = Locale.of(language, country, variant);
         }
         return startupLocale;
     }

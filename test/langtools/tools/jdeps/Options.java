@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8168386 8205116
+ * @bug 8168386 8205116 8281634
  * @summary Test option validation
  * @modules jdk.jdeps
  * @library lib
@@ -48,11 +48,11 @@ public class Options {
                 "-v, -verbose cannot be used with -s, -summary option"
             },
             {
-                new String[] { "-jdkinternal", "-summary", TEST_CLASSES },
+                new String[] { "-jdkinternals", "-summary", TEST_CLASSES },
                 "-summary or -verbose cannot be used with -jdkinternals option"
             },
             {
-                new String[] { "-jdkinternal", "-p", "java.lang", TEST_CLASSES },
+                new String[] { "-jdkinternals", "-p", "java.lang", TEST_CLASSES },
                 "--package, --regex, --require cannot be used with -jdkinternals option"
             },
             {
@@ -69,7 +69,7 @@ public class Options {
             },
             {
                 new String[] { "--inverse", "-R", TEST_CLASSES },
-                "-R cannot be used with --inverse option"
+                "--recursive and --no-recursive cannot be used with --inverse option"
             },
             {
                 new String[] { "--generate-module-info", "dots", "-cp", TEST_CLASSES },
@@ -77,18 +77,22 @@ public class Options {
             },
             {
                 new String[] { "--list-deps", "-summary", TEST_CLASSES },
-                "--list-deps and --list-reduced-deps options are specified"
+                "-summary or -verbose cannot be used with --list-deps option"
             },
             {
                 new String[] { "--list-deps", "--list-reduced-deps", TEST_CLASSES },
                 "--list-deps and --list-reduced-deps options are specified"
             },
+            {
+                new String[] { "--package", "sun.misc", "--require", "java.net.http" },
+                "Only one of --package (-p), --regex (-e), --require option can be specified"
+            }
         };
     }
 
     @Test(dataProvider = "errors")
     public void test(String[] options, String expected) {
-        jdepsError(options).outputContains(expected);
+        assertTrue(jdepsError(options).outputContains(expected));
     }
 
 
@@ -109,6 +113,6 @@ public class Options {
         // invalid path
         jdeps = new JdepsRunner("--check", "java.base", "--system", "bad");
         assertTrue(jdeps.run(true) != 0);
-        jdeps.outputContains("invalid path: bad");
+        assertTrue(jdeps.outputContains("invalid path: bad"));
     }
 }

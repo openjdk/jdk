@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
                                    _partial_objarray_chunk_size);
 
   // Push any needed partial scan tasks.  Pushed before processing the
-  // intitial chunk to allow other workers to steal while we're processing.
+  // initial chunk to allow other workers to steal while we're processing.
   for (uint i = 0; i < step._ncreate; ++i) {
     push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
   }
@@ -434,6 +434,12 @@ void G1ParScanThreadState::undo_allocation(G1HeapRegionAttr dest_attr,
   _plab_allocator->undo_allocation(dest_attr, obj_ptr, word_sz, node_index);
 }
 
+void G1ParScanThreadState::update_bot_after_copying(oop obj, size_t word_sz) {
+  HeapWord* obj_start = cast_from_oop<HeapWord*>(obj);
+  HeapRegion* region = _g1h->heap_region_containing(obj_start);
+  region->update_bot_for_obj(obj_start, word_sz);
+}
+
 // Private inline function, for direct internal use and providing the
 // implementation of the public not-inline function.
 MAYBE_INLINE_EVACUATION
@@ -503,10 +509,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       }
       _age_table.add(age, word_sz);
     } else {
-      // Currently we only have two destinations and we only need BOT updates for
-      // old. If the current allocation was done outside the PLAB this call will
-      // have no effect since the _top of the PLAB has not changed.
-      _plab_allocator->update_bot_for_plab_allocation(dest_attr, word_sz, node_index);
+      update_bot_after_copying(obj, word_sz);
     }
 
     // Most objects are not arrays, so do one array check rather than

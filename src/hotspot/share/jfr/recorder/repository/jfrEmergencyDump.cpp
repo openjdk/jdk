@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ static bool open_emergency_dump_fd(const char* path) {
 
 static void close_emergency_dump_file() {
   if (is_emergency_dump_file_open()) {
-    os::close(emergency_fd);
+    ::close(emergency_fd);
   }
 }
 
@@ -298,7 +298,7 @@ const char* RepositoryIterator::filter(const char* file_name) const {
     return NULL;
   }
   const int64_t size = file_size(fd);
-  os::close(fd);
+  ::close(fd);
   if (size <= chunk_file_header_size) {
     return NULL;
   }
@@ -389,7 +389,7 @@ static void write_repository_files(const RepositoryIterator& iterator, char* con
         bytes_written += (int64_t)os::write(emergency_fd, copy_block, bytes_read - bytes_written);
         assert(bytes_read == bytes_written, "invariant");
       }
-      os::close(current_fd);
+      ::close(current_fd);
     }
   }
 }

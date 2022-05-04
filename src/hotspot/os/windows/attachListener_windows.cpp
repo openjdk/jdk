@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
 #include "services/attachListener.hpp"
-#include "services/dtraceAttacher.hpp"
 
 #include <windows.h>
 #include <signal.h>             // SIGBREAK
@@ -155,7 +154,7 @@ class Win32AttachOperation: public AttachOperation {
   }
 
  public:
-  void Win32AttachOperation::complete(jint result, bufferedStream* result_stream);
+  void complete(jint result, bufferedStream* result_stream);
 };
 
 
@@ -194,7 +193,7 @@ int Win32AttachListener::enqueue(char* cmd, char* arg0, char* arg1, char* arg2, 
     }
   }
 
-  // check that all paramteres to the operation
+  // check that all parameters to the operation
   if (strlen(cmd) > AttachOperation::name_length_max) return ATTACH_ERROR_ILLEGALARG;
   if (strlen(arg0) > AttachOperation::arg_length_max) return ATTACH_ERROR_ILLEGALARG;
   if (strlen(arg1) > AttachOperation::arg_length_max) return ATTACH_ERROR_ILLEGALARG;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public final class VersionInfo
      * @deprecated This API is ICU internal only.
      */
     @Deprecated
-    public static final String ICU_DATA_VERSION_PATH = "67b";
+    public static final String ICU_DATA_VERSION_PATH = "70b";
 
     // public methods ------------------------------------------------------
 
@@ -148,7 +148,15 @@ public final class VersionInfo
      */
     public int compareTo(VersionInfo other)
     {
-        return m_version_ - other.m_version_;
+        // m_version_ is an int, a signed 32-bit integer.
+        // When the major version is >=128, then the version int is negative.
+        // Compare it in two steps to simulate an unsigned-int comparison.
+        // (Alternatively we could turn each int into a long and reset the upper 32 bits.)
+        // Compare the upper bits first, using logical shift right (unsigned).
+        int diff = (m_version_ >>> 1) - (other.m_version_ >>> 1);
+        if (diff != 0) { return diff; }
+        // Compare the remaining bits.
+        return (m_version_ & 1) - (other.m_version_ & 1);
     }
 
     // private data members ----------------------------------------------

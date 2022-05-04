@@ -248,7 +248,7 @@ public final class PlatformRecorder {
             }
             currentChunk = newChunk;
             jvm.beginRecording();
-            startNanos = jvm.getChunkStartNanos();
+            startNanos = Utils.getChunkStartNanos();
             startTime = Utils.epochNanosToInstant(startNanos);
             if (currentChunk != null) {
                 currentChunk.setStartTime(startTime);
@@ -269,7 +269,7 @@ public final class PlatformRecorder {
                 startTime = MetadataRepository.getInstance().setOutput(p);
                 newChunk.setStartTime(startTime);
             }
-            startNanos = jvm.getChunkStartNanos();
+            startNanos = Utils.getChunkStartNanos();
             startTime = Utils.epochNanosToInstant(startNanos);
             recording.setStartTime(startTime);
             recording.setState(RecordingState.RUNNING);
@@ -316,7 +316,7 @@ public final class PlatformRecorder {
             }
         }
         OldObjectSample.emit(recording);
-        recording.setFinalStartnanos(jvm.getChunkStartNanos());
+        recording.setFinalStartnanos(Utils.getChunkStartNanos());
 
         if (endPhysical) {
             RequestEngine.doChunkEnd();

@@ -46,10 +46,10 @@ public final class EventFileStream extends AbstractEventStream {
     private ChunkParser currentParser;
     private RecordedEvent[] cacheSorted;
 
-    public EventFileStream(@SuppressWarnings("removal") AccessControlContext acc, Path path) throws IOException {
+    public EventFileStream(@SuppressWarnings("removal") AccessControlContext acc, Path file) throws IOException {
         super(acc, null, Collections.emptyList());
-        Objects.requireNonNull(path);
-        this.input = new RecordingInput(path.toFile(), FileAccess.UNPRIVILEGED);
+        this.input = new RecordingInput(file.toFile(), FileAccess.UNPRIVILEGED);
+        this.input.setStreamed();
     }
 
     @Override

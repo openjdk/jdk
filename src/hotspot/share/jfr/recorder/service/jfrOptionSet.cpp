@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,14 +116,6 @@ void JfrOptionSet::set_stackdepth(u4 depth) {
   } else {
     _stack_depth = depth;
   }
-}
-
-bool JfrOptionSet::sample_threads() {
-  return _sample_threads == JNI_TRUE;
-}
-
-void JfrOptionSet::set_sample_threads(jboolean sample) {
-  _sample_threads = sample;
 }
 
 bool JfrOptionSet::can_retransform() {
@@ -315,7 +307,6 @@ jlong JfrOptionSet::_memory_size = 0;
 jlong JfrOptionSet::_num_global_buffers = 0;
 jlong JfrOptionSet::_old_object_queue_size = 0;
 u4 JfrOptionSet::_stack_depth = STACK_DEPTH_DEFAULT;
-jboolean JfrOptionSet::_sample_threads = JNI_TRUE;
 jboolean JfrOptionSet::_retransform = JNI_TRUE;
 #ifdef ASSERT
 jboolean JfrOptionSet::_sample_protection = JNI_FALSE;
@@ -476,7 +467,7 @@ static void log_adjustments(MemoryArg& original_memory_size, julong new_memory_s
 
 // All "triangular" options are explicitly set
 // check that they are congruent and not causing
-// an ambiguous situtation
+// an ambiguous situation
 template <typename MemoryArg, typename NumberArg>
 static bool check_for_ambiguity(MemoryArg& memory_size, MemoryArg& global_buffer_size, NumberArg& num_global_buffers) {
   assert(memory_size.is_set(), "invariant");
@@ -497,7 +488,7 @@ static bool check_for_ambiguity(MemoryArg& memory_size, MemoryArg& global_buffer
       num_global_buffers.name(),
       memory_size.name());
     log_error(arguments) (
-      "Try to remove one of the involved options or make sure they are unambigous");
+      "Try to remove one of the involved options or make sure they are unambiguous");
     return false;
   }
   return true;

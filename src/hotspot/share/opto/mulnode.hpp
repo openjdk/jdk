@@ -228,6 +228,8 @@ public:
   LShiftNode(Node *in1, Node *in2) : Node(NULL,in1,in2) {
     init_class_id(Class_LShift);
   }
+
+  static LShiftNode* make(Node* in1, Node* in2, BasicType bt);
 };
 
 //------------------------------LShiftINode------------------------------------

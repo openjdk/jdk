@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,6 +295,12 @@ public class FcFontConfiguration extends FontConfiguration {
         return null;
     }
 
+    private String extractOsInfo(String s) {
+        if (s.startsWith("\"")) s = s.substring(1);
+        if (s.endsWith("\"")) s = s.substring(0, s.length()-1);
+        return s;
+    }
+
     /**
      * Sets the OS name and version from environment information.
      */
@@ -331,6 +337,16 @@ public class FcFontConfiguration extends FontConfiguration {
             } else if ((f = new File("/etc/fedora-release")).canRead()) {
                 osName = "Fedora";
                 osVersion = getVersionString(f);
+            } else if ((f = new File("/etc/os-release")).canRead()) {
+                Properties props = new Properties();
+                try (FileInputStream fis = new FileInputStream(f)) {
+                    props.load(fis);
+                }
+                osName = props.getProperty("NAME");
+                osVersion = props.getProperty("VERSION_ID");
+                osName = extractOsInfo(osName);
+                if (osName.equals("SLES")) osName = "SuSE";
+                osVersion = extractOsInfo(osVersion);
             }
         } catch (Exception e) {
             if (FontUtilities.debugFonts()) {
