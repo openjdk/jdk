@@ -155,7 +155,7 @@ public:
 
     thread->push_jni_handle_block();
     assert(thread == JavaThread::current(), "thread must be current!");
-    thread->frame_anchor()->make_walkable(thread);
+    thread->frame_anchor()->make_walkable();
   };
 
   ~JvmtiEventMark() {

@@ -32,9 +32,9 @@
 G1SegmentedArraySegment::G1SegmentedArraySegment(uint slot_size, uint num_slots, G1SegmentedArraySegment* next, MEMFLAGS flag) :
   _slot_size(slot_size),
   _num_slots(num_slots),
-  _mem_flag(flag),
   _next(next),
-  _next_allocate(0) {
+  _next_allocate(0),
+  _mem_flag(flag) {
   _bottom = ((char*) this) + header_size();
 }
 

@@ -1519,7 +1519,7 @@ private:
 
   // Accessing frames
   frame last_frame() {
-    _anchor.make_walkable(this);
+    _anchor.make_walkable();
     return pd_last_frame();
   }
   javaVFrame* last_java_vframe(RegisterMap* reg_map) { return last_java_vframe(last_frame(), reg_map); }

@@ -609,7 +609,7 @@ void vm_perform_shutdown_actions() {
       JavaThread* jt = JavaThread::cast(thread);
       // Must always be walkable or have no last_Java_frame when in
       // thread_in_native
-      jt->frame_anchor()->make_walkable(jt);
+      jt->frame_anchor()->make_walkable();
       jt->set_thread_state(_thread_in_native);
     }
   }
