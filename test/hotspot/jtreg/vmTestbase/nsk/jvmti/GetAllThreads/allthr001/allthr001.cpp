@@ -180,8 +180,6 @@ void releaseThreadInfo(JNIEnv *env, jvmtiThreadInfo *info) {
 JNIEXPORT void checkInfo(JNIEnv *env, int ind) {
     jint threadsCount = -1;
     jthread *threads;
-    int i, j;
-    bool found;
     jvmtiError err;
     int expected = 0;
     jvmtiThreadInfo inf;
@@ -227,7 +225,7 @@ JNIEXPORT void checkInfo(JNIEnv *env, int ind) {
     }
 
     // check unexpected threads
-    for (i = 0; i < threadsCount; i++) {
+    for (int i = 0; i < threadsCount; i++) {
         err = jvmti->GetThreadInfo(threads[i], &inf);
         if (err != JVMTI_ERROR_NONE) {
             printf("Failed to get thread info: %s (%d)\n",
@@ -238,7 +236,8 @@ JNIEXPORT void checkInfo(JNIEnv *env, int ind) {
         if (printdump == JNI_TRUE) {
             printf(" >>> %s", inf.name);
         }
-        for (j = 0, found = false; j < thrInfo[ind].unexpected.cnt && !found; j++) {
+        bool found = false;
+        for (int j = 0; j < thrInfo[ind].unexpected.cnt && !found; j++) {
             found = (inf.name != NULL && strcmp(inf.name, thrInfo[ind].unexpected.thrNames[j]) == 0);
         }
         if (found) {
@@ -252,8 +251,9 @@ JNIEXPORT void checkInfo(JNIEnv *env, int ind) {
     }
 
     // verify all expected threads are present
-    for (i = 0; i < thrInfo[ind].expected.cnt; i++) {
-        for (j = 0, found = false; j < threadsCount && !found; j++) {
+    for (int i = 0; i < thrInfo[ind].expected.cnt; i++) {
+        bool found = false;
+        for (int j = 0; j < threadsCount && !found; j++) {
             err = jvmti->GetThreadInfo(threads[j], &inf);
             if (err != JVMTI_ERROR_NONE) {
                 printf("Failed to get thread info: %s (%d)\n",
