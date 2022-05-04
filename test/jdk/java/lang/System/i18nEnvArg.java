@@ -21,6 +21,17 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8285517
+ * @summary System.getenv() and argument don't return locale dependent data by JEP400
+ * @requires (os.family == "linux")
+ * @modules jdk.charsets
+ * @library /test/lib
+ * @build jdk.test.lib.process.*
+ * @run main i18nEnvArg
+ */
+
 import java.io.File;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -42,22 +53,43 @@ public class i18nEnvArg {
      * Sets EUC_JP's environment variable and argunments against ProcessBuilder
      */
     public static void main(String[] args) throws Exception {
-        String jnuEncoding = System.getProperty("sun.jnu.encoding");
-        Charset dcs = jnuEncoding != null
-            ? Charset.forName(jnuEncoding)
-            : Charset.defaultCharset();
-        Charset cs = Charset.forName("x-euc-jp-linux");
-        if (!dcs.equals(cs)) {
-            return;
+        ProcessBuilder pb;
+        if (args.length == 0) {
+            var cmds = List.of(
+                "--add-modules=" + System.getProperty("test.modules"),
+                "-classpath",
+                System.getProperty("test.class.path"),
+                "-Dtest.jdk=" + System.getProperty("test.jdk"),
+                "-Dtest.class.path=" + System.getProperty("test.class.path"),
+                "-Dtest.modules=" + System.getProperty("test.modules"),
+                "i18nEnvArg",
+                "Start");
+            pb = ProcessTools.createTestJvm(cmds);
+            Map<String, String> environ = pb.environment();
+            environ.clear();
+            environ.put("LANG", "ja_JP.eucjp");
+        } else {
+            String jnuEncoding = System.getProperty("sun.jnu.encoding");
+            Charset dcs = jnuEncoding != null
+                ? Charset.forName(jnuEncoding)
+                : Charset.defaultCharset();
+            Charset cs = Charset.forName("x-euc-jp-linux");
+            if (!dcs.equals(cs)) {
+                return;
+            }
+            var cmds = List.of(
+                "--add-modules=" + System.getProperty("test.modules"),
+                "--add-opens=java.base/java.lang=ALL-UNNAMED",
+                "-classpath",
+                System.getProperty("test.class.path"),
+                "i18nEnvArg$Verify",
+                EUC_JP_TEXT);
+            pb = ProcessTools.createTestJvm(cmds);
+            Map<String, String> environ = pb.environment();
+            environ.clear();
+            environ.put("LANG", "ja_JP.eucjp");
+            environ.put(EUC_JP_TEXT, EUC_JP_TEXT);
         }
-        var cmds = List.of("--add-opens=java.base/java.lang=ALL-UNNAMED",
-            "i18nEnvArg$Verify",
-            EUC_JP_TEXT);
-        var pb = ProcessTools.createTestJvm(cmds);
-        Map<String, String> environ = pb.environment();
-        environ.clear();
-        environ.put("LANG", "ja_JP.eucjp");
-        environ.put(EUC_JP_TEXT, EUC_JP_TEXT);
         ProcessTools.executeProcess(pb)
             .outputTo(System.out)
             .errorTo(System.err)
