@@ -259,8 +259,9 @@ public class TestOptionsWithRanges {
 
         /*
          * Exclude CompileThresholdScaling from max range testing, because
-         * it is expected to print "outside the allowed range" warnings for
-         * the scaled flags
+         * it is expected to print "outside the allowed range" warnings for the
+         * scaled flag and the "outside the allowed range" warning does not
+         * refer to CompileThresholdScaling itself.
          */
         excludeTestMaxRange("CompileThresholdScaling");
 

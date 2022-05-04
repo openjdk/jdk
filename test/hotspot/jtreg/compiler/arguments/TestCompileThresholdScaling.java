@@ -48,25 +48,25 @@ public class TestCompileThresholdScaling {
     }
 
     static void checkCompileThresholdScaling(double value, boolean fail) throws Throwable {
-      OutputAnalyzer out = ProcessTools.executeTestJvm("-XX:CompileThresholdScaling=" + value, "--version");
-      out.shouldHaveExitValue(0);
-      String output = out.getOutput();
+        OutputAnalyzer out = ProcessTools.executeTestJvm("-XX:CompileThresholdScaling=" + value, "--version");
+        out.shouldHaveExitValue(0);
+        String output = out.getOutput();
 
-      List<String> thresholdList = List.of(
-      "Tier0InvokeNotifyFreqLog", "Tier0BackedgeNotifyFreqLog", "Tier3InvocationThreshold",
-      "Tier3MinInvocationThreshold", "Tier3CompileThreshold", "Tier3BackEdgeThreshold",
-      "Tier2InvokeNotifyFreqLog", "Tier2BackedgeNotifyFreqLog", "Tier3InvokeNotifyFreqLog",
-      "Tier3BackedgeNotifyFreqLog", "Tier23InlineeNotifyFreqLog", "Tier4InvocationThreshold",
-      "Tier4MinInvocationThreshold", "Tier4CompileThreshold", "Tier4BackEdgeThreshold");
+        List<String> thresholdList = List.of(
+        "Tier0InvokeNotifyFreqLog", "Tier0BackedgeNotifyFreqLog", "Tier3InvocationThreshold",
+        "Tier3MinInvocationThreshold", "Tier3CompileThreshold", "Tier3BackEdgeThreshold",
+        "Tier2InvokeNotifyFreqLog", "Tier2BackedgeNotifyFreqLog", "Tier3InvokeNotifyFreqLog",
+        "Tier3BackedgeNotifyFreqLog", "Tier23InlineeNotifyFreqLog", "Tier4InvocationThreshold",
+        "Tier4MinInvocationThreshold", "Tier4CompileThreshold", "Tier4BackEdgeThreshold");
 
-      String pattern = ".*CompileThreshold .* must be between .* and .*";
-      boolean found = Pattern.compile(pattern).matcher(output).find();
-      Asserts.assertEquals(found, fail, "Unexpected result");
+        String pattern = ".*CompileThreshold .* must be between .* and .*";
+        boolean found = Pattern.compile(pattern).matcher(output).find();
+        Asserts.assertEquals(found, fail, "Unexpected result");
 
-      for (String threshold : thresholdList) {
-          pattern = ".*" + threshold + "=.* is outside the allowed range";
-          Asserts.assertEquals(found, fail, "Unexpected result");
-      }
+        for (String threshold : thresholdList) {
+            pattern = ".*" + threshold + "=.* is outside the allowed range";
+            Asserts.assertEquals(found, fail, "Unexpected result");
+        }
     }
 
 }
