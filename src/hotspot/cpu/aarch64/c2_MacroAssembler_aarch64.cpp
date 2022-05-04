@@ -1337,7 +1337,7 @@ void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, 
   assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
   assert_different_registers(dst, src, vtmp1, vtmp2, vtmp3, vtmp4);
   assert_different_registers(mask, ptmp, pgtmp);
-  // Example input:   src   = 88 77 66 45 44 33 22 11
+  // Example input:   src   = 88 77 66 55 44 33 22 11
   //                  mask  = 01 00 00 01 01 00 01 01
   // Expected result: dst   = 00 00 00 88 55 44 22 11
 
