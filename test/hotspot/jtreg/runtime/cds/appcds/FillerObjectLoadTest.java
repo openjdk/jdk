@@ -24,7 +24,7 @@
 /**
  * @test
  * bug 8286066
- * @summary FillerObject_klass should be loaded as early as possible
+ * @summary VM crash caused by unloaded FillerObject_klass
  * @library /test/lib
  * @requires vm.cds
  * @run driver FillerObjectLoadTest
