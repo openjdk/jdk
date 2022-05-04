@@ -444,7 +444,10 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     protected native void exitFullScreenExclusive(int screen, WindowPeer w);
 
     /**
-     * Reapplies the size of this device to the full-screen window.
+     * Reapplies the size of this graphics device to
+     * the given full-screen window.
+     * @param w a Window that needs resizing
+     * @param b new full-screen window bounds
      */
     private static void resizeFSWindow(final Window w, final Rectangle b) {
         if (w != null) {
@@ -479,7 +482,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
                 dm.getBitDepth(), dm.getRefreshRate());
             // Note: window will get resized to actual full-screen dimensions
             // in the upcoming display change event, when the DPI scales
-            // would already be correctly set etc. (see JDK-8282863)
+            // would already be correctly set etc.
         } else {
             throw new IllegalStateException("Must be in fullscreen mode " +
                                             "in order to set display mode");
