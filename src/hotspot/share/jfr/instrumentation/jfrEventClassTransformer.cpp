@@ -1622,9 +1622,9 @@ static void bless_instance_commit_method(const Array<Method*>* methods) {
     const Method* const m = methods->at(i);
     // Method is on the form "void UserEvent:commit()" and instrumented
     if (!m->is_static() &&
-	 m->name() == commit &&
-	 m->signature() == void_method_sig &&
-	 is_commit_method_instrumented(m)) {
+         m->name() == commit &&
+         m->signature() == void_method_sig &&
+         is_commit_method_instrumented(m)) {
       BLESS_METHOD(m);
     }
   }

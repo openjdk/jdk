@@ -66,7 +66,7 @@ public class TestGetEventWriter {
 
     static class Testa extends jdk.jfr.Event {
     }
-    
+
     public static void main(String... args) throws Throwable {
         try (Recording r = new Recording()) {
             // Unlocks access to jdk.jfr.internal.event

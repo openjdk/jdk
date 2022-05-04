@@ -82,6 +82,7 @@ public final class EventWriterKey {
     // could spin in a loop anyway. Alternatives, such as System.exit(1),
     // may provide caller with additional capabilities.
     public static void block() {
+        // Making this field variable a local variable leads to CTW failure
         logged = false;
         while (true) {
             try {
@@ -96,7 +97,7 @@ public final class EventWriterKey {
             }
         }
     }
-    
+
     private static byte[] replace(byte[] bytes, String match, String replacement) {
         if (match.length() != replacement.length()) {
             throw new IllegalArgumentException("Match must be same size as replacement");
