@@ -2201,11 +2201,11 @@ public final class Main {
                 /*
                  * UnrecoverableKeyException will be thrown for any secret key
                  * entries that are protected by a different password than
-                 * storePass, and we will not be able to check the constraints.
+                 * storePass, and we will not be able to check the constraints
+                 * because we do not have the keyPass for this operation.
                  * This may occurs for keystores such as JCEKS. Note that this
                  * is not really a new issue as details about secret key entries
-                 * other than the fact they exist as entries are not listed ,
-                 * presumably because we may not have the right password.
+                 * other than the fact they exist as entries are not listed.
                  */
             }
         } else if (keyStore.entryInstanceOf(alias, KeyStore.PrivateKeyEntry.class)) {
@@ -5283,7 +5283,7 @@ public final class Main {
 
         @Override
         public Set<Key> getKeys() {
-            return (key == null) ? Set.of() : Set.of(key);
+            return Set.of(key);
         }
 
         @Override
