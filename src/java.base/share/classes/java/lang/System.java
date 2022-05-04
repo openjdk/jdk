@@ -733,20 +733,8 @@ public final class System {
      *     the {@linkplain Runtime.Version#feature feature} element of the
      *     {@linkplain Runtime#version() runtime version}</td></tr>
      * <tr><th scope="row">{@systemProperty java.specification.maintenance.version}</th>
-     *     <td>Java Runtime Environment specification maintenance version, not defined
-     *         before the specification implemented by this runtime has undergone a
-     *         <a href="https://jcp.org/en/procedures/jcp2#3.6.4">maintenance
-     *         release</a> <em>(optional)</em>.
-     *         When defined, the value of this property may be
-     *         interpreted as a positive integer.
-     *         The value indicates the latest maintenance release the
-     *         runtime is known to support. A later release may be
-     *         supported by the environment.
-     *         To indicate the first maintenance release this property will
-     *         have the value {@code "1"}; to indicate the second maintenance
-     *         release, this property will have the value {@code "2"},
-     *         and so on.
-     *         </td></tr>
+     *     <td>Java Runtime Environment specification maintenance version,
+     *     may be interpreted as a positive integer <em>(optional, see below)</em></td></tr>
      * <tr><th scope="row">{@systemProperty java.specification.vendor}</th>
      *     <td>Java Runtime Environment specification  vendor</td></tr>
      * <tr><th scope="row">{@systemProperty java.specification.name}</th>
@@ -793,6 +781,16 @@ public final class System {
      *     starting it with the property set to another value leads to undefined behavior.
      * </tbody>
      * </table>
+     * <p>
+     * The {@code java.specification.maintenance.version} property is
+     * defined if the specification implemented by this runtime at the
+     * time of its construction had undergone a <a
+     * href="https://jcp.org/en/procedures/jcp2#3.6.4">maintenance
+     * release</a>. When defined, its value identifies that
+     * maintenance release. To indicate the first maintenance release
+     * this property will have the value {@code "1"}; to indicate the
+     * second maintenance release, this property will have the value
+     * {@code "2"}, and so on.
      * <p>
      * Multiple paths in a system property value are separated by the path
      * separator character of the platform.
