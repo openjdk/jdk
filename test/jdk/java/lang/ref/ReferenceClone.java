@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8201793
+ * @bug 8201793 8285690
  * @summary Test Reference::clone to throw CloneNotSupportedException
  */
 
@@ -47,7 +47,9 @@ public class ReferenceClone {
         CloneableReference ref = new CloneableReference(o);
         try {
             ref.clone();
-        } catch (CloneNotSupportedException e) {}
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException("CloneableReference::clone should not throw CloneNotSupportedException");
+        }
     }
 
     private void assertCloneNotSupported(CloneableRef ref) {

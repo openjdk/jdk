@@ -4707,91 +4707,148 @@ instruct vcvtDtoF(vReg dst, vReg src, vReg tmp)
 
 // ------------------------------ Vector extract ---------------------------------
 
-instruct extractB(iRegINoSp dst, vReg src, immI idx, pRegGov pgtmp, rFlagsReg cr)
+instruct extractB(iRegINoSp dst, vReg src, immI idx, vReg vtmp)
 %{
-  predicate(UseSVE > 0);
+  predicate(UseSVE > 0 && n->in(2)->get_int() >= 16);
   match(Set dst (ExtractB src idx));
-  effect(TEMP pgtmp, KILL cr);
+  effect(TEMP vtmp);
   ins_cost(2 * SVE_COST);
-  format %{ "sve_extract $dst, B, $pgtmp, $src, $idx\n\t"
-            "sbfmw $dst, $dst, 0U, 7U\t# extract from vector(B)" %}
+  format %{ "sve_extract_integral $dst, B, $src, $idx\t# extract from vector(B)" %}
   ins_encode %{
-    __ sve_extract(as_Register($dst$$reg), __ B, as_PRegister($pgtmp$$reg),
-                   as_FloatRegister($src$$reg), (int)($idx$$constant));
-    __ sbfmw(as_Register($dst$$reg), as_Register($dst$$reg), 0U, 7U);
+    __ sve_extract_integral(as_Register($dst$$reg), __ B, as_FloatRegister($src$$reg),
+                            (int)($idx$$constant), /* is_signed */ true, as_FloatRegister($vtmp$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct extractS(iRegINoSp dst, vReg src, immI idx, pRegGov pgtmp, rFlagsReg cr)
+instruct extractS(iRegINoSp dst, vReg src, immI idx, vReg vtmp)
 %{
-  predicate(UseSVE > 0);
+  predicate(UseSVE > 0 && n->in(2)->get_int() >= 8);
   match(Set dst (ExtractS src idx));
-  effect(TEMP pgtmp, KILL cr);
+  effect(TEMP vtmp);
   ins_cost(2 * SVE_COST);
-  format %{ "sve_extract $dst, H, $pgtmp, $src, $idx\n\t"
-            "sbfmw $dst, $dst, 0U, 15U\t# extract from vector(S)" %}
+  format %{ "sve_extract_integral $dst, H, $src, $idx\t# extract from vector(S)" %}
   ins_encode %{
-    __ sve_extract(as_Register($dst$$reg), __ H, as_PRegister($pgtmp$$reg),
-                   as_FloatRegister($src$$reg), (int)($idx$$constant));
-    __ sbfmw(as_Register($dst$$reg), as_Register($dst$$reg), 0U, 15U);
+    __ sve_extract_integral(as_Register($dst$$reg), __ H, as_FloatRegister($src$$reg),
+                            (int)($idx$$constant), /* is_signed */ true, as_FloatRegister($vtmp$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
 
-
-instruct extractI(iRegINoSp dst, vReg src, immI idx, pRegGov pgtmp, rFlagsReg cr)
+instruct extractI(iRegINoSp dst, vReg src, immI idx, vReg vtmp)
 %{
-  predicate(UseSVE > 0);
+  predicate(UseSVE > 0 && n->in(2)->get_int() >= 4);
   match(Set dst (ExtractI src idx));
-  effect(TEMP pgtmp, KILL cr);
+  effect(TEMP vtmp);
   ins_cost(2 * SVE_COST);
-  format %{ "sve_extract $dst, S, $pgtmp, $src, $idx\t# extract from vector(I)" %}
+  format %{ "sve_extract_integral $dst, S, $src, $idx\t# extract from vector(I)" %}
   ins_encode %{
-    __ sve_extract(as_Register($dst$$reg), __ S, as_PRegister($pgtmp$$reg),
-                   as_FloatRegister($src$$reg), (int)($idx$$constant));
+    __ sve_extract_integral(as_Register($dst$$reg), __ S, as_FloatRegister($src$$reg),
+                            (int)($idx$$constant), /* is_signed */ true, as_FloatRegister($vtmp$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct extractL(iRegLNoSp dst, vReg src, immI idx, pRegGov pgtmp, rFlagsReg cr)
+instruct extractL(iRegLNoSp dst, vReg src, immI idx, vReg vtmp)
 %{
-  predicate(UseSVE > 0);
+  predicate(UseSVE > 0 && n->in(2)->get_int() >= 2);
   match(Set dst (ExtractL src idx));
-  effect(TEMP pgtmp, KILL cr);
+  effect(TEMP vtmp);
   ins_cost(2 * SVE_COST);
-  format %{ "sve_extract $dst, D, $pgtmp, $src, $idx\t# extract from vector(L)" %}
+  format %{ "sve_extract_integral $dst, D, $src, $idx\t# extract from vector(L)" %}
   ins_encode %{
-    __ sve_extract(as_Register($dst$$reg), __ D, as_PRegister($pgtmp$$reg),
-                   as_FloatRegister($src$$reg), (int)($idx$$constant));
+    __ sve_extract_integral(as_Register($dst$$reg), __ D, as_FloatRegister($src$$reg),
+                            (int)($idx$$constant), /* is_signed */ false, as_FloatRegister($vtmp$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct extractF(vRegF dst, vReg src, immI idx, pRegGov pgtmp, rFlagsReg cr)
+instruct extractB_LT16(iRegINoSp dst, vReg src, immI idx)
+%{
+  predicate(UseSVE > 0 && n->in(2)->get_int() < 16);
+  match(Set dst (ExtractB src idx));
+  ins_cost(INSN_COST);
+  format %{ "smov $dst, B, $src, $idx\t# extract from vector(B)" %}
+  ins_encode %{
+    __ smov(as_Register($dst$$reg), as_FloatRegister($src$$reg), __ B, $idx$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct extractS_LT8(iRegINoSp dst, vReg src, immI idx)
+%{
+  predicate(UseSVE > 0 && n->in(2)->get_int() < 8);
+  match(Set dst (ExtractS src idx));
+  ins_cost(INSN_COST);
+  format %{ "smov $dst, H, $src, $idx\t# extract from vector(S)" %}
+  ins_encode %{
+    __ smov(as_Register($dst$$reg), as_FloatRegister($src$$reg), __ H, $idx$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct extractI_LT4(iRegINoSp dst, vReg src, immI idx)
+%{
+  predicate(UseSVE > 0 && n->in(2)->get_int() < 4);
+  match(Set dst (ExtractI src idx));
+  ins_cost(INSN_COST);
+  format %{ "smov $dst, S, $src, $idx\t# extract from vector(I)" %}
+  ins_encode %{
+    __ smov(as_Register($dst$$reg), as_FloatRegister($src$$reg), __ S, $idx$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct extractL_LT2(iRegLNoSp dst, vReg src, immI idx)
+%{
+  predicate(UseSVE > 0 && n->in(2)->get_int() < 2);
+  match(Set dst (ExtractL src idx));
+  ins_cost(INSN_COST);
+  format %{ "umov $dst, D, $src, $idx\t# extract from vector(L)" %}
+  ins_encode %{
+    __ umov(as_Register($dst$$reg), as_FloatRegister($src$$reg), __ D, $idx$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct extractF(vRegF dst, vReg src, immI idx)
 %{
   predicate(UseSVE > 0);
   match(Set dst (ExtractF src idx));
-  effect(TEMP pgtmp, KILL cr);
   ins_cost(2 * SVE_COST);
-  format %{ "sve_extract $dst, S, $pgtmp, $src, $idx\t# extract from vector(F)" %}
+  format %{ "sve_extract_f $dst, S, $src, $idx\t# extract from vector(F)" %}
   ins_encode %{
-    __ sve_extract(as_FloatRegister($dst$$reg), __ S, as_PRegister($pgtmp$$reg),
-                   as_FloatRegister($src$$reg), (int)($idx$$constant));
+    if ((as_FloatRegister($dst$$reg) == as_FloatRegister($src$$reg)) && ($idx$$constant == 0)) {
+      /* empty */
+    } else if ($idx$$constant == 0) {
+      __ fmovs(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg));
+    } else if ($idx$$constant < 4) {
+      __ ins(as_FloatRegister($dst$$reg), __ S, as_FloatRegister($src$$reg), 0, (int)($idx$$constant));
+    } else {
+      __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
+      __ sve_ext(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), $idx$$constant << 2);
+    }
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct extractD(vRegD dst, vReg src, immI idx, pRegGov pgtmp, rFlagsReg cr)
+instruct extractD(vRegD dst, vReg src, immI idx)
 %{
   predicate(UseSVE > 0);
   match(Set dst (ExtractD src idx));
-  effect(TEMP pgtmp, KILL cr);
   ins_cost(2 * SVE_COST);
-  format %{ "sve_extract $dst, D, $pgtmp, $src, $idx\t# extract from vector(D)" %}
+  format %{ "sve_extract_d $dst, D, $src, $idx\t# extract from vector(D)" %}
   ins_encode %{
-    __ sve_extract(as_FloatRegister($dst$$reg), __ D, as_PRegister($pgtmp$$reg),
-                   as_FloatRegister($src$$reg), (int)($idx$$constant));
+    if ((as_FloatRegister($dst$$reg) == as_FloatRegister($src$$reg)) && ($idx$$constant == 0)) {
+      /* empty */
+    } else if ($idx$$constant == 0) {
+      __ fmovd(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg));
+    } else if ($idx$$constant == 1) {
+      __ ins(as_FloatRegister($dst$$reg), __ D, as_FloatRegister($src$$reg), 0, 1);
+    } else {
+      __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
+      __ sve_ext(as_FloatRegister($dst$$reg), as_FloatRegister($dst$$reg), $idx$$constant << 3);
+    }
   %}
   ins_pipe(pipe_slow);
 %}
@@ -4833,34 +4890,152 @@ instruct vtest_anytrue(iRegINoSp dst, pRegGov src1, pRegGov src2, rFlagsReg cr)
 %}
 // ------------------------------ Vector insert ---------------------------------
 
-instruct insertI_small(vReg dst, vReg src, iRegIorL2I val, immI idx, pRegGov pgtmp, rFlagsReg cr)
-%{
-  predicate(UseSVE > 0 && n->as_Vector()->length() <= 32 &&
+instruct insertI_le128bits(vReg dst, vReg src, iRegIorL2I val, immI idx) %{
+  predicate(UseSVE > 0 &&
+            (Matcher::vector_length_in_bytes(n) == 8 || Matcher::vector_length_in_bytes(n) == 16) &&
             (n->bottom_type()->is_vect()->element_basic_type() == T_BYTE ||
              n->bottom_type()->is_vect()->element_basic_type() == T_SHORT ||
              n->bottom_type()->is_vect()->element_basic_type() == T_INT));
   match(Set dst (VectorInsert (Binary src val) idx));
-  effect(TEMP_DEF dst, TEMP pgtmp, KILL cr);
+  ins_cost(2 * INSN_COST);
+  format %{ "orr    $dst, T8/16B, $src, $src\n\t"
+            "mov    $dst, B/H/S, $idx, $val\t# insertI into vector(64/128bits)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
+      __ orr(as_FloatRegister($dst$$reg), Matcher::vector_length_in_bytes(this) == 8 ? __ T8B : __ T16B,
+             as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
+    }
+    __ mov(as_FloatRegister($dst$$reg), __ elemType_to_regVariant(Matcher::vector_element_basic_type(this)),
+           $idx$$constant, $val$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct insertI_small_index(vReg dst, vReg src, iRegIorL2I val, immI idx, vReg vtmp, pRegGov pgtmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 && n->in(2)->get_int() < 32 &&
+            Matcher::vector_length_in_bytes(n) > 16 &&
+            (n->bottom_type()->is_vect()->element_basic_type() == T_BYTE ||
+             n->bottom_type()->is_vect()->element_basic_type() == T_SHORT ||
+             n->bottom_type()->is_vect()->element_basic_type() == T_INT));
+  match(Set dst (VectorInsert (Binary src val) idx));
+  effect(TEMP vtmp, TEMP pgtmp, KILL cr);
   ins_cost(4 * SVE_COST);
-  format %{ "sve_index $dst, -16, 1\t# (B/H/S)\n\t"
-            "sve_cmpeq $pgtmp, $dst, ($idx-#16) # shift from [0, 31] to [-16, 15]\n\t"
+  format %{ "sve_index $vtmp, -16, 1\t# (B/H/S)\n\t"
+            "sve_cmpeq $pgtmp, $vtmp, ($idx-#16) # shift from [0, 31] to [-16, 15]\n\t"
             "sve_orr $dst, $src, $src\n\t"
             "sve_cpy $dst, $pgtmp, $val\t# insert into vector (B/H/S)" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
-    __ sve_index(as_FloatRegister($dst$$reg), size, -16, 1);
-    __ sve_cmp(Assembler::EQ, as_PRegister($pgtmp$$reg), size, ptrue,
-               as_FloatRegister($dst$$reg), (int)($idx$$constant) - 16);
-    __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
-    __ sve_cpy(as_FloatRegister($dst$$reg), size, as_PRegister($pgtmp$$reg), as_Register($val$$reg));
+    __ block_comment("insert into vector (B/H/S) {");
+      __ sve_index(as_FloatRegister($vtmp$$reg), size, -16, 1);
+      __ sve_cmp(Assembler::EQ, as_PRegister($pgtmp$$reg), size, ptrue,
+                 as_FloatRegister($vtmp$$reg), (int)($idx$$constant) - 16);
+      if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
+        __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
+      }
+      __ sve_cpy(as_FloatRegister($dst$$reg), size, as_PRegister($pgtmp$$reg), $val$$Register);
+    __ block_comment("} insert into vector (B/H/S)");
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct insertF_small(vReg dst, vReg src, vRegF val, immI idx, pRegGov pgtmp, rFlagsReg cr)
-%{
-  predicate(UseSVE > 0 && n->as_Vector()->length() <= 32 &&
+instruct insertI(vReg dst, vReg src, iRegIorL2I val, immI idx, vReg vtmp1, vReg vtmp2, pRegGov pgtmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 && n->in(2)->get_int() >= 32 &&
+            Matcher::vector_length_in_bytes(n) > 16 &&
+            (n->bottom_type()->is_vect()->element_basic_type() == T_BYTE ||
+             n->bottom_type()->is_vect()->element_basic_type() == T_SHORT ||
+             n->bottom_type()->is_vect()->element_basic_type() == T_INT));
+  match(Set dst (VectorInsert (Binary src val) idx));
+  effect(TEMP vtmp1, TEMP vtmp2, TEMP pgtmp, KILL cr);
+  ins_cost(5 * SVE_COST);
+  format %{ "sve_index $vtmp1, 0, 1\t# (B/H/S)\n\t"
+            "sve_dup $vtmp2, $idx\t# (B/H/S)\n\t"
+            "sve_cmpeq $pgtmp, $vtmp1, $vtmp2\n\t"
+            "sve_orr $dst, $src, $src\n\t"
+            "sve_cpy $dst, $pgtmp, $val\t# insert into vector (B/H/S)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this, $src);
+    Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
+    __ block_comment("insert into vector (B/H/S) {");
+      __ sve_index(as_FloatRegister($vtmp1$$reg), size, 0, 1);
+      __ sve_dup(as_FloatRegister($vtmp2$$reg), size, (int)($idx$$constant));
+      __ sve_cmp(Assembler::EQ, as_PRegister($pgtmp$$reg), size, ptrue,
+                 as_FloatRegister($vtmp1$$reg), as_FloatRegister($vtmp2$$reg));
+      if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
+        __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
+      }
+      __ sve_cpy(as_FloatRegister($dst$$reg), size, as_PRegister($pgtmp$$reg), $val$$Register);
+    __ block_comment("} insert into vector (B/H/S)");
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct insertL_128bits(vReg dst, vReg src, iRegL val, immI idx) %{
+  predicate(UseSVE > 0 && Matcher::vector_length_in_bytes(n) == 16 &&
+            n->bottom_type()->is_vect()->element_basic_type() == T_LONG);
+  match(Set dst (VectorInsert (Binary src val) idx));
+  ins_cost(2 * INSN_COST);
+  format %{ "orr    $dst, T16B, $src, $src\n\t"
+            "mov    $dst, D, $idx, $val\t# insertL into vector(128bits)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
+      __ orr(as_FloatRegister($dst$$reg), __ T16B,
+             as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
+    }
+    __ mov(as_FloatRegister($dst$$reg), __ D, $idx$$constant, $val$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct insertL(vReg dst, vReg src, iRegL val, immI idx, vReg vtmp, pRegGov pgtmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 &&
+            Matcher::vector_length_in_bytes(n) > 16 &&
+            n->bottom_type()->is_vect()->element_basic_type() == T_LONG);
+  match(Set dst (VectorInsert (Binary src val) idx));
+  effect(TEMP vtmp, TEMP pgtmp, KILL cr);
+  ins_cost(4 * SVE_COST);
+  format %{ "sve_index $vtmp, D, -16, 1\n\t"
+            "sve_cmpeq $pgtmp, $vtmp, ($idx-#16) # shift from [0, 31] to [-16, 15]\n\t"
+            "sve_orr $dst, $src, $src\n\t"
+            "sve_cpy $dst, $pgtmp, $val\t# insert into vector (L)" %}
+  ins_encode %{
+    __ block_comment("insert into vector (L) {");
+      __ sve_index(as_FloatRegister($vtmp$$reg), __ D, -16, 1);
+      __ sve_cmp(Assembler::EQ, as_PRegister($pgtmp$$reg), __ D, ptrue,
+                 as_FloatRegister($vtmp$$reg), (int)($idx$$constant) - 16);
+      if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
+        __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
+      }
+      __ sve_cpy(as_FloatRegister($dst$$reg), __ D,
+                 as_PRegister($pgtmp$$reg), $val$$Register);
+    __ block_comment("} insert into vector (L)");
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct insertF_le128bits(vReg dst, vReg src, vRegF val, immI idx) %{
+  predicate(UseSVE > 0 && n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT &&
+            (Matcher::vector_length_in_bytes(n) == 8 || Matcher::vector_length_in_bytes(n) == 16));
+  match(Set dst (VectorInsert (Binary src val) idx));
+  ins_cost(2 * INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "orr    $dst, T8/16B, $src, $src\n\t"
+            "ins    $dst, S, $val, $idx, 0\t# insertF into vector(64/128bits)" %}
+  ins_encode %{
+    __ orr(as_FloatRegister($dst$$reg), Matcher::vector_length_in_bytes(this) == 8 ? __ T8B : __ T16B,
+           as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
+    __ ins(as_FloatRegister($dst$$reg), __ S,
+           as_FloatRegister($val$$reg), $idx$$constant, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct insertF_small_index(vReg dst, vReg src, vRegF val, immI idx, pRegGov pgtmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 && n->in(2)->get_int() < 32 &&
+            Matcher::vector_length_in_bytes(n) > 16 &&
             n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
   match(Set dst (VectorInsert (Binary src val) idx));
   effect(TEMP_DEF dst, TEMP pgtmp, KILL cr);
@@ -4870,87 +5045,20 @@ instruct insertF_small(vReg dst, vReg src, vRegF val, immI idx, pRegGov pgtmp, r
             "sve_orr $dst, $src, $src\n\t"
             "sve_cpy $dst, $pgtmp, $val\t# insert into vector (F)" %}
   ins_encode %{
-    __ sve_index(as_FloatRegister($dst$$reg), __ S, -16, 1);
-    __ sve_cmp(Assembler::EQ, as_PRegister($pgtmp$$reg), __ S, ptrue,
-               as_FloatRegister($dst$$reg), (int)($idx$$constant) - 16);
-    __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
-    __ sve_cpy(as_FloatRegister($dst$$reg), __ S, as_PRegister($pgtmp$$reg), as_FloatRegister($val$$reg));
+    __ block_comment("insert into vector (F) {");
+      __ sve_index(as_FloatRegister($dst$$reg), __ S, -16, 1);
+      __ sve_cmp(Assembler::EQ, as_PRegister($pgtmp$$reg), __ S, ptrue,
+                 as_FloatRegister($dst$$reg), (int)($idx$$constant) - 16);
+      __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
+      __ sve_cpy(as_FloatRegister($dst$$reg), __ S, as_PRegister($pgtmp$$reg), as_FloatRegister($val$$reg));
+    __ block_comment("} insert into vector (F)");
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct insertI(vReg dst, vReg src, iRegIorL2I val, immI idx, vReg tmp1, pRegGov pgtmp, rFlagsReg cr)
-%{
-  predicate(UseSVE > 0 && n->as_Vector()->length() > 32 &&
-            (n->bottom_type()->is_vect()->element_basic_type() == T_BYTE ||
-             n->bottom_type()->is_vect()->element_basic_type() == T_SHORT ||
-             n->bottom_type()->is_vect()->element_basic_type() == T_INT));
-  match(Set dst (VectorInsert (Binary src val) idx));
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP pgtmp, KILL cr);
-  ins_cost(5 * SVE_COST);
-  format %{ "sve_index $tmp1, 0, 1\t# (B/H/S)\n\t"
-            "sve_dup $dst, $idx\t# (B/H/S)\n\t"
-            "sve_cmpeq $pgtmp, $tmp1, $dst\n\t"
-            "sve_orr $dst, $src, $src\n\t"
-            "sve_cpy $dst, $pgtmp, $val\t# insert into vector (B/H/S)" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
-    __ sve_index(as_FloatRegister($tmp1$$reg), size, 0, 1);
-    __ sve_dup(as_FloatRegister($dst$$reg), size, (int)($idx$$constant));
-    __ sve_cmp(Assembler::EQ, as_PRegister($pgtmp$$reg), size, ptrue,
-               as_FloatRegister($tmp1$$reg), as_FloatRegister($dst$$reg));
-    __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
-    __ sve_cpy(as_FloatRegister($dst$$reg), size, as_PRegister($pgtmp$$reg), as_Register($val$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct insertL(vReg dst, vReg src, iRegL val, immI idx, pRegGov pgtmp, rFlagsReg cr)
-%{
-  predicate(UseSVE > 0 &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_LONG);
-  match(Set dst (VectorInsert (Binary src val) idx));
-  effect(TEMP_DEF dst, TEMP pgtmp, KILL cr);
-  ins_cost(4 * SVE_COST);
-  format %{ "sve_index $dst, D, -16, 1\n\t"
-            "sve_cmpeq $pgtmp, $dst, ($idx-#16) # shift from [0, 31] to [-16, 15]\n\t"
-            "sve_orr $dst, $src, $src\n\t"
-            "sve_cpy $dst, $pgtmp, $val\t# insert into vector (L)" %}
-  ins_encode %{
-    __ sve_index(as_FloatRegister($dst$$reg), __ D, -16, 1);
-    __ sve_cmp(Assembler::EQ, as_PRegister($pgtmp$$reg), __ D, ptrue,
-               as_FloatRegister($dst$$reg), (int)($idx$$constant) - 16);
-    __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
-    __ sve_cpy(as_FloatRegister($dst$$reg), __ D, as_PRegister($pgtmp$$reg), as_Register($val$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct insertD(vReg dst, vReg src, vRegD val, immI idx, pRegGov pgtmp, rFlagsReg cr)
-%{
-  predicate(UseSVE > 0 &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
-  match(Set dst (VectorInsert (Binary src val) idx));
-  effect(TEMP_DEF dst, TEMP pgtmp, KILL cr);
-  ins_cost(4 * SVE_COST);
-  format %{ "sve_index $dst, D, -16, 1\n\t"
-            "sve_cmpeq $pgtmp, $dst, ($idx-#16) # shift from [0, 31] to [-16, 15]\n\t"
-            "sve_orr $dst, $src, $src\n\t"
-            "sve_cpy $dst, $pgtmp, $val\t# insert into vector (D)" %}
-  ins_encode %{
-    __ sve_index(as_FloatRegister($dst$$reg), __ D, -16, 1);
-    __ sve_cmp(Assembler::EQ, as_PRegister($pgtmp$$reg), __ D, ptrue,
-               as_FloatRegister($dst$$reg), (int)($idx$$constant) - 16);
-    __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
-    __ sve_cpy(as_FloatRegister($dst$$reg), __ D, as_PRegister($pgtmp$$reg), as_FloatRegister($val$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct insertF(vReg dst, vReg src, vRegF val, immI idx, vReg tmp1, pRegGov pgtmp, rFlagsReg cr)
-%{
-  predicate(UseSVE > 0 && n->as_Vector()->length() > 32 &&
+instruct insertF(vReg dst, vReg src, vRegF val, immI idx, vReg tmp1, pRegGov pgtmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 && n->in(2)->get_int() >= 32 &&
+            Matcher::vector_length_in_bytes(n) > 16 &&
             n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
   match(Set dst (VectorInsert (Binary src val) idx));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP pgtmp, KILL cr);
@@ -4961,15 +5069,58 @@ instruct insertF(vReg dst, vReg src, vRegF val, immI idx, vReg tmp1, pRegGov pgt
             "sve_orr $dst, $src, $src\n\t"
             "sve_cpy $dst, $pgtmp, $val\t# insert into vector (F)" %}
   ins_encode %{
-    __ sve_index(as_FloatRegister($tmp1$$reg), __ S, 0, 1);
-    __ sve_dup(as_FloatRegister($dst$$reg), __ S, (int)($idx$$constant));
-    __ sve_cmp(Assembler::EQ, as_PRegister($pgtmp$$reg), __ S, ptrue,
-               as_FloatRegister($tmp1$$reg), as_FloatRegister($dst$$reg));
-    __ sve_orr(as_FloatRegister($dst$$reg),
-               as_FloatRegister($src$$reg),
-               as_FloatRegister($src$$reg));
-    __ sve_cpy(as_FloatRegister($dst$$reg), __ S,
-               as_PRegister($pgtmp$$reg), as_FloatRegister($val$$reg));
+    __ block_comment("insert into vector (F) {");
+      __ sve_index(as_FloatRegister($tmp1$$reg), __ S, 0, 1);
+      __ sve_dup(as_FloatRegister($dst$$reg), __ S, (int)($idx$$constant));
+      __ sve_cmp(Assembler::EQ, as_PRegister($pgtmp$$reg), __ S, ptrue,
+                 as_FloatRegister($tmp1$$reg), as_FloatRegister($dst$$reg));
+      __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                 as_FloatRegister($src$$reg));
+      __ sve_cpy(as_FloatRegister($dst$$reg), __ S,
+                 as_PRegister($pgtmp$$reg), as_FloatRegister($val$$reg));
+    __ block_comment("} insert into vector (F)");
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct insertD_128bits(vReg dst, vReg src, vRegD val, immI idx) %{
+  predicate(UseSVE > 0 && Matcher::vector_length_in_bytes(n) == 16 &&
+            n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  match(Set dst (VectorInsert (Binary src val) idx));
+  ins_cost(2 * INSN_COST);
+  effect(TEMP_DEF dst);
+  format %{ "orr    $dst, T16B, $src, $src\n\t"
+            "ins    $dst, D, $val, $idx, 0\t# insertD into vector(128bits)" %}
+  ins_encode %{
+    __ orr(as_FloatRegister($dst$$reg), __ T16B,
+           as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
+    __ ins(as_FloatRegister($dst$$reg), __ D,
+           as_FloatRegister($val$$reg), $idx$$constant, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct insertD(vReg dst, vReg src, vRegD val, immI idx, pRegGov pgtmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 &&
+            Matcher::vector_length_in_bytes(n) > 16 &&
+            n->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE);
+  match(Set dst (VectorInsert (Binary src val) idx));
+  effect(TEMP_DEF dst, TEMP pgtmp, KILL cr);
+  ins_cost(4 * SVE_COST);
+  format %{ "sve_index $dst, D, -16, 1\n\t"
+            "sve_cmpeq $pgtmp, $dst, ($idx-#16) # shift from [0, 31] to [-16, 15]\n\t"
+            "sve_orr $dst, $src, $src\n\t"
+            "sve_cpy $dst, $pgtmp, $val\t# insert into vector (D)" %}
+  ins_encode %{
+    __ block_comment("insert into vector (D) {");
+      __ sve_index(as_FloatRegister($dst$$reg), __ D, -16, 1);
+      __ sve_cmp(Assembler::EQ, as_PRegister($pgtmp$$reg), __ D, ptrue,
+                 as_FloatRegister($dst$$reg), (int)($idx$$constant) - 16);
+      __ sve_orr(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                 as_FloatRegister($src$$reg));
+      __ sve_cpy(as_FloatRegister($dst$$reg), __ D,
+                 as_PRegister($pgtmp$$reg), as_FloatRegister($val$$reg));
+    __ block_comment("} insert into vector (D)");
   %}
   ins_pipe(pipe_slow);
 %}
@@ -5229,6 +5380,21 @@ instruct loadconB(vReg dst, immI0 src) %{
   ins_pipe(pipe_slow);
 %}
 
+// -------------------------- Populate Index to a Vector --------------------------
+
+instruct populateindex(vReg dst, iRegIorL2I src1, immI src2) %{
+  predicate(UseSVE > 0);
+  match(Set dst (PopulateIndex src1 src2));
+  ins_cost(SVE_COST);
+  format %{ "sve_index $dst, $src1, $src2\t # populate index (sve)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_index(as_FloatRegister($dst$$reg), __ elemType_to_regVariant(bt),
+                 as_Register($src1$$reg), $src2$$constant);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // Intrisics for String.indexOf(char)
 
 
@@ -5320,19 +5486,18 @@ instruct vmask_lasttrue(iRegINoSp dst, pReg src, pReg ptmp) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmask_tolong(iRegLNoSp dst, pReg src, vReg vtmp1, vReg vtmp2, pRegGov pgtmp, rFlagsReg cr) %{
+instruct vmask_tolong(iRegLNoSp dst, pReg src, vReg vtmp1, vReg vtmp2) %{
   predicate(UseSVE > 0 &&
             n->in(1)->bottom_type()->is_vect()->length() <= 64);
   match(Set dst (VectorMaskToLong src));
-  effect(TEMP vtmp1, TEMP vtmp2, TEMP pgtmp, KILL cr);
+  effect(TEMP vtmp1, TEMP vtmp2);
   ins_cost(13 * SVE_COST);
   format %{ "vmask_tolong $dst, $src\t# vector mask tolong (sve)" %}
   ins_encode %{
     __ sve_vmask_tolong(as_Register($dst$$reg), as_PRegister($src$$reg),
                         Matcher::vector_element_basic_type(this, $src),
                         Matcher::vector_length(this, $src),
-                        as_FloatRegister($vtmp1$$reg), as_FloatRegister($vtmp2$$reg),
-                        as_PRegister($pgtmp$$reg));
+                        as_FloatRegister($vtmp1$$reg), as_FloatRegister($vtmp2$$reg));
   %}
   ins_pipe(pipe_slow);
 %}

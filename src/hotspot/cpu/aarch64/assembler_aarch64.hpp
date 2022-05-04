@@ -3506,6 +3506,13 @@ public:
     f(0b11, 15, 14), prf(Pg, 10), rf(Zn, 5), rf(Zd, 0);
   }
 
+  // SVE Permute Vector - Extract
+  void sve_ext(FloatRegister Zdn, FloatRegister Zm, int imm8) {
+    starti;
+    f(0b00000101001, 31, 21), f(imm8 >> 3, 20, 16), f(0b000, 15, 13);
+    f(imm8 & 0b111, 12, 10), rf(Zm, 5), rf(Zdn, 0);
+  }
+
 // SVE Integer/Floating-Point Compare - Vectors
 #define INSN(NAME, op1, op2, fp)  \
   void NAME(Condition cond, PRegister Pd, SIMD_RegVariant T, PRegister Pg,             \
@@ -3786,9 +3793,19 @@ void sve_fcm(Condition cond, PRegister Pd, SIMD_RegVariant T,
   INSN(sve_lastb, 0b1);
 #undef INSN
 
+  // SVE Create index starting from general-purpose register and incremented by immediate
+  void sve_index(FloatRegister Zd, SIMD_RegVariant T, Register Rn, int imm) {
+    starti;
+    assert(T != Q, "invalid size");
+    f(0b00000100, 31, 24), f(T, 23, 22), f(0b1, 21);
+    sf(imm, 20, 16), f(0b010001, 15, 10);
+    rf(Rn, 5), rf(Zd, 0);
+  }
+
   // SVE create index starting from and incremented by immediate
   void sve_index(FloatRegister Zd, SIMD_RegVariant T, int imm1, int imm2) {
     starti;
+    assert(T != Q, "invalid size");
     f(0b00000100, 31, 24), f(T, 23, 22), f(0b1, 21);
     sf(imm2, 20, 16), f(0b010000, 15, 10);
     sf(imm1, 9, 5), rf(Zd, 0);

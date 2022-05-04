@@ -1584,7 +1584,7 @@ void JavaThread::remove_monitor_chunk(MonitorChunk* chunk) {
 
 void JavaThread::handle_special_runtime_exit_condition() {
   if (is_obj_deopt_suspend()) {
-    frame_anchor()->make_walkable(this);
+    frame_anchor()->make_walkable();
     wait_for_object_deoptimization();
   }
   JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(this);)
@@ -1670,9 +1670,14 @@ class InstallAsyncExceptionHandshake : public HandshakeClosure {
 public:
   InstallAsyncExceptionHandshake(AsyncExceptionHandshake* aeh) :
     HandshakeClosure("InstallAsyncException"), _aeh(aeh) {}
+  ~InstallAsyncExceptionHandshake() {
+    // If InstallAsyncExceptionHandshake was never executed we need to clean up _aeh.
+    delete _aeh;
+  }
   void do_thread(Thread* thr) {
     JavaThread* target = JavaThread::cast(thr);
     target->install_async_exception(_aeh);
+    _aeh = nullptr;
   }
 };
 
