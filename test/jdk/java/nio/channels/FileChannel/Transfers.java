@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,10 +432,16 @@ public class Transfers {
         int pos = (int)seed & 0xfff;
         fc.position(pos);
 
-        int n = (int)fc.transferTo(off, len, tgt.channel());
-        if (n != len)
-            throw new Failure("Incorrect transfer length: " + n
-                              + " (expected " + len + ")");
+        long position = off;
+        long count = len;
+        while (count > 0) {
+            long n = (int)fc.transferTo(position, count, tgt.channel());
+            if (n < 0 || n > count)
+                throw new Failure("Incorrect transfer length n = : " + n
+                                  + " (expected 0 <= n <= " + len + ")");
+            position += n;
+            count -= n;
+        }
 
         // Check that source wasn't changed
         if (fc.position() != pos)
