@@ -25,26 +25,32 @@
  * @test
  * bug 8286066
  * @summary FillerObject_klass should be loaded as early as possible
- * @library /test/lib
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @requires vm.cds
  * @run driver FillerObjectLoadTest
  */
 
+import java.io.File;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class FillerObjectLoadTest {
     public static void main(String... args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        String java_home_src = System.getProperty("java.home");
+        String java_home_dst = CDSTestUtils.getOutputDir() + File.separator + "moved_jdk";
+        CDSTestUtils.clone(new File(java_home_src), new File(java_home_dst));
+        String dstJava  = java_home_dst + File.separator + "bin" + File.separator + "java";
+
+        ProcessBuilder pb = CDSTestUtils.makeBuilder(dstJava,
                 "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseCompressedClassPointers",
                 "-XX:+UnlockExperimentalVMOptions", "-XX:+UseEpsilonGC", "-Xshare:dump");
-        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
-        analyzer.shouldHaveExitValue(0);
+        OutputAnalyzer out = TestCommon.executeAndLog(pb, "exec-dst");
+        out.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = CDSTestUtils.makeBuilder(dstJava,
                 "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseCompressedClassPointers",
                 "-XX:TLABSize=2048", "-Xshare:dump");
-        analyzer = new OutputAnalyzer(pb.start());
-        analyzer.shouldHaveExitValue(0);
+        out = TestCommon.executeAndLog(pb, "exec-dst");
+        out.shouldHaveExitValue(0);
     }
 }
