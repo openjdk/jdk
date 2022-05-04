@@ -1655,14 +1655,8 @@ Node* find_ctrl(const int idx) {
 //   category: characters cmdxo from options string
 //   dump
 int print_bfs_cmp(const Node* n1, const Node* n2) { return n1 != n2; }
-void Node::print_bfs(const uint max_distance, Node* target, char const* options) {
-  // BFS or shortest path?
-  if (target == NULL) {
-    tty->print("No target: perform BFS.\n");
-  } else {
-    tty->print("Find shortest path: %d -> %d.\n", this->_idx, target->_idx);
-  }
-
+void Node::print_bfs(const int max_distance, Node* target, char const* options) {
+  assert(max_distance >= 0, "non-negative distance");
   // Parsing options
   if (options == NULL) {
     options = "+-cmdxoOB"; // default options
@@ -1791,12 +1785,13 @@ void Node::print_bfs(const uint max_distance, Node* target, char const* options)
   Node_List worklist; // BFS queue
   Dict parent((CmpKey)&print_bfs_cmp, hashkey);   // node -> parent (one step closer to this)
   Dict distance((CmpKey)&print_bfs_cmp, hashkey); // node -> distance to this
+  // Note: for distance, we store an int in a (void*), this requires double casting
 
   // add node to traversal queue
-  auto worklist_push = [&] (Node* n, Node* p, const long d) {
+  auto worklist_push = [&] (Node* n, Node* p, const int d) {
     worklist.push(n);
     parent.Insert(n, p);
-    distance.Insert(n, (void*)d);
+    distance.Insert(n, (void*)(size_t)d);
   };
 
   auto print_header = [&] (bool print_parent) {
@@ -1818,7 +1813,7 @@ void Node::print_bfs(const uint max_distance, Node* target, char const* options)
   };
 
   auto print_node = [&] (Node* n, bool print_parent) {
-    tty->print("%3ld", abs((long)distance[n])); // distance
+    tty->print("%3d", abs((int)(size_t)distance[n])); // distance
     if (print_blocks) {
       print_node_block(n);                      // block
     }
@@ -1829,7 +1824,7 @@ void Node::print_bfs(const uint max_distance, Node* target, char const* options)
       print_node_idx((Node*)parent[n]);         // parent
     }
     if (traverse_inputs && traverse_outputs) {
-      long dd = (long)distance[n];
+      int dd = (int)(size_t)distance[n];
       const char* edge = (dd >=0 ) ? ((dd > 0) ? "+" : " " ) : "-";
       tty->print(" %s", edge);                  // edge
     }
@@ -1837,11 +1832,18 @@ void Node::print_bfs(const uint max_distance, Node* target, char const* options)
     n->dump();                                  // node dump
   };
 
-  // BFS header
+  // BFS or shortest path?
   if (target == NULL) {
+    tty->print("No target: perform BFS.\n");
     print_header(true);
+  } else {
+    tty->print("Find shortest path:");
+    print_node_idx(this);
+    tty->print(" ->");
+    print_node_idx(target);
+    tty->print("\n");
   }
-
+ 
   // initialize BFS at this
   worklist_push(this, this, 0);
 
@@ -1850,7 +1852,7 @@ void Node::print_bfs(const uint max_distance, Node* target, char const* options)
   while (pos < worklist.size()) {
     // process next item
     Node* n = worklist.at(pos++);
-    long d = abs((long)distance[n]);
+    int d = abs((int)(size_t)distance[n]);
     // BFS: print n
     if (target == NULL) {
       print_node(n, true);
