@@ -67,7 +67,7 @@ import java.util.function.BiFunction;
  * {@snippet lang=java :
  * try (MemorySession session = MemorySession.openConfined()) {
  *     SymbolLookup libGL = SymbolLookup.libraryLookup("libGL.so"); // libGL.so loaded here
- *     MemorySegment glGetString = libGL.lookup("glGetString");
+ *     MemorySegment glGetString = libGL.lookup("glGetString").orElseThrow();
  *     ...
  * } //  libGL.so unloaded here
  * }
@@ -80,7 +80,7 @@ import java.util.function.BiFunction;
  * System.loadLibrary("GL"); // libGL.so loaded here
  * ...
  * SymbolLookup libGL = SymbolLookup.loaderLookup();
- * MemorySegment glGetString = libGL.lookup("glGetString");
+ * MemorySegment glGetString = libGL.lookup("glGetString").orElseThrow();
  * }
  *
  * This symbol lookup, which is known as a <em>loader lookup</em>, is dynamic with respect to the libraries associated
@@ -113,7 +113,7 @@ import java.util.function.BiFunction;
  * {@snippet lang=java :
  * Linker nativeLinker = Linker.nativeLinker();
  * SymbolLookup stdlib = nativeLinker.defaultLookup();
- * MemorySegment malloc = stdlib.lookup("malloc");
+ * MemorySegment malloc = stdlib.lookup("malloc").orElseThrow();
  * }
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
