@@ -160,31 +160,29 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                                        boolean allowDuplicates) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
-        if (!throwsTags.isEmpty()) {
-            for (Entry<List<? extends ThrowsTree>, ExecutableElement> entry : throwsTags.entrySet()) {
-                CommentHelper ch = utils.getCommentHelper(entry.getValue());
-                Element e = entry.getValue();
-                for (ThrowsTree dt : entry.getKey()) {
-                    Element te = ch.getException(dt);
-                    String excName = ch.getExceptionName(dt).toString();
-                    TypeMirror substituteType = typeSubstitutions.get(excName);
-                    if ((!allowDuplicates) &&
-                            (alreadyDocumented.contains(excName) ||
-                                    (te != null && alreadyDocumented.contains(utils.getFullyQualifiedName(te, false)))) ||
-                            (substituteType != null && alreadyDocumented.contains(substituteType.toString()))) {
-                        continue;
-                    }
-                    if (alreadyDocumented.isEmpty()) {
-                        result.add(writer.getThrowsHeader());
-                    }
-                    result.add(writer.throwsTagOutput(e, dt, substituteType));
-                    if (substituteType != null) {
-                        alreadyDocumented.add(substituteType.toString());
-                    } else {
-                        alreadyDocumented.add(te != null
-                                ? utils.getFullyQualifiedName(te, false)
-                                : excName);
-                    }
+        for (Entry<List<? extends ThrowsTree>, ExecutableElement> entry : throwsTags.entrySet()) {
+            CommentHelper ch = utils.getCommentHelper(entry.getValue());
+            Element e = entry.getValue();
+            for (ThrowsTree dt : entry.getKey()) {
+                Element te = ch.getException(dt);
+                String excName = ch.getExceptionName(dt).toString();
+                TypeMirror substituteType = typeSubstitutions.get(excName);
+                if ((!allowDuplicates) &&
+                        (alreadyDocumented.contains(excName) ||
+                                (te != null && alreadyDocumented.contains(utils.getFullyQualifiedName(te, false)))) ||
+                        (substituteType != null && alreadyDocumented.contains(substituteType.toString()))) {
+                    continue;
+                }
+                if (alreadyDocumented.isEmpty()) {
+                    result.add(writer.getThrowsHeader());
+                }
+                result.add(writer.throwsTagOutput(e, dt, substituteType));
+                if (substituteType != null) {
+                    alreadyDocumented.add(substituteType.toString());
+                } else {
+                    alreadyDocumented.add(te != null
+                            ? utils.getFullyQualifiedName(te, false)
+                            : excName);
                 }
             }
         }
