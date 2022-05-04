@@ -62,6 +62,8 @@ public class TestMemoryWithCgroupV1 {
             } finally {
                 DockerTestUtils.removeDockerImage(imageName);
             }
+        } else {
+            System.out.println("Memory swappiness not supported with cgroups v2. Test skipped.");
         }
         System.out.println("TEST PASSED!!!");
     }
@@ -75,7 +77,6 @@ public class TestMemoryWithCgroupV1 {
         Common.addWhiteBoxOpts(opts);
 
         OutputAnalyzer out = Common.run(opts);
-        System.out.println(out.getOutput());
         out.shouldContain("Memory and Swap Limit is: 157286400")
            .shouldContain("Memory and Swap Limit has been reset to 104857600 because swappiness is 0")
            .shouldContain("Memory & Swap Limit: 100.00M");
