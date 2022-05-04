@@ -26,7 +26,7 @@
  * bug 8286066
  * @summary FillerObject_klass should be loaded as early as possible
  * @library /test/lib
- * @requires vm.cds & vm.gc.Epsilon
+ * @requires vm.cds
  * @run driver FillerObjectLoadTest
  */
 
@@ -38,9 +38,13 @@ public class FillerObjectLoadTest {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseCompressedClassPointers",
                 "-XX:+UnlockExperimentalVMOptions", "-XX:+UseEpsilonGC", "-Xshare:dump");
-
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+        analyzer.shouldHaveExitValue(0);
 
+        pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseCompressedClassPointers",
+                "-XX:TLABSize=2048", "-Xshare:dump");
+        analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
     }
 }
