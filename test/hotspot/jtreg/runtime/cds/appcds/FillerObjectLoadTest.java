@@ -25,32 +25,27 @@
  * @test
  * bug 8286066
  * @summary FillerObject_klass should be loaded as early as possible
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @library /test/lib
  * @requires vm.cds
  * @run driver FillerObjectLoadTest
  */
 
-import java.io.File;
-import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class FillerObjectLoadTest {
     public static void main(String... args) throws Exception {
-        String java_home_src = System.getProperty("java.home");
-        String java_home_dst = CDSTestUtils.getOutputDir() + File.separator + "moved_jdk";
-        CDSTestUtils.clone(new File(java_home_src), new File(java_home_dst));
-        String dstJava  = java_home_dst + File.separator + "bin" + File.separator + "java";
-
-        ProcessBuilder pb = CDSTestUtils.makeBuilder(dstJava,
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseCompressedClassPointers",
-                "-XX:+UnlockExperimentalVMOptions", "-XX:+UseEpsilonGC", "-Xshare:dump");
-        OutputAnalyzer out = TestCommon.executeAndLog(pb, "exec-dst");
-        out.shouldHaveExitValue(0);
+                "-XX:+UnlockExperimentalVMOptions", "-XX:+UseEpsilonGC", "-Xshare:dump",
+                "-XX:SharedArchiveFile=./hello.jsa");
+        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+        analyzer.shouldHaveExitValue(0);
 
-        pb = CDSTestUtils.makeBuilder(dstJava,
+        pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseCompressedClassPointers",
-                "-XX:TLABSize=2048", "-Xshare:dump");
-        out = TestCommon.executeAndLog(pb, "exec-dst");
-        out.shouldHaveExitValue(0);
+                "-XX:TLABSize=2048", "-Xshare:dump", "-XX:SharedArchiveFile=./hello.jsa");
+        analyzer = new OutputAnalyzer(pb.start());
+        analyzer.shouldHaveExitValue(0);
     }
 }
