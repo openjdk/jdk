@@ -2302,6 +2302,7 @@ void GraphBuilder::instance_of(int klass_index) {
 void GraphBuilder::monitorenter(Value x, int bci) {
   // save state before locking in case of deoptimization after a NullPointerException
   ValueStack* state_before = copy_state_for_exception_with_bci(bci);
+  compilation()->set_has_monitors(true);
   append_with_bci(new MonitorEnter(x, state()->lock(x), state_before), bci);
   kill_all();
 }

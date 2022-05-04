@@ -2728,6 +2728,26 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       if (result==EXCEPTION_CONTINUE_EXECUTION) return result;
     }
 #endif
+
+    if (in_java && (exception_code == EXCEPTION_ILLEGAL_INSTRUCTION || exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
+      // Check for UD trap caused by NOP patching.
+      // If it is, patch return address to be deopt handler.
+      if (NativeDeoptInstruction::is_deopt_at(pc)) {
+        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        if (cb != NULL && cb->is_compiled()) {
+          CompiledMethod* cm = cb->as_compiled_method();
+          frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
+          address deopt = cm->is_method_handle_return(pc) ?
+            cm->deopt_mh_handler_begin() :
+            cm->deopt_handler_begin();
+          assert(cm->insts_contains_inclusive(pc), "");
+          cm->set_original_pc(&fr, pc);
+          // Set pc to handler
+          exceptionInfo->ContextRecord->PC_NAME = (DWORD64)deopt;
+          return EXCEPTION_CONTINUE_EXECUTION;
+        }
+      }
+    }
   }
 
 #if !defined(USE_VECTORED_EXCEPTION_HANDLING)

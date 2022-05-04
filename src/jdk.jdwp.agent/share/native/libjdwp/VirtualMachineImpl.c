@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -537,22 +537,35 @@ getAllThreads(PacketInputStream *in, PacketOutputStream *out)
 
         int i;
         jint threadCount;
+        jint vthreadCount;
         jthread *theThreads;
+        jthread *theVThreads;
 
         theThreads = allThreads(&threadCount);
-        if (theThreads == NULL) {
+        if (gdata->enumerateVThreads) {
+            theVThreads = threadControl_allVThreads(&vthreadCount);
+        } else {
+            theVThreads = NULL;
+            vthreadCount = 0;
+        }
+
+        if (theThreads == NULL || (theVThreads == NULL && vthreadCount != 0)) {
             outStream_setError(out, JDWP_ERROR(OUT_OF_MEMORY));
         } else {
             /* Squish out all of the debugger-spawned threads */
             threadCount = filterDebugThreads(theThreads, threadCount);
 
-            (void)outStream_writeInt(out, threadCount);
-            for (i = 0; i <threadCount; i++) {
+            (void)outStream_writeInt(out, threadCount + vthreadCount);
+            for (i = 0; i < vthreadCount; i++) {
+                (void)outStream_writeObjectRef(env, out, theVThreads[i]);
+            }
+            for (i = 0; i < threadCount; i++) {
                 (void)outStream_writeObjectRef(env, out, theThreads[i]);
             }
-
-            jvmtiDeallocate(theThreads);
         }
+
+        jvmtiDeallocate(theThreads);
+        jvmtiDeallocate(theVThreads);
 
     } END_WITH_LOCAL_REFS(env);
 

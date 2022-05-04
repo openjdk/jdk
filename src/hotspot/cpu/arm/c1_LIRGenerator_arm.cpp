@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1327,4 +1327,8 @@ void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
     return;
   }
   __ load(address, result, info, lir_patch_none);
+}
+
+void LIRGenerator::do_continuation_doYield(Intrinsic* x) {
+  fatal("Continuation.doYield intrinsic is not implemented on this platform");
 }

@@ -472,6 +472,10 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   current->set_exception_pc(NULL);
 #endif // INCLUDE_JVMCI
 
+  if (Continuation::is_return_barrier_entry(return_address)) {
+    return StubRoutines::cont_returnBarrierExc();
+  }
+
   // The fastest case first
   CodeBlob* blob = CodeCache::find_blob(return_address);
   CompiledMethod* nm = (blob != NULL) ? blob->as_compiled_method_or_null() : NULL;
@@ -479,7 +483,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     // Set flag if return address is a method handle call site.
     current->set_is_method_handle_return(nm->is_method_handle_return(return_address));
     // native nmethods don't have exception handlers
-    assert(!nm->is_native_method(), "no exception handler");
+    assert(!nm->is_native_method() || nm->method()->is_continuation_enter_intrinsic(), "no exception handler");
     assert(nm->header_begin() != nm->exception_begin(), "no exception handler");
     if (nm->is_deopt_pc(return_address)) {
       // If we come here because of a stack overflow, the stack may be
@@ -525,6 +529,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
 #ifndef PRODUCT
   { ResourceMark rm;
     tty->print_cr("No exception handler found for exception at " INTPTR_FORMAT " - potential problems:", p2i(return_address));
+    os::print_location(tty, (intptr_t)return_address);
     tty->print_cr("a) exception happened in (new?) code stubs/buffers that is not handled here");
     tty->print_cr("b) other problem");
   }
@@ -550,7 +555,7 @@ address SharedRuntime::get_poll_stub(address pc) {
 
   // Look up the relocation information
   assert(((CompiledMethod*)cb)->is_at_poll_or_poll_return(pc),
-    "safepoint polling: type must be poll");
+      "safepoint polling: type must be poll at pc " INTPTR_FORMAT, p2i(pc));
 
 #ifdef ASSERT
   if (!((NativeInstruction*)pc)->is_safepoint_poll()) {
@@ -739,12 +744,13 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
 
   if (t == NULL) {
     ttyLocker ttyl;
-    tty->print_cr("MISSING EXCEPTION HANDLER for pc " INTPTR_FORMAT " and handler bci %d", p2i(ret_pc), handler_bci);
+    tty->print_cr("MISSING EXCEPTION HANDLER for pc " INTPTR_FORMAT " and handler bci %d, catch_pco: %d", p2i(ret_pc), handler_bci, catch_pco);
     tty->print_cr("   Exception:");
     exception->print();
     tty->cr();
     tty->print_cr(" Compiled exception table :");
     table.print();
+    nm->print();
     nm->print_code();
     guarantee(false, "missing exception handler");
     return NULL;
@@ -799,6 +805,9 @@ void SharedRuntime::throw_StackOverflowError_common(JavaThread* current, bool de
   if (StackTraceInThrowable) {
     java_lang_Throwable::fill_in_stack_trace(exception);
   }
+  // Remove the ExtentLocal cache in case we got a StackOverflowError
+  // while we were trying to remove ExtentLocal bindings.
+  current->set_extentLocalCache(NULL);
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
   throw_and_post_jvmti_exception(current, exception);
@@ -1090,6 +1099,12 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
   methodHandle caller(current, vfst.method());
   int          bci   = vfst.bci();
 
+  if (caller->is_continuation_enter_intrinsic()) {
+    bc = Bytecodes::_invokestatic;
+    LinkResolver::resolve_continuation_enter(callinfo, CHECK_NH);
+    return receiver;
+  }
+
   Bytecode_invoke bytecode(caller, bci);
   int bytecode_index = bytecode.index();
   bc = bytecode.invoke_code();
@@ -1152,6 +1167,7 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
 
     // Retrieve from a compiled argument list
     receiver = Handle(current, callerFrame.retrieve_receiver(&reg_map2));
+    assert(oopDesc::is_oop_or_null(receiver()), "");
 
     if (receiver.is_null()) {
       THROW_(vmSymbols::java_lang_NullPointerException(), nullHandle);
@@ -2132,6 +2148,11 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* obj, Ba
   SharedRuntime::monitor_enter_helper(obj, lock, current);
 JRT_END
 
+JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C_inc_held_monitor_count(oopDesc* obj, BasicLock* lock, JavaThread* current))
+  SharedRuntime::monitor_enter_helper(obj, lock, current);
+  current->inc_held_monitor_count();
+JRT_END
+
 void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current) {
   assert(JavaThread::current() == current, "invariant");
   // Exit must be non-blocking, and therefore no exceptions can be thrown.
@@ -2925,7 +2946,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
     tty->print_cr("i2c argument handler #%d for: %s %s (%d bytes generated)",
                   _adapters->number_of_entries(), fingerprint->as_basic_args_string(),
                   fingerprint->as_string(), insts_size);
-    tty->print_cr("c2i argument handler starts at %p", entry->get_c2i_entry());
+    tty->print_cr("c2i argument handler starts at " INTPTR_FORMAT, p2i(entry->get_c2i_entry()));
     if (Verbose || PrintStubCode) {
       address first_pc = entry->base_address();
       if (first_pc != NULL) {
@@ -3012,7 +3033,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   nmethod* nm = NULL;
 
   assert(method->is_native(), "must be native");
-  assert(method->is_method_handle_intrinsic() ||
+  assert(method->is_special_native_intrinsic() ||
          method->has_native_function(), "must have something valid to call!");
 
   {
@@ -3031,7 +3052,13 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
     BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
     if (buf != NULL) {
       CodeBuffer buffer(buf);
+
+      if (method->is_continuation_enter_intrinsic()) {
+        buffer.initialize_stubs_size(64);
+      }
+
       struct { double data[20]; } locs_buf;
+      struct { double data[20]; } stubs_locs_buf;
       buffer.insts()->initialize_shared_locs((relocInfo*)&locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
 #if defined(AARCH64)
       // On AArch64 with ZGC and nmethod entry barriers, we need all oops to be
@@ -3039,6 +3066,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       // accesses. For native_wrappers we need a constant.
       buffer.initialize_consts_size(8);
 #endif
+      buffer.stubs()->initialize_shared_locs((relocInfo*)&stubs_locs_buf, sizeof(stubs_locs_buf) / sizeof(relocInfo));
       MacroAssembler _masm(&buffer);
 
       // Fill in the signature array, for the calling-convention call.
@@ -3235,6 +3263,12 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
   }
   assert(i - max_locals == active_monitor_count*2, "found the expected number of monitors");
 
+  RegisterMap map(current, false);
+  frame sender = fr.sender(&map);
+  if (sender.is_interpreted_frame()) {
+    current->push_cont_fastpath(sender.sp());
+  }
+
   return buf;
 JRT_END
 
@@ -3303,7 +3337,12 @@ frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* curren
 
   assert(fr.is_java_frame(), "Must start on Java frame");
 
-  while (true) {
+  RegisterMap map(JavaThread::current(), false, false); // don't walk continuations
+  for (; !fr.is_first_frame(); fr = fr.sender(&map)) {
+    if (!fr.is_java_frame()) {
+      continue;
+    }
+
     Method* method = NULL;
     bool found = false;
     if (fr.is_interpreted_frame()) {
@@ -3336,11 +3375,6 @@ frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* curren
         event.set_method(method);
         event.commit();
       }
-    }
-    if (fr.is_first_java_frame()) {
-      break;
-    } else {
-      fr = fr.java_sender();
     }
   }
   return activation;

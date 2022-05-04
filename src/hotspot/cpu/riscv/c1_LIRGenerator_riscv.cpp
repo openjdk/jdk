@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -299,6 +299,10 @@ void LIRGenerator::do_MonitorExit(MonitorExit* x) {
   LIR_Opr obj_temp = new_register(T_INT);
   set_no_result(x);
   monitor_exit(obj_temp, lock, syncTempOpr(), LIR_OprFact::illegalOpr, x->monitor_no());
+}
+
+void LIRGenerator::do_continuation_doYield(Intrinsic* x) {
+  fatal("Continuation.doYield intrinsic is not implemented on this platform");
 }
 
 // neg
