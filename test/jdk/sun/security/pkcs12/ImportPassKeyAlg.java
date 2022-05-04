@@ -72,7 +72,7 @@ public class ImportPassKeyAlg {
                 .shouldHaveExitValue(0)
                 .shouldContain("Generated PBE secret key");
 
-        // The aid of a protected entry (at 110c010c01010c0 inside p12) is:
+        // The algorithm id of a protected entry (at 110c010c01010c0 inside p12) is:
         //
         // 0000:002A  [] SEQUENCE
         // 0002:000C  [0]     OID 1.2.840.113549.1.12.1.3 (PBEWithSHA1AndDESede)
