@@ -39,6 +39,7 @@ import jdk.jfr.Recording;
  * @requires vm.hasJFR
  * @library /test/lib
  *
+ * @compile PlaceholderEventWriter.java
  * @compile PlaceholderEventWriterFactory.java
  * @compile E.java
  * @compile NonEvent.java
