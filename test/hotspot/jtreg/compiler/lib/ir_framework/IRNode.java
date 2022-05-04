@@ -134,6 +134,8 @@ public class IRNode {
     public static final String SCOPE_OBJECT = "(.*# ScObj.*" + END;
     public static final String MEMBAR = START + "MemBar" + MID + END;
     public static final String SAFEPOINT = START + "SafePoint" + MID + END;
+
+    public static final String MUL_L = START + "MulL" + MID + END;
     public static final String POPCOUNT_L = START + "PopCountL" + MID + END;
 
     /**
