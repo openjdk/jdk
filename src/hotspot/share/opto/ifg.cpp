@@ -993,6 +993,37 @@ uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List &blocks,
         b->_fhrp_index = pos + 1;
       }
     }
+    if (block->_ihrp_index <= block->end_idx()) {
+      while (block->get_node(block->_ihrp_index)->is_SpillCopy() &&
+             block->get_node(block->_ihrp_index)->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit) {
+        block->_ihrp_index++;
+      }
+    }
+    if (block->_ihrp_index <= block->end_idx()) {
+      while (block->get_node(block->_ihrp_index)->is_SpillCopy() &&
+             block->get_node(block->_ihrp_index)->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry) {
+        block->_ihrp_index--;
+      }
+    }
+    if (block->_fhrp_index <= block->end_idx()) {
+      while (block->get_node(block->_fhrp_index)->is_SpillCopy() &&
+             block->get_node(block->_fhrp_index)->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit) {
+        block->_fhrp_index++;
+      }
+    }
+    if (block->_fhrp_index <= block->end_idx()) {
+      while (block->get_node(block->_fhrp_index)->is_SpillCopy() &&
+             block->get_node(block->_fhrp_index)->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry) {
+        block->_fhrp_index--;
+      }
+    }
+    IndexSetIterator elements(_live->live(block));
+    uint datum;
+    while ((datum = elements.next()) != 0) {
+      if (liveout.member(datum)) {
+        lrgs(datum)._region2 = MIN2(lrgs(datum)._region2, block->_region);
+      }
+    }
 
 #ifndef PRODUCT
     // Gather Register Pressure Statistics

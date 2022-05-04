@@ -347,14 +347,17 @@ Node*PhaseChaitin::split_Rematerialize(Node* def, Block* b, uint insidx, uint &m
       // Cannot spill Op_RegFlags.
       Node *in_spill;
       if (in->ideal_reg() != Op_RegFlags) {
-        in_spill = get_spillcopy_wide(MachSpillCopyNode::InputToRematerialization, in, def, i);
-        if (!in_spill) { return 0; } // Bailed out
-        assert(b_def->_region <= region, "");
-        insert_proj(b_def, idx_def, in_spill, maxlrg++);
-        if (b_def == b) {
-          insidx++;
+        if (!(in->is_SpillCopy() && in->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::InputToRematerialization &&
+            _cfg.get_block_for_node(in) == b_def)) {
+          in_spill = get_spillcopy_wide(MachSpillCopyNode::InputToRematerialization, in, def, i);
+          if (!in_spill) { return 0; } // Bailed out
+          assert(b_def->_region <= region, "");
+          insert_proj(b_def, idx_def, in_spill, maxlrg++);
+          if (b_def == b) {
+            insidx++;
+          }
+          def->set_req(i, in_spill);
         }
-        def->set_req(i, in_spill);
       } else {
         // The 'in' defines a flag register. Flag registers can not be spilled.
         // Register allocation handles live ranges with flag registers
@@ -519,6 +522,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
       LRG &lrg = lrgs(_lrg_map.live_range_id(i));
       if (lrg.alive() && lrg._region > (uint) region && !lrg._fat_proj) {
         set1(i, lrg.prev_reg());
+      }
+      if (lrg.alive() && lrg._region > (uint) region && lrg._was_up_in_prev_region) {
+        _was_up_in_prev_region.set(i);
       }
     }
   }
@@ -850,7 +856,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
           }
         }
         if (crosses_region) {
-          if (lrgs(defidx)._region > region && _live->live(_cfg.get_block_for_node(b->pred(1)))->member(defidx)) {
+          Block* pred_block = _cfg.get_block_for_node(b->pred(1));
+          if (lrgs(defidx)._region > region && _live->live(pred_block)->member(defidx) && (!def->rematerialize() ||
+                  _cfg.get_block_for_node(def)->_region == pred_block->_region)) {
 
             assert(non_phi == 1, "");
             assert(b->num_preds() == 2, "");
@@ -1123,7 +1131,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
 
             // Rematerializable?  Then clone def at use site instead
             // of store/load
-            if( def->rematerialize() ) {
+            if (def->rematerialize() /*&& !(n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit)*/) {
               int old_size = b->number_of_nodes();
               assert(lrgs(lidxs.at(slidx))._region >= region, "");
 //              assert(lrgs(lidxs.at(slidx))._min_region <= region, "");
@@ -1537,7 +1545,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
 
         for (uint i = 0; i < b->_num_succs; ++i) {
           if (b->_succs[i]->_region > b->_region && b->_succs[i]->_region > region) {
-            if (lrgs(defidx)._region > region && (defup || (defup != _was_up_in_prev_region.test(def->_idx)))) {
+            if (lrgs(defidx)._region > region && (defup || (defup != _was_up_in_prev_region.test(def->_idx))) && (!def->rematerialize() || has_uses_in_region(def, b->_succs[i]->_region))) {
 //              tty->print("ZZZZ %d -> %d %s %d %d %s", b->_rpo, b->_succs[i]->_rpo, Reachblock[slidx]->rematerialize() ? "rematerialize" : "", slidx, defidx, defup ? "UP" : "DOWN"); Reachblock[slidx]->dump();
 
               assert(b->_num_succs == 1, "");
@@ -1790,4 +1798,19 @@ bool PhaseChaitin::is_compatible_with_region(uint region, const Block* b, uint l
 //    return true;
 //  }
 //  return false;
+}
+
+bool PhaseChaitin::has_uses_in_region(Node* n, uint region) {
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* u = n->fast_out(i);
+    Block* b = _cfg.get_block_for_node(u);
+    if (b->_region == region) {
+      return true;
+    }
+    if (u->is_SpillCopy() && u->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit &&
+        _cfg.get_block_for_node(b->pred(1))->_region == region) {
+      return true;
+    }
+  }
+  return false;
 }

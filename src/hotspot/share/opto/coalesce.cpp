@@ -780,7 +780,7 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
     return false;
   }
 
-  // ---- THE COMBINED LRG IS COLORABLE ----
+    // ---- THE COMBINED LRG IS COLORABLE ----
 
 //  tty->print_cr("### %d %d - %d %d - %d %d - %d", lr1, lr2, lrgs(lr1)._region, lrgs(lr2)._region, lrgs(lr1)._min_region, lrgs(lr2)._min_region, _region);
 //  dst_copy->dump();
@@ -827,10 +827,11 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
 
   if (lrgs(lr1)._region <= _region) {
     lrgs(lr1).set_prev_reg(lrgs(lr2).prev_reg());
+    lrgs(lr1)._was_up_in_prev_region = lrgs(lr2)._was_up_in_prev_region;
   } else if (lrgs(lr2)._region <= _region) {
     // nothing
   } else {
-    assert(lrgs(lr1).prev_reg() == lrgs(lr2).prev_reg(), "");
+    assert(lrgs(lr1).prev_reg() == lrgs(lr2).prev_reg() || lrgs(lr1)._was_up_in_prev_region != lrgs(lr2)._was_up_in_prev_region, "");
   }
 
   // Join live ranges.  Merge larger into smaller.  Union lr2 into lr1 in the

@@ -755,7 +755,7 @@ void PhaseChaitin::Register_Allocate() {
       _was_up_in_prev_region.clear();
       stringStream ss;
       C->method()->print_short_name(&ss);
-      bool dump = /*!strcmp(ss.as_string(), " com.sun.crypto.provider.AESCrypt::<clinit>") ||*/ UseNewCode3;
+      bool dump = /*!strcmp(ss.as_string(), " com.sun.crypto.provider.AESCrypt::<clinit>") ||*/ UseNewCode2 || UseNewCode3;
       if (dump) {
         tty->print_cr("XXXXX after region = %d - %d/%d", region, offset_of(LRG, _mask), sizeof(LRG));
       }
@@ -803,12 +803,22 @@ void PhaseChaitin::Register_Allocate() {
           LRG &deflrg = lrgs(defidx);
           uint copyidx = n->is_Copy();
           // Remove coalesced copy from CFG
-          if (copyidx && defidx == _lrg_map.live_range_id(n->in(copyidx))) {
-            n->replace_by(n->in(copyidx));
-            n->set_req(copyidx, NULL);
-            b->remove_node(insidx--);
-            b->_ihrp_index--; // Adjust the point where we go hi-pressure
-            b->_fhrp_index--;
+          if (copyidx) {
+            uint copylidx = _lrg_map.live_range_id(n->in(copyidx));
+            if (defidx == copylidx) {
+              n->replace_by(n->in(copyidx));
+              n->set_req(copyidx, NULL);
+              b->remove_node(insidx--);
+              b->_ihrp_index--; // Adjust the point where we go hi-pressure
+              b->_fhrp_index--;
+//            } else if (deflrg._region >= (uint) region && lrgs(copylidx)._region >= (uint) region &&
+//                       deflrg.reg() == lrgs(copylidx)._reg) {
+//              n->replace_by(n->in(copyidx));
+//              n->set_req(copyidx, NULL);
+//              b->remove_node(insidx--);
+//              b->_ihrp_index--; // Adjust the point where we go hi-pressure
+//              b->_fhrp_index--;
+            }
           }
         }
       }
@@ -1667,6 +1677,7 @@ void PhaseChaitin::Simplify(uint region) {
     double cost = lrgs(lo_score)._cost;
     bool bound = lrgs(lo_score)._is_bound;
     uint region2 = lrgs(lo_score)._region2;
+//    uint region = lrgs(lo_score)._region;
     assert(lrgs(lo_score)._region >= region, "");
 
     // Find cheapest guy
@@ -1689,6 +1700,7 @@ void PhaseChaitin::Simplify(uint region) {
       double icost = lrgs(i)._cost;
       bool ibound = lrgs(i)._is_bound;
       uint iregion2 = lrgs(i)._region2;
+//      uint iregion = lrgs(i)._region;
 
       // Compare cost/area of i vs cost/area of lo_score.  Smaller cost/area
       // wins.  Ties happen because all live ranges in question have spilled
@@ -1699,8 +1711,9 @@ void PhaseChaitin::Simplify(uint region) {
       // one block. In which case their area is 0 and score set to max.
       // In such case choose bound live range over unbound to free registers
       // or with smaller cost to spill.
-      if ((iregion2 < region2) ||
-              (iregion2 == region2 && (
+      if (/*(iregion != region2 && region == region2) ||*/
+          (iregion2 < region2) ||
+          (iregion2 == region2 && (
            iscore < score ||
           (iscore == score && iarea > area && lrgs(lo_score)._was_spilled2) ||
           (iscore == score && iarea == area &&
@@ -1711,6 +1724,7 @@ void PhaseChaitin::Simplify(uint region) {
         cost = icost;
         bound = ibound;
         region2 = iregion2;
+//        region = iregion;
       }
     }
     LRG *lo_lrg = &lrgs(lo_score);
