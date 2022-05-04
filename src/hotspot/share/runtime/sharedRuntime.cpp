@@ -1824,7 +1824,7 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
       // On x86 the logic for finding a call instruction is blindly checking for a call opcode 5
       // bytes back in the instruction stream so we must also check for reloc info.
       RelocIterator iter(caller_nm, call_addr, call_addr+1);
-      int ret = iter.next(); // Get item
+      bool ret = iter.next(); // Get item
       if (ret) {
         bool is_static_call = false;
         switch (iter.type()) {
