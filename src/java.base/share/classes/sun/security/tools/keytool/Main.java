@@ -1871,12 +1871,12 @@ public final class Main {
             Object[] source = {keysize,
                                 secKey.getAlgorithm()};
             System.err.println(form.format(source));
-        }
 
-        SecretKeyConstraintsParameters skcp =
-                new SecretKeyConstraintsParameters(secKey);
-        checkWeakConstraint(rb.getString("the.generated.secretkey"),
-                secKey, skcp);
+            SecretKeyConstraintsParameters skcp =
+                    new SecretKeyConstraintsParameters(secKey);
+            checkWeakConstraint(rb.getString("the.generated.secretkey"),
+                    secKey, skcp);
+        }
 
         if (keyPass == null) {
             keyPass = promptForKeyPass(alias, null, storePass);
@@ -2510,14 +2510,13 @@ public final class Main {
         }
 
         try {
+            keyStore.setEntry(newAlias, entry, pp);
             Certificate c = srckeystore.getCertificate(alias);
             if (c != null) {
                 CertPathConstraintsParameters cpcp =
                         buildCertPathConstraint((X509Certificate)c, null);
                 checkWeakConstraint("<" + newAlias + ">", c, cpcp);
-                keyStore.setEntry(newAlias, entry, pp);
             } else {
-                keyStore.setEntry(newAlias, entry, pp);
                 try {
                     Key key = keyStore.getKey(newAlias, newPass);
                     SecretKeyConstraintsParameters skcp =
@@ -5045,6 +5044,17 @@ public final class Main {
             SecretKeyConstraintsParameters skcp) {
         // Do not check disabled algorithms for symmetric key based algorithms for now
         String secKeyAlg = secKey.getAlgorithm();
+        /*
+         * Skipping a secret key entry if its algorithm starts with "PBE".
+         * This is because keytool can only see it as a PBE key and "PBE" is
+         * an alias of "PBEwithMD5andDES" inside the SunJCE security provider,
+         * and its getAlgorithm() always returns "PBEwithMD5andDES". Thus, keytool
+         * won't be able to determine whether this secret key entry is protected
+         * by a weak algorithm or not.
+         */
+        if (secKeyAlg.startsWith("PBE"))
+            return;
+
         try {
             LEGACY_CHECK.permits(secKeyAlg, skcp, true);
         } catch (CertPathValidatorException e) {
