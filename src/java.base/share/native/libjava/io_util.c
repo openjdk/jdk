@@ -53,8 +53,8 @@ readSingle(JNIEnv *env, jobject this, jfieldID fid) {
     return ret & 0xFF;
 }
 
-// The default size of a stack-allocated buffer.
-#define BUF_SIZE 8192
+// The size of a stack-allocated buffer.
+#define STACK_BUF_SIZE 8192
 
 // The maximum size of a dynamically allocated buffer.
 #define MAX_MALLOC_SIZE 65536
@@ -76,10 +76,10 @@ jint
 readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
           jint off, jint len, jfieldID fid)
 {
-    jint n, nread, read_size;
-    char stackBuf[BUF_SIZE];
+    char stackBuf[STACK_BUF_SIZE];
     char *buf = NULL;
-    jint remaining, buf_size;
+    jint buf_size, read_size;;
+    jint n, nread;
     FD fd;
 
     if (IS_NULL(bytes)) {
@@ -94,7 +94,7 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
 
     if (len == 0) {
         return 0;
-    } else if (len > BUF_SIZE) {
+    } else if (len > STACK_BUF_SIZE) {
         buf_size = len < MAX_MALLOC_SIZE ? len : MAX_MALLOC_SIZE;
         buf = malloc(buf_size);
         if (buf == NULL) {
@@ -103,13 +103,14 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         }
     } else {
         buf = stackBuf;
-        buf_size = BUF_SIZE;
+        buf_size = STACK_BUF_SIZE;
     }
 
     nread = 0;
     while (nread < len) {
-        remaining = len - nread;
-        read_size = remaining <= buf_size ? remaining : buf_size;
+        read_size = len - nread;
+        if (read_size > buf_size)
+            read_size = buf_size;
         fd = getFD(env, this, fid);
         if (fd == -1) {
             JNU_ThrowIOException(env, "Stream Closed");
@@ -164,10 +165,10 @@ void
 writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
            jint off, jint len, jboolean append, jfieldID fid)
 {
-    jint n, nwritten, write_size;
-    char stackBuf[BUF_SIZE];
+    char stackBuf[STACK_BUF_SIZE];
     char *buf = NULL;
-    jint remaining, buf_size;
+    jint buf_size, write_size;
+    jint n;
     FD fd;
 
     if (IS_NULL(bytes)) {
@@ -182,7 +183,7 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
 
     if (len == 0) {
         return;
-    } else if (len > BUF_SIZE) {
+    } else if (len > STACK_BUF_SIZE) {
         buf_size = len < MAX_MALLOC_SIZE ? len : MAX_MALLOC_SIZE;
         buf = malloc(buf_size);
         if (buf == NULL) {
@@ -191,13 +192,11 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         }
     } else {
         buf = stackBuf;
-        buf_size = BUF_SIZE;
+        buf_size = STACK_BUF_SIZE;
     }
 
-    nwritten = 0;
-    while (nwritten < len) {
-        remaining = len - nwritten;
-        write_size = remaining <= buf_size ? remaining : buf_size;
+    while (len > 0) {
+        write_size = len < buf_size ? len : buf_size;
         (*env)->GetByteArrayRegion(env, bytes, off, write_size, (jbyte*)buf);
         if (!(*env)->ExceptionOccurred(env)) {
             fd = getFD(env, this, fid);
@@ -210,13 +209,12 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
             } else {
                 n = IO_Write(fd, buf, write_size);
             }
-            if (n > 0) {
-                off += n;
-                nwritten += n;
-            } else if (n == -1) {
+            if (n == -1) {
                 JNU_ThrowIOExceptionWithLastError(env, "Write error");
                 break;
             }
+            off += n;
+            len -= n;
         }
     }
 
