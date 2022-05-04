@@ -1843,7 +1843,7 @@ void Node::print_bfs(const int max_distance, Node* target, char const* options) 
     print_node_idx(target);
     tty->print("\n");
   }
- 
+
   // initialize BFS at this
   worklist_push(this, this, 0);
 
