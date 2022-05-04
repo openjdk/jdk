@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -222,7 +222,7 @@ class Address {
   }
 };
 
-// Convience classes
+// Convenience classes
 class RuntimeAddress: public Address {
 
   public:
@@ -266,12 +266,32 @@ class InternalAddress: public Address {
 class Assembler : public AbstractAssembler {
 public:
 
-  enum { instruction_size = 4 };
+  enum {
+    instruction_size = 4,
+    compressed_instruction_size = 2,
+  };
+
+  // instruction must start at passed address
+  static bool is_compressed_instr(address instr) {
+    // The RISC-V ISA Manual, Section 'Base Instruction-Length Encoding':
+    // Instructions are stored in memory as a sequence of 16-bit little-endian parcels, regardless of
+    // memory system endianness. Parcels forming one instruction are stored at increasing halfword
+    // addresses, with the lowest-addressed parcel holding the lowest-numbered bits in the instruction
+    // specification.
+    if (UseRVC && (((uint16_t *)instr)[0] & 0b11) != 0b11) {
+      // 16-bit instructions have their lowest two bits equal to 0b00, 0b01, or 0b10
+      return true;
+    }
+    // 32-bit instructions have their lowest two bits set to 0b11
+    return false;
+  }
 
   //---<  calculate length of instruction  >---
   // We just use the values set above.
   // instruction must start at passed address
-  static unsigned int instr_len(unsigned char *instr) { return instruction_size; }
+  static unsigned int instr_len(address instr) {
+    return is_compressed_instr(instr) ? compressed_instruction_size : instruction_size;
+  }
 
   //---<  longest instructions  >---
   static unsigned int instr_maxlen() { return instruction_size; }
@@ -388,8 +408,51 @@ public:
     emit_int32((jint)insn);
   }
 
-  void _halt() {
-    emit_int32(0);
+  enum csr {
+    cycle = 0xc00,
+    time,
+    instret,
+    hpmcounter3,
+    hpmcounter4,
+    hpmcounter5,
+    hpmcounter6,
+    hpmcounter7,
+    hpmcounter8,
+    hpmcounter9,
+    hpmcounter10,
+    hpmcounter11,
+    hpmcounter12,
+    hpmcounter13,
+    hpmcounter14,
+    hpmcounter15,
+    hpmcounter16,
+    hpmcounter17,
+    hpmcounter18,
+    hpmcounter19,
+    hpmcounter20,
+    hpmcounter21,
+    hpmcounter22,
+    hpmcounter23,
+    hpmcounter24,
+    hpmcounter25,
+    hpmcounter26,
+    hpmcounter27,
+    hpmcounter28,
+    hpmcounter29,
+    hpmcounter30,
+    hpmcounter31 = 0xc1f
+  };
+
+  // Emit an illegal instruction that's known to trap, with 32 read-only CSR
+  // to choose as the input operand.
+  // According to the RISC-V Assembly Programmer's Manual, a de facto implementation
+  // of this instruction is the UNIMP pseduo-instruction, 'CSRRW x0, cycle, x0',
+  // attempting to write zero to a read-only CSR 'cycle' (0xC00).
+  // RISC-V ISAs provide a set of up to 32 read-only CSR registers 0xC00-0xC1F,
+  // and an attempt to write into any read-only CSR (whether it exists or not)
+  // will generate an illegal instruction exception.
+  void illegal_instruction(csr csr_reg) {
+    csrrw(x0, (unsigned)csr_reg, x0);
   }
 
 // Register Instruction
@@ -1944,6 +2007,7 @@ enum Nf {
 
 // ====================================
 // RISC-V Bit-Manipulation Extension
+// Currently only support Zba and Zbb.
 // ====================================
 #define INSN(NAME, op, funct3, funct7)                  \
   void NAME(Register Rd, Register Rs1, Register Rs2) {  \
@@ -2795,7 +2859,7 @@ public:
   }
 
   INSN(beq, c_beqz, _beq);
-  INSN(bne, c_beqz, _bne);
+  INSN(bne, c_bnez, _bne);
 
 #undef INSN
 
@@ -2850,20 +2914,6 @@ public:
   }
 
   INSN(ebreak);
-
-#undef INSN
-
-#define INSN(NAME)                                                      \
-  void NAME() {                                                         \
-    /* The illegal instruction in RVC is presented by a 16-bit 0. */    \
-    if (do_compress()) {                                                \
-      emit_int16(0);                                                    \
-      return;                                                           \
-    }                                                                   \
-    _halt();                                                            \
-  }
-
-  INSN(halt);
 
 #undef INSN
 

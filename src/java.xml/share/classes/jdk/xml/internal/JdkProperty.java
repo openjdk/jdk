@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,20 +51,43 @@ import static jdk.xml.internal.JdkConstants.RESET_SYMBOL_TABLE;
  */
 public final class JdkProperty<T> {
 
-    private ImplPropMap pName;
+    private final ImplPropMap pName;
+    private final Class<T> pType;
     private T pValue;
     private State pState = State.DEFAULT;
 
     /**
      * Constructs a JDkProperty.
      * @param name the name of the property
+     * @param type the type of the value
      * @param value the initial value
      * @param state the state of the property
      */
-    public JdkProperty(ImplPropMap name, T value, State state) {
+    public JdkProperty(ImplPropMap name, Class<T> type, T value, State state) {
         this.pName = name;
+        this.pType = type;
         this.pValue = value;
         this.pState = state;
+        readSystemProperty();
+    }
+
+    /**
+     * Read from system properties, or those in jaxp.properties
+     */
+    private void readSystemProperty() {
+        if (pState == State.DEFAULT) {
+            T value = null;
+            if (pName.systemProperty() != null) {
+                value = SecuritySupport.getJAXPSystemProperty(pType, pName.systemProperty(), null);
+            }
+            if (value == null && pName.systemPropertyOld() != null) {
+                value = SecuritySupport.getJAXPSystemProperty(pType, pName.systemPropertyOld(), null);
+            }
+            if (value != null) {
+                pValue = value;
+                pState = State.SYSTEMPROPERTY;
+            }
+        }
     }
 
     /**

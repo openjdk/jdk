@@ -230,7 +230,7 @@
         </macrodef>
     </target>
 
-    <!-- Macro to start the debugger and set a property containg the args needed by the run task -->
+    <!-- Macro to start the debugger and set a property containing the args needed by the run task -->
     <target name="-def-start-debugger" if="netbeans.home">
         <macrodef name="start-debugger">
             <attribute name="jpda.jvmargs.property" default="jpda.jvmargs"/>

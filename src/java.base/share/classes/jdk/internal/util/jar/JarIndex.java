@@ -50,7 +50,7 @@ public class JarIndex {
 
     /**
      * The hash map that maintains mappings from
-     * package/classe/resource to jar file list(s)
+     * package/class/resource to jar file list(s)
      */
     private final HashMap<String, List<String>> indexMap;
 

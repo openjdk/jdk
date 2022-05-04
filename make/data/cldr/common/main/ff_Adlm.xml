@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -647,6 +647,108 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</delimiters>
 	<dates>
 		<calendars>
+			<calendar type="buddhist">
+				<eras>
+					<eraNames>
+						<era type="0">𞤘𞤭𞤪𞤢𞤤 𞤄𞤵𞥅𞤣𞤢𞤲𞤳𞤮𞤱𞤢𞤤</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">𞤘𞤄</era>
+					</eraAbbr>
+				</eras>
+			</calendar>
+			<calendar type="chinese">
+				<cyclicNameSets>
+					<cyclicNameSet type="dayParts">
+						<cyclicNameContext type="format">
+							<cyclicNameWidth type="abbreviated">
+								<cyclicName type="1">𞤶𞤭</cyclicName>
+								<cyclicName type="2">𞤅𞤵</cyclicName>
+								<cyclicName type="3">𞤴𞤭𞤲</cyclicName>
+								<cyclicName type="4">𞤥𞤢𞤱𞤮</cyclicName>
+								<cyclicName type="5">𞤷𞤫𞤲</cyclicName>
+								<cyclicName type="6">𞤧𞤭</cyclicName>
+								<cyclicName type="7">𞤱𞤵</cyclicName>
+								<cyclicName type="8">𞤱𞤫𞤭</cyclicName>
+								<cyclicName type="9">𞥃𞤫𞥅𞤲</cyclicName>
+								<cyclicName type="10">𞤴𞤵𞥅</cyclicName>
+								<cyclicName type="11">𞤿𞤵</cyclicName>
+								<cyclicName type="12">𞤸𞤢𞤴</cyclicName>
+							</cyclicNameWidth>
+						</cyclicNameContext>
+					</cyclicNameSet>
+				</cyclicNameSets>
+			</calendar>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE d MMMM⹁ y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM⹁ y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM⹁ y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d-M-y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d-M-y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM⹁ y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E⹁ d MMM⹁ y G</dateFormatItem>
+						<dateFormatItem id="Md">d-M</dateFormatItem>
+						<dateFormatItem id="MEd">E d-M</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">M-y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d-M-y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E⹁ d-M-y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM⹁ y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E⹁ d MMM⹁ y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
@@ -662,7 +764,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="9">𞤅𞤭𞤤𞤼𞤮</month>
 							<month type="10">𞤒𞤢𞤪𞤳𞤮</month>
 							<month type="11">𞤔𞤮𞤤𞤮</month>
-							<month type="12">𞤐𞤦𞤮𞤱𞤼𞤮</month>
+							<month type="12">𞤄𞤮𞤱𞤼𞤮</month>
 						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">𞤅</month>
@@ -690,14 +792,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="9">𞤅𞤭𞤤𞤼𞤮</month>
 							<month type="10">𞤒𞤢𞤪𞤳𞤮</month>
 							<month type="11">𞤔𞤮𞤤𞤮</month>
-							<month type="12">𞤐𞤦𞤮𞤱𞤼𞤮</month>
+							<month type="12">𞤄𞤮𞤱𞤼𞤮</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
 							<month type="1">𞤅𞤭𞥅𞤤</month>
 							<month type="2">𞤕𞤮𞤤</month>
-							<month type="3">𞤄𞤮𞥅𞤴</month>
+							<month type="3">𞤐𞤦𞤮𞥅𞤴</month>
 							<month type="4">𞤅𞤫𞥅𞤼</month>
 							<month type="5">𞤁𞤵𞥅𞤶</month>
 							<month type="6">𞤑𞤮𞤪</month>
@@ -719,7 +821,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="8">𞤔</month>
 							<month type="9">𞤅</month>
 							<month type="10">𞤒</month>
-							<month type="11">𞤄</month>
+							<month type="11">𞤔</month>
 							<month type="12">𞤄</month>
 						</monthWidth>
 						<monthWidth type="wide">
@@ -734,7 +836,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="9">𞤅𞤭𞤤𞤼𞤮</month>
 							<month type="10">𞤒𞤢𞤪𞤳𞤮</month>
 							<month type="11">𞤔𞤮𞤤𞤮</month>
-							<month type="12">𞤐𞤦𞤮𞤱𞤼𞤮</month>
+							<month type="12">𞤄𞤮𞤱𞤼𞤮</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -905,22 +1007,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>y MMMM d, EEEE</pattern>
+							<pattern>EEEE d MMMM⹁ y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>y MMMM d</pattern>
+							<pattern>d MMMM⹁ y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>y MMM d</pattern>
+							<pattern>d MMM⹁ y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>y-MM-dd</pattern>
+							<pattern>d-M-y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -949,12 +1051,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1}{0}</pattern>
+							<pattern>{1} 𞤉 {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} 𞤉 {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -968,12 +1070,150 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d-M-y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM⹁ y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E⹁ d MMM⹁ y G</dateFormatItem>
+						<dateFormatItem id="Md">d-M</dateFormatItem>
+						<dateFormatItem id="MEd">E d-M</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">𞤴𞤮𞤲𞤼𞤫𞤪𞤫 W 𞤲𞤣𞤫𞤪 MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">𞤴𞤮𞤲𞤼𞤫𞤪𞤫 W 𞤲𞤣𞤫𞤪 MMMM</dateFormatItem>
+						<dateFormatItem id="yM">M-y</dateFormatItem>
+						<dateFormatItem id="yMd">d-M-y</dateFormatItem>
+						<dateFormatItem id="yMEd">E⹁ d-M-y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM⹁ y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E⹁ d MMM⹁ y</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="one">𞤴𞤮𞤲𞤼𞤫𞤪𞤫 w 𞤲𞤣𞤫𞤪 Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">𞤴𞤮𞤲𞤼𞤫𞤪𞤫 w 𞤲𞤣𞤫𞤪 Y</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="Bh">
+							<greatestDifference id="h">h – h B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">M-y GGGGG – M-y GGGGG</greatestDifference>
+							<greatestDifference id="M">M-y – M-y GGGGG</greatestDifference>
+							<greatestDifference id="y">M-y – M-y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d-M-y – d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="G">d-M-y GGGGG – d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="M">d-M-y – d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="y">d-M-y – d-M-y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E d-M-y – E d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="G">E d-M-y GGGGG – E d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="M">E d-M-y – E d-M-y GGGGG</greatestDifference>
+							<greatestDifference id="y">E d-M-y – E d-M-y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d – d MMM⹁ y G</greatestDifference>
+							<greatestDifference id="G">d MMM⹁ y G – d MMM⹁ y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM⹁ y G</greatestDifference>
+							<greatestDifference id="y">d MMM⹁ y – d MMM⹁ y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E d MMM – E d MMM⹁ y G</greatestDifference>
+							<greatestDifference id="G">E d MMM⹁ y G – E d MMM⹁ y G</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM⹁ y G</greatestDifference>
+							<greatestDifference id="y">E d MMM⹁ y – E d MMM⹁ y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M – M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">d-M – d-M</greatestDifference>
+							<greatestDifference id="M">d-M – d-M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E d-M – E d-M</greatestDifference>
+							<greatestDifference id="M">E d-M – E d-M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">LLL – LLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d – d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">MM-y – MM-y</greatestDifference>
+							<greatestDifference id="y">MM-y – MM-y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">d-M-y – d-M-y</greatestDifference>
+							<greatestDifference id="M">d-M-y – d-M-y</greatestDifference>
+							<greatestDifference id="y">d-M-y – d-M-y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E d-M⹁ y – E d-M⹁ y</greatestDifference>
+							<greatestDifference id="M">E d-M⹁ y – E d-M⹁ y</greatestDifference>
+							<greatestDifference id="y">E d-M⹁ y – E d-M⹁ y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM – MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d – d MMM⹁ y</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM⹁ y</greatestDifference>
+							<greatestDifference id="y">d MMM⹁ y – d MMM⹁ y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E d MMM – E d MMM⹁ y</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM⹁ y</greatestDifference>
+							<greatestDifference id="y">E d MMM⹁ y – E d MMM⹁ y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
 				</dateTimeFormats>
+			</calendar>
+			<calendar type="hebrew">
+				<eras>
+					<eraNames>
+						<era type="0">𞤀𞤃</era>
+					</eraNames>
+				</eras>
+			</calendar>
+			<calendar type="indian">
+				<eras>
+					<eraNames>
+						<era type="0">𞤅𞤢𞤳𞤢</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">𞤅𞤢𞤳𞤢</era>
+					</eraAbbr>
+				</eras>
 			</calendar>
 			<calendar type="islamic">
 				<months>
@@ -1085,26 +1325,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year">
 				<displayName>𞤸𞤭𞤼𞤢𞥄𞤲𞤣𞤫</displayName>
-				<relative type="-1">𞤸𞤭𞤼𞤢𞥄𞤲𞥋𞤣𞤫 𞤪𞤫𞤱𞤢𞤲𞤭</relative>
-				<relative type="0">𞤸𞤭𞤼𞤢𞥄𞤲𞥋𞤣𞤫 𞤸𞤭𞤳𞥆𞤢</relative>
-				<relative type="1">𞤸𞤭𞤼𞤢𞥄𞤲𞥋𞤣𞤫 𞤸𞤭𞤳𞥆𞤭𞥅𞤲𞥋𞤣𞤫</relative>
+				<relative type="-1">𞤪𞤮𞤱𞤢𞤲𞤭</relative>
+				<relative type="0">𞤸𞤭𞤳𞥆𞤢</relative>
+				<relative type="1">𞤸𞤭𞤼𞤢𞥄𞤲𞤣𞤫 𞤢𞤪𞤮𞥅𞤪𞤫</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">𞤲𞥋𞤣𞤫𞤪 {0} 𞤸𞤭𞤼𞤢𞥄𞤲𞥋𞤣𞤫</relativeTimePattern>
-					<relativeTimePattern count="other">𞤲𞥋𞤣𞤫𞤪 {0} 𞤳𞤭𞤼𞤢𞥄𞤯𞤫</relativeTimePattern>
+					<relativeTimePattern count="one">𞤲𞤣𞤫𞤪 {0} 𞤸𞤭𞤼𞤢𞥄𞤲𞤣𞤫</relativeTimePattern>
+					<relativeTimePattern count="other">𞤲𞤣𞤫𞤪 {0} 𞤳𞤭𞤼𞤢𞥄𞤤𞤫</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𞤸𞤭𞤼𞤢𞥄𞤲𞥋𞤣𞤫 𞤪𞤫𞤱𞤢𞤲𞤭</relativeTimePattern>
+					<relativeTimePattern count="one">𞤱𞤢𞤯𞤭𞥅 𞤸𞤭𞤼𞤢𞥄𞤲𞤣𞤫 {0}</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𞤳𞤭𞤼𞤢𞥄𞤯𞤫 𞤪𞤫𞤱𞤢𞤲𞤭</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-short">
 				<displayName>𞤸𞤭𞤼.</displayName>
-				<relative type="-1">𞤸𞤭𞤼. 𞤪𞤫𞤱𞤢𞤲𞤭</relative>
-				<relative type="0">𞤸𞤭𞤼. 𞤸𞤭𞤳𞥆𞤢</relative>
-				<relative type="1">𞤸𞤭𞤼. 𞤸𞤭𞤳𞥆𞤭𞥅𞤲𞤣𞤫</relative>
+				<relative type="-1">𞤪𞤮𞤱𞤢𞤲𞤭</relative>
+				<relative type="0">𞤸𞤭𞤳𞥆𞤢</relative>
+				<relative type="1">𞤸𞤭𞤼𞤢𞥄𞤲𞤣𞤫 𞤢𞤪𞤮𞥅𞤪𞤫</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">𞤲𞥋𞤣𞤫𞤪 {0} 𞤸𞤭𞤼.</relativeTimePattern>
-					<relativeTimePattern count="other">𞤲𞥋𞤣𞤫𞤪 {0} 𞤸𞤭𞤼.</relativeTimePattern>
+					<relativeTimePattern count="one">𞤲𞤣𞤫𞤪 𞤸𞤭𞤼. {0}</relativeTimePattern>
+					<relativeTimePattern count="other">𞤲𞤣𞤫𞤪 𞤳𞤭𞤼. {0}</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} 𞤸𞤭𞤼. 𞤪𞤫𞤱𞤢𞤲𞤭</relativeTimePattern>
@@ -1113,12 +1353,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-narrow">
 				<displayName>𞤸𞤭𞤼.</displayName>
-				<relative type="-1">𞤸𞤭𞤼. 𞤪𞤫𞤱𞤢𞤲𞤭</relative>
-				<relative type="0">𞤸𞤭𞤼. 𞤸𞤭𞤳𞥆𞤢</relative>
-				<relative type="1">𞤸𞤭𞤼. 𞤸𞤭𞤳𞥆𞤭𞥅𞤲𞤣𞤫</relative>
+				<relative type="-1">𞤪𞤮𞤱𞤢𞤲𞤭</relative>
+				<relative type="0">𞤸𞤭𞤳𞥆𞤢</relative>
+				<relative type="1">𞤸𞤭𞤼 𞤢𞤪𞤮𞥅𞤪𞤫</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">𞤲𞥋𞤣𞤫𞤪 {0} 𞤸𞤭𞤼.</relativeTimePattern>
-					<relativeTimePattern count="other">𞤲𞥋𞤣𞤫𞤪 {0} 𞤸𞤭𞤼.</relativeTimePattern>
+					<relativeTimePattern count="one">𞤲𞤣𞤫𞤪 𞤸𞤭𞤼. {0}</relativeTimePattern>
+					<relativeTimePattern count="other">𞤲𞤣𞤫𞤪 𞤳𞤭𞤼. {0}</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} 𞤸𞤭𞤼. 𞤪𞤫𞤱𞤢𞤲𞤭</relativeTimePattern>
@@ -1128,33 +1368,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="quarter">
 				<displayName>𞤲𞤢𞤴𞤢𞤩𞤭𞥅𞤪𞤫</displayName>
 				<relative type="-1">𞤲𞤢𞤴𞤩𞤭𞥅𞤪𞤫 𞤬𞤫𞤰𞥆𞤵𞤲𞥋𞤣𞤫</relative>
-				<relative type="0">𞤲𞥋𞤣𞤫𞥅 𞤯𞤮𞤮 𞤲𞤢𞤴𞤩𞤭𞥅𞤪𞤫</relative>
-				<relative type="1">𞤲𞤢𞤴𞤩𞤭𞥅𞤪𞤫 𞤸𞤭𞤳𞥆𞤭𞥅𞤲𞥋𞤣𞤫</relative>
+				<relative type="0">𞤲𞤣𞤫𞥅 𞤲𞤢𞤴𞤩𞤭𞥅𞤪𞤫</relative>
+				<relative type="1">𞤲𞤢𞤴𞤩𞤭𞥅𞤪𞤫 𞤢𞤪𞤮𞥅𞤪𞤫</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">𞤲𞥋𞤣𞤫𞤪 {0} 𞤲𞤢𞤴𞤩𞤭𞥅𞤪𞤫</relativeTimePattern>
-					<relativeTimePattern count="other">𞤲𞥋𞤣𞤫𞤪 {0} 𞤲𞤢𞤴𞤩𞤭𞥅𞤶𞤫</relativeTimePattern>
+					<relativeTimePattern count="one">𞤲𞤣𞤫𞤪 𞤲𞤢𞤴𞤩𞤭𞥅𞤪𞤫 {0}</relativeTimePattern>
+					<relativeTimePattern count="other">𞤲𞤣𞤫𞤪 𞤲𞤢𞤴𞤩𞤭𞥅𞤶𞤫 {0}</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𞤲𞤢𞤴𞤩𞤭𞥅𞤪𞤫 𞤱𞤵𞤤𞤭𞥅𞤲𞥋𞤣𞤫</relativeTimePattern>
+					<relativeTimePattern count="one">𞤱𞤢𞤯𞤭𞥅 𞤲𞤢𞤴𞤩𞤭𞥅𞤪𞤫 {0}</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𞤲𞤢𞤴𞤢𞤩𞤭𞥅𞤶𞤫 𞤱𞤵𞤤𞤭𞥅𞤯𞤫</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter-short">
 				<displayName>𞤲𞤢𞤴.</displayName>
+				<relative type="-1">𞤲𞤢𞤴. 𞤬𞤫𞤰.</relative>
+				<relative type="0">𞤲𞤣𞤫𞥅 𞤲𞤢𞤴.</relative>
+				<relative type="1">𞤲𞤢𞤴. 𞤢𞤪𞤮𞥅𞤪𞤫</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">𞤲𞥋𞤣𞤫𞤪 {0} 𞤲𞤢𞤴.</relativeTimePattern>
-					<relativeTimePattern count="other">𞤲𞥋𞤣𞤫𞤪 {0} 𞤲𞤢𞤴𞤶.</relativeTimePattern>
+					<relativeTimePattern count="one">𞤲𞤣𞤫𞤪 𞤲𞤢𞤴. {0}</relativeTimePattern>
+					<relativeTimePattern count="other">𞤲𞤣𞤫𞤪 𞤲𞤢𞤴. {0}</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} 𞤲𞤢𞤴. 𞤱𞤵𞤤𞤭𞥅𞤲𞥋𞤣𞤫</relativeTimePattern>
+					<relativeTimePattern count="one">𞤱𞤢𞤯𞤭𞥅 𞤲𞤢𞤴. {0}</relativeTimePattern>
 					<relativeTimePattern count="other">{0} 𞤲𞤢𞤴𞤶. 𞤱𞤵𞤤𞤭𞥅𞤯𞤫</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter-narrow">
 				<displayName>𞤲𞤢𞤴.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">𞤲𞥋𞤣𞤫𞤪 {0} 𞤲𞤢𞤴.</relativeTimePattern>
-					<relativeTimePattern count="other">𞤲𞥋𞤣𞤫𞤪 {0} 𞤲𞤢𞤴𞤶.</relativeTimePattern>
+					<relativeTimePattern count="one">𞤲𞤣𞤫𞤪 𞤲𞤢𞤴. {0}</relativeTimePattern>
+					<relativeTimePattern count="other">𞤲𞤣𞤫𞤪 𞤲𞤢𞤴. {0}</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} 𞤲𞤢𞤴. 𞤱𞤵𞤤𞤭𞥅𞤲𞥋𞤣𞤫</relativeTimePattern>
@@ -1249,16 +1492,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativePeriod>𞤴𞤮𞤲𞤼𞤫𞤪𞤫 {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
-				<displayName>𞤴𞤮𞤲𞤼𞤫𞤪𞤫 𞤳𞤢 𞤤𞤫𞤱𞤪𞤵</displayName>
+				<displayName>𞤴𞤮𞤲𞤼𞤫𞤪𞤫 𞤲𞤣𞤫𞤪 𞤤𞤫𞤱𞤪𞤵</displayName>
 			</field>
 			<field type="weekOfMonth-short">
-				<displayName>𞤴𞤼. 𞤳𞤢 𞤤𞤫𞤱.</displayName>
+				<displayName>𞤴𞤼. 𞤲𞤣𞤫𞤪 𞤤𞤫𞤱.</displayName>
 			</field>
 			<field type="weekOfMonth-narrow">
-				<displayName>𞤴𞤼. 𞤳𞤢 𞤤𞤫𞤱.</displayName>
+				<displayName>𞤴𞤼. 𞤲𞤣𞤫𞤪 𞤤𞤫𞤱.</displayName>
 			</field>
 			<field type="day">
-				<displayName>𞤻𞤢𞤤𞥆𞤢𞤤</displayName>
+				<displayName>𞤻𞤢𞤤𞤢𞥄𞤲𞤣𞤫</displayName>
 				<relative type="-1">𞤸𞤢𞤲𞤳𞤭</relative>
 				<relative type="0">𞤸𞤢𞤲𞤣𞤫</relative>
 				<relative type="1">𞤶𞤢𞤲𞤺𞤮</relative>
@@ -1300,31 +1543,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="dayOfYear">
-				<displayName>𞤻𞤢𞤤𞥆𞤢𞤤 𞤳𞤢 𞤸𞤭𞤼𞤢𞥄𞤲𞥋𞤣𞤫</displayName>
+				<displayName>𞤻𞤢𞤤𞤢𞥄𞤲𞤣𞤫 𞤲𞤣𞤫𞤪 𞤸𞤭𞤼𞤢𞥄𞤲𞤣𞤫</displayName>
 			</field>
 			<field type="dayOfYear-short">
-				<displayName>𞤻𞤢𞤤. 𞤳𞤢 𞤸𞤼.</displayName>
+				<displayName>𞤻𞤢𞤤. 𞤲𞤣𞤫𞤪 𞤸𞤼.</displayName>
 			</field>
 			<field type="dayOfYear-narrow">
-				<displayName>𞤻𞤢𞤤. 𞤳𞤢 𞤸𞤼.</displayName>
+				<displayName>𞤻𞤢𞤤. 𞤲𞤣𞤫𞤪 𞤸𞤼.</displayName>
 			</field>
 			<field type="weekday">
-				<displayName>𞤻𞤢𞤤𞥆𞤢𞤤 𞤳𞤢 𞤴𞤮𞤲𞤼𞤫𞤪𞤫</displayName>
+				<displayName>𞤻𞤢𞤤𞤢𞥄𞤲𞤣𞤫 𞤲𞤣𞤫𞤪 𞤴𞤮𞤲𞤼𞤫𞤪𞤫</displayName>
 			</field>
 			<field type="weekday-short">
-				<displayName>𞤻𞤢𞤤. 𞤳𞤢 𞤴𞤼.</displayName>
+				<displayName>𞤻𞤢𞤤. 𞤲𞤣𞤫𞤪 𞤴𞤼.</displayName>
 			</field>
 			<field type="weekday-narrow">
-				<displayName>𞤻𞤢𞤤. 𞤳𞤢 𞤴𞤼.</displayName>
+				<displayName>𞤻𞤢𞤤. 𞤲𞤣𞤫𞤪 𞤴𞤼.</displayName>
 			</field>
 			<field type="weekdayOfMonth">
-				<displayName>𞤻𞤢𞤤𞥆𞤢𞤤 𞤳𞤢 𞤴𞤮𞤲𞤼𞤫𞤪𞤫</displayName>
+				<displayName>𞤻𞤢𞤤𞤢𞥄𞤲𞤣𞤫 𞤲𞤣𞤫𞤪 𞤴𞤮𞤲𞤼𞤫𞤪𞤫</displayName>
 			</field>
 			<field type="weekdayOfMonth-short">
-				<displayName>𞤻𞤢𞤤. 𞤳𞤢 𞤤𞤫𞤱.</displayName>
+				<displayName>𞤻𞤢𞤤.𞤲𞤣𞤫𞤪 𞤤𞤫𞤱.</displayName>
 			</field>
 			<field type="weekdayOfMonth-narrow">
-				<displayName>𞤻𞤢𞤤. 𞤳𞤢 𞤤𞤫𞤱.</displayName>
+				<displayName>𞤻𞤢𞤤. 𞤲𞤣𞤫𞤪 𞤤𞤫𞤱.</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">𞤈𞤫𞤬𞤦𞤭𞤪𞥆𞤫 𞤬𞤫𞤰𞥆𞤵𞤲𞥋𞤣𞤫</relative>
@@ -1609,7 +1852,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>𞤀𞤎/𞤇𞤎</displayName>
 			</field>
 			<field type="hour">
-				<displayName>𞤲𞥋𞤶𞤢𞤥𞤲𞥋𞤣𞤭</displayName>
+				<displayName>𞤲𞤶𞤢𞤥𞤣𞤭</displayName>
 				<relative type="0">𞤲𞥋𞤣𞤭𞥅 𞤯𞤮𞤮 𞤲𞥋𞤶𞤢𞤥𞤲𞥋𞤣𞤭</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">𞤲𞥋𞤣𞤫𞤪 {0} 𞤲𞥋𞤶𞤢𞤥𞤲𞥋𞤣𞤭</relativeTimePattern>
@@ -1711,13 +1954,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="zone">
-				<displayName>𞤳𞤭𞤶𞤮𞥅𞤪𞤫 𞤲𞤮𞤳𞥆𞤵𞥅𞤪𞤫</displayName>
+				<displayName>𞤲𞤶𞤢𞤥𞤣𞤭 𞤲𞤮𞤳𞥆𞤵𞥅𞤪𞤫</displayName>
 			</field>
 			<field type="zone-short">
-				<displayName>𞤲𞤮𞤳𞥆𞤵𞥅𞤪𞤫</displayName>
+				<displayName>𞤲𞤶𞤢𞤥𞤣𞤭 𞤲𞤮𞤳𞥆𞤵𞥅𞤪𞤫</displayName>
 			</field>
 			<field type="zone-narrow">
-				<displayName>𞤲𞤮𞤳𞥆𞤵</displayName>
+				<displayName>𞤲𞤶𞤢𞤥𞤣𞤭 𞤲𞤮𞤳𞥆𞤵𞥅𞤪𞤫</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>

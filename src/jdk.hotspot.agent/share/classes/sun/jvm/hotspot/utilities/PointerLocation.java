@@ -107,22 +107,21 @@ public class PointerLocation {
   }
 
   public boolean isInHeap() {
-    return (heap != null || (gen != null));
+    return (heap != null);
   }
 
   public boolean isInNewGen() {
-    return ((gen != null) && (gen == ((GenCollectedHeap)heap).getGen(0)));
+    return ((gen != null) && (gen.equals(((GenCollectedHeap)heap).getGen(0))));
   }
 
   public boolean isInOldGen() {
-    return ((gen != null) && (gen == ((GenCollectedHeap)heap).getGen(1)));
+    return ((gen != null) && (gen.equals(((GenCollectedHeap)heap).getGen(1))));
   }
 
   public boolean inOtherGen() {
     return (!isInNewGen() && !isInOldGen());
   }
 
-  /** Only valid if isInHeap() */
   public Generation getGeneration() {
       return gen;
   }

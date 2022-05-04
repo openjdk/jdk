@@ -26,7 +26,6 @@
 #include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
-#include "c1/c1_FrameMap.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -1586,7 +1585,7 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
   // Calculate the value for last_Java_sp
   // somewhat subtle. call_VM does an intermediate call
   // which places a return address on the stack just under the
-  // stack pointer as the user finsihed with it. This allows
+  // stack pointer as the user finished with it. This allows
   // use to retrieve last_Java_pc from last_Java_sp[-1].
   // On 32bit we then have to push additional args on the stack to accomplish
   // the actual requested call. On 64bit call_VM only can use register args
@@ -2253,12 +2252,12 @@ void MacroAssembler::fld_x(AddressLiteral src) {
   Assembler::fld_x(as_Address(src));
 }
 
-void MacroAssembler::ldmxcsr(AddressLiteral src) {
+void MacroAssembler::ldmxcsr(AddressLiteral src, Register scratchReg) {
   if (reachable(src)) {
     Assembler::ldmxcsr(as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::ldmxcsr(Address(rscratch1, 0));
+    lea(scratchReg, src);
+    Assembler::ldmxcsr(Address(scratchReg, 0));
   }
 }
 
@@ -3594,14 +3593,15 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
 }
 
 XMMRegSet MacroAssembler::call_clobbered_xmm_registers() {
+  int num_xmm_registers = XMMRegisterImpl::available_xmm_registers();
 #if defined(WINDOWS) && defined(_LP64)
   XMMRegSet result = XMMRegSet::range(xmm0, xmm5);
-  if (FrameMap::get_num_caller_save_xmms() > 16) {
-     result += XMMRegSet::range(xmm16, as_XMMRegister(FrameMap::get_num_caller_save_xmms() - 1));
+  if (num_xmm_registers > 16) {
+     result += XMMRegSet::range(xmm16, as_XMMRegister(num_xmm_registers - 1));
   }
   return result;
 #else
-  return XMMRegSet::range(xmm0, as_XMMRegister(FrameMap::get_num_caller_save_xmms() - 1));
+  return XMMRegSet::range(xmm0, as_XMMRegister(num_xmm_registers - 1));
 #endif
 }
 
@@ -4671,16 +4671,6 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
   }
   // Clear upper bits of YMM registers to avoid SSE <-> AVX transition penalty.
   vzeroupper();
-  // Reset k1 to 0xffff.
-
-#ifdef COMPILER2
-  if (PostLoopMultiversioning && VM_Version::supports_evex()) {
-    push(rcx);
-    movl(rcx, 0xffff);
-    kmovwl(k1, rcx);
-    pop(rcx);
-  }
-#endif // COMPILER2
 
 #ifndef _LP64
   // Either restore the x87 floating pointer control word after returning
@@ -4791,7 +4781,7 @@ void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
   access_load_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
 }
 
-// Doesn't do verfication, generates fixed size code
+// Doesn't do verification, generates fixed size code
 void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register tmp1,
                                             Register thread_tmp, DecoratorSet decorators) {
   access_load_at(T_OBJECT, IN_HEAP | IS_NOT_NULL | decorators, dst, src, tmp1, thread_tmp);
@@ -5287,10 +5277,28 @@ void MacroAssembler::clear_mem(Register base, int cnt, Register rtmp, XMMRegiste
 
   int vector64_count = (cnt & (~0x7)) >> 3;
   cnt = cnt & 0x7;
+  const int fill64_per_loop = 4;
+  const int max_unrolled_fill64 = 8;
 
   // 64 byte initialization loop.
   vpxor(xtmp, xtmp, xtmp, use64byteVector ? AVX_512bit : AVX_256bit);
-  for (int i = 0; i < vector64_count; i++) {
+  int start64 = 0;
+  if (vector64_count > max_unrolled_fill64) {
+    Label LOOP;
+    Register index = rtmp;
+
+    start64 = vector64_count - (vector64_count % fill64_per_loop);
+
+    movl(index, 0);
+    BIND(LOOP);
+    for (int i = 0; i < fill64_per_loop; i++) {
+      fill64(Address(base, index, Address::times_1, i * 64), xtmp, use64byteVector);
+    }
+    addl(index, fill64_per_loop * 64);
+    cmpl(index, start64 * 64);
+    jccb(Assembler::less, LOOP);
+  }
+  for (int i = start64; i < vector64_count; i++) {
     fill64(base, i * 64, xtmp, use64byteVector);
   }
 
@@ -6117,7 +6125,7 @@ void MacroAssembler::multiply_128_x_128_bmi2_loop(Register y, Register z,
 }
 
 /**
- * Code for BigInteger::multiplyToLen() instrinsic.
+ * Code for BigInteger::multiplyToLen() intrinsic.
  *
  * rdi: x
  * rax: xlen
@@ -6326,7 +6334,7 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
     jcc(Assembler::zero, SAME_TILL_END);
 
     //bind(VECTOR64_TAIL);
-    // AVX512 code to compare upto 63 byte vectors.
+    // AVX512 code to compare up to 63 byte vectors.
     mov64(tmp2, 0xFFFFFFFFFFFFFFFF);
     shlxq(tmp2, tmp2, tmp1);
     notq(tmp2);
@@ -6607,7 +6615,7 @@ void MacroAssembler::multiply_add_64(Register sum, Register op1, Register op2, R
 }
 
 /**
- * Add 64 bit long carry into z[] with carry propogation.
+ * Add 64 bit long carry into z[] with carry propagation.
  * Preserves z and carry register values and modifies rest of registers.
  *
  */
@@ -6787,7 +6795,7 @@ void MacroAssembler::square_to_len(Register x, Register len, Register z, Registe
   bind(L_third_loop_exit);
 
   // Fourth loop
-  // Add 64 bit long carry into z with carry propogation.
+  // Add 64 bit long carry into z with carry propagation.
   // Uses offsetted zlen.
   add_one_64(z, zlen, carry, tmp1);
 
@@ -7697,7 +7705,7 @@ void MacroAssembler::crc32c_rec_alt2(uint32_t const_or_pre_comp_const_index_u1, 
 }
 
 // Set N to predefined value
-// Subtract from a lenght of a buffer
+// Subtract from a length of a buffer
 // execute in a loop:
 // CRC_A = 0xFFFFFFFF, CRC_B = 0, CRC_C = 0
 // for i = 1 to N do
@@ -8106,7 +8114,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     testl(len, -32);
     jcc(Assembler::zero, below_threshold);
 
-    // First check whether a character is compressable ( <= 0xFF).
+    // First check whether a character is compressible ( <= 0xFF).
     // Create mask to test for Unicode chars inside zmm vector
     movl(result, 0x00FF);
     evpbroadcastw(tmp2Reg, result, Assembler::AVX_512bit);
@@ -8884,20 +8892,27 @@ void MacroAssembler::fill32_masked(uint shift, Register dst, int disp,
 }
 
 
-void MacroAssembler::fill32(Register dst, int disp, XMMRegister xmm) {
+void MacroAssembler::fill32(Address dst, XMMRegister xmm) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
-  vmovdqu(Address(dst, disp), xmm);
+  vmovdqu(dst, xmm);
+}
+
+void MacroAssembler::fill32(Register dst, int disp, XMMRegister xmm) {
+  fill32(Address(dst, disp), xmm);
+}
+
+void MacroAssembler::fill64(Address dst, XMMRegister xmm, bool use64byteVector) {
+  assert(MaxVectorSize >= 32, "vector length should be >= 32");
+  if (!use64byteVector) {
+    fill32(dst, xmm);
+    fill32(dst.plus_disp(32), xmm);
+  } else {
+    evmovdquq(dst, xmm, Assembler::AVX_512bit);
+  }
 }
 
 void MacroAssembler::fill64(Register dst, int disp, XMMRegister xmm, bool use64byteVector) {
-  assert(MaxVectorSize >= 32, "vector length should be >= 32");
-  BasicType type[] = {T_BYTE,  T_SHORT,  T_INT,   T_LONG};
-  if (!use64byteVector) {
-    fill32(dst, disp, xmm);
-    fill32(dst, disp + 32, xmm);
-  } else {
-    evmovdquq(Address(dst, disp), xmm, Assembler::AVX_512bit);
-  }
+  fill64(Address(dst, disp), xmm, use64byteVector);
 }
 
 #ifdef _LP64
@@ -9118,6 +9133,80 @@ void MacroAssembler::convert_f2l(Register dst, XMMRegister src) {
   call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2l_fixup())));
   pop(dst);
   bind(done);
+}
+
+void MacroAssembler::round_float(Register dst, XMMRegister src, Register rtmp, Register rcx) {
+  // Following code is line by line assembly translation rounding algorithm.
+  // Please refer to java.lang.Math.round(float) algorithm for details.
+  const int32_t FloatConsts_EXP_BIT_MASK = 0x7F800000;
+  const int32_t FloatConsts_SIGNIFICAND_WIDTH = 24;
+  const int32_t FloatConsts_EXP_BIAS = 127;
+  const int32_t FloatConsts_SIGNIF_BIT_MASK = 0x007FFFFF;
+  const int32_t MINUS_32 = 0xFFFFFFE0;
+  Label L_special_case, L_block1, L_exit;
+  movl(rtmp, FloatConsts_EXP_BIT_MASK);
+  movdl(dst, src);
+  andl(dst, rtmp);
+  sarl(dst, FloatConsts_SIGNIFICAND_WIDTH - 1);
+  movl(rtmp, FloatConsts_SIGNIFICAND_WIDTH - 2 + FloatConsts_EXP_BIAS);
+  subl(rtmp, dst);
+  movl(rcx, rtmp);
+  movl(dst, MINUS_32);
+  testl(rtmp, dst);
+  jccb(Assembler::notEqual, L_special_case);
+  movdl(dst, src);
+  andl(dst, FloatConsts_SIGNIF_BIT_MASK);
+  orl(dst, FloatConsts_SIGNIF_BIT_MASK + 1);
+  movdl(rtmp, src);
+  testl(rtmp, rtmp);
+  jccb(Assembler::greaterEqual, L_block1);
+  negl(dst);
+  bind(L_block1);
+  sarl(dst);
+  addl(dst, 0x1);
+  sarl(dst, 0x1);
+  jmp(L_exit);
+  bind(L_special_case);
+  convert_f2i(dst, src);
+  bind(L_exit);
+}
+
+void MacroAssembler::round_double(Register dst, XMMRegister src, Register rtmp, Register rcx) {
+  // Following code is line by line assembly translation rounding algorithm.
+  // Please refer to java.lang.Math.round(double) algorithm for details.
+  const int64_t DoubleConsts_EXP_BIT_MASK = 0x7FF0000000000000L;
+  const int64_t DoubleConsts_SIGNIFICAND_WIDTH = 53;
+  const int64_t DoubleConsts_EXP_BIAS = 1023;
+  const int64_t DoubleConsts_SIGNIF_BIT_MASK = 0x000FFFFFFFFFFFFFL;
+  const int64_t MINUS_64 = 0xFFFFFFFFFFFFFFC0L;
+  Label L_special_case, L_block1, L_exit;
+  mov64(rtmp, DoubleConsts_EXP_BIT_MASK);
+  movq(dst, src);
+  andq(dst, rtmp);
+  sarq(dst, DoubleConsts_SIGNIFICAND_WIDTH - 1);
+  mov64(rtmp, DoubleConsts_SIGNIFICAND_WIDTH - 2 + DoubleConsts_EXP_BIAS);
+  subq(rtmp, dst);
+  movq(rcx, rtmp);
+  mov64(dst, MINUS_64);
+  testq(rtmp, dst);
+  jccb(Assembler::notEqual, L_special_case);
+  movq(dst, src);
+  mov64(rtmp, DoubleConsts_SIGNIF_BIT_MASK);
+  andq(dst, rtmp);
+  mov64(rtmp, DoubleConsts_SIGNIF_BIT_MASK + 1);
+  orq(dst, rtmp);
+  movq(rtmp, src);
+  testq(rtmp, rtmp);
+  jccb(Assembler::greaterEqual, L_block1);
+  negq(dst);
+  bind(L_block1);
+  sarq(dst);
+  addq(dst, 0x1);
+  sarq(dst, 0x1);
+  jmp(L_exit);
+  bind(L_special_case);
+  convert_d2l(dst, src);
+  bind(L_exit);
 }
 
 void MacroAssembler::convert_d2l(Register dst, XMMRegister src) {

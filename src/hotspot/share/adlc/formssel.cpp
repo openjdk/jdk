@@ -1354,7 +1354,7 @@ void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
   }
 }
 
-// Seach through operands to determine parameters unique positions.
+// Search through operands to determine parameters unique positions.
 void InstructForm::set_unique_opnds() {
   uint* uniq_idx = NULL;
   uint  nopnds = num_opnds();
@@ -4103,6 +4103,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ReplicateL")==0 ||
         strcmp(opType,"ReplicateF")==0 ||
         strcmp(opType,"ReplicateD")==0 ||
+        strcmp(opType,"PopulateIndex")==0 ||
         strcmp(opType,"AddReductionVI")==0 ||
         strcmp(opType,"AddReductionVL")==0 ||
         strcmp(opType,"AddReductionVF")==0 ||
@@ -4212,7 +4213,7 @@ bool MatchRule::is_vector() const {
     "CMoveVD", "CMoveVF",
     "DivVF","DivVD",
     "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD",
-    "NegVF","NegVD","NegVI",
+    "NegVF","NegVD","NegVI","NegVL",
     "SqrtVD","SqrtVF",
     "AndV" ,"XorV" ,"OrV",
     "MaxV", "MinV",
@@ -4227,7 +4228,7 @@ bool MatchRule::is_vector() const {
     "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
     "RShiftVB","RShiftVS","RShiftVI","RShiftVL",
     "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
-    "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD",
+    "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD","PopulateIndex",
     "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
     "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
     "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
@@ -4236,9 +4237,10 @@ bool MatchRule::is_vector() const {
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X",
     "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
     "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
-    "FmaVD","FmaVF","PopCountVI", "PopCountVL", "VectorLongToMask",
+    "FmaVD","FmaVF","PopCountVI", "PopCountVL", "SignumVF", "SignumVD", "VectorLongToMask",
     // Next are vector mask ops.
     "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
+    "RoundVF", "RoundVD",
     // Next are not supported currently.
     "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",
     "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD"

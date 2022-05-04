@@ -101,11 +101,6 @@ import static jdk.javadoc.internal.doclint.Messages.Group.*;
 
 /**
  * Validate a doc comment.
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
  */
 public class Checker extends DocTreePathScanner<Void, Void> {
     final Env env;
@@ -192,7 +187,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     if (isNormalClass(p.getParentPath())) {
                         reportMissing("dc.default.constructor");
                     }
-                } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous()) {
+                } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous() && !isRecordComponentOrField()) {
                     reportMissing("dc.missing.comment");
                 }
                 return null;
@@ -253,26 +248,28 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
         scan(new DocTreePath(p, tree), null);
 
-        if (!isOverridingMethod) {
-            switch (env.currElement.getKind()) {
-                case METHOD:
-                case CONSTRUCTOR: {
-                    ExecutableElement ee = (ExecutableElement) env.currElement;
-                    checkParamsDocumented(ee.getTypeParameters());
-                    checkParamsDocumented(ee.getParameters());
-                    switch (ee.getReturnType().getKind()) {
-                        case VOID:
-                        case NONE:
-                            break;
-                        default:
-                            if (!foundReturn
-                                    && !foundInheritDoc
-                                    && !env.types.isSameType(ee.getReturnType(), env.java_lang_Void)) {
-                                reportMissing("dc.missing.return");
-                            }
+        // the following checks are made after the scan, which will record @param tags
+        if (isDeclaredType()) {
+            TypeElement te = (TypeElement) env.currElement;
+            checkParamsDocumented(te.getTypeParameters());
+            checkParamsDocumented(te.getRecordComponents());
+        } else if (isExecutable()) {
+            if (!isOverridingMethod) {
+                ExecutableElement ee = (ExecutableElement) env.currElement;
+                checkParamsDocumented(ee.getTypeParameters());
+                checkParamsDocumented(ee.getParameters());
+                switch (ee.getReturnType().getKind()) {
+                    case VOID, NONE -> {
                     }
-                    checkThrowsDocumented(ee.getThrownTypes());
+                    default -> {
+                        if (!foundReturn
+                                && !foundInheritDoc
+                                && !env.types.isSameType(ee.getReturnType(), env.java_lang_Void)) {
+                            reportMissing("dc.missing.return");
+                        }
+                    }
                 }
+                checkThrowsDocumented(ee.getThrownTypes());
             }
         }
 
@@ -1210,6 +1207,26 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 return env.getPos(p) == env.getPos(p.getParentPath());
         }
         return false;
+    }
+
+    private boolean isDeclaredType() {
+        ElementKind ek = env.currElement.getKind();
+        return ek.isClass() || ek.isInterface();
+    }
+
+    private boolean isExecutable() {
+        ElementKind ek = env.currElement.getKind();
+        return switch (ek) {
+            case CONSTRUCTOR, METHOD -> true;
+            default -> false;
+        };
+    }
+
+    private boolean isRecordComponentOrField() {
+        return env.currElement.getKind() == ElementKind.RECORD_COMPONENT
+            || env.currElement.getEnclosingElement() != null
+                && env.currElement.getEnclosingElement().getKind() == ElementKind.RECORD
+                && env.currElement.getKind() == ElementKind.FIELD;
     }
 
     private boolean isNormalClass(TreePath p) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class Bug5096553
       String expectedMed = "30-04-2008";
       String expectedShort="30-04-08";
 
-      Locale dk = new Locale("da", "DK");
+      Locale dk = Locale.of("da", "DK");
       DateFormat df1 = DateFormat.getDateInstance(DateFormat.MEDIUM, dk);
       DateFormat df2 = DateFormat.getDateInstance(DateFormat.SHORT, dk);
       String medString = new String (df1.format(new Date(108, Calendar.APRIL, 30)));

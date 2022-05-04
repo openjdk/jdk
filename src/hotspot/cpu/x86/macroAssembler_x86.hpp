@@ -540,7 +540,7 @@ public:
   // Push and pop everything that might be clobbered by a native
   // runtime call.
   // Only save the lower 64 bits of each vector register.
-  // Additonal registers can be excluded in a passed RegSet.
+  // Additional registers can be excluded in a passed RegSet.
   void push_call_clobbered_registers_except(RegSet exclude, bool save_fpu = true);
   void pop_call_clobbered_registers_except(RegSet exclude, bool restore_fpu = true);
 
@@ -855,14 +855,14 @@ public:
 
   // Jumps
 
-  // NOTE: these jumps tranfer to the effective address of dst NOT
+  // NOTE: these jumps transfer to the effective address of dst NOT
   // the address contained by dst. This is because this is more natural
   // for jumps/calls.
   void jump(AddressLiteral dst);
   void jump_cc(Condition cc, AddressLiteral dst);
 
   // 32bit can do a case table jump in one instruction but we no longer allow the base
-  // to be installed in the Address class. This jump will tranfers to the address
+  // to be installed in the Address class. This jump will transfer to the address
   // contained in the location described by entry (not the address of entry)
   void jump(ArrayAddress entry);
 
@@ -906,7 +906,7 @@ public:
   void fld_x(AddressLiteral src);
 
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
-  void ldmxcsr(AddressLiteral src);
+  void ldmxcsr(AddressLiteral src, Register scratchReg = rscratch1);
 
 #ifdef _LP64
  private:
@@ -1985,7 +1985,11 @@ public:
                          XMMRegister xmm, KRegister mask, Register length,
                          Register temp);
 
+  void fill32(Address dst, XMMRegister xmm);
+
   void fill32(Register dst, int disp, XMMRegister xmm);
+
+  void fill64(Address dst, XMMRegister xmm, bool use64byteVector = false);
 
   void fill64(Register dst, int dis, XMMRegister xmm, bool use64byteVector = false);
 
@@ -1994,6 +1998,8 @@ public:
   void convert_d2i(Register dst, XMMRegister src);
   void convert_f2l(Register dst, XMMRegister src);
   void convert_d2l(Register dst, XMMRegister src);
+  void round_double(Register dst, XMMRegister src, Register rtmp, Register rcx);
+  void round_float(Register dst, XMMRegister src, Register rtmp, Register rcx);
 
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);

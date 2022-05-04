@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8283661
+ * @bug 8283661 8283714
  * @summary Unexpected TypeElement in ANALYZE TaskEvent
  * @modules jdk.compiler
  * @run main TestTypeElement

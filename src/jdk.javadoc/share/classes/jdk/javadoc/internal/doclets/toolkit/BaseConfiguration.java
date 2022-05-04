@@ -90,11 +90,6 @@ import jdk.javadoc.internal.doclint.DocLint;
  * Configure the output based on the options. Doclets should sub-class
  * BaseConfiguration, to configure and add their own options. This class contains
  * all user options which are supported by the standard doclet.
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own risk.
- * This code and its internal interfaces are subject to change or
- * deletion without notice.</b>
  */
 public abstract class BaseConfiguration {
     /**
@@ -347,7 +342,7 @@ public abstract class BaseConfiguration {
         }
 
         // add entries for modules which may not have exported packages
-        modules.forEach(mdle -> modulePackages.computeIfAbsent(mdle, m -> Collections.emptySet()));
+        modules.forEach(mdle -> modulePackages.computeIfAbsent(mdle, m -> Set.of()));
 
         modules.addAll(modulePackages.keySet());
         showModules = !modules.isEmpty();
