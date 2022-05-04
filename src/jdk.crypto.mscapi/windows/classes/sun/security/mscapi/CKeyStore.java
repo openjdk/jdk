@@ -54,43 +54,30 @@ import sun.security.util.Debug;
  */
 abstract class CKeyStore extends KeyStoreSpi {
 
-    public static final class KeyStoreLocation {
-
-        public static final KeyStoreLocation CURRENTUSER = new KeyStoreLocation(0);
-        public static final KeyStoreLocation LOCALMACHINE = new KeyStoreLocation(1);
-    
-        private int value;
-    
-        private KeyStoreLocation(int intValue) {
-            this.value = intValue;
-        }
-    
-        public int getIntValue() {
-            return value;
-        }
-    }    
+    private static final int LOCATION_CURRENTUSER = 0;
+    private static final int LOCATION_LOCALMACHINE = 1;
 
     public static final class MY extends CKeyStore {
         public MY() {
-            super("MY", KeyStoreLocation.CURRENTUSER);
+            super("MY", LOCATION_CURRENTUSER);
         }
     }
 
     public static final class ROOT extends CKeyStore {
         public ROOT() {
-            super("ROOT", KeyStoreLocation.CURRENTUSER);
+            super("ROOT", LOCATION_CURRENTUSER);
         }
     }
 
     public static final class MYLocalMachine extends CKeyStore {
         public MYLocalMachine() {
-            super("MY", KeyStoreLocation.LOCALMACHINE);
+            super("MY", LOCATION_LOCALMACHINE);
         }
     }
 
     public static final class ROOTLocalMachine extends CKeyStore {
         public ROOTLocalMachine() {
-            super("ROOT", KeyStoreLocation.LOCALMACHINE);
+            super("ROOT", LOCATION_LOCALMACHINE);
         }
     }
 
@@ -251,9 +238,9 @@ abstract class CKeyStore extends KeyStoreSpi {
     /*
      * The keystore location.
      */
-    private final KeyStoreLocation storeLocation;
+    private final int storeLocation;
 
-    CKeyStore(String storeName, KeyStoreLocation storeLocation) {
+    CKeyStore(String storeName, int storeLocation) {
         // Get the compatibility mode
         @SuppressWarnings("removal")
         String prop = AccessController.doPrivileged(
@@ -739,7 +726,7 @@ abstract class CKeyStore extends KeyStoreSpi {
         try {
 
             // Load keys and/or certificate chains
-            loadKeysOrCertificateChains(getName(), getLocationValue());
+            loadKeysOrCertificateChains(getName(), getLocation());
 
         } catch (KeyStoreException e) {
             throw new IOException(e);
@@ -865,8 +852,8 @@ abstract class CKeyStore extends KeyStoreSpi {
     /**
      * Returns the location of the keystore.
      */
-    private int getLocationValue() {
-        return storeLocation.getIntValue();
+    private int getLocation() {
+        return storeLocation;
     }
 
     /**
