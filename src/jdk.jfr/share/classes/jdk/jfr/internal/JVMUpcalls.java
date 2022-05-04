@@ -52,6 +52,7 @@ final class JVMUpcalls {
     static byte[] onRetransform(long traceId, boolean dummy1, boolean dummy2, Class<?> clazz, byte[] oldBytes) throws Throwable {
         try {
             if (jdk.internal.event.Event.class.isAssignableFrom(clazz) && !Modifier.isAbstract(clazz.getModifiers())) {
+                EventWriterKey.ensureEventWriterFactory();
                 EventConfiguration configuration = Utils.getConfiguration(clazz.asSubclass(jdk.internal.event.Event.class));
                 if (configuration == null) {
                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "No event configuration found for " + clazz.getName() + ". Ignoring instrumentation request.");
@@ -106,6 +107,7 @@ final class JVMUpcalls {
                     return oldBytes;
                 }
             }
+            EventWriterKey.ensureEventWriterFactory();
             // Corner case when we are forced to generate bytecode. We can't reference
             // EventConfiguration::isEnabled() before event class has been registered, so we add a
             // guard against a null reference.

@@ -55,9 +55,9 @@ void JfrResolution::on_resolution(const CallInfo & info, TRAPS) {
   if (info.selected_method()->name() != event_writer_method_name) {
     return;
   }
-  static const Symbol* const event_writer_klass_name = vmSymbols::jdk_jfr_internal_event_EventWriter();
-  assert(event_writer_klass_name != nullptr, "invariant");
-  if (info.resolved_klass()->name() != event_writer_klass_name) {
+  static const Symbol* const event_writer_factory_klass_name = vmSymbols::jdk_jfr_internal_event_EventWriterFactory();
+  assert(event_writer_factory_klass_name != nullptr, "invariant");
+  if (info.resolved_klass()->name() != event_writer_factory_klass_name) {
     return;
   }
   // Attempting to link against jdk.jfr.internal.event.EventWriter.getEventWriter().
@@ -78,9 +78,9 @@ void JfrResolution::on_resolution(const CallInfo & info, TRAPS) {
 static inline bool is_compiler_linking_event_writer(const ciKlass * holder, const ciMethod * target) {
   assert(holder != nullptr, "invariant");
   assert(target != nullptr, "invariant");
-  static const Symbol* const event_writer_klass_name = vmSymbols::jdk_jfr_internal_event_EventWriter();
-  assert(event_writer_klass_name != nullptr, "invariant");
-  if (holder->name()->get_symbol() != event_writer_klass_name) {
+  static const Symbol* const event_writer_factory_klass_name = vmSymbols::jdk_jfr_internal_event_EventWriterFactory();
+  assert(event_writer_factory_klass_name != nullptr, "invariant");
+  if (holder->name()->get_symbol() != event_writer_factory_klass_name) {
     return false;
   }
   static const Symbol* const event_writer_method_name = vmSymbols::getEventWriter_name();

@@ -52,7 +52,6 @@ import jdk.jfr.Registered;
 import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDefinition;
 import jdk.jfr.internal.event.EventConfiguration;
-import jdk.jfr.internal.event.EventWriter;
 
 /**
  * Class responsible for adding instrumentation to a subclass of {@link Event}.
@@ -105,7 +104,8 @@ public final class EventInstrumentation {
     private static final Type ANNOTATION_TYPE_REGISTERED = Type.getType(Registered.class);
     private static final Type ANNOTATION_TYPE_ENABLED = Type.getType(Enabled.class);
     private static final Type TYPE_EVENT_CONFIGURATION = Type.getType(EventConfiguration.class);
-    private static final Type TYPE_EVENT_WRITER = Type.getType(EventWriter.class);
+    private static final Type TYPE_EVENT_WRITER = Type.getType("Ljdk/jfr/internal/event/EventWriter;");
+    private static final Type TYPE_EVENT_WRITER_FACTORY = Type.getType("Ljdk/jfr/internal/event/EventWriterFactory;");
     private static final Type TYPE_SETTING_CONTROL = Type.getType(SettingControl.class);
     private static final Type TYPE_OBJECT = Type.getType(Object.class);
     private static final Method METHOD_COMMIT = new Method("commit", Type.VOID_TYPE, new Type[0]);
@@ -697,7 +697,7 @@ public final class EventInstrumentation {
 
     private void getEventWriter(MethodVisitor mv) {
         mv.visitLdcInsn(EventWriterKey.getKey());
-        visitMethod(mv, Opcodes.INVOKESTATIC, TYPE_EVENT_WRITER, METHOD_GET_EVENT_WRITER_KEY);
+        visitMethod(mv, Opcodes.INVOKESTATIC, TYPE_EVENT_WRITER_FACTORY, METHOD_GET_EVENT_WRITER_KEY);
     }
 
     private void visitMethod(final MethodVisitor mv, final int opcode, final Type type, final Method method) {

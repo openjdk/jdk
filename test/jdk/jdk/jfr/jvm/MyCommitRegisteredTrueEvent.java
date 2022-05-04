@@ -28,7 +28,7 @@ import jdk.jfr.Registered;
 @Registered(true)
 public class MyCommitRegisteredTrueEvent extends E implements Runnable {
     public void myCommit() {
-        PlaceholderEventWriter.getEventWriter(4711L);
+        PlaceholderEventWriterFactory.getEventWriter(4711L);
         throw new RuntimeException("Should not reach here");
     }
 

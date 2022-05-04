@@ -35,11 +35,11 @@
 
 #define JFR_TEMPLATES(template) \
   template(jdk_jfr_internal_JVM,                                      "jdk/jfr/internal/JVM")                           \
-  template(jdk_jfr_internal_event_EventWriter,                        "jdk/jfr/internal/event/EventWriter")             \
+  template(jdk_jfr_internal_event_EventWriterFactory,                 "jdk/jfr/internal/event/EventWriterFactory")      \
   template(jdk_jfr_internal_event_EventConfiguration_signature,       "Ljdk/jfr/internal/event/EventConfiguration;")    \
   template(getEventWriter_signature,                                  "()Ljdk/jfr/internal/event/EventWriter;")         \
   template(eventConfiguration_name,                                   "eventConfiguration")                             \
-  template(commit_name,                                               "commit") \
+  template(commit_name,                                               "commit")                                         \
 
 #define JFR_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)                              \
   do_intrinsic(_counterTime,        jdk_jfr_internal_JVM, counterTime_name, void_long_signature, F_SN)       \

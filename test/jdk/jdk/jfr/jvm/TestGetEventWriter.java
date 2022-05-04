@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import jdk.jfr.Event;
 import jdk.jfr.FlightRecorder;
+import jdk.jfr.Recording;
 
 /**
  * @test TestGetEventWriter
@@ -38,7 +39,7 @@ import jdk.jfr.FlightRecorder;
  * @requires vm.hasJFR
  * @library /test/lib
  *
- * @compile PlaceholderEventWriter.java
+ * @compile PlaceholderEventWriterFactory.java
  * @compile E.java
  * @compile NonEvent.java
  * @compile RegisteredTrueEvent.java
@@ -63,8 +64,21 @@ import jdk.jfr.FlightRecorder;
  */
 public class TestGetEventWriter {
 
+    static class Testa extends jdk.jfr.Event {
+    }
+    
     public static void main(String... args) throws Throwable {
-        testNonEvent();
+        try (Recording r = new Recording()) {
+            // Unlocks access to jdk.jfr.internal.event
+            r.start();
+            Testa t  = new Testa();
+            t.commit();
+        }
+        // Make sure EventWriterFactory can be accessed.
+        Class<?> clazz = Class.forName("jdk.jfr.internal.event.EventWriterFactory");
+        if (clazz == null) {
+            throw new Exception("Test error, not able to access jdk.jfr.internal.event.EventWriterFactory class");
+        }
         testRegisteredTrueEvent();
         testRegisteredFalseEvent();
         testMyCommitRegisteredTrue();
@@ -72,6 +86,7 @@ public class TestGetEventWriter {
         testStaticCommit();
         testMethodHandleEvent();
         testReflectionEvent();
+        testNonEvent();
     }
 
     // The class does not inherit jdk.jfr.Event and, as such, does not implement the
@@ -177,9 +192,10 @@ public class TestGetEventWriter {
     static class MethodHandleEvent extends Event {
         public void myCommit() throws Throwable {
             try {
-                Class<?> c = Class.forName("jdk.jfr.internal.event.EventWriter");
-                MethodType t = MethodType.methodType(c, List.of(long.class));
-                MethodHandle mh = MethodHandles.lookup().findStatic(c, "getEventWriter", t);
+                Class<?> ew = Class.forName("jdk.jfr.internal.event.EventWriter");
+                MethodType t = MethodType.methodType(ew, List.of(long.class));
+                Class<?> factory = Class.forName("jdk.jfr.internal.event.EventWriterFactory");
+                MethodHandle mh = MethodHandles.lookup().findStatic(factory, "getEventWriter", t);
                 mh.invoke(Long.valueOf(4711)); // throws IllegalAccessException
             } catch (ClassNotFoundException | SecurityException e) {
                 throw new RuntimeException(e);
@@ -209,7 +225,7 @@ public class TestGetEventWriter {
         public void myCommit() throws Throwable {
             Class<?> c;
             try {
-                c = Class.forName("jdk.jfr.internal.event.EventWriter");
+                c = Class.forName("jdk.jfr.internal.event.EventWriterFactory");
                 Method m = c.getMethod("getEventWriter", new Class[] {long.class});
                 m.invoke(null, Long.valueOf(4711)); // throws InternalError
             } catch (ClassNotFoundException | SecurityException e) {
@@ -292,6 +308,7 @@ public class TestGetEventWriter {
         byte[] bytes = is.readAllBytes();
         is.close();
         bytes = replace(bytes, "jdk/jfr/jvm/E", "jdk/jfr/Event");
+        bytes = replace(bytes, "jdk/jfr/jvm/PlaceholderEventWriterFactory", "jdk/jfr/internal/event/EventWriterFactory");
         bytes = replace(bytes, "jdk/jfr/jvm/PlaceholderEventWriter", "jdk/jfr/internal/event/EventWriter");
         BytesClassLoader bc = new BytesClassLoader(bytes, fullName);
         Class<?> clazz = bc.loadClass(fullName);

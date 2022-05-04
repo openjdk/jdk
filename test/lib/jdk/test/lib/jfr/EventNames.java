@@ -70,7 +70,7 @@ public class EventNames {
     public final static String SafepointCleanup = PREFIX + "SafepointCleanup";
     public final static String SafepointCleanupTask = PREFIX + "SafepointCleanupTask";
     public final static String SafepointEnd = PREFIX + "SafepointEnd";
-    public final static String ExecuteVMOperation = PREFIX + "ExecuteVMOperation";
+    public final static String ƒteVMOperation = PREFIX + "ExecuteVMOperation";
     public final static String Shutdown = PREFIX + "Shutdown";
     public final static String JavaThreadStatistics = PREFIX + "JavaThreadStatistics";
     public final static String ClassLoadingStatistics = PREFIX + "ClassLoadingStatistics";

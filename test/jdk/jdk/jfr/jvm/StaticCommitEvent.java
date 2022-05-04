@@ -30,7 +30,7 @@ public class StaticCommitEvent implements Runnable {
     int value;
 
     public static void commit(long start, long duration, String message, int value) {
-        PlaceholderEventWriter.getEventWriter(4711L);
+        PlaceholderEventWriterFactory.getEventWriter(4711L);
         throw new RuntimeException("Should not reach here");
     }
 

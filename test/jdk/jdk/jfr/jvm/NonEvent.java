@@ -25,7 +25,7 @@ package jdk.jfr.jvm;
 // Class used by TestGetEventWriter
 public class NonEvent implements Runnable {
     public void commit() {
-        PlaceholderEventWriter ew = PlaceholderEventWriter.getEventWriter(4711L);
+        PlaceholderEventWriter ew = PlaceholderEventWriterFactory.getEventWriter(4711L);
         throw new RuntimeException("Should not reach here " + ew);
     }
 

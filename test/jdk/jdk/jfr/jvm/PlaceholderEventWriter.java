@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.jfr.jvm;
 
 // Purpose of this class is to have something to
@@ -29,7 +30,4 @@ package jdk.jfr.jvm;
 // will be replaced with "jdk.jfr.internal.event.EventWriter"
 public class PlaceholderEventWriter {
 
-    public static PlaceholderEventWriter getEventWriter(long value) {
-        throw new RuntimeException("Test error. PlaceholderEventWriter class should have been replaced with EventWriter");
-    }
 }

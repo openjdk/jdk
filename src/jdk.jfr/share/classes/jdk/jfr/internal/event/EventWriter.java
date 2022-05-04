@@ -57,7 +57,6 @@ public final class EventWriter {
 
     // Event may not exceed size for a padded integer
     private static final long MAX_EVENT_SIZE = (1 << 28) -1;
-    private static final long KEY = EventWriterKey.getKey();
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static final JVM jvm = JVM.getJVM();
 
@@ -77,35 +76,6 @@ public final class EventWriter {
     // User code must not be able to instantiate
     private EventWriter() {
         threadID = 0;
-    }
-
-    public static EventWriter getEventWriter(long key) {
-        if (key == KEY) {
-            EventWriter ew = JVM.getEventWriter();
-            return ew != null ? ew : JVM.newEventWriter();
-        }
-        block();
-        return null; // Can't reach here.
-    }
-
-    // Starve the system of resources to prevent further attempts.
-    // Note, code that have the capability to invoke this method
-    // could spin in a loop anyway. Alternatives, such as System.exit(1),
-    // may provide caller with additional capabilities.
-    private static void block() {
-        boolean logged = false;
-        while (true) {
-            try {
-                if (!logged) {
-                    // Only log once to prevent flooding of log.
-                    logged = true;
-                    // Purposely don't call Thread::getName() since it can be overridden
-                    Logger.log(LogTag.JFR, LogLevel.ERROR, "Malicious attempt to access JFR buffers. Stopping thread from further execution.");
-                }
-            } catch (Throwable t) {
-                // Ensure code can't break out and retry
-            }
-        }
     }
 
     public void putBoolean(boolean i) {
@@ -291,7 +261,7 @@ public final class EventWriter {
         // event class field and assign it to another. This check makes sure
         // the event type matches what was added by instrumentation.
         if (configuration.getId() != typeId) {
-            block();
+            EventWriterKey.block();
         }
         if (started) {
             // recursive write attempt

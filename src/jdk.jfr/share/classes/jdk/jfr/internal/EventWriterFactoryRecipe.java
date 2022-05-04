@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,15 +22,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.jvm;
+package jdk.jfr.internal;
 
-import jdk.jfr.Registered;
+import jdk.jfr.internal.event.EventWriter;
 
-// Class used by TestGetEventWriter
-@Registered(true)
-public class RegisteredTrueEvent extends E {
-    public void commit() {
-        PlaceholderEventWriterFactory.getEventWriter(4711L);
-        throw new RuntimeException("Should not reach here");
+// This class is not directly used but renamed to 
+// jdk.jfr.event.EventWriterFactory and loaded dynamically
+// when the first event class is bytecode instrumented.
+// See JVMUpcall and EventWriterKey::ensureEventWriterFactory()
+public final class EventWriterFactoryRecipe {
+    private static final long KEY = EventWriterKey.getKey();
+
+    public static EventWriter getEventWriter(long key) {
+        if (key == KEY) {
+            EventWriter ew = JVM.getEventWriter();
+            return ew != null ? ew : JVM.newEventWriter();
+        }
+        EventWriterKey.block();
+        return null; // Can't reach here.
     }
 }

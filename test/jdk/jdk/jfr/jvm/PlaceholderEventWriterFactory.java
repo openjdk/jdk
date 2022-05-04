@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,17 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package jdk.jfr.jvm;
 
-#ifndef SHARE_JFR_INSTRUMENTATION_JFREVENTCLASSTRANSFORMER_HPP
-#define SHARE_JFR_INSTRUMENTATION_JFREVENTCLASSTRANSFORMER_HPP
-
-#include "memory/allocation.hpp"
-#include "utilities/exceptions.hpp"
-
-class CallInfo;
-class ClassFileParser;
-class InstanceKlass;
-class Method;
-class Symbol;
-
+// Purpose of this class is to have something to
+// statically link against for TestGetEventWriter.
 //
-// Intercepts the initial class load of jdk.jfr.Event and subclasses.
-// Will replace the sent in InstanceKlass* with a class file schema extended InstanceKlass*.
-//
-class JfrEventClassTransformer : AllStatic {
- public:
-  static void on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, TRAPS);
-  static bool is_instrumented(const InstanceKlass* ik);
-  static void set_force_instrumentation(bool force_instrumentation);
-  static bool is_force_instrumentation();
-};
+// When the class is loaded "jdk.jfr.jvm.PlaceholderEventWriterFactory"
+// will be replaced with "jdk.jfr.internal.event.EventWriterFactory"
+public class PlaceholderEventWriterFactory {
 
-#endif // SHARE_JFR_INSTRUMENTATION_JFREVENTCLASSTRANSFORMER_HPP
+    public static PlaceholderEventWriter getEventWriter(long value) {
+        throw new RuntimeException("Test error. PlaceholderEventWriter class should have been replaced with EventWriter");
+    }
+}
