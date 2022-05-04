@@ -102,16 +102,6 @@ public final class WFontConfiguration extends FontConfiguration {
         }
     }
 
-    @Override
-    protected void setEncoding() {
-        String nativeEncoding = System.getProperty("native.encoding");
-        Charset cs = (nativeEncoding != null) ?
-                     Charset.forName(nativeEncoding) :
-                     Charset.defaultCharset();
-        encoding = cs.name();
-        startupLocale = sun.awt.SunToolkit.getStartupLocale();
-    }
-
     // overrides FontConfiguration.getFallbackFamilyName
     @Override
     public String getFallbackFamilyName(String fontName, String defaultFallback) {
@@ -218,7 +208,8 @@ public final class WFontConfiguration extends FontConfiguration {
         subsetEncodingMap.put("arabic", "windows-1256");
         subsetEncodingMap.put("chinese-ms936", "GBK");
         subsetEncodingMap.put("chinese-gb18030", "GB18030");
-        if ("x-MS950-HKSCS".equals(defaultEncoding)) {
+        if ("x-MS950-HKSCS".equals(defaultEncoding) ||
+            "HK".equals(startupLocale.getCountry())) {
             subsetEncodingMap.put("chinese-ms950", "x-MS950-HKSCS");
         } else {
             subsetEncodingMap.put("chinese-ms950", "x-windows-950"); //MS950
@@ -235,32 +226,23 @@ public final class WFontConfiguration extends FontConfiguration {
         subsetEncodingMap.put("symbol", "sun.awt.Symbol");
         subsetEncodingMap.put("thai", "x-windows-874");
 
-        if ("windows-1256".equals(defaultEncoding)) {
-            textInputCharset = "ARABIC_CHARSET";
-        } else if ("GBK".equals(defaultEncoding)) {
-            textInputCharset = "GB2312_CHARSET";
-        } else if ("GB18030".equals(defaultEncoding)) {
-            textInputCharset = "GB2312_CHARSET";
-        } else if ("x-windows-950".equals(defaultEncoding)) {
-            textInputCharset = "CHINESEBIG5_CHARSET";
-        } else if ("x-MS950-HKSCS".equals(defaultEncoding)) {
-            textInputCharset = "CHINESEBIG5_CHARSET";
-        } else if ("windows-1251".equals(defaultEncoding)) {
-            textInputCharset = "RUSSIAN_CHARSET";
-        } else if ("UTF-8".equals(defaultEncoding)) {
-            textInputCharset = "DEFAULT_CHARSET";
-        } else if ("windows-1253".equals(defaultEncoding)) {
-            textInputCharset = "GREEK_CHARSET";
-        } else if ("windows-1255".equals(defaultEncoding)) {
-            textInputCharset = "HEBREW_CHARSET";
-        } else if ("windows-31j".equals(defaultEncoding)) {
-            textInputCharset = "SHIFTJIS_CHARSET";
-        } else if ("x-windows-949".equals(defaultEncoding)) {
-            textInputCharset = "HANGEUL_CHARSET";
-        } else if ("x-windows-874".equals(defaultEncoding)) {
-            textInputCharset = "THAI_CHARSET";
-        } else {
-            textInputCharset = "DEFAULT_CHARSET";
-        }
+        textInputCharset = switch(startupLocale.getLanguage()) {
+            case "ar" -> "ARABIC_CHARSET";
+            case "zh" -> {
+                String country = startupLocale.getCountry();
+                if (country.equals("TW") || country.equals("HK")) {
+                    yield "CHINESEBIG5_CHARSET";
+                } else {
+                    yield "GB2312_CHARSET";
+                }
+            }
+            case "ru" -> "RUSSIAN_CHARSET";
+            case "el" -> "GREEK_CHARSET";
+            case "iw" -> "HEBREW_CHARSET";
+            case "ja" -> "SHIFTJIS_CHARSET";
+            case "ko" -> "HANGEUL_CHARSET";
+            case "th" -> "THAI_CHARSET";
+            default -> "DEFAULT_CHARSET";
+        };
     }
 }

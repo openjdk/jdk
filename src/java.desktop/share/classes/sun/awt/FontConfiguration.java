@@ -135,7 +135,7 @@ public abstract class FontConfiguration {
         osVersion = System.getProperty("os.version");
     }
 
-    protected void setEncoding() {
+    private void setEncoding() {
         encoding = Charset.defaultCharset().name();
         startupLocale = SunToolkit.getStartupLocale();
     }
