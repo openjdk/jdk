@@ -65,33 +65,33 @@ public class Extensions {
      */
     @DataProvider
     static Object[][] getProvider() {
-        Object[][] pairs = new Object[][] {
-            new Object[] {".",              EMPTY},
-            new Object[] {"..",             EMPTY},
-            new Object[] {".a.b",           of("b")},
-            new Object[] {"......",         EMPTY_STRING},
-            new Object[] {".....a",         of("a")},
-            new Object[] {"...a.b",         of("b")},
-            new Object[] {"..foo",          of("foo")},
-            new Object[] {"test.rb",        of("rb")},
-            new Object[] {"a/b/d/test.rb" , of("rb")},
-            new Object[] {".a/b/d/test.rb", of("rb")},
-            new Object[] {"foo.",           EMPTY_STRING},
-            new Object[] {"test",           EMPTY},
-            new Object[] {".profile",       EMPTY},
-            new Object[] {".profile.sh",    of("sh")},
-            new Object[] {"..foo",          of("foo")},
-            new Object[] {".....foo",       of("foo")},
-            new Object[] {".vimrc",         EMPTY},
-            new Object[] {"test.",          EMPTY_STRING},
-            new Object[] {"test..",         EMPTY_STRING},
-            new Object[] {"test...",        EMPTY_STRING},
-            new Object[] {"foo.tar.gz",     of("gz")},
-            new Object[] {"foo.bar.",       EMPTY_STRING},
-            new Object[] {"image.jpg",      of("jpg")},
-            new Object[] {"music.mp3",      of("mp3")},
-            new Object[] {"video.mp4",      of("mp4")},
-            new Object[] {"document.txt",   of("txt")},
+        Object[][] pairs = {
+            {".",              EMPTY},
+            {"..",             EMPTY},
+            {".a.b",           of("b")},
+            {"......",         EMPTY_STRING},
+            {".....a",         of("a")},
+            {"...a.b",         of("b")},
+            {"..foo",          of("foo")},
+            {"test.rb",        of("rb")},
+            {"a/b/d/test.rb" , of("rb")},
+            {".a/b/d/test.rb", of("rb")},
+            {"foo.",           EMPTY_STRING},
+            {"test",           EMPTY},
+            {".profile",       EMPTY},
+            {".profile.sh",    of("sh")},
+            {"..foo",          of("foo")},
+            {".....foo",       of("foo")},
+            {".vimrc",         EMPTY},
+            {"test.",          EMPTY_STRING},
+            {"test..",         EMPTY_STRING},
+            {"test...",        EMPTY_STRING},
+            {"foo.tar.gz",     of("gz")},
+            {"foo.bar.",       EMPTY_STRING},
+            {"image.jpg",      of("jpg")},
+            {"music.mp3",      of("mp3")},
+            {"video.mp4",      of("mp4")},
+            {"document.txt",   of("txt")},
         };
         return pairs;
     }
@@ -108,13 +108,13 @@ public class Extensions {
      */
     @DataProvider
     static Object[][] hasProvider() {
-        Object[][] v = new Object[][] {
-            new Object[] {"image.jpg", of("jpg"), "JPEG", "jpeg", "JPG", "jpg"},
-            new Object[] {"image.jpg", EMPTY, "jpG", "jPG", "JPG"},
-            new Object[] {"image.jpg", EMPTY, "gif", "png", "tiff"},
-            new Object[] {"nullext", EMPTY, "gif", "jpg", "png", "tiff"},
-            new Object[] {"emptyext.", EMPTY_STRING, "gif", "jpg", "png", ""},
-            new Object[] {"doc.txt", EMPTY, "doc"},
+        Object[][] v = {
+            {"image.jpg", of("jpg"), "JPEG", "jpeg", "JPG", "jpg"},
+            {"image.jpg", EMPTY, "jpG", "jPG", "JPG"},
+            {"image.jpg", EMPTY, "gif", "png", "tiff"},
+            {"nullext", EMPTY, "gif", "jpg", "png", "tiff"},
+            {"emptyext.", EMPTY_STRING, "gif", "jpg", "png", ""},
+            {"doc.txt", EMPTY, "doc"},
         };
         return v;
     }
@@ -136,13 +136,13 @@ public class Extensions {
      */
     @DataProvider
     static Object[][] replaceProvider() {
-        Object[][] v = new Object[][] {
-            new Object[] {"image.png", "png", Path.of("image.png")},
-            new Object[] {"image.tiff", "jpg", Path.of("image.jpg")},
-            new Object[] {"nullext", "dat", Path.of("nullext.dat")},
-            new Object[] {"emptyext.", "dat", Path.of("emptyext.dat")},
-            new Object[] {"foo.tar", "tar.gz", Path.of("foo.tar.gz")},
-            new Object[] {"foo.", "bar", Path.of("foo.bar")},
+        Object[][] v = {
+            {"image.png", "png", Path.of("image.png")},
+            {"image.tiff", "jpg", Path.of("image.jpg")},
+            {"nullext", "dat", Path.of("nullext.dat")},
+            {"emptyext.", "dat", Path.of("emptyext.dat")},
+            {"foo.tar", "tar.gz", Path.of("foo.tar.gz")},
+            {"foo.", "bar", Path.of("foo.bar")},
         };
         return v;
     }
