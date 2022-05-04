@@ -1733,7 +1733,7 @@ void PhaseChaitin::fixup_spills() {
             // For example, "MoveF2I_stack_reg". We always need a memory edge from
             // src to cisc, else we might schedule cisc before src, loading from a
             // spill location before storing the spill.
-            assert(cisc->memory_operand() == 0, "no memory operand, only stack");
+            assert(cisc->memory_operand() == nullptr, "no memory operand, only stack");
             cisc->add_prec(src);
           }
           block->map_node(cisc, j);          // Insert into basic block
