@@ -970,10 +970,12 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       case Op_ModL: body_size += 30; break;
       case Op_DivL: body_size += 30; break;
       case Op_MulL: body_size += 10; break;
-      case Op_RoundF: body_size += 30; break;
-      case Op_RoundD: body_size += 30; break;
-      case Op_RoundVF: body_size += 30; break;
-      case Op_RoundVD: body_size += 30; break;
+      case Op_RoundF:
+      case Op_RoundD: {
+          body_size += Matcher::scalar_op_pre_select_sz_estimate(n->Opcode(), n->bottom_type()->basic_type());
+      } break;
+      case Op_RoundVF:
+      case Op_RoundVD:
       case Op_PopCountVI:
       case Op_PopCountVL: {
         const TypeVect* vt = n->bottom_type()->is_vect();
@@ -1605,6 +1607,15 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   _igvn.register_new_node_with_optimizer(new_pre_exit);
   set_idom(new_pre_exit, pre_end, dd_main_head);
   set_loop(new_pre_exit, outer_loop->_parent);
+
+  if (peel_only) {
+    // Nodes in the peeled iteration that were marked as reductions within the
+    // original loop might not be reductions within their new outer loop.
+    for (uint i = 0; i < loop->_body.size(); i++) {
+      Node* n = old_new[loop->_body[i]->_idx];
+      n->remove_flag(Node::Flag_is_reduction);
+    }
+  }
 
   // Step B2: Build a zero-trip guard for the main-loop.  After leaving the
   // pre-loop, the main-loop may not execute at all.  Later in life this
@@ -3603,6 +3614,8 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
     } else if (policy_unswitching(phase)) {
       phase->do_unswitching(this, old_new);
       return false; // need to recalculate idom data
+    } else if (phase->duplicate_loop_backedge(this, old_new)) {
+      return false;
     } else if (_head->is_LongCountedLoop()) {
       phase->create_loop_nest(this, old_new);
     }
@@ -3630,6 +3643,9 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
       // completely unroll this loop and it will no longer be a loop.
       phase->do_maximally_unroll(this, old_new);
       return true;
+    }
+    if (StressDuplicateBackedge && phase->duplicate_loop_backedge(this, old_new)) {
+      return false;
     }
   }
 

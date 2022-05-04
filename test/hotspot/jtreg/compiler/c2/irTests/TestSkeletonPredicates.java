@@ -32,6 +32,7 @@ import java.util.Random;
  * @bug 8282592
  * @summary C2: assert(false) failed: graph should be schedulable
  * @library /test/lib /
+ * @requires vm.compiler2.enabled
  * @run driver compiler.c2.irTests.TestSkeletonPredicates
  */
 
