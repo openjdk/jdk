@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8008296 8255552
+ * @bug 8008296
  * @summary Store and retrieve user passwords using PKCS#12 keystore
  * @library /test/lib
  */
@@ -85,7 +85,7 @@ public class StorePasswords {
         new File(KEYSTORE).delete();
 
         storeCount = storeByShell();
-        recoverCount = recoverByShell() / 2;
+        recoverCount = recoverByShell();
 
         if (recoverCount != storeCount || storeCount < 11) {
             throw new Exception("Stored " + storeCount + " user passwords, " +
@@ -229,14 +229,9 @@ public class StorePasswords {
     }
 
     private static int recoverByShell() throws Exception {
-        /*
-         * The returned count also contains the same number of warnings emitted by
-         * keytool for the corresponding secret key entries in the keystore.
-         */
         return (int)SecurityTools.keytool("-list -storetype pkcs12"
                 + " -keystore mykeystore.p12 -storepass changeit")
                 .shouldHaveExitValue(0)
-                .shouldMatch("this entry is protected by.*uses the PBEWithMD5AndDES algorithm which is considered a security risk")
                 .asLines().stream()
                 .filter(s -> s.contains("this entry is protected by"))
                 .count();
