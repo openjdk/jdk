@@ -568,7 +568,7 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
          || entry.rspec().type() == relocInfo::static_call_type
          || entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
   assert(CodeCache::find_blob(entry.target()) != NULL,
-         "destination of far call not found in code cache");
+         "destination of trampoline call not found in code cache");
   assert(cbuf == NULL || cbuf == code(), "CodeBuffers for generated code and marked code not the same");
 
   // We need a trampoline if branches are far.
