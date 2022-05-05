@@ -590,6 +590,7 @@ protected:
 
  private:
   volatile int _jvmti_env_iteration_count;
+  bool _in_asgct;
 
  public:
   void entering_jvmti_env_iteration()            { ++_jvmti_env_iteration_count; }
@@ -611,6 +612,9 @@ protected:
   static ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes); }
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_OFFSET_JFR;)
+
+  inline bool in_asgct(void)                     {return _in_asgct;}
+  inline void set_in_asgct(bool value)           {_in_asgct = value;}
 
  public:
   ParkEvent * volatile _ParkEvent;            // for Object monitors, JVMTI raw monitors,
@@ -643,14 +647,6 @@ protected:
     assert(_wx_state == expected, "wrong state");
   }
 #endif // __APPLE__ && AARCH64
-
- // support AGCT
- private:
-  bool _in_agct;
-
- public:
-  inline bool in_agct(void) {return _in_agct;}
-  inline void set_in_asgct(bool value) {_in_agct = value;}
 };
 
 // Inline implementation of Thread::current()

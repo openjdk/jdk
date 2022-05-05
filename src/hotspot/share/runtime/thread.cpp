@@ -255,7 +255,7 @@ Thread::Thread() {
   // and ::Release()
   _ParkEvent   = ParkEvent::Allocate(this);
 
-  _in_agct = false; // initialize in-asgct state
+  _in_asgct = false; // initialize the ASGCT handler flag
 
 #ifdef CHECK_UNHANDLED_OOPS
   if (CheckUnhandledOops) {
