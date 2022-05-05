@@ -55,7 +55,6 @@ public class ChildAlwaysOnTopTest {
     private static Point point;
     private static Robot robot;
     private static int caseNo = 0;
-    //private static ArrayList<StringBuffer> errorLog = new ArrayList<>();
     private static StringBuffer errorLog = new StringBuffer();
     private static String[] errorMsg= new String[] {
             " Scenario 1 Failed: alwaysOnTop window is sent back by another" +
