@@ -643,6 +643,14 @@ protected:
     assert(_wx_state == expected, "wrong state");
   }
 #endif // __APPLE__ && AARCH64
+
+ // support ASGCT
+ private:
+  bool _in_asgct;
+
+ public:
+  inline bool in_asgct(void) {return _in_asgct;}
+  inline void set_in_asgct(bool value) {_in_asgct = value;}
 };
 
 // Inline implementation of Thread::current()

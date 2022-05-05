@@ -255,6 +255,8 @@ Thread::Thread() {
   // and ::Release()
   _ParkEvent   = ParkEvent::Allocate(this);
 
+  _in_asgct = false; // initialize in-asgct state
+
 #ifdef CHECK_UNHANDLED_OOPS
   if (CheckUnhandledOops) {
     _unhandled_oops = new UnhandledOops(this);

@@ -651,6 +651,12 @@ bool CodeCache::contains(nmethod *nm) {
 // valid indices, which it will always do, as long as the CodeBlob is not in the process of being recycled.
 CodeBlob* CodeCache::find_blob(void* start) {
   CodeBlob* result = find_blob_unsafe(start);
+  Thread* current_thread = Thread::current_or_null_safe();
+  if (current_thread != NULL && current_thread->in_asgct()) {
+    // when in ASGCT handler things might get rough and not all guarantees are held
+    // if the resolved blob is already a zombie return NULL instead of crashing on guarantee
+    return result != NULL || result->is_zombie() ? NULL : result;
+  }
   // We could potentially look up non_entrant methods
   guarantee(result == NULL || !result->is_zombie() || result->is_locked_by_vm() || VMError::is_error_reported(), "unsafe access to zombie method");
   return result;
