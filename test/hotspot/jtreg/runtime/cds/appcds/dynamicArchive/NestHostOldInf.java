@@ -25,17 +25,17 @@
 /*
  * @test
  * @bug 8285914
- * @summary A lambda proxy class should not be archived if its nest host is
- *          old (with major version < JDK_6 (50) which cannot be verified during dump time).
+ * @summary A lambda proxy class should not be archived if its nest host implements an
+ *          old (with major version < JDK_6 (50) interface which cannot be verified during dump time).
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile ../test-classes/OldInf.jasm ../test-classes/ChildOldInf.java
- * @compile ../test-classes/OldNestHostApp.java
+ * @compile ../test-classes/NestHostOldInfApp.java
  * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar oldclassapp.jar OldNestHostApp OldInf ChildOldInf ChildOldInf$InnerChild
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar oldclassapp.jar NestHostOldInfApp OldInf ChildOldInf ChildOldInf$InnerChild
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar OldNestHost
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar NestHostOldInf
  */
 
 import java.io.File;
@@ -43,15 +43,15 @@ import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
-public class OldNestHost extends DynamicArchiveTestBase {
+public class NestHostOldInf extends DynamicArchiveTestBase {
     private static final String ARCHIVE_NAME = CDSTestUtils.getOutputFileName("oldclass-top.jsa");
     private static String wbJar = ClassFileInstaller.getJarPath("WhiteBox.jar");
     private static String use_whitebox_jar = "-Xbootclasspath/a:" + wbJar;
     private static String appJar = ClassFileInstaller.getJarPath("oldclassapp.jar");
-    private static String mainAppClass = "OldNestHostApp";
+    private static String mainAppClass = "NestHostOldInfApp";
 
     public static void main(String[] args) throws Exception {
-        runTest(OldNestHost::doTest);
+        runTest(NestHostOldInf::doTest);
     }
 
     private static void doTest() throws Exception {

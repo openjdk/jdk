@@ -24,23 +24,23 @@
 /*
  * @test
  * @bug 8285914
- * @summary A lambda proxy class should not be archived if its nest host is
- *          old (with major version < JDK_6 (50) which cannot be verified during dump time).
+ * @summary A lambda proxy class should not be archived if its nest host implements an
+ *          old (with major version < JDK_6 (50) interface which cannot be verified during dump time).
  * @requires vm.cds
  * @library /test/lib
  * @compile test-classes/OldInf.jasm
  * @compile test-classes/ChildOldInf.java
- * @compile test-classes/OldNestHostApp.java
- * @run driver OldNestHost
+ * @compile test-classes/NestHostOldInfApp.java
+ * @run driver NestHostOldInf
  */
 
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 
-public class OldNestHost {
+public class NestHostOldInf {
 
     public static void main(String[] args) throws Exception {
-        String mainClass = "OldNestHostApp";
+        String mainClass = "NestHostOldInfApp";
         String namePrefix = "oldsuperinf";
         String appClasses[] = TestCommon.list("OldInf", "ChildOldInf", "ChildOldInf$InnerChild", mainClass);
         JarBuilder.build(namePrefix, appClasses);

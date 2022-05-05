@@ -320,10 +320,19 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     }
   }
 
-  if (k->is_hidden() && !is_registered_lambda_proxy_class(k)) {
-    ResourceMark rm;
-    log_debug(cds)("Skipping %s: Hidden class", k->name()->as_C_string());
-    return true;
+  if (k->is_hidden()) {
+    if (!is_registered_lambda_proxy_class(k)) {
+      ResourceMark rm;
+      log_debug(cds)("Skipping %s: Hidden class", k->name()->as_C_string());
+      return true;
+    } else {
+      DumpTimeClassInfo* info = _dumptime_table->get(k);
+      assert(info != NULL, "sanity");
+      if (check_for_exclusion(info->nest_host(), NULL)) {
+        log_debug(cds)("Skipping %s: lambda proxy class", k->name()->as_C_string());
+        return true;
+      }
+    }
   }
 
   InstanceKlass* super = k->java_super();
@@ -842,9 +851,8 @@ void SystemDictionaryShared::add_lambda_proxy_class(InstanceKlass* caller_ik,
 
   DumpTimeClassInfo* info = _dumptime_table->get(lambda_ik);
   if (info != NULL && !lambda_ik->is_non_strong_hidden() && is_builtin(lambda_ik) && is_builtin(caller_ik)
-      // Don't include the lambda proxy if its nest host is not in the "linked" state
-      // or is an "old" class which cannot be verified at dump time.
-      && nest_host->is_linked() && nest_host->can_be_verified_at_dumptime()) {
+      // Don't include the lambda proxy if its nest host is not in the "linked" state.
+      && nest_host->is_linked()) {
     // Set _is_archived_lambda_proxy in DumpTimeClassInfo so that the lambda_ik
     // won't be excluded during dumping of shared archive. See ExcludeDumpTimeSharedClasses.
     info->_is_archived_lambda_proxy = true;
