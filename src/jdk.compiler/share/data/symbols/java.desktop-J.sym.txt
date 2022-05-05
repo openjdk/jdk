@@ -339,10 +339,51 @@ class name java/awt/geom/Area
 header extends java/lang/Object implements java/awt/Shape,java/lang/Cloneable flags 21
 innerclass innerClass java/awt/geom/Rectangle2D$Double outerClass java/awt/geom/Rectangle2D innerClassName Double flags 9
 
+class name java/awt/geom/CubicCurve2D
+method name getBounds2D descriptor ()Ljava/awt/geom/Rectangle2D; flags 1
+
+class name java/awt/geom/CubicCurve2D$Double
+header extends java/awt/geom/CubicCurve2D implements java/io/Serializable nestHost java/awt/geom/CubicCurve2D flags 21
+innerclass innerClass java/awt/geom/CubicCurve2D$Double outerClass java/awt/geom/CubicCurve2D innerClassName Double flags 9
+innerclass innerClass java/awt/geom/Point2D$Double outerClass java/awt/geom/Point2D innerClassName Double flags 9
+-method name getBounds2D descriptor ()Ljava/awt/geom/Rectangle2D;
+
+class name java/awt/geom/CubicCurve2D$Float
+header extends java/awt/geom/CubicCurve2D implements java/io/Serializable nestHost java/awt/geom/CubicCurve2D flags 21
+innerclass innerClass java/awt/geom/CubicCurve2D$Float outerClass java/awt/geom/CubicCurve2D innerClassName Float flags 9
+innerclass innerClass java/awt/geom/Point2D$Float outerClass java/awt/geom/Point2D innerClassName Float flags 9
+-method name getBounds2D descriptor ()Ljava/awt/geom/Rectangle2D;
+
 class name java/awt/geom/Path2D
 header extends java/lang/Object implements java/awt/Shape,java/lang/Cloneable nestMembers java/awt/geom/Path2D$Double,java/awt/geom/Path2D$Float sealed true flags 421
+innerclass innerClass java/awt/geom/Rectangle2D$Double outerClass java/awt/geom/Rectangle2D innerClassName Double flags 9
 innerclass innerClass java/awt/geom/Path2D$Double outerClass java/awt/geom/Path2D innerClassName Double flags 9
 innerclass innerClass java/awt/geom/Path2D$Float outerClass java/awt/geom/Path2D innerClassName Float flags 9
+
+class name java/awt/geom/Path2D$Double
+header extends java/awt/geom/Path2D implements java/io/Serializable nestHost java/awt/geom/Path2D flags 21
+innerclass innerClass java/awt/geom/Path2D$Double outerClass java/awt/geom/Path2D innerClassName Double flags 9
+innerclass innerClass java/awt/geom/Point2D$Double outerClass java/awt/geom/Point2D innerClassName Double flags 9
+
+class name java/awt/geom/Path2D$Float
+header extends java/awt/geom/Path2D implements java/io/Serializable nestHost java/awt/geom/Path2D flags 21
+innerclass innerClass java/awt/geom/Path2D$Float outerClass java/awt/geom/Path2D innerClassName Float flags 9
+innerclass innerClass java/awt/geom/Point2D$Float outerClass java/awt/geom/Point2D innerClassName Float flags 9
+
+class name java/awt/geom/QuadCurve2D
+method name getBounds2D descriptor ()Ljava/awt/geom/Rectangle2D; flags 1
+
+class name java/awt/geom/QuadCurve2D$Double
+header extends java/awt/geom/QuadCurve2D implements java/io/Serializable nestHost java/awt/geom/QuadCurve2D flags 21
+innerclass innerClass java/awt/geom/QuadCurve2D$Double outerClass java/awt/geom/QuadCurve2D innerClassName Double flags 9
+innerclass innerClass java/awt/geom/Point2D$Double outerClass java/awt/geom/Point2D innerClassName Double flags 9
+-method name getBounds2D descriptor ()Ljava/awt/geom/Rectangle2D;
+
+class name java/awt/geom/QuadCurve2D$Float
+header extends java/awt/geom/QuadCurve2D implements java/io/Serializable nestHost java/awt/geom/QuadCurve2D flags 21
+innerclass innerClass java/awt/geom/QuadCurve2D$Float outerClass java/awt/geom/QuadCurve2D innerClassName Float flags 9
+innerclass innerClass java/awt/geom/Point2D$Float outerClass java/awt/geom/Point2D innerClassName Float flags 9
+-method name getBounds2D descriptor ()Ljava/awt/geom/Rectangle2D;
 
 class name java/awt/geom/RectangularShape
 header extends java/lang/Object implements java/awt/Shape,java/lang/Cloneable flags 421

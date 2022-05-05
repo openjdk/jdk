@@ -57,6 +57,12 @@ class name java/io/PrintStream
 header extends java/io/FilterOutputStream implements java/lang/Appendable,java/io/Closeable flags 21
 innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
 
+class name java/io/PushbackInputStream
+-method name mark descriptor (I)V
+-method name reset descriptor ()V
+method name mark descriptor (I)V flags 1
+method name reset descriptor ()V thrownTypes java/io/IOException flags 1
+
 class name java/lang/AbstractStringBuilder
 header extends java/lang/Object implements java/lang/Appendable,java/lang/CharSequence sealed true flags 420
 innerclass innerClass java/util/Spliterator$OfInt outerClass java/util/Spliterator innerClassName OfInt flags 609
@@ -441,6 +447,9 @@ header extends java/util/Hashtable flags 21 signature Ljava/util/Hashtable<Ljava
 innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
 innerclass innerClass java/util/concurrent/ConcurrentHashMap$KeySetView outerClass java/util/concurrent/ConcurrentHashMap innerClassName KeySetView flags 19
 
+class name java/util/Random
+method name from descriptor (Ljava/util/random/RandomGenerator;)Ljava/util/Random; flags 9
+
 class name java/util/TimeZone
 header extends java/lang/Object implements java/io/Serializable,java/lang/Cloneable flags 421
 innerclass innerClass java/util/Locale$Category outerClass java/util/Locale innerClassName Category flags 4019
@@ -451,6 +460,16 @@ innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassNam
 
 class name java/util/WeakHashMap
 method name newWeakHashMap descriptor (I)Ljava/util/WeakHashMap; flags 9 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>(I)Ljava/util/WeakHashMap<TK;TV;>;
+
+class name java/util/concurrent/CompletableFuture
+header extends java/lang/Object implements java/util/concurrent/Future,java/util/concurrent/CompletionStage nestMembers java/util/concurrent/CompletableFuture$AsynchronousCompletionTask flags 21 signature <T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/concurrent/Future<TT;>;Ljava/util/concurrent/CompletionStage<TT;>;
+innerclass innerClass java/util/concurrent/ForkJoinPool$ManagedBlocker outerClass java/util/concurrent/ForkJoinPool innerClassName ManagedBlocker flags 609
+innerclass innerClass java/util/concurrent/Future$State outerClass java/util/concurrent/Future innerClassName State flags 4019
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+innerclass innerClass java/util/concurrent/CompletableFuture$AsynchronousCompletionTask outerClass java/util/concurrent/CompletableFuture innerClassName AsynchronousCompletionTask flags 609
+method name resultNow descriptor ()Ljava/lang/Object; flags 1 signature ()TT;
+method name exceptionNow descriptor ()Ljava/lang/Throwable; flags 1
+method name state descriptor ()Ljava/util/concurrent/Future$State; flags 1
 
 class name java/util/concurrent/ConcurrentHashMap
 header extends java/util/AbstractMap implements java/util/concurrent/ConcurrentMap,java/io/Serializable nestMembers java/util/concurrent/ConcurrentHashMap$KeySetView,java/util/concurrent/ConcurrentHashMap$CollectionView flags 21 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>Ljava/util/AbstractMap<TK;TV;>;Ljava/util/concurrent/ConcurrentMap<TK;TV;>;Ljava/io/Serializable;
@@ -481,8 +500,57 @@ innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassNam
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name java/util/concurrent/CountedCompleter
-header extends java/util/concurrent/ForkJoinTask flags 421 signature <T:Ljava/lang/Object;>Ljava/util/concurrent/ForkJoinTask<TT;>;
+header extends java/util/concurrent/ForkJoinTask flags 421 signature <T:Ljava/lang/Object;>Ljava/util/concurrent/ForkJoinTask<TT;>; classAnnotations @Ljdk/Profile+Annotation;(value=I1)
+
+class name java/util/concurrent/ExecutorService
+header extends java/lang/Object implements java/util/concurrent/Executor,java/lang/AutoCloseable flags 601
+method name close descriptor ()V flags 1
+
+class name java/util/concurrent/ForkJoinPool
+header extends java/util/concurrent/AbstractExecutorService nestMembers java/util/concurrent/ForkJoinPool$ManagedBlocker,java/util/concurrent/ForkJoinPool$ForkJoinWorkerThreadFactory flags 21
+innerclass innerClass java/util/concurrent/ForkJoinPool$ForkJoinWorkerThreadFactory outerClass java/util/concurrent/ForkJoinPool innerClassName ForkJoinWorkerThreadFactory flags 609
+innerclass innerClass java/util/concurrent/ForkJoinPool$ManagedBlocker outerClass java/util/concurrent/ForkJoinPool innerClassName ManagedBlocker flags 609
+innerclass innerClass java/lang/Thread$UncaughtExceptionHandler outerClass java/lang/Thread innerClassName UncaughtExceptionHandler flags 609
+method name lazySubmit descriptor (Ljava/util/concurrent/ForkJoinTask;)Ljava/util/concurrent/ForkJoinTask; flags 1 signature <T:Ljava/lang/Object;>(Ljava/util/concurrent/ForkJoinTask<TT;>;)Ljava/util/concurrent/ForkJoinTask<TT;>;
+method name setParallelism descriptor (I)I flags 1
+
+class name java/util/concurrent/ForkJoinTask
+header extends java/lang/Object implements java/util/concurrent/Future,java/io/Serializable flags 421 signature <V:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/concurrent/Future<TV;>;Ljava/io/Serializable;
+innerclass innerClass java/util/concurrent/Future$State outerClass java/util/concurrent/Future innerClassName State flags 4019
+method name state descriptor ()Ljava/util/concurrent/Future$State; flags 1
+method name resultNow descriptor ()Ljava/lang/Object; flags 1 signature ()TV;
+method name exceptionNow descriptor ()Ljava/lang/Throwable; flags 1
+method name quietlyJoin descriptor (JLjava/util/concurrent/TimeUnit;)Z thrownTypes java/lang/InterruptedException flags 11
+method name quietlyJoinUninterruptibly descriptor (JLjava/util/concurrent/TimeUnit;)Z flags 11
+method name adaptInterruptible descriptor (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/ForkJoinTask; flags 9 signature <T:Ljava/lang/Object;>(Ljava/util/concurrent/Callable<+TT;>;)Ljava/util/concurrent/ForkJoinTask<TT;>;
+
+class name java/util/concurrent/ForkJoinWorkerThread
+method name <init> descriptor (Ljava/lang/ThreadGroup;Ljava/util/concurrent/ForkJoinPool;Z)V flags 4
+
+class name java/util/concurrent/Future
+header extends java/lang/Object nestMembers java/util/concurrent/Future$State flags 601 signature <V:Ljava/lang/Object;>Ljava/lang/Object;
+innerclass innerClass java/util/concurrent/Future$State outerClass java/util/concurrent/Future innerClassName State flags 4019
+method name resultNow descriptor ()Ljava/lang/Object; flags 1 signature ()TV;
+method name exceptionNow descriptor ()Ljava/lang/Throwable; flags 1
+method name state descriptor ()Ljava/util/concurrent/Future$State; flags 1
+
+class name java/util/concurrent/Future$State
+header extends java/lang/Enum nestHost java/util/concurrent/Future flags 4031 signature Ljava/lang/Enum<Ljava/util/concurrent/Future$State;>;
+innerclass innerClass java/util/concurrent/Future$State outerClass java/util/concurrent/Future innerClassName State flags 4019
+field name RUNNING descriptor Ljava/util/concurrent/Future$State; flags 4019
+field name SUCCESS descriptor Ljava/util/concurrent/Future$State; flags 4019
+field name FAILED descriptor Ljava/util/concurrent/Future$State; flags 4019
+field name CANCELLED descriptor Ljava/util/concurrent/Future$State; flags 4019
+method name values descriptor ()[Ljava/util/concurrent/Future$State; flags 9
+method name valueOf descriptor (Ljava/lang/String;)Ljava/util/concurrent/Future$State; flags 9
+
+class name java/util/concurrent/FutureTask
+header extends java/lang/Object implements java/util/concurrent/RunnableFuture flags 21 signature <V:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/concurrent/RunnableFuture<TV;>;
+innerclass innerClass java/util/concurrent/Future$State outerClass java/util/concurrent/Future innerClassName State flags 4019
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name resultNow descriptor ()Ljava/lang/Object; flags 1 signature ()TV;
+method name exceptionNow descriptor ()Ljava/lang/Throwable; flags 1
+method name state descriptor ()Ljava/util/concurrent/Future$State; flags 1
 
 class name java/util/concurrent/ThreadLocalRandom
 header extends java/util/Random flags 31 runtimeAnnotations @Ljdk/internal/util/random/RandomSupport$RandomGeneratorProperties;(name="ThreadLocalRandom",i=I64,j=I0,k=I0,equidistribution=I1)
@@ -735,6 +803,12 @@ class name javax/crypto/spec/SecretKeySpec
 header extends java/lang/Object implements java/security/spec/KeySpec,javax/crypto/SecretKey flags 21
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name javax/net/ssl/KeyManagerFactory
+header extends java/lang/Object flags 21
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name getDefaultAlgorithm descriptor ()Ljava/lang/String;
+method name getDefaultAlgorithm descriptor ()Ljava/lang/String; flags 9
+
 class name javax/net/ssl/SSLHandshakeException
 method name <init> descriptor (Ljava/lang/String;Ljava/lang/Throwable;)V flags 1
 
@@ -750,6 +824,27 @@ method name <init> descriptor (Ljava/lang/String;Ljava/lang/Throwable;)V flags 1
 
 class name javax/net/ssl/SSLProtocolException
 method name <init> descriptor (Ljava/lang/String;Ljava/lang/Throwable;)V flags 1
+
+class name javax/net/ssl/SSLSessionContext
+-method name setSessionTimeout descriptor (I)V
+-method name setSessionCacheSize descriptor (I)V
+method name setSessionTimeout descriptor (I)V flags 401
+method name setSessionCacheSize descriptor (I)V flags 401
+
+class name javax/net/ssl/SSLSocketFactory
+header extends javax/net/SocketFactory flags 421
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name javax/net/ssl/TrustManagerFactory
+header extends java/lang/Object flags 21
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name getDefaultAlgorithm descriptor ()Ljava/lang/String;
+method name getDefaultAlgorithm descriptor ()Ljava/lang/String; flags 9
+
+class name javax/security/auth/callback/PasswordCallback
+header extends java/lang/Object implements javax/security/auth/callback/Callback,java/io/Serializable flags 21
+innerclass innerClass java/lang/ref/Cleaner$Cleanable outerClass java/lang/ref/Cleaner innerClassName Cleanable flags 609
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name jdk/internal/event/Event
 header extends java/lang/Object flags 421
