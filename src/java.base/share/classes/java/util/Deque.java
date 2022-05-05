@@ -614,29 +614,14 @@ public interface Deque<E> extends Queue<E>, SequencedCollection<E> {
     Iterator<E> descendingIterator();
 
     /**
-     * Returns a reversed-order view of this Deque. If the implementation
+     * Returns a reverse-ordered view of this Deque. If the implementation
      * permits modifications to this view, the modifications "write through"
      * to the underlying collection. Depending upon the implementation's
      * concurrent modification policy, changes to the underlying collection
      * may be visible in this reversed view.
      * @return a reverse-ordered view of this Deque
-     *
-     * @apiNote
-     * This doesn't return a Deque because this would clash with classes
-     * like LinkedList that implement both List and Deque. The covariant
-     * override is not provided here because ReversibleCollection provides
-     * most of what Deque provides. Use reversedDeque() if it's necessary
-     * to get a reverse-ordered Deque view.
      */
-    default SequencedCollection<E> reversed() {
-        return ReverseOrderDequeView.of(this);
-    }
-
-    /**
-     * Returns a reversed-order view of this Deque.
-     * @return a reverse-ordered view of this Deque
-     */
-    default Deque<E> reversedDeque() {
+    default Deque<E> reversed() {
         return ReverseOrderDequeView.of(this);
     }
 }

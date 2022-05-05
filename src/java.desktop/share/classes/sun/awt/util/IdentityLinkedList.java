@@ -878,7 +878,8 @@ public class IdentityLinkedList<E>
         return a;
     }
 
-    public List<E> reversed() {
-        return super.reversed();
+    public IdentityLinkedList<E> reversed() {
+        // TODO
+        throw new UnsupportedOperationException();
     }
 }
