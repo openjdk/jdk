@@ -43,6 +43,7 @@ DocComment[DOC_COMMENT, pos:1
   firstSentence: 2
     Text[TEXT, pos:1, abc_]
     Value[VALUE, pos:5
+      format: null
       reference: null
     ]
   body: empty
@@ -59,6 +60,7 @@ DocComment[DOC_COMMENT, pos:1
   firstSentence: 2
     Text[TEXT, pos:1, abc_]
     Value[VALUE, pos:5
+      format: null
       reference:
         Reference[REFERENCE, pos:13, java.awt.Color#RED]
     ]
@@ -76,6 +78,7 @@ DocComment[DOC_COMMENT, pos:1
   firstSentence: 2
     Text[TEXT, pos:1, abc_]
     Value[VALUE, pos:5
+      format: null
       reference:
         Reference[REFERENCE, pos:13, java.awt.Color#RED]
     ]
@@ -102,6 +105,43 @@ DocComment[DOC_COMMENT, pos:1
 ]
 */
 
+    /**
+     * abc {@value %d java.awt.Color#RED}
+     */
+    int format_plain() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 2
+    Text[TEXT, pos:1, abc_]
+    Value[VALUE, pos:5
+      format:
+        Text[TEXT, pos:13, %d]
+      reference:
+        Reference[REFERENCE, pos:16, java.awt.Color#RED]
+    ]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /**
+     * abc {@value "%d" java.awt.Color#RED}
+     */
+    int format_quoted() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 2
+    Text[TEXT, pos:1, abc_]
+    Value[VALUE, pos:5
+      format:
+        Text[TEXT, pos:13, "%d"]
+      reference:
+        Reference[REFERENCE, pos:18, java.awt.Color#RED]
+    ]
+  body: empty
+  block tags: empty
+]
+*/
 }
 
 
