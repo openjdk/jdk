@@ -38,13 +38,14 @@ public class FillerObjectLoadTest {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseCompressedClassPointers",
                 "-XX:+UnlockExperimentalVMOptions", "-XX:+UseEpsilonGC", "-Xshare:dump",
-                "-XX:SharedArchiveFile=./hello.jsa");
+                "-XX:SharedArchiveFile=" + TestCommon.getNewArchiveName());
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
 
         pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UseCompressedClassPointers",
-                "-XX:TLABSize=2048", "-Xshare:dump", "-XX:SharedArchiveFile=./hello.jsa");
+                "-XX:TLABSize=2048", "-Xshare:dump",
+                "-XX:SharedArchiveFile=" + TestCommon.getNewArchiveName());
         analyzer = new OutputAnalyzer(pb.start());
         analyzer.shouldHaveExitValue(0);
     }
