@@ -868,19 +868,9 @@ class Http2Connection  {
         // always decode the headers as they may affect connection-level HPACK
         // decoding state
         assert pushContinuationState == null;
-        int promisedStreamid = pp.getPromisedStream();
-        if (promisedStreamid != nextPushStream) {
-            resetStream(promisedStreamid, ResetFrame.PROTOCOL_ERROR);
-            return;
-        } else if (!reserveStream(false)) {
-            resetStream(promisedStreamid, ResetFrame.REFUSED_STREAM);
-            return;
-        } else {
-            nextPushStream += 2;
-        }
-
         HeaderDecoder decoder = new HeaderDecoder();
         decodeHeaders(pp, decoder);
+        int promisedStreamid = pp.getPromisedStream();
         if (pp.endHeaders()) {
             completePushPromise(promisedStreamid, parent, decoder.headers());
         } else {
@@ -903,6 +893,16 @@ class Http2Connection  {
     private <T> void completePushPromise(int promisedStreamid, Stream<T> parent, HttpHeaders headers)
             throws IOException {
         HttpRequestImpl parentReq = parent.request;
+        if (promisedStreamid != nextPushStream) {
+            resetStream(promisedStreamid, ResetFrame.PROTOCOL_ERROR);
+            return;
+        } else if (!reserveStream(false)) {
+            resetStream(promisedStreamid, ResetFrame.REFUSED_STREAM);
+            return;
+        } else {
+            nextPushStream += 2;
+        }
+
         HttpRequestImpl pushReq = HttpRequestImpl.createPushRequest(parentReq, headers);
         Exchange<T> pushExch = new Exchange<>(pushReq, parent.exchange.multi);
         Stream.PushedStream<T> pushStream = createPushStream(parent, pushExch);
@@ -946,7 +946,6 @@ class Http2Connection  {
         } finally {
             decrementStreamsCount(streamid);
             closeStream(streamid);
-            System.err.println("closeStream");
         }
     }
 

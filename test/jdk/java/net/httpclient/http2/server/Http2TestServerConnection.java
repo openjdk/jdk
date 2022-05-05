@@ -946,11 +946,9 @@ public class Http2TestServerConnection {
         nextPushStreamId += 2;
         pp.streamid(op.parentStream);
         writeFrame(pp);
-        if (pp.getFlags() != HeadersFrame.END_HEADERS && op.hasContinuations()) {
-            LinkedList<ContinuationFrame> continuations = new LinkedList<>(op.getContinuations());
-            while (!continuations.isEmpty()) {
-                writeFrame(continuations.pop());
-            }
+        if (pp.getFlags() != HeadersFrame.END_HEADERS) {
+            for (ContinuationFrame cf : op.getContinuations())
+                writeFrame(cf);
         }
         final InputStream ii = op.is;
         final BodyOutputStream oo = new BodyOutputStream(

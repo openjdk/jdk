@@ -248,9 +248,7 @@ public class PushPromiseContinuation {
             HttpHeaders pushPromiseHeaders = pushPromiseHeadersBuilder.build();
             testHeaders = testHeadersBuilder.build();
             // Create the Push Promise Frame
-            OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, pushPromiseHeaders, content);
-            if (!cfs.isEmpty())
-                cfs.forEach(pp::addContinuation);
+            OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, pushPromiseHeaders, content, cfs);
 
             // Indicates to the client that a continuation should be expected
             pp.setFlag(0x0);
