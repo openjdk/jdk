@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,6 +198,10 @@ public class WeakHashMap<K,V>
      * Constructs a new, empty {@code WeakHashMap} with the given initial
      * capacity and the given load factor.
      *
+     * @apiNote
+     * To create a {@code WeakHashMap} with an initial capacity that accommodates
+     * an expected number of mappings, use {@link #newWeakHashMap(int) newWeakHashMap}.
+     *
      * @param  initialCapacity The initial capacity of the {@code WeakHashMap}
      * @param  loadFactor      The load factor of the {@code WeakHashMap}
      * @throws IllegalArgumentException if the initial capacity is negative,
@@ -222,6 +226,10 @@ public class WeakHashMap<K,V>
     /**
      * Constructs a new, empty {@code WeakHashMap} with the given initial
      * capacity and the default load factor (0.75).
+     *
+     * @apiNote
+     * To create a {@code WeakHashMap} with an initial capacity that accommodates
+     * an expected number of mappings, use {@link #newWeakHashMap(int) newWeakHashMap}.
      *
      * @param  initialCapacity The initial capacity of the {@code WeakHashMap}
      * @throws IllegalArgumentException if the initial capacity is negative
@@ -1333,6 +1341,23 @@ public class WeakHashMap<K,V>
         public int characteristics() {
             return Spliterator.DISTINCT;
         }
+    }
+
+    /**
+     * Creates a new, empty WeakHashMap suitable for the expected number of mappings.
+     * The returned map uses the default load factor of 0.75, and its initial capacity is
+     * generally large enough so that the expected number of mappings can be added
+     * without resizing the map.
+     *
+     * @param numMappings the expected number of mappings
+     * @param <K>         the type of keys maintained by this map
+     * @param <V>         the type of mapped values
+     * @return the newly created map
+     * @throws IllegalArgumentException if numMappings is negative
+     * @since 19
+     */
+    public static <K, V> WeakHashMap<K, V> newWeakHashMap(int numMappings) {
+        return new WeakHashMap<>(HashMap.calculateHashMapCapacity(numMappings));
     }
 
 }

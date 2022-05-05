@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -147,13 +147,6 @@ class MacroAssembler: public Assembler {
   // thread in the default location (xthread)
   void reset_last_Java_frame(bool clear_fp);
 
-  void call_native(address entry_point,
-                   Register arg_0);
-  void call_native_base(
-    address entry_point,                // the entry point
-    Label*  retaddr = NULL
-  );
-
   virtual void call_VM_leaf_base(
     address entry_point,                // the entry point
     int     number_of_arguments,        // the number of arguments to pop after the call
@@ -225,7 +218,7 @@ class MacroAssembler: public Assembler {
   void store_heap_oop_null(Address dst);
 
   // This dummy is to prevent a call to store_heap_oop from
-  // converting a zero (linke NULL) into a Register by giving
+  // converting a zero (linked NULL) into a Register by giving
   // the compiler two choices it can't resolve
 
   void store_heap_oop(Address dst, void* dummy);
@@ -262,9 +255,9 @@ class MacroAssembler: public Assembler {
                              RegisterOrConstant vtable_index,
                              Register method_result);
 
-  // Form an addres from base + offset in Rd. Rd my or may not
+  // Form an address from base + offset in Rd. Rd my or may not
   // actually be used: you must use the Address that is returned. It
-  // is up to you to ensure that the shift provided mathces the size
+  // is up to you to ensure that the shift provided matches the size
   // of your data.
   Address form_address(Register Rd, Register base, long byte_offset);
 
@@ -302,9 +295,9 @@ class MacroAssembler: public Assembler {
                                      Label* L_slow_path,
                                      Register super_check_offset = noreg);
 
-  // The reset of the type cehck; must be wired to a corresponding fast path.
+  // The reset of the type check; must be wired to a corresponding fast path.
   // It does not repeat the fast path logic, so don't use it standalone.
-  // The tmp1_reg and tmp2_reg can be noreg, if no temps are avaliable.
+  // The tmp1_reg and tmp2_reg can be noreg, if no temps are available.
   // Updates the sub's secondary super cache as necessary.
   void check_klass_subtype_slow_path(Register sub_klass,
                                      Register super_klass,
@@ -321,12 +314,26 @@ class MacroAssembler: public Assembler {
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
   // only if +VerifyOops
-  void verify_oop(Register reg, const char* s = "broken oop");
-  void verify_oop_addr(Address addr, const char* s = "broken oop addr");
+  void _verify_oop(Register reg, const char* s, const char* file, int line);
+  void _verify_oop_addr(Address addr, const char* s, const char* file, int line);
+
+  void _verify_oop_checked(Register reg, const char* s, const char* file, int line) {
+    if (VerifyOops) {
+      _verify_oop(reg, s, file, line);
+    }
+  }
+  void _verify_oop_addr_checked(Address reg, const char* s, const char* file, int line) {
+    if (VerifyOops) {
+      _verify_oop_addr(reg, s, file, line);
+    }
+  }
 
   void _verify_method_ptr(Register reg, const char* msg, const char* file, int line) {}
   void _verify_klass_ptr(Register reg, const char* msg, const char* file, int line) {}
 
+#define verify_oop(reg) _verify_oop_checked(reg, "broken oop " #reg, __FILE__, __LINE__)
+#define verify_oop_msg(reg, msg) _verify_oop_checked(reg, "broken oop " #reg ", " #msg, __FILE__, __LINE__)
+#define verify_oop_addr(addr) _verify_oop_addr_checked(addr, "broken oop addr " #addr, __FILE__, __LINE__)
 #define verify_method_ptr(reg) _verify_method_ptr(reg, "broken method " #reg, __FILE__, __LINE__)
 #define verify_klass_ptr(reg) _verify_method_ptr(reg, "broken klass " #reg, __FILE__, __LINE__)
 
@@ -505,8 +512,6 @@ class MacroAssembler: public Assembler {
     pop_call_clobbered_registers_except(RegSet());
   }
 
-  void pusha();
-  void popa();
   void push_CPU_state(bool save_vectors = false, int vector_size_in_bytes = 0);
   void pop_CPU_state(bool restore_vectors = false, int vector_size_in_bytes = 0);
 

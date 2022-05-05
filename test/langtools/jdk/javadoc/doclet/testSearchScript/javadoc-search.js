@@ -144,7 +144,7 @@ var renderMenu = function(items) {
     var currentCategory = "";
     $.each(items, function(index, item) {
         var li;
-        if (item.l !== noResult && item.category !== currentCategory) {
+        if (item.l !== messages.noResult && item.category !== currentCategory) {
             currentCategory = item.category;
         }
         result.add(renderItem(item));

@@ -966,7 +966,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
   LoopNode* inner_head = create_inner_head(loop, head, exit_test);
 
-  // Summary of steps from inital loop to loop nest:
+  // Summary of steps from initial loop to loop nest:
   //
   // == old IR nodes =>
   //
@@ -1284,7 +1284,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
       // i*(long)K + L <u64 unsigned_min((long)max_jint + L + 1, R) is false
       // So this transformation could cause spurious deoptimizations and failed range check elimination
       // (but not incorrect execution) for unlikely corner cases with overflow.
-      // If this causes problems in practice, we could maybe direct excution to a post-loop, instead of deoptimizing.
+      // If this causes problems in practice, we could maybe direct execution to a post-loop, instead of deoptimizing.
       Node* max_jint_plus_one_long = _igvn.longcon((jlong)max_jint + 1);
       set_ctrl(max_jint_plus_one_long, C->root());
       Node* max_range = new AddLNode(max_jint_plus_one_long, L);
@@ -1711,7 +1711,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   }
 
   if (phi_incr != NULL && bt != BoolTest::ne) {
-    // check if there is a possiblity of IV overflowing after the first increment
+    // check if there is a possibility of IV overflowing after the first increment
     if (stride_con > 0) {
       if (init_t->hi_as_long() > max_signed_integer(iv_bt) - stride_con) {
         return false;
@@ -2233,6 +2233,7 @@ void CountedLoopNode::dump_spec(outputStream *st) const {
   if (is_pre_loop ()) st->print("pre of N%d" , _main_idx);
   if (is_main_loop()) st->print("main of N%d", _idx);
   if (is_post_loop()) st->print("post of N%d", _main_idx);
+  if (is_reduction_loop()) st->print(" reduction");
   if (is_strip_mined()) st->print(" strip mined");
 }
 #endif
@@ -3885,6 +3886,17 @@ uint IdealLoopTree::est_loop_flow_merge_sz() const {
   return 0;
 }
 
+#ifdef ASSERT
+bool IdealLoopTree::has_reduction_nodes() const {
+  for (uint i = 0; i < _body.size(); i++) {
+    if (_body[i]->is_reduction()) {
+      return true;
+    }
+  }
+  return false;
+}
+#endif // ASSERT
+
 #ifndef PRODUCT
 //------------------------------dump_head--------------------------------------
 // Dump 1 liner for loop header info
@@ -3934,6 +3946,7 @@ void IdealLoopTree::dump_head() const {
     if (cl->is_pre_loop ()) tty->print(" pre" );
     if (cl->is_main_loop()) tty->print(" main");
     if (cl->is_post_loop()) tty->print(" post");
+    if (cl->is_reduction_loop()) tty->print(" reduction");
     if (cl->is_vectorized_loop()) tty->print(" vector");
     if (cl->range_checks_present()) tty->print(" rc ");
     if (cl->is_multiversioned()) tty->print(" multi ");
@@ -4844,7 +4857,7 @@ void PhaseIdealLoop::recompute_dom_depth() {
   uint i;
   // Initialize depth to "no depth yet" and realize all lazy updates
   for (i = 0; i < _idom_size; i++) {
-    // Only indices with a _dom_depth has a Node* or NULL (otherwise uninitalized).
+    // Only indices with a _dom_depth has a Node* or NULL (otherwise uninitialized).
     if (_dom_depth[i] > 0 && _idom[i] != NULL) {
       _dom_depth[i] = no_depth_marker;
 
@@ -5084,7 +5097,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           }
           assert(cfg != NULL, "must find the control user of m");
           uint k = 0;             // Probably cfg->in(0)
-          while( cfg->in(k) != m ) k++; // But check incase cfg is a Region
+          while( cfg->in(k) != m ) k++; // But check in case cfg is a Region
           cfg->set_req( k, if_t ); // Now point to NeverBranch
           _igvn._worklist.push(cfg);
 

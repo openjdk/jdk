@@ -91,6 +91,8 @@
   template(ETYPE_name,                                "ETYPE")                                              \
   template(VLENGTH_name,                              "VLENGTH")                                            \
                                                                                                   \
+  template(jdk_internal_vm_FillerObject,              "jdk/internal/vm/FillerObject")             \
+                                                                                                  \
   template(java_lang_Shutdown,                        "java/lang/Shutdown")                       \
   template(java_lang_ref_Reference,                   "java/lang/ref/Reference")                  \
   template(java_lang_ref_SoftReference,               "java/lang/ref/SoftReference")              \
@@ -336,6 +338,8 @@
   template(findMethodHandleType_signature,       "(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/lang/invoke/MethodType;") \
   template(invokeExact_name,                          "invokeExact")                              \
   template(linkMethodHandleConstant_name,             "linkMethodHandleConstant")                 \
+  template(asFixedArity_name,                         "asFixedArity")                             \
+  template(asFixedArity_signature,                    "()Ljava/lang/invoke/MethodHandle;")        \
   template(linkMethodHandleConstant_signature, "(Ljava/lang/Class;ILjava/lang/Class;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/invoke/MethodHandle;") \
   template(linkMethod_name,                           "linkMethod")                               \
   template(linkMethod_signature, "(Ljava/lang/Class;ILjava/lang/Class;Ljava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/invoke/MemberName;") \
