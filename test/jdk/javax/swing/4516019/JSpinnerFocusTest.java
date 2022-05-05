@@ -94,7 +94,7 @@ public class JSpinnerFocusTest {
             Rectangle bounds = new Rectangle(jSpinner.getLocationOnScreen(),
                 jSpinner.getSize());
 
-            // Move cursor to place it in the spinner editor 
+            // Move cursor to place it in the spinner editor
             robot.mouseMove(bounds.x + bounds.width/2 ,
                 bounds.y + bounds.height /2);
             robot.delay(300);
