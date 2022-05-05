@@ -35,6 +35,8 @@ package java.util;
  * mapping in the underlying map, or whether changes to the underlying map
  * are visible in a returned Map.Entry instance.
  *
+ * @param <K> the type of keys maintained by this map
+ * @param <V> the type of mapped values
  * @since XXX
  */
 public interface SequencedMap<K, V> extends Map<K, V> {
