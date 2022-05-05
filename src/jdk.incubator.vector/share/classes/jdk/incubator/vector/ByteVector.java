@@ -3328,7 +3328,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             intoArray(a, offset);
         } else {
             ByteSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            if (offset < 0 || offset > (a.length - vsp.length())) {
+                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            }
             intoArray0(a, offset, m);
         }
     }
@@ -3483,7 +3485,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             intoBooleanArray(a, offset);
         } else {
             ByteSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            if (offset < 0 || offset > (a.length - vsp.length())) {
+                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            }
             intoBooleanArray0(a, offset, m);
         }
     }
@@ -3604,7 +3608,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             intoByteArray(a, offset, bo);
         } else {
             ByteSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            if (offset < 0 || offset > (a.length - vsp.vectorByteSize())) {
+                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            }
             maybeSwap(bo).intoByteArray0(a, offset, m);
         }
     }
@@ -3640,7 +3646,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                 throw new ReadOnlyBufferException();
             }
             ByteSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 1, bb.limit());
+            if (offset < 0 || offset > (bb.limit() - vsp.vectorByteSize())) {
+                checkMaskFromIndexSize(offset, vsp, m, 1, bb.limit());
+            }
             maybeSwap(bo).intoByteBuffer0(bb, offset, m);
         }
     }

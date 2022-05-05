@@ -3071,7 +3071,9 @@ public abstract class LongVector extends AbstractVector<Long> {
             intoArray(a, offset);
         } else {
             LongSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            if (offset < 0 || offset > (a.length - vsp.length())) {
+                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            }
             intoArray0(a, offset, m);
         }
     }
@@ -3218,7 +3220,9 @@ public abstract class LongVector extends AbstractVector<Long> {
             intoByteArray(a, offset, bo);
         } else {
             LongSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 8, a.length);
+            if (offset < 0 || offset > (a.length - vsp.vectorByteSize())) {
+                checkMaskFromIndexSize(offset, vsp, m, 8, a.length);
+            }
             maybeSwap(bo).intoByteArray0(a, offset, m);
         }
     }
@@ -3254,7 +3258,9 @@ public abstract class LongVector extends AbstractVector<Long> {
                 throw new ReadOnlyBufferException();
             }
             LongSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 8, bb.limit());
+            if (offset < 0 || offset > (bb.limit() - vsp.vectorByteSize())) {
+                checkMaskFromIndexSize(offset, vsp, m, 8, bb.limit());
+            }
             maybeSwap(bo).intoByteBuffer0(bb, offset, m);
         }
     }
