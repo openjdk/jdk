@@ -48,7 +48,7 @@ public class TestConvI2LCastLongLoop {
 
     static int size = 1024;
     static long base = UNSAFE.allocateMemory(size * 4);
-    
+
     @Test
     @IR(failOn = { IRNode.CAST_LL })
     public static int test1() {
