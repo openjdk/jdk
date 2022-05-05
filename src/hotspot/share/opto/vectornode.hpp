@@ -1674,4 +1674,20 @@ public:
   virtual int Opcode() const;
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
+
+class SignumVFNode : public VectorNode {
+public:
+  SignumVFNode(Node* in1, Node* zero, Node* one, const TypeVect* vt)
+  : VectorNode(in1, zero, one, vt) {}
+
+  virtual int Opcode() const;
+};
+
+class SignumVDNode : public VectorNode {
+public:
+  SignumVDNode(Node* in1, Node* zero, Node* one, const TypeVect* vt)
+  : VectorNode(in1, zero, one, vt) {}
+
+  virtual int Opcode() const;
+};
 #endif // SHARE_OPTO_VECTORNODE_HPP
