@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -31,6 +32,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.border.Border;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -47,107 +49,145 @@ import java.io.IOException;
  * @requires (os.family == "windows")
  * @run main TitledBorderTest
  */
+
 public class TitledBorderTest {
 
-  public static JFrame frame;
-  public static JPanel parentPanel;
-  public static JPanel childPanel;
-  public static BufferedImage buff;
-  public static Color highlight = Color.BLACK;
-  public static Color shadow = Color.WHITE;
-  public static double scaling = 1.5;
+    public static JFrame frame;
+    public static JPanel contentPanel;
+    public static JPanel parentPanel;
+    public static JPanel childPanel;
+    public static BufferedImage buff;
+    public static Color highlight = Color.RED;
+    public static Color shadow = Color.BLUE;
+    public static boolean showFrame = true;
 
-  public static void main(String[] args) throws Exception {
-    try {
-      UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-    } catch (Exception e) {
-      throw new RuntimeException("Could not get Windows laf.");
-    }
-    SwingUtilities.invokeAndWait(() -> createAndShowGUI());
+    public static void main(String[] args) throws Exception {
+        try {
+            UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+        } catch (Exception e) {
+            throw new RuntimeException("Could not get Windows laf.");
+        }
 
-    Robot robot = new Robot();
-
-    buff = new BufferedImage(frame.getWidth()*((int) Math.ceil(scaling)),
-            frame.getHeight()*((int) Math.ceil(scaling)), BufferedImage.TYPE_INT_ARGB);
-    Graphics2D graph = buff.createGraphics();
-    graph.scale(scaling, scaling);
-    frame.paint(graph);
-    graph.dispose();
-
-    robot.waitForIdle();
-    checkBorder(15, 70, 20, 80, highlight);
-    checkBorder(18, 120, 23, 130, highlight);
-    checkBorder(20, 170, 25, 180, highlight);
-    checkBorder(22, 220, 28, 230, highlight);
-
-    frame.dispose();
-  }
-
-  private static void checkBorder(int x1, int y1, int x2, int y2, Color color) throws RuntimeException {
-    for (int j = y1; j < y2; j++) {
-      int thickness = 0;
-      for (int i = x1; i < x2; i++) {
-        if (buff.getRGB(i, j) == color.getRGB()) thickness++;
-      }
-      if(thickness > Math.floor(scaling)) {
-        System.out.println(y1 + " " + y2 + " " + thickness);
-        saveImage(buff, "test.png");
-        frame.dispose();
-        throw new RuntimeException("Border drawn too thick.");
-      } else if(thickness < Math.floor(scaling)) {
-        System.out.println(y1 + " " + y2 + " " + thickness);
-        saveImage(buff, "test.png");
-        frame.dispose();
-        throw new RuntimeException("BorderLayout was clipped or overdrawn.");
-      }
-    }
-  }
-
-  private static void createAndShowGUI() {
-    frame = new JFrame("Swing Test");
-    frame.setSize(new java.awt.Dimension(300, 200));
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-    JPanel content = new JPanel();
-    content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-
-    for (int i = 0; i < 4; i++) {
-      parentPanel = new JPanel(new BorderLayout());
-      parentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5 + i, 5, 5));
-
-      childPanel = new JPanel(new BorderLayout());
-      childPanel.setBorder(BorderFactory.createEtchedBorder(shadow, highlight));
-      childPanel.add(new JCheckBox(), BorderLayout.CENTER);
-
-      parentPanel.add(childPanel, BorderLayout.CENTER);
-      content.add(parentPanel);
+        for (double scaling : new double[] {1.50}) {
+            testScaling(scaling, showFrame);
+        }
     }
 
-    frame.getContentPane().add(content, BorderLayout.CENTER);
+    private static void testScaling(double scaling, boolean show) throws Exception {
+        SwingUtilities.invokeAndWait(() -> createAndShowGUI(scaling, show));
+        Robot robot = new Robot();
 
-    frame.pack();
-    frame.setLocationRelativeTo(null);
-    frame.setVisible(true);
-  }
+        while(showFrame && frame.isVisible()) Thread.sleep(500);
 
-  private static void saveImage(BufferedImage image, String filename) {
-    try {
-      ImageIO.write(image, "png", new File(filename));
-    } catch (IOException e) {
-      // Don't propagate the exception
-      e.printStackTrace();
+        robot.waitForIdle();
+        // testing left edge
+        checkVerticalBorder(15, 70, 20, 80, highlight, scaling);
+        checkVerticalBorder(18, 120, 23, 130, highlight, scaling);
+        checkVerticalBorder(20, 170, 25, 180, highlight, scaling);
+        checkVerticalBorder(22, 220, 28, 230, highlight, scaling);
+
+        // testing right edge
+
+        // testing top edge
+
+        // testing bottom edge
+
     }
-  }
 
-  private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
-    try {
-      UIManager.setLookAndFeel(laf.getClassName());
-      System.out.println(laf.getName());
-    } catch (UnsupportedLookAndFeelException ignored){
-      System.out.println("Unsupported LookAndFeel: " + laf.getClassName());
-    } catch (ClassNotFoundException | InstantiationException |
-            IllegalAccessException e) {
-      throw new RuntimeException(e);
+    private static void checkHorizontalBorder(int x1, int y1, int x2, int y2,
+                                              Color color, double scaling) throws RuntimeException {
+        for (int j = x1; j < x2; j++) {
+            int thickness = 0;
+            for (int i = y1; i < y2; i++) {
+                if (buff.getRGB(i, j) == color.getRGB()) thickness++;
+            }
+            if (thickness > Math.floor(scaling)) {
+                System.out.println(y1 + " " + y2 + " " + thickness);
+                saveImage(buff, "test.png");
+                throw new RuntimeException("Border drawn too thick.");
+            } else if (thickness < Math.floor(scaling)) {
+                System.out.println(y1 + " " + y2 + " " + thickness);
+                saveImage(buff, "test.png");
+                throw new RuntimeException("BorderLayout was clipped or overdrawn.");
+            }
+        }
     }
-  }
+
+    private static void checkVerticalBorder(int x1, int y1, int x2, int y2,
+                                            Color color, double scaling) throws RuntimeException {
+        for (int j = y1; j < y2; j++) {
+            int thickness = 0;
+            for (int i = x1; i < x2; i++) {
+                if (buff.getRGB(i, j) == color.getRGB()) thickness++;
+            }
+            if (thickness > Math.floor(scaling)) {
+                System.out.println(y1 + " " + y2 + " " + thickness);
+                saveImage(buff, "test.png");
+                throw new RuntimeException("Border drawn too thick.");
+            } else if (thickness < Math.floor(scaling)) {
+                System.out.println(y1 + " " + y2 + " " + thickness);
+                saveImage(buff, "test.png");
+                throw new RuntimeException("BorderLayout was clipped or overdrawn.");
+            }
+        }
+    }
+
+    private static void createAndShowGUI(double scaling, boolean showFrame) {
+        // Render content panel
+        contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setSize(new java.awt.Dimension(300, 200));
+
+        for (int i = 0; i < 4; i++) {
+            parentPanel = new JPanel(new BorderLayout());
+            parentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5 + i, 5, 5));
+
+            childPanel = new JPanel(new BorderLayout());
+            childPanel.setBorder(BorderFactory.createEtchedBorder(highlight, shadow));
+            childPanel.add(new JCheckBox(), BorderLayout.CENTER);
+
+            parentPanel.add(childPanel, BorderLayout.CENTER);
+            contentPanel.add(parentPanel);
+        }
+
+        // Create BufferedImage
+        buff = new BufferedImage(contentPanel.getWidth() * ((int) Math.ceil(scaling)),
+                contentPanel.getHeight() * ((int) Math.ceil(scaling)), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graph = buff.createGraphics();
+
+        // Set affine transform
+        graph.scale(scaling, scaling);
+
+        // Painting panel onto BufferedImage
+        contentPanel.paint(graph);
+        graph.dispose();
+
+        if (showFrame) {
+            frame = new JFrame("Swing Test");
+            frame.setSize(300, 200);
+            frame.getContentPane().add(contentPanel, BorderLayout.CENTER);
+            frame.setVisible(true);
+        }
+    }
+
+    private static void saveImage(BufferedImage image, String filename) {
+        try {
+            ImageIO.write(image, "png", new File(filename));
+        } catch (IOException e) {
+            // Don't propagate the exception
+            e.printStackTrace();
+        }
+    }
+
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+            System.out.println(laf.getName());
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported LookAndFeel: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException |
+                IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
