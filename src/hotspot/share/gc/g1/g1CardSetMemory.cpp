@@ -60,11 +60,11 @@ size_t G1CardSetAllocator::mem_size() const {
          _segmented_array.num_available_slots() * _segmented_array.slot_size();
 }
 
-size_t G1CardSetAllocator::wasted_mem_size() const {
-  uint num_wasted_slots = _segmented_array.num_available_slots() -
+size_t G1CardSetAllocator::unused_mem_size() const {
+  uint num_unused_slots = _segmented_array.num_available_slots() -
                           _segmented_array.num_allocated_slots() -
                           (uint)_free_slots_list.pending_count();
-  return num_wasted_slots * _segmented_array.slot_size();
+  return num_unused_slots * _segmented_array.slot_size();
 }
 
 uint G1CardSetAllocator::num_segments() const {
@@ -142,10 +142,10 @@ size_t G1CardSetMemoryManager::mem_size() const {
     (sizeof(G1CardSetAllocator) * num_mem_object_types());
 }
 
-size_t G1CardSetMemoryManager::wasted_mem_size() const {
+size_t G1CardSetMemoryManager::unused_mem_size() const {
   size_t result = 0;
   for (uint i = 0; i < num_mem_object_types(); i++) {
-    result += _allocators[i].wasted_mem_size();
+    result += _allocators[i].unused_mem_size();
   }
   return result;
 }
