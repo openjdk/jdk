@@ -77,7 +77,7 @@ public class JInternalFrameIconTest {
             createImageIconUI(lookAndFeelString);
             robot.waitForIdle();
             robot.delay(1000);
-            getImageIconBufferedImage();
+            getImageIconBufferedImage(lookAndFeelString);
             robot.waitForIdle();
             robot.delay(1000);
             cleanUp();
@@ -87,7 +87,7 @@ public class JInternalFrameIconTest {
             createIconUI(lookAndFeelString);
             robot.waitForIdle();
             robot.delay(1000);
-            getIconBufferedImage();
+            getIconBufferedImage(lookAndFeelString);
             robot.waitForIdle();
             robot.delay(1000);
             cleanUp();
@@ -189,32 +189,46 @@ public class JInternalFrameIconTest {
         });
     }
 
-    private static void getImageIconBufferedImage() throws Exception {
+    private static void getImageIconBufferedImage(String lookAndFeelString) throws Exception {
         Point point = internalFrame.getLocationOnScreen();
         Rectangle rect = internalFrame.getBounds();
-        Rectangle captureRect = new Rectangle(
+	Rectangle captureRect = null;
+	if (lookAndFeelString.contains("Aqua")) {
+            captureRect = new Rectangle(
+                point.x + internalFrame.getInsets().left,
+                point.y + internalFrame.getInsets().top,
+                rect.width - internalFrame.getInsets().left - internalFrame.getInsets().right,
+                internalFrame.getInsets().top);
+        } else {
+            captureRect = new Rectangle(
                 point.x + internalFrame.getInsets().left,
                 point.y + internalFrame.getInsets().top,
                 titleImageIcon.getIconWidth(),
                 titleImageIcon.getIconHeight());
-
+        }
         System.out.println("imageicon captureRect " + captureRect);
-        imageIconImage
-                = robot.createScreenCapture(captureRect);
+        imageIconImage = robot.createScreenCapture(captureRect);
     }
 
-    private static void getIconBufferedImage() throws Exception {
+    private static void getIconBufferedImage(String lookAndFeelString) throws Exception {
         Point point = internalFrame.getLocationOnScreen();
         Rectangle rect = internalFrame.getBounds();
-        Rectangle captureRect = new Rectangle(
+        Rectangle captureRect = null;
+        if (lookAndFeelString.contains("Aqua")) {
+            captureRect = new Rectangle(
+                    point.x + internalFrame.getInsets().left,
+                    point.y + internalFrame.getInsets().top,
+                    rect.width - internalFrame.getInsets().left - internalFrame.getInsets().right,
+                    internalFrame.getInsets().top);
+        } else {
+            captureRect = new Rectangle(
                 point.x + internalFrame.getInsets().left,
                 point.y + internalFrame.getInsets().top,
                 titleIcon.getIconWidth(),
                 titleIcon.getIconHeight());
-
+        }
         System.out.println("icon captureRect " + captureRect);
-        iconImage
-                = robot.createScreenCapture(captureRect);
+        iconImage = robot.createScreenCapture(captureRect);
     }
 
     private static void testIfSame(final String lookAndFeelString)
@@ -254,15 +268,14 @@ public class JInternalFrameIconTest {
                     int red2 = (color2 >> 16) & 0x000000FF;
                     int green2 = (color2 >> 8) & 0x000000FF;
                     int blue2 = (color2) & 0x000000FF;
-                    if ((Math.abs(red1 - red2) > colorTolerance)
-                            || (Math.abs(green1 - green2) > colorTolerance)
-                            || (Math.abs(blue1 - blue2) > colorTolerance)) {
+                    if (red1 != red2 || green1 != green2 || blue1 != blue2) {
                         ++mismatchCounter;
-                        System.out.println("x " + x + " y " + y +
-                           " red1 " + red1 + " red2 " + red2 +
-                           " green1 " + green1 + " green2 " + green2 +
-                           " blue1 " + blue1 + " blue2 " + blue2);
+                        if ((Math.abs(red1 - red2) > colorTolerance)
+                                || (Math.abs(green1 - green2) > colorTolerance)
+                                || (Math.abs(blue1 - blue2) > colorTolerance)) {
+
                             flag = false;
+                        }
                     }
                 }
             }
