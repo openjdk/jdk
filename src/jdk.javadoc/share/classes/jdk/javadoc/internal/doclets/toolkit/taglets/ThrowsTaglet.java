@@ -158,8 +158,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
         for (Entry<List<? extends ThrowsTree>, ExecutableElement> entry : throwsTags.entrySet()) {
-            CommentHelper ch = utils.getCommentHelper(entry.getValue());
             Element e = entry.getValue();
+            CommentHelper ch = utils.getCommentHelper(e);
             for (ThrowsTree dt : entry.getKey()) {
                 Element te = ch.getException(dt);
                 String excName = ch.getExceptionName(dt).toString();
