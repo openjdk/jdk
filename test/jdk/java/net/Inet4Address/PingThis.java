@@ -27,14 +27,13 @@
 
 /* @test
  * @bug 7163874 8133015
- * @requires os.family != "windows" && os.family != "aix"
+ * @requires os.family != "windows" & os.family != "aix"
  * @library /test/lib
  * @summary InetAddress.isReachable is returning false
- *          for InetAdress 0.0.0.0 and ::0
+ *          for InetAddress 0.0.0.0 and ::0
  *          On AIX InetAddress ::0 is not valid, InetAddress 0.0.0.0 is valid,
  *          but does not respond as 127.0.0.1 (i.e., only responds
  *          when an external device reacts to 0.0.0.0)
- */
  * @run main PingThis
  * @run main/othervm -Djava.net.preferIPv4Stack=true PingThis
  */
