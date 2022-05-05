@@ -1398,7 +1398,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   IfNode *iff = create_and_xform_if( control(), tst, prob, cnt );
   assert(iff->_prob > 0.0f,"Optimizer made bad probability in parser");
   // True branch
-  { PreserveJVMState pjvms(this);
+  { PreserveJVMState pjvms(this, true, true/*recover_bci*/);
     Node* iftrue  = _gvn.transform( new IfTrueNode (iff) );
     set_control(iftrue);
 
@@ -1512,7 +1512,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   }
 
   // Branch is taken:
-  { PreserveJVMState pjvms(this);
+  { PreserveJVMState pjvms(this, true, true/*recover_bci*/);
     taken_branch = _gvn.transform(taken_branch);
     set_control(taken_branch);
 
@@ -1584,7 +1584,16 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
   bool is_fallthrough = (path == successor_for_bci(iter().next_bci()));
 
   if (path_is_suitable_for_uncommon_trap(prob)) {
-    repush_if_args();
+    if (AggressiveLivenessForUnstableIf) {
+      if (is_fallthrough) {
+        set_bci(iter().next_bci());
+      } else {
+        set_bci(iter().get_dest());
+      }
+    } else {
+      repush_if_args();
+    }
+
     uncommon_trap(Deoptimization::Reason_unstable_if,
                   Deoptimization::Action_reinterpret,
                   NULL,
