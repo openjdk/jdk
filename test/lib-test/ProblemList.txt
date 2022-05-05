@@ -37,3 +37,4 @@
 # More than one label is allowed but must be on the same line.
 #
 #############################################################################
+jdk/test/lib/TestMutuallyExclusivePlatformPredicates.java 8286191 generic-all
