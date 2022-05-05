@@ -41,12 +41,15 @@ static jint state[] = {
 };
 
 void printStateFlags(jint flags) {
-  if (flags & JVMTI_THREAD_STATE_SUSPENDED)
-   LOG(" JVMTI_THREAD_STATE_SUSPENDED");
-  if (flags & JVMTI_THREAD_STATE_INTERRUPTED)
-   LOG(" JVMTI_THREAD_STATE_INTERRUPTED");
-  if (flags & JVMTI_THREAD_STATE_IN_NATIVE)
-   LOG(" JVMTI_THREAD_STATE_IN_NATIVE");
+  if (flags & JVMTI_THREAD_STATE_SUSPENDED) {
+    LOG(" JVMTI_THREAD_STATE_SUSPENDED");
+  }
+  if (flags & JVMTI_THREAD_STATE_INTERRUPTED) {
+    LOG(" JVMTI_THREAD_STATE_INTERRUPTED");
+  }
+  if (flags & JVMTI_THREAD_STATE_IN_NATIVE) {
+    LOG(" JVMTI_THREAD_STATE_IN_NATIVE");
+  }
   LOG(" (0x%0x)\n", flags);
 }
 

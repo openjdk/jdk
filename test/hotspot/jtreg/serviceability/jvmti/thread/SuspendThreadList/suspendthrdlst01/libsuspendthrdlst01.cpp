@@ -37,9 +37,7 @@ static jlong timeout = 0;
 #define THREAD_NAME     "TestedThread"
 
 /* constants */
-#define DEFAULT_THREADS_COUNT   10
-
-static int threads_count = 0;
+static const int THREADS_COUNT = 10;
 
 /* ============================================================================= */
 
@@ -59,31 +57,31 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
     jthread *threads = NULL;
     jvmtiError *results = NULL;
 
-    LOG("Allocate threads array: %d threads\n", threads_count);
-    check_jvmti_status(jni, jvmti->Allocate((threads_count * sizeof(jthread)),
+    LOG("Allocate threads array: %d threads\n", THREADS_COUNT);
+    check_jvmti_status(jni, jvmti->Allocate((THREADS_COUNT * sizeof(jthread)),
                                             (unsigned char **) &threads), "");
 
     LOG("  ... allocated array: %p\n", (void *) threads);
 
-    LOG("Allocate results array: %d threads\n", threads_count);
-    check_jvmti_status(jni, jvmti->Allocate((threads_count * sizeof(jvmtiError)),
+    LOG("Allocate results array: %d threads\n", THREADS_COUNT);
+    check_jvmti_status(jni, jvmti->Allocate((THREADS_COUNT * sizeof(jvmtiError)),
                                             (unsigned char **) &results), "");
     LOG("  ... allocated array: %p\n", (void *) threads);
 
-    LOG("Find threads: %d threads\n", threads_count);
-    if (find_threads_by_name(jvmti, jni, THREAD_NAME, threads_count, threads) == 0) {
+    LOG("Find threads: %d threads\n", THREADS_COUNT);
+    if (find_threads_by_name(jvmti, jni, THREAD_NAME, THREADS_COUNT, threads) == 0) {
       return;
     }
 
     LOG("Suspend threads list\n");
-    jvmtiError err = jvmti->SuspendThreadList(threads_count, threads, results);
+    jvmtiError err = jvmti->SuspendThreadList(THREADS_COUNT, threads, results);
     if (err != JVMTI_ERROR_NONE) {
       set_agent_fail_status();
       return;
     }
 
     LOG("Check threads results:\n");
-    for (int i = 0; i < threads_count; i++) {
+    for (int i = 0; i < THREADS_COUNT; i++) {
       LOG("  ... thread #%d: %s (%d)\n", i, TranslateError(results[i]), (int) results[i]);
       if (results[i] != JVMTI_ERROR_NONE) {
         set_agent_fail_status();
@@ -95,23 +93,22 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
       return;
 
     LOG("Get state vector for each thread\n");
-    for (int i = 0; i < threads_count; i++) {
+    for (int i = 0; i < THREADS_COUNT; i++) {
       jint state = 0;
 
       LOG("  thread #%d (%p):\n", i, (void *) threads[i]);
       check_jvmti_status(jni, jvmti->GetThreadState(threads[i], &state), "");
-      LOG("  ... got state vector: %s (%d)\n",
-                   TranslateState(state), (int) state);
+      LOG("  ... got state vector: %s (%d)\n", TranslateState(state), (int) state);
 
       if ((state & JVMTI_THREAD_STATE_SUSPENDED) == 0) {
         LOG("SuspendThreadList() does not turn on flag SUSPENDED for thread #%i:\n"
-                      "#   state: %s (%d)", i, TranslateState(state), (int) state);
+            "#   state: %s (%d)", i, TranslateState(state), (int) state);
         set_agent_fail_status();
       }
     }
 
     LOG("Resume threads list\n");
-    err = jvmti->ResumeThreadList(threads_count, threads, results);
+    err = jvmti->ResumeThreadList(THREADS_COUNT, threads, results);
     if (err != JVMTI_ERROR_NONE) {
       set_agent_fail_status();
       return;
@@ -122,7 +119,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
       return;
 
     LOG("Delete threads references\n");
-    for (int i = 0; i < threads_count; i++) {
+    for (int i = 0; i < THREADS_COUNT; i++) {
       if (threads[i] != NULL)
         jni->DeleteGlobalRef(threads[i]);
     }
@@ -162,8 +159,7 @@ static int find_threads_by_name(jvmtiEnv *jvmti, JNIEnv *jni, const char *name, 
     check_jvmti_status(jni, jvmti->GetThreadInfo(threads[i], &info), "");
 
     if (info.name != NULL && strncmp(name, info.name, len) == 0) {
-      LOG("  ... found thread #%d: %p (%s)\n",
-                   found, threads[i], info.name);
+      LOG("  ... found thread #%d: %p (%s)\n", found, threads[i], info.name);
       if (found < found_count)
         found_threads[found] = threads[i];
       found++;
@@ -175,10 +171,10 @@ static int find_threads_by_name(jvmtiEnv *jvmti, JNIEnv *jni, const char *name, 
 
   if (found != found_count) {
     LOG("Unexpected number of tested threads found:\n"
-                  "#   name:     %s"
-                  "#   found:    %d"
-                  "#   expected: %d",
-           name, found, found_count);
+        "#   name:     %s"
+        "#   found:    %d"
+        "#   expected: %d",
+        name, found, found_count);
     set_agent_fail_status();
     return NSK_FALSE;
   }
@@ -214,8 +210,6 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   if (jvmti->AddCapabilities(&suspendCaps) != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
-
-  threads_count = 10;
 
   if (init_agent_data(jvmti, &agent_data) != JVMTI_ERROR_NONE) {
     return JNI_ERR;

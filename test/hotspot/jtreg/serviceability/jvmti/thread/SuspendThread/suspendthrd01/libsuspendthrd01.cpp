@@ -70,7 +70,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
 
       if ((state & JVMTI_THREAD_STATE_SUSPENDED) == 0) {
         LOG("SuspendThread() does not turn on flag SUSPENDED:\n"
-               "#   state: %s (%d)\n", TranslateState(state), (int) state);
+            "#   state: %s (%d)\n", TranslateState(state), (int) state);
         set_agent_fail_status();
       }
     }

@@ -1441,8 +1441,9 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
         }
         assert(sig_index == sizeargs, "");
       }
-      int out_preserve = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
-      assert(out_preserve ==  m->num_stack_arg_slots(), "");
+      int stack_arg_slots = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
+      assert(stack_arg_slots ==  m->num_stack_arg_slots(), "");
+      int out_preserve = SharedRuntime::out_preserve_stack_slots();
       int sig_index = 0;
       int arg_index = (m->is_static() ? 0 : -1);
       for (SignatureStream ss(m->signature()); !ss.at_return_type(); ) {
@@ -1453,7 +1454,7 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
         VMReg fst = regs[sig_index].first();
         if (fst->is_stack()) {
           assert(((int)fst->reg2stack()) >= 0, "reg2stack: " INTPTR_FORMAT, fst->reg2stack());
-          int offset = fst->reg2stack() * VMRegImpl::stack_slot_size + stack_slot_offset;
+          int offset = (fst->reg2stack() + out_preserve) * VMRegImpl::stack_slot_size + stack_slot_offset;
           intptr_t* stack_address = (intptr_t*)((address)unextended_sp() + offset);
           if (at_this) {
             values.describe(frame_no, stack_address, err_msg("this for #%d", frame_no), 1);

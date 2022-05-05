@@ -253,7 +253,6 @@ public class suspendthrd03 extends DebugeeClass {
             // SP7.1 - wait for agent end
             status = checkStatus(status);
 
-            //
             // Original suspendthrd001 test block ends here.
 
             if (status != DebugeeClass.TEST_PASSED) {

@@ -83,8 +83,7 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
 
       if ((state & JVMTI_THREAD_STATE_SUSPENDED) == 0) {
         LOG("SuspendThread() does not turn on flag SUSPENDED:\n"
-               "#   state: %s (%d)\n",
-               TranslateState(state), (int) state);
+            "#   state: %s (%d)\n", TranslateState(state), (int) state);
         set_agent_fail_status();
       }
     }
@@ -123,8 +122,8 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
 
     LOG("INFO: made %d late calls to JVM/TI SuspendThread()\n", late_count);
     LOG("INFO: N_LATE_CALLS == %d value is %slarge enough to cause a "
-           "SuspendThread() call after thread exit.\n", N_LATE_CALLS,
-           (late_count == N_LATE_CALLS) ? "NOT " : "");
+        "SuspendThread() call after thread exit.\n", N_LATE_CALLS,
+        (late_count == N_LATE_CALLS) ? "NOT " : "");
 
     /* Second part of original agentProc test block starts here: */
     LOG("Wait for thread to finish\n");

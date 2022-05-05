@@ -65,28 +65,25 @@ public class suspendthrdlst01 extends DebugeeClass {
     int status = DebugeeClass.TEST_PASSED;
 
     // constants
-    public static final int DEFAULT_THREADS_COUNT = 10;
+    public static final int THREADS_COUNT = 10;
 
     // tested thread
     suspendthrdlst01Thread threads[] = null;
-    int threads_count = 0;
 
     // run debuggee
     public int runIt(String argv[], PrintStream out) {
         timeout = 60 * 1000; // milliseconds
 
-        threads_count = 10;
-
         // create tested threads
-        threads = new suspendthrdlst01Thread[threads_count];
-        for (int i = 0; i < threads_count; i++) {
+        threads = new suspendthrdlst01Thread[THREADS_COUNT];
+        for (int i = 0; i < THREADS_COUNT; i++) {
             threads[i] = new suspendthrdlst01Thread("TestedThread #" + i);
         }
 
         // run tested threads
         System.out.println("Staring tested threads");
         try {
-            for (int i = 0; i < threads_count; i++) {
+            for (int i = 0; i < THREADS_COUNT; i++) {
                 threads[i].start();
                 if (!threads[i].checkReady()) {
                     throw new RuntimeException("Unable to prepare tested thread: " + threads[i]);
@@ -98,7 +95,7 @@ public class suspendthrdlst01 extends DebugeeClass {
             status = checkStatus(status);
         } finally {
             // let threads to finish
-            for (int i = 0; i < threads_count; i++) {
+            for (int i = 0; i < THREADS_COUNT; i++) {
                 threads[i].letFinish();
             }
         }
@@ -106,7 +103,7 @@ public class suspendthrdlst01 extends DebugeeClass {
         // wait for thread to finish
         System.out.println("Finishing tested threads");
         try {
-            for (int i = 0; i < threads_count; i++) {
+            for (int i = 0; i < THREADS_COUNT; i++) {
                 threads[i].join();
             }
         } catch (InterruptedException e) {
