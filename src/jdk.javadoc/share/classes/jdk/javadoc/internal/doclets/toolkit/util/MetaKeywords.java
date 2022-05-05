@@ -78,7 +78,7 @@ public class MetaKeywords {
             results.addAll(getMemberKeywords(utils.getFields(typeElement)));
             results.addAll(getMemberKeywords(utils.getMethods(typeElement)));
         }
-        ((ArrayList)results).trimToSize();
+        results.trimToSize();
         return results;
     }
 
@@ -122,7 +122,7 @@ public class MetaKeywords {
      * Get the overview keywords.
      */
     public List<String> getOverviewMetaKeywords(String title, String docTitle) {
-         List<String> result = new ArrayList<>(1);
+        List<String> result = new ArrayList<>(1);
         if (options.keywords()) {
             String windowOverview = resources.getText(title);
             if (docTitle.length() > 0) {
@@ -153,7 +153,7 @@ public class MetaKeywords {
                 results.add(membername);
             }
         }
-        ((ArrayList)results).trimToSize();
+        results.trimToSize();
         return results;
     }
 }
