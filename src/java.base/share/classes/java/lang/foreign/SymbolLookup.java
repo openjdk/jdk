@@ -28,7 +28,6 @@ package java.lang.foreign;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.SystemLookup;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.NativeLibrary;
 import jdk.internal.loader.RawNativeLibraries;
@@ -142,6 +141,10 @@ public interface SymbolLookup {
      * returned by this method is backed by a {@linkplain MemorySession#asNonCloseable() non-closeable}, shared memory
      * session which keeps the caller's class loader reachable. Therefore, libraries associated with the caller's class
      * loader are kept loaded (and their symbols available) as long as a loader lookup for that class loader is reachable.
+     * <p>
+     * In cases where this method is called from a context where there is no caller frame on the stack
+     * (e.g. when called directly from a JNI attached thread), the caller's class loader defaults to the
+     * {@linkplain ClassLoader#getSystemClassLoader system class loader}.
      *
      * @return a symbol lookup for symbols in the libraries associated with the caller's class loader.
      * @see System#load(String)
@@ -150,14 +153,20 @@ public interface SymbolLookup {
     @CallerSensitive
     static SymbolLookup loaderLookup() {
         Class<?> caller = Reflection.getCallerClass();
-        ClassLoader loader = Objects.requireNonNull(caller.getClassLoader());
-        MemorySessionImpl loaderSession = MemorySessionImpl.heapSession(loader);
+        // If there's no caller class, fallback to system loader
+        ClassLoader loader = caller != null ?
+                caller.getClassLoader() :
+                ClassLoader.getSystemClassLoader();
+        MemorySession loaderSession = (loader == null) ?
+                MemorySession.global() : // boot loader never goes away
+                MemorySessionImpl.heapSession(loader);
         return name -> {
             Objects.requireNonNull(name);
             JavaLangAccess javaLangAccess = SharedSecrets.getJavaLangAccess();
+            // note: ClassLoader::findNative supports a null loader
             MemoryAddress addr = MemoryAddress.ofLong(javaLangAccess.findNative(loader, name));
-            return addr == MemoryAddress.NULL
-                    ? Optional.empty() :
+            return addr == MemoryAddress.NULL ?
+                    Optional.empty() :
                     Optional.of(MemorySegment.ofAddress(addr, 0L, loaderSession));
         };
     }

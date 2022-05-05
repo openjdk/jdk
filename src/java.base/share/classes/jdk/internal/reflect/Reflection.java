@@ -111,7 +111,13 @@ public class Reflection {
 
     @ForceInline
     public static void ensureNativeAccess(Class<?> currentClass, Class<?> owner, String methodName) {
-        Module module = currentClass.getModule();
+        class Holder {
+            private final static Module FALLBACK_MODULE =
+                    SharedSecrets.getJavaLangAccess().defineUnnamedModule(null); // lazy init
+        }
+        // if there is no caller class, act as if the call came from an unnamed module
+        Module module = currentClass != null ?
+                currentClass.getModule() : Holder.FALLBACK_MODULE;
         boolean isNativeAccessEnabled = SharedSecrets.getJavaLangAccess().isEnableNativeAccess(module);
         if (!isNativeAccessEnabled) {
             synchronized(module) {
