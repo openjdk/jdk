@@ -1229,10 +1229,10 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   // If current arch does not support the predicated operations, we have to bail
   // out when current case uses the predicate feature.
   if (!supports_predicate) {
-    bool use_predicate = false;
+    bool needs_predicate = false;
     if (is_store) {
       // Masked vector store always uses the predicated store.
-      use_predicate = true;
+      needs_predicate = true;
     } else {
       // Masked vector load with IOOBE always uses the predicated load.
       const TypeInt* offset_in_range = gvn().type(argument(8))->isa_int();
@@ -1245,10 +1245,10 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
         set_sp(old_sp);
         return false;
       }
-      use_predicate = (offset_in_range->get_con() == 0);
+      needs_predicate = (offset_in_range->get_con() == 0);
     }
 
-    if (use_predicate) {
+    if (needs_predicate) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: op=%s vlen=%d etype=%s using_byte_array=%d",
                       is_store ? "storeMasked" : "loadMasked",
