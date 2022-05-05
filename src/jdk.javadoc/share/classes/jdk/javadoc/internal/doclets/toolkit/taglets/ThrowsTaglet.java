@@ -53,7 +53,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- * A taglet that represents the {@code @throws} tag.
+ * A taglet that processes {@link ThrowsTree}, which represents tags like
+ * {@code @throws} and {@code @exception}.
  */
 public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
@@ -215,7 +216,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                     List<? extends ThrowsTree> inheritedTags = inheritedDoc.tagList.stream()
                             .map(t -> (ThrowsTree) t)
                             .toList();
-                    declaredExceptionTags.put(inheritedTags, (ExecutableElement) inheritedDoc.holder);
+                    ExecutableElement r = declaredExceptionTags.put(inheritedTags, (ExecutableElement) inheritedDoc.holder);
                 }
             }
             result.add(throwsTagsOutput(declaredExceptionTags, writer, alreadyDocumented,
@@ -227,6 +228,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     private Content linkToUndocumentedDeclaredExceptions(List<? extends TypeMirror> declaredExceptionTypes,
                                                          Set<String> alreadyDocumented,
                                                          TagletWriter writer) {
+        // TODO: assert declaredExceptionTypes are instantiated
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
         for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
