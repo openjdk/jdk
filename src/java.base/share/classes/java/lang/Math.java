@@ -1364,9 +1364,20 @@ public final class Math {
      * The method returns iff the argument and the result
      * are mathematically equal.
      *
+     * <p>Special cases:
+     * <ul>
+     * <li>If the argument is {@link Double#NEGATIVE_INFINITY},
+     * {@link Double#POSITIVE_INFINITY} or {@link Double#NaN},
+     * the method throws.
+     * <li>If the argument is {@code -0.0} or {@code 0.0},
+     * the method returns {@code 0}.
+     * </ul>
+     *
      * @param value the {@code double} value
      * @return the argument as a {@code int}
      * @throws ArithmeticException if the conversion is inexact
+     * @see Math#rint(double)
+     * @see Math#round(double)
      * @since 19
      */
     @ForceInline
@@ -1397,26 +1408,6 @@ public final class Math {
     }
 
     /**
-     * Returns the value of the {@code double} argument,
-     * throwing an exception if the conversion is inexact.
-     * The method returns iff the argument and the result
-     * are mathematically equal.
-     *
-     * @param value the {@code double} value
-     * @return the argument as a {@code short}
-     * @throws ArithmeticException if the conversion is inexact
-     * @since 19
-     */
-    @ForceInline
-    public static short toShortExact(double value) {
-        short result = (short) value;
-        if ((double) result != value) {
-            throw newArithmeticExceptionInexact(value);
-        }
-        return result;
-    }
-
-    /**
      * Returns the value of the {@code long} argument,
      * throwing an exception if the value overflows a {@code byte}.
      *
@@ -1435,30 +1426,15 @@ public final class Math {
     }
 
     /**
-     * Returns the value of the {@code double} argument,
-     * throwing an exception if the conversion is inexact.
-     * The method returns iff the argument and the result
-     * are mathematically equal.
-     *
-     * @param value the {@code double} value
-     * @return the argument as a {@code byte}
-     * @throws ArithmeticException if the conversion is inexact
-     * @since 19
-     */
-    @ForceInline
-    public static byte toByteExact(double value) {
-        byte result = (byte) value;
-        if ((double) result != value) {
-            throw newArithmeticExceptionInexact(value);
-        }
-        return result;
-    }
-
-    /**
      * Returns the value of the {@code long} argument,
      * throwing an exception if the conversion is inexact.
      * The method returns iff the argument and the result
      * are mathematically equal.
+     *
+     * <p>Special case:
+     * <ul>
+     * <li>If the argument is {@code 0L}, the method returns {@code 0.0f}.
+     * </ul>
      *
      * @param value the {@code long} value
      * @return the argument as a {@code float}
@@ -1485,6 +1461,16 @@ public final class Math {
      * throwing an exception if the conversion is inexact.
      * The method returns iff the argument and the result
      * are mathematically equal.
+     *
+     * <p>Special cases:
+     * <ul>
+     * <li>If the argument is {@link Double#NEGATIVE_INFINITY},
+     * {@link Double#POSITIVE_INFINITY}, {@link Double#NaN},
+     * {@code -0.0} or {@code 0.0},
+     * the method returns {@link Float#NEGATIVE_INFINITY},
+     * {@link Float#POSITIVE_INFINITY}, {@link Float#NaN},
+     * {@code -0.0f} or {@code 0.0f}, respectively.
+     * </ul>
      *
      * @param value the {@code double} value
      * @return the argument as a {@code float}
@@ -1513,6 +1499,11 @@ public final class Math {
      * The method returns iff the argument and the result
      * are mathematically equal.
      *
+     * <p>Special case:
+     * <ul>
+     * <li>If the argument is {@code 0L}, the method returns {@code 0.0}.
+     * </ul>
+     *
      * @param value the {@code long} value
      * @return the argument as a {@code double}
      * @throws ArithmeticException if the conversion is inexact
@@ -1539,9 +1530,20 @@ public final class Math {
      * The method returns iff the argument and the result
      * are mathematically equal.
      *
+     * <p>Special cases:
+     * <ul>
+     * <li>If the argument is {@link Double#NEGATIVE_INFINITY},
+     * {@link Double#POSITIVE_INFINITY} or {@link Double#NaN},
+     * the method throws.
+     * <li>If the argument is {@code -0.0} or {@code 0.0},
+     * the method returns {@code 0L}.
+     * </ul>
+     *
      * @param value the {@code double} value
      * @return the argument as a {@code long}
      * @throws ArithmeticException if the conversion is inexact
+     * @see Math#rint(double)
+     * @see Math#round(double)
      * @since 19
      */
     @ForceInline
@@ -1561,8 +1563,8 @@ public final class Math {
 
     /**
      * Returns the value of the {@code long} argument,
-     * throwing an exception if the value overflows an unsigned int,
-     * whose range is [0, 2<sup>{@link Integer#SIZE}</sup>).
+     * throwing an exception if the value overflows the range
+     * [0, 2<sup>{@link Integer#SIZE}</sup>) an unsigned int.
      *
      * @param value the {@code long} value
      * @return the argument as an unsigned int
@@ -1579,30 +1581,9 @@ public final class Math {
     }
 
     /**
-     * Returns the value of the {@code double} argument,
-     * throwing an exception if the conversion is inexact or overflows.
-     * The method returns iff the argument and the result
-     * are mathematically equal and the result is
-     * in the range [0, 2<sup>{@link Integer#SIZE}</sup>).
-     *
-     * @param value the {@code double} value
-     * @return the argument as a {@code int}
-     * @throws ArithmeticException if the conversion is inexact
-     * @since 19
-     */
-    @ForceInline
-    public static long toUnsignedIntExact(double value) {
-        long result = (long) value & 0xFFFF_FFFFL;
-        if ((double) result != value) {
-            throw newArithmeticExceptionInexact(value);
-        }
-        return result;
-    }
-
-    /**
      * Returns the value of the {@code long} argument,
-     * throwing an exception if the value overflows an unsigned short,
-     * whose range is [0, 2<sup>{@link Short#SIZE}</sup>).
+     * throwing an exception if the value overflows the range
+     * [0, 2<sup>{@link Short#SIZE}</sup>) an unsigned int.
      *
      * @param value the {@code long} value
      * @return the argument as an unsigned short
@@ -1619,30 +1600,9 @@ public final class Math {
     }
 
     /**
-     * Returns the value of the {@code double} argument,
-     * throwing an exception if the conversion is inexact or overflows.
-     * The method returns iff the argument and the result
-     * are mathematically equal and the result is
-     * in the range [0, 2<sup>{@link Short#SIZE}</sup>).
-     *
-     * @param value the {@code double} value
-     * @return the argument as a {@code short}
-     * @throws ArithmeticException if the conversion is inexact
-     * @since 19
-     */
-    @ForceInline
-    public static int toUnsignedShortExact(double value) {
-        int result = (int) value & 0xFFFF;
-        if ((double) result != value) {
-            throw newArithmeticExceptionInexact(value);
-        }
-        return result;
-    }
-
-    /**
      * Returns the value of the {@code long} argument,
-     * throwing an exception if the value overflows an unsigned byte,
-     * whose range is [0, 2<sup>{@link Byte#SIZE}</sup>).
+     * throwing an exception if the value overflows the range
+     * [0, 2<sup>{@link Byte#SIZE}</sup>) an unsigned int.
      *
      * @param value the {@code long} value
      * @return the argument as an unsigned byte
@@ -1654,27 +1614,6 @@ public final class Math {
         int result = (int) value & 0xFF;
         if ((long) result != value) {
             throw newArithmeticExceptionOverflow(value);
-        }
-        return result;
-    }
-
-    /**
-     * Returns the value of the {@code double} argument,
-     * throwing an exception if the conversion is inexact or overflows.
-     * The method returns iff the argument and the result
-     * are mathematically equal and the result is
-     * in the range [0, 2<sup>{@link Byte#SIZE}</sup>).
-     *
-     * @param value the {@code double} value
-     * @return the argument as a {@code byte}
-     * @throws ArithmeticException if the conversion is inexact
-     * @since 19
-     */
-    @ForceInline
-    public static int toUnsignedByteExact(double value) {
-        int result = (int) value & 0xFF;
-        if ((double) result != value) {
-            throw newArithmeticExceptionInexact(value);
         }
         return result;
     }

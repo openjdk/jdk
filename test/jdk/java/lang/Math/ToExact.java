@@ -52,9 +52,7 @@ public class ToExact {
         failures = 0;
         errors = 0;
         testToByteExact_long();
-        testToByteExact_double();
         testToShortExact_long();
-        testToShortExact_double();
         testToIntExact_long();
         testToIntExact_double();
 
@@ -65,11 +63,8 @@ public class ToExact {
         testToFloatExact_double();
 
         testToUnsignedIntExact_long();
-        testToUnsignedIntExact_double();
         testToUnsignedShortExact_long();
-        testToUnsignedShortExact_double();
         testToUnsignedByteExact_long();
-        testToUnsignedByteExact_double();
         if (failures > 0 || errors > 0) {
             throw new RuntimeException(
                     String.format("%d failures and %d errors%n", failures, errors));
@@ -86,16 +81,6 @@ public class ToExact {
         testToByteExact(Byte.MAX_VALUE + 1L, null);
     }
 
-    private static void testToByteExact_double() {
-        testCommonToExact_double("toByteExact", (Number v) -> toByteExact(v.doubleValue()));
-        testToByteExact(-0x1p7 - 1, null);
-        testToByteExact(-0x1p7, (long) Byte.MIN_VALUE);
-        testToByteExact(-0x1p7 + 1, Byte.MIN_VALUE + 1L);
-        testToByteExact(0x1p7 - 2, Byte.MAX_VALUE - 1L);
-        testToByteExact(0x1p7 - 1, (long) Byte.MAX_VALUE);
-        testToByteExact(0x1p7, null);
-    }
-
     private static void testToShortExact_long() {
         testCommonToExact_long("toShortExact", (Number v) -> toShortExact(v.longValue()));
         testToShortExact(Short.MIN_VALUE - 1, null);
@@ -104,16 +89,6 @@ public class ToExact {
         testToShortExact(Short.MAX_VALUE - 1, Short.MAX_VALUE - 1L);
         testToShortExact(Short.MAX_VALUE, (long) Short.MAX_VALUE);
         testToShortExact(Short.MAX_VALUE + 1, null);
-    }
-
-    private static void testToShortExact_double() {
-        testCommonToExact_double("toShortExact", (Number v) -> toShortExact(v.doubleValue()));
-        testToShortExact(-0x1p15 - 1, null);
-        testToShortExact(-0x1p15, (long) Short.MIN_VALUE);
-        testToShortExact(-0x1p15 + 1, Short.MIN_VALUE + 1L);
-        testToShortExact(0x1p15 - 2, Short.MAX_VALUE - 1L);
-        testToShortExact(0x1p15 - 1, (long) Short.MAX_VALUE);
-        testToShortExact(0x1p15, null);
     }
 
     private static void testToIntExact_long() {
@@ -211,32 +186,12 @@ public class ToExact {
         testToUnsignedIntExact(1L << Integer.SIZE, null);
     }
 
-    private static void testToUnsignedIntExact_double() {
-        testToUnsignedIntExact(-1.0, null);
-        testToUnsignedIntExact(0.0, 0L);
-        testToUnsignedIntExact(0.5, null);
-        testToUnsignedIntExact(0x1.fffffffcp30, (long) Integer.MAX_VALUE);
-        testToUnsignedIntExact(0x1.fffffffep31 - 0.5, null);
-        testToUnsignedIntExact(0x1.fffffffep31, (1L << Integer.SIZE) - 1);
-        testToUnsignedIntExact(0x1.0p32, null);
-    }
-
     private static void testToUnsignedShortExact_long() {
         testToUnsignedShortExact(-1L, null);
         testToUnsignedShortExact(0L, 0L);
         testToUnsignedShortExact((long) Short.MAX_VALUE, (long) Short.MAX_VALUE);
         testToUnsignedShortExact((1L << Short.SIZE) - 1, (1L << Short.SIZE) - 1);
         testToUnsignedShortExact(1L << Short.SIZE, null);
-    }
-
-    private static void testToUnsignedShortExact_double() {
-        testToUnsignedShortExact(-1.0, null);
-        testToUnsignedShortExact(0.0, 0L);
-        testToUnsignedShortExact(0.5, null);
-        testToUnsignedShortExact(0x1.fffcp14, (long) Short.MAX_VALUE);
-        testToUnsignedShortExact(0x1.fffep15 - 0.5, null);
-        testToUnsignedShortExact(0x1.fffep15, (1L << Short.SIZE) - 1);
-        testToUnsignedShortExact(0x1.0p16, null);
     }
 
     private static void testToUnsignedByteExact_long() {
@@ -246,17 +201,6 @@ public class ToExact {
         testToUnsignedByteExact((1L << Byte.SIZE) - 1, (1L << Byte.SIZE) - 1);
         testToUnsignedByteExact(1L << Byte.SIZE, null);
     }
-
-    private static void testToUnsignedByteExact_double() {
-        testToUnsignedByteExact(-1.0, null);
-        testToUnsignedByteExact(0.0, 0L);
-        testToUnsignedByteExact(0.5, null);
-        testToUnsignedByteExact(0x1.fcp6, (long) Byte.MAX_VALUE);
-        testToUnsignedByteExact(0x1.fep7 - 0.5, null);
-        testToUnsignedByteExact(0x1.fep7, (1L << Byte.SIZE) - 1);
-        testToUnsignedByteExact(0x1.0p8, null);
-    }
-
 
 
     /*
@@ -270,14 +214,6 @@ public class ToExact {
         testToExact("toUnsignedByteExact", v -> toUnsignedByteExact(v.longValue()), arg, expected);
     }
 
-    private static void testToUnsignedByteExact(double arg, Long expected) {
-        testToExact("toUnsignedByteExact", v -> toUnsignedByteExact(v.doubleValue()), arg, expected);
-    }
-
-    private static void testToByteExact(double arg, Long expected) {
-        testToExact("toByteExact", v -> toByteExact(v.doubleValue()), arg, expected);
-    }
-
     private static void testToShortExact(long arg, Long expected) {
         testToExact("toShortExact", v -> toShortExact(v.longValue()), arg, expected);
     }
@@ -286,24 +222,12 @@ public class ToExact {
         testToExact("toUnsignedShortExact", v -> toUnsignedShortExact(v.longValue()), arg, expected);
     }
 
-    private static void testToUnsignedShortExact(double arg, Long expected) {
-        testToExact("toUnsignedShortExact", v -> toUnsignedShortExact(v.doubleValue()), arg, expected);
-    }
-
-    private static void testToShortExact(double arg, Long expected) {
-        testToExact("toShortExact", v -> toShortExact(v.doubleValue()), arg, expected);
-    }
-
     private static void testToIntExact(long arg, Long expected) {
         testToExact("toIntExact", v -> toIntExact(v.longValue()), arg, expected);
     }
 
     private static void testToUnsignedIntExact(long arg, Long expected) {
         testToExact("toUnsignedIntExact", v -> toUnsignedIntExact(v.longValue()), arg, expected);
-    }
-
-    private static void testToUnsignedIntExact(double arg, Long expected) {
-        testToExact("toUnsignedIntExact", v -> toUnsignedIntExact(v.doubleValue()), arg, expected);
     }
 
     private static void testToIntExact(double arg, Long expected) {
