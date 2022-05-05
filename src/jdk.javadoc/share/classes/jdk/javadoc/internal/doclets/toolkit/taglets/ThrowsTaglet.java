@@ -110,8 +110,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         Content result = writer.getOutputInstance();
         Set<String> alreadyDocumented = new HashSet<>();
         result.add(throwsTagsOutput(tagsMap, writer, alreadyDocumented, typeSubstitutions, true));
-        result.add(inheritThrowsDocumentation(holder,
-                thrownTypes, alreadyDocumented, typeSubstitutions, writer));
+        result.add(inheritThrowsDocumentation(holder, thrownTypes, alreadyDocumented, typeSubstitutions, writer));
         result.add(linkToUndocumentedDeclaredExceptions(thrownTypes, alreadyDocumented, writer));
         return result;
     }
