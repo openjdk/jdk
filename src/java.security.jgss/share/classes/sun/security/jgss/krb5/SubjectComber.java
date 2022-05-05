@@ -151,7 +151,8 @@ class SubjectComber {
                     Iterator<Object> iterator = pcs.iterator();
                     while (iterator.hasNext()) {
                         Object obj = iterator.next();
-                        if (!(obj instanceof @SuppressWarnings("unchecked")KerberosTicket ticket)) {
+                        if (!(obj instanceof @SuppressWarnings("unchecked")
+                                KerberosTicket ticket)) {
                             continue;
                         }
                         if (DEBUG) {

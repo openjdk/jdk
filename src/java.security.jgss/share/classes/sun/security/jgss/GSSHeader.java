@@ -263,8 +263,7 @@ public class GSSHeader {
                 return -1;
             if (tmp > 4)
                 throw new IOException("DerInputStream.getLength(): lengthTag="
-                                      + tmp + ", "
-                                      + "too big.");
+                                      + tmp + ", too big.");
 
             for (value = 0; tmp > 0; tmp --) {
                 value <<= 8;
