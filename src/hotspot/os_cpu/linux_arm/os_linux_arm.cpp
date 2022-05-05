@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
           overflow_state->disable_stack_yellow_reserved_zone();
           if (thread->thread_state() == _thread_in_Java) {
-            // Throw a stack overflow exception.  Guard pages will be reenabled
+            // Throw a stack overflow exception.  Guard pages will be re-enabled
             // while unwinding the stack.
             stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
           } else {
@@ -418,9 +418,9 @@ void os::setup_fpu() {
 
 // Minimum usable stack sizes required to get to user code. Space for
 // HotSpot guard pages is added later.
-size_t os::Posix::_compiler_thread_min_stack_allowed = (32 DEBUG_ONLY(+ 4)) * K;
-size_t os::Posix::_java_thread_min_stack_allowed = (32 DEBUG_ONLY(+ 4)) * K;
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
+size_t os::_compiler_thread_min_stack_allowed = (32 DEBUG_ONLY(+ 4)) * K;
+size_t os::_java_thread_min_stack_allowed = (32 DEBUG_ONLY(+ 4)) * K;
+size_t os::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
 
 // return default stack size for thr_type
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {

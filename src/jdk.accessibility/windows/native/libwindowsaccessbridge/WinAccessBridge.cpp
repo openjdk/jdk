@@ -152,7 +152,7 @@ extern "C" {
      * replaced with code to send output to debug file
      *
      */
-    void AppendToCallInfo(char *s) {
+    void AppendToCallInfo(const char *s) {
 
         /*
           _CrtDbgReport(_CRT_WARN, (const char *) NULL, NULL, (const char *) NULL,

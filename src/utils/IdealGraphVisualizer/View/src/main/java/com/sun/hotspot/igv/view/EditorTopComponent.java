@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputNode;
+import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
@@ -38,6 +39,7 @@ import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.services.DiagramProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
+import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
 import java.awt.event.HierarchyBoundsListener;
@@ -91,10 +93,13 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private DiagramViewer scene;
     private InstanceContent content;
     private InstanceContent graphContent;
+    private EnableSeaLayoutAction seaLayoutAction;
     private EnableBlockLayoutAction blockLayoutAction;
+    private EnableCFGLayoutAction cfgLayoutAction;
     private OverviewAction overviewAction;
     private HideDuplicatesAction hideDuplicatesAction;
     private PredSuccAction predSuccAction;
+    private ShowEmptyBlocksAction showEmptyBlocksAction;
     private SelectionModeAction selectionModeAction;
     private PanModeAction panModeAction;
     private boolean notFirstTime;
@@ -238,12 +243,31 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         toolBar.add(ShowAllAction.get(ZoomInAction.class));
         toolBar.add(ShowAllAction.get(ZoomOutAction.class));
 
+        toolBar.addSeparator();
+        ButtonGroup layoutButtons = new ButtonGroup();
+
+        seaLayoutAction = new EnableSeaLayoutAction();
+        JToggleButton button = new JToggleButton(seaLayoutAction);
+        button.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES);
+        layoutButtons.add(button);
+        toolBar.add(button);
+        seaLayoutAction.addPropertyChangeListener(this);
+
         blockLayoutAction = new EnableBlockLayoutAction();
-        JToggleButton button = new JToggleButton(blockLayoutAction);
-        button.setSelected(false);
+        button = new JToggleButton(blockLayoutAction);
+        button.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES);
+        layoutButtons.add(button);
         toolBar.add(button);
         blockLayoutAction.addPropertyChangeListener(this);
 
+        cfgLayoutAction = new EnableCFGLayoutAction();
+        button = new JToggleButton(cfgLayoutAction);
+        button.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH);
+        layoutButtons.add(button);
+        toolBar.add(button);
+        cfgLayoutAction.addPropertyChangeListener(this);
+
+        toolBar.addSeparator();
         overviewAction = new OverviewAction();
         overviewButton = new JToggleButton(overviewAction);
         overviewButton.setSelected(false);
@@ -255,6 +279,13 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         button.setSelected(true);
         toolBar.add(button);
         predSuccAction.addPropertyChangeListener(this);
+
+        showEmptyBlocksAction = new ShowEmptyBlocksAction();
+        button = new JToggleButton(showEmptyBlocksAction);
+        button.setSelected(true);
+        button.setEnabled(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH);
+        toolBar.add(button);
+        showEmptyBlocksAction.addPropertyChangeListener(this);
 
         hideDuplicatesAction = new HideDuplicatesAction();
         hideDuplicatesButton = new JToggleButton(hideDuplicatesAction);
@@ -508,11 +539,24 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         setSelectedFigures(list);
     }
 
+    public void setSelectedNodes(InputBlock b) {
+        List<Figure> list = new ArrayList<>();
+        for (Figure f : getModel().getDiagramToView().getFigures()) {
+            if (f.getBlock() == b) {
+                list.add(f);
+            }
+        }
+        setSelectedFigures(list);
+    }
+
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (evt.getSource() == this.predSuccAction) {
             boolean b = (Boolean) predSuccAction.getValue(PredSuccAction.STATE);
             this.getModel().setShowNodeHull(b);
+        } else if (evt.getSource() == this.showEmptyBlocksAction) {
+            boolean b = (Boolean) showEmptyBlocksAction.getValue(ShowEmptyBlocksAction.STATE);
+            this.getModel().setShowEmptyBlocks(b);
         } else if (evt.getSource() == this.overviewAction) {
             boolean b = (Boolean) overviewAction.getValue(OverviewAction.STATE);
             if (b) {
@@ -520,9 +564,18 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             } else {
                 showScene();
             }
+        } else if (evt.getSource() == this.seaLayoutAction) {
+            boolean b = seaLayoutAction.isSelected();
+            this.getModel().setShowSea(b);
+            this.showEmptyBlocksAction.setEnabled(false);
         } else if (evt.getSource() == this.blockLayoutAction) {
-            boolean b = (Boolean) blockLayoutAction.getValue(EnableBlockLayoutAction.STATE);
+            boolean b = blockLayoutAction.isSelected();
             this.getModel().setShowBlocks(b);
+            this.showEmptyBlocksAction.setEnabled(false);
+        } else if (evt.getSource() == this.cfgLayoutAction) {
+            boolean b = cfgLayoutAction.isSelected();
+            this.getModel().setShowCFG(b);
+            this.showEmptyBlocksAction.setEnabled(true);
         } else if (evt.getSource() == this.hideDuplicatesAction) {
             boolean b = (Boolean) hideDuplicatesAction.getValue(HideDuplicatesAction.STATE);
             this.getModel().setHideDuplicates(b);

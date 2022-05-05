@@ -1038,8 +1038,24 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
                 appendAnnotationsString(buf);
                 buf.append(className(tsym, false));
             } else {
-                appendAnnotationsString(buf);
-                buf.append(className(tsym, true));
+                if (isAnnotated()) {
+                    if (!tsym.packge().isUnnamed()) {
+                        buf.append(tsym.packge());
+                        buf.append(".");
+                    }
+                    ListBuffer<Name> names = new ListBuffer<>();
+                    for (Symbol sym = tsym.owner; sym != null && sym.kind == TYP; sym = sym.owner) {
+                        names.prepend(sym.name);
+                    }
+                    for (Name name : names) {
+                        buf.append(name);
+                        buf.append(".");
+                    }
+                    appendAnnotationsString(buf);
+                    buf.append(tsym.name);
+                } else {
+                    buf.append(className(tsym, true));
+                }
             }
 
             if (getTypeArguments().nonEmpty()) {

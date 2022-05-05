@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ intptr_t* Deoptimization::UnrollBlock::value_addr_at(int register_number) const 
 
 
 int Deoptimization::UnrollBlock::size_of_frames() const {
-  // Acount first for the adjustment of the initial frame
+  // Account first for the adjustment of the initial frame
   int result = _caller_adjustment;
   for (int index = 0; index < number_of_frames(); index++) {
     result += frame_sizes()[index];
@@ -704,6 +704,21 @@ void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_arr
   assert(f->is_interpreted_frame(), "must be interpreted");
 }
 
+#ifndef PRODUCT
+static bool falls_through(Bytecodes::Code bc) {
+  switch (bc) {
+    // List may be incomplete.  Here we really only care about bytecodes where compiled code
+    // can deoptimize.
+    case Bytecodes::_goto:
+    case Bytecodes::_goto_w:
+    case Bytecodes::_athrow:
+      return false;
+    default:
+      return true;
+  }
+}
+#endif
+
 // Return BasicType of value being returned
 JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_mode))
 
@@ -801,7 +816,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
           // calls. It seems to be hard to tell whether the compiler
           // has emitted debug information matching the "state before"
           // a given bytecode or the state after, so we try both
-          if (!Bytecodes::is_invoke(cur_code) && cur_code != Bytecodes::_athrow) {
+          if (!Bytecodes::is_invoke(cur_code) && falls_through(cur_code)) {
             // Get expression stack size for the next bytecode
             InterpreterOopMap next_mask;
             OopMapCache::compute_one_oop_map(mh, str.bci(), &next_mask);
@@ -911,7 +926,7 @@ void Deoptimization::deoptimize_all_marked(nmethod* nmethod_only) {
 Deoptimization::DeoptAction Deoptimization::_unloaded_action
   = Deoptimization::Action_reinterpret;
 
-#if COMPILER2_OR_JVMCI
+#if INCLUDE_JVMCI
 template<typename CacheType>
 class BoxCacheBase : public CHeapObj<mtCompiler> {
 protected:
@@ -1039,7 +1054,9 @@ oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMa
    }
    return NULL;
 }
+#endif // INCLUDE_JVMCI
 
+#if COMPILER2_OR_JVMCI
 bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS) {
   Handle pending_exception(THREAD, thread->pending_exception());
   const char* exception_file = thread->exception_file();
@@ -1056,7 +1073,9 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
     oop obj = NULL;
 
     if (k->is_instance_klass()) {
-      if (sv->is_auto_box()) {
+#if INCLUDE_JVMCI
+      CompiledMethod* cm = fr->cb()->as_compiled_method_or_null();
+      if (cm->is_compiled_by_jvmci() && sv->is_auto_box()) {
         AutoBoxObjectValue* abv = (AutoBoxObjectValue*) sv;
         obj = get_cached_box(abv, fr, reg_map, THREAD);
         if (obj != NULL) {
@@ -1064,6 +1083,7 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
           abv->set_cached(true);
         }
       }
+#endif // INCLUDE_JVMCI
 
       InstanceKlass* ik = InstanceKlass::cast(k);
       if (obj == NULL) {
@@ -1410,10 +1430,12 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
       continue;
     }
 
+#if INCLUDE_JVMCI
     // Don't reassign fields of boxes that came from a cache. Caches may be in CDS.
     if (sv->is_auto_box() && ((AutoBoxObjectValue*) sv)->is_cached()) {
       continue;
     }
+#endif // INCLUDE_JVMCI
 #ifdef COMPILER2
     if (EnableVectorSupport && VectorSupport::is_vector(k)) {
       assert(sv->field_size() == 1, "%s not a vector", k->name()->as_C_string());
@@ -2687,7 +2709,7 @@ void Deoptimization::print_statistics() {
 
 void
 Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int trap_bci, int reason) {
-  // no udpate
+  // no update
 }
 
 int Deoptimization::trap_state_has_reason(int trap_state, int reason) {

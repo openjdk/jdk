@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -585,7 +585,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
         int offset = addp_type->offset();
 
         if (offset == Type::OffsetTop || offset == Type::OffsetBot) {
-          NOT_PRODUCT(fail_eliminate = "Undefined field referrence";)
+          NOT_PRODUCT(fail_eliminate = "Undefined field reference";)
           can_eliminate = false;
           break;
         }
@@ -598,7 +598,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
             if (n->is_Load() || n->is_LoadStore()) {
               NOT_PRODUCT(fail_eliminate = "Field load";)
             } else {
-              NOT_PRODUCT(fail_eliminate = "Not store field referrence";)
+              NOT_PRODUCT(fail_eliminate = "Not store field reference";)
             }
             can_eliminate = false;
           }
@@ -1021,7 +1021,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   const TypeKlassPtr* tklass = _igvn.type(klass)->is_klassptr();
   Node* res = alloc->result_cast();
   // Eliminate boxing allocations which are not used
-  // regardless scalar replacable status.
+  // regardless scalar replaceable status.
   bool boxing_alloc = C->eliminate_boxing() &&
                       tklass->klass()->is_instance_klass()  &&
                       tklass->klass()->as_instance_klass()->is_box_klass();
@@ -1208,7 +1208,8 @@ void PhaseMacroExpand::expand_allocate_common(
             AllocateNode* alloc, // allocation node to be expanded
             Node* length,  // array length for an array allocation
             const TypeFunc* slow_call_type, // Type of slow call
-            address slow_call_address  // Address of slow call
+            address slow_call_address,  // Address of slow call
+            Node* valid_length_test // whether length is valid or not
     )
 {
   Node* ctrl = alloc->in(TypeFunc::Control);
@@ -1393,6 +1394,12 @@ void PhaseMacroExpand::expand_allocate_common(
   // Copy debug information and adjust JVMState information, then replace
   // allocate node with the call
   call->copy_call_debug_info(&_igvn, alloc);
+  // For array allocations, copy the valid length check to the call node so Compile::final_graph_reshaping() can verify
+  // that the call has the expected number of CatchProj nodes (in case the allocation always fails and the fallthrough
+  // path dies).
+  if (valid_length_test != NULL) {
+    call->add_req(valid_length_test);
+  }
   if (expand_fast_path) {
     call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
   } else {
@@ -1875,11 +1882,12 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
 void PhaseMacroExpand::expand_allocate(AllocateNode *alloc) {
   expand_allocate_common(alloc, NULL,
                          OptoRuntime::new_instance_Type(),
-                         OptoRuntime::new_instance_Java());
+                         OptoRuntime::new_instance_Java(), NULL);
 }
 
 void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
   Node* length = alloc->in(AllocateNode::ALength);
+  Node* valid_length_test = alloc->in(AllocateNode::ValidLengthTest);
   InitializeNode* init = alloc->initialization();
   Node* klass_node = alloc->in(AllocateNode::KlassNode);
   ciKlass* k = _igvn.type(klass_node)->is_klassptr()->klass();
@@ -1894,7 +1902,7 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
   }
   expand_allocate_common(alloc, length,
                          OptoRuntime::new_array_Type(),
-                         slow_call_address);
+                         slow_call_address, valid_length_test);
 }
 
 //-------------------mark_eliminated_box----------------------------------
@@ -2113,7 +2121,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
   // The input to a Lock is merged memory, so extract its RawMem input
   // (unless the MergeMem has been optimized away.)
   if (alock->is_Lock()) {
-    // Seach for MemBarAcquireLock node and delete it also.
+    // Search for MemBarAcquireLock node and delete it also.
     MemBarNode* membar = fallthroughproj->unique_ctrl_out()->as_MemBar();
     assert(membar != NULL && membar->Opcode() == Op_MemBarAcquireLock, "");
     Node* ctrlproj = membar->proj_out(TypeFunc::Control);
@@ -2130,7 +2138,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
     }
   }
 
-  // Seach for MemBarReleaseLock node and delete it also.
+  // Search for MemBarReleaseLock node and delete it also.
   if (alock->is_Unlock() && ctrl->is_Proj() && ctrl->in(0)->is_MemBar()) {
     MemBarNode* membar = ctrl->in(0)->as_MemBar();
     assert(membar->Opcode() == Op_MemBarReleaseLock &&

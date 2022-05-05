@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Arm Limited. All rights reserved.
+ * Copyright (c) 2021, 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,23 @@
 #ifndef OS_CPU_BSD_AARCH64_PAUTH_BSD_AARCH64_INLINE_HPP
 #define OS_CPU_BSD_AARCH64_PAUTH_BSD_AARCH64_INLINE_HPP
 
-#ifdef __APPLE__
-#include <ptrauth.h>
-#endif
-
-// Only the PAC instructions in the NOP space can be used. This ensures the
-// binaries work on systems without PAC. Write these instructions using their
-// alternate "hint" instructions to ensure older compilers can still be used.
-// For Apple, use the provided interface as this may provide additional
-// optimization.
-
-#define XPACLRI "hint #0x7;"
+// OS specific Support for ROP Protection in VM code.
+// For more details on PAC see pauth_aarch64.hpp.
 
 inline address pauth_strip_pointer(address ptr) {
-#ifdef __APPLE__
-  return ptrauth_strip(ptr, ptrauth_key_asib);
-#else
-  register address result __asm__("x30") = ptr;
-  asm (XPACLRI : "+r"(result));
-  return result;
-#endif
+  // No PAC support in BSD as of yet.
+  return ptr;
 }
 
-#undef XPACLRI
+inline address pauth_sign_return_address(address ret_addr, address sp) {
+  // No PAC support in BSD as of yet.
+  return ret_addr;
+}
+
+inline address pauth_authenticate_return_address(address ret_addr, address sp) {
+  // No PAC support in BSD as of yet.
+  return ret_addr;
+}
 
 #endif // OS_CPU_BSD_AARCH64_PAUTH_BSD_AARCH64_INLINE_HPP
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 class JVMCIEnv;
 
-// JVMCIEnv exception utility macros.  Analagous to the regular CHECK, TRAP and THREAD macros.
+// JVMCIEnv exception utility macros.  Analogous to the regular CHECK, TRAP and THREAD macros.
 
 #define JVMCIENV __jvmci_env__
 #define JVMCI_TRAPS  JVMCIEnv* JVMCIENV

@@ -385,7 +385,9 @@ class VirtualMemoryTracker : AllStatic {
   // Walk virtual memory data structure for creating baseline, etc.
   static bool walk_virtual_memory(VirtualMemoryWalker* walker);
 
-  static const bool snapshot_region_contains(void* p, ReservedMemoryRegion& region);
+  // If p is contained within a known memory region, print information about it to the
+  // given stream and return true; false otherwise.
+  static bool print_containing_region(const void* p, outputStream* st);
 
   // Snapshot current thread stacks
   static void snapshot_thread_stacks();

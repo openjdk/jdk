@@ -30,6 +30,7 @@ import java.util.List;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.dcmd.CommandExecutorException;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
+import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 import jtreg.SkippedException;
 import sun.hotspot.WhiteBox;
@@ -88,8 +89,8 @@ public abstract class JCmdTestDumpBase {
     }
 
     protected static void buildJars() throws Exception {
-        testJar = JarBuilder.build("test", TEST_CLASSES);
-        bootJar = JarBuilder.build("boot", BOOT_CLASSES);
+        testJar = ClassFileInstaller.writeJar("test", TEST_CLASSES);
+        bootJar = ClassFileInstaller.writeJar("boot", BOOT_CLASSES);
         System.out.println("Jar file created: " + testJar);
         System.out.println("Jar file created: " + bootJar);
         allJars = testJar + File.pathSeparator + bootJar;

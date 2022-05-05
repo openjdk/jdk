@@ -5787,7 +5787,7 @@ public class Collections {
      * Adds all of the specified elements to the specified collection.
      * Elements to be added may be specified individually or as an array.
      * The behaviour of this convenience method is similar to that of
-     * {@code cc.addAll(Collections.unmodifiableList(Arrays.asList(elements)))}.
+     * {@code c.addAll(Collections.unmodifiableList(Arrays.asList(elements)))}.
      *
      * <p>When elements are specified individually, this method provides a
      * convenient way to add a few elements to an existing collection:

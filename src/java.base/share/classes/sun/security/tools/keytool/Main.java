@@ -42,13 +42,9 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.URICertStoreParameters;
 
 
-import java.security.interfaces.ECKey;
-import java.security.interfaces.EdECKey;
 import java.security.spec.ECParameterSpec;
 import java.text.Collator;
 import java.text.MessageFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
@@ -67,6 +63,7 @@ import java.util.Base64;
 
 import sun.security.pkcs12.PKCS12KeyStore;
 import sun.security.provider.certpath.CertPathConstraintsParameters;
+import sun.security.util.ConstraintsParameters;
 import sun.security.util.ECKeySizeParameterSpec;
 import sun.security.util.KeyUtil;
 import sun.security.util.NamedCurve;
@@ -826,9 +823,7 @@ public final class Main {
         if (providerClasses != null) {
             ClassLoader cl = null;
             if (pathlist != null) {
-                String path = null;
-                path = PathList.appendPath(
-                        path, System.getProperty("java.class.path"));
+                String path = System.getProperty("java.class.path");
                 path = PathList.appendPath(
                         path, System.getProperty("env.class.path"));
                 path = PathList.appendPath(path, pathlist);
@@ -1290,6 +1285,7 @@ public final class Main {
             kssave = true;
         } else if (command == LIST) {
             if (storePass == null
+                    && !protectedPath
                     && !KeyStoreUtil.isWindowsKeyStore(storetype)
                     && !isPasswordlessKeyStore) {
                 printNoIntegrityWarning();
@@ -1689,6 +1685,7 @@ public final class Main {
         throws Exception
     {
         if (storePass == null
+                && !protectedPath
                 && !KeyStoreUtil.isWindowsKeyStore(storetype)
                 && !isPasswordlessKeyStore) {
             printNoIntegrityWarning();
@@ -1850,8 +1847,7 @@ public final class Main {
             if (verbose) {
                 MessageFormat form = new MessageFormat(rb.getString(
                     "Generated.keyAlgName.secret.key"));
-                Object[] source =
-                    {useDefaultPBEAlgorithm ? "PBE" : secKey.getAlgorithm()};
+                Object[] source = { "PBE" };
                 System.err.println(form.format(source));
             }
         } else {
@@ -1874,6 +1870,11 @@ public final class Main {
             Object[] source = {keysize,
                                 secKey.getAlgorithm()};
             System.err.println(form.format(source));
+
+            SecretKeyConstraintsParameters skcp =
+                    new SecretKeyConstraintsParameters(secKey);
+            checkWeakConstraint(rb.getString("the.generated.secretkey"),
+                    secKey, skcp);
         }
 
         if (keyPass == null) {
@@ -1921,6 +1922,8 @@ public final class Main {
                     keysize = SecurityProviderConstants.DEF_EC_KEY_SIZE;
                 } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
                     keysize = SecurityProviderConstants.DEF_RSA_KEY_SIZE;
+                } else if ("RSASSA-PSS".equalsIgnoreCase(keyAlgName)) {
+                    keysize = SecurityProviderConstants.DEF_RSASSA_PSS_KEY_SIZE;
                 } else if ("DSA".equalsIgnoreCase(keyAlgName)) {
                     keysize = SecurityProviderConstants.DEF_DSA_KEY_SIZE;
                 } else if ("EdDSA".equalsIgnoreCase(keyAlgName)) {
@@ -2020,7 +2023,7 @@ public final class Main {
                     ("Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for"));
             Object[] source = {
                     groupName == null ? keysize : KeyUtil.getKeySize(privKey),
-                    fullDisplayAlgName(privKey),
+                    KeyUtil.fullDisplayAlgName(privKey),
                     newCert.getSigAlgName(),
                     signerAlias,
                     validity,
@@ -2031,7 +2034,7 @@ public final class Main {
                     ("Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for"));
             Object[] source = {
                     groupName == null ? keysize : KeyUtil.getKeySize(privKey),
-                    fullDisplayAlgName(privKey),
+                    KeyUtil.fullDisplayAlgName(privKey),
                     newCert.getSigAlgName(),
                     validity,
                     x500Name};
@@ -2187,6 +2190,23 @@ public final class Main {
             } else {
                 out.println("SecretKeyEntry, ");
             }
+
+            try {
+                SecretKey secKey = (SecretKey) keyStore.getKey(alias, storePass);
+                SecretKeyConstraintsParameters skcp =
+                        new SecretKeyConstraintsParameters(secKey);
+                checkWeakConstraint(label, secKey, skcp);
+            } catch (UnrecoverableKeyException e) {
+                /*
+                 * UnrecoverableKeyException will be thrown for any secret key
+                 * entries that are protected by a different password than
+                 * storePass, and we will not be able to check the constraints
+                 * because we do not have the keyPass for this operation.
+                 * This may occurs for keystores such as JCEKS. Note that this
+                 * is not really a new issue as details about secret key entries
+                 * other than the fact they exist as entries are not listed.
+                 */
+            }
         } else if (keyStore.entryInstanceOf(alias, KeyStore.PrivateKeyEntry.class)) {
             if (verbose || rfc || debug) {
                 Object[] source = {"PrivateKeyEntry"};
@@ -2257,6 +2277,9 @@ public final class Main {
                 out.println(mf);
                 dumpCert(cert, out);
             } else if (debug) {
+                for (var attr : keyStore.getEntry(alias, null).getAttributes()) {
+                    System.out.println("Attribute " + attr.getName() + ": " + attr.getValue());
+                }
                 out.println(cert.toString());
             } else {
                 out.println("trustedCertEntry, ");
@@ -2424,7 +2447,7 @@ public final class Main {
         /*
          * Information display rule of -importkeystore
          * 1. inside single, shows failure
-         * 2. inside all, shows sucess
+         * 2. inside all, shows success
          * 3. inside all where there is a failure, prompt for continue
          * 4. at the final of all, shows summary
          */
@@ -2489,13 +2512,23 @@ public final class Main {
         }
 
         try {
+            keyStore.setEntry(newAlias, entry, pp);
             Certificate c = srckeystore.getCertificate(alias);
             if (c != null) {
                 CertPathConstraintsParameters cpcp =
                         buildCertPathConstraint((X509Certificate)c, null);
                 checkWeakConstraint("<" + newAlias + ">", c, cpcp);
+            } else {
+                try {
+                    Key key = keyStore.getKey(newAlias, newPass);
+                    SecretKeyConstraintsParameters skcp =
+                            new SecretKeyConstraintsParameters(key);
+                    checkWeakConstraint("<" + newAlias + ">", (SecretKey)key, skcp);
+                } catch (UnrecoverableKeyException e) {
+                    // skip
+                }
             }
-            keyStore.setEntry(newAlias, entry, pp);
+
             // Place the check so that only successful imports are blocked.
             // For example, we don't block a failed SecretEntry import.
             if (P12KEYSTORE.equalsIgnoreCase(storetype) && !isPasswordlessKeyStore) {
@@ -3562,24 +3595,10 @@ public final class Main {
         }
     }
 
-    private String fullDisplayAlgName(Key key) {
-        String result = key.getAlgorithm();
-        if (key instanceof ECKey) {
-            ECParameterSpec paramSpec = ((ECKey) key).getParams();
-            if (paramSpec instanceof NamedCurve) {
-                NamedCurve nc = (NamedCurve)paramSpec;
-                result += " (" + nc.getNameAndAliases()[0] + ")";
-            }
-        } else if (key instanceof EdECKey) {
-            result = ((EdECKey) key).getParams().getName();
-        }
-        return result;
-    }
-
     private String withWeakConstraint(Key key,
             CertPathConstraintsParameters cpcp) {
         int kLen = KeyUtil.getKeySize(key);
-        String displayAlg = fullDisplayAlgName(key);
+        String displayAlg = KeyUtil.fullDisplayAlgName(key);
         try {
             DISABLED_CHECK.permits(key.getAlgorithm(), cpcp, true);
         } catch (CertPathValidatorException e) {
@@ -4926,17 +4945,6 @@ public final class Main {
                                 "Unable.to.parse.denyAfter.string.in.exception.message"));
                     }
 
-                    SimpleDateFormat formatter = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
-                    Date dateObj = null;
-                    try {
-                        dateObj = formatter.parse(denyAfterDate);
-                    } catch (ParseException e2) {
-                        throw new Exception(rb.getString(
-                                "Unable.to.parse.denyAfter.string.in.exception.message"));
-                    }
-                    formatter = new SimpleDateFormat("yyyy-MM-dd");
-                    denyAfterDate = formatter.format(dateObj);
-
                     weakWarnings.add(String.format(
                             rb.getString("whose.sigalg.usagesignedjar"), label, sigAlg,
                             denyAfterDate));
@@ -4959,13 +4967,13 @@ public final class Main {
                     weakWarnings.add(String.format(
                             rb.getString("whose.key.weak"), label,
                             String.format(rb.getString("key.bit"),
-                            KeyUtil.getKeySize(key), fullDisplayAlgName(key))));
+                            KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
                 }
             } catch (CertPathValidatorException e) {
                 weakWarnings.add(String.format(
                         rb.getString("whose.key.disabled"), label,
                         String.format(rb.getString("key.bit"),
-                        KeyUtil.getKeySize(key), fullDisplayAlgName(key))));
+                        KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
             }
         }
     }
@@ -4986,12 +4994,12 @@ public final class Main {
                 weakWarnings.add(String.format(
                     rb.getString("whose.key.disabled"), label,
                     String.format(rb.getString("key.bit"),
-                    KeyUtil.getKeySize(key), fullDisplayAlgName(key))));
+                    KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
             } else if (!LEGACY_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
                 weakWarnings.add(String.format(
                     rb.getString("whose.key.weak"), label,
                     String.format(rb.getString("key.bit"),
-                    KeyUtil.getKeySize(key), fullDisplayAlgName(key))));
+                    KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
             }
         }
     }
@@ -5031,6 +5039,38 @@ public final class Main {
             // No need to check the sigalg of a trust anchor
             String sigAlg = isTrustedCert(cert) ? null : xc.getSigAlgName();
             checkWeakConstraint(label, sigAlg, xc.getPublicKey(), cpcp);
+        }
+    }
+
+    private void checkWeakConstraint(String label, SecretKey secKey,
+            SecretKeyConstraintsParameters skcp) {
+        // Do not check disabled algorithms for symmetric key based algorithms for now
+        String secKeyAlg = secKey.getAlgorithm();
+        /*
+         * Skipping a secret key entry if its algorithm starts with "PBE".
+         * This is because keytool can only see it as a PBE key and "PBE" is
+         * an alias of "PBEwithMD5andDES" inside the SunJCE security provider,
+         * and its getAlgorithm() always returns "PBEwithMD5andDES". Thus, keytool
+         * won't be able to determine whether this secret key entry is protected
+         * by a weak algorithm or not.
+         */
+        if (secKeyAlg.startsWith("PBE"))
+            return;
+
+        try {
+            LEGACY_CHECK.permits(secKeyAlg, skcp, true);
+        } catch (CertPathValidatorException e) {
+            String eMessage = e.getMessage();
+            if (eMessage.contains("constraints check failed on keysize limits") &&
+                    e.getReason() == BasicReason.ALGORITHM_CONSTRAINED) {
+                weakWarnings.add(String.format(
+                        rb.getString("key.size.weak"), label,
+                        String.format(rb.getString("key.bit"),
+                        KeyUtil.getKeySize(secKey), secKeyAlg)));
+            } else {
+                weakWarnings.add(String.format(
+                        rb.getString("key.algorithm.weak"), label, secKeyAlg));
+            }
         }
     }
 
@@ -5230,6 +5270,38 @@ public final class Main {
         if (output != null) return output;
         tinyHelp();
         return null;    // Useless, tinyHelp() already exits.
+    }
+
+    private static class SecretKeyConstraintsParameters implements ConstraintsParameters {
+        private final Key key;
+        private SecretKeyConstraintsParameters(Key key) {
+            this.key = key;
+        }
+
+        @Override
+        public boolean anchorIsJdkCA() {
+            return false;
+        }
+
+        @Override
+        public Set<Key> getKeys() {
+            return Set.of(key);
+        }
+
+        @Override
+        public Date getDate() {
+            return null;
+        }
+
+        @Override
+        public String getVariant() {
+            return null;
+        }
+
+        @Override
+        public String extendedExceptionMsg() {
+            return null;
+        }
     }
 }
 

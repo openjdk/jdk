@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,46 +283,35 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     return new_obj;
   } else {
     // We lost, someone else "owns" this object.
-    // Ensure loads from the forwardee follow all changes that preceeded the
+    // Ensure loads from the forwardee follow all changes that preceded the
     // release-cmpxchg that performed the forwarding in another thread.
     OrderAccess::acquire();
 
     assert(o->is_forwarded(), "Object must be forwarded if the cas failed.");
     assert(o->forwardee() == forwardee, "invariant");
 
-    // Try to deallocate the space.  If it was directly allocated we cannot
-    // deallocate it, so we have to test.  If the deallocation fails,
-    // overwrite with a filler object.
     if (new_obj_is_tenured) {
-      if (!_old_lab.unallocate_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size)) {
-        CollectedHeap::fill_with_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size);
-      }
-    } else if (!_young_lab.unallocate_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size)) {
-      CollectedHeap::fill_with_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size);
+      _old_lab.unallocate_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size);
+    } else {
+      _young_lab.unallocate_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size);
     }
     return forwardee;
   }
 }
 
 // Attempt to "claim" oop at p via CAS, push the new obj if successful
-// This version tests the oop* to make sure it is within the heap before
-// attempting marking.
 template <bool promote_immediately, class T>
 inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
+  assert(ParallelScavengeHeap::heap()->is_in_reserved(p), "precondition");
   assert(should_scavenge(p, true), "revisiting object?");
 
   oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
   oop new_obj = copy_to_survivor_space<promote_immediately>(o);
   RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
 
-  // We cannot mark without test, as some code passes us pointers
-  // that are outside the heap. These pointers are either from roots
-  // or from metadata.
-  if ((!PSScavenge::is_obj_in_young((HeapWord*)p)) &&
-      ParallelScavengeHeap::heap()->is_in_reserved(p)) {
-    if (PSScavenge::is_obj_in_young(new_obj)) {
-      PSScavenge::card_table()->inline_write_ref_field_gc(p, new_obj);
-    }
+  if (!PSScavenge::is_obj_in_young((HeapWord*)p) &&
+       PSScavenge::is_obj_in_young(new_obj)) {
+    PSScavenge::card_table()->inline_write_ref_field_gc(p, new_obj);
   }
 }
 

@@ -936,8 +936,7 @@ public class ManagementFactory {
                         all.add(new DefaultPlatformMBeanProvider());
                         return all;
                     }
-                }, null, new FilePermission("<<ALL FILES>>", "read"),
-                new RuntimePermission("sun.management.spi.PlatformMBeanProvider.subclass"));
+                }, null, new FilePermission("<<ALL FILES>>", "read"));
 
             // load all platform components into a map
             var map = new HashMap<String, PlatformComponent<?>>();
