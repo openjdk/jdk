@@ -788,8 +788,8 @@ public final class System {
      * href="https://jcp.org/en/procedures/jcp2#3.6.4">maintenance
      * release</a>. When defined, its value identifies that
      * maintenance release. To indicate the first maintenance release
-     * this property will have the value {@code "1"}; to indicate the
-     * second maintenance release, this property will have the value
+     * this property will have the value {@code "1"}, to indicate the
+     * second maintenance release this property will have the value
      * {@code "2"}, and so on.
      * <p>
      * Multiple paths in a system property value are separated by the path
