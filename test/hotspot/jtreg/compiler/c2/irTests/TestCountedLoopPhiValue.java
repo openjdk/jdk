@@ -142,7 +142,7 @@ public class TestCountedLoopPhiValue {
     final static int test5_limit = Integer.MAX_VALUE - int_stride;
     final static int test5_iterations = Integer.divideUnsigned(test5_limit - Integer.MIN_VALUE + (int_stride - 1), int_stride);
     final static int last_test5_iteration = Integer.MIN_VALUE + Integer.divideUnsigned(test5_limit - Integer.MIN_VALUE, int_stride) * int_stride;
-    
+
     @Test
     @IR(counts = { IRNode.COUNTEDLOOP, "1" })
     @IR(failOn = { IRNode.IF })
@@ -201,7 +201,7 @@ public class TestCountedLoopPhiValue {
     final static long test7_limit = Long.MAX_VALUE - long_stride;
     final static long test7_iterations = Long.divideUnsigned(test7_limit - Long.MIN_VALUE + (long_stride - 1), long_stride);
     final static long last_test7_iteration = Long.MIN_VALUE + Long.divideUnsigned(test7_limit - Long.MIN_VALUE, long_stride) * long_stride;
-    
+
     @Test
     @IR(counts = { IRNode.LONGCOUNTEDLOOP, "1", IRNode.IF, "1" })
     public static float test7() {
