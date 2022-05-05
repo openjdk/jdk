@@ -4483,7 +4483,7 @@ jint os::init_2(void) {
   }
 
   // Check and sets minimum stack sizes against command line options
-  if (Posix::set_minimum_stack_sizes() == JNI_ERR) {
+  if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
 
@@ -5114,27 +5114,6 @@ bool os::is_thread_cpu_time_supported() {
 // so just return the system wide load average.
 int os::loadavg(double loadavg[], int nelem) {
   return ::getloadavg(loadavg, nelem);
-}
-
-void os::pause() {
-  char filename[MAX_PATH];
-  if (PauseAtStartupFile && PauseAtStartupFile[0]) {
-    jio_snprintf(filename, MAX_PATH, "%s", PauseAtStartupFile);
-  } else {
-    jio_snprintf(filename, MAX_PATH, "./vm.paused.%d", current_process_id());
-  }
-
-  int fd = ::open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-  if (fd != -1) {
-    struct stat buf;
-    ::close(fd);
-    while (::stat(filename, &buf) == 0) {
-      (void)::poll(NULL, 0, 100);
-    }
-  } else {
-    jio_fprintf(stderr,
-                "Could not open pause file '%s', continuing immediately.\n", filename);
-  }
 }
 
 // Get the default path to the core file

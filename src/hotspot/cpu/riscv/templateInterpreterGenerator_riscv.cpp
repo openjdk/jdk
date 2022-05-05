@@ -1228,11 +1228,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ addi(t1, zr, (u1)StackOverflow::stack_guard_yellow_reserved_disabled);
     __ bne(t0, t1, no_reguard);
 
-    __ pusha(); // only save smashed registers
+    __ push_call_clobbered_registers();
     __ mv(c_rarg0, xthread);
     __ mv(t1, CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
     __ jalr(t1);
-    __ popa(); // only restore smashed registers
+    __ pop_call_clobbered_registers();
     __ bind(no_reguard);
   }
 
