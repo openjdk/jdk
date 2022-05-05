@@ -766,6 +766,14 @@
           "for at most jint_max / StressLongCountedLoop")                   \
           range(0, max_juint)                                               \
                                                                             \
+  product(bool, DuplicateBackedge, true, DIAGNOSTIC,                        \
+          "Transform loop with a merge point into 2 loops if inner loop is" \
+          "expected to optimize better")                                    \
+                                                                            \
+  develop(bool, StressDuplicateBackedge, false,                             \
+          "Run DuplicateBackedge whenever possible ignoring benefit"        \
+          "analysis")                                                       \
+                                                                            \
   product(bool, VerifyReceiverTypes, trueInDebug, DIAGNOSTIC,               \
           "Verify receiver types at runtime")                               \
 

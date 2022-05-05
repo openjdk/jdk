@@ -405,6 +405,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         // decode secret key
                     } else {
                         byte[] keyBytes = in.getOctetString();
+                        if (keyAlgo.equals(KnownOIDs.OIW_DES_CBC.stdName())) {
+                            keyAlgo = "DES";
+                        }
                         SecretKeySpec secretKeySpec =
                                 new SecretKeySpec(keyBytes, keyAlgo);
 
