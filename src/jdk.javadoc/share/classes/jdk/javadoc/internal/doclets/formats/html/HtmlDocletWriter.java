@@ -294,7 +294,7 @@ public class HtmlDocletWriter {
         ExecutableElement overriddenMethod = utils.overriddenMethod(method);
         VisibleMemberTable vmt = configuration.getVisibleMemberTable(enclosing);
         // Check whether there is any implementation or overridden info to be
-        // printed. If not overridden or implementation info needs to be
+        // printed. If no overridden or implementation info needs to be
         // printed, do not print this section.
         if ((!intfacs.isEmpty()
                 && !vmt.getImplementedMethods(method).isEmpty())

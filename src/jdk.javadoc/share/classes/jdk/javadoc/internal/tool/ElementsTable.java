@@ -1217,10 +1217,10 @@ public class ElementsTable {
 
         static EnumSet<AccessKind> getFilterSet(AccessKind accessValue) {
             return switch (accessValue) {
-                case PUBLIC -> EnumSet.of(AccessKind.PUBLIC);
+                case PUBLIC    -> EnumSet.of(AccessKind.PUBLIC);
                 case PROTECTED -> EnumSet.of(AccessKind.PUBLIC, AccessKind.PROTECTED);
-                case PACKAGE -> EnumSet.of(AccessKind.PUBLIC, AccessKind.PROTECTED, AccessKind.PACKAGE);
-                case PRIVATE -> EnumSet.allOf(AccessKind.class);
+                case PACKAGE   -> EnumSet.of(AccessKind.PUBLIC, AccessKind.PROTECTED, AccessKind.PACKAGE);
+                case PRIVATE   -> EnumSet.allOf(AccessKind.class);
             };
         }
 
