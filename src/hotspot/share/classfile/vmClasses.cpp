@@ -124,7 +124,7 @@ void vmClasses::resolve_all(TRAPS) {
   vmClassID scan = vmClassID::FIRST;
   // first do Object, then String, Class
   resolve_through(VM_CLASS_ID(Object_klass), scan, CHECK);
-  CollectedHeap::set_filler_klass(vmClasses::Object_klass());
+  CollectedHeap::set_filler_object_klass(vmClasses::Object_klass());
 #if INCLUDE_CDS
   if (UseSharedSpaces) {
     // It's unsafe to access the archived heap regions before they
@@ -192,7 +192,7 @@ void vmClasses::resolve_all(TRAPS) {
   resolve_through(jsr292_group_end, scan, CHECK);
   resolve_until(vmClassID::LIMIT, scan, CHECK);
 
-  CollectedHeap::set_filler_klass(vmClasses::FillerObject_klass());
+  CollectedHeap::set_filler_object_klass(vmClasses::FillerObject_klass());
 
   _box_klasses[T_BOOLEAN] = vmClasses::Boolean_klass();
   _box_klasses[T_CHAR]    = vmClasses::Character_klass();

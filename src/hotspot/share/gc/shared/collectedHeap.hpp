@@ -106,7 +106,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
   // First, set it to java_lang_Object.
   // Then, set it to FillerObject after the FillerObject_klass loading is complete.
-  static Klass* _filler_klass;
+  static Klass* _filler_object_klass;
 
  protected:
   // Not used by all GCs
@@ -208,12 +208,12 @@ class CollectedHeap : public CHeapObj<mtGC> {
     return _filler_array_max_size;
   }
 
-  static inline Klass* filler_klass() {
-    return _filler_klass;
+  static inline Klass* filler_object_klass() {
+    return _filler_object_klass;
   }
 
-  static inline void set_filler_klass(Klass* k) {
-    _filler_klass = k;
+  static inline void set_filler_object_klass(Klass* k) {
+    _filler_object_klass = k;
   }
 
   virtual Name kind() const = 0;
