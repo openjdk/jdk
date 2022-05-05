@@ -474,7 +474,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      *
      * WorkQueue field "phase" is used by both workers and the pool to
      * manage and track whether a worker is unsignalled (possibly
-     * blocked waiting for a signal), convienently using the sign bit
+     * blocked waiting for a signal), conveniently using the sign bit
      * to check.  When a worker is enqueued its phase field is set
      * negative. Note that phase field updates lag queue CAS releases;
      * seeing a negative phase does not guarantee that the worker is

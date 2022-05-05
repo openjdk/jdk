@@ -554,13 +554,6 @@ static unsigned __stdcall thread_native_entry(Thread* thread) {
 
   log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ").", os::current_thread_id());
 
-  // One less thread is executing
-  // When the VMThread gets here, the main thread may have already exited
-  // which frees the CodeHeap containing the Atomic::add code
-  if (thread != VMThread::vm_thread() && VMThread::vm_thread() != NULL) {
-    Atomic::dec(&os::win32::_os_thread_count);
-  }
-
   // Thread must not return from exit_process_or_thread(), but if it does,
   // let it proceed to exit normally
   return (unsigned)os::win32::exit_process_or_thread(os::win32::EPT_THREAD, res);
@@ -774,8 +767,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     delete osthread;
     return false;
   }
-
-  Atomic::inc(&os::win32::_os_thread_count);
 
   // Store info on the Win32 thread into the OSThread
   osthread->set_thread_handle(thread_handle);
@@ -3896,9 +3887,6 @@ int    os::win32::_processor_type            = 0;
 int    os::win32::_processor_level           = 0;
 julong os::win32::_physical_memory           = 0;
 
-intx          os::win32::_os_thread_limit    = 0;
-volatile intx os::win32::_os_thread_count    = 0;
-
 bool   os::win32::_is_windows_server         = false;
 
 // 6573254
@@ -4308,27 +4296,6 @@ jint os::init_2(void) {
   if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
-
-  size_t actual_reserve_size = JavaThread::stack_size_at_create();
-  if (actual_reserve_size == 0) {
-    // -Xss or -XX:ThreadStackSize were not given, use the current stack size.
-    actual_reserve_size = current_stack_size();
-  }
-
-  // Calculate theoretical max. size of Threads to guard against artificial
-  // out-of-memory situations, where all available address-space has been
-  // reserved by thread stacks.
-  assert(actual_reserve_size != 0, "Must have a stack");
-
-  // Calculate the thread limit when we should start doing Virtual Memory
-  // banging. Currently when the threads will have used all but 200Mb of space.
-  //
-  // TODO: consider performing a similar calculation for commit size instead
-  // as reserve size, since on a 64-bit platform we'll run into that more
-  // often than running out of virtual memory space.  We can use the
-  // lower value of the two calculations as the os_thread_limit.
-  size_t max_address_space = ((size_t)1 << (BitsPerWord - 1)) - (200 * K * K);
-  win32::_os_thread_limit = (intx)(max_address_space / actual_reserve_size);
 
   // at exit methods are called in the reverse order of their registration.
   // there is no limit to the number of functions registered. atexit does

@@ -1334,11 +1334,12 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
 
   // Instance case: the layout helper gives us instance size almost directly,
   // but we need to mask out the _lh_instance_slow_path_bit.
-  __ convert(Bytecodes::_i2l, layout, result_reg);
 
   assert((int) Klass::_lh_instance_slow_path_bit < BytesPerLong, "clear bit");
-  jlong mask = ~(jlong) right_n_bits(LogBytesPerLong);
-  __ logical_and(result_reg, LIR_OprFact::longConst(mask), result_reg);
+
+  LIR_Opr mask = load_immediate(~(jint) right_n_bits(LogBytesPerLong), T_INT);
+  __ logical_and(layout, mask, layout);
+  __ convert(Bytecodes::_i2l, layout, result_reg);
 
   __ branch(lir_cond_always, L_done->label());
 
@@ -1351,8 +1352,8 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
   int round_mask = MinObjAlignmentInBytes - 1;
 
   // Figure out header sizes first.
-  LIR_Opr hss = LIR_OprFact::intConst(Klass::_lh_header_size_shift);
-  LIR_Opr hsm = LIR_OprFact::intConst(Klass::_lh_header_size_mask);
+  LIR_Opr hss = load_immediate(Klass::_lh_header_size_shift, T_INT);
+  LIR_Opr hsm = load_immediate(Klass::_lh_header_size_mask, T_INT);
 
   LIR_Opr header_size = new_register(T_INT);
   __ move(layout, header_size);
@@ -1363,7 +1364,7 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
 
   // Figure out the array length in bytes
   assert(Klass::_lh_log2_element_size_shift == 0, "use shift in place");
-  LIR_Opr l2esm = LIR_OprFact::intConst(Klass::_lh_log2_element_size_mask);
+  LIR_Opr l2esm = load_immediate(Klass::_lh_log2_element_size_mask, T_INT);
   __ logical_and(layout, l2esm, layout);
 
   LIR_Opr length_int = new_register(T_INT);
@@ -1403,13 +1404,15 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
   __ convert(Bytecodes::_i2l, header_size, header_size_long);
   __ add(length, header_size_long, length);
   if (round_mask != 0) {
-    __ logical_and(length, LIR_OprFact::longConst(~round_mask), length);
+    LIR_Opr round_mask_opr = load_immediate(~(jlong)round_mask, T_LONG);
+    __ logical_and(length, round_mask_opr, length);
   }
   __ move(length, result_reg);
 #else
   __ add(length_int, header_size, length_int);
   if (round_mask != 0) {
-    __ logical_and(length_int, LIR_OprFact::intConst(~round_mask), length_int);
+    LIR_Opr round_mask_opr = load_immediate(~round_mask, T_INT);
+    __ logical_and(length_int, round_mask_opr, length_int);
   }
   __ convert(Bytecodes::_i2l, length_int, result_reg);
 #endif
