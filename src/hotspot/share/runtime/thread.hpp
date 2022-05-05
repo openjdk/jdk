@@ -644,13 +644,13 @@ protected:
   }
 #endif // __APPLE__ && AARCH64
 
- // support ASGCT
+ // support AGCT
  private:
-  bool _in_asgct;
+  bool _in_agct;
 
  public:
-  inline bool in_asgct(void) {return _in_asgct;}
-  inline void set_in_asgct(bool value) {_in_asgct = value;}
+  inline bool in_agct(void) {return _in_agct;}
+  inline void set_in_asgct(bool value) {_in_agct = value;}
 };
 
 // Inline implementation of Thread::current()

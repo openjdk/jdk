@@ -652,9 +652,9 @@ bool CodeCache::contains(nmethod *nm) {
 CodeBlob* CodeCache::find_blob(void* start) {
   CodeBlob* result = find_blob_unsafe(start);
   Thread* current_thread = Thread::current_or_null_safe();
-  if (current_thread != NULL && current_thread->in_asgct()) {
-    // when in ASGCT handler things might get rough and not all guarantees are held
-    // if the resolved blob is already a zombie return NULL instead of crashing on guarantee
+  if (current_thread != NULL && current_thread->in_agct()) {
+    // If called from AGCT the usual invariants may not apply so if we find
+    // a zombie method just return NULL
     return (result == NULL || result->is_zombie()) ? NULL : result;
   }
   // We could potentially look up non_entrant methods
