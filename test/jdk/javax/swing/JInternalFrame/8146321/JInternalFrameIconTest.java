@@ -192,8 +192,8 @@ public class JInternalFrameIconTest {
     private static void getImageIconBufferedImage(String lookAndFeelString) throws Exception {
         Point point = internalFrame.getLocationOnScreen();
         Rectangle rect = internalFrame.getBounds();
-	Rectangle captureRect = null;
-	if (lookAndFeelString.contains("Aqua")) {
+        Rectangle captureRect = null;
+        if (lookAndFeelString.contains("Aqua")) {
             captureRect = new Rectangle(
                 point.x + internalFrame.getInsets().left,
                 point.y + internalFrame.getInsets().top,
