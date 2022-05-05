@@ -1084,6 +1084,34 @@ private:
 public:
   // Calls
 
+  // Trampoline_call generates a call of the provided address.
+  // The address must be inside the code cache.
+  // Supported entry.rspec():
+  // - relocInfo::runtime_call_type
+  // - relocInfo::opt_virtual_call_type
+  // - relocInfo::static_call_type
+  // - relocInfo::virtual_call_type
+  //
+  // If the distance to the address can exceed the branch range
+  // (128M for the release build, 2M for the debug build; see branch_range definition)
+  // for direct calls(BL), a special code with BR (trampoline) is put in the stub code section.
+  // The call is redirected to it. When CodeBuffer is copied to CodeCache, the distance to
+  // callee's address is checked to bypass the trampoline by replacing the call of the trampoline
+  // with the call of the target.
+  //
+  // Trampoline_call is most suitable for calls of Java methods. Java calls callees can be changed
+  // to the interpreter or different versions of a compiled method. Those callees can be
+  // near-distant or far-distant. Trampoline_call supports switching between near-distant callees
+  // and far-distant callees by having a reserved trampoline. The trampoline is only used if needed.
+  //
+  // The code for runtime calls can also be generated with far_call. For possible far-distant callees
+  // far_call does not use the stub code section for additional code. It inserts the code at a call site.
+  // This prevents the call from optimization to a direct call when the code is copied to CodeCache.
+  //
+  // If a mark of the generated call BL is needed, a pointer to CodeBuffer keeping the generated code
+  // must be provided.
+  //
+  // Return: PC pointing after the generated call in the code section.
   address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
 
   static bool far_branches() {
