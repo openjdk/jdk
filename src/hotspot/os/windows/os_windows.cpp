@@ -1686,7 +1686,7 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
 #if _MSC_VER >= 1900
   // Starting with Visual Studio 2015, vsnprint is C99 compliant.
-  int result = ::vsnprintf(buf, len, fmt, args);
+  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
   // If an encoding error occurred (result < 0) then it's not clear
   // whether the buffer is NUL terminated, so ensure it is.
   if ((result < 0) && (len > 0)) {
