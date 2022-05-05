@@ -120,6 +120,7 @@ public class TestConvI2LCastLongLoop {
     @IR(counts = { IRNode.PHI, "2" })
     public static int test3() {
         int v = 0;
+        // splif if should not push LshiftI through the iv Phi
         for (int i = 0; i < 1024; i++) {
             v += i * UNSAFE.ARRAY_INT_INDEX_SCALE;
         }
