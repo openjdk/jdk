@@ -59,7 +59,7 @@ void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
         _path = os::strdup(buf);
       } else {
         char *p = strstr(cgroup_path, _root);
-        if (p != NULL && p == _root) {
+        if (p != NULL && p == cgroup_path) {
           if (strlen(cgroup_path) > strlen(_root)) {
             int buflen;
             strncpy(buf, _mount_point, MAXPATHLEN);
@@ -72,6 +72,45 @@ void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
             buf[MAXPATHLEN-1] = '\0';
             _path = os::strdup(buf);
           }
+        } else {
+          // Find the longest common substring as namespaces are hierarchical.
+          // If there are no matches between the root and the cgroup path,
+          // the controller's mount point will be used, which is a reasonable
+          // fallback.
+          int buflen;
+          strncpy(buf, _mount_point, MAXPATHLEN);
+          buf[MAXPATHLEN-1] = '\0';
+          buflen = strlen(buf);
+          if ((buflen + strlen(cgroup_path)) > (MAXPATHLEN-1)) {
+              return;
+          }
+          char tmp_root_buf[MAXPATHLEN+1];
+          char tmp_cgroup_buf[MAXPATHLEN+1];
+          strcpy(tmp_root_buf, _root);
+          strcpy(tmp_cgroup_buf, cgroup_path);
+          char* tmp_root = &tmp_root_buf[0];
+          char* tmp_cgroup = &tmp_cgroup_buf[0];
+          char* root_save = NULL;
+          char* cgroup_save = NULL;
+          char* root_token = NULL;
+          char* cg_token = NULL;
+          char* buf_ptr = buf + buflen;
+          while ((root_token = strtok_r(tmp_root, "/", &root_save)) != NULL &&
+                 (cg_token = strtok_r(tmp_cgroup, "/", &cgroup_save)) != NULL) {
+            if (root_token == NULL || cg_token == NULL) {
+              break;
+            }
+            if (strcmp(root_token, cg_token) == 0) {
+              strncpy(buf_ptr, "/", 2);
+              buf_ptr++;
+              strcpy(buf_ptr, root_token);
+              buf_ptr = buf_ptr + strlen(root_token);
+            }
+            tmp_root = NULL;
+            tmp_cgroup = NULL;
+          }
+          buf[MAXPATHLEN-1] = '\0';
+          _path = os::strdup(buf);
         }
       }
     }
