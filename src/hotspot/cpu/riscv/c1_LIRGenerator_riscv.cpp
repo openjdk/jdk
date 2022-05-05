@@ -195,14 +195,14 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
   return generate_address(array_opr, index_opr, shift, offset_in_bytes, type);
 }
 
-LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
+LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
   LIR_Opr r;
   switch (type) {
     case T_LONG:
       r = LIR_OprFact::longConst(x);
       break;
     case T_INT:
-      r = LIR_OprFact::intConst(x);
+      r = LIR_OprFact::intConst(checked_cast<jint>(x));
       break;
     default:
       ShouldNotReachHere();
