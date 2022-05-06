@@ -23,23 +23,28 @@
  * questions.
  */
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.border.Border;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Robot;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 
 /*
  * @test
@@ -52,6 +57,8 @@ import java.io.IOException;
 
 public class TitledBorderTest {
 
+    public static final Dimension SIZE = new Dimension(120, 20);
+
     public static JFrame frame;
     public static JPanel contentPanel;
     public static JPanel parentPanel;
@@ -59,114 +66,182 @@ public class TitledBorderTest {
     public static BufferedImage buff;
     public static Color highlight = Color.RED;
     public static Color shadow = Color.BLUE;
-    public static boolean showFrame = true;
+    public static boolean showFrame = false;
+
+    private static final double[] scales =
+            {1.00, 1.25, 1.50, 1.75, 2.00, 2.50, 3.00};
+
+    private static final List<BufferedImage> images =
+            new ArrayList<>(scales.length);
+
+    private static final List<Point> panelLocations =
+            new ArrayList<>(4);
 
     public static void main(String[] args) throws Exception {
+        showFrame = args.length > 1 && "-show".equals(args[0]);
         try {
             UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
         } catch (Exception e) {
             throw new RuntimeException("Could not get Windows laf.");
         }
 
-        for (double scaling : new double[] {1.50}) {
-            testScaling(scaling, showFrame);
-        }
+        testScaling(showFrame);
     }
 
-    private static void testScaling(double scaling, boolean show) throws Exception {
-        SwingUtilities.invokeAndWait(() -> createAndShowGUI(scaling, show));
-        Robot robot = new Robot();
+    private static void testScaling(boolean show) throws Exception {
+        SwingUtilities.invokeAndWait(() -> createAndShowGUI(show));
 
-        while(showFrame && frame.isVisible()) Thread.sleep(500);
+        for (int i = 0; i < images.size(); i++) {
+            try {
+                BufferedImage img = images.get(i);
+                double scaling = scales[i];
 
-        robot.waitForIdle();
-        // testing left edge
-        checkVerticalBorder(15, 70, 20, 80, highlight, scaling);
-        checkVerticalBorder(18, 120, 23, 130, highlight, scaling);
-        checkVerticalBorder(20, 170, 25, 180, highlight, scaling);
-        checkVerticalBorder(22, 220, 28, 230, highlight, scaling);
+                // For vertical count the number of shadow / highlight in
+                // the middle of the image at (x = SIZE.width / 2)
+                // (there must be no background color between these two colours)
+                // Then skip background until the next border where you count
+                // shadow and highlight thickness
 
-        // testing right edge
+                // int x = SIZE.width / 2;
+                // checkVerticalBorders(x, img);
 
-        // testing top edge
+                // For horizontal border, take the middle of each panel and
+                // count the number of shadow and highlight pixels
+                for (Point p : panelLocations) {
+                    int y = (int) (p.y * scaling) + SIZE.height / 2;
+                    System.out.println(scaling + " : " + y);
 
-        // testing bottom edge
+                     checkHorizontalBorder(y, img, scaling);
+                }
+            } catch (Throwable e) {
+                // print an error message
+                // save image for a failed test
 
-    }
-
-    private static void checkHorizontalBorder(int x1, int y1, int x2, int y2,
-                                              Color color, double scaling) throws RuntimeException {
-        for (int j = x1; j < x2; j++) {
-            int thickness = 0;
-            for (int i = y1; i < y2; i++) {
-                if (buff.getRGB(i, j) == color.getRGB()) thickness++;
-            }
-            if (thickness > Math.floor(scaling)) {
-                System.out.println(y1 + " " + y2 + " " + thickness);
-                saveImage(buff, "test.png");
-                throw new RuntimeException("Border drawn too thick.");
-            } else if (thickness < Math.floor(scaling)) {
-                System.out.println(y1 + " " + y2 + " " + thickness);
-                saveImage(buff, "test.png");
-                throw new RuntimeException("BorderLayout was clipped or overdrawn.");
+                // here the information about the associated scale is needed
+                // iterating via regular for-loop with index could easily
+                // get you the scale from the scales array
             }
         }
     }
 
-    private static void checkVerticalBorder(int x1, int y1, int x2, int y2,
-                                            Color color, double scaling) throws RuntimeException {
-        for (int j = y1; j < y2; j++) {
-            int thickness = 0;
-            for (int i = x1; i < x2; i++) {
-                if (buff.getRGB(i, j) == color.getRGB()) thickness++;
-            }
-            if (thickness > Math.floor(scaling)) {
-                System.out.println(y1 + " " + y2 + " " + thickness);
-                saveImage(buff, "test.png");
-                throw new RuntimeException("Border drawn too thick.");
-            } else if (thickness < Math.floor(scaling)) {
-                System.out.println(y1 + " " + y2 + " " + thickness);
-                saveImage(buff, "test.png");
-                throw new RuntimeException("BorderLayout was clipped or overdrawn.");
+    private static void hBorderLoop(int x1, int x2, int y, BufferedImage buff,
+                                    Color c, double scaling) throws RuntimeException {
+        int thickness = 0;
+        for (int i = x1; i < x2; i++) {
+            if (buff.getRGB(i, y) == c.getRGB()) thickness++;
+        }
+
+        if (thickness > Math.floor(scaling)) {
+            throw new RuntimeException("Border drawn too thick.");
+        } else if (thickness < Math.floor(scaling)) {
+            throw new RuntimeException("Border was clipped or overdrawn.");
+        }
+    }
+
+    private static void checkHorizontalBorder(int y, BufferedImage img, double scaling) throws RuntimeException {
+        // checking left border
+        hBorderLoop(0, (int) Math.floor(scaling)+1, y, img, highlight, scaling);
+        hBorderLoop((int) Math.floor(scaling), (int) Math.floor(scaling)*2+1, y, img, shadow, scaling);
+
+        // checking right border
+        hBorderLoop(img.getWidth() - ((int) Math.floor(scaling)*2+1), img.getWidth() - ((int) Math.floor(scaling)),
+                y, img, highlight, scaling);
+        hBorderLoop(img.getWidth() - ((int) Math.floor(scaling)+1), img.getWidth(),
+                y, img, shadow, scaling);
+    }
+
+    private static void verifyThickness(int thickness, double scaling) {
+        int expected = (int) Math.floor(scaling);
+        if (thickness < expected) throw new RuntimeException("Border drawn too thin.");
+        if (thickness > expected) throw new RuntimeException("Border drawn too thick.");
+    }
+
+    private static void checkVerticalBorder(int x, BufferedImage img, double scaling) throws RuntimeException {
+        int thickness = 0;
+        boolean checkShadow = false;
+        boolean checkHighlight = false;
+        for (int i = 0; i < img.getHeight(); i++) {
+            int color = img.getRGB(x,i);
+            if (!checkHighlight && !checkShadow) {
+                if (color == highlight.getRGB()) {
+                    checkHighlight = true;
+                    thickness++;
+                } else if (color == shadow.getRGB()) {
+                    throw new RuntimeException("Border was clipped or overdrawn.");
+                } else {
+                    continue;
+                }
+            } else if (checkHighlight) {
+                if (color == highlight.getRGB()) {
+                    thickness++;
+                } else if (color == shadow.getRGB()) {
+                    verifyThickness(thickness, scaling);
+                    checkHighlight = false;
+                    checkShadow = true;
+                    thickness = 0;
+                } else {
+                    throw new RuntimeException("Border was clipped or overdrawn.");
+                }
+            } else {
+                if (color == highlight.getRGB()) {
+                    throw new RuntimeException("Border colors reversed.");
+                } else if (color == shadow.getRGB()) {
+                    thickness++;
+                } else {
+                    verifyThickness(thickness, scaling);
+                    checkShadow = false;
+                    thickness = 0;
+                }
             }
         }
     }
 
-    private static void createAndShowGUI(double scaling, boolean showFrame) {
+    private static void createAndShowGUI(boolean showFrame) {
         // Render content panel
         contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-        contentPanel.setSize(new java.awt.Dimension(300, 200));
 
         for (int i = 0; i < 4; i++) {
             parentPanel = new JPanel(new BorderLayout());
-            parentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5 + i, 5, 5));
+            parentPanel.setBorder(BorderFactory.createEmptyBorder(0, i, 4, 0));
 
             childPanel = new JPanel(new BorderLayout());
             childPanel.setBorder(BorderFactory.createEtchedBorder(highlight, shadow));
-            childPanel.add(new JCheckBox(), BorderLayout.CENTER);
+            childPanel.add(Box.createRigidArea(SIZE), BorderLayout.CENTER);
 
             parentPanel.add(childPanel, BorderLayout.CENTER);
             contentPanel.add(parentPanel);
         }
 
-        // Create BufferedImage
-        buff = new BufferedImage(contentPanel.getWidth() * ((int) Math.ceil(scaling)),
-                contentPanel.getHeight() * ((int) Math.ceil(scaling)), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D graph = buff.createGraphics();
+        frame = new JFrame("Swing Test");
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.getContentPane().add(contentPanel, BorderLayout.CENTER);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
 
-        // Set affine transform
-        graph.scale(scaling, scaling);
-
-        // Painting panel onto BufferedImage
-        contentPanel.paint(graph);
-        graph.dispose();
+        for (double scaling : scales) {
+            // Create BufferedImage
+            BufferedImage buff = new BufferedImage((int) Math.ceil(contentPanel.getWidth() * scaling),
+                    (int) Math.ceil(contentPanel.getHeight() * scaling),
+                    BufferedImage.TYPE_INT_ARGB);
+            Graphics2D graph = buff.createGraphics();
+            graph.scale(scaling, scaling);
+            // Painting panel onto BufferedImage
+            contentPanel.paint(graph);
+            graph.dispose();
+            // Save each image ? -- Here it's useful for debugging
+            saveImage(buff, String.format("test%.2f.png", scaling));
+            images.add(buff);
+        }
+        // Save coordinates of the panels
+        Arrays.stream(contentPanel.getComponents())
+                .map(Component::getLocation)
+                .forEach(panelLocations::add);
 
         if (showFrame) {
-            frame = new JFrame("Swing Test");
-            frame.setSize(300, 200);
-            frame.getContentPane().add(contentPanel, BorderLayout.CENTER);
             frame.setVisible(true);
+        } else {
+            frame.dispose();
         }
     }
 
