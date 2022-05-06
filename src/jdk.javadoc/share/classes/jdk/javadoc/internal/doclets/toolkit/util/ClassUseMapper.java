@@ -221,7 +221,7 @@ public class ClassUseMapper {
             for (VariableElement fd : fields) {
                 mapTypeParameters(classToFieldTypeParam, fd, fd);
                 mapAnnotations(annotationToField, fd, fd);
-                 var stv = new SimpleTypeVisitor9<Void, VariableElement>() {
+                var stv = new SimpleTypeVisitor9<Void, VariableElement>() {
                     @Override
                     public Void visitArray(ArrayType t, VariableElement p) {
                         return visit(t.getComponentType(), p);
