@@ -55,7 +55,7 @@ public class ForkJoinPool19Test extends JSR166TestCase {
     }
 
     public static Test suite() {
-        return new TestSuite(ForkJoinPool8Test.class);
+        return new TestSuite(ForkJoinPool19Test.class);
     }
 
     /**
@@ -265,16 +265,18 @@ public class ForkJoinPool19Test extends JSR166TestCase {
      * workers are created or it is explicitly joined by a worker.
      */
     public void testLazySubmit() {
+        FibAction f = new FibAction(8);
+        RecursiveAction j = new RecursiveAction() {
+                protected void compute() {
+                    f.join();
+                }};
         RecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
                 final ForkJoinPool p = mainPool();
-                FibAction f = new FibAction(8);
+                p.invoke(new FibAction(8));
                 p.lazySubmit(f);
-                checkNotDone(f);
-                FibAction g = new FibAction(8);
-                p.submit(g);
-                g.join();
-                f.join();
+                p.invoke(new FibAction(8));
+                p.invoke(j);
                 assertEquals(21, f.result);
                 checkCompletedNormally(f);
             }};
