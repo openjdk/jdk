@@ -92,7 +92,6 @@ public class TitledBorderTest {
         SwingUtilities.invokeAndWait(() -> createAndShowGUI(show));
 
         for (int i = 0; i < images.size(); i++) {
-            try {
                 BufferedImage img = images.get(i);
                 double scaling = scales[i];
 
@@ -102,8 +101,8 @@ public class TitledBorderTest {
                 // Then skip background until the next border where you count
                 // shadow and highlight thickness
 
-                // int x = SIZE.width / 2;
-                // checkVerticalBorders(x, img);
+                 int x = SIZE.width / 2;
+                 checkVerticalBorder(x, img, scaling);
 
                 // For horizontal border, take the middle of each panel and
                 // count the number of shadow and highlight pixels
@@ -113,14 +112,6 @@ public class TitledBorderTest {
 
                      checkHorizontalBorder(y, img, scaling);
                 }
-            } catch (Throwable e) {
-                // print an error message
-                // save image for a failed test
-
-                // here the information about the associated scale is needed
-                // iterating via regular for-loop with index could easily
-                // get you the scale from the scales array
-            }
         }
     }
 
@@ -131,29 +122,34 @@ public class TitledBorderTest {
             if (buff.getRGB(i, y) == c.getRGB()) thickness++;
         }
 
-        if (thickness > Math.floor(scaling)) {
-            throw new RuntimeException("Border drawn too thick.");
-        } else if (thickness < Math.floor(scaling)) {
-            throw new RuntimeException("Border was clipped or overdrawn.");
+        int expected = (int) Math.floor(scaling);
+        if (thickness > expected) {
+            throw new RuntimeException("Horizontal Border drawn too thick. Thickness: "
+                    + thickness + " Scaling: " + scaling + " y: " + y);
+        } else if (thickness < expected) {
+            throw new RuntimeException("Horizontal Border drawn too thin. Thickness: "
+                    + thickness + " Scaling: " + scaling + " y: " + y);
         }
     }
 
     private static void checkHorizontalBorder(int y, BufferedImage img, double scaling) throws RuntimeException {
         // checking left border
-        hBorderLoop(0, (int) Math.floor(scaling)+1, y, img, highlight, scaling);
-        hBorderLoop((int) Math.floor(scaling), (int) Math.floor(scaling)*2+1, y, img, shadow, scaling);
+        hBorderLoop(0, (int) (Math.floor(scaling)+(5*scaling)), y, img, shadow, scaling);
+        hBorderLoop((int) Math.floor(scaling), (int) (Math.floor(scaling)*2+5*scaling), y, img, highlight, scaling);
 
         // checking right border
-        hBorderLoop(img.getWidth() - ((int) Math.floor(scaling)*2+1), img.getWidth() - ((int) Math.floor(scaling)),
-                y, img, highlight, scaling);
-        hBorderLoop(img.getWidth() - ((int) Math.floor(scaling)+1), img.getWidth(),
+        hBorderLoop(img.getWidth() - ((int) (Math.floor(scaling)*2+5*scaling)), img.getWidth() - ((int) Math.floor(scaling)),
                 y, img, shadow, scaling);
+        hBorderLoop(img.getWidth() - ((int) (Math.floor(scaling)+5*scaling)), img.getWidth(),
+                y, img, highlight, scaling);
     }
 
-    private static void verifyThickness(int thickness, double scaling) {
+    private static void verifyThickness(int x, int thickness, double scaling) {
         int expected = (int) Math.floor(scaling);
-        if (thickness < expected) throw new RuntimeException("Border drawn too thin.");
-        if (thickness > expected) throw new RuntimeException("Border drawn too thick.");
+        if (thickness < expected) throw new RuntimeException("Vertical Border drawn too thin. Thickness: "
+                + thickness + " Scaling: " + scaling + " x: " + x);
+        if (thickness > expected) throw new RuntimeException("Vertical Border drawn too thick. Thickness: "
+                + thickness + " Scaling: " + scaling + " x: " + x);
     }
 
     private static void checkVerticalBorder(int x, BufferedImage img, double scaling) throws RuntimeException {
@@ -163,32 +159,34 @@ public class TitledBorderTest {
         for (int i = 0; i < img.getHeight(); i++) {
             int color = img.getRGB(x,i);
             if (!checkHighlight && !checkShadow) {
-                if (color == highlight.getRGB()) {
+                if (color == shadow.getRGB()) {
                     checkHighlight = true;
                     thickness++;
-                } else if (color == shadow.getRGB()) {
-                    throw new RuntimeException("Border was clipped or overdrawn.");
+                } else if (color == highlight.getRGB()) {
+                    throw new RuntimeException("Vertical Border was clipped or overdrawn."
+                            + " Scaling: " + scaling + " x: " + x);
                 } else {
                     continue;
                 }
             } else if (checkHighlight) {
-                if (color == highlight.getRGB()) {
+                if (color == shadow.getRGB()) {
                     thickness++;
-                } else if (color == shadow.getRGB()) {
-                    verifyThickness(thickness, scaling);
+                } else if (color == highlight.getRGB()) {
+                    verifyThickness(x, thickness, scaling);
                     checkHighlight = false;
                     checkShadow = true;
-                    thickness = 0;
+                    thickness = 1;
                 } else {
-                    throw new RuntimeException("Border was clipped or overdrawn.");
+                    throw new RuntimeException("Vertical Border was clipped or overdrawn."
+                            + " Scaling: " + scaling + " x: " + x);
                 }
             } else {
-                if (color == highlight.getRGB()) {
+                if (color == shadow.getRGB()) {
                     throw new RuntimeException("Border colors reversed.");
-                } else if (color == shadow.getRGB()) {
+                } else if (color == highlight.getRGB()) {
                     thickness++;
                 } else {
-                    verifyThickness(thickness, scaling);
+                    verifyThickness(x, thickness, scaling);
                     checkShadow = false;
                     thickness = 0;
                 }
