@@ -578,7 +578,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { ER_RTF_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
        "XRTreeFragSelectWrapper\uB294 rtf()\uB97C \uC9C0\uC6D0\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
 
-  { ER_RTF_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
+  { ER_ASNODEITERATOR_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
        "XRTreeFragSelectWrapper\uB294 asNodeIterator()\uB97C \uC9C0\uC6D0\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."},
 
         /**  detach() not supported by XRTreeFragSelectWrapper   */
