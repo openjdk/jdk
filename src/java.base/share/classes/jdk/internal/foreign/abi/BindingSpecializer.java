@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.constant.ConstantDescs;
 import java.lang.foreign.Addressable;
+import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
@@ -112,6 +113,8 @@ public class BindingSpecializer {
 
     private static final String SUPER_NAME = OBJECT_INTRN;
 
+    private static final SoftReferenceCache<FunctionDescriptor, MethodHandle> UPCALL_WRAPPER_CACHE = new SoftReferenceCache<>();
+
     // Instance fields start here
     private final MethodVisitor mv;
     private final MethodType callerMethodType;
@@ -142,6 +145,15 @@ public class BindingSpecializer {
     }
 
     static MethodHandle specialize(MethodHandle leafHandle, CallingSequence callingSequence, ABIDescriptor abi) {
+        if (callingSequence.forUpcall()) {
+            MethodHandle wrapper = UPCALL_WRAPPER_CACHE.get(callingSequence.functionDesc(), fd -> doSpecialize(leafHandle, callingSequence, abi));
+            return MethodHandles.insertArguments(wrapper, 0, leafHandle); // lazily customized for leaf handle instances
+        } else {
+            return doSpecialize(leafHandle, callingSequence, abi);
+        }
+    }
+
+    static MethodHandle doSpecialize(MethodHandle leafHandle, CallingSequence callingSequence, ABIDescriptor abi) {
         String className = callingSequence.forDowncall() ? CLASS_NAME_DOWNCALL : CLASS_NAME_UPCALL;
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
         cw.visit(CLASSFILE_VERSION, ACC_PUBLIC + ACC_FINAL + ACC_SUPER, className, null, SUPER_NAME, null);
@@ -152,6 +164,8 @@ public class BindingSpecializer {
                 callerMethodType = callerMethodType.dropParameterTypes(0, 1); // Return buffer does not appear in the parameter list
             }
             callerMethodType = callerMethodType.insertParameterTypes(0, SegmentAllocator.class);
+        } else { // upcall
+            callerMethodType = callerMethodType.insertParameterTypes(0, MethodHandle.class); // target
         }
         String descriptor = callerMethodType.descriptorString();
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, METHOD_NAME, descriptor, null, null);
@@ -181,12 +195,13 @@ public class BindingSpecializer {
         }
 
         try {
-            // We must initialize the class since the upcall stubs don't have a clinit barrier, and the slow
-            // path in the c2i adapter we end up calling can not handle the particular code shape where the
-            // caller is an optimized upcall stub.
-            boolean initialize = callingSequence.forUpcall();
-            MethodHandles.Lookup lookup = MethodHandles.lookup().defineHiddenClassWithClassData(bytes, leafHandle, initialize);
-            return lookup.findStatic(lookup.lookupClass(), METHOD_NAME, callerMethodType);
+            MethodHandles.Lookup defineClassLookup = callingSequence.forUpcall()
+                // For upcalls, we must initialize the class since the upcall stubs don't have a clinit barrier,
+                // and the slow path in the c2i adapter we end up calling can not handle the particular code shape
+                // where the caller is an upcall stub.
+                ? MethodHandles.lookup().defineHiddenClass(bytes, true)
+                : MethodHandles.lookup().defineHiddenClassWithClassData(bytes, leafHandle, false);
+            return defineClassLookup.findStatic(defineClassLookup.lookupClass(), METHOD_NAME, callerMethodType);
         } catch (IllegalAccessException | NoSuchMethodException e) {
             throw new InternalError("Should not happen", e);
         }
@@ -300,7 +315,7 @@ public class BindingSpecializer {
         // these are collected from VM_STORE instructions for downcalls, and
         // recipe outputs for upcalls (see uses emitSetOutput for both)
         leafArgTypes = new ArrayList<>();
-        paramIndex = callingSequence.forDowncall() ? 1 : 0; // +1 to skip SegmentAllocator
+        paramIndex = 1; // +1 to skip SegmentAllocator or MethodHandle
         for (int i = 0; i < callingSequence.argumentBindingsCount(); i++) {
             if (callingSequence.forDowncall()) {
                 // for downcalls, recipes have an input value, which we set up here
@@ -334,7 +349,11 @@ public class BindingSpecializer {
         assert leafArgTypes.equals(leafType.parameterList());
 
         // load the leaf MethodHandle
-        mv.visitLdcInsn(CLASS_DATA_CONDY);
+        if (callingSequence.forDowncall()) {
+            mv.visitLdcInsn(CLASS_DATA_CONDY);
+        } else {
+            emitLoad(BasicType.L, 0); // load target arg
+        }
         emitCheckCast(MethodHandle.class);
         // load all the leaf args
         for (int i = 0; i < leafArgSlots.length; i++) {
