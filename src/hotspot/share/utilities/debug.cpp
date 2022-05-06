@@ -414,7 +414,7 @@ extern "C" JNIEXPORT void dump_vtable(address p) {
 
 
 extern "C" JNIEXPORT void nm(intptr_t p) {
-  // Actually we look through all CodeBlobs (the nm name has been kept for backwards compatability)
+  // Actually we look through all CodeBlobs (the nm name has been kept for backwards compatibility)
   Command c("nm");
   CodeBlob* cb = CodeCache::find_blob((address)p);
   if (cb == NULL) {
@@ -478,6 +478,10 @@ extern "C" JNIEXPORT void verify() {
 extern "C" JNIEXPORT void pp(void* p) {
   Command c("pp");
   FlagSetting fl(DisplayVMOutput, true);
+  if (p == NULL) {
+    tty->print_cr("NULL");
+    return;
+  }
   if (Universe::heap()->is_in(p)) {
     oop obj = cast_to_oop(p);
     obj->print();
@@ -489,7 +493,7 @@ extern "C" JNIEXPORT void pp(void* p) {
     // In order to avoid that, switch off SIGSEGV handling with "handle SIGSEGV nostop" before
     // invoking pp()
     if (MemTracker::enabled()) {
-      // Does it point into a known mmaped region?
+      // Does it point into a known mmapped region?
       if (VirtualMemoryTracker::print_containing_region(p, tty)) {
         return;
       }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -549,7 +549,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(exception);
 
-  // Check the stack guard pages and reenable them if necessary and there is
+  // Check the stack guard pages and re-enable them if necessary and there is
   // enough space on the stack to do so.  Use fast exceptions only if the guard
   // pages are enabled.
   bool guard_pages_enabled = current->stack_overflow_state()->reguard_stack_if_needed();
@@ -864,7 +864,7 @@ static Klass* resolve_field_return_klass(const methodHandle& caller, int bci, TR
 // If the class is being initialized the patch body is rewritten and
 // the patch site is rewritten to jump to being_init, instead of
 // patch_stub.  Whenever this code is executed it checks the current
-// thread against the intializing thread so other threads will enter
+// thread against the initializing thread so other threads will enter
 // the runtime and end up blocked waiting the class to finish
 // initializing inside the calls to resolve_field below.  The
 // initializing class will continue on it's way.  Once the class is
@@ -1009,6 +1009,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_
         break;
       case Bytecodes::_ldc:
       case Bytecodes::_ldc_w:
+      case Bytecodes::_ldc2_w:
         {
           Bytecode_loadconstant cc(caller_method, bci);
           oop m = cc.resolve_constant(CHECK);
@@ -1153,7 +1154,6 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_
               assert(load_klass != NULL, "klass not set");
               n_copy->set_data((intx) (load_klass));
             } else {
-              assert(mirror() != NULL, "klass not set");
               // Don't need a G1 pre-barrier here since we assert above that data isn't an oop.
               n_copy->set_data(cast_from_oop<intx>(mirror()));
             }

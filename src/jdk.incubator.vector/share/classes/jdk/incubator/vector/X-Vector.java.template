@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -596,9 +596,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 #if[BITWISE]
             if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
-            } else if (op == NEG) {
-                // FIXME: Support this in the JIT.
-                return broadcast(0).lanewise(SUB, this);
             }
 #end[BITWISE]
         }
@@ -629,8 +626,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 #if[BITWISE]
             if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
-            } else if (op == NEG) {
-                return lanewise(NOT, m).lanewise(ADD, broadcast(1), m);
             }
 #end[BITWISE]
         }
@@ -2128,12 +2123,14 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     M testTemplate(Class<M> maskType, Test op) {
         $Type$Species vsp = vspecies();
         if (opKind(op, VO_SPECIAL)) {
+#if[FP]
             $Bitstype$Vector bits = this.viewAsIntegralLanes();
+#end[FP]
             VectorMask<$Boxbitstype$> m;
             if (op == IS_DEFAULT) {
-                m = bits.compare(EQ, ($bitstype$) 0);
+                m = {#if[FP]?bits.}compare(EQ, ($bitstype$) 0);
             } else if (op == IS_NEGATIVE) {
-                m = bits.compare(LT, ($bitstype$) 0);
+                m = {#if[FP]?bits.}compare(LT, ($bitstype$) 0);
             }
 #if[FP]
             else if (op == IS_FINITE ||
@@ -2156,7 +2153,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             else {
                 throw new AssertionError(op);
             }
-            return maskType.cast(m{#if[FP]?.cast(this.vspecies())});
+            return maskType.cast(m{#if[FP]?.cast(vsp)});
         }
         int opc = opCode(op);
         throw new AssertionError(op);
@@ -2166,11 +2163,54 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    @ForceInline
-    public final
+    public abstract
     VectorMask<$Boxtype$> test(VectorOperators.Test op,
-                                  VectorMask<$Boxtype$> m) {
-        return test(op).and(m);
+                                  VectorMask<$Boxtype$> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends VectorMask<$Boxtype$>>
+    M testTemplate(Class<M> maskType, Test op, M mask) {
+        $Type$Species vsp = vspecies();
+        mask.check(maskType, this);
+        if (opKind(op, VO_SPECIAL)) {
+#if[FP]
+            $Bitstype$Vector bits = this.viewAsIntegralLanes();
+            VectorMask<$Boxbitstype$> m = mask.cast($Bitstype$Vector.species(shape()));
+#else[FP]
+            VectorMask<$Boxbitstype$> m = mask;
+#end[FP]
+            if (op == IS_DEFAULT) {
+                m = {#if[FP]?bits.}compare(EQ, ($bitstype$) 0, m);
+            } else if (op == IS_NEGATIVE) {
+                m = {#if[FP]?bits.}compare(LT, ($bitstype$) 0, m);
+            }
+#if[FP]
+            else if (op == IS_FINITE ||
+                     op == IS_NAN ||
+                     op == IS_INFINITE) {
+                // first kill the sign:
+                bits = bits.and($Boxbitstype$.MAX_VALUE);
+                // next find the bit pattern for infinity:
+                $bitstype$ infbits = ($bitstype$) toBits($Boxtype$.POSITIVE_INFINITY);
+                // now compare:
+                if (op == IS_FINITE) {
+                    m = bits.compare(LT, infbits, m);
+                } else if (op == IS_NAN) {
+                    m = bits.compare(GT, infbits, m);
+                } else {
+                    m = bits.compare(EQ, infbits, m);
+                }
+            }
+#end[FP]
+            else {
+                throw new AssertionError(op);
+            }
+            return maskType.cast(m{#if[FP]?.cast(vsp)});
+        }
+        int opc = opCode(op);
+        throw new AssertionError(op);
     }
 
     /**
@@ -3021,7 +3061,8 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                VectorMask<$Boxtype$> m) {
         m.check(maskClass, this);
         if (op == FIRST_NONZERO) {
-            $abstractvectortype$ v = reduceIdentityVector(op).blend(this, m);
+            // FIXME:  The JIT should handle this.
+            $abstractvectortype$ v = broadcast(($type$) 0).blend(this, m);
             return v.reduceLanesTemplate(op);
         }
         int opc = opCode(op);
@@ -3036,10 +3077,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     final
     $type$ reduceLanesTemplate(VectorOperators.Associative op) {
         if (op == FIRST_NONZERO) {
-            // FIXME:  The JIT should handle this, and other scan ops alos.
+            // FIXME:  The JIT should handle this.
             VectorMask<$Boxbitstype$> thisNZ
                 = this.viewAsIntegralLanes().compare(NE, ($bitstype$) 0);
-            return this.lane(thisNZ.firstTrue());
+            int ft = thisNZ.firstTrue();
+            return ft < length() ? this.lane(ft) : ($type$) 0;
         }
         int opc = opCode(op);
         return fromBits(VectorSupport.reductionCoerced(
@@ -3073,38 +3115,6 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             default: return null;
         }
     }
-
-    private
-    @ForceInline
-    $abstractvectortype$ reduceIdentityVector(VectorOperators.Associative op) {
-        int opc = opCode(op);
-        UnaryOperator<$abstractvectortype$> fn
-            = REDUCE_ID_IMPL.find(op, opc, (opc_) -> {
-                switch (opc_) {
-                case VECTOR_OP_ADD:
-#if[BITWISE]
-                case VECTOR_OP_OR:
-                case VECTOR_OP_XOR:
-#end[BITWISE]
-                    return v -> v.broadcast(0);
-                case VECTOR_OP_MUL:
-                    return v -> v.broadcast(1);
-#if[BITWISE]
-                case VECTOR_OP_AND:
-                    return v -> v.broadcast(-1);
-#end[BITWISE]
-                case VECTOR_OP_MIN:
-                    return v -> v.broadcast(MAX_OR_INF);
-                case VECTOR_OP_MAX:
-                    return v -> v.broadcast(MIN_OR_INF);
-                default: return null;
-                }
-            });
-        return fn.apply(this);
-    }
-    private static final
-    ImplCache<Associative,UnaryOperator<$abstractvectortype$>> REDUCE_ID_IMPL
-        = new ImplCache<>(Associative.class, $Type$Vector.class);
 
 #if[FP]
     private static final $type$ MIN_OR_INF = $Boxtype$.NEGATIVE_INFINITY;
@@ -5528,12 +5538,12 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      */
     static $Type$Species species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s) {
-            case S_64_BIT: return ($Type$Species) SPECIES_64;
-            case S_128_BIT: return ($Type$Species) SPECIES_128;
-            case S_256_BIT: return ($Type$Species) SPECIES_256;
-            case S_512_BIT: return ($Type$Species) SPECIES_512;
-            case S_Max_BIT: return ($Type$Species) SPECIES_MAX;
+        switch (s.switchKey) {
+            case VectorShape.SK_64_BIT: return ($Type$Species) SPECIES_64;
+            case VectorShape.SK_128_BIT: return ($Type$Species) SPECIES_128;
+            case VectorShape.SK_256_BIT: return ($Type$Species) SPECIES_256;
+            case VectorShape.SK_512_BIT: return ($Type$Species) SPECIES_512;
+            case VectorShape.SK_Max_BIT: return ($Type$Species) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,9 +396,6 @@ final class StringLatin1 {
             int u1 = CharacterDataLatin1.instance.toUpperCase(c1);
             int u2 = CharacterDataLatin1.instance.toUpperCase(c2);
             if (u1 == u2) {
-                continue;
-            }
-            if (Character.toLowerCase(u1) == Character.toLowerCase(u2)) {
                 continue;
             }
             return false;

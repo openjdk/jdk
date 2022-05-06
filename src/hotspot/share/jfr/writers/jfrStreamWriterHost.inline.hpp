@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_WRITERS_JFRSTREAMWRITERHOST_INLINE_HPP
 #define SHARE_JFR_WRITERS_JFRSTREAMWRITERHOST_INLINE_HPP
 
+#include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/writers/jfrStreamWriterHost.hpp"
-
 #include "runtime/os.hpp"
 
 template <typename Adapter, typename AP>
@@ -77,6 +77,9 @@ inline void StreamWriterHost<Adapter, AP>::write_bytes(const u1* buf, intptr_t l
   while (len > 0) {
     const unsigned int nBytes = len > INT_MAX ? INT_MAX : (unsigned int)len;
     const ssize_t num_written = os::write(_fd, buf, nBytes);
+    if (errno == ENOSPC) {
+      JfrJavaSupport::abort("Failed to write to jfr stream because no space left on device", false);
+    }
     guarantee(num_written > 0, "Nothing got written, or os::write() failed");
     _stream_pos += num_written;
     len -= num_written;

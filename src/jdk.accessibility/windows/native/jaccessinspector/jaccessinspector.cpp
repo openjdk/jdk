@@ -205,7 +205,7 @@ void displayJavaEvent(long vmID, AccessibleContext ac, char *announcement) {
  * Display Accessible propertyChange event info
  */
 void displayAccessiblePropertyChange(long vmID, AccessibleContext ac,
-                                     char *announcement) {
+                                     const char *announcement) {
     char buffer[HUGE_BUFSIZE];
     char *bufOffset;
 

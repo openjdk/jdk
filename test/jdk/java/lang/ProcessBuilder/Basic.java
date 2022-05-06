@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  *      4947220 7018606 7034570 4244896 5049299 8003488 8054494 8058464
- *      8067796 8224905 8263729 8265173 8272600 8231297
+ *      8067796 8224905 8263729 8265173 8272600 8231297 8282219
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
@@ -486,15 +486,15 @@ public class Basic {
                             equal(run(pb).exitValue(),
                                   False.exitValue());
                             // Traditional shell scripts without #!
-                            setFileContents(prog, "exec /bin/true\n");
-                            prog.setExecutable(true);
-                            equal(run(pb).exitValue(),
-                                  True.exitValue());
-                            prog.delete();
-                            setFileContents(prog, "exec /bin/false\n");
-                            prog.setExecutable(true);
-                            equal(run(pb).exitValue(),
-                                  False.exitValue());
+                            if (!(Platform.isLinux() && Platform.isMusl())) {
+                                setFileContents(prog, "exec /bin/true\n");
+                                prog.setExecutable(true);
+                                equal(run(pb).exitValue(), True.exitValue());
+                                prog.delete();
+                                setFileContents(prog, "exec /bin/false\n");
+                                prog.setExecutable(true);
+                                equal(run(pb).exitValue(), False.exitValue());
+                            }
                             prog.delete();
                         }
 
@@ -511,14 +511,16 @@ public class Basic {
                         pb.command(cmd);
 
                         // Test traditional shell scripts without #!
-                        setFileContents(dir1Prog, "/bin/echo \"$@\"\n");
-                        pb.command(new String[] {"prog", "hello", "world"});
-                        checkPermissionDenied(pb);
-                        dir1Prog.setExecutable(true);
-                        equal(run(pb).out(), "hello world\n");
-                        equal(run(pb).exitValue(), True.exitValue());
-                        dir1Prog.delete();
-                        pb.command(cmd);
+                        if (!(Platform.isLinux() && Platform.isMusl())) {
+                            setFileContents(dir1Prog, "/bin/echo \"$@\"\n");
+                            pb.command(new String[] {"prog", "hello", "world"});
+                            checkPermissionDenied(pb);
+                            dir1Prog.setExecutable(true);
+                            equal(run(pb).out(), "hello world\n");
+                            equal(run(pb).exitValue(), True.exitValue());
+                            dir1Prog.delete();
+                            pb.command(cmd);
+                        }
 
                         // If prog found on both parent and child's PATH,
                         // parent's is used.
@@ -1870,6 +1872,8 @@ public class Basic {
             String[] envpOth = {"=ExitValue=3", "=C:=\\"};
             if (Windows.is()) {
                 envp = envpWin;
+            } else if (AIX.is()) {
+                envp = new String[] {"=ExitValue=3", "=C:=\\", "LIBPATH=" + libpath};
             } else {
                 envp = envpOth;
             }
@@ -1918,6 +1922,9 @@ public class Basic {
             String[] envp;
             if (Windows.is()) {
                 envp = envpWin;
+            } else if (AIX.is()) {
+                envp = new String[] {"LC_ALL=C\u0000\u0000", // Yuck!
+                        "FO\u0000=B\u0000R", "LIBPATH=" + libpath};
             } else {
                 envp = envpOth;
             }

@@ -1362,4 +1362,268 @@ public class TestVectorCast {
     public static void runD512toF256() throws Throwable {
         runCastHelper(D2F, DSPEC512, FSPEC256);
     }
+
+    @Test
+    @IR(counts = {UB2X_NODE, "1"})
+    public static void testUB64toS64(byte[] input, short[] output) {
+        vectorCast(ZERO_EXTEND_B2S, BSPEC64, SSPEC64, input, output);
+    }
+
+    @Run(test = "testUB64toS64")
+    public static void runUB64toS64() throws Throwable {
+        runCastHelper(ZERO_EXTEND_B2S, BSPEC64, SSPEC64);
+    }
+
+    @Test
+    @IR(counts = {UB2X_NODE, "1"})
+    public static void testUB64toS128(byte[] input, short[] output) {
+        vectorCast(ZERO_EXTEND_B2S, BSPEC64, SSPEC128, input, output);
+    }
+
+    @Run(test = "testUB64toS128")
+    public static void runUB64toS128() throws Throwable {
+        runCastHelper(ZERO_EXTEND_B2S, BSPEC64, SSPEC128);
+    }
+
+    @Test
+    @IR(counts = {UB2X_NODE, "1"})
+    public static void testUB128toS256(byte[] input, short[] output) {
+        vectorCast(ZERO_EXTEND_B2S, BSPEC128, SSPEC256, input, output);
+    }
+
+    @Run(test = "testUB128toS256")
+    public static void runUB128toS256() throws Throwable {
+        runCastHelper(ZERO_EXTEND_B2S, BSPEC128, SSPEC256);
+    }
+
+    @Test
+    @IR(counts = {UB2X_NODE, "1"})
+    public static void testUB256toS512(byte[] input, short[] output) {
+        vectorCast(ZERO_EXTEND_B2S, BSPEC256, SSPEC512, input, output);
+    }
+
+    @Run(test = "testUB256toS512")
+    public static void runUB256toS512() throws Throwable {
+        runCastHelper(ZERO_EXTEND_B2S, BSPEC256, SSPEC512);
+    }
+
+    @Test
+    @IR(counts = {UB2X_NODE, "1"})
+    public static void testUB64toI64(byte[] input, int[] output) {
+        vectorCast(ZERO_EXTEND_B2I, BSPEC64, ISPEC64, input, output);
+    }
+
+    @Run(test = "testUB64toI64")
+    public static void runUB64toI64() throws Throwable {
+        runCastHelper(ZERO_EXTEND_B2I, BSPEC64, ISPEC64);
+    }
+
+    @Test
+    @IR(counts = {UB2X_NODE, "1"})
+    public static void testUB64toI128(byte[] input, int[] output) {
+        vectorCast(ZERO_EXTEND_B2I, BSPEC64, ISPEC128, input, output);
+    }
+
+    @Run(test = "testUB64toI128")
+    public static void runUB64toI128() throws Throwable {
+        runCastHelper(ZERO_EXTEND_B2I, BSPEC64, ISPEC128);
+    }
+
+    @Test
+    @IR(counts = {UB2X_NODE, "1"})
+    public static void testUB64toI256(byte[] input, int[] output) {
+        vectorCast(ZERO_EXTEND_B2I, BSPEC64, ISPEC256, input, output);
+    }
+
+    @Run(test = "testUB64toI256")
+    public static void runUB64toI256() throws Throwable {
+        runCastHelper(ZERO_EXTEND_B2I, BSPEC64, ISPEC256);
+    }
+
+    @Test
+    @IR(counts = {UB2X_NODE, "1"})
+    public static void testUB128toI512(byte[] input, int[] output) {
+        vectorCast(ZERO_EXTEND_B2I, BSPEC128, ISPEC512, input, output);
+    }
+
+    @Run(test = "testUB128toI512")
+    public static void runUB128toI512() throws Throwable {
+        runCastHelper(ZERO_EXTEND_B2I, BSPEC128, ISPEC512);
+    }
+
+    @Test
+    @IR(counts = {UB2X_NODE, "1"})
+    public static void testUB64toL64(byte[] input, long[] output) {
+        vectorCast(ZERO_EXTEND_B2L, BSPEC64, LSPEC64, input, output);
+    }
+
+    @Run(test = "testUB64toL64")
+    public static void runUB64toL64() throws Throwable {
+        runCastHelper(ZERO_EXTEND_B2L, BSPEC64, LSPEC64);
+    }
+
+    @Test
+    @IR(counts = {UB2X_NODE, "1"})
+    public static void testUB64toL128(byte[] input, long[] output) {
+        vectorCast(ZERO_EXTEND_B2L, BSPEC64, LSPEC128, input, output);
+    }
+
+    @Run(test = "testUB64toL128")
+    public static void runUB64toL128() throws Throwable {
+        runCastHelper(ZERO_EXTEND_B2L, BSPEC64, LSPEC128);
+    }
+
+    @Test
+    @IR(counts = {UB2X_NODE, "1"})
+    public static void testUB64toL256(byte[] input, long[] output) {
+        vectorCast(ZERO_EXTEND_B2L, BSPEC64, LSPEC256, input, output);
+    }
+
+    @Run(test = "testUB64toL256")
+    public static void runUB64toL256() throws Throwable {
+        runCastHelper(ZERO_EXTEND_B2L, BSPEC64, LSPEC256);
+    }
+
+    @Test
+    @IR(counts = {UB2X_NODE, "1"})
+    public static void testUB64toL512(byte[] input, long[] output) {
+        vectorCast(ZERO_EXTEND_B2L, BSPEC64, LSPEC512, input, output);
+    }
+
+    @Run(test = "testUB64toL512")
+    public static void runUB64toL512() throws Throwable {
+        runCastHelper(ZERO_EXTEND_B2L, BSPEC64, LSPEC512);
+    }
+
+    @Test
+    @IR(counts = {US2X_NODE, "1"})
+    public static void testUS64toI64(short[] input, int[] output) {
+        vectorCast(ZERO_EXTEND_S2I, SSPEC64, ISPEC64, input, output);
+    }
+
+    @Run(test = "testUS64toI64")
+    public static void runUS64toI64() throws Throwable {
+        runCastHelper(ZERO_EXTEND_S2I, SSPEC64, ISPEC64);
+    }
+
+    @Test
+    @IR(counts = {US2X_NODE, "1"})
+    public static void testUS64toI128(short[] input, int[] output) {
+        vectorCast(ZERO_EXTEND_S2I, SSPEC64, ISPEC128, input, output);
+    }
+
+    @Run(test = "testUS64toI128")
+    public static void runUS64toI128() throws Throwable {
+        runCastHelper(ZERO_EXTEND_S2I, SSPEC64, ISPEC128);
+    }
+
+    @Test
+    @IR(counts = {US2X_NODE, "1"})
+    public static void testUS128toI256(short[] input, int[] output) {
+        vectorCast(ZERO_EXTEND_S2I, SSPEC128, ISPEC256, input, output);
+    }
+
+    @Run(test = "testUS128toI256")
+    public static void runUS128toI256() throws Throwable {
+        runCastHelper(ZERO_EXTEND_S2I, SSPEC128, ISPEC256);
+    }
+
+    @Test
+    @IR(counts = {US2X_NODE, "1"})
+    public static void testUS256toI512(short[] input, int[] output) {
+        vectorCast(ZERO_EXTEND_S2I, SSPEC256, ISPEC512, input, output);
+    }
+
+    @Run(test = "testUS256toI512")
+    public static void runUS256toI512() throws Throwable {
+        runCastHelper(ZERO_EXTEND_S2I, SSPEC256, ISPEC512);
+    }
+
+    @Test
+    @IR(counts = {US2X_NODE, "1"})
+    public static void testUS64toL64(short[] input, long[] output) {
+        vectorCast(ZERO_EXTEND_S2L, SSPEC64, LSPEC64, input, output);
+    }
+
+    @Run(test = "testUS64toL64")
+    public static void runUS64toL64() throws Throwable {
+        runCastHelper(ZERO_EXTEND_S2L, SSPEC64, LSPEC64);
+    }
+
+    @Test
+    @IR(counts = {US2X_NODE, "1"})
+    public static void testUS64toL128(short[] input, long[] output) {
+        vectorCast(ZERO_EXTEND_S2L, SSPEC64, LSPEC128, input, output);
+    }
+
+    @Run(test = "testUS64toL128")
+    public static void runUS64toL128() throws Throwable {
+        runCastHelper(ZERO_EXTEND_S2L, SSPEC64, LSPEC128);
+    }
+
+    @Test
+    @IR(counts = {US2X_NODE, "1"})
+    public static void testUS64toL256(short[] input, long[] output) {
+        vectorCast(ZERO_EXTEND_S2L, SSPEC64, LSPEC256, input, output);
+    }
+
+    @Run(test = "testUS64toL256")
+    public static void runUS64toL256() throws Throwable {
+        runCastHelper(ZERO_EXTEND_S2L, SSPEC64, LSPEC256);
+    }
+
+    @Test
+    @IR(counts = {US2X_NODE, "1"})
+    public static void testUS128toL512(short[] input, long[] output) {
+        vectorCast(ZERO_EXTEND_S2L, SSPEC128, LSPEC512, input, output);
+    }
+
+    @Run(test = "testUS128toL512")
+    public static void runUS128toL512() throws Throwable {
+        runCastHelper(ZERO_EXTEND_S2L, SSPEC128, LSPEC512);
+    }
+
+    @Test
+    @IR(counts = {UI2X_NODE, "1"})
+    public static void testUI64toL64(int[] input, long[] output) {
+        vectorCast(ZERO_EXTEND_I2L, ISPEC64, LSPEC64, input, output);
+    }
+
+    @Run(test = "testUI64toL64")
+    public static void runUI64toL64() throws Throwable {
+        runCastHelper(ZERO_EXTEND_I2L, ISPEC64, LSPEC64);
+    }
+
+    @Test
+    @IR(counts = {UI2X_NODE, "1"})
+    public static void testUI64toL128(int[] input, long[] output) {
+        vectorCast(ZERO_EXTEND_I2L, ISPEC64, LSPEC128, input, output);
+    }
+
+    @Run(test = "testUI64toL128")
+    public static void runUI64toL128() throws Throwable {
+        runCastHelper(ZERO_EXTEND_I2L, ISPEC64, LSPEC128);
+    }
+
+    @Test
+    @IR(counts = {UI2X_NODE, "1"})
+    public static void testUI128toL256(int[] input, long[] output) {
+        vectorCast(ZERO_EXTEND_I2L, ISPEC128, LSPEC256, input, output);
+    }
+
+    @Run(test = "testUI128toL256")
+    public static void runUI128toL256() throws Throwable {
+        runCastHelper(ZERO_EXTEND_I2L, ISPEC128, LSPEC256);
+    }
+
+    @Test
+    @IR(counts = {UI2X_NODE, "1"})
+    public static void testUI256toL512(int[] input, long[] output) {
+        vectorCast(ZERO_EXTEND_I2L, ISPEC256, LSPEC512, input, output);
+    }
+
+    @Run(test = "testUI256toL512")
+    public static void runUI256toL512() throws Throwable {
+        runCastHelper(ZERO_EXTEND_I2L, ISPEC256, LSPEC512);
+    }
 }

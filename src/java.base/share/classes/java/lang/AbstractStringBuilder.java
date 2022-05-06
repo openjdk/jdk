@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,8 @@ import static java.lang.String.checkOffset;
  * @author      Ulf Zibis
  * @since       1.5
  */
-abstract class AbstractStringBuilder implements Appendable, CharSequence {
+abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
+    permits StringBuilder, StringBuffer {
     /**
      * The value is used for character storage.
      */
@@ -68,6 +69,14 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * The id of the encoding used to encode the bytes in {@code value}.
      */
     byte coder;
+
+    /**
+     *  The attribute indicates {@code value} might be compressible to LATIN1 if it is UTF16-encoded.
+     *  An inflated byte array becomes compressible only when those non-latin1 chars are deleted.
+     *  We simply set this attribute in all methods which may delete chars. Therefore, there are
+     *  false positives. Subclasses and String need to handle it properly.
+     */
+    boolean maybeLatin1;
 
     /**
      * The count is the number of characters used.
@@ -133,10 +142,11 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
 
         final byte initCoder;
         if (COMPACT_STRINGS) {
-            if (seq instanceof AbstractStringBuilder) {
-                initCoder = ((AbstractStringBuilder)seq).getCoder();
-            } else if (seq instanceof String) {
-                initCoder = ((String)seq).coder();
+            if (seq instanceof AbstractStringBuilder asb) {
+                initCoder = asb.getCoder();
+                maybeLatin1 |= asb.maybeLatin1;
+            } else if (seq instanceof String s) {
+                initCoder = s.coder();
             } else {
                 initCoder = LATIN1;
             }
@@ -320,6 +330,8 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
             } else {
                 StringUTF16.fillNull(value, count, newLength);
             }
+        } else if (count > newLength) {
+            maybeLatin1 = true;
         }
         count = newLength;
     }
@@ -529,6 +541,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
                 inflate();
             }
             StringUTF16.putCharSB(value, index, ch);
+            maybeLatin1 = true;
         }
     }
 
@@ -598,6 +611,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         inflateIfNeededFor(asb);
         asb.getBytes(value, count, coder);
         count += len;
+        maybeLatin1 |= asb.maybeLatin1;
         return this;
     }
 
@@ -917,6 +931,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (len > 0) {
             shift(end, -len);
             this.count = count - len;
+            maybeLatin1 = true;
         }
         return this;
     }
@@ -968,6 +983,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         checkIndex(index, count);
         shift(index + 1, -1);
         count--;
+        maybeLatin1 = true;
         return this;
     }
 
@@ -1002,6 +1018,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         shift(end, newCount - count);
         this.count = newCount;
         putStringAt(start, str);
+        maybeLatin1 = true;
         return this;
     }
 

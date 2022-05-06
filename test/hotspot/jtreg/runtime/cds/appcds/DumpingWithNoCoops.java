@@ -72,15 +72,24 @@ public class DumpingWithNoCoops {
         // all sizes are in the unit of GB
         // size of 0 means don't set the heap size
         new HeapArgs( 0, 0, 0),
-        new HeapArgs( 8, 0, 0),
-        new HeapArgs( 0, 8, 0),
-        new HeapArgs( 0, 0, 8),
-        new HeapArgs( 8, 8, 0),
-        new HeapArgs( 0, 8, 8),
-        new HeapArgs( 8, 0, 8),
-        new HeapArgs( 8, 8, 8),
+        new HeapArgs( 5, 3, 5),
+        new HeapArgs( 3, 3, 5),
+        new HeapArgs( 5, 5, 5),
         new HeapArgs( 2, 1, 33),
     };
+
+    static void checkExpectedMessages(HeapArgs ha, OutputAnalyzer output) throws Exception {
+        final int DUMPTIME_MAX_HEAP = 4; // 4 GB
+        if (ha.minSize > DUMPTIME_MAX_HEAP) {
+            output.shouldContain("Setting MinHeapSize to 4G for CDS dumping");
+        }
+        if (ha.initialSize > DUMPTIME_MAX_HEAP) {
+            output.shouldContain("Setting InitialHeapSize to 4G for CDS dumping");
+        }
+        if (ha.maxSize > DUMPTIME_MAX_HEAP) {
+            output.shouldContain("Setting MaxHeapSize to 4G for CDS dumping");
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         final String noCoops = "-XX:-UseCompressedOops";
@@ -108,10 +117,10 @@ public class DumpingWithNoCoops {
                     dumptimeArgs.add(heapSize);
                 }
                 output = TestCommon.dump(appJar, appClasses, dumptimeArgs.toArray(new String[0]));
-                output.shouldContain("Setting MaxHeapSize to 4G for CDS dumping");
+                checkExpectedMessages(ha, output);
             }
-            TestCommon.checkDump(output);
 
+            TestCommon.checkDump(output);
             TestCommon.run("-cp", appJar,
                         logArg, "-Xlog:class+load", noCoops, "Hello")
                 .assertNormalExit("Hello source: shared objects file");

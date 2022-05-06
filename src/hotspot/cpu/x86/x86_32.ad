@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -260,17 +260,7 @@ source %{
 // instructions, to allow sign-masking or sign-bit flipping.  They allow
 // fast versions of NegF/NegD and AbsF/AbsD.
 
-void reg_mask_init() {
-  if (Matcher::has_predicated_vectors()) {
-    // Post-loop multi-versioning expects mask to be present in K1 register, till the time
-    // its fixed, RA should not be allocting K1 register, this shall prevent any accidental
-    // curruption of value held in K1 register.
-    if (PostLoopMultiversioning) {
-      const_cast<RegMask*>(&_VECTMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k1->as_VMReg()));
-      const_cast<RegMask*>(&_VECTMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k1->as_VMReg()->next()));
-    }
-  }
-}
+void reg_mask_init() {}
 
 // Note: 'double' and 'long long' have 32-bits alignment on x86.
 static jlong* double_quadword(jlong *adr, jlong lo, jlong hi) {
@@ -1564,47 +1554,6 @@ encode %{
   enc_class mov_r32_imm0( rRegI dst ) %{
     emit_opcode( cbuf, 0xB8 + $dst$$reg ); // 0xB8+ rd   -- MOV r32  ,imm32
     emit_d32   ( cbuf, 0x0  );             //                         imm32==0x0
-  %}
-
-  enc_class cdq_enc %{
-    // Full implementation of Java idiv and irem; checks for
-    // special case as described in JVM spec., p.243 & p.271.
-    //
-    //         normal case                           special case
-    //
-    // input : rax,: dividend                         min_int
-    //         reg: divisor                          -1
-    //
-    // output: rax,: quotient  (= rax, idiv reg)       min_int
-    //         rdx: remainder (= rax, irem reg)       0
-    //
-    //  Code sequnce:
-    //
-    //  81 F8 00 00 00 80    cmp         rax,80000000h
-    //  0F 85 0B 00 00 00    jne         normal_case
-    //  33 D2                xor         rdx,edx
-    //  83 F9 FF             cmp         rcx,0FFh
-    //  0F 84 03 00 00 00    je          done
-    //                  normal_case:
-    //  99                   cdq
-    //  F7 F9                idiv        rax,ecx
-    //                  done:
-    //
-    emit_opcode(cbuf,0x81); emit_d8(cbuf,0xF8);
-    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x00);
-    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x80);                     // cmp rax,80000000h
-    emit_opcode(cbuf,0x0F); emit_d8(cbuf,0x85);
-    emit_opcode(cbuf,0x0B); emit_d8(cbuf,0x00);
-    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x00);                     // jne normal_case
-    emit_opcode(cbuf,0x33); emit_d8(cbuf,0xD2);                     // xor rdx,edx
-    emit_opcode(cbuf,0x83); emit_d8(cbuf,0xF9); emit_d8(cbuf,0xFF); // cmp rcx,0FFh
-    emit_opcode(cbuf,0x0F); emit_d8(cbuf,0x84);
-    emit_opcode(cbuf,0x03); emit_d8(cbuf,0x00);
-    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x00);                     // je done
-    // normal_case:
-    emit_opcode(cbuf,0x99);                                         // cdq
-    // idiv (note: must be emitted by the user of this rule)
-    // normal:
   %}
 
   // Dense encoding for older common ops
@@ -3104,10 +3053,10 @@ encode %{
 //         Region 6-7 is determined per call site.
 // Note 2: If the calling convention leaves holes in the incoming argument
 //         area, those holes are owned by SELF.  Holes in the outgoing area
-//         are owned by the CALLEE.  Holes should not be nessecary in the
+//         are owned by the CALLEE.  Holes should not be necessary in the
 //         incoming area, as the Java calling convention is completely under
 //         the control of the AD file.  Doubles can be sorted and packed to
-//         avoid holes.  Holes in the outgoing arguments may be nessecary for
+//         avoid holes.  Holes in the outgoing arguments may be necessary for
 //         varargs C calling conventions.
 // Note 3: Region 0-3 is even aligned, with pad2 as needed.  Region 3-5 is
 //         even aligned with pad0 as needed.
@@ -4383,7 +4332,7 @@ operand stackSlotL(sRegL reg) %{
 // the flags (produced by the Cmp) specifies the coding of the comparison op
 // by matching a specific subtype of Bool operand below, such as cmpOpU.
 
-// Comparision Code
+// Comparison Code
 operand cmpOp() %{
   match(Bool);
 
@@ -7807,27 +7756,23 @@ instruct mulL_eReg_con(eADXRegL dst, immL_127 src, rRegI tmp, eFlagsReg cr) %{
 
 // Integer DIV with Register
 instruct divI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
-  match(Set rax (DivI rax div));
+  match(Set rax (NoOvfDivI rax div));
   effect(KILL rdx, KILL cr);
-  size(26);
-  ins_cost(30*100+10*100);
-  format %{ "CMP    EAX,0x80000000\n\t"
-            "JNE,s  normal\n\t"
-            "XOR    EDX,EDX\n\t"
-            "CMP    ECX,-1\n\t"
-            "JE,s   done\n"
-    "normal: CDQ\n\t"
-            "IDIV   $div\n\t"
-    "done:"        %}
-  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
-  ins_encode( cdq_enc, OpcP, RegOpc(div) );
-  ins_pipe( ialu_reg_reg_alu0 );
+  size(3);
+  ins_cost(500);
+  format %{ "CDQ\n\t"
+            "IDIV   $div" %}
+  ins_encode %{
+    __ cdql();
+    __ idivl($div$$Register);
+  %}
+  ins_pipe( pipe_slow );
 %}
 
 // Divide Register Long
-instruct divL_eReg( eADXRegL dst, eRegL src1, eRegL src2, eFlagsReg cr, eCXRegI cx, eBXRegI bx ) %{
+instruct divL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
   match(Set dst (DivL src1 src2));
-  effect( KILL cr, KILL cx, KILL bx );
+  effect(CALL);
   ins_cost(10000);
   format %{ "PUSH   $src1.hi\n\t"
             "PUSH   $src1.lo\n\t"
@@ -7841,41 +7786,39 @@ instruct divL_eReg( eADXRegL dst, eRegL src1, eRegL src2, eFlagsReg cr, eCXRegI 
 
 // Integer DIVMOD with Register, both quotient and mod results
 instruct divModI_eReg_divmod(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
-  match(DivModI rax div);
+  match(NoOvfDivModI rax div);
   effect(KILL cr);
-  size(26);
-  ins_cost(30*100+10*100);
-  format %{ "CMP    EAX,0x80000000\n\t"
-            "JNE,s  normal\n\t"
-            "XOR    EDX,EDX\n\t"
-            "CMP    ECX,-1\n\t"
-            "JE,s   done\n"
-    "normal: CDQ\n\t"
-            "IDIV   $div\n\t"
-    "done:"        %}
-  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
-  ins_encode( cdq_enc, OpcP, RegOpc(div) );
+  size(3);
+  ins_cost(500);
+  format %{ "CDQ\n\t"
+            "IDIV   $div" %}
+  ins_encode %{
+    __ cdql();
+    __ idivl($div$$Register);
+  %}
   ins_pipe( pipe_slow );
 %}
 
 // Integer MOD with Register
 instruct modI_eReg(eDXRegI rdx, eAXRegI rax, eCXRegI div, eFlagsReg cr) %{
-  match(Set rdx (ModI rax div));
+  match(Set rdx (NoOvfModI rax div));
   effect(KILL rax, KILL cr);
 
-  size(26);
-  ins_cost(300);
+  size(3);
+  ins_cost(500);
   format %{ "CDQ\n\t"
             "IDIV   $div" %}
-  opcode(0xF7, 0x7);  /* Opcode F7 /7 */
-  ins_encode( cdq_enc, OpcP, RegOpc(div) );
-  ins_pipe( ialu_reg_reg_alu0 );
+  ins_encode %{
+    __ cdql();
+    __ idivl($div$$Register);
+  %}
+  ins_pipe( pipe_slow );
 %}
 
 // Remainder Register Long
-instruct modL_eReg( eADXRegL dst, eRegL src1, eRegL src2, eFlagsReg cr, eCXRegI cx, eBXRegI bx ) %{
+instruct modL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
   match(Set dst (ModL src1 src2));
-  effect( KILL cr, KILL cx, KILL bx );
+  effect(CALL);
   ins_cost(10000);
   format %{ "PUSH   $src1.hi\n\t"
             "PUSH   $src1.lo\n\t"
@@ -12122,34 +12065,34 @@ instruct array_equalsC_evex(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
   ins_pipe( pipe_slow );
 %}
 
-instruct has_negatives(eSIRegP ary1, eCXRegI len, eAXRegI result,
-                      regD tmp1, regD tmp2, eBXRegI tmp3, eFlagsReg cr)
+instruct count_positives(eSIRegP ary1, eCXRegI len, eAXRegI result,
+                         regD tmp1, regD tmp2, eBXRegI tmp3, eFlagsReg cr)
 %{
   predicate(!VM_Version::supports_avx512vlbw() || !VM_Version::supports_bmi2());
-  match(Set result (HasNegatives ary1 len));
+  match(Set result (CountPositives ary1 len));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
 
-  format %{ "has negatives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
+  format %{ "countPositives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
-    __ has_negatives($ary1$$Register, $len$$Register,
-                     $result$$Register, $tmp3$$Register,
-                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, knoreg, knoreg);
+    __ count_positives($ary1$$Register, $len$$Register,
+                       $result$$Register, $tmp3$$Register,
+                       $tmp1$$XMMRegister, $tmp2$$XMMRegister, knoreg, knoreg);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct has_negatives_evex(eSIRegP ary1, eCXRegI len, eAXRegI result,
-                           regD tmp1, regD tmp2, kReg ktmp1, kReg ktmp2, eBXRegI tmp3, eFlagsReg cr)
+instruct count_positives_evex(eSIRegP ary1, eCXRegI len, eAXRegI result,
+                              regD tmp1, regD tmp2, kReg ktmp1, kReg ktmp2, eBXRegI tmp3, eFlagsReg cr)
 %{
   predicate(VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2());
-  match(Set result (HasNegatives ary1 len));
+  match(Set result (CountPositives ary1 len));
   effect(TEMP tmp1, TEMP tmp2, TEMP ktmp1, TEMP ktmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
 
-  format %{ "has negatives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
+  format %{ "countPositives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
-    __ has_negatives($ary1$$Register, $len$$Register,
-                     $result$$Register, $tmp3$$Register,
-                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
+    __ count_positives($ary1$$Register, $len$$Register,
+                       $result$$Register, $tmp3$$Register,
+                       $tmp1$$XMMRegister, $tmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -12549,7 +12492,7 @@ instruct loopLimit_eReg(eAXRegI limit, nadxRegI init, immI stride, eDXRegI limit
       __ lneg($limit_hi$$Register, $limit$$Register);
       __ movl($tmp$$Register, -strd);
     }
-    // signed devision: (EAX:EDX) / pos_stride
+    // signed division: (EAX:EDX) / pos_stride
     __ idivl($tmp$$Register);
     if (strd < 0) {
       // restore sign
@@ -12610,7 +12553,6 @@ instruct jmpCon(cmpOp cop, eFlagsReg cr, label labl) %{
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEnd(cmpOp cop, eFlagsReg cr, label labl) %{
-  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cr);
   effect(USE labl);
 
@@ -12626,7 +12568,6 @@ instruct jmpLoopEnd(cmpOp cop, eFlagsReg cr, label labl) %{
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEndU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
-  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -12641,7 +12582,6 @@ instruct jmpLoopEndU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
 %}
 
 instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
-  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -12651,66 +12591,6 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
   ins_encode %{
     Label* L = $labl$$label;
     __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
-// mask version
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-// Bounded mask operand used in following patten is needed for
-// post-loop multiversioning.
-instruct jmpLoopEnd_and_restoreMask(cmpOp cop, kReg_K1 ktmp, eFlagsReg cr, label labl) %{
-  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
-  match(CountedLoopEnd cop cr);
-  effect(USE labl, TEMP ktmp);
-
-  ins_cost(400);
-  format %{ "J$cop    $labl\t# Loop end\n\t"
-            "restorevectmask \t# vector mask restore for loops" %}
-  size(10);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask($ktmp$$KRegister);
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-// Bounded mask operand used in following patten is needed for
-// post-loop multiversioning.
-instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, kReg_K1 ktmp, eFlagsRegU cmp, label labl) %{
-  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl, TEMP ktmp);
-
-  ins_cost(400);
-  format %{ "J$cop,u  $labl\t# Loop end\n\t"
-            "restorevectmask \t# vector mask restore for loops" %}
-  size(10);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask($ktmp$$KRegister);
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
-// Bounded mask operand used in following patten is needed for
-// post-loop multiversioning.
-instruct jmpLoopEndUCF_and_restoreMask(cmpOpUCF cop, kReg_K1 ktmp, eFlagsRegUCF cmp, label labl) %{
-  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl, TEMP ktmp);
-
-  ins_cost(300);
-  format %{ "J$cop,u  $labl\t# Loop end\n\t"
-            "restorevectmask \t# vector mask restore for loops" %}
-  size(10);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask($ktmp$$KRegister);
   %}
   ins_pipe( pipe_jcc );
 %}
@@ -13966,7 +13846,7 @@ instruct tlsLoadP(eRegP dst, eFlagsReg cr) %{
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch ( incI_eReg movI );
 //   // require that the destination register of the increment
 //   // match the destination register of the move

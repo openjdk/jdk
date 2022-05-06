@@ -393,7 +393,7 @@ public class Main {
                 case "tr":
                 case "td":
                 case "th":
-                    // ending any of these elements implicity or explicitly ends the
+                    // ending any of these elements implicitly or explicitly ends the
                     // current cell
                     table.endCell();
                     break;

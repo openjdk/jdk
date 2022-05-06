@@ -27,7 +27,7 @@
 //----------REGISTER DEFINITION BLOCK------------------------------------------
 // This information is used by the matcher and the register allocator to
 // describe individual registers and classes of registers within the target
-// archtecture.
+// architecture.
 
 register %{
 //----------Architecture Description Register Definitions----------------------
@@ -1405,8 +1405,12 @@ const bool Matcher::match_rule_supported(int opcode) {
       }
       break;
     case Op_PopCountVI:
+      if (!UsePopCountInstruction || (UseAVX < 2)) {
+        return false;
+      }
+      break;
     case Op_PopCountVL:
-      if (!UsePopCountInstruction || !VM_Version::supports_avx512_vpopcntdq()) {
+      if (!UsePopCountInstruction || (UseAVX <= 2)) {
         return false;
       }
       break;
@@ -1457,8 +1461,21 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_VectorCastL2X:
     case Op_VectorCastF2X:
     case Op_VectorCastD2X:
+    case Op_VectorUCastB2X:
+    case Op_VectorUCastS2X:
+    case Op_VectorUCastI2X:
       if (UseAVX < 1) { // enabled for AVX only
         return false;
+      }
+      break;
+    case Op_RoundVF:
+      if (UseAVX < 2) { // enabled for AVX2 only
+        return false;
+      }
+      break;
+    case Op_RoundVD:
+      if (UseAVX < 3) {
+        return false;  // enabled for AVX3 only
       }
       break;
     case Op_CompareAndSwapL:
@@ -1563,6 +1580,12 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_VectorMaskToLong:
       if (!is_LP64 || UseAVX < 1) {
          return false;
+      }
+      break;
+    case Op_RoundF:
+    case Op_RoundD:
+      if (!is_LP64) {
+        return false;
       }
       break;
     case Op_CopySignD:
@@ -1810,6 +1833,11 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    case Op_RoundVD:
+      if (!VM_Version::supports_avx512dq()) {
+        return false;
+      }
+      break;
     case Op_VectorCastF2X:
       if (is_subword_type(bt) || bt == T_LONG) {
         return false;
@@ -1855,6 +1883,24 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       if (UseAVX < 3 && !VM_Version::supports_bmi2()) {
+        return false;
+      }
+      break;
+    case Op_SignumVD:
+    case Op_SignumVF:
+      if (UseAVX < 1) {
+        return false;
+      }
+      break;
+    case Op_PopCountVI:
+      if (!VM_Version::supports_avx512_vpopcntdq() &&
+          (vlen == 16) && !VM_Version::supports_avx512bw()) {
+        return false;
+      }
+      break;
+    case Op_PopCountVL:
+      if (!VM_Version::supports_avx512_vpopcntdq() &&
+          ((vlen <= 4) || ((vlen == 8) && !VM_Version::supports_avx512bw()))) {
         return false;
       }
       break;
@@ -2552,15 +2598,21 @@ void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
   }
 }
 
-static inline jlong replicate8_imm(int con, int width) {
-  // Load a constant of "width" (in bytes) and replicate it to fill 64bit.
-  assert(width == 1 || width == 2 || width == 4, "only byte, short or int types here");
-  int bit_width = width * 8;
-  jlong val = con;
-  val &= (((jlong) 1) << bit_width) - 1;  // mask off sign bits
-  while(bit_width < 64) {
-    val |= (val << bit_width);
-    bit_width <<= 1;
+template <class T>
+static inline GrowableArray<jvalue>* vreplicate_imm(BasicType bt, T con, int len) {
+  GrowableArray<jvalue>* val = new GrowableArray<jvalue>(len);
+  jvalue ele;
+  switch (bt) {
+    case T_BYTE:   ele.b = con; break;
+    case T_SHORT:  ele.s = con; break;
+    case T_INT:    ele.i = con; break;
+    case T_LONG:   ele.j = con; break;
+    case T_FLOAT:  ele.f = con; break;
+    case T_DOUBLE: ele.d = con; break;
+    default: ShouldNotReachHere();
+  }
+  for (int i = 0; i < len; i++) {
+    val->append(ele);
   }
   return val;
 }
@@ -2796,23 +2848,6 @@ instruct ShouldNotReachHere() %{
     if (is_reachable()) {
       __ stop(_halt_reason);
     }
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// =================================EVEX special===============================
-// Existing partial implementation for post-loop multi-versioning computes
-// the mask corresponding to tail loop in K1 opmask register. This may then be
-// used for predicating instructions in loop body during last post-loop iteration.
-// TODO: Remove hard-coded K1 usage while fixing existing post-loop
-// multiversioning support.
-instruct setMask(rRegI dst, rRegI src, kReg_K1 mask) %{
-  predicate(PostLoopMultiversioning && Matcher::has_predicated_vectors());
-  match(Set dst (SetVectMaskI  src));
-  effect(TEMP dst);
-  format %{ "setvectmask   $dst, $src" %}
-  ins_encode %{
-    __ setvectmask($dst$$Register, $src$$Register, $mask$$KRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3824,14 +3859,7 @@ instruct loadV(vec dst, memory mem) %{
   ins_cost(125);
   format %{ "load_vector $dst,$mem" %}
   ins_encode %{
-    switch (Matcher::vector_length_in_bytes(this)) {
-      case  4: __ movdl    ($dst$$XMMRegister, $mem$$Address); break;
-      case  8: __ movq     ($dst$$XMMRegister, $mem$$Address); break;
-      case 16: __ movdqu   ($dst$$XMMRegister, $mem$$Address); break;
-      case 32: __ vmovdqu  ($dst$$XMMRegister, $mem$$Address); break;
-      case 64: __ evmovdqul($dst$$XMMRegister, $mem$$Address, Assembler::AVX_512bit); break;
-      default: ShouldNotReachHere();
-    }
+    __ load_vector($dst$$XMMRegister, $mem$$Address, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4009,41 +4037,10 @@ instruct ReplB_imm(vec dst, immI con) %{
   match(Set dst (ReplicateB con));
   format %{ "replicateB $dst,$con" %}
   ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    InternalAddress const_addr = $constantaddress(replicate8_imm($con$$constant, 1));
-    if (vlen == 4) {
-      __ movdl($dst$$XMMRegister, const_addr);
-    } else {
-      __ movq($dst$$XMMRegister, const_addr);
-      if (vlen >= 16) {
-        if (VM_Version::supports_avx2()) {
-          int vlen_enc = vector_length_encoding(this);
-          __ vpbroadcastq($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-        } else {
-          assert(vlen == 16, "sanity");
-          __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-        }
-      }
-    }
+    InternalAddress addr = $constantaddress(T_BYTE, vreplicate_imm(T_BYTE, $con$$constant, Matcher::vector_length(this)));
+    __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
-%}
-
-// Replicate byte scalar zero to be vector
-instruct ReplB_zero(vec dst, immI_0 zero) %{
-  match(Set dst (ReplicateB zero));
-  format %{ "replicateB $dst,$zero" %}
-  ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    if (vlen <= 16) {
-      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
-    } else {
-      // Use vpxor since AVX512F does not have 512bit vxorpd (requires AVX512DQ).
-      int vlen_enc = vector_length_encoding(this);
-      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    }
-  %}
-  ins_pipe( fpu_reg_reg );
 %}
 
 // ====================ReplicateS=======================================
@@ -4091,39 +4088,10 @@ instruct ReplS_imm(vec dst, immI con) %{
   match(Set dst (ReplicateS con));
   format %{ "replicateS $dst,$con" %}
   ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    InternalAddress const_addr = $constantaddress(replicate8_imm($con$$constant, 2));
-    if (vlen == 2) {
-      __ movdl($dst$$XMMRegister, const_addr);
-    } else {
-      __ movq($dst$$XMMRegister, const_addr);
-      if (vlen >= 8) {
-        if (VM_Version::supports_avx2()) {
-          int vlen_enc = vector_length_encoding(this);
-          __ vpbroadcastw($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-        } else {
-          assert(vlen == 8, "sanity");
-          __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-        }
-      }
-    }
+    InternalAddress addr = $constantaddress(T_SHORT, vreplicate_imm(T_SHORT, $con$$constant, Matcher::vector_length(this)));
+    __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
   %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-instruct ReplS_zero(vec dst, immI_0 zero) %{
-  match(Set dst (ReplicateS zero));
-  format %{ "replicateS $dst,$zero" %}
-  ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    if (vlen <= 8) {
-      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
-    } else {
-      int vlen_enc = vector_length_encoding(this);
-      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    }
-  %}
-  ins_pipe( fpu_reg_reg );
+  ins_pipe( pipe_slow );
 %}
 
 // ====================ReplicateI=======================================
@@ -4173,30 +4141,21 @@ instruct ReplI_imm(vec dst, immI con) %{
   match(Set dst (ReplicateI con));
   format %{ "replicateI $dst,$con" %}
   ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    InternalAddress const_addr = $constantaddress(replicate8_imm($con$$constant, 4));
-    if (vlen <= 4) {
-      __ movq($dst$$XMMRegister, const_addr);
-      if (vlen == 4) {
-        __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-      }
-    } else {
-      assert(VM_Version::supports_avx2(), "sanity");
-      int vlen_enc = vector_length_encoding(this);
-      __ movq($dst$$XMMRegister, const_addr);
-      __ vpbroadcastd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    }
+    InternalAddress addr = $constantaddress(T_INT, vreplicate_imm(T_INT, $con$$constant, Matcher::vector_length(this)));
+    __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
 %}
 
-// Replicate integer (4 byte) scalar zero to be vector
+// Replicate scalar zero to be vector
 instruct ReplI_zero(vec dst, immI_0 zero) %{
+  match(Set dst (ReplicateB zero));
+  match(Set dst (ReplicateS zero));
   match(Set dst (ReplicateI zero));
   format %{ "replicateI $dst,$zero" %}
   ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    if (vlen <= 4) {
+    uint vsize = Matcher::vector_length_in_bytes(this);
+    if (vsize <= 16) {
       __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
     } else {
       int vlen_enc = vector_length_encoding(this);
@@ -4327,17 +4286,8 @@ instruct ReplL_imm(vec dst, immL con) %{
   match(Set dst (ReplicateL con));
   format %{ "replicateL $dst,$con" %}
   ins_encode %{
-    uint vlen = Matcher::vector_length(this);
-    InternalAddress const_addr = $constantaddress($con);
-    if (vlen == 2) {
-      __ movq($dst$$XMMRegister, const_addr);
-      __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    } else {
-      assert(VM_Version::supports_avx2(), "sanity");
-      int vlen_enc = vector_length_encoding(this);
-      __ movq($dst$$XMMRegister, const_addr);
-      __ vpbroadcastq($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    }
+    InternalAddress addr = $constantaddress(T_LONG, vreplicate_imm(T_LONG, $con$$constant, Matcher::vector_length(this)));
+    __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4407,6 +4357,17 @@ instruct ReplF_mem(vec dst, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
+// Replicate float scalar immediate to be vector by loading from const table.
+instruct ReplF_imm(vec dst, immF con) %{
+  match(Set dst (ReplicateF con));
+  format %{ "replicateF $dst,$con" %}
+  ins_encode %{
+    InternalAddress addr = $constantaddress(T_FLOAT, vreplicate_imm(T_FLOAT, $con$$constant, Matcher::vector_length(this)));
+    __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct ReplF_zero(vec dst, immF0 zero) %{
   match(Set dst (ReplicateF zero));
   format %{ "replicateF $dst,$zero" %}
@@ -4457,6 +4418,17 @@ instruct ReplD_mem(vec dst, memory mem) %{
       int vlen_enc = vector_length_encoding(this);
       __ vbroadcastsd($dst$$XMMRegister, $mem$$Address, vlen_enc);
     }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// Replicate double (8 byte) scalar immediate to be vector by loading from const table.
+instruct ReplD_imm(vec dst, immD con) %{
+  match(Set dst (ReplicateD con));
+  format %{ "replicateD $dst,$con" %}
+  ins_encode %{
+    InternalAddress addr = $constantaddress(T_DOUBLE, vreplicate_imm(T_DOUBLE, $con$$constant, Matcher::vector_length(this)));
+    __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
 %}
@@ -6123,6 +6095,36 @@ instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr)
   ins_pipe( pipe_slow );
 %}
 
+instruct signumV_reg_avx(vec dst, vec src, vec zero, vec one, vec xtmp1) %{
+  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_length_in_bytes(n) <= 32);
+  match(Set dst (SignumVF src (Binary zero one)));
+  match(Set dst (SignumVD src (Binary zero one)));
+  effect(TEMP dst, TEMP xtmp1);
+  format %{ "vector_signum_avx $dst, $src\t! using $xtmp1 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vec_enc = vector_length_encoding(this);
+    __ vector_signum_avx(opcode, $dst$$XMMRegister, $src$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister,
+                         $xtmp1$$XMMRegister, vec_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct signumV_reg_evex(vec dst, vec src, vec zero, vec one, kReg ktmp1) %{
+  predicate(VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n) == 64);
+  match(Set dst (SignumVF src (Binary zero one)));
+  match(Set dst (SignumVD src (Binary zero one)));
+  effect(TEMP dst, TEMP ktmp1);
+  format %{ "vector_signum_evex $dst, $src\t! using $ktmp1 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vec_enc = vector_length_encoding(this);
+    __ vector_signum_evex(opcode, $dst$$XMMRegister, $src$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister,
+                          $ktmp1$$KRegister, vec_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // ---------------------------------------
 // For copySign use 0xE4 as writemask for vpternlog
 // Desired Truth Table: A -> xmm0 bit, B -> xmm1 bit, C -> xmm2 bit
@@ -6697,13 +6699,13 @@ instruct vshift16S_var_nobw(vec dst, vec src, vec shift, vec vtmp1, vec vtmp2, r
     int opcode = this->ideal_Opcode();
     bool sign = (opcode != Op_URShiftVS);
     int vlen_enc = Assembler::AVX_256bit;
-    // Shift lower half, with result in vtmp2 usign vtmp1 as TEMP
+    // Shift lower half, with result in vtmp2 using vtmp1 as TEMP
     __ vextendwd(sign, $vtmp2$$XMMRegister, $src$$XMMRegister, vlen_enc);
     __ vpmovzxwd($vtmp1$$XMMRegister, $shift$$XMMRegister, vlen_enc);
     __ varshiftd(opcode, $vtmp2$$XMMRegister, $vtmp2$$XMMRegister, $vtmp1$$XMMRegister, vlen_enc);
     __ vpand($vtmp2$$XMMRegister, $vtmp2$$XMMRegister, ExternalAddress(vector_int_to_short_mask()), vlen_enc, $scratch$$Register);
 
-    // Shift upper half, with result in dst usign vtmp1 as TEMP
+    // Shift upper half, with result in dst using vtmp1 as TEMP
     __ vextracti128_high($dst$$XMMRegister, $src$$XMMRegister);
     __ vextracti128_high($vtmp1$$XMMRegister, $shift$$XMMRegister);
     __ vextendwd(sign, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
@@ -7211,13 +7213,14 @@ instruct vcastFtoD_reg(vec dst, vec src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vcastFtoI_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4, rRegP scratch, rFlagsReg cr) %{
+
+instruct castFtoI_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4, rRegP scratch, rFlagsReg cr) %{
   predicate(!VM_Version::supports_avx512vl() &&
             Matcher::vector_length_in_bytes(n) < 64 &&
             Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (VectorCastF2X src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP xtmp4, TEMP scratch, KILL cr);
-  format %{ "vector_cast_f2i $dst,$src\t! using $xtmp1, $xtmp2, $xtmp3 and $xtmp4 as TEMP" %}
+  format %{ "vector_cast_f2i $dst,$src\t! using $xtmp1, $xtmp2, $xtmp3, $xtmp4 and $scratch as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ vector_castF2I_avx($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
@@ -7227,13 +7230,13 @@ instruct vcastFtoI_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, ve
   ins_pipe( pipe_slow );
 %}
 
-instruct vcastFtoI_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
+instruct castFtoI_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
   predicate((VM_Version::supports_avx512vl() ||
              Matcher::vector_length_in_bytes(n) == 64) &&
              Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (VectorCastF2X src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, TEMP scratch, KILL cr);
-  format %{ "vector_cast_f2i $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1 and $ktmp2 as TEMP" %}
+  format %{ "vector_cast_f2i $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ vector_castF2I_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
@@ -7254,11 +7257,11 @@ instruct vcastDtoF_reg(vec dst, vec src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vcastDtoL_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
+instruct castDtoL_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (VectorCastD2X src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, TEMP scratch, KILL cr);
-  format %{ "vector_cast_d2l $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1 and $ktmp2 as TEMP" %}
+  format %{ "vector_cast_d2l $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ vector_castD2L_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
@@ -7268,6 +7271,72 @@ instruct vcastDtoL_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, 
   ins_pipe( pipe_slow );
 %}
 
+instruct vucast(vec dst, vec src) %{
+  match(Set dst (VectorUCastB2X src));
+  match(Set dst (VectorUCastS2X src));
+  match(Set dst (VectorUCastI2X src));
+  format %{ "vector_ucast $dst,$src\t!" %}
+  ins_encode %{
+    assert(UseAVX > 0, "required");
+
+    BasicType from_elem_bt = Matcher::vector_element_basic_type(this, $src);
+    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
+    int vlen_enc = vector_length_encoding(this);
+    __ vector_unsigned_cast($dst$$XMMRegister, $src$$XMMRegister, vlen_enc, from_elem_bt, to_elem_bt);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+#ifdef _LP64
+instruct vround_float_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4, rRegP scratch, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx512vl() &&
+            Matcher::vector_length_in_bytes(n) < 64 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst (RoundVF src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP xtmp4, TEMP scratch, KILL cr);
+  format %{ "vector_round_float $dst,$src\t! using $xtmp1, $xtmp2, $xtmp3, $xtmp4 and $scratch as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    InternalAddress new_mxcsr = $constantaddress((jint)0x3F80);
+    __ vector_round_float_avx($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
+                              $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $xtmp4$$XMMRegister,
+                              ExternalAddress(vector_float_signflip()), new_mxcsr, $scratch$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vround_float_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
+  predicate((VM_Version::supports_avx512vl() ||
+             Matcher::vector_length_in_bytes(n) == 64) &&
+             Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst (RoundVF src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, TEMP scratch, KILL cr);
+  format %{ "vector_round_float $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    InternalAddress new_mxcsr = $constantaddress((jint)0x3F80);
+    __ vector_round_float_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
+                               $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
+                               ExternalAddress(vector_float_signflip()), new_mxcsr, $scratch$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vround_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (RoundVD src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, TEMP scratch, KILL cr);
+  format %{ "vector_round_long $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    InternalAddress new_mxcsr = $constantaddress((jint)0x3F80);
+    __ vector_round_double_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
+                                $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
+                                ExternalAddress(vector_double_signflip()), new_mxcsr, $scratch$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+#endif
 // --------------------------------- VectorMaskCmp --------------------------------------
 
 instruct vcmpFD(legVec dst, legVec src1, legVec src2, immI8 cond) %{
@@ -8609,28 +8678,54 @@ instruct vmuladdaddS2I_reg(vec dst, vec src1, vec src2) %{
 
 // --------------------------------- PopCount --------------------------------------
 
-instruct vpopcountI(vec dst, vec src) %{
+instruct vpopcountI_popcntd(vec dst, vec src) %{
+  predicate(VM_Version::supports_avx512_vpopcntdq());
   match(Set dst (PopCountVI src));
-  format %{ "vpopcntd  $dst,$src\t! vector popcount packedI" %}
+  format %{ "vector_popcount_int $dst, $src\t! vector popcount packedI" %}
   ins_encode %{
     assert(UsePopCountInstruction, "not enabled");
-
     int vlen_enc = vector_length_encoding(this);
-    __ vpopcntd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+    __ vector_popcount_int($dst$$XMMRegister, $src$$XMMRegister, xnoreg, xnoreg, xnoreg, noreg, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vpopcountL(vec dst, vec src) %{
-  match(Set dst (PopCountVL src));
-  format %{ "vpopcntq  $dst,$src\t! vector popcount packedL" %}
+instruct vpopcountI(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, rRegP rtmp, rFlagsReg cc) %{
+  predicate(!VM_Version::supports_avx512_vpopcntdq());
+  match(Set dst (PopCountVI src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, KILL cc);
+  format %{ "vector_popcount_int  $dst, $src\t! using $xtmp1, $xtmp2, $xtmp3, and $rtmp as TEMP" %}
   ins_encode %{
     assert(UsePopCountInstruction, "not enabled");
+    int vlen_enc = vector_length_encoding(this);
+    __ vector_popcount_int($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister,
+                           $xtmp3$$XMMRegister, $rtmp$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
+instruct vpopcountL_popcntd(vec dst, vec src) %{
+  predicate(VM_Version::supports_avx512_vpopcntdq());
+  match(Set dst (PopCountVL src));
+  format %{ "vector_popcount_long  $dst, $src\t! vector popcount packedL" %}
+  ins_encode %{
+    assert(UsePopCountInstruction, "not enabled");
     int vlen_enc = vector_length_encoding(this, $src);
-    __ vpopcntq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-    __ evpmovqd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+    __ vector_popcount_long($dst$$XMMRegister, $src$$XMMRegister, xnoreg, xnoreg, xnoreg, noreg, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
+instruct vpopcountL(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, rRegP rtmp, rFlagsReg cc) %{
+  predicate(!VM_Version::supports_avx512_vpopcntdq());
+  match(Set dst (PopCountVL src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, KILL cc);
+  format %{ "vector_popcount_long  $dst, $src\t! using $xtmp1, $xtmp2, $xtmp3, and $rtmp as TEMP" %}
+  ins_encode %{
+    assert(UsePopCountInstruction, "not enabled");
+    int vlen_enc = vector_length_encoding(this, $src);
+    __ vector_popcount_long($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister,
+                           $xtmp3$$XMMRegister, $rtmp$$Register, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8722,7 +8817,7 @@ instruct vmasked_load64(vec dst, memory mem, kReg mask) %{
   ins_encode %{
     BasicType elmType =  this->bottom_type()->is_vect()->element_basic_type();
     int vector_len = vector_length_encoding(this);
-    __ evmovdqu(elmType, $mask$$KRegister, $dst$$XMMRegister, $mem$$Address, vector_len);
+    __ evmovdqu(elmType, $mask$$KRegister, $dst$$XMMRegister, $mem$$Address, false, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8755,7 +8850,7 @@ instruct vmasked_store64(memory mem, vec src, kReg mask) %{
     const MachNode* src_node = static_cast<const MachNode*>(this->in(this->operand_index($src)));
     BasicType elmType =  src_node->bottom_type()->is_vect()->element_basic_type();
     int vector_len = vector_length_encoding(src_node);
-    __ evmovdqu(elmType, $mask$$KRegister, $mem$$Address, $src$$XMMRegister, vector_len);
+    __ evmovdqu(elmType, $mask$$KRegister, $mem$$Address, $src$$XMMRegister, true, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}

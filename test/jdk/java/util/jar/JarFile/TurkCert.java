@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public class TurkCert {
     public static void main(String[] args) throws Exception{
         Locale reservedLocale = Locale.getDefault();
         try {
-            Locale.setDefault(new Locale("TR", "tr"));
+            Locale.setDefault(Locale.of("tr", "TR"));
             File f = new File(System.getProperty("test.src","."), "test.jar");
             try (JarFile jf = new JarFile(f, true)) {
                 JarEntry je = (JarEntry)jf.getEntry("test.class");

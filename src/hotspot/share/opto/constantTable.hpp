@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,18 +38,21 @@ public:
   class Constant {
   private:
     BasicType _type;
+    bool _is_array;
     union {
       jvalue    _value;
       Metadata* _metadata;
+      GrowableArray<jvalue>* _array;
     } _v;
     int       _offset;         // offset of this constant (in bytes) relative to the constant table base.
     float     _freq;
     bool      _can_be_reused;  // true (default) if the value can be shared with other users.
 
   public:
-    Constant() : _type(T_ILLEGAL), _offset(-1), _freq(0.0f), _can_be_reused(true) { _v._value.l = 0; }
+    Constant() : _type(T_ILLEGAL), _is_array(false), _offset(-1), _freq(0.0f), _can_be_reused(true) { _v._value.l = 0; }
     Constant(BasicType type, jvalue value, float freq = 0.0f, bool can_be_reused = true) :
       _type(type),
+      _is_array(false),
       _offset(-1),
       _freq(freq),
       _can_be_reused(can_be_reused)
@@ -59,16 +62,31 @@ public:
     }
     Constant(Metadata* metadata, bool can_be_reused = true) :
       _type(T_METADATA),
+      _is_array(false),
       _offset(-1),
       _freq(0.0f),
       _can_be_reused(can_be_reused)
     {
       _v._metadata = metadata;
     }
+    Constant(BasicType type, GrowableArray<jvalue>* array) :
+      _type(type),
+      _is_array(true),
+      _offset(-1),
+      _freq(0.0f),
+      _can_be_reused(false)
+    {
+      assert(is_java_primitive(type), "not applicable for %s", type2name(type));
+      _v._array = new GrowableArray<jvalue>(array->length());
+      for (jvalue ele : *array) {
+        _v._array->append(ele);
+      }
+    }
 
     bool operator==(const Constant& other);
 
     BasicType type()      const    { return _type; }
+    bool is_array()       const    { return _is_array; }
 
     jint    get_jint()    const    { return _v._value.i; }
     jlong   get_jlong()   const    { return _v._value.j; }
@@ -77,6 +95,8 @@ public:
     jobject get_jobject() const    { return _v._value.l; }
 
     Metadata* get_metadata() const { return _v._metadata; }
+
+    GrowableArray<jvalue>* get_array() const { return _v._array; }
 
     int         offset()  const    { return _offset; }
     void    set_offset(int offset) {        _offset = offset; }
@@ -124,6 +144,7 @@ public:
   void     add(Constant& con);
   Constant add(MachConstantNode* n, BasicType type, jvalue value);
   Constant add(Metadata* metadata);
+  Constant add(MachConstantNode* n, BasicType bt, GrowableArray<jvalue>* array);
   Constant add(MachConstantNode* n, MachOper* oper);
   Constant add(MachConstantNode* n, jint i) {
     jvalue value; value.i = i;

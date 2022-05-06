@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,17 +37,17 @@
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
 
-// Klass IDs for all subclasses of Klass
-enum KlassID {
-  InstanceKlassID,
-  InstanceRefKlassID,
-  InstanceMirrorKlassID,
-  InstanceClassLoaderKlassID,
-  TypeArrayKlassID,
-  ObjArrayKlassID
+// Klass Kinds for all subclasses of Klass
+enum KlassKind {
+  InstanceKlassKind,
+  InstanceRefKlassKind,
+  InstanceMirrorKlassKind,
+  InstanceClassLoaderKlassKind,
+  TypeArrayKlassKind,
+  ObjArrayKlassKind
 };
 
-const uint KLASS_ID_COUNT = 6;
+const uint KLASS_KIND_COUNT = ObjArrayKlassKind + 1;
 
 //
 // A Klass provides:
@@ -114,8 +114,10 @@ class Klass : public Metadata {
   // because it is frequently queried.
   jint        _layout_helper;
 
-  // Klass identifier used to implement devirtualized oop closure dispatching.
-  const KlassID _id;
+  // Klass kind used to resolve the runtime type of the instance.
+  //  - Used to implement devirtualized oop closure dispatching.
+  //  - Various type checking in the JVM
+  const KlassKind _kind;
 
   // Processed access flags, for use by Class.getModifiers.
   jint        _modifier_flags;
@@ -173,10 +175,11 @@ private:
   // Flags of the current shared class.
   u2     _shared_class_flags;
   enum {
-    _archived_lambda_proxy_is_available = 2,
-    _has_value_based_class_annotation = 4,
-    _verified_at_dump_time = 8,
-    _regenerated = 16
+    _archived_lambda_proxy_is_available    = 1 << 1,
+    _has_value_based_class_annotation      = 1 << 2,
+    _verified_at_dump_time                 = 1 << 3,
+    _has_archived_enum_objs                = 1 << 4,
+    _regenerated                           = 1 << 5
   };
 #endif
 
@@ -185,13 +188,13 @@ private:
 protected:
 
   // Constructor
-  Klass(KlassID id);
-  Klass() : _id(KlassID(-1)) { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
+  Klass(KlassKind kind);
+  Klass() : _kind(KlassKind(-1)) { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
 
   void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
 
  public:
-  int id() { return _id; }
+  int kind() { return _kind; }
 
   enum class DefaultsLookupMode { find, skip };
   enum class OverpassLookupMode { find, skip };
@@ -337,6 +340,14 @@ protected:
   }
   bool verified_at_dump_time() const {
     CDS_ONLY(return (_shared_class_flags & _verified_at_dump_time) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_has_archived_enum_objs() {
+    CDS_ONLY(_shared_class_flags |= _has_archived_enum_objs;)
+  }
+  bool has_archived_enum_objs() const {
+    CDS_ONLY(return (_shared_class_flags & _has_archived_enum_objs) != 0;)
     NOT_CDS(return false;)
   }
 
@@ -605,18 +616,16 @@ protected:
   }
  public:
   #endif
-  inline  bool is_instance_klass()            const { return assert_same_query(
-                                                      layout_helper_is_instance(layout_helper()),
-                                                      is_instance_klass_slow()); }
-  inline  bool is_array_klass()               const { return assert_same_query(
-                                                    layout_helper_is_array(layout_helper()),
-                                                    is_array_klass_slow()); }
-  inline  bool is_objArray_klass()            const { return assert_same_query(
-                                                    layout_helper_is_objArray(layout_helper()),
-                                                    is_objArray_klass_slow()); }
-  inline  bool is_typeArray_klass()           const { return assert_same_query(
-                                                    layout_helper_is_typeArray(layout_helper()),
-                                                    is_typeArray_klass_slow()); }
+
+  bool is_instance_klass()              const { return assert_same_query(_kind <= InstanceClassLoaderKlassKind, is_instance_klass_slow()); }
+  // Other is anything that is not one of the more specialized kinds of InstanceKlass.
+  bool is_other_instance_klass()        const { return _kind == InstanceKlassKind; }
+  bool is_reference_instance_klass()    const { return _kind == InstanceRefKlassKind; }
+  bool is_mirror_instance_klass()       const { return _kind == InstanceMirrorKlassKind; }
+  bool is_class_loader_instance_klass() const { return _kind == InstanceClassLoaderKlassKind; }
+  bool is_array_klass()                 const { return assert_same_query( _kind >= TypeArrayKlassKind, is_array_klass_slow()); }
+  bool is_objArray_klass()              const { return assert_same_query( _kind == ObjArrayKlassKind,  is_objArray_klass_slow()); }
+  bool is_typeArray_klass()             const { return assert_same_query( _kind == TypeArrayKlassKind, is_typeArray_klass_slow()); }
   #undef assert_same_query
 
   // Access flags

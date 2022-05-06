@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,7 @@
 // Known objects
 Klass* Universe::_typeArrayKlassObjs[T_LONG+1]        = { NULL /*, NULL...*/ };
 Klass* Universe::_objectArrayKlassObj                 = NULL;
+Klass* Universe::_fillerArrayKlassObj                 = NULL;
 OopHandle Universe::_mirrors[T_VOID+1];
 
 OopHandle Universe::_main_thread_group;
@@ -196,16 +197,15 @@ void Universe::replace_mirror(BasicType t, oop new_mirror) {
   Universe::_mirrors[t].replace(new_mirror);
 }
 
-void Universe::basic_type_classes_do(void f(Klass*)) {
-  for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
-    f(_typeArrayKlassObjs[i]);
-  }
-}
-
 void Universe::basic_type_classes_do(KlassClosure *closure) {
   for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
     closure->do_klass(_typeArrayKlassObjs[i]);
   }
+  // We don't do the following because it will confuse JVMTI.
+  // _fillerArrayKlassObj is used only by GC, which doesn't need to see
+  // this klass from basic_type_classes_do().
+  //
+  // closure->do_klass(_fillerArrayKlassObj);
 }
 
 void LatestMethodCache::metaspace_pointers_do(MetaspaceClosure* it) {
@@ -213,6 +213,7 @@ void LatestMethodCache::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 void Universe::metaspace_pointers_do(MetaspaceClosure* it) {
+  it->push(&_fillerArrayKlassObj);
   for (int i = 0; i < T_LONG+1; i++) {
     it->push(&_typeArrayKlassObjs[i]);
   }
@@ -261,6 +262,7 @@ void Universe::serialize(SerializeClosure* f) {
   }
 #endif
 
+  f->do_ptr((void**)&_fillerArrayKlassObj);
   for (int i = 0; i < T_LONG+1; i++) {
     f->do_ptr((void**)&_typeArrayKlassObjs[i]);
   }
@@ -320,6 +322,10 @@ void Universe::genesis(TRAPS) {
       compute_base_vtable_size();
 
       if (!UseSharedSpaces) {
+        // Initialization of the fillerArrayKlass must come before regular
+        // int-TypeArrayKlass so that the int-Array mirror points to the
+        // int-TypeArrayKlass.
+        _fillerArrayKlassObj = TypeArrayKlass::create_klass(T_INT, "Ljava/internal/vm/FillerArray;", CHECK);
         for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
           _typeArrayKlassObjs[i] = TypeArrayKlass::create_klass((BasicType)i, CHECK);
         }
@@ -361,6 +367,8 @@ void Universe::genesis(TRAPS) {
       _the_array_interfaces_array->at_put(1, vmClasses::Serializable_klass());
     }
 
+    initialize_basic_type_klass(_fillerArrayKlassObj, CHECK);
+
     initialize_basic_type_klass(boolArrayKlassObj(), CHECK);
     initialize_basic_type_klass(charArrayKlassObj(), CHECK);
     initialize_basic_type_klass(floatArrayKlassObj(), CHECK);
@@ -369,6 +377,9 @@ void Universe::genesis(TRAPS) {
     initialize_basic_type_klass(shortArrayKlassObj(), CHECK);
     initialize_basic_type_klass(intArrayKlassObj(), CHECK);
     initialize_basic_type_klass(longArrayKlassObj(), CHECK);
+
+    assert(_fillerArrayKlassObj != intArrayKlassObj(),
+           "Internal filler array klass should be different to int array Klass");
   } // end of core bootstrapping
 
   {
@@ -1227,7 +1238,7 @@ void LatestMethodCache::init(Klass* k, Method* m) {
   }
 #ifndef PRODUCT
   else {
-    // sharing initilization should have already set up _klass
+    // sharing initialization should have already set up _klass
     assert(_klass != NULL, "just checking");
   }
 #endif
@@ -1254,6 +1265,7 @@ bool Universe::release_fullgc_alot_dummy() {
     if (_fullgc_alot_dummy_next >= fullgc_alot_dummy_array->length()) {
       // No more dummies to release, release entire array instead
       _fullgc_alot_dummy_array.release(Universe::vm_global());
+      _fullgc_alot_dummy_array = OopHandle(); // NULL out OopStorage pointer.
       return false;
     }
 

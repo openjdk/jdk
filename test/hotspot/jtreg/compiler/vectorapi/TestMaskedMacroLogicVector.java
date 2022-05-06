@@ -37,9 +37,6 @@ package compiler.vectorapi;
 
 import java.util.concurrent.Callable;
 import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.driver.IRViolationException;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import java.util.Random;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,11 @@ import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateException;
 import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import sun.security.pkcs.EncryptedPrivateKeyInfo;
 import sun.security.util.PolicyUtil;
 
 /**
@@ -419,20 +417,22 @@ abstract class DomainKeyStore extends KeyStoreSpi {
                     if (aliases.hasMoreElements()) {
                         return true;
                     } else {
-                        if (iterator.hasNext()) {
+                        while (iterator.hasNext()) {
                             keystoresEntry = iterator.next();
                             prefix = keystoresEntry.getKey() +
-                                entryNameSeparator;
+                                    entryNameSeparator;
                             aliases = keystoresEntry.getValue().aliases();
-                        } else {
-                            return false;
+                            if (aliases.hasMoreElements()) {
+                                return true;
+                            } else {
+                                continue;
+                            }
                         }
+                        return false;
                     }
                 } catch (KeyStoreException e) {
                     return false;
                 }
-
-                return aliases.hasMoreElements();
             }
 
             public String nextElement() {
@@ -796,11 +796,8 @@ abstract class DomainKeyStore extends KeyStoreSpi {
             parser.read(configurationReader);
             domains = parser.getDomainEntries();
 
-        } catch (MalformedURLException mue) {
-            throw new IOException(mue);
-
-        } catch (PolicyParser.ParsingException pe) {
-            throw new IOException(pe);
+        } catch (MalformedURLException | PolicyParser.ParsingException e) {
+            throw new IOException(e);
         }
 
         for (PolicyParser.DomainEntry domain : domains) {
