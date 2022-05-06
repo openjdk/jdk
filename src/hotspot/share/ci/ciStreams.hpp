@@ -230,9 +230,14 @@ public:
   constantTag get_constant_pool_tag(int index) const;
   BasicType   get_basic_type_for_constant_at(int index) const;
 
-  constantTag get_raw_pool_tag(int index) const;
+  constantTag get_raw_pool_tag_at(int index) const;
 
-  // True if the klass-using bytecode points to an unresolved klass
+  constantTag get_raw_pool_tag() const {
+    int index = get_constant_pool_index();
+    return get_raw_pool_tag_at(index);
+  }
+
+    // True if the klass-using bytecode points to an unresolved klass
   bool is_unresolved_klass() const {
     constantTag tag = get_constant_pool_tag(get_klass_index());
     return tag.is_unresolved_klass();
@@ -243,8 +248,7 @@ public:
            cur_bc() == Bytecodes::_ldc_w  ||
            cur_bc() == Bytecodes::_ldc2_w, "not supported: %s", Bytecodes::name(cur_bc()));
 
-    int index = get_constant_pool_index();
-    constantTag tag = get_raw_pool_tag(index);
+    constantTag tag = get_raw_pool_tag();
     return tag.is_dynamic_constant() ||
            tag.is_dynamic_constant_in_error();
   }
@@ -254,8 +258,7 @@ public:
            cur_bc() == Bytecodes::_ldc_w  ||
            cur_bc() == Bytecodes::_ldc2_w, "not supported: %s", Bytecodes::name(cur_bc()));
 
-    int index = get_constant_pool_index();
-    constantTag tag = get_raw_pool_tag(index);
+    constantTag tag = get_raw_pool_tag();
     return tag.is_string();
   }
 
