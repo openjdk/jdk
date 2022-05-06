@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ final public class DoubleToDecimal {
      *
      * @param   v   the {@code double} to be converted.
      * @return a string representation of the argument.
-     * @see Double#toString(double) 
+     * @see Double#toString(double)
      */
     public static String toString(double v) {
         return threadLocalInstance().toDecimalString(v);
