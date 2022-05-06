@@ -40,6 +40,7 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.InetAddress;
@@ -179,7 +180,9 @@ public class ContentLengthHeaderTest {
     }
 
     public static void handleResponse(HttpExchange ex, String body, int rCode) throws IOException {
-        try (OutputStream os = ex.getResponseBody()) {
+        try (InputStream is = ex.getRequestBody();
+             OutputStream os = ex.getResponseBody()) {
+            is.readAllBytes();
             byte[] bytes = body.getBytes(UTF_8);
             ex.sendResponseHeaders(rCode, bytes.length);
             os.write(bytes);
@@ -199,7 +202,7 @@ public class ContentLengthHeaderTest {
                 handleResponse(exchange, "Request completed",200);
             } else {
                 String responseBody = exchange.getRequestMethod() + " request contained an unexpected " +
-                        "Content-length header.";
+                        "Content-length header of value: " + exchange.getRequestHeaders().getFirst("Content-length");
                 handleResponse(exchange, responseBody, 400);
             }
         }
