@@ -38,6 +38,7 @@ import sun.security.util.ObjectIdentifier;
 
 import javax.security.auth.kerberos.ServicePermission;
 import java.io.IOException;
+import java.lang.ref.Cleaner;
 import java.security.Provider;
 
 /**
@@ -48,11 +49,12 @@ import java.security.Provider;
  */
 
 public class GSSNameElement implements GSSNameSpi {
+    private final Cleaner.Cleanable cleanable;
 
-    long pName = 0; // Pointer to the gss_name_t structure
+    final long pName; // Pointer to the gss_name_t structure
     private String printableName;
     private Oid printableType;
-    private GSSLibStub cStub;
+    final private GSSLibStub cStub;
 
     static final GSSNameElement DEF_ACCEPTOR = new GSSNameElement();
 
@@ -94,6 +96,9 @@ public class GSSNameElement implements GSSNameSpi {
 
     private GSSNameElement() {
         printableName = "<DEFAULT ACCEPTOR>";
+        pName = 0;
+        cleanable = null;
+        cStub = null;
     }
 
     // Warning: called by NativeUtil.c
@@ -106,6 +111,8 @@ public class GSSNameElement implements GSSNameSpi {
         pName = pNativeName;
         cStub = stub;
         setPrintables();
+
+        cleanable = Krb5Util.cleaner.register(this, disposerFor(stub, pName));
     }
 
     GSSNameElement(byte[] nameBytes, Oid nameType, GSSLibStub stub)
@@ -151,6 +158,8 @@ public class GSSNameElement implements GSSNameSpi {
             }
         }
         pName = cStub.importName(name, nameType);
+        cleanable = Krb5Util.cleaner.register(this, disposerFor(stub, pName));
+
         setPrintables();
 
         @SuppressWarnings("removal")
@@ -284,14 +293,14 @@ public class GSSNameElement implements GSSNameSpi {
     }
 
     public void dispose() {
-        if (pName != 0) {
-            cStub.releaseName(pName);
-            pName = 0;
+        if (cleanable != null) {
+            cleanable.clean();
         }
     }
 
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        dispose();
+    private static Runnable disposerFor(GSSLibStub stub, long pName) {
+        return () -> {
+            stub.releaseName(pName);
+        };
     }
 }

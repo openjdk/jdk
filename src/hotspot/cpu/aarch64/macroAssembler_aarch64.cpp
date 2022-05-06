@@ -403,6 +403,9 @@ void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
+  assert(entry.rspec().type() == relocInfo::external_word_type
+         || entry.rspec().type() == relocInfo::runtime_call_type
+         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   if (target_needs_far_branch(entry.target())) {
     uint64_t offset;
     // We can use ADRP here because we know that the total size of
@@ -421,6 +424,9 @@ int MacroAssembler::far_jump(Address entry, CodeBuffer *cbuf, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
+  assert(entry.rspec().type() == relocInfo::external_word_type
+         || entry.rspec().type() == relocInfo::runtime_call_type
+         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   address start = pc();
   if (target_needs_far_branch(entry.target())) {
     uint64_t offset;
@@ -2192,11 +2198,11 @@ void MacroAssembler::unimplemented(const char* what) {
 
 // If a constant does not fit in an immediate field, generate some
 // number of MOV instructions and then perform the operation.
-void MacroAssembler::wrap_add_sub_imm_insn(Register Rd, Register Rn, uint64_t imm,
+void MacroAssembler::wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned imm,
                                            add_sub_imm_insn insn1,
                                            add_sub_reg_insn insn2) {
   assert(Rd != zr, "Rd = zr and not setting flags?");
-  if (operand_valid_for_add_sub_immediate(imm)) {
+  if (operand_valid_for_add_sub_immediate((int)imm)) {
     (this->*insn1)(Rd, Rn, imm);
   } else {
     if (uabs(imm) < (1 << 24)) {
@@ -2204,7 +2210,7 @@ void MacroAssembler::wrap_add_sub_imm_insn(Register Rd, Register Rn, uint64_t im
        (this->*insn1)(Rd, Rd, imm & ((1 << 12)-1));
     } else {
        assert_different_registers(Rd, Rn);
-       mov(Rd, imm);
+       mov(Rd, (uint64_t)imm);
        (this->*insn2)(Rd, Rn, Rd, LSL, 0);
     }
   }
@@ -2212,15 +2218,15 @@ void MacroAssembler::wrap_add_sub_imm_insn(Register Rd, Register Rn, uint64_t im
 
 // Separate vsn which sets the flags. Optimisations are more restricted
 // because we must set the flags correctly.
-void MacroAssembler::wrap_adds_subs_imm_insn(Register Rd, Register Rn, uint64_t imm,
+void MacroAssembler::wrap_adds_subs_imm_insn(Register Rd, Register Rn, unsigned imm,
                                            add_sub_imm_insn insn1,
                                            add_sub_reg_insn insn2) {
-  if (operand_valid_for_add_sub_immediate(imm)) {
+  if (operand_valid_for_add_sub_immediate((int)imm)) {
     (this->*insn1)(Rd, Rn, imm);
   } else {
     assert_different_registers(Rd, Rn);
     assert(Rd != zr, "overflow in immediate operand");
-    mov(Rd, imm);
+    mov(Rd, (uint64_t)imm);
     (this->*insn2)(Rd, Rn, Rd, LSL, 0);
   }
 }

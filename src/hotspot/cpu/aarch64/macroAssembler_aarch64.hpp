@@ -212,7 +212,7 @@ class MacroAssembler: public Assembler {
 
   inline void movw(Register Rd, Register Rn) {
     if (Rd == sp || Rn == sp) {
-      Assembler::addw(Rd, Rn, 0U);
+      addw(Rd, Rn, 0U);
     } else {
       orrw(Rd, zr, Rn);
     }
@@ -221,7 +221,7 @@ class MacroAssembler: public Assembler {
     assert(Rd != r31_sp && Rn != r31_sp, "should be");
     if (Rd == Rn) {
     } else if (Rd == sp || Rn == sp) {
-      Assembler::add(Rd, Rn, 0U);
+      add(Rd, Rn, 0U);
     } else {
       orr(Rd, zr, Rn);
     }
@@ -1095,8 +1095,19 @@ public:
     return CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
 
-  // Jumps that can reach anywhere in the code cache.
-  // Trashes tmp.
+  // Far_call and far_jump generate a call of/jump to the provided address.
+  // The address must be inside the code cache.
+  // Supported entry.rspec():
+  // - relocInfo::external_word_type
+  // - relocInfo::runtime_call_type
+  // - relocInfo::none
+  // If the distance to the address can exceed the branch range
+  // (128M for the release build, 2M for the debug build; see branch_range definition)
+  // for direct calls(BL)/jumps(B), a call(BLR)/jump(BR) with the address put in
+  // the tmp register is generated. Instructions putting the address in the tmp register
+  // are embedded at a call site. The tmp register is invalidated.
+  // This differs from trampoline_call which puts additional code (trampoline) including
+  // BR into the stub code section and a BL to the trampoline at a call site.
   void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
   int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
 
@@ -1144,16 +1155,16 @@ public:
 
   // If a constant does not fit in an immediate field, generate some
   // number of MOV instructions and then perform the operation
-  void wrap_add_sub_imm_insn(Register Rd, Register Rn, uint64_t imm,
+  void wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned imm,
                              add_sub_imm_insn insn1,
                              add_sub_reg_insn insn2);
   // Separate vsn which sets the flags
-  void wrap_adds_subs_imm_insn(Register Rd, Register Rn, uint64_t imm,
+  void wrap_adds_subs_imm_insn(Register Rd, Register Rn, unsigned imm,
                              add_sub_imm_insn insn1,
                              add_sub_reg_insn insn2);
 
 #define WRAP(INSN)                                                      \
-  void INSN(Register Rd, Register Rn, uint64_t imm) {                   \
+  void INSN(Register Rd, Register Rn, unsigned imm) {                   \
     wrap_add_sub_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN); \
   }                                                                     \
                                                                         \
@@ -1175,7 +1186,7 @@ public:
 
 #undef WRAP
 #define WRAP(INSN)                                                      \
-  void INSN(Register Rd, Register Rn, uint64_t imm) {                   \
+  void INSN(Register Rd, Register Rn, unsigned imm) {                   \
     wrap_adds_subs_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN); \
   }                                                                     \
                                                                         \
