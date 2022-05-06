@@ -45,6 +45,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -66,6 +67,7 @@ public class ContentLengthHeaderTest {
     static HttpServer testContentLengthServer;
     static PrintStream testLog = System.err;
 
+    HttpClient hc;
     URI testContentLengthURI;
 
     @BeforeTest
@@ -85,6 +87,11 @@ public class ContentLengthHeaderTest {
         testContentLengthServer.start();
         testLog.println("Server up at address: " + testContentLengthServer.getAddress());
         testLog.println("Request URI for Client: " + testContentLengthURI);
+
+        hc = HttpClient.newBuilder()
+                .proxy(HttpClient.Builder.NO_PROXY)
+                .version(HTTP_1_1)
+                .build();
     }
 
     @AfterTest
@@ -102,7 +109,6 @@ public class ContentLengthHeaderTest {
                 .GET()
                 .uri(URI.create(testContentLengthURI + NO_BODY_PATH))
                 .build();
-        HttpClient hc = HttpClient.newHttpClient();
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
     }
@@ -116,7 +122,6 @@ public class ContentLengthHeaderTest {
                 .method("GET", HttpRequest.BodyPublishers.ofString("GET Body"))
                 .uri(URI.create(testContentLengthURI + BODY_PATH))
                 .build();
-        HttpClient hc = HttpClient.newHttpClient();
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
     }
@@ -130,7 +135,6 @@ public class ContentLengthHeaderTest {
                 .DELETE()
                 .uri(URI.create(testContentLengthURI + NO_BODY_PATH))
                 .build();
-        HttpClient hc = HttpClient.newHttpClient();
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
     }
@@ -144,7 +148,6 @@ public class ContentLengthHeaderTest {
                 .method("DELETE", HttpRequest.BodyPublishers.ofString("DELETE Body"))
                 .uri(URI.create(testContentLengthURI + BODY_PATH))
                 .build();
-        HttpClient hc = HttpClient.newHttpClient();
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
     }
@@ -158,7 +161,6 @@ public class ContentLengthHeaderTest {
                 .HEAD()
                 .uri(URI.create(testContentLengthURI + NO_BODY_PATH))
                 .build();
-        HttpClient hc = HttpClient.newHttpClient();
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
     }
@@ -172,7 +174,6 @@ public class ContentLengthHeaderTest {
                 .method("HEAD", HttpRequest.BodyPublishers.ofString("HEAD Body"))
                 .uri(URI.create(testContentLengthURI + BODY_PATH))
                 .build();
-        HttpClient hc = HttpClient.newHttpClient();
         // Sending this request invokes sendResponseHeaders which emits a warning about including
         // a Content-length header with a HEAD request
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
