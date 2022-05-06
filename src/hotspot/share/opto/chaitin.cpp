@@ -434,7 +434,14 @@ void PhaseChaitin::Register_Allocate() {
   }
 
   GrowableArray<Block_List> regions;
-  if (!C->is_osr_compilation() && !C->has_irreducible_loop() && UseNewCode) {
+  bool do_it = (C->method() != NULL);
+  if (do_it) {
+    stringStream ss;
+    C->method()->print_short_name(&ss);
+    do_it = !strcmp(ss.as_string(), " spec.benchmarks.scimark.LU::factor");
+  }
+
+  if (!C->is_osr_compilation() && !C->has_irreducible_loop() && UseNewCode && do_it) {
 //      _cfg._root_loop->dump_tree();
     CFGLoop* loop = _cfg._root_loop;
     GrowableArray<CFGLoop*> leaf_loops;
@@ -463,7 +470,7 @@ void PhaseChaitin::Register_Allocate() {
             }
           }
         }
-        if (!skip) {
+        if (!skip && loop->_freq > RegAllocRegionMinFreq) {
           leaf_loops.push(loop);
         }
       }
@@ -484,14 +491,30 @@ void PhaseChaitin::Register_Allocate() {
         else if ((*l1)->_freq > (*l2)->_freq) return 1;
         return 0;
     });
+//    leaf_loops.trunc_to(1);
     for (int i = 0; i < leaf_loops.length(); ++i) {
+//      if (i == 0 && leaf_loops.at(i)->_parent->_parent != NULL && leaf_loops.at(i)->_parent->_parent != _cfg._root_loop) {
+//        leaf_loops.at(i) = leaf_loops.at(i)->_parent->_parent;
+//      }
+      {
+        stringStream ss;
+        C->method()->print_short_name(&ss);
+//        if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
+        tty->print_cr("XXX %s:%d %f", ss.as_string(), C->compile_id(), leaf_loops.at(i)->_freq);
+        leaf_loops.at(i)->dump();
+        leaf_loops.at(i)->head()->dump();
+        CFGLoop* l = leaf_loops.at(i)->_parent;
+        while (l != NULL) {
+          tty->print_cr("XXXXXX %f/%f", l->_freq, leaf_loops.at(i)->_freq / l->_freq);
+          l->head()->dump();
+          l = l->_parent;
+        }
+
+//        }
+      }
       GrowableArray<CFGElement*> blocks = leaf_loops.at(i)->_members;
       Block_List region;
-      for (int j = 0; j < blocks.length(); ++j) {
-        Block* block = blocks.at(j)->as_Block();
-        block->_region = i+1;
-        region.push(block);
-      }
+      collect_blocks(i, blocks, region);
       regions.push(region);
     }
     Block_List region;
@@ -906,6 +929,18 @@ void PhaseChaitin::Register_Allocate() {
   _live = NULL;
   _ifg = NULL;
   C->set_indexSet_arena(NULL);  // ResourceArea is at end of scope
+}
+
+void PhaseChaitin::collect_blocks(int i, GrowableArray<CFGElement*> &blocks, Block_List &region) const {
+  for (int j = 0; j < blocks.length(); ++j) {
+    if (blocks.at(j)->is_loop()) {
+      collect_blocks(i, blocks.at(j)->as_CFGLoop()->_members, region);
+    } else {
+      Block* block = blocks.at(j)->as_Block();
+      block->_region = i+1;
+      region.push(block);
+    }
+  }
 }
 
 void PhaseChaitin::record_regs() {// Move important info out of the live_arena to longer lasting storage.

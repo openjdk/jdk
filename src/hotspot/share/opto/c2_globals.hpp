@@ -776,6 +776,9 @@
                                                                             \
   product(bool, VerifyReceiverTypes, trueInDebug, DIAGNOSTIC,               \
           "Verify receiver types at runtime")                               \
+                                                                            \
+  product(uintx, RegAllocRegionMinFreq, 10000,                              \
+          "")                                                               \
 
 // end of C2_FLAGS
 

@@ -824,6 +824,8 @@ private:
   bool is_compatible_with_region(uint region, const Block* b, uint lidx, Node*** Reaches, uint slidx) const;
 
   bool has_uses_in_region(Node* n, uint region);
+
+  void collect_blocks(int i, GrowableArray<CFGElement*> &blocks, Block_List &region) const;
 };
 
 #endif // SHARE_OPTO_CHAITIN_HPP
