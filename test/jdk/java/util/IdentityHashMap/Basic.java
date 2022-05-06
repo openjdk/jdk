@@ -289,6 +289,7 @@ public class Basic {
         assertFalse(tmp.entrySet().equals(map.entrySet()));
     }
 
+    // keySet equals, contains
     @Test
     public void testKeySet() {
         Set<Box> keySet = map.keySet();
@@ -299,6 +300,7 @@ public class Basic {
         assertTrue(map2.keySet().equals(map.keySet()));
     }
 
+    // keySet remove
     @Test
     public void testKeySetNoRemove() {
         Set<Box> keySet = map.keySet();
@@ -313,6 +315,7 @@ public class Basic {
         assertTrue(map2.keySet().equals(map.keySet()));
     }
 
+    // keySet remove
     @Test
     public void testKeySetRemove() {
         Set<Box> keySet = map.keySet();
@@ -326,6 +329,7 @@ public class Basic {
         assertFalse(map2.keySet().equals(map.keySet()));
     }
 
+    // values
     @Test
     public void testValues() {
         Collection<Box> values = map.values();
@@ -333,6 +337,7 @@ public class Basic {
         assertFalse(values.contains(new Box(v1a)));
     }
 
+    // values remove
     @Test
     public void testValuesNoRemove() {
         Collection<Box> values = map.values();
@@ -345,6 +350,7 @@ public class Basic {
                                      entry(k2, v2));
     }
 
+    // values remove
     @Test
     public void testValuesRemove() {
         Collection<Box> values = map.values();
@@ -356,6 +362,7 @@ public class Basic {
                                      entry(k2, v2));
     }
 
+    // entrySet equals, contains
     @Test
     public void testEntrySet() {
         Set<Map.Entry<Box,Box>> entrySet = map.entrySet();
@@ -369,6 +376,7 @@ public class Basic {
                                entry(k2, v2));
     }
 
+    // entrySet remove
     @Test
     public void testEntrySetNoRemove() {
         Set<Map.Entry<Box, Box>> entrySet = map.entrySet();
@@ -383,6 +391,7 @@ public class Basic {
                                entry(k2, v2));
     }
 
+    // entrySet remove
     @Test
     public void testEntrySetRemove() {
         Set<Map.Entry<Box, Box>> entrySet = map.entrySet();
@@ -523,6 +532,7 @@ public class Basic {
                                      entry(k2, v2));
     }
 
+    // computeIfAbsent
     @Test
     public void testComputeIfAbsentIsCalled() {
         boolean[] called = new boolean[1];
@@ -538,6 +548,7 @@ public class Basic {
                                      entry(newKey, newVal));
     }
 
+    // computeIfAbsent
     @Test
     public void testComputeIfAbsentNotCalled() {
         boolean[] called = new boolean[1];
@@ -550,6 +561,7 @@ public class Basic {
                                      entry(k2, v2));
     }
 
+    // computeIfAbsent
     @Test
     public void testComputeIfAbsentNullReturn() {
         boolean[] called = new boolean[1];
@@ -563,6 +575,7 @@ public class Basic {
                                      entry(k2, v2));
     }
 
+    // computeIfPresent
     @Test
     public void testComputeIfPresentIsCalled() {
         boolean[] called = new boolean[1];
@@ -576,6 +589,7 @@ public class Basic {
                                      entry(k2, v2));
     }
 
+    // computeIfPresent
     @Test
     public void testComputeIfPresentNotCalled() {
         boolean[] called = new boolean[1];
@@ -588,6 +602,7 @@ public class Basic {
                                      entry(k2, v2));
     }
 
+    // computeIfPresent
     @Test
     public void testComputeIfPresentNullReturn() {
         boolean[] called = new boolean[1];
@@ -599,6 +614,7 @@ public class Basic {
                                      entry(k2, v2));
     }
 
+    // merge
     @Test
     public void testMergeAbsent() {
         boolean[] called = new boolean[1];
@@ -614,6 +630,7 @@ public class Basic {
                                      entry(newKey, newVal));
     }
 
+    // merge
     @Test
     public void testMergePresent() {
         boolean[] called = new boolean[1];
@@ -632,6 +649,7 @@ public class Basic {
                                      entry(k2, v2));
     }
 
+    // forEach
     @Test
     public void testForEach() {
         @SuppressWarnings("unchecked")
@@ -642,6 +660,7 @@ public class Basic {
                               entry(k2, v2));
     }
 
+    // replaceAll
     @Test
     public void testReplaceAll() {
         List<Map.Entry<Box, Box>> replacements = new ArrayList<>();
