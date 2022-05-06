@@ -56,7 +56,7 @@ void G1CardSetAllocator::drop_all() {
 
 size_t G1CardSetAllocator::mem_size() const {
   return sizeof(*this) +
-         _segmented_array.num_segments() * sizeof(G1CardSetSegment) +
+         num_segments() * sizeof(G1CardSetSegment) +
          _segmented_array.num_total_slots() * _segmented_array.slot_size();
 }
 
@@ -104,13 +104,6 @@ void G1CardSetMemoryManager::free(uint type, void* value) {
 void G1CardSetMemoryManager::flush() {
   for (uint i = 0; i < num_mem_object_types(); i++) {
     _allocators[i].drop_all();
-  }
-}
-
-void G1CardSetMemoryManager::print(outputStream* os) {
-  os->print_cr("MM " PTR_FORMAT " size %zu", p2i(this), sizeof(*this));
-  for (uint i = 0; i < num_mem_object_types(); i++) {
-    _allocators[i].print(os);
   }
 }
 

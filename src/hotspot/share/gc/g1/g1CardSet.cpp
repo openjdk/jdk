@@ -922,8 +922,3 @@ void G1CardSet::clear() {
   _num_occupied = 0;
   _mm->flush();
 }
-
-void G1CardSet::print(outputStream* os) {
-  _table->print(os);
-  _mm->print(os);
-}
