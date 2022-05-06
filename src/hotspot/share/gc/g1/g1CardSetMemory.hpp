@@ -86,12 +86,9 @@ public:
   // Total memory allocated.
   size_t mem_size() const;
 
-  // Unused (but usable) memory.
   size_t unused_mem_size() const;
 
   uint num_segments() const;
-
-  void print(outputStream* os);
 };
 
 using G1CardSetFreePool = G1SegmentedArrayFreePool;
@@ -117,8 +114,6 @@ public:
   inline void free_node(void* value);
 
   void flush();
-
-  void print(outputStream* os);
 
   size_t mem_size() const;
   size_t unused_mem_size() const;
