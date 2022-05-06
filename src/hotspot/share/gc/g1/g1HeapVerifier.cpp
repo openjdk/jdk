@@ -491,20 +491,15 @@ void G1HeapVerifier::verify(VerifyOption vo) {
   }
 
   log_debug(gc, verify)("HeapRegions");
-  if (GCParallelVerificationEnabled && ParallelGCThreads > 1) {
 
-    G1ParVerifyTask task(_g1h, vo);
+  G1ParVerifyTask task(_g1h, vo);
+  if (GCParallelVerificationEnabled) {
     _g1h->workers()->run_task(&task);
-    if (task.failures()) {
-      failures = true;
-    }
-
   } else {
-    VerifyRegionClosure blk(false, vo);
-    _g1h->heap_region_iterate(&blk);
-    if (blk.failures()) {
-      failures = true;
-    }
+    task.work(0);
+  }
+  if (task.failures()) {
+    failures = true;
   }
 
   if (failures) {
