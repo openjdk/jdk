@@ -328,8 +328,10 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     } else {
       DumpTimeClassInfo* info = _dumptime_table->get(k);
       assert(info != NULL, "sanity");
-      if (check_for_exclusion(info->nest_host(), NULL)) {
-        log_debug(cds)("Skipping %s: lambda proxy class", k->name()->as_C_string());
+      InstanceKlass* nest_host = info->nest_host();
+      if (check_for_exclusion(nest_host, NULL)) {
+        log_debug(cds)("Skipping %s: lambda proxy class because its nest host %s was excluded",
+                       k->name()->as_C_string(), nest_host->name()->as_C_string());
         return true;
       }
     }

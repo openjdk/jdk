@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,10 @@
  * @test
  * @bug 8285914
  * @summary A lambda proxy class should not be archived if its nest host implements an
- *          old (with major version < JDK_6 (50) interface which cannot be verified during dump time).
+ *          old (with major version < JDK_6 (50)) interface which cannot be verified during dump time.
  * @requires vm.cds
  * @library /test/lib
- * @compile test-classes/OldInf.jasm
- * @compile test-classes/ChildOldInf.java
- * @compile test-classes/NestHostOldInfApp.java
+ * @compile test-classes/OldInf.jasm test-classes/ChildOldInf.java test-classes/NestHostOldInfApp.java
  * @run driver NestHostOldInf
  */
 

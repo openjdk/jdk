@@ -26,12 +26,11 @@
  * @test
  * @bug 8285914
  * @summary A lambda proxy class should not be archived if its nest host implements an
- *          old (with major version < JDK_6 (50) interface which cannot be verified during dump time).
+ *          old (with major version < JDK_6 (50)) interface which cannot be verified during dump time.
  * @requires vm.cds
  * @requires vm.cds.custom.loaders
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @compile ../test-classes/OldInf.jasm ../test-classes/ChildOldInf.java
- * @compile ../test-classes/NestHostOldInfApp.java
+ * @compile ../test-classes/OldInf.jasm ../test-classes/ChildOldInf.java ../test-classes/NestHostOldInfApp.java
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar oldclassapp.jar NestHostOldInfApp OldInf ChildOldInf ChildOldInf$InnerChild
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
