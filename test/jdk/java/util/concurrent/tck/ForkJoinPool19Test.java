@@ -492,4 +492,31 @@ public class ForkJoinPool19Test extends JSR166TestCase {
         }
     }
 
+    /**
+     * Implictly closing a new pool using try-with-resources terminates it
+     */
+    public void testClose() {
+        ForkJoinTask f = new FibAction(8);
+        ForkJoinPool pool = null;
+        try (ForkJoinPool p = new ForkJoinPool()) {
+            pool = p;
+            p.execute(f);
+        }
+        checkCompletedNormally(f);
+        assertTrue(pool != null && pool.isTerminated());
+    }
+
+    /**
+     * Implictly closing commonpool using try-with-resources does not
+     * terminate it
+     */
+    public void testCloseCommonPool() {
+        ForkJoinTask f = new FibAction(8);
+        ForkJoinPool pool;
+        try (ForkJoinPool p = ForkJoinPool.commonPool()) {
+            pool = p;
+            p.execute(f);
+        }
+        assertFalse(pool.isTerminated());
+    }
 }
