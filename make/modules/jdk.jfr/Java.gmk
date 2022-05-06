@@ -23,6 +23,6 @@
 # questions.
 #
 
-DISABLED_WARNINGS_java += exports
+DISABLED_WARNINGS_java += exports lossy-conversions
 COPY := .xsd .xml .dtd
 JAVAC_FLAGS := -XDstringConcat=inline

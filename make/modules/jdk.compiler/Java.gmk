@@ -26,6 +26,7 @@
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:-com.sun.tools.*,-jdk.internal.*,sun.tools.serialver.resources.*'
 JAVAC_FLAGS += -XDstringConcat=inline
+DISABLED_WARNINGS_java += lossy-conversions
 CLEAN_FILES += $(wildcard \
     $(patsubst %, $(TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
         sun/tools/serialver/resources))
