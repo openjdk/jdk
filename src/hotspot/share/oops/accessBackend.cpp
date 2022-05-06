@@ -30,6 +30,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/vmError.hpp"
 
 namespace AccessInternal {
@@ -208,7 +209,7 @@ namespace AccessInternal {
 
 #ifdef ASSERT
   void check_access_thread_state() {
-    if (VMError::is_error_reported()) {
+    if (VMError::is_error_reported() || Debugging) {
       return;
     }
 
