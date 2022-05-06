@@ -92,6 +92,9 @@ public class ReferenceTracker {
                 "outstanding operations", true);
     }
 
+    // This method is copied from ThreadInfo::toString, but removes the
+    // limit on the stack trace depth (8 frames max) that ThreadInfo::toString
+    // forcefully implement. We want to print all frames for better diagnosis.
     private static String toString(ThreadInfo info) {
         StringBuilder sb = new StringBuilder("\"" + info.getThreadName() + "\"" +
                 (info.isDaemon() ? " daemon" : "") +
