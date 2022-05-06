@@ -4113,9 +4113,9 @@ Address MacroAssembler::allocate_metadata_address(Metadata* obj) {
 }
 
 // Move an oop into a register.  immediate is true if we want
-// immediate instructions and nmethod entry barriers are not enabled.
-// i.e. we are not going to patch this instruction while the code is being
-// executed by another thread.
+// immediate instructions and code patching incompatible nmethod entry barriers
+// are not enabled. i.e. we are not going to patch this instruction while the code
+// is being executed by another thread.
 void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
   int oop_index;
   if (obj == NULL) {
@@ -4131,15 +4131,16 @@ void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
   }
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
 
-  // nmethod entry barrier necessitate using the constant pool. They have to be
-  // ordered with respected to oop accesses.
+  // code patching incompatible nmethod entry barrier necessitate using the
+  // constant pool. They have to be ordered with respected to oop accesses.
   // Using immediate literals would necessitate ISBs.
-  if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL || !immediate) {
+  BarrierSet* bs = BarrierSet::barrier_set();
+  if (immediate && (bs->barrier_set_nmethod() == NULL || bs->barrier_set_assembler()->nmethod_code_patching())) {
+    mov(dst, Address((address)obj, rspec));
+  } else {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ldr_constant(dst, Address(dummy, rspec));
-  } else
-    mov(dst, Address((address)obj, rspec));
-
+  }
 }
 
 // Move a metadata address into a register.
