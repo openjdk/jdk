@@ -37,7 +37,7 @@ final class MathUtils {
      * For full details about this code see the following reference:
      *
      *     Giulietti, "The Schubfach way to render doubles",
-     *     https://drive.google.com/file/d/1IEeATSVnEE6TkrHlCYNY2GjaraBjOT4f
+     *     https://drive.google.com/file/d/1gp5xv4CAa78SVgCeWfGqqI4FfYYYuNFb
      */
 
     /*

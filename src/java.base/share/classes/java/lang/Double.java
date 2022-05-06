@@ -260,121 +260,139 @@ public final class Double extends Number
     public static final Class<Double>   TYPE = (Class<Double>) Class.getPrimitiveClass("double");
 
     /**
-     * Returns a string rendering of the {@code double} argument.
+     * Returns a string representation of the {@code double}
+     * argument. All characters mentioned below are ASCII characters.
+     * <ul>
+     * <li>If the argument is NaN, the result is the string
+     *     "{@code NaN}".
+     * <li>Otherwise, the result is a string that represents the sign and
+     * magnitude (absolute value) of the argument. If the sign is negative,
+     * the first character of the result is '{@code -}'
+     * ({@code '\u005Cu002D'}); if the sign is positive, no sign character
+     * appears in the result. As for the magnitude <i>m</i>:
+     * <ul>
+     * <li>If <i>m</i> is infinity, it is represented by the characters
+     * {@code "Infinity"}; thus, positive infinity produces the result
+     * {@code "Infinity"} and negative infinity produces the result
+     * {@code "-Infinity"}.
      *
-     * <p>The characters of the result are all drawn from the ASCII set.
+     * <li>If <i>m</i> is zero, it is represented by the characters
+     * {@code "0.0"}; thus, negative zero produces the result
+     * {@code "-0.0"} and positive zero produces the result
+     * {@code "0.0"}.
+     *
+     * <li> Otherwise <i>m</i> is positive and finite.
+     * It is converted to a string in two stages:
      * <ul>
-     * <li> Any NaN, whether quiet or signaling, is rendered as
-     * {@code "NaN"}, regardless of the sign bit.
-     * <li> The infinities +&infin; and -&infin; are rendered as
-     * {@code "Infinity"} and {@code "-Infinity"}, respectively.
-     * <li> The positive and negative zeroes are rendered as
-     * {@code "0.0"} and {@code "-0.0"}, respectively.
-     * <li> A finite negative {@code v} is rendered as the sign
-     * '{@code -}' followed by the rendering of the magnitude -{@code v}.
-     * <li> A finite positive {@code v} is rendered in two stages:
-     * <ul>
-     * <li> <em>Selection of a decimal</em>: A well-defined
-     * decimal <i>d</i><sub><code>v</code></sub> is selected
-     * to represent {@code v}.
-     * <li> <em>Formatting as a string</em>: The decimal
-     * <i>d</i><sub><code>v</code></sub> is formatted as a string,
+     * <li> <em>Selection of a decimal</em>:
+     * A well-defined decimal <i>d</i><sub><i>m</i></sub>
+     * is selected to represent <i>m</i>.
+     * This decimal is (almost always) the <em>shortest</em> one that
+     * rounds to <i>m</i> according to the round to nearest
+     * rounding policy of IEEE 754 floating-point arithmetic.
+     * <li> <em>Formatting as a string</em>:
+     * The decimal <i>d</i><sub><i>m</i></sub> is formatted as a string,
      * either in plain or in computerized scientific notation,
      * depending on its value.
      * </ul>
      * </ul>
+     * </ul>
      *
      * <p>A <em>decimal</em> is a number of the form
-     * <i>d</i>&times;10<sup><i>i</i></sup>
-     * for some (unique) integers <i>d</i> &gt; 0 and <i>i</i> such that
-     * <i>d</i> is not a multiple of 10.
+     * <i>s</i>&times;10<sup><i>i</i></sup>
+     * for some (unique) integers <i>s</i> &gt; 0 and <i>i</i> such that
+     * <i>s</i> is not a multiple of 10.
      * These integers are the <em>significand</em> and
      * the <em>exponent</em>, respectively, of the decimal.
      * The <em>length</em> of the decimal is the (unique)
      * positive integer <i>n</i> meeting
-     * 10<sup><i>n</i>-1</sup> &le; <i>d</i> &lt; 10<sup><i>n</i></sup>.
+     * 10<sup><i>n</i>-1</sup> &le; <i>s</i> &lt; 10<sup><i>n</i></sup>.
      *
-     * <p>The decimal <i>d</i><sub><code>v</code></sub>
-     * for a finite positive {@code v} is defined as follows:
+     * <p>The decimal <i>d</i><sub><i>m</i></sub> for a finite positive <i>m</i>
+     * is defined as follows:
      * <ul>
-     * <li>Let <i>R</i> be the set of all decimals that round to {@code v}
-     * according to the usual round-to-closest rule of
+     * <li>Let <i>R</i> be the set of all decimals that round to <i>m</i>
+     * according to the usual <em>round to nearest</em> rounding policy of
      * IEEE 754 floating-point arithmetic.
-     * <li>Let <i>m</i> be the minimal length over all decimals in <i>R</i>.
-     * <li>When <i>m</i> &ge; 2, let <i>T</i> be the set of all decimals
-     * in <i>R</i> with length <i>m</i>.
+     * <li>Let <i>p</i> be the minimal length over all decimals in <i>R</i>.
+     * <li>When <i>p</i> &ge; 2, let <i>T</i> be the set of all decimals
+     * in <i>R</i> with length <i>p</i>.
      * Otherwise, let <i>T</i> be the set of all decimals
      * in <i>R</i> with length 1 or 2.
-     * <li>Define <i>d</i><sub><code>v</code></sub> as
-     * the decimal in <i>T</i> that is closest to {@code v}.
+     * <li>Define <i>d</i><sub><i>m</i></sub> as the decimal in <i>T</i>
+     * that is closest to <i>m</i>.
      * Or if there are two such decimals in <i>T</i>,
-     * select the one with the even significand (there is exactly one).
+     * select the one with the even significand.
      * </ul>
      *
-     * <p>The (uniquely) selected decimal <i>d</i><sub><code>v</code></sub>
+     * <p>The (uniquely) selected decimal <i>d</i><sub><i>m</i></sub>
      * is then formatted.
-     *
-     * <p>Let <i>d</i>, <i>i</i> and <i>n</i> be the significand, exponent and
-     * length of <i>d</i><sub><code>v</code></sub>, respectively.
+     * Let <i>s</i>, <i>i</i> and <i>n</i> be the significand, exponent and
+     * length of <i>d</i><sub><i>m</i></sub>, respectively.
      * Further, let <i>e</i> = <i>n</i> + <i>i</i> - 1 and let
-     * <i>d</i><sub>1</sub>&hellip;<i>d</i><sub><i>n</i></sub>
-     * be the usual decimal expansion of the significand.
-     * Note that <i>d</i><sub>1</sub> &ne; 0
-     * and <i>d</i><sub><i>n</i></sub> &ne; 0.
+     * <i>s</i><sub>1</sub>&hellip;<i>s</i><sub><i>n</i></sub>
+     * be the usual decimal expansion of <i>s</i>.
+     * Note that <i>s</i><sub>1</sub> &ne; 0
+     * and <i>s</i><sub><i>n</i></sub> &ne; 0.
+     * Below, the decimal point {@code '.'} is {@code '\u005Cu002E'}
+     * and the exponent indicator {@code 'E'} is {@code '\u005Cu0045'}.
      * <ul>
      * <li>Case -3 &le; <i>e</i> &lt; 0:
-     * <i>d</i><sub><code>v</code></sub> is formatted as
+     * <i>d</i><sub><i>m</i></sub> is formatted as
      * <code>0.0</code>&hellip;<code>0</code><!--
-     * --><i>d</i><sub>1</sub>&hellip;<i>d</i><sub><i>n</i></sub>,
+     * --><i>s</i><sub>1</sub>&hellip;<i>s</i><sub><i>n</i></sub>,
      * where there are exactly -(<i>n</i> + <i>i</i>) zeroes between
-     * the decimal point and <i>d</i><sub>1</sub>.
+     * the decimal point and <i>s</i><sub>1</sub>.
      * For example, 123 &times; 10<sup>-4</sup> is formatted as
      * {@code 0.0123}.
      * <li>Case 0 &le; <i>e</i> &lt; 7:
      * <ul>
      * <li>Subcase <i>i</i> &ge; 0:
-     * <i>d</i><sub><code>v</code></sub> is formatted as
-     * <i>d</i><sub>1</sub>&hellip;<i>d</i><sub><i>n</i></sub><!--
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub>&hellip;<i>s</i><sub><i>n</i></sub><!--
      * --><code>0</code>&hellip;<code>0.0</code>,
      * where there are exactly <i>i</i> zeroes
-     * between <i>d</i><sub><i>n</i></sub> and the decimal point.
+     * between <i>s</i><sub><i>n</i></sub> and the decimal point.
      * For example, 123 &times; 10<sup>2</sup> is formatted as
      * {@code 12300.0}.
      * <li>Subcase <i>i</i> &lt; 0:
-     * <i>d</i><sub><code>v</code></sub> is formatted as
-     * <i>d</i><sub>1</sub>&hellip;<!--
-     * --><i>d</i><sub><i>n</i>+<i>i</i></sub>.<!--
-     * --><i>d</i><sub><i>n</i>+<i>i</i>+1</sub>&hellip;<!--
-     * --><i>d</i><sub><i>n</i></sub>.
-     * There are exactly -<i>i</i> digits to the right of
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub>&hellip;<!--
+     * --><i>s</i><sub><i>n</i>+<i>i</i></sub><code>.</code><!--
+     * --><i>s</i><sub><i>n</i>+<i>i</i>+1</sub>&hellip;<!--
+     * --><i>s</i><sub><i>n</i></sub>,
+     * where there are exactly -<i>i</i> digits to the right of
      * the decimal point.
      * For example, 123 &times; 10<sup>-1</sup> is formatted as
      * {@code 12.3}.
      * </ul>
      * <li>Case <i>e</i> &lt; -3 or <i>e</i> &ge; 7:
      * computerized scientific notation is used to format
-     * <i>d</i><sub><code>v</code></sub>.
+     * <i>d</i><sub><i>m</i></sub>.
      * Here <i>e</i> is formatted as by {@link Integer#toString(int)}.
      * <ul>
      * <li>Subcase <i>n</i> = 1:
-     * <i>d</i><sub><code>v</code></sub> is formatted as
-     * <i>d</i><sub>1</sub><code>.0E</code><i>e</i>.
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub><code>.0E</code><i>e</i>.
      * For example, 1 &times; 10<sup>23</sup> is formatted as
      * {@code 1.0E23}.
      * <li>Subcase <i>n</i> &gt; 1:
-     * <i>d</i><sub><code>v</code></sub> is formatted as
-     * <i>d</i><sub>1</sub><code>.</code><i>d</i><sub>2</sub><!--
-     * -->&hellip;<i>d</i><sub><i>n</i></sub><code>E</code><i>e</i>.
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub><code>.</code><i>s</i><sub>2</sub><!--
+     * -->&hellip;<i>s</i><sub><i>n</i></sub><code>E</code><i>e</i>.
      * For example, 123 &times; 10<sup>-21</sup> is formatted as
      * {@code 1.23E-19}.
      * </ul>
      * </ul>
      *
-     * @param v the {@code double} to be rendered.
-     * @return a string rendering of the argument.
+     * <p>To create localized string representations of a floating-point
+     * value, use subclasses of {@link java.text.NumberFormat}.
+     *
+     * @param   d   the {@code double} to be converted.
+     * @return a string representation of the argument.
      */
-    public static String toString(double v) {
-        return DoubleToDecimal.toString(v);
+    public static String toString(double d) {
+        return DoubleToDecimal.toString(d);
     }
 
     /**
