@@ -438,16 +438,16 @@ void os::print_context(outputStream *st, const void *context) {
 
   const ucontext_t *uc = (const ucontext_t*)context;
 
-# define STEP(i, instruction1, instruction2)  \
-  if (VMErrorStepper::step()) {               \
-    instruction1 ; instruction2 ;             \
+# define STEP(instruction1, instruction2) \
+  if (VMErrorStepper::step()) {           \
+    instruction1 ; instruction2 ;         \
   }
 
-  STEP(0, st->print_cr("Register to memory mapping:"), st->cr());
+  STEP(st->print_cr("Register to memory mapping:"), st->cr());
 
   intx* reg_area = (intx*)&uc->uc_mcontext.arm_r0;
   for (int r = 0; r < ARM_REGS_IN_CONTEXT; r++) {
-    STEP(r, st->print("  %-3s = ", as_Register(r)->name()),
+    STEP(st->print("  %-3s = ", as_Register(r)->name()),
          print_location(st, reg_area[r]));
   }
   st->cr();

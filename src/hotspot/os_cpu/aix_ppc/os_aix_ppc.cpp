@@ -438,20 +438,19 @@ void os::print_context(outputStream *st, const void *context) {
 
   const ucontext_t* uc = (const ucontext_t*)context;
 
-# define STEP(i, instruction1, instruction2)  \
-  if (VMErrorStepper::step()) {               \
-    instruction1 ; instruction2 ;             \
+# define STEP(instruction1, instruction2) \
+  if (VMErrorStepper::step()) {           \
+    instruction1 ; instruction2 ;         \
   }
 
-  STEP(0, st->print_cr("Register to memory mapping:"), st->cr());
+  STEP(st->print_cr("Register to memory mapping:"), st->cr());
 
-  STEP(0, st->print("pc ="), print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.iar));
-  STEP(0, st->print("lr ="), print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.lr));
-  STEP(0, st->print("sp ="), print_location(st, (intptr_t)os::Aix::ucontext_get_sp(uc)));
+  STEP(st->print("pc ="), print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.iar));
+  STEP(st->print("lr ="), print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.lr));
+  STEP(st->print("sp ="), print_location(st, (intptr_t)os::Aix::ucontext_get_sp(uc)));
 
-  int r_count = 32;
-  for (int r = 0; r < r_count; r++) {
-    STEPI(r, st->print("r%-2d=", r),
+  for (int r = 0; r < 32; r++) {
+    STEP(st->print("r%-2d=", r),
           print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.gpr[r]));
   }
   st->cr();

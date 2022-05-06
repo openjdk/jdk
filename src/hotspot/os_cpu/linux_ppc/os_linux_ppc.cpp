@@ -450,20 +450,19 @@ void os::print_context(outputStream *st, const void *context) {
 
   const ucontext_t* uc = (const ucontext_t*)context;
 
-# define STEP(i, instruction1, instruction2)  \
-  if (VMErrorStepper::step()) {               \
-    instruction1 ; instruction2 ;             \
+# define STEP(instruction1, instruction2) \
+  if (VMErrorStepper::step()) {           \
+    instruction1 ; instruction2 ;         \
   }
 
-  STEP(0, st->print_cr("Register to memory mapping:"), st->cr());
+  STEP(st->print_cr("Register to memory mapping:"), st->cr());
 
-  STEP(0, st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->nip));
-  STEP(0, st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->link));
-  STEP(0, st->print("ctr ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->ctr));
+  STEP(st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->nip));
+  STEP(st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->link));
+  STEP(st->print("ctr ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->ctr));
 
-  int r_count = 32;
-  for (int r = 0; r < r_count; r++) {
-    STEP(r, st->print("r%-2d=", r),
+  for (int r = 0; r < 32; r++) {
+    STEP(st->print("r%-2d=", r),
          print_location(st, uc->uc_mcontext.regs->gpr[r]));
   }
   st->cr();
