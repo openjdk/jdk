@@ -136,6 +136,8 @@ public interface EventStream extends AutoCloseable {
      * <p>
      * By default, the stream starts with the next event flushed by Flight
      * Recorder.
+     * <p>
+     * Only trusted disk repositories should be opened.
      *
      * @param directory location of the disk repository, not {@code null}
      *
@@ -149,7 +151,7 @@ public interface EventStream extends AutoCloseable {
      *         files in the directory.
      */
     public static EventStream openRepository(Path directory) throws IOException {
-        Objects.requireNonNull(directory);
+        Objects.requireNonNull(directory, "directory");
         @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
         return new EventDirectoryStream(
@@ -166,6 +168,8 @@ public interface EventStream extends AutoCloseable {
      * Creates an event stream from a file.
      * <p>
      * By default, the stream starts with the first event in the file.
+     * <p>
+     * Only recording files from trusted sources should be opened.
      *
      * @param file location of the file, not {@code null}
      *
@@ -179,6 +183,7 @@ public interface EventStream extends AutoCloseable {
      */
     @SuppressWarnings("removal")
     static EventStream openFile(Path file) throws IOException {
+        Objects.requireNonNull(file, "file");
         return new EventFileStream(AccessController.getContext(), file);
     }
 

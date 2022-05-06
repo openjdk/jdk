@@ -68,6 +68,7 @@ class OSThread;
 class ThreadStatistics;
 class ConcurrentLocksDump;
 class MonitorInfo;
+class AsyncExceptionHandshake;
 
 class vframeArray;
 class vframe;
@@ -78,6 +79,8 @@ class JvmtiDeferredUpdates;
 
 class ThreadClosure;
 class ICRefillVerifier;
+
+class JVMCIRuntime;
 
 class Metadata;
 class ResourceArea;
@@ -785,13 +788,11 @@ class JavaThread: public Thread {
   enum SuspendFlags {
     // NOTE: avoid using the sign-bit as cc generates different test code
     //       when the sign-bit is used, and sometimes incorrectly - see CR 6398077
-    _has_async_exception    = 0x00000001U, // there is a pending async exception
     _trace_flag             = 0x00000004U, // call tracing backend
     _obj_deopt              = 0x00000008U  // suspend for object reallocation and relocking for JVMTI agent
   };
 
   // various suspension related flags - atomically updated
-  // overloaded with async exceptions so that we do a single check when transitioning from native->Java
   volatile uint32_t _suspend_flags;
 
   inline void set_suspend_flag(SuspendFlags f);
@@ -805,23 +806,25 @@ class JavaThread: public Thread {
   bool is_trace_suspend()      { return (_suspend_flags & _trace_flag) != 0; }
   bool is_obj_deopt_suspend()  { return (_suspend_flags & _obj_deopt) != 0; }
 
-  // Asynchronous exceptions support
+  // Asynchronous exception support
  private:
-  oop     _pending_async_exception;
-#ifdef ASSERT
-  bool    _is_unsafe_access_error;
-#endif
+  friend class InstallAsyncExceptionHandshake;
+  friend class AsyncExceptionHandshake;
+  friend class HandshakeState;
 
-  inline bool clear_async_exception_condition();
+  void install_async_exception(AsyncExceptionHandshake* aec = NULL);
+  void handle_async_exception(oop java_throwable);
  public:
-  bool has_async_exception_condition() {
-    return (_suspend_flags & _has_async_exception) != 0;
-  }
-  inline void set_pending_async_exception(oop e);
+  bool has_async_exception_condition(bool ThreadDeath_only = false);
   inline void set_pending_unsafe_access_error();
   static void send_async_exception(JavaThread* jt, oop java_throwable);
-  void send_thread_stop(oop throwable);
-  void check_and_handle_async_exceptions();
+
+  class NoAsyncExceptionDeliveryMark : public StackObj {
+    friend JavaThread;
+    JavaThread *_target;
+    inline NoAsyncExceptionDeliveryMark(JavaThread *t);
+    inline ~NoAsyncExceptionDeliveryMark();
+  };
 
   // Safepoint support
  public:                                                        // Expose _thread_state for SafeFetchInt()
@@ -938,6 +941,9 @@ class JavaThread: public Thread {
     // Communicates an alternative call target to an i2c stub from a JavaCall .
     address   _alternate_call_target;
   } _jvmci;
+
+  // The JVMCIRuntime in a JVMCI shared library
+  JVMCIRuntime* _libjvmci_runtime;
 
   // Support for high precision, thread sensitive counters in JVMCI compiled code.
   jlong*    _jvmci_counters;
@@ -1160,13 +1166,10 @@ class JavaThread: public Thread {
   // current thread, i.e. reverts optimizations based on escape analysis.
   void wait_for_object_deoptimization();
 
-  // these next two are also used for self-suspension and async exception support
-  void handle_special_runtime_exit_condition(bool check_asyncs = true);
-
-  // Return true if JavaThread has an asynchronous condition or
-  // if external suspension is requested.
+  // Support for object deoptimization and JFR suspension
+  void handle_special_runtime_exit_condition();
   bool has_special_runtime_exit_condition() {
-    return (_suspend_flags & (_has_async_exception | _obj_deopt JFR_ONLY(| _trace_flag))) != 0;
+    return (_suspend_flags & (_obj_deopt JFR_ONLY(| _trace_flag))) != 0;
   }
 
   // Fast-locking support
@@ -1221,6 +1224,12 @@ class JavaThread: public Thread {
 
   virtual bool in_retryable_allocation() const    { return _in_retryable_allocation; }
   void set_in_retryable_allocation(bool b)        { _in_retryable_allocation = b; }
+
+  JVMCIRuntime* libjvmci_runtime() const          { return _libjvmci_runtime; }
+  void set_libjvmci_runtime(JVMCIRuntime* rt) {
+    assert((_libjvmci_runtime == nullptr && rt != nullptr) || (_libjvmci_runtime != nullptr && rt == nullptr), "must be");
+    _libjvmci_runtime = rt;
+  }
 #endif // INCLUDE_JVMCI
 
   // Exception handling for compiled methods
@@ -1323,14 +1332,15 @@ class JavaThread: public Thread {
   // external JNI entry points where the JNIEnv is passed into the VM.
   static JavaThread* thread_from_jni_environment(JNIEnv* env) {
     JavaThread* current = (JavaThread*)((intptr_t)env - in_bytes(jni_environment_offset()));
-    // We can't get here in a thread that has completed its execution and so
-    // "is_terminated", but a thread is also considered terminated if the VM
+    // We can't normally get here in a thread that has completed its
+    // execution and so "is_terminated", except when the call is from
+    // AsyncGetCallTrace, which can be triggered by a signal at any point in
+    // a thread's lifecycle. A thread is also considered terminated if the VM
     // has exited, so we have to check this and block in case this is a daemon
     // thread returning to the VM (the JNI DirectBuffer entry points rely on
     // this).
     if (current->is_terminated()) {
       current->block_if_vm_exited();
-      ShouldNotReachHere();
     }
     return current;
   }
@@ -1348,7 +1358,7 @@ class JavaThread: public Thread {
   // Checked JNI: is the programmer required to check for exceptions, if so specify
   // which function name. Returning to a Java frame should implicitly clear the
   // pending check, this is done for Native->Java transitions (i.e. user JNI code).
-  // VM->Java transistions are not cleared, it is expected that JNI code enclosed
+  // VM->Java transitions are not cleared, it is expected that JNI code enclosed
   // within ThreadToNativeFromVM makes proper exception checks (i.e. VM internal).
   bool is_pending_jni_exception_check() const { return _pending_jni_exception_check_fn != NULL; }
   void clear_pending_jni_exception_check() { _pending_jni_exception_check_fn = NULL; }

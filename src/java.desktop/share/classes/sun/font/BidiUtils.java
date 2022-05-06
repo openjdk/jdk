@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public final class BidiUtils {
     static final char NUMLEVELS = 62;
 
     /**
-     * Given level data, compute a a visual to logical mapping.
+     * Given level data, compute a visual to logical mapping.
      * The leftmost (or topmost) character is at visual index zero.  The
      * logical index of the character is derived from the visual index
      * by the expression {@code li = map[vi];}.

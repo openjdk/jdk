@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,31 @@ import javax.lang.model.type.TypeMirror;
  * Represents a package program element.  Provides access to information
  * about the package and its members.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
+ * @apiNote
+ * The represented package may have an explicit {@linkplain
+ * javax.lang.model.util.Elements#getFileObjectOf(Element) reference
+ * representation} (either source code or executable output) or may be
+ * created from implicit information. The explicit and standalone
+ * source code construct for a package is typically a {@code
+ * package-info.java} file (JLS {@jls 7.4.1}).  A named package
+ * without a standalone {@code package-info.java} file can be declared
+ * in the package declaration of a {@linkplain NestingKind#TOP_LEVEL
+ * top-level} class or interface.  Implicit information is used to
+ * model {@linkplain #isUnnamed unnamed packages} (JLS {@jls 7.4.2}).
+ * <p>In the context of annotation processing, a package element can
+ * be:
+ * <ul>
+ * <li>created from the initial inputs to a run of the tool
+ * <li>created from {@linkplain
+ * javax.annotation.processing.Filer#createSourceFile(CharSequence,
+ * Element...) source code} or {@linkplain
+ * javax.annotation.processing.Filer#createClassFile(CharSequence,
+ * Element...) class files} written by a processor
+ * <li>{@linkplain
+ * javax.lang.model.util.Elements#getAllPackageElements(CharSequence)
+ * queried for} in the configured environment
+ * </ul>
+ *
  * @see javax.lang.model.util.Elements#getPackageOf
  * @since 1.6
  */
