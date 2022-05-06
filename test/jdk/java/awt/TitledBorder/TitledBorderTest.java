@@ -177,7 +177,7 @@ public class TitledBorderTest {
                     checkShadow = true;
                     thickness = 1;
                 } else {
-                    throw new RuntimeException("Vertical Border was clipped or overdrawn."
+                    throw new RuntimeException("Vertical Border has empty space between highlight and shadow."
                             + " Scaling: " + scaling + " x: " + x);
                 }
             } else {
