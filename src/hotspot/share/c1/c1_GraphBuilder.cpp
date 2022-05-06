@@ -952,7 +952,7 @@ void GraphBuilder::load_constant() {
       case T_ARRAY  : // fall-through
       case T_OBJECT : {
         ciObject* obj = con.as_object();
-        if (!obj->is_loaded() || (PatchALot && (obj->is_null_object() || obj->klass() != ciEnv::current()->String_klass()))) {
+        if (!obj->is_loaded() || (PatchALot && !stream()->is_string_constant())) {
           // A Class, MethodType, MethodHandle, Dynamic, or String.
           patch_state = copy_state_before();
           t = new ObjectConstant(obj);
@@ -973,7 +973,9 @@ void GraphBuilder::load_constant() {
     }
     Value x;
     if (patch_state != NULL) {
-      bool kills_memory = stream()->is_dynamic_constant(); // arbitrary memory effects from running BSM during linkage
+      // Arbitrary memory effects from running BSM or class loading (using custom loader) during linkage.
+      bool kills_memory = stream()->is_dynamic_constant() ||
+                          (!stream()->is_string_constant() && !method()->holder()->has_trusted_loader());
       x = new Constant(t, patch_state, kills_memory);
     } else {
       x = new Constant(t);
