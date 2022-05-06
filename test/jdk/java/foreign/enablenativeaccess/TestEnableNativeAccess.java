@@ -62,6 +62,7 @@ public class TestEnableNativeAccess {
     static final String PANAMA_MAIN = "panama_module/org.openjdk.foreigntest.PanamaMainDirect";
     static final String PANAMA_REFLECTION = "panama_module/org.openjdk.foreigntest.PanamaMainReflection";
     static final String PANAMA_INVOKE = "panama_module/org.openjdk.foreigntest.PanamaMainInvoke";
+    static final String PANAMA_JNI = "panama_module/org.openjdk.foreigntest.PanamaMainJNI";
     static final String UNNAMED = "org.openjdk.foreigntest.PanamaMainUnnamedModule";
 
     /**
@@ -130,14 +131,17 @@ public class TestEnableNativeAccess {
                 { "panama_enable_native_access", PANAMA_MAIN, successNoWarning(), new String[]{"--enable-native-access=panama_module"} },
                 { "panama_enable_native_access_reflection", PANAMA_REFLECTION, successNoWarning(), new String[]{"--enable-native-access=panama_module"} },
                 { "panama_enable_native_access_invoke", PANAMA_INVOKE, successNoWarning(), new String[]{"--enable-native-access=panama_module"} },
+                { "panama_enable_native_access_jni", PANAMA_JNI, successNoWarning(), new String[]{"--enable-native-access=ALL-UNNAMED"} },
 
                 { "panama_comma_separated_enable", PANAMA_MAIN, successNoWarning(), new String[]{"--enable-native-access=java.base,panama_module"} },
                 { "panama_comma_separated_enable_reflection", PANAMA_REFLECTION, successNoWarning(), new String[]{"--enable-native-access=java.base,panama_module"} },
                 { "panama_comma_separated_enable_invoke", PANAMA_INVOKE, successNoWarning(), new String[]{"--enable-native-access=java.base,panama_module"} },
+                { "panama_comma_separated_enable_jni", PANAMA_JNI, successNoWarning(), new String[]{"--enable-native-access=java.base,ALL-UNNAMED"} },
 
                 { "panama_enable_native_access_warn", PANAMA_MAIN, successWithWarning("panama"), new String[]{} },
                 { "panama_enable_native_access_warn_reflection", PANAMA_REFLECTION, successWithWarning("panama"), new String[]{} },
                 { "panama_enable_native_access_warn_invoke", PANAMA_INVOKE, successWithWarning("panama"), new String[]{} },
+                { "panama_enable_native_access_warn_jni", PANAMA_JNI, successWithWarning("ALL-UNNAMED"), new String[]{} },
 
                 { "panama_no_unnamed_module_native_access", UNNAMED, successWithWarning("ALL-UNNAMED"), new String[]{} },
                 { "panama_all_unnamed_module_native_access", UNNAMED, successNoWarning(), new String[]{"--enable-native-access=ALL-UNNAMED"} },
@@ -167,7 +171,9 @@ public class TestEnableNativeAccess {
     OutputAnalyzer run(String action, String cls, Result expectedResult, String... vmopts)
             throws Exception
     {
-        Stream<String> s1 = Stream.of(vmopts);
+        Stream<String> s1 = Stream.concat(
+                Stream.of(vmopts),
+                Stream.of("-Djava.library.path=" + System.getProperty("java.library.path")));
         Stream<String> s2 = cls.equals(UNNAMED) ? Stream.of("--enable-preview", "-p", MODULE_PATH, cls, action)
                 : Stream.of("--enable-preview", "-p", MODULE_PATH, "-m", cls, action);
         String[] opts = Stream.concat(s1, s2).toArray(String[]::new);

@@ -29,6 +29,7 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.NativeLibrary;
 import jdk.internal.loader.RawNativeLibraries;
 import jdk.internal.reflect.CallerSensitive;
@@ -157,8 +158,8 @@ public interface SymbolLookup {
         ClassLoader loader = caller != null ?
                 caller.getClassLoader() :
                 ClassLoader.getSystemClassLoader();
-        MemorySession loaderSession = (loader == null) ?
-                MemorySession.global() : // boot loader never goes away
+        MemorySession loaderSession = (loader == null || loader instanceof BuiltinClassLoader) ?
+                MemorySession.global() : // builtin loaders never go away
                 MemorySessionImpl.heapSession(loader);
         return name -> {
             Objects.requireNonNull(name);

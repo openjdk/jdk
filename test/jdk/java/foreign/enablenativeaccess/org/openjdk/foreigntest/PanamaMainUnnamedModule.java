@@ -29,11 +29,17 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
 public class PanamaMainUnnamedModule {
+
+    static {
+        System.loadLibrary("LinkerInvokerUnnamed");
+    }
+
     public static void main(String[] args) throws Throwable {
         testReflection();
         testSetAccessible();
         testInvoke();
         testDirectAccess();
+        testJNIAccess();
     }
 
    public static void testReflection() throws Throwable {
@@ -56,4 +62,10 @@ public class PanamaMainUnnamedModule {
    public static void testDirectAccess() {
        Linker.nativeLinker();
    }
+
+   public static void testJNIAccess() {
+        nativeLinker0();
+    }
+
+    static native void nativeLinker0();
 }
