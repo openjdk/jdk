@@ -42,8 +42,6 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   else ifeq ($(call isBuildOs, windows), true)
     ADLC_LDFLAGS += -nologo
     ADLC_CFLAGS := -nologo -EHsc
-    # NOTE: The old build also have -D_CRT_SECURE_NO_DEPRECATE but it doesn't
-    # seem needed any more.
     ADLC_CFLAGS_WARNINGS := -W3 -D_CRT_SECURE_NO_WARNINGS
   endif
 
