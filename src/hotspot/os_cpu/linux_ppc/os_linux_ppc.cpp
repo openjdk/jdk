@@ -457,9 +457,9 @@ void os::print_context(outputStream *st, const void *context) {
 
   STEP(st->print_cr("Register to memory mapping:"), st->cr());
 
-  STEP(st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->nip));
-  STEP(st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->link));
-  STEP(st->print("ctr ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->ctr));
+  STEP(st->print("pc ="), print_location(st, (intptr_t)uc->uc_mcontext.regs->nip));
+  STEP(st->print("lr ="), print_location(st, (intptr_t)uc->uc_mcontext.regs->link));
+  STEP(st->print("ctr ="), print_location(st, (intptr_t)uc->uc_mcontext.regs->ctr));
 
   for (int r = 0; r < 32; r++) {
     STEP(st->print("r%-2d=", r),
