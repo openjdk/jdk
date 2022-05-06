@@ -1081,7 +1081,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
     return n;
   }
 
-// Check for having no control input; not pinned.  Allow
+  // Check for having no control input; not pinned.  Allow
   // dominating control.
   if (n->in(0)) {
     Node *dom = idom(n_blk);
