@@ -163,7 +163,7 @@ public interface AccessibleList {
 
     /**
      * Returns an array of all of the selected indices in the selection model,
-     * in increasing order. 
+     * in increasing order.
      *
      * @return all of the selected indices, in increasing order,
      *         or an empty array if nothing is selected
