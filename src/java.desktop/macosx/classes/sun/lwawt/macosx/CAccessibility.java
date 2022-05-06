@@ -48,6 +48,7 @@ import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleAction;
 import javax.accessibility.AccessibleComponent;
 import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleList;
 import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleSelection;
 import javax.accessibility.AccessibleState;
@@ -565,8 +566,9 @@ class CAccessibility implements PropertyChangeListener {
                 if (pac == null) return;
                 AccessibleSelection as = pac.getAccessibleSelection();
                 if (as == null) return;
-                if (parent instanceof JList) {
-                    ((JList) parent).setSelectedIndex(i);
+                AccessibleTable pat = pac.getAccessibleTable();
+                if (pat instanceof AccessibleList) {
+                    ((AccessibleList) pat).setSelectionInterval(i, i);
                     return;
                 }
                 as.addAccessibleSelection(i);

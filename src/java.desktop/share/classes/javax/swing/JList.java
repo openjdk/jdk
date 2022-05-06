@@ -49,23 +49,9 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Vector;
+import java.util.*;
 
-import javax.accessibility.Accessible;
-import javax.accessibility.AccessibleAction;
-import javax.accessibility.AccessibleComponent;
-import javax.accessibility.AccessibleContext;
-import javax.accessibility.AccessibleIcon;
-import javax.accessibility.AccessibleRole;
-import javax.accessibility.AccessibleSelection;
-import javax.accessibility.AccessibleState;
-import javax.accessibility.AccessibleStateSet;
-import javax.accessibility.AccessibleText;
-import javax.accessibility.AccessibleValue;
+import javax.accessibility.*;
 import javax.swing.event.EventListenerList;
 import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
@@ -3050,7 +3036,246 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
                                 Boolean.valueOf(false), Boolean.valueOf(true));
          }
 
-    // AccessibleContext methods
+        private class AccessibleListImpl implements AccessibleList, AccessibleTable {
+            private final Map<Integer, Integer> listSelectionModeMap = Map.of(
+                    AccessibleList.SINGLE_SELECTION, ListSelectionModel.SINGLE_SELECTION,
+                    AccessibleList.SINGLE_INTERVAL_SELECTION, ListSelectionModel.SINGLE_INTERVAL_SELECTION,
+                    AccessibleList.MULTIPLE_INTERVAL_SELECTION, ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
+            );
+            private final Map<Integer, Integer> accessibleListModeMap = Map.of(
+                    ListSelectionModel.SINGLE_SELECTION, AccessibleList.SINGLE_SELECTION,
+                    ListSelectionModel.SINGLE_INTERVAL_SELECTION, AccessibleList.SINGLE_INTERVAL_SELECTION,
+                    ListSelectionModel.MULTIPLE_INTERVAL_SELECTION, AccessibleList.MULTIPLE_INTERVAL_SELECTION
+            );
+
+            @Override
+            public Accessible getAccessibleCaption() {
+                return null;
+            }
+
+            @Override
+            public void setAccessibleCaption(Accessible a) {
+
+            }
+
+            @Override
+            public Accessible getAccessibleSummary() {
+                return null;
+            }
+
+            @Override
+            public void setAccessibleSummary(Accessible a) {
+
+            }
+
+            @Override
+            public int getAccessibleRowCount() {
+                return AccessibleListImpl.this.getSize();
+            }
+
+            /**
+             *  list has one column only
+             *
+             * @return 1
+             */
+            @Override
+            public int getAccessibleColumnCount() {
+                return 1;
+            }
+
+            @Override
+            public int getAccessibleRowExtentAt(int r, int c) {
+                return 0;
+            }
+
+            @Override
+            public int getAccessibleColumnExtentAt(int r, int c) {
+                return 0;
+            }
+
+            @Override
+            public AccessibleTable getAccessibleRowHeader() {
+                return null;
+            }
+
+            @Override
+            public void setAccessibleRowHeader(AccessibleTable table) {
+
+            }
+
+            @Override
+            public AccessibleTable getAccessibleColumnHeader() {
+                return null;
+            }
+
+            @Override
+            public void setAccessibleColumnHeader(AccessibleTable table) {
+
+            }
+
+            @Override
+            public Accessible getAccessibleRowDescription(int r) {
+                return null;
+            }
+
+            @Override
+            public void setAccessibleRowDescription(int r, Accessible a) {
+
+            }
+
+            @Override
+            public Accessible getAccessibleColumnDescription(int c) {
+                return null;
+            }
+
+            @Override
+            public void setAccessibleColumnDescription(int c, Accessible a) {
+
+            }
+
+            /**
+             *  table has one column, so we only check the row
+             *
+             * @param r zero-based row of the table
+             * @param c zero-based column of the table
+             * @return row is selected
+             */
+            @Override
+            public boolean isAccessibleSelected(int r, int c) {
+                return AccessibleListImpl.this.isAccessibleRowSelected(r);
+            }
+
+            @Override
+            public boolean isAccessibleRowSelected(int r) {
+                return AccessibleListImpl.this.isSelectedIndex(r);
+            }
+
+            /**
+             *  list has selected only one column
+             *
+             * @param c zero-based column of the table
+             * @return c is first column
+             */
+            @Override
+            public boolean isAccessibleColumnSelected(int c) {
+                return c == 0;
+            }
+
+            @Override
+            public int[] getSelectedAccessibleRows() {
+                return AccessibleListImpl.this.getSelectedIndices();
+            }
+
+            @Override
+            public int[] getSelectedAccessibleColumns() {
+                return new int[] {0};
+            }
+
+            @Override
+            public int getSize() {
+                return JList.this.getModel().getSize();
+            }
+
+            @Override
+            public void setSelectionInterval(int index0, int index1) {
+                JList.this.getSelectionModel().setSelectionInterval(index0, index1);
+            }
+
+            @Override
+            public void addSelectionInterval(int index0, int index1) {
+                JList.this.getSelectionModel().addSelectionInterval(index0, index1);
+            }
+
+            @Override
+            public void removeSelectionInterval(int index0, int index1) {
+                JList.this.getSelectionModel().removeSelectionInterval(index0, index1);
+            }
+
+            @Override
+            public int getMinSelectionIndex() {
+                return JList.this.getSelectionModel().getMinSelectionIndex();
+            }
+
+            @Override
+            public int getMaxSelectionIndex() {
+                return JList.this.getSelectionModel().getMaxSelectionIndex();
+            }
+
+            @Override
+            public boolean isSelectedIndex(int index) {
+                return JList.this.getSelectionModel().isSelectedIndex(index);
+            }
+
+            @Override
+            public boolean isSelectionEmpty() {
+                return JList.this.getSelectionModel().isSelectionEmpty();
+            }
+
+            @Override
+            public void insertIndexInterval(int index, int length, boolean before) {
+                JList.this.getSelectionModel().insertIndexInterval(index, length, before);
+            }
+
+            @Override
+            public void removeIndexInterval(int index0, int index1) {
+                JList.this.getSelectionModel().removeIndexInterval(index0, index1);
+            }
+
+            /**
+             * This method sets the ListSelectionMode to match the AccessibleListMode.
+             * If no match is found, the value will not be set.
+             *
+             * @param selectionMode the AccessibleListMode
+             */
+            @Override
+            public void setSelectionMode(int selectionMode) {
+                Integer sm = listSelectionModeMap.get(selectionMode);
+                if (sm != null) {
+                    JList.this.getSelectionModel().setSelectionMode(sm);
+                }
+            }
+
+            /**
+             * This method returns an AccessibleListMode corresponding to the ListSelectionMode
+             *
+             * @return AccessibleListMode
+             */
+            @Override
+            public int getSelectionMode() {
+                return accessibleListModeMap.get(JList.this.getSelectionModel().getSelectionMode());
+            }
+
+            @Override
+            public int[] getSelectedIndices() {
+                return JList.this.getSelectionModel().getSelectedIndices();
+            }
+
+            @Override
+            public int getSelectedItemsCount() {
+                return JList.this.getSelectionModel().getSelectedItemsCount();
+            }
+
+            public Accessible getAccessibleAt(int r, int c) {
+                if ((r >= 0) && (r < getAccessibleRowCount())) {
+                    E o =  JList.this.getModel().getElementAt(r);
+                    if (o != null) {
+                        Component component = JList.this.getCellRenderer().getListCellRendererComponent(JList.this, o, r,
+                                JList.this.isSelectedIndex(r), false);
+                        if (component instanceof Accessible) {
+                            return (Accessible) component;
+                        }
+                    }
+                }
+                return null;
+            }
+        }
+
+        // AccessibleContext methods
+
+        @Override
+        public AccessibleTable getAccessibleTable() {
+                 return new AccessibleListImpl();
+         }
 
         /**
          * Get the state set of this object.
