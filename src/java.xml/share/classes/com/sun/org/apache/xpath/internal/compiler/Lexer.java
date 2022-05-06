@@ -32,7 +32,7 @@ import jdk.xml.internal.XMLSecurityManager.Limit;
  * This class is in charge of lexical processing of the XPath
  * expression into tokens.
  *
- * @LastModified: Jan 2022
+ * @LastModified: Apr 2022
  */
 class Lexer
 {
