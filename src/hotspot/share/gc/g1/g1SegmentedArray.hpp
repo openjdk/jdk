@@ -215,7 +215,7 @@ class G1SegmentedArray : public FreeListConfig  {
   G1SegmentedArrayFreeList* _free_segment_list;   // The global free segment list to preferentially
                                                   // get new segments from.
 
-  volatile uint _num_available_slots; // Number of slots available in all segments (allocated + not yet used).
+  volatile uint _num_total_slots; // Number of slots available in all segments (allocated + not yet used).
   volatile uint _num_allocated_slots; // Number of total slots allocated ever (including free and pending).
 
 private:
@@ -226,7 +226,7 @@ private:
 public:
   const G1SegmentedArraySegment* first_array_segment() const { return Atomic::load(&_first); }
 
-  uint num_available_slots() const { return Atomic::load(&_num_available_slots); }
+  uint num_total_slots() const { return Atomic::load(&_num_total_slots); }
   uint num_allocated_slots() const {
     uint allocated = Atomic::load(&_num_allocated_slots);
     assert(calculate_length() == allocated, "Must be");
