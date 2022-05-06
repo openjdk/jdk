@@ -113,7 +113,8 @@ public class Reflection {
     public static void ensureNativeAccess(Class<?> currentClass, Class<?> owner, String methodName) {
         // if there is no caller class, act as if the call came from unnamed module of system class loader
         Module module = currentClass != null ?
-                currentClass.getModule() : ClassLoader.getSystemClassLoader().getUnnamedModule();
+                currentClass.getModule() :
+                ClassLoader.getSystemClassLoader().getUnnamedModule();
         boolean isNativeAccessEnabled = SharedSecrets.getJavaLangAccess().isEnableNativeAccess(module);
         if (!isNativeAccessEnabled) {
             synchronized(module) {
