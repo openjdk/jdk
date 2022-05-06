@@ -493,7 +493,7 @@ public class ForkJoinPool19Test extends JSR166TestCase {
     }
 
     /**
-     * Implictly closing a new pool using try-with-resources terminates it
+     * Implicitly closing a new pool using try-with-resources terminates it
      */
     public void testClose() {
         ForkJoinTask f = new FibAction(8);
@@ -507,7 +507,7 @@ public class ForkJoinPool19Test extends JSR166TestCase {
     }
 
     /**
-     * Implictly closing commonpool using try-with-resources does not
+     * Implicitly closing common pool using try-with-resources does not
      * terminate it
      */
     public void testCloseCommonPool() {
