@@ -1153,7 +1153,7 @@ public:
                                add_sub_reg_insn insn2, bool is32);
 
 #define WRAP(INSN, is32)                                                \
-  void INSN(Register Rd, Register Rn, uint64_t imm) {        \
+  void INSN(Register Rd, Register Rn, uint64_t imm) {                   \
     wrap_add_sub_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN, is32); \
   }                                                                     \
                                                                         \
@@ -1175,7 +1175,7 @@ public:
 
 #undef WRAP
 #define WRAP(INSN, is32)                                                \
-  void INSN(Register Rd, Register Rn, uint64_t imm) {        \
+  void INSN(Register Rd, Register Rn, uint64_t imm) {                   \
     wrap_adds_subs_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN, is32); \
   }                                                                     \
                                                                         \
