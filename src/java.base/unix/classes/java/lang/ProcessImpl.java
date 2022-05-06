@@ -142,15 +142,7 @@ final class ProcessImpl extends Process {
 
     private static final Platform platform = Platform.get();
     private static final LaunchMechanism launchMechanism = platform.launchMechanism();
-    private static final Charset jnuCharset;
-    static {
-        @SuppressWarnings("removal")
-        String jnuEncoding = AccessController.doPrivileged((PrivilegedAction<String>) ()
-            -> System.getProperty("sun.jnu.encoding"));
-        jnuCharset = jnuEncoding != null
-            ? Charset.forName(jnuEncoding, Charset.defaultCharset())
-            : Charset.defaultCharset();
-    }
+    private static final Charset jnuCharset = StaticProperty.jnuCharset();
     private static final byte[] helperpath = toCString(StaticProperty.javaHome() + "/lib/jspawnhelper");
 
     private static byte[] toCString(String s) {

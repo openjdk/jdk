@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.internal.util;
 
 import java.util.Properties;
+import java.nio.charset.Charset;
 
 /**
  * System Property access for internal use only.
@@ -52,6 +53,8 @@ public final class StaticProperty {
     private static final String NATIVE_ENCODING;
     private static final String FILE_ENCODING;
     private static final String JAVA_PROPERTIES_DATE;
+    private static final String SUN_JNU_ENCODING;
+    private static final Charset jnuCharset;
 
     private StaticProperty() {}
 
@@ -69,6 +72,8 @@ public final class StaticProperty {
         NATIVE_ENCODING = getProperty(props, "native.encoding");
         FILE_ENCODING = getProperty(props, "file.encoding");
         JAVA_PROPERTIES_DATE = getProperty(props, "java.properties.date", null);
+        SUN_JNU_ENCODING = getProperty(props, "sun.jnu.encoding");
+        jnuCharset = Charset.forName(SUN_JNU_ENCODING, Charset.defaultCharset());
     }
 
     private static String getProperty(Properties props, String key) {
@@ -240,5 +245,30 @@ public final class StaticProperty {
      */
     public static String javaPropertiesDate() {
         return JAVA_PROPERTIES_DATE;
+    }
+
+    /**
+     * Return the {@code sun.jnu.encoding} system property.
+     *
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     *
+     * @return the {@code sun.jnu.encoding} system property
+     */
+    public static String jnuEncoding() {
+        return SUN_JNU_ENCODING;
+    }
+
+    /**
+     * Return charset for {@code sun.jnu.encoding} system property.
+     *
+     * <strong>If {@code sun.jnu.encoding} system property has invalid
+     * encoding name, {@link Charset#defaultCharset()} is returned.</strong>
+     *
+     * @return charset for {@code sun.jnu.encoding} system property
+     */
+    public static Charset jnuCharset() {
+        return jnuCharset;
     }
 }

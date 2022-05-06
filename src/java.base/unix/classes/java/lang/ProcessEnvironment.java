@@ -56,9 +56,8 @@ package java.lang;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
+import jdk.internal.util.StaticProperty;
 
 
 final class ProcessEnvironment
@@ -66,15 +65,7 @@ final class ProcessEnvironment
     private static final HashMap<Variable,Value> theEnvironment;
     private static final Map<String,String> theUnmodifiableEnvironment;
     static final int MIN_NAME_LENGTH = 0;
-    private static final Charset jnuCharset;
-    static {
-        @SuppressWarnings("removal")
-        String jnuEncoding = AccessController.doPrivileged((PrivilegedAction<String>) ()
-            -> System.getProperty("sun.jnu.encoding"));
-        jnuCharset = jnuEncoding != null
-            ? Charset.forName(jnuEncoding, Charset.defaultCharset())
-            : Charset.defaultCharset();
-    }
+    private static final Charset jnuCharset = StaticProperty.jnuCharset();
 
     static {
         // We cache the C environment.  This means that subsequent calls
