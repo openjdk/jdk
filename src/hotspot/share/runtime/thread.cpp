@@ -255,8 +255,6 @@ Thread::Thread() {
   // and ::Release()
   _ParkEvent   = ParkEvent::Allocate(this);
 
-  _in_asgct = false; // initialize the ASGCT handler flag
-
 #ifdef CHECK_UNHANDLED_OOPS
   if (CheckUnhandledOops) {
     _unhandled_oops = new UnhandledOops(this);
@@ -994,6 +992,7 @@ void JavaThread::check_for_valid_safepoint_state() {
 JavaThread::JavaThread() :
   // Initialize fields
 
+  _in_asgct(false),
   _on_thread_list(false),
   DEBUG_ONLY(_java_call_counter(0) COMMA)
   _entry_point(nullptr),

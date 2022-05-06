@@ -652,7 +652,7 @@ bool CodeCache::contains(nmethod *nm) {
 CodeBlob* CodeCache::find_blob(void* start) {
   CodeBlob* result = find_blob_unsafe(start);
   Thread* current_thread = Thread::current_or_null_safe();
-  if (current_thread != NULL && current_thread->in_asgct()) {
+  if (current_thread != NULL && current_thread->is_Java_thread() && JavaThread::cast(current_thread)->in_asgct()) {
     // If called from ASGCT the usual invariants may not apply so if we find
     // a zombie method just return NULL
     return (result == NULL || result->is_zombie()) ? NULL : result;
