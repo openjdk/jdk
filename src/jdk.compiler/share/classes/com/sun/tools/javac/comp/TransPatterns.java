@@ -82,7 +82,6 @@ import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCContinue;
-import com.sun.tools.javac.tree.JCTree.JCDeconstructionPattern;
 import com.sun.tools.javac.tree.JCTree.JCDoWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCLambda;
@@ -90,6 +89,7 @@ import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCParenthesizedPattern;
 import com.sun.tools.javac.tree.JCTree.JCPattern;
+import com.sun.tools.javac.tree.JCTree.JCRecordPattern;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
@@ -259,7 +259,7 @@ public class TransPatterns extends TreeTranslator {
     }
 
     @Override
-    public void visitDeconstructionPattern(JCDeconstructionPattern tree) {
+    public void visitRecordPattern(JCRecordPattern tree) {
         //type test already done, finish handling of deconstruction patterns ("T(PATT1, PATT2, ...)")
         //=>
         //<PATT1-handling> && <PATT2-handling> && ...
@@ -303,7 +303,7 @@ public class TransPatterns extends TreeTranslator {
                     extraTest = makeTypeTest(make.Ident(nestedTemp),
                                              make.Type(nested.type));
                 }
-            } else if (nested.type.isReference() && nested.hasTag(Tag.DECONSTRUCTIONPATTERN)) {
+            } else if (nested.type.isReference() && nested.hasTag(Tag.RECORDPATTERN)) {
                 extraTest = makeBinary(Tag.NE, make.Ident(nestedTemp), makeNull());
             }
             if (extraTest != null) {

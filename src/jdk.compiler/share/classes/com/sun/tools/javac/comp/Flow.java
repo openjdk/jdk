@@ -56,6 +56,7 @@ import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import com.sun.tools.javac.code.Type.TypeVar;
 import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
+import static com.sun.tools.javac.code.TypeTag.NONE;
 import static com.sun.tools.javac.code.TypeTag.VOID;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -690,8 +691,8 @@ public class Flow {
             tree.isExhaustive = tree.hasTotalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
-                Set<Symbol> constants = coveredSymbolsForCases(tree.pos(), tree.selector, tree.cases);
-                tree.isExhaustive |= isExhaustive(tree.selector.pos(), tree.selector.type, constants);
+                Set<Symbol> coveredSymbols = coveredSymbolsForCases(tree.pos(), tree.selector, tree.cases);
+                tree.isExhaustive |= isExhaustive(tree.selector.pos(), tree.selector.type, coveredSymbols);
                 if (!tree.isExhaustive) {
                     log.error(tree, Errors.NotExhaustiveStatement);
                 }
@@ -725,10 +726,10 @@ public class Flow {
                     }
                 }
             }
-            Set<Symbol> constants = coveredSymbolsForCases(tree.pos(), tree.selector, tree.cases);
+            Set<Symbol> coveredSymbols = coveredSymbolsForCases(tree.pos(), tree.selector, tree.cases);
             tree.isExhaustive = tree.hasTotalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) ||
-                                isExhaustive(tree.selector.pos(), tree.selector.type, constants);
+                                isExhaustive(tree.selector.pos(), tree.selector.type, coveredSymbols);
             if (!tree.isExhaustive) {
                 log.error(tree, Errors.NotExhaustive);
             }
@@ -747,23 +748,25 @@ public class Flow {
 
         private Set<Symbol> coveredSymbols(DiagnosticPosition pos, Type targetType,
                                            Iterable<? extends JCCaseLabel> labels) {
-            Set<Symbol> constants = new HashSet<>();
-            Map<Symbol, List<JCDeconstructionPattern>> categorizedDeconstructionPatterns = new HashMap<>();
+            Set<Symbol> coveredSymbols = new HashSet<>();
+            Map<Symbol, List<JCRecordPattern>> deconstructionPatternsBySymbol = new HashMap<>();
 
             for (JCCaseLabel label : labels) {
                 switch (label.getTag()) {
                     case BINDINGPATTERN, PARENTHESIZEDPATTERN -> {
                         PatternPrimaryType primaryPatternType = TreeInfo.primaryPatternType((JCPattern) label);
-                        constants.add(primaryPatternType.type().tsym);
+                        if (!primaryPatternType.type().hasTag(NONE)) {
+                            coveredSymbols.add(primaryPatternType.type().tsym);
+                        }
                     }
-                    case DECONSTRUCTIONPATTERN -> {
-                        JCDeconstructionPattern dpat = (JCDeconstructionPattern) label;
+                    case RECORDPATTERN -> {
+                        JCRecordPattern dpat = (JCRecordPattern) label;
                         Symbol type = dpat.record;
-                        List<JCDeconstructionPattern> augmentedPatterns =
-                                categorizedDeconstructionPatterns.getOrDefault(type, List.nil())
+                        List<JCRecordPattern> augmentedPatterns =
+                                deconstructionPatternsBySymbol.getOrDefault(type, List.nil())
                                                                  .prepend(dpat);
 
-                        categorizedDeconstructionPatterns.put(type, augmentedPatterns);
+                        deconstructionPatternsBySymbol.put(type, augmentedPatterns);
                     }
 
 
@@ -772,72 +775,94 @@ public class Flow {
                         if (label.isExpression()) {
                             JCExpression expr = (JCExpression) label;
                             if (expr.hasTag(IDENT) && ((JCIdent) expr).sym.isEnum())
-                                constants.add(((JCIdent) expr).sym);
+                                coveredSymbols.add(((JCIdent) expr).sym);
                         } else {
                             throw new AssertionError(label.getTag());
                         }
                     }
                 }
             }
-            for (Entry<Symbol, List<JCDeconstructionPattern>> e : categorizedDeconstructionPatterns.entrySet()) {
-                if (coversDeconstructionStartingFromComponent(pos, targetType, e.getValue(), 0)) {
-                    constants.add(e.getKey());
+            for (Entry<Symbol, List<JCRecordPattern>> e : deconstructionPatternsBySymbol.entrySet()) {
+                if (coversDeconstructionFromComponent(pos, targetType, e.getValue(), 0)) {
+                    coveredSymbols.add(e.getKey());
                 }
             }
-            return constants;
+            return coveredSymbols;
         }
 
-        private boolean coversDeconstructionStartingFromComponent(DiagnosticPosition pos,
-                                                                  Type targetType,
-                                                                  List<JCDeconstructionPattern> patterns,
-                                                                  int component) {
-            List<? extends RecordComponent> components = patterns.head.record.getRecordComponents();
+        private boolean coversDeconstructionFromComponent(DiagnosticPosition pos,
+                                                          Type targetType,
+                                                          List<JCRecordPattern> deconstructionPatterns,
+                                                          int component) {
+            //Given a set of record patterns for the same record, and a starting component,
+            //this method checks, whether the nested patterns for the components are exhaustive,
+            //i.e. represent all possible combinations.
+            //This is done by categorizing the patterns based on the type covered by the given
+            //starting component.
+            //For each such category, it is then checked if the nested patterns starting at the next
+            //component are exhaustive, by recursivelly invoking this method. If these nested patterns
+            //are exhaustive, the given covered type is accepted.
+            //All such covered types are then checked whether they cover the declared type of
+            //the starting component's declaration. If yes, the given set of patterns starting at
+            //the given component cover the given record exhaustivelly, and true is returned.
+            List<? extends RecordComponent> components =
+                    deconstructionPatterns.head.record.getRecordComponents();
 
             if (components.size() == component) {
+                //no components remain to be checked:
                 return true;
             }
 
-            Type parameterizedComponentType = types.memberType(targetType, components.get(component));
-            List<JCPattern> nestedComponentPatterns = patterns.map(d -> d.nested.get(component));
-            Set<Symbol> nestedCovered = coveredSymbols(pos, parameterizedComponentType,
-                                                       nestedComponentPatterns);
-            Map<Symbol, List<JCDeconstructionPattern>> componentType2Patterns = new HashMap<>();
-            Set<Symbol> covered = new HashSet<>();
+            //for the first tested component, gather symbols covered by the nested patterns:
+            Type instantiatedComponentType = types.memberType(targetType, components.get(component));
+            List<JCPattern> nestedComponentPatterns = deconstructionPatterns.map(d -> d.nested.get(component));
+            Set<Symbol> coveredSymbolsForComponent = coveredSymbols(pos, instantiatedComponentType,
+                                                                    nestedComponentPatterns);
 
-            for (JCDeconstructionPattern subTypeCandidate : patterns) {
-                JCPattern nestedPattern = subTypeCandidate.nested.get(component);
-                Symbol currentPatternType;
+            //for each of the symbols covered by the starting component, find all deconstruction patterns
+            //that have the given type, or its supertype, as a type of the starting nested pattern:
+            Map<Symbol, List<JCRecordPattern>> coveredSymbol2Patterns = new HashMap<>();
+
+            for (JCRecordPattern deconstructionPattern : deconstructionPatterns) {
+                JCPattern nestedPattern = deconstructionPattern.nested.get(component);
+                Symbol componentPatternType;
                 switch (nestedPattern.getTag()) {
                     case BINDINGPATTERN, PARENTHESIZEDPATTERN -> {
                         PatternPrimaryType primaryPatternType =
                                 TreeInfo.primaryPatternType(nestedPattern);
-                        currentPatternType = primaryPatternType.type().tsym;
+                        componentPatternType = primaryPatternType.type().tsym;
                     }
-                    case DECONSTRUCTIONPATTERN -> {
-                        currentPatternType = ((JCDeconstructionPattern) nestedPattern).record;
+                    case RECORDPATTERN -> {
+                        componentPatternType = ((JCRecordPattern) nestedPattern).record;
                     }
                     default -> {
                         throw Assert.error("Unexpected tree kind: " + nestedPattern.getTag());
                     }
                 }
-                for (Symbol currentType : nestedCovered) {
+                for (Symbol currentType : coveredSymbolsForComponent) {
                     if (types.isSubtype(types.erasure(currentType.type),
-                                        types.erasure(currentPatternType.type))) {
-                        componentType2Patterns.put(currentType,
-                                                   componentType2Patterns.getOrDefault(currentType,
+                                        types.erasure(componentPatternType.type))) {
+                        coveredSymbol2Patterns.put(currentType,
+                                                   coveredSymbol2Patterns.getOrDefault(currentType,
                                                                                        List.nil())
-                                              .prepend(subTypeCandidate));
+                                              .prepend(deconstructionPattern));
                     }
                 }
             }
 
-            for (Entry<Symbol, List<JCDeconstructionPattern>> e : componentType2Patterns.entrySet()) {
-                if (coversDeconstructionStartingFromComponent(pos, targetType, e.getValue(), component + 1)) {
+            //Check the components following the starting component, for each of the covered symbol,
+            //if they are exhaustive. If yes, the given covered symbol should be part of the following
+            //exhaustiveness check:
+            Set<Symbol> covered = new HashSet<>();
+
+            for (Entry<Symbol, List<JCRecordPattern>> e : coveredSymbol2Patterns.entrySet()) {
+                if (coversDeconstructionFromComponent(pos, targetType, e.getValue(), component + 1)) {
                     covered.add(e.getKey());
                 }
             }
 
-            return isExhaustive(pos, parameterizedComponentType, covered);
+            //verify whether the filtered symbols cover the given record's declared type:
+            return isExhaustive(pos, instantiatedComponentType, covered);
         }
 
         private void transitiveCovers(DiagnosticPosition pos, Type seltype, Set<Symbol> covered) {
@@ -2948,8 +2973,8 @@ public class Flow {
         }
 
         @Override
-        public void visitDeconstructionPattern(JCDeconstructionPattern tree) {
-            super.visitDeconstructionPattern(tree);
+        public void visitRecordPattern(JCRecordPattern tree) {
+            super.visitRecordPattern(tree);
             if (tree.var != null) {
                 initParam(tree.var);
             }
@@ -3143,7 +3168,7 @@ public class Flow {
         }
 
         @Override
-        public void visitDeconstructionPattern(JCDeconstructionPattern tree) {
+        public void visitRecordPattern(JCRecordPattern tree) {
             scan(tree.deconstructor);
             scan(tree.nested);
             JCTree prevTree = currentTree;

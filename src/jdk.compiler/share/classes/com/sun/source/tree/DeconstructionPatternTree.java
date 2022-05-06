@@ -40,7 +40,7 @@ public interface DeconstructionPatternTree extends PatternTree {
      * Returns the deconstructed type.
      * @return the deconstructed type
      */
-    Tree getDeconstructor();
+    ExpressionTree getDeconstructor();
 
     /**
      * Returns the nested patterns.

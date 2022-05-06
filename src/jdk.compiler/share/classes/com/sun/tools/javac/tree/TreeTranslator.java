@@ -471,7 +471,7 @@ public class TreeTranslator extends JCTree.Visitor {
     }
 
     @Override
-    public void visitDeconstructionPattern(JCDeconstructionPattern tree) {
+    public void visitRecordPattern(JCRecordPattern tree) {
         tree.deconstructor = translate(tree.deconstructor);
         tree.nested = translate(tree.nested);
         result = tree;

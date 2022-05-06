@@ -45,7 +45,6 @@ import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCConditional;
 import com.sun.tools.javac.tree.JCTree.JCContinue;
-import com.sun.tools.javac.tree.JCTree.JCDeconstructionPattern;
 import com.sun.tools.javac.tree.JCTree.JCDefaultCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCDoWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCEnhancedForLoop;
@@ -72,6 +71,7 @@ import com.sun.tools.javac.tree.JCTree.JCOpens;
 import com.sun.tools.javac.tree.JCTree.JCPackageDecl;
 import com.sun.tools.javac.tree.JCTree.JCPrimitiveTypeTree;
 import com.sun.tools.javac.tree.JCTree.JCProvides;
+import com.sun.tools.javac.tree.JCTree.JCRecordPattern;
 import com.sun.tools.javac.tree.JCTree.JCRequires;
 import com.sun.tools.javac.tree.JCTree.JCReturn;
 import com.sun.tools.javac.tree.JCTree.JCSwitch;
@@ -266,8 +266,8 @@ public class TreeDiffer extends TreeScanner {
     }
 
     @Override
-    public void visitDeconstructionPattern(JCTree.JCDeconstructionPattern tree) {
-        JCDeconstructionPattern that = (JCDeconstructionPattern) parameter;
+    public void visitRecordPattern(JCTree.JCRecordPattern tree) {
+        JCRecordPattern that = (JCRecordPattern) parameter;
         result =
                 scan(tree.deconstructor, that.deconstructor)
                         && scan(tree.nested, that.nested);

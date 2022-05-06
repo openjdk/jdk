@@ -38,10 +38,11 @@ import jdk.internal.javac.PreviewFeature;
  *        subtypes at runtime than it had at compilation time, an enum has a different set of
  *        constants at runtime than it had at compilation time, or the type hierarchy has changed
  *        in incompatible ways between compile time and run time.</li>
- *    <li>Null targets and sealed types. If an interface or abstract class {@code C} is sealed
- *        to permit {@code A} and {@code B}, then the set of record patterns {@code R(A a)} and
- *        {@code R(B b)} are exhaustive on a record {@code R} whose sole component is of
- *        type {@code C}, but neither of these patterns will match {@code new R(null)}.</li>
+ *    <li>{@code null} values and nested patterns using sealed types. If an interface or abstract
+ *        class {@code C} is sealed to permit {@code A} and {@code B}, then the set of record
+ *        patterns {@code R(A a)} and {@code R(B b)} are exhaustive on a record {@code R} whose
+ *        sole component is of type {@code C}, but neither of these patterns will match
+ *        {@code new R(null)}.</li>
  *    <li>Null targets and nested record patterns. Given a record type {@code R} whose sole
  *        component is {@code S}, which in turn is a record whose sole component is {@code String},
  *        then the nested record pattern {@code R(S(String s))} will not match {@code new R(null)}.</li>

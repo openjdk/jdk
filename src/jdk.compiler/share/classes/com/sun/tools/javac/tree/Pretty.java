@@ -925,7 +925,7 @@ public class Pretty extends JCTree.Visitor {
     }
 
     @Override
-    public void visitDeconstructionPattern(JCDeconstructionPattern tree) {
+    public void visitRecordPattern(JCRecordPattern tree) {
         try {
             printExpr(tree.deconstructor);
             print("(");

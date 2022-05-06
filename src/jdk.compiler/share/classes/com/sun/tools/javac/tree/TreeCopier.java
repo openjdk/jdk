@@ -518,11 +518,11 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 
     @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitDeconstructionPattern(DeconstructionPatternTree node, P p) {
-        JCDeconstructionPattern t = (JCDeconstructionPattern) node;
+        JCRecordPattern t = (JCRecordPattern) node;
         JCExpression deconstructor = copy(t.deconstructor, p);
         List<JCPattern> nested = copy(t.nested, p);
         JCVariableDecl var = copy(t.var, p);
-        return M.at(t.pos).DeconstructionPattern(deconstructor, nested, var);
+        return M.at(t.pos).RecordPattern(deconstructor, nested, var);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

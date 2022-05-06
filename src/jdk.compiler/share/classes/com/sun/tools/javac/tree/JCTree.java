@@ -243,7 +243,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         DEFAULTCASELABEL,
         PARENTHESIZEDPATTERN,
 
-        DECONSTRUCTIONPATTERN,
+        RECORDPATTERN,
 
         /** Indexed array expressions, of type Indexed.
          */
@@ -2370,7 +2370,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
     }
 
-    public static class JCDeconstructionPattern extends JCPattern
+    public static class JCRecordPattern extends JCPattern
             implements DeconstructionPatternTree {
         public JCExpression deconstructor;
         public List<JCPattern> nested;
@@ -2378,8 +2378,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public ClassSymbol record;
         public List<Type> fullComponentTypes;
 
-        protected JCDeconstructionPattern(JCExpression deconstructor, List<JCPattern> nested,
-                                          JCVariableDecl var) {
+        protected JCRecordPattern(JCExpression deconstructor, List<JCPattern> nested,
+                                  JCVariableDecl var) {
             this.deconstructor = deconstructor;
             this.nested = nested;
             this.var = var;
@@ -2391,7 +2391,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
-        public Tree getDeconstructor() {
+        public ExpressionTree getDeconstructor() {
             return deconstructor;
         }
 
@@ -2402,7 +2402,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         @Override
         public void accept(Visitor v) {
-            v.visitDeconstructionPattern(this);
+            v.visitRecordPattern(this);
         }
 
         @DefinedBy(Api.COMPILER_TREE)
@@ -2418,7 +2418,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         @Override
         public Tag getTag() {
-            return DECONSTRUCTIONPATTERN;
+            return RECORDPATTERN;
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
@@ -3470,7 +3470,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitBindingPattern(JCBindingPattern that) { visitTree(that); }
         public void visitDefaultCaseLabel(JCDefaultCaseLabel that) { visitTree(that); }
         public void visitParenthesizedPattern(JCParenthesizedPattern that) { visitTree(that); }
-        public void visitDeconstructionPattern(JCDeconstructionPattern that) { visitTree(that); }
+        public void visitRecordPattern(JCRecordPattern that) { visitTree(that); }
         public void visitIndexed(JCArrayAccess that)         { visitTree(that); }
         public void visitSelect(JCFieldAccess that)          { visitTree(that); }
         public void visitReference(JCMemberReference that)   { visitTree(that); }

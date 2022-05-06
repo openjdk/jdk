@@ -1796,7 +1796,7 @@ public class Attr extends JCTree.Visitor {
                             }
                             matchBindings = matchBindingsComputer.caseGuard(c, afterPattern, matchBindings);
                         }
-                        boolean unconditional = TreeInfo.unrefinedCaseLabel(pat) && !pat.hasTag(DECONSTRUCTIONPATTERN);
+                        boolean unconditional = TreeInfo.unrefinedCaseLabel(pat) && !pat.hasTag(RECORDPATTERN);
                         boolean isTotal = unconditional &&
                                           !patternType.isErroneous() &&
                                           types.isSubtype(types.boxedTypeOrType(types.erasure(seltype)),
@@ -4110,18 +4110,20 @@ public class Attr extends JCTree.Visitor {
         Type clazztype;
         JCTree typeTree;
         if (tree.pattern.getTag() == BINDINGPATTERN ||
-           tree.pattern.getTag() == PARENTHESIZEDPATTERN) {
+            tree.pattern.getTag() == PARENTHESIZEDPATTERN ||
+            tree.pattern.getTag() == RECORDPATTERN) {
             attribTree(tree.pattern, env, unknownExprInfo);
             clazztype = tree.pattern.type;
             if (types.isSubtype(exprtype, clazztype) &&
-                !exprtype.isErroneous() && !clazztype.isErroneous()) {
+                !exprtype.isErroneous() && !clazztype.isErroneous() &&
+                tree.pattern.getTag() != RECORDPATTERN) {
                 if (!allowUnconditionalPatternsInstance) {
                     log.error(tree.pos(), Errors.InstanceofPatternNoSubtype(exprtype, clazztype));
                 } else if (preview.isPreview(Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF)) {
                     preview.warnPreview(tree.pattern.pos(), Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF);
                 }
             }
-            typeTree = TreeInfo.primaryPatternTree((JCPattern) tree.pattern).var.vartype;
+            typeTree = TreeInfo.primaryPatternTypeTree((JCPattern) tree.pattern);
         } else {
             clazztype = attribType(tree.pattern, env);
             typeTree = tree.pattern;
@@ -4197,7 +4199,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     @Override
-    public void visitDeconstructionPattern(JCDeconstructionPattern tree) {
+    public void visitRecordPattern(JCRecordPattern tree) {
         tree.type = attribType(tree.deconstructor, env);
         Type site = types.removeWildcards(tree.type);
         List<Type> expectedRecordTypes;
