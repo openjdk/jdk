@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ final public class TKit {
     static void runTests(List<TestInstance> tests) {
         if (currentTest != null) {
             throw new IllegalStateException(
-                    "Unexpeced nested or concurrent Test.run() call");
+                    "Unexpected nested or concurrent Test.run() call");
         }
 
         withExtraLogStream(() -> {
@@ -234,6 +234,13 @@ final public class TKit {
         ThrowingRunnable.toRunnable(() -> Files.write(propsFilename,
                 props.stream().map(e -> String.join("=", e.getKey(),
                 e.getValue())).peek(TKit::trace).collect(Collectors.toList()))).run();
+        trace("Done");
+    }
+
+    public static void traceFileContents(Path path, String label) throws IOException {
+        assertFileExists(path);
+        trace(String.format("Dump [%s] %s...", path, label));
+        Files.readAllLines(path).forEach(TKit::trace);
         trace("Done");
     }
 

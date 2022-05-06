@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
 #define CDS_DYNAMIC_ARCHIVE_MAGIC 0xf00baba8
 #define CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION 13
-#define CURRENT_CDS_ARCHIVE_VERSION 13
+#define CURRENT_CDS_ARCHIVE_VERSION 14
 
 typedef struct CDSFileMapRegion {
   int     _crc;               // CRC checksum of this region.
@@ -48,7 +48,7 @@ typedef struct CDSFileMapRegion {
   int     _is_heap_region;    // Used by SA and debug build.
   int     _is_bitmap_region;  // Relocation bitmap for RO/RW regions (used by SA and debug build).
   int     _mapped_from_file;  // Is this region mapped from a file?
-                              // If false, this region was initialized using os::read().
+                              // If false, this region was initialized using ::read().
   size_t  _file_offset;       // Data for this region starts at this offset in the archive file.
   size_t  _mapping_offset;    // This region should be mapped at this offset from the base address
                               // - for non-heap regions, the base address is SharedBaseAddress

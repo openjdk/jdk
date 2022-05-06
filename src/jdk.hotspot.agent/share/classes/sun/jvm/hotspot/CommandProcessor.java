@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1671,19 +1671,54 @@ public class CommandProcessor {
                 }
             }
         },
+        new Command("threadcontext", "threadcontext [-v] { -a | id }", false) {
+            public void doit(Tokens t) {
+                boolean verbose = false;
+                if (t.countTokens() == 2) {
+                    if (t.nextToken().equals("-v")) {
+                        verbose = true;
+                    } else {
+                        usage();
+                        return;
+                    }
+                }
+                if (t.countTokens() != 1) {
+                    usage();
+                    return;
+                }
+                String id = t.nextToken();
+                Threads threads = VM.getVM().getThreads();
+                boolean all = id.equals("-a");
+                for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+                    JavaThread thread = threads.getJavaThreadAt(i);
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    thread.printThreadIDOn(new PrintStream(bos));
+                    if (all || bos.toString().equals(id)) {
+                        out.format("Thread \"%s\" id=%s Address=%s\n",
+                                   thread.getThreadName(), bos.toString(), thread.getAddress());
+                        thread.printThreadContextOn(out, verbose);
+                        out.println(" ");
+                        if (!all) return;
+                    }
+                }
+                if (!all) {
+                    out.println("Couldn't find thread " + id);
+                }
+            }
+        },
         new Command("thread", "thread { -a | id }", false) {
             public void doit(Tokens t) {
                 if (t.countTokens() != 1) {
                     usage();
                 } else {
-                    String name = t.nextToken();
+                    String id = t.nextToken();
                     Threads threads = VM.getVM().getThreads();
-                    boolean all = name.equals("-a");
+                    boolean all = id.equals("-a");
                     for (int i = 0; i < threads.getNumberOfThreads(); i++) {
                         JavaThread thread = threads.getJavaThreadAt(i);
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         thread.printThreadIDOn(new PrintStream(bos));
-                        if (all || bos.toString().equals(name)) {
+                        if (all || bos.toString().equals(id)) {
                             out.println("Thread " + bos.toString() + " Address " + thread.getAddress());
                             thread.printInfoOn(out);
                             out.println(" ");

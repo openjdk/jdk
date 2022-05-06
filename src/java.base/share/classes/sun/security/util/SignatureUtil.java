@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,32 +47,37 @@ import sun.security.x509.AlgorithmId;
 public class SignatureUtil {
 
     /**
-     * Convert OID.1.2.3.4 or 1.2.3.4 to its matching stdName.
+     * Convert OID.1.2.3.4 or 1.2.3.4 to its matching stdName, and return
+     * upper case algorithm name.
      *
      * @param algName input, could be in any form
-     * @return the matching stdName, or {@code algName} if it is not in the
-     *      form of an OID, or the OID value if no match is found.
+     * @return the matching algorithm name or the OID string in upper case.
      */
     private static String checkName(String algName) {
-        if (!algName.contains(".")) {
-            return algName;
-        } else {
+        algName = algName.toUpperCase(Locale.ENGLISH);
+        if (algName.contains(".")) {
             // convert oid to String
             if (algName.startsWith("OID.")) {
                 algName = algName.substring(4);
             }
             KnownOIDs ko = KnownOIDs.findMatch(algName);
-            return ko != null ? ko.stdName() : algName;
+            if (ko != null) {
+                return ko.stdName().toUpperCase(Locale.ENGLISH);
+            }
         }
+        return algName;
     }
 
     // Utility method of creating an AlgorithmParameters object with
     // the specified algorithm name and encoding
+    //
+    // Note this method can be called only after converting OID.1.2.3.4 or
+    // 1.2.3.4 to its matching stdName, which is implemented in the
+    // checkName(String) method.
     private static AlgorithmParameters createAlgorithmParameters(String algName,
             byte[] paramBytes) throws ProviderException {
 
         try {
-            algName = checkName(algName);
             AlgorithmParameters result =
                 AlgorithmParameters.getInstance(algName);
             result.init(paramBytes);
@@ -96,7 +101,7 @@ public class SignatureUtil {
 
         AlgorithmParameterSpec paramSpec = null;
         if (params != null) {
-            sigName = checkName(sigName).toUpperCase(Locale.ENGLISH);
+            sigName = checkName(sigName);
             // AlgorithmParameters.getAlgorithm() may returns oid if it's
             // created during DER decoding. Convert to use the standard name
             // before passing it to RSAUtil
@@ -140,7 +145,7 @@ public class SignatureUtil {
         AlgorithmParameterSpec paramSpec = null;
 
         if (paramBytes != null) {
-            sigName = checkName(sigName).toUpperCase(Locale.ENGLISH);
+            sigName = checkName(sigName);
             if (sigName.contains("RSA")) {
                 AlgorithmParameters params =
                     createAlgorithmParameters(sigName, paramBytes);
@@ -313,7 +318,7 @@ public class SignatureUtil {
     public static AlgorithmParameterSpec getDefaultParamSpec(
             String sigAlg, Key k) {
         sigAlg = checkName(sigAlg);
-        if (sigAlg.equalsIgnoreCase("RSASSA-PSS")) {
+        if (sigAlg.equals("RSASSA-PSS")) {
             if (k instanceof RSAKey) {
                 AlgorithmParameterSpec spec = ((RSAKey) k).getParams();
                 if (spec instanceof PSSParameterSpec) {
@@ -428,7 +433,7 @@ public class SignatureUtil {
      */
     public static void checkKeyAndSigAlgMatch(PrivateKey key, String sAlg) {
         String kAlg = key.getAlgorithm().toUpperCase(Locale.ENGLISH);
-        sAlg = checkName(sAlg).toUpperCase(Locale.ENGLISH);
+        sAlg = checkName(sAlg);
         switch (sAlg) {
             case "RSASSA-PSS" -> {
                 if (!kAlg.equals("RSASSA-PSS")
@@ -484,12 +489,11 @@ public class SignatureUtil {
      * @return the default alg, might be null if unsupported
      */
     public static String getDefaultSigAlgForKey(PrivateKey k) {
-        String kAlg = k.getAlgorithm();
-        return switch (kAlg.toUpperCase(Locale.ENGLISH)) {
-            case "DSA", "RSA" -> ifcFfcStrength(KeyUtil.getKeySize(k))
-                    + "with" + kAlg;
-            case "EC" -> ecStrength(KeyUtil.getKeySize(k))
-                    + "withECDSA";
+        String kAlg = k.getAlgorithm().toUpperCase(Locale.ENGLISH);
+        return switch (kAlg) {
+            case "DSA" -> "SHA256withDSA";
+            case "RSA" -> ifcFfcStrength(KeyUtil.getKeySize(k)) + "withRSA";
+            case "EC" -> ecStrength(KeyUtil.getKeySize(k)) + "withECDSA";
             case "EDDSA" -> k instanceof EdECPrivateKey
                     ? ((EdECPrivateKey) k).getParams().getName()
                     : kAlg;
@@ -514,11 +518,16 @@ public class SignatureUtil {
                 64, PSSParameterSpec.TRAILER_FIELD_BC);
     }
 
-    // The following values are from SP800-57 part 1 rev 4 tables 2 and 3
+    // SP800-57 part 1 rev5 table 2 "Comparable security strengths of
+    // symmetric block cipher and asymmetric-key algorithms", and table 3
+    // "Maximum security strengths for hash and hash-based functions"
+    // define security strength for various algorithms.
+    // Besides matching the security strength, the default algorithms may
+    // also be chosen based on various recommendations such as NIST CNSA.
 
     /**
-     * Return the default message digest algorithm with the same security
-     * strength as the specified EC key size.
+     * Return the default message digest algorithm based on the specified
+     * EC key size.
      *
      * Attention: sync with the @implNote inside
      * {@link jdk.security.jarsigner.JarSigner.Builder#getDefaultSignatureAlgorithm}.
@@ -526,27 +535,27 @@ public class SignatureUtil {
     private static String ecStrength (int bitLength) {
         if (bitLength >= 512) { // 256 bits of strength
             return "SHA512";
-        } else if (bitLength >= 384) {  // 192 bits of strength
+        } else {
+            // per CNSA, use SHA-384
             return "SHA384";
-        } else { // 128 bits of strength and less
-            return "SHA256";
         }
     }
 
     /**
-     * Return the default message digest algorithm with the same security
-     * strength as the specified IFC/FFC key size.
+     * Return the default message digest algorithm based on both the
+     * security strength of the specified IFC/FFC key size, i.e. RSA,
+     * RSASSA-PSS, and the recommendation from NIST CNSA, e.g. use SHA-384
+     * and min 3072-bit.
      *
      * Attention: sync with the @implNote inside
      * {@link jdk.security.jarsigner.JarSigner.Builder#getDefaultSignatureAlgorithm}.
      */
-    private static String ifcFfcStrength (int bitLength) {
-        if (bitLength > 7680) { // 256 bits
+    private static String ifcFfcStrength(int bitLength) {
+        if (bitLength > 7680) { // 256 bits security strength
             return "SHA512";
-        } else if (bitLength > 3072) {  // 192 bits
-            return "SHA384";
-        } else  { // 128 bits and less
-            return "SHA256";
+        } else {
+            // per CNSA, use SHA-384 unless keysize is too small
+            return (bitLength >= 624 ? "SHA384" : "SHA256");
         }
     }
 }

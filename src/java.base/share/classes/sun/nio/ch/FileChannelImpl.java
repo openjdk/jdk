@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -574,6 +574,10 @@ public class FileChannelImpl
         }
     }
 
+    // Size threshold above which to use a mapped buffer;
+    // transferToArbitraryChannel() is faster for smaller transfers
+    private static final long TRUSTED_TRANSFER_THRESHOLD = 16L*1024L;
+
     // Maximum size to map when using a mapped buffer
     private static final long MAPPED_TRANSFER_SIZE = 8L*1024L*1024L;
 
@@ -581,6 +585,9 @@ public class FileChannelImpl
                                           WritableByteChannel target)
         throws IOException
     {
+        if (count < TRUSTED_TRANSFER_THRESHOLD)
+            return IOStatus.UNSUPPORTED_CASE;
+
         boolean isSelChImpl = (target instanceof SelChImpl);
         if (!((target instanceof FileChannelImpl) || isSelChImpl))
             return IOStatus.UNSUPPORTED;
@@ -1271,6 +1278,8 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
         if (!shared && !writable)
             throw new NonWritableChannelException();
+        if (size == 0)
+            size = Long.MAX_VALUE - Math.max(0, position);
         FileLockImpl fli = new FileLockImpl(this, position, size, shared);
         FileLockTable flt = fileLockTable();
         flt.add(fli);
@@ -1316,6 +1325,8 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
         if (!shared && !writable)
             throw new NonWritableChannelException();
+        if (size == 0)
+            size = Long.MAX_VALUE - Math.max(0, position);
         FileLockImpl fli = new FileLockImpl(this, position, size, shared);
         FileLockTable flt = fileLockTable();
         flt.add(fli);
@@ -1368,9 +1379,10 @@ public class FileChannelImpl
     // Removes an existing mapping
     private static native int unmap0(long address, long length);
 
-    // Transfers from src to dst, or returns -2 if kernel can't do that
-    private native long transferTo0(FileDescriptor src, long position,
-                                    long count, FileDescriptor dst);
+    // Transfers from src to dst, or returns IOStatus.UNSUPPORTED (-4) or
+    // IOStatus.UNSUPPORTED_CASE (-6) if the kernel does not support it
+    private static native long transferTo0(FileDescriptor src, long position,
+                                           long count, FileDescriptor dst);
 
     // Retrieves the maximum size of a transfer
     private static native int maxDirectTransferSize0();

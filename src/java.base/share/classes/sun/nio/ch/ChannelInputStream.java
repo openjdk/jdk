@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,58 +40,52 @@ import java.util.Objects;
 import jdk.internal.util.ArraysSupport;
 
 /**
- * This class is defined here rather than in java.nio.channels.Channels
- * so that code can be shared with SocketAdaptor.
+ * An InputStream that reads bytes from a channel.
  *
  * @author Mike McCloskey
  * @author Mark Reinhold
- * @since 1.4
  */
-
-public class ChannelInputStream
-    extends InputStream
-{
+class ChannelInputStream extends InputStream {
     private static final int DEFAULT_BUFFER_SIZE = 8192;
 
-    public static int read(ReadableByteChannel ch, ByteBuffer bb,
-                           boolean block)
-        throws IOException
-    {
+    private final ReadableByteChannel ch;
+    private ByteBuffer bb;
+    private byte[] bs;       // Invoker's previous array
+    private byte[] b1;
+
+    /**
+     * Initialize a ChannelInputStream that reads from the given channel.
+     */
+    ChannelInputStream(ReadableByteChannel ch) {
+        this.ch = ch;
+    }
+
+    /**
+     * Reads a sequence of bytes from the channel into the given buffer.
+     */
+    private int read(ByteBuffer bb) throws IOException {
         if (ch instanceof SelectableChannel sc) {
             synchronized (sc.blockingLock()) {
-                boolean bm = sc.isBlocking();
-                if (!bm)
+                if (!sc.isBlocking())
                     throw new IllegalBlockingModeException();
-                if (bm != block)
-                    sc.configureBlocking(block);
-                int n = ch.read(bb);
-                if (bm != block)
-                    sc.configureBlocking(bm);
-                return n;
+                return ch.read(bb);
             }
         } else {
             return ch.read(bb);
         }
     }
 
-    protected final ReadableByteChannel ch;
-    private ByteBuffer bb = null;
-    private byte[] bs = null;           // Invoker's previous array
-    private byte[] b1 = null;
-
-    public ChannelInputStream(ReadableByteChannel ch) {
-        this.ch = ch;
-    }
-
+    @Override
     public synchronized int read() throws IOException {
         if (b1 == null)
             b1 = new byte[1];
-        int n = this.read(b1);
+        int n = read(b1);
         if (n == 1)
             return b1[0] & 0xff;
         return -1;
     }
 
+    @Override
     public synchronized int read(byte[] bs, int off, int len)
         throws IOException
     {
@@ -107,12 +101,6 @@ public class ChannelInputStream
         this.bb = bb;
         this.bs = bs;
         return read(bb);
-    }
-
-    protected int read(ByteBuffer bb)
-        throws IOException
-    {
-        return ChannelInputStream.read(ch, bb, true);
     }
 
     @Override
@@ -201,6 +189,7 @@ public class ChannelInputStream
         return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
     }
 
+    @Override
     public int available() throws IOException {
         // special case where the channel is to a file
         if (ch instanceof SeekableByteChannel sbc) {
@@ -210,6 +199,7 @@ public class ChannelInputStream
         return 0;
     }
 
+    @Override
     public synchronized long skip(long n) throws IOException {
         // special case where the channel is to a file
         if (ch instanceof SeekableByteChannel sbc) {
@@ -230,46 +220,62 @@ public class ChannelInputStream
         return super.skip(n);
     }
 
-    public void close() throws IOException {
-        ch.close();
-    }
-
     @Override
     public long transferTo(OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
 
-        if (out instanceof ChannelOutputStream cos
-                && ch instanceof FileChannel fc) {
-            WritableByteChannel wbc = cos.channel();
-
-            if (wbc instanceof FileChannel dst) {
-                return transfer(fc, dst);
-            }
-
-            if (wbc instanceof SelectableChannel sc) {
+        if (ch instanceof FileChannel fc) {
+            // FileChannel -> SocketChannel
+            if (out instanceof SocketOutputStream sos) {
+                SocketChannelImpl sc = sos.channel();
                 synchronized (sc.blockingLock()) {
                     if (!sc.isBlocking())
                         throw new IllegalBlockingModeException();
-                    return transfer(fc, wbc);
+                    return transfer(fc, sc);
                 }
             }
 
-            return transfer(fc, wbc);
+            // FileChannel -> WritableByteChannel
+            if (out instanceof ChannelOutputStream cos) {
+                WritableByteChannel wbc = cos.channel();
+
+                if (wbc instanceof SelectableChannel sc) {
+                    synchronized (sc.blockingLock()) {
+                        if (!sc.isBlocking())
+                            throw new IllegalBlockingModeException();
+                        return transfer(fc, wbc);
+                    }
+                }
+
+                return transfer(fc, wbc);
+            }
         }
 
         return super.transferTo(out);
     }
 
-    private static long transfer(FileChannel src, WritableByteChannel dst) throws IOException {
-        long initialPos = src.position();
+    /**
+     * Transfers all bytes from a channel's file to a target writeable byte channel.
+     * If the writeable byte channel is a selectable channel then it must be in
+     * blocking mode.
+     */
+    private static long transfer(FileChannel fc, WritableByteChannel target)
+        throws IOException
+    {
+        long initialPos = fc.position();
         long pos = initialPos;
         try {
-            while (pos < src.size()) {
-                pos += src.transferTo(pos, Long.MAX_VALUE, dst);
+            while (pos < fc.size()) {
+                pos += fc.transferTo(pos, Long.MAX_VALUE, target);
             }
         } finally {
-            src.position(pos);
+            fc.position(pos);
         }
         return pos - initialPos;
+    }
+
+    @Override
+    public void close() throws IOException {
+        ch.close();
     }
 }

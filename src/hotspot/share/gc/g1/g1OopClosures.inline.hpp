@@ -274,7 +274,9 @@ template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
 
   HeapRegion* to = _g1h->heap_region_containing(obj);
   HeapRegionRemSet* rem_set = to->rem_set();
-  rem_set->add_reference(p, _worker_id);
+  if (rem_set->is_tracked()) {
+    rem_set->add_reference(p, _worker_id);
+  }
 }
 
 #endif // SHARE_GC_G1_G1OOPCLOSURES_INLINE_HPP

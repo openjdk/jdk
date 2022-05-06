@@ -1313,7 +1313,6 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
   num_optional_regions = 0;
   uint num_expensive_regions = 0;
 
-  double predicted_old_time_ms = 0.0;
   double predicted_initial_time_ms = 0.0;
   double predicted_optional_time_ms = 0.0;
 
@@ -1344,7 +1343,7 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
     time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
     // Add regions to old set until we reach the minimum amount
     if (num_initial_regions < min_old_cset_length) {
-      predicted_old_time_ms += predicted_time_ms;
+      predicted_initial_time_ms += predicted_time_ms;
       num_initial_regions++;
       // Record the number of regions added with no time remaining
       if (time_remaining_ms == 0.0) {
@@ -1358,7 +1357,7 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
     } else {
       // Keep adding regions to old set until we reach the optional threshold
       if (time_remaining_ms > optional_threshold_ms) {
-        predicted_old_time_ms += predicted_time_ms;
+        predicted_initial_time_ms += predicted_time_ms;
         num_initial_regions++;
       } else if (time_remaining_ms > 0) {
         // Keep adding optional regions until time is up.
@@ -1382,7 +1381,7 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
   }
 
   log_debug(gc, ergo, cset)("Finish choosing collection set old regions. Initial: %u, optional: %u, "
-                            "predicted old time: %1.2fms, predicted optional time: %1.2fms, time remaining: %1.2f",
+                            "predicted initial time: %1.2fms, predicted optional time: %1.2fms, time remaining: %1.2f",
                             num_initial_regions, num_optional_regions,
                             predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms);
 }

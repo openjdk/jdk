@@ -282,11 +282,11 @@ public class LayoutPath {
     private static void checkAlignment(LayoutPath path) {
         MemoryLayout layout = path.layout;
         long alignment = layout.bitAlignment();
-        if (path.offset % alignment != 0) {
+        if (!Utils.isAligned(path.offset, alignment)) {
             throw new UnsupportedOperationException("Invalid alignment requirements for layout " + layout);
         }
         for (long stride : path.strides) {
-            if (stride % alignment != 0) {
+            if (!Utils.isAligned(stride, alignment)) {
                 throw new UnsupportedOperationException("Alignment requirements for layout " + layout + " do not match stride " + stride);
             }
         }

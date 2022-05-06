@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,9 @@ class Universe: AllStatic {
   // Known classes in the VM
   static Klass* _typeArrayKlassObjs[T_LONG+1];
   static Klass* _objectArrayKlassObj;
+  // Special int-Array that represents filler objects that are used by GC to overwrite
+  // dead objects. References to them are generally an error.
+  static Klass* _fillerArrayKlassObj;
 
   // Known objects in the VM
   static OopHandle    _main_thread_group;             // Reference to the main thread group object
@@ -207,6 +210,8 @@ class Universe: AllStatic {
   static Klass* doubleArrayKlassObj()               { return typeArrayKlassObj(T_DOUBLE); }
 
   static Klass* objectArrayKlassObj()               { return _objectArrayKlassObj; }
+
+  static Klass* fillerArrayKlassObj()               { return _fillerArrayKlassObj; }
 
   static Klass* typeArrayKlassObj(BasicType t) {
     assert((uint)t >= T_BOOLEAN, "range check for type: %s", type2name(t));
@@ -329,9 +334,8 @@ class Universe: AllStatic {
   // CDS support
   static void serialize(SerializeClosure* f);
 
-  // Apply "f" to all klasses for basic types (classes not present in
+  // Apply the closure to all klasses for basic types (classes not present in
   // SystemDictionary).
-  static void basic_type_classes_do(void f(Klass*));
   static void basic_type_classes_do(KlassClosure* closure);
   static void metaspace_pointers_do(MetaspaceClosure* it);
 

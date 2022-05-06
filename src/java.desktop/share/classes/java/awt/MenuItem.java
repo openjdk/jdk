@@ -185,7 +185,7 @@ public class MenuItem extends MenuComponent implements Accessible {
     /**
      * Constructs a new MenuItem with an empty label and no keyboard
      * shortcut.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since    1.1
@@ -201,7 +201,7 @@ public class MenuItem extends MenuComponent implements Accessible {
      * menu items. By default, all menu items except for
      * separators are enabled.
      * @param       label the label for this menu item.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since       1.0
@@ -218,7 +218,7 @@ public class MenuItem extends MenuComponent implements Accessible {
      * @param       label the label for this menu item.
      * @param       s the instance of {@code MenuShortcut}
      *                       associated with this menu item.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since       1.1
@@ -616,7 +616,7 @@ public class MenuItem extends MenuComponent implements Accessible {
      *          <code><em>Foo</em>Listener</code>s on this menu item,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
      *

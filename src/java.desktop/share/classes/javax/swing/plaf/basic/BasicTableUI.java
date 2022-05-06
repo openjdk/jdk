@@ -1872,23 +1872,6 @@ public class BasicTableUI extends TableUI
             comp = comp.getParent();
         }
 
-        if (comp != null && !(comp instanceof JViewport) && !(comp instanceof JScrollPane)) {
-            // We did rMax-1 to paint the same number of rows that are drawn on console
-            // otherwise 1 extra row is printed per page than that are displayed
-            // when there is no scrollPane and we do printing of table
-            // but not when rmax is already pointing to index of last row
-            // and if there is any selected rows
-            if (rMax != (table.getRowCount() - 1) &&
-                    (table.getSelectedRow() == -1)) {
-                // Do not decrement rMax if rMax becomes
-                // less than or equal to rMin
-                // else cells will not be painted
-                if (rMax - rMin > 1) {
-                    rMax = rMax - 1;
-                }
-            }
-        }
-
         // Paint the grid.
         paintGrid(g, rMin, rMax, cMin, cMax);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,7 +225,9 @@ public class KeyStoreUtil {
 
         List<String> result = new ArrayList<>();
         Properties p = new Properties();
-        p.load(new FileInputStream(file));
+        try (FileInputStream is = new FileInputStream(file)) {
+            p.load(is);
+        }
 
         String s = p.getProperty(tool + ".all");
         if (s != null) {

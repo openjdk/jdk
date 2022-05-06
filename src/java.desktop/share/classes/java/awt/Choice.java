@@ -124,7 +124,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * By default, the first item added to the choice menu becomes the
      * selected item, until a different selection is made by the user
      * by calling one of the {@code select} methods.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
      * @see       java.awt.GraphicsEnvironment#isHeadless
      * @see       #select(int)
@@ -205,7 +205,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
     /**
      * Adds an item to this {@code Choice} menu.
      * @param      item    the item to be added
-     * @exception  NullPointerException   if the item's value is
+     * @throws  NullPointerException   if the item's value is
      *                  {@code null}
      * @since      1.1
      */
@@ -219,7 +219,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * <p>
      * Adds an item to this {@code Choice} menu.
      * @param item the item to be added
-     * @exception NullPointerException if the item's value is equal to
+     * @throws NullPointerException if the item's value is equal to
      *          {@code null}
      */
     public void addItem(String item) {
@@ -238,7 +238,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * invoking this method.
      * @param item the item to be added
      * @param index the new item position
-     * @exception NullPointerException if the item's value is equal to
+     * @throws NullPointerException if the item's value is equal to
      *          {@code null}
      */
     private void insertNoInvalidate(String item, int index) {
@@ -274,7 +274,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * the selected item.
      * @param item the non-{@code null} item to be inserted
      * @param index the position at which the item should be inserted
-     * @exception IllegalArgumentException if index is less than 0
+     * @throws IllegalArgumentException if index is less than 0
      */
     public void insert(String item, int index) {
         synchronized (this) {
@@ -300,7 +300,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * item remains selected (and the selected index is
      * updated accordingly).
      * @param      item  the item to remove from this {@code Choice} menu
-     * @exception  IllegalArgumentException  if the item doesn't
+     * @throws  IllegalArgumentException  if the item doesn't
      *                     exist in the choice menu
      * @since      1.1
      */
@@ -430,7 +430,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * {@code ItemEvent} is by user interaction.
      *
      * @param      pos      the position of the selected item
-     * @exception  IllegalArgumentException if the specified
+     * @throws  IllegalArgumentException if the specified
      *                            position is greater than the
      *                            number of items or less than zero
      * @see        #getSelectedItem
@@ -561,7 +561,7 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      *          <code><em>Foo</em>Listener</code>s on this choice,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
      *

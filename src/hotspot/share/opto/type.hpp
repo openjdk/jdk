@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -593,7 +593,7 @@ public:
 
   // Check for single integer
   bool is_con() const { return _lo==_hi; }
-  bool is_con(int i) const { return is_con() && _lo == i; }
+  bool is_con(jint i) const { return is_con() && _lo == i; }
   jint get_con() const { assert(is_con(), "" );  return _lo; }
 
   virtual bool        is_finite() const;  // Has a finite value
@@ -661,7 +661,7 @@ public:
 
   // Check for single integer
   bool is_con() const { return _lo==_hi; }
-  bool is_con(int i) const { return is_con() && _lo == i; }
+  bool is_con(jlong i) const { return is_con() && _lo == i; }
   jlong get_con() const { assert(is_con(), "" ); return _lo; }
 
   // Check for positive 32-bit value.

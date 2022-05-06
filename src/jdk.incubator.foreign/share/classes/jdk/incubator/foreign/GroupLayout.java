@@ -133,18 +133,14 @@ public final class GroupLayout extends AbstractLayout implements MemoryLayout {
     }
 
     /**
-     * Is this group layout a <em>struct</em>?
-     *
-     * @return true, if this group layout is a <em>struct</em>.
+     * {@return {@code true}, if this group layout is a <em>struct</em>}
      */
     public boolean isStruct() {
         return kind == Kind.STRUCT;
     }
 
     /**
-     * Is this group layout a <em>union</em>?
-     *
-     * @return true, if this group layout is a <em>union</em>.
+     * {@return {@code true}, if this group layout is a <em>union</em>}
      */
     public boolean isUnion() {
         return kind == Kind.UNION;

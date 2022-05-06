@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ static void ScaleDown(POINT &cp, HWND m_window) {
 
 HRESULT __stdcall AwtDropTarget::DragEnter(IDataObject __RPC_FAR *pDataObj, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
     TRY;
-    AwtToolkit::GetInstance().isInDoDragDropLoop = TRUE;
+    AwtToolkit::GetInstance().isDnDTargetActive = TRUE;
     if (NULL != m_pIDropTargetHelper) {
         m_pIDropTargetHelper->DragEnter(
             m_window,
@@ -161,7 +161,7 @@ HRESULT __stdcall AwtDropTarget::DragEnter(IDataObject __RPC_FAR *pDataObj, DWOR
         (IsLocalDnD()  && !IsLocalDataObject(pDataObj)))
     {
         *pdwEffect = retEffect;
-        AwtToolkit::GetInstance().isInDoDragDropLoop = FALSE;
+        AwtToolkit::GetInstance().isDnDTargetActive = FALSE;
         return ret;
     }
 
@@ -173,7 +173,7 @@ HRESULT __stdcall AwtDropTarget::DragEnter(IDataObject __RPC_FAR *pDataObj, DWOR
     }
 
     if (JNU_IsNull(env, m_dtcp) || !JNU_IsNull(env, safe_ExceptionOccurred(env))) {
-        AwtToolkit::GetInstance().isInDoDragDropLoop = FALSE;
+        AwtToolkit::GetInstance().isDnDTargetActive = FALSE;
         return ret;
     }
 
@@ -200,12 +200,12 @@ HRESULT __stdcall AwtDropTarget::DragEnter(IDataObject __RPC_FAR *pDataObj, DWOR
                 env->ExceptionDescribe();
                 env->ExceptionClear();
                 actions = java_awt_dnd_DnDConstants_ACTION_NONE;
-                AwtToolkit::GetInstance().isInDoDragDropLoop = FALSE;
+                AwtToolkit::GetInstance().isDnDTargetActive = FALSE;
             }
         } catch (std::bad_alloc&) {
             retEffect = ::convertActionsToDROPEFFECT(actions);
             *pdwEffect = retEffect;
-            AwtToolkit::GetInstance().isInDoDragDropLoop = FALSE;
+            AwtToolkit::GetInstance().isDnDTargetActive = FALSE;
             throw;
         }
 
@@ -421,7 +421,7 @@ void AwtDropTarget::DropDone(jboolean success, jint action) {
     m_dropSuccess = success;
     m_dropActions = action;
     AwtToolkit::GetInstance().QuitMessageLoop(AwtToolkit::EXIT_ENCLOSING_LOOP);
-    AwtToolkit::GetInstance().isInDoDragDropLoop = FALSE;
+    AwtToolkit::GetInstance().isDnDTargetActive = FALSE;
 }
 
 /**
@@ -1136,7 +1136,7 @@ void AwtDropTarget::UnloadCache() {
 
 void AwtDropTarget::DragCleanup(void) {
     UnloadCache();
-    AwtToolkit::GetInstance().isInDoDragDropLoop = FALSE;
+    AwtToolkit::GetInstance().isDnDTargetActive = FALSE;
 }
 
 BOOL AwtDropTarget::IsLocalDataObject(IDataObject __RPC_FAR *pDataObject) {

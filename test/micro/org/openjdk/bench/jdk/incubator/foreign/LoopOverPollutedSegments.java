@@ -58,7 +58,7 @@ public class LoopOverPollutedSegments {
 
     static final Unsafe unsafe = Utils.unsafe;
 
-    MemorySegment nativeSegment, heapSegmentBytes, heapSegmentFloats;
+    MemorySegment nativeSegment, nativeSharedSegment, heapSegmentBytes, heapSegmentFloats;
     byte[] arr;
     long addr;
 
@@ -73,6 +73,7 @@ public class LoopOverPollutedSegments {
         }
         arr = new byte[ALLOC_SIZE];
         nativeSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, ResourceScope.newConfinedScope());
+        nativeSharedSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, ResourceScope.newSharedScope());
         heapSegmentBytes = MemorySegment.ofArray(new byte[ALLOC_SIZE]);
         heapSegmentFloats = MemorySegment.ofArray(new float[ELEM_SIZE]);
 
@@ -81,6 +82,8 @@ public class LoopOverPollutedSegments {
                 unsafe.putInt(arr, Unsafe.ARRAY_BYTE_BASE_OFFSET + (i * 4), i);
                 nativeSegment.setAtIndex(JAVA_INT, i, i);
                 nativeSegment.setAtIndex(JAVA_FLOAT, i, i);
+                nativeSharedSegment.setAtIndex(JAVA_INT, i, i);
+                nativeSharedSegment.setAtIndex(JAVA_FLOAT, i, i);
                 intHandle.set(nativeSegment, (long)i, i);
                 heapSegmentBytes.setAtIndex(JAVA_INT, i, i);
                 heapSegmentBytes.setAtIndex(JAVA_FLOAT, i, i);

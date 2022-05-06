@@ -67,4 +67,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #define NOT_R18_RESERVED(code) code
 #endif
 
+#define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
+
 #endif // CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP

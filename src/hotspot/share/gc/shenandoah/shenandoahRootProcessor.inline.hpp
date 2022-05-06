@@ -82,7 +82,7 @@ ShenandoahClassLoaderDataRoots<CONCURRENT>::ShenandoahClassLoaderDataRoots(Shena
   if (heap_iteration) {
     ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_other);
   } else {
-    ClassLoaderDataGraph::clear_claimed_marks();
+    ClassLoaderDataGraph::clear_claimed_marks(ClassLoaderData::_claim_strong);
   }
 
   if (CONCURRENT) {

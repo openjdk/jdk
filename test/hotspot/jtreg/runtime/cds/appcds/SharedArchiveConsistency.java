@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,14 @@ public class SharedArchiveConsistency {
         OutputAnalyzer output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         String stdtxt = output.getOutput();
         System.out.println("Note: this test may fail in very rare occasions due to CRC32 checksum collision");
+        for (String opt : execArgs) {
+          if (opt.equals("-XX:+VerifySharedSpaces")) {
+            // If VerifySharedSpaces is enabled, the VM should never crash even if the archive
+            // is corrupted (unless if we are so lucky that the corrupted archive ends up
+            // have the same checksum as recoreded in the header)
+            output.shouldNotContain("A fatal error has been detected by the Java Runtime Environment");
+          }
+        }
         for (String message : matchMessages) {
             if (stdtxt.contains(message)) {
                 // match any to return
@@ -181,9 +189,7 @@ public class SharedArchiveConsistency {
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modVersion);
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), version);
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
-        output.shouldContain("The shared archive file has the wrong version")
-              .shouldContain("_version expected: " + currentCDSArchiveVersion)
-              .shouldContain("actual: " + version);
+        output.shouldContain("The shared archive file version " + version + " does not match the required version " + currentCDSArchiveVersion);
         if (shareAuto) {
             output.shouldContain(HELLO_WORLD);
         }

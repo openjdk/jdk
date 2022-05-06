@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.bits == 64
  * @bug 8276766
  * @summary Test jar --date source date of entries and that jars are
  *          reproducible

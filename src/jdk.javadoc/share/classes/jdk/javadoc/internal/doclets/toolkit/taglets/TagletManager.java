@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -83,13 +82,7 @@ import static javax.tools.DocumentationTool.Location.TAGLET_PATH;
 
 /**
  * Manages the {@code Taglet}s used by doclets.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
-
 public class TagletManager {
 
     /**
@@ -234,7 +227,7 @@ public class TagletManager {
                 }
                 sfm.setLocation(TAGLET_PATH, paths);
             } else if (!sfm.hasLocation(TAGLET_PATH)) {
-                sfm.setLocation(TAGLET_PATH, Collections.emptyList());
+                sfm.setLocation(TAGLET_PATH, List.of());
             }
         } else if (tagletPath != null) {
             messages.error("doclet.not_standard_file_manager");
@@ -250,23 +243,22 @@ public class TagletManager {
      * @param fileManager the file manager to load classes and resources
      */
     public void addCustomTag(String classname, JavaFileManager fileManager) {
+        ClassLoader tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
+        if (configuration.workArounds.accessInternalAPI()) {
+            Module thisModule = getClass().getModule();
+            Module tagletLoaderUnnamedModule = tagClassLoader.getUnnamedModule();
+            List<String> pkgs = List.of(
+                    "jdk.javadoc.doclet",
+                    "jdk.javadoc.internal.doclets.toolkit",
+                    "jdk.javadoc.internal.doclets.formats.html");
+            pkgs.forEach(p -> thisModule.addOpens(p, tagletLoaderUnnamedModule));
+        }
         try {
-            ClassLoader tagClassLoader;
-            tagClassLoader = fileManager.getClassLoader(TAGLET_PATH);
-            if (configuration.workArounds.accessInternalAPI()) {
-                Module thisModule = getClass().getModule();
-                Module tagletLoaderUnnamedModule = tagClassLoader.getUnnamedModule();
-                List<String> pkgs = List.of(
-                        "jdk.javadoc.doclet",
-                        "jdk.javadoc.internal.doclets.toolkit",
-                        "jdk.javadoc.internal.doclets.formats.html");
-                pkgs.forEach(p -> thisModule.addOpens(p, tagletLoaderUnnamedModule));
-            }
             Class<? extends jdk.javadoc.doclet.Taglet> customTagClass =
                     tagClassLoader.loadClass(classname).asSubclass(jdk.javadoc.doclet.Taglet.class);
             jdk.javadoc.doclet.Taglet instance = customTagClass.getConstructor().newInstance();
             registerTaglet(instance);
-        } catch (ReflectiveOperationException exc) {
+        } catch (ReflectiveOperationException | ExceptionInInitializerError | ClassCastException exc) {
             messages.error("doclet.Error_taglet_not_registered", exc.getClass().getName(),
                     classname);
         }

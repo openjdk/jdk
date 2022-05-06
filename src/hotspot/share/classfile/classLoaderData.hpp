@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool _has_class_mirror_holder; // If true, CLD is dedicated to one class and that class determines
                                  // the CLDs lifecycle.  For example, a non-strong hidden class.
                                  // Arrays of these classes are also assigned
-                                 // to these class loader datas.
+                                 // to these class loader data.
 
   // Remembered sets support for the oops in the class loader data.
   bool _modified_oops;     // Card Table Equivalent
@@ -311,7 +311,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // Also works if unloading.
   Klass* class_loader_klass() const { return _class_loader_klass; }
 
-  // Returns the class loader's explict name as specified during
+  // Returns the class loader's explicit name as specified during
   // construction or the class loader's qualified class name.
   // Works during unloading.
   const char* loader_name() const;

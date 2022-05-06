@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,7 +365,7 @@ ciType* Invoke::declared_type() const {
   return t;
 }
 
-// Implementation of Contant
+// Implementation of Constant
 intx Constant::hash() const {
   if (state_before() == NULL) {
     switch (type()->tag()) {
@@ -529,9 +529,10 @@ void BlockBegin::set_end(BlockEnd* new_end) { // Assumes that no predecessor of 
   if (new_end == _end) return;
 
   // Remove this block as predecessor of its current successors
-  if (_end != NULL)
-  for (int i = 0; i < number_of_sux(); i++) {
-    sux_at(i)->remove_predecessor(this);
+  if (_end != NULL) {
+    for (int i = 0; i < number_of_sux(); i++) {
+      sux_at(i)->remove_predecessor(this);
+    }
   }
 
   _end = new_end;
@@ -718,7 +719,7 @@ void BlockBegin::block_values_do(ValueVisitor* f) {
 #endif
 
 
-bool BlockBegin::try_merge(ValueStack* new_state) {
+bool BlockBegin::try_merge(ValueStack* new_state, bool has_irreducible_loops) {
   TRACE_PHI(tty->print_cr("********** try_merge for block B%d", block_id()));
 
   // local variables used for state iteration
@@ -759,10 +760,9 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
       }
 
       BitMap& requires_phi_function = new_state->scope()->requires_phi_function();
-
       for_each_local_value(new_state, index, new_value) {
         bool requires_phi = requires_phi_function.at(index) || (new_value->type()->is_double_word() && requires_phi_function.at(index + 1));
-        if (requires_phi || !SelectivePhiFunctions) {
+        if (requires_phi || !SelectivePhiFunctions || has_irreducible_loops) {
           new_state->setup_phi_for_local(this, index);
           TRACE_PHI(tty->print_cr("creating phi-function %c%d for local %d", new_state->local_at(index)->type()->tchar(), new_state->local_at(index)->id(), index));
         }
@@ -773,7 +773,7 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
     set_state(new_state);
 
   } else if (existing_state->is_same(new_state)) {
-    TRACE_PHI(tty->print_cr("exisiting state found"));
+    TRACE_PHI(tty->print_cr("existing state found"));
 
     assert(existing_state->scope() == new_state->scope(), "not matching");
     assert(existing_state->locals_size() == new_state->locals_size(), "not matching");

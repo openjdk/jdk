@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,6 +149,9 @@ JVM_ActiveProcessorCount(void);
 
 JNIEXPORT jboolean JNICALL
 JVM_IsUseContainerSupport(void);
+
+JNIEXPORT void * JNICALL
+JVM_LoadZipLibrary();
 
 JNIEXPORT void * JNICALL
 JVM_LoadLibrary(const char *name, jboolean throwException);
@@ -446,7 +449,7 @@ JVM_LookupDefineClass(JNIEnv *env, jclass lookup, const char *name, const jbyte 
                       jsize len, jobject pd, jboolean init, int flags, jobject classData);
 
 /*
- * Module support funcions
+ * Module support functions
  */
 
 /*

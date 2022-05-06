@@ -301,10 +301,7 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
     _alloc_buffers[state] = NEW_C_HEAP_ARRAY(PLAB*, length, mtGC);
     size_t word_sz = _g1h->desired_plab_sz(state);
     for (uint node_index = 0; node_index < length; node_index++) {
-      // Specialized PLABs for old that handle BOT updates for object allocations.
-      _alloc_buffers[state][node_index] = (state == G1HeapRegionAttr::Old)
-                                        ? new G1BotUpdatingPLAB(word_sz)
-                                        : new PLAB(word_sz);
+      _alloc_buffers[state][node_index] = new PLAB(word_sz);
     }
   }
 }
@@ -364,7 +361,6 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
   // Try direct allocation.
   HeapWord* result = _allocator->par_allocate_during_gc(dest, word_sz, node_index);
   if (result != NULL) {
-    update_bot_for_direct_allocation(dest, result, word_sz);
     _direct_allocated[dest.type()] += word_sz;
   }
   return result;

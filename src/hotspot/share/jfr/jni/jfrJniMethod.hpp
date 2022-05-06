@@ -87,8 +87,6 @@ void JNICALL jfr_set_method_sampling_interval(JNIEnv* env, jobject jvm, jlong ty
 
 void JNICALL jfr_set_output(JNIEnv* env, jobject jvm, jstring path);
 
-void JNICALL jfr_set_sample_threads(JNIEnv* env, jobject jvm, jboolean sampleThreads);
-
 void JNICALL jfr_set_stack_depth(JNIEnv* env, jobject jvm, jint depth);
 
 void JNICALL jfr_set_stacktrace_enabled(JNIEnv* env, jobject jvm, jlong event_type_id, jboolean enabled);

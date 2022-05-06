@@ -124,8 +124,12 @@ public abstract non-sealed class AbstractMemorySegmentImpl extends MemorySegment
         if (elementLayout.byteSize() == 0) {
             throw new IllegalArgumentException("Element layout size cannot be zero");
         }
-        if (byteSize() % elementLayout.byteSize() != 0) {
-            throw new IllegalArgumentException("Segment size is no a multiple of layout size");
+        Utils.checkElementAlignment(elementLayout, "Element layout alignment greater than its size");
+        if (!isAlignedForElement(0, elementLayout)) {
+            throw new IllegalArgumentException("Incompatible alignment constraints");
+        }
+        if (!Utils.isAligned(byteSize(), elementLayout.byteSize())) {
+            throw new IllegalArgumentException("Segment size is not a multiple of layout size");
         }
         return new SegmentSplitter(elementLayout.byteSize(), byteSize() / elementLayout.byteSize(),
                 this);
@@ -360,11 +364,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl extends MemorySegment
     }
 
     void checkValidState() {
-        try {
-            scope.checkValidState();
-        } catch (ScopedMemoryAccess.Scope.ScopedAccessError ex) {
-            throw new IllegalStateException("This segment is already closed");
-        }
+        scope.checkValidStateSlow();
     }
 
     @Override
@@ -383,8 +383,13 @@ public abstract non-sealed class AbstractMemorySegmentImpl extends MemorySegment
         return (this.mask & mask) != 0;
     }
 
+    @ForceInline
+    public final boolean isAlignedForElement(long offset, MemoryLayout layout) {
+        return (((unsafeGetOffset() + offset) | maxAlignMask()) & (layout.byteAlignment() - 1)) == 0;
+    }
+
     private int checkArraySize(String typeName, int elemSize) {
-        if (length % elemSize != 0) {
+        if (!Utils.isAligned(length, elemSize)) {
             throw new IllegalStateException(String.format("Segment size is not a multiple of %d. Size: %d", elemSize, length));
         }
         long arraySize = length / elemSize;

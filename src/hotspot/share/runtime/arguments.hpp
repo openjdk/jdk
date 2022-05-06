@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
@@ -35,6 +36,8 @@
 #include "utilities/vmEnums.hpp"
 
 // Arguments parses the command line and recognizes options
+
+class JVMFlag;
 
 // Invocation API hook typedefs (these should really be defined in jni.h)
 extern "C" {
@@ -66,7 +69,8 @@ class PathString : public CHeapObj<mtArguments> {
  public:
   char* value() const { return _value; }
 
-  bool set_value(const char *value);
+  // return false iff OOM && alloc_failmode == AllocFailStrategy::RETURN_NULL
+  bool set_value(const char *value, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
   void append_value(const char *value);
 
   PathString(const char* value);
@@ -98,7 +102,6 @@ class SystemProperty : public PathString {
   SystemProperty* _next;
   bool            _internal;
   bool            _writeable;
-  bool writeable() { return _writeable; }
 
  public:
   // Accessors
@@ -107,9 +110,11 @@ class SystemProperty : public PathString {
   bool internal() const               { return _internal; }
   SystemProperty* next() const        { return _next; }
   void set_next(SystemProperty* next) { _next = next; }
+  bool writeable() const              { return _writeable; }
 
-  bool is_readable() const {
-    return !_internal || strcmp(_key, "jdk.boot.class.path.append") == 0;
+  bool readable() const {
+    return !_internal || (strcmp(_key, "jdk.boot.class.path.append") == 0 &&
+                          value() != NULL);
   }
 
   // A system property should only have its value set
@@ -119,11 +124,10 @@ class SystemProperty : public PathString {
   // via -Xbootclasspath/a or JVMTI OnLoad phase call to AddToBootstrapClassLoaderSearch.
   // In those cases for jdk.boot.class.path.append, the base class
   // set_value and append_value methods are called directly.
-  bool set_writeable_value(const char *value) {
+  void set_writeable_value(const char *value) {
     if (writeable()) {
-      return set_value(value);
+      set_value(value);
     }
-    return false;
   }
   void append_writeable_value(const char *value) {
     if (writeable()) {
@@ -236,6 +240,7 @@ class Arguments : AllStatic {
   friend class JvmtiExport;
   friend class CodeCacheExtensions;
   friend class ArgumentsTest;
+  friend class LargeOptionsTest;
  public:
   // Operation modi
   enum Mode {
@@ -461,20 +466,21 @@ class Arguments : AllStatic {
 
   // Return the real name for the flag passed on the command line (either an alias name or "flag_name").
   static const char* real_flag_name(const char *flag_name);
+  static JVMFlag* find_jvm_flag(const char* name, size_t name_length);
 
   // Return the "real" name for option arg if arg is an alias, and print a warning if arg is deprecated.
   // Return NULL if the arg has expired.
-  static const char* handle_aliases_and_deprecation(const char* arg, bool warn);
+  static const char* handle_aliases_and_deprecation(const char* arg);
 
   static char*  SharedArchivePath;
   static char*  SharedDynamicArchivePath;
   static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
-  static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
   static void extract_shared_archive_paths(const char* archive_path,
                                          char** base_archive_path,
                                          char** top_archive_path) NOT_CDS_RETURN;
 
  public:
+  static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
   // Parses the arguments, first phase
   static jint parse(const JavaVMInitArgs* args);
   // Parse a string for a unsigned integer.  Returns true if value

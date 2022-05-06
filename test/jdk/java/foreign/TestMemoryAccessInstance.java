@@ -35,12 +35,13 @@ import java.util.function.Function;
 
 import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.ValueLayout;
+import org.testng.SkipException;
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
 public class TestMemoryAccessInstance {
 
-    static class Accessor<T, X, L> {
+    static class Accessor<T, X, L extends ValueLayout> {
 
         interface SegmentGetter<T, X, L> {
             X get(T buffer, L layout, long offset);
@@ -90,13 +91,34 @@ public class TestMemoryAccessInstance {
             }
         }
 
-        static <L, X> Accessor<MemorySegment, X, L> ofSegment(L layout, X value,
+        @SuppressWarnings("unchecked")
+        void testHyperAligned() {
+            try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+                MemorySegment segment = MemorySegment.allocateNative(64, scope);
+                T t = transform.apply(segment);
+                L alignedLayout = (L)layout.withBitAlignment(layout.byteSize() * 8 * 2);
+                try {
+                    segmentSetter.set(t, alignedLayout, 0, value);
+                    fail();
+                } catch (IllegalArgumentException exception) {
+                    assertTrue(exception.getMessage().contains("greater"));
+                }
+                try {
+                    segmentGetter.get(t, alignedLayout, 0);
+                    fail();
+                } catch (IllegalArgumentException exception) {
+                    assertTrue(exception.getMessage().contains("greater"));
+                }
+            }
+        }
+
+        static <L extends ValueLayout, X> Accessor<MemorySegment, X, L> ofSegment(L layout, X value,
                          SegmentGetter<MemorySegment, X, L> segmentGetter, SegmentSetter<MemorySegment, X, L> segmentSetter,
                          BufferGetter<X> bufferGetter, BufferSetter<X> bufferSetter) {
             return new Accessor<>(Function.identity(), layout, value, segmentGetter, segmentSetter, bufferGetter, bufferSetter);
         }
 
-        static <L, X> Accessor<MemoryAddress, X, L> ofAddress(L layout, X value,
+        static <L extends ValueLayout, X> Accessor<MemoryAddress, X, L> ofAddress(L layout, X value,
                                                               SegmentGetter<MemoryAddress, X, L> segmentGetter, SegmentSetter<MemoryAddress, X, L> segmentSetter,
                                                               BufferGetter<X> bufferGetter, BufferSetter<X> bufferSetter) {
             return new Accessor<>(MemorySegment::address, layout, value, segmentGetter, segmentSetter, bufferGetter, bufferSetter);
@@ -111,6 +133,24 @@ public class TestMemoryAccessInstance {
     @Test(dataProvider = "addressAccessors")
     public void testAddressAccess(String testName, Accessor<?, ?, ?> accessor) {
         accessor.test();
+    }
+
+    @Test(dataProvider = "segmentAccessors")
+    public void testSegmentAccessHyper(String testName, Accessor<?, ?, ?> accessor) {
+        if (testName.contains("index")) {
+            accessor.testHyperAligned();
+        } else {
+            throw new SkipException("Skipping");
+        }
+    }
+
+    @Test(dataProvider = "addressAccessors")
+    public void testAddressAccessHyper(String testName, Accessor<?, ?, ?> accessor) {
+        if (testName.contains("index")) {
+            accessor.testHyperAligned();
+        } else {
+            throw new SkipException("Skipping");
+        }
     }
 
     static final ByteOrder NE = ByteOrder.nativeOrder();

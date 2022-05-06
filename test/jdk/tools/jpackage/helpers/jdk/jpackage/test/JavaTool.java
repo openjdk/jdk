@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public enum JavaTool {
         }
     }
 
-    Path getPath() {
+    public Path getPath() {
         return path;
     }
 
@@ -48,7 +48,7 @@ public enum JavaTool {
         return ToolProvider.findFirst(toolName()).orElse(null);
     }
 
-    Path relativePathInJavaHome() {
+    private Path relativePathInJavaHome() {
         Path path = Path.of("bin", toolName());
         if (TKit.isWindows()) {
             path = path.getParent().resolve(path.getFileName().toString() + ".exe");

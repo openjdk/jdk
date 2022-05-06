@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ class nmethod : public CompiledMethod {
   // Unclaimed (C)-> N|SD (C)-> X|SD: the nmethod has been processed strongly from
   //   the beginning by a single thread.
   //
-  // "|" describes the concatentation of bits in _oops_do_mark_link.
+  // "|" describes the concatenation of bits in _oops_do_mark_link.
   //
   // The diagram also describes the threads responsible for changing the nmethod to
   // the next state by marking the _transition_ with (C) and (O), which mean "current"
@@ -256,7 +256,7 @@ class nmethod : public CompiledMethod {
   // stack.  An not_entrant method can be removed when there are no
   // more activations, i.e., when the _stack_traversal_mark is less than
   // current sweep traversal index.
-  volatile long _stack_traversal_mark;
+  volatile int64_t _stack_traversal_mark;
 
   // The _hotness_counter indicates the hotness of a method. The higher
   // the value the hotter the method. The hotness counter of a nmethod is
@@ -334,7 +334,7 @@ class nmethod : public CompiledMethod {
   // Inform external interfaces that a compiled method has been unloaded
   void post_compiled_method_unload();
 
-  // Initailize fields to their default values
+  // Initialize fields to their default values
   void init_defaults();
 
   // Offsets
@@ -538,8 +538,8 @@ public:
   void fix_oop_relocations()                           { fix_oop_relocations(NULL, NULL, false); }
 
   // Sweeper support
-  long  stack_traversal_mark()                    { return _stack_traversal_mark; }
-  void  set_stack_traversal_mark(long l)          { _stack_traversal_mark = l; }
+  int64_t stack_traversal_mark()                  { return _stack_traversal_mark; }
+  void    set_stack_traversal_mark(int64_t l)     { _stack_traversal_mark = l; }
 
   // On-stack replacement support
   int   osr_entry_bci() const                     { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }

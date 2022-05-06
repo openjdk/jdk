@@ -32,6 +32,8 @@ import jdk.incubator.foreign.SegmentAllocator;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.util.Objects;
@@ -53,6 +55,23 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Seg
 
     final ResourceList resourceList;
     final Cleaner.Cleanable cleanable;
+    final Thread owner;
+
+    static final int ALIVE = 0;
+    static final int CLOSING = -1;
+    static final int CLOSED = -2;
+
+    int state = ALIVE;
+
+    static final VarHandle STATE;
+
+    static {
+        try {
+            STATE = MethodHandles.lookup().findVarHandle(ResourceScopeImpl.class, "state", int.class);
+        } catch (Throwable ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
 
     static final int MAX_FORKS = Integer.MAX_VALUE;
 
@@ -89,7 +108,8 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Seg
         }
     }
 
-    protected ResourceScopeImpl(ResourceList resourceList, Cleaner cleaner) {
+    protected ResourceScopeImpl(Thread owner, ResourceList resourceList, Cleaner cleaner) {
+        this.owner = owner;
         this.resourceList = resourceList;
         cleanable = (cleaner != null) ?
             cleaner.register(this, resourceList) : null;
@@ -147,7 +167,9 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Seg
      * Returns "owner" thread of this scope.
      * @return owner thread (or null for a shared scope)
      */
-    public abstract Thread ownerThread();
+    public final Thread ownerThread() {
+        return owner;
+    }
 
     /**
      * Returns true, if this scope is still alive. This method may be called in any thread.
@@ -155,14 +177,23 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Seg
      */
     public abstract boolean isAlive();
 
-
     /**
      * This is a faster version of {@link #checkValidStateSlow()}, which is called upon memory access, and which
-     * relies on invariants associated with the memory scope implementations (typically, volatile access
-     * to the closed state bit is replaced with plain access, and ownership check is removed where not needed.
-     * Should be used with care.
+     * relies on invariants associated with the memory scope implementations (volatile access
+     * to the closed state bit is replaced with plain access). This method should be monomorphic,
+     * to avoid virtual calls in the memory access hot path. This method is not intended as general purpose method
+     * and should only be used in the memory access handle hot path; for liveness checks triggered by other API methods,
+     * please use {@link #checkValidStateSlow()}.
      */
-    public abstract void checkValidState();
+    @ForceInline
+    public final void checkValidState() {
+        if (owner != null && owner != Thread.currentThread()) {
+            throw new IllegalStateException("Attempted access outside owning thread");
+        }
+        if (state < ALIVE) {
+            throw ScopedAccessError.INSTANCE;
+        }
+    }
 
     /**
      * Checks that this scope is still alive (see {@link #isAlive()}).
@@ -170,7 +201,7 @@ public abstract non-sealed class ResourceScopeImpl implements ResourceScope, Seg
      * a confined scope and this method is called outside of the owner thread.
      */
     public final void checkValidStateSlow() {
-        if (ownerThread() != null && Thread.currentThread() != ownerThread()) {
+        if (owner != null && Thread.currentThread() != owner) {
             throw new IllegalStateException("Attempted access outside owning thread");
         } else if (!isAlive()) {
             throw new IllegalStateException("Already closed");

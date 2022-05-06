@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ class CompileReplay : public StackObj {
     _protection_domain = Handle();
     _protection_domain_initialized = false;
 
-    _stream = fopen(filename, "rt");
+    _stream = os::fopen(filename, "rt");
     if (_stream == NULL) {
       fprintf(stderr, "ERROR: Can't open replay file %s\n", filename);
     }
@@ -398,7 +398,12 @@ class CompileReplay : public StackObj {
 
       ik->link_class(CHECK_NULL);
 
-      Bytecode_invoke bytecode(caller, bci);
+      Bytecode_invoke bytecode = Bytecode_invoke_check(caller, bci);
+      if (!Bytecodes::is_defined(bytecode.code()) || !bytecode.is_valid()) {
+        report_error("no invoke found at bci");
+        return NULL;
+      }
+      bytecode.verify();
       int index = bytecode.index();
 
       ConstantPoolCacheEntry* cp_cache_entry = NULL;
@@ -1383,7 +1388,7 @@ int ciReplay::replay_impl(TRAPS) {
   if (ReplaySuppressInitializers > 2) {
     // ReplaySuppressInitializers > 2 means that we want to allow
     // normal VM bootstrap but once we get into the replay itself
-    // don't allow any intializers to be run.
+    // don't allow any initializers to be run.
     ReplaySuppressInitializers = 1;
   }
 

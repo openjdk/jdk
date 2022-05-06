@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
+#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -76,7 +76,6 @@ public:
 
     zap_dead_objects(_last_forwarded_object_end, obj_addr);
 
-    // Zapping clears the bitmap, make sure it didn't clear too much.
     assert(_cm->is_marked_in_prev_bitmap(obj), "should be correctly marked");
     if (_during_concurrent_start) {
       // For the next marking info we'll only mark the
@@ -94,16 +93,18 @@ public:
     size_t obj_size = obj->size();
 
     _marked_words += obj_size;
-    PreservedMarks::init_forwarded_mark(obj);
+    // Reset the markWord
+    obj->init_mark();
 
     HeapWord* obj_end = obj_addr + obj_size;
     _last_forwarded_object_end = obj_end;
-    _hr->alloc_block_in_bot(obj_addr, obj_end);
+    _hr->update_bot_for_block(obj_addr, obj_end);
     return obj_size;
   }
 
   // Fill the memory area from start to end with filler objects, and update the BOT
-  // and the mark bitmap accordingly.
+  // accordingly. Since we clear and use the prev bitmap for marking objects that
+  // failed evacuation, there is no work to be done there.
   void zap_dead_objects(HeapWord* start, HeapWord* end) {
     if (start == end) {
       return;
@@ -115,13 +116,13 @@ public:
       CollectedHeap::fill_with_objects(start, gap_size);
 
       HeapWord* end_first_obj = start + cast_to_oop(start)->size();
-      _hr->alloc_block_in_bot(start, end_first_obj);
+      _hr->update_bot_for_block(start, end_first_obj);
       // Fill_with_objects() may have created multiple (i.e. two)
       // objects, as the max_fill_size() is half a region.
       // After updating the BOT for the first object, also update the
       // BOT for the second object to make the BOT complete.
       if (end_first_obj != end) {
-        _hr->alloc_block_in_bot(end_first_obj, end);
+        _hr->update_bot_for_block(end_first_obj, end);
 #ifdef ASSERT
         size_t size_second_obj = cast_to_oop(end_first_obj)->size();
         HeapWord* end_of_second_obj = end_first_obj + size_second_obj;
@@ -132,7 +133,7 @@ public:
 #endif
       }
     }
-    _cm->clear_range_in_prev_bitmap(mr);
+    assert(!_cm->is_marked_in_prev_bitmap(cast_to_oop(start)), "should not be marked in prev bitmap");
   }
 
   void zap_remainder() {
@@ -146,12 +147,15 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
 
   G1EvacFailureRegions* _evac_failure_regions;
 
+  G1GCPhaseTimes* _phase_times;
+
 public:
   RemoveSelfForwardPtrHRClosure(uint worker_id,
                                 G1EvacFailureRegions* evac_failure_regions) :
     _g1h(G1CollectedHeap::heap()),
     _worker_id(worker_id),
-    _evac_failure_regions(evac_failure_regions) {
+    _evac_failure_regions(evac_failure_regions),
+    _phase_times(G1CollectedHeap::heap()->phase_times()) {
   }
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
@@ -183,11 +187,14 @@ public:
     hr->note_self_forwarding_removal_start(during_concurrent_start,
                                            during_concurrent_mark);
 
-    hr->reset_bot();
+    _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
+                                                   _worker_id,
+                                                   1,
+                                                   G1GCPhaseTimes::RestoreRetainedRegionsNum);
 
     size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_concurrent_start);
 
-    hr->rem_set()->clean_strong_code_roots(hr);
+    hr->rem_set()->clean_code_roots(hr);
     hr->rem_set()->clear_locked(true);
 
     hr->note_self_forwarding_removal_end(live_bytes);

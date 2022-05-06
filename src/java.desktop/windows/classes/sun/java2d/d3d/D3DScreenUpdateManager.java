@@ -257,7 +257,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
             WComponentPeer peer, Color fgColor, Color bgColor, Font font)
     {
         if (!done && sd instanceof D3DWindowSurfaceData d3dw) {
-            if (!d3dw.isSurfaceLost() || validate(d3dw)) {
+            if (!d3dw.isSurfaceLost() || validate(d3dw, false)) {
                 trackScreenSurface(d3dw);
                 return new SunGraphics2D(sd, fgColor, bgColor, font);
             }
@@ -449,7 +449,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
                         } finally {
                             rq.unlock();
                         }
-                    } else if (!validate(sd)) {
+                    } else if (!validate(sd, true)) {
                         // it is possible that the validation may never
                         // succeed, we need to detect this and replace
                         // the d3dw surface with gdi; the replacement of
@@ -471,7 +471,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      * @return true if surface wasn't lost or if restoration was successful,
      * false otherwise
      */
-    private boolean validate(D3DWindowSurfaceData sd) {
+    private boolean validate(D3DWindowSurfaceData sd, boolean postEvent) {
         if (sd.isSurfaceLost()) {
             try {
                 sd.restoreSurface();
@@ -488,7 +488,9 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
                 sd.markClean();
                 // since the surface was successfully restored we need to
                 // repaint whole window to repopulate the back-buffer
-                repaintPeerTarget(sd.getPeer());
+                if (postEvent) {
+                    repaintPeerTarget(sd.getPeer());
+                }
             } catch (InvalidPipeException ipe) {
                 return false;
             }

@@ -507,10 +507,16 @@ public class JavacTrees extends DocTrees {
             }
 
             ClassSymbol sym = (ClassSymbol) types.skipTypeVars(tsym.type, false).tsym;
-
             Symbol msym = (memberName == sym.name)
-                    ? findConstructor(sym, paramTypes)
-                    : findMethod(sym, memberName, paramTypes);
+                    ? findConstructor(sym, paramTypes, true)
+                    : findMethod(sym, memberName, paramTypes, true);
+
+            if (msym == null) {
+                msym = (memberName == sym.name)
+                        ? findConstructor(sym, paramTypes, false)
+                        : findMethod(sym, memberName, paramTypes, false);
+            }
+
             if (paramTypes != null) {
                 // explicit (possibly empty) arg list given, so cannot be a field
                 return msym;
@@ -608,10 +614,10 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    MethodSymbol findConstructor(ClassSymbol tsym, List<Type> paramTypes) {
+    MethodSymbol findConstructor(ClassSymbol tsym, List<Type> paramTypes, boolean strict) {
         for (Symbol sym : tsym.members().getSymbolsByName(names.init)) {
             if (sym.kind == MTH) {
-                if (hasParameterTypes((MethodSymbol) sym, paramTypes)) {
+                if (hasParameterTypes((MethodSymbol) sym, paramTypes, strict)) {
                     return (MethodSymbol) sym;
                 }
             }
@@ -619,12 +625,13 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    private MethodSymbol findMethod(ClassSymbol tsym, Name methodName, List<Type> paramTypes) {
-        return searchMethod(tsym, methodName, paramTypes, new HashSet<>());
+    private MethodSymbol findMethod(ClassSymbol tsym, Name methodName, List<Type> paramTypes, boolean strict) {
+        return searchMethod(tsym, methodName, paramTypes, strict, new HashSet<>());
     }
 
     private MethodSymbol searchMethod(ClassSymbol tsym, Name methodName,
-                                       List<Type> paramTypes, Set<ClassSymbol> searched) {
+                                       List<Type> paramTypes, boolean strict,
+                                       Set<ClassSymbol> searched) {
         //### Note that this search is not necessarily what the compiler would do!
 
         // do not match constructors
@@ -662,7 +669,7 @@ public class JavacTrees extends DocTrees {
             for (Symbol sym : tsym.members().getSymbolsByName(methodName)) {
                 if (sym != null &&
                     sym.kind == MTH) {
-                    if (hasParameterTypes((MethodSymbol) sym, paramTypes)) {
+                    if (hasParameterTypes((MethodSymbol) sym, paramTypes, strict)) {
                         return (MethodSymbol) sym;
                     }
                 }
@@ -675,7 +682,7 @@ public class JavacTrees extends DocTrees {
         // search superclass
         Type superclass = tsym.getSuperclass();
         if (superclass.tsym != null) {
-            MethodSymbol msym = searchMethod((ClassSymbol) superclass.tsym, methodName, paramTypes, searched);
+            MethodSymbol msym = searchMethod((ClassSymbol) superclass.tsym, methodName, paramTypes, strict, searched);
             if (msym != null) {
                 return msym;
             }
@@ -686,7 +693,7 @@ public class JavacTrees extends DocTrees {
         for (List<Type> l = intfs; l.nonEmpty(); l = l.tail) {
             Type intf = l.head;
             if (intf.isErroneous()) continue;
-            MethodSymbol msym = searchMethod((ClassSymbol) intf.tsym, methodName, paramTypes, searched);
+            MethodSymbol msym = searchMethod((ClassSymbol) intf.tsym, methodName, paramTypes, strict, searched);
             if (msym != null) {
                 return msym;
             }
@@ -695,7 +702,7 @@ public class JavacTrees extends DocTrees {
         // search enclosing class
         ClassSymbol encl = tsym.owner.enclClass();
         if (encl != null) {
-            MethodSymbol msym = searchMethod(encl, methodName, paramTypes, searched);
+            MethodSymbol msym = searchMethod(encl, methodName, paramTypes, strict, searched);
             if (msym != null) {
                 return msym;
             }
@@ -704,7 +711,7 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    private boolean hasParameterTypes(MethodSymbol method, List<Type> paramTypes) {
+    private boolean hasParameterTypes(MethodSymbol method, List<Type> paramTypes, boolean strict) {
         if (paramTypes == null)
             return true;
 
@@ -712,7 +719,7 @@ public class JavacTrees extends DocTrees {
             return false;
 
         List<Type> methodParamTypes = method.asType().getParameterTypes();
-        if (!Type.isErroneous(paramTypes) && types.isSubtypes(paramTypes, methodParamTypes)) {
+        if (!strict && !Type.isErroneous(paramTypes) && types.isSubtypes(paramTypes, methodParamTypes)) {
             return true;
         }
 

@@ -98,7 +98,7 @@ public final class Utils {
     }
 
     public static long bitsToBytesOrThrow(long bits, Supplier<RuntimeException> exFactory) {
-        if (bits % 8 == 0) {
+        if (Utils.isAligned(bits, 8)) {
             return bits / 8;
         } else {
             throw exFactory.get();
@@ -172,5 +172,17 @@ public final class Utils {
     public static long scaleOffset(MemorySegment segment, long index, long size) {
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
         return MemorySegmentProxy.multiplyOffsets(index, (int)size, (AbstractMemorySegmentImpl)segment);
+    }
+
+    @ForceInline
+    public static boolean isAligned(long offset, long align) {
+        return (offset & (align - 1)) == 0;
+    }
+
+    @ForceInline
+    public static void checkElementAlignment(MemoryLayout layout, String msg) {
+        if (layout.byteAlignment() > layout.byteSize()) {
+            throw new IllegalArgumentException(msg);
+        }
     }
 }

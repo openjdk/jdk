@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,8 @@ public class ManifestEntryVerifier {
      *
      */
     public CodeSigner[] verify(Hashtable<String, CodeSigner[]> verifiedSigners,
-                Hashtable<String, CodeSigner[]> sigFileSigners)
+                Hashtable<String, CodeSigner[]> sigFileSigners,
+                Map<CodeSigner[], Map<String, Boolean>> signersToAlgs)
         throws JarException
     {
         if (skip) {
@@ -207,38 +208,60 @@ public class ManifestEntryVerifier {
             return signers;
         }
 
-        JarConstraintsParameters params =
-            getParams(verifiedSigners, sigFileSigners);
+        CodeSigner[] entrySigners = sigFileSigners.get(name);
+        Map<String, Boolean> algsPermittedStatus =
+            algsPermittedStatusForSigners(signersToAlgs, entrySigners);
 
+        // Flag that indicates if only disabled algorithms are used and jar
+        // entry should be treated as unsigned.
+        boolean disabledAlgs = true;
+        JarConstraintsParameters params = null;
         for (int i=0; i < digests.size(); i++) {
             MessageDigest digest = digests.get(i);
-            if (params != null) {
-                try {
-                    params.setExtendedExceptionMsg(JarFile.MANIFEST_NAME,
-                        name + " entry");
-                    DisabledAlgorithmConstraints.jarConstraints()
-                           .permits(digest.getAlgorithm(), params, false);
-                } catch (GeneralSecurityException e) {
-                    if (debug != null) {
-                        debug.println("Digest algorithm is restricted: " + e);
+            String digestAlg = digest.getAlgorithm();
+
+            // Check if this algorithm is permitted, skip if false.
+            if (algsPermittedStatus != null) {
+                Boolean permitted = algsPermittedStatus.get(digestAlg);
+                if (permitted == null) {
+                    if (params == null) {
+                        params = new JarConstraintsParameters(entrySigners);
                     }
-                    return null;
+                    if (!checkConstraints(digestAlg, params)) {
+                        algsPermittedStatus.put(digestAlg, Boolean.FALSE);
+                        continue;
+                    } else {
+                        algsPermittedStatus.put(digestAlg, Boolean.TRUE);
+                    }
+                } else if (!permitted) {
+                    continue;
                 }
             }
+
+            // A non-disabled algorithm was used.
+            disabledAlgs = false;
+
             byte [] manHash = manifestHashes.get(i);
             byte [] theHash = digest.digest();
 
             if (debug != null) {
                 debug.println("Manifest Entry: " +
-                                   name + " digest=" + digest.getAlgorithm());
+                                   name + " digest=" + digestAlg);
                 debug.println("  manifest " + HexFormat.of().formatHex(manHash));
                 debug.println("  computed " + HexFormat.of().formatHex(theHash));
                 debug.println();
             }
 
-            if (!MessageDigest.isEqual(theHash, manHash))
-                throw new SecurityException(digest.getAlgorithm()+
+            if (!MessageDigest.isEqual(theHash, manHash)) {
+                throw new SecurityException(digestAlg +
                                             " digest error for "+name);
+            }
+        }
+
+        // If there were only disabled algorithms used, return null and jar
+        // entry will be treated as unsigned.
+        if (disabledAlgs) {
+            return null;
         }
 
         // take it out of sigFileSigners and put it in verifiedSigners...
@@ -249,40 +272,36 @@ public class ManifestEntryVerifier {
         return signers;
     }
 
-    /**
-     * Get constraints parameters for JAR. The constraints should be
-     * checked against all code signers. Returns the parameters,
-     * or null if the signers for this entry have already been checked
-     * or there are no signers for this entry.
-     */
-    private JarConstraintsParameters getParams(
-            Map<String, CodeSigner[]> verifiedSigners,
-            Map<String, CodeSigner[]> sigFileSigners) {
+    // Gets the algorithms permitted status for the signers of this entry.
+    private static Map<String, Boolean> algsPermittedStatusForSigners(
+            Map<CodeSigner[], Map<String, Boolean>> signersToAlgs,
+            CodeSigner[] signers) {
+        if (signers != null) {
+            Map<String, Boolean> algs = signersToAlgs.get(signers);
+            // create new HashMap if absent
+            if (algs == null) {
+                algs = new HashMap<>();
+                signersToAlgs.put(signers, algs);
+            }
+            return algs;
+        }
+        return null;
+    }
 
-        // verifiedSigners is usually preloaded with the Manifest's signers.
-        // If verifiedSigners contains the Manifest, then it will have all of
-        // the signers of the JAR. But if it doesn't then we need to fallback
-        // and check verifiedSigners to see if the signers of this entry have
-        // been checked already.
-        if (verifiedSigners.containsKey(manifestFileName)) {
-            if (verifiedSigners.size() > 1) {
-                // this means we already checked it previously
-                return null;
-            } else {
-                return new JarConstraintsParameters(
-                    verifiedSigners.get(manifestFileName));
-            }
-        } else {
+    // Checks the algorithm constraints against the signers of this entry.
+    private boolean checkConstraints(String algorithm,
+        JarConstraintsParameters params) {
+        try {
+            params.setExtendedExceptionMsg(JarFile.MANIFEST_NAME,
+                name + " entry");
+            DisabledAlgorithmConstraints.jarConstraints()
+                   .permits(algorithm, params, false);
+            return true;
+        } catch (GeneralSecurityException e) {
             if (debug != null) {
-                debug.println(manifestFileName + " not present in verifiedSigners");
+                debug.println("Digest algorithm is restricted: " + e);
             }
-            CodeSigner[] signers = sigFileSigners.get(name);
-            if (signers == null || verifiedSigners.containsValue(signers)) {
-                return null;
-            } else {
-                return new JarConstraintsParameters(signers);
-            }
+            return false;
         }
     }
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1222,7 +1222,7 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
 
 
 // Find new constant pool index value for old constant pool index value
-// by seaching the index map. Returns zero (0) if there is no mapped
+// by searching the index map. Returns zero (0) if there is no mapped
 // value for the old constant pool index.
 int VM_RedefineClasses::find_new_index(int old_index) {
   if (_index_map_count == 0) {
@@ -1248,7 +1248,7 @@ int VM_RedefineClasses::find_new_index(int old_index) {
 
 
 // Find new bootstrap specifier index value for old bootstrap specifier index
-// value by seaching the index map. Returns unused index (-1) if there is
+// value by searching the index map. Returns unused index (-1) if there is
 // no mapped value for the old bootstrap specifier index.
 int VM_RedefineClasses::find_new_operand_index(int old_index) {
   if (_operands_index_map_count == 0) {
@@ -1856,13 +1856,14 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
   if (old_cp->has_dynamic_constant()) {
     scratch_cp->set_has_dynamic_constant();
   }
-  // Copy attributes from scratch_cp to merge_cp
-  merge_cp->copy_fields(scratch_cp());
 
   log_info(redefine, class, constantpool)("merge_cp_len=%d, index_map_len=%d", merge_cp_length, _index_map_count);
 
   if (_index_map_count == 0) {
     // there is nothing to map between the new and merged constant pools
+
+    // Copy attributes from scratch_cp to merge_cp
+    merge_cp->copy_fields(scratch_cp());
 
     if (old_cp->length() == scratch_cp->length()) {
       // The old and new constant pools are the same length and the
@@ -1916,6 +1917,9 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
     if (!rewrite_cp_refs(scratch_class)) {
       return JVMTI_ERROR_INTERNAL;
     }
+
+    // Copy attributes from scratch_cp to merge_cp (should be done after rewrite_cp_refs())
+    merge_cp->copy_fields(scratch_cp());
 
     // Replace the new constant pool with a shrunken copy of the
     // merged constant pool so now the rewritten bytecodes have
@@ -2266,21 +2270,6 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
         break;
     }
   } // end for each bytecode
-
-  // We also need to rewrite the parameter name indexes, if there is
-  // method parameter data present
-  if(method->has_method_parameters()) {
-    const int len = method->method_parameters_length();
-    MethodParametersElement* elem = method->method_parameters_start();
-
-    for (int i = 0; i < len; i++) {
-      const u2 cp_index = elem[i].name_cp_index;
-      const u2 new_cp_index = find_new_index(cp_index);
-      if (new_cp_index != 0) {
-        elem[i].name_cp_index = new_cp_index;
-      }
-    }
-  }
 } // end rewrite_cp_refs_in_method()
 
 
@@ -3507,10 +3496,9 @@ void VM_RedefineClasses::rewrite_cp_refs_in_verification_type_info(
 } // end rewrite_cp_refs_in_verification_type_info()
 
 
-// Change the constant pool associated with klass scratch_class to
-// scratch_cp. If shrink is true, then scratch_cp_length elements
-// are copied from scratch_cp to a smaller constant pool and the
-// smaller constant pool is associated with scratch_class.
+// Change the constant pool associated with klass scratch_class to scratch_cp.
+// scratch_cp_length elements are copied from scratch_cp to a smaller constant pool
+// and the smaller constant pool is associated with scratch_class.
 void VM_RedefineClasses::set_new_constant_pool(
        ClassLoaderData* loader_data,
        InstanceKlass* scratch_class, constantPoolHandle scratch_cp,
@@ -3693,6 +3681,19 @@ void VM_RedefineClasses::set_new_constant_pool(
         }
       } // end for each local variable table entry
     } // end if there are local variable table entries
+
+    // Update constant pool indices in the method's method_parameters.
+    int mp_length = method->method_parameters_length();
+    if (mp_length > 0) {
+      MethodParametersElement* elem = method->method_parameters_start();
+      for (int j = 0; j < mp_length; j++) {
+        const int cp_index = elem[j].name_cp_index;
+        const int new_cp_index = find_new_index(cp_index);
+        if (new_cp_index != 0) {
+          elem[j].name_cp_index = (u2)new_cp_index;
+        }
+      }
+    }
 
     rewrite_cp_refs_in_stack_map_table(method);
   } // end for each method
@@ -4358,10 +4359,6 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   the_class->itable().initialize_itable();
 
   // Leave arrays of jmethodIDs and itable index cache unchanged
-
-  // Copy the "source file name" attribute from new class version
-  the_class->set_source_file_name_index(
-    scratch_class->source_file_name_index());
 
   // Copy the "source debug extension" attribute from new class version
   the_class->set_source_debug_extension(

@@ -121,10 +121,6 @@ NO_TRANSITION(void, jfr_set_file_notification(JNIEnv* env, jobject jvm, jlong th
   JfrChunkRotation::set_threshold(threshold);
 NO_TRANSITION_END
 
-NO_TRANSITION(void, jfr_set_sample_threads(JNIEnv* env, jobject jvm, jboolean sampleThreads))
-  JfrOptionSet::set_sample_threads(sampleThreads);
-NO_TRANSITION_END
-
 NO_TRANSITION(void, jfr_set_stack_depth(JNIEnv* env, jobject jvm, jint depth))
   JfrOptionSet::set_stackdepth((jlong)depth);
 NO_TRANSITION_END
