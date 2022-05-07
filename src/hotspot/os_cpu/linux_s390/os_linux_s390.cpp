@@ -403,8 +403,8 @@ void os::print_context(outputStream *st, const void *context) {
 
   STEP(st->print_cr("Register to memory mapping:"), st->cr());
 
-  STEP(st->print("pc ="), print_location(st, (intptr_t)uc->uc_mcontext.psw.addr), ;);
-
+  STEP(st->print("pc ="), print_location(st, (intptr_t)uc->uc_mcontext.psw.addr));
+  
   for (int r = 0; r < 16; r++) {
     STEP(st->print("r%-2d=", r), print_location(st, uc->uc_mcontext.gregs[r]));
   }
