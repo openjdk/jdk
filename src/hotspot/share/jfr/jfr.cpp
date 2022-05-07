@@ -95,15 +95,15 @@ bool Jfr::is_excluded(Thread* t) {
 }
 
 void Jfr::on_resolution(const CallInfo& info, TRAPS) {
-  JfrResolution::on_resolution(info, THREAD);
-}
-
-void Jfr::on_resolution(const Parse* parse, const ciKlass* holder, const ciMethod* target) {
-  JfrResolution::on_resolution(parse, holder, target);
+  JfrResolution::on_runtime_resolution(info, THREAD);
 }
 
 void Jfr::on_resolution(const GraphBuilder* builder, const ciKlass* holder, const ciMethod* target) {
-  JfrResolution::on_resolution(builder, holder, target);
+  JfrResolution::on_c1_resolution(builder, holder, target);
+}
+
+void Jfr::on_resolution(const Parse* parse, const ciKlass* holder, const ciMethod* target) {
+  JfrResolution::on_c2_resolution(parse, holder, target);
 }
 
 void Jfr::on_vm_shutdown(bool exception_handler) {

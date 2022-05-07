@@ -1448,15 +1448,14 @@ static bool has_local_method_implementation(const InstanceKlass* ik, const Symbo
 }
 
 // If for a subklass, on initial class load, an implementation exist for any of the final methods declared in Event,
-// then constaints are considered breached.
+// then constraints are considered breached.
 static bool invalid_preconditions_for_subklass_on_initial_load(const InstanceKlass* ik) {
   assert(ik != NULL, "invariant");
-  if (has_local_method_implementation(ik, begin, void_method_sig)) return true;
-  if (has_local_method_implementation(ik, end, void_method_sig)) return true;
-  if (has_local_method_implementation(ik, commit, void_method_sig)) return true;
-  if (has_local_method_implementation(ik, isEnabled, boolean_method_sig)) return true;
-  if (has_local_method_implementation(ik, shouldCommit, boolean_method_sig)) return true;
-  return false;
+  return has_local_method_implementation(ik, begin, void_method_sig) ||
+         has_local_method_implementation(ik, end, void_method_sig) ||
+         has_local_method_implementation(ik, commit, void_method_sig) ||
+         has_local_method_implementation(ik, isEnabled, boolean_method_sig) ||
+         has_local_method_implementation(ik, shouldCommit, boolean_method_sig);
 }
 
 static ClassFileStream* schema_extend_event_subklass_bytes(const InstanceKlass* ik, const ClassFileParser& parser, bool& is_instrumented, TRAPS) {
@@ -1465,7 +1464,7 @@ static ClassFileStream* schema_extend_event_subklass_bytes(const InstanceKlass* 
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   if (invalid_preconditions_for_subklass_on_initial_load(ik)) {
     // Remove the tag denoting this as a jdk.jfr.Event subklass. No instrumentation, hence no events can be written.
-    // The class is allow to load as-is, but it is classified as outside of the jfr system.
+    // The class is allowed to load as-is, but it is classified as outside of the jfr system.
     JdkJfrEvent::remove(ik);
     return NULL;
   }
@@ -1557,7 +1556,7 @@ static void cache_class_file_data(InstanceKlass* new_ik, const ClassFileStream* 
   JvmtiCachedClassFileData* p =
     (JvmtiCachedClassFileData*)NEW_C_HEAP_ARRAY_RETURN_NULL(u1, offset_of(JvmtiCachedClassFileData, data) + stream_len, mtInternal);
   if (p == NULL) {
-    log_error(jfr, system)("Allocation using C_HEAP_ARRAY for " SIZE_FORMAT " bytes failed in JfrEventClassTransformer::on_klass_creation",
+    log_error(jfr, system)("Allocation using C_HEAP_ARRAY for " SIZE_FORMAT " bytes failed in JfrEventClassTransformer::cache_class_file_data",
       static_cast<size_t>(offset_of(JvmtiCachedClassFileData, data) + stream_len));
     return;
   }

@@ -61,7 +61,7 @@ final class JVMUpcalls {
                 }
                 boolean bootClassLoader = clazz.getClassLoader() == null;
                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Adding instrumentation to event class " + clazz.getName() + " using retransform");
-                EventInstrumentation ei = new EventInstrumentation(clazz.getSuperclass(), oldBytes, traceId, bootClassLoader);
+                EventInstrumentation ei = new EventInstrumentation(clazz.getSuperclass(), oldBytes, traceId, bootClassLoader, false);
                 byte[] bytes = ei.buildInstrumented();
                 ASMToolkit.logASM(clazz.getName(), bytes);
                 return bytes;
@@ -94,7 +94,7 @@ final class JVMUpcalls {
         }
         String eventName = "<Unknown>";
         try {
-            EventInstrumentation ei = new EventInstrumentation(superClass, oldBytes, traceId, bootClassLoader);
+            EventInstrumentation ei = new EventInstrumentation(superClass, oldBytes, traceId, bootClassLoader, true);
             eventName = ei.getEventName();
             if (!forceInstrumentation) {
                 // Assume we are recording
@@ -108,10 +108,6 @@ final class JVMUpcalls {
                 }
             }
             EventWriterKey.ensureEventWriterFactory();
-            // Corner case when we are forced to generate bytecode. We can't reference
-            // EventConfiguration::isEnabled() before event class has been registered, so we add a
-            // guard against a null reference.
-            ei.setGuardEventConfiguration(true);
             Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Adding " + (forceInstrumentation ? "forced " : "") + "instrumentation for event type " + eventName + " during initial class load");
             byte[] bytes = ei.buildInstrumented();
             ASMToolkit.logASM(ei.getClassName() + "(" + traceId + ")", bytes);

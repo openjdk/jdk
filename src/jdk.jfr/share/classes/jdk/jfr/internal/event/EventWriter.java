@@ -28,9 +28,6 @@ package jdk.jfr.internal.event;
 import jdk.internal.misc.Unsafe;
 import jdk.jfr.internal.Bits;
 import jdk.jfr.internal.EventWriterKey;
-import jdk.jfr.internal.Logger;
-import jdk.jfr.internal.LogTag;
-import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.StringPool;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.PlatformEventType;
@@ -46,12 +43,15 @@ import jdk.jfr.internal.consumer.StringParser;
 //    at least one event class (for a particular module) must be
 //    registered having FlightRecorderPermission("registerEvent").
 //
-// 2. The EventWriter::getEventWriter(long) method can only be linked from
+// 2. The EventWriter EventWriterFactor::getEventWriter(long) method can only be linked from
 //    the UserEvent::commit() method instrumented by JFR. This is ensured by the JVM.
+//    (The EventWriterFactory class is dynamically generated before the first event
+//    is instrumented. See EventWriterFactoryRecipe)
 //
 // 3. Steps 1 and 2 are sufficient to make it fully secure, with or without a Security
-//    Manager, but as an add additional measure the method EventWriter::getEventWriter(long)
-//    requires the caller to provide a key that is hard to guess.
+//    Manager, but as an add additional measure the method EventWriterFactor::getEventWriter(long)
+//    requires the caller to provide a key that is hard to guess. The key is generated
+//    into the bytecode of the method invoking getEventWriter(long).
 //
 public final class EventWriter {
 

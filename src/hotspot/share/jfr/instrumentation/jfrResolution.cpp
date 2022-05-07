@@ -46,7 +46,7 @@ static const Method* ljf_sender_method(JavaThread* jt) {
   return ljf.method();
 }
 
-void JfrResolution::on_resolution(const CallInfo & info, TRAPS) {
+void JfrResolution::on_runtime_resolution(const CallInfo & info, TRAPS) {
   assert(info.selected_method() != nullptr, "invariant");
   assert(info.resolved_klass() != nullptr, "invariant");
   static const Symbol* const event_writer_method_name = vmSymbols::getEventWriter_name();
@@ -89,14 +89,14 @@ static inline bool is_compiler_linking_event_writer(const ciKlass * holder, cons
 }
 
 // C1
-void JfrResolution::on_resolution(const GraphBuilder * builder, const ciKlass * holder, const ciMethod * target) {
+void JfrResolution::on_c1_resolution(const GraphBuilder * builder, const ciKlass * holder, const ciMethod * target) {
   if (is_compiler_linking_event_writer(holder, target) && !IS_METHOD_BLESSED(builder->method()->get_Method())) {
     builder->bailout(link_error_msg);
   }
 }
 
 // C2
-void JfrResolution::on_resolution(const Parse * parse, const ciKlass * holder, const ciMethod * target) {
+void JfrResolution::on_c2_resolution(const Parse * parse, const ciKlass * holder, const ciMethod * target) {
   if (is_compiler_linking_event_writer(holder, target) && !IS_METHOD_BLESSED(parse->method()->get_Method())) {
     parse->C->record_failure(link_error_msg);
   }

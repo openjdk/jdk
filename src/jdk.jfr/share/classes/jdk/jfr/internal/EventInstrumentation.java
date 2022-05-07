@@ -52,45 +52,26 @@ import jdk.jfr.Registered;
 import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDefinition;
 import jdk.jfr.internal.event.EventConfiguration;
+import jdk.jfr.internal.event.EventWriter;
 
 /**
  * Class responsible for adding instrumentation to a subclass of {@link Event}.
  *
  */
 public final class EventInstrumentation {
-    static final class SettingInfo {
-        private String methodName;
-        private String internalSettingName;
-        private String settingDescriptor;
-        final String fieldName;
-        final int index;
 
-        // The settingControl is passed to EventConfiguration where it is
-        // used to check enablement before calling commit
-        // Methods on settingControl must never be invoked
-        // directly by JFR, instead use jdk.jfr.internal.Control
-        SettingControl settingControl;
-
-        public SettingInfo(String fieldName, int index) {
-            this.fieldName = fieldName;
-            this.index = index;
+    record SettingInfo(String fieldName, int index, Type paramType, String methodName, SettingControl settingControl) {
+        /**
+         * A malicious user must never be able to run a callback in the wrong
+         * context. Methods on SettingControl must therefore never be invoked directly
+         * by JFR, instead use jdk.jfr.internal.Control.
+         */
+        public SettingControl settingControl() {
+            return this.settingControl;
         }
     }
 
-    public static final class FieldInfo {
-        public final String fieldName;
-        public final String fieldDescriptor;
-        public final String internalClassName;
-
-        public FieldInfo(String fieldName, String fieldDescriptor, String internalClassName) {
-            this.fieldName = fieldName;
-            this.fieldDescriptor = fieldDescriptor;
-            this.internalClassName = internalClassName;
-        }
-
-        public boolean isString() {
-            return ASMToolkit.TYPE_STRING.getDescriptor().equals(fieldDescriptor);
-        }
+    record FieldInfo(String fieldName, String fieldDescriptor, String internalClassName) {
     }
 
     public static final String FIELD_EVENT_THREAD = "eventThread";
@@ -100,14 +81,16 @@ public final class EventInstrumentation {
     static final String FIELD_EVENT_CONFIGURATION = "eventConfiguration";
     static final String FIELD_START_TIME = "startTime";
 
-    private static final Type ANNOTATION_TYPE_NAME = Type.getType(Name.class);
-    private static final Type ANNOTATION_TYPE_REGISTERED = Type.getType(Registered.class);
-    private static final Type ANNOTATION_TYPE_ENABLED = Type.getType(Enabled.class);
+    private static final String ANNOTATION_NAME_DESCRIPTOR = Type.getDescriptor(Name.class);
+    private static final String ANNOTATION_REGISTERED_DESCRIPTOR = Type.getDescriptor(Registered.class);
+    private static final String ANNOTATION_ENABLED_DESCRIPTOR = Type.getDescriptor(Enabled.class);
     private static final Type TYPE_EVENT_CONFIGURATION = Type.getType(EventConfiguration.class);
-    private static final Type TYPE_EVENT_WRITER = Type.getType("Ljdk/jfr/internal/event/EventWriter;");
+    private static final Type TYPE_EVENT_WRITER = Type.getType(EventWriter.class);
     private static final Type TYPE_EVENT_WRITER_FACTORY = Type.getType("Ljdk/jfr/internal/event/EventWriterFactory;");
     private static final Type TYPE_SETTING_CONTROL = Type.getType(SettingControl.class);
-    private static final Type TYPE_OBJECT = Type.getType(Object.class);
+    private static final String TYPE_OBJECT_DESCRIPTOR = Type.getDescriptor(Object.class);
+    private static final String TYPE_EVENT_CONFIGURATION_DESCRIPTOR = TYPE_EVENT_CONFIGURATION.getDescriptor();
+    private static final String TYPE_SETTING_DEFINITION_DESCRIPTOR = Type.getDescriptor(SettingDefinition.class);
     private static final Method METHOD_COMMIT = new Method("commit", Type.VOID_TYPE, new Type[0]);
     private static final Method METHOD_BEGIN = new Method("begin", Type.VOID_TYPE, new Type[0]);
     private static final Method METHOD_END = new Method("end", Type.VOID_TYPE, new Type[0]);
@@ -128,18 +111,22 @@ public final class EventInstrumentation {
     private final boolean untypedEventConfiguration;
     private final Method staticCommitMethod;
     private final long eventTypeId;
-    private boolean guardEventConfiguration;
+    private final boolean guardEventConfiguration;
 
-    EventInstrumentation(Class<?> superClass, byte[] bytes, long id, boolean bootClass) {
+    EventInstrumentation(Class<?> superClass, byte[] bytes, long id, boolean bootClass, boolean guardEventConfiguration) {
         this.eventTypeId = id;
         this.superClass = superClass;
         this.classNode = createClassNode(bytes);
         this.settingInfos = buildSettingInfos(superClass, classNode);
         this.fieldInfos = buildFieldInfos(superClass, classNode);
-        String n = annotationValue(classNode, ANNOTATION_TYPE_NAME.getDescriptor(), String.class);
+        String n = annotationValue(classNode, ANNOTATION_NAME_DESCRIPTOR, String.class);
         this.eventName = n == null ? classNode.name.replace("/", ".") : n;
         this.staticCommitMethod = bootClass ? findStaticCommitMethod(classNode, fieldInfos) : null;
         this.untypedEventConfiguration = hasUntypedConfiguration();
+        // Corner case when we are forced to generate bytecode (bytesForEagerInstrumentation)
+        // We can't reference EventConfiguration::isEnabled() before event class has been registered,
+        // so we add a guard against a null reference.
+        this.guardEventConfiguration = guardEventConfiguration;
     }
 
     public static Method findStaticCommitMethod(ClassNode classNode, List<FieldInfo> fields) {
@@ -161,7 +148,7 @@ public final class EventInstrumentation {
     private boolean hasUntypedConfiguration() {
         for (FieldNode field : classNode.fields) {
             if (FIELD_EVENT_CONFIGURATION.equals(field.name)) {
-                return field.desc.equals(TYPE_OBJECT.getDescriptor());
+                return field.desc.equals(TYPE_OBJECT_DESCRIPTOR);
             }
         }
         throw new InternalError("Class missing configuration field");
@@ -179,7 +166,7 @@ public final class EventInstrumentation {
     }
 
     boolean isRegistered() {
-        Boolean result = annotationValue(classNode, ANNOTATION_TYPE_REGISTERED.getDescriptor(), Boolean.class);
+        Boolean result = annotationValue(classNode, ANNOTATION_REGISTERED_DESCRIPTOR, Boolean.class);
         if (result != null) {
             return result.booleanValue();
         }
@@ -193,7 +180,7 @@ public final class EventInstrumentation {
     }
 
     boolean isEnabled() {
-        Boolean result = annotationValue(classNode, ANNOTATION_TYPE_ENABLED.getDescriptor(), Boolean.class);
+        Boolean result = annotationValue(classNode, ANNOTATION_ENABLED_DESCRIPTOR, Boolean.class);
         if (result != null) {
             return result.booleanValue();
         }
@@ -232,18 +219,16 @@ public final class EventInstrumentation {
     private static List<SettingInfo> buildSettingInfos(Class<?> superClass, ClassNode classNode) {
         Set<String> methodSet = new HashSet<>();
         List<SettingInfo> settingInfos = new ArrayList<>();
-        String settingDescriptor = Type.getType(SettingDefinition.class).getDescriptor();
-        String nameDescriptor = Type.getType(Name.class).getDescriptor();
         for (MethodNode m : classNode.methods) {
             if (m.visibleAnnotations != null) {
                 for (AnnotationNode an : m.visibleAnnotations) {
                     // We can't really validate the method at this
                     // stage. We would need to check that the parameter
                     // is an instance of SettingControl.
-                    if (settingDescriptor.equals(an.desc)) {
+                    if (TYPE_SETTING_DEFINITION_DESCRIPTOR.equals(an.desc)) {
                         String name = m.name;
                         for (AnnotationNode nameCandidate : m.visibleAnnotations) {
-                            if (nameDescriptor.equals(nameCandidate.desc)) {
+                            if (ANNOTATION_NAME_DESCRIPTOR.equals(nameCandidate.desc)) {
                                 List<Object> values = nameCandidate.values;
                                 if (values.size() == 1 && values.get(0)instanceof String s) {
                                     name = Utils.validJavaIdentifier(s, name);
@@ -257,12 +242,8 @@ public final class EventInstrumentation {
                                 Type paramType = args[0];
                                 String fieldName = EventControl.FIELD_SETTING_PREFIX + settingInfos.size();
                                 int index = settingInfos.size();
-                                SettingInfo si = new SettingInfo(fieldName, index);
-                                si.methodName = m.name;
-                                si.settingDescriptor = paramType.getDescriptor();
-                                si.internalSettingName = paramType.getInternalName();
                                 methodSet.add(m.name);
-                                settingInfos.add(si);
+                                settingInfos.add(new SettingInfo(fieldName, index, paramType, m.name, null));
                             }
                         }
                     }
@@ -280,12 +261,8 @@ public final class EventInstrumentation {
                                 Type paramType = Type.getType(param.getType());
                                 String fieldName = EventControl.FIELD_SETTING_PREFIX + settingInfos.size();
                                 int index = settingInfos.size();
-                                SettingInfo si = new SettingInfo(fieldName, index);
-                                si.methodName = method.getName();
-                                si.settingDescriptor = paramType.getDescriptor();
-                                si.internalSettingName = paramType.getInternalName();
                                 methodSet.add(method.getName());
-                                settingInfos.add(si);
+                                settingInfos.add(new SettingInfo(fieldName, index, paramType, method.getName(), null));
                             }
                         }
                     }
@@ -673,15 +650,15 @@ public final class EventInstrumentation {
                 // if (!settingsMethod(eventConfiguration.settingX)) goto fail;
                 methodVisitor.visitIntInsn(Opcodes.ALOAD, 0);
                 if (untypedEventConfiguration) {
-                    methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, getInternalClassName(), FIELD_EVENT_CONFIGURATION, TYPE_OBJECT.getDescriptor());
+                    methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, getInternalClassName(), FIELD_EVENT_CONFIGURATION, TYPE_OBJECT_DESCRIPTOR);
                 } else {
-                    methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, getInternalClassName(), FIELD_EVENT_CONFIGURATION, Type.getDescriptor(EventConfiguration.class));
+                    methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, getInternalClassName(), FIELD_EVENT_CONFIGURATION, TYPE_EVENT_CONFIGURATION_DESCRIPTOR);
                 }
                 methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, TYPE_EVENT_CONFIGURATION.getInternalName());
                 methodVisitor.visitLdcInsn(index);
                 invokeVirtual(methodVisitor, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_GET_SETTING);
-                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, si.internalSettingName);
-                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getInternalClassName(), si.methodName, "(" + si.settingDescriptor + ")Z", false);
+                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, si.paramType().getInternalName());
+                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, getInternalClassName(), si.methodName, "(" + si.paramType().getDescriptor() + ")Z", false);
                 methodVisitor.visitJumpInsn(Opcodes.IFEQ, fail);
                 index++;
             }
@@ -714,14 +691,13 @@ public final class EventInstrumentation {
 
     private void invokeVirtual(MethodVisitor methodVisitor, Type type, Method method) {
         methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, type.getInternalName(), method.getName(), method.getDescriptor(), false);
-
     }
 
     private void getEventConfiguration(MethodVisitor methodVisitor) {
         if (untypedEventConfiguration) {
-            methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, getInternalClassName(), FIELD_EVENT_CONFIGURATION, TYPE_OBJECT.getDescriptor());
+            methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, getInternalClassName(), FIELD_EVENT_CONFIGURATION, TYPE_OBJECT_DESCRIPTOR);
         } else {
-            methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, getInternalClassName(), FIELD_EVENT_CONFIGURATION, Type.getDescriptor(EventConfiguration.class));
+            methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, getInternalClassName(), FIELD_EVENT_CONFIGURATION, TYPE_EVENT_CONFIGURATION_DESCRIPTOR);
         }
     }
 
@@ -777,9 +753,5 @@ public final class EventInstrumentation {
 
     public String getEventName() {
         return eventName;
-    }
-
-    public void setGuardEventConfiguration(boolean guard) {
-        this.guardEventConfiguration = guard;
     }
 }

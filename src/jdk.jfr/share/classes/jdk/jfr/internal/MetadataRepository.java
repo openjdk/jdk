@@ -214,7 +214,7 @@ public final class MetadataRepository {
         SettingControl[] settings = new SettingControl[settingInfos.size()];
         int index = 0;
         for (var settingInfo : settingInfos) {
-            settings[index++] = settingInfo.settingControl;
+            settings[index++] = settingInfo.settingControl();
         }
         EventConfiguration configuration = newEventConfiguration(eventType, ec, settings);
         PlatformEventType pe = configuration.getPlatformEventType();

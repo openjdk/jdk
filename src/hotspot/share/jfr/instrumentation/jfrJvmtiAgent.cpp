@@ -187,7 +187,6 @@ static bool register_callbacks(JavaThread* jt) {
   jvmtiEventCallbacks callbacks;
   /* Set callbacks */
   memset(&callbacks, 0, sizeof(callbacks));
-  // callbacks.ClassFileLoadHook = jfr_on_class_file_load_hook;
   const jvmtiError jvmti_ret_code = jfr_jvmti_env->SetEventCallbacks(&callbacks, sizeof(callbacks));
   check_jvmti_error(jfr_jvmti_env, jvmti_ret_code, "SetEventCallbacks");
   return jvmti_ret_code == JVMTI_ERROR_NONE;
