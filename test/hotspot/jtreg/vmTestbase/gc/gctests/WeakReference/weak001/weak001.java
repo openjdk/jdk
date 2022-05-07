@@ -145,12 +145,23 @@ public class weak001 extends ThreadedGCTest {
                     type = "NonbranchyTree";
                     break;
             }
-            WhiteBox.getWhiteBox().fullGC();
             Reference polledReference = null;
-            try {
-                polledReference = queue.remove();
-            } catch (InterruptedException e) {
-                log.error("Unexpected InterruptedException during queue.remove().");
+            for (int i = 0; i < 10 && polledReference == null; i++) {
+                WhiteBox.getWhiteBox().fullGC();
+                if (!getExecutionController().continueExecution()) {
+                    // we were interrrupted by stresser. just exit...
+                    return;
+                }
+                try {
+                    polledReference = queue.remove(i * 100);
+                } catch (InterruptedException e) {
+                    log.error("Unexpected InterruptedException during queue.remove().");
+                    setFailed(true);
+                }
+            }
+
+            if (polledReference == null) {
+                log.error("Haven't polled reference after 10 GC.");
                 setFailed(true);
             }
 

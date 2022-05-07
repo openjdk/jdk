@@ -92,9 +92,6 @@ public class soft001 extends ThreadedGCTest {
         int iteration;
 
         public void run() {
-            // Pre-allocated OOME message to avoid OOME when logging it
-            String oomMsg = "Ignored OOME in run()";
-
             log.info("iteration " + iteration);
             ReferenceQueue queue = new ReferenceQueue();
             SoftReference reference;
@@ -148,18 +145,26 @@ public class soft001 extends ThreadedGCTest {
                     type = "NonbranchyTree";
                     break;
             }
-            WhiteBox.getWhiteBox().fullGC();
-            if (!getExecutionController().continueExecution()) {
-                // we were interrrupted by stresser. just exit...
-                return;
-            }
             Reference polledReference = null;
-            try {
-                polledReference = queue.remove();
-            } catch (InterruptedException e) {
-                log.error("Unexpected InterruptedException during queue.remove().");
+            for (int i = 0; i < 10 && polledReference == null; i++) {
+                WhiteBox.getWhiteBox().fullGC();
+                if (!getExecutionController().continueExecution()) {
+                    // we were interrrupted by stresser. just exit...
+                    return;
+                }
+                try {
+                    polledReference = queue.remove(i * 100);
+                } catch (InterruptedException e) {
+                    log.error("Unexpected InterruptedException during queue.remove().");
+                    setFailed(true);
+                }
+            }
+
+            if (polledReference == null) {
+                log.error("Haven't polled reference after 10 GC.");
                 setFailed(true);
             }
+
             // Check the reference and the queue
             // The polled reference must be equal to the one enqueued to
             // the queue

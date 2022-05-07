@@ -188,7 +188,7 @@ public class phantom001 extends ThreadedGCTest {
                     WhiteBox.getWhiteBox().fullGC();
                     // Give some time for finalizer to run.
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(checks * 100);
                     } catch (InterruptedException e) {}
                 }
             }
@@ -206,7 +206,7 @@ public class phantom001 extends ThreadedGCTest {
                 WhiteBox.getWhiteBox().fullGC();
                 // Give some time for reference to be enqueued.
                 try {
-                    polled = queue.remove(100);
+                    polled = queue.remove(checks * 100);
                 } catch (InterruptedException e) {}
             }
 
