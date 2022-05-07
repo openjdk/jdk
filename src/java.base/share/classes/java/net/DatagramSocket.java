@@ -29,11 +29,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.MulticastChannel;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.Set;
-import sun.net.NetProperties;
 import sun.nio.ch.DefaultSelectorProvider;
 
 /**
@@ -666,17 +663,33 @@ public class DatagramSocket implements java.io.Closeable {
     }
 
     /**
-     * Receives a datagram packet from this socket. When this method
-     * returns, the {@code DatagramPacket}'s buffer is filled with
-     * the data received. The datagram packet also contains the sender's
+     * Receives a datagram packet from this socket. This method blocks until a
+     * datagram is received.
+     *
+     * When this method returns, the {@code DatagramPacket}'s buffer is filled
+     * with the data received. The datagram packet also contains the sender's
      * IP address, and the port number on the sender's machine.
-     * <p>
-     * This method blocks until a datagram is received. The
-     * {@code length} field of the datagram packet object contains
+     * The {@code length} field of the datagram packet object contains
      * the length of the received message. If the message is longer than
      * the packet's length, the message is truncated.
-     * <p>
-     * If there is a security manager, and the socket is not currently
+     *
+     * <p> This method is {@linkplain Thread#interrupt() interruptible} in the
+     * following circumstances:
+     * <ol>
+     *   <li> The datagram socket is {@linkplain DatagramChannel#socket() associated}
+     *        with a {@link DatagramChannel DatagramChannel}. In that case,
+     *        interrupting a thread receiving a datagram packet will close the
+     *        underlying channel and cause this method to throw {@link
+     *        java.nio.channels.ClosedByInterruptException} with the interrupt
+     *        status set.
+     *   <li> The datagram socket uses the system-default socket implementation and
+     *        a {@linkplain Thread#isVirtual() virtual thread} is receiving a
+     *        datagram packet. In that case, interrupting the virtual thread will
+     *        cause it to wakeup and close the socket. This method will then throw
+     *        {@code SocketException} with the interrupt status set.
+     * </ol>
+     *
+     * <p> If there is a security manager, and the socket is not currently
      * connected to a remote address, a packet cannot be received if the
      * security manager's {@code checkAccept} method does not allow it.
      * Datagrams that are not permitted by the security manager are silently

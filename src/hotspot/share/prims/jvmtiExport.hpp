@@ -91,8 +91,10 @@ class JvmtiExport : public AllStatic {
   JVMTI_SUPPORT_FLAG(can_post_field_modification)
   JVMTI_SUPPORT_FLAG(can_post_method_entry)
   JVMTI_SUPPORT_FLAG(can_post_method_exit)
+  JVMTI_SUPPORT_FLAG(can_post_frame_pop)
   JVMTI_SUPPORT_FLAG(can_pop_frame)
   JVMTI_SUPPORT_FLAG(can_force_early_return)
+  JVMTI_SUPPORT_FLAG(can_support_virtual_threads)
 
   JVMTI_SUPPORT_FLAG(early_vmstart_recorded)
   JVMTI_SUPPORT_FLAG(can_get_owned_monitor_info) // includes can_get_owned_monitor_stack_depth_info
@@ -129,6 +131,11 @@ class JvmtiExport : public AllStatic {
   JVMTI_SUPPORT_FLAG(should_clean_up_heap_objects)
   JVMTI_SUPPORT_FLAG(should_post_vm_object_alloc)
   JVMTI_SUPPORT_FLAG(should_post_sampled_object_alloc)
+
+  JVMTI_SUPPORT_FLAG(should_post_vthread_start)
+  JVMTI_SUPPORT_FLAG(should_post_vthread_end)
+  JVMTI_SUPPORT_FLAG(should_post_vthread_mount)
+  JVMTI_SUPPORT_FLAG(should_post_vthread_unmount)
 
   // If flag cannot be implemented, give an error if on=true
   static void report_unsupported(bool on);
@@ -291,6 +298,8 @@ class JvmtiExport : public AllStatic {
   static void decode_version_values(jint version, int * major, int * minor,
                                     int * micro) NOT_JVMTI_RETURN;
 
+  static void check_vthread_and_suspend_at_safepoint(JavaThread *thread) NOT_JVMTI_RETURN;
+
   // single stepping management methods
   static void at_single_stepping_point(JavaThread *thread, Method* method, address location) NOT_JVMTI_RETURN;
   static void expose_single_stepping(JavaThread *thread) NOT_JVMTI_RETURN;
@@ -334,6 +343,13 @@ class JvmtiExport : public AllStatic {
 
   static void post_thread_start          (JavaThread *thread) NOT_JVMTI_RETURN;
   static void post_thread_end            (JavaThread *thread) NOT_JVMTI_RETURN;
+
+  static void post_vthread_start         (jthread vthread) NOT_JVMTI_RETURN;
+  static void post_vthread_end           (jthread vthread) NOT_JVMTI_RETURN;
+  static void post_vthread_mount         (jthread vthread) NOT_JVMTI_RETURN;
+  static void post_vthread_unmount       (jthread vthread) NOT_JVMTI_RETURN;
+
+  static void continuation_yield_cleanup (JavaThread* thread, jint continuation_frame_count) NOT_JVMTI_RETURN;
 
   // Support for java.lang.instrument agent loading.
   static bool _should_post_class_file_load_hook;
@@ -542,9 +558,12 @@ class JvmtiVMObjectAllocEventCollector : public JvmtiObjectAllocEventCollector {
 //
 class JvmtiSampledObjectAllocEventCollector : public JvmtiObjectAllocEventCollector {
  public:
-  JvmtiSampledObjectAllocEventCollector()  NOT_JVMTI_RETURN;
+  JvmtiSampledObjectAllocEventCollector(bool should_start = true) {
+    JVMTI_ONLY(if (should_start) start();)
+  }
   ~JvmtiSampledObjectAllocEventCollector()  NOT_JVMTI_RETURN;
   bool is_sampled_object_alloc_event()    { return true; }
+  void start() NOT_JVMTI_RETURN;
   static bool object_alloc_is_safe_to_sample() NOT_JVMTI_RETURN_(false);
 };
 
