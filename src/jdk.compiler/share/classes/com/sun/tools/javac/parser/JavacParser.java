@@ -763,13 +763,13 @@ public class JavacParser implements Parser {
      */
 
     public JCPattern parsePattern(int pos, JCModifiers mods, JCExpression parsedType,
-                                  boolean allowVar) {
+                                  boolean allowVar, boolean checkGuard) {
         JCPattern pattern;
         if (token.kind == LPAREN && parsedType == null) {
             //parenthesized pattern:
             int startPos = token.pos;
             accept(LPAREN);
-            JCPattern p = parsePattern(token.pos, null, null, true);
+            JCPattern p = parsePattern(token.pos, null, null, true, false);
             accept(RPAREN);
             pattern = toP(F.at(startPos).ParenthesizedPattern(p));
         } else {
@@ -791,7 +791,7 @@ public class JavacParser implements Parser {
                 if (!peekToken(RPAREN)) {
                     do {
                         nextToken();
-                        JCPattern nestedPattern = parsePattern(token.pos, null, null, true);
+                        JCPattern nestedPattern = parsePattern(token.pos, null, null, true, false);
                         nested.append(nestedPattern);
                     } while (token.kind == COMMA);
                 } else {
@@ -800,8 +800,12 @@ public class JavacParser implements Parser {
                 accept(RPAREN);
                 JCVariableDecl var;
                 if (token.kind == IDENTIFIER) {
-                    var = to(F.at(token.pos).VarDef(F.Modifiers(0), token.name(), e, null));
-                    nextToken();
+                    if (!checkGuard || token.name() != names.when) {
+                        var = to(F.at(token.pos).VarDef(F.Modifiers(0), token.name(), e, null));
+                        nextToken();
+                    } else {
+                        var = null;
+                    }
                 } else {
                     var = null;
                 }
@@ -1001,7 +1005,7 @@ public class JavacParser implements Parser {
                 JCTree pattern;
                 if (token.kind == LPAREN) {
                     checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
-                    pattern = parsePattern(token.pos, null, null, false);
+                    pattern = parsePattern(token.pos, null, null, false, false);
                 } else {
                     int patternPos = token.pos;
                     JCModifiers mods = optFinal(0);
@@ -1009,9 +1013,9 @@ public class JavacParser implements Parser {
                     JCExpression type = unannotatedType(false);
                     if (token.kind == IDENTIFIER) {
                         checkSourceLevel(token.pos, Feature.PATTERN_MATCHING_IN_INSTANCEOF);
-                        pattern = parsePattern(patternPos, mods, type, false);
+                        pattern = parsePattern(patternPos, mods, type, false, false);
                     } else if (token.kind == LPAREN) {
-                        pattern = parsePattern(patternPos, mods, type, false);
+                        pattern = parsePattern(patternPos, mods, type, false, false);
                     } else {
                         checkNoMods(typePos, mods.flags & ~Flags.DEPRECATED);
                         if (mods.annotations.nonEmpty()) {
@@ -3112,7 +3116,7 @@ public class JavacParser implements Parser {
                               analyzePattern(lookahead) == PatternResult.PATTERN;
             if (pattern) {
                 checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
-                JCPattern p = parsePattern(patternPos, mods, null, false);
+                JCPattern p = parsePattern(patternPos, mods, null, false, true);
                 if (token.kind == IDENTIFIER && token.name() == names.when) {
                     nextToken();
                     p.guard = term(EXPR | NOLAMBDA);
