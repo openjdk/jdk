@@ -25,6 +25,9 @@
 
 package java.lang.ref;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import jdk.internal.misc.VM;
 
@@ -38,13 +41,10 @@ import jdk.internal.misc.VM;
  */
 
 public class ReferenceQueue<T> {
-
-    /**
-     * Constructs a new reference-object queue.
-     */
-    public ReferenceQueue() { }
-
     private static class Null extends ReferenceQueue<Object> {
+        public Null() { super(0); }
+
+        @Override
         boolean enqueue(Reference<?> r) {
             return false;
         }
@@ -53,37 +53,65 @@ public class ReferenceQueue<T> {
     static final ReferenceQueue<Object> NULL = new Null();
     static final ReferenceQueue<Object> ENQUEUED = new Null();
 
-    private static class Lock { };
-    private final Lock lock = new Lock();
     private volatile Reference<? extends T> head;
     private long queueLength = 0;
 
-    boolean enqueue(Reference<? extends T> r) { /* Called only by Reference class */
-        synchronized (lock) {
-            // Check that since getting the lock this reference hasn't already been
-            // enqueued (and even then removed)
-            ReferenceQueue<?> queue = r.queue;
-            if ((queue == NULL) || (queue == ENQUEUED)) {
-                return false;
-            }
-            assert queue == this;
-            // Self-loop end, so if a FinalReference it remains inactive.
-            r.next = (head == null) ? r : head;
-            head = r;
-            queueLength++;
-            // Update r.queue *after* adding to list, to avoid race
-            // with concurrent enqueued checks and fast-path poll().
-            // Volatiles ensure ordering.
-            r.queue = ENQUEUED;
-            if (r instanceof FinalReference) {
-                VM.addFinalRefCount(1);
-            }
-            lock.notifyAll();
-            return true;
-        }
+    private final ReentrantLock lock;
+    private final Condition notEmpty;
+
+    void signal() {
+        notEmpty.signalAll();
     }
 
-    private Reference<? extends T> reallyPoll() {       /* Must hold lock */
+    void await() throws InterruptedException {
+        notEmpty.await();
+    }
+
+    void await(long timeoutMillis) throws InterruptedException {
+        notEmpty.await(timeoutMillis, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Constructs a new reference-object queue.
+     */
+    public ReferenceQueue() {
+        this.lock = new ReentrantLock();
+        this.notEmpty = lock.newCondition();
+    }
+
+    ReferenceQueue(int dummy) {
+        this.lock = null;
+        this.notEmpty = null;
+    }
+
+    final boolean enqueue0(Reference<? extends T> r) { // must hold lock
+        // Check that since getting the lock this reference hasn't already been
+        // enqueued (and even then removed)
+        ReferenceQueue<?> queue = r.queue;
+        if ((queue == NULL) || (queue == ENQUEUED)) {
+            return false;
+        }
+        assert queue == this;
+        // Self-loop end, so if a FinalReference it remains inactive.
+        r.next = (head == null) ? r : head;
+        head = r;
+        queueLength++;
+        // Update r.queue *after* adding to list, to avoid race
+        // with concurrent enqueued checks and fast-path poll().
+        // Volatiles ensure ordering.
+        r.queue = ENQUEUED;
+        if (r instanceof FinalReference) {
+            VM.addFinalRefCount(1);
+        }
+        signal();
+        return true;
+    }
+
+    final boolean headIsNull() {
+        return head == null;
+    }
+
+    final Reference<? extends T> poll0() { // must hold lock
         Reference<? extends T> r = head;
         if (r != null) {
             r.queue = NULL;
@@ -106,6 +134,40 @@ public class ReferenceQueue<T> {
         return null;
     }
 
+    final Reference<? extends T> remove0(long timeout)
+            throws IllegalArgumentException, InterruptedException { // must hold lock
+        Reference<? extends T> r = poll0();
+        if (r != null) return r;
+        long start = System.nanoTime();
+        for (;;) {
+            await(timeout);
+            r = poll0();
+            if (r != null) return r;
+
+            long end = System.nanoTime();
+            timeout -= (end - start) / 1000_000;
+            if (timeout <= 0) return null;
+            start = end;
+        }
+    }
+
+    final Reference<? extends T> remove0() throws InterruptedException { // must hold lock
+        for (;;) {
+            var r = poll0();
+            if (r != null) return r;
+            await();
+        }
+    }
+
+    boolean enqueue(Reference<? extends T> r) { /* Called only by Reference class */
+        lock.lock();
+        try {
+            return enqueue0(r);
+        } finally {
+            lock.unlock();
+        }
+    }
+
     /**
      * Polls this queue to see if a reference object is available.  If one is
      * available without further delay then it is removed from the queue and
@@ -115,10 +177,13 @@ public class ReferenceQueue<T> {
      *          otherwise {@code null}
      */
     public Reference<? extends T> poll() {
-        if (head == null)
+        if (headIsNull())
             return null;
-        synchronized (lock) {
-            return reallyPoll();
+        lock.lock();
+        try {
+            return poll0();
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -142,27 +207,17 @@ public class ReferenceQueue<T> {
      * @throws  InterruptedException
      *          If the timeout wait is interrupted
      */
-    public Reference<? extends T> remove(long timeout)
-        throws IllegalArgumentException, InterruptedException
-    {
-        if (timeout < 0) {
+    public Reference<? extends T> remove(long timeout) throws InterruptedException {
+        if (timeout < 0)
             throw new IllegalArgumentException("Negative timeout value");
-        }
-        synchronized (lock) {
-            Reference<? extends T> r = reallyPoll();
-            if (r != null) return r;
-            long start = (timeout == 0) ? 0 : System.nanoTime();
-            for (;;) {
-                lock.wait(timeout);
-                r = reallyPoll();
-                if (r != null) return r;
-                if (timeout != 0) {
-                    long end = System.nanoTime();
-                    timeout -= (end - start) / 1000_000;
-                    if (timeout <= 0) return null;
-                    start = end;
-                }
-            }
+        if (timeout == 0)
+            return remove();
+
+        lock.lock();
+        try {
+            return remove0(timeout);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -174,7 +229,12 @@ public class ReferenceQueue<T> {
      * @throws  InterruptedException  If the wait is interrupted
      */
     public Reference<? extends T> remove() throws InterruptedException {
-        return remove(0);
+        lock.lock();
+        try {
+            return remove0();
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**

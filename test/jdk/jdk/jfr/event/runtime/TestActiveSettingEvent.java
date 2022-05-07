@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,6 +205,10 @@ public final class TestActiveSettingEvent {
         settingValues.put(EventNames.X509Validation + "#threshold", "0 ns");
         settingValues.put(EventNames.ProcessStart + "#threshold", "0 ns");
         settingValues.put(EventNames.Deserialization + "#threshold", "0 ns");
+        settingValues.put(EventNames.VirtualThreadStart + "#threshold", "0 ns");
+        settingValues.put(EventNames.VirtualThreadEnd + "#stackTrace", "false");
+        settingValues.put(EventNames.VirtualThreadEnd + "#threshold", "0 ns");
+        settingValues.put(EventNames.VirtualThreadSubmitFailed + "#threshold", "0 ns");
 
         try (Recording recording = new Recording(c)) {
             Map<Long, EventType> eventTypes = new HashMap<>();

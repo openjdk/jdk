@@ -51,8 +51,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.Condition;
+import jdk.internal.access.JavaUtilConcurrentFJPAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
-//import jdk.internal.vm.SharedThreadContainer; // for loom
+import jdk.internal.vm.SharedThreadContainer;
 
 /**
  * An {@link ExecutorService} for running {@link ForkJoinTask}s.
@@ -1512,7 +1514,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     final ForkJoinWorkerThreadFactory factory;
     final UncaughtExceptionHandler ueh;  // per-worker UEH
     final Predicate<? super ForkJoinPool> saturate;
-    //    final SharedThreadContainer container; // for loom
+    final SharedThreadContainer container;
 
     @jdk.internal.vm.annotation.Contended("fjpctl") // segregate
     volatile long ctl;                   // main pool control
@@ -1568,8 +1570,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         try {
             if (runState >= 0 &&  // avoid construction if terminating
                 fac != null && (wt = fac.newThread(this)) != null) {
-                wt.start();       // replace with following line for loom
-                //                container.start(wt);
+                container.start(wt);
                 return true;
             }
         } catch (Throwable rex) {
@@ -2528,7 +2529,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             if ((cond = termination) != null)
                 cond.signalAll();
             lock.unlock();
-            // container.close(); // for loom
+            container.close();
         }
         return true;
     }
@@ -2721,7 +2722,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         String pid = Integer.toString(getAndAddPoolIds(1) + 1);
         String name = "ForkJoinPool-" + pid;
         this.workerNamePrefix = name + "-worker-";
-        //        this.container = SharedThreadContainer.create(name); // for loom
+        this.container = SharedThreadContainer.create(name);
     }
 
     /**
@@ -2773,7 +2774,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         this.workerNamePrefix = null;
         this.registrationLock = new ReentrantLock();
         this.queues = new WorkQueue[size];
-        //        this.container = SharedThreadContainer.create("ForkJoinPool.commonPool"); // for loom
+        this.container = SharedThreadContainer.create("ForkJoinPool.commonPool");
     }
 
     /**
@@ -3662,6 +3663,32 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
     }
 
+    /**
+     * Invokes tryCompensate to create or re-activate a spare thread to
+     * compensate for a thread that performs a blocking operation. When the
+     * blocking operation is done then endCompensatedBlock must be invoked
+     * with the value returned by this method to re-adjust the parallelism.
+     */
+    private long beginCompensatedBlock() {
+        for (;;) {
+            int comp;
+            if ((comp = tryCompensate(ctl, false)) >= 0) {
+                return (comp == 0) ? 0L : RC_UNIT;
+            } else {
+                Thread.onSpinWait();
+            }
+        }
+    }
+
+    /**
+     * Re-adjusts parallelism after a blocking operation completes.
+     */
+    void endCompensatedBlock(long post) {
+        if (post > 0) {
+            getAndAddCtl(post);
+        }
+    }
+
     /** ManagedBlock for external threads */
     private static void unmanagedBlock(ManagedBlocker blocker)
         throws InterruptedException {
@@ -3704,6 +3731,17 @@ public class ForkJoinPool extends AbstractExecutorService {
             AccessController.doPrivileged(new PrivilegedAction<>() {
                     public ForkJoinPool run() {
                         return new ForkJoinPool((byte)0); }});
+        // allow access to non-public methods
+        SharedSecrets.setJavaUtilConcurrentFJPAccess(
+            new JavaUtilConcurrentFJPAccess() {
+                @Override
+                public long beginCompensatedBlock(ForkJoinPool pool) {
+                    return pool.beginCompensatedBlock();
+                }
+                public void endCompensatedBlock(ForkJoinPool pool, long post) {
+                    pool.endCompensatedBlock(post);
+                }
+            });
         Class<?> dep = LockSupport.class; // ensure loaded
     }
 }

@@ -84,6 +84,8 @@ typedef struct {
     volatile jboolean vmDead; /* Once VM is dead it stays that way - don't put in init */
     jboolean assertOn;
     jboolean assertFatal;
+    jboolean vthreadsSupported; /* If true, debugging support for vthreads is enabled. */
+    jboolean enumerateVThreads; /* If true, JDWP APIs return vthreads in thread lists. */
     jboolean doerrorexit;
     jboolean modifiedUtf8;
     jboolean quiet;
@@ -171,7 +173,10 @@ typedef enum {
         EI_MONITOR_WAITED       = 18,
         EI_VM_INIT              = 19,
         EI_VM_DEATH             = 20,
-        EI_max                  = 20
+        EI_VIRTUAL_THREAD_START = 21,
+        EI_VIRTUAL_THREAD_END   = 22,
+
+        EI_max                  = 22
 } EventIndex;
 
 /* Agent errors that might be in a jvmtiError for JDWP or internal.
@@ -212,6 +217,7 @@ typedef struct {
 
     EventIndex  ei;
     jthread     thread;
+    jboolean    is_vthread;
     jclass      clazz;
     jmethodID   method;
     jlocation   location;
@@ -328,6 +334,7 @@ jvmtiError classLoader(jclass, jobject *);
  */
 JNIEnv *getEnv(void);
 jboolean isClass(jobject object);
+jboolean isVThread(jobject object);
 jboolean isThread(jobject object);
 jboolean isThreadGroup(jobject object);
 jboolean isString(jobject object);

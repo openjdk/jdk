@@ -476,6 +476,11 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
+  Unimplemented();
+  return NULL;
+}
+
 // Interpreter intrinsic for WeakReference.get().
 // 1. Don't push a full blown frame and go on dispatching, but fetch the value
 //    into R8 and return quickly

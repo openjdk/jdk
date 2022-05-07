@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import com.sun.jdi.Location;
 import com.sun.jdi.MonitorInfo;
 import com.sun.jdi.NativeMethodException;
 import com.sun.jdi.ObjectReference;
+import com.sun.jdi.OpaqueFrameException;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadGroupReference;
@@ -76,8 +77,12 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
      * when any thread is resumed.
      */
 
-    // This is cached for the life of the thread
+    // The ThreadGroup is cached for the life of the thread
     private ThreadGroupReference threadGroup;
+
+    // Whether a thread is a virtual thread or not is cached
+    private volatile boolean isVirtual;
+    private volatile boolean isVirtualCached;
 
     // This is cached only while this one thread is suspended.  Each time
     // the thread is resumed, we abandon the current cache object and
@@ -581,7 +586,12 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
         } catch (JDWPException exc) {
             switch (exc.errorCode()) {
             case JDWP.Error.OPAQUE_FRAME:
-                throw new NativeMethodException();
+                if (meth.isNative()) {
+                    throw new NativeMethodException();
+                } else {
+                    assert isVirtual(); // can only happen with virtual threads
+                    throw new OpaqueFrameException();
+                }
             case JDWP.Error.THREAD_NOT_SUSPENDED:
                 throw new IncompatibleThreadStateException(
                          "Thread not suspended");
@@ -595,6 +605,24 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
                 throw exc.toJDIException();
             }
         }
+    }
+
+    @Override
+    public boolean isVirtual() {
+        if (isVirtualCached) {
+            return isVirtual;
+        }
+        boolean result = false;
+        if (vm.mayCreateVirtualThreads()) {
+            try {
+                result = JDWP.ThreadReference.IsVirtual.process(vm, this).isVirtual;
+            } catch (JDWPException exc) {
+                throw exc.toJDIException();
+            }
+        }
+        isVirtual = result;
+        isVirtualCached = true;
+        return result;
     }
 
     public String toString() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,14 +49,14 @@ public final class EventWriter {
     private long maxPosition;
     private boolean valid;
     boolean notified; // Not private to avoid being optimized away
+    boolean excluded;
 
     private PlatformEventType eventType;
-    private boolean started;
     private boolean flushOnEnd;
     private boolean largeSize = false;
 
     public static EventWriter getEventWriter() {
-        EventWriter ew = (EventWriter)JVM.getEventWriter();
+        EventWriter ew = JVM.getEventWriter();
         return ew != null ? ew : JVM.newEventWriter();
     }
 
@@ -197,7 +197,6 @@ public final class EventWriter {
             flushOnEnd = flush();
         }
         valid = true;
-        started = false;
     }
 
     private boolean isValidForSize(int requestedSize) {
@@ -239,11 +238,10 @@ public final class EventWriter {
     }
 
     public boolean beginEvent(PlatformEventType eventType) {
-        if (started) {
-            // recursive write attempt
+        if (excluded) {
+            // thread is excluded from writing events
             return false;
         }
-        started = true;
         this.eventType = eventType;
         reserveEventSizeField();
         putLong(eventType.getId());
@@ -289,19 +287,18 @@ public final class EventWriter {
         if (flushOnEnd) {
             flushOnEnd = flush();
         }
-        started = false;
         return true;
     }
 
-    private EventWriter(long startPos, long maxPos, long startPosAddress, long threadID, boolean valid) {
+    private EventWriter(long startPos, long maxPos, long startPosAddress, long threadID, boolean valid, boolean excluded) {
         startPosition = currentPosition = startPos;
         maxPosition = maxPos;
         startPositionAddress = startPosAddress;
         this.threadID = threadID;
-        started = false;
         flushOnEnd = false;
         this.valid = valid;
         notified = false;
+        this.excluded = excluded;
     }
 
     private static int makePaddedInt(int v) {

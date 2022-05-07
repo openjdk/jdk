@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -937,6 +937,8 @@ public:
 
   void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) override;
 
+  static void start_codecache_marking_cycle_if_inactive();
+
   // Apply the given closure on all cards in the Hot Card Cache, emptying it.
   void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_id);
 
@@ -1180,6 +1182,7 @@ public:
   size_t unsafe_max_tlab_alloc(Thread* ignored) const override;
 
   inline bool is_in_young(const oop obj) const;
+  inline bool requires_barriers(stackChunkOop obj) const override;
 
   // Returns "true" iff the given word_size is "very large".
   static bool is_humongous(size_t word_size) {

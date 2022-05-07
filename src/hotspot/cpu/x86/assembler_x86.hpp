@@ -49,7 +49,9 @@ class Argument {
     n_int_register_parameters_j   = 6, // j_rarg0, j_rarg1, ...
     n_float_register_parameters_j = 8  // j_farg0, j_farg1, ...
 #else
-    n_register_parameters = 0   // 0 registers used to pass arguments
+    n_register_parameters = 0,   // 0 registers used to pass arguments
+    n_int_register_parameters_j   = 0,
+    n_float_register_parameters_j = 0
 #endif // _LP64
   };
 };

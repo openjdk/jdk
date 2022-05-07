@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /*
  * @test LocalLongTest
  * @bug 8163014
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc java.base/jdk.internal.vm
  * @library /test/lib
  * @requires vm.bits == 64
  * @compile LocalLongHelper.java
@@ -38,10 +38,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class LocalLongTest {
     public static void main(String... args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xint",
-                                                                  "--add-opens",
-                                                                  "java.base/java.lang=ALL-UNNAMED",
-                                                                  "--add-opens",
-                                                                  "java.base/java.lang.invoke=ALL-UNNAMED",
+                                                                  "--add-opens",   "java.base/java.lang=ALL-UNNAMED",
+                                                                  "--add-opens",   "java.base/java.lang.invoke=ALL-UNNAMED",
+                                                                  "--add-exports", "java.base/jdk.internal.vm=ALL-UNNAMED",
                                                                   "LocalLongHelper");
         OutputAnalyzer o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);

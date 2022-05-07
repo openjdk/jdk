@@ -31,6 +31,8 @@
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
+ *          java.base/java.io:open
+ *          java.base/jdk.internal.misc
  * @library /test/lib
  * @run main/othervm/native/timeout=300 -Djava.security.manager=allow Basic
  * @run main/othervm/native/timeout=300 -Djava.security.manager=allow -Djdk.lang.Process.launchMechanism=fork Basic
@@ -40,6 +42,8 @@
 /*
  * @test
  * @modules java.base/java.lang:open
+ *          java.base/java.io:open
+ *          java.base/jdk.internal.misc
  * @requires (os.family == "linux")
  * @library /test/lib
  * @run main/othervm/timeout=300 -Djava.security.manager=allow -Djdk.lang.Process.launchMechanism=posix_spawn Basic
@@ -50,6 +54,7 @@ import java.lang.ProcessHandle;
 import static java.lang.ProcessBuilder.Redirect.*;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -2196,7 +2201,7 @@ public class Basic {
                     // Wait until after the s.read occurs in "thread" by
                     // checking when the input stream monitor is acquired
                     // (BufferedInputStream.read is synchronized)
-                    while (!isLocked(s, 10)) {
+                    while (!isLocked((BufferedInputStream) s)) {
                         Thread.sleep(100);
                     }
                 }
@@ -2850,18 +2855,29 @@ public class Basic {
                 if (k.isAssignableFrom(t.getClass())) pass();
                 else unexpected(t);}}
 
-    static boolean isLocked(final Object monitor, final long millis) throws InterruptedException {
+    static boolean isLocked(BufferedInputStream bis) throws Exception {
+        Field lockField = BufferedInputStream.class.getDeclaredField("lock");
+        lockField.setAccessible(true);
+        var lock = (jdk.internal.misc.InternalLock) lockField.get(bis);
+        if (lock != null) {
+            if (lock.tryLock()) {
+                lock.unlock();
+                return false;
+            } else {
+                return true;
+            }
+        }
         return new Thread() {
             volatile boolean unlocked;
 
             @Override
             public void run() {
-                synchronized (monitor) { unlocked = true; }
+                synchronized (bis) { unlocked = true; }
             }
 
             boolean isLocked() throws InterruptedException {
                 start();
-                join(millis);
+                join(10);
                 return !unlocked;
             }
         }.isLocked();

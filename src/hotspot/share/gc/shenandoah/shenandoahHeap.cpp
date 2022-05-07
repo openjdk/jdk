@@ -39,6 +39,7 @@
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -2304,4 +2305,13 @@ void ShenandoahHeap::flush_liveness_cache(uint worker_id) {
       ld[i] = 0;
     }
   }
+}
+
+bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
+  ShenandoahHeapRegion* region = heap_region_containing(obj);
+  bool allocated_after_mark_start = marking_context()->allocated_after_mark_start(obj);
+  bool requires_concmark_barriers = is_concurrent_mark_in_progress() && !allocated_after_mark_start;
+  bool requires_loadref_barriers = has_forwarded_objects() && cast_from_oop<HeapWord*>(obj) < heap_region_containing(obj)->get_update_watermark();
+  bool requires_deep_loadref_barriers = allocated_after_mark_start && has_forwarded_objects();
+  return requires_concmark_barriers || requires_loadref_barriers || requires_deep_loadref_barriers;
 }

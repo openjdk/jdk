@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package nsk.jdb.kill.kill001;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdb.*;
+import nsk.share.jdi.JDIThreadFactory;
 
 import java.io.*;
 import java.util.*;
@@ -39,13 +40,14 @@ public class kill001a {
 
     static void breakHere () {}
 
-    static final String MYTHREAD         = "MyThread";
+    static final String MYTHREAD         = nsk.jdb.kill.kill001.kill001.MYTHREAD;
     static final int numThreads          = 5;   // number of threads. one lock per thread.
     static Object lock                   = new Object();
     static Object waitnotify             = new Object();
     public static volatile int notKilled = 0;
     static final String message          = "kill001a's Exception";
     static int waitTime;
+    static boolean vthreadMode           = "Virtual".equals(System.getProperty("main.wrapper"));
 
     static JdbArgumentHandler argumentHandler;
     static Log log;
@@ -69,7 +71,8 @@ public class kill001a {
         Thread holder [] = new Thread[numThreads];
 
         for (i = 0; i < numThreads ; i++) {
-            holder[i] = new MyThread(MYTHREAD + "-" + i);
+            String name = MYTHREAD + "-" + i;
+            holder[i] = JDIThreadFactory.newThread(new MyThread(name), name);
         }
 
         // lock monitor to prevent threads from finishing after they started
@@ -88,12 +91,18 @@ public class kill001a {
             breakHere();  // a break to get thread ids and then to kill MyThreads.
         }
 
-        // wait during watTime until all MyThreads will be killed
+        // wait during waitTime until all MyThreads will be killed
         long oldTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - oldTime) <= kill001a.waitTime) {
             boolean waited = false;
             for (i = 0; i < numThreads ; i++) {
-                if (holder[i].isAlive()) {
+                if (vthreadMode) {
+                    // vthreads will exit on their own without being killed, so just wait for them to exit.
+                    try {
+                        holder[i].join();
+                    } catch (InterruptedException e) {
+                    }
+                } else if (holder[i].isAlive()) {
                     waited = true;
                     try {
                         synchronized(waitnotify) {
@@ -104,7 +113,7 @@ public class kill001a {
                     }
                 }
             }
-            if (!waited) {
+            if (!waited || vthreadMode) {
                 break;
             }
         }
@@ -113,7 +122,7 @@ public class kill001a {
 
         for (i = 0; i < numThreads ; i++) {
             if (holder[i].isAlive()) {
-                log.display("Debuggee FAILED");
+                log.display("Debuggee FAILED - thread " + i + " is alive");
                 return kill001.FAILED;
             }
         }
@@ -149,15 +158,20 @@ class MyThread extends Thread {
         // prevent thread from early finish
         synchronized (kill001a.lock) {}
 
-        // sleep during waitTime to give debugger a chance to kill debugee's thread
+        // Sleep during waitTime to give debugger a chance to kill debugee's thread.
+        // Note vthreads need a short sleep because they will never receive the kill,
+        // and therefore sleep the full time, resulting in a test timeout if too long.
         try {
-            Thread.currentThread().sleep(kill001a.waitTime);
+            Thread.currentThread().sleep(kill001a.vthreadMode ? 10000 : kill001a.waitTime);
         } catch (InterruptedException e) {
             kill001a.log.display(ThreadInterrupted);
             e.printStackTrace(kill001a.log.getOutStream());
         }
 
-        kill001a.notKilled++;
+        // Need to make sure the increment is atomic
+        synchronized (kill001a.lock) {
+            kill001a.notKilled++;
+        }
         kill001a.log.display(ThreadFinished);
     }
 }

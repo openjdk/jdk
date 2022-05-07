@@ -84,10 +84,6 @@
     <Field type="Thread" name="thread" label="Java Thread" />
   </Event>
 
-  <Event name="ThreadSleep" category="Java Application" label="Java Thread Sleep" thread="true" stackTrace="true">
-    <Field type="long" contentType="millis" name="time" label="Sleep Time" />
-  </Event>
-
   <Event name="ThreadPark" category="Java Application" label="Java Thread Park" thread="true" stackTrace="true">
     <Field type="Class" name="parkedClass" label="Class Parked On" />
     <Field type="long" contentType="nanos" name="timeout" label="Park Timeout" />
@@ -117,6 +113,44 @@
 
   <Event name="SyncOnValueBasedClass" category="Java Virtual Machine, Diagnostics" label="Value Based Class Synchronization" thread="true" stackTrace="true" startTime="false" experimental="true">
     <Field type="Class" name="valueBasedClass" label="Value Based Class" />
+  </Event>
+
+  <Event name="ContinuationFreeze" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Yield" description="Invocation of Continuation.yield()"
+    thread="true" stackTrace="true">
+    <Field type="Thread" name="carrierThread" label="Carrier Thread" description="Thread enlisted as a carrier" />
+    <Field type="Class" name="continuationClass" label="Continuation Class" />
+    <Field type="ushort" name="interpretedFrames" label="Interpreted Frames" />
+    <Field type="ushort" name="references" label="References" />
+    <Field type="ushort" contentType="bytes" name="size" label="Stack Size" />
+  </Event>
+
+  <Event name="ContinuationThaw" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Continue" description="Invocation of Continuation.run() on a started continuation"
+    thread="true" stackTrace="true">
+    <Field type="Thread" name="carrierThread" label="Carrier Thread" description="Thread enlisted as a carrier" />
+    <Field type="Class" name="continuationClass" label="Continuation Class" />
+    <Field type="ushort" name="interpretedFrames" label="Interpreted Frames" />
+    <Field type="ushort" name="references" label="References" />
+    <Field type="ushort" contentType="bytes" name="size" label="Stack Size" />
+  </Event>
+
+  <Event name="ContinuationFreezeYoung" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Freeze Young" thread="true" stackTrace="false" startTime="false">
+    <Field type="ulong" name="id" label="Continuation ID" />
+    <Field type="uint" name="size" label="Size" />
+    <Field type="boolean" name="allocate" label="Allocated New" />
+  </Event>
+
+  <Event name="ContinuationFreezeOld" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Freeze Old" thread="true" stackTrace="false" startTime="false">
+    <Field type="ulong" name="id" label="Continuation ID" />
+  </Event>
+
+  <Event name="ContinuationThawYoung" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Thaw Young" thread="true" stackTrace="false" startTime="false">
+    <Field type="ulong" name="id" label="Continuation ID" />
+    <Field type="boolean" name="full" label="Full" />
+    <Field type="uint" name="size" label="Size" />
+  </Event>
+
+  <Event name="ContinuationThawOld" experimental="true" category="Java Virtual Machine, Runtime" label="Continuation Thaw Old" thread="true" stackTrace="false" startTime="false">
+    <Field type="ulong" name="id" label="Continuation ID" />
   </Event>
 
   <Event name="ReservedStackActivation" category="Java Virtual Machine, Runtime" label="Reserved Stack Activation"
@@ -1175,6 +1209,7 @@
     <Field type="string" name="javaName" label="Java Thread Name" />
     <Field type="long" name="javaThreadId" label="Java Thread Id" />
     <Field type="ThreadGroup" name="group" label="Java Thread Group" />
+    <Field type="boolean" name="virtual" label="Virtual Thread" />
   </Type>
 
   <Type name="ThreadGroup" label="Thread Group">

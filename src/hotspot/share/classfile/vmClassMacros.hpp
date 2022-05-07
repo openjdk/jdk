@@ -87,7 +87,10 @@
   do_klass(Finalizer_klass,                             java_lang_ref_Finalizer                               ) \
                                                                                                                 \
   do_klass(Thread_klass,                                java_lang_Thread                                      ) \
+  do_klass(Thread_FieldHolder_klass,                    java_lang_Thread_FieldHolder                          ) \
+  do_klass(Thread_Constants_klass,                      java_lang_Thread_Constants                            ) \
   do_klass(ThreadGroup_klass,                           java_lang_ThreadGroup                                 ) \
+  do_klass(VirtualThread_klass,                         java_lang_VirtualThread                               ) \
   do_klass(Properties_klass,                            java_util_Properties                                  ) \
   do_klass(Module_klass,                                java_lang_Module                                      ) \
   do_klass(reflect_AccessibleObject_klass,              java_lang_reflect_AccessibleObject                    ) \
@@ -95,6 +98,11 @@
   do_klass(reflect_Parameter_klass,                     java_lang_reflect_Parameter                           ) \
   do_klass(reflect_Method_klass,                        java_lang_reflect_Method                              ) \
   do_klass(reflect_Constructor_klass,                   java_lang_reflect_Constructor                         ) \
+                                                                                                                \
+  do_klass(Runnable_klass,                              java_lang_Runnable                                    ) \
+  do_klass(ContinuationScope_klass,                     jdk_internal_vm_ContinuationScope                     ) \
+  do_klass(Continuation_klass,                          jdk_internal_vm_Continuation                          ) \
+  do_klass(StackChunk_klass,                            jdk_internal_vm_StackChunk                            ) \
                                                                                                                 \
   /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                     \
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                 \

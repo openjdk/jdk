@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,21 @@
 package com.sun.management.internal;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 import javax.management.ObjectName;
-
 import com.sun.management.HotSpotDiagnosticMXBean;
+import com.sun.management.HotSpotDiagnosticMXBean.ThreadDumpFormat;
 import com.sun.management.VMOption;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import jdk.internal.vm.ThreadDumper;
 import sun.management.Util;
 
 /**
@@ -151,5 +158,43 @@ public class HotSpotDiagnostic implements HotSpotDiagnosticMXBean {
     @Override
     public ObjectName getObjectName() {
         return Util.newObjectName("com.sun.management:type=HotSpotDiagnostic");
+    }
+
+    @Override
+    @SuppressWarnings("removal")
+    public void dumpThreads(String outputFile, ThreadDumpFormat format) throws IOException {
+        Path file = Path.of(outputFile);
+        if (!file.isAbsolute())
+            throw new IllegalArgumentException("'outputFile' not absolute path");
+
+        // need ManagementPermission("control")
+        @SuppressWarnings("removal")
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+            Util.checkControlAccess();
+
+        try (OutputStream out = Files.newOutputStream(file, StandardOpenOption.CREATE_NEW)) {
+            PrivilegedExceptionAction<Void> pa = () -> {
+                dumpThreads(out, format);
+                return null;
+            };
+            try {
+                AccessController.doPrivileged(pa);
+            } catch (PrivilegedActionException pae) {
+                Throwable cause = pae.getCause();
+                if (cause instanceof IOException ioe)
+                    throw ioe;
+                if (cause instanceof RuntimeException e)
+                    throw e;
+                throw new RuntimeException(cause);
+            }
+        }
+    }
+
+    private void dumpThreads(OutputStream out, ThreadDumpFormat format) throws IOException {
+        switch (format) {
+            case TEXT_PLAIN -> ThreadDumper.dumpThreads(out);
+            case JSON       -> ThreadDumper.dumpThreadsToJson(out);
+        }
     }
 }

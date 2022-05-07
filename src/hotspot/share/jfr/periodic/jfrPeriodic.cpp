@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@
 #include "jfr/periodic/jfrThreadDumpEvent.hpp"
 #include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/support/jfrThreadId.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfrfiles/jfrPeriodic.hpp"
@@ -430,7 +429,7 @@ TRACE_REQUEST_FUNC(ThreadAllocationStatistics) {
     JavaThread* const jt = iter.next();
     assert(jt != NULL, "invariant");
     allocated.append(jt->cooked_allocated_bytes());
-    thread_ids.append(JFR_THREAD_ID(jt));
+    thread_ids.append(JFR_JVM_THREAD_ID(jt));
   }
 
   // Write allocation statistics to buffer.
