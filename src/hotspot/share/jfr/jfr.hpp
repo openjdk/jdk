@@ -27,12 +27,12 @@
 
 #include "jni.h"
 #include "memory/allStatic.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class JavaThread;
-class Thread;
-class Klass;
 class outputStream;
+class Thread;
 
 extern "C" void JNICALL jfr_register_natives(JNIEnv*, jclass);
 
@@ -48,20 +48,17 @@ class Jfr : AllStatic {
   static void on_create_vm_2();
   static void on_create_vm_3();
   static void on_unloading_classes();
-  static void on_thread_start(Thread* thread);
-  static void on_thread_exit(Thread* thread);
-  static void on_vm_shutdown(bool exception_handler = false);
-  static bool on_flight_recorder_option(const JavaVMOption** option, char* delimiter);
-  static bool on_start_flight_recording_option(const JavaVMOption** option, char* delimiter);
-  static void on_vm_error_report(outputStream* st);
-  static void exclude_thread(Thread* thread);
   static bool is_excluded(Thread* thread);
   static void include_thread(Thread* thread);
-
-  // intrinsic support
-  static void get_class_id_intrinsic(const Klass* klass);
-  static address epoch_address();
-  static address signal_address();
+  static void exclude_thread(Thread* thread);
+  static void on_thread_start(Thread* thread);
+  static void on_thread_exit(Thread* thread);
+  static void on_java_thread_start(JavaThread* starter, JavaThread* startee);
+  static void on_set_current_thread(JavaThread* jt, oop thread);
+  static void on_vm_shutdown(bool exception_handler = false);
+  static void on_vm_error_report(outputStream* st);
+  static bool on_flight_recorder_option(const JavaVMOption** option, char* delimiter);
+  static bool on_start_flight_recording_option(const JavaVMOption** option, char* delimiter);
 };
 
 #endif // SHARE_JFR_JFR_HPP

@@ -467,9 +467,12 @@ and file name of the library.
 .RE
 .TP
 .B \f[CB]\-\-class\-path\f[R] \f[I]classpath\f[R], \f[CB]\-classpath\f[R] \f[I]classpath\f[R], or \f[CB]\-cp\f[R] \f[I]classpath\f[R]
-A semicolon (\f[CB];\f[R]) separated list of directories, JAR archives,
-and ZIP archives to search for class files.
+Specifies a list of directories, JAR archives, and ZIP archives to search
+for class files.
 .RS
+.PP
+On Windows, semicolons (\f[CB];\f[R]) separate entities in this list;
+on other platforms it is a colon (\f[CB]:\f[R]).
 .PP
 Specifying \f[I]classpath\f[R] overrides any setting of the
 \f[CB]CLASSPATH\f[R] environment variable.
@@ -522,16 +525,21 @@ invoked.
 .RE
 .TP
 .B \f[CB]\-\-module\-path\f[R] \f[I]modulepath\f[R]... or \f[CB]\-p\f[R] \f[I]modulepath\f[R]
-A semicolon (\f[CB];\f[R]) separated list of directories in which each
-directory is a directory of modules.
+Specifies a list of directories in which each directory is a directory
+of modules.
 .RS
+.PP
+On Windows, semicolons (\f[CB];\f[R]) separate directories in this list;
+on other platforms it is a colon (\f[CB]:\f[R]).
 .RE
 .TP
 .B \f[CB]\-\-upgrade\-module\-path\f[R] \f[I]modulepath\f[R]...
-A semicolon (\f[CB];\f[R]) separated list of directories in which each
-directory is a directory of modules that replace upgradeable modules in
-the runtime image.
+Specifies a list of directories in which each directory is a directory
+of modules that replace upgradeable modules in the runtime image.
 .RS
+.PP
+On Windows, semicolons (\f[CB];\f[R]) separate directories in this list;
+on other platforms it is a colon (\f[CB]:\f[R]).
 .RE
 .TP
 .B \f[CB]\-\-add\-modules\f[R] \f[I]module\f[R][\f[CB],\f[R]\f[I]module\f[R]...]
@@ -794,11 +802,8 @@ Specifies a list of directories, JAR files, and ZIP archives to append
 to the end of the default bootstrap class path.
 .RS
 .PP
-\f[B]Linux and macOS:\f[R] Colons (\f[CB]:\f[R]) separate entities in this
-list.
-.PP
-\f[B]Windows:\f[R] Semicolons (\f[CB];\f[R]) separate entities in this
-list.
+On Windows, semicolons (\f[CB];\f[R]) separate entities in this list;
+on other platforms it is a colon (\f[CB]:\f[R]).
 .RE
 .TP
 .B \f[CB]\-Xcheck:jni\f[R]

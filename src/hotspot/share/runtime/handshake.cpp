@@ -525,7 +525,7 @@ bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_except
   assert(Thread::current() == _handshakee, "should call from _handshakee");
   assert(!_handshakee->is_terminated(), "should not be a terminated thread");
 
-  _handshakee->frame_anchor()->make_walkable(_handshakee);
+  _handshakee->frame_anchor()->make_walkable();
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
 
@@ -733,6 +733,7 @@ public:
 };
 
 bool HandshakeState::suspend() {
+  JVMTI_ONLY(assert(!_handshakee->is_in_VTMS_transition(), "no suspend allowed in VTMS transition");)
   JavaThread* self = JavaThread::current();
   if (_handshakee == self) {
     // If target is the current thread we can bypass the handshake machinery
