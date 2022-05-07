@@ -29,8 +29,8 @@ import java.util.Random;
 
 /*
  * @test
- * @bug 8278228
- * @summary C2: Improve identical back-to-back if elimination
+ * @bug 8282592
+ * @summary C2: assert(false) failed: graph should be schedulable
  * @library /test/lib /
  * @requires vm.compiler2.enabled
  * @run driver compiler.c2.irTests.TestSkeletonPredicates
@@ -45,7 +45,7 @@ public class TestSkeletonPredicates {
     static volatile int barrier;
 
     @ForceInline
-    static boolean test1_helper(int start, int stop, double[] array1, double[] array2) {
+    static boolean test1_helper(int start, int stop, double[] array1) {
         for (int i = start; i < stop; i++) {
             if ((i % 2) == 0) {
                 array1[i] = 42.42;
@@ -57,12 +57,11 @@ public class TestSkeletonPredicates {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTEDLOOP, "3" })
-    static double[] test1(int stop, double[] array2) {
-        double[] array1 = null;
-        array1 = new double[10];
+    @IR(counts = { IRNode.COUNTEDLOOP, "2" })
+    static double[] test1(int stop) {
+        double[] array1 = new double[10];
         for (int j = 0; j < stop; j++) {
-            if (test1_helper(8, j, array1, array2)) {
+            if (test1_helper(8, j, array1)) {
                 return null;
             }
         }
@@ -73,7 +72,7 @@ public class TestSkeletonPredicates {
     void test1_runner() {
         double[] array2 = new double[10];
         double[] array3 = new double[1000];
-        test1_helper(1, 1000, array3, array3);
-        test1(11, array3);
+        test1_helper(1, 1000, array3);
+        test1(11);
     }
 }
