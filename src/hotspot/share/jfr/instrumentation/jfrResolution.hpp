@@ -42,3 +42,4 @@ class JfrResolution : AllStatic {
 };
 
 #endif // SHARE_JFR_INSTRUMENTATION_JFRRESOLUTION_HPP
+

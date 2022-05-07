@@ -43,13 +43,13 @@ import jdk.jfr.internal.consumer.StringParser;
 //    at least one event class (for a particular module) must be
 //    registered having FlightRecorderPermission("registerEvent").
 //
-// 2. The EventWriter EventWriterFactor::getEventWriter(long) method can only be linked from
+// 2. The EventWriter EventWriterFactory::getEventWriter(long) method can only be linked from
 //    the UserEvent::commit() method instrumented by JFR. This is ensured by the JVM.
 //    (The EventWriterFactory class is dynamically generated before the first event
 //    is instrumented. See EventWriterFactoryRecipe)
 //
 // 3. Steps 1 and 2 are sufficient to make it fully secure, with or without a Security
-//    Manager, but as an add additional measure the method EventWriterFactor::getEventWriter(long)
+//    Manager, but as an add additional measure the method EventWriterFactory::getEventWriter(long)
 //    requires the caller to provide a key that is hard to guess. The key is generated
 //    into the bytecode of the method invoking getEventWriter(long).
 //
