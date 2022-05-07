@@ -512,37 +512,35 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
                                            CompiledICInfo& info,
                                            TRAPS) {
   CodeBlob* blob = method->blob();
+  CompiledMethod* method_code = (blob == nullptr) ? nullptr : blob->as_compiled_method_or_null();
 
   address entry = NULL;
-  if (blob != nullptr && blob->is_compiled()) {
-    CompiledMethod* method_code = blob->as_compiled_method();
-    if (method_code->is_in_use() && !method_code->is_unloading()) {
-      // Call to compiled code
-      //
-      // Note: the following problem exists with Compiler1:
-      //   - at compile time we may or may not know if the destination is final
-      //   - if we know that the destination is final (is_optimized), we will emit
-      //     an optimized virtual call (no inline cache), and need a Method* to make
-      //     a call to the interpreter
-      //   - if we don't know if the destination is final, we emit a standard
-      //     virtual call, and use CompiledICHolder to call interpreted code
-      //     (no static call stub has been generated)
-      //   - In the case that we here notice the call is static bound we
-      //     convert the call into what looks to be an optimized virtual call,
-      //     but we must use the unverified entry point (since there will be no
-      //     null check on a call when the target isn't loaded).
-      //     This causes problems when verifying the IC because
-      //     it looks vanilla but is optimized. Code in is_call_to_interpreted
-      //     is aware of this and weakens its asserts.
-      if (is_optimized) {
-        entry      = method_code->verified_entry_point();
-      } else {
-        entry      = method_code->entry_point();
-      }
+  if (method_code != NULL && method_code->is_in_use() && !method_code->is_unloading()) {
+    assert(method_code->is_compiled(), "must be compiled");
+    // Call to compiled code
+    //
+    // Note: the following problem exists with Compiler1:
+    //   - at compile time we may or may not know if the destination is final
+    //   - if we know that the destination is final (is_optimized), we will emit
+    //     an optimized virtual call (no inline cache), and need a Method* to make
+    //     a call to the interpreter
+    //   - if we don't know if the destination is final, we emit a standard
+    //     virtual call, and use CompiledICHolder to call interpreted code
+    //     (no static call stub has been generated)
+    //   - In the case that we here notice the call is static bound we
+    //     convert the call into what looks to be an optimized virtual call,
+    //     but we must use the unverified entry point (since there will be no
+    //     null check on a call when the target isn't loaded).
+    //     This causes problems when verifying the IC because
+    //     it looks vanilla but is optimized. Code in is_call_to_interpreted
+    //     is aware of this and weakens its asserts.
+    if (is_optimized) {
+      entry      = method_code->verified_entry_point();
+    } else {
+      entry      = method_code->entry_point();
     }
-  } else if (blob != nullptr) {
-    assert(blob->is_mhmethod(), "must be mhmethod");
-    entry      = blob->code_begin();
+  } else if (blob != nullptr && blob->is_mhmethod()) {
+    entry = blob->as_mhmethod()->code_begin();
   }
   if (entry != NULL) {
     // Call to near compiled code.
@@ -553,7 +551,7 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
       info.set_interpreter_entry(method()->get_c2i_entry(), method());
     } else {
       // Use icholder entry
-      assert(blob == NULL || blob->is_compiled(), "must be compiled");
+      assert(method_code == NULL || method_code->is_compiled(), "must be compiled");
       CompiledICHolder* holder = new CompiledICHolder(method(), receiver_klass);
       info.set_icholder_entry(method()->get_c2i_unverified_entry(), holder);
     }
@@ -643,14 +641,15 @@ void CompiledStaticCall::set(const StaticCallInfo& info) {
 // Compute settings for a CompiledStaticCall. Since we might have to set
 // the stub when calling to the interpreter, we need to return arguments.
 void CompiledStaticCall::compute_entry(const methodHandle& m, StaticCallInfo& info) {
-  CodeBlob* blob = m->blob();
+  CodeBlob* m_blob = m->blob();
+  CompiledMethod* m_code = (m_blob == nullptr) ? nullptr : m_blob->as_compiled_method_or_null();
   info._callee = m;
-  if (blob != nullptr && blob->is_compiled() && blob->as_compiled_method()->is_in_use() && !blob->as_compiled_method()->is_unloading()) {
+  if (m_code != NULL && m_code->is_in_use() && !m_code->is_unloading()) {
     info._to_interpreter = false;
-    info._entry  = blob->as_compiled_method()->verified_entry_point();
-  } else if (blob != nullptr && blob->is_mhmethod()) {
+    info._entry  = m_code->verified_entry_point();
+  } else if (m_blob != NULL && m_blob->is_mhmethod()) {
     info._to_interpreter = false;
-    info._entry  = blob->code_begin();
+    info._entry  = m_blob->code_begin();
   } else {
     // Callee is interpreted code.  In any case entering the interpreter
     // puts a converter-frame on the stack to save arguments.

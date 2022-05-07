@@ -1265,11 +1265,12 @@ void Method::restore_unshareable_info(TRAPS) {
 }
 
 address Method::from_compiled_entry_no_trampoline() const {
-  CodeBlob *code = Atomic::load_acquire(&_code);
-  if (code != nullptr && code->is_compiled()) {
-    return code->as_compiled_method()->verified_entry_point();
+  CodeBlob *blob = Atomic::load_acquire(&_blob);
+  if (blob != nullptr && blob->is_compiled()) {
+    return blob->as_compiled_method()->verified_entry_point();
+  } else if (blob != nullptr && blob->is_mhmethod()) {
+    return blob->as_mhmethod()->code_begin();
   } else {
-    assert(code == nullptr || !code->is_mhmethod(), "unexpected MH intrinsic");
     return adapter()->get_c2i_entry();
   }
 }

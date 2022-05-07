@@ -1274,7 +1274,7 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
     // Patch call site to C2I adapter if callee nmethod is deoptimized or unloaded.
     callee = NULL;
   }
-  nmethodLocker nl_callee((callee != NULL && callee->is_compiled()) ? callee->as_compiled_method() : nullptr);
+  nmethodLocker nl_callee((callee != nullptr) ? callee->as_compiled_method_or_null() : nullptr);
 #ifdef ASSERT
   address dest_entry_point = callee == NULL ? 0 : (callee->is_compiled() ? callee->as_compiled_method()->entry_point() : callee->code_begin()); // used below
 #endif
@@ -1304,7 +1304,7 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
     // which may happen when multiply alive nmethod (tiered compilation)
     // will be supported.
     if (!callee_method->is_old() &&
-        (callee == NULL || ((!callee->is_compiled() || callee->as_compiled_method()->is_in_use()) && callee_method->blob() == callee))) {
+        (callee == NULL || callee->is_mhmethod() || (callee->as_compiled_method()->is_in_use() && callee_method->code() == callee))) {
       NoSafepointVerifier nsv;
 #ifdef ASSERT
       // We must not try to patch to jump to an already unloaded method.
@@ -3009,7 +3009,7 @@ bool AdapterHandlerEntry::compare_code(AdapterHandlerEntry* other) {
  */
 void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   ResourceMark rm;
-  CodeBlob* nm = NULL;
+  CodeBlob* blob = NULL;
 
   assert(method->is_native(), "must be native");
   assert(method->is_method_handle_intrinsic() ||
@@ -3058,24 +3058,22 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
 
       // Generate the compiled-to-native wrapper code
       if (!method->is_method_handle_intrinsic()) {
-        nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
+        blob = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
       } else {
-        nm = SharedRuntime::generate_mhi_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
+        blob = SharedRuntime::generate_mhi_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
       }
 
-      if (nm != NULL) {
+      if (blob != NULL) {
         {
           MutexLocker pl(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
-          if (nm->is_nmethod() && nm->as_nmethod()->make_in_use()) {
-            method->set_code(method, nm);
-          } else if (nm->is_mhmethod()) {
-            method->set_code(method, nm);
+          if (blob->is_mhmethod() || blob->as_nmethod()->make_in_use()) {
+            method->set_code(method, blob);
           }
         }
 
         DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_simple));
         if (directive->PrintAssemblyOption) {
-          nm->print_code();
+          blob->print_code();
         }
         DirectivesStack::release(directive);
       }
@@ -3084,14 +3082,15 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
 
 
   // Install the generated code.
-  if (nm != NULL && nm->is_compiled()) {
+  if (blob != NULL && blob->is_nmethod()) {
+    nmethod* nm = blob->as_nmethod();
     const char *msg = method->is_static() ? "(static)" : "";
-    CompileTask::print_ul(nm->as_compiled_method(), msg);
+    CompileTask::print_ul(nm, msg);
     if (PrintCompilation) {
       ttyLocker ttyl;
-      CompileTask::print(tty, nm->as_compiled_method(), msg);
+      CompileTask::print(tty, nm, msg);
     }
-    nm->as_nmethod()->post_compiled_method_load_event();
+    nm->post_compiled_method_load_event();
   }
 }
 

@@ -3670,7 +3670,7 @@ void mhmethod::print() const {
 void mhmethod::print(outputStream* st) const {
   ResourceMark rm;
 
-  st->print("Compiled method ");
+  st->print("MethodHandle method ");
 
   print_on(st, NULL);
 

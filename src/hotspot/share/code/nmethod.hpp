@@ -809,13 +809,8 @@ class mhmethod : public CodeBlob {
                               int frame_complete,
                               int frame_size);
 
-  bool  is_compiled() const                 { return false; }
   bool  is_mhmethod() const                 { return true; }
-
-  bool  is_not_entrant()  const             { return false; }
   bool  is_alive()        const             { return true;  }
-  bool  is_zombie()       const             { return false; }
-  bool  is_unloaded()     const             { return false; }
 
   Method* method()      const               { return _method; }
   int     compile_id()  const               { return _compile_id; }
@@ -840,7 +835,7 @@ class mhmethod : public CodeBlob {
   address insts_begin () const  { return           code_begin()                           ; }
   address insts_end   () const  { return           header_begin() + _data_offset          ; }
 
-  int insts_size() const    { return header_begin() + _data_offset - code_begin(); }
+  int insts_size() const    { return insts_end() - insts_begin(); }
 
   void verify();
 
