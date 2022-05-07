@@ -656,6 +656,21 @@ public enum HtmlStyle {
     // The following constants are used for items in the static and interactive search indexes.
 
     /**
+     * The class for a {@code button} in the search page to copy the search URL to the clipboard.
+     */
+    copyUrl,
+
+    /**
+     * The class for a {@code details} element in the search page to show additional information.
+     */
+    pageSearchDetails,
+
+    /**
+     * The class for a {@code div} element in the search page which contains additional information.
+     */
+    pageSearchInfo,
+
+    /**
      * The class for a link in the static "Index" pages to a custom searchable item,
      * such as defined with an {@code @index} tag.
      */
@@ -774,6 +789,11 @@ public enum HtmlStyle {
      * The class of the {@code body} element for the page listing any preview items.
      */
     previewListPage,
+
+    /**
+     * The class of the {@code body} element for the search page.
+     */
+    searchPage,
 
     /**
      * The class of the {@code body} element for the serialized-forms page.
