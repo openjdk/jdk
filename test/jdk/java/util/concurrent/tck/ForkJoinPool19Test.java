@@ -264,7 +264,14 @@ public class ForkJoinPool19Test extends JSR166TestCase {
      * lazySubmit submits a task that is not executed until new
      * workers are created or it is explicitly joined by a worker.
      */
+    @SuppressWarnings("removal")
     public void testLazySubmit() {
+        ForkJoinPool p;
+        try {
+            p = new ForkJoinPool();
+        } catch (java.security.AccessControlException e) {
+            return;
+        }
         FibAction f = new FibAction(8);
         RecursiveAction j = new RecursiveAction() {
                 protected void compute() {
@@ -272,7 +279,6 @@ public class ForkJoinPool19Test extends JSR166TestCase {
                 }};
         RecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
-                final ForkJoinPool p = mainPool();
                 p.invoke(new FibAction(8));
                 p.lazySubmit(f);
                 p.invoke(new FibAction(8));
@@ -280,7 +286,7 @@ public class ForkJoinPool19Test extends JSR166TestCase {
                 assertEquals(21, f.result);
                 checkCompletedNormally(f);
             }};
-        testInvokeOnPool(mainPool(), a);
+        testInvokeOnPool(p, a);
     }
 
     /**
