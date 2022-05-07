@@ -32,12 +32,13 @@
  * @run main i18nEnvArg
  */
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import jdk.test.lib.process.ProcessTools;
@@ -91,46 +92,80 @@ public class i18nEnvArg {
     }
 
     public static class Verify {
-        private final static int maxSize = 4096;
+
+        private static String toReadable(String s) {
+            if (s == null)
+                return "null";
+            StringBuilder sb = new StringBuilder();
+            for(char ch : s.toCharArray()) {
+                sb.append(String.format("\\u%04X", (int)ch));
+            }
+            return sb.toString();
+        }
+
         /*
-         * Verify environment variable and argument are encoded by Linux's eucjp or not
+         * Verify environment variable and argument are encoded by Linux's
+         * eucjp or not
          */
         public static void main(String[] args) throws Exception {
             Charset cs = Charset.forName("x-euc-jp-linux");
-            byte[] euc = (EUC_JP_TEXT + "=" + EUC_JP_TEXT).getBytes(cs);
-            byte[] eucjp = "LANG=ja_JP.eucjp".getBytes(cs);
+            byte[] euc = EUC_JP_TEXT.getBytes(cs);
+            if (!EUC_JP_TEXT.equals(args[0])) {
+                System.err.println("ERROR: argument EUC_JP_TEXT is:");
+                System.err.println("  Actual:   " + toReadable(args[0]));
+                System.err.println("  Expected: " + toReadable(EUC_JP_TEXT));
+            }
             String s = System.getenv(EUC_JP_TEXT);
             if (!EUC_JP_TEXT.equals(s)) {
-                System.err.println("ERROR: getenv() returns unexpected data");
-            }
-            if (!EUC_JP_TEXT.equals(args[0])) {
-                System.err.print("ERROR: Unexpected argument was received: ");
-                for(char ch : EUC_JP_TEXT.toCharArray()) {
-                   System.err.printf("\\u%04X", (int)ch);
-                }
-                System.err.print("<->");
-                for(char ch : args[0].toCharArray()) {
-                   System.err.printf("\\u%04X", (int)ch);
-                }
-                System.err.println();
-            }
-            Class<?> cls = Class.forName("java.lang.ProcessEnvironment");
-            Method environ_mid = cls.getDeclaredMethod("environ");
-            environ_mid.setAccessible(true);
-            byte[][] environ = (byte[][]) environ_mid.invoke(null,
-                (Object[])null);
-            HexFormat hf = HexFormat.of().withUpperCase().withPrefix("\\x");
-            byte[] ba = new byte[maxSize];
-            for(int i = 0; i < environ.length; i += 2) {
-                ByteBuffer bb = ByteBuffer.wrap(ba);
-                bb.put(environ[i]);
-                bb.put((byte)'=');
-                bb.put(environ[i+1]);
-                byte[] envb = Arrays.copyOf(ba, bb.position());
-                if (Arrays.equals(eucjp, envb)) continue;
-                if (!Arrays.equals(euc, envb)) {
-                    System.err.println("ERROR: Unexpected environment variables: " +
-                        hf.formatHex(envb));
+                System.err.println("ERROR: getenv(\"EUC_JP_TEXT\") is:");
+                System.err.println("  Actual:   " + toReadable(s));
+                System.err.println("  Expected: " + toReadable(EUC_JP_TEXT));
+            } else {
+                try {
+                    Class<?> ProcessEnvironment_cls =
+                        Class.forName("java.lang.ProcessEnvironment");
+                    Field theEnvironment_fid =
+                        ProcessEnvironment_cls.getDeclaredField("theEnvironment");
+                    theEnvironment_fid.setAccessible(true);
+                    HashMap theEnvironment =
+                        (HashMap) theEnvironment_fid.get(null);
+                    Class<?> ExternalData_cls =
+                        Class.forName("java.lang.ProcessEnvironment$ExternalData");
+                    Method getBytes_mid =
+                        ExternalData_cls.getDeclaredMethod("getBytes");
+                    getBytes_mid.setAccessible(true);
+                    HexFormat hf = HexFormat.of()
+                        .withUpperCase()
+                        .withPrefix("\\x");
+                    for (Object k : theEnvironment.keySet()) {
+                        if (EUC_JP_TEXT.equals(k.toString())) {
+                            byte[] ba = (byte[]) getBytes_mid.invoke(k,
+                                (Object[])null);
+                            if (!Arrays.equals(euc, ba)) {
+                                System.err.println(
+                                    "ERROR: Variable EUC_JP_TEXT is encoded by:");
+                                System.err.println("  Actual:   "
+                                    + hf.formatHex(ba));
+                                System.err.println("  Expected: "
+                                    + hf.formatHex(euc));
+                            }
+                            ba = (byte[]) getBytes_mid.invoke(
+                                theEnvironment.get(k),
+                                (Object[])null);
+                            if (!Arrays.equals(euc, ba)) {
+                                System.err.println(
+                                    "ERROR: Value EUC_JP_TEXT is encoded by:");
+                                System.err.println("  Actual:   "
+                                    + hf.formatHex(ba));
+                                System.err.println("  Expected: "
+                                    + hf.formatHex(euc));
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println(
+                        "ERROR: Check ProcessEnvironment class implementation");
+                    e.printStackTrace();
                 }
             }
         }
