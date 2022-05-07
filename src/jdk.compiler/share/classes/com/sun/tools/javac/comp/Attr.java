@@ -4205,6 +4205,11 @@ public class Attr extends JCTree.Visitor {
         List<Type> expectedRecordTypes;
         if (site.tsym.kind == Kind.TYP && ((ClassSymbol) site.tsym).isRecord()) {
             ClassSymbol record = (ClassSymbol) site.tsym;
+            if (record.type.getTypeArguments().nonEmpty()) {
+                if (!tree.deconstructor.hasTag(TYPEAPPLY)) {
+                    log.error(tree.pos(),Errors.RawDeconstructionPattern);
+                }
+            }
             expectedRecordTypes = record.getRecordComponents()
                                         .stream()
                                         .map(rc -> types.memberType(site, rc)).collect(List.collector());

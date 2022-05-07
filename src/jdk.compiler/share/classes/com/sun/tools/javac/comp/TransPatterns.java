@@ -297,9 +297,7 @@ public class TransPatterns extends TreeTranslator {
             }
             JCExpression extraTest = null;
             if (!types.isAssignable(nestedTemp.type, nested.type)) {
-                if (types.isAssignable(nestedFullComponentTypes.head, nested.type)) {
-                    extraTest = makeBinary(Tag.NE, make.Ident(nestedTemp), makeNull());
-                } else {
+                if (!types.isAssignable(nestedFullComponentTypes.head, nested.type)) {
                     extraTest = makeTypeTest(make.Ident(nestedTemp),
                                              make.Type(nested.type));
                 }

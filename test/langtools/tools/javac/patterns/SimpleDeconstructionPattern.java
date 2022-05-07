@@ -103,18 +103,6 @@ public class SimpleDeconstructionPattern {
         if (testF(new P7(0, (short) 1))) {
             throw new IllegalStateException();
         }
-        if (!testGen1(new GenRecord1<>(1L, ""))) {
-            throw new IllegalStateException();
-        }
-        if (testGen1(new GenRecord1<>(1L, "a"))) {
-            throw new IllegalStateException();
-        }
-        if (testGen2(new GenRecord1<>(3L, ""))) {
-            throw new IllegalStateException();
-        }
-        if (!testGen2(new GenRecord1<>(3, ""))) {
-            throw new IllegalStateException();
-        }
         if (testGen3(new GenRecord1<>(3L, ""))) {
             throw new IllegalStateException();
         }
@@ -190,14 +178,6 @@ public class SimpleDeconstructionPattern {
 
     private static boolean testF(Object o) throws Throwable {
         return o instanceof P7(int i, short s) && i == s;
-    }
-
-    private static boolean testGen1(Object o) throws Throwable {
-        return o instanceof GenRecord1(var i, var s) && s.length() == 0;
-    }
-
-    private static boolean testGen2(Object o) throws Throwable {
-        return o instanceof GenRecord1(Integer i, var s) && i.intValue() == 3 && s.length() == 0;
     }
 
     private static boolean testGen3(Object o) throws Throwable {

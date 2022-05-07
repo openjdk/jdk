@@ -35,6 +35,15 @@ public class DeconstructionPatternErrors {
             case P7(long l) -> {} //incorrect pattern type - no exception should occur
             default -> {}
         }
+        GenRecord<String> r1 = null;
+        if (r1 instanceof GenRecord(String s)) {}
+        switch (r1) {
+            case GenRecord(String s) -> {}
+        }
+        if (r1 instanceof GenRecord<>(String s)) {}
+        switch (r1) {
+            case GenRecord<>(String s) -> {}
+        }
     }
 
     public record P(int i) {
