@@ -1459,9 +1459,12 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) == NULL) return NULL;     // Dead loop?
 
   PhaseIterGVN* igvn = phase->is_IterGVN();
-  Node* result = fold_compares(igvn);
-  if (result != NULL) {
-    return result;
+  // temporarily disable comparison_folding
+  if (!AggressiveLivenessForUnstableIf) {
+    Node* result = fold_compares(igvn);
+    if (result != NULL) {
+      return result;
+    }
   }
 
   // Scan for an equivalent test
