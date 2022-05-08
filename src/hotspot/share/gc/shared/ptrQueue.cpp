@@ -38,14 +38,12 @@ PtrQueue::~PtrQueue() {
   assert(_buf == NULL, "queue must be flushed before delete");
 }
 
-BufferNode::AllocatorConfig::AllocatorConfig(size_t size) : _buffer_size(size) {}
-
-void* BufferNode::AllocatorConfig::allocate() {
+void* BufferNode::Allocator::AllocatorConfig::allocate() {
   size_t byte_size = _buffer_size * sizeof(void*);
   return NEW_C_HEAP_ARRAY(char, buffer_offset() + byte_size, mtGC);
 }
 
-void BufferNode::AllocatorConfig::deallocate(void* node) {
+void BufferNode::Allocator::AllocatorConfig::deallocate(void* node) {
   assert(node != nullptr, "precondition");
   FREE_C_HEAP_ARRAY(char, node);
 }

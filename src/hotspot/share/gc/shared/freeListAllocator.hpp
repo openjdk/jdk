@@ -32,22 +32,12 @@
 #include "utilities/lockFreeStack.hpp"
 
 class FreeListConfig {
-  // Desired minimum transfer batch size.  There is relatively little
-  // importance to the specific number.  It shouldn't be too big, else
-  // we're wasting space when the release rate is low.  If the release
-  // rate is high, we might accumulate more than this before being
-  // able to start a new transfer, but that's okay.
-  const size_t _transfer_threshold;
 protected:
   ~FreeListConfig() = default;
 public:
-  explicit FreeListConfig(size_t threshold = 10) : _transfer_threshold(threshold) {}
-
-  size_t transfer_threshold() { return _transfer_threshold; }
-
   virtual void* allocate() = 0;
 
-  virtual  void deallocate(void* node) = 0;
+  virtual void deallocate(void* node) = 0;
 };
 
 // Allocation is based on a lock-free list of nodes. To reduce synchronization
@@ -61,6 +51,15 @@ public:
 // as a minimum batch size for transferring released nodes from the pending list
 // to the free list making them available for re-allocation.
 class FreeListAllocator {
+  // Desired minimum transfer batch size.  There is relatively little
+  // importance to the specific number.  It shouldn't be too big, else
+  // we're wasting space when the release rate is low.  If the release
+  // rate is high, we might accumulate more than this before being
+  // able to start a new transfer, but that's okay.
+  const size_t _transfer_threshold;
+
+  size_t transfer_threshold() const { return _transfer_threshold; }
+
   struct FreeNode {
     FreeNode* volatile _next;
 
@@ -126,7 +125,9 @@ class FreeListAllocator {
   NONCOPYABLE(FreeListAllocator);
 
 public:
-  FreeListAllocator(const char* name, FreeListConfig* config);
+  FreeListAllocator(const char* name,
+                    FreeListConfig* config,
+                    size_t transfer_threshold = 10);
 
   const char* name() const { return _name; }
 

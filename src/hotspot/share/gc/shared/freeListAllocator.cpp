@@ -64,7 +64,10 @@ size_t FreeListAllocator::PendingList::count() const {
   return  Atomic::load(&_count);
 }
 
-FreeListAllocator::FreeListAllocator(const char* name, FreeListConfig* config) :
+FreeListAllocator::FreeListAllocator(const char* name,
+                                     FreeListConfig* config,
+                                     size_t transfer_threshold) :
+  _transfer_threshold(transfer_threshold),
   _config(config),
   _free_count(0),
   _free_list(),
@@ -152,7 +155,7 @@ void FreeListAllocator::release(void* free_node) {
     GlobalCounter::CriticalSection cs(Thread::current());
     uint index = Atomic::load_acquire(&_active_pending_list);
     size_t count = _pending_lists[index].add(node);
-    if (count <= _config->transfer_threshold()) return;
+    if (count <= transfer_threshold()) return;
   }
   // Attempt transfer when number pending exceeds the transfer threshold.
   try_transfer_pending();

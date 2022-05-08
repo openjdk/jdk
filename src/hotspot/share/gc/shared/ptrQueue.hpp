@@ -157,31 +157,26 @@ public:
       reinterpret_cast<char*>(node) + buffer_offset());
   }
 
-  class AllocatorConfig;
   class Allocator;              // Free-list based allocator.
   class TestSupport;            // Unit test support.
-};
-
-// We use BufferNode::AllocatorConfig to set the allocation options for the
-// FreeListAllocator.
-class BufferNode::AllocatorConfig : public FreeListConfig {
-  const size_t _buffer_size;
-public:
-  explicit AllocatorConfig(size_t size);
-
-  ~AllocatorConfig() = default;
-
-  void* allocate() override;
-
-  void deallocate(void* node) override;
-
-  size_t buffer_size() const { return _buffer_size; }
 };
 
 class BufferNode::Allocator {
   friend class TestSupport;
 
-  AllocatorConfig _config;
+  class AllocatorConfig : public FreeListConfig {
+    const size_t _buffer_size;
+  public:
+    explicit AllocatorConfig(size_t buffer_size) : _buffer_size(buffer_size) {}
+
+    ~AllocatorConfig() = default;
+
+    void* allocate() override;
+
+    void deallocate(void* node) override;
+
+    size_t buffer_size() const { return _buffer_size; }
+  } _config;
   FreeListAllocator _free_list;
 
   NONCOPYABLE(Allocator);
