@@ -515,16 +515,25 @@ public class ForkJoinPool19Test extends JSR166TestCase {
     }
 
     /**
-     * Implicitly closing common pool using try-with-resources does not
-     * terminate it
+     * Implicitly closing common pool using try-with-resources has no effect.
      */
     public void testCloseCommonPool() {
         ForkJoinTask f = new FibAction(8);
         ForkJoinPool pool;
-        try (ForkJoinPool p = ForkJoinPool.commonPool()) {
-            pool = p;
+        try (ForkJoinPool p = pool = ForkJoinPool.commonPool()) {
             p.execute(f);
         }
+
+        assertFalse(pool.isShutdown());
+        assertFalse(pool.isTerminating());
         assertFalse(pool.isTerminated());
+
+        String prop = System.getProperty(
+            "java.util.concurrent.ForkJoinPool.common.parallelism");
+        if (! "0".equals(prop)) {
+            f.join();
+            checkCompletedNormally(f);
+        }
     }
+
 }
