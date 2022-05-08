@@ -3700,6 +3700,100 @@ class StubGenerator: public StubCodeGenerator {
     return stub->entry_point();
   }
 
+  address generate_cont_thaw() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  address generate_cont_returnBarrier() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  address generate_cont_returnBarrier_exception() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  RuntimeStub* generate_cont_doYield() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+#if INCLUDE_JFR
+
+#undef __
+#define __ _masm->
+
+  static void jfr_prologue(address the_pc, MacroAssembler* _masm, Register thread) {
+    __ set_last_Java_frame(sp, fp, the_pc, t0);
+    __ mv(c_rarg0, thread);
+  }
+
+  static void jfr_epilogue(MacroAssembler* _masm, Register thread) {
+    __ reset_last_Java_frame(true);
+    Label null_jobject;
+    __ beqz(x10, null_jobject);
+    DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->load_at(_masm, decorators, T_OBJECT, x10, Address(x10, 0), c_rarg0, thread);
+    __ bind(null_jobject);
+  }
+
+  static RuntimeStub* generate_jfr_stub(const char* name, address entrypoint) {
+    enum layout {
+      fp_off,
+      fp_off2,
+      return_off,
+      return_off2,
+      framesize // inclusive of return address
+    };
+
+    int insts_size = 512;
+    int locs_size = 64;
+    CodeBuffer code(name, insts_size, locs_size);
+    OopMapSet* oop_maps = new OopMapSet();
+    MacroAssembler* masm = new MacroAssembler(&code);
+    MacroAssembler* _masm = masm;
+
+    address start = __ pc();
+    __ enter();
+    int frame_complete = __ pc() - start;
+    address the_pc = __ pc();
+    jfr_prologue(the_pc, _masm, xthread);
+    __ call_VM_leaf(entrypoint, 1);
+    jfr_epilogue(_masm, xthread);
+    __ leave();
+    __ ret();
+
+    OopMap* map = new OopMap(framesize, 1);
+    oop_maps->add_gc_map(the_pc - start, map);
+
+    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
+      RuntimeStub::new_runtime_stub(name, &code, frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps, false);
+    return stub;
+  }
+
+#undef __
+
+  RuntimeStub* generate_jfr_write_checkpoint() {
+    return generate_jfr_stub("jfr_write_checkpoint",
+                              CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint));
+  }
+
+  RuntimeStub* generate_jfr_get_event_writer() {
+    return generate_jfr_stub("jfr_get_event_writer",
+                              CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::event_writer));
+  }
+
+#endif // INCLUDE_JFR
+
   // Initialization
   void generate_initial() {
     // Generate initial stubs and initializes the entry points
@@ -3727,6 +3821,23 @@ class StubGenerator: public StubCodeGenerator {
       generate_throw_exception("delayed StackOverflowError throw_exception",
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::throw_delayed_StackOverflowError));
+  }
+
+  void generate_phase1() {
+    // Continuation stubs:
+    StubRoutines::_cont_thaw             = generate_cont_thaw();
+    StubRoutines::_cont_returnBarrier    = generate_cont_returnBarrier();
+    StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+    StubRoutines::_cont_doYield_stub     = generate_cont_doYield();
+    StubRoutines::_cont_doYield = StubRoutines::_cont_doYield_stub == nullptr ? nullptr
+                                   : StubRoutines::_cont_doYield_stub->entry_point();
+
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub == nullptr ? nullptr
+                                                    : StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+    JFR_ONLY(StubRoutines::_jfr_get_event_writer_stub = generate_jfr_get_event_writer();)
+    JFR_ONLY(StubRoutines::_jfr_get_event_writer = StubRoutines::_jfr_get_event_writer_stub == nullptr ? nullptr
+                                                    : StubRoutines::_jfr_get_event_writer_stub->entry_point();)
   }
 
   void generate_all() {
@@ -3798,11 +3909,13 @@ class StubGenerator: public StubCodeGenerator {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, bool all) : StubCodeGenerator(code) {
-    if (all) {
-      generate_all();
-    } else {
+  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
+    if (phase == 0) {
       generate_initial();
+    } else if (phase == 1) {
+      generate_phase1(); // stubs that must be available for the interpreter
+    } else {
+      generate_all();
     }
   }
 
