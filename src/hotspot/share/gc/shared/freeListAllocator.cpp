@@ -65,10 +65,10 @@ size_t FreeListAllocator::PendingList::count() const {
 }
 
 FreeListAllocator::FreeListAllocator(const char* name,
-                                     FreeListConfig* config,
+                                     AbstractAllocator* allocator,
                                      size_t transfer_threshold) :
   _transfer_threshold(transfer_threshold),
-  _config(config),
+  _allocator(allocator),
   _free_count(0),
   _free_list(),
   _transfer_lock(false),
@@ -83,7 +83,7 @@ void FreeListAllocator::delete_list(FreeNode* list) {
   while (list != nullptr) {
     FreeNode* next = list->next();
     list->~FreeNode();
-    _config->deallocate(list);
+    _allocator->deallocate(list);
     list = next;
   }
 }
@@ -132,7 +132,7 @@ void* FreeListAllocator::allocate() {
     assert((count + 1) != 0, "_free_count underflow");
     return node;
   } else {
-    return _config->allocate();
+    return _allocator->allocate();
   }
 }
 

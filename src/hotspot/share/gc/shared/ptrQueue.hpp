@@ -164,19 +164,19 @@ public:
 class BufferNode::Allocator {
   friend class TestSupport;
 
-  class AllocatorConfig : public FreeListConfig {
+  class MemAllocator : public AbstractAllocator {
     const size_t _buffer_size;
   public:
-    explicit AllocatorConfig(size_t buffer_size) : _buffer_size(buffer_size) {}
+    explicit MemAllocator(size_t buffer_size) : _buffer_size(buffer_size) {}
 
-    ~AllocatorConfig() = default;
+    ~MemAllocator() = default;
 
     void* allocate() override;
 
     void deallocate(void* node) override;
 
     size_t buffer_size() const { return _buffer_size; }
-  } _config;
+  } _mem_allocator;
   FreeListAllocator _free_list;
 
   NONCOPYABLE(Allocator);
@@ -185,7 +185,7 @@ public:
   Allocator(const char* name, size_t buffer_size);
   ~Allocator() = default;
 
-  size_t buffer_size() const { return _config.buffer_size(); }
+  size_t buffer_size() const { return _mem_allocator.buffer_size(); }
   size_t free_count() const;
   BufferNode* allocate();
   void release(BufferNode* node);
