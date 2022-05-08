@@ -38,14 +38,14 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/growableArray.hpp"
 
- // returns updated value
-static traceid atomic_inc(traceid volatile* const dest) {
+// returns updated value
+static traceid atomic_inc(traceid volatile* const dest, traceid stride = 1) {
   assert(VM_Version::supports_cx8(), "invariant");
   traceid compare_value;
   traceid exchange_value;
   do {
     compare_value = *dest;
-    exchange_value = compare_value + 1;
+    exchange_value = compare_value + stride;
   } while (Atomic::cmpxchg(dest, compare_value, exchange_value) != compare_value);
   return exchange_value;
 }
@@ -53,11 +53,6 @@ static traceid atomic_inc(traceid volatile* const dest) {
 static traceid next_class_id() {
   static volatile traceid class_id_counter = LAST_TYPE_ID + 1; // + 1 is for the void.class primitive
   return atomic_inc(&class_id_counter) << TRACE_ID_SHIFT;
-}
-
-static traceid next_thread_id() {
-  static volatile traceid thread_id_counter = 0;
-  return atomic_inc(&thread_id_counter);
 }
 
 static traceid next_module_id() {
@@ -170,10 +165,6 @@ void JfrTraceId::assign(const ClassLoaderData* cld) {
 
 traceid JfrTraceId::assign_primitive_klass_id() {
   return next_class_id();
-}
-
-traceid JfrTraceId::assign_thread_id() {
-  return next_thread_id();
 }
 
 // A mirror representing a primitive class (e.g. int.class) has no reified Klass*,

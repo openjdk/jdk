@@ -44,7 +44,7 @@ public final class EventWriterKey {
         long r = mixMurmur64(System.identityHashCode(new Object()));
         r = 31 * r + mixMurmur64(jvm.getPid().hashCode());
         r = 31 * r + mixMurmur64(System.nanoTime());
-        r = 31 * r + mixMurmur64(Thread.currentThread().getId());
+        r = 31 * r + mixMurmur64(Thread.currentThread().threadId());
         r = 31 * r + mixMurmur64(System.currentTimeMillis());
         r = 31 * r + mixMurmur64(jvm.getTypeId(JVM.class));
         r = 31 * r + mixMurmur64(JVM.counterTime());

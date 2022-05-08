@@ -401,8 +401,8 @@ public final class EventInstrumentation {
                 // stack: [EW], [EW], [EventConfiguration] [long]
                 visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.asASM());
                 // stack: [EW], [integer]
-                Label recursive = new Label();
-                mv.visitJumpInsn(Opcodes.IFEQ, recursive);
+                Label excluded = new Label();
+                mv.visitJumpInsn(Opcodes.IFEQ, excluded);
                 // stack: [EW]
                 // write startTime
                 mv.visitInsn(Opcodes.DUP);
@@ -474,7 +474,7 @@ public final class EventInstrumentation {
                 mv.visitInsn(Opcodes.POP);
                 // stack:[ex]
                 mv.visitInsn(Opcodes.ATHROW);
-                mv.visitLabel(recursive);
+                mv.visitLabel(excluded);
                 // stack: [EW]
                 mv.visitFrame(Opcodes.F_SAME, 0, null, 1, new Object[] { TYPE_EVENT_WRITER.getInternalName() });
                 mv.visitInsn(Opcodes.POP);
@@ -549,9 +549,9 @@ public final class EventInstrumentation {
                 // stack: [EW] [EW] [EC]
                 methodVisitor.visitLdcInsn(eventTypeId);
                 invokeVirtual(methodVisitor, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.asmMethod);
-                Label recursive = new Label();
+                Label excluded = new Label();
                 // stack: [EW] [int]
-                methodVisitor.visitJumpInsn(Opcodes.IFEQ, recursive);
+                methodVisitor.visitJumpInsn(Opcodes.IFEQ, excluded);
                 // stack: [EW]
                 int fieldIndex = 0;
                 methodVisitor.visitInsn(Opcodes.DUP);
@@ -619,7 +619,7 @@ public final class EventInstrumentation {
                 methodVisitor.visitInsn(Opcodes.POP);
                 // stack:[ex]
                 methodVisitor.visitInsn(Opcodes.ATHROW);
-                methodVisitor.visitLabel(recursive);
+                methodVisitor.visitLabel(excluded);
                 // stack: [EW]
                 methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 1, new Object[] { TYPE_EVENT_WRITER.getInternalName() });
                 methodVisitor.visitInsn(Opcodes.POP);

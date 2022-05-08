@@ -68,10 +68,11 @@ public final class EventWriter {
     private long maxPosition;
     private boolean valid;
     boolean notified; // Not private to avoid being optimized away
-    private boolean started;
+    boolean excluded;
+
+    private PlatformEventType eventType;
     private boolean flushOnEnd;
     private boolean largeSize = false;
-    private PlatformEventType eventType;
 
     // User code must not be able to instantiate
     private EventWriter() {
@@ -215,7 +216,6 @@ public final class EventWriter {
             flushOnEnd = flush();
         }
         valid = true;
-        started = false;
     }
 
     private boolean isValidForSize(int requestedSize) {
@@ -256,6 +256,7 @@ public final class EventWriter {
         return JVM.flush(this, usedSize, requestedSize);
     }
 
+
     public boolean beginEvent(EventConfiguration configuration, long typeId) {
         // Malicious code could take the EventConfiguration object from one
         // event class field and assign it to another. This check makes sure
@@ -263,11 +264,10 @@ public final class EventWriter {
         if (configuration.getId() != typeId) {
             EventWriterKey.block();
         }
-        if (started) {
-            // recursive write attempt
+        if (excluded) {
+            // thread is excluded from writing events
             return false;
         }
-        started = true;
         this.eventType = configuration.getPlatformEventType();
         reserveEventSizeField();
         putLong(eventType.getId());
@@ -313,19 +313,18 @@ public final class EventWriter {
         if (flushOnEnd) {
             flushOnEnd = flush();
         }
-        started = false;
         return true;
     }
 
-    private EventWriter(long startPos, long maxPos, long startPosAddress, long threadID, boolean valid) {
+    private EventWriter(long startPos, long maxPos, long startPosAddress, long threadID, boolean valid, boolean excluded) {
         startPosition = currentPosition = startPos;
         maxPosition = maxPos;
         startPositionAddress = startPosAddress;
         this.threadID = threadID;
-        started = false;
         flushOnEnd = false;
         this.valid = valid;
         notified = false;
+        this.excluded = excluded;
     }
 
     private static int makePaddedInt(int v) {
