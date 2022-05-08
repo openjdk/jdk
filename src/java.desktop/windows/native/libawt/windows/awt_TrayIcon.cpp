@@ -224,21 +224,21 @@ void AwtTrayIcon::InitNID(UINT uID)
 // trayicon update handler called when Screen scale changes
 void AwtTrayIcon::UpdateTrayIconHandler()
 {
-        jmethodID updateTrayFn;
-        jclass systemTrayClass;
+    jmethodID updateTrayFn;
+    jclass systemTrayClass;
 
-        JNIEnv *env =(JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        systemTrayClass = env->FindClass("java/awt/SystemTray");
+    JNIEnv *env =(JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    systemTrayClass = env->FindClass("java/awt/SystemTray");
 
-        if (systemTrayClass != NULL) {
-             updateTrayFn = env->GetStaticMethodID(
-                         systemTrayClass, "updateTrayIcons", "()V");
-             if (updateTrayFn != NULL) {
-                 env->CallStaticVoidMethod(systemTrayClass,
-                          updateTrayFn);
-             }
-             env->DeleteLocalRef(systemTrayClass);
-        }
+    if (systemTrayClass != NULL) {
+         updateTrayFn = env->GetStaticMethodID(
+                     systemTrayClass, "updateTrayIcons", "()V");
+         if (updateTrayFn != NULL) {
+             env->CallStaticVoidMethod(systemTrayClass,
+                      updateTrayFn);
+         }
+         env->DeleteLocalRef(systemTrayClass);
+    }
 }
 
 BOOL AwtTrayIcon::SendTrayMessage(DWORD dwMessage)

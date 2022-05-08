@@ -290,14 +290,12 @@ public class SystemTray {
     // when WM_POSCHANGING msg received
     static void updateTrayIcons() {
         SwingUtilities.invokeLater(()->{
-            TrayIcon[] trayIconList = null;
-            trayIconList = systemTray.getTrayIcons();
-
+            TrayIcon[] trayIconList = systemTray.getTrayIcons();
             if (trayIconList == null || trayIconList.length == 0) {
                 // no tray icons present so do nothing
                 return;
             }
-            for (TrayIcon trayIcon: trayIconList) {
+            for (TrayIcon trayIcon : trayIconList) {
                 trayIcon.updateNotify();
             }
         });
