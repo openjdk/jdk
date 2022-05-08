@@ -276,6 +276,7 @@ class GraphKit : public Phase {
 
   // Helper Functions for adding debug information
   void kill_dead_locals();
+  void kill_dead_locals(const MethodLivenessResult&);
 #ifdef ASSERT
   bool dead_locals_are_killed();
 #endif
@@ -915,15 +916,13 @@ class PreserveJVMState: public StackObj {
   GraphKit*      _kit;
 #ifdef ASSERT
   int            _block;  // PO of current block, if a Parse
-#endif
   int            _bci;
-  // AggressiveLivenessForUnstableIf updates bci. Force parser to recovery bci.
-  bool           _recover_bci;
+#endif
   SafePointNode* _map;
   uint           _sp;
 
  public:
-  PreserveJVMState(GraphKit* kit, bool clone_map = true, bool recover_bci = false);
+  PreserveJVMState(GraphKit* kit, bool clone_map = true);
   ~PreserveJVMState();
 };
 
