@@ -67,8 +67,8 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             IntegerPolynomialP384, IntegerPolynomialP521,
             IntegerPolynomialModBinP, P256OrderField,
             P384OrderField, P521OrderField,
-            sun.security.util.math.intpoly.Curve25519OrderField,
-            sun.security.util.math.intpoly.Curve448OrderField {
+            Curve25519OrderField,
+            Curve448OrderField {
 
     protected static final BigInteger TWO = BigInteger.valueOf(2);
 
