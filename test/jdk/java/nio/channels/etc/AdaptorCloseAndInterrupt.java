@@ -167,7 +167,7 @@ public class AdaptorCloseAndInterrupt {
         try {
             dc.socket().receive(new DatagramPacket(new byte[100], 100));
             throw new RuntimeException("receive should not have completed");
-        } catch (SocketException expected) {
+        } catch (ClosedByInterruptException expected) {
             System.out.format("interrupt() was invoked: %s%n",
                 isInterrupted.get());
             System.out.format("dcReceiveAsyncInterrupt was interrupted: %s%n",
