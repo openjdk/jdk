@@ -86,19 +86,6 @@ public class VerifyType {
     }
 
     /**
-     * Specialization of isNullConversion to reference types.
-     * @param src the type of a stacked value
-     * @param dst the reference type by which we'd like to treat it
-     * @return whether the retyping can be done without a cast
-     */
-    public static boolean isNullReferenceConversion(Class<?> src, Class<?> dst) {
-        assert(!dst.isPrimitive());
-        if (dst.isInterface())  return true;   // verifier allows this
-        if (isNullType(src))    return true;
-        return dst.isAssignableFrom(src);
-    }
-
-    /**
      * Is the given type java.lang.Null or an equivalent null-only type?
      */
     public static boolean isNullType(Class<?> type) {
