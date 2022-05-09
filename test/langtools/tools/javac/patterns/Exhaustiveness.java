@@ -966,6 +966,49 @@ public class Exhaustiveness extends TestRunner {
                "4 errors");
     }
 
+    @Test
+    public void testSuperTypesInPattern(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public final class B implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record R(S a, S b) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private void testStatement(R obj) {
+                       switch (obj) {
+                           case R(A a, A b): break;
+                           case R(A a, B b): break;
+                           case R(B a, A b): break;
+                           case R(B a, B b): break;
+                       }
+                       switch (obj) {
+                           case R(S a, A b): break;
+                           case R(S a, B b): break;
+                       }
+                       switch (obj) {
+                           case R(Object a, A b): break;
+                           case R(Object a, B b): break;
+                       }
+                   }
+               }
+               """);
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");

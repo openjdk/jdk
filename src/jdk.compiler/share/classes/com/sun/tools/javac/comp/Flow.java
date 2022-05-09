@@ -930,7 +930,9 @@ public class Flow {
                         }
                         yield false;
                     }
-                    yield covered.contains(seltype.tsym);
+                    yield covered.stream()
+                                 .anyMatch(coveredType -> types.isSubtype(types.erasure(seltype),
+                                                                          types.erasure(coveredType.type)));
                 }
                 case TYPEVAR -> isExhaustive(pos, ((TypeVar) seltype).getUpperBound(), covered);
                 default -> {
