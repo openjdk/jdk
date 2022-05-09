@@ -63,10 +63,8 @@ public class TitledBorderTest {
     public static JPanel contentPanel;
     public static JPanel parentPanel;
     public static JPanel childPanel;
-    public static BufferedImage buff;
     public static Color highlight = Color.RED;
     public static Color shadow = Color.BLUE;
-    public static boolean showFrame = false;
 
     private static final double[] scales =
             {1.00, 1.25, 1.50, 1.75, 2.00, 2.50, 3.00};
@@ -78,7 +76,7 @@ public class TitledBorderTest {
             new ArrayList<>(4);
 
     public static void main(String[] args) throws Exception {
-        showFrame = args.length > 1 && "-show".equals(args[0]);
+        boolean showFrame = args.length > 1 && "-show".equals(args[0]);
         try {
             UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
         } catch (Exception e) {
@@ -89,67 +87,66 @@ public class TitledBorderTest {
     }
 
     private static void testScaling(boolean show) throws Exception {
-        SwingUtilities.invokeAndWait(() -> createAndShowGUI(show));
+        SwingUtilities.invokeAndWait(() -> createGUI(show));
 
         for (int i = 0; i < images.size(); i++) {
-                BufferedImage img = images.get(i);
-                double scaling = scales[i];
+            BufferedImage img = images.get(i);
+            double scaling = scales[i];
 
-                // For vertical count the number of shadow / highlight in
-                // the middle of the image at (x = SIZE.width / 2)
-                // (there must be no background color between these two colours)
-                // Then skip background until the next border where you count
-                // shadow and highlight thickness
+            // checking vertical border
+            int x = SIZE.width / 2;
+            checkVerticalBorder(x, img, scaling);
 
-                 int x = SIZE.width / 2;
-                 checkVerticalBorder(x, img, scaling);
+            for (Point p : panelLocations) {
+                int y = (int) (p.y * scaling) + SIZE.height / 2;
+                System.out.println(scaling + " : " + y);
 
-                // For horizontal border, take the middle of each panel and
-                // count the number of shadow and highlight pixels
-                for (Point p : panelLocations) {
-                    int y = (int) (p.y * scaling) + SIZE.height / 2;
-                    System.out.println(scaling + " : " + y);
-
-                     checkHorizontalBorder(y, img, scaling);
-                }
-        }
-    }
-
-    private static void hBorderLoop(int x1, int x2, int y, BufferedImage buff,
-                                    Color c, double scaling) throws RuntimeException {
-        int thickness = 0;
-        for (int i = x1; i < x2; i++) {
-            if (buff.getRGB(i, y) == c.getRGB()) thickness++;
-        }
-
-        int expected = (int) Math.floor(scaling);
-        if (thickness > expected) {
-            throw new RuntimeException("Horizontal Border drawn too thick. Thickness: "
-                    + thickness + " Scaling: " + scaling + " y: " + y);
-        } else if (thickness < expected) {
-            throw new RuntimeException("Horizontal Border drawn too thin. Thickness: "
-                    + thickness + " Scaling: " + scaling + " y: " + y);
+                checkHorizontalBorder(y, img, scaling);
+            }
         }
     }
 
     private static void checkHorizontalBorder(int y, BufferedImage img, double scaling) throws RuntimeException {
-        // checking left border
-        hBorderLoop(0, (int) (Math.floor(scaling)+(5*scaling)), y, img, shadow, scaling);
-        hBorderLoop((int) Math.floor(scaling), (int) (Math.floor(scaling)*2+5*scaling), y, img, highlight, scaling);
-
-        // checking right border
-        hBorderLoop(img.getWidth() - ((int) (Math.floor(scaling)*2+5*scaling)), img.getWidth() - ((int) Math.floor(scaling)),
-                y, img, shadow, scaling);
-        hBorderLoop(img.getWidth() - ((int) (Math.floor(scaling)+5*scaling)), img.getWidth(),
-                y, img, highlight, scaling);
+        int thickness = 0;
+        boolean checkShadow = false;
+        boolean checkHighlight = false;
+        for (int i = 0; i < img.getWidth(); i++) {
+            int color = img.getRGB(i,y);
+            if (!checkHighlight && !checkShadow) {
+                if (color == shadow.getRGB()) {
+                    checkHighlight = true;
+                    thickness++;
+                } else if (color == highlight.getRGB()) {
+                    throw new RuntimeException("Horizontal Border was clipped or overdrawn.");
+                }
+            } else if (checkHighlight) {
+                if (color == shadow.getRGB()) {
+                    thickness++;
+                } else if (color == highlight.getRGB()) {
+                    verifyThickness(y, thickness, scaling, "Horizontal");
+                    checkHighlight = false;
+                    checkShadow = true;
+                    thickness = 1;
+                } else {
+                    throw new RuntimeException("Horizontal Border has empty space between highlight and shadow.");
+                }
+            } else {
+                if (color == shadow.getRGB()) {
+                    throw new RuntimeException("Border colors reversed.");
+                } else if (color == highlight.getRGB()) {
+                    thickness++;
+                } else {
+                    verifyThickness(y, thickness, scaling, "Horizontal");
+                    checkShadow = false;
+                    thickness = 0;
+                }
+            }
+        }
     }
 
-    private static void verifyThickness(int x, int thickness, double scaling) {
+    private static void verifyThickness(int x, int thickness, double scaling, String orientation) {
         int expected = (int) Math.floor(scaling);
-        if (thickness < expected) throw new RuntimeException("Vertical Border drawn too thin. Thickness: "
-                + thickness + " Scaling: " + scaling + " x: " + x);
-        if (thickness > expected) throw new RuntimeException("Vertical Border drawn too thick. Thickness: "
-                + thickness + " Scaling: " + scaling + " x: " + x);
+        if (thickness != expected) throw new RuntimeException("Unexpected " + orientation + " Border thickness.");
     }
 
     private static void checkVerticalBorder(int x, BufferedImage img, double scaling) throws RuntimeException {
@@ -163,22 +160,18 @@ public class TitledBorderTest {
                     checkHighlight = true;
                     thickness++;
                 } else if (color == highlight.getRGB()) {
-                    throw new RuntimeException("Vertical Border was clipped or overdrawn."
-                            + " Scaling: " + scaling + " x: " + x);
-                } else {
-                    continue;
+                    throw new RuntimeException("Vertical Border was clipped or overdrawn.");
                 }
             } else if (checkHighlight) {
                 if (color == shadow.getRGB()) {
                     thickness++;
                 } else if (color == highlight.getRGB()) {
-                    verifyThickness(x, thickness, scaling);
+                    verifyThickness(x, thickness, scaling, "Vertical");
                     checkHighlight = false;
                     checkShadow = true;
                     thickness = 1;
                 } else {
-                    throw new RuntimeException("Vertical Border has empty space between highlight and shadow."
-                            + " Scaling: " + scaling + " x: " + x);
+                    throw new RuntimeException("Vertical Border has empty space between highlight and shadow.");
                 }
             } else {
                 if (color == shadow.getRGB()) {
@@ -186,7 +179,7 @@ public class TitledBorderTest {
                 } else if (color == highlight.getRGB()) {
                     thickness++;
                 } else {
-                    verifyThickness(x, thickness, scaling);
+                    verifyThickness(x, thickness, scaling, "Vertical");
                     checkShadow = false;
                     thickness = 0;
                 }
@@ -194,14 +187,14 @@ public class TitledBorderTest {
         }
     }
 
-    private static void createAndShowGUI(boolean showFrame) {
+    private static void createGUI(boolean showFrame) {
         // Render content panel
         contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
 
         for (int i = 0; i < 4; i++) {
             parentPanel = new JPanel(new BorderLayout());
-            parentPanel.setBorder(BorderFactory.createEmptyBorder(0, i, 4, 0));
+            parentPanel.setBorder(BorderFactory.createEmptyBorder(0, i, 4, 4));
 
             childPanel = new JPanel(new BorderLayout());
             childPanel.setBorder(BorderFactory.createEtchedBorder(highlight, shadow));
@@ -232,9 +225,9 @@ public class TitledBorderTest {
             images.add(buff);
         }
         // Save coordinates of the panels
-        Arrays.stream(contentPanel.getComponents())
-                .map(Component::getLocation)
-                .forEach(panelLocations::add);
+        for (Component comp : contentPanel.getComponents()) {
+            panelLocations.add(comp.getLocation());
+        }
 
         if (showFrame) {
             frame.setVisible(true);
