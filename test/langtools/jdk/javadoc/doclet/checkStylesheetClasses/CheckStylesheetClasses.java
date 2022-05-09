@@ -134,10 +134,11 @@ public class CheckStylesheetClasses {
         // for doc-comment authors; maybe worthy of inclusion in HtmlStyle, just to be documented
         removeAll(styleSheetNames, "borderless", "plain", "striped");
 
-        // used in search.js; may be worth documenting in HtmlStyle
+        // used in search.js and search-page.js; may be worth documenting in HtmlStyle
         removeAll(styleSheetNames, "result-highlight", "result-item",
-                "search-tag-desc-result", "search-tag-holder-result",
-                "ui-autocomplete", "ui-autocomplete-category", "expanded");
+                "search-tag-desc-result", "search-tag-holder-result", "page-search-header",
+                "ui-autocomplete", "ui-autocomplete-category", "expanded",
+                "search-result-link", "two-column-search-results", "ui-static-link");
 
         // very JDK specific
         styleSheetNames.remove("module-graph");

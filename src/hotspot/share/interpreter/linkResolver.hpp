@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,6 +283,8 @@ class LinkResolver: AllStatic {
   static Method* resolve_method_statically(Bytecodes::Code code,
                                            const constantPoolHandle& pool,
                                            int index, TRAPS);
+
+  static void resolve_continuation_enter(CallInfo& callinfo, TRAPS);
 
   static void resolve_field_access(fieldDescriptor& result,
                                    const constantPoolHandle& pool,

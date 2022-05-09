@@ -995,6 +995,7 @@ void Compile::Init(int aliaslevel) {
   set_do_scheduling(OptoScheduling);
 
   set_do_vector_loop(false);
+  set_has_monitors(false);
 
   if (AllowVectorizeOnDemand) {
     if (has_method() && (_directive->VectorizeOption || _directive->VectorizeDebugOption)) {

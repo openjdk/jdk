@@ -36,6 +36,7 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
@@ -166,6 +167,9 @@ address CodeCache::_low_bound = 0;
 address CodeCache::_high_bound = 0;
 int CodeCache::_number_of_nmethods_with_dependencies = 0;
 ExceptionCache* volatile CodeCache::_exception_cache_purge_list = NULL;
+
+int CodeCache::Sweep::_compiled_method_iterators = 0;
+bool CodeCache::Sweep::_pending_sweep = false;
 
 // Initialize arrays of CodeHeap subsets
 GrowableArray<CodeHeap*>* CodeCache::_heaps = new(ResourceObj::C_HEAP, mtCode) GrowableArray<CodeHeap*> (CodeBlobType::All, mtCode);
@@ -472,6 +476,40 @@ CodeHeap* CodeCache::get_code_heap(int code_blob_type) {
     }
   }
   return NULL;
+}
+
+void CodeCache::Sweep::begin_compiled_method_iteration() {
+  MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  // Reach a state without concurrent sweeping
+  while (_compiled_method_iterators < 0) {
+    CodeCache_lock->wait_without_safepoint_check();
+  }
+  _compiled_method_iterators++;
+}
+
+void CodeCache::Sweep::end_compiled_method_iteration() {
+  MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  // Let the sweeper run again, if we stalled it
+  _compiled_method_iterators--;
+  if (_pending_sweep) {
+    CodeCache_lock->notify_all();
+  }
+}
+
+void CodeCache::Sweep::begin() {
+  assert_locked_or_safepoint(CodeCache_lock);
+  _pending_sweep = true;
+  while (_compiled_method_iterators > 0) {
+    CodeCache_lock->wait_without_safepoint_check();
+  }
+  _pending_sweep = false;
+  _compiled_method_iterators = -1;
+}
+
+void CodeCache::Sweep::end() {
+  assert_locked_or_safepoint(CodeCache_lock);
+  _compiled_method_iterators = 0;
+  CodeCache_lock->notify_all();
 }
 
 CodeBlob* CodeCache::first_blob(CodeHeap* heap) {
@@ -1137,7 +1175,9 @@ void CodeCache::mark_all_nmethods_for_evol_deoptimization() {
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     if (!nm->method()->is_method_handle_intrinsic()) {
-      nm->mark_for_deoptimization();
+      if (nm->can_be_deoptimized()) {
+        nm->mark_for_deoptimization();
+      }
       if (nm->has_evol_metadata()) {
         add_to_old_table(nm);
       }
@@ -1189,14 +1229,20 @@ int CodeCache::mark_for_deoptimization(Method* dependee) {
   return number_of_marked_CodeBlobs;
 }
 
-void CodeCache::make_marked_nmethods_not_entrant() {
-  assert_locked_or_safepoint(CodeCache_lock);
-  CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
+void CodeCache::make_marked_nmethods_deoptimized() {
+  SweeperBlockingCompiledMethodIterator iter(SweeperBlockingCompiledMethodIterator::only_alive_and_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
-    if (nm->is_marked_for_deoptimization()) {
+    if (nm->is_marked_for_deoptimization() && !nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
       nm->make_not_entrant();
+      make_nmethod_deoptimized(nm);
     }
+  }
+}
+
+void CodeCache::make_nmethod_deoptimized(CompiledMethod* nm) {
+  if (nm->is_marked_for_deoptimization() && nm->can_be_deoptimized()) {
+    nm->make_deoptimized();
   }
 }
 

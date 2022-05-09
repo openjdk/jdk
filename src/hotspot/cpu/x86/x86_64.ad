@@ -2045,19 +2045,7 @@ encode %{
     MacroAssembler _masm(&cbuf);
     __ mov64(r10, (int64_t) $meth$$method);
     __ call(r10);
-  %}
-
-  enc_class Java_To_Interpreter(method meth)
-  %{
-    // CALL Java_To_Interpreter
-    // This is the instruction starting address for relocation info.
-    cbuf.set_insts_mark();
-    $$$emit8$primary;
-    // CALL directly to the runtime
-    emit_d32_reloc(cbuf,
-                   (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
-                   runtime_call_Relocation::spec(),
-                   RELOC_DISP32);
+    __ post_call_nop();
   %}
 
   enc_class Java_Static_Call(method meth)
@@ -2065,6 +2053,7 @@ encode %{
     // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to
     // determine who we intended to call.
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     $$$emit8$primary;
 
@@ -2086,31 +2075,14 @@ encode %{
         return;
       }
     }
+    _masm.clear_inst_mark();
+    __ post_call_nop();
   %}
 
   enc_class Java_Dynamic_Call(method meth) %{
     MacroAssembler _masm(&cbuf);
     __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
-  %}
-
-  enc_class Java_Compiled_Call(method meth)
-  %{
-    // JAVA COMPILED CALL
-    int disp = in_bytes(Method:: from_compiled_offset());
-
-    // XXX XXX offset is 128 is 1.5 NON-PRODUCT !!!
-    // assert(-0x80 <= disp && disp < 0x80, "compiled_code_offset isn't small");
-
-    // callq *disp(%rax)
-    cbuf.set_insts_mark();
-    $$$emit8$primary;
-    if (disp < 0x80) {
-      emit_rm(cbuf, 0x01, $secondary, RAX_enc); // R/M byte
-      emit_d8(cbuf, disp); // Displacement
-    } else {
-      emit_rm(cbuf, 0x02, $secondary, RAX_enc); // R/M byte
-      emit_d32(cbuf, disp); // Displacement
-    }
+    __ post_call_nop();
   %}
 
   enc_class reg_opc_imm(rRegI dst, immI8 shift)
