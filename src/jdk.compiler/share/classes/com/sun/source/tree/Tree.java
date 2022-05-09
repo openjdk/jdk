@@ -249,7 +249,7 @@ public interface Tree {
          *
          * @since 19
          */
-        @PreviewFeature(feature=PreviewFeature.Feature.DECONSTRUCTION_PATTERNS, reflective=true)
+        @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
         DECONSTRUCTION_PATTERN(DeconstructionPatternTree.class),
 
         /**

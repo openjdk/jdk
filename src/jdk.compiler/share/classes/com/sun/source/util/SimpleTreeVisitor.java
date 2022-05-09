@@ -670,7 +670,7 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
      * @since 19
      */
     @Override
-    @PreviewFeature(feature=PreviewFeature.Feature.DECONSTRUCTION_PATTERNS, reflective=true)
+    @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
     public R visitDeconstructionPattern(DeconstructionPatternTree node, P p) {
         return defaultAction(node, p);
     }

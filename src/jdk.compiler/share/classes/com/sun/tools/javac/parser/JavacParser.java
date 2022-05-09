@@ -786,7 +786,7 @@ public class JavacParser implements Parser {
             }
             if (token.kind == LPAREN) {
                 //deconstruction pattern:
-                checkSourceLevel(Feature.DECONSTRUCTION_PATTERNS);
+                checkSourceLevel(Feature.RECORD_PATTERNS);
                 ListBuffer<JCPattern> nested = new ListBuffer<>();
                 if (!peekToken(RPAREN)) {
                     do {

@@ -285,7 +285,7 @@ public interface TreeVisitor<R,P> {
      * @return a result value
      * @since 19
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.DECONSTRUCTION_PATTERNS, reflective=true)
+    @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
     R visitDeconstructionPattern(DeconstructionPatternTree node, P p);
 
     /**

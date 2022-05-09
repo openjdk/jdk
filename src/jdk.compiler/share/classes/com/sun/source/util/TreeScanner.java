@@ -803,7 +803,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @since 19
      */
     @Override
-    @PreviewFeature(feature=PreviewFeature.Feature.DECONSTRUCTION_PATTERNS, reflective=true)
+    @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
     public R visitDeconstructionPattern(DeconstructionPatternTree node, P p) {
         R r = scan(node.getDeconstructor(), p);
         r = scanAndReduce(node.getNestedPatterns(), p, r);
