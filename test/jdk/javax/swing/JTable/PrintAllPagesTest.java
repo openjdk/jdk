@@ -28,6 +28,8 @@
  */
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.print.PrinterException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -43,34 +45,31 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.WindowConstants;
 
-public class PrintAllPagesTest {
+public class PrintAllPagesTest extends WindowAdapter {
     static JFrame f;
     static JDialog dialog;
     static JTable table;
     static volatile boolean testResult = false;
-    final static CountDownLatch latch = new CountDownLatch(1);
-    static  boolean ret = false;
+    static final CountDownLatch latch = new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
 
         try {
             SwingUtilities.invokeAndWait(() -> {
-                createUI();
                 printAllPagesTest();
+                createUI();
             });
 
             Thread.sleep(1000);
             SwingUtilities.invokeAndWait(() -> {
                 try {
-                    ret = table.print();
+                    if (!table.print()) {
+                        throw new RuntimeException("Printing cancelled");
+                    }
                 } catch (PrinterException e) {
                     throw new RuntimeException("Printing failed: " + e);
                 }
             });
-
-            if (!testResult) {
-                throw new RuntimeException("Only 1st page is printed out of multiple pages");
-            }
 
             // wait for latch to complete
             if (!latch.await(5, TimeUnit.MINUTES)) {
@@ -120,10 +119,10 @@ public class PrintAllPagesTest {
         f = new JFrame("Table test");
         f.add(scrollpane);
         f.setSize(1000, 800);
-        f.setUndecorated(true);
         f.setLocationRelativeTo(null);
         f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         f.setVisible(true);
+        f.addWindowListener(new PrintAllPagesTest());
     }
 
     private static void createUI() {
@@ -133,7 +132,7 @@ public class PrintAllPagesTest {
                 + " If only 1 page is printed,\n "
                 + " then press fail else press pass";
 
-        dialog = new JDialog();
+        dialog = new JDialog(f, "Instructions for Table Print Test");
         dialog.setTitle("textselectionTest");
         JTextArea textArea = new JTextArea(description);
         textArea.setEditable(false);
@@ -157,5 +156,11 @@ public class PrintAllPagesTest {
         dialog.setUndecorated(true);
         dialog.pack();
         dialog.setVisible(true);
+        dialog.addWindowListener(new PrintAllPagesTest());
+    }
+
+    @Override
+    public void windowClosing(WindowEvent e) {
+        latch.countDown();
     }
 }
