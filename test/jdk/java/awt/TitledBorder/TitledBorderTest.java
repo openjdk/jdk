@@ -99,14 +99,12 @@ public class TitledBorderTest {
 
             for (Point p : panelLocations) {
                 int y = (int) (p.y * scaling) + SIZE.height / 2;
-                System.out.println(scaling + " : " + y);
-
                 checkHorizontalBorder(y, img, scaling);
             }
         }
     }
 
-    private static void checkHorizontalBorder(int y, BufferedImage img, double scaling) throws RuntimeException {
+    private static void checkHorizontalBorder(int y, BufferedImage img, double scaling) {
         int thickness = 0;
         boolean checkShadow = false;
         boolean checkHighlight = false;
@@ -146,10 +144,12 @@ public class TitledBorderTest {
 
     private static void verifyThickness(int x, int thickness, double scaling, String orientation) {
         int expected = (int) Math.floor(scaling);
-        if (thickness != expected) throw new RuntimeException("Unexpected " + orientation + " Border thickness.");
+        if (thickness != expected) {
+            throw new RuntimeException("Unexpected " + orientation + " Border thickness.");
+        }
     }
 
-    private static void checkVerticalBorder(int x, BufferedImage img, double scaling) throws RuntimeException {
+    private static void checkVerticalBorder(int x, BufferedImage img, double scaling) {
         int thickness = 0;
         boolean checkShadow = false;
         boolean checkHighlight = false;
