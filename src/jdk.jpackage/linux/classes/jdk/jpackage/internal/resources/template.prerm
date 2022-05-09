@@ -17,11 +17,14 @@ set -e
 # the debian-policy package
 
 
-UTILITY_SCRIPTS
+package_type=deb
+DESKTOP_SCRIPTS
+LAUNCHER_AS_SERVICE_SCRIPTS
 
 case "$1" in
     remove|upgrade|deconfigure)
 DESKTOP_COMMANDS_UNINSTALL
+LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL
     ;;
 
     failed-upgrade)
@@ -34,4 +37,3 @@ DESKTOP_COMMANDS_UNINSTALL
 esac
 
 exit 0
-

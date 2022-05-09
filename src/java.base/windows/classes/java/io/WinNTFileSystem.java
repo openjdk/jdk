@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.util.BitSet;
 import java.util.Locale;
 import java.util.Properties;
+import jdk.internal.misc.Blocker;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -459,7 +460,12 @@ class WinNTFileSystem extends FileSystem {
             return "" + ((char) (c-32)) + ':' + '\\';
         }
         if (!useCanonCaches) {
-            return canonicalize0(path);
+            long comp = Blocker.begin();
+            try {
+                return canonicalize0(path);
+            } finally {
+                Blocker.end(comp);
+            }
         } else {
             String res = cache.get(path);
             if (res == null) {
@@ -576,38 +582,116 @@ class WinNTFileSystem extends FileSystem {
     /* -- Attribute accessors -- */
 
     @Override
-    public native int getBooleanAttributes(File f);
+    public int getBooleanAttributes(File f) {
+        long comp = Blocker.begin();
+        try {
+            return getBooleanAttributes0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native int getBooleanAttributes0(File f);
 
     @Override
-    public native boolean checkAccess(File f, int access);
+    public boolean checkAccess(File f, int access) {
+        long comp = Blocker.begin();
+        try {
+            return checkAccess0(f, access);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean checkAccess0(File f, int access);
 
     @Override
-    public native long getLastModifiedTime(File f);
+    public long getLastModifiedTime(File f) {
+        long comp = Blocker.begin();
+        try {
+            return getLastModifiedTime0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native long getLastModifiedTime0(File f);
 
     @Override
-    public native long getLength(File f);
+    public long getLength(File f) {
+        long comp = Blocker.begin();
+        try {
+            return getLength0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native long getLength0(File f);
 
     @Override
-    public native boolean setPermission(File f, int access, boolean enable,
-            boolean owneronly);
+    public boolean setPermission(File f, int access, boolean enable, boolean owneronly) {
+        long comp = Blocker.begin();
+        try {
+            return setPermission0(f, access, enable, owneronly);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean setPermission0(File f, int access, boolean enable, boolean owneronly);
 
     /* -- File operations -- */
 
     @Override
-    public native boolean createFileExclusively(String path)
-            throws IOException;
+    public boolean createFileExclusively(String path) throws IOException {
+        long comp = Blocker.begin();
+        try {
+            return createFileExclusively0(path);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean createFileExclusively0(String path) throws IOException;
 
     @Override
-    public native String[] list(File f);
+    public String[] list(File f) {
+        long comp = Blocker.begin();
+        try {
+            return list0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native String[] list0(File f);
 
     @Override
-    public native boolean createDirectory(File f);
+    public boolean createDirectory(File f) {
+        long comp = Blocker.begin();
+        try {
+            return createDirectory0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean createDirectory0(File f);
 
     @Override
-    public native boolean setLastModifiedTime(File f, long time);
+    public boolean setLastModifiedTime(File f, long time) {
+        long comp = Blocker.begin();
+        try {
+            return setLastModifiedTime0(f, time);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean setLastModifiedTime0(File f, long time);
 
     @Override
-    public native boolean setReadOnly(File f);
+    public boolean setReadOnly(File f) {
+        long comp = Blocker.begin();
+        try {
+            return setReadOnly0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean setReadOnly0(File f);
 
     @Override
     public boolean delete(File f) {
@@ -622,9 +706,13 @@ class WinNTFileSystem extends FileSystem {
         if (useCanonPrefixCache) {
             prefixCache.clear();
         }
-        return delete0(f);
+        long comp = Blocker.begin();
+        try {
+            return delete0(f);
+        } finally {
+            Blocker.end(comp);
+        }
     }
-
     private native boolean delete0(File f);
 
     @Override
@@ -640,9 +728,13 @@ class WinNTFileSystem extends FileSystem {
         if (useCanonPrefixCache) {
             prefixCache.clear();
         }
-        return rename0(f1, f2);
+        long comp = Blocker.begin();
+        try {
+            return rename0(f1, f2);
+        } finally {
+            Blocker.end(comp);
+        }
     }
-
     private native boolean rename0(File f1, File f2);
 
     /* -- Filesystem interface -- */
@@ -656,7 +748,6 @@ class WinNTFileSystem extends FileSystem {
             .filter(f -> access(f.getPath()) && f.exists())
             .toArray(File[]::new);
     }
-
     private static native int listRoots0();
 
     private boolean access(String path) {
@@ -679,7 +770,6 @@ class WinNTFileSystem extends FileSystem {
         }
         return 0;
     }
-
     private native long getSpace0(File f, int t);
 
     /* -- Basic infrastructure -- */
