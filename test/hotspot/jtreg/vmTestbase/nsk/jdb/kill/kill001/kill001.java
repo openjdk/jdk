@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +51,13 @@
  *      nsk.jdb.kill.kill001.kill001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
+ *      -verbose
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -jdb=${test.jdk}/bin/jdb
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
+ *      -jdb.option="-trackvthreads"
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 
@@ -98,11 +100,14 @@ public class kill001 extends JdbTest {
         Vector v;
         String found;
         String[] threads;
+        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
 
         jdb.setBreakpointInMethod(LAST_BREAK);
         reply = jdb.receiveReplyFor(JdbCommand.cont);
 
-        threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+        // At this point we are at the breakpoint triggered by the breakHere() call done
+        // after creating all the threads. Get the list of debuggee threads.
+        threads = jdb.getThreadIdsByName(MYTHREAD);
 
         if (threads.length != numThreads) {
             log.complain("jdb should report " + numThreads + " instance of " + DEBUGGEE_THREAD);
@@ -110,14 +115,26 @@ public class kill001 extends JdbTest {
             success = false;
         }
 
+        // Kill each debuggee thread. This will cause each thread to stop in the debugger,
+        // indicating that an exception was thrown.
         for (int i = 0; i < threads.length; i++) {
+            // kill (ThreadReference.stop) is not supproted for vthreads, so we expect an error.
+            String msg = (vthreadMode ? "Operation is not supported" : "killed");
             reply = jdb.receiveReplyForWithMessageWait(JdbCommand.kill + threads[i] + " " +
                                                        DEBUGGEE_EXCEPTIONS + "[" + i + "]",
-                                                       "killed");
+                                                       msg);
         }
 
-        for (int i = 0; i <= numThreads; i++) {
-            reply = jdb.receiveReplyFor(JdbCommand.cont);
+        // Continue the main thread, which is still at the breakpoint. This will resume
+        // all the debuggee threads, allowing the kill to take place.
+        reply = jdb.receiveReplyFor(JdbCommand.cont);
+
+        // Continue each of the threads that received the "kill" exception. Not needed
+        // for the vthread case since they are not actually killed.
+        if (!vthreadMode) {
+            for (int i = 0; i < numThreads; i++) {
+                reply = jdb.receiveReplyFor(JdbCommand.cont);
+            }
         }
 
         // make sure the debugger is at a breakpoint
@@ -132,9 +149,14 @@ public class kill001 extends JdbTest {
         grep = new Paragrep(reply);
         found = grep.findFirst(DEBUGGEE_RESULT + " =" );
         if (found.length() > 0) {
-            if (found.indexOf(DEBUGGEE_RESULT + " = 0") < 0) {
-               log.complain("Not all " + MYTHREAD + "s were killed. " + found + " remaining");
-               success = false;
+            if (vthreadMode) {
+                if (found.indexOf(DEBUGGEE_RESULT + " = " + numThreads) < 0) {
+                    log.complain("Some " + MYTHREAD + "s were killed. " + found + " remaining");
+                    success = false;
+                }
+            } else if (found.indexOf(DEBUGGEE_RESULT + " = 0") < 0) {
+                log.complain("Not all " + MYTHREAD + "s were killed. " + found + " remaining");
+                success = false;
             }
         } else {
             log.complain("Value for " + DEBUGGEE_RESULT + " is not found.");

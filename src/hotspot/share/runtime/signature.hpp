@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -329,17 +329,25 @@ class Fingerprinter: public SignatureIterator {
  private:
   fingerprint_t _accumulator;
   int _param_size;
+  int _stack_arg_slots;
   int _shift_count;
   const Method* _method;
+
+  uint _int_args;
+  uint _fp_args;
 
   void initialize_accumulator() {
     _accumulator = 0;
     _shift_count = fp_result_feature_size + fp_static_feature_size;
     _param_size = 0;
+    _stack_arg_slots = 0;
   }
 
   // Out-of-line method does it all in constructor:
   void compute_fingerprint_and_return_type(bool static_flag = false);
+
+  void initialize_calling_convention(bool static_flag);
+  void do_type_calling_convention(BasicType type);
 
   friend class SignatureIterator;  // so do_parameters_on can call do_type
   void do_type(BasicType type) {
@@ -347,10 +355,13 @@ class Fingerprinter: public SignatureIterator {
     _accumulator |= ((fingerprint_t)type << _shift_count);
     _shift_count += fp_parameter_feature_size;
     _param_size += (is_double_word_type(type) ? 2 : 1);
+    do_type_calling_convention(type);
   }
 
  public:
   int size_of_parameters() const { return _param_size; }
+  int num_stack_arg_slots() const { return _stack_arg_slots; }
+
   // fingerprint() and return_type() are in super class
 
   Fingerprinter(const methodHandle& method)
