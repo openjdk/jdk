@@ -27,7 +27,7 @@
  * @summary Tests Exception detail message when too few response bytes are
  *          received before a socket exception or eof.
  * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext ShortResponseBody ShortResponseBodyGet
+ * @build jdk.test.lib.net.SimpleSSLContext ShortResponseBody ShortResponseBodyPost
  * @run testng/othervm
  *       -Djdk.httpclient.HttpClient.log=headers,errors,channel
  *       -Djdk.internal.httpclient.debug=true
