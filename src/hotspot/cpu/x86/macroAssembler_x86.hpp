@@ -200,6 +200,7 @@ class MacroAssembler: public Assembler {
   void align(int modulus);
   void align(int modulus, int target);
 
+  void post_call_nop();
   // A 5 byte nop that is safe for patching (see patch_verified_entry)
   void fat_nop();
 
@@ -293,6 +294,9 @@ class MacroAssembler: public Assembler {
                     Register arg_1, Register arg_2);
   void call_VM_leaf(address entry_point,
                     Register arg_1, Register arg_2, Register arg_3);
+
+  void call_VM_leaf(address entry_point,
+                    Register arg_1, Register arg_2, Register arg_3, Register arg_4);
 
   // These always tightly bind to MacroAssembler::call_VM_leaf_base
   // bypassing the virtual implementation
@@ -519,6 +523,13 @@ class MacroAssembler: public Assembler {
   void push_CPU_state();
   void pop_CPU_state();
 
+  void push_cont_fastpath(Register java_thread);
+  void pop_cont_fastpath(Register java_thread);
+  void inc_held_monitor_count(Register java_thread);
+  void dec_held_monitor_count(Register java_thread);
+  void reset_held_monitor_count(Register java_thread);
+  DEBUG_ONLY(void stop_if_in_cont(Register cont_reg, const char* name);)
+
   // Round up to a power of two
   void round_to(Register reg, int modulus);
 
@@ -662,6 +673,10 @@ public:
 
   // prints msg and continues
   void warn(const char* msg);
+
+  void _assert_asm(Condition cc, const char* msg);
+#define assert_asm0(cc, msg) _assert_asm(cc, FILE_AND_LINE ": " msg)
+#define assert_asm(masm, command, cc, msg) DEBUG_ONLY((masm)->command; (masm)->_assert_asm(cc, FILE_AND_LINE ": " #command " " #cc ": " msg))
 
   // dumps registers and other state
   void print_state();
@@ -867,6 +882,11 @@ public:
   void jump(ArrayAddress entry);
 
   // Floating
+
+  void push_f(XMMRegister r);
+  void pop_f(XMMRegister r);
+  void push_d(XMMRegister r);
+  void pop_d(XMMRegister r);
 
   void andpd(XMMRegister dst, Address src) { Assembler::andpd(dst, src); }
   void andpd(XMMRegister dst, AddressLiteral src, Register scratch_reg = rscratch1);
@@ -1147,49 +1167,64 @@ public:
 
 
   // AVX512 Unaligned
-  void evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, int vector_len);
-  void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, int vector_len);
+  void evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src,  bool merge, int vector_len);
+  void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, bool merge, int vector_len);
 
-  void evmovdqub(Address dst, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdqub(dst, src, merge, vector_len); }
-  void evmovdqub(XMMRegister dst, Address src, bool merge, int vector_len) { Assembler::evmovdqub(dst, src, merge, vector_len); }
-  void evmovdqub(XMMRegister dst, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdqub(dst, src, merge, vector_len); }
+  void evmovdqub(XMMRegister dst, XMMRegister src, int vector_len) { Assembler::evmovdqub(dst, src, vector_len); }
+  void evmovdqub(XMMRegister dst, Address src, int vector_len) { Assembler::evmovdqub(dst, src, vector_len); }
+  void evmovdqub(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
+    if (dst->encoding() != src->encoding() || mask != k0)  {
+      Assembler::evmovdqub(dst, mask, src, merge, vector_len);
+    }
+  }
   void evmovdqub(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len) { Assembler::evmovdqub(dst, mask, src, merge, vector_len); }
   void evmovdqub(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdqub(dst, mask, src, merge, vector_len); }
   void evmovdqub(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register scratch_reg);
 
-  void evmovdquw(Address dst, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdquw(dst, src, merge, vector_len); }
-  void evmovdquw(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdquw(dst, mask, src, merge, vector_len); }
-  void evmovdquw(XMMRegister dst, Address src, bool merge, int vector_len) { Assembler::evmovdquw(dst, src, merge, vector_len); }
+  void evmovdquw(XMMRegister dst, Address src, int vector_len) { Assembler::evmovdquw(dst, src, vector_len); }
+  void evmovdquw(Address dst, XMMRegister src, int vector_len) { Assembler::evmovdquw(dst, src, vector_len); }
+  void evmovdquw(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
+    if (dst->encoding() != src->encoding() || mask != k0) {
+      Assembler::evmovdquw(dst, mask, src, merge, vector_len);
+    }
+  }
   void evmovdquw(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len) { Assembler::evmovdquw(dst, mask, src, merge, vector_len); }
+  void evmovdquw(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdquw(dst, mask, src, merge, vector_len); }
   void evmovdquw(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register scratch_reg);
 
+  void evmovdqul(XMMRegister dst, XMMRegister src, int vector_len) {
+     if (dst->encoding() != src->encoding()) {
+       Assembler::evmovdqul(dst, src, vector_len);
+     }
+  }
   void evmovdqul(Address dst, XMMRegister src, int vector_len) { Assembler::evmovdqul(dst, src, vector_len); }
   void evmovdqul(XMMRegister dst, Address src, int vector_len) { Assembler::evmovdqul(dst, src, vector_len); }
-  void evmovdqul(XMMRegister dst, XMMRegister src, int vector_len) {
-     if (dst->encoding() == src->encoding()) return;
-     Assembler::evmovdqul(dst, src, vector_len);
-  }
-  void evmovdqul(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdqul(dst, mask, src, merge, vector_len); }
-  void evmovdqul(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len) { Assembler::evmovdqul(dst, mask, src, merge, vector_len); }
+
   void evmovdqul(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
-    if (dst->encoding() == src->encoding() && mask == k0) return;
-    Assembler::evmovdqul(dst, mask, src, merge, vector_len);
-   }
+    if (dst->encoding() != src->encoding() || mask != k0)  {
+      Assembler::evmovdqul(dst, mask, src, merge, vector_len);
+    }
+  }
+  void evmovdqul(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len) { Assembler::evmovdqul(dst, mask, src, merge, vector_len); }
+  void evmovdqul(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdqul(dst, mask, src, merge, vector_len); }
   void evmovdqul(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register scratch_reg);
 
+  void evmovdquq(XMMRegister dst, XMMRegister src, int vector_len) {
+    if (dst->encoding() != src->encoding()) {
+      Assembler::evmovdquq(dst, src, vector_len);
+    }
+  }
   void evmovdquq(XMMRegister dst, Address src, int vector_len) { Assembler::evmovdquq(dst, src, vector_len); }
   void evmovdquq(Address dst, XMMRegister src, int vector_len) { Assembler::evmovdquq(dst, src, vector_len); }
   void evmovdquq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch);
-  void evmovdquq(XMMRegister dst, XMMRegister src, int vector_len) {
-    if (dst->encoding() == src->encoding()) return;
-    Assembler::evmovdquq(dst, src, vector_len);
-  }
-  void evmovdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdquq(dst, mask, src, merge, vector_len); }
-  void evmovdquq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len) { Assembler::evmovdquq(dst, mask, src, merge, vector_len); }
+
   void evmovdquq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
-    if (dst->encoding() == src->encoding() && mask == k0) return;
-    Assembler::evmovdquq(dst, mask, src, merge, vector_len);
+    if (dst->encoding() != src->encoding() || mask != k0) {
+      Assembler::evmovdquq(dst, mask, src, merge, vector_len);
+    }
   }
+  void evmovdquq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len) { Assembler::evmovdquq(dst, mask, src, merge, vector_len); }
+  void evmovdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len) { Assembler::evmovdquq(dst, mask, src, merge, vector_len); }
   void evmovdquq(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register scratch_reg);
 
   // Move Aligned Double Quadword
@@ -1985,7 +2020,11 @@ public:
                          XMMRegister xmm, KRegister mask, Register length,
                          Register temp);
 
+  void fill32(Address dst, XMMRegister xmm);
+
   void fill32(Register dst, int disp, XMMRegister xmm);
+
+  void fill64(Address dst, XMMRegister xmm, bool use64byteVector = false);
 
   void fill64(Register dst, int dis, XMMRegister xmm, bool use64byteVector = false);
 

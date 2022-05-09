@@ -60,6 +60,7 @@ public enum HtmlAttr {
     SCOPE,
     SCROLLING,
     SRC,
+    STYLE,
     SUMMARY,
     TABINDEX,
     TARGET,

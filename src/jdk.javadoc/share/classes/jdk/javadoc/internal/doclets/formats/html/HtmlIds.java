@@ -83,7 +83,6 @@ public class HtmlIds {
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
     static final HtmlId HELP_NAVIGATION = HtmlId.of("help-navigation");
     static final HtmlId HELP_PAGES = HtmlId.of("help-pages");
-    static final HtmlId HELP_SEARCH = HtmlId.of("help-search");
     static final HtmlId METHOD_DETAIL = HtmlId.of("method-detail");
     static final HtmlId METHOD_SUMMARY = HtmlId.of("method-summary");
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
