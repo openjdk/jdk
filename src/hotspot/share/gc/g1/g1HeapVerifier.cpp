@@ -437,7 +437,7 @@ public:
   }
 
   void work(uint worker_id) {
-    VerifyRegionClosure blk(true, _vo);
+    VerifyRegionClosure blk(_vo);
     _g1h->heap_region_par_iterate_from_worker_offset(&blk, &_hrclaimer, worker_id);
     if (blk.failures()) {
       _failures = true;
