@@ -1108,18 +1108,55 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
         const TypeInteger* hi = phase->type(limit)->isa_integer(l->bt());
         const TypeInteger* stride_t = phase->type(stride)->isa_integer(l->bt());
         if (lo != NULL && hi != NULL && stride_t != NULL) { // Dying loops might have TOP here
-          assert(stride_t->hi_as_long() >= stride_t->lo_as_long(), "bad stride type");
+          assert(stride_t->is_con(), "bad stride type");
           BoolTest::mask bt = l->loopexit()->test_trip();
           // If the loop exit condition is "not equal", the condition
           // would not trigger if init > limit (if stride > 0) or if
           // init < limit if (stride > 0) so we can't deduce bounds
           // for the iv from the exit condition.
           if (bt != BoolTest::ne) {
-            if (stride_t->hi_as_long() < 0) {          // Down-counter loop
+            jlong stride_con = stride_t->get_con_as_long(l->bt());
+            if (stride_con < 0) {          // Down-counter loop
               swap(lo, hi);
-              return TypeInteger::make(MIN2(lo->lo_as_long(), hi->lo_as_long()), hi->hi_as_long(), 3, l->bt())->filter_speculative(_type);
-            } else if (stride_t->lo_as_long() >= 0) {
-              return TypeInteger::make(lo->lo_as_long(), MAX2(lo->hi_as_long(), hi->hi_as_long()), 3, l->bt())->filter_speculative(_type);
+              jlong iv_range_lower_limit = lo->lo_as_long();
+              // Prevent overflow when adding one below
+              if (iv_range_lower_limit < max_signed_integer(l->bt())) {
+                // The loop exit condition is: iv + stride > limit (iv is this Phi). So the loop iterates until
+                // iv + stride <= limit
+                // We know that: limit >= lo->lo_as_long() and stride <= -1
+                // So when the loop exits, iv has to be at most lo->lo_as_long() + 1
+                iv_range_lower_limit += 1; // lo is after decrement
+                // Exact bounds for the phi can be computed when ABS(stride) greater than 1 if bounds are constant.
+                if (lo->is_con() && hi->is_con() && hi->lo_as_long() > lo->hi_as_long() && stride_con != -1) {
+                  julong uhi = static_cast<julong>(hi->lo_as_long());
+                  julong ulo = static_cast<julong>(lo->hi_as_long());
+                  julong diff = ((uhi - ulo - 1) / (-stride_con)) * (-stride_con);
+                  julong ufirst = hi->lo_as_long() - diff;
+                  iv_range_lower_limit = reinterpret_cast<jlong &>(ufirst);
+                  assert(iv_range_lower_limit >= lo->lo_as_long() + 1, "should end up with narrower range");
+                }
+              }
+              return TypeInteger::make(MIN2(iv_range_lower_limit, hi->lo_as_long()), hi->hi_as_long(), 3, l->bt())->filter_speculative(_type);
+            } else if (stride_con >= 0) {
+              jlong iv_range_upper_limit = hi->hi_as_long();
+              // Prevent overflow when subtracting one below
+              if (iv_range_upper_limit > min_signed_integer(l->bt())) {
+                // The loop exit condition is: iv + stride < limit (iv is this Phi). So the loop iterates until
+                // iv + stride >= limit
+                // We know that: limit <= hi->hi_as_long() and stride >= 1
+                // So when the loop exits, iv has to be at most hi->hi_as_long() - 1
+                iv_range_upper_limit -= 1;
+                // Exact bounds for the phi can be computed when ABS(stride) greater than 1 if bounds are constant.
+                if (lo->is_con() && hi->is_con() && hi->lo_as_long() > lo->hi_as_long() && stride_con != 1) {
+                  julong uhi = static_cast<julong>(hi->lo_as_long());
+                  julong ulo = static_cast<julong>(lo->hi_as_long());
+                  julong diff = ((uhi - ulo - 1) / stride_con) * stride_con;
+                  julong ulast = lo->hi_as_long() + diff;
+                  iv_range_upper_limit = reinterpret_cast<jlong &>(ulast);
+                  assert(iv_range_upper_limit <= hi->hi_as_long() - 1, "should end up with narrower range");
+                }
+              }
+              return TypeInteger::make(lo->lo_as_long(), MAX2(lo->hi_as_long(), iv_range_upper_limit), 3, l->bt())->filter_speculative(_type);
             }
           }
         }

@@ -207,10 +207,8 @@ public final class InnocuousThread extends Thread {
             CONTEXTCLASSLOADER = UNSAFE.objectFieldOffset
                 (tk, "contextClassLoader");
 
-            long tg = UNSAFE.objectFieldOffset(tk, "group");
             long gp = UNSAFE.objectFieldOffset(gk, "parent");
-            ThreadGroup group = (ThreadGroup)
-                UNSAFE.getReference(Thread.currentThread(), tg);
+            ThreadGroup group = Thread.currentThread().getThreadGroup();
 
             while (group != null) {
                 ThreadGroup parent = (ThreadGroup)UNSAFE.getReference(group, gp);
