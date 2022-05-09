@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.IOUtils.XmlConsumer;
 import jdk.jpackage.internal.OverridableResource.Source;
@@ -203,7 +202,8 @@ abstract class WixFragmentBuilder {
             return sb.toString();
         }
 
-        private final Pattern dollarPattern = Pattern.compile("\\$");
+        // Match '$', but don't match $(var.foo)
+        private final Pattern dollarPattern = Pattern.compile("\\$(?!\\([^)]*\\))");
         private final XMLStreamWriter target;
     }
 
