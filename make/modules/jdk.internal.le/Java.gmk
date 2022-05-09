@@ -24,3 +24,4 @@
 #
 
 COPY += .properties .caps .txt
+DISABLED_WARNINGS_java += lossy-conversions
