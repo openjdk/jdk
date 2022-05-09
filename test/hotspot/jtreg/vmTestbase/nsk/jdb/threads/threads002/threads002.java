@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,11 +44,13 @@
  *      nsk.jdb.threads.threads002.threads002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
+ *      -verbose
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -jdb=${test.jdk}/bin/jdb
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
+ *      -jdb.option="-trackvthreads"
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 

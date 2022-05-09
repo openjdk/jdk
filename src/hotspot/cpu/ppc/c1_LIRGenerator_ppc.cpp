@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1380,4 +1380,8 @@ void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {
 
 void LIRGenerator::do_vectorizedMismatch(Intrinsic* x) {
   fatal("vectorizedMismatch intrinsic is not implemented on this platform");
+}
+
+void LIRGenerator::do_continuation_doYield(Intrinsic* x) {
+  fatal("Continuation.doYield intrinsic is not implemented on this platform");
 }

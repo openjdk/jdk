@@ -26,7 +26,7 @@
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
  *      8184205 8214468 8222548 8223378 8234746 8241219 8254627 8247994 8263528
- *      8266808
+ *      8266808 8248863
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -64,7 +64,8 @@ public class TestSearch extends JavadocTester {
                 "module-search-index.js",
                 "package-search-index.js",
                 "tag-search-index.js",
-                "type-search-index.js");
+                "type-search-index.js",
+                "search.html");
     }
 
     @Test
@@ -87,7 +88,8 @@ public class TestSearch extends JavadocTester {
                 "module-search-index.js",
                 "package-search-index.js",
                 "tag-search-index.js",
-                "type-search-index.js");
+                "type-search-index.js",
+                "search.html");
     }
 
     @Test
@@ -108,7 +110,8 @@ public class TestSearch extends JavadocTester {
                 "member-search-index.js",
                 "package-search-index.js",
                 "tag-search-index.js",
-                "type-search-index.js");
+                "type-search-index.js",
+                "search.html");
     }
 
     @Test
@@ -129,7 +132,9 @@ public class TestSearch extends JavadocTester {
                 "type-search-index.js",
                 "index-all.html",
                 "allpackages-index.html",
-                "allclasses-index.html");
+                "allclasses-index.html",
+                "search-page.js",
+                "search.html");
     }
 
     @Test
@@ -150,7 +155,8 @@ public class TestSearch extends JavadocTester {
                 "member-search-index.js",
                 "package-search-index.js",
                 "tag-search-index.js",
-                "type-search-index.js");
+                "type-search-index.js",
+                "search.html");
     }
 
     @Test
@@ -170,7 +176,9 @@ public class TestSearch extends JavadocTester {
                 "package-search-index.js",
                 "tag-search-index.js",
                 "type-search-index.js",
-                "index-all.html");
+                "index-all.html",
+                "search-page.js",
+                "search.html");
     }
 
     @Test
@@ -190,7 +198,8 @@ public class TestSearch extends JavadocTester {
                 "member-search-index.js",
                 "package-search-index.js",
                 "tag-search-index.js",
-                "type-search-index.js");
+                "type-search-index.js",
+                "search.html");
     }
 
     @Test
@@ -211,7 +220,8 @@ public class TestSearch extends JavadocTester {
                 "member-search-index.js",
                 "package-search-index.js",
                 "tag-search-index.js",
-                "type-search-index.js");
+                "type-search-index.js",
+                "search.html");
     }
 
     @Test
@@ -233,7 +243,8 @@ public class TestSearch extends JavadocTester {
                 "member-search-index.js",
                 "package-search-index.js",
                 "tag-search-index.js",
-                "type-search-index.js");
+                "type-search-index.js",
+                "search.html");
     }
 
     @Test
@@ -255,7 +266,8 @@ public class TestSearch extends JavadocTester {
                 "module-search-index.js",
                 "package-search-index.js",
                 "tag-search-index.js",
-                "type-search-index.js");
+                "type-search-index.js",
+                "search.html");
     }
 
     @Test
@@ -420,7 +432,7 @@ public class TestSearch extends JavadocTester {
                     loadScripts(document, 'script');""",
                 "<div class=\"nav-list-search\">",
                 """
-                    <label for="search-input">SEARCH:</label>
+                    <div class="nav-list-search"><a href="search.html">SEARCH</a>
                     <input type="text" id="search-input" disabled placeholder="Search">
                     <input type="reset" id="reset-button" disabled value="reset">
                     """);
@@ -712,6 +724,10 @@ public class TestSearch extends JavadocTester {
                 "function searchIndex(indexArray, category) {",
                 "function getURLPrefix(item, category) {",
                 "url += item.l;");
+
+        checkOutput("search-page.js", true,
+                "function renderResults(result) {",
+                "function selectTab(category) {");
 
         checkCssClasses("search.js", "stylesheet.css");
     }
