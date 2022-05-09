@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.io;
 import java.nio.channels.FileChannel;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
+import jdk.internal.misc.Blocker;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -288,9 +289,13 @@ public class FileOutputStream extends OutputStream
      * @param name name of file to be opened
      * @param append whether the file is to be opened in append mode
      */
-    private void open(String name, boolean append)
-        throws FileNotFoundException {
-        open0(name, append);
+    private void open(String name, boolean append) throws FileNotFoundException {
+        long comp = Blocker.begin();
+        try {
+            open0(name, append);
+        } finally {
+            Blocker.end(comp);
+        }
     }
 
     /**
@@ -310,7 +315,13 @@ public class FileOutputStream extends OutputStream
      * @throws     IOException  if an I/O error occurs.
      */
     public void write(int b) throws IOException {
-        write(b, fdAccess.getAppend(fd));
+        boolean append = fdAccess.getAppend(fd);
+        long comp = Blocker.begin();
+        try {
+            write(b, append);
+        } finally {
+            Blocker.end(comp);
+        }
     }
 
     /**
@@ -333,7 +344,13 @@ public class FileOutputStream extends OutputStream
      * @throws     IOException  if an I/O error occurs.
      */
     public void write(byte[] b) throws IOException {
-        writeBytes(b, 0, b.length, fdAccess.getAppend(fd));
+        boolean append = fdAccess.getAppend(fd);
+        long comp = Blocker.begin();
+        try {
+            writeBytes(b, 0, b.length, append);
+        } finally {
+            Blocker.end(comp);
+        }
     }
 
     /**
@@ -346,7 +363,13 @@ public class FileOutputStream extends OutputStream
      * @throws     IOException  if an I/O error occurs.
      */
     public void write(byte[] b, int off, int len) throws IOException {
-        writeBytes(b, off, len, fdAccess.getAppend(fd));
+        boolean append = fdAccess.getAppend(fd);
+        long comp = Blocker.begin();
+        try {
+            writeBytes(b, off, len, append);
+        } finally {
+            Blocker.end(comp);
+        }
     }
 
     /**

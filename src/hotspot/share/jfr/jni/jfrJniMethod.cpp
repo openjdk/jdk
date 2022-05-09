@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,7 +289,7 @@ JVM_END
 
 // trace thread id for a thread object
 JVM_ENTRY_NO_ENV(jlong, jfr_id_for_thread(JNIEnv* env, jobject jvm, jobject t))
-  return JfrJavaSupport::jfr_thread_id(t);
+  return JfrJavaSupport::jfr_thread_id(thread, t);
 JVM_END
 
 JVM_ENTRY_NO_ENV(jobject, jfr_get_event_writer(JNIEnv* env, jclass cls))
@@ -351,11 +351,11 @@ JVM_ENTRY_NO_ENV(void, jfr_emit_old_object_samples(JNIEnv* env, jobject jvm, jlo
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_exclude_thread(JNIEnv* env, jobject jvm, jobject t))
-  JfrJavaSupport::exclude(t);
+  JfrJavaSupport::exclude(thread, t);
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_include_thread(JNIEnv* env, jobject jvm, jobject t))
-  JfrJavaSupport::include(t);
+  JfrJavaSupport::include(thread, t);
 JVM_END
 
 JVM_ENTRY_NO_ENV(jboolean, jfr_is_thread_excluded(JNIEnv* env, jobject jvm, jobject t))
