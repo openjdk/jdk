@@ -1614,8 +1614,7 @@ Node* find_node(const int idx) {
 // Call this from debugger, search in old nodes:
 Node* find_old_node(const int idx) {
   Node* root = old_root();
-  assert(root != nullptr, "must have old_root() to find old nodes");
-  return root->find(idx);
+  return (root == nullptr) ? nullptr : root->find(idx);
 }
 
 // Call this from debugger, search in same graph as n:
@@ -1631,8 +1630,7 @@ Node* find_ctrl(const int idx) {
 // Call this from debugger, search in old nodes:
 Node* find_old_ctrl(const int idx) {
   Node* root = old_root();
-  assert(root != nullptr, "must have old_root() to find old nodes");
-  return root->find_ctrl(idx);
+  return (root == nullptr) ? nullptr : root->find_ctrl(idx);
 }
 
 //------------------------------find_ctrl--------------------------------------
