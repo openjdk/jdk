@@ -438,7 +438,7 @@ int LIR_Assembler::emit_unwind_handler() {
 
   // Fetch the exception from TLS and clear out exception related thread state
   Register thread = NOT_LP64(rsi) LP64_ONLY(r15_thread);
-  NOT_LP64(__ get_thread(rsi));
+  NOT_LP64(__ get_thread(thread));
   __ movptr(rax, Address(thread, JavaThread::exception_oop_offset()));
   __ movptr(Address(thread, JavaThread::exception_oop_offset()), (intptr_t)NULL_WORD);
   __ movptr(Address(thread, JavaThread::exception_pc_offset()), (intptr_t)NULL_WORD);
@@ -460,6 +460,8 @@ int LIR_Assembler::emit_unwind_handler() {
       __ unlock_object(rdi, rsi, rax, *stub->entry());
     }
     __ bind(*stub->continuation());
+    NOT_LP64(__ get_thread(thread);)
+    __ dec_held_monitor_count(thread);
   }
 
   if (compilation()->env()->dtrace_method_probes()) {
@@ -2864,6 +2866,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
          "must be aligned");
   __ call(AddressLiteral(op->addr(), rtype));
   add_call_info(code_offset(), op->info());
+  __ post_call_nop();
 }
 
 
@@ -2872,6 +2875,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   add_call_info(code_offset(), op->info());
   assert((__ offset() - NativeCall::instruction_size + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
+  __ post_call_nop();
 }
 
 
@@ -3507,7 +3511,38 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   } else {
     Unimplemented();
   }
+  if (op->code() == lir_lock) {
+    // If deoptimization happens in Runtime1::monitorenter, inc_held_monitor_count after backing from slowpath
+    // will be skipped. Solution is
+    // 1. Increase only in fastpath
+    // 2. Runtime1::monitorenter increase count after locking
+#ifndef _LP64
+    Register thread = rsi;
+    __ push(thread);
+    __ get_thread(thread);
+#else
+    Register thread = r15_thread;
+#endif
+    __ inc_held_monitor_count(thread);
+#ifndef _LP64
+    __ pop(thread);
+#endif
+  }
   __ bind(*op->stub()->continuation());
+  if (op->code() == lir_unlock) {
+    // unlock in slowpath is JRT_Leaf stub, no deoptimization can happen
+#ifndef _LP64
+    Register thread = rsi;
+    __ push(thread);
+    __ get_thread(thread);
+#else
+    Register thread = r15_thread;
+#endif
+    __ dec_held_monitor_count(thread);
+#ifndef _LP64
+    __ pop(thread);
+#endif
+  }
 }
 
 void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
@@ -3868,6 +3903,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
   if (info != NULL) {
     add_call_info_here(info);
   }
+  __ post_call_nop();
 }
 
 
