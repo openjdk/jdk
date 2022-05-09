@@ -276,7 +276,6 @@ class GraphKit : public Phase {
 
   // Helper Functions for adding debug information
   void kill_dead_locals();
-  void kill_dead_locals(const MethodLivenessResult&);
 #ifdef ASSERT
   bool dead_locals_are_killed();
 #endif

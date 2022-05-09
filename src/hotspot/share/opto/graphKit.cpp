@@ -771,15 +771,12 @@ void GraphKit::kill_dead_locals() {
   }
 
   ResourceMark rm;
-  kill_dead_locals(method()->liveness_at_bci(bci()));
-}
 
-// Consult the liveness information for the locals.  If any
-// of them are unused, then they can be replaced by top().  This
-// should help register allocation time and cut down on the size
-// of the deoptimization information.
-void GraphKit::kill_dead_locals(const MethodLivenessResult& live_locals) {
-  assert(live_locals.is_valid(), "invalid liveness result from ciTypeFlow");
+  // Consult the liveness information for the locals.  If any
+  // of them are unused, then they can be replaced by top().  This
+  // should help register allocation time and cut down on the size
+  // of the deoptimization information.
+  MethodLivenessResult live_locals = method()->liveness_at_bci(bci());
 
   int len = (int)live_locals.size();
   assert(len <= jvms()->loc_size(), "too many live locals");
@@ -2116,30 +2113,8 @@ void GraphKit::uncommon_trap(int trap_request,
     }
   }
 
-  bool done = false;
-  if (AggressiveLivenessForUnstableIf && reason == Deoptimization::Reason_unstable_if) {
-    bool is_fallthrough = 0 == strncmp(comment, "taken always", 12);
-    assert(is_fallthrough || 0 == strncmp(comment, "taken never", 11), "wrong comment for Unstable_if!");
-
-    ResourceMark rm;
-    ciBytecodeStream iter(method());
-    iter.force_bci(bci());
-
-    Bytecodes::Code code = iter.cur_bc();
-    if (code != Bytecodes::_tableswitch && code != Bytecodes::_lookupswitch) {
-      int next_bci = is_fallthrough ? iter.next_bci() : iter.get_dest();
-      // Collect liveness of 'next_bci'.
-      const MethodLivenessResult& liveness = method()->liveness_at_bci(next_bci);
-      kill_dead_locals(liveness);
-      done = true;
-    }
-  }
-
-  if (!done) {
-    kill_dead_locals();
-  }
-
   // Clear out dead values from the debug info.
+  kill_dead_locals();
 
   // Now insert the uncommon trap subroutine call
   address call_addr = SharedRuntime::uncommon_trap_blob()->entry_point();

@@ -301,7 +301,7 @@ private:
   bool is_null_check(ProjNode* proj, PhaseIterGVN* igvn);
   bool is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn);
   void reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn);
-  ProjNode* uncommon_trap_proj(CallStaticJavaNode*& call) const;
+  ProjNode* uncommon_trap_proj(CallStaticJavaNode*& call, Deoptimization::DeoptReason reason = Deoptimization::Reason_none) const;
   bool fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
   static bool is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* unc);
 
@@ -382,8 +382,9 @@ public:
 
   float _prob;                  // Probability of true path being taken.
   float _fcnt;                  // Frequency counter
+  int   _unc_bci;               // next_bci for unstable_if trap
   IfNode( Node *control, Node *b, float p, float fcnt )
-    : MultiBranchNode(2), _prob(p), _fcnt(fcnt) {
+    : MultiBranchNode(2), _prob(p), _fcnt(fcnt), _unc_bci(-1) {
     init_class_id(Class_If);
     init_req(0,control);
     init_req(1,b);
@@ -398,6 +399,12 @@ public:
   Node* fold_compares(PhaseIterGVN* phase);
   static Node* up_one_dom(Node* curr, bool linear_only = false);
   Node* dominated_by(Node* prev_dom, PhaseIterGVN* igvn);
+
+  int unc_bci() const { return _unc_bci; }
+  void set_unc_bci(int bci) {
+    assert(bci == -1 || _unc_bci == -1, "attempt to overwrite unc_bci");
+    _unc_bci = bci;
+  }
 
   // Takes the type of val and filters it through the test represented
   // by if_proj and returns a more refined type if one is produced.

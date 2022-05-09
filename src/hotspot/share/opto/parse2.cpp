@@ -1584,6 +1584,10 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
   bool is_fallthrough = (path == successor_for_bci(iter().next_bci()));
 
   if (path_is_suitable_for_uncommon_trap(prob)) {
+    IfNode *iff = control()->in(0)->as_If();
+    int next_bci = is_fallthrough ? iter().next_bci() : iter().get_dest();
+    iff->set_unc_bci(next_bci);
+
     repush_if_args();
     uncommon_trap(Deoptimization::Reason_unstable_if,
                   Deoptimization::Action_reinterpret,

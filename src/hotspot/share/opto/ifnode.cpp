@@ -792,9 +792,9 @@ bool IfNode::is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* u
 }
 
 // Return projection that leads to an uncommon trap if any
-ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call) const {
+ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call, Deoptimization::DeoptReason reason) const {
   for (int i = 0; i < 2; i++) {
-    call = proj_out(i)->is_uncommon_trap_proj(Deoptimization::Reason_none);
+    call = proj_out(i)->is_uncommon_trap_proj(reason);
     if (call != NULL) {
       return proj_out(i);
     }
@@ -1338,6 +1338,30 @@ Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
       }
     }
   }
+
+  if (AggressiveLivenessForUnstableIf) { // prob IfTrue and IfFalse and see if we can perform fold-compares beforehand.
+    for (uint i = 0; i < 2; ++i) {
+      Node *n = raw_out(i);
+
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        IfNode *iff = n->fast_out(i)->isa_If();
+
+        if (iff != NULL && iff->outcnt() == 2) {
+          CallStaticJavaNode *unc;
+          ProjNode *proj = iff->uncommon_trap_proj(unc);
+
+          if (proj != NULL) {
+            //Node *result = iff->fold_compares(igvn);
+            Node *result = iff->Ideal(igvn, true);
+            if (result != NULL) {
+              igvn->_worklist.push(result);
+              return this;
+            }
+          }
+        }
+      }
+    }
+  }
   return NULL;
 }
 
@@ -1459,11 +1483,49 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) == NULL) return NULL;     // Dead loop?
 
   PhaseIterGVN* igvn = phase->is_IterGVN();
-  // temporarily disable comparison_folding
-  if (!AggressiveLivenessForUnstableIf) {
-    Node* result = fold_compares(igvn);
-    if (result != NULL) {
-      return result;
+  Node* result = fold_compares(igvn);
+  if (result != NULL) {
+    return result;
+  }
+
+  if (AggressiveLivenessForUnstableIf) {
+    CallStaticJavaNode *unc;
+    ProjNode *proj = uncommon_trap_proj(unc, Deoptimization::Reason_unstable_if);
+
+    if (proj != NULL) {
+      int next_bci = unc_bci();
+      ciMethod *method = unc->jvms()->method();
+      if (method != NULL && next_bci != -1) {
+        ResourceMark rm;
+        JVMState* jvms = unc->jvms();
+        Node *top = igvn->C->top(); // Shortcut to top
+        const MethodLivenessResult& live_locals = jvms->method()->liveness_at_bci(next_bci);
+
+        //tty->print_cr("found! next_bci = %d", next_bci);
+        //method->print_short_name(tty);
+        //tty->cr();
+
+        //tty->print("Before:");
+        //unc->dump();
+
+        int len = (int)live_locals.size();
+        bool changed = false;
+        assert(live_locals.is_valid() && len <= jvms->loc_size(), "too many live locals");
+        for (int local = 0; local < len; local++) {
+          if (!live_locals.at(local) && !unc->local(jvms, local)->is_top()) {
+            unc->set_local(jvms, local, top);
+            changed = true;
+          }
+        }
+
+        set_unc_bci(-1);
+        if (changed) {
+          //tty->print("After: ");
+          //unc->dump();
+          igvn->_worklist.push(unc);
+          return this;
+        }
+      }
     }
   }
 
