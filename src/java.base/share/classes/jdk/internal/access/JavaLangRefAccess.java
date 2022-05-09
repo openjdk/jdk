@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,14 @@
 
 package jdk.internal.access;
 
+import java.lang.ref.ReferenceQueue;
+
 public interface JavaLangRefAccess {
+
+    /**
+     * Starts the Finalizer and Reference Handler threads.
+     */
+    void startThreads();
 
     /**
      * Wait for progress in {@link java.lang.ref.Reference}
@@ -43,4 +50,11 @@ public interface JavaLangRefAccess {
      * Invoked by Runtime.runFinalization()
      */
     void runFinalization();
+
+    /**
+     * Constructs a new NativeReferenceQueue.
+     *
+     * Invoked by MethodType.ConcurrentWeakInternSet
+     */
+    <T> ReferenceQueue<T> newNativeReferenceQueue();
 }

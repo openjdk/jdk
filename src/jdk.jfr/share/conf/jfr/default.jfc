@@ -73,6 +73,26 @@
       <setting name="threshold" control="locking-threshold">20 ms</setting>
     </event>
 
+    <event name="jdk.VirtualThreadStart">
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.VirtualThreadEnd">
+      <setting name="enabled">false</setting>
+    </event>
+
+    <event name="jdk.VirtualThreadPinned">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="threshold">20 ms</setting>
+    </event>
+
+    <event name="jdk.VirtualThreadSubmitFailed">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
     <event name="jdk.JavaMonitorEnter">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
@@ -94,6 +114,34 @@
     <event name="jdk.SyncOnValueBasedClass">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.ContinuationFreeze">
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">false</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.ContinuationThaw">
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">false</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.ContinuationFreezeYoung">
+      <setting name="enabled">false</setting>
+    </event>
+
+    <event name="jdk.ContinuationFreezeOld">
+      <setting name="enabled">false</setting>
+    </event>
+
+    <event name="jdk.ContinuationThawYoung">
+      <setting name="enabled">false</setting>
+    </event>
+
+    <event name="jdk.ContinuationThawOld">
+      <setting name="enabled">false</setting>
     </event>
 
     <event name="jdk.ReservedStackActivation">
