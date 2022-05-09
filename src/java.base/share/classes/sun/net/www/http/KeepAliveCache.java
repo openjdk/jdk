@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,7 +233,7 @@ public class KeepAliveCache
         }
     }
 
-    /* Sleeps for an alloted timeout, then checks for timed out connections.
+    /* Sleeps for an allotted timeout, then checks for timed out connections.
      * Errs on the side of caution (leave connections idle for a relatively
      * short time).
      */

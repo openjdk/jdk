@@ -65,6 +65,7 @@
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"
+#include "oops/instanceStackChunkKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
@@ -161,6 +162,12 @@ static inline bool is_class_loader(const Symbol* class_name,
     }
   }
   return false;
+}
+
+static inline bool is_stack_chunk_class(const Symbol* class_name,
+                                        const ClassLoaderData* loader_data) {
+  return (class_name == vmSymbols::jdk_internal_vm_StackChunk() &&
+          loader_data->is_the_null_class_loader_data());
 }
 
 // private: called to verify that k is a static member of this nest.
@@ -439,13 +446,16 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
 
   // Allocation
   if (parser.is_instance_ref_klass()) {
-    // reference
+    // java.lang.ref.Reference
     ik = new (loader_data, size, THREAD) InstanceRefKlass(parser);
   } else if (class_name == vmSymbols::java_lang_Class()) {
-    // mirror
+    // mirror - java.lang.Class
     ik = new (loader_data, size, THREAD) InstanceMirrorKlass(parser);
+  } else if (is_stack_chunk_class(class_name, loader_data)) {
+    // stack chunk
+    ik = new (loader_data, size, THREAD) InstanceStackChunkKlass(parser);
   } else if (is_class_loader(class_name, parser)) {
-    // class loader
+    // class loader - java.lang.ClassLoader
     ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(parser);
   } else {
     // normal
@@ -773,7 +783,7 @@ void InstanceKlass::eager_initialize_impl() {
     if (old_state != _init_state)
       set_init_state(old_state);
   } else {
-    // linking successfull, mark class as initialized
+    // linking successful, mark class as initialized
     set_init_state(fully_initialized);
     fence_and_clear_init_lock();
     // trace

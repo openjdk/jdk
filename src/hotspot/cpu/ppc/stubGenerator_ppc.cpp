@@ -3510,7 +3510,7 @@ class StubGenerator: public StubCodeGenerator {
    * scratch:
    *   R2, R6-R12
    *
-   * Ouput:
+   * Output:
    *   R3_RET     - int   crc result
    */
   // Compute CRC32 function.
@@ -3958,7 +3958,7 @@ class StubGenerator: public StubCodeGenerator {
 
       // Each element of non_match correspond to one each of the 16 input
       // characters.  Those elements that become 0x00 after the xxland
-      // instuction are invalid Base64 characters.
+      // instruction are invalid Base64 characters.
       __ xxland(non_match->to_vsr(), M, bit);
 
       // Compare each element to zero
@@ -4618,9 +4618,9 @@ class StubGenerator: public StubCodeGenerator {
 };
 
 #define UCM_TABLE_MAX_ENTRIES 8
-void StubGenerator_generate(CodeBuffer* code, bool all) {
+void StubGenerator_generate(CodeBuffer* code, int phase) {
   if (UnsafeCopyMemory::_table == NULL) {
     UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
   }
-  StubGenerator g(code, all);
+  StubGenerator g(code, phase);
 }
