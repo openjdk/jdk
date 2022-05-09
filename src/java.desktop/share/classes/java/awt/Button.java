@@ -484,6 +484,7 @@ public class Button extends Component implements Accessible {
      * @throws IOException if an I/O error occurs
      * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
      *         returns {@code true}
+     *
      * @see #removeActionListener(ActionListener)
      * @see #addActionListener(ActionListener)
      * @see java.awt.GraphicsEnvironment#isHeadless
