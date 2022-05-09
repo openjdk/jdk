@@ -297,7 +297,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
             } else {
                 // when getName() is called in decodeParams(), algParams is
                 // null, where AlgorithmParameters.getInstance("PBES2") will
-                // ne used to initialize it.
+                // be used to initialize it.
             }
         }
         if (o != null) {
