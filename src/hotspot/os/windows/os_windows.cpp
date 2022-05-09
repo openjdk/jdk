@@ -1758,6 +1758,15 @@ void os::print_os_info(outputStream* st) {
   VM_Version::print_platform_virtualization_info(st);
 }
 
+static bool get_version_ex(OSVERSIONINFOEX* osvi) {
+  // GetVersionEx is deprecated, but there doesn't seem to be a better
+  // option for the places where we're using it.
+  PRAGMA_DIAG_PUSH
+  PRAGMA_DISABLE_MSVC_WARNING(4996) // Disable deprecation warning.
+  return GetVersionEx((OSVERSIONINFO *)osvi);
+  PRAGMA_DIAG_POP
+}
+
 void os::win32::print_windows_version(outputStream* st) {
   OSVERSIONINFOEX osvi;
   VS_FIXEDFILEINFO *file_info;
@@ -1769,7 +1778,7 @@ void os::win32::print_windows_version(outputStream* st) {
   // trust the OS version information returned by this API.
   ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-  if (!GetVersionEx((OSVERSIONINFO *)&osvi)) {
+  if (!get_version_ex(&osvi)) {
     st->print_cr("Call to GetVersionEx failed");
     return;
   }
@@ -3918,15 +3927,12 @@ void os::win32::initialize_system_info() {
 
   OSVERSIONINFOEX oi;
   oi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-  GetVersionEx((OSVERSIONINFO*)&oi);
+  get_version_ex(&oi);
   switch (oi.dwPlatformId) {
   case VER_PLATFORM_WIN32_NT:
-    {
-      int os_vers = oi.dwMajorVersion * 1000 + oi.dwMinorVersion;
-      if (oi.wProductType == VER_NT_DOMAIN_CONTROLLER ||
-          oi.wProductType == VER_NT_SERVER) {
-        _is_windows_server = true;
-      }
+    if (oi.wProductType == VER_NT_DOMAIN_CONTROLLER ||
+        oi.wProductType == VER_NT_SERVER) {
+      _is_windows_server = true;
     }
     break;
   default: fatal("Unknown platform");
