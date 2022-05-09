@@ -216,7 +216,7 @@ public class TestMeetIncompatibleInterfaceArrays extends ClassLoader {
      *       3: areturn
      *
      * The "test()" method calls the "getName()" function from I1 on the objects returned by "run()".
-     * This will epectedly fail with an "IncompatibleClassChangeError" because the objects returned
+     * This will expectedly fail with an "IncompatibleClassChangeError" because the objects returned
      * by "run()" (and by createI2Array()) are actually of type "I2C" and only implement "I2" but not "I1".
      *
      *

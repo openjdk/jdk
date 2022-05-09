@@ -165,13 +165,6 @@ address LIR_Assembler::emit_call_c(address a) {
 }
 
 int LIR_Assembler::emit_exception_handler() {
-  // If the last instruction is a call (typically to do a throw which
-  // is coming at the end after block reordering) the return address
-  // must still point into the code area in order to avoid assertion
-  // failures when searching for the corresponding bci. => Add a nop.
-  // (was bug 5/14/1999 - gri)
-  __ nop();
-
   // Generate code for exception handler.
   address handler_base = __ start_a_stub(exception_handler_size());
   if (handler_base == NULL) {
@@ -219,7 +212,7 @@ int LIR_Assembler::emit_unwind_handler() {
     __ lgr_if_needed(exception_oop_callee_saved, Z_EXC_OOP); // Preserve the exception.
   }
 
-  // Preform needed unlocking.
+  // Perform needed unlocking.
   MonitorExitStub* stub = NULL;
   if (method()->is_synchronized()) {
     // Runtime1::monitorexit_id expects lock address in Z_R1_scratch.
@@ -263,13 +256,6 @@ int LIR_Assembler::emit_unwind_handler() {
 }
 
 int LIR_Assembler::emit_deopt_handler() {
-  // If the last instruction is a call (typically to do a throw which
-  // is coming at the end after block reordering) the return address
-  // must still point into the code area in order to avoid assertion
-  // failures when searching for the corresponding bci. => Add a nop.
-  // (was bug 5/14/1999 - gri)
-  __ nop();
-
   // Generate code for exception handler.
   address handler_base = __ start_a_stub(deopt_handler_size());
   if (handler_base == NULL) {
@@ -2992,7 +2978,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       __ z_bru(next);
     }
   } else {
-    __ asm_assert_ne("unexpect null obj", __LINE__);
+    __ asm_assert_ne("unexpected null obj", __LINE__);
   }
 
   __ bind(update);

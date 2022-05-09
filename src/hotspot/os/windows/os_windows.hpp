@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ class win32 {
   static int    _processor_type;
   static int    _processor_level;
   static julong _physical_memory;
-  static size_t _default_stack_size;
   static bool   _is_windows_server;
   static bool   _has_exit_bug;
 
@@ -83,10 +82,6 @@ class win32 {
  public:
   // Generic interface:
 
-  // Trace number of created threads
-  static          intx  _os_thread_limit;
-  static volatile intx  _os_thread_count;
-
   // Tells whether this is a server version of Windows
   static bool is_windows_server() { return _is_windows_server; }
 
@@ -102,9 +97,6 @@ class win32 {
   // Read the headers for the executable that started the current process into
   // the structure passed in (see winnt.h).
   static void read_executable_headers(PIMAGE_NT_HEADERS);
-
-  // Default stack size for the current process.
-  static size_t default_stack_size() { return _default_stack_size; }
 
   static bool get_frame_at_stack_banging_point(JavaThread* thread,
                           struct _EXCEPTION_POINTERS* exceptionInfo,
@@ -125,7 +117,7 @@ class win32 {
   static bool find_mapping(address p, mapping_info_t* mapping_info);
 
 #ifndef _WIN64
-  // A wrapper to install a structured exception handler for fast JNI accesors.
+  // A wrapper to install a structured exception handler for fast JNI accessors.
   static address fast_jni_accessor_wrapper(BasicType);
 #endif
 

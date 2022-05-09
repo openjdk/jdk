@@ -1401,7 +1401,7 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
             if (WITH_ZERO_EXTRA_INFO(target) !=
                              MAKE_FULLINFO(ITEM_Object, 0, 0))
                 CCerror(context, "Illegal creation of multi-dimensional array");
-            /* operand gets set to the "unitialized object".  operand2 gets
+            /* operand gets set to the "uninitialized object".  operand2 gets
              * set to what the value will be after it's initialized. */
             this_idata->operand.fi = MAKE_FULLINFO(ITEM_NewObject, 0, inumber);
             this_idata->operand2.fi = target;
@@ -2173,11 +2173,11 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                 }
                 break;
 
-            case '@': {         /* unitialized object, for call to <init> */
+            case '@': {         /* uninitialized object, for call to <init> */
                 int item_type = GET_ITEM_TYPE(top_type);
                 if (item_type != ITEM_NewObject && item_type != ITEM_InitObject)
                     CCerror(context,
-                            "Expecting to find unitialized object on stack");
+                            "Expecting to find uninitialized object on stack");
                 break;
             }
 
@@ -2476,7 +2476,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
             /* Make sure that nothing on the stack already looks like what
              * we want to create.  I can't image how this could possibly happen
              * but we should test for it anyway, since if it could happen, the
-             * result would be an unitialized object being able to masquerade
+             * result would be an uninitialized object being able to masquerade
              * as an initialized one.
              */
             stack_item_type *item;

@@ -27,6 +27,7 @@
  * @summary Quick test for the new WhiteBox methods of JDK-8275908
  *
  * @requires vm.compiler2.enabled & vm.compMode != "Xcomp"
+ * @requires vm.opt.DeoptimizeALot != true
  *
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
