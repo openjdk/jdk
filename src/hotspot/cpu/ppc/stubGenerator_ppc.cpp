@@ -4501,6 +4501,74 @@ class StubGenerator: public StubCodeGenerator {
 
 #endif // VM_LITTLE_ENDIAN
 
+  RuntimeStub* generate_cont_doYield() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  address generate_cont_thaw(bool return_barrier, bool exception) {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  address generate_cont_thaw() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  address generate_cont_returnBarrier() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  address generate_cont_returnBarrier_exception() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+#if INCLUDE_JFR
+
+  static RuntimeStub* generate_jfr_stub(const char* name, address entrypoint) {
+    int insts_size = 512;
+    int locs_size = 64;
+    CodeBuffer code(name, insts_size, locs_size);
+    OopMapSet* oop_maps = new OopMapSet();
+    MacroAssembler* masm = new MacroAssembler(&code);
+    MacroAssembler* _masm = masm;
+
+    address start = __ pc();
+    __ unimplemented(FILE_AND_LINE);
+    int frame_complete = __ pc() - start;
+
+    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
+      RuntimeStub::new_runtime_stub(name, &code, frame_complete,
+                                    0 /*framesize*/,
+                                    oop_maps, false);
+    return stub;
+  }
+
+  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
+  // It returns a jobject handle to the event writer.
+  // The handle is dereferenced and the return value is the event writer oop.
+  RuntimeStub* generate_jfr_write_checkpoint() {
+    return generate_jfr_stub("jfr_write_checkpoint",
+                              CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint));
+  }
+
+  // For c1: call the corresponding runtime routine, it returns a jobject handle to the event writer.
+  // The handle is dereferenced and the return value is the event writer oop.
+  RuntimeStub* generate_jfr_get_event_writer() {
+    return generate_jfr_stub("jfr_get_event_writer",
+                              CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::event_writer));
+  }
+#endif // INCLUDE_JFR
+
+
   // Initialization
   void generate_initial() {
     // Generates all stubs and initializes the entry points
@@ -4534,6 +4602,21 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_crc32c_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32C_POLY);
       StubRoutines::_updateBytesCRC32C = generate_CRC32_updateBytes(true);
     }
+  }
+
+  void generate_phase1() {
+    // Continuation stubs:
+    StubRoutines::_cont_thaw          = generate_cont_thaw();
+    StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
+    StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+    StubRoutines::_cont_doYield_stub = generate_cont_doYield();
+    StubRoutines::_cont_doYield      = StubRoutines::_cont_doYield_stub == nullptr ? nullptr
+                                        : StubRoutines::_cont_doYield_stub->entry_point();
+
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+    JFR_ONLY(StubRoutines::_jfr_get_event_writer_stub = generate_jfr_get_event_writer();)
+    JFR_ONLY(StubRoutines::_jfr_get_event_writer = StubRoutines::_jfr_get_event_writer_stub->entry_point();)
   }
 
   void generate_all() {
@@ -4608,11 +4691,13 @@ class StubGenerator: public StubCodeGenerator {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, bool all) : StubCodeGenerator(code) {
-    if (all) {
-      generate_all();
-    } else {
+  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
+    if (phase == 0) {
       generate_initial();
+    } else if (phase == 1) {
+      generate_phase1(); // stubs that must be available for the interpreter
+    } else {
+      generate_all();
     }
   }
 };
