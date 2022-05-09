@@ -37,6 +37,7 @@ import java.awt.Rectangle;
 
 import javax.swing.ButtonModel;
 import javax.swing.Icon;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
@@ -392,7 +393,8 @@ public class SynthGraphicsUtils {
         Insets insets = SynthLookAndFeel.getPaintingInsets(ss, paintInsets);
 
         final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
-        if (v != null) {
+
+        if (c instanceof JButton && v != null) {
             paintViewR.x = 0;
             paintViewR.y = 0;
             paintViewR.width = c.getWidth();

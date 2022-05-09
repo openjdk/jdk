@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8015854
- * @summary Tests HTML image as JButton text for unwanted padding on macOS Aqua LAF
+ * @summary Tests HTML image as JButton text for unwanted padding
  * @run main HtmlButtonImageTest
  */
 
