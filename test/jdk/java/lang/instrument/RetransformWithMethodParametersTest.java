@@ -25,7 +25,7 @@
  * @test
  * @bug 8240908
  *
- * @library /test/lib
+ * @library /test/lib /test/jdk/com/sun/jdi
  * @run compile -g -parameters RetransformWithMethodParametersTest.java
  * @run shell MakeJAR.sh retransformAgent
  *
@@ -45,7 +45,7 @@ import java.util.Arrays;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.util.ClassTransformer;
+import lib.jdb.ClassTransformer;
 
 /*
  * The test verifies Instrumentation.retransformClasses() (and JVMTI function RetransformClasses)
