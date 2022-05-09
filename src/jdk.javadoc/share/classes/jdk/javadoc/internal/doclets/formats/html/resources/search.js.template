@@ -24,8 +24,13 @@
  */
 "use strict";
 const messages = {
+    enterTerm: "##REPLACE:doclet.search.enter_search_term##",
     noResult: "##REPLACE:doclet.search.no_results##",
-    loading: "##REPLACE:doclet.search.loading##"
+    oneResult: "##REPLACE:doclet.search.one_result##",
+    manyResults: "##REPLACE:doclet.search.many_results##",
+    loading: "##REPLACE:doclet.search.loading##",
+    searching: "##REPLACE:doclet.search.searching##",
+    redirecting: "##REPLACE:doclet.search.redirecting##",
 }
 const categories = {
     modules: "##REPLACE:doclet.search.modules##",
@@ -36,7 +41,7 @@ const categories = {
 };
 const highlight = "<span class='result-highlight'>$&</span>";
 const NO_MATCH = {};
-const MAX_RESULTS = 1200;
+const MAX_RESULTS = 500;
 function checkUnnamed(name, separator) {
     return name === "<Unnamed>" || !name ? "" : name + separator;
 }
@@ -230,6 +235,7 @@ function rateNoise(str) {
 }
 function doSearch(request, response) {
     var term = request.term.trim();
+    var maxResults = request.maxResults || MAX_RESULTS;
     if (term.length === 0) {
         return this.close();
     }
@@ -292,7 +298,7 @@ function doSearch(request, response) {
                 }
                 matches.push(m);
             }
-            return matches.length < MAX_RESULTS;
+            return matches.length < maxResults;
         });
         return matches.sort(function(e1, e2) {
             return e2.score - e1.score;
@@ -319,6 +325,25 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
     _create: function() {
         this._super();
         this.widget().menu("option", "items", "> .result-item");
+        // workaround for search result scrolling
+        this.menu._scrollIntoView = function _scrollIntoView( item ) {
+            var borderTop, paddingTop, offset, scroll, elementHeight, itemHeight;
+            if ( this._hasScroll() ) {
+                borderTop = parseFloat( $.css( this.activeMenu[ 0 ], "borderTopWidth" ) ) || 0;
+                paddingTop = parseFloat( $.css( this.activeMenu[ 0 ], "paddingTop" ) ) || 0;
+                offset = item.offset().top - this.activeMenu.offset().top - borderTop - paddingTop;
+                scroll = this.activeMenu.scrollTop();
+                elementHeight = this.activeMenu.height() - 26;
+                console.log(item)
+                itemHeight = item.outerHeight();
+
+                if ( offset < 0 ) {
+                    this.activeMenu.scrollTop( scroll + offset );
+                } else if ( offset + itemHeight > elementHeight ) {
+                    this.activeMenu.scrollTop( scroll + offset - elementHeight + itemHeight );
+                }
+            }
+        };
     },
     _renderMenu: function(ul, items) {
         var currentCategory = "";
@@ -337,6 +362,8 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
             }
             li.attr("class", "result-item");
         });
+        ul.append("<li class='ui-static-link'><a href='" + pathtoroot + "search.html?q="
+            + encodeURI(widget.term) + "'>Go to search page</a></li>");
     },
     _renderItem: function(ul, item) {
         var li = $("<li/>").appendTo(ul);
@@ -374,7 +401,8 @@ $(function() {
         if (expanded) {
             collapse();
         } else {
-            $("div#navbar-top").height($("#navbar-top").prop("scrollHeight"));
+            var navbar = $("div#navbar-top");
+            navbar.height(navbar.prop("scrollHeight"));
             $("button#navbar-toggle-button")
                 .addClass("expanded")
                 .attr("aria-expanded", "true");

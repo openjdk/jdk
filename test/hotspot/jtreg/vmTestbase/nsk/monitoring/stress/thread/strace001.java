@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ public class strace001 {
     private static int depth;
     private static int threadCount;
     private static String[] expectedTrace;
+    private static String[] expectedSystemTrace;
     private static ThreadMonitor monitor;
     private static ThreadController controller;
 
@@ -137,35 +138,41 @@ public class strace001 {
     // Fill expectedTrace array according to the invocation type that is set in
     // test options
     private static boolean fillTrace() {
+        expectedSystemTrace = new String[]{
+                "java.lang.Thread.sleep",
+                "java.lang.Thread.sleep0",
+                "java.lang.Thread.yield",
+                "java.lang.Thread.yield0",
+                "java.lang.Thread.currentCarrierThread",
+                "java.lang.Thread.currentThread",
+                "jdk.internal.event.ThreadSleepEvent.<clinit>",
+                "jdk.internal.event.ThreadSleepEvent.isTurnedOn",
+                "jdk.internal.event.ThreadSleepEvent.isEnabled"
+        };
+
         switch (controller.getInvocationType()) {
             case ThreadController.JAVA_TYPE:
-                expectedTrace = new String[] {
-                    "java.lang.Thread.sleep"
-                    , "java.lang.Thread.yield"
-                    , THREAD_NAME + ".waitForSign"
-                    , THREAD_NAME + ".recursionJava"
-                    , THREAD_NAME + ".run"
+                expectedTrace = new String[]{
+                        THREAD_NAME + ".waitForSign",
+                        THREAD_NAME + ".recursionJava",
+                        THREAD_NAME + ".run"
                 };
                 break;
 
             case ThreadController.NATIVE_TYPE:
-                expectedTrace = new String[] {
-                    "java.lang.Thread.sleep"
-                    , "java.lang.Thread.yield"
-                    , THREAD_NAME + ".waitForSign"
-                    , THREAD_NAME + ".recursionNative"
-                    , THREAD_NAME + ".run"
+                expectedTrace = new String[]{
+                        THREAD_NAME + ".waitForSign",
+                        THREAD_NAME + ".recursionNative",
+                        THREAD_NAME + ".run"
                 };
                 break;
 
             case ThreadController.MIXED_TYPE:
-                expectedTrace = new String[] {
-                    "java.lang.Thread.sleep"
-                    , "java.lang.Thread.yield"
-                    , THREAD_NAME + ".waitForSign"
-                    , THREAD_NAME + ".recursionNative"
-                    , THREAD_NAME + ".recursionJava"
-                    , THREAD_NAME + ".run"
+                expectedTrace = new String[]{
+                        THREAD_NAME + ".waitForSign",
+                        THREAD_NAME + ".recursionNative",
+                        THREAD_NAME + ".recursionJava",
+                        THREAD_NAME + ".run"
                 };
                 break;
 
@@ -194,7 +201,7 @@ public class strace001 {
     // The method performs checks of the stack trace
     private static boolean checkTrace(StackTraceElement[] elements) {
         int length = elements.length;
-        int expectedLength = depth +3;
+        int expectedLength = depth + 5;
         boolean result = true;
 
         // Check the length of the trace. It must not be greater than
@@ -233,6 +240,12 @@ public class strace001 {
         // The latest element is not checked, since it must be "run()"
         for (int i = 0; i < expectedTrace.length - 1; i++) {
             if (expectedTrace[i].equals(name))
+                return true;
+        }
+
+        // Implementation of sleep/wait/yield
+        for (int i = 0; i < expectedSystemTrace.length; i++) {
+            if (expectedSystemTrace[i].equals(name))
                 return true;
         }
 

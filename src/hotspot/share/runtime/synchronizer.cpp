@@ -34,6 +34,7 @@
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
