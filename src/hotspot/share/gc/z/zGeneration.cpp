@@ -29,6 +29,8 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zAllocator.inline.hpp"
+#include "gc/z/zBarrierSet.hpp"
+#include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
 #include "gc/z/zBreakpoint.hpp"
 #include "gc/z/zCollectedHeap.hpp"
@@ -586,6 +588,15 @@ public:
   }
 };
 
+void ZGenerationYoung::flip_mark_start() {
+  ZGlobalsPointers::flip_young_mark_start();
+  ZBarrierSet::assembler()->patch_barriers();
+}
+
+void ZGenerationYoung::flip_relocate_start() {
+  ZGlobalsPointers::flip_young_relocate_start();
+  ZBarrierSet::assembler()->patch_barriers();
+}
 
 void ZGenerationYoung::pause_mark_start() {
   if (type() == ZYoungType::major_roots) {
@@ -723,8 +734,8 @@ void ZGenerationYoung::concurrent_relocate() {
 void ZGenerationYoung::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
-  // Flip address view
-  ZGlobalsPointers::flip_young_mark_start();
+  // Change good colors
+  flip_mark_start();
 
   // Retire allocating pages
   ZAllocator::eden()->retire_pages();
@@ -785,8 +796,8 @@ bool ZGenerationYoung::mark_end() {
 void ZGenerationYoung::relocate_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
-  // Flip address view
-  ZGlobalsPointers::flip_young_relocate_start();
+  // Change good colors
+  flip_relocate_start();
 
   // Enter relocate phase
   set_phase(Phase::Relocate);
@@ -929,6 +940,16 @@ void ZGenerationOld::collect(ConcurrentGCTimer* timer) {
   concurrent_relocate();
 }
 
+void ZGenerationOld::flip_mark_start() {
+  ZGlobalsPointers::flip_old_mark_start();
+  ZBarrierSet::assembler()->patch_barriers();
+}
+
+void ZGenerationOld::flip_relocate_start() {
+  ZGlobalsPointers::flip_old_relocate_start();
+  ZBarrierSet::assembler()->patch_barriers();
+}
+
 void ZGenerationOld::concurrent_mark() {
   ZStatTimerOld timer(ZPhaseConcurrentMarkOld);
   ZBreakpoint::at_after_marking_started();
@@ -1053,8 +1074,8 @@ void ZGenerationOld::mark_start() {
   // Verification
   ClassLoaderDataGraph::verify_claimed_marks_not(ClassLoaderData::_claim_strong);
 
-  // Flip address view
-  ZGlobalsPointers::flip_old_mark_start();
+  // Change good colors
+  flip_mark_start();
 
   // Retire allocating pages
   ZAllocator::old()->retire_pages();
@@ -1206,8 +1227,8 @@ void ZGenerationOld::relocate_start() {
   // Finish unloading stale metadata and nmethods
   _unload.finish();
 
-  // Flip address view
-  ZGlobalsPointers::flip_old_relocate_start();
+  // Change good colors
+  flip_relocate_start();
 
   // Enter relocate phase
   set_phase(Phase::Relocate);

@@ -165,6 +165,8 @@ public:
   void generate_conjoint_oop_copy(MacroAssembler* masm, bool dest_uninitialized);
 
   void patch_barrier_relocation(address addr, int format);
+
+  void patch_barriers() {}
 };
 
 #endif // CPU_PPC_GC_Z_ZBARRIERSETASSEMBLER_PPC_HPP

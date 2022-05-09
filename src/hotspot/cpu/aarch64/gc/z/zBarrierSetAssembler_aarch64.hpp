@@ -154,6 +154,8 @@ public:
 
   void patch_barrier_relocation(address addr, int format);
 
+  void patch_barriers() {}
+
 #ifdef COMPILER1
   void generate_c1_color(LIR_Assembler* ce, LIR_Opr ref) const;
   void generate_c1_uncolor(LIR_Assembler* ce, LIR_Opr ref) const;
