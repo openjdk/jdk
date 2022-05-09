@@ -2898,8 +2898,6 @@ void MacroAssembler::pop_cont_fastpath() {
 }
 
 void MacroAssembler::inc_held_monitor_count() {
-  if (!Continuations::enabled()) return;
-
 #ifndef _LP64
   Register thread = rax;
   push(thread);
@@ -2916,8 +2914,6 @@ void MacroAssembler::inc_held_monitor_count() {
 }
 
 void MacroAssembler::dec_held_monitor_count() {
-  if (!Continuations::enabled()) return;
-
 #ifndef _LP64
   Register thread = rax;
   push(thread);
@@ -2927,24 +2923,6 @@ void MacroAssembler::dec_held_monitor_count() {
 #endif
 
   decrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-
-#ifndef _LP64
-  pop(thread);
-#endif
-}
-
-void MacroAssembler::reset_held_monitor_count() {
-  if (!Continuations::enabled()) return;
-
-#ifndef _LP64
-  Register thread = rax;
-  push(thread);
-  get_thread(thread);
-#else
-  Register thread = r15_thread;
-#endif
-
-  movl(Address(thread, JavaThread::held_monitor_count_offset()), (int32_t)0);
 
 #ifndef _LP64
   pop(thread);

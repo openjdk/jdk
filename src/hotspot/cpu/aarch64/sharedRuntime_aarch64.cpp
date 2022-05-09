@@ -1566,7 +1566,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label lock_done;
 
   if (method->is_synchronized()) {
-
+    Label count;
     const int mark_word_offset = BasicLock::displaced_header_offset_in_bytes();
 
     // Get the handle (the 2nd argument)
@@ -1588,9 +1588,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ str(swap_reg, Address(lock_reg, mark_word_offset));
 
       // src -> dest iff dest == r0 else r0 <- dest
-      { Label here;
-        __ cmpxchg_obj_header(r0, lock_reg, obj_reg, rscratch1, lock_done, /*fallthrough*/NULL);
-      }
+      __ cmpxchg_obj_header(r0, lock_reg, obj_reg, rscratch1, count, /*fallthrough*/NULL);
 
       // Hmm should this move to the slow path code area???
 
@@ -1613,6 +1611,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     } else {
       __ b(slow_path_lock);
     }
+    __ bind(count);
+    __ incrementw(Address(rthread, JavaThread::held_monitor_count_offset()));
 
     // Slow path will re-enter here
     __ bind(lock_done);
@@ -1714,13 +1714,17 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Get locked oop from the handle we passed to jni
     __ ldr(obj_reg, Address(oop_handle_reg, 0));
 
-    Label done;
+    Label done, not_recursive;
 
     if (!UseHeavyMonitors) {
       // Simple recursive lock?
       __ ldr(rscratch1, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
-      __ cbz(rscratch1, done);
+      __ cbnz(rscratch1, not_recursive);
+      __ decrementw(Address(rthread, JavaThread::held_monitor_count_offset()));
+      __ b(done);
     }
+
+    __ bind(not_recursive);
 
     // Must save r0 if if it is live now because cmpxchg must use it
     if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
@@ -1734,9 +1738,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ ldr(old_hdr, Address(r0, 0));
 
       // Atomic swap old header if oop still contains the stack lock
-      Label succeed;
-      __ cmpxchg_obj_header(r0, old_hdr, obj_reg, rscratch1, succeed, &slow_path_unlock);
-      __ bind(succeed);
+      Label count;
+      __ cmpxchg_obj_header(r0, old_hdr, obj_reg, rscratch1, count, &slow_path_unlock);
+      __ bind(count);
+      __ decrementw(Address(rthread, JavaThread::held_monitor_count_offset()));
     } else {
       __ b(slow_path_unlock);
     }

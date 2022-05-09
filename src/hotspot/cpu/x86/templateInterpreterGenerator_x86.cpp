@@ -604,8 +604,6 @@ void TemplateInterpreterGenerator::lock_method() {
   const Register lockreg = NOT_LP64(rdx) LP64_ONLY(c_rarg1);
   __ movptr(lockreg, rsp); // object address
   __ lock_object(lockreg);
-
-  __ inc_held_monitor_count();
 }
 
 // Generate a fixed interpreter frame. This is identical setup for
@@ -1264,7 +1262,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
       __ bind(unlock);
       __ unlock_object(regmon);
-      __ dec_held_monitor_count();
     }
     __ bind(L);
   }
