@@ -26,7 +26,6 @@ import java.awt.TextField;
 import java.lang.reflect.InvocationTargetException;
 
 import static java.awt.EventQueue.invokeAndWait;
-
 /*
   @test
   @key headful
@@ -48,21 +47,19 @@ public class SelectionVisible {
         tf.select(0, 6);
         frame.add(tf);
         frame.setSize(200,200);
-        frame.setAlwaysOnTop(true);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
-    private static void test() {
+    private static void test() throws InterruptedException,
+            InvocationTargetException {
         String selectedText = tf.getSelectedText();
         System.out.println("Selected Text : " + selectedText);
+        invokeAndWait(SelectionVisible::disposeFrame);
         if (!selectedText.equals("012345")) {
-            disposeFrame();
             throw new RuntimeException("Expected 012345 to be selected but " +
                     "got " + selectedText);
         }
-
-        disposeFrame();
         System.out.println("Test passed");
     }
 

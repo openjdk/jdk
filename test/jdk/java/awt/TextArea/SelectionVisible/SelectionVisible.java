@@ -48,7 +48,6 @@ public class SelectionVisible {
         ta.select(3, 9);
 
         frame.add(ta);
-        frame.setAlwaysOnTop(true);
         frame.setLocationRelativeTo(null);
         frame.pack();
         frame.setVisible(true);
@@ -56,16 +55,15 @@ public class SelectionVisible {
         ta.requestFocus();
     }
 
-    public static void test() {
+    public static void test() throws InterruptedException,
+            InvocationTargetException {
         String selectedText = ta.getSelectedText();
         System.out.println("selectedText : " + selectedText);
+        invokeAndWait(SelectionVisible::disposeFrame);
         if (!selectedText.equals("34\n567")) {
-            disposeFrame();
             throw new RuntimeException("Expected '34\n567' to be " +
                     "selected text, but got " + selectedText);
         }
-
-        disposeFrame();
         System.out.println("Test passed");
     }
 
