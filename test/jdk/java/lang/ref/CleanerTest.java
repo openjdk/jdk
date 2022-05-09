@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import jdk.test.lib.Utils;
 
 import org.testng.Assert;
 import org.testng.TestNG;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /*
@@ -58,8 +59,9 @@ import org.testng.annotations.Test;
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.ref
  *          java.management
+ * @compile --enable-preview -source ${jdk.version} CleanerTest.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run testng/othervm
+ * @run testng/othervm --enable-preview
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      -verbose:gc CleanerTest
  */
@@ -72,6 +74,13 @@ public class CleanerTest {
     // Access to WhiteBox utilities
     static final WhiteBox whitebox = WhiteBox.getWhiteBox();
 
+    @DataProvider(name = "cleanerSuppliers")
+    public Object[][] factories() {
+        Supplier<Cleaner> supplier1 = () -> Cleaner.create();
+        Supplier<Cleaner> supplier2 = () -> Cleaner.create(Thread.ofVirtual().factory());
+        return new Object[][] { { supplier1 }, { supplier2 } };
+    }
+
     /**
      * Test that sequences of the various actions on a Reference
      * and on the Cleanable instance have the desired result.
@@ -82,10 +91,10 @@ public class CleanerTest {
      * collection actions on the reference and explicitly performing
      * the cleaning action.
      */
-    @Test
+    @Test(dataProvider = "cleanerSuppliers")
     @SuppressWarnings("unchecked")
-    void testCleanableActions() {
-        Cleaner cleaner = Cleaner.create();
+    public void testCleanableActions(Supplier<Cleaner> supplier) {
+        Cleaner cleaner = supplier.get();
 
         // Individually
         generateCases(cleaner, c -> c.clearRef());
@@ -109,10 +118,10 @@ public class CleanerTest {
      * collection actions on the reference, explicitly performing
      * the cleanup and explicitly clearing the cleaning action.
      */
-    @Test
+    @Test(dataProvider = "cleanerSuppliers")
     @SuppressWarnings("unchecked")
-    void testRefSubtypes() {
-        Cleaner cleaner = Cleaner.create();
+    public void testRefSubtypes(Supplier<Cleaner> supplier) {
+        Cleaner cleaner = supplier.get();
 
         // Individually
         generateCasesInternal(cleaner, c -> c.clearRef());
@@ -248,10 +257,10 @@ public class CleanerTest {
      * Test that releasing the reference to the Cleaner service allows it to be
      * be freed.
      */
-    @Test
-    void testCleanerTermination() {
+    @Test(dataProvider = "cleanerSuppliers")
+    public void testCleanerTermination(Supplier<Cleaner> supplier) {
         ReferenceQueue<Object> queue = new ReferenceQueue<>();
-        Cleaner service = Cleaner.create();
+        Cleaner service = supplier.get();
 
         PhantomReference<Object> ref = new PhantomReference<>(service, queue);
         System.gc();
@@ -277,8 +286,7 @@ public class CleanerTest {
      * @param expectCleaned true if cleaning should occur
      * @param msg a message to explain the error
      */
-    static void checkCleaned(Semaphore semaphore, boolean expectCleaned,
-                             String msg) {
+    static void checkCleaned(Semaphore semaphore, boolean expectCleaned, String msg) {
         long max_cycles = expectCleaned ? 10 : 3;
         long cycle = 0;
         for (; cycle < max_cycles; cycle++) {
@@ -519,10 +527,10 @@ public class CleanerTest {
      * Verify that casting a Cleanup to a Reference is not allowed to
      * get the referent or clear the reference.
      */
-    @Test
+    @Test(dataProvider = "cleanerSuppliers")
     @SuppressWarnings("rawtypes")
-    void testReferentNotAvailable() {
-        Cleaner cleaner = Cleaner.create();
+    public void testReferentNotAvailable(Supplier<Cleaner> supplier) {
+        Cleaner cleaner = supplier.get();
         Semaphore s1 = new Semaphore(0);
 
         Object obj = new String("a new string");
@@ -552,7 +560,7 @@ public class CleanerTest {
      * Test the Cleaner from the CleanerFactory.
      */
     @Test
-    void testCleanerFactory() {
+    public void testCleanerFactory() {
         Cleaner cleaner = CleanerFactory.cleaner();
 
         Object obj = new Object();

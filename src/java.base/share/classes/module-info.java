@@ -144,7 +144,10 @@ module java.base {
     exports jdk.internal.javac to
         java.compiler,
         jdk.compiler,
-        jdk.jshell;
+        jdk.jdi,
+        jdk.jfr,
+        jdk.jshell,
+        jdk.management;
     exports jdk.internal.access to
         java.desktop,
         java.logging,
@@ -227,7 +230,9 @@ module java.base {
         jdk.internal.vm.ci,
         jdk.unsupported;
     exports jdk.internal.vm to
+        java.management,
         jdk.internal.jvmstat,
+        jdk.management,
         jdk.management.agent;
     exports jdk.internal.vm.annotation to
         java.instrument,
