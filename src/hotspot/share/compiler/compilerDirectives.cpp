@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,12 +102,20 @@ void CompilerDirectives::finalize(outputStream* st) {
 }
 
 void DirectiveSet::finalize(outputStream* st) {
-  // Check LogOption and warn
+  const char* level;
+  if (is_c1(this->directive())) {
+    level = "c1";
+  } else if (is_c2(this->directive())) {
+    level = "c2";
+  } else {
+    ShouldNotReachHere();
+  }
+
   if (LogOption && !LogCompilation) {
-    st->print_cr("Warning:  +LogCompilation must be set to enable compilation logging from directives");
+    st->print_cr("Warning: %s: +LogCompilation must be set to enable compilation logging from directives", level);
   }
   if (PrintAssemblyOption && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
-    warning("printing of assembly code is enabled; turning on DebugNonSafepoints to gain additional output");
+    warning("%s: printing of assembly code is enabled; turning on DebugNonSafepoints to gain additional output", level);
     DebugNonSafepoints = true;
   }
 
@@ -183,6 +191,14 @@ DirectiveSet* CompilerDirectives::get_for(AbstractCompiler *comp) {
     assert(comp->is_c1() || comp->is_jvmci(), "");
     return _c1_store;
   }
+}
+
+bool DirectiveSet::is_c1(CompilerDirectives* directive) {
+  return this == directive->_c1_store;
+}
+
+bool DirectiveSet::is_c2(CompilerDirectives* directive) {
+  return this == directive->_c2_store;
 }
 
 // In the list of Control/disabled intrinsics, the ID of the control intrinsics can separated:
