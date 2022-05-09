@@ -57,10 +57,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#if INCLUDE_JFR
-#include "jfr/jfr.hpp"
-#endif
-
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   vmIntrinsicID id = m->intrinsic_id();
@@ -472,11 +468,15 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_onSpinWait:               return inline_onspinwait();
 
+  case vmIntrinsics::_currentCarrierThread:     return inline_native_currentCarrierThread();
   case vmIntrinsics::_currentThread:            return inline_native_currentThread();
+  case vmIntrinsics::_setCurrentThread:         return inline_native_setCurrentThread();
+
+  case vmIntrinsics::_extentLocalCache:          return inline_native_extentLocalCache();
+  case vmIntrinsics::_setExtentLocalCache:       return inline_native_setExtentLocalCache();
 
 #ifdef JFR_HAVE_INTRINSICS
-  case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, JFR_TIME_FUNCTION), "counterTime");
-  case vmIntrinsics::_getClassId:               return inline_native_classID();
+  case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, JfrTime::time_function()), "counterTime");
   case vmIntrinsics::_getEventWriter:           return inline_native_getEventWriter();
 #endif
   case vmIntrinsics::_currentTimeMillis:        return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeMillis), "currentTimeMillis");
@@ -631,6 +631,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_fmaF:
     return inline_fma(intrinsic_id());
 
+  case vmIntrinsics::_Continuation_doYield:
+    return inline_continuation_do_yield();
+
   case vmIntrinsics::_isDigit:
   case vmIntrinsics::_isLowerCase:
   case vmIntrinsics::_isUpperCase:
@@ -752,7 +755,7 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
     }
 #endif
     Node* slow_ctl = control();
-    set_control(top()); // No fast path instrinsic
+    set_control(top()); // No fast path intrinsic
     return slow_ctl;
   }
 }
@@ -889,18 +892,41 @@ void LibraryCallKit::generate_string_range_check(Node* array, Node* offset, Node
   }
 }
 
-//--------------------------generate_current_thread--------------------
-Node* LibraryCallKit::generate_current_thread(Node* &tls_output) {
-  ciKlass*    thread_klass = env()->Thread_klass();
-  const Type* thread_type  = TypeOopPtr::make_from_klass(thread_klass)->cast_to_ptr_type(TypePtr::NotNull);
+Node* LibraryCallKit::current_thread_helper(Node*& tls_output, ByteSize handle_offset,
+                                            bool is_immutable) {
+  ciKlass* thread_klass = env()->Thread_klass();
+  const Type* thread_type
+    = TypeOopPtr::make_from_klass(thread_klass)->cast_to_ptr_type(TypePtr::NotNull);
+
   Node* thread = _gvn.transform(new ThreadLocalNode());
-  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::threadObj_offset()));
+  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(handle_offset));
   tls_output = thread;
-  Node* thread_obj_handle = LoadNode::make(_gvn, NULL, immutable_memory(), p, p->bottom_type()->is_ptr(), TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered);
+
+  Node* thread_obj_handle
+    = (is_immutable
+      ? LoadNode::make(_gvn, NULL, immutable_memory(), p, p->bottom_type()->is_ptr(),
+        TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered)
+      : make_load(NULL, p, p->bottom_type()->is_ptr(), T_ADDRESS, MemNode::unordered));
   thread_obj_handle = _gvn.transform(thread_obj_handle);
-  return access_load(thread_obj_handle, thread_type, T_OBJECT, IN_NATIVE | C2_IMMUTABLE_MEMORY);
+
+  DecoratorSet decorators = IN_NATIVE;
+  if (is_immutable) {
+    decorators |= C2_IMMUTABLE_MEMORY;
+  }
+  return access_load(thread_obj_handle, thread_type, T_OBJECT, decorators);
 }
 
+//--------------------------generate_current_thread--------------------
+Node* LibraryCallKit::generate_current_thread(Node* &tls_output) {
+  return current_thread_helper(tls_output, JavaThread::threadObj_offset(),
+                               /*is_immutable*/false);
+}
+
+//--------------------------generate_virtual_thread--------------------
+Node* LibraryCallKit::generate_virtual_thread(Node* tls_output) {
+  return current_thread_helper(tls_output, JavaThread::vthread_offset(),
+                               !C->method()->changes_current_thread());
+}
 
 //------------------------------make_string_method_node------------------------
 // Helper method for String intrinsic functions. This version is called with
@@ -1065,7 +1091,7 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
     return true;
   }
 
-  // length is now known postive, add a cast node to make this explicit
+  // length is now known positive, add a cast node to make this explicit
   jlong upper_bound = _gvn.type(length)->is_integer(bt)->hi_as_long();
   Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
   casted_length = _gvn.transform(casted_length);
@@ -1586,7 +1612,7 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
   if (is_store) {
     access_store_at(value, adr, TypeAryPtr::BYTES, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
   } else {
-    ch = access_load_at(value, adr, TypeAryPtr::BYTES, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD);
+    ch = access_load_at(value, adr, TypeAryPtr::BYTES, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD | C2_UNKNOWN_CONTROL_LOAD);
     set_result(ch);
   }
   return true;
@@ -2194,32 +2220,49 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
 }
 
 //--------------------------inline_unsigned_divmod_methods-----------------------------
-// inline int Integer.divideUnsigned(init, int)
+// inline int Integer.divideUnsigned(int, int)
 // inline int Integer.remainderUnsigned(int, int)
+// inline long Long.divideUnsigned(long, long)
+// inline long Long.remainderUnsigned(long, long)
 bool LibraryCallKit::inline_divmod_methods(vmIntrinsics::ID id) {
   Node* n = NULL;
-  switch(id) {
-    case vmIntrinsics::_divideUnsigned_i:
+  switch (id) {
+    case vmIntrinsics::_divideUnsigned_i: {
       zero_check_int(argument(1));
-      // Compile-time detect of null-exception?
-      if (stopped()) return false;
+      // Compile-time detect of null-exception
+      if (stopped()) {
+        return true; // keep the graph constructed so far
+      }
       n = new UDivINode(control(), argument(0), argument(1));
       break;
-    case vmIntrinsics::_divideUnsigned_l:
+    }
+    case vmIntrinsics::_divideUnsigned_l: {
       zero_check_long(argument(2));
-      // Compile-time detect of null-exception?
-      if (stopped()) return false;
-      n = new UDivLNode(control(), argument(0), argument(2));  break;
-    case vmIntrinsics::_remainderUnsigned_i:
+      // Compile-time detect of null-exception
+      if (stopped()) {
+        return true; // keep the graph constructed so far
+      }
+      n = new UDivLNode(control(), argument(0), argument(2));
+      break;
+    }
+    case vmIntrinsics::_remainderUnsigned_i: {
       zero_check_int(argument(1));
-      // Compile-time detect of null-exception?
-      if (stopped()) return false;
-      n = new UModINode(control(), argument(0), argument(1));  break;
-    case vmIntrinsics::_remainderUnsigned_l:
+      // Compile-time detect of null-exception
+      if (stopped()) {
+        return true; // keep the graph constructed so far
+      }
+      n = new UModINode(control(), argument(0), argument(1));
+      break;
+    }
+    case vmIntrinsics::_remainderUnsigned_l: {
       zero_check_long(argument(2));
-      // Compile-time detect of null-exception?
-      if (stopped()) return false;
-      n = new UModLNode(control(), argument(0), argument(2));  break;
+      // Compile-time detect of null-exception
+      if (stopped()) {
+        return true; // keep the graph constructed so far
+      }
+      n = new UModLNode(control(), argument(0), argument(2));
+      break;
+    }
     default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
@@ -2250,7 +2293,7 @@ const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_
   }
 
   // The sharpened class might be unloaded if there is no class loader
-  // contraint in place.
+  // constraint in place.
   if (sharpened_klass != NULL && sharpened_klass->is_loaded()) {
     const TypeOopPtr* tjp = TypeOopPtr::make_from_klass(sharpened_klass);
 
@@ -2918,7 +2961,7 @@ bool LibraryCallKit::inline_native_classID() {
     Node* kls_trace_id_addr = basic_plus_adr(kls, in_bytes(KLASS_TRACE_ID_OFFSET));
     Node* kls_trace_id_raw = ideal.load(ideal.ctrl(), kls_trace_id_addr,TypeLong::LONG, T_LONG, Compile::AliasIdxRaw);
 
-    Node* epoch_address = makecon(TypeRawPtr::make(Jfr::epoch_address()));
+    Node* epoch_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::epoch_address()));
     Node* epoch = ideal.load(ideal.ctrl(), epoch_address, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
     epoch = _gvn.transform(new LShiftLNode(longcon(1), epoch));
     Node* mask = _gvn.transform(new LShiftLNode(epoch, intcon(META_SHIFT)));
@@ -2929,9 +2972,9 @@ bool LibraryCallKit::inline_native_classID() {
     __ if_then(kls_trace_id_raw_and_mask, BoolTest::ne, epoch, unlikely); {
       sync_kit(ideal);
       make_runtime_call(RC_LEAF,
-                        OptoRuntime::get_class_id_intrinsic_Type(),
-                        CAST_FROM_FN_PTR(address, Jfr::get_class_id_intrinsic),
-                        "get_class_id_intrinsic",
+                        OptoRuntime::class_id_load_barrier_Type(),
+                        CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::load_barrier),
+                        "class id load barrier",
                         TypePtr::BOTTOM,
                         kls);
       ideal.sync_kit(this);
@@ -2952,7 +2995,7 @@ bool LibraryCallKit::inline_native_classID() {
       ideal.set(result, _gvn.transform(longcon(LAST_TYPE_ID + 1)));
     } __ end_if();
 
-    Node* signaled_flag_address = makecon(TypeRawPtr::make(Jfr::signal_address()));
+    Node* signaled_flag_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::signal_address()));
     Node* signaled = ideal.load(ideal.ctrl(), signaled_flag_address, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw, true, MemNode::acquire);
     __ if_then(signaled, BoolTest::ne, ideal.ConI(1)); {
       ideal.store(ideal.ctrl(), signaled_flag_address, ideal.ConI(1), T_BOOLEAN, Compile::AliasIdxRaw, MemNode::release, true);
@@ -2965,49 +3008,496 @@ bool LibraryCallKit::inline_native_classID() {
   return true;
 }
 
+/*
+ * The intrinsic is a model of this pseudo-code:
+ *
+ * JfrThreadLocal* const tl = Thread::jfr_thread_local()
+ * jobject h_event_writer = tl->java_event_writer();
+ * if (h_event_writer == NULL) {
+ *   return NULL;
+ * }
+ * oop threadObj = Thread::threadObj();
+ * oop vthread = java_lang_Thread::vthread(threadObj);
+ * traceid tid;
+ * bool excluded;
+ * if (vthread != threadObj) {  // i.e. current thread is virtual
+ *   tid = java_lang_Thread::tid(vthread);
+ *   u2 vthread_epoch_raw = java_lang_Thread::jfr_epoch(vthread);
+ *   excluded = vthread_epoch_raw & excluded_mask;
+ *   if (!excluded) {
+ *     traceid current_epoch = JfrTraceIdEpoch::current_generation();
+ *     u2 vthread_epoch = vthread_epoch_raw & epoch_mask;
+ *     if (vthread_epoch != current_epoch) {
+ *       write_checkpoint();
+ *     }
+ *   }
+ * } else {
+ *   tid = java_lang_Thread::tid(threadObj);
+ *   u2 thread_epoch_raw = java_lang_Thread::jfr_epoch(threadObj);
+ *   excluded = thread_epoch_raw & excluded_mask;
+ * }
+ * oop event_writer = JNIHandles::resolve_non_null(h_event_writer);
+ * traceid tid_in_event_writer = getField(event_writer, "threadID");
+ * if (tid_in_event_writer != tid) {
+ *   setField(event_writer, "threadID", tid);
+ *   setField(event_writer, "excluded", excluded);
+ * }
+ * return event_writer
+ */
 bool LibraryCallKit::inline_native_getEventWriter() {
+  enum { _true_path = 1, _false_path = 2, PATH_LIMIT };
+
+  // Save input memory and i_o state.
+  Node* input_memory_state = reset_memory();
+  set_all_memory(input_memory_state);
+  Node* input_io_state = i_o();
+
+  Node* excluded_mask = _gvn.intcon(32768);
+  Node* epoch_mask = _gvn.intcon(32767);
+
+  // TLS
   Node* tls_ptr = _gvn.transform(new ThreadLocalNode());
 
-  Node* jobj_ptr = basic_plus_adr(top(), tls_ptr,
-                                  in_bytes(THREAD_LOCAL_WRITER_OFFSET_JFR));
+  // Load the address of java event writer jobject handle from the jfr_thread_local structure.
+  Node* jobj_ptr = basic_plus_adr(top(), tls_ptr, in_bytes(THREAD_LOCAL_WRITER_OFFSET_JFR));
 
+  // Load the eventwriter jobject handle.
   Node* jobj = make_load(control(), jobj_ptr, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
 
-  Node* jobj_cmp_null = _gvn.transform( new CmpPNode(jobj, null()) );
-  Node* test_jobj_eq_null  = _gvn.transform( new BoolNode(jobj_cmp_null, BoolTest::eq) );
+  // Null check the jobject handle.
+  Node* jobj_cmp_null = _gvn.transform(new CmpPNode(jobj, null()));
+  Node* test_jobj_not_equal_null = _gvn.transform(new BoolNode(jobj_cmp_null, BoolTest::ne));
+  IfNode* iff_jobj_not_equal_null = create_and_map_if(control(), test_jobj_not_equal_null, PROB_MAX, COUNT_UNKNOWN);
 
-  IfNode* iff_jobj_null =
-    create_and_map_if(control(), test_jobj_eq_null, PROB_MIN, COUNT_UNKNOWN);
+  // False path, jobj is null.
+  Node* jobj_is_null = _gvn.transform(new IfFalseNode(iff_jobj_not_equal_null));
 
-  enum { _normal_path = 1,
-         _null_path = 2,
-         PATH_LIMIT };
+  // True path, jobj is not null.
+  Node* jobj_is_not_null = _gvn.transform(new IfTrueNode(iff_jobj_not_equal_null));
 
-  RegionNode* result_rgn = new RegionNode(PATH_LIMIT);
-  PhiNode*    result_val = new PhiNode(result_rgn, TypeInstPtr::BOTTOM);
-
-  Node* jobj_is_null = _gvn.transform(new IfTrueNode(iff_jobj_null));
-  result_rgn->init_req(_null_path, jobj_is_null);
-  result_val->init_req(_null_path, null());
-
-  Node* jobj_is_not_null = _gvn.transform(new IfFalseNode(iff_jobj_null));
   set_control(jobj_is_not_null);
-  Node* res = access_load(jobj, TypeInstPtr::NOTNULL, T_OBJECT,
-                          IN_NATIVE | C2_CONTROL_DEPENDENT_LOAD);
-  result_rgn->init_req(_normal_path, control());
-  result_val->init_req(_normal_path, res);
 
-  set_result(result_rgn, result_val);
+  // Load the threadObj for the CarrierThread.
+  Node* threadObj = generate_current_thread(tls_ptr);
 
+  // Load the vthread.
+  Node* vthread = generate_virtual_thread(tls_ptr);
+
+  // If vthread != threadObj, this is a virtual thread.
+  Node* vthread_cmp_threadObj = _gvn.transform(new CmpPNode(vthread, threadObj));
+  Node* test_vthread_not_equal_threadObj = _gvn.transform(new BoolNode(vthread_cmp_threadObj, BoolTest::ne));
+  IfNode* iff_vthread_not_equal_threadObj =
+    create_and_map_if(jobj_is_not_null, test_vthread_not_equal_threadObj, PROB_FAIR, COUNT_UNKNOWN);
+
+  // False branch, fallback to threadObj.
+  Node* vthread_equal_threadObj = _gvn.transform(new IfFalseNode(iff_vthread_not_equal_threadObj));
+  set_control(vthread_equal_threadObj);
+
+  // Load the tid field from the vthread object.
+  Node* thread_obj_tid = load_field_from_object(threadObj, "tid", "J");
+
+  // Load the raw epoch value from the threadObj.
+  Node* threadObj_epoch_offset = basic_plus_adr(threadObj, java_lang_Thread::jfr_epoch_offset());
+  Node* threadObj_epoch_raw = access_load_at(threadObj, threadObj_epoch_offset, TypeRawPtr::BOTTOM, TypeInt::CHAR, T_CHAR,
+                                             IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD);
+
+  // Mask off the excluded information from the epoch.
+  Node * threadObj_is_excluded = _gvn.transform(new AndINode(threadObj_epoch_raw, excluded_mask));
+
+  // True branch, this is a virtual thread.
+  Node* vthread_not_equal_threadObj = _gvn.transform(new IfTrueNode(iff_vthread_not_equal_threadObj));
+  set_control(vthread_not_equal_threadObj);
+
+  // Load the tid field from the vthread object.
+  Node* vthread_tid = load_field_from_object(vthread, "tid", "J");
+
+  // Load the raw epoch value from the vthread.
+  Node* vthread_epoch_offset = basic_plus_adr(vthread, java_lang_Thread::jfr_epoch_offset());
+  Node* vthread_epoch_raw = access_load_at(vthread, vthread_epoch_offset, TypeRawPtr::BOTTOM, TypeInt::CHAR, T_CHAR,
+                                           IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD);
+
+  // Mask off the excluded information from the epoch.
+  Node * vthread_is_excluded = _gvn.transform(new AndINode(vthread_epoch_raw, _gvn.transform(excluded_mask)));
+
+  // Branch on excluded to conditionalize updating the epoch for the virtual thread.
+  Node* is_excluded_cmp = _gvn.transform(new CmpINode(vthread_is_excluded, _gvn.transform(excluded_mask)));
+  Node* test_not_excluded = _gvn.transform(new BoolNode(is_excluded_cmp, BoolTest::ne));
+  IfNode* iff_not_excluded = create_and_map_if(control(), test_not_excluded, PROB_MAX, COUNT_UNKNOWN);
+
+  // False branch, vthread is excluded, no need to write epoch info.
+  Node* excluded = _gvn.transform(new IfFalseNode(iff_not_excluded));
+
+  // True branch, vthread is included, update epoch info.
+  Node* included = _gvn.transform(new IfTrueNode(iff_not_excluded));
+  set_control(included);
+
+  // Get epoch value.
+  Node* epoch = _gvn.transform(new AndINode(vthread_epoch_raw, _gvn.transform(epoch_mask)));
+
+  // Load the current epoch generation. The value is unsigned 16-bit, so we type it as T_CHAR.
+  Node* epoch_generation_address = makecon(TypeRawPtr::make(JfrIntrinsicSupport::epoch_generation_address()));
+  Node* current_epoch_generation = make_load(control(), epoch_generation_address, TypeInt::CHAR, T_CHAR, MemNode::unordered);
+
+  // Compare the epoch in the vthread to the current epoch generation.
+  Node* const epoch_cmp = _gvn.transform(new CmpUNode(current_epoch_generation, epoch));
+  Node* test_epoch_not_equal = _gvn.transform(new BoolNode(epoch_cmp, BoolTest::ne));
+  IfNode* iff_epoch_not_equal = create_and_map_if(control(), test_epoch_not_equal, PROB_FAIR, COUNT_UNKNOWN);
+
+  // False path, epoch is equal, checkpoint information is valid.
+  Node* epoch_is_equal = _gvn.transform(new IfFalseNode(iff_epoch_not_equal));
+
+  // True path, epoch is not equal, write a checkpoint for the vthread.
+  Node* epoch_is_not_equal = _gvn.transform(new IfTrueNode(iff_epoch_not_equal));
+
+  set_control(epoch_is_not_equal);
+
+  // Make a runtime call, which can safepoint, to write a checkpoint for the vthread for this epoch.
+  // The call also updates the native thread local thread id and the vthread with the current epoch.
+  Node* call_write_checkpoint = make_runtime_call(RC_NO_LEAF,
+                                                  OptoRuntime::jfr_write_checkpoint_Type(),
+                                                  StubRoutines::jfr_write_checkpoint(),
+                                                  "write_checkpoint", TypePtr::BOTTOM);
+  Node* call_write_checkpoint_control = _gvn.transform(new ProjNode(call_write_checkpoint, TypeFunc::Control));
+
+  // vthread epoch != current epoch
+  RegionNode* epoch_compare_rgn = new RegionNode(PATH_LIMIT);
+  record_for_igvn(epoch_compare_rgn);
+  PhiNode* epoch_compare_mem = new PhiNode(epoch_compare_rgn, Type::MEMORY, TypePtr::BOTTOM);
+  record_for_igvn(epoch_compare_mem);
+  PhiNode* epoch_compare_io = new PhiNode(epoch_compare_rgn, Type::ABIO);
+  record_for_igvn(epoch_compare_io);
+
+  // Update control and phi nodes.
+  epoch_compare_rgn->init_req(_true_path, call_write_checkpoint_control);
+  epoch_compare_rgn->init_req(_false_path, epoch_is_equal);
+  epoch_compare_mem->init_req(_true_path, _gvn.transform(reset_memory()));
+  epoch_compare_mem->init_req(_false_path, input_memory_state);
+  epoch_compare_io->init_req(_true_path, i_o());
+  epoch_compare_io->init_req(_false_path, input_io_state);
+
+  // excluded != true
+  RegionNode* exclude_compare_rgn = new RegionNode(PATH_LIMIT);
+  record_for_igvn(exclude_compare_rgn);
+  PhiNode* exclude_compare_mem = new PhiNode(exclude_compare_rgn, Type::MEMORY, TypePtr::BOTTOM);
+  record_for_igvn(exclude_compare_mem);
+  PhiNode* exclude_compare_io = new PhiNode(exclude_compare_rgn, Type::ABIO);
+  record_for_igvn(exclude_compare_io);
+
+  // Update control and phi nodes.
+  exclude_compare_rgn->init_req(_true_path, _gvn.transform(epoch_compare_rgn));
+  exclude_compare_rgn->init_req(_false_path, excluded);
+  exclude_compare_mem->init_req(_true_path, _gvn.transform(epoch_compare_mem));
+  exclude_compare_mem->init_req(_false_path, input_memory_state);
+  exclude_compare_io->init_req(_true_path, _gvn.transform(epoch_compare_io));
+  exclude_compare_io->init_req(_false_path, input_io_state);
+
+  // vthread != threadObj
+  RegionNode* vthread_compare_rgn = new RegionNode(PATH_LIMIT);
+  record_for_igvn(vthread_compare_rgn);
+  PhiNode* vthread_compare_mem = new PhiNode(vthread_compare_rgn, Type::MEMORY, TypePtr::BOTTOM);
+  PhiNode* vthread_compare_io = new PhiNode(vthread_compare_rgn, Type::ABIO);
+  record_for_igvn(vthread_compare_io);
+  PhiNode* tid = new PhiNode(vthread_compare_rgn, TypeLong::LONG);
+  record_for_igvn(tid);
+  PhiNode* exclusion = new PhiNode(vthread_compare_rgn, TypeInt::BOOL);
+  record_for_igvn(exclusion);
+
+  // Update control and phi nodes.
+  vthread_compare_rgn->init_req(_true_path, _gvn.transform(exclude_compare_rgn));
+  vthread_compare_rgn->init_req(_false_path, vthread_equal_threadObj);
+  vthread_compare_mem->init_req(_true_path, _gvn.transform(exclude_compare_mem));
+  vthread_compare_mem->init_req(_false_path, input_memory_state);
+  vthread_compare_io->init_req(_true_path, _gvn.transform(exclude_compare_io));
+  vthread_compare_io->init_req(_false_path, input_io_state);
+  tid->init_req(_true_path, _gvn.transform(vthread_tid));
+  tid->init_req(_false_path, _gvn.transform(thread_obj_tid));
+  exclusion->init_req(_true_path, _gvn.transform(vthread_is_excluded));
+  exclusion->init_req(_false_path, _gvn.transform(threadObj_is_excluded));
+
+  // Update branch state.
+  set_control(_gvn.transform(vthread_compare_rgn));
+  set_all_memory(_gvn.transform(vthread_compare_mem));
+  set_i_o(_gvn.transform(vthread_compare_io));
+
+  // Load the event writer oop by dereferencing the jobject handle.
+  ciKlass* klass_EventWriter = env()->find_system_klass(ciSymbol::make("jdk/jfr/internal/EventWriter"));
+  assert(klass_EventWriter->is_loaded(), "invariant");
+  ciInstanceKlass* const instklass_EventWriter = klass_EventWriter->as_instance_klass();
+  const TypeKlassPtr* const aklass = TypeKlassPtr::make(instklass_EventWriter);
+  const TypeOopPtr* const xtype = aklass->as_instance_type();
+  Node* event_writer = access_load(jobj, xtype, T_OBJECT, IN_NATIVE | C2_CONTROL_DEPENDENT_LOAD);
+
+  // Load the current thread id from the event writer object.
+  Node* const event_writer_tid = load_field_from_object(event_writer, "threadID", "J");
+  // Get the field offset to, conditionally, store an updated tid value later.
+  Node* const event_writer_tid_field = field_address_from_object(event_writer, "threadID", "J", false);
+  const TypePtr* event_writer_tid_field_type = _gvn.type(event_writer_tid_field)->isa_ptr();
+  // Get the field offset to, conditionally, store an updated exclusion value later.
+  Node* const event_writer_excluded_field = field_address_from_object(event_writer, "excluded", "Z", false);
+  const TypePtr* event_writer_excluded_field_type = _gvn.type(event_writer_excluded_field)->isa_ptr();
+
+  RegionNode* event_writer_tid_compare_rgn = new RegionNode(PATH_LIMIT);
+  record_for_igvn(event_writer_tid_compare_rgn);
+  PhiNode* event_writer_tid_compare_mem = new PhiNode(event_writer_tid_compare_rgn, Type::MEMORY, TypePtr::BOTTOM);
+  record_for_igvn(event_writer_tid_compare_mem);
+  PhiNode* event_writer_tid_compare_io = new PhiNode(event_writer_tid_compare_rgn, Type::ABIO);
+  record_for_igvn(event_writer_tid_compare_io);
+
+  // Compare the current tid from the thread object to what is currently stored in the event writer object.
+  Node* const tid_cmp = _gvn.transform(new CmpLNode(event_writer_tid, _gvn.transform(tid)));
+  Node* test_tid_not_equal = _gvn.transform(new BoolNode(tid_cmp, BoolTest::ne));
+  IfNode* iff_tid_not_equal = create_and_map_if(_gvn.transform(vthread_compare_rgn), test_tid_not_equal, PROB_FAIR, COUNT_UNKNOWN);
+
+  // False path, tids are the same.
+  Node* tid_is_equal = _gvn.transform(new IfFalseNode(iff_tid_not_equal));
+
+  // True path, tid is not equal, need to update the tid in the event writer.
+  Node* tid_is_not_equal = _gvn.transform(new IfTrueNode(iff_tid_not_equal));
+  record_for_igvn(tid_is_not_equal);
+
+  // Store the exclusion state to the event writer.
+  store_to_memory(tid_is_not_equal, event_writer_excluded_field, _gvn.transform(exclusion), T_BOOLEAN, event_writer_excluded_field_type, MemNode::unordered);
+
+  // Store the tid to the event writer.
+  store_to_memory(tid_is_not_equal, event_writer_tid_field, tid, T_LONG, event_writer_tid_field_type, MemNode::unordered);
+
+  // Update control and phi nodes.
+  event_writer_tid_compare_rgn->init_req(_true_path, tid_is_not_equal);
+  event_writer_tid_compare_rgn->init_req(_false_path, tid_is_equal);
+  event_writer_tid_compare_mem->init_req(_true_path, _gvn.transform(reset_memory()));
+  event_writer_tid_compare_mem->init_req(_false_path, _gvn.transform(vthread_compare_mem));
+  event_writer_tid_compare_io->init_req(_true_path, _gvn.transform(i_o()));
+  event_writer_tid_compare_io->init_req(_false_path, _gvn.transform(vthread_compare_io));
+
+  // Result of top level CFG, Memory, IO and Value.
+  RegionNode* result_rgn = new RegionNode(PATH_LIMIT);
+  PhiNode* result_mem = new PhiNode(result_rgn, Type::MEMORY, TypePtr::BOTTOM);
+  PhiNode* result_io = new PhiNode(result_rgn, Type::ABIO);
+  PhiNode* result_value = new PhiNode(result_rgn, TypeInstPtr::BOTTOM);
+
+  // Result control.
+  result_rgn->init_req(_true_path, _gvn.transform(event_writer_tid_compare_rgn));
+  result_rgn->init_req(_false_path, jobj_is_null);
+
+  // Result memory.
+  result_mem->init_req(_true_path, _gvn.transform(event_writer_tid_compare_mem));
+  result_mem->init_req(_false_path, _gvn.transform(input_memory_state));
+
+  // Result IO.
+  result_io->init_req(_true_path, _gvn.transform(event_writer_tid_compare_io));
+  result_io->init_req(_false_path, _gvn.transform(input_io_state));
+
+  // Result value.
+  result_value->init_req(_true_path, _gvn.transform(event_writer)); // return event writer oop
+  result_value->init_req(_false_path, null()); // return NULL
+
+  // Set output state.
+  set_control(_gvn.transform(result_rgn));
+  set_all_memory(_gvn.transform(result_mem));
+  set_i_o(_gvn.transform(result_io));
+  set_result(result_rgn, result_value);
   return true;
+}
+
+/*
+ * The intrinsic is a model of this pseudo-code:
+ *
+ * JfrThreadLocal* const tl = thread->jfr_thread_local();
+ * if (carrierThread != thread) { // is virtual thread
+ *   const u2 vthread_epoch_raw = java_lang_Thread::jfr_epoch(thread);
+ *   bool excluded = vthread_epoch_raw & excluded_mask;
+ *   Atomic::store(&tl->_contextual_tid, java_lang_Thread::tid(thread));
+ *   Atomic::store(&tl->_contextual_thread_excluded, is_excluded);
+ *   if (!excluded) {
+ *     const u2 vthread_epoch = vthread_epoch_raw & epoch_mask;
+ *     Atomic::store(&tl->_vthread_epoch, vthread_epoch);
+ *   }
+ *   Atomic::release_store(&tl->_vthread, true);
+ *   return;
+ * }
+ * Atomic::release_store(&tl->_vthread, false);
+ */
+void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
+  enum { _true_path = 1, _false_path = 2, PATH_LIMIT };
+
+  Node* input_memory_state = reset_memory();
+  set_all_memory(input_memory_state);
+
+  Node* excluded_mask = _gvn.intcon(32768);
+  Node* epoch_mask = _gvn.intcon(32767);
+
+  Node* const carrierThread = generate_current_thread(jt);
+  // If thread != carrierThread, this is a virtual thread.
+  Node* thread_cmp_carrierThread = _gvn.transform(new CmpPNode(thread, carrierThread));
+  Node* test_thread_not_equal_carrierThread = _gvn.transform(new BoolNode(thread_cmp_carrierThread, BoolTest::ne));
+  IfNode* iff_thread_not_equal_carrierThread =
+    create_and_map_if(control(), test_thread_not_equal_carrierThread, PROB_FAIR, COUNT_UNKNOWN);
+
+  Node* vthread_offset = basic_plus_adr(jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_OFFSET_JFR));
+
+  // False branch, is carrierThread.
+  Node* thread_equal_carrierThread = _gvn.transform(new IfFalseNode(iff_thread_not_equal_carrierThread));
+  // Store release
+  Node* vthread_false_memory = store_to_memory(thread_equal_carrierThread, vthread_offset, _gvn.intcon(0), T_BOOLEAN, Compile::AliasIdxRaw, MemNode::release, true);
+
+  set_all_memory(input_memory_state);
+
+  // True branch, is virtual thread.
+  Node* thread_not_equal_carrierThread = _gvn.transform(new IfTrueNode(iff_thread_not_equal_carrierThread));
+  set_control(thread_not_equal_carrierThread);
+
+  // Load the raw epoch value from the vthread.
+  Node* epoch_offset = basic_plus_adr(thread, java_lang_Thread::jfr_epoch_offset());
+  Node* epoch_raw = access_load_at(thread, epoch_offset, TypeRawPtr::BOTTOM, TypeInt::CHAR, T_CHAR,
+                                   IN_HEAP | MO_UNORDERED | C2_MISMATCHED | C2_CONTROL_DEPENDENT_LOAD);
+
+  // Mask off the excluded information from the epoch.
+  Node * const is_excluded = _gvn.transform(new AndINode(epoch_raw, _gvn.transform(excluded_mask)));
+
+  // Load the tid field from the thread.
+  Node* tid = load_field_from_object(thread, "tid", "J");
+
+  // Store the vthread tid to the jfr thread local.
+  Node* thread_id_offset = basic_plus_adr(jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_ID_OFFSET_JFR));
+  Node* tid_memory = store_to_memory(control(), thread_id_offset, tid, T_LONG, Compile::AliasIdxRaw, MemNode::unordered, true);
+
+  // Branch is_excluded to conditionalize updating the epoch .
+  Node* excluded_cmp = _gvn.transform(new CmpINode(is_excluded, _gvn.transform(excluded_mask)));
+  Node* test_excluded = _gvn.transform(new BoolNode(excluded_cmp, BoolTest::eq));
+  IfNode* iff_excluded = create_and_map_if(control(), test_excluded, PROB_MIN, COUNT_UNKNOWN);
+
+  // True branch, vthread is excluded, no need to write epoch info.
+  Node* excluded = _gvn.transform(new IfTrueNode(iff_excluded));
+  set_control(excluded);
+  Node* vthread_is_excluded = _gvn.intcon(1);
+
+  // False branch, vthread is included, update epoch info.
+  Node* included = _gvn.transform(new IfFalseNode(iff_excluded));
+  set_control(included);
+  Node* vthread_is_included = _gvn.intcon(0);
+
+  // Get epoch value.
+  Node* epoch = _gvn.transform(new AndINode(epoch_raw, _gvn.transform(epoch_mask)));
+
+  // Store the vthread epoch to the jfr thread local.
+  Node* vthread_epoch_offset = basic_plus_adr(jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_EPOCH_OFFSET_JFR));
+  Node* included_memory = store_to_memory(control(), vthread_epoch_offset, epoch, T_CHAR, Compile::AliasIdxRaw, MemNode::unordered, true);
+
+  RegionNode* excluded_rgn = new RegionNode(PATH_LIMIT);
+  record_for_igvn(excluded_rgn);
+  PhiNode* excluded_mem = new PhiNode(excluded_rgn, Type::MEMORY, TypePtr::BOTTOM);
+  record_for_igvn(excluded_mem);
+  PhiNode* exclusion = new PhiNode(excluded_rgn, TypeInt::BOOL);
+  record_for_igvn(exclusion);
+
+  // Merge the excluded control and memory.
+  excluded_rgn->init_req(_true_path, excluded);
+  excluded_rgn->init_req(_false_path, included);
+  excluded_mem->init_req(_true_path, tid_memory);
+  excluded_mem->init_req(_false_path, included_memory);
+  exclusion->init_req(_true_path, _gvn.transform(vthread_is_excluded));
+  exclusion->init_req(_false_path, _gvn.transform(vthread_is_included));
+
+  // Set intermediate state.
+  set_control(_gvn.transform(excluded_rgn));
+  set_all_memory(excluded_mem);
+
+  // Store the vthread exclusion state to the jfr thread local.
+  Node* thread_local_excluded_offset = basic_plus_adr(jt, in_bytes(THREAD_LOCAL_OFFSET_JFR + VTHREAD_EXCLUDED_OFFSET_JFR));
+  store_to_memory(control(), thread_local_excluded_offset, _gvn.transform(exclusion), T_BOOLEAN, Compile::AliasIdxRaw, MemNode::unordered, true);
+
+  // Store release
+  Node * vthread_true_memory = store_to_memory(control(), vthread_offset, _gvn.intcon(1), T_BOOLEAN, Compile::AliasIdxRaw, MemNode::release, true);
+
+  RegionNode* thread_compare_rgn = new RegionNode(PATH_LIMIT);
+  record_for_igvn(thread_compare_rgn);
+  PhiNode* thread_compare_mem = new PhiNode(thread_compare_rgn, Type::MEMORY, TypePtr::BOTTOM);
+  record_for_igvn(thread_compare_mem);
+  PhiNode* vthread = new PhiNode(thread_compare_rgn, TypeInt::BOOL);
+  record_for_igvn(vthread);
+
+  // Merge the thread_compare control and memory.
+  thread_compare_rgn->init_req(_true_path, control());
+  thread_compare_rgn->init_req(_false_path, thread_equal_carrierThread);
+  thread_compare_mem->init_req(_true_path, vthread_true_memory);
+  thread_compare_mem->init_req(_false_path, vthread_false_memory);
+
+  // Set output state.
+  set_control(_gvn.transform(thread_compare_rgn));
+  set_all_memory(_gvn.transform(thread_compare_mem));
 }
 
 #endif // JFR_HAVE_INTRINSICS
 
+//------------------------inline_native_currentCarrierThread------------------
+bool LibraryCallKit::inline_native_currentCarrierThread() {
+  Node* junk = NULL;
+  set_result(generate_current_thread(junk));
+  return true;
+}
+
 //------------------------inline_native_currentThread------------------
 bool LibraryCallKit::inline_native_currentThread() {
   Node* junk = NULL;
-  set_result(generate_current_thread(junk));
+  set_result(generate_virtual_thread(junk));
+  return true;
+}
+
+//------------------------inline_native_setVthread------------------
+bool LibraryCallKit::inline_native_setCurrentThread() {
+  assert(C->method()->changes_current_thread(),
+         "method changes current Thread but is not annotated ChangesCurrentThread");
+  Node* arr = argument(1);
+  Node* thread = _gvn.transform(new ThreadLocalNode());
+  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::vthread_offset()));
+  Node* thread_obj_handle
+    = make_load(NULL, p, p->bottom_type()->is_ptr(), T_OBJECT, MemNode::unordered);
+  thread_obj_handle = _gvn.transform(thread_obj_handle);
+  const TypePtr *adr_type = _gvn.type(thread_obj_handle)->isa_ptr();
+  // Stores of oops to native memory not supported yet by BarrierSetC2::store_at_resolved
+  // access_store_at(NULL, thread_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
+  store_to_memory(control(), thread_obj_handle, arr, T_OBJECT, adr_type, MemNode::unordered);
+  JFR_ONLY(extend_setCurrentThread(thread, arr);)
+  return true;
+}
+
+Node* LibraryCallKit::extentLocalCache_helper() {
+  ciKlass *objects_klass = ciObjArrayKlass::make(env()->Object_klass());
+  const TypeOopPtr *etype = TypeOopPtr::make_from_klass(env()->Object_klass());
+
+  bool xk = etype->klass_is_exact();
+
+  Node* thread = _gvn.transform(new ThreadLocalNode());
+  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::extentLocalCache_offset()));
+  return _gvn.transform(LoadNode::make(_gvn, NULL, immutable_memory(), p, p->bottom_type()->is_ptr(),
+        TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered));
+}
+
+//------------------------inline_native_extentLocalCache------------------
+bool LibraryCallKit::inline_native_extentLocalCache() {
+  ciKlass *objects_klass = ciObjArrayKlass::make(env()->Object_klass());
+  const TypeOopPtr *etype = TypeOopPtr::make_from_klass(env()->Object_klass());
+  const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
+
+  // Because we create the extentLocal cache lazily we have to make the
+  // type of the result BotPTR.
+  bool xk = etype->klass_is_exact();
+  const Type* objects_type = TypeAryPtr::make(TypePtr::BotPTR, arr0, objects_klass, xk, 0);
+  Node* cache_obj_handle = extentLocalCache_helper();
+  set_result(access_load(cache_obj_handle, objects_type, T_OBJECT, IN_NATIVE));
+
+  return true;
+}
+
+//------------------------inline_native_setExtentLocalCache------------------
+bool LibraryCallKit::inline_native_setExtentLocalCache() {
+  Node* arr = argument(0);
+  Node* cache_obj_handle = extentLocalCache_helper();
+
+  const TypePtr *adr_type = _gvn.type(cache_obj_handle)->isa_ptr();
+  store_to_memory(control(), cache_obj_handle, arr, T_OBJECT, adr_type,
+                  MemNode::unordered);
+
   return true;
 }
 
@@ -4458,7 +4948,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
 // If we have a tightly coupled allocation, the arraycopy may take care
 // of the array initialization. If one of the guards we insert between
 // the allocation and the arraycopy causes a deoptimization, an
-// unitialized array will escape the compiled method. To prevent that
+// uninitialized array will escape the compiled method. To prevent that
 // we set the JVM state for uncommon traps between the allocation and
 // the arraycopy to the state before the allocation so, in case of
 // deoptimization, we'll reexecute the allocation and the
@@ -5732,7 +6222,7 @@ bool LibraryCallKit::inline_updateDirectByteBufferCRC32C() {
 // int java.util.zip.Adler32.updateBytes(int crc, byte[] buf, int off, int len)
 //
 bool LibraryCallKit::inline_updateBytesAdler32() {
-  assert(UseAdler32Intrinsics, "Adler32 Instrinsic support need"); // check if we actually need to check this flag or check a different one
+  assert(UseAdler32Intrinsics, "Adler32 Intrinsic support need"); // check if we actually need to check this flag or check a different one
   assert(callee()->signature()->size() == 4, "updateBytes has 4 parameters");
   assert(callee()->holder()->is_loaded(), "Adler32 class must be loaded");
   // no receiver since it is static method
@@ -5778,7 +6268,7 @@ bool LibraryCallKit::inline_updateBytesAdler32() {
 // int java.util.zip.Adler32.updateByteBuffer(int crc, long buf, int off, int len)
 //
 bool LibraryCallKit::inline_updateByteBufferAdler32() {
-  assert(UseAdler32Intrinsics, "Adler32 Instrinsic support need"); // check if we actually need to check this flag or check a different one
+  assert(UseAdler32Intrinsics, "Adler32 Intrinsic support need"); // check if we actually need to check this flag or check a different one
   assert(callee()->signature()->size() == 5, "updateByteBuffer has 4 parameters and one is long");
   assert(callee()->holder()->is_loaded(), "Adler32 class must be loaded");
   // no receiver since it is static method
@@ -5871,8 +6361,8 @@ bool LibraryCallKit::inline_reference_refersTo0(bool is_phantom) {
 
 
 Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString,
-                                             DecoratorSet decorators = IN_HEAP, bool is_static = false,
-                                             ciInstanceKlass* fromKls = NULL) {
+                                             DecoratorSet decorators, bool is_static,
+                                             ciInstanceKlass* fromKls) {
   if (fromKls == NULL) {
     const TypeInstPtr* tinst = _gvn.type(fromObj)->isa_instptr();
     assert(tinst != NULL, "obj is null");
@@ -5885,7 +6375,7 @@ Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldNam
                                               ciSymbol::make(fieldTypeString),
                                               is_static);
 
-  assert (field != NULL, "undefined field");
+  assert(field != NULL, "undefined field %s %s %s", fieldTypeString, fromKls->name()->as_utf8(), fieldName);
   if (field == NULL) return (Node *) NULL;
 
   if (is_static) {
@@ -5920,8 +6410,8 @@ Node* LibraryCallKit::load_field_from_object(Node* fromObj, const char* fieldNam
 }
 
 Node * LibraryCallKit::field_address_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString,
-                                                 bool is_exact = true, bool is_static = false,
-                                                 ciInstanceKlass * fromKls = NULL) {
+                                                 bool is_exact /* true */, bool is_static /* false */,
+                                                 ciInstanceKlass * fromKls /* NULL */) {
   if (fromKls == NULL) {
     const TypeInstPtr* tinst = _gvn.type(fromObj)->isa_instptr();
     assert(tinst != NULL, "obj is null");
@@ -6268,7 +6758,7 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
 Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object) {
 #if defined(PPC64) || defined(S390)
   // MixColumns for decryption can be reduced by preprocessing MixColumns with round keys.
-  // Intel's extention is based on this optimization and AESCrypt generates round keys by preprocessing MixColumns.
+  // Intel's extension is based on this optimization and AESCrypt generates round keys by preprocessing MixColumns.
   // However, ppc64 vncipher processes MixColumns and requires the same round keys with encryption.
   // The ppc64 stubs of encryption and decryption use the same round keys (sessionK[0]).
   Node* objSessionK = load_field_from_object(aescrypt_object, "sessionK", "[[I");
@@ -6601,31 +7091,31 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   switch(id) {
   case vmIntrinsics::_md5_implCompress:
     assert(UseMD5Intrinsics, "need MD5 instruction support");
-    state = get_state_from_digest_object(digestBase_obj, "[I");
+    state = get_state_from_digest_object(digestBase_obj, T_INT);
     stubAddr = StubRoutines::md5_implCompress();
     stubName = "md5_implCompress";
     break;
   case vmIntrinsics::_sha_implCompress:
     assert(UseSHA1Intrinsics, "need SHA1 instruction support");
-    state = get_state_from_digest_object(digestBase_obj, "[I");
+    state = get_state_from_digest_object(digestBase_obj, T_INT);
     stubAddr = StubRoutines::sha1_implCompress();
     stubName = "sha1_implCompress";
     break;
   case vmIntrinsics::_sha2_implCompress:
     assert(UseSHA256Intrinsics, "need SHA256 instruction support");
-    state = get_state_from_digest_object(digestBase_obj, "[I");
+    state = get_state_from_digest_object(digestBase_obj, T_INT);
     stubAddr = StubRoutines::sha256_implCompress();
     stubName = "sha256_implCompress";
     break;
   case vmIntrinsics::_sha5_implCompress:
     assert(UseSHA512Intrinsics, "need SHA512 instruction support");
-    state = get_state_from_digest_object(digestBase_obj, "[J");
+    state = get_state_from_digest_object(digestBase_obj, T_LONG);
     stubAddr = StubRoutines::sha512_implCompress();
     stubName = "sha512_implCompress";
     break;
   case vmIntrinsics::_sha3_implCompress:
     assert(UseSHA3Intrinsics, "need SHA3 instruction support");
-    state = get_state_from_digest_object(digestBase_obj, "[B");
+    state = get_state_from_digest_object(digestBase_obj, T_BYTE);
     stubAddr = StubRoutines::sha3_implCompress();
     stubName = "sha3_implCompress";
     digest_length = get_digest_length_from_digest_object(digestBase_obj);
@@ -6689,7 +7179,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
   const char* klass_digestBase_name = NULL;
   const char* stub_name = NULL;
   address     stub_addr = NULL;
-  const char* state_type = "[I";
+  BasicType elem_type = T_INT;
 
   switch (predicate) {
   case 0:
@@ -6718,7 +7208,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
       klass_digestBase_name = "sun/security/provider/SHA5";
       stub_name = "sha512_implCompressMB";
       stub_addr = StubRoutines::sha512_implCompressMB();
-      state_type = "[J";
+      elem_type = T_LONG;
     }
     break;
   case 4:
@@ -6726,7 +7216,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
       klass_digestBase_name = "sun/security/provider/SHA3";
       stub_name = "sha3_implCompressMB";
       stub_addr = StubRoutines::sha3_implCompressMB();
-      state_type = "[B";
+      elem_type = T_BYTE;
     }
     break;
   default:
@@ -6744,21 +7234,21 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
     ciKlass* klass_digestBase = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make(klass_digestBase_name));
     assert(klass_digestBase->is_loaded(), "predicate checks that this class is loaded");
     ciInstanceKlass* instklass_digestBase = klass_digestBase->as_instance_klass();
-    return inline_digestBase_implCompressMB(digestBase_obj, instklass_digestBase, state_type, stub_addr, stub_name, src_start, ofs, limit);
+    return inline_digestBase_implCompressMB(digestBase_obj, instklass_digestBase, elem_type, stub_addr, stub_name, src_start, ofs, limit);
   }
   return false;
 }
 
 //------------------------------inline_digestBase_implCompressMB-----------------------
 bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciInstanceKlass* instklass_digestBase,
-                                                      const char* state_type, address stubAddr, const char *stubName,
+                                                      BasicType elem_type, address stubAddr, const char *stubName,
                                                       Node* src_start, Node* ofs, Node* limit) {
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_digestBase);
   const TypeOopPtr* xtype = aklass->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
   Node* digest_obj = new CheckCastPPNode(control(), digestBase_obj, xtype);
   digest_obj = _gvn.transform(digest_obj);
 
-  Node* state = get_state_from_digest_object(digest_obj, state_type);
+  Node* state = get_state_from_digest_object(digest_obj, elem_type);
   if (state == NULL) return false;
 
   Node* digest_length = NULL;
@@ -6918,13 +7408,20 @@ Node* LibraryCallKit::inline_galoisCounterMode_AESCrypt_predicate() {
 }
 
 //------------------------------get_state_from_digest_object-----------------------
-Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object, const char *state_type) {
+Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object, BasicType elem_type) {
+  const char* state_type;
+  switch (elem_type) {
+    case T_BYTE: state_type = "[B"; break;
+    case T_INT:  state_type = "[I"; break;
+    case T_LONG: state_type = "[J"; break;
+    default: ShouldNotReachHere();
+  }
   Node* digest_state = load_field_from_object(digest_object, "state", state_type);
   assert (digest_state != NULL, "wrong version of sun.security.provider.MD5/SHA/SHA2/SHA5/SHA3");
   if (digest_state == NULL) return (Node *) NULL;
 
   // now have the array, need to get the start address of the state array
-  Node* state = array_element_address(digest_state, intcon(0), T_INT);
+  Node* state = array_element_address(digest_state, intcon(0), elem_type);
   return state;
 }
 
@@ -7007,6 +7504,15 @@ Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) 
   Node* instof_false = generate_guard(bool_instof, NULL, PROB_MIN);
 
   return instof_false;  // even if it is NULL
+}
+
+bool LibraryCallKit::inline_continuation_do_yield() {
+  address call_addr = StubRoutines::cont_doYield();
+  const TypeFunc* tf = OptoRuntime::continuation_doYield_Type();
+  Node* call = make_runtime_call(RC_NO_LEAF, tf, call_addr, "doYield", TypeRawPtr::BOTTOM);
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
+  return true;
 }
 
 //-------------inline_fma-----------------------------------

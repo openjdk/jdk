@@ -93,6 +93,7 @@ public class Navigation {
         PACKAGE,
         PREVIEW,
         SERIALIZED_FORM,
+        SEARCH,
         SYSTEM_PROPERTIES,
         TREE,
         USE;
@@ -316,6 +317,7 @@ public class Navigation {
             case ALL_PACKAGES:
             case CONSTANT_VALUES:
             case SERIALIZED_FORM:
+            case SEARCH:
             case SYSTEM_PROPERTIES:
                 addOverviewLink(target);
                 addModuleLink(target);
@@ -590,7 +592,8 @@ public class Navigation {
         var inputReset = HtmlTree.INPUT(reset, HtmlIds.RESET_BUTTON)
                 .put(HtmlAttr.VALUE, reset);
         var searchDiv = HtmlTree.DIV(HtmlStyle.navListSearch,
-                HtmlTree.LABEL(HtmlIds.SEARCH_INPUT.name(), searchLabel));
+                links.createLink(pathToRoot.resolve(DocPaths.SEARCH_PAGE),
+                        searchLabel, ""));
         searchDiv.add(inputText);
         searchDiv.add(inputReset);
         target.add(searchDiv);
@@ -624,7 +627,7 @@ public class Navigation {
                         links.createLink(HtmlIds.SKIP_NAVBAR_TOP, skipNavLinks,
                                 skipNavLinks.toString())));
         Content aboutContent = userHeader;
-        boolean addSearch = options.createIndex();
+        boolean addSearch = options.createIndex() && documentedPage != PageMode.SEARCH;
 
         var aboutDiv = HtmlTree.DIV(HtmlStyle.aboutLanguage, aboutContent);
         navDiv.add(aboutDiv);

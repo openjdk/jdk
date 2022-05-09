@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,8 +92,9 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
 
 vframeStreamForte::vframeStreamForte(JavaThread *jt,
                                      frame fr,
-                                     bool stop_at_java_call_stub) : vframeStreamCommon(jt, false /* process_frames */) {
-
+                                     bool stop_at_java_call_stub)
+    : vframeStreamCommon(RegisterMap(jt, false, false, false)) {
+  _reg_map.set_async(true);
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _frame = fr;
 
@@ -652,7 +653,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 
 
 #ifndef _WINDOWS
-// Support for the Forte(TM) Peformance Tools collector.
+// Support for the Forte(TM) Performance Tools collector.
 //
 // The method prototype is derived from libcollector.h. For more
 // information, please see the libcollect man page.

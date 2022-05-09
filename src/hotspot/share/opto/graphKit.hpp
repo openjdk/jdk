@@ -589,7 +589,7 @@ class GraphKit : public Phase {
   // Perform decorated accesses
 
   Node* access_store_at(Node* obj,   // containing obj
-                        Node* adr,   // actual adress to store val at
+                        Node* adr,   // actual address to store val at
                         const TypePtr* adr_type,
                         Node* val,
                         const Type* val_type,
@@ -597,13 +597,13 @@ class GraphKit : public Phase {
                         DecoratorSet decorators);
 
   Node* access_load_at(Node* obj,   // containing obj
-                       Node* adr,   // actual adress to load val at
+                       Node* adr,   // actual address to load val at
                        const TypePtr* adr_type,
                        const Type* val_type,
                        BasicType bt,
                        DecoratorSet decorators);
 
-  Node* access_load(Node* adr,   // actual adress to load val at
+  Node* access_load(Node* adr,   // actual address to load val at
                     const Type* val_type,
                     BasicType bt,
                     DecoratorSet decorators);
