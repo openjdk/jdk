@@ -524,7 +524,7 @@ public:
   void  verify() { Unimplemented(); }
 
   static bool is_deopt_at(address instr) {
-    Unimplemented();
+    // Unimplemented();
     return false;
   }
 
