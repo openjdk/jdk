@@ -31,6 +31,7 @@
 #include "opto/optoreg.hpp"
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 
@@ -101,8 +102,11 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   assert(is_initialized(), "Compiler thread must be initialized");
 
   bool subsume_loads = SubsumeLoads;
-  bool do_escape_analysis = DoEscapeAnalysis;
-  bool do_iterative_escape_analysis = DoEscapeAnalysis;
+  // EscapeBarrier is not supported for virtual threads
+  // so EA should be disabled if JVMTI agent enables corresponding capabilities
+  bool do_escape_analysis = DoEscapeAnalysis
+      && !(Continuations::enabled() && (env->should_retain_local_variables() || env->jvmti_can_get_owned_monitor_info()));
+  bool do_iterative_escape_analysis = do_escape_analysis;
   bool eliminate_boxing = EliminateAutoBox;
   bool do_locks_coarsening = EliminateLocks;
 
