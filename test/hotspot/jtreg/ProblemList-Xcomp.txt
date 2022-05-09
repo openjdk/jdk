@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,3 +35,13 @@ vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java 82456
 
 serviceability/sa/TestJhsdbJstackMixed.java 8248675 linux-aarch64
 
+#############################################################################
+
+# Loom
+
+# JVMTI FramePop and stack depth issues using the internal Continuation API directly
+serviceability/jvmti/vthread/ContFramePopTest/ContFramePopTest.java     8278053 generic-all
+serviceability/jvmti/vthread/ContStackDepthTest/ContStackDepthTest.java 8278053 generic-all
+
+# test issues that don't reproduce in jdk repo
+serviceability/dcmd/vm/ClassLoaderStatsTest.java                        8278123 generic-all
