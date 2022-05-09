@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,30 @@
  * questions.
  */
 
-/* @test
- * @bug 4949631
- * @summary Check for ability to decode arrays of odd sizes > 16MB
- * @run main/othervm -Xms100m -Xmx200m Enormous
+/*
+ * @test
+ * @bug 8286287
+ * @summary Verifies newStringNoRepl() does not throw an Error.
  */
 
-public class Enormous {
-    public static void main(String[] args) throws Exception {
-        new String(new char[16777217]).getBytes("ASCII");
-        byte[] bytes = new byte[16777217];
-        new String(bytes,"ASCII");
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.HexFormat;
+import static java.nio.charset.StandardCharsets.UTF_16;
 
-        // Another manifestation of this bug, reported in bug 6192102.
-        java.util.Base64.getEncoder().encodeToString(bytes);
+public class NewStringNoRepl {
+    private final static byte[] MALFORMED_UTF16 = {(byte)0x00, (byte)0x20, (byte)0x00};
+
+    public static void main(String... args) throws IOException {
+        var f = Files.createTempFile(null, null);
+        try (var fos = Files.newOutputStream(f)) {
+            fos.write(MALFORMED_UTF16);
+        }
+        System.out.println("Returned bytes: " +
+            HexFormat.of()
+                .withPrefix("x")
+                .withUpperCase()
+                .formatHex(Files.readString(f, UTF_16).getBytes(UTF_16)));
+        Files.delete(f);
     }
 }
