@@ -103,10 +103,6 @@ final public class FloatToDecimal {
     private static final int MINUS_INF      = 4;
     private static final int NAN            = 5;
 
-    /* For thread-safety, each thread gets its own instance of this class */
-    private static final ThreadLocal<FloatToDecimal> threadLocal =
-            ThreadLocal.withInitial(FloatToDecimal::new);
-
     /*
      * Room for the longer of the forms
      *     -ddddd.dddd         H + 2 characters
@@ -116,11 +112,7 @@ final public class FloatToDecimal {
      */
     public static final int MAX_CHARS = H + 6;
 
-    /* Numerical results are created here... */
     private final byte[] bytes = new byte[MAX_CHARS];
-
-    /* ... and copied here in appendTo() */
-    private final char[] chars = new char[MAX_CHARS];
 
     /* Index into bytes of rightmost valid character */
     private int index;
@@ -137,7 +129,7 @@ final public class FloatToDecimal {
      * @see Float#toString(float)
      */
     public static String toString(float v) {
-        return threadLocalInstance().toDecimalString(v);
+        return new FloatToDecimal().toDecimalString(v);
     }
 
     /**
@@ -153,11 +145,7 @@ final public class FloatToDecimal {
      */
     public static Appendable appendTo(float v, Appendable app)
             throws IOException {
-        return threadLocalInstance().appendDecimalTo(v, app);
-    }
-
-    private static FloatToDecimal threadLocalInstance() {
-        return threadLocal.get();
+        return new FloatToDecimal().appendDecimalTo(v, app);
     }
 
     private String toDecimalString(float v) {
@@ -175,6 +163,7 @@ final public class FloatToDecimal {
             throws IOException {
         switch (toDecimal(v)) {
             case NON_SPECIAL:
+                char[] chars = new char[MAX_CHARS];
                 for (int i = 0; i <= index; ++i) {
                     chars[i] = (char) bytes[i];
                 }
