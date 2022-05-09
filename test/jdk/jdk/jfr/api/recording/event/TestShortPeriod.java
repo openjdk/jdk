@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,8 @@ public class TestShortPeriod {
     // for periodic events
     private static void testExecutionSamplePeriod() {
         try (var r = new RecordingStream()) {
+            // start a new thread as the current thread is excluded from
+            // sample capturing to avoid recursion
             var t = startLoopingThread();
             r.enable(EventNames.ExecutionSample).withPeriod(Duration.ofNanos(1));
             r.onEvent("jdk.ExecutionSample", e -> {
