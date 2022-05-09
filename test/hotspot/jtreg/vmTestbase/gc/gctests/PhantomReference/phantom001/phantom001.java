@@ -46,7 +46,6 @@
  *         4. queue.poll() again returns null.
  *         5. If the checked type is class (Referent), then it must be finalized,
  *            since the reference is already enqueued.
- *         6. reference.clear() does not throw any exception.
  *     The test extends ThreadedGCTest and implements GarbageProducerAware and
  *     MemoryStrategyAware interfaces. The corresponding javadoc documentation
  *     for additional test configuration.
