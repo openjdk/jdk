@@ -1116,6 +1116,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
   BaseCountedLoopNode* cl = _head->as_BaseCountedLoop();
   Node *trip_counter = cl->phi();
   assert(!cl->is_LongCountedLoop() || bt == T_LONG, "only long range checks in long counted loops");
+  assert(cl->is_valid_counted_loop(cl->bt()), "only for well formed loops");
 
   // Check loop body for tests of trip-counter plus loop-invariant vs
   // loop-invariant.

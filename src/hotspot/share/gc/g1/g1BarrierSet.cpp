@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,7 @@ void G1BarrierSet::on_thread_destroy(Thread* thread) {
 }
 
 void G1BarrierSet::on_thread_attach(Thread* thread) {
+  BarrierSet::on_thread_attach(thread);
   SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
   assert(!queue.is_active(), "SATB queue should not be active");
   assert(queue.buffer() == nullptr, "SATB queue should not have a buffer");

@@ -642,10 +642,13 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:
+  case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
+  case vmIntrinsics::_setCurrentThread:
+  case vmIntrinsics::_extentLocalCache:
+  case vmIntrinsics::_setExtentLocalCache:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
-  case vmIntrinsics::_getClassId:
   case vmIntrinsics::_getEventWriter:
 #endif
   case vmIntrinsics::_currentTimeMillis:
@@ -713,6 +716,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_Preconditions_checkIndex:
   case vmIntrinsics::_Preconditions_checkLongIndex:
   case vmIntrinsics::_getObjectSize:
+  case vmIntrinsics::_Continuation_doYield:
     break;
 
   case vmIntrinsics::_VectorUnaryOp:

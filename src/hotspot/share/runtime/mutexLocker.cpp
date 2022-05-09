@@ -53,6 +53,7 @@ Mutex*   JfieldIdCreation_lock        = NULL;
 Monitor* JNICritical_lock             = NULL;
 Mutex*   JvmtiThreadState_lock        = NULL;
 Monitor* EscapeBarrier_lock           = NULL;
+Monitor* JvmtiVTMSTransition_lock     = NULL;
 Monitor* Heap_lock                    = NULL;
 #ifdef INCLUDE_PARALLELGC
 Mutex*   PSOldGenExpand_lock      = NULL;
@@ -131,6 +132,8 @@ Monitor* JfrThreadSampler_lock        = NULL;
 Mutex*   UnsafeJlong_lock             = NULL;
 #endif
 Mutex*   CodeHeapStateAnalytics_lock  = NULL;
+
+Monitor* ContinuationRelativize_lock  = NULL;
 
 Mutex*   Metaspace_lock               = NULL;
 Monitor* MetaspaceCritical_lock       = NULL;
@@ -242,7 +245,6 @@ void mutex_init() {
   }
   def(StringDedup_lock             , PaddedMonitor, nosafepoint);
   def(StringDedupIntern_lock       , PaddedMutex  , nosafepoint);
-  def(ParGCRareEvent_lock          , PaddedMutex  , safepoint, true);
   def(RawMonitor_lock              , PaddedMutex  , nosafepoint-1);
 
   def(Metaspace_lock               , PaddedMutex  , nosafepoint-3);
@@ -288,9 +290,10 @@ void mutex_init() {
   def(DirectivesStack_lock         , PaddedMutex  , nosafepoint);
   def(MultiArray_lock              , PaddedMutex  , safepoint);
 
-  def(JvmtiThreadState_lock        , PaddedMutex  , safepoint); // Used by JvmtiThreadState/JvmtiEventController
-  def(EscapeBarrier_lock           , PaddedMonitor, nosafepoint);  // Used to synchronize object reallocation/relocking triggered by JVMTI
-  def(Management_lock              , PaddedMutex  , safepoint); // used for JVM management
+  def(JvmtiThreadState_lock        , PaddedMutex  , safepoint);   // Used by JvmtiThreadState/JvmtiEventController
+  def(EscapeBarrier_lock           , PaddedMonitor, nosafepoint); // Used to synchronize object reallocation/relocking triggered by JVMTI
+  def(JvmtiVTMSTransition_lock     , PaddedMonitor, nosafepoint); // used for Virtual Thread Mount State transition management
+  def(Management_lock              , PaddedMutex  , safepoint);   // used for JVM management
 
   def(ConcurrentGCBreakpoints_lock , PaddedMonitor, safepoint, true);
   def(MethodData_lock              , PaddedMutex  , safepoint);
@@ -315,6 +318,8 @@ void mutex_init() {
 #ifndef SUPPORTS_NATIVE_CX8
   def(UnsafeJlong_lock             , PaddedMutex  , nosafepoint);
 #endif
+
+  def(ContinuationRelativize_lock  , PaddedMonitor, nosafepoint-3);
 
   def(CodeHeapStateAnalytics_lock  , PaddedMutex  , safepoint);
   def(NMethodSweeperStats_lock     , PaddedMutex  , nosafepoint);
@@ -361,6 +366,8 @@ void mutex_init() {
   if (UseG1GC) {
     defl(G1OldGCCount_lock         , PaddedMonitor, Threads_lock, true);
   }
+  defl(ParGCRareEvent_lock         , PaddedMutex  , Threads_lock, true);
+
   defl(CompileTaskAlloc_lock       , PaddedMutex ,  MethodCompileQueue_lock);
 #ifdef INCLUDE_PARALLELGC
   if (UseParallelGC) {

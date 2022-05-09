@@ -2726,10 +2726,10 @@ static inline jlong high_bit_set(BasicType bt) {
 encode %{
 
   enc_class call_epilog %{
+    C2_MacroAssembler _masm(&cbuf);
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
       int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3*VMRegImpl::slots_per_word));
-      C2_MacroAssembler _masm(&cbuf);
       Label L;
       __ cmpptr(Address(rsp, framesize), (int32_t)0xbadb100d);
       __ jccb(Assembler::equal, L);
@@ -8976,7 +8976,7 @@ instruct vmasked_load64(vec dst, memory mem, kReg mask) %{
   ins_encode %{
     BasicType elmType =  this->bottom_type()->is_vect()->element_basic_type();
     int vector_len = vector_length_encoding(this);
-    __ evmovdqu(elmType, $mask$$KRegister, $dst$$XMMRegister, $mem$$Address, vector_len);
+    __ evmovdqu(elmType, $mask$$KRegister, $dst$$XMMRegister, $mem$$Address, false, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9009,7 +9009,7 @@ instruct vmasked_store64(memory mem, vec src, kReg mask) %{
     const MachNode* src_node = static_cast<const MachNode*>(this->in(this->operand_index($src)));
     BasicType elmType =  src_node->bottom_type()->is_vect()->element_basic_type();
     int vector_len = vector_length_encoding(src_node);
-    __ evmovdqu(elmType, $mask$$KRegister, $mem$$Address, $src$$XMMRegister, vector_len);
+    __ evmovdqu(elmType, $mask$$KRegister, $mem$$Address, $src$$XMMRegister, true, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
