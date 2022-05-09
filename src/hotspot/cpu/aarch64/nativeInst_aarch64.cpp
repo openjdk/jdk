@@ -544,3 +544,29 @@ address NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest) {
 
   return stub;
 }
+
+void NativePostCallNop::make_deopt() {
+  NativeDeoptInstruction::insert(addr_at(0));
+}
+
+void NativePostCallNop::patch(jint diff) {
+  // unsupported for now
+}
+
+void NativeDeoptInstruction::verify() {
+}
+
+// Inserts an undefined instruction at a given pc
+void NativeDeoptInstruction::insert(address code_pos) {
+  // 1 1 0 1 | 0 1 0 0 | 1 0 1 imm16 0 0 0 0 1
+  // d       | 4       | a      | de | 0 | 0 |
+  // 0xd4, 0x20, 0x00, 0x00
+  uint32_t insn = 0xd4ade001;
+  uint32_t *pos = (uint32_t *) code_pos;
+  *pos = insn;
+  /**code_pos = 0xd4;
+  *(code_pos+1) = 0x60;
+  *(code_pos+2) = 0x00;
+  *(code_pos+3) = 0x00;*/
+  ICache::invalidate_range(code_pos, 4);
+}

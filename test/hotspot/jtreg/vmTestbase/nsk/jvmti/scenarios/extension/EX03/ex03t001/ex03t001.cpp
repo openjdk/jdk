@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,7 @@ jboolean enableClassUnloadEvent (jboolean enable) {
     jint extCount, i;
     jvmtiExtensionEventInfo* extList;
     jboolean found = JNI_FALSE;
+    jvmtiEventMode mode = enable ? JVMTI_ENABLE : JVMTI_DISABLE;
 
     NSK_DISPLAY0("Get extension events list\n");
     if (!NSK_JVMTI_VERIFY(jvmti->GetExtensionEvents(&extCount, &extList))) {
@@ -152,6 +153,11 @@ jboolean enableClassUnloadEvent (jboolean enable) {
             if (!NSK_JVMTI_VERIFY(
                     jvmti->SetExtensionEventCallback(extList[i].extension_event_index,
                                                      enable ? (jvmtiExtensionEvent)ClassUnload : NULL))) {
+                nsk_jvmti_setFailStatus();
+                return JNI_FALSE;
+            }
+            if (!NSK_JVMTI_VERIFY(
+                    jvmti->SetEventNotificationMode(mode, (jvmtiEvent)extList[i].extension_event_index, NULL))) {
                 nsk_jvmti_setFailStatus();
                 return JNI_FALSE;
             }

@@ -32,6 +32,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
@@ -2212,6 +2213,31 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
 
 #undef DBG
 
+bool ConstantPool::is_maybe_on_continuation_stack() const {
+  // This method uses the similar logic as nmethod::is_maybe_on_continuation_stack()
+  if (!Continuations::enabled()) {
+    return false;
+  }
+
+  // If the condition below is true, it means that the nmethod was found to
+  // be alive the previous completed marking cycle.
+  return cache()->gc_epoch() >= Continuations::previous_completed_gc_marking_cycle();
+}
+
+// For redefinition, if any methods found in loom stack chunks, the gc_epoch is
+// recorded in their constant pool cache. The on_stack-ness of the constant pool controls whether
+// memory for the method is reclaimed.
+bool ConstantPool::on_stack() const {
+  if ((_flags &_on_stack) != 0) {
+    return true;
+  }
+
+  if (_cache == nullptr) {
+    return false;
+  }
+
+  return is_maybe_on_continuation_stack();
+}
 
 void ConstantPool::set_on_stack(const bool value) {
   if (value) {
