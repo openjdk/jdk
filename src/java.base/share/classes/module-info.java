@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,10 @@ module java.base {
     exports jdk.internal.javac to
         java.compiler,
         jdk.compiler,
-        jdk.jshell;
+        jdk.jdi,
+        jdk.jfr,
+        jdk.jshell,
+        jdk.management;
     exports jdk.internal.access to
         java.desktop,
         java.logging,
@@ -235,7 +238,9 @@ module java.base {
         jdk.unsupported,
         jdk.incubator.foreign;
     exports jdk.internal.vm to
+        java.management,
         jdk.internal.jvmstat,
+        jdk.management,
         jdk.management.agent;
     exports jdk.internal.vm.annotation to
         java.instrument,

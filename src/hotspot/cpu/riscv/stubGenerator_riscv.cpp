@@ -578,7 +578,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(error);
     __ pop_reg(0x3000, sp);   // pop c_rarg2 and c_rarg3
 
-    __ pusha();
+    __ push_reg(RegSet::range(x0, x31), sp);
     // debug(char* msg, int64_t pc, int64_t regs[])
     __ mv(c_rarg0, t0);             // pass address of error message
     __ mv(c_rarg1, ra);             // pass return address
@@ -3731,7 +3731,9 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_all() {
     // support for verify_oop (must happen after universe_init)
-    StubRoutines::_verify_oop_subroutine_entry     = generate_verify_oop();
+    if (VerifyOops) {
+      StubRoutines::_verify_oop_subroutine_entry   = generate_verify_oop();
+    }
     StubRoutines::_throw_AbstractMethodError_entry =
       generate_throw_exception("AbstractMethodError throw_exception",
                                CAST_FROM_FN_PTR(address,
@@ -3808,10 +3810,10 @@ class StubGenerator: public StubCodeGenerator {
 }; // end class declaration
 
 #define UCM_TABLE_MAX_ENTRIES 8
-void StubGenerator_generate(CodeBuffer* code, bool all) {
+void StubGenerator_generate(CodeBuffer* code, int phase) {
   if (UnsafeCopyMemory::_table == NULL) {
     UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
   }
 
-  StubGenerator g(code, all);
+  StubGenerator g(code, phase);
 }
