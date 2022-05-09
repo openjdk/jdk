@@ -1086,6 +1086,9 @@ Java_sun_font_FontConfigManager_getFontConfig
                 free(file);
                 (*FcPatternDestroy)(pattern);
                 (*FcFontSetDestroy)(fontset);
+                if (prevUnionCharset != NULL) {
+                    (*FcCharSetDestroy)(prevUnionCharset);
+                }
                 closeFontConfig(libfontconfig, JNI_FALSE);
                 if (locale) {
                     (*env)->ReleaseStringUTFChars(env, localeStr, (const char*)locale);
