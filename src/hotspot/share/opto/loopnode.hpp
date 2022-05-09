@@ -246,11 +246,14 @@ class CountedLoopNode : public BaseCountedLoopNode {
   // vector mapped unroll factor here
   int _slp_maximum_unroll_factor;
 
+  // The eventual count of vectorizable packs in slp
+  int _slp_vector_pack_count;
+
 public:
   CountedLoopNode(Node *entry, Node *backedge)
     : BaseCountedLoopNode(entry, backedge), _main_idx(0), _trip_count(max_juint),
       _unrolled_count_log2(0), _node_count_before_unroll(0),
-      _slp_maximum_unroll_factor(0) {
+      _slp_maximum_unroll_factor(0), _slp_vector_pack_count(0) {
     init_class_id(Class_CountedLoop);
     // Initialize _trip_count to the largest possible value.
     // Will be reset (lower) if the loop's trip count is known.
@@ -327,6 +330,8 @@ public:
   int  node_count_before_unroll()            { return _node_count_before_unroll; }
   void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
   int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
+  void set_slp_pack_count(int pack_count)    { _slp_vector_pack_count = pack_count; }
+  int  slp_pack_count() const                { return _slp_vector_pack_count; }
 
   virtual LoopNode* skip_strip_mined(int expect_skeleton = 1);
   OuterStripMinedLoopNode* outer_loop() const;
@@ -772,6 +777,11 @@ public:
   bool is_innermost() { return is_loop() && _child == NULL; }
 
   void remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *phase);
+
+#ifdef ASSERT
+  // Tell whether the body contains nodes marked as reductions.
+  bool has_reduction_nodes() const;
+#endif // ASSERT
 
 #ifndef PRODUCT
   void dump_head() const;       // Dump loop head only
@@ -1415,6 +1425,7 @@ public:
 
   // Partially peel loop up through last_peel node.
   bool partial_peel( IdealLoopTree *loop, Node_List &old_new );
+  bool duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old_new);
 
   // Create a scheduled list of nodes control dependent on ctrl set.
   void scheduled_nodelist( IdealLoopTree *loop, VectorSet& ctrl, Node_List &sched );
@@ -1461,8 +1472,8 @@ public:
   // "Nearly" because all Nodes have been cloned from the original in the loop,
   // but the fall-in edges to the Cmp are different.  Clone bool/Cmp pairs
   // through the Phi recursively, and return a Bool.
-  Node *clone_iff( PhiNode *phi, IdealLoopTree *loop );
-  CmpNode *clone_bool( PhiNode *phi, IdealLoopTree *loop );
+  Node* clone_iff(PhiNode* phi);
+  CmpNode* clone_bool(PhiNode* phi);
 
 
   // Rework addressing expressions to get the most loop-invariant stuff
@@ -1675,6 +1686,20 @@ public:
   void push_pinned_nodes_thru_region(IfNode* dom_if, Node* region);
 
   bool try_merge_identical_ifs(Node* n);
+
+  void clone_loop_body(const Node_List& body, Node_List &old_new, CloneMap* cm);
+
+  void fix_body_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
+                      IdealLoopTree* parent, bool partial);
+
+  void fix_ctrl_uses(const Node_List& body, const IdealLoopTree* loop, Node_List &old_new, CloneLoopMode mode,
+                Node* side_by_side_idom, CloneMap* cm, Node_List &worklist);
+
+  void fix_data_uses(Node_List& body, IdealLoopTree* loop, CloneLoopMode mode, IdealLoopTree* outer_loop,
+                     uint new_counter, Node_List& old_new, Node_List& worklist, Node_List*& split_if_set,
+                     Node_List*& split_bool_set, Node_List*& split_cex_set);
+
+  void finish_clone_loop(Node_List* split_if_set, Node_List* split_bool_set, Node_List* split_cex_set);
 };
 
 
@@ -1822,6 +1847,35 @@ public:
   void next();                                 // Advance to next loop tree
 
   IdealLoopTree* current() { return _curnt; }  // Return current value of iterator.
+};
+
+// Compute probability of reaching some CFG node from a fixed
+// dominating CFG node
+class PathFrequency {
+private:
+  Node* _dom; // frequencies are computed relative to this node
+  Node_Stack _stack;
+  GrowableArray<float> _freqs_stack; // keep track of intermediate result at regions
+  GrowableArray<float> _freqs; // cache frequencies
+  PhaseIdealLoop* _phase;
+
+  float check_and_truncate_frequency(float f) {
+    assert(f >= 0, "Incorrect frequency");
+    // We do not perform an exact (f <= 1) check
+    // this would be error prone with rounding of floats.
+    // Performing a check like (f <= 1+eps) would be of benefit,
+    // however, it is not evident how to determine such an eps,
+    // given that an arbitrary number of add/mul operations
+    // are performed on these frequencies.
+    return (f > 1) ? 1 : f;
+  }
+
+public:
+  PathFrequency(Node* dom, PhaseIdealLoop* phase)
+    : _dom(dom), _stack(0), _phase(phase) {
+  }
+
+  float to(Node* n);
 };
 
 #endif // SHARE_OPTO_LOOPNODE_HPP

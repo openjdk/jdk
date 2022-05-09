@@ -451,7 +451,7 @@ void os::init_system_properties_values() {
   // Where to look for native libraries.
   //
   // Note: Due to a legacy implementation, most of the library path
-  // is set in the launcher. This was to accomodate linking restrictions
+  // is set in the launcher. This was to accommodate linking restrictions
   // on legacy Linux implementations (which are no longer supported).
   // Eventually, all the library path setting will be done here.
   //
@@ -811,7 +811,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // is not implemented properly. The posix standard requires adding
   // the size of the guard pages to the stack size, instead Linux
   // takes the space out of 'stacksize'. Thus we adapt the requested
-  // stack_size by the size of the guard pages to mimick proper
+  // stack_size by the size of the guard pages to mimic proper
   // behaviour. However, be careful not to end up with a size
   // of zero due to overflow. Don't add the guard page in that case.
   size_t guard_size = os::Linux::default_guard_size(thr_type);
@@ -1628,7 +1628,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     {EM_PARISC,      EM_PARISC,  ELFCLASS32, ELFDATA2MSB, (char*)"PARISC"},
     {EM_68K,         EM_68K,     ELFCLASS32, ELFDATA2MSB, (char*)"M68k"},
     {EM_AARCH64,     EM_AARCH64, ELFCLASS64, ELFDATA2LSB, (char*)"AARCH64"},
-    {EM_RISCV,       EM_RISCV,   ELFCLASS64, ELFDATA2LSB, (char*)"RISC-V"},
+#ifdef _LP64
+    {EM_RISCV,       EM_RISCV,   ELFCLASS64, ELFDATA2LSB, (char*)"RISCV64"},
+#else
+    {EM_RISCV,       EM_RISCV,   ELFCLASS32, ELFDATA2LSB, (char*)"RISCV32"},
+#endif
     {EM_LOONGARCH,   EM_LOONGARCH, ELFCLASS64, ELFDATA2LSB, (char*)"LoongArch"},
   };
 
@@ -2185,6 +2189,19 @@ void os::Linux::print_uptime_info(outputStream* st) {
   }
 }
 
+static void print_container_helper(outputStream* st, jlong j, const char* metrics) {
+  st->print("%s: ", metrics);
+  if (j > 0) {
+    if (j >= 1024) {
+      st->print_cr(UINT64_FORMAT " k", uint64_t(j) / 1024);
+    } else {
+      st->print_cr(UINT64_FORMAT, uint64_t(j));
+    }
+  } else {
+    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+  }
+}
+
 bool os::Linux::print_container_info(outputStream* st) {
   if (!OSContainer::is_containerized()) {
     st->print_cr("container information not found.");
@@ -2240,47 +2257,13 @@ bool os::Linux::print_container_info(outputStream* st) {
     st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no shares");
   }
 
-  jlong j = OSContainer::memory_limit_in_bytes();
-  st->print("memory_limit_in_bytes: ");
-  if (j > 0) {
-    st->print_cr(JLONG_FORMAT, j);
-  } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
-  }
+  print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
+  print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
+  print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
+  print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
+  print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
 
-  j = OSContainer::memory_and_swap_limit_in_bytes();
-  st->print("memory_and_swap_limit_in_bytes: ");
-  if (j > 0) {
-    st->print_cr(JLONG_FORMAT, j);
-  } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
-  }
-
-  j = OSContainer::memory_soft_limit_in_bytes();
-  st->print("memory_soft_limit_in_bytes: ");
-  if (j > 0) {
-    st->print_cr(JLONG_FORMAT, j);
-  } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
-  }
-
-  j = OSContainer::OSContainer::memory_usage_in_bytes();
-  st->print("memory_usage_in_bytes: ");
-  if (j > 0) {
-    st->print_cr(JLONG_FORMAT, j);
-  } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
-  }
-
-  j = OSContainer::OSContainer::memory_max_usage_in_bytes();
-  st->print("memory_max_usage_in_bytes: ");
-  if (j > 0) {
-    st->print_cr(JLONG_FORMAT, j);
-  } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
-  }
-
-  j = OSContainer::OSContainer::pids_max();
+  jlong j = OSContainer::pids_max();
   st->print("maximum number of tasks: ");
   if (j > 0) {
     st->print_cr(JLONG_FORMAT, j);
@@ -2288,7 +2271,7 @@ bool os::Linux::print_container_info(outputStream* st) {
     st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
   }
 
-  j = OSContainer::OSContainer::pids_current();
+  j = OSContainer::pids_current();
   st->print("current number of tasks: ");
   if (j > 0) {
     st->print_cr(JLONG_FORMAT, j);
@@ -2497,7 +2480,7 @@ void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
 #elif defined(PPC)
   strncpy(cpuinfo, "PPC64", length);
 #elif defined(RISCV)
-  strncpy(cpuinfo, "RISCV64", length);
+  strncpy(cpuinfo, LP64_ONLY("RISCV64") NOT_LP64("RISCV32"), length);
 #elif defined(S390)
   strncpy(cpuinfo, "S390", length);
 #elif defined(SPARC)
@@ -4032,7 +4015,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
 
   // We only end up here when at least 1 large page can be used.
   // If the size is not a multiple of the large page size, we
-  // will mix the type of pages used, but in a decending order.
+  // will mix the type of pages used, but in a descending order.
   // Start off by reserving a range of the given size that is
   // properly aligned. At this point no pages are committed. If
   // a requested address is given it will be used and it must be
@@ -4500,7 +4483,7 @@ jint os::init_2(void) {
   }
 
   // Check and sets minimum stack sizes against command line options
-  if (Posix::set_minimum_stack_sizes() == JNI_ERR) {
+  if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
 
@@ -4961,35 +4944,6 @@ jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::lseek64(fd, (off64_t)offset, SEEK_SET);
 }
 
-// This code originates from JDK's sysAvailable
-// from src/solaris/hpi/src/native_threads/src/sys_api_td.c
-
-int os::available(int fd, jlong *bytes) {
-  jlong cur, end;
-  int mode;
-  struct stat64 buf64;
-
-  if (::fstat64(fd, &buf64) >= 0) {
-    mode = buf64.st_mode;
-    if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      int n;
-      if (::ioctl(fd, FIONREAD, &n) >= 0) {
-        *bytes = n;
-        return 1;
-      }
-    }
-  }
-  if ((cur = ::lseek64(fd, 0L, SEEK_CUR)) == -1) {
-    return 0;
-  } else if ((end = ::lseek64(fd, 0L, SEEK_END)) == -1) {
-    return 0;
-  } else if (::lseek64(fd, cur, SEEK_SET) == -1) {
-    return 0;
-  }
-  *bytes = end - cur;
-  return 1;
-}
-
 // Map a block of memory.
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
@@ -5160,27 +5114,6 @@ bool os::is_thread_cpu_time_supported() {
 // so just return the system wide load average.
 int os::loadavg(double loadavg[], int nelem) {
   return ::getloadavg(loadavg, nelem);
-}
-
-void os::pause() {
-  char filename[MAX_PATH];
-  if (PauseAtStartupFile && PauseAtStartupFile[0]) {
-    jio_snprintf(filename, MAX_PATH, "%s", PauseAtStartupFile);
-  } else {
-    jio_snprintf(filename, MAX_PATH, "./vm.paused.%d", current_process_id());
-  }
-
-  int fd = ::open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-  if (fd != -1) {
-    struct stat buf;
-    ::close(fd);
-    while (::stat(filename, &buf) == 0) {
-      (void)::poll(NULL, 0, 100);
-    }
-  } else {
-    jio_fprintf(stderr,
-                "Could not open pause file '%s', continuing immediately.\n", filename);
-  }
 }
 
 // Get the default path to the core file

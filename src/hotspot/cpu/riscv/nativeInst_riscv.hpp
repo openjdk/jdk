@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -566,6 +566,37 @@ public:
   static inline int instruction_size() {
     // 2 for fence.i + fence
     return (UseConservativeFence ? 2 : 1) * NativeInstruction::instruction_size;
+  }
+};
+
+class NativePostCallNop: public NativeInstruction {
+public:
+  bool check() const { Unimplemented(); return false; }
+  int displacement() const { Unimplemented(); return 0; }
+  void patch(jint diff) { Unimplemented(); }
+  void make_deopt() { Unimplemented(); }
+};
+
+inline NativePostCallNop* nativePostCallNop_at(address address) {
+  Unimplemented();
+  return NULL;
+}
+
+class NativeDeoptInstruction: public NativeInstruction {
+public:
+  address instruction_address() const       { Unimplemented(); return NULL; }
+  address next_instruction_address() const  { Unimplemented(); return NULL; }
+
+  void  verify() { Unimplemented(); }
+
+  static bool is_deopt_at(address instr) {
+    Unimplemented();
+    return false;
+  }
+
+  // MT-safe patching
+  static void insert(address code_pos) {
+    Unimplemented();
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ class InstanceKlass: public Klass {
     loaded,                             // loaded and inserted in class hierarchy (but not linked yet)
     linked,                             // successfully linked/verified (but not initialized yet)
     being_initialized,                  // currently running class initializer
-    fully_initialized,                  // initialized (successfull final state)
+    fully_initialized,                  // initialized (successful final state)
     initialization_error                // error happened during initialization
   };
 
@@ -474,6 +474,11 @@ private:
   bool has_nest_member(JavaThread* current, InstanceKlass* k) const;
 
 public:
+  // Call this only if you know that the nest host has been initialized.
+  InstanceKlass* nest_host_not_null() {
+    assert(_nest_host != NULL, "must be");
+    return _nest_host;
+  }
   // Used to construct informative IllegalAccessError messages at a higher level,
   // if there was an issue resolving or validating the nest host.
   // Returns NULL if there was no error.

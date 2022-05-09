@@ -25,20 +25,9 @@
 
 package javax.crypto;
 
-import java.util.StringTokenizer;
-import java.util.NoSuchElementException;
-import java.security.AlgorithmParameters;
-import java.security.Provider;
-import java.security.Key;
-import java.security.SecureRandom;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.InvalidKeyException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.ProviderException;
-import java.security.spec.AlgorithmParameterSpec;
-
 import java.nio.ByteBuffer;
+import java.security.*;
+import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
@@ -544,7 +533,7 @@ public abstract class CipherSpi {
      * process ByteBuffers more efficiently than byte arrays.
      *
      * @param input the input ByteBuffer
-     * @param output the output ByteByffer
+     * @param output the output ByteBuffer
      *
      * @return the number of bytes stored in {@code output}
      *
@@ -558,10 +547,7 @@ public abstract class CipherSpi {
             throws ShortBufferException {
         try {
             return bufferCrypt(input, output, true);
-        } catch (IllegalBlockSizeException e) {
-            // never thrown for engineUpdate()
-            throw new ProviderException("Internal error in update()");
-        } catch (BadPaddingException e) {
+        } catch (IllegalBlockSizeException | BadPaddingException e) {
             // never thrown for engineUpdate()
             throw new ProviderException("Internal error in update()");
         }
@@ -707,7 +693,7 @@ public abstract class CipherSpi {
      * process ByteBuffers more efficiently than byte arrays.
      *
      * @param input the input ByteBuffer
-     * @param output the output ByteByffer
+     * @param output the output ByteBuffer
      *
      * @return the number of bytes stored in {@code output}
      *
@@ -777,8 +763,9 @@ public abstract class CipherSpi {
             byte[] inArray = input.array();
             int inOfs = input.arrayOffset() + inPos;
 
+            byte[] outArray;
             if (a2) { // output has an accessible byte[]
-                byte[] outArray = output.array();
+                outArray = output.array();
                 int outPos = output.position();
                 int outOfs = output.arrayOffset() + outPos;
 
@@ -803,10 +790,7 @@ public abstract class CipherSpi {
                     // adjust output position manually
                     output.position(outPos + total);
                 }
-                // adjust input position manually
-                input.position(inLimit);
             } else { // output does not have an accessible byte[]
-                byte[] outArray = null;
                 if (isUpdate) {
                     outArray = engineUpdate(inArray, inOfs, inLen);
                 } else {
@@ -816,9 +800,9 @@ public abstract class CipherSpi {
                     output.put(outArray);
                     total = outArray.length;
                 }
-                // adjust input position manually
-                input.position(inLimit);
             }
+            // adjust input position manually
+            input.position(inLimit);
         } else { // input does not have an accessible byte[]
             // have to assume the worst, since we have no way of determine
             // if input and output overlaps or not
@@ -939,7 +923,7 @@ public abstract class CipherSpi {
     }
 
     /**
-     * Continues a multi-part update of the Additional Authentication
+     * Continues a multipart update of the Additional Authentication
      * Data (AAD), using a subset of the provided buffer.
      * <p>
      * Calls to this method provide AAD to the cipher when operating in
@@ -969,7 +953,7 @@ public abstract class CipherSpi {
     }
 
     /**
-     * Continues a multi-part update of the Additional Authentication
+     * Continues a multipart update of the Additional Authentication
      * Data (AAD).
      * <p>
      * Calls to this method provide AAD to the cipher when operating in
