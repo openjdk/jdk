@@ -35,6 +35,8 @@ vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java 82456
 
 serviceability/sa/TestJhsdbJstackMixed.java 8248675 linux-aarch64
 
+compiler/c2/irTests/TestSkeletonPredicates.java 8286361 generic-all
+
 #############################################################################
 
 # Loom
