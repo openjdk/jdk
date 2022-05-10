@@ -122,7 +122,7 @@ public class EtchedBorder extends AbstractBorder
         this.shadow = shadow;
     }
 
-    private void paintBorderRect(Graphics g, Color c, int w, int h, int stkWidth) {
+    private void paintBorderHighlight(Graphics g, Color c, int w, int h, int stkWidth) {
         g.setColor(c);
         g.drawRect(stkWidth/2, stkWidth/2, w-(2*stkWidth), h-(2*stkWidth));
     }
@@ -172,9 +172,11 @@ public class EtchedBorder extends AbstractBorder
         g.translate(xtranslation, ytranslation);
 
         paintBorderShadow(g, (etchType == LOWERED) ? getHighlightColor(c)
-                                                    : getShadowColor(c), w, h, stkWidth);
-        paintBorderRect(g, (etchType == LOWERED) ? getShadowColor(c)
-                                                    : getHighlightColor(c), w, h, stkWidth);
+                                                   : getShadowColor(c),
+                          w, h, stkWidth);
+        paintBorderHighlight(g, (etchType == LOWERED) ? getShadowColor(c)
+                                                   : getHighlightColor(c),
+                             w, h, stkWidth);
 
         g.translate(-xtranslation, -ytranslation);
 

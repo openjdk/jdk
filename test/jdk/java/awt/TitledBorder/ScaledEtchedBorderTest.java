@@ -33,7 +33,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -44,7 +43,6 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 /*
  * @test
@@ -55,7 +53,7 @@ import javax.swing.UnsupportedLookAndFeelException;
  * @run main TitledBorderTest
  */
 
-public class TitledBorderTest {
+public class ScaledEtchedBorderTest {
 
     public static final Dimension SIZE = new Dimension(120, 20);
 
@@ -92,6 +90,8 @@ public class TitledBorderTest {
         for (int i = 0; i < images.size(); i++) {
             BufferedImage img = images.get(i);
             double scaling = scales[i];
+            System.out.println("Testing scaling: " + scaling);
+
 
             // checking vertical border
             int x = SIZE.width / 2;
@@ -108,8 +108,8 @@ public class TitledBorderTest {
         int thickness = 0;
         boolean checkShadow = false;
         boolean checkHighlight = false;
-        for (int i = 0; i < img.getWidth(); i++) {
-            int color = img.getRGB(i,y);
+        for (int x = 0; x < img.getWidth(); x++) {
+            int color = img.getRGB(x,y);
             if (!checkHighlight && !checkShadow) {
                 if (color == shadow.getRGB()) {
                     checkHighlight = true;
@@ -121,7 +121,7 @@ public class TitledBorderTest {
                 if (color == shadow.getRGB()) {
                     thickness++;
                 } else if (color == highlight.getRGB()) {
-                    verifyThickness(y, thickness, scaling, "Horizontal");
+                    verifyThickness(x, y, thickness, scaling, "Horizontal");
                     checkHighlight = false;
                     checkShadow = true;
                     thickness = 1;
@@ -134,7 +134,7 @@ public class TitledBorderTest {
                 } else if (color == highlight.getRGB()) {
                     thickness++;
                 } else {
-                    verifyThickness(y, thickness, scaling, "Horizontal");
+                    verifyThickness(x, y, thickness, scaling, "Horizontal");
                     checkShadow = false;
                     thickness = 0;
                 }
@@ -142,10 +142,11 @@ public class TitledBorderTest {
         }
     }
 
-    private static void verifyThickness(int x, int thickness, double scaling, String orientation) {
+    private static void verifyThickness(int x, int y, int thickness, double scaling, String orientation) {
         int expected = (int) Math.floor(scaling);
         if (thickness != expected) {
-            throw new RuntimeException("Unexpected " + orientation + " Border thickness.");
+            throw new RuntimeException("Unexpected " + orientation + " Border thickness at x:"
+                                       + x + " y: " + y + ". Expected: " + expected + " Actual: " + thickness);
         }
     }
 
@@ -153,8 +154,8 @@ public class TitledBorderTest {
         int thickness = 0;
         boolean checkShadow = false;
         boolean checkHighlight = false;
-        for (int i = 0; i < img.getHeight(); i++) {
-            int color = img.getRGB(x,i);
+        for (int y = 0; y < img.getHeight(); y++) {
+            int color = img.getRGB(x,y);
             if (!checkHighlight && !checkShadow) {
                 if (color == shadow.getRGB()) {
                     checkHighlight = true;
@@ -166,7 +167,7 @@ public class TitledBorderTest {
                 if (color == shadow.getRGB()) {
                     thickness++;
                 } else if (color == highlight.getRGB()) {
-                    verifyThickness(x, thickness, scaling, "Vertical");
+                    verifyThickness(x, y, thickness, scaling, "Vertical");
                     checkHighlight = false;
                     checkShadow = true;
                     thickness = 1;
@@ -179,7 +180,7 @@ public class TitledBorderTest {
                 } else if (color == highlight.getRGB()) {
                     thickness++;
                 } else {
-                    verifyThickness(x, thickness, scaling, "Vertical");
+                    verifyThickness(x, y, thickness, scaling, "Vertical");
                     checkShadow = false;
                     thickness = 0;
                 }
@@ -242,18 +243,6 @@ public class TitledBorderTest {
         } catch (IOException e) {
             // Don't propagate the exception
             e.printStackTrace();
-        }
-    }
-
-    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
-        try {
-            UIManager.setLookAndFeel(laf.getClassName());
-            System.out.println(laf.getName());
-        } catch (UnsupportedLookAndFeelException ignored) {
-            System.out.println("Unsupported LookAndFeel: " + laf.getClassName());
-        } catch (ClassNotFoundException | InstantiationException |
-                IllegalAccessException e) {
-            throw new RuntimeException(e);
         }
     }
 }
