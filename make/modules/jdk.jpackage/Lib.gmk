@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #
 
 include LibCommon.gmk
+include LauncherCommon.gmk
 
 ################################################################################
 
@@ -75,6 +76,8 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
     LIBS_macosx := $(LIBCXX) -framework Cocoa, \
     LIBS_windows := $(LIBCXX), \
     LIBS_linux := -ldl, \
+    MANIFEST := $(JAVA_MANIFEST), \
+    MANIFEST_VERSION := $(VERSION_NUMBER_FOUR_POSITIONS) \
 ))
 
 JPACKAGE_TARGETS += $(BUILD_JPACKAGE_APPLAUNCHEREXE)
@@ -175,6 +178,8 @@ ifeq ($(call isTargetOs, windows), true)
       LDFLAGS := $(BUILD_JPACKAGE_APPLAUNCHEREXE_LDFLAGS), \
       LIBS := $(BUILD_JPACKAGE_APPLAUNCHEREXE_LIBS), \
       LIBS_windows := $(BUILD_JPACKAGE_APPLAUNCHEREXE_LIBS_windows), \
+      MANIFEST := $(JAVA_MANIFEST), \
+      MANIFEST_VERSION := $(VERSION_NUMBER_FOUR_POSITIONS) \
   ))
 
   JPACKAGE_TARGETS += $(BUILD_JPACKAGE_APPLAUNCHERWEXE)

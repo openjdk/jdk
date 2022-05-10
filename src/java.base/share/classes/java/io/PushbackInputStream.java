@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.io;
 
 import java.util.Objects;
+import jdk.internal.misc.InternalLock;
 
 /**
  * A {@code PushbackInputStream} adds
@@ -52,6 +53,8 @@ import java.util.Objects;
  * @since   1.0
  */
 public class PushbackInputStream extends FilterInputStream {
+    private final InternalLock closeLock;
+
     /**
      * The pushback buffer.
      * @since   1.1
@@ -95,6 +98,13 @@ public class PushbackInputStream extends FilterInputStream {
         }
         this.buf = new byte[size];
         this.pos = size;
+
+        // use monitors when PushbackInputStream is sub-classed
+        if (getClass() == PushbackInputStream.class) {
+            closeLock = InternalLock.newLockOrNull();
+        } else {
+            closeLock = null;
+        }
     }
 
     /**
@@ -345,7 +355,7 @@ public class PushbackInputStream extends FilterInputStream {
      *                      the mark position becomes invalid.
      * @see     java.io.InputStream#reset()
      */
-    public synchronized void mark(int readlimit) {
+    public void mark(int readlimit) {
     }
 
     /**
@@ -360,7 +370,7 @@ public class PushbackInputStream extends FilterInputStream {
      * @see     java.io.InputStream#mark(int)
      * @see     java.io.IOException
      */
-    public synchronized void reset() throws IOException {
+    public void reset() throws IOException {
         throw new IOException("mark/reset not supported");
     }
 
@@ -373,11 +383,26 @@ public class PushbackInputStream extends FilterInputStream {
      *
      * @throws     IOException  if an I/O error occurs.
      */
-    public synchronized void close() throws IOException {
-        if (in == null)
-            return;
-        in.close();
-        in = null;
-        buf = null;
+    public void close() throws IOException {
+        if (closeLock != null) {
+            closeLock.lock();
+            try {
+                implClose();
+            } finally {
+                closeLock.unlock();
+            }
+        } else {
+            synchronized (this) {
+                implClose();
+            }
+        }
+    }
+
+    private void implClose() throws IOException {
+        if (in != null) {
+            in.close();
+            in = null;
+            buf = null;
+        }
     }
 }

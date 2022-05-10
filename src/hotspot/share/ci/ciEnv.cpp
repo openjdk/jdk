@@ -309,7 +309,7 @@ ciEnv::~ciEnv() {
 // Cache Jvmti state
 bool ciEnv::cache_jvmti_state() {
   VM_ENTRY_MARK;
-  // Get Jvmti capabilities under lock to get consistant values.
+  // Get Jvmti capabilities under lock to get consistent values.
   MutexLocker mu(JvmtiThreadState_lock);
   _jvmti_redefinition_count             = JvmtiExport::redefinition_count();
   _jvmti_can_hotswap_or_post_breakpoint = JvmtiExport::can_hotswap_or_post_breakpoint();
@@ -1051,6 +1051,8 @@ void ciEnv::register_method(ciMethod* target,
                             AbstractCompiler* compiler,
                             bool has_unsafe_access,
                             bool has_wide_vectors,
+                            bool has_monitors,
+                            int immediate_oops_patched,
                             RTMState  rtm_state,
                             const GrowableArrayView<RuntimeStub*>& native_invokers) {
   VM_ENTRY_MARK;
@@ -1150,6 +1152,8 @@ void ciEnv::register_method(ciMethod* target,
     if (nm != NULL) {
       nm->set_has_unsafe_access(has_unsafe_access);
       nm->set_has_wide_vectors(has_wide_vectors);
+      nm->set_has_monitors(has_monitors);
+      assert(!method->is_synchronized() || nm->has_monitors(), "");
 #if INCLUDE_RTM_OPT
       nm->set_rtm_state(rtm_state);
 #endif
@@ -1209,6 +1213,13 @@ void ciEnv::register_method(ciMethod* target,
     // The CodeCache is full.
     record_failure("code cache is full");
   }
+}
+
+// ------------------------------------------------------------------
+// ciEnv::find_system_klass
+ciKlass* ciEnv::find_system_klass(ciSymbol* klass_name) {
+  VM_ENTRY_MARK;
+  return get_klass_by_name_impl(NULL, constantPoolHandle(), klass_name, false);
 }
 
 // ------------------------------------------------------------------
@@ -1614,7 +1625,7 @@ void ciEnv::find_dynamic_call_sites() {
         }
       }
 
-      // Look for MethodHandle contant pool entries
+      // Look for MethodHandle constant pool entries
       RecordLocation fp(this, "@cpi %s", ik->name()->as_quoted_ascii());
       int len = pool->length();
       for (int i = 0; i < len; ++i) {

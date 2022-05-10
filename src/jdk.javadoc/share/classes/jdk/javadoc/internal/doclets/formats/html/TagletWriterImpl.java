@@ -81,7 +81,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewFlagProvider;
 /**
  * The taglet writer that writes HTML.
  */
-
 public class TagletWriterImpl extends TagletWriter {
     /**
      * A class that provides the information about the enclosing context for
@@ -210,7 +209,7 @@ public class TagletWriterImpl extends TagletWriter {
                              .replaceAll("\\s+", " ");
         }
 
-        Content desc = htmlWriter.commentTagsToContent(tag, element, tag.getDescription(), context.within(tag));
+        Content desc = htmlWriter.commentTagsToContent(element, tag.getDescription(), context.within(tag));
         String descText = extractText(desc);
 
         return createAnchorAndSearchIndex(element, tagText, descText, tag);
@@ -299,7 +298,7 @@ public class TagletWriterImpl extends TagletWriter {
         body.add(HtmlTree.CODE(defineID ? HtmlTree.SPAN_ID(HtmlIds.forParam(paramName), nameContent) : nameContent));
         body.add(" - ");
         List<? extends DocTree> description = ch.getDescription(paramTag);
-        body.add(htmlWriter.commentTagsToContent(paramTag, element, description, context.within(paramTag)));
+        body.add(htmlWriter.commentTagsToContent(element, description, context.within(paramTag)));
         return HtmlTree.DD(body);
     }
 
@@ -307,7 +306,7 @@ public class TagletWriterImpl extends TagletWriter {
     public Content returnTagOutput(Element element, ReturnTree returnTag, boolean inline) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> desc = ch.getDescription(returnTag);
-        Content content = htmlWriter.commentTagsToContent(returnTag, element, desc , context.within(returnTag));
+        Content content = htmlWriter.commentTagsToContent(element, desc , context.within(returnTag));
         return inline
                 ? new ContentBuilder(contents.getContent("doclet.Returns_0", content))
                 : new ContentBuilder(HtmlTree.DT(contents.returns), HtmlTree.DD(content));
@@ -367,7 +366,7 @@ public class TagletWriterImpl extends TagletWriter {
                 body.add(", ");
             }
             List<? extends DocTree> bodyTags = ch.getBody(simpleTag);
-            body.add(htmlWriter.commentTagsToContent(simpleTag, element, bodyTags, context.within(simpleTag)));
+            body.add(htmlWriter.commentTagsToContent(element, bodyTags, context.within(simpleTag)));
             many = true;
         }
         return new ContentBuilder(
@@ -514,7 +513,7 @@ public class TagletWriterImpl extends TagletWriter {
         }
         body.add(HtmlTree.CODE(excName));
         List<? extends DocTree> description = ch.getDescription(throwsTag);
-        Content desc = htmlWriter.commentTagsToContent(throwsTag, element, description, context.within(throwsTag));
+        Content desc = htmlWriter.commentTagsToContent(element, description, context.within(throwsTag));
         if (desc != null && !desc.isEmpty()) {
             body.add(" - ");
             body.add(desc);
@@ -559,7 +558,7 @@ public class TagletWriterImpl extends TagletWriter {
                                        List<? extends DocTree> tags,
                                        boolean isFirstSentence)
     {
-        return htmlWriter.commentTagsToContent(holderTag, holder,
+        return htmlWriter.commentTagsToContent(holder,
                 tags, holderTag == null ? context : context.within(holderTag));
     }
 

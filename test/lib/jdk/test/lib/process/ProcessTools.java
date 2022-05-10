@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -287,6 +289,63 @@ public final class ProcessTools {
         return createJavaProcessBuilder(command.toArray(String[]::new));
     }
 
+    /*
+      Convert arguments for tests running with virtual threads main wrapper
+      When test is executed with process wrapper the line is changed from
+      java <jvm-args> <test-class> <test-args>
+      to
+      java --enable-preview <jvm-args> jdk.test.lib.process.ProcessTools <wrapper-name> <test-class> <test-args>
+     */
+    private static List<String> addMainWrapperArgs(String mainWrapper, List<String> command) {
+
+        boolean useModules = command.contains("-m");
+        if (useModules) {
+            return command;
+        }
+
+        ArrayList<String> args = new ArrayList<>();
+        final String[] doubleWordArgs = {"-cp", "-classpath", "--add-opens", "--class-path", "--upgrade-module-path",
+                "--add-modules", "-d", "--add-exports", "--patch-module", "--module-path"};
+
+        if (mainWrapper.equalsIgnoreCase("virtual")) {
+            args.add("--enable-preview");
+        }
+
+        boolean expectSecondArg = false;
+        boolean isWrapperClassAdded = false;
+        for (String cmd : command) {
+            if (isWrapperClassAdded) {
+                args.add(cmd);
+                continue;
+            }
+
+            if (expectSecondArg) {
+                expectSecondArg = false;
+                args.add(cmd);
+                continue;
+            }
+            for (String dWArg : doubleWordArgs) {
+                if (cmd.equals(dWArg)) {
+                    expectSecondArg = true;
+                    args.add(cmd);
+                    break;
+                }
+            }
+            if (expectSecondArg) {
+                continue;
+            }
+            if (cmd.startsWith("-")) {
+                args.add(cmd);
+                continue;
+            }
+            args.add("jdk.test.lib.process.ProcessTools");
+            args.add(mainWrapper);
+            isWrapperClassAdded = true;
+            args.add(cmd);
+        }
+        return args;
+    }
+
     /**
      * Create ProcessBuilder using the java launcher from the jdk to be tested.
      *
@@ -302,7 +361,12 @@ public final class ProcessTools {
         args.add("-cp");
         args.add(System.getProperty("java.class.path"));
 
-        Collections.addAll(args, command);
+        String mainWrapper = System.getProperty("main.wrapper");
+        if (mainWrapper != null) {
+            args.addAll(addMainWrapperArgs(mainWrapper, Arrays.asList(command)));
+        } else {
+            Collections.addAll(args, command);
+        }
 
         // Reporting
         StringBuilder cmdLine = new StringBuilder();
@@ -692,6 +756,83 @@ public final class ProcessTools {
                 stderrTask.get();
             } catch (ExecutionException e) {
             }
+        }
+    }
+
+    // ProcessTools as a wrapper
+    // It executes method main in a separate virtual or platform thread
+    public static void main(String[] args) throws Throwable {
+        String wrapper = args[0];
+        String className = args[1];
+        String[] classArgs = new String[args.length - 2];
+        System.arraycopy(args, 2, classArgs, 0, args.length - 2);
+        Class c = Class.forName(className);
+        Method mainMethod = c.getMethod("main", new Class[] { String[].class });
+        mainMethod.setAccessible(true);
+
+        if (wrapper.equals("Virtual")) {
+            // MainThreadGroup used just as a container for exceptions
+            // when main is executed in virtual thread
+            MainThreadGroup tg = new MainThreadGroup();
+            Thread vthread = startVirtualThread(() -> {
+                    try {
+                        mainMethod.invoke(null, new Object[] { classArgs });
+                    } catch (InvocationTargetException e) {
+                        tg.uncaughtThrowable = e.getCause();
+                    } catch (Throwable error) {
+                        tg.uncaughtThrowable = error;
+                    }
+                });
+            if (tg.uncaughtThrowable != null) {
+                throw new RuntimeException(tg.uncaughtThrowable);
+            }
+            vthread.join();
+        } else if (wrapper.equals("Kernel")) {
+            MainThreadGroup tg = new MainThreadGroup();
+            Thread t = new Thread(tg, () -> {
+                    try {
+                        mainMethod.invoke(null, new Object[] { classArgs });
+                    } catch (InvocationTargetException e) {
+                        tg.uncaughtThrowable = e.getCause();
+                    } catch (Throwable error) {
+                        tg.uncaughtThrowable = error;
+                    }
+                });
+            t.start();
+            t.join();
+            if (tg.uncaughtThrowable != null) {
+                throw new RuntimeException(tg.uncaughtThrowable);
+            }
+        } else {
+            mainMethod.invoke(null, new Object[] { classArgs });
+        }
+    }
+
+    static class MainThreadGroup extends ThreadGroup {
+        MainThreadGroup() {
+            super("MainThreadGroup");
+        }
+
+        public void uncaughtException(Thread t, Throwable e) {
+            if (e instanceof ThreadDeath) {
+                return;
+            }
+            e.printStackTrace(System.err);
+            uncaughtThrowable = e;
+        }
+        Throwable uncaughtThrowable = null;
+    }
+
+    static Thread startVirtualThread(Runnable task) {
+        try {
+            Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
+            Class<?> clazz = Class.forName("java.lang.Thread$Builder");
+            Method start = clazz.getMethod("start", Runnable.class);
+            return (Thread) start.invoke(builder, task);
+        } catch (RuntimeException | Error e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

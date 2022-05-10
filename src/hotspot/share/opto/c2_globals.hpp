@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,7 @@
           "Print New compiler peephole replacements")                       \
                                                                             \
   develop(bool, PrintCFGBlockFreq, false,                                   \
-          "Print CFG block freqencies")                                     \
+          "Print CFG block frequencies")                                    \
                                                                             \
   develop(bool, TraceOptoParse, false,                                      \
           "Trace bytecode parse and control-flow merge")                    \
@@ -334,7 +334,7 @@
           "Trace loop unswitching")                                         \
                                                                             \
   product(bool, AllowVectorizeOnDemand, true,                               \
-          "Globally supress vectorization set in VectorizeMethod")          \
+          "Globally suppress vectorization set in VectorizeMethod")         \
                                                                             \
   product(bool, UseSuperWord, true,                                         \
           "Transform scalar operations into superword operations")          \
@@ -529,7 +529,7 @@
           "Use edge frequencies to drive block ordering")                   \
                                                                             \
   product(intx, BlockLayoutMinDiamondPercentage, 20,                        \
-          "Miniumum %% of a successor (predecessor) for which block "       \
+          "Minimum %% of a successor (predecessor) for which block "        \
           "layout a will allow a fork (join) in a single chain")            \
           range(0, 100)                                                     \
                                                                             \
@@ -636,7 +636,8 @@
           range(1, max_intx)                                                \
                                                                             \
   product(intx, AliasLevel,     3,                                          \
-          "0 for no aliasing, 1 for oop/field/static/array split, "         \
+          "(Deprecated) 0 for no aliasing, "                                \
+          "1 for oop/field/static/array split, "                            \
           "2 for class split, 3 for unique instances")                      \
           range(0, 3)                                                       \
           constraint(AliasLevelConstraintFunc,AfterErgo)                    \
@@ -770,6 +771,14 @@
           "to stress handling of long counted loops: run inner loop"        \
           "for at most jint_max / StressLongCountedLoop")                   \
           range(0, max_juint)                                               \
+                                                                            \
+  product(bool, DuplicateBackedge, true, DIAGNOSTIC,                        \
+          "Transform loop with a merge point into 2 loops if inner loop is" \
+          "expected to optimize better")                                    \
+                                                                            \
+  develop(bool, StressDuplicateBackedge, false,                             \
+          "Run DuplicateBackedge whenever possible ignoring benefit"        \
+          "analysis")                                                       \
                                                                             \
   product(bool, VerifyReceiverTypes, trueInDebug, DIAGNOSTIC,               \
           "Verify receiver types at runtime")                               \

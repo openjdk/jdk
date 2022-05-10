@@ -771,7 +771,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   // thread needs to take no further action and can exit via the fast path (success).
   // If the re-acquire succeeds then pass control into the slow path.
   // As implemented, this latter mode is horrible because we generated more
-  // coherence traffic on the lock *and* artifically extended the critical section
+  // coherence traffic on the lock *and* artificially extended the critical section
   // length while by virtue of passing control into the slow path.
 
   // box is really RAX -- the following CMPXCHG depends on that binding
@@ -1983,12 +1983,12 @@ void C2_MacroAssembler::reduce8D(int opcode, XMMRegister dst, XMMRegister src, X
   reduce4D(opcode, dst, vtmp1, vtmp1, vtmp2);
 }
 
-void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, int vector_len) {
-  MacroAssembler::evmovdqu(type, kmask, dst, src, vector_len);
+void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, bool merge, int vector_len) {
+  MacroAssembler::evmovdqu(type, kmask, dst, src, merge, vector_len);
 }
 
-void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, int vector_len) {
-  MacroAssembler::evmovdqu(type, kmask, dst, src, vector_len);
+void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, bool merge, int vector_len) {
+  MacroAssembler::evmovdqu(type, kmask, dst, src, merge, vector_len);
 }
 
 
@@ -2912,7 +2912,7 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1, Regis
 
   bind(SCAN_TO_16_CHAR);
   cmpl(cnt1, stride);
-  jcc(Assembler::less, SCAN_TO_CHAR_INIT);//less than 16 entires left
+  jcc(Assembler::less, SCAN_TO_CHAR_INIT);//less than 16 entries left
   if (UseAVX < 2) {
     movdl(vec1, ch);
     pxor(vec2, vec2);
@@ -4704,6 +4704,48 @@ void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister
 }
 #endif
 
+void C2_MacroAssembler::vector_signum_evex(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
+                                           KRegister ktmp1, int vec_enc) {
+  if (opcode == Op_SignumVD) {
+    vsubpd(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    evcmppd(ktmp1, k0, src, zero, Assembler::LT_OQ, vec_enc);
+    evblendmpd(dst, ktmp1, one, dst, true, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    evcmppd(ktmp1, k0, src, zero, Assembler::EQ_UQ, vec_enc);
+    evblendmpd(dst, ktmp1, dst, src, true, vec_enc);
+  } else {
+    assert(opcode == Op_SignumVF, "");
+    vsubps(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    evcmpps(ktmp1, k0, src, zero, Assembler::LT_OQ, vec_enc);
+    evblendmps(dst, ktmp1, one, dst, true, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    evcmpps(ktmp1, k0, src, zero, Assembler::EQ_UQ, vec_enc);
+    evblendmps(dst, ktmp1, dst, src, true, vec_enc);
+  }
+}
+
+void C2_MacroAssembler::vector_signum_avx(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
+                                          XMMRegister xtmp1, int vec_enc) {
+  if (opcode == Op_SignumVD) {
+    vsubpd(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    vblendvpd(dst, one, dst, src, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    vcmppd(xtmp1, src, zero, Assembler::EQ_UQ, vec_enc);
+    vblendvpd(dst, dst, src, xtmp1, vec_enc);
+  } else {
+    assert(opcode == Op_SignumVF, "");
+    vsubps(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    vblendvps(dst, one, dst, src, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    vcmpps(xtmp1, src, zero, Assembler::EQ_UQ, vec_enc);
+    vblendvps(dst, dst, src, xtmp1, vec_enc);
+  }
+}
+
 void C2_MacroAssembler::vector_maskall_operation(KRegister dst, Register src, int mask_len) {
   if (VM_Version::supports_avx512bw()) {
     if (mask_len > 32) {
@@ -4818,3 +4860,167 @@ void C2_MacroAssembler::vector_maskall_operation32(KRegister dst, Register src, 
   kunpckdql(dst, tmp, tmp);
 }
 #endif
+
+void C2_MacroAssembler::udivI(Register rax, Register divisor, Register rdx) {
+  Label done;
+  Label neg_divisor_fastpath;
+  cmpl(divisor, 0);
+  jccb(Assembler::less, neg_divisor_fastpath);
+  xorl(rdx, rdx);
+  divl(divisor);
+  jmpb(done);
+  bind(neg_divisor_fastpath);
+  // Fastpath for divisor < 0:
+  // quotient = (dividend & ~(dividend - divisor)) >>> (Integer.SIZE - 1)
+  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
+  movl(rdx, rax);
+  subl(rdx, divisor);
+  if (VM_Version::supports_bmi1()) {
+    andnl(rax, rdx, rax);
+  } else {
+    notl(rdx);
+    andl(rax, rdx);
+  }
+  shrl(rax, 31);
+  bind(done);
+}
+
+void C2_MacroAssembler::umodI(Register rax, Register divisor, Register rdx) {
+  Label done;
+  Label neg_divisor_fastpath;
+  cmpl(divisor, 0);
+  jccb(Assembler::less, neg_divisor_fastpath);
+  xorl(rdx, rdx);
+  divl(divisor);
+  jmpb(done);
+  bind(neg_divisor_fastpath);
+  // Fastpath when divisor < 0:
+  // remainder = dividend - (((dividend & ~(dividend - divisor)) >> (Integer.SIZE - 1)) & divisor)
+  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
+  movl(rdx, rax);
+  subl(rax, divisor);
+  if (VM_Version::supports_bmi1()) {
+    andnl(rax, rax, rdx);
+  } else {
+    notl(rax);
+    andl(rax, rdx);
+  }
+  sarl(rax, 31);
+  andl(rax, divisor);
+  subl(rdx, rax);
+  bind(done);
+}
+
+void C2_MacroAssembler::udivmodI(Register rax, Register divisor, Register rdx, Register tmp) {
+  Label done;
+  Label neg_divisor_fastpath;
+
+  cmpl(divisor, 0);
+  jccb(Assembler::less, neg_divisor_fastpath);
+  xorl(rdx, rdx);
+  divl(divisor);
+  jmpb(done);
+  bind(neg_divisor_fastpath);
+  // Fastpath for divisor < 0:
+  // quotient = (dividend & ~(dividend - divisor)) >>> (Integer.SIZE - 1)
+  // remainder = dividend - (((dividend & ~(dividend - divisor)) >> (Integer.SIZE - 1)) & divisor)
+  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in
+  // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
+  movl(rdx, rax);
+  subl(rax, divisor);
+  if (VM_Version::supports_bmi1()) {
+    andnl(rax, rax, rdx);
+  } else {
+    notl(rax);
+    andl(rax, rdx);
+  }
+  movl(tmp, rax);
+  shrl(rax, 31); // quotient
+  sarl(tmp, 31);
+  andl(tmp, divisor);
+  subl(rdx, tmp); // remainder
+  bind(done);
+}
+
+#ifdef _LP64
+void C2_MacroAssembler::udivL(Register rax, Register divisor, Register rdx) {
+  Label done;
+  Label neg_divisor_fastpath;
+  cmpq(divisor, 0);
+  jccb(Assembler::less, neg_divisor_fastpath);
+  xorl(rdx, rdx);
+  divq(divisor);
+  jmpb(done);
+  bind(neg_divisor_fastpath);
+  // Fastpath for divisor < 0:
+  // quotient = (dividend & ~(dividend - divisor)) >>> (Long.SIZE - 1)
+  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
+  movq(rdx, rax);
+  subq(rdx, divisor);
+  if (VM_Version::supports_bmi1()) {
+    andnq(rax, rdx, rax);
+  } else {
+    notq(rdx);
+    andq(rax, rdx);
+  }
+  shrq(rax, 63);
+  bind(done);
+}
+
+void C2_MacroAssembler::umodL(Register rax, Register divisor, Register rdx) {
+  Label done;
+  Label neg_divisor_fastpath;
+  cmpq(divisor, 0);
+  jccb(Assembler::less, neg_divisor_fastpath);
+  xorq(rdx, rdx);
+  divq(divisor);
+  jmp(done);
+  bind(neg_divisor_fastpath);
+  // Fastpath when divisor < 0:
+  // remainder = dividend - (((dividend & ~(dividend - divisor)) >> (Long.SIZE - 1)) & divisor)
+  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
+  movq(rdx, rax);
+  subq(rax, divisor);
+  if (VM_Version::supports_bmi1()) {
+    andnq(rax, rax, rdx);
+  } else {
+    notq(rax);
+    andq(rax, rdx);
+  }
+  sarq(rax, 63);
+  andq(rax, divisor);
+  subq(rdx, rax);
+  bind(done);
+}
+
+void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, Register tmp) {
+  Label done;
+  Label neg_divisor_fastpath;
+  cmpq(divisor, 0);
+  jccb(Assembler::less, neg_divisor_fastpath);
+  xorq(rdx, rdx);
+  divq(divisor);
+  jmp(done);
+  bind(neg_divisor_fastpath);
+  // Fastpath for divisor < 0:
+  // quotient = (dividend & ~(dividend - divisor)) >>> (Long.SIZE - 1)
+  // remainder = dividend - (((dividend & ~(dividend - divisor)) >> (Long.SIZE - 1)) & divisor)
+  // See Hacker's Delight (2nd ed), section 9.3 which is implemented in
+  // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
+  movq(rdx, rax);
+  subq(rax, divisor);
+  if (VM_Version::supports_bmi1()) {
+    andnq(rax, rax, rdx);
+  } else {
+    notq(rax);
+    andq(rax, rdx);
+  }
+  movq(tmp, rax);
+  shrq(rax, 63); // quotient
+  sarq(tmp, 63);
+  andq(tmp, divisor);
+  subq(rdx, tmp); // remainder
+  bind(done);
+}
+#endif
+

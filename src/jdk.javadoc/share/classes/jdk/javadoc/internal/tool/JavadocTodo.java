@@ -30,8 +30,8 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Context.Factory;
 
 /**
- *  Javadoc's own todo queue doesn't queue its inputs, as javadoc
- *  doesn't perform attribution of method bodies or semantic checking.
+ * Javadoc's own todo queue doesn't queue its inputs, as javadoc
+ * doesn't perform attribution of method bodies or semantic checking.
  */
 public class JavadocTodo extends Todo {
     public static void preRegister(Context context) {

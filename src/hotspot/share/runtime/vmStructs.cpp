@@ -70,6 +70,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"
+#include "oops/instanceStackChunkKlass.hpp"
 #include "oops/klass.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/markWord.hpp"
@@ -317,6 +318,7 @@
   nonstatic_field(ConstMethod,                 _max_stack,                                    u2)                                    \
   nonstatic_field(ConstMethod,                 _max_locals,                                   u2)                                    \
   nonstatic_field(ConstMethod,                 _size_of_parameters,                           u2)                                    \
+  nonstatic_field(ConstMethod,                 _num_stack_arg_slots,                          u2)                                    \
   nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
   nonstatic_field(ObjArrayKlass,               _bottom_klass,                                 Klass*)                                \
   volatile_nonstatic_field(Symbol,             _hash_and_refcount,                            unsigned int)                          \
@@ -455,6 +457,7 @@
      static_field(vmClasses,                   VM_CLASS_AT(ClassLoader_klass),                   InstanceKlass*)                     \
      static_field(vmClasses,                   VM_CLASS_AT(System_klass),                        InstanceKlass*)                     \
      static_field(vmClasses,                   VM_CLASS_AT(Thread_klass),                        InstanceKlass*)                     \
+     static_field(vmClasses,                   VM_CLASS_AT(Thread_FieldHolder_klass),            InstanceKlass*)                     \
      static_field(vmClasses,                   VM_CLASS_AT(ThreadGroup_klass),                   InstanceKlass*)                     \
      static_field(vmClasses,                   VM_CLASS_AT(MethodHandle_klass),                  InstanceKlass*)                     \
                                                                                                                                      \
@@ -709,6 +712,9 @@
   nonstatic_field(NamedThread,                 _name,                                         char*)                                 \
   nonstatic_field(NamedThread,                 _processed_thread,                             Thread*)                               \
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
+  nonstatic_field(JavaThread,                  _vthread,                                      OopHandle)                             \
+  nonstatic_field(JavaThread,                  _jvmti_vthread,                                OopHandle)                             \
+  nonstatic_field(JavaThread,                  _extentLocalCache,                              OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _vm_result_2,                                  Metadata*)                             \
@@ -1229,6 +1235,7 @@
         declare_type(InstanceClassLoaderKlass, InstanceKlass)             \
         declare_type(InstanceMirrorKlass, InstanceKlass)                  \
         declare_type(InstanceRefKlass, InstanceKlass)                     \
+        declare_type(InstanceStackChunkKlass, InstanceKlass)              \
     declare_type(ConstantPool, Metadata)                                  \
     declare_type(ConstantPoolCache, MetaspaceObj)                         \
     declare_type(MethodData, Metadata)                                    \
@@ -1579,13 +1586,25 @@
   declare_c2_type(DivLNode, Node)                                         \
   declare_c2_type(DivFNode, Node)                                         \
   declare_c2_type(DivDNode, Node)                                         \
+  declare_c2_type(UDivINode, Node)                                        \
+  declare_c2_type(UDivLNode, Node)                                        \
+  declare_c2_type(NoOvfDivINode, DivINode)                                \
+  declare_c2_type(NoOvfDivLNode, DivLNode)                                \
   declare_c2_type(ModINode, Node)                                         \
   declare_c2_type(ModLNode, Node)                                         \
   declare_c2_type(ModFNode, Node)                                         \
   declare_c2_type(ModDNode, Node)                                         \
+  declare_c2_type(UModINode, Node)                                        \
+  declare_c2_type(UModLNode, Node)                                        \
+  declare_c2_type(NoOvfModINode, ModINode)                                \
+  declare_c2_type(NoOvfModLNode, ModLNode)                                \
   declare_c2_type(DivModNode, MultiNode)                                  \
   declare_c2_type(DivModINode, DivModNode)                                \
   declare_c2_type(DivModLNode, DivModNode)                                \
+  declare_c2_type(UDivModINode, DivModNode)                               \
+  declare_c2_type(UDivModLNode, DivModNode)                               \
+  declare_c2_type(NoOvfDivModINode, DivModINode)                          \
+  declare_c2_type(NoOvfDivModLNode, DivModLNode)                          \
   declare_c2_type(BoxLockNode, Node)                                      \
   declare_c2_type(LoopNode, RegionNode)                                   \
   declare_c2_type(CountedLoopNode, LoopNode)                              \
@@ -1799,6 +1818,7 @@
   declare_c2_type(ReplicateLNode, VectorNode)                             \
   declare_c2_type(ReplicateFNode, VectorNode)                             \
   declare_c2_type(ReplicateDNode, VectorNode)                             \
+  declare_c2_type(PopulateIndexNode, VectorNode)                          \
   declare_c2_type(PackNode, VectorNode)                                   \
   declare_c2_type(PackBNode, PackNode)                                    \
   declare_c2_type(PackSNode, PackNode)                                    \
@@ -1993,7 +2013,7 @@
   declare_toplevel_type(vframeArray)                                      \
   declare_toplevel_type(vframeArrayElement)                               \
   declare_toplevel_type(Annotations*)                                     \
-  declare_type(OopMapValue, StackObj)                                     \
+  declare_toplevel_type(OopMapValue)                                      \
   declare_type(FileMapInfo, CHeapObj<mtInternal>)                         \
   declare_toplevel_type(FileMapHeader)                                    \
   declare_toplevel_type(CDSFileMapRegion)                                 \
@@ -2176,6 +2196,7 @@
   declare_constant(Method::_force_inline)                                 \
   declare_constant(Method::_dont_inline)                                  \
   declare_constant(Method::_hidden)                                       \
+  declare_constant(Method::_changes_current_thread)                       \
                                                                           \
   declare_constant(Method::nonvirtual_vtable_index)                       \
                                                                           \
