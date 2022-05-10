@@ -3767,7 +3767,7 @@ class StubGenerator: public StubCodeGenerator {
     int frame_complete = __ pc() - start;
     address the_pc = __ pc();
     jfr_prologue(the_pc, _masm, xthread);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint) 1);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
     jfr_epilogue(_masm, xthread);
     __ leave();
     __ ret();
