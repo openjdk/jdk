@@ -62,7 +62,7 @@ import jdk.jfr.Event;
 import jdk.jfr.FlightRecorderPermission;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
-import jdk.jfr.internal.handlers.EventHandler;
+import jdk.jfr.internal.event.EventConfiguration;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
@@ -74,7 +74,7 @@ public final class Utils {
     private static final String OFF = "off";
     public static final String EVENTS_PACKAGE_NAME = "jdk.jfr.events";
     public static final String INSTRUMENT_PACKAGE_NAME = "jdk.jfr.internal.instrument";
-    public static final String HANDLERS_PACKAGE_NAME = "jdk.jfr.internal.handlers";
+    public static final String EVENT_PACKAGE_NAME = "jdk.jfr.internal.event";
     public static final String REGISTER_EVENT = "registerEvent";
     public static final String ACCESS_FLIGHT_RECORDER = "accessFlightRecorder";
     private static final String LEGACY_EVENT_NAME_PREFIX = "com.oracle.jdk.";
@@ -445,19 +445,19 @@ public final class Utils {
         return (long) (nanos * JVM.getJVM().getTimeConversionFactor());
     }
 
-    public static synchronized EventHandler getHandler(Class<? extends jdk.internal.event.Event> eventClass) {
+    public static synchronized EventConfiguration getConfiguration(Class<? extends jdk.internal.event.Event> eventClass) {
         Utils.ensureValidEventSubclass(eventClass);
-        Object handler = JVM.getJVM().getHandler(eventClass);
-        if (handler == null || handler instanceof EventHandler) {
-            return (EventHandler) handler;
+        Object configuration = JVM.getJVM().getConfiguration(eventClass);
+        if (configuration == null || configuration instanceof EventConfiguration) {
+            return (EventConfiguration) configuration;
         }
-        throw new InternalError("Could not access event handler");
+        throw new InternalError("Could not get configuration object on event class " + eventClass.getName());
     }
 
-    static synchronized void setHandler(Class<? extends jdk.internal.event.Event> eventClass, EventHandler handler) {
+    static synchronized void setConfiguration(Class<? extends jdk.internal.event.Event> eventClass, EventConfiguration configuration) {
         Utils.ensureValidEventSubclass(eventClass);
-        if (!JVM.getJVM().setHandler(eventClass, handler)) {
-            throw new InternalError("Could not set event handler");
+        if (!JVM.getJVM().setConfiguration(eventClass, configuration)) {
+            throw new InternalError("Could not set configuration object on event class " + eventClass.getName());
         }
     }
 
@@ -522,6 +522,7 @@ public final class Utils {
             SAVE_GENERATED = SecuritySupport.getBooleanProperty("jfr.save.generated.asm");
         }
         if (SAVE_GENERATED) {
+            className = className.substring(className.lastIndexOf("/") + 1, className.length());
             try {
                 try (FileOutputStream fos = new FileOutputStream(className + ".class")) {
                     fos.write(bytes);

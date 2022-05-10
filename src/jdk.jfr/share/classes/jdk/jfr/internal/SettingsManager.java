@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 
 import jdk.jfr.internal.EventControl.NamedControl;
-import jdk.jfr.internal.handlers.EventHandler;
+import jdk.jfr.internal.event.EventConfiguration;
 
 final class SettingsManager {
 
@@ -154,9 +154,9 @@ final class SettingsManager {
     public void updateRetransform(List<Class<? extends jdk.internal.event.Event>> eventClasses) {
         List<Class<?>> classes = new ArrayList<>();
         for(Class<? extends jdk.internal.event.Event> eventClass: eventClasses) {
-            EventHandler eh = Utils.getHandler(eventClass);
-            if (eh != null ) {
-                PlatformEventType eventType = eh.getPlatformEventType();
+            EventConfiguration ec = Utils.getConfiguration(eventClass);
+            if (ec != null ) {
+                PlatformEventType eventType = ec.getPlatformEventType();
                 if (eventType.isMarkedForInstrumentation()) {
                     classes.add(eventClass);
                     eventType.markForInstrumentation(false);
