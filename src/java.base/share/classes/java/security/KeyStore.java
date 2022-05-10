@@ -145,21 +145,24 @@ import sun.security.util.Debug;
  * <pre>
  *    KeyStore.ProtectionParameter protParam =
  *        new KeyStore.PasswordProtection(password);
+ *    try {
+ *        // get my private key
+ *        KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
+ *            ks.getEntry("privateKeyAlias", protParam);
+ *        PrivateKey myPrivateKey = pkEntry.getPrivateKey();
  *
- *    // get my private key
- *    KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
- *        ks.getEntry("privateKeyAlias", protParam);
- *    PrivateKey myPrivateKey = pkEntry.getPrivateKey();
+ *        // save my secret key
+ *        javax.crypto.SecretKey mySecretKey;
+ *        KeyStore.SecretKeyEntry skEntry =
+ *            new KeyStore.SecretKeyEntry(mySecretKey);
+ *        ks.setEntry("secretKeyAlias", skEntry, protParam);
  *
- *    // save my secret key
- *    javax.crypto.SecretKey mySecretKey;
- *    KeyStore.SecretKeyEntry skEntry =
- *        new KeyStore.SecretKeyEntry(mySecretKey);
- *    ks.setEntry("secretKeyAlias", skEntry, protParam);
- *
- *    // store away the keystore
- *    try (FileOutputStream fos = new FileOutputStream("newKeyStoreName")) {
- *        ks.store(fos, password);
+ *        // store away the keystore
+ *        try (FileOutputStream fos = new FileOutputStream("newKeyStoreName")) {
+ *            ks.store(fos, password);
+ *        }
+ *    } finally {
+ *        protParam.destroy();
  *    }
  * </pre>
  *
