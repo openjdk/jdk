@@ -280,7 +280,7 @@ abstract class CKeyStore extends KeyStoreSpi {
      * @exception UnrecoverableKeyException if the key cannot be recovered.
      */
     public java.security.Key engineGetKey(String alias, char[] password)
-        throws NoSuchAlgorithmException, UnrecoverableKeyException {
+            throws NoSuchAlgorithmException, UnrecoverableKeyException {
         if (alias == null) {
             return null;
         }
@@ -822,7 +822,7 @@ abstract class CKeyStore extends KeyStoreSpi {
      * @param certCollection Collection of certificates.
      */
     private void generateCertificate(byte[] data,
-        Collection<Certificate> certCollection) {
+            Collection<Certificate> certCollection) {
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(data);
 
@@ -857,13 +857,13 @@ abstract class CKeyStore extends KeyStoreSpi {
     }
 
     /**
-     * Load keys and/or certificates from keystore into Collection.
+     * Loads keys and/or certificates from keystore into Collection.
      *
      * @param name Name of keystore.
      * @param location Location of keystore.
      */
     private native void loadKeysOrCertificateChains(String name,
-        int location) throws KeyStoreException;
+            int location) throws KeyStoreException;
 
     /**
      * Stores a DER-encoded certificate into the certificate store
@@ -873,8 +873,8 @@ abstract class CKeyStore extends KeyStoreSpi {
      * @param encoding DER-encoded certificate.
      */
     private native void storeCertificate(String name, String alias,
-        byte[] encoding, int encodingLength, long hCryptProvider,
-        long hCryptKey) throws CertificateException, KeyStoreException;
+            byte[] encoding, int encodingLength, long hCryptProvider,
+            long hCryptKey) throws CertificateException, KeyStoreException;
 
     /**
      * Removes the certificate from the certificate store
@@ -884,7 +884,7 @@ abstract class CKeyStore extends KeyStoreSpi {
      * @param encoding DER-encoded certificate.
      */
     private native void removeCertificate(String name, String alias,
-        byte[] encoding, int encodingLength)
+            byte[] encoding, int encodingLength)
             throws CertificateException, KeyStoreException;
 
     /**
@@ -893,7 +893,7 @@ abstract class CKeyStore extends KeyStoreSpi {
      * @param keyContainerName The name of the key container.
      */
     private native void destroyKeyContainer(String keyContainerName)
-        throws KeyStoreException;
+            throws KeyStoreException;
 
     /**
      * Removes a CNG key.
@@ -906,16 +906,16 @@ abstract class CKeyStore extends KeyStoreSpi {
      * Generates a private-key BLOB from a key's components.
      */
     private native byte[] generateRSAPrivateKeyBlob(
-        int keyBitLength,
-        byte[] modulus,
-        byte[] publicExponent,
-        byte[] privateExponent,
-        byte[] primeP,
-        byte[] primeQ,
-        byte[] exponentP,
-        byte[] exponentQ,
-        byte[] crtCoefficient) throws InvalidKeyException;
+            int keyBitLength,
+            byte[] modulus,
+            byte[] publicExponent,
+            byte[] privateExponent,
+            byte[] primeP,
+            byte[] primeQ,
+            byte[] exponentP,
+            byte[] exponentQ,
+            byte[] crtCoefficient) throws InvalidKeyException;
 
     private native CPrivateKey storePrivateKey(String alg, byte[] keyBlob,
-        String keyContainerName, int keySize) throws KeyStoreException;
+            String keyContainerName, int keySize) throws KeyStoreException;
 }
