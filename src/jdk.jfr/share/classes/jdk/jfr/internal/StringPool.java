@@ -38,8 +38,6 @@ public final class StringPool {
     private static final long MAX_SIZE_UTF16 = 16 * 1024 * 1024;
     /* string id index */
     private static final AtomicLong sidIdx = new AtomicLong(1);
-    /* max size bytes */
-    private static long currentSizeUTF16;
     /* looking at a biased data set 4 is a good value */
     private static final String[] preCache = new String[] { "", "", "", "" };
     /* the cache */
@@ -48,6 +46,8 @@ public final class StringPool {
     private static final int preCacheMask = 0x03;
     /* index of oldest */
     private static int preCacheOld = 0;
+    /* max size bytes */
+    private static long currentSizeUTF16;
 
     public static void reset() {
         cache.clear();
