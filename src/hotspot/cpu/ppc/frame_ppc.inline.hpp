@@ -33,7 +33,7 @@
 
 // Inline functions for ppc64 frames:
 
-// Initialize frame members
+// Initialize frame members (_pc and _sp must be given)
 inline void frame::setup() {
   assert(_pc != nullptr, "precondition: must have PC");
 
@@ -88,31 +88,6 @@ inline frame::frame(intptr_t* sp, address pc, intptr_t* unextended_sp, intptr_t*
   : _sp(sp), _pc(pc), _cb(nullptr), _oop_map(nullptr),
     _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(unextended_sp), _fp(fp) {
   setup();
-}
-
-inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map)
-  : _sp(sp), _pc(pc), _cb(cb), _oop_map(oop_map),
-    _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(unextended_sp), _fp(fp) {
-  assert(_cb != nullptr, "pc: " INTPTR_FORMAT, p2i(pc));
-  setup();
-}
-
-inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb,
-                    const ImmutableOopMap* oop_map, bool on_heap)
-                    : _sp(sp), _pc(pc), _cb(cb), _oop_map(oop_map), _deopt_state(not_deoptimized),
-                      _on_heap(on_heap), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(unextended_sp), _fp(fp) {
-  // In thaw, non-heap frames use this constructor to pass oop_map.  I don't know why.
-  assert(_on_heap || _cb != nullptr, "these frames are always heap frames");
-  if (cb != NULL) {
-    setup();
-  }
-#ifdef ASSERT
-  // The following assertion has been disabled because it would sometime trap for Continuation.run,
-  // which is not *in* a continuation and therefore does not clear the _cont_fastpath flag, but this
-  // is benign even in fast mode (see Freeze::setup_jump)
-  // We might freeze deoptimized frame in slow mode
-  // assert(_pc == pc && _deopt_state == not_deoptimized, "");
-#endif
 }
 
 // Accessors
