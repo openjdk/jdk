@@ -106,7 +106,7 @@ import java.util.Objects;
 @jdk.internal.ValueBased
 public final class MinguoDate
         extends ChronoLocalDateImpl<MinguoDate>
-        implements ChronoLocalDate, Serializable {
+        implements ChronoLocalDate, Serializable, FooDate {
 
     /**
      * Serialization version.
