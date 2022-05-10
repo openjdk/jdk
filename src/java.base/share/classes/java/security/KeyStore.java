@@ -143,7 +143,7 @@ import sun.security.util.Debug;
  * to read existing entries from the keystore, or to write new entries
  * into the keystore:
  * <pre>
- *    KeyStore.ProtectionParameter protParam =
+ *    KeyStore.PasswordProtection protParam =
  *        new KeyStore.PasswordProtection(password);
  *    try {
  *        // get my private key
