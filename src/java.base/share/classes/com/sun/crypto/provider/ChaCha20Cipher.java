@@ -166,7 +166,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
      * ciphers, but allow {@code NoPadding}.  See JCE spec.
      *
      * @param padding The padding type.  The only allowed value is
-     *      {@code NoPadding} case insensitive).
+     *      {@code NoPadding} case insensitive.
      *
      * @throws NoSuchPaddingException if a padding scheme besides
      *      {@code NoPadding} is provided.
@@ -400,7 +400,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
             return;
         }
 
-        byte[] newNonce = null;
+        byte[] newNonce;
         switch (mode) {
             case MODE_NONE:
                 throw new InvalidAlgorithmParameterException(
@@ -425,12 +425,6 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 break;
             default:
                 throw new RuntimeException("Invalid mode: " + mode);
-        }
-
-        // If after all the above processing we still don't have a nonce value
-        // then supply a random one provided a random source has been given.
-        if (newNonce == null) {
-            newNonce = createRandomNonce(random);
         }
 
         // Continue with initialization

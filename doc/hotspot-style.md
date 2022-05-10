@@ -60,7 +60,7 @@ list.  Changes are likely to be cautious and incremental, since HotSpot
 coders have been using these guidelines for years.
 
 Substantive changes are approved by
-[rough consensus](https://en.wikipedia.org/wiki/Rough_consensus) of
+[rough consensus](https://www.rfc-editor.org/rfc/rfc7282.html) of
 the [HotSpot Group](https://openjdk.java.net/census#hotspot) Members.
 The Group Lead determines whether consensus has been reached.
 
@@ -294,7 +294,9 @@ well.
 or consistency.  Gratuitous whitespace changes will make integrations
 and backports more difficult.
 
-* Use One-True-Brace-Style. The opening brace for a function or class
+* Use [One-True-Brace-Style](
+https://en.wikipedia.org/wiki/Indentation_style#Variant:_1TBS_(OTBS)).
+The opening brace for a function or class
 is normally at the end of the line; it is sometimes moved to the
 beginning of the next line for emphasis.  Substatements are enclosed
 in braces, even if there is only a single statement.  Extremely simple
@@ -469,7 +471,9 @@ code is disabled for some platforms.
 Rationale: HotSpot often uses "resource" or "arena" allocation.  Even
 where heap allocation is used, the standard global functions are
 avoided in favor of wrappers around malloc and free that support the
-VM's Native Memory Tracking (NMT) feature.
+VM's Native Memory Tracking (NMT) feature.  Typically, uses of the global
+operator new are inadvertent and therefore often associated with memory
+leaks.
 
 Native memory allocation failures are often treated as non-recoverable.
 The place where "out of memory" is (first) detected may be an innocent
@@ -629,7 +633,7 @@ Here are a few closely related example bugs:<br>
 ### enum
 
 Where appropriate, _scoped-enums_ should be used.
-([n2347](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2347.pdf)) 
+([n2347](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2347.pdf))
 
 Use of _unscoped-enums_ is permitted, though ordinary constants may be
 preferable when the automatic initializer feature isn't used.
@@ -649,10 +653,12 @@ integral constants.
 
 ### thread_local
 
-Do not use `thread_local`
+Avoid use of `thread_local`
 ([n2659](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2659.htm));
-instead, use the HotSpot macro `THREAD_LOCAL`.  The initializer must
-be a constant expression.
+and instead, use the HotSpot macro `THREAD_LOCAL`, for which the initializer must
+be a constant expression. When `thread_local` must be used, use the Hotspot macro
+`APPROVED_CPP_THREAD_LOCAL` to indicate that the use has been given appropriate
+consideration.
 
 As was discussed in the review for
 [JDK-8230877](https://mail.openjdk.java.net/pipermail/hotspot-dev/2019-September/039487.html),
@@ -661,14 +667,18 @@ semantics.  However, that support requires a run-time penalty for
 references to non-function-local `thread_local` variables defined in a
 different translation unit, even if they don't need dynamic
 initialization.  Dynamic initialization and destruction of
-namespace-scoped thread local variables also has the same ordering
-problems as for ordinary namespace-scoped variables.
+non-local `thread_local` variables also has the same ordering
+problems as for ordinary non-local variables. So we avoid use of
+`thread_local` in general, limiting its use to only those cases where dynamic
+initialization or destruction are essential. See
+[JDK-8282469](https://bugs.openjdk.java.net/browse/JDK-8282469)
+for further discussion.
 
 ### nullptr
 
 Prefer `nullptr`
 ([n2431](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2431.pdf))
-to `NULL`.  Don't use (constexpr or literal) 0 for pointers. 
+to `NULL`.  Don't use (constexpr or literal) 0 for pointers.
 
 For historical reasons there are widespread uses of both `NULL` and of
 integer 0 as a pointer value.
@@ -937,7 +947,7 @@ References:
 * Generalized lambda capture (init-capture) ([N3648])
 * Generic (polymorphic) lambda expressions ([N3649])
 
-[n2657]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2657.htm 
+[n2657]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2657.htm
 [n2927]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2009/n2927.pdf
 [N3648]: https://isocpp.org/files/papers/N3648.html
 [N3649]: https://isocpp.org/files/papers/N3649.html
@@ -975,10 +985,34 @@ References from C++23
 
 [p1102r2]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1102r2.html
 
+### Inheriting constructors
+
+Do not use _inheriting constructors_
+([n2540](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2540.htm)).
+
+C++11 provides simple syntax allowing a class to inherit the constructors of a
+base class.  Unfortunately there are a number of problems with the original
+specification, and C++17 contains significant revisions ([p0136r1] opens with
+a list of 8 Core Issues).  Since HotSpot doesn't support use of C++17, use of
+inherited constructors could run into those problems. Such uses might also
+change behavior in a future HotSpot update to use C++17 or later, potentially
+in subtle ways that could lead to hard to diagnose problems.  Because of this,
+HotSpot code must not use inherited constructors.
+
+Note that gcc7 provides the `-fnew-inheriting-ctors` option to use the
+[p0136r1] semantics.  This is enabled by default when using C++17 or later.
+It is also enabled by default for `fabi-version=11` (introduced by gcc7) or
+higher when using C++11/14, as the change is considered a Defect Report that
+applies to those versions.  Earlier versions of gcc don't have that option,
+and other supported compilers may not have anything similar.
+
+[p0136r1]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0136r1.html
+  "p0136r1"
+
 ### Additional Permitted Features
 
 * `constexpr`
-([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf)) 
+([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf))
 ([n3652](https://isocpp.org/files/papers/N3652.html))
 
 * Sized deallocation
@@ -1033,6 +1067,9 @@ References from C++23
 ([n2930](http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2930.html))
 ([range-for](https://en.cppreference.com/w/cpp/language/range-for))
 
+* Unrestricted Unions
+([n2544](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2544.pdf))
+
 ### Excluded Features
 
 * New string and character literals
@@ -1064,7 +1101,7 @@ namespace std;` to avoid needing to qualify Standard Library names.
 ([n2179](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2179.html)) &mdash;
 HotSpot does not permit the use of exceptions, so this feature isn't useful.
 
-* Avoid namespace-scoped variables with non-constexpr initialization.
+* Avoid non-local variables with non-constexpr initialization.
 In particular, avoid variables with types requiring non-trivial
 initialization or destruction.  Initialization order problems can be
 difficult to deal with and lead to surprises, as can destruction
@@ -1085,14 +1122,14 @@ in HotSpot code because of the "no implicit boolean" guideline.)
 
 * Avoid covariant return types.
 
-* Avoid `goto` statements. 
+* Avoid `goto` statements.
 
 ### Undecided Features
 
 This list is incomplete; it serves to explicitly call out some
 features that have not yet been discussed.
 
-* Trailing return type syntax for functions 
+* Trailing return type syntax for functions
 ([n2541](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm))
 
 * Variable templates
@@ -1106,7 +1143,7 @@ features that have not yet been discussed.
 
 * Rvalue references and move semantics
 
-[ADL]: https://en.cppreference.com/w/cpp/language/adl 
+[ADL]: https://en.cppreference.com/w/cpp/language/adl
   "Argument Dependent Lookup"
 
 [ODR]: https://en.cppreference.com/w/cpp/language/definition

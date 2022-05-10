@@ -66,14 +66,14 @@ public class HiDPIRobotScreenCaptureTest {
         }
 
         Frame frame = new Frame();
-        // Position the frame on prime number coordinates to avoid
-        // them being multiple of the desktop scale; this tests Linux
+        // Position the frame on prime number coordinates (mind OFFSET)
+        // to avoid them being multiple of the desktop scale; this tests Linux
         // color picker better.
         // Also, the position should be far enough from the top left
         // corner of the screen to reduce the chance of being repositioned
         // by the system because that area's occupied by the global
         // menu bar and such.
-        frame.setBounds(83, 97, 400, 300);
+        frame.setBounds(78, 92, 100, 100);
         frame.setUndecorated(true);
 
         Panel panel = new Panel(new BorderLayout());

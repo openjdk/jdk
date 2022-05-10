@@ -104,7 +104,7 @@ public class ServiceRegistry {
      * @param categories an {@code Iterator} containing
      * {@code Class} objects to be used to define categories.
      *
-     * @exception IllegalArgumentException if
+     * @throws IllegalArgumentException if
      * {@code categories} is {@code null}, or if
      * one of the categories is not an allowed service type.
      */
@@ -157,7 +157,7 @@ public class ServiceRegistry {
      * file violates the specified format or if a provider class
      * cannot be found and instantiated.
      *
-     * @exception IllegalArgumentException if
+     * @throws IllegalArgumentException if
      * {@code providerClass} is {@code null}, or if it is
      * not one of the allowed service types.
      */
@@ -196,7 +196,7 @@ public class ServiceRegistry {
      * file violates the specified format or if a provider class
      * cannot be found and instantiated.
      *
-     * @exception IllegalArgumentException if
+     * @throws IllegalArgumentException if
      * {@code providerClass} is {@code null}, or if it is
      * not one of the allowed service types.
      */
@@ -254,11 +254,11 @@ public class ServiceRegistry {
      * @return true if no provider of the same class was previously
      * registered in the same category category.
      *
-     * @exception IllegalArgumentException if {@code provider} is
+     * @throws IllegalArgumentException if {@code provider} is
      * {@code null}.
-     * @exception IllegalArgumentException if there is no category
+     * @throws IllegalArgumentException if there is no category
      * corresponding to {@code category}.
-     * @exception ClassCastException if provider does not implement
+     * @throws ClassCastException if provider does not implement
      * the {@code Class} defined by {@code category}.
      */
     public <T> boolean registerServiceProvider(T provider,
@@ -292,7 +292,7 @@ public class ServiceRegistry {
      *
      * @param provider the service provider object to be registered.
      *
-     * @exception IllegalArgumentException if
+     * @throws IllegalArgumentException if
      * {@code provider} is {@code null}.
      */
     public void registerServiceProvider(Object provider) {
@@ -323,7 +323,7 @@ public class ServiceRegistry {
      * @param providers an Iterator containing service provider
      * objects to be registered.
      *
-     * @exception IllegalArgumentException if {@code providers}
+     * @throws IllegalArgumentException if {@code providers}
      * is {@code null} or contains a {@code null} entry.
      */
     public void registerServiceProviders(Iterator<?> providers) {
@@ -357,11 +357,11 @@ public class ServiceRegistry {
      * registered in the same category category,
      * {@code false} otherwise.
      *
-     * @exception IllegalArgumentException if {@code provider} is
+     * @throws IllegalArgumentException if {@code provider} is
      * {@code null}.
-     * @exception IllegalArgumentException if there is no category
+     * @throws IllegalArgumentException if there is no category
      * corresponding to {@code category}.
-     * @exception ClassCastException if provider does not implement
+     * @throws ClassCastException if provider does not implement
      * the class defined by {@code category}.
      */
     public <T> boolean deregisterServiceProvider(T provider,
@@ -385,7 +385,7 @@ public class ServiceRegistry {
      *
      * @param provider the service provider object to be deregistered.
      *
-     * @exception IllegalArgumentException if {@code provider} is
+     * @throws IllegalArgumentException if {@code provider} is
      * {@code null}.
      */
     public void deregisterServiceProvider(Object provider) {
@@ -408,7 +408,7 @@ public class ServiceRegistry {
      * @return {@code true} if the given provider has been
      * registered.
      *
-     * @exception IllegalArgumentException if {@code provider} is
+     * @throws IllegalArgumentException if {@code provider} is
      * {@code null}.
      */
     public boolean contains(Object provider) {
@@ -444,7 +444,7 @@ public class ServiceRegistry {
      * @return an {@code Iterator} containing service provider
      * objects from the given category, possibly in order.
      *
-     * @exception IllegalArgumentException if there is no category
+     * @throws IllegalArgumentException if there is no category
      * corresponding to {@code category}.
      */
     public <T> Iterator<T> getServiceProviders(Class<T> category,
@@ -502,7 +502,7 @@ public class ServiceRegistry {
      * @return an {@code Iterator} containing service provider
      * objects from the given category, possibly in order.
      *
-     * @exception IllegalArgumentException if there is no category
+     * @throws IllegalArgumentException if there is no category
      * corresponding to {@code category}.
      */
     public <T> Iterator<T> getServiceProviders(Class<T> category,
@@ -531,7 +531,7 @@ public class ServiceRegistry {
      * desired {@code Class} type, or {@code null} is none is
      * present.
      *
-     * @exception IllegalArgumentException if {@code providerClass} is
+     * @throws IllegalArgumentException if {@code providerClass} is
      * {@code null}.
      */
     public <T> T getServiceProviderByClass(Class<T> providerClass) {
@@ -573,9 +573,9 @@ public class ServiceRegistry {
      * @return {@code true} if a previously unset ordering
      * was established.
      *
-     * @exception IllegalArgumentException if either provider is
+     * @throws IllegalArgumentException if either provider is
      * {@code null} or they are the same object.
-     * @exception IllegalArgumentException if there is no category
+     * @throws IllegalArgumentException if there is no category
      * corresponding to {@code category}.
      */
     public <T> boolean setOrdering(Class<T> category,
@@ -619,9 +619,9 @@ public class ServiceRegistry {
      * @return {@code true} if a previously set ordering was
      * disestablished.
      *
-     * @exception IllegalArgumentException if either provider is
+     * @throws IllegalArgumentException if either provider is
      * {@code null} or they are the same object.
-     * @exception IllegalArgumentException if there is no category
+     * @throws IllegalArgumentException if there is no category
      * corresponding to {@code category}.
      */
     public <T> boolean unsetOrdering(Class<T> category,
@@ -650,7 +650,7 @@ public class ServiceRegistry {
      *
      * @param category the category to be emptied.
      *
-     * @exception IllegalArgumentException if there is no category
+     * @throws IllegalArgumentException if there is no category
      * corresponding to {@code category}.
      */
     public void deregisterAll(Class<?> category) {
@@ -677,7 +677,7 @@ public class ServiceRegistry {
      * currently registered service providers.  This method should not
      * be called from application code.
      *
-     * @exception Throwable if an error occurs during superclass
+     * @throws Throwable if an error occurs during superclass
      * finalization.
      *
      * @deprecated Finalization has been deprecated for removal.  See

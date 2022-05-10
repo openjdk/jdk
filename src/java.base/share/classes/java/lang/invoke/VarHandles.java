@@ -695,8 +695,8 @@ final class VarHandles {
 //                @LambdaForm.Compiled
 //                @Hidden
 //                static final <METHOD> throws Throwable {
-//                    handle.checkExactAccessMode(ad);
-//                    if (handle.isDirect() && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
+//                    boolean direct = handle.checkAccessModeThenIsDirect(ad);
+//                    if (direct && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
 //                        <RESULT_ERASED>MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);<RETURN_ERASED>
 //                    } else {
 //                        MethodHandle mh = handle.getMethodHandle(ad.mode);
@@ -710,10 +710,10 @@ final class VarHandles {
 //                @LambdaForm.Compiled
 //                @Hidden
 //                static final <METHOD> throws Throwable {
-//                    handle.checkExactAccessMode(ad);
-//                    if (handle.isDirect() && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
+//                    boolean direct = handle.checkAccessModeThenIsDirect(ad);
+//                    if (direct && handle.vform.methodType_table[ad.type] == ad.symbolicMethodTypeErased) {
 //                        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
-//                    } else if (handle.isDirect() && handle.vform.getMethodType_V(ad.type) == ad.symbolicMethodTypeErased) {
+//                    } else if (direct && handle.vform.getMethodType_V(ad.type) == ad.symbolicMethodTypeErased) {
 //                        MethodHandle.linkToStatic(<LINK_TO_STATIC_ARGS>);
 //                    } else {
 //                        MethodHandle mh = handle.getMethodHandle(ad.mode);
@@ -859,9 +859,6 @@ final class VarHandles {
 //            List<String> LINK_TO_STATIC_ARGS = params.keySet().stream().
 //                    collect(toList());
 //            LINK_TO_STATIC_ARGS.add("handle.vform.getMemberName(ad.mode)");
-//            List<String> LINK_TO_STATIC_ARGS_V = params.keySet().stream().
-//                    collect(toList());
-//            LINK_TO_STATIC_ARGS_V.add("handle.vform.getMemberName_V(ad.mode)");
 //
 //            List<String> LINK_TO_INVOKER_ARGS = params.keySet().stream().
 //                    collect(toList());
@@ -893,8 +890,6 @@ final class VarHandles {
 //                    replace("<RESULT_ERASED>", RESULT_ERASED).
 //                    replace("<RETURN_ERASED>", RETURN_ERASED).
 //                    replaceAll("<LINK_TO_STATIC_ARGS>", LINK_TO_STATIC_ARGS.stream().
-//                            collect(joining(", "))).
-//                    replaceAll("<LINK_TO_STATIC_ARGS_V>", LINK_TO_STATIC_ARGS_V.stream().
 //                            collect(joining(", "))).
 //                    replace("<LINK_TO_INVOKER_ARGS>", LINK_TO_INVOKER_ARGS.stream().
 //                            collect(joining(", ")))

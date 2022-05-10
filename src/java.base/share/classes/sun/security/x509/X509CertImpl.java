@@ -648,9 +648,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             if (attr.getSuffix() != null) {
                 try {
                     return info.get(attr.getSuffix());
-                } catch (IOException e) {
-                    throw new CertificateParsingException(e.toString());
-                } catch (CertificateException e) {
+                } catch (IOException | CertificateException e) {
                     throw new CertificateParsingException(e.toString());
                 }
             } else {

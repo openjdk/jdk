@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ class MimeTypesFileTypeDetector extends AbstractFileTypeDetector {
                             }
                         });
 
-                    mimeTypeMap = new HashMap<>(lines.size());
+                    mimeTypeMap = HashMap.newHashMap(lines.size());
                     String entry = "";
                     for (String line : lines) {
                         entry += line;

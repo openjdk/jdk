@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "jfr/leakprofiler/chains/bitset.inline.hpp"
 #include "jfr/leakprofiler/chains/dfsClosure.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
 #include "jfr/leakprofiler/chains/edgeStore.hpp"
+#include "jfr/leakprofiler/chains/jfrbitset.hpp"
 #include "jfr/leakprofiler/chains/rootSetClosure.hpp"
 #include "jfr/leakprofiler/utilities/granularTimer.hpp"
 #include "jfr/leakprofiler/utilities/rootType.hpp"
@@ -40,7 +40,7 @@
 UnifiedOopRef DFSClosure::_reference_stack[max_dfs_depth];
 
 void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
-                                      BitSet* mark_bits,
+                                      JFRBitSet* mark_bits,
                                       const Edge* start_edge) {
   assert(edge_store != NULL, "invariant");
   assert(mark_bits != NULL," invariant");
@@ -52,7 +52,7 @@ void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
 }
 
 void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
-                                          BitSet* mark_bits) {
+                                          JFRBitSet* mark_bits) {
   assert(edge_store != NULL, "invariant");
   assert(mark_bits != NULL, "invariant");
 
@@ -68,7 +68,7 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   rs.process();
 }
 
-DFSClosure::DFSClosure(EdgeStore* edge_store, BitSet* mark_bits, const Edge* start_edge)
+DFSClosure::DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge)
   :_edge_store(edge_store), _mark_bits(mark_bits), _start_edge(start_edge),
   _max_depth(max_dfs_depth), _depth(0), _ignore_root_set(false) {
 }
@@ -80,24 +80,23 @@ void DFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
   if (GranularTimer::is_finished()) {
     return;
   }
+
   if (_depth == 0 && _ignore_root_set) {
     // Root set is already marked, but we want
     // to continue, so skip is_marked check.
     assert(_mark_bits->is_marked(pointee), "invariant");
-  }  else {
+    _reference_stack[_depth] = reference;
+  } else {
     if (_mark_bits->is_marked(pointee)) {
       return;
     }
+    _mark_bits->mark_obj(pointee);
+    _reference_stack[_depth] = reference;
+    // is the pointee a sample object?
+    if (pointee->mark().is_marked()) {
+      add_chain();
+    }
   }
-  _reference_stack[_depth] = reference;
-  _mark_bits->mark_obj(pointee);
-  assert(_mark_bits->is_marked(pointee), "invariant");
-
-  // is the pointee a sample object?
-  if (pointee->mark().is_marked()) {
-    add_chain();
-  }
-
   assert(_max_depth >= 1, "invariant");
   if (_depth < _max_depth - 1) {
     _depth++;

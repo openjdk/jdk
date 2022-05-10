@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "asm/register.hpp"
 #include "atomic_aarch64.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -1320,10 +1321,10 @@ class StubGenerator: public StubCodeGenerator {
   void clobber_registers() {
 #ifdef ASSERT
     RegSet clobbered
-      = MacroAssembler::call_clobbered_registers() - rscratch1;
+      = MacroAssembler::call_clobbered_gp_registers() - rscratch1;
     __ mov(rscratch1, (uint64_t)0xdeadbeef);
     __ orr(rscratch1, rscratch1, rscratch1, Assembler::LSL, 32);
-    for (RegSetIterator<> it = clobbered.begin(); *it != noreg; ++it) {
+    for (RegSetIterator<Register> it = clobbered.begin(); *it != noreg; ++it) {
       __ mov(*it, rscratch1);
     }
 #endif
@@ -3985,45 +3986,417 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Safefetch stubs.
-  void generate_safefetch(const char* name, int size, address* entry,
-                          address* fault_pc, address* continuation_pc) {
-    // safefetch signatures:
-    //   int      SafeFetch32(int*      adr, int      errValue);
-    //   intptr_t SafeFetchN (intptr_t* adr, intptr_t errValue);
-    //
-    // arguments:
-    //   c_rarg0 = adr
-    //   c_rarg1 = errValue
-    //
-    // result:
-    //   PPC_RET  = *adr or errValue
+  // ChaCha20 block function.  This version parallelizes 4 quarter
+  // round operations at a time.  It uses 16 SIMD registers to
+  // produce 4 blocks of key stream.
+  //
+  // state (int[16]) = c_rarg0
+  // keystream (byte[256]) = c_rarg1
+  // return - number of bytes of keystream (always 256)
+  address generate_chacha20Block_qr() {
+    // Macro to expand the quarter round for the a/b/c/d vectors
+    // for a given state block.
+    // -------------------------------------------------------
+    // a += b, d ^= a, d <<<= 16
+    // c += d, b ^= c, b <<<= 12
+    // a += b, d ^= a, d <<<= 8
+    // c += d, b ^= c, b <<<= 7
+    #define FOUR_QTR_ROUND(a, b, c, d)      \
+        __ addv(a, __ T4S, a, b);           \
+        __ eor(d, __ T16B, d, a);           \
+        __ rev32(d, __ T8H, d);             \
+                                            \
+        __ addv(c, __ T4S, c, d);           \
+        __ eor(scratch, __ T16B, b, c);     \
+        __ ushr(b, __ T4S, scratch, 20);    \
+        __ sli(b, __ T4S, scratch, 12);     \
+                                            \
+        __ addv(a, __ T4S, a, b);           \
+        __ eor(d, __ T16B, d, a);           \
+        __ tbl(d, __ T16B, d,  1, lrot8Tbl);\
+                                            \
+        __ addv(c, __ T4S, c, d);           \
+        __ eor(scratch, __ T16B, b, c);     \
+        __ ushr(b, __ T4S, scratch, 25);    \
+        __ sli(b, __ T4S, scratch, 7);      \
 
-    StubCodeMark mark(this, "StubRoutines", name);
+    // Lane shifting used for column-to-diagonal and vice-versa
+    #define SHIFT_LANES(b, bCnt, c, cCnt, d, dCnt)  \
+        __ ext(b, __ T16B, b, b, bCnt);             \
+        __ ext(c, __ T16B, c, c, cCnt);             \
+        __ ext(d, __ T16B, d, d, dCnt);             \
 
-    // Entry point, pc or function descriptor.
-    *entry = __ pc();
+    __ align(CodeEntryAlignment);
+     StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+    address start = __ pc();
+    __ enter();
 
-    // Load *adr into c_rarg1, may fault.
-    *fault_pc = __ pc();
-    switch (size) {
-      case 4:
-        // int32_t
-        __ ldrw(c_rarg1, Address(c_rarg0, 0));
-        break;
-      case 8:
-        // int64_t
-        __ ldr(c_rarg1, Address(c_rarg0, 0));
-        break;
-      default:
-        ShouldNotReachHere();
-    }
+    Label L_twoRounds;
+    const Register state = c_rarg0;
+    const Register keystream = c_rarg1;
+    const Register loopCtr = r10;
+    const Register counter = r11;
+    const Register tmpAddr = r12;
 
-    // return errValue or *adr
-    *continuation_pc = __ pc();
-    __ mov(r0, c_rarg1);
+    const FloatRegister aState = v0;
+    const FloatRegister bState = v1;
+    const FloatRegister cState = v2;
+    const FloatRegister dState = v3;
+    const FloatRegister a1Vec = v4;
+    const FloatRegister b1Vec = v5;
+    const FloatRegister c1Vec = v6;
+    const FloatRegister d1Vec = v7;
+    const FloatRegister a2Vec = v16;
+    const FloatRegister b2Vec = v17;
+    const FloatRegister c2Vec = v18;
+    const FloatRegister d2Vec = v19;
+    const FloatRegister a3Vec = v20;
+    const FloatRegister b3Vec = v21;
+    const FloatRegister c3Vec = v22;
+    const FloatRegister d3Vec = v23;
+    const FloatRegister a4Vec = v24;
+    const FloatRegister b4Vec = v25;
+    const FloatRegister c4Vec = v26;
+    const FloatRegister d4Vec = v27;
+    const FloatRegister scratch = v28;
+    const FloatRegister addMask = v29;
+    const FloatRegister lrot8Tbl = v30;
+
+    // Load the initial state in the first 4 quadword registers,
+    // then copy the initial state into the next 4 quadword registers
+    // that will be used for the working state.
+    __ ldrq(aState, Address(state, 0));
+    __ ldrq(bState, Address(state, 16));
+    __ ldrq(cState, Address(state, 32));
+    __ ldrq(dState, Address(state, 48));
+
+    // Load the index register for the 8-bit left rotation.  This
+    // constant data begins 16 bytes into the constant data segment.
+    __ lea(tmpAddr, ExternalAddress((address) StubRoutines::aarch64::chacha20_counter_addmask()));
+    __ ldrq(lrot8Tbl, Address(tmpAddr, 16));
+
+    // Create an add mask to increment the SIMD register that
+    // holds the 32-bit counter field.
+    __ mov(counter, 1);
+    __ eor(addMask, __ T16B, addMask, addMask);
+    __ mov(addMask, __ S, 0, counter);
+
+    __ mov(a1Vec, __ T16B, aState);
+    __ mov(b1Vec, __ T16B, bState);
+    __ mov(c1Vec, __ T16B, cState);
+    __ mov(d1Vec, __ T16B, dState);
+
+    __ mov(a2Vec, __ T16B, aState);
+    __ mov(b2Vec, __ T16B, bState);
+    __ mov(c2Vec, __ T16B, cState);
+    __ addv(d2Vec, __ T4S, d1Vec, addMask);
+
+    __ mov(a3Vec, __ T16B, aState);
+    __ mov(b3Vec, __ T16B, bState);
+    __ mov(c3Vec, __ T16B, cState);
+    __ addv(d3Vec, __ T4S, d2Vec, addMask);
+
+    __ mov(a4Vec, __ T16B, aState);
+    __ mov(b4Vec, __ T16B, bState);
+    __ mov(c4Vec, __ T16B, cState);
+    __ addv(d4Vec, __ T4S, d3Vec, addMask);
+
+    // Set up the 10 iteration loop
+    __ mov(loopCtr, 10);
+    __ BIND(L_twoRounds);
+
+    // The first set of operations on the vectors covers the first 4 quarter
+    // round operations:
+    //  Qround(state, 0, 4, 8,12)
+    //  Qround(state, 1, 5, 9,13)
+    //  Qround(state, 2, 6,10,14)
+    //  Qround(state, 3, 7,11,15)
+    FOUR_QTR_ROUND(a1Vec, b1Vec, c1Vec, d1Vec)
+    FOUR_QTR_ROUND(a2Vec, b2Vec, c2Vec, d2Vec)
+    FOUR_QTR_ROUND(a3Vec, b3Vec, c3Vec, d3Vec)
+    FOUR_QTR_ROUND(a4Vec, b4Vec, c4Vec, d4Vec)
+
+    // Shuffle the b1Vec/c1Vec/d1Vec to reorganize the state vectors to
+    // diagonals. The a1Vec does not need to change orientation.
+    SHIFT_LANES(b1Vec, 4, c1Vec, 8, d1Vec, 12)
+    SHIFT_LANES(b2Vec, 4, c2Vec, 8, d2Vec, 12)
+    SHIFT_LANES(b3Vec, 4, c3Vec, 8, d3Vec, 12)
+    SHIFT_LANES(b4Vec, 4, c4Vec, 8, d4Vec, 12)
+
+    // The second set of operations on the vectors covers the second 4 quarter
+    // round operations, now acting on the diagonals:
+    //  Qround(state, 0, 5,10,15)
+    //  Qround(state, 1, 6,11,12)
+    //  Qround(state, 2, 7, 8,13)
+    //  Qround(state, 3, 4, 9,14)
+    FOUR_QTR_ROUND(a1Vec, b1Vec, c1Vec, d1Vec)
+    FOUR_QTR_ROUND(a2Vec, b2Vec, c2Vec, d2Vec)
+    FOUR_QTR_ROUND(a3Vec, b3Vec, c3Vec, d3Vec)
+    FOUR_QTR_ROUND(a4Vec, b4Vec, c4Vec, d4Vec)
+
+    // Before we start the next iteration, we need to perform shuffles
+    // on the b/c/d vectors to move them back to columnar organizations
+    // from their current diagonal orientation.
+    SHIFT_LANES(b1Vec, 12, c1Vec, 8, d1Vec, 4)
+    SHIFT_LANES(b2Vec, 12, c2Vec, 8, d2Vec, 4)
+    SHIFT_LANES(b3Vec, 12, c3Vec, 8, d3Vec, 4)
+    SHIFT_LANES(b4Vec, 12, c4Vec, 8, d4Vec, 4)
+
+    // Decrement and iterate
+    __ subs(loopCtr, loopCtr, 1);
+    __ cmp(loopCtr, (u1)0);
+    __ br(Assembler::NE, L_twoRounds);
+
+    // Once the counter reaches zero, we fall out of the loop
+    // and need to add the initial state back into the working state
+    // represented by the a/b/c/d1Vec registers.  This is destructive
+    // on the dState register but we no longer will need it.
+    __ addv(a1Vec, __ T4S, a1Vec, aState);
+    __ addv(b1Vec, __ T4S, b1Vec, bState);
+    __ addv(c1Vec, __ T4S, c1Vec, cState);
+    __ addv(d1Vec, __ T4S, d1Vec, dState);
+
+    __ addv(a2Vec, __ T4S, a2Vec, aState);
+    __ addv(b2Vec, __ T4S, b2Vec, bState);
+    __ addv(c2Vec, __ T4S, c2Vec, cState);
+    __ addv(dState, __ T4S, dState, addMask);
+    __ addv(d2Vec, __ T4S, d2Vec, dState);
+
+    __ addv(a3Vec, __ T4S, a3Vec, aState);
+    __ addv(b3Vec, __ T4S, b3Vec, bState);
+    __ addv(c3Vec, __ T4S, c3Vec, cState);
+    __ addv(dState, __ T4S, dState, addMask);
+    __ addv(d3Vec, __ T4S, d3Vec, dState);
+
+    __ addv(a4Vec, __ T4S, a4Vec, aState);
+    __ addv(b4Vec, __ T4S, b4Vec, bState);
+    __ addv(c4Vec, __ T4S, c4Vec, cState);
+    __ addv(dState, __ T4S, dState, addMask);
+    __ addv(d4Vec, __ T4S, d4Vec, dState);
+
+    // Now write the final state back to the result buffer
+    __ stpq(a1Vec, b1Vec, Address(keystream, 0));
+    __ stpq(c1Vec, d1Vec, Address(keystream, 32));
+
+    __ stpq(a2Vec, b2Vec, Address(keystream, 64));
+    __ stpq(c2Vec, d2Vec, Address(keystream, 96));
+
+    __ stpq(a3Vec, b3Vec, Address(keystream, 128));
+    __ stpq(c3Vec, d3Vec, Address(keystream, 160));
+
+    __ stpq(a4Vec, b4Vec, Address(keystream, 192));
+    __ stpq(c4Vec, d4Vec, Address(keystream, 224));
+
+    __ mov(r0, 256);             // Return length of output keystream
+    __ leave();
     __ ret(lr);
+
+    #undef SHIFT_LANES
+    #undef FOUR_QTR_ROUND
+
+    return start;
   }
+
+  /* Create add mask for 4-block counter increment */
+  address cc20_ctr_addmask() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "chacha20_ctradd_mask");
+    address start = __ pc();
+    __ emit_data64(0x0000000100000000, relocInfo::none);
+    __ emit_data64(0x0000000300000002, relocInfo::none);
+    __ emit_data64(0x0605040702010003, relocInfo::none);
+    __ emit_data64(0x0E0D0C0F0A09080B, relocInfo::none);
+    return start;
+  }
+
+  // ChaCha20 block function.  This version parallelizes by loading
+  // individual 32-bit state elements into vectors for four blocks
+  // (e.g. all four blocks' worth of state[0] in one register, etc.)
+  //
+  // state (int[16]) = c_rarg0
+  // keystream (byte[256]) = c_rarg1
+  // return - number of bytes of keystream (always 256)
+  address generate_chacha20Block_block() {
+
+    // Perform calculations where each vector is a string of
+    // elements at the same state position from successive key
+    // stream blocks.
+    // -------------------------------------------------------
+    // a += b, d ^= a, d <<<= 16
+    // c += d, b ^= c, b <<<= 12
+    // a += b, d ^= a, d <<<= 8
+    // c += d, b ^= c, b <<<= 7
+    #define QTR_ROUND(a, b, c, d, scr)          \
+        __ addv(a, __ T4S, a, b);               \
+        __ eor(d, __ T16B, d, a);               \
+        __ rev32(d, __ T8H, d);                 \
+                                                \
+        __ addv(c, __ T4S, c, d);               \
+        __ eor(scr, __ T16B, b, c);             \
+        __ ushr(b, __ T4S, scr, 20);            \
+        __ sli(b, __ T4S, scr, 12);             \
+                                                \
+        __ addv(a, __ T4S, a, b);               \
+        __ eor(d, __ T16B, d, a);               \
+        __ tbl(d, __ T16B, d,  1, lrot8Tbl);    \
+                                                \
+        __ addv(c, __ T4S, c, d);               \
+        __ eor(scr, __ T16B, b, c);             \
+        __ ushr(b, __ T4S, scr, 25);            \
+        __ sli(b, __ T4S, scr, 7);              \
+
+    // Duplicate an individual state element to a scratch register
+    // and then add it into the working state vector for that element.
+    // This is used to do the final start-state add-back at the end of
+    // the ChaCha20 block function.
+    #define ADD_START_STATE(destVec, srcVec, index, scratch)    \
+        __ dup(scratch, __ T4S, srcVec, index);                 \
+        __ addv(destVec, __ T4S, destVec, scratch);             \
+
+    __ align(CodeEntryAlignment);
+     StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+    address start = __ pc();
+    __ enter();
+
+    Label L_twoRounds;
+    const Register state = c_rarg0;
+    const Register keystream = c_rarg1;
+    const Register loopCtr = r10;
+    const Register tmpAddr = r11;
+
+    const FloatRegister stateFirst = v0;
+    const FloatRegister stateSecond = v1;
+    const FloatRegister stateThird = v2;
+    const FloatRegister stateFourth = v3;
+    const FloatRegister wkState0 = v4;
+    const FloatRegister wkState1 = v5;
+    const FloatRegister wkState2 = v6;
+    const FloatRegister wkState3 = v7;
+    const FloatRegister wkState4 = v16;
+    const FloatRegister wkState5 = v17;
+    const FloatRegister wkState6 = v18;
+    const FloatRegister wkState7 = v19;
+    const FloatRegister wkState8 = v20;
+    const FloatRegister wkState9 = v21;
+    const FloatRegister wkState10 = v22;
+    const FloatRegister wkState11 = v23;
+    const FloatRegister wkState12 = v24;
+    const FloatRegister wkState13 = v25;
+    const FloatRegister wkState14 = v26;
+    const FloatRegister wkState15 = v27;
+    const FloatRegister origCtrState = v28;
+    const FloatRegister scratch = v29;
+    const FloatRegister lrot8Tbl = v30;
+
+    // Load from memory and interlace across 16 SIMD registers
+    __ mov(tmpAddr, state);
+    __ ld4r(wkState0, wkState1, wkState2, wkState3, __ T4S, __ post(tmpAddr, 16));
+    __ ld4r(wkState4, wkState5, wkState6, wkState7, __ T4S, __ post(tmpAddr, 16));
+    __ ld4r(wkState8, wkState9, wkState10, wkState11, __ T4S, __ post(tmpAddr, 16));
+    __ ld4r(wkState12, wkState13, wkState14, wkState15, __ T4S, __ post(tmpAddr, 16));
+
+    // Pull in constant data.  The first 16 bytes are the add mask
+    // which is applied to the vector holding the counter (state[12]).
+    // The second 16 bytes is the index register for the 8-bit left
+    // rotation tbl instruction.
+    __ lea(tmpAddr, ExternalAddress((address) StubRoutines::aarch64::chacha20_counter_addmask()));
+    //__ ld1(origCtrState, __ T16B, Address(tmpAddr));
+    __ ldpq(origCtrState, lrot8Tbl, Address(tmpAddr));
+    __ addv(wkState12, __ T4S, wkState12, origCtrState);
+
+    // Set up the 10 iteration loop
+    __ mov(loopCtr, 10);
+    __ BIND(L_twoRounds);
+
+    QTR_ROUND(wkState0, wkState4, wkState8, wkState12, scratch)
+    QTR_ROUND(wkState1, wkState5, wkState9, wkState13, scratch)
+    QTR_ROUND(wkState2, wkState6, wkState10, wkState14, scratch)
+    QTR_ROUND(wkState3, wkState7, wkState11, wkState15, scratch)
+
+    QTR_ROUND(wkState0, wkState5, wkState10, wkState15, scratch)
+    QTR_ROUND(wkState1, wkState6, wkState11, wkState12, scratch)
+    QTR_ROUND(wkState2, wkState7, wkState8, wkState13, scratch)
+    QTR_ROUND(wkState3, wkState4, wkState9, wkState14, scratch)
+
+    // Decrement and iterate
+    __ subs(loopCtr, loopCtr, 1);
+    __ cmp(loopCtr, (u1)0);
+    __ br(Assembler::NE, L_twoRounds);
+
+/* JJN OLD ADD-BACK
+    // Add the starting state back into the current working state
+    ADD_START_STATE(wkState0, stateFirst, 0, scratch)
+    ADD_START_STATE(wkState1, stateFirst, 1, scratch)
+    ADD_START_STATE(wkState2, stateFirst, 2, scratch)
+    ADD_START_STATE(wkState3, stateFirst, 3, scratch)
+    ADD_START_STATE(wkState4, stateSecond, 0, scratch)
+    ADD_START_STATE(wkState5, stateSecond, 1, scratch)
+    ADD_START_STATE(wkState6, stateSecond, 2, scratch)
+    ADD_START_STATE(wkState7, stateSecond, 3, scratch)
+    ADD_START_STATE(wkState8, stateThird, 0, scratch)
+    ADD_START_STATE(wkState9, stateThird, 1, scratch)
+    ADD_START_STATE(wkState10, stateThird, 2, scratch)
+    ADD_START_STATE(wkState11, stateThird, 3, scratch)
+    // For state[12] the original state vector is origCtrState
+    __ addv(wkState12, __ T4S, wkState12, origCtrState);
+    ADD_START_STATE(wkState13, stateFourth, 1, scratch)
+    ADD_START_STATE(wkState14, stateFourth, 2, scratch)
+    ADD_START_STATE(wkState15, stateFourth, 3, scratch)
+*/
+    __ mov(tmpAddr, state);
+    __ ld4r(stateFirst, stateSecond, stateThird, stateFourth, __ T4S, __ post(tmpAddr, 16));
+    __ addv(wkState0, __ T4S, wkState0, stateFirst);
+    __ addv(wkState1, __ T4S, wkState1, stateSecond);
+    __ addv(wkState2, __ T4S, wkState2, stateThird);
+    __ addv(wkState3, __ T4S, wkState3, stateFourth);
+
+    __ ld4r(stateFirst, stateSecond, stateThird, stateFourth, __ T4S, __ post(tmpAddr, 16));
+    __ addv(wkState4, __ T4S, wkState4, stateFirst);
+    __ addv(wkState5, __ T4S, wkState5, stateSecond);
+    __ addv(wkState6, __ T4S, wkState6, stateThird);
+    __ addv(wkState7, __ T4S, wkState7, stateFourth);
+
+    __ ld4r(stateFirst, stateSecond, stateThird, stateFourth, __ T4S, __ post(tmpAddr, 16));
+    __ addv(wkState8, __ T4S, wkState8, stateFirst);
+    __ addv(wkState9, __ T4S, wkState9, stateSecond);
+    __ addv(wkState10, __ T4S, wkState10, stateThird);
+    __ addv(wkState11, __ T4S, wkState11, stateFourth);
+
+    __ ld4r(stateFirst, stateSecond, stateThird, stateFourth, __ T4S, __ post(tmpAddr, 16));
+    __ addv(wkState12, __ T4S, wkState12, stateFirst);
+    __ addv(wkState12, __ T4S, wkState12, origCtrState);    // Add ctr mask
+    __ addv(wkState13, __ T4S, wkState13, stateSecond);
+    __ addv(wkState14, __ T4S, wkState14, stateThird);
+    __ addv(wkState15, __ T4S, wkState15, stateFourth);
+
+    // Write to Keystream
+    __ st4(wkState0, wkState1, wkState2, wkState3, __ S, 0, __ post(keystream, 16));
+    __ st4(wkState4, wkState5, wkState6, wkState7, __ S, 0, __ post(keystream, 16));
+    __ st4(wkState8, wkState9, wkState10, wkState11, __ S, 0, __ post(keystream, 16));
+    __ st4(wkState12, wkState13, wkState14, wkState15, __ S, 0, __ post(keystream, 16));
+    __ st4(wkState0, wkState1, wkState2, wkState3, __ S, 1, __ post(keystream, 16));
+    __ st4(wkState4, wkState5, wkState6, wkState7, __ S, 1, __ post(keystream, 16));
+    __ st4(wkState8, wkState9, wkState10, wkState11, __ S, 1, __ post(keystream, 16));
+    __ st4(wkState12, wkState13, wkState14, wkState15, __ S, 1, __ post(keystream, 16));
+    __ st4(wkState0, wkState1, wkState2, wkState3, __ S, 2, __ post(keystream, 16));
+    __ st4(wkState4, wkState5, wkState6, wkState7, __ S, 2, __ post(keystream, 16));
+    __ st4(wkState8, wkState9, wkState10, wkState11, __ S, 2, __ post(keystream, 16));
+    __ st4(wkState12, wkState13, wkState14, wkState15, __ S, 2, __ post(keystream, 16));
+    __ st4(wkState0, wkState1, wkState2, wkState3, __ S, 3, __ post(keystream, 16));
+    __ st4(wkState4, wkState5, wkState6, wkState7, __ S, 3, __ post(keystream, 16));
+    __ st4(wkState8, wkState9, wkState10, wkState11, __ S, 3, __ post(keystream, 16));
+    __ st4(wkState12, wkState13, wkState14, wkState15, __ S, 3, __ post(keystream, 16));
+
+    __ mov(r0, 256);             // Return length of output keystream
+    __ leave();
+    __ ret(lr);
+
+    #undef QTR_ROUND
+    #undef ADD_START_STATE
+
+    return start;
+  }
+
 
   /**
    *  Arguments:
@@ -5069,7 +5442,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  address generate_has_negatives(address &has_negatives_long) {
+  address generate_count_positives(address &count_positives_long) {
     const u1 large_loop_size = 64;
     const uint64_t UPPER_BIT_MASK=0x8080808080808080;
     int dcache_line = VM_Version::dcache_line_size();
@@ -5078,13 +5451,15 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    StubCodeMark mark(this, "StubRoutines", "has_negatives");
+    StubCodeMark mark(this, "StubRoutines", "count_positives");
 
     address entry = __ pc();
 
     __ enter();
+    // precondition: a copy of len is already in result
+    // __ mov(result, len);
 
-  Label RET_TRUE, RET_TRUE_NO_POP, RET_FALSE, ALIGNED, LOOP16, CHECK_16,
+  Label RET_ADJUST, RET_ADJUST_16, RET_ADJUST_LONG, RET_NO_POP, RET_LEN, ALIGNED, LOOP16, CHECK_16,
         LARGE_LOOP, POST_LOOP16, LEN_OVER_15, LEN_OVER_8, POST_LOOP16_LOAD_TAIL;
 
   __ cmp(len, (u1)15);
@@ -5098,25 +5473,26 @@ class StubGenerator: public StubCodeGenerator {
   __ sub(rscratch1, zr, len, __ LSL, 3);  // LSL 3 is to get bits from bytes.
   __ lsrv(rscratch2, rscratch2, rscratch1);
   __ tst(rscratch2, UPPER_BIT_MASK);
-  __ cset(result, Assembler::NE);
+  __ csel(result, zr, result, Assembler::NE);
   __ leave();
   __ ret(lr);
   __ bind(LEN_OVER_8);
   __ ldp(rscratch1, rscratch2, Address(ary1, -16));
   __ sub(len, len, 8); // no data dep., then sub can be executed while loading
   __ tst(rscratch2, UPPER_BIT_MASK);
-  __ br(Assembler::NE, RET_TRUE_NO_POP);
+  __ br(Assembler::NE, RET_NO_POP);
   __ sub(rscratch2, zr, len, __ LSL, 3); // LSL 3 is to get bits from bytes
   __ lsrv(rscratch1, rscratch1, rscratch2);
   __ tst(rscratch1, UPPER_BIT_MASK);
-  __ cset(result, Assembler::NE);
+  __ bind(RET_NO_POP);
+  __ csel(result, zr, result, Assembler::NE);
   __ leave();
   __ ret(lr);
 
   Register tmp1 = r3, tmp2 = r4, tmp3 = r5, tmp4 = r6, tmp5 = r7, tmp6 = r10;
   const RegSet spilled_regs = RegSet::range(tmp1, tmp5) + tmp6;
 
-  has_negatives_long = __ pc(); // 2nd entry point
+  count_positives_long = __ pc(); // 2nd entry point
 
   __ enter();
 
@@ -5128,10 +5504,10 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(tmp5, 16);
     __ sub(rscratch1, tmp5, rscratch2); // amount of bytes until aligned address
     __ add(ary1, ary1, rscratch1);
-    __ sub(len, len, rscratch1);
     __ orr(tmp6, tmp6, tmp1);
     __ tst(tmp6, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST);
+    __ sub(len, len, rscratch1);
 
   __ bind(ALIGNED);
     __ cmp(len, large_loop_size);
@@ -5146,7 +5522,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(len, len, 16);
     __ orr(tmp6, tmp6, tmp1);
     __ tst(tmp6, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST_16);
     __ cmp(len, large_loop_size);
     __ br(Assembler::LT, CHECK_16);
 
@@ -5178,7 +5554,7 @@ class StubGenerator: public StubCodeGenerator {
     __ orr(rscratch1, rscratch1, tmp6);
     __ orr(tmp2, tmp2, rscratch1);
     __ tst(tmp2, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST_LONG);
     __ cmp(len, large_loop_size);
     __ br(Assembler::GE, LARGE_LOOP);
 
@@ -5191,7 +5567,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(len, len, 16);
     __ orr(tmp2, tmp2, tmp3);
     __ tst(tmp2, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST_16);
     __ cmp(len, (u1)16);
     __ br(Assembler::GE, LOOP16); // 16-byte load loop end
 
@@ -5199,31 +5575,36 @@ class StubGenerator: public StubCodeGenerator {
     __ cmp(len, (u1)8);
     __ br(Assembler::LE, POST_LOOP16_LOAD_TAIL);
     __ ldr(tmp3, Address(__ post(ary1, 8)));
-    __ sub(len, len, 8);
     __ tst(tmp3, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST);
+    __ sub(len, len, 8);
 
   __ bind(POST_LOOP16_LOAD_TAIL);
-    __ cbz(len, RET_FALSE); // Can't shift left by 64 when len==0
+    __ cbz(len, RET_LEN); // Can't shift left by 64 when len==0
     __ ldr(tmp1, Address(ary1));
     __ mov(tmp2, 64);
     __ sub(tmp4, tmp2, len, __ LSL, 3);
     __ lslv(tmp1, tmp1, tmp4);
     __ tst(tmp1, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST);
     // Fallthrough
 
-  __ bind(RET_FALSE);
+  __ bind(RET_LEN);
     __ pop(spilled_regs, sp);
     __ leave();
-    __ mov(result, zr);
     __ ret(lr);
 
-  __ bind(RET_TRUE);
+    // difference result - len is the count of guaranteed to be
+    // positive bytes
+
+  __ bind(RET_ADJUST_LONG);
+    __ add(len, len, (u1)(large_loop_size - 16));
+  __ bind(RET_ADJUST_16);
+    __ add(len, len, 16);
+  __ bind(RET_ADJUST);
     __ pop(spilled_regs, sp);
-  __ bind(RET_TRUE_NO_POP);
     __ leave();
-    __ mov(result, 1);
+    __ sub(result, result, len);
     __ ret(lr);
 
     return entry;
@@ -7033,7 +7414,7 @@ class StubGenerator: public StubCodeGenerator {
 
       // Register allocation
 
-      RegSetIterator<> regs = (RegSet::range(r0, r26) - r18_tls).begin();
+      RegSetIterator<Register> regs = (RegSet::range(r0, r26) - r18_tls).begin();
       Pa_base = *regs;       // Argument registers
       if (squaring)
         Pb_base = Pa_base;
@@ -7891,14 +8272,6 @@ class StubGenerator: public StubCodeGenerator {
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos)) {
       StubRoutines::_dcos = generate_dsin_dcos(/* isCos = */ true);
     }
-
-    // Safefetch stubs.
-    generate_safefetch("SafeFetch32", sizeof(int),     &StubRoutines::_safefetch32_entry,
-                                                       &StubRoutines::_safefetch32_fault_pc,
-                                                       &StubRoutines::_safefetch32_continuation_pc);
-    generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
-                                                       &StubRoutines::_safefetchN_fault_pc,
-                                                       &StubRoutines::_safefetchN_continuation_pc);
   }
 
   void generate_all() {
@@ -7927,8 +8300,8 @@ class StubGenerator: public StubCodeGenerator {
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
-    // has negatives stub for large arrays.
-    StubRoutines::aarch64::_has_negatives = generate_has_negatives(StubRoutines::aarch64::_has_negatives_long);
+    // countPositives stub for large arrays.
+    StubRoutines::aarch64::_count_positives = generate_count_positives(StubRoutines::aarch64::_count_positives_long);
 
     // array equals stub for large arrays.
     if (!UseSimpleArrayEquals) {
@@ -7980,13 +8353,13 @@ class StubGenerator: public StubCodeGenerator {
 #endif // COMPILER2
 
     if (UseChaCha20Intrinsics) {
-        StubRoutines::_chacha20Block = generate_chacha20Block();
-    }
-
-    if (UseChaCha20Intrinsics) {
         StubRoutines::aarch64::_chacha20_counter_addmask = cc20_ctr_addmask();
 #if 0
         StubRoutines::_chacha20Block = generate_chacha20Block_qr();
+#else
+        StubRoutines::_chacha20Block = generate_chacha20Block_block();
+#endif
+    }
 #else
         StubRoutines::_chacha20Block = generate_chacha20Block_block();
 #endif

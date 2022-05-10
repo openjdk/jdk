@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.util;
 
 import java.io.IOException;
@@ -84,7 +85,7 @@ public class Textifier extends Printer {
     /** The help message shown when command line arguments are incorrect. */
     private static final String USAGE =
             "Prints a disassembled view of the given class.\n"
-                    + "Usage: Textifier [-debug] <fully qualified class name or class file name>";
+                    + "Usage: Textifier [-nodebug] <fully qualified class name or class file name>";
 
     /** The type of internal names. See {@link #appendDescriptor}. */
     public static final int INTERNAL_NAME = 0;
@@ -143,7 +144,7 @@ public class Textifier extends Printer {
       * @throws IllegalStateException If a subclass calls this constructor.
       */
     public Textifier() {
-        this(/* latest api = */ Opcodes.ASM8);
+        this(/* latest api = */ Opcodes.ASM9);
         if (getClass() != Textifier.class) {
             throw new IllegalStateException();
         }
@@ -152,9 +153,8 @@ public class Textifier extends Printer {
     /**
       * Constructs a new {@link Textifier}.
       *
-      * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
-      *     Opcodes#ASM8}.
+      * @param api the ASM API version implemented by this visitor. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       */
     protected Textifier(final int api) {
         super(api);
@@ -163,7 +163,7 @@ public class Textifier extends Printer {
     /**
       * Prints a disassembled view of the given class to the standard output.
       *
-      * <p>Usage: Textifier [-debug] &lt;binary class name or class file name &gt;
+      * <p>Usage: Textifier [-nodebug] &lt;binary class name or class file name &gt;
       *
       * @param args the command line arguments.
       * @throws IOException if the class cannot be found, or if an IOException occurs.
@@ -175,7 +175,7 @@ public class Textifier extends Printer {
     /**
       * Prints a disassembled view of the given class to the given output.
       *
-      * <p>Usage: Textifier [-debug] &lt;binary class name or class file name &gt;
+      * <p>Usage: Textifier [-nodebug] &lt;binary class name or class file name &gt;
       *
       * @param args the command line arguments.
       * @param output where to print the result.
@@ -337,15 +337,8 @@ public class Textifier extends Printer {
         text.add(stringBuilder.toString());
     }
 
-    /**
-      * <b>Experimental, use at your own risk.</b>.
-      *
-      * @param permittedSubclass the internal name of a permitted subclass.
-      * @deprecated this API is experimental.
-      */
     @Override
-    @Deprecated
-    public void visitPermittedSubclassExperimental(final String permittedSubclass) {
+    public void visitPermittedSubclass(final String permittedSubclass) {
         stringBuilder.setLength(0);
         stringBuilder.append(tab).append("PERMITTEDSUBCLASS ");
         appendDescriptor(INTERNAL_NAME, permittedSubclass);
@@ -926,9 +919,9 @@ public class Textifier extends Printer {
     }
 
     @Override
-    public void visitVarInsn(final int opcode, final int var) {
+    public void visitVarInsn(final int opcode, final int varIndex) {
         stringBuilder.setLength(0);
-        stringBuilder.append(tab2).append(OPCODES[opcode]).append(' ').append(var).append('\n');
+        stringBuilder.append(tab2).append(OPCODES[opcode]).append(' ').append(varIndex).append('\n');
         text.add(stringBuilder.toString());
     }
 
@@ -1051,12 +1044,12 @@ public class Textifier extends Printer {
     }
 
     @Override
-    public void visitIincInsn(final int var, final int increment) {
+    public void visitIincInsn(final int varIndex, final int increment) {
         stringBuilder.setLength(0);
         stringBuilder
                 .append(tab2)
                 .append("IINC ")
-                .append(var)
+                .append(varIndex)
                 .append(' ')
                 .append(increment)
                 .append('\n');
@@ -1638,3 +1631,4 @@ public class Textifier extends Printer {
         return new Textifier(api);
     }
 }
+

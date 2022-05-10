@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
             throw new IllegalArgumentException("UUID string too large");
         }
 
-        int dash1 = name.indexOf('-', 0);
+        int dash1 = name.indexOf('-');
         int dash2 = name.indexOf('-', dash1 + 1);
         int dash3 = name.indexOf('-', dash2 + 1);
         int dash4 = name.indexOf('-', dash3 + 1);

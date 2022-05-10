@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,27 @@ public class StringUtils {
         } else {
             return str.toString();
         }
+    }
+
+    /**
+     * Rank a match of a query in a word. Full matches of a word rank highest,
+     * followed by partial matches at the word start, followed by the rest of
+     * matches in increasing size of the partially matched word, for example:
+     *
+     *   rank("5", "5")   = 1 (full match)
+     *   rank("5", "554") = 2 (start match)
+     *   rank("5", "25")  = 3 (middle match with excess 1)
+     *   rank("5", "253") = 4 (middle match with excess 2)
+     */
+    public static int rankMatch(String query, String word) {
+        if (word.equals(query)) {
+            return 1;
+        } else if (word.startsWith(query)) {
+            return 2;
+        } else if (word.contains(query)) {
+            return word.length() - query.length() + 2;
+        }
+        return Integer.MAX_VALUE;
     }
 
 }

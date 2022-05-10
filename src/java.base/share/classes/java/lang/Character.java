@@ -737,12 +737,14 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      */
     public static final class UnicodeBlock extends Subset {
         /**
-         * 696 - the expected number of entities
+         * NUM_ENTITIES should match the total number of UnicodeBlocks
+         * to calculate the initial capacity of the map. It should be
+         * adjusted whenever the Unicode Character Database is upgraded.
+         *
          * 0.75 - the default load factor of HashMap
          */
-        private static final int NUM_ENTITIES = 696;
-        private static Map<String, UnicodeBlock> map =
-                new HashMap<>((int)(NUM_ENTITIES / 0.75f + 1.0f));
+        private static final int NUM_ENTITIES = 737;
+        private static Map<String, UnicodeBlock> map = HashMap.newHashMap(NUM_ENTITIES);
 
         /**
          * Creates a UnicodeBlock with the given identifier name.
@@ -8569,7 +8571,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
 
         private static final HashMap<String, Character.UnicodeScript> aliases;
         static {
-            aliases = new HashMap<>((int)(162 / 0.75f + 1.0f));
+            aliases = HashMap.newHashMap(162);
             aliases.put("ADLM", ADLAM);
             aliases.put("AGHB", CAUCASIAN_ALBANIAN);
             aliases.put("AHOM", AHOM);
