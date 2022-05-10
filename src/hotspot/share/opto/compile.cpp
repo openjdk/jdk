@@ -2103,6 +2103,7 @@ void Compile::Optimize() {
 #ifdef ASSERT
   _modified_nodes = new (comp_arena()) Unique_Node_List(comp_arena());
 #endif
+  _unstable_ifs = new (comp_arena()) Unique_Node_List(comp_arena());
   {
     TracePhase tp("iterGVN", &timers[_t_iterGVN]);
     igvn.optimize();
@@ -2129,6 +2130,41 @@ void Compile::Optimize() {
     print_method(PHASE_INCREMENTAL_BOXING_INLINE, 2);
 
     if (failing())  return;
+  }
+
+  // do it before renumbering.
+  if (AggressiveLivenessForUnstableIf) {
+    for (uint i=0; i<_unstable_ifs->size(); ++i) {
+      IfNode *iff = _unstable_ifs->at(i)->as_If();
+      int next_bci = iff->unc_bci();
+
+      if (next_bci != -1 && !_dead_node_list.test(iff->_idx)) {
+        CallStaticJavaNode *unc;
+        ProjNode *proj = iff->uncommon_trap_proj(unc, Deoptimization::Reason_unstable_if);
+
+        if (proj != NULL) {
+          JVMState *jvms = unc->jvms();
+          ciMethod *method = jvms->method();
+          ResourceMark rm;
+          const MethodLivenessResult& live_locals = method->liveness_at_bci(next_bci);
+
+          int len = (int)live_locals.size();
+          for (int local = 0; local < len; local++) {
+            if (!live_locals.at(local) && !unc->local(jvms, local)->is_top()) {
+              //unc->set_local(jvms, local, top);
+              uint idx = jvms->locoff() + local;
+              igvn.replace_input_of(unc, idx, top());
+            }
+          }
+          iff->set_unc_bci(-1);
+          if (Verbose){
+            tty->print("worklist: bci = %d", iff->unc_bci()); iff->dump();
+          }
+          igvn._worklist.push(iff);
+        }
+      }
+    }
+    igvn.optimize();
   }
 
   // Remove the speculative part of types and clean up the graph from
@@ -5088,3 +5124,4 @@ Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGV
   return result;
 }
 
+void Compile::record_unstable_if(Node *iff) { _unstable_ifs->push(iff); }

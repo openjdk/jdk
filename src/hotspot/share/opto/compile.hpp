@@ -369,6 +369,7 @@ class Compile : public Phase {
   VectorSet             _dead_node_list;        // Set of dead nodes
   uint                  _dead_node_count;       // Number of dead nodes; VectorSet::Size() is O(N).
                                                 // So use this to keep count and make the call O(1).
+  Unique_Node_List*     _unstable_ifs;
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
 
@@ -798,6 +799,8 @@ class Compile : public Phase {
   void         reset_dead_node_list()      { _dead_node_list.reset();
                                              _dead_node_count = 0;
                                            }
+  void         record_unstable_if(Node *iff);
+
   uint          live_nodes() const         {
     int  val = _unique - _dead_node_count;
     assert (val >= 0, "number of tracked dead nodes %d more than created nodes %d", _unique, _dead_node_count);
