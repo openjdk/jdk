@@ -7616,7 +7616,10 @@ address generate_avx_ghash_processBlocks() {
     __ bind(null_jobject);
   }
 
-  static RuntimeStub* generate_jfr_stub(const char* name, address entrypoint) {
+  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
+  // It returns a jobject handle to the event writer.
+  // The handle is dereferenced and the return value is the event writer oop.
+  RuntimeStub* generate_jfr_write_checkpoint() {
     enum layout {
       rbp_off,
       rbpH_off,
@@ -7627,7 +7630,7 @@ address generate_avx_ghash_processBlocks() {
 
     int insts_size = 512;
     int locs_size = 64;
-    CodeBuffer code(name, insts_size, locs_size);
+    CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
     OopMapSet* oop_maps = new OopMapSet();
     MacroAssembler* masm = new MacroAssembler(&code);
     MacroAssembler* _masm = masm;
@@ -7637,7 +7640,7 @@ address generate_avx_ghash_processBlocks() {
     int frame_complete = __ pc() - start;
     address the_pc = __ pc();
     jfr_prologue(the_pc, _masm);
-    __ call_VM_leaf(entrypoint, 1);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
     jfr_epilogue(_masm);
     __ leave();
     __ ret(0);
@@ -7646,25 +7649,10 @@ address generate_avx_ghash_processBlocks() {
     oop_maps->add_gc_map(the_pc - start, map);
 
     RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-      RuntimeStub::new_runtime_stub(name, &code, frame_complete,
+      RuntimeStub::new_runtime_stub("jfr_write_checkpoint", &code, frame_complete,
                                     (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                     oop_maps, false);
     return stub;
-  }
-
-  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
-  // It returns a jobject handle to the event writer.
-  // The handle is dereferenced and the return value is the event writer oop.
-  RuntimeStub* generate_jfr_write_checkpoint() {
-    return generate_jfr_stub("jfr_write_checkpoint",
-                              CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint));
-  }
-
-  // For c1: call the corresponding runtime routine, it returns a jobject handle to the event writer.
-  // The handle is dereferenced and the return value is the event writer oop.
-  RuntimeStub* generate_jfr_get_event_writer() {
-    return generate_jfr_stub("jfr_get_event_writer",
-                              CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::event_writer));
   }
 
 #endif // INCLUDE_JFR
@@ -7900,8 +7888,6 @@ address generate_avx_ghash_processBlocks() {
 
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
-    JFR_ONLY(StubRoutines::_jfr_get_event_writer_stub = generate_jfr_get_event_writer();)
-    JFR_ONLY(StubRoutines::_jfr_get_event_writer = StubRoutines::_jfr_get_event_writer_stub->entry_point();)
   }
 
   void generate_all() {

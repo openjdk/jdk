@@ -36,7 +36,6 @@
 
 class JfrIntrinsicSupport : AllStatic {
  public:
-  static void* event_writer(JavaThread* jt);
   static void* write_checkpoint(JavaThread* jt);
   static void load_barrier(const Klass* klass);
   static address epoch_address();
