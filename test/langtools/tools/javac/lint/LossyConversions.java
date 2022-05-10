@@ -127,7 +127,7 @@ public class LossyConversions {
     }
 
     @SuppressWarnings("lossy-conversions")
-    public void supressedLossyConversions() {
+    public void suppressedLossyConversions() {
         byte a = 0;
         a += 1.0; a -= 2.0; a *= 3.0; a /= 4.0;
         a += 21l; a -= 22l; a *= 23l; a /= 24l;
