@@ -106,14 +106,7 @@ public class $i {
         String verifyOpt =
             Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-showversion";
 
-        String[] classPaths = javaClassPath.split(File.pathSeparator);
-        String junitJar = null;
-        for (String path : classPaths) {
-            if (path.endsWith("junit.jar")) {
-                junitJar = path;
-                break;
-            }
-        }
+        String junitJar = Path.of(Test.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
 
         String jars = appJar + ps + junitJar;
 

@@ -70,14 +70,7 @@ public class MethodHandlesPermuteArgumentsTest extends DynamicArchiveTestBase {
         String verifyOpt =
             Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-showversion";
 
-        String[] classPaths = javaClassPath.split(File.pathSeparator);
-        String junitJar = null;
-        for (String path : classPaths) {
-            if (path.endsWith("junit.jar")) {
-                junitJar = path;
-                break;
-            }
-        }
+        String junitJar = Path.of(Test.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
 
         dumpAndRun(topArchiveName, "-Xlog:cds,cds+dynamic=debug,class+load=trace",
             "-cp", appJar + ps + junitJar, verifyOpt,
