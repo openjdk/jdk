@@ -72,6 +72,8 @@ class aarch64 {
 
   static address _spin_wait;
 
+  static address _chacha20_counter_addmask;
+
   static bool _completed;
 
  public:
@@ -182,6 +184,10 @@ class aarch64 {
 
   static address spin_wait() {
     return _spin_wait;
+  }
+
+  static address chacha20_counter_addmask() {
+      return _chacha20_counter_addmask;
   }
 
   static bool complete() {
