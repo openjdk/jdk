@@ -116,6 +116,7 @@ ReferenceArgumentCount::ReferenceArgumentCount(Symbol* signature)
   do_parameters_on(this);  // non-virtual template execution
 }
 
+#if !defined(_LP64) || defined(ZERO) || defined(ASSERT)
 static int compute_num_stack_arg_slots(Symbol* signature, int sizeargs, bool is_static) {
   ResourceMark rm;
   BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sizeargs);
@@ -137,6 +138,7 @@ static int compute_num_stack_arg_slots(Symbol* signature, int sizeargs, bool is_
 
   return SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
 }
+#endif
 
 void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
   // See if we fingerprinted this method already
