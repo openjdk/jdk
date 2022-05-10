@@ -41,6 +41,10 @@
 #include "opto/subnode.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {
   if (TraceTypeProfile || C->print_inlining()) {
@@ -511,6 +515,7 @@ void Parse::do_call() {
   ciKlass*         holder       = iter().get_declared_method_holder();
   ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
   assert(declared_signature != NULL, "cannot be null");
+  JFR_ONLY(Jfr::on_resolution(this, holder, orig_callee);)
 
   // Bump max node limit for JSR292 users
   if (bc() == Bytecodes::_invokedynamic || orig_callee->is_method_handle_intrinsic()) {
