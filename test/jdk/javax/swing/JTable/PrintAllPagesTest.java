@@ -23,6 +23,8 @@
 /*
  * @test
  * @bug 8257810
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @summary  Verifies if all pages are printed if scrollRectToVisible is set.
  * @run main/manual PrintAllPagesTest
  */
@@ -30,6 +32,7 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.print.PrinterJob;
 import java.awt.print.PrinterException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -47,53 +50,53 @@ import javax.swing.WindowConstants;
 
 public class PrintAllPagesTest extends WindowAdapter {
     static JFrame f;
-    static JDialog dialog;
     static JTable table;
-    static volatile boolean testResult = false;
-    static final CountDownLatch latch = new CountDownLatch(1);
+
+    static final String INSTRUCTIONS = """
+         Note: You must have a printer installed for this test.
+         If printer is not available, the test passes automatically.
+
+         A JTable with 1000 rows and a print dialog will be shown.
+         If only 1 page is printed,
+         then press fail else press pass.
+		""";
 
     public static void main(String[] args) throws Exception {
 
-        try {
-            SwingUtilities.invokeAndWait(() -> {
-                printAllPagesTest();
-                createUI();
-            });
+        PassFailJFrame passFailJFrame = new PassFailJFrame(INSTRUCTIONS);
 
-            Thread.sleep(1000);
-            SwingUtilities.invokeAndWait(() -> {
-                try {
-                    if (!table.print()) {
-                        throw new RuntimeException("Printing cancelled");
-                    }
-                } catch (PrinterException e) {
-                    throw new RuntimeException("Printing failed: " + e);
+        PrinterJob pj = PrinterJob.getPrinterJob();
+        if (pj.getPrintService() == null) {
+            System.out.println("Printer not configured or available."
+                    + " Test cannot continue.");
+            PassFailJFrame.forcePass();
+        }
+
+        SwingUtilities.invokeAndWait(() -> {
+            printAllPagesTest();
+        });
+
+        Thread.sleep(1000);
+
+        // add the test frame to dispose
+        PassFailJFrame.addTestFrame(f);
+
+        // Arrange the test instruction frame and test frame side by side
+        PassFailJFrame.positionTestFrame(f, PassFailJFrame.Position.HORIZONTAL);
+
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                if (!table.print()) {
+                    throw new RuntimeException("Printing cancelled");
                 }
-            });
-
-            // wait for latch to complete
-            if (!latch.await(5, TimeUnit.MINUTES)) {
-                throw new RuntimeException("Test timed out");
+            } catch (PrinterException e) {
+                throw new RuntimeException("Printing failed: " + e);
             }
+        });
 
-            if (!testResult) {
-                throw new RuntimeException("Only 1st page is printed out of multiple pages");
-            }
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                dispose();
-            });
-        }
+        passFailJFrame.awaitAndCheck();
     }
 
-    private static void dispose() {
-        if (dialog != null) {
-            dialog.dispose();
-        }
-        if (f != null) {
-            f.dispose();
-        }
-    }
 
     private static void printAllPagesTest() {
         TableModel dataModel = new AbstractTableModel() {
@@ -119,48 +122,7 @@ public class PrintAllPagesTest extends WindowAdapter {
         f = new JFrame("Table test");
         f.add(scrollpane);
         f.setSize(1000, 800);
-        f.setLocationRelativeTo(null);
         f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         f.setVisible(true);
-        f.addWindowListener(new PrintAllPagesTest());
-    }
-
-    private static void createUI() {
-        String description
-                = " INSTRUCTIONS:\n"
-                + " A JTable with 1000 rows and a print dialog will be shown.\n"
-                + " If only 1 page is printed,\n "
-                + " then press fail else press pass";
-
-        dialog = new JDialog(f, "Instructions for Table Print Test");
-        dialog.setTitle("textselectionTest");
-        JTextArea textArea = new JTextArea(description);
-        textArea.setEditable(false);
-        final JButton passButton = new JButton("PASS");
-        passButton.addActionListener((e) -> {
-            testResult = true;
-            latch.countDown();
-        });
-        final JButton failButton = new JButton("FAIL");
-        failButton.addActionListener((e) -> {
-            testResult = false;
-            latch.countDown();
-        });
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.add(textArea, BorderLayout.CENTER);
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(passButton);
-        buttonPanel.add(failButton);
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-        dialog.add(mainPanel);
-        dialog.setUndecorated(true);
-        dialog.pack();
-        dialog.setVisible(true);
-        dialog.addWindowListener(new PrintAllPagesTest());
-    }
-
-    @Override
-    public void windowClosing(WindowEvent e) {
-        latch.countDown();
     }
 }
