@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
@@ -442,7 +443,7 @@ void before_exit(JavaThread* thread) {
 
   EventThreadEnd event;
   if (event.should_commit()) {
-    event.set_thread(JFR_THREAD_ID(thread));
+    event.set_thread(JFR_JVM_THREAD_ID(thread));
     event.commit();
   }
 

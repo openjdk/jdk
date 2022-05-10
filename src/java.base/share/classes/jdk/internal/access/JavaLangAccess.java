@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,17 @@ import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
 
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.ConstantPool;
+import jdk.internal.vm.Continuation;
+import jdk.internal.vm.ContinuationScope;
+import jdk.internal.vm.StackableScope;
+import jdk.internal.vm.ThreadContainer;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
 
@@ -410,4 +416,114 @@ public interface JavaLangAccess {
      * @param statusCode the status code
      */
     void exit(int statusCode);
+
+    /**
+     * Returns an array of all platform threads.
+     */
+    Thread[] getAllThreads();
+
+    /**
+     * Returns the ThreadContainer for a thread, may be null.
+     */
+    ThreadContainer threadContainer(Thread thread);
+
+    /**
+     * Starts a thread in the given ThreadContainer.
+     */
+    void start(Thread thread, ThreadContainer container);
+
+    /**
+     * Returns the top of the given thread's stackable scope stack.
+     */
+    StackableScope headStackableScope(Thread thread);
+
+    /**
+     * Sets the top of the current thread's stackable scope stack.
+     */
+    void setHeadStackableScope(StackableScope scope);
+
+    /**
+     * Returns the Thread object for the current platform thread. If the
+     * current thread is a virtual thread then this method returns the carrier.
+     */
+    Thread currentCarrierThread();
+
+    /**
+     * Executes the given value returning task on the current carrier thread.
+     */
+    <V> V executeOnCarrierThread(Callable<V> task) throws Exception;
+
+    /**
+     * Returns the value of the current carrier thread's copy of a thread-local.
+     */
+    <T> T getCarrierThreadLocal(ThreadLocal<T> local);
+
+    /**
+     * Sets the value of the current carrier thread's copy of a thread-local.
+     */
+    <T> void setCarrierThreadLocal(ThreadLocal<T> local, T value);
+
+    /**
+     * Returns the current thread's extent locals cache
+     */
+    Object[] extentLocalCache();
+
+    /**
+     * Sets the current thread's extent locals cache
+     */
+    void setExtentLocalCache(Object[] cache);
+
+    /**
+     * Return the current thread's extent local bindings.
+     */
+    Object extentLocalBindings();
+
+    /**
+     * Set the current thread's extent local bindings.
+     */
+    void setExtentLocalBindings(Object bindings);
+
+    /**
+     * Returns the innermost mounted continuation
+     */
+    Continuation getContinuation(Thread thread);
+
+    /**
+     * Sets the innermost mounted continuation
+     */
+    void setContinuation(Thread thread, Continuation continuation);
+
+    /**
+     * The ContinuationScope of virtual thread continuations
+     */
+    ContinuationScope virtualThreadContinuationScope();
+
+    /**
+     * Parks the current virtual thread.
+     * @throws WrongThreadException if the current thread is not a virtual thread
+     */
+    void parkVirtualThread();
+
+    /**
+     * Parks the current virtual thread for up to the given waiting time.
+     * @param nanos the maximum number of nanoseconds to wait
+     * @throws WrongThreadException if the current thread is not a virtual thread
+     */
+    void parkVirtualThread(long nanos);
+
+    /**
+     * Re-enables a virtual thread for scheduling. If the thread was parked then
+     * it will be unblocked, otherwise its next attempt to park will not block
+     * @param thread the virtual thread to unpark
+     * @throws IllegalArgumentException if the thread is not a virtual thread
+     * @throws RejectedExecutionException if the scheduler cannot accept a task
+     */
+    void unparkVirtualThread(Thread thread);
+
+    /**
+     * Creates a new StackWalker
+     */
+    StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,
+                                       ContinuationScope contScope,
+                                       Continuation continuation);
 }
