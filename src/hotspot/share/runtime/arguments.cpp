@@ -4205,6 +4205,15 @@ jint Arguments::apply_ergo() {
   }
 #endif // COMPILER2
 
+#ifdef ARM32
+  // FIXME: Newly added Loom code has major problems with C2 on ARM32, for example
+  // with handling derived pointers. Leave only C1 for the moment to unbreak ARM32.
+  if (!TieredCompilation || TieredStopAtLevel >= 4) {
+    FLAG_SET_DEFAULT(TieredCompilation, true);
+    FLAG_SET_DEFAULT(TieredStopAtLevel, 1);
+  }
+#endif
+
   if (FLAG_IS_CMDLINE(DiagnoseSyncOnValueBasedClasses)) {
     if (DiagnoseSyncOnValueBasedClasses == ObjectSynchronizer::LOG_WARNING && !log_is_enabled(Info, valuebasedclasses)) {
       LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(valuebasedclasses));
