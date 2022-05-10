@@ -25,8 +25,8 @@
  * @test
  * @bug 8227046
  * @summary reflection test for sealed classes
- * @compile --enable-preview -source ${jdk.version} SealedClassesReflectionTest.java
- * @run testng/othervm --enable-preview SealedClassesReflectionTest
+ * @compile -source ${jdk.version} SealedClassesReflectionTest.java
+ * @run testng/othervm SealedClassesReflectionTest
  */
 
 import java.lang.annotation.*;
