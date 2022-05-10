@@ -1061,16 +1061,14 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 
   __ bind(slow);
 
-  {
-    // Call VM
-    ZRuntimeCallSpill rcs(ce->masm(), noreg);
-    __ lea(c_rarg0, ce->as_Address(stub->ref_addr()->as_address_ptr()));
-    if (stub->is_atomic()) {
-      __ MacroAssembler::call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr(), 1);
-    } else {
-      __ MacroAssembler::call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), 1);
-    }
-  }
+  __ lea(stub->new_zpointer()->as_register(), ce->as_Address(stub->ref_addr()->as_address_ptr()));
+
+  __ sub(sp, sp, 16);
+  // Setup arguments and call runtime stub
+  assert(stub->new_zpointer()->is_valid(), "invariant");
+  ce->store_parameter(stub->new_zpointer()->as_register(), 0);
+  __ far_call(stub->runtime_stub());
+  __ add(sp, sp, 16);
 
   // Stub exit
   __ b(slow_continuation);
@@ -1092,6 +1090,26 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
   __ call_VM_leaf(ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators), 2);
 
   __ pop_call_clobbered_registers_except(RegSet::of(r0));
+
+  __ epilogue();
+}
+
+void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler* sasm,
+                                                                  bool self_healing) const {
+  __ prologue("zgc_store_barrier stub", false);
+
+  __ push_call_clobbered_registers();
+
+  // Setup arguments
+  __ load_parameter(0, c_rarg0);
+
+  if (self_healing) {
+    __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr(), 1);
+  } else {
+    __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), 1);
+  }
+
+  __ pop_call_clobbered_registers();
 
   __ epilogue();
 }

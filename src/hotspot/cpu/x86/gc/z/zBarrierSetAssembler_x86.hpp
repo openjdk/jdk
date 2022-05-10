@@ -132,6 +132,9 @@ public:
   void generate_c1_store_barrier_stub(LIR_Assembler* ce,
                                       ZStoreBarrierStubC1* stub) const;
 
+  void generate_c1_store_barrier_runtime_stub(StubAssembler* sasm,
+                                              bool self_healing) const;
+
   void generate_c1_load_barrier(LIR_Assembler* ce,
                                 LIR_Opr ref,
                                 ZLoadBarrierStubC1* stub,

@@ -95,11 +95,13 @@ void ZLoadBarrierStubC1::print_name(outputStream* out) const {
 ZStoreBarrierStubC1::ZStoreBarrierStubC1(LIRAccess& access,
                                          LIR_Opr new_zaddress,
                                          LIR_Opr new_zpointer,
-                                         bool is_atomic) :
+                                         bool is_atomic,
+                                         address runtime_stub) :
     _ref_addr(access.resolved_addr()),
     _new_zaddress(new_zaddress),
     _new_zpointer(new_zpointer),
-    _is_atomic(is_atomic) {
+    _is_atomic(is_atomic),
+    _runtime_stub(runtime_stub) {
   assert(_ref_addr->is_address(), "Must be an address");
 }
 
@@ -117,6 +119,10 @@ LIR_Opr ZStoreBarrierStubC1::new_zpointer() const {
 
 bool ZStoreBarrierStubC1::is_atomic() const {
   return _is_atomic;
+}
+
+address ZStoreBarrierStubC1::runtime_stub() const {
+  return _runtime_stub;
 }
 
 void ZStoreBarrierStubC1::visit(LIR_OpVisitState* visitor) {
@@ -209,7 +215,9 @@ static bool barrier_needed(LIRAccess& access) {
 
 ZBarrierSetC1::ZBarrierSetC1() :
     _load_barrier_on_oop_field_preloaded_runtime_stub(NULL),
-    _load_barrier_on_weak_oop_field_preloaded_runtime_stub(NULL) {}
+    _load_barrier_on_weak_oop_field_preloaded_runtime_stub(NULL),
+    _store_barrier_on_oop_field_with_healing(NULL),
+    _store_barrier_on_oop_field_without_healing(NULL) {}
 
 address ZBarrierSetC1::load_barrier_on_oop_field_preloaded_runtime_stub(DecoratorSet decorators) const {
   assert((decorators & ON_PHANTOM_OOP_REF) == 0, "Unsupported decorator");
@@ -219,6 +227,14 @@ address ZBarrierSetC1::load_barrier_on_oop_field_preloaded_runtime_stub(Decorato
     return _load_barrier_on_weak_oop_field_preloaded_runtime_stub;
   } else {
     return _load_barrier_on_oop_field_preloaded_runtime_stub;
+  }
+}
+
+address ZBarrierSetC1::store_barrier_on_oop_field_runtime_stub(bool self_healing) const {
+  if (self_healing) {
+    return _store_barrier_on_oop_field_with_healing;
+  } else {
+    return _store_barrier_on_oop_field_without_healing;
   }
 }
 
@@ -362,7 +378,8 @@ LIR_Opr ZBarrierSetC1::store_barrier(LIRAccess& access, LIR_Opr new_zaddress, bo
   ZStoreBarrierStubC1* stub = new ZStoreBarrierStubC1(access,
                                                       new_zaddress_reg,
                                                       new_zpointer,
-                                                      is_atomic);
+                                                      is_atomic,
+                                                      store_barrier_on_oop_field_runtime_stub(is_atomic));
 
   __ append(new LIR_OpZStoreBarrier(access.resolved_addr(),
                                     new_zaddress_reg,
@@ -471,15 +488,40 @@ public:
   }
 };
 
-static address generate_c1_runtime_stub(BufferBlob* blob, DecoratorSet decorators, const char* name) {
+static address generate_c1_load_runtime_stub(BufferBlob* blob, DecoratorSet decorators, const char* name) {
   ZLoadBarrierRuntimeStubCodeGenClosure cl(decorators);
+  CodeBlob* const code_blob = Runtime1::generate_blob(blob, -1 /* stub_id */, name, false /* expect_oop_map*/, &cl);
+  return code_blob->code_begin();
+}
+
+class ZStoreBarrierRuntimeStubCodeGenClosure : public StubAssemblerCodeGenClosure {
+private:
+  const bool _self_healing;
+
+public:
+  ZStoreBarrierRuntimeStubCodeGenClosure(bool self_healing) :
+    _self_healing(self_healing) {}
+
+  virtual OopMapSet* generate_code(StubAssembler* sasm) {
+    ZBarrierSet::assembler()->generate_c1_store_barrier_runtime_stub(sasm, _self_healing);
+    return NULL;
+  }
+};
+
+static address generate_c1_store_runtime_stub(BufferBlob* blob, bool self_healing, const char* name) {
+  ZStoreBarrierRuntimeStubCodeGenClosure cl(self_healing);
   CodeBlob* const code_blob = Runtime1::generate_blob(blob, -1 /* stub_id */, name, false /* expect_oop_map*/, &cl);
   return code_blob->code_begin();
 }
 
 void ZBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* blob) {
   _load_barrier_on_oop_field_preloaded_runtime_stub =
-    generate_c1_runtime_stub(blob, ON_STRONG_OOP_REF, "load_barrier_on_oop_field_preloaded_runtime_stub");
+    generate_c1_load_runtime_stub(blob, ON_STRONG_OOP_REF, "load_barrier_on_oop_field_preloaded_runtime_stub");
   _load_barrier_on_weak_oop_field_preloaded_runtime_stub =
-    generate_c1_runtime_stub(blob, ON_WEAK_OOP_REF, "load_barrier_on_weak_oop_field_preloaded_runtime_stub");
+    generate_c1_load_runtime_stub(blob, ON_WEAK_OOP_REF, "load_barrier_on_weak_oop_field_preloaded_runtime_stub");
+
+  _store_barrier_on_oop_field_with_healing =
+    generate_c1_store_runtime_stub(blob, true /* self_healing */, "store_barrier_on_oop_field_with_healing");
+  _store_barrier_on_oop_field_without_healing =
+    generate_c1_store_runtime_stub(blob, false /* self_healing */, "store_barrier_on_oop_field_without_healing");
 }

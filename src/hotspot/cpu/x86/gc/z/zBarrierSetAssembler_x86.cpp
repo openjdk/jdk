@@ -1001,16 +1001,13 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 
   __ bind(slow);
 
-  {
-    // Call VM
-    ZRuntimeCallSpill rcs(ce->masm(), noreg, true /* spill_xmm */);
-    __ leaq(c_rarg0, ce->as_Address(stub->ref_addr()->as_address_ptr()));
-    if (stub->is_atomic()) {
-      __ MacroAssembler::call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr(), c_rarg0);
-    } else {
-      __ MacroAssembler::call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), c_rarg0);
-    }
-  }
+  ce->leal(stub->ref_addr(), stub->new_zpointer());
+
+  // Setup arguments and call runtime stub
+  __ subptr(rsp, 2 * BytesPerWord);
+  ce->store_parameter(stub->new_zpointer()->as_pointer_register(), 0);
+  __ call(RuntimeAddress(stub->runtime_stub()));
+  __ addptr(rsp, 2 * BytesPerWord);
 
   // Stub exit
   __ jmp(slow_continuation);
@@ -1034,6 +1031,28 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
 
   // Restore registers and return
   __ restore_live_registers_except_rax(true /* restore_fpu_registers */);
+  __ leave();
+  __ ret(0);
+}
+
+void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler* sasm,
+                                                                  bool self_healing) const {
+  // Enter and save registers
+  __ enter();
+  __ save_live_registers_no_oop_map(true /* save_fpu_registers */);
+
+  // Setup arguments
+  __ load_parameter(0, c_rarg0);
+
+  // Call VM
+  if (self_healing) {
+    __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr(), c_rarg0);
+  } else {
+    __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), c_rarg0);
+  }
+
+  // Restore registers and return
+  __ restore_live_registers(true /* restore_fpu_registers */);
   __ leave();
   __ ret(0);
 }
