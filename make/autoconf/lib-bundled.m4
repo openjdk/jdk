@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -170,6 +170,11 @@ AC_DEFUN_ONCE([LIB_SETUP_ZLIB],
     DEFAULT_ZLIB=bundled
   fi
 
+  APPLE_LIBZ_CFLAGS=""
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    APPLE_LIBZ_CFLAGS="-DHAVE_UNISTD_H"
+  fi
+
   if test "x${ZLIB_FOUND}" != "xyes"; then
     # If we don't find any system...set default to bundled
     DEFAULT_ZLIB=bundled
@@ -216,7 +221,7 @@ AC_DEFUN_ONCE([LIB_SETUP_ZLIB],
   LIBZ_CFLAGS=""
   LIBZ_LIBS=""
   if test "x$USE_EXTERNAL_LIBZ" = "xfalse"; then
-    LIBZ_CFLAGS="$LIBZ_CFLAGS -I$TOPDIR/src/java.base/share/native/libzip/zlib"
+    LIBZ_CFLAGS="$LIBZ_CFLAGS $APPLE_LIBZ_CFLAGS -I$TOPDIR/src/java.base/share/native/libzip/zlib"
   else
     LIBZ_LIBS="-lz"
   fi
