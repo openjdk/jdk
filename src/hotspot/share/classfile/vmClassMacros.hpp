@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,10 @@
   do_klass(Finalizer_klass,                             java_lang_ref_Finalizer                               ) \
                                                                                                                 \
   do_klass(Thread_klass,                                java_lang_Thread                                      ) \
+  do_klass(Thread_FieldHolder_klass,                    java_lang_Thread_FieldHolder                          ) \
+  do_klass(Thread_Constants_klass,                      java_lang_Thread_Constants                            ) \
   do_klass(ThreadGroup_klass,                           java_lang_ThreadGroup                                 ) \
+  do_klass(VirtualThread_klass,                         java_lang_VirtualThread                               ) \
   do_klass(Properties_klass,                            java_util_Properties                                  ) \
   do_klass(Module_klass,                                java_lang_Module                                      ) \
   do_klass(reflect_AccessibleObject_klass,              java_lang_reflect_AccessibleObject                    ) \
@@ -95,6 +98,11 @@
   do_klass(reflect_Parameter_klass,                     java_lang_reflect_Parameter                           ) \
   do_klass(reflect_Method_klass,                        java_lang_reflect_Method                              ) \
   do_klass(reflect_Constructor_klass,                   java_lang_reflect_Constructor                         ) \
+                                                                                                                \
+  do_klass(Runnable_klass,                              java_lang_Runnable                                    ) \
+  do_klass(ContinuationScope_klass,                     jdk_internal_vm_ContinuationScope                     ) \
+  do_klass(Continuation_klass,                          jdk_internal_vm_Continuation                          ) \
+  do_klass(StackChunk_klass,                            jdk_internal_vm_StackChunk                            ) \
                                                                                                                 \
   /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                     \
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                 \
@@ -136,6 +144,7 @@
   do_klass(ByteArrayInputStream_klass,                  java_io_ByteArrayInputStream                          ) \
   do_klass(URL_klass,                                   java_net_URL                                          ) \
   do_klass(URLClassLoader_klass,                        java_net_URLClassLoader                               ) \
+  do_klass(Enum_klass,                                  java_lang_Enum                                        ) \
   do_klass(Jar_Manifest_klass,                          java_util_jar_Manifest                                ) \
   do_klass(jdk_internal_loader_BuiltinClassLoader_klass,jdk_internal_loader_BuiltinClassLoader                ) \
   do_klass(jdk_internal_loader_ClassLoaders_klass,      jdk_internal_loader_ClassLoaders                      ) \
@@ -181,6 +190,9 @@
   do_klass(vector_Vector_klass,                         jdk_internal_vm_vector_Vector                         ) \
   do_klass(vector_VectorMask_klass,                     jdk_internal_vm_vector_VectorMask                     ) \
   do_klass(vector_VectorShuffle_klass,                  jdk_internal_vm_vector_VectorShuffle                  ) \
+                                                                                                                \
+  /* GC support */                                                                                              \
+  do_klass(FillerObject_klass,                          jdk_internal_vm_FillerObject                          ) \
                                                                                                                 \
   /*end*/
 

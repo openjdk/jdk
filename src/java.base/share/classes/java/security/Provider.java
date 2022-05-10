@@ -863,7 +863,6 @@ public abstract class Provider extends Properties {
     * @param in the {@code ObjectInputStream} to read
     * @throws IOException if an I/O error occurs
     * @throws ClassNotFoundException if a serialized class cannot be loaded
-    * @serial
     */
     @java.io.Serial
     private void readObject(ObjectInputStream in)
@@ -1605,7 +1604,7 @@ public abstract class Provider extends Properties {
                             "java.lang.Object");
     }
 
-    // get the "standard" (mixed-case) engine name for arbitary case engine name
+    // get the "standard" (mixed-case) engine name for arbitrary case engine name
     // if there is no known engine by that name, return s
     private static String getEngineName(String s) {
         // try original case first, usually correct

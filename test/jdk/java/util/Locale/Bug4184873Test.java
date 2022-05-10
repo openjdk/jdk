@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,10 @@
     @bug 4184873
 */
 /*
- *
+ * This file is available under and governed by the GNU General Public
+ * License version 2 only, as published by the Free Software Foundation.
+ * However, the following notice accompanied the original version of this
+ * file and, per its terms, should not be removed:
  *
  * (C) Copyright IBM Corp. 1996 - 1999 - All Rights Reserved
  *
@@ -84,7 +87,7 @@ public class Bug4184873Test extends IntlTest {
             ObjectInputStream in = getStream(lang);
             if (in != null) {
                 final Locale loc = (Locale)in.readObject();
-                final Locale expected = new Locale(lang, "XX");
+                final Locale expected = Locale.of(lang, "XX");
                 if (!(expected.equals(loc))) {
                     errln("Locale didn't maintain invariants for: "+lang);
                     errln("         got: "+loc);
@@ -123,7 +126,7 @@ public class Bug4184873Test extends IntlTest {
         try {
             ObjectOutputStream out = new ObjectOutputStream(
                     new FileOutputStream("Bug4184873_"+lang));
-            out.writeObject(new Locale(lang, "XX"));
+            out.writeObject(Locale.of(lang, "XX"));
             out.close();
         } catch (Exception e) {
             System.out.println(e);

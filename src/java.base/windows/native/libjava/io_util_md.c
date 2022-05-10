@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,10 +174,10 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
                    obviously a burden to all relative paths (The current dir/len
                    for "drive & directory" relative path is cached, so we only
                    calculate it once but for "drive-relative path we call
-                   _wgetdcwd() and wcslen() everytime), but a hit we have
+                   _wgetdcwd() and wcslen() every time), but a hit we have
                    to take if we want to support relative path beyond max_path.
                    There is no way to predict how long the absolute path will be
-                   (therefor allocate the sufficient memory block) before calling
+                   (therefore allocate the sufficient memory block) before calling
                    _wfullpath(), we have to get the length of "current" dir first.
                 */
                 WCHAR *abpath = NULL;
@@ -550,7 +550,7 @@ fileDescriptorClose(JNIEnv *env, jobject this)
     /* Set the fd to -1 before closing it so that the timing window
      * of other threads using the wrong fd (closed but recycled fd,
      * that gets re-opened with some other filename) is reduced.
-     * Practically the chance of its occurance is low, however, we are
+     * Practically the chance of its occurrence is low, however, we are
      * taking extra precaution over here.
      */
     (*env)->SetLongField(env, this, IO_handle_fdID, -1);

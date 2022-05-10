@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_JFR_LEAKPROFILER_SAMPLING_OBJECTSAMPLER_HPP
 #define SHARE_JFR_LEAKPROFILER_SAMPLING_OBJECTSAMPLER_HPP
 
+#include "jfr/utilities/jfrBlob.hpp"
 #include "memory/allocation.hpp"
 
 typedef u8 traceid;
@@ -35,7 +36,7 @@ class ObjectSample;
 class SampleList;
 class SamplePriorityQueue;
 
-// Class reponsible for holding samples and
+// Class responsible for holding samples and
 // making sure the samples are evenly distributed as
 // new entries are added and removed.
 class ObjectSampler : public CHeapObj<mtTracing> {
@@ -60,7 +61,7 @@ class ObjectSampler : public CHeapObj<mtTracing> {
 
   // Sampling
   static void sample(HeapWord* object, size_t size, JavaThread* thread);
-  void add(HeapWord* object, size_t size, traceid thread_id, JavaThread* thread);
+  void add(HeapWord* object, size_t size, traceid thread_id, bool virtual_thread, const JfrBlobHandle& bh, JavaThread* thread);
   void scavenge();
   void remove_dead(ObjectSample* sample);
 

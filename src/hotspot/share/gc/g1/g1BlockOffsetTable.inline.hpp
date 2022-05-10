@@ -140,7 +140,7 @@ inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr(HeapWo
         "start of block must be an initialized object");
     n += block_size(q);
   }
-  assert(q <= n, "wrong order for q and addr");
+  assert(q <= addr, "wrong order for q and addr");
   assert(addr < n, "wrong order for addr and n");
   return q;
 }

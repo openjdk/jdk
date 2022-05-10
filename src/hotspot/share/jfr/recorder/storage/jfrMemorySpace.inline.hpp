@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -560,7 +560,6 @@ inline bool ScavengingReleaseOp<Mspace, List>::excise_with_release(typename List
   assert(node->identity() != NULL, "invariant");
   assert(node->empty(), "invariant");
   assert(!node->lease(), "invariant");
-  assert(!node->excluded(), "invariant");
   ++_count;
   _amount += node->total_size();
   node->clear_retired();
@@ -569,23 +568,27 @@ inline bool ScavengingReleaseOp<Mspace, List>::excise_with_release(typename List
   return true;
 }
 
-template <typename Mspace, typename FromList>
+template <typename Functor, typename Mspace, typename FromList>
 class ReleaseRetiredOp : public StackObj {
 private:
+  Functor& _functor;
   Mspace* _mspace;
   FromList& _list;
   typename Mspace::NodePtr _prev;
 public:
   typedef typename Mspace::Node Node;
-  ReleaseRetiredOp(Mspace* mspace, FromList& list) :
-    _mspace(mspace), _list(list), _prev(NULL) {}
+  ReleaseRetiredOp(Functor& functor, Mspace* mspace, FromList& list) :
+    _functor(functor), _mspace(mspace), _list(list), _prev(NULL) {}
   bool process(Node* node);
 };
 
-template <typename Mspace, typename FromList>
-inline bool ReleaseRetiredOp<Mspace, FromList>::process(typename Mspace::Node* node) {
+template <typename Functor, typename Mspace, typename FromList>
+inline bool ReleaseRetiredOp<Functor, Mspace, FromList>::process(typename Mspace::Node* node) {
   assert(node != NULL, "invariant");
-  if (node->retired()) {
+  const bool is_retired = node->retired();
+  const bool result = _functor.process(node);
+  if (is_retired) {
+    assert(node->unflushed_size() == 0, "invariant");
     _prev = _list.excise(_prev, node);
     node->reinitialize();
     assert(node->empty(), "invariant");
@@ -595,7 +598,7 @@ inline bool ReleaseRetiredOp<Mspace, FromList>::process(typename Mspace::Node* n
   } else {
     _prev = node;
   }
-  return true;
+  return result;
 }
 
 template <typename Mspace, typename FromList>

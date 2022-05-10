@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
@@ -845,39 +846,15 @@ PSParallelCompact::IsAliveClosure PSParallelCompact::_is_alive_closure;
 
 bool PSParallelCompact::IsAliveClosure::do_object_b(oop p) { return mark_bitmap()->is_marked(p); }
 
-class PCReferenceProcessor: public ReferenceProcessor {
-public:
-  PCReferenceProcessor(
-    BoolObjectClosure* is_subject_to_discovery,
-    BoolObjectClosure* is_alive_non_header) :
-      ReferenceProcessor(is_subject_to_discovery,
-                         ParallelGCThreads,   // mt processing degree
-                         ParallelGCThreads,   // mt discovery degree
-                         false,               // concurrent_discovery
-                         is_alive_non_header) {}
-
-  template<typename T> bool discover(oop obj, ReferenceType type) {
-    T* referent_addr = (T*) java_lang_ref_Reference::referent_addr_raw(obj);
-    T heap_oop = RawAccess<>::oop_load(referent_addr);
-    oop referent = CompressedOops::decode_not_null(heap_oop);
-    return PSParallelCompact::mark_bitmap()->is_unmarked(referent)
-        && ReferenceProcessor::discover_reference(obj, type);
-  }
-  virtual bool discover_reference(oop obj, ReferenceType type) {
-    if (UseCompressedOops) {
-      return discover<narrowOop>(obj, type);
-    } else {
-      return discover<oop>(obj, type);
-    }
-  }
-};
-
 void PSParallelCompact::post_initialize() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   _span_based_discoverer.set_span(heap->reserved_region());
   _ref_processor =
-    new PCReferenceProcessor(&_span_based_discoverer,
-                             &_is_alive_closure); // non-header is alive closure
+    new ReferenceProcessor(&_span_based_discoverer,
+                           ParallelGCThreads,   // mt processing degree
+                           ParallelGCThreads,   // mt discovery degree
+                           false,               // concurrent_discovery
+                           &_is_alive_closure); // non-header is alive closure
 
   _counters = new CollectorCounters("Parallel full collection pauses", 1);
 
@@ -984,6 +961,9 @@ void PSParallelCompact::pre_compact()
   // Increment the invocation count
   heap->increment_total_collections(true);
 
+  Continuations::on_gc_marking_cycle_start();
+  Continuations::arm_all_nmethods();
+
   // We need to track unique mark sweep invocations as well.
   _total_invocations++;
 
@@ -1013,6 +993,9 @@ void PSParallelCompact::post_compact()
 {
   GCTraceTime(Info, gc, phases) tm("Post Compact", &_gc_timer);
   ParCompactionManager::remove_all_shadow_regions();
+
+  Continuations::on_gc_marking_cycle_finish();
+  Continuations::arm_all_nmethods();
 
   for (unsigned int id = old_space_id; id < last_space_id; ++id) {
     // Clear the marking bitmap, summary data and split info.
@@ -1938,7 +1921,7 @@ public:
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(_worker_id);
 
     PCMarkAndPushClosure mark_and_push_closure(cm);
-    MarkingCodeBlobClosure mark_and_push_in_blobs(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations);
+    MarkingCodeBlobClosure mark_and_push_in_blobs(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
 
     thread->oops_do(&mark_and_push_closure, &mark_and_push_in_blobs);
 

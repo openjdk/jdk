@@ -113,7 +113,7 @@ class ThreadStateTransition : public StackObj {
       thread->check_possible_safepoint();
 
       // Once we are in native/blocked vm expects stack to be walkable
-      thread->frame_anchor()->make_walkable(thread);
+      thread->frame_anchor()->make_walkable();
       OrderAccess::storestore(); // Keep thread_state change and make_walkable() separate.
       thread->set_thread_state(to);
     }
@@ -210,7 +210,7 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
 
     if (SafepointMechanism::should_process(_thread, _allow_suspend)) {
       _pr(_thread);
-      SafepointMechanism::process_if_requested(_thread, _allow_suspend);
+      SafepointMechanism::process_if_requested(_thread, _allow_suspend, false /* check_async_exception */);
     }
   }
 };

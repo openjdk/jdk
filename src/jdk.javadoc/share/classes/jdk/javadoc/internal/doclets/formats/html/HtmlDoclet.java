@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,11 +58,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
 /**
  * The class with "start" method, calls individual Writers.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class HtmlDoclet extends AbstractDoclet {
 
@@ -271,6 +266,7 @@ public class HtmlDoclet extends AbstractDoclet {
             }
             configuration.mainIndex.createSearchIndexFiles();
             IndexWriter.generate(configuration);
+            SearchWriter.generate(configuration);
         }
 
         if (options.createOverview()) {
@@ -297,6 +293,9 @@ public class HtmlDoclet extends AbstractDoclet {
             f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_JS);
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_JS_TEMPLATE), configuration.docResources);
 
+            f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_PAGE_JS);
+            f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_PAGE_JS), configuration.docResources);
+
             f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCES.resolve(DocPaths.GLASS_IMG));
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.GLASS_IMG), true, false);
 
@@ -313,10 +312,10 @@ public class HtmlDoclet extends AbstractDoclet {
 
     private void copyJqueryFiles() throws DocletException {
         List<String> files = Arrays.asList(
-                "jquery-3.5.1.min.js",
-                "jquery-ui.min.js",
-                "jquery-ui.min.css",
-                "jquery-ui.structure.min.css",
+                DocPaths.JQUERY_JS.getPath(),
+                DocPaths.JQUERY_UI_JS.getPath(),
+                DocPaths.JQUERY_UI_CSS.getPath(),
+                DocPaths.JQUERY_UI_STRUCTURE_CSS.getPath(),
                 "images/ui-bg_glass_65_dadada_1x400.png",
                 "images/ui-icons_454545_256x240.png",
                 "images/ui-bg_glass_95_fef1ec_1x400.png",

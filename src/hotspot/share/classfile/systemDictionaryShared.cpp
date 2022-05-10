@@ -171,7 +171,7 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   // Get the package entry.
   PackageEntry* pkg_entry = CDSProtectionDomain::get_package_entry_from_class(ik, class_loader);
 
-  // Load and check super/interfaces, restore unsharable info
+  // Load and check super/interfaces, restore unshareable info
   InstanceKlass* shared_klass = load_shared_class(ik, class_loader, protection_domain,
                                                   cfs, pkg_entry, THREAD);
   if (shared_klass == NULL || HAS_PENDING_EXCEPTION) {
@@ -793,6 +793,13 @@ bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbo
   }
 }
 
+void SystemDictionaryShared::add_enum_klass_static_field(InstanceKlass* ik, int root_index) {
+  assert(DumpSharedSpaces, "static dump only");
+  DumpTimeClassInfo* info = SystemDictionaryShared::find_or_allocate_info_for_locked(ik);
+  assert(info != NULL, "must be");
+  info->add_enum_klass_static_field(root_index);
+}
+
 void SystemDictionaryShared::add_to_dump_time_lambda_proxy_class_dictionary(LambdaProxyClassKey& key,
                                                            InstanceKlass* proxy_klass) {
   assert_lock_strong(DumpTimeTable_lock);
@@ -1016,7 +1023,7 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
   //   - loader1 = X->class_loader()
   //   - loader2 = S->class_loader()
   //   - loader1 != loader2
-  //   - M's paramater(s) include an object type T
+  //   - M's parameter(s) include an object type T
   // We require that
   //   - whenever loader1 and loader2 try to
   //     resolve the type T, they must always resolve to
@@ -1040,14 +1047,7 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
     return;
   }
 
-  if (DumpSharedSpaces && !is_builtin(klass)) {
-    // During static dump, unregistered classes (those intended for
-    // custom loaders) are loaded by the boot loader. Need to
-    // exclude these for the same reason as above.
-    // This should be fixed by JDK-8261941.
-    return;
-  }
-
+  assert(is_builtin(klass), "must be");
   assert(klass_loader != NULL, "should not be called for boot loader");
   assert(loader1 != loader2, "must be");
 
@@ -1105,7 +1105,7 @@ bool SystemDictionaryShared::check_linking_constraints(Thread* current, Instance
             log.print(" succeeded]");
         }
       }
-      return true; // for all recorded constraints added successully.
+      return true; // for all recorded constraints added successfully.
     }
   }
   if (log.is_enabled()) {
@@ -1174,7 +1174,7 @@ public:
 
   bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded()) {
-      size_t byte_size = RunTimeClassInfo::byte_size(info._klass, info.num_verifier_constraints(), info.num_loader_constraints());
+      size_t byte_size = info.runtime_info_bytesize();
       _shared_class_info_size += align_up(byte_size, SharedSpaceObjectAlignment);
     }
     return true; // keep on iterating
@@ -1283,7 +1283,7 @@ public:
 
   bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded() && info.is_builtin() == _is_builtin) {
-      size_t byte_size = RunTimeClassInfo::byte_size(info._klass, info.num_verifier_constraints(), info.num_loader_constraints());
+      size_t byte_size = info.runtime_info_bytesize();
       RunTimeClassInfo* record;
       record = (RunTimeClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
       record->init(info);
@@ -1625,17 +1625,16 @@ class CleanupDumpTimeLambdaProxyClassTable: StackObj {
   bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
     assert_lock_strong(DumpTimeTable_lock);
     InstanceKlass* caller_ik = key.caller_ik();
-    if (SystemDictionaryShared::check_for_exclusion(caller_ik, NULL)) {
-      // If the caller class is excluded, unregister all the associated lambda proxy classes
-      // so that they will not be included in the CDS archive.
-      for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
-        SystemDictionaryShared::reset_registered_lambda_proxy_class(info._proxy_klasses->at(i));
-        info._proxy_klasses->remove_at(i);
-      }
-    }
+    InstanceKlass* nest_host = caller_ik->nest_host_not_null();
+
+    // If the caller class and/or nest_host are excluded, the associated lambda proxy
+    // must also be excluded.
+    bool always_exclude = SystemDictionaryShared::check_for_exclusion(caller_ik, NULL) ||
+                          SystemDictionaryShared::check_for_exclusion(nest_host, NULL);
+
     for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
       InstanceKlass* ik = info._proxy_klasses->at(i);
-      if (SystemDictionaryShared::check_for_exclusion(ik, NULL)) {
+      if (always_exclude || SystemDictionaryShared::check_for_exclusion(ik, NULL)) {
         SystemDictionaryShared::reset_registered_lambda_proxy_class(ik);
         info._proxy_klasses->remove_at(i);
       }
@@ -1717,5 +1716,6 @@ void SystemDictionaryShared::update_archived_mirror_native_pointers() {
     Klass* k = Universe::typeArrayKlassObj((BasicType)t);
     ArchivedMirrorPatcher::update_array_klasses(k);
   }
+  ArchivedMirrorPatcher::update_array_klasses(Universe::fillerArrayKlassObj());
 }
 #endif

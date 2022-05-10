@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,8 +233,8 @@ final class EventHandlerCreator {
         // stack: [BW], [BW], [BS]
         visitMethod(mv, Opcodes.INVOKEVIRTUAL, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.asASM());
         // stack: [BW], [integer]
-        Label recursive = new Label();
-        mv.visitJumpInsn(Opcodes.IFEQ, recursive);
+        Label excluded = new Label();
+        mv.visitJumpInsn(Opcodes.IFEQ, excluded);
         // stack: [BW]
         // write startTime
         mv.visitInsn(Opcodes.DUP);
@@ -312,7 +312,7 @@ final class EventHandlerCreator {
         mv.visitInsn(Opcodes.POP);
         // stack:[ex]
         mv.visitInsn(Opcodes.ATHROW);
-        mv.visitLabel(recursive);
+        mv.visitLabel(excluded);
         // stack: [BW]
         mv.visitFrame(Opcodes.F_SAME, 0, null, 1, new Object[] { TYPE_EVENT_WRITER.getInternalName()} );
         mv.visitInsn(Opcodes.POP);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,6 +40,7 @@
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_s390.inline.hpp"
 
@@ -164,13 +165,6 @@ address LIR_Assembler::emit_call_c(address a) {
 }
 
 int LIR_Assembler::emit_exception_handler() {
-  // If the last instruction is a call (typically to do a throw which
-  // is coming at the end after block reordering) the return address
-  // must still point into the code area in order to avoid assertion
-  // failures when searching for the corresponding bci. => Add a nop.
-  // (was bug 5/14/1999 - gri)
-  __ nop();
-
   // Generate code for exception handler.
   address handler_base = __ start_a_stub(exception_handler_size());
   if (handler_base == NULL) {
@@ -218,7 +212,7 @@ int LIR_Assembler::emit_unwind_handler() {
     __ lgr_if_needed(exception_oop_callee_saved, Z_EXC_OOP); // Preserve the exception.
   }
 
-  // Preform needed unlocking.
+  // Perform needed unlocking.
   MonitorExitStub* stub = NULL;
   if (method()->is_synchronized()) {
     // Runtime1::monitorexit_id expects lock address in Z_R1_scratch.
@@ -262,13 +256,6 @@ int LIR_Assembler::emit_unwind_handler() {
 }
 
 int LIR_Assembler::emit_deopt_handler() {
-  // If the last instruction is a call (typically to do a throw which
-  // is coming at the end after block reordering) the return address
-  // must still point into the code area in order to avoid assertion
-  // failures when searching for the corresponding bci. => Add a nop.
-  // (was bug 5/14/1999 - gri)
-  __ nop();
-
   // Generate code for exception handler.
   address handler_base = __ start_a_stub(deopt_handler_size());
   if (handler_base == NULL) {
@@ -1440,7 +1427,10 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
 }
 
 // result = condition ? opr1 : opr2
-void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type) {
+void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type,
+                          LIR_Opr cmp_opr1, LIR_Opr cmp_opr2) {
+  assert(cmp_opr1 == LIR_OprFact::illegalOpr && cmp_opr2 == LIR_OprFact::illegalOpr, "unnecessary cmp oprs on s390");
+
   Assembler::branch_condition acond = Assembler::bcondEqual, ncond = Assembler::bcondNotEqual;
   switch (condition) {
     case lir_cond_equal:        acond = Assembler::bcondEqual;    ncond = Assembler::bcondNotEqual; break;
@@ -2988,7 +2978,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       __ z_bru(next);
     }
   } else {
-    __ asm_assert_ne("unexpect null obj", __LINE__);
+    __ asm_assert_ne("unexpected null obj", __LINE__);
   }
 
   __ bind(update);

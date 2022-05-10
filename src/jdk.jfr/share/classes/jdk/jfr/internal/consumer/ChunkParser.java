@@ -41,7 +41,7 @@ import jdk.jfr.internal.LongMap;
 import jdk.jfr.internal.MetadataDescriptor;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.Utils;
-import jdk.jfr.internal.consumer.filter.CheckPointEvent;
+import jdk.jfr.internal.consumer.filter.CheckpointEvent;
 import jdk.jfr.internal.consumer.filter.ChunkWriter;
 
 /**
@@ -77,7 +77,7 @@ public final class ChunkParser {
         }
     }
 
-    private enum CheckPointType {
+    private enum CheckpointType {
         // Checkpoint that finishes a flush segment
         FLUSH(1),
         // Checkpoint contains chunk header information in the first pool
@@ -87,7 +87,7 @@ public final class ChunkParser {
         // Checkpoint contains thread related information
         THREAD(8);
         private final int mask;
-        private CheckPointType(int mask) {
+        private CheckpointType(int mask) {
             this.mask = mask;
         }
 
@@ -267,7 +267,7 @@ public final class ChunkParser {
                 // Not accepted by filter
             } else {
                 if (typeId == 1) { // checkpoint event
-                    if (CheckPointType.FLUSH.is(parseCheckpointType())) {
+                    if (CheckpointType.FLUSH.is(parseCheckpointType())) {
                         input.position(pos + size);
                         return FLUSH_MARKER;
                     }
@@ -317,9 +317,9 @@ public final class ChunkParser {
         long delta = -1;
         boolean logTrace = Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE);
         while (thisCP != abortCP && delta != 0) {
-            CheckPointEvent cp = null;
+            CheckpointEvent cp = null;
             if (configuration.chunkWriter != null) {
-                cp = configuration.chunkWriter.newCheckPointEvent(thisCP);
+                cp = configuration.chunkWriter.newCheckpointEvent(thisCP);
             }
             input.position(thisCP);
             lastCP = thisCP;
