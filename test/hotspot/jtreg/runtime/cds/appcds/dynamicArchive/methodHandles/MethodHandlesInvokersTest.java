@@ -47,6 +47,7 @@
 import org.junit.Test;
 
 import java.io.File;
+import java.nio.file.Path;
 import jdk.test.lib.Platform;
 
 public class MethodHandlesInvokersTest extends DynamicArchiveTestBase {
