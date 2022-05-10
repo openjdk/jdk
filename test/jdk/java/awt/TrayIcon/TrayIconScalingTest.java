@@ -32,15 +32,25 @@
  * @requires (os.family == "windows")
  */
 
+
+import java.awt.AWTException;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
 import java.awt.font.TextLayout;
 import java.awt.image.BaseMultiResolutionImage;
 import java.awt.image.BufferedImage;
-import java.awt.*;
-import java.awt.image.MultiResolutionImage;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
 public class TrayIconScalingTest {
+
+    private static SystemTray tray;
+    private static TrayIcon icon;
 
     private static final String INSTRUCTIONS =
             "This test case checks the scaling of tray icons for on-the-fly" +
@@ -55,64 +65,56 @@ public class TrayIconScalingTest {
                     "3. On scale changes observe the white tray icon," +
                     " if there is NO distortion then press PASS.\n\n";
 
+    private static Font font = new Font("Dialog", Font.BOLD, 12);
+
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
-        PassFailJFrame passFailJFrame = new PassFailJFrame("TrayIcon " +
-                "Test Instructions", INSTRUCTIONS, 8, 18, 85);
-        createAndShowGUI();
-        passFailJFrame.awaitAndCheck();
-
-    }
-
-    private static void createAndShowGUI() {
 
         // Check if SystemTray supported on the machine
         if (!SystemTray.isSupported()) {
             System.out.println("SystemTray is not supported");
             return;
         }
+        PassFailJFrame passFailJFrame = new PassFailJFrame("TrayIcon " +
+                "Test Instructions", INSTRUCTIONS, 8, 18, 85);
+        createAndShowGUI();
+        try {
+            passFailJFrame.awaitAndCheck();
+        } finally {
+            tray.remove(icon);
+        }
+    }
 
+    private static void createAndShowGUI() {
         // Create Multi Resolution Image
         ArrayList<Image> images = new ArrayList<>();
-        for (int size = 16; size <= 34; size++) {
+        for (int size = 16; size <= 48; size += 4) {
             createIcon(size, images);
         }
-        MultiResolutionImage multiResolutionImage =
+        Image mRImage =
                 new BaseMultiResolutionImage(images.toArray(new Image[0]));
 
-        SystemTray tray = SystemTray.getSystemTray();
-        TrayIcon icon = new TrayIcon((Image) multiResolutionImage);
-
-        PopupMenu popup = new PopupMenu();
-        MenuItem exitItem = new MenuItem("Exit");
-        popup.add(exitItem);
-        icon.setPopupMenu(popup);
+        tray = SystemTray.getSystemTray();
+        icon = new TrayIcon(mRImage);
 
         try {
             tray.add(icon);
         } catch (AWTException e) {
             throw new RuntimeException("Error while adding icon to system tray");
         }
-
-        exitItem.addActionListener(e -> {
-            tray.remove(icon);
-            System.exit(0);
-        });
-
     }
 
-    // to create different size icon for MRI
+    // to create different size icons for MRI
     private static void createIcon(int size, ArrayList<Image> imageArrayList) {
 
         BufferedImage image = new BufferedImage(size, size,
                 BufferedImage.TYPE_INT_ARGB);
-
         Graphics2D g = image.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+        ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                 RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, size, size);
-        g.setFont(new Font("Dialog", Font.BOLD, 12));
+        g.setFont(font);
         g.setColor(Color.BLACK);
 
         TextLayout layout = new TextLayout(String.valueOf(size),
@@ -124,3 +126,4 @@ public class TrayIconScalingTest {
         g.dispose();
     }
 }
+

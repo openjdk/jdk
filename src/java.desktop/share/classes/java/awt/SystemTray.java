@@ -287,20 +287,15 @@ public class SystemTray {
     }
 
     // updateTrayIcons method called from native side
-    // when WM_POSCHANGING msg received
+    // when WM_WINDOWPOSCHANGING msg received
     static void updateTrayIcons() {
         SwingUtilities.invokeLater(()->{
             TrayIcon[] trayIconList = systemTray.getTrayIcons();
-            if (trayIconList == null || trayIconList.length == 0) {
-                // no tray icons present so do nothing
-                return;
-            }
             for (TrayIcon trayIcon : trayIconList) {
                 trayIcon.updateNotify();
             }
         });
     }
-
 
     /**
      * Removes the specified {@code TrayIcon} from the
