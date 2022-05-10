@@ -51,8 +51,8 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8219014 8245121
  * @summary Ensure that a bulk put of a buffer into another is correct.
- * @compile --enable-preview -source ${jdk.version} BulkPutBuffer.java
- * @run testng/othervm --enable-preview BulkPutBuffer
+ * @compile -source ${jdk.version} BulkPutBuffer.java
+ * @run testng/othervm BulkPutBuffer
  */
 public class BulkPutBuffer {
     static final long SEED = System.nanoTime();

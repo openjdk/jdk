@@ -26,8 +26,8 @@
  * @summary Ensure that sun.misc.Unsafe::objectFieldOffset and staticFieldOffset
  *          throw UnsupportedOperationException on Field of a hidden or record class
  * @modules jdk.unsupported
- * @compile --enable-preview -source ${jdk.version} UnsafeFieldOffsets.java
- * @run testng/othervm --enable-preview UnsafeFieldOffsets
+ * @compile -source ${jdk.version} UnsafeFieldOffsets.java
+ * @run testng/othervm UnsafeFieldOffsets
  */
 
 import sun.misc.Unsafe;
