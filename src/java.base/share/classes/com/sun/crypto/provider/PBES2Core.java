@@ -195,6 +195,9 @@ abstract class PBES2Core extends CipherSpi {
 
         byte[] passwdBytes = key.getEncoded();
         char[] passwdChars = null;
+        salt = null;
+        iCount = 0;
+
         PBEKeySpec pbeSpec;
         try {
             if ((passwdBytes == null) ||
@@ -223,10 +226,11 @@ abstract class PBES2Core extends CipherSpi {
                             "Wrong parameter type: IV expected");
                 }
             } else if (params == null && doEncrypt) {
-                // Try extracting from the key, if present
+                // Try extracting from the key if present. If unspecified,
+                // PBEKey returns null and 0 respectively.
                 if (key instanceof javax.crypto.interfaces.PBEKey pbeKey) {
-                    salt = check(pbeKey.getSalt()); // may be null
-                    iCount = check(pbeKey.getIterationCount()); // may be 0
+                    salt = check(pbeKey.getSalt());
+                    iCount = check(pbeKey.getIterationCount());
                 }
                 if (salt == null) {
                     // generate random salt
