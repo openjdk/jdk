@@ -435,11 +435,11 @@ void PhaseChaitin::Register_Allocate() {
 
   GrowableArray<Block_List> regions;
   bool do_it = (C->method() != NULL);
-  if (do_it) {
-    stringStream ss;
-    C->method()->print_short_name(&ss);
-    do_it = !strcmp(ss.as_string(), " spec.benchmarks.scimark.LU::factor");
-  }
+//  if (do_it) {
+//    stringStream ss;
+//    C->method()->print_short_name(&ss);
+//    do_it = !strcmp(ss.as_string(), " spec.benchmarks.scimark.LU::factor");
+//  }
 
   if (!C->is_osr_compilation() && !C->has_irreducible_loop() && UseNewCode && do_it) {
 //      _cfg._root_loop->dump_tree();
@@ -470,7 +470,7 @@ void PhaseChaitin::Register_Allocate() {
             }
           }
         }
-        if (!skip && loop->_freq > RegAllocRegionMinFreq) {
+        if (!skip && loop->_freq > RegAllocLoopMinFreq) {
           leaf_loops.push(loop);
         }
       }
@@ -491,32 +491,80 @@ void PhaseChaitin::Register_Allocate() {
         else if ((*l1)->_freq > (*l2)->_freq) return 1;
         return 0;
     });
+    tty->print_cr("XXXXXX");
+    _cfg.dump();
+    tty->print_cr("XXXXXX");
 //    leaf_loops.trunc_to(1);
-    for (int i = 0; i < leaf_loops.length(); ++i) {
+    for (int i = 0; i < leaf_loops.length(); i++) {
+      int region = i + 1;
+      Block_List blocks;
+      VectorSet visited;
+      CFGLoop* loop = leaf_loops.at(i);
+      assert(loop->head()->head()->is_Loop(), "");
+      blocks.push(loop->head());
+      visited.set(loop->head()->_pre_order);
+      for (uint j = 0; j < blocks.size(); j++) {
+        Block* block = blocks[j];
+        block->dump();
+        block->_region = region;
+        for (uint k = 0; k < block->_num_succs; k++) {
+          Block* succ = block->_succs[k];
+          if (succ->_loop != loop || visited.test_set(succ->_pre_order) || succ->_freq / loop->_freq < RegAllocBranchnMinFreq) {
+            continue;
+          }
+#ifdef ASSERT
+          for (uint l = 0; l < blocks.size(); l++) {
+            assert(blocks[l] != succ, "");
+          }
+#endif
+          blocks.push(succ);
+        }
+      }
+#ifdef ASSERT
+      uint l;
+      for (l = 0; l < blocks.size(); l++) {
+        if (blocks[l] == _cfg.get_block_for_node(loop->head()->pred(2))) {
+          break;
+        }
+      }
+      assert(l < blocks.size(), "not reaching back branch");
+#endif
+
+      regions.push(blocks);
+//      GrowableArray<CFGElement*> blocks = leaf_loops.at(i)->_members;
+//      for (int j = 0; j < blocks.length(); ++j) {
+//        CFGElement* block = blocks.at(j);
+//        block->as_Block()->dump();
+//      }
 //      if (i == 0 && leaf_loops.at(i)->_parent->_parent != NULL && leaf_loops.at(i)->_parent->_parent != _cfg._root_loop) {
 //        leaf_loops.at(i) = leaf_loops.at(i)->_parent->_parent;
 //      }
-      {
-        stringStream ss;
-        C->method()->print_short_name(&ss);
-//        if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
-        tty->print_cr("XXX %s:%d %f", ss.as_string(), C->compile_id(), leaf_loops.at(i)->_freq);
-        leaf_loops.at(i)->dump();
-        leaf_loops.at(i)->head()->dump();
-        CFGLoop* l = leaf_loops.at(i)->_parent;
-        while (l != NULL) {
-          tty->print_cr("XXXXXX %f/%f", l->_freq, leaf_loops.at(i)->_freq / l->_freq);
-          l->head()->dump();
-          l = l->_parent;
-        }
-
+//      {
+//        stringStream ss;
+//        C->method()->print_short_name(&ss);
+////        if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
+//        tty->print_cr("XXX %s:%d %f", ss.as_string(), C->compile_id(), leaf_loops.at(i)->_freq);
+//        leaf_loops.at(i)->dump();
+//        leaf_loops.at(i)->head()->dump();
+//        CFGLoop* l = leaf_loops.at(i)->_parent;
+//        while (l != NULL) {
+//          tty->print_cr("XXXXXX %f/%f", l->_freq, leaf_loops.at(i)->_freq / l->_freq);
+//          l->head()->dump();
+//          l = l->_parent;
 //        }
-      }
-      GrowableArray<CFGElement*> blocks = leaf_loops.at(i)->_members;
-      Block_List region;
-      collect_blocks(i, blocks, region);
-      regions.push(region);
+//
+////        }
+//      }
+//      GrowableArray<CFGElement*> blocks = leaf_loops.at(i)->_members;
+//      Block_List region;
+//      collect_blocks(i, blocks, region);
+//      regions.push(region);
+
     }
+    tty->print_cr("XXXXXX");
+    _cfg.dump();
+    tty->print_cr("XXXXXX");
+
     Block_List region;
     for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
       Block* block = _cfg.get_block(i);
