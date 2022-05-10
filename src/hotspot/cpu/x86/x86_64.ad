@@ -314,6 +314,15 @@ reg_class int_rdi_reg(RDI);
 // Singleton class for RSI int register
 reg_class int_rsi_reg(RSI);
 
+// Singleton class for R8 int register
+reg_class int_r8_reg(R8);
+
+// Singleton class for R9 int register
+reg_class int_r9_reg(R9);
+
+// Singleton class for R10 int register
+reg_class int_r10_reg(R10);
+
 // Singleton class for instruction pointer
 // reg_class ip_reg(RIP);
 
@@ -3374,6 +3383,36 @@ operand rsi_RegI()
   match(rRegI);
 
   format %{ "RSI" %}
+  interface(REG_INTER);
+%}
+
+operand r8_RegI()
+%{
+  constraint(ALLOC_IN_RC(int_r8_reg));
+  match(RegI);
+  match(rRegI);
+
+  format %{ "R8" %}
+  interface(REG_INTER);
+%}
+
+operand r9_RegI()
+%{
+  constraint(ALLOC_IN_RC(int_r9_reg));
+  match(RegI);
+  match(rRegI);
+
+  format %{ "R9" %}
+  interface(REG_INTER);
+%}
+
+operand r10_RegI()
+%{
+  constraint(ALLOC_IN_RC(int_r10_reg));
+  match(RegI);
+  match(rRegI);
+
+  format %{ "R10" %}
   interface(REG_INTER);
 %}
 
@@ -11704,7 +11743,7 @@ instruct string_hashcodeL(rdi_RegP str1, rsi_RegI cnt1, rbx_RegI result,
                           legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                           legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
                           legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
-                          legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3,
+                          legRegD tmp_vec13, r8_RegI tmp1, r9_RegI tmp2, r10_RegI tmp3,
                           rFlagsReg cr)
 %{
   predicate(UseAVX >= 2 && (((StrHashCodeNode*)n)->encoding() == StrIntrinsicNode::LL));
@@ -11730,7 +11769,7 @@ instruct string_hashcodeU(rdi_RegP str1, rsi_RegI cnt1, rbx_RegI result,
                           legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                           legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
                           legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
-                          legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3,
+                          legRegD tmp_vec13, r8_RegI tmp1, r9_RegI tmp2, r10_RegI tmp3,
                           rFlagsReg cr)
 %{
   predicate(UseAVX >= 2 && (((StrHashCodeNode*)n)->encoding() == StrIntrinsicNode::UU));
@@ -11821,7 +11860,7 @@ instruct array_hashcodeI(rdi_RegP ary1, rax_RegI result,
                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
                          legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
-                         legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3, rRegI tmp4,
+                         legRegD tmp_vec13, r8_RegI tmp1, r9_RegI tmp2, r10_RegI tmp3, rRegI tmp4,
                          rFlagsReg cr)
 %{
   predicate(UseAVX >= 2 && (((AryHashCodeNode*)n)->type() == T_INT));
@@ -11847,7 +11886,7 @@ instruct array_hashcodeS(rdi_RegP ary1, rax_RegI result,
                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
                          legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
-                         legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3, rRegI tmp4,
+                         legRegD tmp_vec13, r8_RegI tmp1, r9_RegI tmp2, r10_RegI tmp3, rRegI tmp4,
                          rFlagsReg cr)
 %{
   predicate(UseAVX >= 2 && (((AryHashCodeNode*)n)->type() == T_SHORT));
@@ -11873,7 +11912,7 @@ instruct array_hashcodeC(rdi_RegP ary1, rax_RegI result,
                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
                          legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
-                         legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3, rRegI tmp4,
+                         legRegD tmp_vec13, r8_RegI tmp1, r9_RegI tmp2, r10_RegI tmp3, rRegI tmp4,
                          rFlagsReg cr)
 %{
   predicate(UseAVX >= 2 && (((AryHashCodeNode*)n)->type() == T_CHAR));
@@ -11899,7 +11938,7 @@ instruct array_hashcodeB(rdi_RegP ary1, rax_RegI result,
                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
                          legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
-                         legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3, rRegI tmp4,
+                         legRegD tmp_vec13, r8_RegI tmp1, r9_RegI tmp2, r10_RegI tmp3, rRegI tmp4,
                          rFlagsReg cr)
 %{
   predicate(UseAVX >= 2 && (((AryHashCodeNode*)n)->type() == T_BYTE));
@@ -11925,7 +11964,7 @@ instruct array_hashcodeF(rdi_RegP ary1, rax_RegI result,
                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
                          legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
                          legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
-                         legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3, rRegI tmp4,
+                         legRegD tmp_vec13, r8_RegI tmp1, r9_RegI tmp2, r10_RegI tmp3, rRegI tmp4,
                          rFlagsReg cr)
 %{
   predicate(UseAVX >= 2 && (((AryHashCodeNode*)n)->type() == T_FLOAT));

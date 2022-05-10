@@ -3166,7 +3166,6 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   andl(tmp, 32-1);
   subl(bound, tmp);
 
-
   if (!is_string_hashcode) {
     // result = 0;
     movl(result, 0);
