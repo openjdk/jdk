@@ -3220,7 +3220,7 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   set_i_o(_gvn.transform(vthread_compare_io));
 
   // Load the event writer oop by dereferencing the jobject handle.
-  ciKlass* klass_EventWriter = env()->find_system_klass(ciSymbol::make("jdk/jfr/internal/EventWriter"));
+  ciKlass* klass_EventWriter = env()->find_system_klass(ciSymbol::make("jdk/jfr/internal/event/EventWriter"));
   assert(klass_EventWriter->is_loaded(), "invariant");
   ciInstanceKlass* const instklass_EventWriter = klass_EventWriter->as_instance_klass();
   const TypeKlassPtr* const aklass = TypeKlassPtr::make(instklass_EventWriter);
