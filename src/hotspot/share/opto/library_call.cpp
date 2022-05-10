@@ -591,6 +591,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_ghash_processBlocks:
     return inline_ghash_processBlocks();
+  case vmIntrinsics::_chacha20Block:
+    return inline_chacha20Block();
   case vmIntrinsics::_base64_encodeBlock:
     return inline_base64_encodeBlock();
   case vmIntrinsics::_base64_decodeBlock:
@@ -6502,6 +6504,36 @@ bool LibraryCallKit::inline_ghash_processBlocks() {
                                   OptoRuntime::ghash_processBlocks_Type(),
                                   stubAddr, stubName, TypePtr::BOTTOM,
                                   state_start, subkeyH_start, data_start, len);
+  return true;
+}
+
+//------------------------------inline_chacha20Block
+bool LibraryCallKit::inline_chacha20Block() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseChaCha20Intrinsics, "need ChaCha20 intrinsics support");
+
+  stubAddr = StubRoutines::chacha20Block();
+  stubName = "chacha20Block";
+
+  Node* state          = argument(0);
+  Node* result         = argument(1);
+
+  state = must_be_not_null(state, true);
+  result = must_be_not_null(result, true);
+
+  Node* state_start  = array_element_address(state, intcon(0), T_INT);
+  assert(state_start, "state is NULL");
+  Node* result_start  = array_element_address(result, intcon(0), T_BYTE);
+  assert(result_start, "result is NULL");
+
+  Node* cc20Blk = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::chacha20Block_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  state_start, result_start);
+  // return key stream length (int)
+  Node* retvalue = _gvn.transform(new ProjNode(cc20Blk, TypeFunc::Parms));
+  set_result(retvalue);
   return true;
 }
 

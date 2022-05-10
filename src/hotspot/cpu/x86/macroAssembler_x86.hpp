@@ -1176,6 +1176,7 @@ public:
     Assembler::evmovdqul(dst, mask, src, merge, vector_len);
    }
   void evmovdqul(XMMRegister dst, KRegister mask, AddressLiteral src, bool merge, int vector_len, Register scratch_reg);
+  void evmovdqul(XMMRegister dst, AddressLiteral src, int vector_len, Register scratch_reg);
 
   void evmovdquq(XMMRegister dst, Address src, int vector_len) { Assembler::evmovdquq(dst, src, vector_len); }
   void evmovdquq(Address dst, XMMRegister src, int vector_len) { Assembler::evmovdquq(dst, src, vector_len); }

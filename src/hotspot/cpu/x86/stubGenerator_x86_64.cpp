@@ -5360,6 +5360,482 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
 
+  /* The ChaCha20 block function implementation */
+  address generate_chacha20Block() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+    address start = __ pc();
+
+    Label L_twoRounds;
+    const Register state        = c_rarg0;
+    const Register result       = c_rarg1;
+    const Register loopCounter  = rcx;
+
+    const XMMRegister xmm_aVec = xmm0;
+    const XMMRegister xmm_bVec = xmm1;
+    const XMMRegister xmm_cVec = xmm2;
+    const XMMRegister xmm_dVec = xmm3;
+    const XMMRegister xmm_aState = xmm4;
+    const XMMRegister xmm_bState = xmm5;
+    const XMMRegister xmm_cState = xmm6;
+    const XMMRegister xmm_dState = xmm7;
+    const XMMRegister xmm_scratch = xmm8;
+
+    __ enter();
+
+    // Load the initial state in columnar orientation.
+    // For the starting state, hold it on two sets of
+    // for XMM registers, the second group of 4 is the
+    // working state.  the a/b/c/dState registers will
+    // be added back to the working state at the end of
+    // the block function.
+    __ movdqu(xmm_aState, Address(state, 0));         // Bytes 0 - 15 -> aVec
+    __ movdqu(xmm_bState, Address(state, 16));        // Bytes 16 - 31 -> bVec
+    __ movdqu(xmm_cState, Address(state, 32));        // Bytes 32 - 47 -> cVec
+    __ movdqu(xmm_dState, Address(state, 48));        // Bytes 48 - 63 -> dVec
+    __ movdqu(xmm_aVec, xmm_aState);
+    __ movdqu(xmm_bVec, xmm_bState);
+    __ movdqu(xmm_cVec, xmm_cState);
+    __ movdqu(xmm_dVec, xmm_dState);
+
+    __ movl(loopCounter, 10);                       // Set 10 2-round iterations
+    __ BIND(L_twoRounds);
+
+    // The first set of operations on the vectors covers the first 4 quarter
+    // round operations:
+    //  Qround(state, 0, 4, 8,12)
+    //  Qround(state, 1, 5, 9,13)
+    //  Qround(state, 2, 6,10,14)
+    //  Qround(state, 3, 7,11,15)
+
+    // a += b; d ^= a; d <<<= 16
+    __ paddd(xmm_aVec, xmm_bVec);
+    __ pxor(xmm_dVec, xmm_aVec);
+    __ pshufhw(xmm_dVec, xmm_dVec, 0xB1);
+    __ pshuflw(xmm_dVec, xmm_dVec, 0xB1);
+
+    // c += d; b ^= c; b <<<= 12 (b << 12 | scratch >>> 20)
+    __ paddd(xmm_cVec, xmm_dVec);
+    __ pxor(xmm_bVec, xmm_cVec);
+    __ movdqu(xmm_scratch, xmm_bVec);
+    __ pslld(xmm_bVec, 12);
+    __ psrld(xmm_scratch, 20);
+    __ por(xmm_bVec, xmm_scratch);
+
+    // a += b; d ^= a; d <<<= 8 (d << 8 | scratch >>> 24)
+    __ paddd(xmm_aVec, xmm_bVec);
+    __ pxor(xmm_dVec, xmm_aVec);
+    __ movdqu(xmm_scratch, xmm_dVec);
+    __ pslld(xmm_dVec, 8);
+    __ psrld(xmm_scratch, 24);
+    __ por(xmm_dVec, xmm_scratch);
+
+    // c += d; b ^= c; b <<<= 7 (b << 7 | scratch >>> 25)
+    __ paddd(xmm_cVec, xmm_dVec);
+    __ pxor(xmm_bVec, xmm_cVec);
+    __ movdqu(xmm_scratch, xmm_bVec);
+    __ pslld(xmm_bVec, 7);
+    __ psrld(xmm_scratch, 25);
+    __ por(xmm_bVec, xmm_scratch);
+
+    // Shuffle the bVec/cVec/dVec to reorganize the state vectors to diagonals
+    // The aVec does not need to change orientation.
+    __ pshufd(xmm_bVec, xmm_bVec, 0x39);
+    __ pshufd(xmm_cVec, xmm_cVec, 0x4E);
+    __ pshufd(xmm_dVec, xmm_dVec, 0x93);
+
+    // The second set of operations on the vectors covers the second 4 quarter
+    // round operations, now acting on the diagonals:
+    //  Qround(state, 0, 5,10,15)
+    //  Qround(state, 1, 6,11,12)
+    //  Qround(state, 2, 7, 8,13)
+    //  Qround(state, 3, 4, 9,14)
+
+    // a += b; d ^= a; d <<<= 16
+    __ paddd(xmm_aVec, xmm_bVec);
+    __ pxor(xmm_dVec, xmm_aVec);
+    __ pshufhw(xmm_dVec, xmm_dVec, 0xB1);
+    __ pshuflw(xmm_dVec, xmm_dVec, 0xB1);
+
+    // c += d; b ^= c; b <<<= 12 (b << 12 | scratch >>> 20)
+    __ paddd(xmm_cVec, xmm_dVec);
+    __ pxor(xmm_bVec, xmm_cVec);
+    __ movdqu(xmm_scratch, xmm_bVec);
+    __ pslld(xmm_bVec, 12);
+    __ psrld(xmm_scratch, 20);
+    __ por(xmm_bVec, xmm_scratch);
+
+    // a += b; d ^= a; d <<<= 8 (d << 8 | scratch >>> 24)
+    __ paddd(xmm_aVec, xmm_bVec);
+    __ pxor(xmm_dVec, xmm_aVec);
+    __ movdqu(xmm_scratch, xmm_dVec);
+    __ pslld(xmm_dVec, 8);
+    __ psrld(xmm_scratch, 24);
+    __ por(xmm_dVec, xmm_scratch);
+
+    // c += d; b ^= c; b <<<= 7 (b << 7 | scratch >>> 25)
+    __ paddd(xmm_cVec, xmm_dVec);
+    __ pxor(xmm_bVec, xmm_cVec);
+    __ movdqu(xmm_scratch, xmm_bVec);
+    __ pslld(xmm_bVec, 7);
+    __ psrld(xmm_scratch, 25);
+    __ por(xmm_bVec, xmm_scratch);
+
+    // Before we start the next iteration, we need to perform shuffles
+    // on the b/c/d vectors to move them back to columnar organizations
+    // from their current diagonal orientation.
+    __ pshufd(xmm_bVec, xmm_bVec, 0x93);
+    __ pshufd(xmm_cVec, xmm_cVec, 0x4E);
+    __ pshufd(xmm_dVec, xmm_dVec, 0x39);
+
+    __ decrement(loopCounter);
+    __ jcc(Assembler::notZero, L_twoRounds);
+
+    // Once the counter reaches zero, we fall out of the loop
+    // and need to add the initial state back into the current state
+    // represented by the a/b/c/dVec xmm registers.
+    __ paddd(xmm_aVec, xmm_aState);
+    __ paddd(xmm_bVec, xmm_bState);
+    __ paddd(xmm_cVec, xmm_cState);
+    __ paddd(xmm_dVec, xmm_dState);
+
+    // Now write the final state back to the result
+    __ movdqu(Address(result, 0), xmm_aVec);
+    __ movdqu(Address(result, 16), xmm_bVec);
+    __ movdqu(Address(result, 32), xmm_cVec);
+    __ movdqu(Address(result, 48), xmm_dVec);
+
+    // This function will always write 64 bytes into the key stream buffer
+    // and that length should be returned through %rax.  This stands in
+    // contrast with AVX2/AVX512 versions of this function that can return
+    // larger amounts of key stream.
+    __ mov64(rax, 64);
+
+    __ leave();
+    __ ret(0);
+    return start;
+  }
+
+  /* The 2-block AVX2-enabled ChaCha20 block function implementation */
+  address generate_chacha20Block_avx2() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+    address start = __ pc();
+
+    Label L_twoRounds;
+    const Register state        = c_rarg0;
+    const Register result       = c_rarg1;
+    const Register loopCounter  = rcx;
+
+    const XMMRegister ymm_aVec = xmm0;
+    const XMMRegister ymm_bVec = xmm1;
+    const XMMRegister ymm_cVec = xmm2;
+    const XMMRegister ymm_dVec = xmm3;
+    const XMMRegister ymm_aState = xmm4;
+    const XMMRegister ymm_bState = xmm5;
+    const XMMRegister ymm_cState = xmm6;
+    const XMMRegister ymm_dState = xmm7;
+    const XMMRegister ymm_scratch = xmm8;
+
+    __ enter();
+
+    // Load the initial state in columnar orientation
+    // We will broadcast each 128-bit segment of the state array into
+    // the high and low halves of ymm state registers.  Then apply the add
+    // mask to the dState register.  These will then be copied into the
+    // a/b/c/dVec working registers.
+    __ vbroadcastf128(ymm_aState, Address(state, 0), Assembler::AVX_256bit);
+    __ vbroadcastf128(ymm_bState, Address(state, 16), Assembler::AVX_256bit);
+    __ vbroadcastf128(ymm_cState, Address(state, 32), Assembler::AVX_256bit);
+    __ vbroadcastf128(ymm_dState, Address(state, 48), Assembler::AVX_256bit);
+    __ vpaddd(ymm_dState, ymm_dState, ExternalAddress(StubRoutines::x86::chacha20_counter_addmask_avx2()), Assembler::AVX_256bit, rax);
+    __ vmovdqu(ymm_aVec, ymm_aState);
+    __ vmovdqu(ymm_bVec, ymm_bState);
+    __ vmovdqu(ymm_cVec, ymm_cState);
+    __ vmovdqu(ymm_dVec, ymm_dState);
+
+    __ movl(loopCounter, 10);                       // Set 10 2-round iterations
+    __ BIND(L_twoRounds);
+
+    // The first set of operations on the vectors covers the first 4 quarter
+    // round operations:
+    //  Qround(state, 0, 4, 8,12)
+    //  Qround(state, 1, 5, 9,13)
+    //  Qround(state, 2, 6,10,14)
+    //  Qround(state, 3, 7,11,15)
+
+    // a += b; d ^= a; d <<<= 16
+    __ vpaddd(ymm_aVec, ymm_aVec, ymm_bVec, Assembler::AVX_256bit);
+    __ vpxor(ymm_dVec, ymm_dVec, ymm_aVec, Assembler::AVX_256bit);
+    __ vpshufhw(ymm_dVec, ymm_dVec, 0xB1, Assembler::AVX_256bit);
+    __ vpshuflw(ymm_dVec, ymm_dVec, 0xB1, Assembler::AVX_256bit);
+
+    // c += d; b ^= c; b <<<= 12 (b << 12 | scratch >>> 20)
+    __ vpaddd(ymm_cVec, ymm_cVec, ymm_dVec, Assembler::AVX_256bit);
+    __ vpxor(ymm_bVec, ymm_bVec, ymm_cVec, Assembler::AVX_256bit);
+    __ vpsrld(ymm_scratch, ymm_bVec, 20, Assembler::AVX_256bit);
+    __ vpslld(ymm_bVec, ymm_bVec, 12, Assembler::AVX_256bit);
+    __ vpor(ymm_bVec, ymm_bVec, ymm_scratch, Assembler::AVX_256bit);
+
+    // a += b; d ^= a; d <<<= 8 (d << 8 | scratch >>> 24)
+    __ vpaddd(ymm_aVec, ymm_aVec, ymm_bVec, Assembler::AVX_256bit);
+    __ vpxor(ymm_dVec, ymm_dVec, ymm_aVec, Assembler::AVX_256bit);
+    __ vpsrld(ymm_scratch, ymm_dVec, 24, Assembler::AVX_256bit);
+    __ vpslld(ymm_dVec, ymm_dVec, 8, Assembler::AVX_256bit);
+    __ vpor(ymm_dVec, ymm_dVec, ymm_scratch, Assembler::AVX_256bit);
+
+    // c += d; b ^= c; b <<<= 7 (b << 7 | scratch >>> 25)
+    __ vpaddd(ymm_cVec, ymm_cVec, ymm_dVec, Assembler::AVX_256bit);
+    __ vpxor(ymm_bVec, ymm_bVec, ymm_cVec, Assembler::AVX_256bit);
+    __ vpsrld(ymm_scratch, ymm_bVec, 25, Assembler::AVX_256bit);
+    __ vpslld(ymm_bVec, ymm_bVec, 7, Assembler::AVX_256bit);
+    __ vpor(ymm_bVec, ymm_bVec, ymm_scratch, Assembler::AVX_256bit);
+
+    // Shuffle the bVec/cVec/dVec to reorganize the state vectors to diagonals
+    // The aVec does not need to change orientation.
+    __ vpshufd(ymm_bVec, ymm_bVec, 0x39, Assembler::AVX_256bit);
+    __ vpshufd(ymm_cVec, ymm_cVec, 0x4E, Assembler::AVX_256bit);
+    __ vpshufd(ymm_dVec, ymm_dVec, 0x93, Assembler::AVX_256bit);
+
+    // The second set of operations on the vectors covers the second 4 quarter
+    // round operations, now acting on the diagonals:
+    //  Qround(state, 0, 5,10,15)
+    //  Qround(state, 1, 6,11,12)
+    //  Qround(state, 2, 7, 8,13)
+    //  Qround(state, 3, 4, 9,14)
+
+    // a += b; d ^= a; d <<<= 16
+    __ vpaddd(ymm_aVec, ymm_aVec, ymm_bVec, Assembler::AVX_256bit);
+    __ vpxor(ymm_dVec, ymm_dVec, ymm_aVec, Assembler::AVX_256bit);
+    __ vpshufhw(ymm_dVec, ymm_dVec, 0xB1, Assembler::AVX_256bit);
+    __ vpshuflw(ymm_dVec, ymm_dVec, 0xB1, Assembler::AVX_256bit);
+
+    // c += d; b ^= c; b <<<= 12 (b << 12 | scratch >>> 20)
+    __ vpaddd(ymm_cVec, ymm_cVec, ymm_dVec, Assembler::AVX_256bit);
+    __ vpxor(ymm_bVec, ymm_bVec, ymm_cVec, Assembler::AVX_256bit);
+    __ vpsrld(ymm_scratch, ymm_bVec, 20, Assembler::AVX_256bit);
+    __ vpslld(ymm_bVec, ymm_bVec, 12, Assembler::AVX_256bit);
+    __ vpor(ymm_bVec, ymm_bVec, ymm_scratch, Assembler::AVX_256bit);
+
+    // a += b; d ^= a; d <<<= 8 (d << 8 | scratch >>> 24)
+    __ vpaddd(ymm_aVec, ymm_aVec, ymm_bVec, Assembler::AVX_256bit);
+    __ vpxor(ymm_dVec, ymm_dVec, ymm_aVec, Assembler::AVX_256bit);
+    __ vpsrld(ymm_scratch, ymm_dVec, 24, Assembler::AVX_256bit);
+    __ vpslld(ymm_dVec, ymm_dVec, 8, Assembler::AVX_256bit);
+    __ vpor(ymm_dVec, ymm_dVec, ymm_scratch, Assembler::AVX_256bit);
+
+    // c += d; b ^= c; b <<<= 7 (b << 7 | scratch >>> 25)
+    __ vpaddd(ymm_cVec, ymm_cVec, ymm_dVec, Assembler::AVX_256bit);
+    __ vpxor(ymm_bVec, ymm_bVec, ymm_cVec, Assembler::AVX_256bit);
+    __ vpsrld(ymm_scratch, ymm_bVec, 25, Assembler::AVX_256bit);
+    __ vpslld(ymm_bVec, ymm_bVec, 7, Assembler::AVX_256bit);
+    __ vpor(ymm_bVec, ymm_bVec, ymm_scratch, Assembler::AVX_256bit);
+
+    // Before we start the next iteration, we need to perform shuffles
+    // on the b/c/d vectors to move them back to columnar organizations
+    // from their current diagonal orientation.
+    __ vpshufd(ymm_bVec, ymm_bVec, 0x93, Assembler::AVX_256bit);
+    __ vpshufd(ymm_cVec, ymm_cVec, 0x4E, Assembler::AVX_256bit);
+    __ vpshufd(ymm_dVec, ymm_dVec, 0x39, Assembler::AVX_256bit);
+
+    __ decrement(loopCounter);
+    __ jcc(Assembler::notZero, L_twoRounds);
+
+    // Add the original start state back into the current state.
+    __ vpaddd(ymm_aVec, ymm_aVec, ymm_aState, Assembler::AVX_256bit);
+    __ vpaddd(ymm_bVec, ymm_bVec, ymm_bState, Assembler::AVX_256bit);
+    __ vpaddd(ymm_cVec, ymm_cVec, ymm_cState, Assembler::AVX_256bit);
+    __ vpaddd(ymm_dVec, ymm_dVec, ymm_dState, Assembler::AVX_256bit);
+
+    // Write the data to the keystream array
+    // Each half of the YMM has to be written 64 bytes apart from
+    // each other in memory so the final keystream buffer holds
+    // two consecutive keystream blocks.
+    __ vextracti128(Address(result, 0), ymm_aVec, 0);
+    __ vextracti128(Address(result, 64), ymm_aVec, 1);
+    __ vextracti128(Address(result, 16), ymm_bVec, 0);
+    __ vextracti128(Address(result, 80), ymm_bVec, 1);
+    __ vextracti128(Address(result, 32), ymm_cVec, 0);
+    __ vextracti128(Address(result, 96), ymm_cVec, 1);
+    __ vextracti128(Address(result, 48), ymm_dVec, 0);
+    __ vextracti128(Address(result, 112), ymm_dVec, 1);
+
+    // This function will always write 128 bytes into the key stream buffer
+    // and that length should be returned through %rax.
+    __ mov64(rax, 128);
+
+    __ leave();
+    __ ret(0);
+    return start;
+  }
+
+  /* Add mask for 4-block ChaCha20 Block calculations */
+  address chacha20_ctradd_avx512() {
+    __ align64();
+    StubCodeMark mark(this, "StubRoutines", "chacha20_ctradd_avx512");
+    address start = __ pc();
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000001, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000002, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000003, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    return start;
+  }
+
+  /* The 4-block AVX512-enabled ChaCha20 block function implementation */
+  address generate_chacha20Block_avx512() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+    address start = __ pc();
+
+    Label L_twoRounds;
+    const Register state        = c_rarg0;
+    const Register result       = c_rarg1;
+    const Register loopCounter  = rcx;
+
+    const XMMRegister zmm_aVec = xmm0;
+    const XMMRegister zmm_bVec = xmm1;
+    const XMMRegister zmm_cVec = xmm2;
+    const XMMRegister zmm_dVec = xmm3;
+    const XMMRegister zmm_aState = xmm4;
+    const XMMRegister zmm_bState = xmm5;
+    const XMMRegister zmm_cState = xmm6;
+    const XMMRegister zmm_dState = xmm7;
+
+    __ enter();
+
+    // Load the initial state in columnar orientation.
+    // We will broadcast each 128-bit segment of the state array into
+    // all four double-quadword slots on ZMM State registers.  They will
+    // be copied into the working ZMM registers and then added back in
+    // at the very end of the block function.  The add mask should be
+    // applied to the zmm_dState register so it does not need to be fetched
+    // when adding the start state back into the final working state.
+    __ evbroadcasti32x4(zmm_aState, Address(state, 0), Assembler::AVX_512bit);
+    __ evbroadcasti32x4(zmm_bState, Address(state, 16), Assembler::AVX_512bit);
+    __ evbroadcasti32x4(zmm_cState, Address(state, 32), Assembler::AVX_512bit);
+    __ evbroadcasti32x4(zmm_dState, Address(state, 48), Assembler::AVX_512bit);
+    __ vpaddd(zmm_dState, zmm_dState, ExternalAddress(StubRoutines::x86::chacha20_counter_addmask_avx512()), Assembler::AVX_512bit, rax);
+    __ evmovdquq(zmm_aVec, zmm_aState, Assembler::AVX_512bit);
+    __ evmovdquq(zmm_bVec, zmm_bState, Assembler::AVX_512bit);
+    __ evmovdquq(zmm_cVec, zmm_cState, Assembler::AVX_512bit);
+    __ evmovdquq(zmm_dVec, zmm_dState, Assembler::AVX_512bit);
+
+    __ movl(loopCounter, 10);                       // Set 10 2-round iterations
+    __ BIND(L_twoRounds);
+
+    // The first set of operations on the vectors covers the first 4 quarter
+    // round operations:
+    //  Qround(state, 0, 4, 8,12)
+    //  Qround(state, 1, 5, 9,13)
+    //  Qround(state, 2, 6,10,14)
+    //  Qround(state, 3, 7,11,15)
+
+    // a += b; d ^= a; d <<<= 16
+    __ vpaddd(zmm_aVec, zmm_aVec, zmm_bVec, Assembler::AVX_512bit);
+    __ vpxor(zmm_dVec, zmm_dVec, zmm_aVec, Assembler::AVX_512bit);
+    __ evprold(zmm_dVec, zmm_dVec, 16, Assembler::AVX_512bit);
+
+    // c += d; b ^= c; b <<<= 12 (b << 12 | scratch >>> 20)
+    __ vpaddd(zmm_cVec, zmm_cVec, zmm_dVec, Assembler::AVX_512bit);
+    __ vpxor(zmm_bVec, zmm_bVec, zmm_cVec, Assembler::AVX_512bit);
+    __ evprold(zmm_bVec, zmm_bVec, 12, Assembler::AVX_512bit);
+
+    // a += b; d ^= a; d <<<= 8 (d << 8 | scratch >>> 24)
+    __ vpaddd(zmm_aVec, zmm_aVec, zmm_bVec, Assembler::AVX_512bit);
+    __ vpxor(zmm_dVec, zmm_dVec, zmm_aVec, Assembler::AVX_512bit);
+    __ evprold(zmm_dVec, zmm_dVec, 8, Assembler::AVX_512bit);
+
+    // c += d; b ^= c; b <<<= 7 (b << 7 | scratch >>> 25)
+    __ vpaddd(zmm_cVec, zmm_cVec, zmm_dVec, Assembler::AVX_512bit);
+    __ vpxor(zmm_bVec, zmm_bVec, zmm_cVec, Assembler::AVX_512bit);
+    __ evprold(zmm_bVec, zmm_bVec, 7, Assembler::AVX_512bit);
+
+    // Shuffle the bVec/cVec/dVec to reorganize the state vectors to diagonals
+    // The aVec does not need to change orientation.
+    __ vpshufd(zmm_bVec, zmm_bVec, 0x39, Assembler::AVX_512bit);
+    __ vpshufd(zmm_cVec, zmm_cVec, 0x4E, Assembler::AVX_512bit);
+    __ vpshufd(zmm_dVec, zmm_dVec, 0x93, Assembler::AVX_512bit);
+
+    // The second set of operations on the vectors covers the second 4 quarter
+    // round operations, now acting on the diagonals:
+    //  Qround(state, 0, 5,10,15)
+    //  Qround(state, 1, 6,11,12)
+    //  Qround(state, 2, 7, 8,13)
+    //  Qround(state, 3, 4, 9,14)
+
+    // a += b; d ^= a; d <<<= 16
+    __ vpaddd(zmm_aVec, zmm_aVec, zmm_bVec, Assembler::AVX_512bit);
+    __ vpxor(zmm_dVec, zmm_dVec, zmm_aVec, Assembler::AVX_512bit);
+    __ evprold(zmm_dVec, zmm_dVec, 16, Assembler::AVX_512bit);
+
+    // c += d; b ^= c; b <<<= 12 (b << 12 | scratch >>> 20)
+    __ vpaddd(zmm_cVec, zmm_cVec, zmm_dVec, Assembler::AVX_512bit);
+    __ vpxor(zmm_bVec, zmm_bVec, zmm_cVec, Assembler::AVX_512bit);
+    __ evprold(zmm_bVec, zmm_bVec, 12, Assembler::AVX_512bit);
+
+    // a += b; d ^= a; d <<<= 8 (d << 8 | scratch >>> 24)
+    __ vpaddd(zmm_aVec, zmm_aVec, zmm_bVec, Assembler::AVX_512bit);
+    __ vpxor(zmm_dVec, zmm_dVec, zmm_aVec, Assembler::AVX_512bit);
+    __ evprold(zmm_dVec, zmm_dVec, 8, Assembler::AVX_512bit);
+
+    // c += d; b ^= c; b <<<= 7 (b << 7 | scratch >>> 25)
+    __ vpaddd(zmm_cVec, zmm_cVec, zmm_dVec, Assembler::AVX_512bit);
+    __ vpxor(zmm_bVec, zmm_bVec, zmm_cVec, Assembler::AVX_512bit);
+    __ evprold(zmm_bVec, zmm_bVec, 7, Assembler::AVX_512bit);
+
+    // Before we start the next iteration, we need to perform shuffles
+    // on the b/c/d vectors to move them back to columnar organizations
+    // from their current diagonal orientation.
+    __ vpshufd(zmm_bVec, zmm_bVec, 0x93, Assembler::AVX_512bit);
+    __ vpshufd(zmm_cVec, zmm_cVec, 0x4E, Assembler::AVX_512bit);
+    __ vpshufd(zmm_dVec, zmm_dVec, 0x39, Assembler::AVX_512bit);
+
+    __ decrement(loopCounter);
+    __ jcc(Assembler::notZero, L_twoRounds);
+
+    // Add the initial state now held on the a/b/c/dState registers to the final
+    // working register values.  We will also add in the counter add mask onto
+    // zmm3 after adding in the start state.
+    __ vpaddd(zmm_aVec, zmm_aVec, zmm_aState, Assembler::AVX_512bit);
+    __ vpaddd(zmm_bVec, zmm_bVec, zmm_bState, Assembler::AVX_512bit);
+    __ vpaddd(zmm_cVec, zmm_cVec, zmm_cState, Assembler::AVX_512bit);
+    __ vpaddd(zmm_dVec, zmm_dVec, zmm_dState, Assembler::AVX_512bit);
+
+    // Write the ZMM state registers out to the key stream buffer
+    // Each ZMM is divided into 4 128-bit segments.  Each segment
+    // is written to memory at 64-byte displacements from one
+    // another.  The result is that all 4 blocks will be in their
+    // proper order when serialized.
+    __ vextracti32x4(Address(result, 0), zmm_aVec, 0);
+    __ vextracti32x4(Address(result, 64), zmm_aVec, 1);
+    __ vextracti32x4(Address(result, 128), zmm_aVec, 2);
+    __ vextracti32x4(Address(result, 192), zmm_aVec, 3);
+    __ vextracti32x4(Address(result, 16), zmm_bVec, 0);
+    __ vextracti32x4(Address(result, 80), zmm_bVec, 1);
+    __ vextracti32x4(Address(result, 144), zmm_bVec, 2);
+    __ vextracti32x4(Address(result, 208), zmm_bVec, 3);
+    __ vextracti32x4(Address(result, 32), zmm_cVec, 0);
+    __ vextracti32x4(Address(result, 96), zmm_cVec, 1);
+    __ vextracti32x4(Address(result, 160), zmm_cVec, 2);
+    __ vextracti32x4(Address(result, 224), zmm_cVec, 3);
+    __ vextracti32x4(Address(result, 48), zmm_dVec, 0);
+    __ vextracti32x4(Address(result, 112), zmm_dVec, 1);
+    __ vextracti32x4(Address(result, 176), zmm_dVec, 2);
+    __ vextracti32x4(Address(result, 240), zmm_dVec, 3);
+
+    // This function will always write 256 bytes into the key stream buffer
+    // and that length should be returned through %rax.
+    __ mov64(rax, 256);
+
+    __ leave();
+    __ ret(0);
+    return start;
+  }
+
   address base64_shuffle_addr()
   {
     __ align64();
@@ -7773,6 +8249,22 @@ address generate_avx_ghash_processBlocks() {
       }
     }
 
+    // Generate ChaCha20 intrinsics code
+    if (UseChaCha20Intrinsics) {
+        if (VM_Version::supports_evex()) {
+            StubRoutines::x86::_chacha20_counter_addmask_avx512 =
+                chacha20_ctradd_avx512();
+            StubRoutines::_chacha20Block = generate_chacha20Block_avx512();
+        } else if (VM_Version::supports_avx2()) {
+            StubRoutines::x86::_chacha20_counter_addmask_avx2 =
+                generate_vector_custom_i32("chacha20_counter_addmask_avx2",
+                        Assembler::AVX_256bit, 0, 0, 0, 0, 1, 0, 0, 0);
+            StubRoutines::_chacha20Block = generate_chacha20Block_avx2();
+        } else {
+            /* Baseline single-block SSE2+AVX version */
+            StubRoutines::_chacha20Block = generate_chacha20Block();
+        }
+    }
 
     if (UseBASE64Intrinsics) {
       if(VM_Version::supports_avx2() &&

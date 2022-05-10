@@ -208,6 +208,7 @@ class StubRoutines: AllStatic {
   static address _counterMode_AESCrypt;
   static address _galoisCounterMode_AESCrypt;
   static address _ghash_processBlocks;
+  static address _chacha20Block;
   static address _base64_encodeBlock;
   static address _base64_decodeBlock;
 
@@ -376,6 +377,7 @@ class StubRoutines: AllStatic {
   static address electronicCodeBook_decryptAESCrypt()   { return _electronicCodeBook_decryptAESCrypt; }
   static address counterMode_AESCrypt()  { return _counterMode_AESCrypt; }
   static address ghash_processBlocks()   { return _ghash_processBlocks; }
+  static address chacha20Block()         { return _chacha20Block; }
   static address base64_encodeBlock()    { return _base64_encodeBlock; }
   static address base64_decodeBlock()    { return _base64_decodeBlock; }
   static address md5_implCompress()      { return _md5_implCompress; }

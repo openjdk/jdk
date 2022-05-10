@@ -2353,6 +2353,64 @@ public:
     }
   }
 
+  // Single-structure load/store with no offset
+  void ld_st(FloatRegister Vt, SIMD_RegVariant T, int index, Register Xn,
+             int op1, int op2) {
+    int sVal = (T < D) ? (index >> (2 - T)) & 0x01 : 0;
+    int opcode = (T < D) ? (T << 2) : ((T & 0x02) << 2);
+    int size = (T < D) ? (index & (0x3 << T)) : 1;  // only care about low 2b
+    starti;
+    f(0,31), f((index >> (3 - T)), 30);
+    f(op1, 29, 21), f(0, 20, 16), f(op2 | opcode | sVal, 15, 12);
+    f(size, 11, 10), srf(Xn, 5), rf(Vt, 0);
+  }
+
+  // Single-structure load/store with immediate offset
+  void ld_st(FloatRegister Vt, SIMD_RegVariant T, int index, Register Xn,
+             int imm, int op1, int op2, int regs) {
+    bool replicate = op2 >> 2 == 3;
+    int sVal = (T < D) ? (index >> (2 - T)) & 0x01 : 0;
+    int opcode = (T < D) ? (T << 2) : ((T & 0x02) << 2);
+    int size = (T < D) ? (index & (0x3 << T)) : 1;  // only care about low 2b
+    int expectedImmediate = (regVariant_to_elemBits(T) >> 3) * regs;
+    guarantee(imm == expectedImmediate, "bad offset");
+    starti;
+    f(0,31), f((index >> (3 - T)), 30);
+    f(op1 | 0b100, 29, 21), f(0b11111, 20, 16), f(op2 | opcode | sVal, 15, 12);
+    f(size, 11, 10), srf(Xn, 5), rf(Vt, 0);
+  }
+
+  // Single-structure load/store with register offset
+  void ld_st(FloatRegister Vt, SIMD_RegVariant T, int index, Register Xn,
+             Register Xm, int op1, int op2) {
+    int sVal = (T < D) ? (index >> (2 - T)) & 0x01 : 0;
+    int opcode = (T < D) ? (T << 2) : ((T & 0x02) << 2);
+    int size = (T < D) ? (index & (0x3 << T)) : 1;  // only care about low 2b
+    int expectedImmediate = regVariant_to_elemBits(T) / 2;
+    starti;
+    f(0,31), f((index >> (3 - T)), 30);
+    f(op1 | 0b100, 29, 21), rf(Xm, 16), f(op2 | opcode | sVal, 15, 12);
+    f(size, 11, 10), srf(Xn, 5), rf(Vt, 0);
+  }
+
+  void ld_st(FloatRegister Vt, SIMD_RegVariant T, int index, Address a,
+             int op1, int op2, int regs) {
+    switch (a.getMode()) {
+    case Address::base_plus_offset:
+      guarantee(a.offset() == 0, "no offset allowed here");
+      ld_st(Vt, T, index, a.base(), op1, op2);
+      break;
+    case Address::post:
+      ld_st(Vt, T, index, a.base(), a.offset(), op1, op2, regs);
+      break;
+    case Address::post_reg:
+      ld_st(Vt, T, index, a.base(), a.index(), op1, op2);
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+  }
+
  public:
 
 #define INSN1(NAME, op1, op2)                                           \
@@ -2404,6 +2462,57 @@ public:
   INSN2(ld2r, 0b001101011, 0b1100);
   INSN3(ld3r, 0b001101010, 0b1110);
   INSN4(ld4r, 0b001101011, 0b1110);
+
+#undef INSN1
+#undef INSN2
+#undef INSN3
+#undef INSN4
+
+// Define a set of INSN1/2/3/4 macros to handle single-structure
+// load/store instructions.
+#define INSN1(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, SIMD_RegVariant T, int index,             \
+            const Address &a) {                                         \
+    assert(index >= 0 && (T <= D) && ((T == B && index <= 15) ||        \
+                (T == H && index <= 7) || (T == S && index <= 3) ||     \
+                (T == D && index <= 1)), "invalid index");              \
+    ld_st(Vt, T, index, a, op1, op2, 1);                                \
+ }
+
+#define INSN2(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, FloatRegister Vt2, SIMD_RegVariant T,     \
+            int index, const Address &a) {                              \
+    assert(index >= 0 && (T <= D) && ((T == B && index <= 15) ||        \
+                (T == H && index <= 7) || (T == S && index <= 3) ||     \
+                (T == D && index <= 1)), "invalid index");              \
+    assert(Vt->successor() == Vt2, "Registers must be ordered");        \
+    ld_st(Vt, T, index, a, op1, op2, 2);                                \
+  }
+
+#define INSN3(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, FloatRegister Vt2, FloatRegister Vt3,     \
+            SIMD_RegVariant T, int index, const Address &a) {           \
+    assert(index >= 0 && (T <= D) && ((T == B && index <= 15) ||        \
+                (T == H && index <= 7) || (T == S && index <= 3) ||     \
+                (T == D && index <= 1)), "invalid index");              \
+    assert(Vt->successor() == Vt2 && Vt2->successor() == Vt3,           \
+           "Registers must be ordered");                                \
+    ld_st(Vt, T, index, a, op1, op2, 3);                                \
+  }
+
+#define INSN4(NAME, op1, op2)                                           \
+  void NAME(FloatRegister Vt, FloatRegister Vt2, FloatRegister Vt3,     \
+            FloatRegister Vt4, SIMD_RegVariant T, int index,            \
+            const Address &a) {                                         \
+    assert(index >= 0 && (T <= D) && ((T == B && index <= 15) ||        \
+                (T == H && index <= 7) || (T == S && index <= 3) ||     \
+                (T == D && index <= 1)), "invalid index");              \
+    assert(Vt->successor() == Vt2 && Vt2->successor() == Vt3 &&         \
+           Vt3->successor() == Vt4, "Registers must be ordered");       \
+    ld_st(Vt, T, index, a, op1, op2, 4);                                \
+  }
+
+  INSN4(st4, 0b001101001, 0b0010);
 
 #undef INSN1
 #undef INSN2
@@ -2762,6 +2871,7 @@ public:
   INSN(ushr, 1, 0b000001, /* isSHR = */ true);
   INSN(usra, 1, 0b000101, /* isSHR = */ true);
   INSN(ssra, 0, 0b000101, /* isSHR = */ true);
+  INSN(sli,  1, 0b010101, /* isSHR = */ false);
 
 #undef INSN
 
