@@ -70,7 +70,6 @@ public class JPopupMenuFocusStealTest {
                                   .map(LookAndFeelInfo::getClassName)
                                   .collect(Collectors.toList());
         for (final String laf : lafs) {
-            try {
                 AtomicBoolean lafSetSuccess = new AtomicBoolean(false);
                 SwingUtilities.invokeAndWait(() -> {
                     lafSetSuccess.set(setLookAndFeel(laf));
@@ -92,16 +91,13 @@ public class JPopupMenuFocusStealTest {
                 final AtomicBoolean isFocusOwner = new AtomicBoolean(false);
                 SwingUtilities.invokeAndWait(
                         () -> isFocusOwner.set(comboBox.isFocusOwner()));
-
+                SwingUtilities
+                        .invokeAndWait(JPopupMenuFocusStealTest::disposeFrame);
                 if (isFocusOwner.get()) {
                     System.out.println("Test Passed for " + laf);
                 } else {
                     throw new RuntimeException("Test Failed for " + laf);
                 }
-            } finally {
-                SwingUtilities
-                        .invokeAndWait(JPopupMenuFocusStealTest::disposeFrame);
-            }
         }
     }
 
