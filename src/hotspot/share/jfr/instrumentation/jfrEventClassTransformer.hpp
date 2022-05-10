@@ -31,8 +31,6 @@
 class CallInfo;
 class ClassFileParser;
 class InstanceKlass;
-class Method;
-class Symbol;
 
 //
 // Intercepts the initial class load of jdk.jfr.Event and subclasses.

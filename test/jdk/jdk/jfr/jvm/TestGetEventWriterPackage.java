@@ -45,7 +45,7 @@ public class TestGetEventWriterPackage {
     }
      public static void main(String... args) throws Throwable {
         // --add-opens jdk.jfr/jdk.jfr.events=ALL-UNNAMED gives access to
-        // the FileReadEvent class in the jdk.jfr modiule.
+        // the FileReadEvent class in the jdk.jfr module.
         // When JFR is initialized the FileReadEvent is registered and an EventConfiguration object
         // assigned to its static field eventConfiguration
         try (Recording r = new Recording()) {
