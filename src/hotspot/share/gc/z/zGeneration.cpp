@@ -679,6 +679,9 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   const double max_promotion_fraction = young_residency_ratio * young_life_expectancy;
   const size_t promotion_threshold = live_total * max_promotion_fraction;
 
+  log_info(gc, reloc)("Young: Residency Ratio: %.1f%%", young_residency_ratio * 100.0);
+  log_info(gc, reloc)("Young: Survivor Ratio: %.1f%%", young_life_expectancy * 100.0);
+
   size_t young_selected_live = 0;
 
   uint tenuring_threshold;

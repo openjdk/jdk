@@ -516,6 +516,7 @@ struct ZStatRelocationSummary {
   size_t total;
   size_t empty;
   size_t relocate;
+  size_t live;
 };
 
 //
