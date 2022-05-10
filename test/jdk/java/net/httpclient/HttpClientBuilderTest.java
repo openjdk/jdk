@@ -265,6 +265,7 @@ public class HttpClientBuilderTest {
 
     /**
      * Tests the {@link HttpClient,java.net.http.HttpClient.Builder#localAddress(InetAddress)} method
+     * behaviour when that method is called on a builder returned by {@link HttpClient#newBuilder()}
      */
     @Test
     public void testLocalAddress() throws Exception {
@@ -274,6 +275,75 @@ public class HttpClientBuilderTest {
         builder.localAddress(InetAddress.getLoopbackAddress());
         // resetting back to null should work fine
         builder.localAddress(null);
+    }
+
+    /**
+     * Tests that the default method implementation of
+     * {@link HttpClient,java.net.http.HttpClient.Builder#localAddress(InetAddress)} throws
+     * an {@link UnsupportedOperationException}
+     */
+    @Test
+    public void testDefaultMethodImplForLocalAddress() throws Exception {
+        HttpClient.Builder noOpBuilder = new HttpClient.Builder() {
+            @Override
+            public HttpClient.Builder cookieHandler(CookieHandler cookieHandler) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder connectTimeout(Duration duration) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder sslContext(SSLContext sslContext) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder sslParameters(SSLParameters sslParameters) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder executor(Executor executor) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder followRedirects(Redirect policy) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder version(Version version) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder priority(int priority) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder proxy(ProxySelector proxySelector) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder authenticator(Authenticator authenticator) {
+                return null;
+            }
+
+            @Override
+            public HttpClient build() {
+                return null;
+            }
+        };
+        // expected to throw a UnsupportedOperationException
+        assertThrows(UOE, () -> noOpBuilder.localAddress(null));
+        // a non-null address should also throw a UnsupportedOperationException
+        assertThrows(UOE, () -> noOpBuilder.localAddress(InetAddress.getLoopbackAddress()));
     }
 
     // ---
