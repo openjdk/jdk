@@ -110,8 +110,10 @@ class JfrJavaSupport : public AllStatic {
   static bool is_excluded(Thread* thread);
   static bool on_thread_start(Thread* t);
 
-  static jobject get_handler(jobject clazz, TRAPS);
-  static bool set_handler(jobject clazz, jobject handler, TRAPS);
+  static jobject get_configuration(jobject clazz, TRAPS);
+  static bool set_configuration(jobject clazz, jobject configuration, TRAPS);
+
+  static bool is_instrumented(jobject clazz, TRAPS);
 
   // critical
   static void abort(jstring errorMsg, TRAPS);

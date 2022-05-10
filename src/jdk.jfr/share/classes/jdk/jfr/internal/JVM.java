@@ -29,8 +29,8 @@ import java.util.List;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.jfr.Event;
-import jdk.jfr.internal.EventWriter;
-import jdk.jfr.internal.handlers.EventHandler;
+import jdk.jfr.internal.event.EventConfiguration;
+import jdk.jfr.internal.event.EventWriter;
 
 /**
  * Interface against the JVM.
@@ -212,7 +212,7 @@ public final class JVM {
      *
      * @throws IllegalStateException if wrong JVMTI phase.
      */
-    public synchronized native void retransformClasses(Class<?>[] classes);
+     public synchronized native void retransformClasses(Class<?>[] classes);
 
     /**
      * Enable event
@@ -561,11 +561,29 @@ public final class JVM {
     public native void include(Thread thread);
 
     /**
-     * Test if a thread ius currently excluded from the jfr system.
+     * Test if a thread is currently excluded from the jfr system.
      *
      * @return is thread currently excluded
      */
     public native boolean isExcluded(Thread thread);
+
+    /**
+     * Test if a class is excluded from the jfr system.
+     *
+     * @param eventClass the class, not {@code null}
+     *
+     * @return is class excluded
+     */
+    public native boolean isExcluded(Class<? extends jdk.internal.event.Event> eventClass);
+
+    /**
+     * Test if a class is instrumented.
+     *
+     * @param eventClass the class, not {@code null}
+     *
+     * @return is class instrumented
+     */
+    public native boolean isInstrumented(Class<? extends jdk.internal.event.Event> eventClass);
 
     /**
      * Get the start time in nanos from the header of the current chunk
@@ -575,24 +593,24 @@ public final class JVM {
     public native long getChunkStartNanos();
 
     /**
-     * Stores an EventHandler to the eventHandler field of an event class.
+     * Stores an EventConfiguration to the configuration field of an event class.
      *
      * @param eventClass the class, not {@code null}
      *
-     * @param handler the handler, may be {@code null}
+     * @param configuration the configuration, may be {@code null}
      *
      * @return if the field could be set
      */
-    public native boolean setHandler(Class<? extends jdk.internal.event.Event> eventClass, EventHandler handler);
+    public native boolean setConfiguration(Class<? extends jdk.internal.event.Event> eventClass, EventConfiguration configuration);
 
     /**
-     * Retrieves the EventHandler for an event class.
+     * Retrieves the EventConfiguration for an event class.
      *
      * @param eventClass the class, not {@code null}
      *
-     * @return the handler, may be {@code null}
+     * @return the configuration, may be {@code null}
      */
-    public native Object getHandler(Class<? extends jdk.internal.event.Event> eventClass);
+    public native Object getConfiguration(Class<? extends jdk.internal.event.Event> eventClass);
 
     /**
      * Returns the id for the Java types defined in metadata.xml.
