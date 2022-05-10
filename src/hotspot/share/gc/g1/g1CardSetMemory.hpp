@@ -50,7 +50,7 @@ public:
   static const uint SlotAlignment = 8;
 
   G1CardSetAllocOptions(uint slot_size, uint initial_num_slots = MinimumNumSlots, uint max_num_slots = MaximumNumSlots) :
-    G1SegmentedArrayAllocOptions(align_up(slot_size, SlotAlignment), initial_num_slots, max_num_slots, SlotAlignment) {
+    G1SegmentedArrayAllocOptions(mtGCCardSet, slot_size, initial_num_slots, max_num_slots, SlotAlignment) {
   }
 
   virtual uint next_num_slots(uint prev_num_slots) const override {
@@ -58,16 +58,16 @@ public:
   }
 };
 
-typedef G1SegmentedArraySegment<mtGCCardSet> G1CardSetSegment;
+using G1CardSetSegment = G1SegmentedArraySegment;
 
-typedef G1SegmentedArrayFreeList<mtGCCardSet> G1CardSetFreeList;
+using G1CardSetFreeList = G1SegmentedArrayFreeList;
 
 // Arena-like allocator for (card set) heap memory objects.
 //
 // Allocation occurs from an internal free list of objects first. If the free list is
 // empty then tries to allocate from the G1SegmentedArray.
 class G1CardSetAllocator {
-  G1SegmentedArray<mtGCCardSet> _segmented_array;
+  G1SegmentedArray _segmented_array;
   FreeListAllocator _free_slots_list;
 
 public:
@@ -83,16 +83,15 @@ public:
   // be called in a globally synchronized area.
   void drop_all();
 
+  // Total memory allocated.
   size_t mem_size() const;
 
-  size_t wasted_mem_size() const;
+  size_t unused_mem_size() const;
 
   uint num_segments() const;
-
-  void print(outputStream* os);
 };
 
-typedef G1SegmentedArrayFreePool<mtGCCardSet> G1CardSetFreePool;
+using G1CardSetFreePool = G1SegmentedArrayFreePool;
 
 class G1CardSetMemoryManager : public CHeapObj<mtGCCardSet> {
   G1CardSetConfiguration* _config;
@@ -116,10 +115,8 @@ public:
 
   void flush();
 
-  void print(outputStream* os);
-
   size_t mem_size() const;
-  size_t wasted_mem_size() const;
+  size_t unused_mem_size() const;
 
   G1SegmentedArrayMemoryStats memory_stats() const;
 };

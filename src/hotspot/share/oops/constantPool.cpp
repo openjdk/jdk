@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
@@ -472,7 +473,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
 
   // A resolved constantPool entry will contain a Klass*, otherwise a Symbol*.
   // It is not safe to rely on the tag bit's here, since we don't have a lock, and
-  // the entry and tag is not updated atomicly.
+  // the entry and tag is not updated atomically.
   CPKlassSlot kslot = this_cp->klass_slot_at(which);
   int resolved_klass_index = kslot.resolved_klass_index();
   int name_index = kslot.name_index();
@@ -2205,13 +2206,38 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
   }
   assert(size == cpool_size, "Size mismatch");
 
-  // Keep temorarily for debugging until it's stable.
+  // Keep temporarily for debugging until it's stable.
   DBG(print_cpool_bytes(cnt, start_bytes));
   return (int)(bytes - start_bytes);
 } /* end copy_cpool_bytes */
 
 #undef DBG
 
+bool ConstantPool::is_maybe_on_continuation_stack() const {
+  // This method uses the similar logic as nmethod::is_maybe_on_continuation_stack()
+  if (!Continuations::enabled()) {
+    return false;
+  }
+
+  // If the condition below is true, it means that the nmethod was found to
+  // be alive the previous completed marking cycle.
+  return cache()->gc_epoch() >= Continuations::previous_completed_gc_marking_cycle();
+}
+
+// For redefinition, if any methods found in loom stack chunks, the gc_epoch is
+// recorded in their constant pool cache. The on_stack-ness of the constant pool controls whether
+// memory for the method is reclaimed.
+bool ConstantPool::on_stack() const {
+  if ((_flags &_on_stack) != 0) {
+    return true;
+  }
+
+  if (_cache == nullptr) {
+    return false;
+  }
+
+  return is_maybe_on_continuation_stack();
+}
 
 void ConstantPool::set_on_stack(const bool value) {
   if (value) {

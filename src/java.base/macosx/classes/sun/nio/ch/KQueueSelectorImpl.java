@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import jdk.internal.misc.Blocker;
 
 import static sun.nio.ch.KQueue.EVFILT_READ;
 import static sun.nio.ch.KQueue.EVFILT_WRITE;
@@ -119,7 +120,12 @@ class KQueueSelectorImpl extends SelectorImpl {
 
             do {
                 long startTime = timedPoll ? System.nanoTime() : 0;
-                numEntries = KQueue.poll(kqfd, pollArrayAddress, MAX_KEVENTS, to);
+                long comp = Blocker.begin(blocking);
+                try {
+                    numEntries = KQueue.poll(kqfd, pollArrayAddress, MAX_KEVENTS, to);
+                } finally {
+                    Blocker.end(comp);
+                }
                 if (numEntries == IOStatus.INTERRUPTED && timedPoll) {
                     // timed poll interrupted so need to adjust timeout
                     long adjust = System.nanoTime() - startTime;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,10 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
 
   NativeNMethodBarrier* barrier = get_nmethod_barrier(nm);
   barrier->release_set_guard_value(disarmed_value());
+}
+
+void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
+  Unimplemented();
 }
 
 bool BarrierSetNMethod::is_armed(nmethod* nm) {

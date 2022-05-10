@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,36 +29,27 @@ import javax.lang.model.element.ExecutableElement;
 
 /**
  * The interface for writing constructor output.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
-
 public interface ConstructorWriter extends MemberWriter {
 
     /**
-     * Get the constructor details tree header.
+     * {@return the constructor details header}
      *
-     * @param memberDetailsTree the content tree representing member details
-     * @return content tree for the constructor details header
+     * @param content the content representing member details
      */
-    Content getConstructorDetailsTreeHeader(Content memberDetailsTree);
+    Content getConstructorDetailsHeader(Content content);
 
     /**
-     * Get the constructor documentation tree header.
+     * {@return the constructor documentation header}
      *
      * @param constructor the constructor being documented
-     * @return content tree for the constructor documentation header
      */
-    Content getConstructorDocTreeHeader(ExecutableElement constructor);
+    Content getConstructorHeaderContent(ExecutableElement constructor);
 
     /**
-     * Get the signature for the given constructor.
+     * {@return the signature for the given constructor}
      *
      * @param constructor the constructor being documented
-     * @return content tree for the constructor signature
      */
     Content getSignature(ExecutableElement constructor);
 
@@ -66,42 +57,41 @@ public interface ConstructorWriter extends MemberWriter {
      * Add the deprecated output for the given constructor.
      *
      * @param constructor the constructor being documented
-     * @param constructorDocTree content tree to which the deprecated information will be added
+     * @param constructorContent the content to which the deprecated information will be added
      */
-    void addDeprecated(ExecutableElement constructor, Content constructorDocTree);
+    void addDeprecated(ExecutableElement constructor, Content constructorContent);
 
     /**
      * Add the preview output for the given member.
      *
      * @param member the member being documented
-     * @param contentTree content tree to which the preview information will be added
+     * @param content the content to which the preview information will be added
      */
-    void addPreview(ExecutableElement member, Content contentTree);
+    void addPreview(ExecutableElement member, Content content);
 
     /**
      * Add the comments for the given constructor.
      *
      * @param constructor the constructor being documented
-     * @param constructorDocTree the content tree to which the comments will be added
+     * @param constructorContent the content to which the comments will be added
      */
-    void addComments(ExecutableElement constructor, Content constructorDocTree);
+    void addComments(ExecutableElement constructor, Content constructorContent);
 
     /**
      * Add the tags for the given constructor.
      *
      * @param constructor the constructor being documented
-     * @param constructorDocTree the content tree to which the tags will be added
+     * @param constructorContent the content to which the tags will be added
      */
-    void addTags(ExecutableElement constructor, Content constructorDocTree);
+    void addTags(ExecutableElement constructor, Content constructorContent);
 
     /**
-     * Get the constructor details tree.
+     * {@return the constructor details}
      *
-     * memberDetailsTreeHeader the content tree representing member details header
-     * @param memberDetailsTree the content tree representing member details
-     * @return content tree for the constructor details
+     * @param memberDetailsHeader the content representing member details header
+     * @param memberDetails the content representing member details
      */
-    Content getConstructorDetails(Content memberDetailsTreeHeader, Content memberDetailsTree);
+    Content getConstructorDetails(Content memberDetailsHeader, Content memberDetails);
 
     /**
      * Let the writer know whether a non public constructor was found.
@@ -111,9 +101,7 @@ public interface ConstructorWriter extends MemberWriter {
     void setFoundNonPubConstructor(boolean foundNonPubConstructor);
 
     /**
-     * Gets the member header tree.
-     *
-     * @return a content tree for the member header
+     * @return the member header}
      */
-    Content getMemberTreeHeader();
+    Content getMemberHeader();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ extern "C" {
  * - The string written to str is always zero-terminated, also in case of
  *   truncation (count is too small to hold the result string), unless count
  *   is 0. In case of truncation count-1 characters are written and '\0'
- *   appendend.
+ *   appended.
  * - If count is too small to hold the whole string, -1 is returned across
  *   all platforms. */
 

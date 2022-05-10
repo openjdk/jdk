@@ -51,7 +51,6 @@ import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXServiceURL;
 
 import static jdk.internal.agent.AgentConfigurationError.*;
-import jdk.internal.agent.spi.AgentProvider;
 import jdk.internal.vm.VMSupport;
 import sun.management.jdp.JdpController;
 import sun.management.jdp.JdpException;

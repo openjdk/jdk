@@ -66,10 +66,7 @@ compiler/rtm/locking/TestUseRTMXendForLockBusy.java 8183263 generic-x64
 compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 
 compiler/c2/Test8004741.java 8235801 generic-all
-
-compiler/whitebox/ClearMethodStateTest.java 8265360 macosx-all
-compiler/whitebox/EnqueueMethodForCompilationTest.java 8265360 macosx-all
-compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-all
+compiler/c2/irTests/TestEnumFinalFold.java 8286339 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 compiler/codecache/TestStressCodeBuffers.java 8272094 generic-aarch64
@@ -105,7 +102,7 @@ runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 
 applications/jcstress/copy.java 8229852 linux-all
 
-containers/docker/TestJcmd.java 8278102 linux-aarch64
+containers/docker/TestJcmd.java 8278102 linux-all
 
 #############################################################################
 
@@ -173,3 +170,5 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 
 #############################################################################
+
+# Loom

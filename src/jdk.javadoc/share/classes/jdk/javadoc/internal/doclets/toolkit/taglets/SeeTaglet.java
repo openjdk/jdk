@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- * A taglet that represents the @see tag.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * A taglet that represents the {@code @see} tag.
  */
 public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
 
@@ -57,7 +52,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
         List<? extends SeeTree> tags = input.utils.getSeeTrees(input.element);
         if (!tags.isEmpty()) {
-            CommentHelper ch =  input.utils.getCommentHelper(input.element);
+            CommentHelper ch = input.utils.getCommentHelper(input.element);
             output.holder = input.element;
             output.holderTag = tags.get(0);
             output.inlineTags = input.isFirstSentence
@@ -71,7 +66,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         Utils utils = writer.configuration().utils;
         List<? extends SeeTree> tags = utils.getSeeTrees(holder);
         Element e = holder;
-        if (tags.isEmpty() && utils.isExecutableElement(holder)) {
+        if (tags.isEmpty() && utils.isMethod(holder)) {
             Input input = new DocFinder.Input(utils, holder, this);
             DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
             if (inheritedDoc.holder != null) {
