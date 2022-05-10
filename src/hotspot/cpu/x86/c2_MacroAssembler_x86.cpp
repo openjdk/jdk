@@ -3166,6 +3166,12 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   andl(tmp, 32-1);
   subl(bound, tmp);
 
+
+  if (!is_string_hashcode) {
+    // result = 0;
+    movl(result, 0);
+  }
+
   // for (; i >= bound; i -= 1) {
   bind(LONG_SCALAR_LOOP_BEGIN);
   // i >= bound;
@@ -3231,8 +3237,9 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   // }
 
   if (!is_string_hashcode) {
-    // result = vcoef0[0];
-    movdl(result, vcoef0);
+    // result += vcoef0[0];
+    movdl(tmp, vcoef0);
+    addl(result, tmp);
   }
 
   // result += vresult.reduceLanes(ADD);
