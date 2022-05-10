@@ -49,7 +49,7 @@ public class PrintAllPagesTest {
          A JTable with 1000 rows and a print dialog will be shown.
          If only 1 page is printed,
          then press fail else press pass.
-		""";
+            """;
 
     public static void main(String[] args) throws Exception {
 
