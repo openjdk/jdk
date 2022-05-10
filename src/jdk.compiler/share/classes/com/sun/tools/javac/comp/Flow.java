@@ -931,8 +931,9 @@ public class Flow {
                         yield false;
                     }
                     yield covered.stream()
-                                 .anyMatch(coveredType -> types.isSubtype(types.erasure(seltype),
-                                                                          types.erasure(coveredType.type)));
+                                 .filter(coveredSym -> coveredSym.kind == TYP)
+                                 .anyMatch(coveredSym -> types.isSubtype(types.erasure(seltype),
+                                                                         types.erasure(coveredSym.type)));
                 }
                 case TYPEVAR -> isExhaustive(pos, ((TypeVar) seltype).getUpperBound(), covered);
                 default -> {
