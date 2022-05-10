@@ -898,6 +898,7 @@ uint InstructForm::oper_input_base(FormDict &globals) {
 
   if( _matrule->_rChild &&
       ( strcmp(_matrule->_rChild->_opType,"AryEq"     )==0 ||
+        strcmp(_matrule->_rChild->_opType,"AryHashCode")==0 ||
         strcmp(_matrule->_rChild->_opType,"StrComp"   )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrEquals" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrHashCode")==0 ||
