@@ -717,7 +717,7 @@ public class DerValue {
         byte[] retval = Arrays.copyOfRange(buffer, start + 1, end);
         if (numOfPadBits != 0) {
             // get rid of the padding bits
-            retval[end - start - 2] &= (0xff << numOfPadBits);
+            retval[end - start - 2] &= (byte)((0xff << numOfPadBits));
         }
         data.pos = data.end; // Compatibility. Reach end.
         return retval;

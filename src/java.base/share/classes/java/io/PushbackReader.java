@@ -251,7 +251,7 @@ public class PushbackReader extends FilterReader {
             int avail = buf.length - pos;
             if (avail > 0) {
                 if (n <= avail) {
-                    pos += n;
+                    pos += (int)n;
                     return n;
                 } else {
                     pos = buf.length;

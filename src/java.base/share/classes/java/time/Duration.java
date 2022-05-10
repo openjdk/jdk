@@ -283,7 +283,7 @@ public final class Duration
         long secs = nanos / NANOS_PER_SECOND;
         int nos = (int) (nanos % NANOS_PER_SECOND);
         if (nos < 0) {
-            nos += NANOS_PER_SECOND;
+            nos += (int)NANOS_PER_SECOND;
             secs--;
         }
         return create(secs, nos);

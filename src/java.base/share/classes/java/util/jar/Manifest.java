@@ -533,7 +533,7 @@ public class Manifest implements Cloneable {
             if (n > avail) {
                 n = avail;
             }
-            pos += n;
+            pos += (int)n;
             return n;
         }
 

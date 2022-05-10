@@ -834,7 +834,7 @@ public class FloatingDecimal{
             }
         }
 
-        private static int insignificantDigits(int insignificant) {
+        private static int insignificantDigits(long insignificant) {
             int i;
             for ( i = 0; insignificant >= 10L; i++ ) {
                 insignificant /= 10L;

@@ -136,7 +136,7 @@ public class StringReader extends Reader {
             // Bound skip by beginning and end of the source
             long r = Math.min(length - next, n);
             r = Math.max(-next, r);
-            next += r;
+            next += (int)r;
             return r;
         }
     }

@@ -142,9 +142,9 @@ public class BitArray {
         int bit = position(index);
 
         if (value) {
-            repn[idx] |= bit;
+            repn[idx] |= (byte)bit;
         } else {
-            repn[idx] &= ~bit;
+            repn[idx] &= (byte)~bit;
         }
     }
 

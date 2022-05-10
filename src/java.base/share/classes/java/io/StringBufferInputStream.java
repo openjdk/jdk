@@ -145,7 +145,7 @@ public class StringBufferInputStream extends InputStream {
         if (n > count - pos) {
             n = count - pos;
         }
-        pos += n;
+        pos += (int)n;
         return n;
     }
 

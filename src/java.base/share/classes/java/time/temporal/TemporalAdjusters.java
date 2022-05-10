@@ -351,7 +351,7 @@ public final class TemporalAdjusters {
                 Temporal temp = temporal.with(DAY_OF_MONTH, 1);
                 int curDow = temp.get(DAY_OF_WEEK);
                 int dowDiff = (dowValue - curDow + 7) % 7;
-                dowDiff += (ordinal - 1L) * 7L;  // safe from overflow
+                dowDiff += (int)((ordinal - 1L) * 7L);  // safe from overflow
                 return temp.plus(dowDiff, DAYS);
             };
         } else {
@@ -360,7 +360,7 @@ public final class TemporalAdjusters {
                 int curDow = temp.get(DAY_OF_WEEK);
                 int daysDiff = dowValue - curDow;
                 daysDiff = (daysDiff == 0 ? 0 : (daysDiff > 0 ? daysDiff - 7 : daysDiff));
-                daysDiff -= (-ordinal - 1L) * 7L;  // safe from overflow
+                daysDiff -= (int)((-ordinal - 1L) * 7L);  // safe from overflow
                 return temp.plus(daysDiff, DAYS);
             };
         }

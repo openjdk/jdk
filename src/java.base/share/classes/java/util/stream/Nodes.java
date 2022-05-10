@@ -2055,14 +2055,14 @@ final class Nodes {
                 else {
                     task.setPendingCount(task.node.getChildCount() - 1);
 
-                    int size = 0;
+                    long size = 0;
                     int i = 0;
                     for (;i < task.node.getChildCount() - 1; i++) {
-                        K leftTask = task.makeChild(i, task.offset + size);
+                        K leftTask = task.makeChild(i, (int)(task.offset + size));
                         size += leftTask.node.count();
                         leftTask.fork();
                     }
-                    task = task.makeChild(i, task.offset + size);
+                    task = task.makeChild(i, (int)(task.offset + size));
                 }
             }
         }

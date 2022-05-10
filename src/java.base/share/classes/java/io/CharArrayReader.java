@@ -196,7 +196,7 @@ public class CharArrayReader extends Reader {
             if (n < 0) {
                 return 0;
             }
-            pos += n;
+            pos += (int)n;
             return n;
         }
     }

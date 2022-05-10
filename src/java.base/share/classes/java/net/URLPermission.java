@@ -418,7 +418,7 @@ public final class URLPermission extends Permission {
                     "White space not allowed in methods: \"" + methods + "\"");
             } else {
                 if (c >= 'a' && c <= 'z') {
-                    c += 'A' - 'a';
+                    c += (char)('A' - 'a');
                 }
                 b.append(c);
             }
@@ -437,7 +437,7 @@ public final class URLPermission extends Permission {
             char c = headers.charAt(i);
             if (c >= 'a' && c <= 'z') {
                 if (capitalizeNext) {
-                    c += 'A' - 'a';
+                    c += (char)('A' - 'a');
                     capitalizeNext = false;
                 }
                 b.append(c);
