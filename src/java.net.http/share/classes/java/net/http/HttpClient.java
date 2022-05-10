@@ -395,7 +395,7 @@ public abstract class HttpClient {
          * builder.
          *
          * @implSpec If the {@link #localAddress(InetAddress) local address} is a non-null
-         * <i>Internet Protocol</i> address and a security manager is installed, then
+         * address and a security manager is installed, then
          * this method calls {@link SecurityManager#checkListen checkListen} to check that
          * the caller has necessary permission to bind to that local address.
          *
@@ -405,9 +405,7 @@ public abstract class HttpClient {
          * by the implementation cannot be allocated. For instance,
          * if the implementation requires a {@link Selector}, and opening
          * one fails due to {@linkplain Selector#open() lack of necessary resources}.
-         * @throws SecurityException If a security manager has been installed and
-         *         the {@link #localAddress(InetAddress) local address} is an
-         *         <i>Internet Protocol</i> address and the
+         * @throws SecurityException If a security manager has been installed and the
          *         security manager's {@link SecurityManager#checkListen checkListen}
          *         method disallows binding to the given address.
          */
