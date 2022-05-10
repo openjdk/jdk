@@ -1364,7 +1364,7 @@ public final class Math {
     /**
      * Returns the value of the {@code double} argument,
      * throwing an exception if the conversion is inexact.
-     * The method returns iff the argument and the result
+     * The method returns if and only if the argument and the result
      * are mathematically equal.
      *
      * <p>Special cases:
@@ -1431,7 +1431,7 @@ public final class Math {
     /**
      * Returns the value of the {@code long} argument,
      * throwing an exception if the conversion is inexact.
-     * The method returns iff the argument and the result
+     * The method returns if and only if the argument and the result
      * are mathematically equal.
      *
      * <p>Special case:
@@ -1462,7 +1462,7 @@ public final class Math {
     /**
      * Returns the value of the {@code double} argument,
      * throwing an exception if the conversion is inexact.
-     * The method returns iff the argument and the result
+     * The method returns if and only if the argument and the result
      * are mathematically equal.
      *
      * <p>Special cases:
@@ -1499,7 +1499,7 @@ public final class Math {
     /**
      * Returns the value of the {@code long} argument,
      * throwing an exception if the conversion is inexact.
-     * The method returns iff the argument and the result
+     * The method returns if and only if the argument and the result
      * are mathematically equal.
      *
      * <p>Special case:
@@ -1530,7 +1530,7 @@ public final class Math {
     /**
      * Returns the value of the {@code double} argument,
      * throwing an exception if the conversion is inexact.
-     * The method returns iff the argument and the result
+     * The method returns if and only if the argument and the result
      * are mathematically equal.
      *
      * <p>Special cases:
@@ -1575,7 +1575,7 @@ public final class Math {
      * @since 19
      */
     @ForceInline
-    public static long toUnsignedIntExact(long value) {
+    public static long toUnsignedIntRangeExact(long value) {
         long result = value & 0xFFFF_FFFFL;
         if (result != value) {
             throw newArithmeticExceptionOverflow(value);
@@ -1594,7 +1594,7 @@ public final class Math {
      * @since 19
      */
     @ForceInline
-    public static int toUnsignedShortExact(long value) {
+    public static int toUnsignedShortRangeExact(long value) {
         int result = (int) value & 0xFFFF;
         if ((long) result != value) {
             throw newArithmeticExceptionOverflow(value);
@@ -1613,7 +1613,7 @@ public final class Math {
      * @since 19
      */
     @ForceInline
-    public static int toUnsignedByteExact(long value) {
+    public static int toUnsignedByteRangeExact(long value) {
         int result = (int) value & 0xFF;
         if ((long) result != value) {
             throw newArithmeticExceptionOverflow(value);

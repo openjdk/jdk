@@ -62,9 +62,9 @@ public class ToExact {
         testToFloatExact_long();
         testToFloatExact_double();
 
-        testToUnsignedIntExact_long();
-        testToUnsignedShortExact_long();
-        testToUnsignedByteExact_long();
+        testToUnsignedIntRangeExact_long();
+        testToUnsignedShortRangeExact_long();
+        testToUnsignedByteRangeExact_long();
         if (failures > 0 || errors > 0) {
             throw new RuntimeException(
                     String.format("%d failures and %d errors%n", failures, errors));
@@ -178,28 +178,28 @@ public class ToExact {
         testToDoubleExact(Long.MAX_VALUE, null);
     }
 
-    private static void testToUnsignedIntExact_long() {
-        testToUnsignedIntExact(-1L, null);
-        testToUnsignedIntExact(0L, 0L);
-        testToUnsignedIntExact((long) Integer.MAX_VALUE, (long) Integer.MAX_VALUE);
-        testToUnsignedIntExact((1L << Integer.SIZE) - 1, (1L << Integer.SIZE) - 1);
-        testToUnsignedIntExact(1L << Integer.SIZE, null);
+    private static void testToUnsignedIntRangeExact_long() {
+        testToUnsignedIntRangeExact(-1L, null);
+        testToUnsignedIntRangeExact(0L, 0L);
+        testToUnsignedIntRangeExact((long) Integer.MAX_VALUE, (long) Integer.MAX_VALUE);
+        testToUnsignedIntRangeExact((1L << Integer.SIZE) - 1, (1L << Integer.SIZE) - 1);
+        testToUnsignedIntRangeExact(1L << Integer.SIZE, null);
     }
 
-    private static void testToUnsignedShortExact_long() {
-        testToUnsignedShortExact(-1L, null);
-        testToUnsignedShortExact(0L, 0L);
-        testToUnsignedShortExact((long) Short.MAX_VALUE, (long) Short.MAX_VALUE);
-        testToUnsignedShortExact((1L << Short.SIZE) - 1, (1L << Short.SIZE) - 1);
-        testToUnsignedShortExact(1L << Short.SIZE, null);
+    private static void testToUnsignedShortRangeExact_long() {
+        testToUnsignedShortRangeExact(-1L, null);
+        testToUnsignedShortRangeExact(0L, 0L);
+        testToUnsignedShortRangeExact((long) Short.MAX_VALUE, (long) Short.MAX_VALUE);
+        testToUnsignedShortRangeExact((1L << Short.SIZE) - 1, (1L << Short.SIZE) - 1);
+        testToUnsignedShortRangeExact(1L << Short.SIZE, null);
     }
 
-    private static void testToUnsignedByteExact_long() {
-        testToUnsignedByteExact(-1L, null);
-        testToUnsignedByteExact(0L, 0L);
-        testToUnsignedByteExact((long) Byte.MAX_VALUE, (long) Byte.MAX_VALUE);
-        testToUnsignedByteExact((1L << Byte.SIZE) - 1, (1L << Byte.SIZE) - 1);
-        testToUnsignedByteExact(1L << Byte.SIZE, null);
+    private static void testToUnsignedByteRangeExact_long() {
+        testToUnsignedByteRangeExact(-1L, null);
+        testToUnsignedByteRangeExact(0L, 0L);
+        testToUnsignedByteRangeExact((long) Byte.MAX_VALUE, (long) Byte.MAX_VALUE);
+        testToUnsignedByteRangeExact((1L << Byte.SIZE) - 1, (1L << Byte.SIZE) - 1);
+        testToUnsignedByteRangeExact(1L << Byte.SIZE, null);
     }
 
 
@@ -210,24 +210,24 @@ public class ToExact {
         testToExact("toByteExact", v -> toByteExact(v.longValue()), arg, expected);
     }
 
-    private static void testToUnsignedByteExact(long arg, Long expected) {
-        testToExact("toUnsignedByteExact", v -> toUnsignedByteExact(v.longValue()), arg, expected);
+    private static void testToUnsignedByteRangeExact(long arg, Long expected) {
+        testToExact("toUnsignedByteRangeExact", v -> toUnsignedByteRangeExact(v.longValue()), arg, expected);
     }
 
     private static void testToShortExact(long arg, Long expected) {
         testToExact("toShortExact", v -> toShortExact(v.longValue()), arg, expected);
     }
 
-    private static void testToUnsignedShortExact(long arg, Long expected) {
-        testToExact("toUnsignedShortExact", v -> toUnsignedShortExact(v.longValue()), arg, expected);
+    private static void testToUnsignedShortRangeExact(long arg, Long expected) {
+        testToExact("toUnsignedShortRangeExact", v -> toUnsignedShortRangeExact(v.longValue()), arg, expected);
     }
 
     private static void testToIntExact(long arg, Long expected) {
         testToExact("toIntExact", v -> toIntExact(v.longValue()), arg, expected);
     }
 
-    private static void testToUnsignedIntExact(long arg, Long expected) {
-        testToExact("toUnsignedIntExact", v -> toUnsignedIntExact(v.longValue()), arg, expected);
+    private static void testToUnsignedIntRangeExact(long arg, Long expected) {
+        testToExact("toUnsignedIntRangeExact", v -> toUnsignedIntRangeExact(v.longValue()), arg, expected);
     }
 
     private static void testToIntExact(double arg, Long expected) {
