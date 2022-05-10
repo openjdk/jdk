@@ -372,7 +372,7 @@ public final class EventInstrumentation {
             methodVisitor.visitMaxs(0, 0);
         });
 
-        // MyEvent#commit() or MyEvent#commit(EventConfiguration, ...)
+        // MyEvent#commit() or static MyEvent#commit(...)
         if (staticCommitMethod != null) {
             updateExistingWithEmptyVoidMethod(METHOD_COMMIT);
             updateMethod(staticCommitMethod, mv -> {

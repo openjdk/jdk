@@ -142,7 +142,7 @@ public final class MetadataRepository {
         if (jvm.isExcluded(eventClass)) {
             // Event classes are marked as excluded during class load
             // if they override methods in the jdk.jfr.Event class, i.e. commit().
-            // An excluded class lacks configuration field and can't be used by JFR.
+            // An excluded class lacks a configuration field and can't be used by JFR.
             // The Event::commit() is marked as final, so javac won't
             // compile an override, but it can be constructed by other means.
             throw new IllegalArgumentException("Must not override methods declared in jdk.jfr.Event");
@@ -150,7 +150,7 @@ public final class MetadataRepository {
         EventConfiguration configuration = getConfiguration(eventClass, true);
         if (configuration == null) {
             if (eventClass.getAnnotation(MirrorEvent.class) != null) {
-                // don't register mirrors classes.
+                // Don't register mirror classes.
                 return null;
             }
             PlatformEventType pe = findMirrorType(eventClass);

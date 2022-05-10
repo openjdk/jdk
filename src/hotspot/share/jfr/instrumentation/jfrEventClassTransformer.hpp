@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_INSTRUMENTATION_JFREVENTCLASSTRANSFORMER_HPP
 #define SHARE_JFR_INSTRUMENTATION_JFREVENTCLASSTRANSFORMER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/exceptions.hpp"
 
 class CallInfo;

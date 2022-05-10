@@ -49,7 +49,7 @@ import jdk.jfr.internal.consumer.StringParser;
 //    is instrumented. See EventWriterFactoryRecipe)
 //
 // 3. Steps 1 and 2 are sufficient to make it fully secure, with or without a Security
-//    Manager, but as an add additional measure the method EventWriterFactory::getEventWriter(long)
+//    Manager, but as an additional measure, the method EventWriterFactory::getEventWriter(long)
 //    requires the caller to provide a key that is hard to guess. The key is generated
 //    into the bytecode of the method invoking getEventWriter(long).
 //

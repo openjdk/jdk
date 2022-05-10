@@ -1606,7 +1606,7 @@ static bool bless_static_commit_method(const Array<Method*>* methods) {
   assert(methods != NULL, "invariant");
   for (int i = 0; i < methods->length(); ++i) {
     const Method* const m = methods->at(i);
-    // Method is on the form "static void UserEvent::commit(...)" and instrumented
+    // Method is of the form "static void UserEvent::commit(...)" and instrumented
     if (m->is_static() && m->name() == commit && is_commit_method_instrumented(m)) {
       BLESS_METHOD(m);
       return true;
@@ -1619,7 +1619,7 @@ static void bless_instance_commit_method(const Array<Method*>* methods) {
   assert(methods != NULL, "invariant");
   for (int i = 0; i < methods->length(); ++i) {
     const Method* const m = methods->at(i);
-    // Method is on the form "void UserEvent:commit()" and instrumented
+    // Method is of the form "void UserEvent:commit()" and instrumented
     if (!m->is_static() &&
          m->name() == commit &&
          m->signature() == void_method_sig &&
@@ -1777,7 +1777,7 @@ static bool is_static_commit_method_blessed(const Array<Method*>* methods) {
   assert(methods != NULL, "invariant");
   for (int i = 0; i < methods->length(); ++i) {
     const Method* const m = methods->at(i);
-    // Must be on form: static void UserEvent::commit(...)
+    // Must be of form: static void UserEvent::commit(...)
     if (m->is_static() && m->name() == commit) {
       return IS_METHOD_BLESSED(m);
     }
@@ -1789,7 +1789,7 @@ static bool is_instance_commit_method_blessed(const Array<Method*>* methods) {
   assert(methods != NULL, "invariant");
   for (int i = 0; i < methods->length(); ++i) {
     const Method* const m = methods->at(i);
-    // Must be on form: void UserEvent::commit()
+    // Must be of form: void UserEvent::commit()
     if (!m->is_static() && m->name() == commit && m->signature() == void_method_sig) {
       return IS_METHOD_BLESSED(m);
     }

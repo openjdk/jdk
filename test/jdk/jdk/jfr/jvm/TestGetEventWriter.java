@@ -92,7 +92,7 @@ public class TestGetEventWriter {
 
     // The class does not inherit jdk.jfr.Event and, as such, does not implement the
     // API. It has its own stand-alone "commit()V", which is not an override, that
-    // attempts to resolve and link against EventWriter. This user implementation
+    // attempts to resolve and link against EventWriterFactory. This user implementation
     // is not blessed for linkage.
     private static void testNonEvent() throws Throwable {
         Runnable e = newEventObject("NonEvent");
@@ -145,7 +145,7 @@ public class TestGetEventWriter {
     }
 
     // The user has implemented another method, "myCommit()V", not an override nor
-    // overload. that attempts to resolve and link EventWriter. This will fail,
+    // overload. that attempts to resolve and link EventWriterFactory. This will fail,
     // because "myCommit()V" is not blessed for linkage.
     private static void testMyCommitRegisteredTrue() throws Throwable {
         Runnable e = newEventObject("MyCommitRegisteredTrueEvent");

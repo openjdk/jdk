@@ -35,7 +35,7 @@
 #include "runtime/thread.hpp"
 #include "runtime/vframe.inline.hpp"
 
-static const char* const link_error_msg = "illegal access linking method 'jdk.jfr.internal.event.EventWriter.getEventWriter(long)'";
+static const char* const link_error_msg = "illegal access linking method 'jdk.jfr.internal.event.EventWriterFactory.getEventWriter(long)'";
 
 static const Method* ljf_sender_method(JavaThread* jt) {
   assert(jt != nullptr, "invariant");
@@ -60,7 +60,7 @@ void JfrResolution::on_runtime_resolution(const CallInfo & info, TRAPS) {
   if (info.resolved_klass()->name() != event_writer_factory_klass_name) {
     return;
   }
-  // Attempting to link against jdk.jfr.internal.event.EventWriter.getEventWriter().
+  // Attempting to link against jdk.jfr.internal.event.EventWriterFactory.getEventWriter().
   // The sender, i.e. the method attempting to link, is in the ljf (if one exists).
   const Method* const sender = ljf_sender_method(THREAD);
   if (sender == nullptr) {

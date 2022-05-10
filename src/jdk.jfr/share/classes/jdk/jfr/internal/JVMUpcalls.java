@@ -39,9 +39,16 @@ final class JVMUpcalls {
      *
      * @param traceId
      *            Id of the class
-     * @param dummy
-     *            (not used but needed since invoke infrastructure in native
-     *            uses same signature bytesForEagerInstrumentation)
+     * @param dummy1
+     *            not used, but act as padding so bytesForEagerInstrumentation and
+     *            onRetransform can have identical method signatures, which simplifies the
+     *            invoke machinery in native
+     *
+     * @param dummy2
+     *            not used, but act as padding so bytesForEagerInstrumentation and
+     *            onRetransform can have identical method signatures, which simplifies the
+     *            invoke machinery in native
+     *
      * @param clazz
      *            class being retransformed
      * @param oldBytes

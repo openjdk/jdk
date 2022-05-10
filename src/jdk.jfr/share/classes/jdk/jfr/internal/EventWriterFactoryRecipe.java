@@ -29,7 +29,7 @@ import jdk.jfr.internal.event.EventWriter;
 // This class is not directly used but renamed to
 // jdk.jfr.event.EventWriterFactory and loaded dynamically
 // when the first event class is bytecode instrumented.
-// See JVMUpcall and EventWriterKey::ensureEventWriterFactory()
+// See JVMUpcallz and EventWriterKey::ensureEventWriterFactory()
 public final class EventWriterFactoryRecipe {
     private static final long KEY = EventWriterKey.getKey();
 

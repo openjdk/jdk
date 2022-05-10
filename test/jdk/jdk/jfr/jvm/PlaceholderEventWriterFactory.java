@@ -30,6 +30,6 @@ package jdk.jfr.jvm;
 public class PlaceholderEventWriterFactory {
 
     public static PlaceholderEventWriter getEventWriter(long value) {
-        throw new RuntimeException("Test error. PlaceholderEventWriter class should have been replaced with EventWriter");
+        throw new RuntimeException("Test error, PlaceholderEventWriterFactory class should have been replaced with EventWriterFactory");
     }
 }
