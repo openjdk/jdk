@@ -264,7 +264,7 @@ public class HttpClientBuilderTest {
     }
 
     /**
-     * Tests the {@link HttpClient,java.net.http.HttpClient.Builder#localAddress(InetAddress)} method
+     * Tests the {@link java.net.http.HttpClient.Builder#localAddress(InetAddress)} method
      * behaviour when that method is called on a builder returned by {@link HttpClient#newBuilder()}
      */
     @Test
@@ -279,7 +279,7 @@ public class HttpClientBuilderTest {
 
     /**
      * Tests that the default method implementation of
-     * {@link HttpClient,java.net.http.HttpClient.Builder#localAddress(InetAddress)} throws
+     * {@link java.net.http.HttpClient.Builder#localAddress(InetAddress)} throws
      * an {@link UnsupportedOperationException}
      */
     @Test
