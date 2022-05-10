@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,8 @@ import static jdk.test.lib.Asserts.assertTrue;
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
- * @run main/othervm jdk.jfr.jvm.TestThreadExclusion
+ * @compile --enable-preview -source ${jdk.version} TestThreadExclusion.java LatchedThread.java
+ * @run main/othervm --enable-preview jdk.jfr.jvm.TestThreadExclusion
  */
 
 /**
@@ -83,12 +84,11 @@ public class TestThreadExclusion {
 
     private static LatchedThread[] startThreads() {
         LatchedThread threads[] = new LatchedThread[10];
-        ThreadGroup threadGroup = new ThreadGroup("TestThreadGroup");
         jvm = JVM.getJVM();
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new LatchedThread(threadGroup, THREAD_NAME_PREFIX + i);
-            jvm.exclude(threads[i]);
-            threads[i].startThread();
+            threads[i] = new LatchedThread(THREAD_NAME_PREFIX + i, false);
+            jvm.exclude(threads[i].getThread());
+            threads[i].start();
             System.out.println("Started thread id=" + threads[i].getId());
         }
         return threads;
@@ -103,47 +103,13 @@ public class TestThreadExclusion {
     }
 
     private static void stopThreads(LatchedThread[] threads) {
-        for (LatchedThread thread : threads) {
-            assertTrue(jvm.isExcluded(thread), "Thread " + thread + "should be excluded");
-            thread.stopThread();
-            while (thread.isAlive()) {
-                try {
-                    Thread.sleep(5);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    private static class LatchedThread extends Thread {
-        private final CountDownLatch start = new CountDownLatch(1);
-        private final CountDownLatch stop = new CountDownLatch(1);
-
-        public LatchedThread(ThreadGroup threadGroup, String name) {
-            super(threadGroup, name);
-        }
-
-        public void run() {
-            start.countDown();
+        for (LatchedThread t : threads) {
+            assertTrue(jvm.isExcluded(t.getThread()), "Thread " + t.getThread() + "should be excluded");
             try {
-                stop.await();
+                t.stopAndJoin();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        }
-
-        public void startThread() {
-            this.start();
-            try {
-                start.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        public void stopThread() {
-            stop.countDown();
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,6 +313,12 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
 
         args.add(argumentHandler.getLaunchExecPath());
 
+        /* Need --enable-preview on the debuggee in order to support virtual threads. */
+        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+        if (vthreadMode) {
+            args.add("--enable-preview");
+        }
+
         String javaOpts = argumentHandler.getLaunchOptions();
         if (javaOpts != null && javaOpts.length() > 0) {
             StringTokenizer st = new StringTokenizer(javaOpts);
@@ -340,7 +346,8 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
         String jdwpArgs = "-Xrunjdwp:"
                         + "server=" + server
                         + ",transport=" + argumentHandler.getTransportName()
-                        + ",address=" + transportAddress;
+                        + ",address=" + transportAddress
+                        + ",enumeratevthreads=y";
 
         if (! argumentHandler.isDefaultJVMDIStrictMode()) {
             if (argumentHandler.isJVMDIStrictMode())
@@ -350,6 +357,11 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
         }
 
         args.add(jdwpArgs);
+
+        if(System.getProperty("main.wrapper") != null) {
+            args.add(MainWrapper.class.getName());
+            args.add(System.getProperty("main.wrapper"));
+        }
 
         if (classToExecute != null) {
             StringTokenizer st = new StringTokenizer(classToExecute);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ class VMConnection {
     private final Connector connector;
     private final Map<String, com.sun.jdi.connect.Connector.Argument> connectorArgs;
     private int traceFlags;
+    private final boolean trackVthreads;
 
     synchronized void notifyOutputComplete() {
         outputCompleteCount++;
@@ -327,7 +328,7 @@ class VMConnection {
         return (pos + 1 == arr.length);
     }
 
-    VMConnection(String connectSpec, int traceFlags, String extraOptions) {
+    VMConnection(String connectSpec, int traceFlags, boolean trackVthreads, String extraOptions) {
         String nameString;
         String argString;
         int index = connectSpec.indexOf(':');
@@ -347,6 +348,7 @@ class VMConnection {
 
         connectorArgs = parseConnectorArgs(connector, argString, extraOptions);
         this.traceFlags = traceFlags;
+        this.trackVthreads = trackVthreads;
     }
 
     public void setTraceFlags(int flags) {
@@ -466,8 +468,12 @@ class VMConnection {
             (new StringTokenizer("uncaught java.lang.Throwable"));
 
         ThreadStartRequest tsr = erm.createThreadStartRequest();
-        tsr.enable();
         ThreadDeathRequest tdr = erm.createThreadDeathRequest();
+        if (!trackVthreads) {
+            tsr.addPlatformThreadsOnlyFilter();
+            tdr.addPlatformThreadsOnlyFilter();
+        }
+        tsr.enable();
         tdr.enable();
     }
 

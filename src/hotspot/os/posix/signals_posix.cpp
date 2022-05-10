@@ -25,6 +25,9 @@
 #include "precompiled.hpp"
 
 #include "jvm.h"
+#include "code/codeCache.hpp"
+#include "code/compiledMethod.hpp"
+#include "code/nativeInst.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
@@ -620,6 +623,31 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       (sig == SIGPIPE || sig == SIGXFSZ)) {
     PosixSignals::chained_handler(sig, info, ucVoid);
     signal_was_handled = true; // unconditionally.
+  }
+
+  // Check for UD trap caused by NOP patching.
+  // If it is, patch return address to be deopt handler.
+  if (!signal_was_handled) {
+    address pc = os::Posix::ucontext_get_pc(uc);
+    assert(pc != NULL, "");
+    if (NativeDeoptInstruction::is_deopt_at(pc)) {
+      CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+      if (cb != NULL && cb->is_compiled()) {
+        MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, t);) // can call PcDescCache::add_pc_desc
+        CompiledMethod* cm = cb->as_compiled_method();
+        assert(cm->insts_contains_inclusive(pc), "");
+        address deopt = cm->is_method_handle_return(pc) ?
+          cm->deopt_mh_handler_begin() :
+          cm->deopt_handler_begin();
+        assert(deopt != NULL, "");
+
+        frame fr = os::fetch_frame_from_context(uc);
+        cm->set_original_pc(&fr, pc);
+
+        os::Posix::ucontext_set_pc(uc, deopt);
+        signal_was_handled = true;
+      }
+    }
   }
 
   // Call platform dependent signal handler.
