@@ -28,27 +28,17 @@
  * @summary  Verifies if all pages are printed if scrollRectToVisible is set.
  * @run main/manual PrintAllPagesTest
  */
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.print.PrinterJob;
 import java.awt.print.PrinterException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.WindowConstants;
 
-public class PrintAllPagesTest extends WindowAdapter {
+public class PrintAllPagesTest {
     static JFrame f;
     static JTable table;
 
