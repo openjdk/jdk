@@ -1605,6 +1605,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param  val value to be multiplied by this BigInteger.
      * @return {@code this * val}
      * @see #multiply
+     * @since 19
      */
     public BigInteger parallelMultiply(BigInteger val) {
         return multiply(val, false, true, 0);

@@ -181,8 +181,6 @@ address StubRoutines::_cont_returnBarrierExc = NULL;
 
 JFR_ONLY(RuntimeStub* StubRoutines::_jfr_write_checkpoint_stub = NULL;)
 JFR_ONLY(address StubRoutines::_jfr_write_checkpoint = NULL;)
-JFR_ONLY(RuntimeStub* StubRoutines::_jfr_get_event_writer_stub = NULL;)
-JFR_ONLY(address StubRoutines::_jfr_get_event_writer = NULL;)
 
 // Initialization
 //
