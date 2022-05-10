@@ -2157,9 +2157,11 @@ void Compile::Optimize() {
             }
           }
           iff->set_unc_bci(-1);
+#ifndef PRODUCT
           if (Verbose){
             tty->print("worklist: bci = %d", iff->unc_bci()); iff->dump();
           }
+#endif
           igvn._worklist.push(iff);
         }
       }
