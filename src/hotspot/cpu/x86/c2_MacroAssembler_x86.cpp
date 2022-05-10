@@ -3230,6 +3230,11 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   bind(LONG_VECTOR_LOOP_END);
   // }
 
+  if (!is_string_hashcode) {
+    // result = vcoef0[0];
+    movdl(result, vcoef0);
+  }
+
   // result += vresult.reduceLanes(ADD);
   for (int idx = 0; idx < 4; idx++) {
     reduceI(Op_AddReductionVI, 256/(sizeof(jint)*8), result, result, vresult[idx], vtmp[(idx*2+0)%4], vtmp[(idx*2+1)%4]);
