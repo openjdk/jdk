@@ -61,6 +61,10 @@ public final class HtmlButtonImageTest {
     private static final int maxY = centerY + (SQUARE_HEIGHT / 2);
 
     private static boolean supportedLaf;
+    private static int failCount = 0;
+    private static String currentLaf = new String();
+    private static StringBuffer failedLafs = new StringBuffer();
+
 
     public static void main(String[] args) throws Exception {
         testDir = Path.of(System.getProperty("test.classes", "."));
@@ -69,6 +73,7 @@ public final class HtmlButtonImageTest {
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
             if(supportedLaf) {
+                currentLaf = laf.getName();
                 SwingUtilities.invokeAndWait(HtmlButtonImageTest::createButton);
                 SwingUtilities.invokeAndWait(HtmlButtonImageTest::paintButton);
 
@@ -78,6 +83,14 @@ public final class HtmlButtonImageTest {
                         image.getRGB(maxX, minY),
                         image.getRGB(maxX, maxY));
             }
+        }
+
+        if(!failedLafs.isEmpty()) {
+            if(failCount > 1) {
+                failedLafs.setLength(failedLafs.length() - 2);
+            }
+            throw new RuntimeException("HTML image not centered in button " +
+                    "for these L&F's: " + failedLafs);
         }
     }
 
@@ -111,9 +124,11 @@ public final class HtmlButtonImageTest {
     private static void testImageCentering(int... colors) throws IOException {
         for (int c : colors) {
             if (!checkRedColor(c)) {
-                ImageIO.write(image, "png",
-                        new File(testDir + "/fail_image.png"));
-                throw new RuntimeException("HTML image not centered in button");
+                failCount++;
+                ImageIO.write(image, "png", new File(testDir + "/fail_image_" +
+                        currentLaf.replaceAll("[^\\w\\s]","") + ".png"));
+                failedLafs.append(currentLaf + ", ");
+                break;
             }
         }
     }
