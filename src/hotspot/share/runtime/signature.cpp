@@ -116,7 +116,6 @@ ReferenceArgumentCount::ReferenceArgumentCount(Symbol* signature)
   do_parameters_on(this);  // non-virtual template execution
 }
 
-#ifdef ASSERT
 static int compute_num_stack_arg_slots(Symbol* signature, int sizeargs, bool is_static) {
   ResourceMark rm;
   BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sizeargs);
@@ -138,7 +137,6 @@ static int compute_num_stack_arg_slots(Symbol* signature, int sizeargs, bool is_
 
   return SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
 }
-#endif // ASSERT
 
 void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
   // See if we fingerprinted this method already
@@ -177,13 +175,15 @@ void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
     _param_size += 1;  // this is the convention for Method::compute_size_of_parameters
   }
 
-  _stack_arg_slots = align_up(_stack_arg_slots, 2);
-
-#ifdef ASSERT
-  int dbg_stack_arg_slots = compute_num_stack_arg_slots(_signature, _param_size, static_flag);
 #if defined(_LP64) && !defined(ZERO)
+#ifdef ASSERT
+  _stack_arg_slots = align_up(_stack_arg_slots, 2);
+  int dbg_stack_arg_slots = compute_num_stack_arg_slots(_signature, _param_size, static_flag);
   assert(_stack_arg_slots == dbg_stack_arg_slots, "fingerprinter: %d full: %d", _stack_arg_slots, dbg_stack_arg_slots);
 #endif
+#else
+  // Fallback: computed _stack_arg_slots is unreliable, compute directly.
+  _stack_arg_slots = compute_num_stack_arg_slots(_signature, _param_size, static_flag);
 #endif
 
   // Detect overflow.  (We counted _param_size correctly.)
@@ -220,7 +220,10 @@ void Fingerprinter::initialize_calling_convention(bool static_flag) {
 
 void Fingerprinter::do_type_calling_convention(BasicType type) {
   // We compute the number of slots for stack-passed arguments in compiled calls.
-  // The value computed for 32-bit ports and for zero is bogus, and will need to be fixed.
+  // TODO: SharedRuntime::java_calling_convention is the shared code that knows all details
+  // about the platform-specific calling conventions. This method tries to compute the stack
+  // args number... poorly, at least for 32-bit ports and for zero. Current code has the fallback
+  // that recomputes the stack args number from SharedRuntime::java_calling_convention.
 #if defined(_LP64) && !defined(ZERO)
   switch (type) {
   case T_VOID:
