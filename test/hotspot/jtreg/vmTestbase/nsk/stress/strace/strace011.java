@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,12 @@ public class strace011 {
     static final int THRD_COUNT = 50;
     static final String[] EXPECTED_METHODS = {
             "java.lang.Thread.sleep",
+            "java.lang.Thread.sleep0",
+            "jdk.internal.event.ThreadSleepEvent.<clinit>",
+            "jdk.internal.event.ThreadSleepEvent.isTurnedOn",
+            "jdk.internal.event.ThreadSleepEvent.isEnabled",
+            "java.lang.Thread.currentCarrierThread",
+            "java.lang.Thread.currentThread",
             "nsk.stress.strace.strace011Thread.run",
             "nsk.stress.strace.strace011Thread.recursiveMethod"
     };
@@ -227,7 +233,7 @@ public class strace011 {
     boolean checkElement(StackTraceElement element) {
         String name = element.getClassName() + "." + element.getMethodName();
         for (int i = 0; i < EXPECTED_METHODS.length; i++) {
-            if (EXPECTED_METHODS[i].compareTo(name) == 0)
+            if (name.startsWith(EXPECTED_METHODS[i]))
                 return true;
         }
         return false;

@@ -573,7 +573,9 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
         address runtime_entry) {
   address entry = __ pc();
   __ push(state);
+  __ push_cont_fastpath(rthread);
   __ call_VM(noreg, runtime_entry);
+  __ pop_cont_fastpath(rthread);
   __ membar(Assembler::AnyAny);
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
@@ -786,6 +788,7 @@ void TemplateInterpreterGenerator::lock_method() {
   __ str(r0, Address(esp, BasicObjectLock::obj_offset_in_bytes()));
   __ mov(c_rarg1, esp); // object address
   __ lock_object(c_rarg1);
+  __ inc_held_monitor_count(rthread);
 }
 
 // Generate a fixed interpreter frame. This is identical setup for
@@ -851,6 +854,18 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 }
 
 // End of helpers
+
+address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
+  if (!Continuations::enabled()) return nullptr;
+
+  address entry = __ pc();
+  assert(StubRoutines::cont_doYield() != NULL, "stub not yet generated");
+
+  __ push_cont_fastpath(rthread);
+  __ far_jump(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::cont_doYield())));
+
+  return entry;
+}
 
 // Various method entries
 //------------------------------------------------------------------------------------------------------------------------
@@ -1490,6 +1505,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
       __ bind(unlock);
       __ unlock_object(c_rarg1);
+      __ dec_held_monitor_count(rthread);
     }
     __ bind(L);
   }

@@ -27,6 +27,7 @@
  * @summary Record null_check traps for calls and array_check traps in the interpreter
  *
  * @requires vm.compiler2.enabled & vm.compMode != "Xcomp"
+ * @requires vm.opt.DeoptimizeALot != true
  *
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
