@@ -1357,6 +1357,9 @@ public class WeakHashMap<K,V>
      * @since 19
      */
     public static <K, V> WeakHashMap<K, V> newWeakHashMap(int numMappings) {
+        if (numMappings < 0) {
+            throw new IllegalArgumentException("Negative number of mappings: " + numMappings);
+        }
         return new WeakHashMap<>(HashMap.calculateHashMapCapacity(numMappings));
     }
 
