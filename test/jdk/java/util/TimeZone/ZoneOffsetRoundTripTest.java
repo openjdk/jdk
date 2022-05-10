@@ -22,6 +22,7 @@
  */
 
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.TimeZone;
 
 import org.testng.annotations.Test;
@@ -41,10 +42,12 @@ public class ZoneOffsetRoundTripTest {
     private Object[][] testZoneOffsets() {
         return new Object[][] {
                 {ZoneId.of("Z"), 0},
-                {ZoneId.of("+00:01"), 60},
-                {ZoneId.of("-00:01"), -60},
-                {ZoneId.of("+00:00:01"), 1},
-                {ZoneId.of("-00:00:01"), -1},
+                {ZoneId.of("+00:01"), 60_000},
+                {ZoneId.of("-00:01"), -60_000},
+                {ZoneId.of("+00:00:01"), 1_000},
+                {ZoneId.of("-00:00:01"), -1_000},
+                {ZoneId.of("GMT+00:00:01"), 1_000},
+                {ZoneOffset.of("+00:00:01"), 1_000},
         };
     }
 
@@ -52,7 +55,7 @@ public class ZoneOffsetRoundTripTest {
     public void test_ZoneOffsetRoundTrip(ZoneId zid, int offset) {
         var tz = TimeZone.getTimeZone(zid);
         assertEquals(tz.getRawOffset(), offset);
-        assertEquals(tz.toZoneId().normalized(), zid);
+        assertEquals(tz.toZoneId().normalized(), zid.normalized());
     }
 }
 

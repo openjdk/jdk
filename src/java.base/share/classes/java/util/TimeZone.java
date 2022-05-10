@@ -106,20 +106,20 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * zone ID is normalized in the following syntax:
  * <blockquote><pre>
  * <a id="NormalizedCustomID"><i>NormalizedCustomID:</i></a>
- *         {@code GMT} <i>Sign</i> <i>TwoDigitHours</i> {@code :} <i>Minutes</i> [<i>Seconds</i>]
+ *         {@code GMT} <i>Sign</i> <i>TwoDigitHours</i> {@code :} <i>Minutes</i> [<i>ColonSeconds</i>]
  * <i>Sign:</i> one of
  *         {@code + -}
  * <i>TwoDigitHours:</i>
  *         <i>Digit</i> <i>Digit</i>
  * <i>Minutes:</i>
  *         <i>Digit</i> <i>Digit</i>
- * <i>Seconds:</i>
+ * <i>ColonSeconds:</i>
  *         {@code :} <i>Digit</i> <i>Digit</i>
  * <i>Digit:</i> one of
  *         {@code 0 1 2 3 4 5 6 7 8 9}
  * </pre></blockquote>
  * For example, TimeZone.getTimeZone("GMT-8").getID() returns "GMT-08:00".
- * <i>Seconds</i> part only appears if the value is non-zero.
+ * <i>ColonSeconds</i> part only appears if the seconds value is non-zero.
  *
  * <h2>Three-letter time zone IDs</h2>
  *
@@ -537,8 +537,8 @@ public abstract class TimeZone implements Serializable, Cloneable {
     public static TimeZone getTimeZone(ZoneId zoneId) {
         String tzid = zoneId.getId(); // throws an NPE if null
         if (zoneId instanceof ZoneOffset zo) {
-            var totalSecs = zo.getTotalSeconds();
-            return new ZoneInfo(totalSecs == 0 ? "UTC" : GMT_ID + tzid, totalSecs);
+            var totalMillis = zo.getTotalSeconds() * 1_000;
+            return new ZoneInfo(totalMillis == 0 ? "UTC" : GMT_ID + tzid, totalMillis);
         } else {
             return getTimeZone(tzid, true);
         }
