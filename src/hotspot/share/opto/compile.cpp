@@ -1880,7 +1880,7 @@ void Compile::process_for_unstable_ifs(PhaseIterGVN& igvn) {
             uint idx = jvms->locoff() + i;
 #ifndef PRODUCT
             if (Verbose) {
-              tty->print("kill local variable#%d for unstable_if ", idx);
+              tty->print("[unstable_if] kill local#%d: ", idx);
               local->dump();
               tty->cr();
             }
