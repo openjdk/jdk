@@ -67,14 +67,12 @@ public class RemoteHostImpl implements RemoteHost, HostListener {
         monitoredHost.addHostListener(this);
     }
 
-    public RemoteVm attachVm(int lvmid)
-                    throws RemoteException, MonitorException {
+    public RemoteVm attachVm(int lvmid) throws RemoteException, MonitorException {
         Integer v = lvmid;
         RemoteVm stub = null;
         StringBuilder sb = new StringBuilder();
 
-        sb.append("local://").append(lvmid).append("@localhost");
-        String vmidStr = sb.toString();
+        String vmidStr = "local://" + lvmid + "@localhost";
 
         try {
             VmIdentifier vmid = new VmIdentifier(vmidStr);

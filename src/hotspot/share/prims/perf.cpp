@@ -81,8 +81,7 @@ PERF_ENTRY(jobject, Perf_Attach(JNIEnv *env, jobject unused, jstring user, int v
   }
 
   // attach to the PerfData memory region for the specified VM
-  PerfMemory::attach(user_utf, vmid,
-                     &address, &capacity, CHECK_NULL);
+  PerfMemory::attach(user_utf, vmid, &address, &capacity, CHECK_NULL);
 
   {
     ThreadToNativeFromVM ttnfv(thread);

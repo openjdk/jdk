@@ -54,11 +54,10 @@ public class PerfDataBuffer extends AbstractPerfDataBuffer {
     public PerfDataBuffer(VmIdentifier vmid) throws MonitorException {
         File f = new File(vmid.getURI());
 
-        try {
-            FileChannel fc = new RandomAccessFile(f, "r").getChannel();
+        try (FileChannel fc = new RandomAccessFile(f, "r").getChannel()) {
             ByteBuffer bb = fc.map(FileChannel.MapMode.READ_ONLY, 0L, (int)fc.size());
-            fc.close();               // doesn't need to remain open
             createPerfDataBuffer(bb, 0);
+            // fc doesn't need to remain open
         } catch (FileNotFoundException e) {
             throw new MonitorException("Could not find " + vmid.toString());
         } catch (IOException e) {

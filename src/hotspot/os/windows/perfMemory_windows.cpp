@@ -1573,8 +1573,7 @@ static size_t sharedmem_filesize(const char* filename, TRAPS) {
 // this method opens a file mapping object and maps the object
 // into the address space of the process
 //
-static void open_file_mapping(const char* user, int vmid,
-                              char** addrp, size_t* sizep, TRAPS) {
+static void open_file_mapping(const char* user, int vmid, char** addrp, size_t* sizep, TRAPS) {
 
   ResourceMark rm;
 
