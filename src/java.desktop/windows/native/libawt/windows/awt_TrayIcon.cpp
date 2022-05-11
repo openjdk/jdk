@@ -256,13 +256,6 @@ LRESULT CALLBACK AwtTrayIcon::TrayWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 
     switch(uMsg)
     {
-         // calling update handler on Windows position change
-         // (generated when DPI changes)
-        case WM_WINDOWPOSCHANGING:
-            if (hwnd == AwtTrayIcon::sm_msgWindow) {
-                AwtTrayIcon::UpdateTrayIconHandler();
-            }
-            break;
         case WM_CREATE:
             // Fix for CR#6369062
             s_msgTaskbarCreated = ::RegisterWindowMessage(TEXT("TaskbarCreated"));
@@ -278,6 +271,8 @@ LRESULT CALLBACK AwtTrayIcon::TrayWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
         default:
             if(uMsg == s_msgTaskbarCreated) {
                 if (hwnd == AwtTrayIcon::sm_msgWindow) {
+                    // call tray icon update when taskbar reloads
+                    AwtTrayIcon::UpdateTrayIconHandler();
                     mr = WmTaskbarCreated();
                 }
             }
