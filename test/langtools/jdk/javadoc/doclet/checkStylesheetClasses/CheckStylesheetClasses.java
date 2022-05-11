@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,7 +202,7 @@ public class CheckStylesheetClasses {
                 throw new AssertionError("Cannot find or access resource " + resource);
             }
             String s = new String(in.readAllBytes());
-            Pattern p = Pattern.compile("(?i)(\\s|([a-z][a-z0-9-]*))\\.(?<name>[a-z0-9-]+)\\b");
+            Pattern p = Pattern.compile("(?i)(\\s|([a-z][a-z0-9-]*))\\.(?<name>[a-z][a-z0-9-]+)\\b");
             Matcher m = p.matcher(s);
             while (m.find()) {
                 names.add(m.group("name"));

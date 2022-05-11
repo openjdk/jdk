@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,17 +95,16 @@ public class TestStylesheet extends JavadocTester {
                         text-align:left;
                         background-repeat:no-repeat;
                         color:#253441;
-                        font-weight:bold;
                         clear:none;
                         overflow:hidden;
                         padding:0;
                         padding-top:10px;
                         padding-left:1px;
                         margin:0;
-                        white-space:pre;
                     }""",
                 """
                 .caption span {
+                    font-weight:bold;
                     white-space:nowrap;
                     padding:5px 12px 7px 12px;
                     display:inline-block;
@@ -120,9 +119,9 @@ public class TestStylesheet extends JavadocTester {
                        cursor: pointer;
                        padding: 5px 12px 7px 12px;
                        font-weight: bold;
-                       margin-right: 3px;
+                       margin-right: 8px;
                     }
-                    div.table-tabs > button.active-table-tab {
+                    div.table-tabs > .active-table-tab {
                        background: #F8981D;
                        color: #253441;
                     }
