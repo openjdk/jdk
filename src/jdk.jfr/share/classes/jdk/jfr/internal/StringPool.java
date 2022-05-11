@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class StringPool {
-    static final int MIN_LIMIT = 16;
-    static final int MAX_LIMIT = 128; /* 0 MAX means disabled */
+    public static final int MIN_LIMIT = 16;
+    public static final int MAX_LIMIT = 128; /* 0 MAX means disabled */
     private static final long DO_NOT_POOL = -1;
     private static final SimpleStringIdPool sp = new SimpleStringIdPool();
 
-    static long addString(String s) {
+    public static long addString(String s) {
         return sp.addString(s);
     }
 
-    static void reset() {
+    public static void reset() {
         sp.reset();
     }
 
