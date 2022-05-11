@@ -539,7 +539,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
         if (zoneId instanceof ZoneOffset zo) {
             var totalMillis = zo.getTotalSeconds() * 1_000;
             return new ZoneInfo(totalMillis == 0 ? "UTC" : GMT_ID + tzid, totalMillis);
-        } else if (tzid.startsWith("UT")) {
+        } else if (tzid.startsWith("UT") && !tzid.equals("UTC")) {
             tzid = tzid.replaceFirst("(UTC|UT)(.*)", "GMT$2");
         }
         return getTimeZone(tzid, true);
