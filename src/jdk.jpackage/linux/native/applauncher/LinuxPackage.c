@@ -180,11 +180,17 @@ static int popenCommand(const char* cmdlineFormat, const char* arg,
             /*
              * We can ignore -Wuse-after-free for strBufBegin because we use it
              * as a numerical value.
+             * This option has been introduced in GCC 12
+             *   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=104075
              */
+#if defined(__GNUC__) && __GNUC__ >= 12
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif
             strBufNextChar = strNewBufBegin + (strBufNextChar - strBufBegin);
+#if defined(__GNUC__) && __GNUC__ >= 12
 #pragma GCC diagnostic pop
+#endif
 
             strBufEnd = strNewBufBegin + strBufCapacity;
             strBufBegin = strNewBufBegin;
