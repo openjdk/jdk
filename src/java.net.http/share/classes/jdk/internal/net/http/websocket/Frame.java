@@ -215,7 +215,7 @@ final class Frame {
             if (value) {
                 firstChar |=  0b10000000_00000000;
             } else {
-                // the negation. "~" sets the high order bits
+                // The negation "~" sets the high order bits
                 // so the value is more than 16 bits and the
                 // compiler will emit a warning if not cast
                 firstChar &= (char) ~0b10000000_00000000;
@@ -227,7 +227,7 @@ final class Frame {
             if (value) {
                 firstChar |=  0b01000000_00000000;
             } else {
-                // the negation. "~" sets the high order bits
+                // The negation "~" sets the high order bits
                 // so the value is more than 16 bits and the
                 // compiler will emit a warning if not cast
                 firstChar &= (char) ~0b01000000_00000000;
@@ -239,7 +239,7 @@ final class Frame {
             if (value) {
                 firstChar |=  0b00100000_00000000;
             } else {
-                // the negation. "~" sets the high order bits
+                // The negation "~" sets the high order bits
                 // so the value is more than 16 bits and the
                 // compiler will emit a warning if not cast
                 firstChar &= (char) ~0b00100000_00000000;
@@ -251,7 +251,7 @@ final class Frame {
             if (value) {
                 firstChar |=  0b00010000_00000000;
             } else {
-                // the negation. "~" sets the high order bits
+                // The negation "~" sets the high order bits
                 // so the value is more than 16 bits and the
                 // compiler will emit a warning if not cast
                 firstChar &= (char) ~0b00010000_00000000;
@@ -288,7 +288,7 @@ final class Frame {
         }
 
         HeaderWriter noMask() {
-            // the negation. "~" sets the high order bits
+            // The negation "~" sets the high order bits
             // so the value is more than 16 bits and the
             // compiler will emit a warning if not cast
             firstChar &= (char) ~0b00000000_10000000;
