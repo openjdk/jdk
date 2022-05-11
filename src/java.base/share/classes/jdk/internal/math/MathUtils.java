@@ -29,8 +29,6 @@ package jdk.internal.math;
  * This class exposes package private utilities for other classes.
  * Thus, all methods are assumed to be invoked with correct arguments,
  * so these are not checked at all.
- *
- * @author Raffaello Giulietti
  */
 final class MathUtils {
     /*

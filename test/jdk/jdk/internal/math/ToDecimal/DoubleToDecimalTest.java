@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import jdk.test.lib.RandomFactory;
 /*
  * @test
  * @bug 4511638
- * @author Raffaello Giulietti
  * @key randomness
  *
  * @modules java.base/jdk.internal.math

@@ -34,8 +34,6 @@ import static jdk.internal.math.MathUtils.*;
 
 /**
  * This class exposes a method to render a {@code float} as a string.
- *
- * @author Raffaello Giulietti
  */
 final public class FloatToDecimal {
     /*
@@ -163,18 +161,18 @@ final public class FloatToDecimal {
             throws IOException {
         switch (toDecimal(v)) {
             case NON_SPECIAL:
-                char[] chars = new char[MAX_CHARS];
-                for (int i = 0; i <= index; ++i) {
+                char[] chars = new char[index + 1];
+                for (int i = 0; i < chars.length; ++i) {
                     chars[i] = (char) bytes[i];
                 }
                 if (app instanceof StringBuilder builder) {
-                    return builder.append(chars, 0, index + 1);
+                    return builder.append(chars);
                 }
                 if (app instanceof StringBuffer buffer) {
-                    return buffer.append(chars, 0, index + 1);
+                    return buffer.append(chars);
                 }
-                for (int i = 0; i <= index; ++i) {
-                    app.append(chars[i]);
+                for (char c : chars) {
+                    app.append(c);
                 }
                 return app;
             case PLUS_ZERO: return app.append("0.0");

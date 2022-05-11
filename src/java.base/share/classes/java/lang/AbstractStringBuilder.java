@@ -879,8 +879,8 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     public AbstractStringBuilder append(float f) {
         try {
             FloatToDecimal.appendTo(f, this);
-        } catch (IOException ignored) {
-            assert false;
+        } catch (IOException e) {
+            throw new AssertionError(e);
         }
         return this;
 
@@ -901,8 +901,8 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     public AbstractStringBuilder append(double d) {
         try {
             DoubleToDecimal.appendTo(d, this);
-        } catch (IOException ignored) {
-            assert false;
+        } catch (IOException e) {
+            throw new AssertionError(e);
         }
         return this;
     }
