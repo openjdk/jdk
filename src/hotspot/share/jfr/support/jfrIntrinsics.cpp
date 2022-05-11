@@ -49,14 +49,7 @@ static void assert_epoch_identity(JavaThread* jt, u2 current_epoch) {
   const u2 vthread_epoch = epoch_raw & epoch_mask;
   assert(vthread_epoch == current_epoch, "invariant");
 }
-#endif
-
-void* JfrIntrinsicSupport::event_writer(JavaThread* jt) {
-  DEBUG_ONLY(assert_precondition(jt);)
-  // Can safepoint here.
-  ThreadInVMfromJava transition(jt);
-  return JfrJavaEventWriter::event_writer(jt);
-}
+#endif // ASSERT
 
 void* JfrIntrinsicSupport::write_checkpoint(JavaThread* jt) {
   DEBUG_ONLY(assert_precondition(jt);)
