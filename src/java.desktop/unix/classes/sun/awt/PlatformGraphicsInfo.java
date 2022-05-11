@@ -79,7 +79,7 @@ public class PlatformGraphicsInfo {
                 }
                 return false;
             });
-        return headless; 
+        return headless;
     }
 
     /**
