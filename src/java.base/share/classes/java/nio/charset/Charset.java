@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.nio.charset;
 
+import jdk.internal.misc.ThreadTracker;
 import jdk.internal.misc.VM;
 import sun.nio.cs.ThreadLocalCoders;
 import sun.security.action.GetPropertyAction;
@@ -47,6 +48,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.jar.JarFile;
 
 
 /**
@@ -370,9 +372,17 @@ public abstract class Charset
             };
     }
 
-    // Thread-local gate to prevent recursive provider lookups
-    private static ThreadLocal<ThreadLocal<?>> gate =
-            new ThreadLocal<ThreadLocal<?>>();
+    private static class ThreadTrackHolder {
+        static final ThreadTracker TRACKER = new ThreadTracker();
+    }
+
+    private static Object tryBeginLookup() {
+        return ThreadTrackHolder.TRACKER.tryBegin();
+    }
+
+    private static void endLookup(Object key) {
+        ThreadTrackHolder.TRACKER.end(key);
+    }
 
     @SuppressWarnings("removal")
     private static Charset lookupViaProviders(final String charsetName) {
@@ -388,12 +398,12 @@ public abstract class Charset
         if (!VM.isBooted())
             return null;
 
-        if (gate.get() != null)
+        Object key = tryBeginLookup();
+        if (key == null) {
             // Avoid recursive provider lookups
             return null;
+        }
         try {
-            gate.set(gate);
-
             return AccessController.doPrivileged(
                 new PrivilegedAction<>() {
                     public Charset run() {
@@ -409,7 +419,7 @@ public abstract class Charset
                 });
 
         } finally {
-            gate.set(null);
+            endLookup(key);
         }
     }
 

@@ -32,6 +32,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -48,11 +49,12 @@ import org.xml.sax.SAXException;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
-public class AppImageFile {
+public final class AppImageFile {
 
     // These values will be loaded from AppImage xml file.
     private final String creatorVersion;
@@ -143,13 +145,13 @@ public class AppImageFile {
             List<Map<String, ? super Object>> addLaunchers =
                 ADD_LAUNCHERS.fetchFrom(params);
 
-            for (int i = 0; i < addLaunchers.size(); i++) {
-                Map<String, ? super Object> sl = addLaunchers.get(i);
+            for (var launcherParams : addLaunchers) {
+                var li = new LauncherInfo(launcherParams);
                 xml.writeStartElement("add-launcher");
-                xml.writeAttribute("name", APP_NAME.fetchFrom(sl));
-                xml.writeAttribute("shortcut",
-                        SHORTCUT_HINT.fetchFrom(sl).toString());
-                xml.writeAttribute("menu", MENU_HINT.fetchFrom(sl).toString());
+                xml.writeAttribute("name", li.getName());
+                xml.writeAttribute("shortcut", Boolean.toString(li.isShortcut()));
+                xml.writeAttribute("menu", Boolean.toString(li.isMenu()));
+                xml.writeAttribute("service", Boolean.toString(li.isService()));
                 xml.writeEndElement();
             }
         });
@@ -190,14 +192,7 @@ public class AppImageFile {
                     XPathConstants.NODESET);
 
             for (int i = 0; i != launcherNodes.getLength(); i++) {
-                 Node item = launcherNodes.item(i);
-                 String name = getAttribute(item, "name");
-                 String shortcut = getAttribute(item, "shortcut");
-                 String menu = getAttribute(item, "menu");
-
-                 launcherInfos.add(new LauncherInfo(name,
-                         !("false".equals(shortcut)),
-                         !("false".equals(menu))));
+                 launcherInfos.add(new LauncherInfo(launcherNodes.item(i)));
             }
 
             AppImageFile file = new AppImageFile(
@@ -241,31 +236,32 @@ public class AppImageFile {
      * Following items in the list are names of additional launchers.
      */
     static List<LauncherInfo> getLaunchers(Path appImageDir,
-            Map<String, ? super Object> params) {
+            Map<String, Object> params) {
         List<LauncherInfo> launchers = new ArrayList<>();
-        try {
-            AppImageFile appImageInfo = AppImageFile.load(appImageDir);
-            if (appImageInfo != null) {
-                launchers.add(new LauncherInfo(
-                        appImageInfo.getLauncherName(), true, true));
-                launchers.addAll(appImageInfo.getAddLaunchers());
-                return launchers;
+        if (appImageDir != null) {
+            try {
+                AppImageFile appImageInfo = AppImageFile.load(appImageDir);
+                if (appImageInfo != null) {
+                    launchers.add(new LauncherInfo(
+                            appImageInfo.getLauncherName(), params));
+                    launchers.addAll(appImageInfo.getAddLaunchers());
+                    return launchers;
+                }
+            } catch (NoSuchFileException nsfe) {
+                // non jpackage generated app-image (no app/.jpackage.xml)
+                Log.info(MessageFormat.format(I18N.getString(
+                        "warning.foreign-app-image"), appImageDir));
+            } catch (IOException ioe) {
+                Log.verbose(ioe);
+                Log.info(MessageFormat.format(I18N.getString(
+                        "warning.invalid-app-image"), appImageDir));
             }
-        } catch (NoSuchFileException nsfe) {
-            // non jpackage generated app-image (no app/.jpackage.xml)
-            Log.info(MessageFormat.format(I18N.getString(
-                    "warning.foreign-app-image"), appImageDir));
-        } catch (IOException ioe) {
-            Log.verbose(ioe);
-            Log.info(MessageFormat.format(I18N.getString(
-                    "warning.invalid-app-image"), appImageDir));
-
         }
-        // this should never be the case, but maintaining behavior of
-        // creating default launchers without AppImageFile present
 
-        ADD_LAUNCHERS.fetchFrom(params).stream().map(APP_NAME::fetchFrom).map(
-                name -> new LauncherInfo(name, true, true)).forEach(launchers::add);
+        launchers.add(new LauncherInfo(params));
+        ADD_LAUNCHERS.fetchFrom(params).stream()
+                .map(launcherParams -> new LauncherInfo(launcherParams))
+                .forEach(launchers::add);
         return launchers;
     }
 
@@ -289,11 +285,11 @@ public class AppImageFile {
         return null;
     }
 
-    private static String getVersion() {
-        return System.getProperty("java.version");
+    static String getVersion() {
+        return "1.0";
     }
 
-    private static String getPlatform() {
+    static String getPlatform() {
         return PLATFORM_LABELS.get(Platform.getPlatform());
     }
 
@@ -301,33 +297,62 @@ public class AppImageFile {
         if (launcherName == null || launcherName.length() == 0) {
             return false;
         }
+
         for (var launcher : addLauncherInfos) {
             if ("".equals(launcher.getName())) {
                 return false;
             }
         }
 
+        if (!Objects.equals(getVersion(), creatorVersion)) {
+            return false;
+        }
+
+        if (!Objects.equals(getPlatform(), creatorPlatform)) {
+            return false;
+        }
+
         return true;
     }
 
     static class LauncherInfo {
-        private String name;
-        private boolean shortcut;
-        private boolean menu;
+        private final String name;
+        private final boolean shortcut;
+        private final boolean menu;
+        private final boolean service;
 
-        public LauncherInfo(String name, boolean shortcut, boolean menu) {
-            this.name = name;
-            this.shortcut = shortcut;
-            this.menu = menu;
+        private LauncherInfo(Map<String, Object> params) {
+            this(APP_NAME.fetchFrom(params), params);
         }
+
+        private LauncherInfo(String name, Map<String, Object> params) {
+            this.name = name;
+            this.shortcut = SHORTCUT_HINT.fetchFrom(params);
+            this.menu = MENU_HINT.fetchFrom(params);
+            this.service = LAUNCHER_AS_SERVICE.fetchFrom(params);
+        }
+
+        private LauncherInfo(Node node) {
+            this.name = getAttribute(node, "name");
+            this.shortcut = !"false".equals(getAttribute(node, "shortcut"));
+            this.menu = !"false".equals(getAttribute(node, "menu"));
+            this.service = !"false".equals(getAttribute(node, "service"));
+        }
+
         public String getName() {
             return name;
         }
+
         public boolean isShortcut() {
             return shortcut;
         }
+
         public boolean isMenu() {
             return menu;
+        }
+
+        public boolean isService() {
+            return service;
         }
     }
 

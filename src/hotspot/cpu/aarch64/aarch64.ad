@@ -2465,6 +2465,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_MulVL:
+    case Op_PopulateIndex:
       return false;
     case Op_VectorLoadShuffle:
     case Op_VectorRearrange:
@@ -3828,6 +3829,8 @@ encode %{
       }
     }
 
+    __ post_call_nop();
+
     // Only non uncommon_trap calls need to reinitialize ptrue.
     if (Compile::current()->max_vector_size() > 0 && uncommon_trap_request() == 0) {
       __ reinitialize_ptrue();
@@ -3841,7 +3844,9 @@ encode %{
     if (call == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
-    } else if (Compile::current()->max_vector_size() > 0) {
+    }
+    __ post_call_nop();
+    if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();
     }
   %}
@@ -3869,6 +3874,7 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
+      __ post_call_nop();
     } else {
       Label retaddr;
       __ adr(rscratch2, retaddr);
@@ -3877,6 +3883,7 @@ encode %{
       __ stp(zr, rscratch2, Address(__ pre(sp, -2 * wordSize)));
       __ blr(rscratch1);
       __ bind(retaddr);
+      __ post_call_nop();
       __ add(sp, sp, 2 * wordSize);
     }
     if (Compile::current()->max_vector_size() > 0) {
@@ -15139,6 +15146,30 @@ instruct convL2D_reg_reg(vRegD dst, iRegL src) %{
   %}
 
   ins_pipe(fp_l2d);
+%}
+
+instruct round_double_reg(iRegLNoSp dst, vRegD src, vRegD ftmp, rFlagsReg cr)
+%{
+  match(Set dst (RoundD src));
+  effect(TEMP_DEF dst, TEMP ftmp, KILL cr);
+  format %{ "java_round_double $dst,$src"%}
+  ins_encode %{
+    __ java_round_double($dst$$Register, as_FloatRegister($src$$reg),
+                         as_FloatRegister($ftmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct round_float_reg(iRegINoSp dst, vRegF src, vRegF ftmp, rFlagsReg cr)
+%{
+  match(Set dst (RoundF src));
+  effect(TEMP_DEF dst, TEMP ftmp, KILL cr);
+  format %{ "java_round_float $dst,$src"%}
+  ins_encode %{
+    __ java_round_float($dst$$Register, as_FloatRegister($src$$reg),
+                        as_FloatRegister($ftmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 // stack <-> reg and reg <-> reg shuffles with no conversion

@@ -588,6 +588,10 @@ filterAndHandleEvent(JNIEnv *env, EventInfo *evinfo, EventIndex ei,
         reportEvents(env, eventSessionID, evinfo->thread, evinfo->ei,
                      evinfo->clazz, evinfo->method, evinfo->location, eventBag);
     }
+    // TODO - vthread node cleanup: if we didn't have any events to report, we should allow
+    // the vthread ThreadNode to be released at this point. Need to check if
+    // (bagSize(eventBag) < 1), not just (eventBag == NULL).
+
 }
 
 /*
@@ -653,6 +657,10 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
 
     thread = evinfo->thread;
     if (thread != NULL) {
+        if (gdata->vthreadsSupported) {
+            evinfo->is_vthread = isVThread(thread);
+        }
+
         /*
          * Record the fact that we're entering an event
          * handler so that thread operations (status, interrupt,
@@ -887,6 +895,47 @@ cbThreadEnd(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread)
     } END_CALLBACK();
 
     LOG_MISC(("END cbThreadEnd"));
+}
+
+/* Event callback for JVMTI_EVENT_VIRTUAL_THREAD_START */
+static void JNICALL
+cbVThreadStart(jvmtiEnv *jvmti_env, JNIEnv *env, jthread vthread)
+{
+    EventInfo info;
+
+    LOG_CB(("cbVThreadStart: vthread=%p", vthread));
+    JDI_ASSERT(gdata->vthreadsSupported);
+
+    BEGIN_CALLBACK() {
+        (void)memset(&info,0,sizeof(info));
+        /* Convert to THREAD_START event. */
+        info.ei         = EI_THREAD_START;
+        info.thread     = vthread;
+        event_callback(env, &info);
+    } END_CALLBACK();
+
+    LOG_MISC(("END cbVThreadStart"));
+}
+
+/* Event callback for JVMTI_EVENT_VIRTUAL_THREAD_END */
+static void JNICALL
+cbVThreadEnd(jvmtiEnv *jvmti_env, JNIEnv *env, jthread vthread)
+{
+
+    EventInfo info;
+
+    LOG_CB(("cbVThreadEnd: vthread=%p", vthread));
+    JDI_ASSERT(gdata->vthreadsSupported);
+
+    BEGIN_CALLBACK() {
+        (void)memset(&info,0,sizeof(info));
+        /* Convert to THREAD_END event. */
+        info.ei         = EI_THREAD_END;
+        info.thread     = vthread;
+        event_callback(env, &info);
+    } END_CALLBACK();
+
+    LOG_MISC(("END cbVThreadEnd"));
 }
 
 /* Event callback for JVMTI_EVENT_CLASS_PREPARE */
@@ -1500,6 +1549,19 @@ eventHandler_initialize(jbyte sessionID)
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"Can't enable garbage collection finish events");
     }
+    /* Only enable vthread events if vthread support is enabled. */
+    if (gdata->vthreadsSupported) {
+        error = threadControl_setEventMode(JVMTI_ENABLE,
+                                           EI_VIRTUAL_THREAD_START, NULL);
+        if (error != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error,"Can't enable vthread start events");
+        }
+        error = threadControl_setEventMode(JVMTI_ENABLE,
+                                           EI_VIRTUAL_THREAD_END, NULL);
+        if (error != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error,"Can't enable vthread end events");
+        }
+    }
 
     (void)memset(&(gdata->callbacks),0,sizeof(gdata->callbacks));
     /* Event callback for JVMTI_EVENT_SINGLE_STEP */
@@ -1542,6 +1604,10 @@ eventHandler_initialize(jbyte sessionID)
     gdata->callbacks.VMDeath                    = &cbVMDeath;
     /* Event callback for JVMTI_EVENT_GARBAGE_COLLECTION_FINISH */
     gdata->callbacks.GarbageCollectionFinish    = &cbGarbageCollectionFinish;
+    /* Event callback for JVMTI_EVENT_VIRTUAL_THREAD_START */
+    gdata->callbacks.VirtualThreadStart         = &cbVThreadStart;
+    /* Event callback for JVMTI_EVENT_VIRTUAL_THREAD_END */
+    gdata->callbacks.VirtualThreadEnd           = &cbVThreadEnd;
 
     error = JVMTI_FUNC_PTR(gdata->jvmti,SetEventCallbacks)
                 (gdata->jvmti, &(gdata->callbacks), sizeof(gdata->callbacks));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package jdk.jfr.internal;
 
 import jdk.internal.misc.Unsafe;
 
-final class Bits {                            // package-private
+public final class Bits {
 
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static final boolean unalignedAccess = unsafe.unalignedAccess();
@@ -158,12 +158,12 @@ final class Bits {                            // package-private
     }
 
     // external api
-    static int putByte(long a, byte x) {
+    public static int putByte(long a, byte x) {
         putByte_(a, x);
         return Byte.BYTES;
     }
 
-    static int putBoolean(long a, boolean x) {
+    public static int putBoolean(long a, boolean x) {
         putBoolean_(a, x);
         return Byte.BYTES;
     }
@@ -186,7 +186,7 @@ final class Bits {                            // package-private
         return Short.BYTES;
     }
 
-    static int putInt(long a, int x) {
+    public static int putInt(long a, int x) {
         if (unalignedAccess || isAddressAligned(a, Integer.BYTES)) {
             putInt_(a, x);
             return Integer.BYTES;
@@ -204,7 +204,7 @@ final class Bits {                            // package-private
         return Long.BYTES;
     }
 
-    static int putFloat(long a, float x) {
+    public static int putFloat(long a, float x) {
         if (unalignedAccess || isAddressAligned(a, Float.BYTES)) {
             putFloat_(a, x);
             return Float.BYTES;
@@ -213,7 +213,7 @@ final class Bits {                            // package-private
         return Float.BYTES;
     }
 
-    static int putDouble(long a, double x) {
+    public static int putDouble(long a, double x) {
         if (unalignedAccess || isAddressAligned(a, Double.BYTES)) {
             putDouble_(a, x);
             return Double.BYTES;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,8 @@ import java.lang.reflect.Array;
  * ArrayType<String[][][]> a19 = new ArrayType<String[][][]>(1, a18);
  * }</pre>
  *
+ * @param <T> the Java component type that arrays described by this ArrayType must
+ * have.
  *
  * @since 1.5
  */

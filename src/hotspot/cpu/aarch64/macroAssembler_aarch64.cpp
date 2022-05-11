@@ -46,6 +46,7 @@
 #include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -313,6 +314,41 @@ void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acqui
   }
 }
 
+void MacroAssembler::push_cont_fastpath(Register java_thread) {
+  if (!Continuations::enabled()) return;
+  Label done;
+  ldr(rscratch1, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  cmp(sp, rscratch1);
+  br(Assembler::LS, done);
+  mov(rscratch1, sp); // we can't use sp as the source in str
+  str(rscratch1, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  bind(done);
+}
+
+void MacroAssembler::pop_cont_fastpath(Register java_thread) {
+  if (!Continuations::enabled()) return;
+  Label done;
+  ldr(rscratch1, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  cmp(sp, rscratch1);
+  br(Assembler::LO, done);
+  str(zr, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  bind(done);
+}
+
+void MacroAssembler::inc_held_monitor_count(Register java_thread) {
+  if (!Continuations::enabled()) return;
+  incrementw(Address(java_thread, JavaThread::held_monitor_count_offset()));
+}
+
+void MacroAssembler::dec_held_monitor_count(Register java_thread) {
+  if (!Continuations::enabled()) return;
+  decrementw(Address(java_thread, JavaThread::held_monitor_count_offset()));
+}
+
+void MacroAssembler::reset_held_monitor_count(Register java_thread) {
+  strw(zr, Address(java_thread, JavaThread::held_monitor_count_offset()));
+}
+
 void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
   // we must set sp to zero to clear frame
   str(zr, Address(rthread, JavaThread::last_Java_sp_offset()));
@@ -403,6 +439,9 @@ void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
+  assert(entry.rspec().type() == relocInfo::external_word_type
+         || entry.rspec().type() == relocInfo::runtime_call_type
+         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   if (target_needs_far_branch(entry.target())) {
     uint64_t offset;
     // We can use ADRP here because we know that the total size of
@@ -421,6 +460,9 @@ int MacroAssembler::far_jump(Address entry, CodeBuffer *cbuf, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
+  assert(entry.rspec().type() == relocInfo::external_word_type
+         || entry.rspec().type() == relocInfo::runtime_call_type
+         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   address start = pc();
   if (target_needs_far_branch(entry.target())) {
     uint64_t offset;
@@ -560,9 +602,7 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
 
 // Maybe emit a call via a trampoline.  If the code cache is small
 // trampolines won't be emitted.
-
-address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
-  assert(JavaThread::current()->is_Compiler_thread(), "just checking");
+address MacroAssembler::trampoline_call1(Address entry, CodeBuffer* cbuf, bool check_emit_size) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::opt_virtual_call_type
          || entry.rspec().type() == relocInfo::static_call_type
@@ -572,12 +612,14 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
   if (far_branches()) {
     bool in_scratch_emit_size = false;
 #ifdef COMPILER2
-    // We don't want to emit a trampoline if C2 is generating dummy
-    // code during its branch shortening phase.
-    CompileTask* task = ciEnv::current()->task();
-    in_scratch_emit_size =
-      (task != NULL && is_c2_compile(task->comp_level()) &&
-       Compile::current()->output()->in_scratch_emit_size());
+    if (check_emit_size) {
+      // We don't want to emit a trampoline if C2 is generating dummy
+      // code during its branch shortening phase.
+      CompileTask* task = ciEnv::current()->task();
+      in_scratch_emit_size =
+        (task != NULL && is_c2_compile(task->comp_level()) &&
+         Compile::current()->output()->in_scratch_emit_size());
+    }
 #endif
     if (!in_scratch_emit_size) {
       address stub = emit_trampoline_stub(offset(), entry.target());
@@ -782,6 +824,14 @@ void MacroAssembler::get_vm_result_2(Register metadata_result, Register java_thr
 
 void MacroAssembler::align(int modulus) {
   while (offset() % modulus != 0) nop();
+}
+
+void MacroAssembler::post_call_nop() {
+  if (!Continuations::enabled()) {
+    return;
+  }
+  relocate(post_call_nop_Relocation::spec());
+  nop();
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler
@@ -2190,13 +2240,24 @@ void MacroAssembler::unimplemented(const char* what) {
   stop(buf);
 }
 
+void MacroAssembler::_assert_asm(Assembler::Condition cc, const char* msg) {
+#ifdef ASSERT
+  Label OK;
+  br(cc, OK);
+  stop(msg);
+  bind(OK);
+#endif
+}
+
 // If a constant does not fit in an immediate field, generate some
 // number of MOV instructions and then perform the operation.
-void MacroAssembler::wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned imm,
+void MacroAssembler::wrap_add_sub_imm_insn(Register Rd, Register Rn, uint64_t imm,
                                            add_sub_imm_insn insn1,
-                                           add_sub_reg_insn insn2) {
+                                           add_sub_reg_insn insn2,
+                                           bool is32) {
   assert(Rd != zr, "Rd = zr and not setting flags?");
-  if (operand_valid_for_add_sub_immediate((int)imm)) {
+  bool fits = operand_valid_for_add_sub_immediate(is32 ? (int32_t)imm : imm);
+  if (fits) {
     (this->*insn1)(Rd, Rn, imm);
   } else {
     if (uabs(imm) < (1 << 24)) {
@@ -2204,7 +2265,7 @@ void MacroAssembler::wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned im
        (this->*insn1)(Rd, Rd, imm & ((1 << 12)-1));
     } else {
        assert_different_registers(Rd, Rn);
-       mov(Rd, (uint64_t)imm);
+       mov(Rd, imm);
        (this->*insn2)(Rd, Rn, Rd, LSL, 0);
     }
   }
@@ -2212,15 +2273,17 @@ void MacroAssembler::wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned im
 
 // Separate vsn which sets the flags. Optimisations are more restricted
 // because we must set the flags correctly.
-void MacroAssembler::wrap_adds_subs_imm_insn(Register Rd, Register Rn, unsigned imm,
-                                           add_sub_imm_insn insn1,
-                                           add_sub_reg_insn insn2) {
-  if (operand_valid_for_add_sub_immediate((int)imm)) {
+void MacroAssembler::wrap_adds_subs_imm_insn(Register Rd, Register Rn, uint64_t imm,
+                                             add_sub_imm_insn insn1,
+                                             add_sub_reg_insn insn2,
+                                             bool is32) {
+  bool fits = operand_valid_for_add_sub_immediate(is32 ? (int32_t)imm : imm);
+  if (fits) {
     (this->*insn1)(Rd, Rn, imm);
   } else {
     assert_different_registers(Rd, Rn);
     assert(Rd != zr, "overflow in immediate operand");
-    mov(Rd, (uint64_t)imm);
+    mov(Rd, imm);
     (this->*insn2)(Rd, Rn, Rd, LSL, 0);
   }
 }
@@ -4142,7 +4205,8 @@ void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
   // nmethod entry barrier necessitate using the constant pool. They have to be
   // ordered with respected to oop accesses.
   // Using immediate literals would necessitate ISBs.
-  if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL || !immediate) {
+  BarrierSet* bs = BarrierSet::barrier_set();
+  if ((bs->barrier_set_nmethod() != NULL && bs->barrier_set_assembler()->nmethod_code_patching()) || !immediate) {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ldr_constant(dst, Address(dummy, rspec));
   } else
@@ -5176,6 +5240,56 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
   // Adjust result: res == len ? len : 0
   cmp(len, res);
   csel(res, res, zr, EQ);
+}
+
+// java.math.round(double a)
+// Returns the closest long to the argument, with ties rounding to
+// positive infinity.  This requires some fiddling for corner
+// cases. We take care to avoid double rounding in e.g. (jlong)(a + 0.5).
+void MacroAssembler::java_round_double(Register dst, FloatRegister src,
+                                       FloatRegister ftmp) {
+  Label DONE;
+  BLOCK_COMMENT("java_round_double: { ");
+  fmovd(rscratch1, src);
+  // Use RoundToNearestTiesAway unless src small and -ve.
+  fcvtasd(dst, src);
+  // Test if src >= 0 || abs(src) >= 0x1.0p52
+  eor(rscratch1, rscratch1, UCONST64(1) << 63); // flip sign bit
+  mov(rscratch2, julong_cast(0x1.0p52));
+  cmp(rscratch1, rscratch2);
+  br(HS, DONE); {
+    // src < 0 && abs(src) < 0x1.0p52
+    // src may have a fractional part, so add 0.5
+    fmovd(ftmp, 0.5);
+    faddd(ftmp, src, ftmp);
+    // Convert double to jlong, use RoundTowardsNegative
+    fcvtmsd(dst, ftmp);
+  }
+  bind(DONE);
+  BLOCK_COMMENT("} java_round_double");
+}
+
+void MacroAssembler::java_round_float(Register dst, FloatRegister src,
+                                      FloatRegister ftmp) {
+  Label DONE;
+  BLOCK_COMMENT("java_round_float: { ");
+  fmovs(rscratch1, src);
+  // Use RoundToNearestTiesAway unless src small and -ve.
+  fcvtassw(dst, src);
+  // Test if src >= 0 || abs(src) >= 0x1.0p23
+  eor(rscratch1, rscratch1, 0x80000000); // flip sign bit
+  mov(rscratch2, jint_cast(0x1.0p23f));
+  cmp(rscratch1, rscratch2);
+  br(HS, DONE); {
+    // src < 0 && |src| < 0x1.0p23
+    // src may have a fractional part, so add 0.5
+    fmovs(ftmp, 0.5f);
+    fadds(ftmp, src, ftmp);
+    // Convert float to jint, use RoundTowardsNegative
+    fcvtmssw(dst, ftmp);
+  }
+  bind(DONE);
+  BLOCK_COMMENT("} java_round_float");
 }
 
 // get_thread() can be called anywhere inside generated code so we

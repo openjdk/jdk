@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010, 2015 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -234,8 +234,8 @@ class StubGenerator: public StubCodeGenerator {
   }
 };
 
-void StubGenerator_generate(CodeBuffer* code, bool all) {
-  StubGenerator g(code, all);
+void StubGenerator_generate(CodeBuffer* code, int phase) {
+  StubGenerator g(code, phase);
 }
 
 EntryFrame *EntryFrame::build(const intptr_t*  parameters,
