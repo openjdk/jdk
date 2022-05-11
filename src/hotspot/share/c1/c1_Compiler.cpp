@@ -228,7 +228,6 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_Continuation_doYield:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
-  case vmIntrinsics::_getEventWriter:
 #endif
   case vmIntrinsics::_getObjectSize:
     break;

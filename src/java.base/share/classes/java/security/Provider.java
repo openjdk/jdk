@@ -863,7 +863,6 @@ public abstract class Provider extends Properties {
     * @param in the {@code ObjectInputStream} to read
     * @throws IOException if an I/O error occurs
     * @throws ClassNotFoundException if a serialized class cannot be loaded
-    * @serial
     */
     @java.io.Serial
     private void readObject(ObjectInputStream in)

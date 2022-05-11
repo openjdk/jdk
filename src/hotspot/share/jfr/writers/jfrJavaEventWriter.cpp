@@ -50,7 +50,7 @@ static int thread_id_offset = invalid_offset;
 static int valid_offset = invalid_offset;
 
 static bool setup_event_writer_offsets(TRAPS) {
-  const char class_name[] = "jdk/jfr/internal/EventWriter";
+  const char class_name[] = "jdk/jfr/internal/event/EventWriter";
   Symbol* const k_sym = SymbolTable::new_symbol(class_name);
   assert(k_sym != NULL, "invariant");
   Klass* klass = SystemDictionary::resolve_or_fail(k_sym, true, CHECK_false);
@@ -207,7 +207,7 @@ static jobject create_new_event_writer(JfrBuffer* buffer, JfrThreadLocal* tl, TR
   assert(buffer != NULL, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   HandleMark hm(THREAD);
-  static const char klass[] = "jdk/jfr/internal/EventWriter";
+  static const char klass[] = "jdk/jfr/internal/event/EventWriter";
   static const char method[] = "<init>";
   static const char signature[] = "(JJJJZZ)V";
   JavaValue result(T_OBJECT);
