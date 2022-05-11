@@ -1097,13 +1097,12 @@ static size_t sharedmem_filesize(int fd, TRAPS) {
 
 // attach to a named shared memory region.
 //
-static void mmap_attach_shared(const char* user, int vmid, char** addr, size_t* sizep, TRAPS) {
+static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
 
   char* mapAddress;
   int result;
   int fd;
   size_t size = 0;
-  const char* luser = NULL;
 
   int mmap_prot = PROT_READ;
   int file_flags = O_RDONLY | O_NOFOLLOW;
@@ -1112,13 +1111,7 @@ static void mmap_attach_shared(const char* user, int vmid, char** addr, size_t* 
 
   // for linux, determine if vmid is for a containerized process
   int nspid = LINUX_ONLY(os::Linux::get_namespace_pid(vmid)) NOT_LINUX(-1);
-
-  if (user == NULL || strlen(user) == 0) {
-    luser = get_user_name(vmid, &nspid, CHECK);
-  }
-  else {
-    luser = user;
-  }
+  const char* luser = get_user_name(vmid, &nspid, CHECK);
 
   if (luser == NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
@@ -1132,9 +1125,7 @@ static void mmap_attach_shared(const char* user, int vmid, char** addr, size_t* 
   //
   if (!is_directory_secure(dirname)) {
     FREE_C_HEAP_ARRAY(char, dirname);
-    if (luser != user) {
-      FREE_C_HEAP_ARRAY(char, luser);
-    }
+    FREE_C_HEAP_ARRAY(char, luser);
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Process not found");
   }
@@ -1149,7 +1140,7 @@ static void mmap_attach_shared(const char* user, int vmid, char** addr, size_t* 
   strcpy(rfilename, filename);
 
   // free the c heap resources that are no longer needed
-  if (luser != user) FREE_C_HEAP_ARRAY(char, luser);
+  FREE_C_HEAP_ARRAY(char, luser);
   FREE_C_HEAP_ARRAY(char, dirname);
   FREE_C_HEAP_ARRAY(char, filename);
 
@@ -1268,7 +1259,7 @@ void PerfMemory::delete_memory_region() {
 // the indicated process's PerfData memory region into this JVMs
 // address space.
 //
-void PerfMemory::attach(const char* user, int vmid, char** addrp, size_t* sizep, TRAPS) {
+void PerfMemory::attach(int vmid, char** addrp, size_t* sizep, TRAPS) {
 
   if (vmid == 0 || vmid == os::current_process_id()) {
      *addrp = start();
@@ -1276,7 +1267,7 @@ void PerfMemory::attach(const char* user, int vmid, char** addrp, size_t* sizep,
      return;
   }
 
-  mmap_attach_shared(user, vmid, addrp, sizep, CHECK);
+  mmap_attach_shared(vmid, addrp, sizep, CHECK);
 }
 
 // detach from the PerfData memory region of another JVM
