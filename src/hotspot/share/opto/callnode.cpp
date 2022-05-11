@@ -1547,6 +1547,12 @@ Node *SafePointNode::peek_monitor_obj() const {
   return monitor_obj(jvms(), mon);
 }
 
+Node *SafePointNode::peek_operand(uint off) const {
+  assert(jvms()->sp() > 0, "must have an operand");
+  assert(off < jvms()->sp(), "off is out-of-range");
+  return stack(jvms(), jvms()->sp() - off - 1);
+}
+
 // Do we Match on this edge index or not?  Match no edges
 uint SafePointNode::match_edge(uint idx) const {
   return (TypeFunc::Parms == idx);

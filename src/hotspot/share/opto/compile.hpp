@@ -355,6 +355,7 @@ class Compile : public Phase {
   GrowableArray<Node*>  _skeleton_predicate_opaqs; // List of Opaque4 nodes for the loop skeleton predicates.
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
+  GrowableArray<IfNode *> _unstable_ifs;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
@@ -369,7 +370,6 @@ class Compile : public Phase {
   VectorSet             _dead_node_list;        // Set of dead nodes
   uint                  _dead_node_count;       // Number of dead nodes; VectorSet::Size() is O(N).
                                                 // So use this to keep count and make the call O(1).
-  Unique_Node_List*     _unstable_ifs;
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
 
@@ -548,6 +548,10 @@ class Compile : public Phase {
   bool              eliminate_boxing() const    { return _options._eliminate_boxing; }
   /** Do aggressive boxing elimination. */
   bool              aggressive_unboxing() const { return _options._eliminate_boxing && AggressiveUnboxing; }
+  /** Adjust liveness for unstable ifs. */
+  bool              aggressive_unstable_if() const {
+    return AggressiveLivenessForUnstableIf && !env()->should_retain_local_variables();
+  }
   bool              should_install_code() const { return _options._install_code; }
   /** Do locks coarsening. */
   bool              do_locks_coarsening() const { return _options._do_locks_coarsening; }
@@ -730,6 +734,7 @@ class Compile : public Phase {
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
   void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
+  void process_for_unstable_ifs(PhaseIterGVN& igvn);
 
   void sort_macro_nodes();
 
@@ -799,8 +804,7 @@ class Compile : public Phase {
   void         reset_dead_node_list()      { _dead_node_list.reset();
                                              _dead_node_count = 0;
                                            }
-  void         record_unstable_if(Node *iff);
-
+  void         record_unstable_if(IfNode *iff);
   uint          live_nodes() const         {
     int  val = _unique - _dead_node_count;
     assert (val >= 0, "number of tracked dead nodes %d more than created nodes %d", _unique, _dead_node_count);
