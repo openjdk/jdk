@@ -45,19 +45,21 @@ class JfrIntrinsicSupport : AllStatic {
 
 #define JFR_HAVE_INTRINSICS
 
-#define JFR_TEMPLATES(template)                                                                                   \
-  template(jdk_jfr_internal_JVM,                                      "jdk/jfr/internal/JVM")                     \
-  template(jdk_jfr_internal_handlers_EventHandler_signature,          "Ljdk/jfr/internal/handlers/EventHandler;") \
-  template(eventHandler_name,                                         "eventHandler")                             \
-  template(void_eventWriter_signature,                                "()Ljdk/jfr/internal/EventWriter;")         \
+#define JFR_TEMPLATES(template)                                                                                      \
+  template(jdk_jfr_internal_JVM,                                      "jdk/jfr/internal/JVM")                        \
+  template(jdk_jfr_internal_event_EventWriterFactory,                 "jdk/jfr/internal/event/EventWriterFactory")   \
+  template(jdk_jfr_internal_event_EventConfiguration_signature,       "Ljdk/jfr/internal/event/EventConfiguration;") \
+  template(getEventWriter_signature,                                  "()Ljdk/jfr/internal/event/EventWriter;")      \
+  template(eventConfiguration_name,                                   "eventConfiguration")                          \
+  template(commit_name,                                               "commit")                                      \
 
-#define JFR_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)                                   \
-  do_intrinsic(_counterTime,        jdk_jfr_internal_JVM, counterTime_name, void_long_signature, F_SN)            \
-    do_name(     counterTime_name,                             "counterTime")                                     \
-  do_intrinsic(_getClassId,         jdk_jfr_internal_JVM, getClassId_name, class_long_signature, F_SN)            \
-    do_name(     getClassId_name,                              "getClassId")                                      \
-  do_intrinsic(_getEventWriter,   jdk_jfr_internal_JVM, getEventWriter_name, void_eventWriter_signature, F_SN)    \
-    do_name(     getEventWriter_name,                          "getEventWriter")                                  \
+#define JFR_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)                                      \
+  do_intrinsic(_counterTime,        jdk_jfr_internal_JVM, counterTime_name, void_long_signature, F_SN)               \
+    do_name(     counterTime_name,                             "counterTime")                                        \
+  do_intrinsic(_getClassId,         jdk_jfr_internal_JVM, getClassId_name, class_long_signature, F_SN)               \
+    do_name(     getClassId_name,                              "getClassId")                                         \
+  do_intrinsic(_getEventWriter,   jdk_jfr_internal_JVM, getEventWriter_name, getEventWriter_signature, F_SN)         \
+    do_name(     getEventWriter_name,                          "getEventWriter")                                     \
 
 #else // !INCLUDE_JFR
 
