@@ -180,7 +180,7 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
 
   Register shuffle_reg = rbx;
   JavaCallingConvention out_conv;
-  NativeCallingConvention in_conv(call_regs._arg_regs, call_regs._args_length);
+  NativeCallingConvention in_conv(call_regs._arg_regs);
   ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv, shuffle_reg->as_VMReg());
   int stack_slots = SharedRuntime::out_preserve_stack_slots() + arg_shuffle.out_arg_stack_slots();
   int out_arg_area = align_up(stack_slots * VMRegImpl::stack_slot_size, StackAlignmentInBytes);
@@ -201,8 +201,8 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   }
 
   int reg_save_area_size = compute_reg_save_area_size(abi);
-  RegSpiller arg_spilller(call_regs._arg_regs, call_regs._args_length);
-  RegSpiller result_spiller(call_regs._ret_regs, call_regs._rets_length);
+  RegSpiller arg_spilller(call_regs._arg_regs);
+  RegSpiller result_spiller(call_regs._ret_regs);
 
   int shuffle_area_offset    = 0;
   int res_save_area_offset   = shuffle_area_offset    + out_arg_area;
@@ -295,7 +295,7 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   // return value shuffle
   if (!needs_return_buffer) {
 #ifdef ASSERT
-    if (call_regs._rets_length == 1) { // 0 or 1
+    if (call_regs._ret_regs.length() == 1) { // 0 or 1
       VMReg j_expected_result_reg;
       switch (ret_type) {
         case T_BOOLEAN:
@@ -315,16 +315,16 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
       }
       // No need to move for now, since CallArranger can pick a return type
       // that goes in the same reg for both CCs. But, at least assert they are the same
-      assert(call_regs._ret_regs[0] == j_expected_result_reg,
-      "unexpected result register: %s != %s", call_regs._ret_regs[0]->name(), j_expected_result_reg->name());
+      assert(call_regs._ret_regs.at(0) == j_expected_result_reg,
+        "unexpected result register: %s != %s", call_regs._ret_regs.at(0)->name(), j_expected_result_reg->name());
     }
 #endif
   } else {
     assert(ret_buf_offset != -1, "no return buffer allocated");
     __ lea(rscratch1, Address(rsp, ret_buf_offset));
     int offset = 0;
-    for (int i = 0; i < call_regs._rets_length; i++) {
-      VMReg reg = call_regs._ret_regs[i];
+    for (int i = 0; i < call_regs._ret_regs.length(); i++) {
+      VMReg reg = call_regs._ret_regs.at(i);
       if (reg->is_Register()) {
         __ movptr(reg->as_Register(), Address(rscratch1, offset));
         offset += 8;

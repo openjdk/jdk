@@ -34,19 +34,16 @@ const CallRegs ForeignGlobals::parse_call_regs(jobject jconv) {
   oop conv_oop = JNIHandles::resolve_non_null(jconv);
   objArrayOop arg_regs_oop = jdk_internal_foreign_abi_CallConv::argRegs(conv_oop);
   objArrayOop ret_regs_oop = jdk_internal_foreign_abi_CallConv::retRegs(conv_oop);
-  CallRegs result;
-  result._args_length = arg_regs_oop->length();
-  result._arg_regs = NEW_RESOURCE_ARRAY(VMReg, result._args_length);
+  int num_args = arg_regs_oop->length();
+  int num_rets = ret_regs_oop->length();
+  CallRegs result(num_args, num_rets);
 
-  result._rets_length = ret_regs_oop->length();
-  result._ret_regs = NEW_RESOURCE_ARRAY(VMReg, result._rets_length);
-
-  for (int i = 0; i < result._args_length; i++) {
-    result._arg_regs[i] = parse_vmstorage(arg_regs_oop->obj_at(i));
+  for (int i = 0; i < num_args; i++) {
+    result._arg_regs.push(parse_vmstorage(arg_regs_oop->obj_at(i)));
   }
 
-  for (int i = 0; i < result._rets_length; i++) {
-    result._ret_regs[i] = parse_vmstorage(ret_regs_oop->obj_at(i));
+  for (int i = 0; i < num_rets; i++) {
+    result._ret_regs.push(parse_vmstorage(ret_regs_oop->obj_at(i)));
   }
 
   return result;
@@ -58,10 +55,10 @@ VMReg ForeignGlobals::parse_vmstorage(oop storage) {
   return vmstorage_to_vmreg(type, index);
 }
 
-int RegSpiller::compute_spill_area(const VMReg* regs, int num_regs) {
+int RegSpiller::compute_spill_area(const GrowableArray<VMReg>& regs) {
   int result_size = 0;
-  for (int i = 0; i < num_regs; i++) {
-    result_size += pd_reg_size(regs[i]);
+  for (int i = 0; i < regs.length(); i++) {
+    result_size += pd_reg_size(regs.at(i));
   }
   return result_size;
 }
@@ -69,8 +66,8 @@ int RegSpiller::compute_spill_area(const VMReg* regs, int num_regs) {
 void RegSpiller::generate(MacroAssembler* masm, int rsp_offset, bool spill) const {
   assert(rsp_offset != -1, "rsp_offset should be set");
   int offset = rsp_offset;
-  for (int i = 0; i < _num_regs; i++) {
-    VMReg reg = _regs[i];
+  for (int i = 0; i < _regs.length(); i++) {
+    VMReg reg = _regs.at(i);
     if (spill) {
       pd_store_reg(masm, offset, reg);
     } else {
@@ -113,8 +110,8 @@ int NativeCallingConvention::calling_convention(BasicType* sig_bt, VMRegPair* ou
       case T_SHORT:
       case T_INT:
       case T_FLOAT: {
-        assert(src_pos < _input_regs_length, "oob");
-        VMReg reg = _input_regs[src_pos++];
+        assert(src_pos < _input_regs.length(), "oob");
+        VMReg reg = _input_regs.at(src_pos++);
         out_regs[i].set1(reg);
         if (reg->is_stack())
           stk_slots += 2;
@@ -123,8 +120,8 @@ int NativeCallingConvention::calling_convention(BasicType* sig_bt, VMRegPair* ou
       case T_LONG:
       case T_DOUBLE: {
         assert((i + 1) < num_args && sig_bt[i + 1] == T_VOID, "expecting half");
-        assert(src_pos < _input_regs_length, "oob");
-        VMReg reg = _input_regs[src_pos++];
+        assert(src_pos < _input_regs.length(), "oob");
+        VMReg reg = _input_regs.at(src_pos++);
         out_regs[i].set2(reg);
         if (reg->is_stack())
           stk_slots += 2;
@@ -146,26 +143,20 @@ class ComputeMoveOrder: public StackObj {
   class MoveOperation: public ResourceObj {
     friend class ComputeMoveOrder;
    private:
-    VMRegPair        _src;
-    VMRegPair        _dst;
-    bool             _processed;
-    MoveOperation*  _next;
-    MoveOperation*  _prev;
-    BasicType        _bt;
+    VMRegPair      _src;
+    VMRegPair      _dst;
+    bool           _processed;
+    MoveOperation* _next;
+    MoveOperation* _prev;
+    BasicType      _bt;
 
     static int get_id(VMRegPair r) {
       return r.first()->value();
     }
 
    public:
-    MoveOperation(VMRegPair src, VMRegPair dst, BasicType bt):
-      _src(src)
-    , _dst(dst)
-    , _processed(false)
-    , _next(NULL)
-    , _prev(NULL)
-    , _bt(bt) {
-    }
+    MoveOperation(VMRegPair src, VMRegPair dst, BasicType bt)
+      : _src(src), _dst(dst), _processed(false), _next(NULL), _prev(NULL), _bt(bt) {}
 
     int src_id() const          { return get_id(_src); }
     int dst_id() const          { return get_id(_dst); }
@@ -313,7 +304,8 @@ class ComputeMoveOrder: public StackObj {
   }
 
 public:
-  static GrowableArray<Move> compute_move_order(int total_in_args, const VMRegPair* in_regs, int total_out_args, VMRegPair* out_regs,
+  static GrowableArray<Move> compute_move_order(int total_in_args, const VMRegPair* in_regs,
+                                                int total_out_args, VMRegPair* out_regs,
                                                 const BasicType* in_sig_bt, VMRegPair tmp_vmreg) {
     ComputeMoveOrder cmo(total_in_args, in_regs, total_out_args, out_regs, in_sig_bt, tmp_vmreg);
     cmo.compute();

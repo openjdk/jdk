@@ -38,11 +38,11 @@ public:
 };
 
 struct CallRegs {
-  VMReg* _arg_regs;
-  int _args_length;
+  GrowableArray<VMReg> _arg_regs;
+  GrowableArray<VMReg> _ret_regs;
 
-  VMReg* _ret_regs;
-  int _rets_length;
+  CallRegs(int num_args, int num_rets)
+    : _arg_regs(num_args), _ret_regs(num_rets) {}
 };
 
 class ForeignGlobals {
@@ -67,29 +67,19 @@ public:
 };
 
 class NativeCallingConvention : public CallingConventionClosure {
-  const VMReg* _input_regs;
-  int _input_regs_length;
+  GrowableArray<VMReg> _input_regs;
 public:
-  NativeCallingConvention(const VMReg* input_regs, int input_regs_length) :
-    _input_regs(input_regs),
-    _input_regs_length(input_regs_length) {
-  }
   NativeCallingConvention(const GrowableArray<VMReg>& input_regs)
-   : NativeCallingConvention(input_regs.data(), input_regs.length()) {}
+   : _input_regs(input_regs) {}
 
   int calling_convention(BasicType* sig_bt, VMRegPair* out_regs, int num_args) const override;
 };
 
 class RegSpiller {
-  const VMReg* _regs;
-  int _num_regs;
+  GrowableArray<VMReg> _regs;
   int _spill_size_bytes;
 public:
-  RegSpiller(const VMReg* regs, int num_regs) :
-    _regs(regs), _num_regs(num_regs),
-    _spill_size_bytes(compute_spill_area(regs, num_regs)) {
-  }
-  RegSpiller(const GrowableArray<VMReg>& regs) : RegSpiller(regs.data(), regs.length()) {
+  RegSpiller(const GrowableArray<VMReg>& regs) : _regs(regs), _spill_size_bytes(compute_spill_area(regs)) {
   }
 
   int spill_size_bytes() const { return _spill_size_bytes; }
@@ -97,7 +87,7 @@ public:
   void generate_fill(MacroAssembler* masm, int rsp_offset) const { return generate(masm, rsp_offset, false); }
 
 private:
-  static int compute_spill_area(const VMReg* regs, int num_regs);
+  static int compute_spill_area(const GrowableArray<VMReg>& regs);
   void generate(MacroAssembler* masm, int rsp_offset, bool is_spill) const;
 
   static int pd_reg_size(VMReg reg);
