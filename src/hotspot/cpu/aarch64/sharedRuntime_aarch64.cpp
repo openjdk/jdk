@@ -1048,7 +1048,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ bind(call_thaw);
 
-  rt_call(masm, CAST_FROM_FN_PTR(address, StubRoutines::cont_thaw()));
+  __ rt_call(CAST_FROM_FN_PTR(address, StubRoutines::cont_thaw()));
   oop_maps->add_gc_map(__ pc() - start, map->deep_copy());
   ContinuationEntry::return_pc_offset = __ pc() - start;
   __ post_call_nop();
