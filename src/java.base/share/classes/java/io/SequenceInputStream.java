@@ -162,10 +162,11 @@ public class SequenceInputStream extends InputStream {
     }
 
     /**
-     * Reads up to {@code len} bytes of data from this input stream
-     * into an array of bytes.  If {@code len} is not zero, the method
-     * blocks until at least 1 byte of input is available; otherwise, no
-     * bytes are read and {@code 0} is returned.
+     * Reads up to {@code len} bytes of data from this input stream into an
+     * array of bytes.  If the end of the last contained stream has been reached
+     * then {@code -1} is returned.  Otherwise, if {@code len} is not zero, the
+     * method blocks until at least 1 byte of input is available; if {@code len}
+     * is zero, no bytes are read and {@code 0} is returned.
      * <p>
      * The {@code read} method of {@code SequenceInputStream}
      * tries to read the data from the current substream. If it fails to
