@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4949631
- * @summary Check for ability to decode arrays of odd sizes > 16MB
+ * @summary Check for ability to recode arrays of odd sizes > 16MB
  * @run main/othervm -Xms100m -Xmx200m Enormous
  */
 
