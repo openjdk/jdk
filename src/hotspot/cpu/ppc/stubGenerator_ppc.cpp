@@ -4533,39 +4533,52 @@ class StubGenerator: public StubCodeGenerator {
 
 #if INCLUDE_JFR
 
-  static RuntimeStub* generate_jfr_stub(const char* name, address entrypoint) {
-    int insts_size = 512;
-    int locs_size = 64;
-    CodeBuffer code(name, insts_size, locs_size);
-    OopMapSet* oop_maps = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-    MacroAssembler* _masm = masm;
-
-    address start = __ pc();
-    __ unimplemented(FILE_AND_LINE);
-    int frame_complete = __ pc() - start;
-
-    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-      RuntimeStub::new_runtime_stub(name, &code, frame_complete,
-                                    0 /*framesize*/,
-                                    oop_maps, false);
-    return stub;
-  }
-
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
   // It returns a jobject handle to the event writer.
   // The handle is dereferenced and the return value is the event writer oop.
   RuntimeStub* generate_jfr_write_checkpoint() {
-    return generate_jfr_stub("jfr_write_checkpoint",
-                              CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint));
+    Register tmp1 = R10_ARG8;
+    Register tmp2 = R9_ARG7;
+    int insts_size = 512;
+    int locs_size = 64;
+    CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
+    OopMapSet* oop_maps = new OopMapSet();
+    MacroAssembler* masm = new MacroAssembler(&code);
+    MacroAssembler* _masm = masm;
+
+    int framesize = frame::abi_reg_args_size / VMRegImpl::stack_slot_size;
+    address start = __ pc();
+    __ mflr(tmp1);
+    __ std(tmp1, _abi0(lr), R1_SP);  // save return pc
+    __ push_frame_reg_args(0, tmp1);
+    int frame_complete = __ pc() - start;
+    __ set_last_Java_frame(R1_SP, noreg);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), R16_thread);
+    address calls_return_pc = __ last_calls_return_pc();
+    __ reset_last_Java_frame();
+    // The handle is dereferenced through a load barrier.
+    Label null_jobject;
+    __ cmpdi(CCR0, R3_RET, 0);
+    __ beq(CCR0, null_jobject);
+    DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->load_at(_masm, decorators, T_OBJECT, R3_RET /*base*/, (intptr_t)0, R3_RET /*dst*/, tmp1, tmp2, MacroAssembler::PRESERVATION_NONE);
+    __ bind(null_jobject);
+    __ pop_frame();
+    __ ld(tmp1, _abi0(lr), R1_SP);
+    __ mtlr(tmp1);
+    __ blr();
+
+    OopMap* map = new OopMap(framesize, 0);
+    oop_maps->add_gc_map(calls_return_pc - start, map);
+
+    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
+      RuntimeStub::new_runtime_stub("jfr_write_checkpoint", &code, frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps, false);
+    return stub;
   }
 
-  // For c1: call the corresponding runtime routine, it returns a jobject handle to the event writer.
-  // The handle is dereferenced and the return value is the event writer oop.
-  RuntimeStub* generate_jfr_get_event_writer() {
-    return generate_jfr_stub("jfr_get_event_writer",
-                              CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::event_writer));
-  }
 #endif // INCLUDE_JFR
 
 
@@ -4615,8 +4628,6 @@ class StubGenerator: public StubCodeGenerator {
 
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
-    JFR_ONLY(StubRoutines::_jfr_get_event_writer_stub = generate_jfr_get_event_writer();)
-    JFR_ONLY(StubRoutines::_jfr_get_event_writer = StubRoutines::_jfr_get_event_writer_stub->entry_point();)
   }
 
   void generate_all() {
