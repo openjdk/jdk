@@ -39,25 +39,25 @@ class PollsetPoller extends Poller {
     @Override
     int fdVal() {
         // Stub
-        throw new RuntimeException("Unimplemented on AIX");
+        throw new UnsupportedOperationException("Unimplemented on AIX");
     }
 
     @Override
     void implRegister(int fdVal) throws IOException {
         // Stub
-        throw new RuntimeException("Unimplemented on AIX");
+        throw new UnsupportedOperationException("Unimplemented on AIX");
     }
 
     @Override
     void implDeregister(int fdVal) {
         // Stub
-        throw new RuntimeException("Unimplemented on AIX");
+        throw new UnsupportedOperationException("Unimplemented on AIX");
     }
 
     @Override
     int poll(int timeout) throws IOException {
         // Stub
-        throw new RuntimeException("Unimplemented on AIX");
+        throw new UnsupportedOperationException("Unimplemented on AIX");
     }
 }
 
