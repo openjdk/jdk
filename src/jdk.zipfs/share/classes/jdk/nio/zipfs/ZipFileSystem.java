@@ -1584,7 +1584,7 @@ class ZipFileSystem extends FileSystem {
             IndexNode inode = new IndexNode(cen, pos, nlen);
             if (hasDotOrDotDot(inode.name)) {
                 throw new ZipException("ZIP file can't be opened as a file system " +
-                        "because entry \"" + new String(inode.name) + "\" has a '.' or '..' element in its name");
+                        "because an entry has a '.' or '..' element in its name");
             }
             inodes.put(inode, inode);
             if (zc.isUTF8() || (flag & FLAG_USE_UTF8) != 0) {
