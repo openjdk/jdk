@@ -297,7 +297,7 @@ public class CipherInputStream extends FilterInputStream {
         if (n < 0) {
             return 0;
         }
-        ostart += (int)n;
+        ostart += (int) n;
         return n;
     }
 
