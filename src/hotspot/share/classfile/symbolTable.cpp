@@ -469,7 +469,11 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
     assert(lookup_shared(name, len, hash) == NULL, "must have checked already");
     Symbol* sym = do_add_if_needed(name, len, hash, c_heap);
     assert(sym->refcount() != 0, "lookup should have incremented the count");
+
+PRAGMA_DIAG_PUSH
+PRAGMA_STRINGOP_OVERFLOW_IGNORED
     cp->symbol_at_put(cp_indices[i], sym);
+PRAGMA_DIAG_POP
   }
 }
 

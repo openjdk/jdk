@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,12 @@
   PRAGMA_DISABLE_GCC_WARNING("-Wformat-security")
 
 #define PRAGMA_FORMAT_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wformat")
+
+#define PRAGMA_FORMAT_OVERFLOW_IGNORED \
+  PRAGMA_DISABLE_GCC_WARNING("-Wformat-overflow")
+
+#define PRAGMA_STRINGOP_OVERFLOW_IGNORED \
+  PRAGMA_DISABLE_GCC_WARNING("-Wstringop-overflow")
 
 // Disable -Wstringop-truncation which is introduced in GCC 8.
 // https://gcc.gnu.org/gcc-8/changes.html

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,15 @@ static int popenCommand(const char* cmdlineFormat, const char* arg,
                 goto cleanup;
             }
 
+            /*
+             * We can ignore -Wuse-after-free for strBufBegin because we use it
+             * as a numerical value.
+             */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
             strBufNextChar = strNewBufBegin + (strBufNextChar - strBufBegin);
+#pragma GCC diagnostic pop
+
             strBufEnd = strNewBufBegin + strBufCapacity;
             strBufBegin = strNewBufBegin;
         }

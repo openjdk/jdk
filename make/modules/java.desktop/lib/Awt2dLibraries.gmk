@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -459,7 +459,7 @@ else
 
    HARFBUZZ_DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
-        maybe-uninitialized class-memaccess unused-result extra
+        maybe-uninitialized class-memaccess unused-result extra use-after-free
    HARFBUZZ_DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
         undef missing-field-initializers range-loop-analysis \

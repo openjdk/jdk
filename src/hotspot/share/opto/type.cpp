@@ -4294,7 +4294,10 @@ jint TypeAryPtr::max_array_length(BasicType etype) {
     } else if (etype == T_ILLEGAL) { // bottom[]
       etype = T_BYTE; // will produce conservatively high value
     } else {
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_OVERFLOW_IGNORED
       fatal("not an element type: %s", type2name(etype));
+PRAGMA_DIAG_POP
     }
   }
   return arrayOopDesc::max_array_length(etype);

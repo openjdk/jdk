@@ -5963,7 +5963,11 @@ void ClassFileParser::mangle_hidden_class_name(InstanceKlass* const ik) {
   // Add a Utf8 entry containing the hidden name.
   assert(_class_name != NULL, "Unexpected null _class_name");
   int hidden_index = _orig_cp_size; // this is an extra slot we added
+
+PRAGMA_DIAG_PUSH
+PRAGMA_STRINGOP_OVERFLOW_IGNORED
   _cp->symbol_at_put(hidden_index, _class_name);
+PRAGMA_DIAG_POP
 
   // Update this_class_index's slot in the constant pool with the new Utf8 entry.
   // We have to update the resolved_klass_index and the name_index together

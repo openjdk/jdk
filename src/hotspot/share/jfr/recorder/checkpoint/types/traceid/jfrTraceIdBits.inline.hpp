@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,12 @@ inline jbyte traceid_xor(jbyte bits, jbyte current) {
 template <jbyte op(jbyte, jbyte)>
 inline void set_form(jbyte bits, jbyte* dest) {
   assert(dest != NULL, "invariant");
+
+PRAGMA_DIAG_PUSH
+PRAGMA_STRINGOP_OVERFLOW_IGNORED
   *dest = op(bits, *dest);
+PRAGMA_DIAG_POP
+
   OrderAccess::storestore();
 }
 

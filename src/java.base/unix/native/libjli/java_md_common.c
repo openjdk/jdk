@@ -128,8 +128,12 @@ Resolve(char *indir, char *cmd)
 {
     char name[PATH_MAX + 2], *real;
 
-    if ((JLI_StrLen(indir) + JLI_StrLen(cmd) + 1)  > PATH_MAX) return 0;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+    if ((JLI_StrLen(indir) + JLI_StrLen(cmd) + 2) > sizeof(name)) return 0;
     JLI_Snprintf(name, sizeof(name), "%s%c%s", indir, FILE_SEPARATOR, cmd);
+#pragma GCC diagnostic pop
+
     if (!ProgramExists(name)) return 0;
     real = JLI_MemAlloc(PATH_MAX + 2);
     if (!realpath(name, real))

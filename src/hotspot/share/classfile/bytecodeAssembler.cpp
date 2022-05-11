@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,9 @@ ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
   for (int i = 0; i < _entries.length(); ++i) {
     BytecodeCPEntry entry = _entries.at(i);
     int idx = i + _orig->length();
+
+PRAGMA_DIAG_PUSH
+PRAGMA_STRINGOP_OVERFLOW_IGNORED
     switch (entry._tag) {
       case BytecodeCPEntry::UTF8:
         entry._u.utf8->increment_refcount();
@@ -89,6 +92,8 @@ ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
       default:
         ShouldNotReachHere();
     }
+PRAGMA_DIAG_POP
+
   }
 
   cp->initialize_unresolved_klasses(_orig->pool_holder()->class_loader_data(),
