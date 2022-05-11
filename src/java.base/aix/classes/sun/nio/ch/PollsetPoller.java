@@ -32,7 +32,7 @@ import java.io.IOException;
 
 class PollsetPoller extends Poller {
 
-    PollsetPoller (boolean read) throws IOException {
+    PollsetPoller(boolean read) throws IOException {
         super(read);
     }
 
