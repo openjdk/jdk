@@ -264,7 +264,7 @@ public final class WFontConfiguration extends FontConfiguration {
                 }
                 case "ru" -> "RUSSIAN_CHARSET";
                 case "el" -> "GREEK_CHARSET";
-                case "iw" -> "HEBREW_CHARSET";
+                case "iw", "he" -> "HEBREW_CHARSET";
                 case "ja" -> "SHIFTJIS_CHARSET";
                 case "ko" -> "HANGEUL_CHARSET";
                 case "th" -> "THAI_CHARSET";
