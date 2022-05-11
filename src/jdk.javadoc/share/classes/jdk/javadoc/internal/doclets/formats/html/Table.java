@@ -126,7 +126,7 @@ public class Table extends Content {
             occurringTabs = new HashSet<>();  // order not significant
         }
         // Use current size of tabs list as id so we have tab ids that are consistent
-        // over tables with the same tabs but different content.
+        // across tables with the same tabs but different content.
         tabs.add(new Tab(label, predicate, tabs.size() + 1));
         return this;
     }
