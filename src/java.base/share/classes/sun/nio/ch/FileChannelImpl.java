@@ -536,9 +536,9 @@ public class FileChannelImpl
     }
 
     // Assume at first that the underlying kernel supports sendfile();
-    // set this to false if we find out later that it doesn't
+    // set this to true if we find out later that it doesn't
     //
-    private static volatile boolean transferToSupported = true;
+    private static volatile boolean transferToNotSupported = false;
 
     // Assume that the underlying kernel sendfile() will work if the target
     // fd is a pipe; set this to false if we find out later that it doesn't
@@ -582,7 +582,7 @@ public class FileChannelImpl
             }
             if (n == IOStatus.UNSUPPORTED) {
                 // Don't bother trying again
-                transferToSupported = false;
+                transferToNotSupported = true;
                 return IOStatus.UNSUPPORTED;
             }
             return IOStatus.normalize(n);
@@ -596,7 +596,7 @@ public class FileChannelImpl
                                     WritableByteChannel target)
         throws IOException
     {
-        if (!transferToSupported)
+        if (transferToNotSupported)
             return IOStatus.UNSUPPORTED;
 
         FileDescriptor targetFD = null;
@@ -778,9 +778,9 @@ public class FileChannelImpl
     }
 
     // Assume at first that the underlying kernel supports copy_file_range();
-    // set this to false if we find out later that it doesn't
+    // set this to true if we find out later that it doesn't
     //
-    private static volatile boolean transferFromSupported = true;
+    private static volatile boolean transferFromNotSupported = false;
 
     private long transferFromDirectlyInternal(FileDescriptor srcFD,
                                               long position, long count)
@@ -803,7 +803,7 @@ public class FileChannelImpl
             } while ((n == IOStatus.INTERRUPTED) && isOpen());
             if (n == IOStatus.UNSUPPORTED) {
                 // Don't bother trying again
-                transferFromSupported = false;
+                transferFromNotSupported = true;
                 return IOStatus.UNSUPPORTED;
             }
             return IOStatus.normalize(n);
@@ -819,7 +819,7 @@ public class FileChannelImpl
     {
         if (!src.readable)
             throw new NonReadableChannelException();
-        if (!transferFromSupported)
+        if (transferFromNotSupported)
             return IOStatus.UNSUPPORTED;
         FileDescriptor srcFD = src.fd;
         if (srcFD == null)
