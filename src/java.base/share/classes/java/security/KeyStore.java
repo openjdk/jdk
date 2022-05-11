@@ -145,7 +145,7 @@ import sun.security.util.Debug;
  * <pre>
  *    KeyStore.PasswordProtection protParam =
  *        new KeyStore.PasswordProtection(password);
- *    try {
+ *    try (FileOutputStream fos = new FileOutputStream("newKeyStoreName")) {
  *        // get my private key
  *        KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
  *            ks.getEntry("privateKeyAlias", protParam);
@@ -158,9 +158,7 @@ import sun.security.util.Debug;
  *        ks.setEntry("secretKeyAlias", skEntry, protParam);
  *
  *        // store away the keystore
- *        try (FileOutputStream fos = new FileOutputStream("newKeyStoreName")) {
- *            ks.store(fos, password);
- *        }
+ *        ks.store(fos, password);
  *    } finally {
  *        protParam.destroy();
  *    }
