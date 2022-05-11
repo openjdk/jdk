@@ -132,7 +132,7 @@ public class CastNullCheckDroppingsTest {
         t.runTest(methodClassCastNull, false, svalue);
         t.runTest(methodNullClassCast, false, svalue);
         t.runTest(methodClassCastObj,  false, svalue);
-        t.runTest(methodObjClassCast,  true,  svalue);
+        t.runTest(methodObjClassCast,  false,  svalue);
         t.runTest(methodClassCastInt,  false, svalue);
         t.runTest(methodIntClassCast,  true,  svalue);
         t.runTest(methodClassCastint,  false, svalue);

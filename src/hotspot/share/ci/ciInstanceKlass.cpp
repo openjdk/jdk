@@ -729,6 +729,19 @@ void ciInstanceKlass::dump_replay_instanceKlass(outputStream* out, InstanceKlass
   }
 }
 
+GrowableArray<ciInstanceKlass*>* ciInstanceKlass::transitive_interfaces() const {
+  GrowableArray<ciInstanceKlass*>* result = NULL;
+  GUARDED_VM_ENTRY(
+    InstanceKlass* ik = get_instanceKlass();
+    Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
+    result = new GrowableArray<ciInstanceKlass*>(interfaces->length());
+    for (int i = 0; i < interfaces->length(); i++) {
+      result->append(CURRENT_ENV->get_instance_klass(interfaces->at(i)));
+    }
+  );
+  return result;
+}
+
 void ciInstanceKlass::dump_replay_data(outputStream* out) {
   ResourceMark rm;
 

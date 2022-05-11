@@ -153,9 +153,16 @@ void ciObjectFactory::init_shared_objects() {
   ciEnv::_null_object_instance = new (_arena) ciNullObject();
   init_ident_of(ciEnv::_null_object_instance);
 
-#define VM_CLASS_DEFN(name, ignore_s)                              \
-  if (vmClasses::name##_is_loaded()) \
-    ciEnv::_##name = get_metadata(vmClasses::name())->as_instance_klass();
+#define VM_CLASS_DEFN(name, ignore_s)                                \
+  if (vmClasses::name##_is_loaded()) {                               \
+    InstanceKlass* ik = vmClasses::name();                           \
+    ciEnv::_##name = get_metadata(ik)->as_instance_klass();          \
+    Array<InstanceKlass*>* interfaces = ik->transitive_interfaces(); \
+    for (int i = 0; i < interfaces->length(); i++) {                 \
+      InstanceKlass* interface = interfaces->at(i);                  \
+      get_metadata(interface);                                       \
+    }                                                                \
+  }
 
   VM_CLASSES_DO(VM_CLASS_DEFN)
 #undef VM_CLASS_DEFN

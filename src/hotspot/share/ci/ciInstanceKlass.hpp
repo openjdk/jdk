@@ -292,6 +292,7 @@ public:
   bool has_trusted_loader() const {
     return _has_trusted_loader;
   }
+  GrowableArray<ciInstanceKlass*>* transitive_interfaces() const;
 
   // Replay support
 
