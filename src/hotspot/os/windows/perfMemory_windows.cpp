@@ -1576,10 +1576,6 @@ static size_t sharedmem_filesize(const char* filename, TRAPS) {
 static void open_file_mapping(int vmid, char** addrp, size_t* sizep, TRAPS) {
 
   ResourceMark rm;
-
-  void *mapAddress = 0;
-  size_t size = 0;
-  HANDLE fmh;
   DWORD ofm_access = FILE_MAP_READ;
   DWORD mv_access = FILE_MAP_READ;
   const char* luser = get_user_name(vmid);
@@ -1621,6 +1617,7 @@ static void open_file_mapping(int vmid, char** addrp, size_t* sizep, TRAPS) {
   FREE_C_HEAP_ARRAY(char, filename);
   FREE_C_HEAP_ARRAY(char, objectname);
 
+  size_t size;
   if (*sizep == 0) {
     size = sharedmem_filesize(rfilename, CHECK);
   } else {
@@ -1630,12 +1627,11 @@ static void open_file_mapping(int vmid, char** addrp, size_t* sizep, TRAPS) {
   assert(size > 0, "unexpected size <= 0");
 
   // Open the file mapping object with the given name
-  fmh = open_sharedmem_object(robjectname, ofm_access, CHECK);
-
+  HANDLE fmh = open_sharedmem_object(robjectname, ofm_access, CHECK);
   assert(fmh != INVALID_HANDLE_VALUE, "unexpected handle value");
 
   // map the entire file into the address space
-  mapAddress = MapViewOfFile(
+  void* mapAddress = MapViewOfFile(
                  fmh,             /* HANDLE Handle of file mapping object */
                  mv_access,       /* DWORD access flags */
                  0,               /* DWORD High word of offset */

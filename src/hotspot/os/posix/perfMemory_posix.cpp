@@ -1099,11 +1099,6 @@ static size_t sharedmem_filesize(int fd, TRAPS) {
 //
 static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
 
-  char* mapAddress;
-  int result;
-  int fd;
-  size_t size = 0;
-
   int mmap_prot = PROT_READ;
   int file_flags = O_RDONLY | O_NOFOLLOW;
 
@@ -1145,7 +1140,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   FREE_C_HEAP_ARRAY(char, filename);
 
   // open the shared memory file for the give vmid
-  fd = open_sharedmem_file(rfilename, file_flags, THREAD);
+  int fd = open_sharedmem_file(rfilename, file_flags, THREAD);
 
   if (fd == OS_ERR) {
     return;
@@ -1156,6 +1151,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
     return;
   }
 
+  size_t size;
   if (*sizep == 0) {
     size = sharedmem_filesize(fd, CHECK);
   } else {
@@ -1164,9 +1160,9 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
 
   assert(size > 0, "unexpected size <= 0");
 
-  mapAddress = (char*)::mmap((char*)0, size, mmap_prot, MAP_SHARED, fd, 0);
+  char* mapAddress = (char*)::mmap((char*)0, size, mmap_prot, MAP_SHARED, fd, 0);
 
-  result = ::close(fd);
+  int result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
