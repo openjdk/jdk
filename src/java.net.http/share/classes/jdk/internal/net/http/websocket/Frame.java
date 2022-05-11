@@ -39,8 +39,6 @@ final class Frame {
 
     static final int MAX_HEADER_SIZE_BYTES = 2 + 8 + 4;
     static final int MAX_CONTROL_FRAME_PAYLOAD_LENGTH = 125;
-    static final char FIN_BIT = 0b10000000_00000000;
-    static final char RSV1_BIT = 0b01000000_00000000;
 
     enum Opcode {
 
