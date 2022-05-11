@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ import javax.crypto.spec.RC2ParameterSpec;
  * @since   1.5
  * @author  Andreas Sterbenz
  */
-public final class RC2Cipher extends CipherSpi {
+public sealed class RC2Cipher extends CipherSpi
+        permits PKCS12PBECipherCore.PBEWithSHA1AndRC2 {
 
     // internal CipherCore & RC2Crypt objects which do the real work.
     private final CipherCore core;
