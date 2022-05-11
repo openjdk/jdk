@@ -148,7 +148,7 @@ public class PointerBenchmarkFlat {
     public int test() {
         int sum = 0;
         for (int i = 0 ; i < ELEM_SIZE ; i++) {
-            sum += ptr_ptr.get(i).address().toRawLongValue();
+            sum += (int)ptr_ptr.get(i).address().toRawLongValue();
         }
         return sum;
     }
@@ -157,7 +157,7 @@ public class PointerBenchmarkFlat {
     public int testFlat() {
         int sum = 0;
         for (int i = 0 ; i < ELEM_SIZE ; i++) {
-            sum += ptr_ptr_flat.get(i).address().toRawLongValue();
+            sum += (int)ptr_ptr_flat.get(i).address().toRawLongValue();
         }
         return sum;
     }

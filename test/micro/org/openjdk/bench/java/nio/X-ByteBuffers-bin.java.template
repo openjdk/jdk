@@ -40,8 +40,8 @@ class XXX {
 #end[RO]
 
     @Benchmark
-    public int test$Ms$LoopGet$Type$$SWAP$$RO$() {
-        int r = 0;
+    public $type$ test$Ms$LoopGet$Type$$SWAP$$RO$() {
+        $type$ r = 0;
         for (int i = 0; i < $ms$ByteBuffer$SWAP$$RO$.capacity(); i+=$CarrierBW$) {
             r += $ms$ByteBuffer$SWAP$$RO$.get{#if[!byte]?$Type$}(i);
         }

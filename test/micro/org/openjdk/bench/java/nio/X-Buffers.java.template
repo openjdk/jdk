@@ -133,8 +133,8 @@ public class $Type$Buffers {
 #if[!byte]
     // ---------------- HELPER METHODS
 
-    private int innerLoopGet$Type$($Type$Buffer buf) {
-        int r = 0;
+    private $type$ innerLoopGet$Type$($Type$Buffer buf) {
+        $type$ r = 0;
         for (int i = 0; i < buf.capacity(); i++) {
             r += buf.get(i);
         }
