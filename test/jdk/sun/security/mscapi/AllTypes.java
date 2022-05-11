@@ -45,30 +45,30 @@ public class AllTypes {
         var nr = test("windows-root");
         var nmu = test("windows-my-currentuser");
         var nru = test("windows-root-currentuser");
-        var nmm = adminTest("windows-my-localmachine");
-        var nrm = adminTest("windows-root-localmachine");
+        var hasAdminPrivileges = detectIfRunningWithAdminPrivileges();
+        var nmm = adminTest("windows-my-localmachine", hasAdminPrivileges);
+        var nrm = adminTest("windows-root-localmachine", hasAdminPrivileges);
         Asserts.assertEQ(nm, nmu);
         Asserts.assertEQ(nr, nru);
     }
 
-    private static boolean hasAccess(String type) throws Exception {
+    private static boolean detectIfRunningWithAdminPrivileges() {
         try {
-            KeyStore ks = KeyStore.getInstance(type);
-            ks.load(null, null);
-            return true;
-        } catch (IOException ioe) {
-            if (ioe.getMessage().trim().endsWith("java.security.KeyStoreException: Access is denied.")) {
-                return false;
-            }
-            throw ioe;
+            Process p = Runtime.getRuntime().exec("reg query \"HKU\\S-1-5-19\"");
+            p.waitFor();
+            return (p.exitValue() == 0);
+        }
+        catch (Exception ex) {
+            System.out.println("Warning: unable to detect admin privileges, assuming none");
+            return false;
         }
     }
 
-    private static List<String> adminTest(String type) throws Exception {
-        if (hasAccess(type)) {
+    private static List<String> adminTest(String type, boolean hasAdminPrivileges) throws Exception {
+        if (hasAdminPrivileges) {
             return test(type);
         }
-        System.out.println("Ignoring: " + type + " as it requires admin access");
+        System.out.println("Ignoring: " + type + " as it requires admin privileges");
         return null;
     }
 
