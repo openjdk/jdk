@@ -82,6 +82,11 @@ JavaThread* ProgrammableUpcallHandler::on_entry(OptimizedEntryBlob::FrameData* c
   // since it can potentially block.
   context->new_handles = JNIHandleBlock::allocate_block(thread);
 
+  // block async exceptions during upcalls to prevent them from
+  // happening outside user-defined exception handlers
+  // and terminating the VM through one of the fallback handlers.
+  thread->block_async_exceptions();
+
   // clear any pending exception in thread (native calls start with no exception pending)
   thread->clear_pending_exception();
 
@@ -91,7 +96,7 @@ JavaThread* ProgrammableUpcallHandler::on_entry(OptimizedEntryBlob::FrameData* c
 
   // After this, we are officially in Java Code. This needs to be done before we change any of the thread local
   // info, since we cannot find oops before the new information is set up completely.
-  ThreadStateTransition::transition_from_native(thread, _thread_in_Java, true /* check_asyncs */);
+  ThreadStateTransition::transition_from_native(thread, _thread_in_Java, false /* check_asyncs (already blocked above)*/);
 
   context->old_handles = thread->active_handles();
 
@@ -131,6 +136,7 @@ void ProgrammableUpcallHandler::on_exit(OptimizedEntryBlob::FrameData* context) 
   JNIHandleBlock::release_block(context->new_handles, thread);
 
   assert(!thread->has_pending_exception(), "Upcall can not throw an exception");
+  thread->unblock_async_exceptions();
 }
 
 void ProgrammableUpcallHandler::handle_uncaught_exception(oop exception) {
