@@ -1807,11 +1807,11 @@ void Node::dump(const char* suffix, bool mark, outputStream *st) const {
 
   const Type *t = bottom_type();
 
-  if (t != NULL && (t->isa_instptr() || t->isa_klassptr())) {
+  if (t != NULL && (t->isa_instptr() || t->isa_instklassptr())) {
     const TypeInstPtr  *toop = t->isa_instptr();
-    const TypeKlassPtr *tkls = t->isa_klassptr();
-    ciKlass*           klass = toop ? toop->klass() : (tkls ? tkls->klass() : NULL );
-    if (klass && klass->is_loaded() && klass->is_interface()) {
+    const TypeInstKlassPtr *tkls = t->isa_instklassptr();
+    ciKlass*           klass = toop ? toop->instance_klass() : (tkls ? tkls->instance_klass() : NULL );
+    if (klass && klass->is_loaded() && ((toop && toop->is_interface()) || (tkls && tkls->is_interface()))) {
       st->print("  Interface:");
     } else if (toop) {
       st->print("  Oop:");

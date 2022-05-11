@@ -420,7 +420,7 @@ class GraphKit : public Phase {
 
   // Use the type profile to narrow an object type.
   Node* maybe_cast_profiled_receiver(Node* not_null_obj,
-                                     ciKlass* require_klass,
+                                     const TypeKlassPtr* require_klass,
                                      ciKlass* spec,
                                      bool safe_for_replace);
 

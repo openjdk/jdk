@@ -678,13 +678,12 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
 bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints) {
   GrowableArray <SafePointNode *> safepoints_done;
 
-  ciKlass* klass = NULL;
   ciInstanceKlass* iklass = NULL;
   int nfields = 0;
   int array_base = 0;
   int element_size = 0;
   BasicType basic_elem_type = T_ILLEGAL;
-  ciType* elem_type = NULL;
+  const Type* field_type = NULL;
 
   Node* res = alloc->result_cast();
   assert(res == NULL || res->is_CheckCastPP(), "unexpected AllocateNode result");
@@ -694,20 +693,18 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
   }
 
   if (res != NULL) {
-    klass = res_type->klass();
     if (res_type->isa_instptr()) {
       // find the fields of the class which will be needed for safepoint debug information
-      assert(klass->is_instance_klass(), "must be an instance klass.");
-      iklass = klass->as_instance_klass();
+      iklass = res_type->is_instptr()->instance_klass();
       nfields = iklass->nof_nonstatic_fields();
     } else {
       // find the array's elements which will be needed for safepoint debug information
       nfields = alloc->in(AllocateNode::ALength)->find_int_con(-1);
-      assert(klass->is_array_klass() && nfields >= 0, "must be an array klass.");
-      elem_type = klass->as_array_klass()->element_type();
-      basic_elem_type = elem_type->basic_type();
+      assert(nfields >= 0, "must be an array klass.");
+      basic_elem_type = res_type->is_aryptr()->elem()->array_element_basic_type();
       array_base = arrayOopDesc::base_offset_in_bytes(basic_elem_type);
       element_size = type2aelembytes(basic_elem_type);
+      field_type = res_type->is_aryptr()->elem();
     }
   }
   //
@@ -737,33 +734,31 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
       if (iklass != NULL) {
         field = iklass->nonstatic_field_at(j);
         offset = field->offset();
-        elem_type = field->type();
+        ciType* elem_type = field->type();
         basic_elem_type = field->layout_type();
+
+        // The next code is taken from Parse::do_get_xxx().
+        if (is_reference_type(basic_elem_type)) {
+          if (!elem_type->is_loaded()) {
+            field_type = TypeInstPtr::BOTTOM;
+          } else if (field != NULL && field->is_static_constant()) {
+            ciObject* con = field->constant_value().as_object();
+            // Do not "join" in the previous type; it doesn't add value,
+            // and may yield a vacuous result if the field is of interface type.
+            field_type = TypeOopPtr::make_from_constant(con)->isa_oopptr();
+            assert(field_type != NULL, "field singleton type must be consistent");
+          } else {
+            field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
+          }
+          if (UseCompressedOops) {
+            field_type = field_type->make_narrowoop();
+            basic_elem_type = T_NARROWOOP;
+          }
+        } else {
+          field_type = Type::get_const_basic_type(basic_elem_type);
+        }
       } else {
         offset = array_base + j * (intptr_t)element_size;
-      }
-
-      const Type *field_type;
-      // The next code is taken from Parse::do_get_xxx().
-      if (is_reference_type(basic_elem_type)) {
-        if (!elem_type->is_loaded()) {
-          field_type = TypeInstPtr::BOTTOM;
-        } else if (field != NULL && field->is_static_constant()) {
-          // This can happen if the constant oop is non-perm.
-          ciObject* con = field->constant_value().as_object();
-          // Do not "join" in the previous type; it doesn't add value,
-          // and may yield a vacuous result if the field is of interface type.
-          field_type = TypeOopPtr::make_from_constant(con)->isa_oopptr();
-          assert(field_type != NULL, "field singleton type must be consistent");
-        } else {
-          field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
-        }
-        if (UseCompressedOops) {
-          field_type = field_type->make_narrowoop();
-          basic_elem_type = T_NARROWOOP;
-        }
-      } else {
-        field_type = Type::get_const_basic_type(basic_elem_type);
       }
 
       const TypeOopPtr *field_addr_type = res_type->add_offset(offset)->isa_oopptr();
@@ -1024,8 +1019,8 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   // Eliminate boxing allocations which are not used
   // regardless scalar replaceable status.
   bool boxing_alloc = C->eliminate_boxing() &&
-                      tklass->klass()->is_instance_klass()  &&
-                      tklass->klass()->as_instance_klass()->is_box_klass();
+                      tklass->isa_instklassptr() &&
+                      tklass->is_instklassptr()->instance_klass()->is_box_klass();
   if (!alloc->_is_scalar_replaceable && (!boxing_alloc || (res != NULL))) {
     return false;
   }
@@ -1054,7 +1049,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   CompileLog* log = C->log();
   if (log != NULL) {
     log->head("eliminate_allocation type='%d'",
-              log->identify(tklass->klass()));
+              log->identify(tklass->exact_klass()));
     JVMState* p = alloc->jvms();
     while (p != NULL) {
       log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
@@ -1095,7 +1090,7 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
   CompileLog* log = C->log();
   if (log != NULL) {
     log->head("eliminate_boxing type='%d'",
-              log->identify(t->klass()));
+              log->identify(t->instance_klass()));
     JVMState* p = boxing->jvms();
     while (p != NULL) {
       log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
@@ -1689,9 +1684,13 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
     rawmem = make_store(control, rawmem, object, arrayOopDesc::length_offset_in_bytes(), length, T_INT);
     // conservatively small header size:
     header_size = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-    ciKlass* k = _igvn.type(klass_node)->is_klassptr()->klass();
-    if (k->is_array_klass())    // we know the exact header size in most cases:
-      header_size = Klass::layout_helper_header_size(k->layout_helper());
+    if (_igvn.type(klass_node)->isa_aryklassptr()) {   // we know the exact header size in most cases:
+      BasicType elem = _igvn.type(klass_node)->is_klassptr()->as_instance_type()->isa_aryptr()->elem()->array_element_basic_type();
+      if (is_reference_type(elem, true)) {
+        elem = T_OBJECT;
+      }
+      header_size = Klass::layout_helper_header_size(Klass::array_layout_helper(elem));
+    }
   }
 
   // Clear the object body, if necessary.
@@ -1891,10 +1890,10 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
   Node* valid_length_test = alloc->in(AllocateNode::ValidLengthTest);
   InitializeNode* init = alloc->initialization();
   Node* klass_node = alloc->in(AllocateNode::KlassNode);
-  ciKlass* k = _igvn.type(klass_node)->is_klassptr()->klass();
+  const TypeAryKlassPtr* ary_klass_t = _igvn.type(klass_node)->isa_aryklassptr();
   address slow_call_address;  // Address of slow call
   if (init != NULL && init->is_complete_with_arraycopy() &&
-      k->is_type_array_klass()) {
+      ary_klass_t && ary_klass_t->elem()->isa_klassptr() == NULL) {
     // Don't zero type array during slow allocation in VM since
     // it will be initialized later by arraycopy in compiled code.
     slow_call_address = OptoRuntime::new_array_nozero_Java();
