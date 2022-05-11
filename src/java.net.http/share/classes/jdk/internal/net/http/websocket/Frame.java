@@ -39,11 +39,11 @@ final class Frame {
 
     static final int MAX_HEADER_SIZE_BYTES = 2 + 8 + 4;
     static final int MAX_CONTROL_FRAME_PAYLOAD_LENGTH = 125;
-    static final char FIN_BIT  = 0b10000000_00000000;
-    static final char RSV1_BIT = 0b01000000_00000000;
-    static final char RSV2_BIT = 0b00100000_00000000;
-    static final char RSV3_BIT = 0b00010000_00000000;
-    static final char MASK_BIT = 0b00000000_10000000;
+    static final char FIN_BIT_MASK = 0b10000000_00000000;
+    static final char RSV1_BIT_MASK = 0b01000000_00000000;
+    static final char RSV2_BIT_MASK = 0b00100000_00000000;
+    static final char RSV3_BIT_MASK = 0b00010000_00000000;
+    static final char MASK_BIT_MASK = 0b00000000_10000000;
 
     enum Opcode {
 
@@ -218,36 +218,36 @@ final class Frame {
 
         HeaderWriter fin(boolean value) {
             if (value) {
-                firstChar |=  FIN_BIT;
+                firstChar |= FIN_BIT_MASK;
             } else {
-                firstChar &= ~FIN_BIT;
+                firstChar &= ~FIN_BIT_MASK;
             }
             return this;
         }
 
         HeaderWriter rsv1(boolean value) {
             if (value) {
-                firstChar |=  RSV1_BIT;
+                firstChar |= RSV1_BIT_MASK;
             } else {
-                firstChar &= ~RSV1_BIT;
+                firstChar &= ~RSV1_BIT_MASK;
             }
             return this;
         }
 
         HeaderWriter rsv2(boolean value) {
             if (value) {
-                firstChar |=  RSV2_BIT;
+                firstChar |= RSV2_BIT_MASK;
             } else {
-                firstChar &= ~RSV2_BIT;
+                firstChar &= ~RSV2_BIT_MASK;
             }
             return this;
         }
 
         HeaderWriter rsv3(boolean value) {
             if (value) {
-                firstChar |=  RSV3_BIT;
+                firstChar |= RSV3_BIT_MASK;
             } else {
-                firstChar &= ~RSV3_BIT;
+                firstChar &= ~RSV3_BIT_MASK;
             }
             return this;
         }
@@ -281,7 +281,7 @@ final class Frame {
         }
 
         HeaderWriter noMask() {
-            firstChar &= ~MASK_BIT;
+            firstChar &= ~MASK_BIT_MASK;
             mask = false;
             return this;
         }
