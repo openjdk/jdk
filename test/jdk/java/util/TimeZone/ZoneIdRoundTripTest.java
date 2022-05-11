@@ -44,6 +44,7 @@ public class ZoneIdRoundTripTest {
                 {ZoneId.of("Z"), 0},
                 {ZoneId.of("UT"), 0},
                 {ZoneId.of("UTC"), 0},
+                {ZoneId.of("GMT"), 0},
                 {ZoneId.of("+00:01"), 60_000},
                 {ZoneId.of("-00:01"), -60_000},
                 {ZoneId.of("+00:00:01"), 1_000},
