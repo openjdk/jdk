@@ -32,7 +32,7 @@
 #include "oops/oopCast.inline.hpp"
 
 template<typename T, typename Func>
-void ForeignGlobals::loadArray(objArrayOop jarray, int type_index, GrowableArray<T>& array, Func converter) {
+void ForeignGlobals::parse_register_array(objArrayOop jarray, int type_index, GrowableArray<T>& array, Func converter) {
   objArrayOop subarray = oop_cast<objArrayOop>(jarray->obj_at(type_index));
   int subarray_length = subarray->length();
   for (int i = 0; i < subarray_length; i++) {

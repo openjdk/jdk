@@ -4227,7 +4227,7 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
     break;
 
   case vmIntrinsics::_linkToNative:
-    print_inlining(callee, "Native call", /*success*/ false);
+    print_inlining(callee, "native call", /*success*/ false);
     break;
 
   default:

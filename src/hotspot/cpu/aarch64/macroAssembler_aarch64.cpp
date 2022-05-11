@@ -5528,9 +5528,9 @@ static int reg2offset_out(VMReg r) {
   return (r->reg2stack() + SharedRuntime::out_preserve_stack_slots()) * VMRegImpl::stack_slot_size;
 }
 
-// On 64 bit we will store integer like items to the stack as
-// 64 bits items (Aarch64 abi) even though java would only store
-// 32bits for a parameter. On 32bit it will simply be 32 bits
+// On64 bit we will store integer like items to the stack as
+// 64bits items (AArch64 ABI) even though java would only store
+// 32bits for a parameter. On 32bit it will simply be 32bits
 // So this routine will do 32->32 on 32bit and 32->64 on 64bit
 void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst, Register tmp) {
   if (src.first()->is_stack()) {
@@ -5544,8 +5544,6 @@ void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst, Register tmp) {
     }
   } else if (dst.first()->is_stack()) {
     // reg to stack
-    // Do we really have to sign extend???
-    // __ movslq(src.first()->as_Register(), src.first()->as_Register());
     str(src.first()->as_Register(), Address(sp, reg2offset_out(dst.first())));
   } else {
     if (dst.first() != src.first()) {

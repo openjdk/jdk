@@ -376,7 +376,7 @@ OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const fr
   assert(frame.is_optimized_entry_frame(), "wrong frame");
   // need unextended_sp here, since normal sp is wrong for interpreter callees
   return reinterpret_cast<OptimizedEntryBlob::FrameData*>(
-    reinterpret_cast<char*>(frame.unextended_sp()) + in_bytes(_frame_data_offset));
+    reinterpret_cast<address>(frame.unextended_sp()) + in_bytes(_frame_data_offset));
 }
 
 bool frame::optimized_entry_frame_is_first() const {
@@ -396,13 +396,9 @@ frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
   assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
   // Since we are walking the stack now this nested anchor is obviously walkable
   // even if it wasn't when it was stacked.
-  if (!jfa->walkable()) {
-    // Capture _last_Java_pc (if needed) and mark anchor walkable.
-    jfa->capture_last_Java_pc();
-  }
+  jfa->make_walkable();
   map->clear();
   assert(map->include_argument_oops(), "should be set by clear");
-  vmassert(jfa->last_Java_pc() != NULL, "not walkable");
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
 
   return fr;

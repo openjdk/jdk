@@ -137,8 +137,8 @@ void NativeInvokerGenerator::generate() {
   Register tmp2 = r10;
 
   Register shuffle_reg = r19;
-  JavaCallConv in_conv;
-  NativeCallConv out_conv(_input_registers);
+  JavaCallingConvention in_conv;
+  NativeCallingConvention out_conv(_input_registers);
   ArgumentShuffle arg_shuffle(_signature, _num_args, _signature, _num_args, &in_conv, &out_conv, shuffle_reg->as_VMReg());
 
 #ifdef ASSERT

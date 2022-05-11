@@ -57,8 +57,8 @@ JNI_ENTRY(jlong, NEP_makeInvoker(JNIEnv* env, jclass _unused, jobject method_typ
     if (bt == BasicType::T_DOUBLE || bt == BasicType::T_LONG) {
       basic_type[bt_idx++] = T_VOID;
       // we only need these in the basic type
-      // NativeCallConv ignores them, but they are needed
-      // for JavaCallConv
+      // NativeCallingConvention ignores them, but they are needed
+      // for JavaCallingConvention
     }
   }
 

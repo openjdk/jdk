@@ -153,7 +153,7 @@ public class X86_64Architecture implements Architecture {
             },
             stackAlignment,
             shadowSpace,
-                targetAddrStorage, retBufAddrStorage);
+            targetAddrStorage, retBufAddrStorage);
     }
 
 }

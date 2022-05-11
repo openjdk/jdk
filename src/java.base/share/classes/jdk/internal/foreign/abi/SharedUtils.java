@@ -310,8 +310,9 @@ public class SharedUtils {
         }
         MethodType newType = oldType.dropParameterTypes(destIndex, destIndex + 1);
         int[] reorder = new int[oldType.parameterCount()];
-        if (destIndex < sourceIndex)
+        if (destIndex < sourceIndex) {
             sourceIndex--;
+        }
         for (int i = 0, index = 0; i < reorder.length; i++) {
             if (i != destIndex) {
                 reorder[i] = index++;

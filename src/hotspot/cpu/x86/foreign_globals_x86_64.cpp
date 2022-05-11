@@ -49,18 +49,18 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   ABIDescriptor abi;
 
   objArrayOop inputStorage = jdk_internal_foreign_abi_ABIDescriptor::inputStorage(abi_oop);
-  loadArray(inputStorage, INTEGER_TYPE, abi._integer_argument_registers, as_Register);
-  loadArray(inputStorage, VECTOR_TYPE, abi._vector_argument_registers, as_XMMRegister);
+  parse_register_array(inputStorage, INTEGER_TYPE, abi._integer_argument_registers, as_Register);
+  parse_register_array(inputStorage, VECTOR_TYPE, abi._vector_argument_registers, as_XMMRegister);
 
   objArrayOop outputStorage = jdk_internal_foreign_abi_ABIDescriptor::outputStorage(abi_oop);
-  loadArray(outputStorage, INTEGER_TYPE, abi._integer_return_registers, as_Register);
-  loadArray(outputStorage, VECTOR_TYPE, abi._vector_return_registers, as_XMMRegister);
+  parse_register_array(outputStorage, INTEGER_TYPE, abi._integer_return_registers, as_Register);
+  parse_register_array(outputStorage, VECTOR_TYPE, abi._vector_return_registers, as_XMMRegister);
   objArrayOop subarray = oop_cast<objArrayOop>(outputStorage->obj_at(X87_TYPE));
   abi._X87_return_registers_noof = subarray->length();
 
   objArrayOop volatileStorage = jdk_internal_foreign_abi_ABIDescriptor::volatileStorage(abi_oop);
-  loadArray(volatileStorage, INTEGER_TYPE, abi._integer_additional_volatile_registers, as_Register);
-  loadArray(volatileStorage, VECTOR_TYPE, abi._vector_additional_volatile_registers, as_XMMRegister);
+  parse_register_array(volatileStorage, INTEGER_TYPE, abi._integer_additional_volatile_registers, as_Register);
+  parse_register_array(volatileStorage, VECTOR_TYPE, abi._vector_additional_volatile_registers, as_XMMRegister);
 
   abi._stack_alignment_bytes = jdk_internal_foreign_abi_ABIDescriptor::stackAlignment(abi_oop);
   abi._shadow_space_bytes = jdk_internal_foreign_abi_ABIDescriptor::shadowSpace(abi_oop);

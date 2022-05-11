@@ -102,7 +102,7 @@ void ArgumentShuffle::print_on(outputStream* os) const {
   os->print_cr("}");
 }
 
-int NativeCallConv::calling_convention(BasicType* sig_bt, VMRegPair* out_regs, int num_args) const {
+int NativeCallingConvention::calling_convention(BasicType* sig_bt, VMRegPair* out_regs, int num_args) const {
   int src_pos = 0;
   int stk_slots = 0;
   for (int i = 0; i < num_args; i++) {
@@ -142,11 +142,9 @@ int NativeCallConv::calling_convention(BasicType* sig_bt, VMRegPair* out_regs, i
   return stk_slots;
 }
 
-// based on ComputeMoveOrder from x86_64 shared runtime code.
-// with some changes.
-class ForeignCMO: public StackObj {
+class ComputeMoveOrder: public StackObj {
   class MoveOperation: public ResourceObj {
-    friend class ForeignCMO;
+    friend class ComputeMoveOrder;
    private:
     VMRegPair        _src;
     VMRegPair        _dst;
@@ -210,13 +208,29 @@ class ForeignCMO: public StackObj {
   };
 
  private:
+  int _total_in_args;
+  const VMRegPair* _in_regs;
+  int _total_out_args;
+  const VMRegPair* _out_regs;
+  const BasicType* _in_sig_bt;
+  VMRegPair _tmp_vmreg;
   GrowableArray<MoveOperation*> _edges;
   GrowableArray<Move> _moves;
 
- public:
-  ForeignCMO(int total_in_args, const VMRegPair* in_regs, int total_out_args, VMRegPair* out_regs,
-             const BasicType* in_sig_bt, VMRegPair tmp_vmreg) : _edges(total_in_args), _moves(total_in_args) {
-    assert(total_out_args >= total_in_args, "can only add prefix args");
+  ComputeMoveOrder(int total_in_args, const VMRegPair* in_regs, int total_out_args, VMRegPair* out_regs,
+                   const BasicType* in_sig_bt, VMRegPair tmp_vmreg) :
+      _total_in_args(total_in_args),
+      _in_regs(in_regs),
+      _total_out_args(total_out_args),
+      _out_regs(out_regs),
+      _in_sig_bt(in_sig_bt),
+      _tmp_vmreg(tmp_vmreg),
+      _edges(total_in_args),
+      _moves(total_in_args) {
+  }
+
+  void compute() {
+    assert(_total_out_args >= _total_in_args, "can only add prefix args");
     // Note that total_out_args args can be greater than total_in_args in the case of upcalls.
     // There will be a leading MH receiver arg in the out args in that case.
     //
@@ -224,11 +238,11 @@ class ForeignCMO: public StackObj {
     // the register arrays until !(in_idx >= 0), and total_in_args is smaller.
     //
     // Stub code adds a move for the receiver to j_rarg0 (and potential other prefix args) manually.
-    for (int in_idx = total_in_args - 1, out_idx = total_out_args - 1; in_idx >= 0; in_idx--, out_idx--) {
-      BasicType bt = in_sig_bt[in_idx];
+    for (int in_idx = _total_in_args - 1, out_idx = _total_out_args - 1; in_idx >= 0; in_idx--, out_idx--) {
+      BasicType bt = _in_sig_bt[in_idx];
       assert(bt != T_ARRAY, "array not expected");
-      VMRegPair in_reg = in_regs[in_idx];
-      VMRegPair out_reg = out_regs[out_idx];
+      VMRegPair in_reg = _in_regs[in_idx];
+      VMRegPair out_reg = _out_regs[out_idx];
 
       if (out_reg.first()->is_stack()) {
         // Move operations where the dest is the stack can all be
@@ -249,7 +263,7 @@ class ForeignCMO: public StackObj {
     }
     // Break any cycles in the register moves and emit the in the
     // proper order.
-    compute_store_order(tmp_vmreg);
+    compute_store_order(_tmp_vmreg);
   }
 
   // Walk the edges breaking cycles between moves.  The result list
@@ -298,8 +312,12 @@ class ForeignCMO: public StackObj {
     }
   }
 
-  GrowableArray<Move> moves() {
-    return _moves;
+public:
+  static GrowableArray<Move> compute_move_order(int total_in_args, const VMRegPair* in_regs, int total_out_args, VMRegPair* out_regs,
+                                                const BasicType* in_sig_bt, VMRegPair tmp_vmreg) {
+    ComputeMoveOrder cmo(total_in_args, in_regs, total_out_args, out_regs, in_sig_bt, tmp_vmreg);
+    cmo.compute();
+    return cmo._moves;
   }
 };
 
@@ -308,8 +326,8 @@ ArgumentShuffle::ArgumentShuffle(
     int num_in_args,
     BasicType* out_sig_bt,
     int num_out_args,
-    const CallConvClosure* input_conv,
-    const CallConvClosure* output_conv,
+    const CallingConventionClosure* input_conv,
+    const CallingConventionClosure* output_conv,
     VMReg shuffle_temp) {
 
   VMRegPair* in_regs = NEW_RESOURCE_ARRAY(VMRegPair, num_in_args);
@@ -322,13 +340,12 @@ ArgumentShuffle::ArgumentShuffle(
   tmp_vmreg.set2(shuffle_temp);
 
   // Compute a valid move order, using tmp_vmreg to break any cycles.
-  // Note that ForeignCMO ignores the upper half of our VMRegPairs.
+  // Note that ComputeMoveOrder ignores the upper half of our VMRegPairs.
   // We are not moving Java values here, only register-sized values,
   // so we shouldn't have to worry about the upper half any ways.
   // This should work fine on 32-bit as well, since we would only be
   // moving 32-bit sized values (i.e. low-level MH shouldn't take any double/long).
-  ForeignCMO order(num_in_args, in_regs,
-                   num_out_args, out_regs,
-                   in_sig_bt, tmp_vmreg);
-  _moves = order.moves();
+  _moves = ComputeMoveOrder::compute_move_order(num_in_args, in_regs,
+                                                num_out_args, out_regs,
+                                                in_sig_bt, tmp_vmreg);
 }

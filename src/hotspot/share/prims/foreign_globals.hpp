@@ -32,7 +32,7 @@
 
 #include CPU_HEADER(foreign_globals)
 
-class CallConvClosure {
+class CallingConventionClosure {
 public:
   virtual int calling_convention(BasicType* sig_bt, VMRegPair* regs, int num_args) const = 0;
 };
@@ -48,7 +48,7 @@ struct CallRegs {
 class ForeignGlobals {
 private:
   template<typename T, typename Func>
-  static void loadArray(objArrayOop jarray, int type_index, GrowableArray<T>& array, Func converter);
+  static void parse_register_array(objArrayOop jarray, int type_index, GrowableArray<T>& array, Func converter);
 
 public:
   static const ABIDescriptor parse_abi_descriptor(jobject jabi);
@@ -59,23 +59,23 @@ public:
 
 
 
-class JavaCallConv : public CallConvClosure {
+class JavaCallingConvention : public CallingConventionClosure {
 public:
   int calling_convention(BasicType* sig_bt, VMRegPair* regs, int num_args) const override {
     return SharedRuntime::java_calling_convention(sig_bt, regs, num_args);
   }
 };
 
-class NativeCallConv : public CallConvClosure {
+class NativeCallingConvention : public CallingConventionClosure {
   const VMReg* _input_regs;
   int _input_regs_length;
 public:
-  NativeCallConv(const VMReg* input_regs, int input_regs_length) :
+  NativeCallingConvention(const VMReg* input_regs, int input_regs_length) :
     _input_regs(input_regs),
     _input_regs_length(input_regs_length) {
   }
-  NativeCallConv(const GrowableArray<VMReg>& input_regs)
-   : NativeCallConv(input_regs.data(), input_regs.length()) {}
+  NativeCallingConvention(const GrowableArray<VMReg>& input_regs)
+   : NativeCallingConvention(input_regs.data(), input_regs.length()) {}
 
   int calling_convention(BasicType* sig_bt, VMRegPair* out_regs, int num_args) const override;
 };
@@ -119,7 +119,7 @@ public:
   ArgumentShuffle(
     BasicType* in_sig_bt, int num_in_args,
     BasicType* out_sig_bt, int num_out_args,
-    const CallConvClosure* input_conv, const CallConvClosure* output_conv,
+    const CallingConventionClosure* input_conv, const CallingConventionClosure* output_conv,
     VMReg shuffle_temp);
 
   int out_arg_stack_slots() const { return _out_arg_stack_slots; }

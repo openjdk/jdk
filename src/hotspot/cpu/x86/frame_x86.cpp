@@ -370,7 +370,7 @@ OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const fr
   assert(frame.is_optimized_entry_frame(), "wrong frame");
   // need unextended_sp here, since normal sp is wrong for interpreter callees
   return reinterpret_cast<OptimizedEntryBlob::FrameData*>(
-    reinterpret_cast<char*>(frame.unextended_sp()) + in_bytes(_frame_data_offset));
+    reinterpret_cast<address>(frame.unextended_sp()) + in_bytes(_frame_data_offset));
 }
 
 bool frame::optimized_entry_frame_is_first() const {
