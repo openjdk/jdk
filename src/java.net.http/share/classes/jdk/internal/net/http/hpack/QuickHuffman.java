@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -735,7 +735,7 @@ public final class QuickHuffman {
                     long len = codeLengthOf(c);
                     if (bufferLen + len <= 64) {
                         buffer |= (codeValueOf(c) >>> bufferLen); // append
-                        bufferLen += len;
+                        bufferLen += (int) len;
                         pos++;
                     } else {
                         break;
@@ -779,7 +779,7 @@ public final class QuickHuffman {
             int len = 0;
             for (int i = start; i < end; i++) {
                 char c = value.charAt(i);
-                len += codeLengthOf(c);
+                len += (int) codeLengthOf(c);
             }
             return bytesForBits(len);
         }
