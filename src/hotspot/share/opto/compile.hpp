@@ -1103,7 +1103,9 @@ class Compile : public Phase {
   // Management of the AliasType table.
   void grow_alias_types();
   AliasCacheEntry* probe_alias_cache(const TypePtr* adr_type);
+public:
   const TypePtr *flatten_alias_type(const TypePtr* adr_type) const;
+private:
   AliasType* find_alias_type(const TypePtr* adr_type, bool no_create, ciField* field);
 
   void verify_top(Node*) const PRODUCT_RETURN;
