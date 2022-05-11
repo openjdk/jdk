@@ -39,11 +39,8 @@ final class Frame {
 
     static final int MAX_HEADER_SIZE_BYTES = 2 + 8 + 4;
     static final int MAX_CONTROL_FRAME_PAYLOAD_LENGTH = 125;
-    static final char FIN_BIT_MASK = 0b10000000_00000000;
-    static final char RSV1_BIT_MASK = 0b01000000_00000000;
-    static final char RSV2_BIT_MASK = 0b00100000_00000000;
-    static final char RSV3_BIT_MASK = 0b00010000_00000000;
-    static final char MASK_BIT_MASK = 0b00000000_10000000;
+    static final char FIN_BIT = 0b10000000_00000000;
+    static final char RSV1_BIT = 0b01000000_00000000;
 
     enum Opcode {
 
@@ -218,36 +215,48 @@ final class Frame {
 
         HeaderWriter fin(boolean value) {
             if (value) {
-                firstChar |= FIN_BIT_MASK;
+                firstChar |=  0b10000000_00000000;
             } else {
-                firstChar &= ~FIN_BIT_MASK;
+                // The negation "~" sets the high order bits
+                // so the value is more than 16 bits and the
+                // compiler will emit a warning if not cast
+                firstChar &= (char) ~0b10000000_00000000;
             }
             return this;
         }
 
         HeaderWriter rsv1(boolean value) {
             if (value) {
-                firstChar |= RSV1_BIT_MASK;
+                firstChar |=  0b01000000_00000000;
             } else {
-                firstChar &= ~RSV1_BIT_MASK;
+                // The negation "~" sets the high order bits
+                // so the value is more than 16 bits and the
+                // compiler will emit a warning if not cast
+                firstChar &= (char) ~0b01000000_00000000;
             }
             return this;
         }
 
         HeaderWriter rsv2(boolean value) {
             if (value) {
-                firstChar |= RSV2_BIT_MASK;
+                firstChar |=  0b00100000_00000000;
             } else {
-                firstChar &= ~RSV2_BIT_MASK;
+                // The negation "~" sets the high order bits
+                // so the value is more than 16 bits and the
+                // compiler will emit a warning if not cast
+                firstChar &= (char) ~0b00100000_00000000;
             }
             return this;
         }
 
         HeaderWriter rsv3(boolean value) {
             if (value) {
-                firstChar |= RSV3_BIT_MASK;
+                firstChar |=  0b00010000_00000000;
             } else {
-                firstChar &= ~RSV3_BIT_MASK;
+                // The negation "~" sets the high order bits
+                // so the value is more than 16 bits and the
+                // compiler will emit a warning if not cast
+                firstChar &= (char) ~0b00010000_00000000;
             }
             return this;
         }
@@ -281,7 +290,10 @@ final class Frame {
         }
 
         HeaderWriter noMask() {
-            firstChar &= ~MASK_BIT_MASK;
+            // The negation "~" sets the high order bits
+            // so the value is more than 16 bits and the
+            // compiler will emit a warning if not cast
+            firstChar &= (char) ~0b00000000_10000000;
             mask = false;
             return this;
         }
