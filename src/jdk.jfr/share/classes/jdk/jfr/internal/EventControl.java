@@ -170,9 +170,8 @@ public final class EventControl {
             Module settingModule = settingsClass.getModule();
             Modules.addReads(settingModule, EventControl.class.getModule());
             int index = settingInfos.size();
-            SettingInfo si = new SettingInfo(FIELD_SETTING_PREFIX + index, index);
-            si.settingControl = instantiateSettingControl(settingsClass);
-            Control c = new Control(si.settingControl, null);
+            SettingControl settingControl = instantiateSettingControl(settingsClass);
+            Control c = new Control(settingControl, null);
             c.setDefault();
             String defaultValue = c.getValue();
             if (defaultValue != null) {
@@ -187,7 +186,7 @@ public final class EventControl {
                 aes.trimToSize();
                 addControl(settingName, c);
                 eventType.add(PrivateAccess.getInstance().newSettingDescriptor(settingType, settingName, defaultValue, aes));
-                settingInfos.add(si);
+                settingInfos.add(new SettingInfo(FIELD_SETTING_PREFIX + index, index, null, null, settingControl));
             }
         } catch (InstantiationException e) {
             // Programming error by user, fail fast

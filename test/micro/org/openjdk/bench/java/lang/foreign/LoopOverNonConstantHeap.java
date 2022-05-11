@@ -22,7 +22,6 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 import java.lang.foreign.ValueLayout;
@@ -40,12 +39,10 @@ import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
 import java.lang.invoke.VarHandle;
-import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.foreign.MemoryLayout.PathElement.sequenceElement;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
 import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
@@ -66,10 +63,10 @@ public class LoopOverNonConstantHeap {
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
     static final int UNSAFE_BYTE_BASE = unsafe.arrayBaseOffset(byte[].class);
 
-    static final VarHandle VH_int = JAVA_INT.arrayElementVarHandle();
+    static final VarHandle VH_INT = JAVA_INT.arrayElementVarHandle();
 
-    static final ValueLayout.OfInt JAVA_INT_ALIGNED = JAVA_INT.withBitAlignment(32);
-    static final VarHandle VH_int_aligned = JAVA_INT_ALIGNED.arrayElementVarHandle();
+    static final ValueLayout.OfInt JAVA_INT_UNALIGNED = JAVA_INT.withBitAlignment(8);
+    static final VarHandle VH_INT_UNALIGNED = JAVA_INT_UNALIGNED.arrayElementVarHandle();
     static final int UNSAFE_INT_BASE = unsafe.arrayBaseOffset(int[].class);
 
     MemorySegment segment, alignedSegment;
@@ -120,7 +117,7 @@ public class LoopOverNonConstantHeap {
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public int segment_get() {
-        return (int) VH_int.get(segment, 0L);
+        return (int) VH_INT_UNALIGNED.get(segment, 0L);
     }
 
     @Benchmark
@@ -142,7 +139,7 @@ public class LoopOverNonConstantHeap {
     public int segment_loop() {
         int sum = 0;
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int.get(segment, (long) i);
+            sum += (int) VH_INT_UNALIGNED.get(segment, (long) i);
         }
         return sum;
     }
@@ -151,7 +148,7 @@ public class LoopOverNonConstantHeap {
     public int segment_loop_aligned() {
         int sum = 0;
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int_aligned.get(alignedSegment, (long) i);
+            sum += (int) VH_INT.get(alignedSegment, (long) i);
         }
         return sum;
     }
@@ -160,7 +157,7 @@ public class LoopOverNonConstantHeap {
     public int segment_loop_instance() {
         int res = 0;
         for (int i = 0; i < ELEM_SIZE; i ++) {
-            res += segment.get(JAVA_INT, i * CARRIER_SIZE);
+            res += segment.get(JAVA_INT_UNALIGNED, i * CARRIER_SIZE);
         }
         return res;
     }
@@ -169,7 +166,7 @@ public class LoopOverNonConstantHeap {
     public int segment_loop_instance_aligned() {
         int res = 0;
         for (int i = 0; i < ELEM_SIZE; i ++) {
-            res += alignedSegment.get(JAVA_INT_ALIGNED, i * CARRIER_SIZE);
+            res += alignedSegment.get(JAVA_INT, i * CARRIER_SIZE);
         }
         return res;
     }
@@ -179,7 +176,7 @@ public class LoopOverNonConstantHeap {
         int sum = 0;
         MemorySegment base = segment.asSlice(0, segment.byteSize());
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int.get(base, (long) i);
+            sum += (int) VH_INT_UNALIGNED.get(base, (long) i);
         }
         return sum;
     }
@@ -189,7 +186,7 @@ public class LoopOverNonConstantHeap {
         int sum = 0;
         MemorySegment base = segment.asReadOnly();
         for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += (int) VH_int.get(base, (long) i);
+            sum += (int) VH_INT_UNALIGNED.get(base, (long) i);
         }
         return sum;
     }
