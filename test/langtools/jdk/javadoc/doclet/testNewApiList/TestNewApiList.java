@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8263468 8269401
+ * @bug      8263468 8269401 8268422
  * @summary  New page for "recent" new API
  * @library  ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -100,38 +100,38 @@ public class TestNewApiList extends JavadocTester {
 
     private void checkMultiReleaseContents() {
         checkOutput("new-list.html", true,
-                """
-                    <h1 title="New API in recent releases" class="title">New API in recent releases</h1>
-                    <h2 title="Contents">Contents</h2>
-                    <ul>
-                    <li><a href="#module">Modules</a></li>
-                    <li><a href="#package">Packages</a></li>
-                    <li><a href="#interface">Interfaces</a></li>
-                    <li><a href="#class">Classes</a></li>
-                    <li><a href="#enum-class">Enum Classes</a></li>
-                    <li><a href="#exception-class">Exception Classes</a></li>
-                    <li><a href="#record-class">Record Classes</a></li>
-                    <li><a href="#annotation-interface">Annotation Interfaces</a></li>
-                    <li><a href="#field">Fields</a></li>
-                    <li><a href="#method">Methods</a></li>
-                    <li><a href="#constructor">Constructors</a></li>
-                    <li><a href="#enum-constant">Enum Constants</a></li>
-                    <li><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
-                    </ul>
-                    </div>
-                    <div class="checkboxes">Show API added in:<label for="release-1">
-                    <input type="checkbox" id="release-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
-                    <span>0.9</span></label><label for="release-2">
-                    <input type="checkbox" id="release-2" disabled checked onclick="toggleGlobal(this, '2', 3)">
-                    <span>v1.0</span></label><label for="release-3">
-                    <input type="checkbox" id="release-3" disabled checked onclick="toggleGlobal(this, '3', 3)">
-                    <span>1.2</span></label><label for="release-4">
-                    <input type="checkbox" id="release-4" disabled checked onclick="toggleGlobal(this, '4', 3)">
-                    <span>2.0b</span></label><label for="release-5">
-                    <input type="checkbox" id="release-5" disabled checked onclick="toggleGlobal(this, '5', 3)">
-                    <span>3.2</span></label><label for="release-6">
-                    <input type="checkbox" id="release-6" disabled checked onclick="toggleGlobal(this, '6', 3)">
-                    <span>5</span></label></div>""");
+            """
+                <h1 title="New API in recent releases" class="title">New API in recent releases</h1>
+                <h2 title="Contents">Contents</h2>
+                <ul>
+                <li><a href="#module">Modules</a></li>
+                <li><a href="#package">Packages</a></li>
+                <li><a href="#interface">Interfaces</a></li>
+                <li><a href="#class">Classes</a></li>
+                <li><a href="#enum-class">Enum Classes</a></li>
+                <li><a href="#exception-class">Exception Classes</a></li>
+                <li><a href="#record-class">Record Classes</a></li>
+                <li><a href="#annotation-interface">Annotation Interfaces</a></li>
+                <li><a href="#field">Fields</a></li>
+                <li><a href="#method">Methods</a></li>
+                <li><a href="#constructor">Constructors</a></li>
+                <li><a href="#enum-constant">Enum Constants</a></li>
+                <li><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
+                </ul>
+                </div>
+                <div class="checkboxes">Show API added in:<label for="release-1">
+                <input type="checkbox" id="release-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
+                <span>0.9</span></label><label for="release-2">
+                <input type="checkbox" id="release-2" disabled checked onclick="toggleGlobal(this, '2', 3)">
+                <span>v1.0</span></label><label for="release-3">
+                <input type="checkbox" id="release-3" disabled checked onclick="toggleGlobal(this, '3', 3)">
+                <span>1.2</span></label><label for="release-4">
+                <input type="checkbox" id="release-4" disabled checked onclick="toggleGlobal(this, '4', 3)">
+                <span>2.0b</span></label><label for="release-5">
+                <input type="checkbox" id="release-5" disabled checked onclick="toggleGlobal(this, '5', 3)">
+                <span>3.2</span></label><label for="release-6">
+                <input type="checkbox" id="release-6" disabled checked onclick="toggleGlobal(this, '6', 3)">
+                <span>5</span></label></div>""");
     }
 
     private void checkMultiReleaseNewElements() {
@@ -667,27 +667,27 @@ public class TestNewApiList extends JavadocTester {
 
     private void checkPackageContents() {
         checkOutput("new-list.html", true,
-                """
-                    <h1 title="New API" class="title">New API</h1>
-                    <h2 title="Contents">Contents</h2>
-                    <ul>
-                    <li><a href="#class">Classes</a></li>
-                    <li><a href="#field">Fields</a></li>
-                    <li><a href="#method">Methods</a></li>
-                    <li><a href="#constructor">Constructors</a></li>
-                    </ul>
-                    </div>
-                    <div class="checkboxes">Show API added in:<label for="release-1">
-                    <input type="checkbox" id="release-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
-                    <span>1.2</span></label><label for="release-2">
-                    <input type="checkbox" id="release-2" disabled checked onclick="toggleGlobal(this, '2', 3)">
-                    <span>2.0b</span></label><label for="release-3">
-                    <input type="checkbox" id="release-3" disabled checked onclick="toggleGlobal(this, '3', 3)">
-                    <span>3.2</span></label><label for="release-4">
-                    <input type="checkbox" id="release-4" disabled checked onclick="toggleGlobal(this, '4', 3)">
-                    <span>5</span></label><label for="release-5">
-                    <input type="checkbox" id="release-5" disabled checked onclick="toggleGlobal(this, '5', 3)">
-                    <span>6</span></label></div>""");
+            """
+                <h1 title="New API" class="title">New API</h1>
+                <h2 title="Contents">Contents</h2>
+                <ul>
+                <li><a href="#class">Classes</a></li>
+                <li><a href="#field">Fields</a></li>
+                <li><a href="#method">Methods</a></li>
+                <li><a href="#constructor">Constructors</a></li>
+                </ul>
+                </div>
+                <div class="checkboxes">Show API added in:<label for="release-1">
+                <input type="checkbox" id="release-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
+                <span>1.2</span></label><label for="release-2">
+                <input type="checkbox" id="release-2" disabled checked onclick="toggleGlobal(this, '2', 3)">
+                <span>2.0b</span></label><label for="release-3">
+                <input type="checkbox" id="release-3" disabled checked onclick="toggleGlobal(this, '3', 3)">
+                <span>3.2</span></label><label for="release-4">
+                <input type="checkbox" id="release-4" disabled checked onclick="toggleGlobal(this, '4', 3)">
+                <span>5</span></label><label for="release-5">
+                <input type="checkbox" id="release-5" disabled checked onclick="toggleGlobal(this, '5', 3)">
+                <span>6</span></label></div>""");
     }
 
     private void checkPackageNewElements() {
