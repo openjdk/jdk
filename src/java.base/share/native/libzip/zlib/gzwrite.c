@@ -449,14 +449,7 @@ int ZEXPORTVA gzvprintf(gzFile file, const char *format, va_list va)
     (void)vsnprintf(next, state->size, format, va);
     len = strlen(next);
 #  else
-#   ifdef __APPLE__ // ignore format-nonliteral warning on macOS
-#       pragma clang diagnostic push
-#       pragma clang diagnostic ignored "-Wformat-nonliteral"
-        len = vsnprintf(next, state->size, format, va);
-#       pragma clang diagnostic pop
-#   else // not macOS
-        len = vsnprintf(next, state->size, format, va);
-#   endif // end of __APPLE__
+    len = vsnprintf(next, state->size, format, va);
 #  endif
 #endif
 

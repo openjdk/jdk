@@ -95,22 +95,4 @@
 
 (7) deflate.c undo (6), replaced withe the official zlib repo fix see#305/#f969409
 
-(8) Applied following patch to allow building against macOS:
-
---- a/src/java.base/share/native/libzip/zlib/gzwrite.c
-+++ b/src/java.base/share/native/libzip/zlib/gzwrite.c
-@@ -449,7 +449,14 @@ int ZEXPORTVA gzvprintf(gzFile file, const char *format, va_list va)
-     (void)vsnprintf(next, state->size, format, va);
-     len = strlen(next);
- #  else
--    len = vsnprintf(next, state->size, format, va);
-+#   ifdef __APPLE__ // ignore format-nonliteral warning on macOS
-+#       pragma clang diagnostic push
-+#       pragma clang diagnostic ignored "-Wformat-nonliteral"
-+        len = vsnprintf(next, state->size, format, va);
-+#       pragma clang diagnostic pop
-+#   else // not macOS
-+        len = vsnprintf(next, state->size, format, va);
-+#   endif // end of __APPLE__
- #  endif
- #endif
+  
