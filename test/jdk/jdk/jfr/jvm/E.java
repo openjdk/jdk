@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,12 @@
  * questions.
  */
 
-package jdk.jfr.events;
-import jdk.jfr.internal.handlers.EventHandler;
-import jdk.jfr.internal.Utils;
+package jdk.jfr.jvm;
 
-public final class Handlers {
-    public static final EventHandler SOCKET_READ = Utils.getHandler(SocketReadEvent.class);
-    public static final EventHandler SOCKET_WRITE = Utils.getHandler(SocketWriteEvent.class);
-    public static final EventHandler FILE_READ = Utils.getHandler(FileReadEvent.class);
-    public static final EventHandler FILE_WRITE = Utils.getHandler(FileWriteEvent.class);
-    public static final EventHandler FILE_FORCE = Utils.getHandler(FileForceEvent.class);
-    public static final EventHandler ERROR_THROWN = Utils.getHandler(ErrorThrownEvent.class);
-    public static final EventHandler EXCEPTION_THROWN = Utils.getHandler(ExceptionThrownEvent.class);
+//Purpose of this class is to have something to
+//statically link against for TestGetEventWriter.
+//
+// When the class is loaded "jdk.jfr.jvm.E" will be
+// replaced with "jdk.jfr.Event"
+public class E {
 }

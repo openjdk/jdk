@@ -172,4 +172,8 @@ public final class Control {
     final String getLastValue() {
         return lastValue;
     }
+
+    final SettingControl getSettingControl() {
+        return delegate;
+    }
 }

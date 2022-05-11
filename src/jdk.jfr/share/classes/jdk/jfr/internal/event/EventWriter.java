@@ -23,17 +23,36 @@
  * questions.
  */
 
-package jdk.jfr.internal;
+package jdk.jfr.internal.event;
 
 import jdk.internal.misc.Unsafe;
+import jdk.jfr.internal.Bits;
+import jdk.jfr.internal.EventWriterKey;
+import jdk.jfr.internal.StringPool;
+import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.consumer.StringParser;
 
-/**
- * Class must reside in a package with package restriction.
- *
- * Users should not have direct access to underlying memory.
- *
- */
+// User code should not be able to get access to an EventWriter instance as it
+// would allow it to write arbitrary data into buffers, potentially from
+// different threads.
+//
+// This is prevented in three ways:
+//
+// 1. For code to access the jdk.jfr.internal.event package
+//    at least one event class (for a particular module) must be
+//    registered having FlightRecorderPermission("registerEvent").
+//
+// 2. The EventWriter EventWriterFactory::getEventWriter(long) method can only be linked from
+//    the UserEvent::commit() method instrumented by JFR. This is ensured by the JVM.
+//    (The EventWriterFactory class is dynamically generated before the first event
+//    is instrumented. See EventWriterFactoryRecipe)
+//
+// 3. Steps 1 and 2 are sufficient to make it fully secure, with or without a Security
+//    Manager, but as an additional measure, the method EventWriterFactory::getEventWriter(long)
+//    requires the caller to provide a key that is hard to guess. The key is generated
+//    into the bytecode of the method invoking getEventWriter(long).
+//
 public final class EventWriter {
 
     // Event may not exceed size for a padded integer
@@ -55,9 +74,9 @@ public final class EventWriter {
     private boolean flushOnEnd;
     private boolean largeSize = false;
 
-    public static EventWriter getEventWriter() {
-        EventWriter ew = JVM.getEventWriter();
-        return ew != null ? ew : JVM.newEventWriter();
+    // User code must not be able to instantiate
+    private EventWriter() {
+        threadID = 0;
     }
 
     public void putBoolean(boolean i) {
@@ -117,7 +136,7 @@ public final class EventWriter {
         }
     }
 
-    public void putString(String s, StringPool pool) {
+    public void putString(String s) {
         if (s == null) {
             putByte(StringParser.Encoding.NULL.byteValue());
             return;
@@ -237,12 +256,19 @@ public final class EventWriter {
         return JVM.flush(this, usedSize, requestedSize);
     }
 
-    public boolean beginEvent(PlatformEventType eventType) {
+
+    public boolean beginEvent(EventConfiguration configuration, long typeId) {
+        // Malicious code could take the EventConfiguration object from one
+        // event class field and assign it to another. This check makes sure
+        // the event type matches what was added by instrumentation.
+        if (configuration.getId() != typeId) {
+            EventWriterKey.block();
+        }
         if (excluded) {
             // thread is excluded from writing events
             return false;
         }
-        this.eventType = eventType;
+        this.eventType = configuration.getPlatformEventType();
         reserveEventSizeField();
         putLong(eventType.getId());
         return true;
