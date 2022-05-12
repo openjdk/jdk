@@ -1336,10 +1336,12 @@ public class TreeInfo {
             return true;
         }
         JCExpression guard = ((JCPattern) cse).guard;
-        if (guard != null && guard.type.hasTag(BOOLEAN)) {
-            var constValue = guard.type.constValue();
-            return constValue != null && ((int) constValue) == 1;
+        if (guard == null) {
+            return true;
         }
-        return true;
+        var constValue = guard.type.constValue();
+        return constValue != null &&
+               guard.type.hasTag(BOOLEAN) &&
+               ((int) constValue) == 1;
     }
 }

@@ -867,6 +867,53 @@ public class Exhaustiveness extends TestRunner {
                "4 errors");
     }
 
+    @Test
+    public void testNonPrimitiveBooleanGuard(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface A {}
+                   final class B1 implements A {}
+                   final class B2 implements A {}
+
+                   void test(A arg, Boolean g) {
+                       int i = switch (arg) {
+                           case B1 b1 when g -> 1;
+                           case B2 b2 -> 2;
+                       };
+                   }
+               }
+               """,
+               "Test.java:8:17: compiler.err.not.exhaustive",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "1 error");
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface A {}
+                   final class B1 implements A {}
+                   final class B2 implements A {}
+
+                   void test(A arg) {
+                       int i = switch (arg) {
+                           case B1 b1 when undefined() -> 1;
+                           case B2 b2 -> 2;
+                       };
+                   }
+               }
+               """,
+               "Test.java:9:29: compiler.err.cant.resolve.location.args: kindname.method, undefined, , , (compiler.misc.location: kindname.class, test.Test, null)",
+               "Test.java:8:17: compiler.err.not.exhaustive",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "2 errors");
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");
