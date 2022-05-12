@@ -335,6 +335,11 @@ void PhaseChaitin::compact() {
   _lrg_map.reset_uf_map(j);
 }
 
+struct pred_candidate {
+    Block* _block;
+    double _freq;
+};
+
 void PhaseChaitin::Register_Allocate() {
 // Above the OLD FP (and in registers) are the incoming arguments.  Stack
   // slots in this area are called "arg_slots".  Above the NEW FP (and in
@@ -501,34 +506,49 @@ void PhaseChaitin::Register_Allocate() {
       VectorSet visited;
       CFGLoop* loop = leaf_loops.at(i);
       assert(loop->head()->head()->is_Loop(), "");
-      blocks.push(loop->head());
-      visited.set(loop->head()->_pre_order);
+      assert(loop->head()->num_preds() == 3, "");
+      Block *b = _cfg.get_block_for_node(loop->head()->pred(2));
+      blocks.push(b);
+      visited.set(b->_pre_order);
       for (uint j = 0; j < blocks.size(); j++) {
         Block* block = blocks[j];
         block->dump();
         block->_region = region;
-        for (uint k = 0; k < block->_num_succs; k++) {
-          Block* succ = block->_succs[k];
-          if (succ->_loop != loop || visited.test_set(succ->_pre_order) || succ->_freq / loop->_freq < RegAllocBranchnMinFreq) {
-            continue;
+        GrowableArray<pred_candidate> freqs;
+        for (uint k = 1; k < block->num_preds(); k++) {
+          Block* b = _cfg.get_block_for_node(block->pred(k));
+          assert(b->_loop == loop, "");
+          double freq = b->_freq;
+          for (uint l = 0; l < b->_num_succs; ++l) {
+            if (block != b->_succs[l]) {
+              freq -= b->_succs[l]->_freq;
+            }
           }
-#ifdef ASSERT
-          for (uint l = 0; l < blocks.size(); l++) {
-            assert(blocks[l] != succ, "");
-          }
-#endif
-          blocks.push(succ);
+          assert(freq >= 0, "");
+          freqs.push({ b, freq});
         }
+//        for (uint k = 1; k < block->_num_succs; k++) {
+//          Block* succ = block->_succs[k];
+//          if (succ->_loop != loop || visited.test_set(succ->_pre_order) || succ->_freq / loop->_freq < RegAllocBranchnMinFreq) {
+//            continue;
+//          }
+//#ifdef ASSERT
+//          for (uint l = 0; l < blocks.size(); l++) {
+//            assert(blocks[l] != succ, "");
+//          }
+//#endif
+//          blocks.push(succ);
+//        }
       }
-#ifdef ASSERT
-      uint l;
-      for (l = 0; l < blocks.size(); l++) {
-        if (blocks[l] == _cfg.get_block_for_node(loop->head()->pred(2))) {
-          break;
-        }
-      }
-      assert(l < blocks.size(), "not reaching back branch");
-#endif
+//#ifdef ASSERT
+//      uint l;
+//      for (l = 0; l < blocks.size(); l++) {
+//        if (blocks[l] == _cfg.get_block_for_node(loop->head()->pred(2))) {
+//          break;
+//        }
+//      }
+//      assert(l < blocks.size(), "not reaching back branch");
+//#endif
 
       regions.push(blocks);
 //      GrowableArray<CFGElement*> blocks = leaf_loops.at(i)->_members;

@@ -748,8 +748,15 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
         }  // end if found correct phi
       }  // end for all phi's
 
-      if (b->_region > region) {
-        needs_phi = false;
+      if (b->_region > region && needs_phi) {
+        uint min_region = max_juint;
+        uint max_region = 0;
+        for (uint i = 1; i < b->num_preds(); i++) {
+          Block *pred = _cfg.get_block_for_node(b->pred(i));
+          min_region = MIN2(pred->_region, min_region);
+          max_region = MAX2(pred->_region, max_region);
+        }
+        needs_phi = min_region <= region && max_region > region;
       }
 
       // If a phi is needed or exist, check for it
