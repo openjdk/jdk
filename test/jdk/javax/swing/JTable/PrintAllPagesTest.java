@@ -41,6 +41,7 @@ import javax.swing.WindowConstants;
 public class PrintAllPagesTest {
     static JFrame f;
     static JTable table;
+    static volatile boolean ret = false;
 
     static final String INSTRUCTIONS = """
          Note: You must have a printer installed for this test.
@@ -53,8 +54,6 @@ public class PrintAllPagesTest {
 
     public static void main(String[] args) throws Exception {
 
-        PassFailJFrame passFailJFrame = new PassFailJFrame(INSTRUCTIONS);
-
         PrinterJob pj = PrinterJob.getPrinterJob();
         if (pj.getPrintService() == null) {
             System.out.println("Printer not configured or available."
@@ -62,11 +61,11 @@ public class PrintAllPagesTest {
             PassFailJFrame.forcePass();
         }
 
+        PassFailJFrame passFailJFrame = new PassFailJFrame(INSTRUCTIONS);
+
         SwingUtilities.invokeAndWait(() -> {
             printAllPagesTest();
         });
-
-        Thread.sleep(1000);
 
         // add the test frame to dispose
         PassFailJFrame.addTestFrame(f);
@@ -76,14 +75,15 @@ public class PrintAllPagesTest {
 
         SwingUtilities.invokeAndWait(() -> {
             try {
-                if (!table.print()) {
-                    throw new RuntimeException("Printing cancelled");
-                }
-            } catch (PrinterException e) {
-                throw new RuntimeException("Printing failed: " + e);
+                ret = table.print();
+            } catch (PrinterException ex) {
+                ret = false;
             }
         });
 
+        if (!ret) {
+            throw new RuntimeException("Printing cancelled/failed");
+        }
         passFailJFrame.awaitAndCheck();
     }
 
