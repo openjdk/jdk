@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,42 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package sun.nio.ch;
 
-#warn This file is preprocessed before being compiled
+import java.io.IOException;
 
-class XXX {
-#begin
+/**
+ * Poller implementation based on the AIX Pollset library.
+ */
 
-    // -- $Ms$_$Type$_$SWAP$_$RO$
-#if[!RO]
+class PollsetPoller extends Poller {
 
-    @Benchmark
-    public void test$Ms$LoopPut$Type$$SWAP$$RO$() {
-        for (int i = 0; i < $ms$ByteBuffer$SWAP$$RO$.capacity(); i+=$CarrierBW$) {
-            $ms$ByteBuffer$SWAP$$RO$.put{#if[!byte]?$Type$}(i, $type$Value);
-        }
+    PollsetPoller(boolean read) throws IOException {
+        super(read);
     }
-#end[RO]
 
-    @Benchmark
-    public $type$ test$Ms$LoopGet$Type$$SWAP$$RO$() {
-        $type$ r = 0;
-        for (int i = 0; i < $ms$ByteBuffer$SWAP$$RO$.capacity(); i+=$CarrierBW$) {
-            r += $ms$ByteBuffer$SWAP$$RO$.get{#if[!byte]?$Type$}(i);
-        }
-        return r;
+    @Override
+    int fdVal() {
+        // Stub
+        throw new UnsupportedOperationException("Unimplemented on AIX");
     }
-#end
+
+    @Override
+    void implRegister(int fdVal) throws IOException {
+        // Stub
+        throw new UnsupportedOperationException("Unimplemented on AIX");
+    }
+
+    @Override
+    void implDeregister(int fdVal) {
+        // Stub
+        throw new UnsupportedOperationException("Unimplemented on AIX");
+    }
+
+    @Override
+    int poll(int timeout) throws IOException {
+        // Stub
+        throw new UnsupportedOperationException("Unimplemented on AIX");
+    }
 }
+
