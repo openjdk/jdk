@@ -3829,6 +3829,7 @@ encode %{
       }
     }
 
+    _masm.clear_inst_mark();
     __ post_call_nop();
 
     // Only non uncommon_trap calls need to reinitialize ptrue.
@@ -3845,6 +3846,7 @@ encode %{
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
+    _masm.clear_inst_mark();
     __ post_call_nop();
     if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();
@@ -3874,6 +3876,7 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
+      _masm.clear_inst_mark();
       __ post_call_nop();
     } else {
       Label retaddr;
