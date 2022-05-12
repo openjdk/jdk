@@ -63,8 +63,8 @@ public final class QuickHuffman {
         return codes[c] & 0xffffffff00000000L;
     }
 
-    private static long codeLengthOf(char c) {
-        return codes[c] & 0x00000000ffffffffL;
+    private static int codeLengthOf(char c) {
+        return (int) (codes[c] & 0x00000000ffffffffL);
     }
 
     private static final int EOS_LENGTH = 30;
@@ -732,10 +732,11 @@ public final class QuickHuffman {
                     if (c > 255) {
                         throw new IllegalArgumentException("char=" + ((int) c));
                     }
-                    long len = codeLengthOf(c);
+                    int len = codeLengthOf(c);
+                    assert len >= 0;
                     if (bufferLen + len <= 64) {
                         buffer |= (codeValueOf(c) >>> bufferLen); // append
-                        bufferLen += (int) len;
+                        bufferLen += len;
                         pos++;
                     } else {
                         break;
@@ -779,7 +780,7 @@ public final class QuickHuffman {
             int len = 0;
             for (int i = start; i < end; i++) {
                 char c = value.charAt(i);
-                len += (int) codeLengthOf(c);
+                len += codeLengthOf(c);
             }
             return bytesForBits(len);
         }

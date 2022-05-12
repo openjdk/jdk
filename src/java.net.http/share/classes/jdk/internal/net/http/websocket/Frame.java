@@ -215,6 +215,7 @@ final class Frame {
             if (value) {
                 firstChar |=  0b10000000_00000000;
             } else {
+                // Explicit cast required:
                 // The negation "~" sets the high order bits
                 // so the value is more than 16 bits and the
                 // compiler will emit a warning if not cast
@@ -227,9 +228,7 @@ final class Frame {
             if (value) {
                 firstChar |=  0b01000000_00000000;
             } else {
-                // The negation "~" sets the high order bits
-                // so the value is more than 16 bits and the
-                // compiler will emit a warning if not cast
+                // Explicit cast required - see fin() above
                 firstChar &= (char) ~0b01000000_00000000;
             }
             return this;
@@ -239,9 +238,7 @@ final class Frame {
             if (value) {
                 firstChar |=  0b00100000_00000000;
             } else {
-                // The negation "~" sets the high order bits
-                // so the value is more than 16 bits and the
-                // compiler will emit a warning if not cast
+                // Explicit cast required - see fin() above
                 firstChar &= (char) ~0b00100000_00000000;
             }
             return this;
@@ -251,9 +248,7 @@ final class Frame {
             if (value) {
                 firstChar |=  0b00010000_00000000;
             } else {
-                // The negation "~" sets the high order bits
-                // so the value is more than 16 bits and the
-                // compiler will emit a warning if not cast
+                // Explicit cast required - see fin() above
                 firstChar &= (char) ~0b00010000_00000000;
             }
             return this;
