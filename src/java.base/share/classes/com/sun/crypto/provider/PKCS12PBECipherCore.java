@@ -168,13 +168,8 @@ final class PKCS12PBECipherCore {
     }
 
     // holder for the derived key and iv
-    private static class KeyAndIv implements Closeable {
-        final SecretKey key;
-        final IvParameterSpec iv;
-        KeyAndIv(SecretKey key, IvParameterSpec iv) {
-            this.key = key;
-            this.iv = iv;
-        }
+    private record KeyAndIv(SecretKey key, IvParameterSpec iv)
+            implements Closeable {
         @Override
         public void close() {
             try {
@@ -314,23 +309,15 @@ final class PKCS12PBECipherCore {
             SecretKey cipherKey = new SecretKeySpec(derivedKey, algo);
             Arrays.fill(derivedKey, (byte)0);
 
-            KeyAndIv result;
-            switch (algo) {
-                case "RC4":
-                    result = new KeyAndIv(cipherKey, null);
-                    break;
-                case "RC2":
-                case "DESede":
-                    byte[] derivedIv = derive(passwdChars, salt, iCount, 8,
-                            CIPHER_IV);
-                    IvParameterSpec ivSpec = new IvParameterSpec(derivedIv);
-                    result = new KeyAndIv(cipherKey, ivSpec);
-                    break;
-                default:
+            return switch (algo) {
+                case "RC4"-> new KeyAndIv(cipherKey, null);
+                case "RC2", "DESede"-> new KeyAndIv(cipherKey,
+                    new IvParameterSpec(derive(passwdChars, salt, iCount, 8,
+                            CIPHER_IV)));
+                default->
                     throw new ProviderException("Unsupported cipher impl: "
                             + algo);
-            }
-            return result;
+            };
         } finally {
            Arrays.fill(passwdChars, '\0');
         }
@@ -379,7 +366,7 @@ final class PKCS12PBECipherCore {
                                   SecureRandom random)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
             try (var derived = core.implInit(opmode, key, params, random)) {
-                super.engineInit(opmode, derived.key, derived.iv, random);
+                super.engineInit(opmode, derived.key(), derived.iv(), random);
             }
         }
         @Override
@@ -438,7 +425,7 @@ final class PKCS12PBECipherCore {
                                   SecureRandom random)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
             try (var derived = core.implInit(opmode, key, params, random)) {
-                super.engineInit(opmode, derived.key, derived.iv, random);
+                super.engineInit(opmode, derived.key(), derived.iv(), random);
             }
         }
         @Override
@@ -506,7 +493,7 @@ final class PKCS12PBECipherCore {
                                   SecureRandom random)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
             try (var derived = core.implInit(opmode, key, params, random)) {
-                super.engineInit(opmode, derived.key, derived.iv, random);
+                super.engineInit(opmode, derived.key(), derived.iv(), random);
             }
         }
         @Override
