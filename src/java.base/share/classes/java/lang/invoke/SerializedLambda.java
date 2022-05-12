@@ -277,9 +277,7 @@ public final class SerializedLambda implements Serializable {
 
             return deserialize.invoke(null, this);
         } catch (ReflectiveOperationException roe) {
-            ObjectStreamException ose = new InvalidObjectException("ReflectiveOperationException during deserialization");
-            ose.initCause(roe);
-            throw ose;
+            throw new InvalidObjectException("ReflectiveOperationException during deserialization", roe);
         } catch (PrivilegedActionException e) {
             Exception cause = e.getException();
             if (cause instanceof RuntimeException)
