@@ -4866,7 +4866,7 @@ public final class Main {
                                 if (pos % 2 == 0) {
                                     data[pos/2] = (byte)(hex << 4);
                                 } else {
-                                    data[pos/2] += hex;
+                                    data[pos/2] += (byte)hex;
                                 }
                                 pos++;
                             }
@@ -5338,4 +5338,3 @@ class Pair<A, B> {
         return new Pair<>(a,b);
     }
 }
-

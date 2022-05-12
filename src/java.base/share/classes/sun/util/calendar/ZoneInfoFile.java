@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,12 +190,12 @@ public final class ZoneInfoFile {
 
         char[] buf = new char[] { 'G', 'M', 'T', sign, '0', '0', ':', '0', '0' };
         if (hh >= 10) {
-            buf[4] += hh / 10;
+            buf[4] += (char)(hh / 10);
         }
-        buf[5] += hh % 10;
+        buf[5] += (char)(hh % 10);
         if (mm != 0) {
-            buf[7] += mm / 10;
-            buf[8] += mm % 10;
+            buf[7] += (char)(mm / 10);
+            buf[8] += (char)(mm % 10);
         }
         return new String(buf);
     }
