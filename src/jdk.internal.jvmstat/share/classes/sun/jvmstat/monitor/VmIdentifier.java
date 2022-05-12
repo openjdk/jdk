@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -373,26 +373,6 @@ public class VmIdentifier {
             }
         } catch (NumberFormatException e) { }
         return result;
-    }
-
-    /**
-     * Return the mode indicated in this VmIdentifier.
-     *
-     * @return String - the mode string. If no mode is specified, then "r"
-     *                  is returned. otherwise, the specified mode is returned.
-     */
-    public String getMode() {
-        String query = getQuery();
-        if (query != null) {
-            String[] queryArgs = query.split("\\+");
-            for (String queryArg : queryArgs) {
-                if (queryArg.startsWith("mode=")) {
-                    int index = queryArg.indexOf('=');
-                    return queryArg.substring(index + 1);
-                }
-            }
-        }
-        return "r";
     }
 
     /**

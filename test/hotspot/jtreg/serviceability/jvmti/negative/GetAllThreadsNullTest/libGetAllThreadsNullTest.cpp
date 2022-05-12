@@ -30,7 +30,8 @@ extern "C" {
 
 static jvmtiEnv *jvmti_env = NULL;
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res = jvm->GetEnv((void **) &jvmti_env, JVMTI_VERSION_1_1);
   if (res != JNI_OK || jvmti_env == NULL) {
     LOG("Wrong test_passed of a valid call to GetEnv!\n");

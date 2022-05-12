@@ -197,9 +197,11 @@ endef
 ################################################################################
 # Create man pages for jmod to pick up. There should be a one-to-one
 # relationship between executables and man pages (even if this is not always
-# the case), so piggyback man page generation on the launcher compilation.
+# the case), so piggyback man page generation on the launcher compilation. This
+# file may be included from other places as well, so only process man pages
+# when called from <module>/Launcher.gmk.
 
-ifeq ($(call isTargetOsType, unix), true)
+ifeq ($(call isTargetOsType, unix)+$(MAKEFILE_PREFIX), true+Launcher)
   # Only build manpages on unix systems.
   # We assume all our man pages should reside in section 1.
 
@@ -243,9 +245,9 @@ ifeq ($(call isTargetOsType, unix), true)
           FILTER := $(PANDOC_TROFF_MANPAGE_FILTER), \
           POST_PROCESS := $(MAN_POST_PROCESS), \
           REPLACEMENTS := \
-		@@COPYRIGHT_YEAR@@ => $(COPYRIGHT_YEAR) ; \
-		@@VERSION_SHORT@@ => $(VERSION_SHORT) ; \
-		@@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION), \
+              @@COPYRIGHT_YEAR@@ => $(COPYRIGHT_YEAR) ; \
+              @@VERSION_SHORT@@ => $(VERSION_SHORT) ; \
+              @@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION), \
           EXTRA_DEPS := $(PANDOC_TROFF_MANPAGE_FILTER) \
               $(PANDOC_TROFF_MANPAGE_FILTER_SOURCE), \
       ))

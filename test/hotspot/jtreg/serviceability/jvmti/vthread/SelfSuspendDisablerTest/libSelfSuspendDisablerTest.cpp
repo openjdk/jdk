@@ -61,7 +61,8 @@ Java_SelfSuspendDisablerTest_resumeAllVirtualThreads(JNIEnv* jni, jclass cls) {
 }
 
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
 
   LOG("Agent init started\n");
