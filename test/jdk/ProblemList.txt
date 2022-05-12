@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -212,7 +212,6 @@ java/awt/TrayIcon/TrayIconPopup/TrayIconPopupTest.java 8150540 windows-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java 8197936 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java 8013450 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8013450 macosx-all
-java/awt/Window/MultiWindowApp/ChildAlwaysOnTopTest.java 8222323 windows-all
 java/awt/Window/ShapedAndTranslucentWindows/FocusAWTTest.java 8222328 windows-all,linux-all,macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/Shaped.java  8222328 windows-all,linux-all,macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedByAPI.java 8222328 windows-all,linux-all,macosx-all
@@ -429,7 +428,6 @@ java/awt/image/VolatileImage/GradientPaints.java 8199003 linux-all
 java/awt/JAWT/JAWT.sh 8197798 windows-all,linux-all
 java/awt/datatransfer/ConstructFlavoredObjectTest/ConstructFlavoredObjectTest.java 8202860 linux-all
 java/awt/FileDialog/FilenameFilterTest/FilenameFilterTest.java 8202882 linux-all
-java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8030121 macosx-all,linux-all
 java/awt/Choice/ChoicePopupLocation/ChoicePopupLocation.java 8202931 macosx-all,linux-all
 java/awt/Focus/NonFocusableBlockedOwnerTest/NonFocusableBlockedOwnerTest.java 7124275 macosx-all
 java/awt/Focus/TranserFocusToWindow/TranserFocusToWindow.java 6848810 macosx-all,linux-all
@@ -684,13 +682,9 @@ java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
 java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
 
-# macos12 failure
-javax/swing/JMenu/4515762/bug4515762.java 8276074 macosx-all
-
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
-javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-all
 javax/swing/JTable/8236907/LastVisibleRow.java 8284619 macosx-all
 
 ############################################################################
@@ -808,6 +802,3 @@ java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macos
 java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windows-x64
 java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java 8258103 linux-all
 java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
-
-
-############################################################################

@@ -372,7 +372,7 @@ void C2Access::fixup_decorators() {
       intptr_t offset = Type::OffsetBot;
       AddPNode::Ideal_base_and_offset(adr, &gvn(), offset);
       if (offset >= 0) {
-        int s = Klass::layout_helper_size_in_bytes(adr_type->isa_instptr()->klass()->layout_helper());
+        int s = Klass::layout_helper_size_in_bytes(adr_type->isa_instptr()->instance_klass()->layout_helper());
         if (offset < s) {
           // Guaranteed to be a valid access, no need to pin it
           _decorators ^= C2_CONTROL_DEPENDENT_LOAD;
@@ -386,9 +386,6 @@ void C2Access::fixup_decorators() {
 //--------------------------- atomic operations---------------------------------
 
 void BarrierSetC2::pin_atomic_op(C2AtomicParseAccess& access) const {
-  if (!access.needs_pinning()) {
-    return;
-  }
   // SCMemProjNodes represent the memory state of a LoadStore. Their
   // main role is to prevent LoadStore nodes from being optimized away
   // when their results aren't used.

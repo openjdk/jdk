@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
- Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -735,7 +735,7 @@ static jvmtiError JNICALL
 
 <xsl:template match="outptr|outbuf|allocfieldbuf|ptrtype|inptr|inbuf|vmbuf|allocbuf|agentbuf|allocallocbuf" mode="dochecks">
   <xsl:param name="name"/>
-  <xsl:if test="count(nullok)=0">
+  <xsl:if test="count(nullok)=0 and not(contains(@impl,'nonullcheck'))">
     <xsl:text>  if (</xsl:text>
     <xsl:value-of select="$name"/>
     <xsl:text> == NULL) {

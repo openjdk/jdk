@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ void G1FullGCMarkTask::work(uint worker_id) {
   Ticks start = Ticks::now();
   ResourceMark rm;
   G1FullGCMarker* marker = collector()->marker(worker_id);
-  MarkingCodeBlobClosure code_closure(marker->mark_closure(), !CodeBlobToOopClosure::FixRelocations);
+  MarkingCodeBlobClosure code_closure(marker->mark_closure(), !CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
 
   if (ClassUnloading) {
     _root_processor.process_strong_roots(marker->mark_closure(),

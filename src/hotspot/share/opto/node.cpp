@@ -1588,23 +1588,112 @@ jfloat Node::getf() const {
 #ifndef PRODUCT
 
 // Call this from debugger:
+Node* old_root() {
+  Matcher* matcher = Compile::current()->matcher();
+  if (matcher != nullptr) {
+    Node* new_root = Compile::current()->root();
+    Node* old_root = matcher->find_old_node(new_root);
+    if (old_root != nullptr) {
+      return old_root;
+    }
+  }
+  tty->print("old_root: not found.\n");
+  return nullptr;
+}
+
+// Call this from debugger, search in same graph as n:
 Node* find_node(Node* n, const int idx) {
   return n->find(idx);
 }
 
-// Call this from debugger with root node as default:
+// Call this from debugger, search in new nodes:
 Node* find_node(const int idx) {
   return Compile::current()->root()->find(idx);
 }
 
-// Call this from debugger:
+// Call this from debugger, search in old nodes:
+Node* find_old_node(const int idx) {
+  Node* root = old_root();
+  return (root == nullptr) ? nullptr : root->find(idx);
+}
+
+// Call this from debugger, search in same graph as n:
 Node* find_ctrl(Node* n, const int idx) {
   return n->find_ctrl(idx);
 }
 
-// Call this from debugger with root node as default:
+// Call this from debugger, search in new nodes:
 Node* find_ctrl(const int idx) {
   return Compile::current()->root()->find_ctrl(idx);
+}
+
+// Call this from debugger, search in old nodes:
+Node* find_old_ctrl(const int idx) {
+  Node* root = old_root();
+  return (root == nullptr) ? nullptr : root->find_ctrl(idx);
+}
+
+//------------------------------find_ctrl--------------------------------------
+// Find an ancestor to this node in the control history with given _idx
+Node* Node::find_ctrl(int idx) {
+  return find(idx, true);
+}
+
+//------------------------------find-------------------------------------------
+// Tries to find the node with the index |idx| starting from this node. If idx is negative,
+// the search also includes forward (out) edges. Returns NULL if not found.
+// If only_ctrl is set, the search will only be done on control nodes. Returns NULL if
+// not found or if the node to be found is not a control node (search will not find it).
+Node* Node::find(const int idx, bool only_ctrl) {
+  ResourceMark rm;
+  VectorSet old_space;
+  VectorSet new_space;
+  Node_List worklist;
+  Arena* old_arena = Compile::current()->old_arena();
+  add_to_worklist(this, &worklist, old_arena, &old_space, &new_space);
+  Node* result = NULL;
+  int node_idx = (idx >= 0) ? idx : -idx;
+
+  for (uint list_index = 0; list_index < worklist.size(); list_index++) {
+    Node* n = worklist[list_index];
+
+    if ((int)n->_idx == node_idx debug_only(|| n->debug_idx() == node_idx)) {
+      if (result != NULL) {
+        tty->print("find: " INTPTR_FORMAT " and " INTPTR_FORMAT " both have idx==%d\n",
+                  (uintptr_t)result, (uintptr_t)n, node_idx);
+      }
+      result = n;
+    }
+
+    for (uint i = 0; i < n->len(); i++) {
+      if (!only_ctrl || n->is_Region() || (n->Opcode() == Op_Root) || (i == TypeFunc::Control)) {
+        // If only_ctrl is set: Add regions, the root node, or control inputs only
+        add_to_worklist(n->in(i), &worklist, old_arena, &old_space, &new_space);
+      }
+    }
+
+    // Also search along forward edges if idx is negative and the search is not done on control nodes only
+    if (idx < 0 && !only_ctrl) {
+      for (uint i = 0; i < n->outcnt(); i++) {
+        add_to_worklist(n->raw_out(i), &worklist, old_arena, &old_space, &new_space);
+      }
+    }
+  }
+  return result;
+}
+
+bool Node::add_to_worklist(Node* n, Node_List* worklist, Arena* old_arena, VectorSet* old_space, VectorSet* new_space) {
+  if (not_a_node(n)) {
+    return false; // Gracefully handle NULL, -1, 0xabababab, etc.
+  }
+
+  // Contained in new_space or old_space? Check old_arena first since it's mostly empty.
+  VectorSet* v = old_arena->contains(n) ? old_space : new_space;
+  if (!v->test_set(n->_idx)) {
+    worklist->push(n);
+    return true;
+  }
+  return false;
 }
 
 //------------------------------print_bfs--------------------------------------
@@ -1928,76 +2017,6 @@ void Node::print_bfs(const int max_distance, Node* target, char const* options) 
   bfs.run();
 }
 
-//------------------------------find_ctrl--------------------------------------
-// Find an ancestor to this node in the control history with given _idx
-Node* Node::find_ctrl(int idx) {
-  return find(idx, true);
-}
-
-//------------------------------find-------------------------------------------
-// Tries to find the node with the index |idx| starting from this node. If idx is negative,
-// the search also includes forward (out) edges. Returns NULL if not found.
-// If only_ctrl is set, the search will only be done on control nodes. Returns NULL if
-// not found or if the node to be found is not a control node (search will not find it).
-Node* Node::find(const int idx, bool only_ctrl) {
-  ResourceMark rm;
-  VectorSet old_space;
-  VectorSet new_space;
-  Node_List worklist;
-  Arena* old_arena = Compile::current()->old_arena();
-  add_to_worklist(this, &worklist, old_arena, &old_space, &new_space);
-  Node* result = NULL;
-  int node_idx = (idx >= 0) ? idx : -idx;
-
-  for (uint list_index = 0; list_index < worklist.size(); list_index++) {
-    Node* n = worklist[list_index];
-
-    if ((int)n->_idx == node_idx debug_only(|| n->debug_idx() == node_idx)) {
-      if (result != NULL) {
-        tty->print("find: " INTPTR_FORMAT " and " INTPTR_FORMAT " both have idx==%d\n",
-                  (uintptr_t)result, (uintptr_t)n, node_idx);
-      }
-      result = n;
-    }
-
-    for (uint i = 0; i < n->len(); i++) {
-      if (!only_ctrl || n->is_Region() || (n->Opcode() == Op_Root) || (i == TypeFunc::Control)) {
-        // If only_ctrl is set: Add regions, the root node, or control inputs only
-        add_to_worklist(n->in(i), &worklist, old_arena, &old_space, &new_space);
-      }
-    }
-
-    // Also search along forward edges if idx is negative and the search is not done on control nodes only
-    if (idx < 0 && !only_ctrl) {
-      for (uint i = 0; i < n->outcnt(); i++) {
-        add_to_worklist(n->raw_out(i), &worklist, old_arena, &old_space, &new_space);
-      }
-    }
-#ifdef ASSERT
-    // Search along debug_orig edges last
-    Node* orig = n->debug_orig();
-    while (orig != NULL && add_to_worklist(orig, &worklist, old_arena, &old_space, &new_space)) {
-      orig = orig->debug_orig();
-    }
-#endif // ASSERT
-  }
-  return result;
-}
-
-bool Node::add_to_worklist(Node* n, Node_List* worklist, Arena* old_arena, VectorSet* old_space, VectorSet* new_space) {
-  if (not_a_node(n)) {
-    return false; // Gracefully handle NULL, -1, 0xabababab, etc.
-  }
-
-  // Contained in new_space or old_space? Check old_arena first since it's mostly empty.
-  VectorSet* v = old_arena->contains(n) ? old_space : new_space;
-  if (!v->test_set(n->_idx)) {
-    worklist->push(n);
-    return true;
-  }
-  return false;
-}
-
 // -----------------------------Name-------------------------------------------
 extern const char *NodeClassNames[];
 const char *Node::Name() const { return NodeClassNames[Opcode()]; }
@@ -2109,11 +2128,11 @@ void Node::dump(const char* suffix, bool mark, outputStream *st) const {
 
   const Type *t = bottom_type();
 
-  if (t != NULL && (t->isa_instptr() || t->isa_klassptr())) {
+  if (t != NULL && (t->isa_instptr() || t->isa_instklassptr())) {
     const TypeInstPtr  *toop = t->isa_instptr();
-    const TypeKlassPtr *tkls = t->isa_klassptr();
-    ciKlass*           klass = toop ? toop->klass() : (tkls ? tkls->klass() : NULL );
-    if (klass && klass->is_loaded() && klass->is_interface()) {
+    const TypeInstKlassPtr *tkls = t->isa_instklassptr();
+    ciKlass*           klass = toop ? toop->instance_klass() : (tkls ? tkls->instance_klass() : NULL );
+    if (klass && klass->is_loaded() && ((toop && toop->is_interface()) || (tkls && tkls->is_interface()))) {
       st->print("  Interface:");
     } else if (toop) {
       st->print("  Oop:");

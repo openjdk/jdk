@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,9 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_isInstance:
   case vmIntrinsics::_isPrimitive:
   case vmIntrinsics::_getModifiers:
+  case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
+  case vmIntrinsics::_extentLocalCache:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_dsqrt:
   case vmIntrinsics::_dsqrt_strict:
@@ -223,9 +225,9 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_compareAndSetReference:
   case vmIntrinsics::_getCharStringU:
   case vmIntrinsics::_putCharStringU:
+  case vmIntrinsics::_Continuation_doYield:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
-  case vmIntrinsics::_getEventWriter:
 #endif
   case vmIntrinsics::_getObjectSize:
     break;
