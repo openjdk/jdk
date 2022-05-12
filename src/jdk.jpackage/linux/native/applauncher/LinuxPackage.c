@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <linux/limits.h>
@@ -123,6 +124,7 @@ static int popenCommand(const char* cmdlineFormat, const char* arg,
     int callbackMode = POPEN_CALLBACK_USE;
     int exitCode = -1;
     int c;
+    ptrdiff_t char_offset;
 
     cmdline = malloc(cmdlineLenth + 1 /* \0 */);
     if (!cmdline) {
@@ -171,27 +173,14 @@ static int popenCommand(const char* cmdlineFormat, const char* arg,
         if (strBufNextChar == strBufEnd) {
             /* Double buffer size */
             strBufCapacity = strBufCapacity * 2 + 1;
+            char_offset = strBufNextChar - strBufBegin;
             strNewBufBegin = realloc(strBufBegin, strBufCapacity);
             if (!strNewBufBegin) {
                 JP_LOG_ERRNO;
                 goto cleanup;
             }
 
-            /*
-             * We can ignore -Wuse-after-free for strBufBegin because we use it
-             * as a numerical value.
-             * This option has been introduced in GCC 12
-             *   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=104075
-             */
-#if defined(__GNUC__) && __GNUC__ >= 12
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wuse-after-free"
-#endif
-            strBufNextChar = strNewBufBegin + (strBufNextChar - strBufBegin);
-#if defined(__GNUC__) && __GNUC__ >= 12
-#pragma GCC diagnostic pop
-#endif
-
+            strBufNextChar = strNewBufBegin + char_offset;
             strBufEnd = strNewBufBegin + strBufCapacity;
             strBufBegin = strNewBufBegin;
         }
