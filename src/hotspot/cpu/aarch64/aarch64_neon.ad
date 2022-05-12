@@ -5696,10 +5696,10 @@ instruct vpopcountID(vecD dst, vecD src) %{
     if (bt == T_SHORT || bt == T_INT) {
       __ uaddlp(as_FloatRegister($dst$$reg), __ T8B,
                 as_FloatRegister($dst$$reg));
-    }
-    if (bt == T_INT) {
-      __ uaddlp(as_FloatRegister($dst$$reg), __ T4H,
-                as_FloatRegister($dst$$reg));
+      if (bt == T_INT) {
+        __ uaddlp(as_FloatRegister($dst$$reg), __ T4H,
+                  as_FloatRegister($dst$$reg));
+      }
     }
   %}
   ins_pipe(pipe_class_default);
@@ -5718,10 +5718,10 @@ instruct vpopcountIX(vecX dst, vecX src) %{
     if (bt == T_SHORT || bt == T_INT) {
       __ uaddlp(as_FloatRegister($dst$$reg), __ T16B,
                 as_FloatRegister($dst$$reg));
-    }
-    if (bt == T_INT) {
-      __ uaddlp(as_FloatRegister($dst$$reg), __ T8H,
-                as_FloatRegister($dst$$reg));
+      if (bt == T_INT) {
+        __ uaddlp(as_FloatRegister($dst$$reg), __ T8H,
+                  as_FloatRegister($dst$$reg));
+      }
     }
   %}
   ins_pipe(pipe_class_default);

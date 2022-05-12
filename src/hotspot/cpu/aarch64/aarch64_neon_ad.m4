@@ -2474,10 +2474,10 @@ ifelse($1, `L', `
     if (bt == T_SHORT || bt == T_INT) {
       __ uaddlp(as_FloatRegister($dst$$reg), __ T`'ifelse($2, D, 8, 16)B,
                 as_FloatRegister($dst$$reg));
-    }
-    if (bt == T_INT) {
-      __ uaddlp(as_FloatRegister($dst$$reg), __ T`'ifelse($2, D, 4, 8)H,
-                as_FloatRegister($dst$$reg));
+      if (bt == T_INT) {
+        __ uaddlp(as_FloatRegister($dst$$reg), __ T`'ifelse($2, D, 4, 8)H,
+                  as_FloatRegister($dst$$reg));
+      }
     }')dnl
 ifelse($1$2, `LD', `
     __ xtn(as_FloatRegister($dst$$reg), __ T2S,

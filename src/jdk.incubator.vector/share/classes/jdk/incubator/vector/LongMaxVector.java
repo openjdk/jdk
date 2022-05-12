@@ -656,7 +656,7 @@ final class LongMaxVector extends LongVector {
         @Override
         @ForceInline
         public LongMaxMask compress() {
-            return (LongMaxMask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+            return (LongMaxMask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 LongMaxVector.class, LongMaxMask.class, ETYPE, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }

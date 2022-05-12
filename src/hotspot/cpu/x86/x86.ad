@@ -2110,7 +2110,7 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
       return true;
 
     case Op_CountLeadingZerosV:
-      if ((bt == T_INT || bt == T_LONG) && VM_Version::supports_avx512cd()) {
+      if (is_non_subword_integral_type(bt) && VM_Version::supports_avx512cd()) {
         return true;
       }
     default:

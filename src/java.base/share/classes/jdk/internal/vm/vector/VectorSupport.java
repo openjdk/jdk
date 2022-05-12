@@ -644,7 +644,7 @@ public class VectorSupport {
 
     /* ============================================================================ */
 
-    public interface ComExpOperation<V extends Vector<?>,
+    public interface CompressExpandOperation<V extends Vector<?>,
                                      M extends VectorMask<?>> {
         VectorPayload apply(V v, M m);
     }
@@ -654,10 +654,10 @@ public class VectorSupport {
     <V extends Vector<E>,
      M extends VectorMask<E>,
      E>
-    VectorPayload comExpOp(int opr,
-                           Class<? extends V> vClass, Class<? extends M> mClass, Class<E> eClass,
-                           int length, V v, M m,
-                           ComExpOperation<V, M> defaultImpl) {
+    VectorPayload compressExpandOp(int opr,
+                                   Class<? extends V> vClass, Class<? extends M> mClass, Class<E> eClass,
+                                   int length, V v, M m,
+                                   CompressExpandOperation<V, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v, m);
     }

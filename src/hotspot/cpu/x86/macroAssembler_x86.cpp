@@ -2584,7 +2584,6 @@ void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scrat
 }
 
 void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg, int vector_len) {
-  assert(vector_len <= AVX_512bit, "unexpected vector length");
   if (vector_len == AVX_512bit) {
     evmovdquq(dst, src, AVX_512bit, scratch_reg);
   } else if (vector_len == AVX_256bit) {

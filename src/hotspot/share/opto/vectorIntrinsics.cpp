@@ -2728,10 +2728,10 @@ bool LibraryCallKit::inline_vector_extract() {
 // <V extends Vector<E>,
 //  M extends VectorMask<E>,
 //  E>
-//  V comExpOp(int opr,
-//             Class<? extends V> vClass, Class<? extends M> mClass, Class<E> eClass,
-//             int length, V v, M m,
-//             CmpExpOperation<V, M> defaultImpl)
+//  V compressExpandOp(int opr,
+//                    Class<? extends V> vClass, Class<? extends M> mClass, Class<E> eClass,
+//                    int length, V v, M m,
+//                    CompressExpandOperation<V, M> defaultImpl)
 bool LibraryCallKit::inline_vector_compress_expand() {
   const TypeInt*     opr          = gvn().type(argument(0))->isa_int();
   const TypeInstPtr* vector_klass = gvn().type(argument(1))->isa_instptr();
@@ -2741,7 +2741,7 @@ bool LibraryCallKit::inline_vector_compress_expand() {
 
   if (vector_klass == NULL || elem_klass == NULL || mask_klass == NULL || vlen == NULL ||
       vector_klass->const_oop() == NULL || mask_klass->const_oop() == NULL ||
-      elem_klass->const_oop() == NULL || !vlen->is_con()) {
+      elem_klass->const_oop() == NULL || !vlen->is_con() || !opr->is_con()) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** missing constant: opr=%s vclass=%s mclass=%s etype=%s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],

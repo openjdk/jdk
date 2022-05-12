@@ -666,7 +666,7 @@ final class ShortMaxVector extends ShortVector {
         @Override
         @ForceInline
         public ShortMaxMask compress() {
-            return (ShortMaxMask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+            return (ShortMaxMask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 ShortMaxVector.class, ShortMaxMask.class, ETYPE, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }

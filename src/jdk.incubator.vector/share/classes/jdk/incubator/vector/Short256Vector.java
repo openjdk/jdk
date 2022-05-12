@@ -696,7 +696,7 @@ final class Short256Vector extends ShortVector {
         @Override
         @ForceInline
         public Short256Mask compress() {
-            return (Short256Mask)VectorSupport.comExpOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+            return (Short256Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
                 Short256Vector.class, Short256Mask.class, ETYPE, VLENGTH, null, this,
                 (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
         }
