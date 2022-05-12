@@ -77,40 +77,19 @@ void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
           // If there are no matches between the root and the cgroup path,
           // the controller's mount point will be used, which is a reasonable
           // fallback.
-          int buflen;
-          strncpy(buf, _mount_point, MAXPATHLEN);
-          buf[MAXPATHLEN-1] = '\0';
-          buflen = strlen(buf);
-          if ((buflen + strlen(cgroup_path)) > (MAXPATHLEN-1)) {
-              return;
-          }
-          char tmp_root_buf[MAXPATHLEN+1];
-          char tmp_cgroup_buf[MAXPATHLEN+1];
-          strcpy(tmp_root_buf, _root);
-          strcpy(tmp_cgroup_buf, cgroup_path);
-          char* tmp_root = &tmp_root_buf[0];
-          char* tmp_cgroup = &tmp_cgroup_buf[0];
-          char* root_save = NULL;
-          char* cgroup_save = NULL;
-          char* root_token = NULL;
-          char* cg_token = NULL;
-          char* buf_ptr = buf + buflen;
-          while ((root_token = strtok_r(tmp_root, "/", &root_save)) != NULL &&
-                 (cg_token = strtok_r(tmp_cgroup, "/", &cgroup_save)) != NULL) {
-            if (root_token == NULL || cg_token == NULL) {
-              break;
+          stringStream ss;
+          ss.print_raw(_mount_point);
+          const char* root_p = _root;
+          const char* cgroup_p = cgroup_path;
+          int last_matching_slash_pos = -1;
+          for (int i = 0; *root_p == *cgroup_p && *root_p != 0; i++) {
+            if (*root_p == '/') {
+              last_matching_slash_pos = i;
             }
-            if (strcmp(root_token, cg_token) == 0) {
-              strncpy(buf_ptr, "/", 2);
-              buf_ptr++;
-              strcpy(buf_ptr, root_token);
-              buf_ptr = buf_ptr + strlen(root_token);
-            }
-            tmp_root = NULL;
-            tmp_cgroup = NULL;
+            root_p++; cgroup_p++;
           }
-          buf[MAXPATHLEN-1] = '\0';
-          _path = os::strdup(buf);
+          ss.print_raw(_root, last_matching_slash_pos);
+          _path = os::strdup(ss.base());
         }
       }
     }
