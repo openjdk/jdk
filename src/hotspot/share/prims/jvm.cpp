@@ -2909,6 +2909,9 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
   assert(native_thread != NULL, "Starting null thread?");
 
   if (native_thread->osthread() == NULL) {
+    ResourceMark rm(thread);
+    log_warning(os, thread)("Failed to start the native thread for java.lang.Thread \"%s\"",
+                            JavaThread::name_for(JNIHandles::resolve_non_null(jthread)));
     // No one should hold a reference to the 'native_thread'.
     native_thread->smr_delete();
     if (JvmtiExport::should_post_resource_exhausted()) {

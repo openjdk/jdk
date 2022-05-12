@@ -1376,6 +1376,7 @@ class JavaThread: public Thread {
 
   // Misc. operations
   char* name() const { return (char*)get_thread_name(); }
+  static const char* name_for(oop thread_obj);
   void print_on(outputStream* st, bool print_extended_info) const;
   void print_on(outputStream* st) const { print_on(st, false); }
   void print() const;
