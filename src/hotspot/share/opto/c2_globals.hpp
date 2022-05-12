@@ -558,7 +558,7 @@
   product(bool, SpecialArraysEquals, true, DIAGNOSTIC,                      \
           "special version of Arrays.equals(char[],char[])")                \
                                                                             \
-  product(bool, SpecialArraysHashCode, false, DIAGNOSTIC,                    \
+  product(bool, SpecialArraysHashCode, true, DIAGNOSTIC,                    \
           "special version of Arrays.hashCode")                             \
                                                                             \
   product(bool, SpecialEncodeISOArray, true, DIAGNOSTIC,                    \
