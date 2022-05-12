@@ -29,11 +29,6 @@
  *
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -Xcomp -XX:-TieredCompilation
  *                   -XX:CompileCommand=compileonly,compiler.rangechecks.TestRangeCheckCmpUUnderflow::*
- *                   -XX:StressSeed=858221963
- *                   compiler.rangechecks.TestRangeCheckCmpUUnderflow
- *
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -Xcomp -XX:-TieredCompilation
- *                   -XX:CompileCommand=compileonly,compiler.rangechecks.TestRangeCheckCmpUUnderflow::*
  *                   -XX:RepeatCompilation=300
  *                   compiler.rangechecks.TestRangeCheckCmpUUnderflow
 */
