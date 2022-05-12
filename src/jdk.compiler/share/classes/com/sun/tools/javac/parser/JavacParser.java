@@ -4033,6 +4033,10 @@ public class JavacParser implements Parser {
 
         Name name = typeName();
 
+        if(typeParametersOpt().size() > 0) {
+            log.error(DiagnosticFlag.SYNTAX, S.prevToken().endPos, Errors.EnumCantBeGeneric);
+        }
+
         List<JCExpression> implementing = List.nil();
         if (token.kind == IMPLEMENTS) {
             nextToken();
