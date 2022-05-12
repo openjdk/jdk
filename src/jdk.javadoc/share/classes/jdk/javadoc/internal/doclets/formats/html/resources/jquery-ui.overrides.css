@@ -31,4 +31,9 @@ a.ui-button:active,
 .ui-button.ui-state-active:hover {
     /* Overrides the color of selection used in jQuery UI */
     background: #F8981D;
+    border: 1px solid #aaa;
+}
+
+.ui-widget {
+    font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;
 }
