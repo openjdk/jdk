@@ -24,11 +24,9 @@
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpHeaders;
-import java.util.LinkedList;
 import java.util.List;
 
 import jdk.internal.net.http.frame.ContinuationFrame;
-import jdk.internal.net.http.frame.HeaderFrame;
 import jdk.internal.net.http.frame.Http2Frame;
 
 // will be converted to a PushPromiseFrame in the writeLoop
@@ -38,18 +36,13 @@ class OutgoingPushPromise extends Http2Frame {
     final URI uri;
     final InputStream is;
     final int parentStream; // not the pushed streamid
-    private final List<ContinuationFrame> continuations;
+    private final List<Http2Frame> continuations;
 
     public OutgoingPushPromise(int parentStream,
                                URI uri,
                                HttpHeaders headers,
                                InputStream is) {
-        super(0,0);
-        this.uri = uri;
-        this.headers = headers;
-        this.is = is;
-        this.parentStream = parentStream;
-        this.continuations = null;
+        this(parentStream, uri, headers, is, List.of());
     }
 
     public OutgoingPushPromise(int parentStream,
@@ -58,7 +51,6 @@ class OutgoingPushPromise extends Http2Frame {
                                InputStream is,
                                List<ContinuationFrame> continuations) {
         super(0,0);
-        assert flags != HeaderFrame.END_HEADERS;
         this.uri = uri;
         this.headers = headers;
         this.is = is;
@@ -66,7 +58,7 @@ class OutgoingPushPromise extends Http2Frame {
         this.continuations = List.copyOf(continuations);
     }
 
-    public List<ContinuationFrame> getContinuations() {
+    public List<Http2Frame> getContinuations() {
         return continuations;
     }
 }
