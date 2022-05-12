@@ -538,7 +538,7 @@ public class FileChannelImpl
     // Assume at first that the underlying kernel supports sendfile();
     // set this to true if we find out later that it doesn't
     //
-    private static volatile boolean transferToNotSupported = false;
+    private static volatile boolean transferToNotSupported;
 
     // Assume that the underlying kernel sendfile() will work if the target
     // fd is a pipe; set this to false if we find out later that it doesn't
@@ -780,7 +780,7 @@ public class FileChannelImpl
     // Assume at first that the underlying kernel supports copy_file_range();
     // set this to true if we find out later that it doesn't
     //
-    private static volatile boolean transferFromNotSupported = false;
+    private static volatile boolean transferFromNotSupported;
 
     private long transferFromDirectlyInternal(FileDescriptor srcFD,
                                               long position, long count)
