@@ -3788,7 +3788,7 @@ public final class Main {
         System.err.println(prompt);
         MessageFormat form = new MessageFormat
                 (rb.getString(".defaultValue."));
-        Object[] source = { ".".equals(defaultValue) ? "EMPTY" : defaultValue };
+        Object[] source = { ".".equals(defaultValue) ? "" : defaultValue };
         System.err.print(form.format(source));
         System.err.flush();
 

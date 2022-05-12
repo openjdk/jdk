@@ -375,7 +375,7 @@ public class Resources extends java.util.ListResourceBundle {
         {".RETURN.if.same.as.for.otherAlias.",
                 "\t(RETURN if same as for <{0}>)"},
         {"enter.dname.components",
-                "Enter the distinguished name. Provide a single dot (.) to leave a sub-component empty."},
+                "Enter the distinguished name. Provide a single dot (.) to leave a sub-component empty or press ENTER to use the default value in braces."},
         {"What.is.your.first.and.last.name.",
                 "What is your first and last name?"},
         {"What.is.the.name.of.your.organizational.unit.",

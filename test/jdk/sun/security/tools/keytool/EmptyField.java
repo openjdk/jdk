@@ -46,7 +46,7 @@ public class EmptyField {
         SecurityTools.keytool("-genkeypair -keystore ks -storepass changeit -alias b -keyalg EC")
                 .shouldContain("[Unknown]") // old default
                 .shouldContain("At least one field must be provided. Enter again.")
-                .shouldContain("[EMPTY]") // new value in 2nd round
+                .shouldContain("[]") // new value in 2nd round
                 .shouldContain("[Me]") // new value in 3nd round
                 .shouldContain("Is CN=Me correct?")
                 .shouldHaveExitValue(0);
