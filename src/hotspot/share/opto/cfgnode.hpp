@@ -382,7 +382,7 @@ public:
 
   float _prob;                  // Probability of true path being taken.
   float _fcnt;                  // Frequency counter
-  int   _unc_bci;               // next_bci for unstable_if trap
+  int   _unc_bci;               // speculative bci for unstable_if trap
   IfNode( Node *control, Node *b, float p, float fcnt )
     : MultiBranchNode(2), _prob(p), _fcnt(fcnt), _unc_bci(-1) {
     init_class_id(Class_If);

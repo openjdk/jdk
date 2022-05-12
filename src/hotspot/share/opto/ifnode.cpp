@@ -1297,6 +1297,7 @@ void IfNode::reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, Ph
 
   igvn->replace_node(otherproj, igvn->C->top());
   igvn->C->root()->add_req(halt);
+  // suppress unstable_if optimization for the dominating if.
   c->in(0)->as_If()->set_unc_bci(-1);
 }
 

@@ -1851,44 +1851,48 @@ void Compile::process_for_unstable_ifs(PhaseIterGVN& igvn) {
       ProjNode *proj = iff->uncommon_trap_proj(unc, Deoptimization::Reason_unstable_if);
 
       if (proj != nullptr) {
-        JVMState *jvms = unc->jvms();
-        ciMethod *method = jvms->method();
-        ciBytecodeStream iter(method);
+        ProjNode *other_proj = proj->other_if_proj();
+        // give up if 2 branches are unstable. It could happen if program is under-profiling.
+        if (other_proj->is_uncommon_trap_proj(Deoptimization::Reason_unstable_if) == nullptr) {
+          JVMState *jvms = unc->jvms();
+          ciMethod *method = jvms->method();
+          ciBytecodeStream iter(method);
 
-        iter.force_bci(jvms->bci());
-        assert(next_bci == iter.next_bci() || next_bci == iter.get_dest(), "wrong next_bci at unstable_if");
-        Bytecodes::Code c = iter.cur_bc();
-        Node *lhs = nullptr;
-        Node *rhs = nullptr;
-        if (c == Bytecodes::_if_acmpeq || c == Bytecodes::_if_acmpne) {
-          lhs = unc->peek_operand(0);
-          rhs = unc->peek_operand(1);
-        } else if (c == Bytecodes::_ifnull || c == Bytecodes::_ifnonnull) {
-          lhs = unc->peek_operand(0);
-        }
-
-        ResourceMark rm;
-        const MethodLivenessResult& live_locals = method->liveness_at_bci(next_bci);
-        assert(live_locals.is_valid(), "broken liveness info");
-
-        int len = (int)live_locals.size();
-        for (int i = 0; i < len; i++) {
-          Node *local = unc->local(jvms, i);
-          // kill local using the liveness of next_bci.
-          // yield when local looks like an operand to secure reexecution.
-          if (!live_locals.at(i) && !local->is_top() && local != lhs && local!= rhs) {
-            uint idx = jvms->locoff() + i;
-#ifndef PRODUCT
-            if (Verbose) {
-              tty->print("[unstable_if] kill local#%d: ", idx);
-              local->dump();
-              tty->cr();
-            }
-#endif
-            igvn.replace_input_of(unc, idx, top());
+          iter.force_bci(jvms->bci());
+          assert(next_bci == iter.next_bci() || next_bci == iter.get_dest(), "wrong next_bci at unstable_if");
+          Bytecodes::Code c = iter.cur_bc();
+          Node *lhs = nullptr;
+          Node *rhs = nullptr;
+          if (c == Bytecodes::_if_acmpeq || c == Bytecodes::_if_acmpne) {
+            lhs = unc->peek_operand(0);
+            rhs = unc->peek_operand(1);
+          } else if (c == Bytecodes::_ifnull || c == Bytecodes::_ifnonnull) {
+            lhs = unc->peek_operand(0);
           }
+
+          ResourceMark rm;
+          const MethodLivenessResult& live_locals = method->liveness_at_bci(next_bci);
+          assert(live_locals.is_valid(), "broken liveness info");
+
+          int len = (int)live_locals.size();
+          for (int i = 0; i < len; i++) {
+            Node *local = unc->local(jvms, i);
+            // kill local using the liveness of next_bci.
+            // yield when local looks like an operand to secure reexecution.
+            if (!live_locals.at(i) && !local->is_top() && local != lhs && local!= rhs) {
+              uint idx = jvms->locoff() + i;
+#ifndef PRODUCT
+              if (Verbose) {
+                tty->print("[unstable_if] kill local#%d: ", idx);
+                local->dump();
+                tty->cr();
+              }
+#endif
+              igvn.replace_input_of(unc, idx, top());
+            }
+          }
+          igvn._worklist.push(iff);
         }
-        igvn._worklist.push(iff);
       }
       iff->set_unc_bci(-1);
     }
