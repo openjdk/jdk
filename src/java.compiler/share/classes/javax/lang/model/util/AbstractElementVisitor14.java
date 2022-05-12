@@ -64,10 +64,10 @@ public abstract class AbstractElementVisitor14<R, P> extends AbstractElementVisi
      * @implSpec Visits a {@code RecordComponentElement} in a manner defined by a
      * subclass.
      *
-     * @param t  {@inheritDoc}
+     * @param e  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return   {@inheritDoc}
      */
     @Override
-    public abstract R visitRecordComponent(RecordComponentElement t, P p);
+    public abstract R visitRecordComponent(RecordComponentElement e, P p);
 }

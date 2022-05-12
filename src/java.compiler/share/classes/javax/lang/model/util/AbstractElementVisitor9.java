@@ -64,10 +64,10 @@ public abstract class AbstractElementVisitor9<R, P> extends AbstractElementVisit
      * @implSpec Visits a {@code ModuleElement} in a manner defined by a
      * subclass.
      *
-     * @param t  {@inheritDoc}
+     * @param e  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return   {@inheritDoc}
      */
     @Override
-    public abstract R visitModule(ModuleElement t, P p);
+    public abstract R visitModule(ModuleElement e, P p);
 }
