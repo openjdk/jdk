@@ -486,7 +486,7 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 # jdk_foreign
 
-java/foreign/TestMismatch.java 8249684 macosx-all
+java/foreign/TestUpcallStack.java 8275584 macosx-aarch64
 
 ############################################################################
 
