@@ -217,7 +217,7 @@ final class Frame {
             } else {
                 // Explicit cast required:
                 // The negation "~" sets the high order bits
-                // so the value is more than 16 bits and the
+                // so the value becomes more than 16 bits and the
                 // compiler will emit a warning if not cast
                 firstChar &= (char) ~0b10000000_00000000;
             }
@@ -283,9 +283,7 @@ final class Frame {
         }
 
         HeaderWriter noMask() {
-            // The negation "~" sets the high order bits
-            // so the value is more than 16 bits and the
-            // compiler will emit a warning if not cast
+            // Explicit cast required: see fin() above
             firstChar &= (char) ~0b00000000_10000000;
             mask = false;
             return this;

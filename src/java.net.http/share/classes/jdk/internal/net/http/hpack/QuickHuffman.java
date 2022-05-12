@@ -64,6 +64,10 @@ public final class QuickHuffman {
     }
 
     private static int codeLengthOf(char c) {
+        // codes are up to 30 bits long - and their length
+        // is code on 5 bits which means casting to int here is safe: the
+        // returned value is expected to be in the range (5..30) and will
+        // never be negative.
         return (int) (codes[c] & 0x00000000ffffffffL);
     }
 
