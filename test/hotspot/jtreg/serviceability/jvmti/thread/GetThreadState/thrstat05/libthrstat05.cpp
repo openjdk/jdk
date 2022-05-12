@@ -71,7 +71,8 @@ static int g_wait_time = 1000;
 jrawMonitorID wait_lock; /* Monitor is used just for sleeping */
 
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res = jvm->GetEnv((void **) &jvmti_env, JVMTI_VERSION_1_1);
   if (res != JNI_OK || !jvmti_env) {
     LOG("Agent_OnLoad: Error: GetEnv returned error or NULL\n");

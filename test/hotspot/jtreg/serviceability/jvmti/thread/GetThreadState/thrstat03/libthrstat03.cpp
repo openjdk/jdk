@@ -43,7 +43,8 @@ Java_thrstat03_init(JNIEnv *env, jclass cls, jint waitTime) {
   wait_time = waitTime * 60000;
 }
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
   if (res != JNI_OK || jvmti == NULL) {
     LOG("Wrong result of a valid call to GetEnv!\n");
