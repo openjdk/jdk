@@ -179,8 +179,7 @@ public final class Perf {
      *                           into the virtual machine's address space.
      * @see     java.nio.ByteBuffer
      */
-    public ByteBuffer attach(int lvmid)
-           throws IllegalArgumentException, IOException
+    public ByteBuffer attach(int lvmid) throws IOException
     {
         final ByteBuffer b = attach0(lvmid);
 
@@ -242,8 +241,7 @@ public final class Perf {
      * @throws  OutOfMemoryError The instrumentation buffer could not be mapped
      *                           into the virtual machine's address space.
      */
-    private native ByteBuffer attach0(int lvmid)
-                   throws IllegalArgumentException, IOException;
+    private native ByteBuffer attach0(int lvmid) throws IOException;
 
     /**
      * Native method to perform the implementation specific detach mechanism.
