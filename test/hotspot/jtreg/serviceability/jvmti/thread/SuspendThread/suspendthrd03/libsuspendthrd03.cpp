@@ -143,7 +143,8 @@ agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
   /* Second part of original agentProc test block ends here. */
 }
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEnv *jvmti = NULL;
 
   timeout = 60 * 1000;

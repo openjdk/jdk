@@ -23,27 +23,28 @@
 
 /*
  * @test
- * @bug 8286024
- * @library /test/lib
- * @summary PKCS12 keystore shows "DES/CBC" as the algorithm of a DES SecretKeyEntry
+ * @bug 8286287
+ * @summary Verifies newStringNoRepl() does not throw an Error.
  */
 
-import jdk.test.lib.Asserts;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.HexFormat;
+import static java.nio.charset.StandardCharsets.UTF_16;
 
-import javax.crypto.KeyGenerator;
-import java.security.Key;
-import java.security.KeyStore;
+public class NewStringNoRepl {
+    private final static byte[] MALFORMED_UTF16 = {(byte)0x00, (byte)0x20, (byte)0x00};
 
-public class DESName {
-    public static void main(String[] args) throws Exception {
-        char[] pass = "changeit".toCharArray();
-        KeyStore ks = KeyStore.getInstance("PKCS12");
-        ks.load(null, null);
-        KeyGenerator g = KeyGenerator.getInstance("DES");
-        Key k = g.generateKey();
-        Asserts.assertEQ(k.getAlgorithm(), "DES");
-        ks.setKeyEntry("d", k, pass, null);
-        k = ks.getKey("d", pass);
-        Asserts.assertEQ(k.getAlgorithm(), "DES");
+    public static void main(String... args) throws IOException {
+        var f = Files.createTempFile(null, null);
+        try (var fos = Files.newOutputStream(f)) {
+            fos.write(MALFORMED_UTF16);
+        }
+        System.out.println("Returned bytes: " +
+            HexFormat.of()
+                .withPrefix("x")
+                .withUpperCase()
+                .formatHex(Files.readString(f, UTF_16).getBytes(UTF_16)));
+        Files.delete(f);
     }
 }

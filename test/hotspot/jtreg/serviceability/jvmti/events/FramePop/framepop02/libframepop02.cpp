@@ -232,7 +232,8 @@ void JNICALL FramePop(jvmtiEnv *jvmti, JNIEnv *jni,
   }
 }
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
 
