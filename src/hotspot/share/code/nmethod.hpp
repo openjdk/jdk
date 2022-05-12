@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ class DepChange;
 class DirectiveSet;
 class DebugInformationRecorder;
 class JvmtiThreadState;
+class OopIterateClosure;
 
 // nmethods (native methods) are the compiled code versions of Java methods.
 //
@@ -72,6 +73,8 @@ class nmethod : public CompiledMethod {
  private:
   // Shared fields for all nmethod's
   int       _entry_bci;        // != InvocationEntryBci if this nmethod is an on-stack replacement method
+
+  uint64_t  _gc_epoch;
 
   // To support simple linked-list chaining of nmethods:
   nmethod*  _osr_link;         // from InstanceKlass::osr_nmethods_head
@@ -129,7 +132,7 @@ class nmethod : public CompiledMethod {
   // Unclaimed (C)-> N|SD (C)-> X|SD: the nmethod has been processed strongly from
   //   the beginning by a single thread.
   //
-  // "|" describes the concatentation of bits in _oops_do_mark_link.
+  // "|" describes the concatenation of bits in _oops_do_mark_link.
   //
   // The diagram also describes the threads responsible for changing the nmethod to
   // the next state by marking the _transition_ with (C) and (O), which mean "current"
@@ -256,7 +259,7 @@ class nmethod : public CompiledMethod {
   // stack.  An not_entrant method can be removed when there are no
   // more activations, i.e., when the _stack_traversal_mark is less than
   // current sweep traversal index.
-  volatile long _stack_traversal_mark;
+  volatile int64_t _stack_traversal_mark;
 
   // The _hotness_counter indicates the hotness of a method. The higher
   // the value the hotter the method. The hotness counter of a nmethod is
@@ -334,7 +337,7 @@ class nmethod : public CompiledMethod {
   // Inform external interfaces that a compiled method has been unloaded
   void post_compiled_method_unload();
 
-  // Initailize fields to their default values
+  // Initialize fields to their default values
   void init_defaults();
 
   // Offsets
@@ -385,7 +388,8 @@ class nmethod : public CompiledMethod {
                                      int frame_size,
                                      ByteSize receiver_sp_offset,
                                      ByteSize basic_lock_sp_offset,
-                                     OopMapSet* oop_maps);
+                                     OopMapSet* oop_maps,
+                                     int exception_handler = -1);
 
   // type info
   bool is_nmethod() const                         { return true; }
@@ -538,8 +542,8 @@ public:
   void fix_oop_relocations()                           { fix_oop_relocations(NULL, NULL, false); }
 
   // Sweeper support
-  long  stack_traversal_mark()                    { return _stack_traversal_mark; }
-  void  set_stack_traversal_mark(long l)          { _stack_traversal_mark = l; }
+  int64_t stack_traversal_mark()                  { return _stack_traversal_mark; }
+  void    set_stack_traversal_mark(int64_t l)     { _stack_traversal_mark = l; }
 
   // On-stack replacement support
   int   osr_entry_bci() const                     { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }
@@ -566,6 +570,8 @@ public:
 
   // See comment at definition of _last_seen_on_stack
   void mark_as_seen_on_stack();
+  void mark_as_maybe_on_continuation();
+  bool is_maybe_on_continuation_stack();
   bool can_convert_to_zombie();
 
   // Evolution support. We make old (discarded) compiled methods point to new Method*s.
@@ -594,6 +600,9 @@ public:
   // All-in-one claiming of nmethods: returns true if the caller successfully claimed that
   // nmethod.
   bool oops_do_try_claim();
+
+  // Loom support for following nmethods on the stack
+  void follow_nmethod(OopIterateClosure* cl);
 
   // Class containing callbacks for the oops_do_process_weak/strong() methods
   // below.
@@ -632,9 +641,7 @@ public:
   void copy_scopes_pcs(PcDesc* pcs, int count);
   void copy_scopes_data(address buffer, int size);
 
-  // Accessor/mutator for the original pc of a frame before a frame was deopted.
-  address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
-  void    set_original_pc(const frame* fr, address pc) { *orig_pc_addr(fr) = pc; }
+  int orig_pc_offset() { return _orig_pc_offset; }
 
   // jvmti support:
   void post_compiled_method_load_event(JvmtiThreadState* state = NULL);
@@ -754,6 +761,9 @@ public:
   virtual CompiledStaticCall* compiledStaticCall_at(Relocation* call_site) const;
   virtual CompiledStaticCall* compiledStaticCall_at(address addr) const;
   virtual CompiledStaticCall* compiledStaticCall_before(address addr) const;
+
+  virtual void  make_deoptimized();
+  void finalize_relocations();
 };
 
 // Locks an nmethod so its code will not get removed and it will not

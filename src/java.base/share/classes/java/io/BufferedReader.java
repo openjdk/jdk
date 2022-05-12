@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.io;
 
-
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -33,6 +32,7 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.internal.misc.InternalLock;
 
 /**
  * Reads text from a character-input stream, buffering characters so as to
@@ -69,7 +69,6 @@ import java.util.stream.StreamSupport;
  */
 
 public class BufferedReader extends Reader {
-
     private Reader in;
 
     private char[] cb;
@@ -176,23 +175,37 @@ public class BufferedReader extends Reader {
      * @throws     IOException  If an I/O error occurs
      */
     public int read() throws IOException {
-        synchronized (lock) {
-            ensureOpen();
-            for (;;) {
-                if (nextChar >= nChars) {
-                    fill();
-                    if (nextChar >= nChars)
-                        return -1;
-                }
-                if (skipLF) {
-                    skipLF = false;
-                    if (cb[nextChar] == '\n') {
-                        nextChar++;
-                        continue;
-                    }
-                }
-                return cb[nextChar++];
+        Object lock = this.lock;
+        if (lock instanceof InternalLock locker) {
+            locker.lock();
+            try {
+                return implRead();
+            } finally {
+                locker.unlock();
             }
+        } else {
+            synchronized (lock) {
+                return implRead();
+            }
+        }
+    }
+
+    private int implRead() throws IOException {
+        ensureOpen();
+        for (;;) {
+            if (nextChar >= nChars) {
+                fill();
+                if (nextChar >= nChars)
+                    return -1;
+            }
+            if (skipLF) {
+                skipLF = false;
+                if (cb[nextChar] == '\n') {
+                    nextChar++;
+                    continue;
+                }
+            }
+            return cb[nextChar++];
         }
     }
 
@@ -277,22 +290,36 @@ public class BufferedReader extends Reader {
      * @throws     IOException  {@inheritDoc}
      */
     public int read(char[] cbuf, int off, int len) throws IOException {
-        synchronized (lock) {
-            ensureOpen();
-            Objects.checkFromIndexSize(off, len, cbuf.length);
-            if (len == 0) {
-                return 0;
+        Object lock = this.lock;
+        if (lock instanceof InternalLock locker) {
+            locker.lock();
+            try {
+                return implRead(cbuf, off, len);
+            } finally {
+                locker.unlock();
             }
-
-            int n = read1(cbuf, off, len);
-            if (n <= 0) return n;
-            while ((n < len) && in.ready()) {
-                int n1 = read1(cbuf, off + n, len - n);
-                if (n1 <= 0) break;
-                n += n1;
+        } else {
+            synchronized (lock) {
+                return implRead(cbuf, off, len);
             }
-            return n;
         }
+    }
+
+    private int implRead(char[] cbuf, int off, int len) throws IOException {
+        ensureOpen();
+        Objects.checkFromIndexSize(off, len, cbuf.length);
+        if (len == 0) {
+            return 0;
+        }
+
+        int n = read1(cbuf, off, len);
+        if (n <= 0) return n;
+        while ((n < len) && in.ready()) {
+            int n1 = read1(cbuf, off + n, len - n);
+            if (n1 <= 0) break;
+            n += n1;
+        }
+        return n;
     }
 
     /**
@@ -314,67 +341,81 @@ public class BufferedReader extends Reader {
      * @throws     IOException  If an I/O error occurs
      */
     String readLine(boolean ignoreLF, boolean[] term) throws IOException {
+        Object lock = this.lock;
+        if (lock instanceof InternalLock locker) {
+            locker.lock();
+            try {
+                return implReadLine(ignoreLF, term);
+            } finally {
+                locker.unlock();
+            }
+        } else {
+            synchronized (lock) {
+                return implReadLine(ignoreLF, term);
+            }
+        }
+    }
+
+    private String implReadLine(boolean ignoreLF, boolean[] term) throws IOException {
         StringBuilder s = null;
         int startChar;
 
-        synchronized (lock) {
-            ensureOpen();
-            boolean omitLF = ignoreLF || skipLF;
-            if (term != null) term[0] = false;
+        ensureOpen();
+        boolean omitLF = ignoreLF || skipLF;
+        if (term != null) term[0] = false;
 
-        bufferLoop:
-            for (;;) {
+      bufferLoop:
+        for (;;) {
 
-                if (nextChar >= nChars)
-                    fill();
-                if (nextChar >= nChars) { /* EOF */
-                    if (s != null && s.length() > 0)
-                        return s.toString();
-                    else
-                        return null;
-                }
-                boolean eol = false;
-                char c = 0;
-                int i;
-
-                /* Skip a leftover '\n', if necessary */
-                if (omitLF && (cb[nextChar] == '\n'))
-                    nextChar++;
-                skipLF = false;
-                omitLF = false;
-
-            charLoop:
-                for (i = nextChar; i < nChars; i++) {
-                    c = cb[i];
-                    if ((c == '\n') || (c == '\r')) {
-                        if (term != null) term[0] = true;
-                        eol = true;
-                        break charLoop;
-                    }
-                }
-
-                startChar = nextChar;
-                nextChar = i;
-
-                if (eol) {
-                    String str;
-                    if (s == null) {
-                        str = new String(cb, startChar, i - startChar);
-                    } else {
-                        s.append(cb, startChar, i - startChar);
-                        str = s.toString();
-                    }
-                    nextChar++;
-                    if (c == '\r') {
-                        skipLF = true;
-                    }
-                    return str;
-                }
-
-                if (s == null)
-                    s = new StringBuilder(defaultExpectedLineLength);
-                s.append(cb, startChar, i - startChar);
+            if (nextChar >= nChars)
+                fill();
+            if (nextChar >= nChars) { /* EOF */
+                if (s != null && s.length() > 0)
+                    return s.toString();
+                else
+                    return null;
             }
+            boolean eol = false;
+            char c = 0;
+            int i;
+
+            /* Skip a leftover '\n', if necessary */
+            if (omitLF && (cb[nextChar] == '\n'))
+                nextChar++;
+            skipLF = false;
+            omitLF = false;
+
+          charLoop:
+            for (i = nextChar; i < nChars; i++) {
+                c = cb[i];
+                if ((c == '\n') || (c == '\r')) {
+                    if (term != null) term[0] = true;
+                    eol = true;
+                    break charLoop;
+                }
+            }
+
+            startChar = nextChar;
+            nextChar = i;
+
+            if (eol) {
+                String str;
+                if (s == null) {
+                    str = new String(cb, startChar, i - startChar);
+                } else {
+                    s.append(cb, startChar, i - startChar);
+                    str = s.toString();
+                }
+                nextChar++;
+                if (c == '\r') {
+                    skipLF = true;
+                }
+                return str;
+            }
+
+            if (s == null)
+                s = new StringBuilder(defaultExpectedLineLength);
+            s.append(cb, startChar, i - startChar);
         }
     }
 
@@ -403,33 +444,47 @@ public class BufferedReader extends Reader {
         if (n < 0L) {
             throw new IllegalArgumentException("skip value is negative");
         }
-        synchronized (lock) {
-            ensureOpen();
-            long r = n;
-            while (r > 0) {
-                if (nextChar >= nChars)
-                    fill();
-                if (nextChar >= nChars) /* EOF */
-                    break;
-                if (skipLF) {
-                    skipLF = false;
-                    if (cb[nextChar] == '\n') {
-                        nextChar++;
-                    }
-                }
-                long d = nChars - nextChar;
-                if (r <= d) {
-                    nextChar += r;
-                    r = 0;
-                    break;
-                }
-                else {
-                    r -= d;
-                    nextChar = nChars;
+        Object lock = this.lock;
+        if (lock instanceof InternalLock locker) {
+            locker.lock();
+            try {
+                return implSkip(n);
+            } finally {
+                locker.unlock();
+            }
+        } else {
+            synchronized (lock) {
+                return implSkip(n);
+            }
+        }
+    }
+
+    private long implSkip(long n) throws IOException {
+        ensureOpen();
+        long r = n;
+        while (r > 0) {
+            if (nextChar >= nChars)
+                fill();
+            if (nextChar >= nChars) /* EOF */
+                break;
+            if (skipLF) {
+                skipLF = false;
+                if (cb[nextChar] == '\n') {
+                    nextChar++;
                 }
             }
-            return n - r;
+            long d = nChars - nextChar;
+            if (r <= d) {
+                nextChar += r;
+                r = 0;
+                break;
+            }
+            else {
+                r -= d;
+                nextChar = nChars;
+            }
         }
+        return n - r;
     }
 
     /**
@@ -440,28 +495,42 @@ public class BufferedReader extends Reader {
      * @throws     IOException  If an I/O error occurs
      */
     public boolean ready() throws IOException {
-        synchronized (lock) {
-            ensureOpen();
-
-            /*
-             * If newline needs to be skipped and the next char to be read
-             * is a newline character, then just skip it right away.
-             */
-            if (skipLF) {
-                /* Note that in.ready() will return true if and only if the next
-                 * read on the stream will not block.
-                 */
-                if (nextChar >= nChars && in.ready()) {
-                    fill();
-                }
-                if (nextChar < nChars) {
-                    if (cb[nextChar] == '\n')
-                        nextChar++;
-                    skipLF = false;
-                }
+        Object lock = this.lock;
+        if (lock instanceof InternalLock locker) {
+            locker.lock();
+            try {
+                return implReady();
+            } finally {
+                locker.unlock();
             }
-            return (nextChar < nChars) || in.ready();
+        } else {
+            synchronized (lock) {
+                return implReady();
+            }
         }
+    }
+
+    private boolean implReady() throws IOException {
+        ensureOpen();
+
+        /*
+         * If newline needs to be skipped and the next char to be read
+         * is a newline character, then just skip it right away.
+         */
+        if (skipLF) {
+            /* Note that in.ready() will return true if and only if the next
+             * read on the stream will not block.
+             */
+            if (nextChar >= nChars && in.ready()) {
+                fill();
+            }
+            if (nextChar < nChars) {
+                if (cb[nextChar] == '\n')
+                    nextChar++;
+                skipLF = false;
+            }
+        }
+        return (nextChar < nChars) || in.ready();
     }
 
     /**
@@ -491,12 +560,26 @@ public class BufferedReader extends Reader {
         if (readAheadLimit < 0) {
             throw new IllegalArgumentException("Read-ahead limit < 0");
         }
-        synchronized (lock) {
-            ensureOpen();
-            this.readAheadLimit = readAheadLimit;
-            markedChar = nextChar;
-            markedSkipLF = skipLF;
+        Object lock = this.lock;
+        if (lock instanceof InternalLock locker) {
+            locker.lock();
+            try {
+                implMark(readAheadLimit);
+            } finally {
+                locker.unlock();
+            }
+        } else {
+            synchronized (lock) {
+                implMark(readAheadLimit);
+            }
         }
+    }
+
+    private void implMark(int readAheadLimit) throws IOException {
+        ensureOpen();
+        this.readAheadLimit = readAheadLimit;
+        markedChar = nextChar;
+        markedSkipLF = skipLF;
     }
 
     /**
@@ -506,27 +589,55 @@ public class BufferedReader extends Reader {
      *                          or if the mark has been invalidated
      */
     public void reset() throws IOException {
-        synchronized (lock) {
-            ensureOpen();
-            if (markedChar < 0)
-                throw new IOException((markedChar == INVALIDATED)
-                                      ? "Mark invalid"
-                                      : "Stream not marked");
-            nextChar = markedChar;
-            skipLF = markedSkipLF;
+        Object lock = this.lock;
+        if (lock instanceof InternalLock locker) {
+            locker.lock();
+            try {
+                implReset();
+            } finally {
+                locker.unlock();
+            }
+        } else {
+            synchronized (lock) {
+                implReset();
+            }
         }
     }
 
+    private void implReset() throws IOException {
+        ensureOpen();
+        if (markedChar < 0)
+            throw new IOException((markedChar == INVALIDATED)
+                                  ? "Mark invalid"
+                                  : "Stream not marked");
+        nextChar = markedChar;
+        skipLF = markedSkipLF;
+    }
+
     public void close() throws IOException {
-        synchronized (lock) {
-            if (in == null)
-                return;
+        Object lock = this.lock;
+        if (lock instanceof InternalLock locker) {
+            locker.lock();
             try {
-                in.close();
+                implClose();
             } finally {
-                in = null;
-                cb = null;
+                locker.unlock();
             }
+        } else {
+            synchronized (lock) {
+                implClose();
+            }
+        }
+    }
+
+    private void implClose() throws IOException {
+        if (in == null)
+            return;
+        try {
+            in.close();
+        } finally {
+            in = null;
+            cb = null;
         }
     }
 

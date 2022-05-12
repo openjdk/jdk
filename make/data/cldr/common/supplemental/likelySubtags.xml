@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
 <!--
-Copyright © 1991-2021 Unicode, Inc.
+Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <!--
@@ -340,6 +340,10 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Buhid; ?; ? } => { Buhid; Latin; Philippines }-->
 		<likelySubtag from="bkv" to="bkv_Latn_ZZ"/>
 		<!--{ Bekwarra; ?; ? } => { Bekwarra; Latin; Unknown Region }-->
+		<likelySubtag from="bla" to="bla_Latn_CA"/>
+		<!--{ Siksika; ?; ? } => { Siksika; Latin; Canada }-->
+		<likelySubtag from="blg" to="blg_Latn_MY"/>
+		<!--{ Balau; ?; ? } => { Balau; Latin; Malaysia }-->
 		<likelySubtag from="blt" to="blt_Tavt_VN"/>
 		<!--{ Tai Dam; ?; ? } => { Tai Dam; Tai Viet; Vietnam }-->
 		<likelySubtag from="bm" to="bm_Latn_ML"/>
@@ -502,6 +506,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Cakfem-Mushere; ?; ? } => { Cakfem-Mushere; Latin; Unknown Region }-->
 		<likelySubtag from="cla" to="cla_Latn_ZZ"/>
 		<!--{ Ron; ?; ? } => { Ron; Latin; Unknown Region }-->
+		<likelySubtag from="clc" to="clc_Latn_CA"/>
+		<!--{ Chilcotin; ?; ? } => { Chilcotin; Latin; Canada }-->
 		<likelySubtag from="cme" to="cme_Latn_ZZ"/>
 		<!--{ Cerma; ?; ? } => { Cerma; Latin; Unknown Region }-->
 		<likelySubtag from="cmg" to="cmg_Soyo_MN"/>
@@ -514,16 +520,14 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Capiznon; ?; ? } => { Capiznon; Latin; Philippines }-->
 		<likelySubtag from="cr" to="cr_Cans_CA"/>
 		<!--{ Cree; ?; ? } => { Cree; Unified Canadian Aboriginal Syllabics; Canada }-->
+		<likelySubtag from="crg" to="crg_Latn_CA"/>
+		<!--{ Michif; ?; ? } => { Michif; Latin; Canada }-->
 		<likelySubtag from="crh" to="crh_Cyrl_UA"/>
-		<!--{ Crimean Turkish; ?; ? } => { Crimean Turkish; Cyrillic; Ukraine }-->
-		<likelySubtag from="crj" to="crj_Cans_CA"/>
-		<!--{ Southern East Cree; ?; ? } => { Southern East Cree; Unified Canadian Aboriginal Syllabics; Canada }-->
+		<!--{ Crimean Tatar; ?; ? } => { Crimean Tatar; Cyrillic; Ukraine }-->
 		<likelySubtag from="crk" to="crk_Cans_CA"/>
 		<!--{ Plains Cree; ?; ? } => { Plains Cree; Unified Canadian Aboriginal Syllabics; Canada }-->
 		<likelySubtag from="crl" to="crl_Cans_CA"/>
 		<!--{ Northern East Cree; ?; ? } => { Northern East Cree; Unified Canadian Aboriginal Syllabics; Canada }-->
-		<likelySubtag from="crm" to="crm_Cans_CA"/>
-		<!--{ Moose Cree; ?; ? } => { Moose Cree; Unified Canadian Aboriginal Syllabics; Canada }-->
 		<likelySubtag from="crs" to="crs_Latn_SC"/>
 		<!--{ Seselwa Creole French; ?; ? } => { Seselwa Creole French; Latin; Seychelles }-->
 		<likelySubtag from="cs" to="cs_Latn_CZ"/>
@@ -940,6 +944,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Hoyahoya; ?; ? } => { Hoyahoya; Latin; Unknown Region }-->
 		<likelySubtag from="hi" to="hi_Deva_IN"/>
 		<!--{ Hindi; ?; ? } => { Hindi; Devanagari; India }-->
+		<likelySubtag from="hi_Latn" to="hi_Latn_IN"/>
+		<!--{ Hindi; Latin; ? } => { Hindi; Latin; India }-->
 		<likelySubtag from="hia" to="hia_Latn_ZZ"/>
 		<!--{ Lamang; ?; ? } => { Lamang; Latin; Unknown Region }-->
 		<likelySubtag from="hif" to="hif_Latn_FJ"/>
@@ -962,8 +968,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Southern Hindko; ?; ? } => { Southern Hindko; Arabic; Pakistan }-->
 		<likelySubtag from="hne" to="hne_Deva_IN"/>
 		<!--{ Chhattisgarhi; ?; ? } => { Chhattisgarhi; Devanagari; India }-->
-		<likelySubtag from="hnj" to="hnj_Hmng_LA"/>
-		<!--{ Hmong Njua; ?; ? } => { Hmong Njua; Pahawh Hmong; Laos }-->
+		<likelySubtag from="hnj" to="hnj_Hmnp_US"/>
+		<!--{ Hmong Njua; ?; ? } => { Hmong Njua; Nyiakeng Puachue Hmong; United States }-->
 		<likelySubtag from="hnn" to="hnn_Latn_PH"/>
 		<!--{ Hanunoo; ?; ? } => { Hanunoo; Latin; Philippines }-->
 		<likelySubtag from="hno" to="hno_Arab_PK"/>
@@ -988,6 +994,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Hungarian; ?; ? } => { Hungarian; Latin; Hungary }-->
 		<likelySubtag from="hui" to="hui_Latn_ZZ"/>
 		<!--{ Huli; ?; ? } => { Huli; Latin; Unknown Region }-->
+		<likelySubtag from="hur" to="hur_Latn_CA"/>
+		<!--{ Halkomelem; ?; ? } => { Halkomelem; Latin; Canada }-->
 		<likelySubtag from="hy" to="hy_Armn_AM"/>
 		<!--{ Armenian; ?; ? } => { Armenian; Armenian; Armenia }-->
 		<likelySubtag from="hz" to="hz_Latn_NA"/>
@@ -1032,8 +1040,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Inupiaq; ?; ? } => { Inupiaq; Latin; United States }-->
 		<likelySubtag from="ikk" to="ikk_Latn_ZZ"/>
 		<!--{ Ika; ?; ? } => { Ika; Latin; Unknown Region }-->
-		<likelySubtag from="ikt" to="ikt_Latn_CA"/>
-		<!--{ Inuinnaqtun; ?; ? } => { Inuinnaqtun; Latin; Canada }-->
 		<likelySubtag from="ikw" to="ikw_Latn_ZZ"/>
 		<!--{ Ikwere; ?; ? } => { Ikwere; Latin; Unknown Region }-->
 		<likelySubtag from="ikx" to="ikx_Latn_ZZ"/>
@@ -1120,6 +1126,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Kamba; ?; ? } => { Kamba; Latin; Kenya }-->
 		<likelySubtag from="kao" to="kao_Latn_ML"/>
 		<!--{ Xaasongaxango; ?; ? } => { Xaasongaxango; Latin; Mali }-->
+		<likelySubtag from="kaw" to="kaw_Kawi_ID"/>
+		<!--{ Kawi; ?; ? } => { Kawi; Kawi; Indonesia }-->
 		<likelySubtag from="kbd" to="kbd_Cyrl_RU"/>
 		<!--{ Kabardian; ?; ? } => { Kabardian; Cyrillic; Russia }-->
 		<likelySubtag from="kbm" to="kbm_Latn_ZZ"/>
@@ -1142,8 +1150,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Kaian; ?; ? } => { Kaian; Latin; Unknown Region }-->
 		<likelySubtag from="kde" to="kde_Latn_TZ"/>
 		<!--{ Makonde; ?; ? } => { Makonde; Latin; Tanzania }-->
-		<likelySubtag from="kdh" to="kdh_Arab_TG"/>
-		<!--{ Tem; ?; ? } => { Tem; Arabic; Togo }-->
+		<likelySubtag from="kdh" to="kdh_Latn_TG"/>
+		<!--{ Tem; ?; ? } => { Tem; Latin; Togo }-->
 		<likelySubtag from="kdl" to="kdl_Latn_ZZ"/>
 		<!--{ Tsikimba; ?; ? } => { Tsikimba; Latin; Unknown Region }-->
 		<likelySubtag from="kdt" to="kdt_Thai_TH"/>
@@ -1350,6 +1358,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Cornish; ?; ? } => { Cornish; Latin; United Kingdom }-->
 		<likelySubtag from="kwj" to="kwj_Latn_ZZ"/>
 		<!--{ Kwanga; ?; ? } => { Kwanga; Latin; Unknown Region }-->
+		<likelySubtag from="kwk" to="kwk_Latn_CA"/>
+		<!--{ Kwakʼwala; ?; ? } => { Kwakʼwala; Latin; Canada }-->
 		<likelySubtag from="kwo" to="kwo_Latn_ZZ"/>
 		<!--{ Kwomtari; ?; ? } => { Kwomtari; Latin; Unknown Region }-->
 		<likelySubtag from="kwq" to="kwq_Latn_ZZ"/>
@@ -1454,6 +1464,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Lihir; ?; ? } => { Lihir; Latin; Unknown Region }-->
 		<likelySubtag from="lij" to="lij_Latn_IT"/>
 		<!--{ Ligurian; ?; ? } => { Ligurian; Latin; Italy }-->
+		<likelySubtag from="lil" to="lil_Latn_CA"/>
+		<!--{ Lillooet; ?; ? } => { Lillooet; Latin; Canada }-->
 		<likelySubtag from="lis" to="lis_Lisu_CN"/>
 		<!--{ Lisu; ?; ? } => { Lisu; Fraser; China }-->
 		<likelySubtag from="ljp" to="ljp_Latn_ID"/>
@@ -1615,7 +1627,9 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="mhl" to="mhl_Latn_ZZ"/>
 		<!--{ Mauwake; ?; ? } => { Mauwake; Latin; Unknown Region }-->
 		<likelySubtag from="mi" to="mi_Latn_NZ"/>
-		<!--{ Maori; ?; ? } => { Maori; Latin; New Zealand }-->
+		<!--{ Māori; ?; ? } => { Māori; Latin; New Zealand }-->
+		<likelySubtag from="mic" to="mic_Latn_CA"/>
+		<!--{ Mi'kmaq; ?; ? } => { Mi'kmaq; Latin; Canada }-->
 		<likelySubtag from="mif" to="mif_Latn_ZZ"/>
 		<!--{ Mofu-Gudur; ?; ? } => { Mofu-Gudur; Latin; Unknown Region }-->
 		<likelySubtag from="min" to="min_Latn_ID"/>
@@ -1665,7 +1679,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="moa" to="moa_Latn_ZZ"/>
 		<!--{ Mwan; ?; ? } => { Mwan; Latin; Unknown Region }-->
 		<likelySubtag from="moe" to="moe_Latn_CA"/>
-		<!--{ Innu; ?; ? } => { Innu; Latin; Canada }-->
+		<!--{ Innu-aimun; ?; ? } => { Innu-aimun; Latin; Canada }-->
 		<likelySubtag from="moh" to="moh_Latn_CA"/>
 		<!--{ Mohawk; ?; ? } => { Mohawk; Latin; Canada }-->
 		<likelySubtag from="mos" to="mos_Latn_BF"/>
@@ -1878,6 +1892,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Northern Sotho; ?; ? } => { Northern Sotho; Latin; South Africa }-->
 		<likelySubtag from="nss" to="nss_Latn_ZZ"/>
 		<!--{ Nali; ?; ? } => { Nali; Latin; Unknown Region }-->
+		<likelySubtag from="nst" to="nst_Tnsa_IN"/>
+		<!--{ Tase Naga; ?; ? } => { Tase Naga; Tangsa; India }-->
 		<likelySubtag from="ntm" to="ntm_Latn_ZZ"/>
 		<!--{ Nateni; ?; ? } => { Nateni; Latin; Unknown Region }-->
 		<likelySubtag from="ntr" to="ntr_Latn_ZZ"/>
@@ -1912,6 +1928,12 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Occitan; ?; ? } => { Occitan; Latin; France }-->
 		<likelySubtag from="ogc" to="ogc_Latn_ZZ"/>
 		<!--{ Ogbah; ?; ? } => { Ogbah; Latin; Unknown Region }-->
+		<likelySubtag from="oj" to="oj_Cans_CA"/>
+		<!--{ Ojibwa; ?; ? } => { Ojibwa; Unified Canadian Aboriginal Syllabics; Canada }-->
+		<likelySubtag from="ojs" to="ojs_Cans_CA"/>
+		<!--{ Oji-Cree; ?; ? } => { Oji-Cree; Unified Canadian Aboriginal Syllabics; Canada }-->
+		<likelySubtag from="oka" to="oka_Latn_CA"/>
+		<!--{ Okanagan; ?; ? } => { Okanagan; Latin; Canada }-->
 		<likelySubtag from="okr" to="okr_Latn_ZZ"/>
 		<!--{ Kirike; ?; ? } => { Kirike; Latin; Unknown Region }-->
 		<likelySubtag from="okv" to="okv_Latn_ZZ"/>
@@ -1940,6 +1962,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Ottoman Turkish; ?; ? } => { Ottoman Turkish; Arabic; Unknown Region }-->
 		<likelySubtag from="otk" to="otk_Orkh_MN"/>
 		<!--{ Old Turkish; ?; ? } => { Old Turkish; Orkhon; Mongolia }-->
+		<likelySubtag from="oui" to="oui_Ougr_143"/>
+		<!--{ Old Uighur; ?; ? } => { Old Uighur; Old Uyghur; Central Asia }-->
 		<likelySubtag from="ozm" to="ozm_Latn_ZZ"/>
 		<!--{ Koonzime; ?; ? } => { Koonzime; Latin; Unknown Region }-->
 		<likelySubtag from="pa" to="pa_Guru_IN"/>
@@ -2008,6 +2032,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Pao; ?; ? } => { Pao; Devanagari; India }-->
 		<likelySubtag from="ppo" to="ppo_Latn_ZZ"/>
 		<!--{ Folopa; ?; ? } => { Folopa; Latin; Unknown Region }-->
+		<likelySubtag from="pqm" to="pqm_Latn_CA"/>
+		<!--{ Malecite; ?; ? } => { Malecite; Latin; Canada }-->
 		<likelySubtag from="pra" to="pra_Khar_PK"/>
 		<!--{ Prakrit languages; ?; ? } => { Prakrit languages; Kharoshthi; Pakistan }-->
 		<likelySubtag from="prd" to="prd_Arab_IR"/>
@@ -2048,8 +2074,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Reshe; ?; ? } => { Reshe; Latin; Unknown Region }-->
 		<likelySubtag from="rgn" to="rgn_Latn_IT"/>
 		<!--{ Romagnol; ?; ? } => { Romagnol; Latin; Italy }-->
-		<likelySubtag from="rhg" to="rhg_Arab_MM"/>
-		<!--{ Rohingya; ?; ? } => { Rohingya; Arabic; Myanmar (Burma) }-->
+		<likelySubtag from="rhg" to="rhg_Rohg_MM"/>
+		<!--{ Rohingya; ?; ? } => { Rohingya; Hanifi; Myanmar (Burma) }-->
 		<likelySubtag from="ria" to="ria_Latn_IN"/>
 		<!--{ Riang (India); ?; ? } => { Riang (India); Latin; India }-->
 		<likelySubtag from="rif" to="rif_Tfng_MA"/>
@@ -2134,12 +2160,12 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Sicilian; ?; ? } => { Sicilian; Latin; Italy }-->
 		<likelySubtag from="sco" to="sco_Latn_GB"/>
 		<!--{ Scots; ?; ? } => { Scots; Latin; United Kingdom }-->
-		<likelySubtag from="scs" to="scs_Latn_CA"/>
-		<!--{ North Slavey; ?; ? } => { North Slavey; Latin; Canada }-->
 		<likelySubtag from="sd" to="sd_Arab_PK"/>
 		<!--{ Sindhi; ?; ? } => { Sindhi; Arabic; Pakistan }-->
 		<likelySubtag from="sd_Deva" to="sd_Deva_IN"/>
 		<!--{ Sindhi; Devanagari; ? } => { Sindhi; Devanagari; India }-->
+		<likelySubtag from="sd_IN" to="sd_Deva_IN"/>
+		<!--{ Sindhi; ?; India } => { Sindhi; Devanagari; India }-->
 		<likelySubtag from="sd_Khoj" to="sd_Khoj_IN"/>
 		<!--{ Sindhi; Khojki; ? } => { Sindhi; Khojki; India }-->
 		<likelySubtag from="sd_Sind" to="sd_Sind_IN"/>
@@ -2496,6 +2522,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Tasawaq; ?; ? } => { Tasawaq; Latin; Niger }-->
 		<likelySubtag from="txg" to="txg_Tang_CN"/>
 		<!--{ Tangut; ?; ? } => { Tangut; Tangut; China }-->
+		<likelySubtag from="txo" to="txo_Toto_IN"/>
+		<!--{ Toto; ?; ? } => { Toto; Toto; India }-->
 		<likelySubtag from="ty" to="ty_Latn_PF"/>
 		<!--{ Tahitian; ?; ? } => { Tahitian; Latin; French Polynesia }-->
 		<likelySubtag from="tya" to="tya_Latn_ZZ"/>
@@ -3306,8 +3334,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ ?; Arabic; Cocos (Keeling) Islands } => { Malay; Arabic; Cocos (Keeling) Islands }-->
 		<likelySubtag from="und_Arab_CN" to="ug_Arab_CN"/>
 		<!--{ ?; Arabic; China } => { Uyghur; Arabic; China }-->
-		<likelySubtag from="und_Arab_GB" to="ks_Arab_GB"/>
-		<!--{ ?; Arabic; United Kingdom } => { Kashmiri; Arabic; United Kingdom }-->
+		<likelySubtag from="und_Arab_GB" to="ur_Arab_GB"/>
+		<!--{ ?; Arabic; United Kingdom } => { Urdu; Arabic; United Kingdom }-->
 		<likelySubtag from="und_Arab_ID" to="ms_Arab_ID"/>
 		<!--{ ?; Arabic; Indonesia } => { Malay; Arabic; Indonesia }-->
 		<likelySubtag from="und_Arab_IN" to="ur_Arab_IN"/>
@@ -3364,8 +3392,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ ?; Buhid; ? } => { Buhid; Buhid; Philippines }-->
 		<likelySubtag from="und_Cakm" to="ccp_Cakm_BD"/>
 		<!--{ ?; Chakma; ? } => { Chakma; Chakma; Bangladesh }-->
-		<likelySubtag from="und_Cans" to="cr_Cans_CA"/>
-		<!--{ ?; Unified Canadian Aboriginal Syllabics; ? } => { Cree; Unified Canadian Aboriginal Syllabics; Canada }-->
+		<likelySubtag from="und_Cans" to="iu_Cans_CA"/>
+		<!--{ ?; Unified Canadian Aboriginal Syllabics; ? } => { Inuktitut; Unified Canadian Aboriginal Syllabics; Canada }-->
 		<likelySubtag from="und_Cari" to="xcr_Cari_TR"/>
 		<!--{ ?; Carian; ? } => { Carian; Carian; Turkey }-->
 		<likelySubtag from="und_Cham" to="cjm_Cham_VN"/>
@@ -3376,6 +3404,10 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ ?; Chorasmian; ? } => { Chorasmian; Chorasmian; Uzbekistan }-->
 		<likelySubtag from="und_Copt" to="cop_Copt_EG"/>
 		<!--{ ?; Coptic; ? } => { Coptic; Coptic; Egypt }-->
+		<likelySubtag from="und_Cpmn" to="und_Cpmn_CY"/>
+		<!--{ ?; Cypro-Minoan; ? } => { ?; Cypro-Minoan; Cyprus }-->
+		<likelySubtag from="und_Cpmn_CY" to="und_Cpmn_CY"/>
+		<!--{ ?; Cypro-Minoan; Cyprus } => { ?; Cypro-Minoan; Cyprus }-->
 		<likelySubtag from="und_Cprt" to="grc_Cprt_CY"/>
 		<!--{ ?; Cypriot; ? } => { Ancient Greek; Cypriot; Cyprus }-->
 		<likelySubtag from="und_Cyrl" to="ru_Cyrl_RU"/>
@@ -3384,8 +3416,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ ?; Cyrillic; Albania } => { Macedonian; Cyrillic; Albania }-->
 		<likelySubtag from="und_Cyrl_BA" to="sr_Cyrl_BA"/>
 		<!--{ ?; Cyrillic; Bosnia & Herzegovina } => { Serbian; Cyrillic; Bosnia & Herzegovina }-->
-		<likelySubtag from="und_Cyrl_GE" to="os_Cyrl_GE"/>
-		<!--{ ?; Cyrillic; Georgia } => { Ossetic; Cyrillic; Georgia }-->
+		<likelySubtag from="und_Cyrl_GE" to="ab_Cyrl_GE"/>
+		<!--{ ?; Cyrillic; Georgia } => { Abkhazian; Cyrillic; Georgia }-->
 		<likelySubtag from="und_Cyrl_GR" to="mk_Cyrl_GR"/>
 		<!--{ ?; Cyrillic; Greece } => { Macedonian; Cyrillic; Greece }-->
 		<likelySubtag from="und_Cyrl_MD" to="uk_Cyrl_MD"/>
@@ -3454,12 +3486,10 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ ?; Simplified; ? } => { Chinese; Simplified; China }-->
 		<likelySubtag from="und_Hant" to="zh_Hant_TW"/>
 		<!--{ ?; Traditional; ? } => { Chinese; Traditional; Taiwan }-->
+		<likelySubtag from="und_Hant_CA" to="yue_Hant_CA"/>
+		<!--{ ?; Traditional; Canada } => { Cantonese; Traditional; Canada }-->
 		<likelySubtag from="und_Hebr" to="he_Hebr_IL"/>
 		<!--{ ?; Hebrew; ? } => { Hebrew; Hebrew; Israel }-->
-		<likelySubtag from="und_Hebr_CA" to="yi_Hebr_CA"/>
-		<!--{ ?; Hebrew; Canada } => { Yiddish; Hebrew; Canada }-->
-		<likelySubtag from="und_Hebr_GB" to="yi_Hebr_GB"/>
-		<!--{ ?; Hebrew; United Kingdom } => { Yiddish; Hebrew; United Kingdom }-->
 		<likelySubtag from="und_Hebr_SE" to="yi_Hebr_SE"/>
 		<!--{ ?; Hebrew; Sweden } => { Yiddish; Hebrew; Sweden }-->
 		<likelySubtag from="und_Hebr_UA" to="yi_Hebr_UA"/>
@@ -3472,8 +3502,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ ?; Anatolian Hieroglyphs; ? } => { Hieroglyphic Luwian; Anatolian Hieroglyphs; Turkey }-->
 		<likelySubtag from="und_Hmng" to="hnj_Hmng_LA"/>
 		<!--{ ?; Pahawh Hmong; ? } => { Hmong Njua; Pahawh Hmong; Laos }-->
-		<likelySubtag from="und_Hmnp" to="mww_Hmnp_US"/>
-		<!--{ ?; Nyiakeng Puachue Hmong; ? } => { Hmong Daw; Nyiakeng Puachue Hmong; United States }-->
+		<likelySubtag from="und_Hmnp" to="hnj_Hmnp_US"/>
+		<!--{ ?; Nyiakeng Puachue Hmong; ? } => { Hmong Njua; Nyiakeng Puachue Hmong; United States }-->
 		<likelySubtag from="und_Hung" to="hu_Hung_HU"/>
 		<!--{ ?; Old Hungarian; ? } => { Hungarian; Old Hungarian; Hungary }-->
 		<likelySubtag from="und_Ital" to="ett_Ital_IT"/>
@@ -3488,6 +3518,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ ?; Kayah Li; ? } => { Eastern Kayah; Kayah Li; Myanmar (Burma) }-->
 		<likelySubtag from="und_Kana" to="ja_Kana_JP"/>
 		<!--{ ?; Katakana; ? } => { Japanese; Katakana; Japan }-->
+		<likelySubtag from="und_Kawi" to="kaw_Kawi_ID"/>
+		<!--{ ?; Kawi; ? } => { Kawi; Kawi; Indonesia }-->
 		<likelySubtag from="und_Khar" to="pra_Khar_PK"/>
 		<!--{ ?; Kharoshthi; ? } => { Prakrit languages; Kharoshthi; Pakistan }-->
 		<likelySubtag from="und_Khmr" to="km_Khmr_KH"/>
@@ -3594,6 +3626,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ ?; Myanmar; India } => { Khamti; Myanmar; India }-->
 		<likelySubtag from="und_Mymr_TH" to="mnw_Mymr_TH"/>
 		<!--{ ?; Myanmar; Thailand } => { Mon; Myanmar; Thailand }-->
+		<likelySubtag from="und_Nagm" to="unr_Nagm_IN"/>
+		<!--{ ?; Nag Mundari; ? } => { Mundari; Nag Mundari; India }-->
 		<likelySubtag from="und_Nand" to="sa_Nand_IN"/>
 		<!--{ ?; Nandinagari; ? } => { Sanskrit; Nandinagari; India }-->
 		<likelySubtag from="und_Narb" to="xna_Narb_SA"/>
@@ -3618,6 +3652,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ ?; Osage; ? } => { Osage; Osage; United States }-->
 		<likelySubtag from="und_Osma" to="so_Osma_SO"/>
 		<!--{ ?; Osmanya; ? } => { Somali; Osmanya; Somalia }-->
+		<likelySubtag from="und_Ougr" to="oui_Ougr_143"/>
+		<!--{ ?; Old Uyghur; ? } => { Old Uighur; Old Uyghur; Central Asia }-->
 		<likelySubtag from="und_Palm" to="arc_Palm_SY"/>
 		<!--{ ?; Palmyrene; ? } => { Aramaic; Palmyrene; Syria }-->
 		<likelySubtag from="und_Pauc" to="ctd_Pauc_MM"/>
@@ -3639,7 +3675,7 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="und_Rjng" to="rej_Rjng_ID"/>
 		<!--{ ?; Rejang; ? } => { Rejang; Rejang; Indonesia }-->
 		<likelySubtag from="und_Rohg" to="rhg_Rohg_MM"/>
-		<!--{ ?; Hanifi Rohingya; ? } => { Rohingya; Hanifi Rohingya; Myanmar (Burma) }-->
+		<!--{ ?; Hanifi; ? } => { Rohingya; Hanifi; Myanmar (Burma) }-->
 		<likelySubtag from="und_Runr" to="non_Runr_SE"/>
 		<!--{ ?; Runic; ? } => { Old Norse; Runic; Sweden }-->
 		<likelySubtag from="und_Samr" to="smp_Samr_IL"/>
@@ -3708,10 +3744,16 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ ?; Tibetan; ? } => { Tibetan; Tibetan; China }-->
 		<likelySubtag from="und_Tirh" to="mai_Tirh_IN"/>
 		<!--{ ?; Tirhuta; ? } => { Maithili; Tirhuta; India }-->
+		<likelySubtag from="und_Tnsa" to="nst_Tnsa_IN"/>
+		<!--{ ?; Tangsa; ? } => { Tase Naga; Tangsa; India }-->
+		<likelySubtag from="und_Toto" to="txo_Toto_IN"/>
+		<!--{ ?; Toto; ? } => { Toto; Toto; India }-->
 		<likelySubtag from="und_Ugar" to="uga_Ugar_SY"/>
 		<!--{ ?; Ugaritic; ? } => { Ugaritic; Ugaritic; Syria }-->
 		<likelySubtag from="und_Vaii" to="vai_Vaii_LR"/>
 		<!--{ ?; Vai; ? } => { Vai; Vai; Liberia }-->
+		<likelySubtag from="und_Vith" to="sq_Vith_AL"/>
+		<!--{ ?; Vithkuqi; ? } => { Albanian; Vithkuqi; Albania }-->
 		<likelySubtag from="und_Wara" to="hoc_Wara_IN"/>
 		<!--{ ?; Varang Kshiti; ? } => { Ho; Varang Kshiti; India }-->
 		<likelySubtag from="und_Wcho" to="nnp_Wcho_IN"/>

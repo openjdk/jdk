@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@
 G1ConcurrentRefineThread* G1ConcurrentRefineThreadControl::create_refinement_thread(uint worker_id, bool initializing) {
   G1ConcurrentRefineThread* result = NULL;
   if (initializing || !InjectGCWorkerCreationFailure) {
-    result = new G1ConcurrentRefineThread(_cr, worker_id);
+    result = G1ConcurrentRefineThread::create(_cr, worker_id);
   }
   if (result == NULL || result->osthread() == NULL) {
     log_warning(gc)("Failed to create refinement thread %u, no more %s",
@@ -53,8 +53,9 @@ G1ConcurrentRefineThread* G1ConcurrentRefineThreadControl::create_refinement_thr
 }
 
 G1ConcurrentRefineThreadControl::G1ConcurrentRefineThreadControl() :
-  _cr(NULL),
-  _threads(NULL),
+  _cr(nullptr),
+  _primary_thread(nullptr),
+  _threads(nullptr),
   _num_max_threads(0)
 {
 }
@@ -76,20 +77,25 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint nu
 
   _threads = NEW_C_HEAP_ARRAY(G1ConcurrentRefineThread*, num_max_threads, mtGC);
 
-  for (uint i = 0; i < num_max_threads; i++) {
-    if (UseDynamicNumberOfGCThreads && i != 0 /* Always start first thread. */) {
-      _threads[i] = NULL;
-    } else {
-      _threads[i] = create_refinement_thread(i, true);
-      if (_threads[i] == NULL) {
-        vm_shutdown_during_initialization("Could not allocate refinement threads.");
-        return JNI_ENOMEM;
+  if (num_max_threads > 0) {
+    auto primary = G1PrimaryConcurrentRefineThread::create(cr);
+    if (primary == nullptr) {
+      vm_shutdown_during_initialization("Could not allocate primary refinement thread");
+      return JNI_ENOMEM;
+    }
+    _threads[0] = _primary_thread = primary;
+
+    for (uint i = 1; i < num_max_threads; ++i) {
+      if (UseDynamicNumberOfGCThreads) {
+        _threads[i] = nullptr;
+      } else {
+        _threads[i] = create_refinement_thread(i, true);
+        if (_threads[i] == nullptr) {
+          vm_shutdown_during_initialization("Could not allocate refinement threads.");
+          return JNI_ENOMEM;
+        }
       }
     }
-  }
-
-  if (num_max_threads > 0) {
-    G1BarrierSet::dirty_card_queue_set().set_primary_refinement_thread(_threads[0]);
   }
 
   return JNI_OK;
@@ -237,7 +243,18 @@ G1ConcurrentRefine::G1ConcurrentRefine(size_t green_zone,
 }
 
 jint G1ConcurrentRefine::initialize() {
-  return _thread_control.initialize(this, max_num_threads());
+  jint result = _thread_control.initialize(this, max_num_threads());
+  if (result != JNI_OK) return result;
+
+  G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
+  dcqs.set_max_cards(red_zone());
+  if (max_num_threads() > 0) {
+    G1PrimaryConcurrentRefineThread* primary_thread = _thread_control.primary_thread();
+    primary_thread->update_notify_threshold(primary_activation_threshold());
+    dcqs.set_refinement_notification_thread(primary_thread);
+  }
+
+  return JNI_OK;
 }
 
 static size_t calc_min_yellow_zone_size() {
@@ -392,14 +409,9 @@ void G1ConcurrentRefine::adjust(double logged_cards_scan_time,
     update_zones(logged_cards_scan_time, processed_logged_cards, goal_ms);
 
     // Change the barrier params
-    if (max_num_threads() == 0) {
-      // Disable dcqs notification when there are no threads to notify.
-      dcqs.set_process_cards_threshold(G1DirtyCardQueueSet::ProcessCardsThresholdNever);
-    } else {
-      // Worker 0 is the primary; wakeup is via dcqs notification.
-      STATIC_ASSERT(max_yellow_zone <= INT_MAX);
-      size_t activate = activation_threshold(0);
-      dcqs.set_process_cards_threshold(activate);
+    if (max_num_threads() > 0) {
+      size_t threshold = primary_activation_threshold();
+      _thread_control.primary_thread()->update_notify_threshold(threshold);
     }
     dcqs.set_max_cards(red_zone());
   }
@@ -411,7 +423,6 @@ void G1ConcurrentRefine::adjust(double logged_cards_scan_time,
   } else {
     dcqs.set_max_cards_padding(0);
   }
-  dcqs.notify_if_necessary();
 }
 
 G1ConcurrentRefineStats G1ConcurrentRefine::get_and_reset_refinement_stats() {
@@ -436,6 +447,11 @@ size_t G1ConcurrentRefine::activation_threshold(uint worker_id) const {
 size_t G1ConcurrentRefine::deactivation_threshold(uint worker_id) const {
   Thresholds thresholds = calc_thresholds(_green_zone, _yellow_zone, worker_id);
   return deactivation_level(thresholds);
+}
+
+size_t G1ConcurrentRefine::primary_activation_threshold() const {
+  assert(max_num_threads() > 0, "No primary refinement thread");
+  return activation_threshold(0);
 }
 
 uint G1ConcurrentRefine::worker_id_offset() {

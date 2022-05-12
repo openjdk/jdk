@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -136,7 +136,7 @@ public:
     assert(contains(c) == false, "Chunk already in freelist");
     assert(_first == NULL || _first->level() == c->level(),
            "List should only contains chunks of the same level.");
-    // Uncomitted chunks go to the back, fully or partially committed to the front.
+    // Uncommitted chunks go to the back, fully or partially committed to the front.
     if (c->committed_words() == 0) {
       add_back(c);
     } else {

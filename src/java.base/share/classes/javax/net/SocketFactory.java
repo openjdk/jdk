@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,12 +120,8 @@ public abstract class SocketFactory
         // The Exception is used by HttpsClient to signal that
         // unconnected sockets have not been implemented.
         //
-        UnsupportedOperationException uop = new
-                UnsupportedOperationException();
-        SocketException se =  new SocketException(
-                "Unconnected sockets not implemented");
-        se.initCause(uop);
-        throw se;
+        throw new SocketException("Unconnected sockets not implemented",
+                                  new UnsupportedOperationException());
     }
 
 
@@ -217,7 +213,7 @@ public abstract class SocketFactory
     /**
      * Creates a socket and connect it to the specified remote address
      * on the specified remote port.  The socket will also be bound
-     * to the local address and port suplied.  The socket is configured using
+     * to the local address and port supplied.  The socket is configured using
      * the socket options established for this factory.
      * <p>
      * If there is a security manager, its <code>checkConnect</code>

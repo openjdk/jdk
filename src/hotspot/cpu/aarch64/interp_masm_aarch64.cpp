@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -117,7 +117,7 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
   switch (state) {
     case atos: ldr(r0, oop_addr);
                str(zr, oop_addr);
-               verify_oop(r0, state);               break;
+               interp_verify_oop(r0, state);        break;
     case ltos: ldr(r0, val_addr);                   break;
     case btos:                                   // fall through
     case ztos:                                   // fall through
@@ -382,11 +382,11 @@ void InterpreterMacroAssembler::pop(TosState state) {
   case vtos: /* nothing to do */        break;
   default:   ShouldNotReachHere();
   }
-  verify_oop(r0, state);
+  interp_verify_oop(r0, state);
 }
 
 void InterpreterMacroAssembler::push(TosState state) {
-  verify_oop(r0, state);
+  interp_verify_oop(r0, state);
   switch (state) {
   case atos: push_ptr();                break;
   case btos:
@@ -464,7 +464,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     Unimplemented();
   }
   if (verifyoop) {
-    verify_oop(r0, state);
+    interp_verify_oop(r0, state);
   }
 
   Label safepoint;
@@ -523,7 +523,7 @@ void InterpreterMacroAssembler::dispatch_via(TosState state, address* table) {
 //
 // Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
-// Unlock any Java monitors from syncronized blocks.
+// Unlock any Java monitors from synchronized blocks.
 // Remove the activation from the stack.
 //
 // If there are locked Java monitors
@@ -606,6 +606,7 @@ void InterpreterMacroAssembler::remove_activation(
 
   bind(unlock);
   unlock_object(c_rarg1);
+  dec_held_monitor_count(rthread);
   pop(state);
 
   // Check that for block-structured locking (i.e., that all locked
@@ -648,6 +649,7 @@ void InterpreterMacroAssembler::remove_activation(
 
       push(state);
       unlock_object(c_rarg1);
+      dec_held_monitor_count(rthread);
       pop(state);
 
       if (install_monitor_exception) {
@@ -1469,9 +1471,9 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
   }
 }
 
-void InterpreterMacroAssembler::verify_oop(Register reg, TosState state) {
+void InterpreterMacroAssembler::_interp_verify_oop(Register reg, TosState state, const char* file, int line) {
   if (state == atos) {
-    MacroAssembler::verify_oop(reg);
+    MacroAssembler::_verify_oop_checked(reg, "broken oop", file, line);
   }
 }
 
@@ -1748,7 +1750,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
 
       // If we don't profile all invoke bytecodes we must make sure
       // it's a bytecode we indeed profile. We can't go back to the
-      // begining of the ProfileData we intend to update to check its
+      // beginning of the ProfileData we intend to update to check its
       // type because we're right after it and we don't known its
       // length
       Label do_profile;

@@ -83,6 +83,7 @@ Method* Method::allocate(ClassLoaderData* loader_data,
                          AccessFlags access_flags,
                          InlineTableSizes* sizes,
                          ConstMethod::MethodType method_type,
+                         Symbol* name,
                          TRAPS) {
   assert(!access_flags.is_native() || byte_code_size == 0,
          "native methods should not contain byte codes");
@@ -92,10 +93,10 @@ Method* Method::allocate(ClassLoaderData* loader_data,
                                           method_type,
                                           CHECK_NULL);
   int size = Method::size(access_flags.is_native());
-  return new (loader_data, size, MetaspaceObj::MethodType, THREAD) Method(cm, access_flags);
+  return new (loader_data, size, MetaspaceObj::MethodType, THREAD) Method(cm, access_flags, name);
 }
 
-Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
+Method::Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name) {
   NoSafepointVerifier no_safepoint;
   set_constMethod(xconst);
   set_access_flags(access_flags);
@@ -103,6 +104,7 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
   set_force_inline(false);
   set_hidden(false);
   set_dont_inline(false);
+  set_changes_current_thread(false);
   set_has_injected_profile(false);
   set_method_data(NULL);
   clear_method_counters();
@@ -119,6 +121,8 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
   }
 
   NOT_PRODUCT(set_compiled_invocation_count(0);)
+  // Name is very useful for debugging.
+  NOT_PRODUCT(_name = name;)
 }
 
 // Release Method*.  The nmethod will be gone when we get here because
@@ -393,6 +397,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   }
   it->push(&_method_data);
   it->push(&_method_counters);
+  NOT_PRODUCT(it->push(&_name);)
 }
 
 // Attempt to return method to original state.  Clear any pointers
@@ -512,7 +517,7 @@ bool Method::register_native(Klass* k, Symbol* name, Symbol* signature, address 
 bool Method::was_executed_more_than(int n) {
   // Invocation counter is reset when the Method* is compiled.
   // If the method has compiled code we therefore assume it has
-  // be excuted more than n times.
+  // be executed more than n times.
   if (is_accessor() || is_empty_method() || (code() != NULL)) {
     // interpreter doesn't bump invocation counter of trivial methods
     // compiler does not bump invocation counter of compiled methods
@@ -658,6 +663,7 @@ void Method::compute_from_signature(Symbol* sig) {
   // we might as well compute the whole fingerprint.
   Fingerprinter fp(sig, is_static());
   set_size_of_parameters(fp.size_of_parameters());
+  set_num_stack_arg_slots(fp.num_stack_arg_slots());
   constMethod()->set_result_type(fp.return_type());
   constMethod()->set_fingerprint(fp.fingerprint());
 }
@@ -983,7 +989,7 @@ bool Method::is_klass_loaded(int refinfo_index, bool must_be_resolved) const {
 
 void Method::set_native_function(address function, bool post_event_flag) {
   assert(function != NULL, "use clear_native_function to unregister natives");
-  assert(!is_method_handle_intrinsic() || function == SharedRuntime::native_method_throw_unsatisfied_link_error_entry(), "");
+  assert(!is_special_native_intrinsic() || function == SharedRuntime::native_method_throw_unsatisfied_link_error_entry(), "");
   address* native_function = native_function_addr();
 
   // We can see racers trying to place the same native function into place. Once
@@ -996,7 +1002,7 @@ void Method::set_native_function(address function, bool post_event_flag) {
     // be passed when post_event_flag is false.
     assert(function !=
       SharedRuntime::native_method_throw_unsatisfied_link_error_entry(),
-      "post_event_flag mis-match");
+      "post_event_flag mismatch");
 
     // post the bind event, and possible change the bind function
     JvmtiExport::post_native_method_bind(this, &function);
@@ -1013,7 +1019,7 @@ void Method::set_native_function(address function, bool post_event_flag) {
 
 
 bool Method::has_native_function() const {
-  if (is_method_handle_intrinsic())
+  if (is_special_native_intrinsic())
     return false;  // special-cased in SharedRuntime::generate_native_wrapper
   address func = native_function();
   return (func != NULL && func != SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
@@ -1070,7 +1076,7 @@ void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report,
 
 bool Method::is_always_compilable() const {
   // Generated adapters must be compiled
-  if (is_method_handle_intrinsic() && is_synthetic()) {
+  if (is_special_native_intrinsic() && is_synthetic()) {
     assert(!is_not_c1_compilable(), "sanity check");
     assert(!is_not_c2_compilable(), "sanity check");
     return true;
@@ -1314,6 +1320,11 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
   // Instantly compiled code can execute.
   if (!mh->is_method_handle_intrinsic())
     mh->_from_interpreted_entry = mh->get_i2c_entry();
+  if (mh->is_continuation_enter_intrinsic()) {
+    // this is the entry used when we're in interpreter-only mode; see InterpreterMacroAssembler::jump_from_interpreted
+    mh->_i2i_entry = mh->get_i2c_entry();
+    mh->_from_interpreted_entry = mh->get_i2c_entry();
+  }
 }
 
 
@@ -1368,7 +1379,7 @@ bool Method::is_ignored_by_security_stack_walk() const {
     return true;
   }
   if (method_holder()->is_subclass_of(vmClasses::reflect_MethodAccessorImpl_klass())) {
-    // This is an auxilary frame -- ignore it
+    // This is an auxiliary frame -- ignore it
     return true;
   }
   if (is_method_handle_intrinsic() || is_compiled_lambda_form()) {
@@ -1446,7 +1457,9 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
     InlineTableSizes sizes;
     Method* m_oop = Method::allocate(loader_data, 0,
                                      accessFlags_from(flags_bits), &sizes,
-                                     ConstMethod::NORMAL, CHECK_(empty));
+                                     ConstMethod::NORMAL,
+                                     name,
+                                     CHECK_(empty));
     m = methodHandle(THREAD, m_oop);
   }
   m->set_constants(cp());
@@ -1526,6 +1539,7 @@ methodHandle Method::clone_with_new_data(const methodHandle& m, u_char* new_code
                                       flags,
                                       &sizes,
                                       m->method_type(),
+                                      m->name(),
                                       CHECK_(methodHandle()));
   methodHandle newm (THREAD, newm_oop);
 
@@ -1718,7 +1732,7 @@ bool Method::has_unloaded_classes_in_signature(const methodHandle& m, TRAPS) {
 }
 
 // Exposed so field engineers can debug VM
-void Method::print_short_name(outputStream* st) {
+void Method::print_short_name(outputStream* st) const {
   ResourceMark rm;
 #ifdef PRODUCT
   st->print(" %s::", method_holder()->external_name());
@@ -1786,7 +1800,7 @@ class SignatureTypePrinter : public SignatureTypeNames {
 };
 
 
-void Method::print_name(outputStream* st) {
+void Method::print_name(outputStream* st) const {
   Thread *thread = Thread::current();
   ResourceMark rm(thread);
   st->print("%s ", is_static() ? "static" : "virtual");
@@ -2269,6 +2283,13 @@ void Method::set_on_stack(const bool value) {
   if (value && !already_set) {
     MetadataOnStackMark::record(this);
   }
+}
+
+void Method::record_gc_epoch() {
+  // If any method is on the stack in continuations, none of them can be reclaimed,
+  // so save the marking cycle to check for the whole class in the cpCache.
+  // The cpCache is writeable.
+  constants()->cache()->record_gc_epoch();
 }
 
 // Called when the class loader is unloaded to make all methods weak.

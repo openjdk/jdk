@@ -35,6 +35,7 @@
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "oops/access.inline.hpp"
@@ -66,6 +67,8 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
       G1StringDedup::is_candidate_from_mark(obj)) {
     _string_dedup_requests.add(obj);
   }
+
+  ContinuationGCSupport::transform_stack_chunk(obj);
 
   // Collect live words.
   _mark_stats_cache.add_live_words(obj);
@@ -138,7 +141,7 @@ inline void G1FullGCMarker::follow_object(oop obj) {
   } else {
     obj->oop_iterate(mark_closure());
     if (VerifyDuringGC) {
-      if (obj->is_instance() && InstanceKlass::cast(obj->klass())->is_reference_instance_klass()) {
+      if (obj->is_instanceRef()) {
         return;
       }
       _verify_closure.set_containing_obj(obj);
@@ -151,7 +154,7 @@ inline void G1FullGCMarker::follow_object(oop obj) {
   }
 }
 
-inline void G1FullGCMarker::drain_oop_stack() {
+inline void G1FullGCMarker::publish_and_drain_oop_tasks() {
   oop obj;
   while (_oop_stack.pop_overflow(obj)) {
     if (!_oop_stack.try_push_to_taskqueue(obj)) {
@@ -165,7 +168,7 @@ inline void G1FullGCMarker::drain_oop_stack() {
   }
 }
 
-inline bool G1FullGCMarker::transfer_objArray_overflow_stack(ObjArrayTask& task) {
+inline bool G1FullGCMarker::publish_or_pop_objarray_tasks(ObjArrayTask& task) {
   // It is desirable to move as much as possible work from the overflow queue to
   // the shared queue as quickly as possible.
   while (_objarray_stack.pop_overflow(task)) {
@@ -176,15 +179,15 @@ inline bool G1FullGCMarker::transfer_objArray_overflow_stack(ObjArrayTask& task)
   return false;
 }
 
-void G1FullGCMarker::drain_stack() {
+void G1FullGCMarker::follow_marking_stacks() {
   do {
     // First, drain regular oop stack.
-    drain_oop_stack();
+    publish_and_drain_oop_tasks();
 
     // Then process ObjArrays one at a time to avoid marking stack bloat.
     ObjArrayTask task;
-    if (transfer_objArray_overflow_stack(task) ||
-      _objarray_stack.pop_local(task)) {
+    if (publish_or_pop_objarray_tasks(task) ||
+        _objarray_stack.pop_local(task)) {
       follow_array_chunk(objArrayOop(task.obj()), task.index());
     }
   } while (!is_empty());

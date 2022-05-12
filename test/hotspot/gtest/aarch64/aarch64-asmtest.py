@@ -209,15 +209,17 @@ class Instruction(object):
         self._name = name
         self.isWord = name.endswith("w") | name.endswith("wi")
         self.asmRegPrefix = ["x", "w"][self.isWord]
+        self.isPostfixException = False
 
     def aname(self):
-        if (self._name.endswith("wi")):
+        if self.isPostfixException:
+            return self._name
+        elif (self._name.endswith("wi")):
             return self._name[:len(self._name)-2]
+        elif (self._name.endswith("i") | self._name.endswith("w")):
+            return self._name[:len(self._name)-1]
         else:
-            if (self._name.endswith("i") | self._name.endswith("w")):
-                return self._name[:len(self._name)-1]
-            else:
-                return self._name
+            return self._name
 
     def emit(self) :
         pass
@@ -348,6 +350,12 @@ class OneRegOp(Instruction):
         return (super(OneRegOp, self).astr()
                 + '%s' % self.reg.astr(self.asmRegPrefix))
 
+class PostfixExceptionOneRegOp(OneRegOp):
+
+    def __init__(self, op):
+        OneRegOp.__init__(self, op)
+        self.isPostfixException=True
+
 class ArithOp(ThreeRegInstruction):
 
     def generate(self):
@@ -453,6 +461,29 @@ class SVEBinaryImmOp(Instruction):
         Regs = [str(self.reg[i]) + self._width.astr() for i in range(0, self.numRegs)]
         return (formatStr
                 % tuple([Instruction.astr(self)] + Regs + [self.immed]))
+
+class SVEComparisonWithZero(Instruction):
+     def __init__(self, arg):
+          Instruction.__init__(self, "fcm")
+          self.condition = arg
+          self.dest = OperandFactory.create('p').generate()
+          self.reg = SVEVectorRegister().generate()
+          self._width = RegVariant(2, 3)
+          self.preg = OperandFactory.create('P').generate()
+
+     def generate(self):
+          return Instruction.generate(self)
+
+     def cstr(self):
+          return ("%s(%s, %s, %s, %s, %s, 0.0);"
+                  % ("__ sve_" + self._name, "Assembler::" + self.condition,
+                     str(self.dest), self._width.cstr(), str(self.preg), str(self.reg)))
+
+     def astr(self):
+          val = ("%s%s\t%s%s, %s/z, %s%s, #0.0"
+                 % (self._name, self.condition.lower(), str(self.dest), self._width.astr(),
+                    str(self.preg), str(self.reg), self._width.astr()))
+          return val
 
 class MultiOp():
 
@@ -596,6 +627,13 @@ class Op(Instruction):
         return Instruction.cstr(self) + ");"
     def astr(self):
         return self.aname();
+
+
+class PostfixExceptionOp(Op):
+
+    def __init__(self, op):
+        Op.__init__(self, op)
+        self.isPostfixException=True
 
 class SystemOp(Instruction):
 
@@ -1335,14 +1373,26 @@ generate (CondBranchOp, ["EQ", "NE", "HS", "CS", "LO", "CC", "MI", "PL", "VS", "
 generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", # "dcps1",  "dcps2",  "dcps3"
                ])
 
-generate (Op, ["nop", "eret", "drps", "isb"])
+generate (Op, ["nop", "yield", "wfe", "sev", "sevl",
+               "autia1716", "autiasp", "autiaz", "autib1716", "autibsp", "autibz",
+               "pacia1716", "paciasp", "paciaz", "pacib1716", "pacibsp", "pacibz",
+               "eret", "drps", "isb",])
+
+# Ensure the "i" is not stripped off the end of the instruction
+generate (PostfixExceptionOp, ["wfi", "xpaclri"])
 
 barriers = ["OSHLD", "OSHST", "OSH", "NSHLD", "NSHST", "NSH",
             "ISHLD", "ISHST", "ISH", "LD", "ST", "SY"]
 
 generate (SystemOp, [["dsb", barriers], ["dmb", barriers]])
 
-generate (OneRegOp, ["br", "blr"])
+generate (OneRegOp, ["br", "blr",
+                     "paciza", "pacizb", "pacdza", "pacdzb",
+                     "autiza", "autizb", "autdza", "autdzb", "xpacd",
+                     "braaz", "brabz", "blraaz", "blrabz"])
+
+# Ensure the "i" is not stripped off the end of the instruction
+generate (PostfixExceptionOneRegOp, ["xpaci"])
 
 for mode in 'xwhb':
     generate (LoadStoreExclusiveOp, [["stxr", mode, 3], ["stlxr", mode, 3],
@@ -1387,7 +1437,10 @@ generate(ConditionalSelectOp,
 
 generate(TwoRegOp,
          ["rbitw", "rev16w", "revw", "clzw", "clsw", "rbit",
-          "rev16", "rev32", "rev", "clz", "cls"])
+          "rev16", "rev32", "rev", "clz", "cls",
+          "pacia",  "pacib", "pacda", "pacdb", "autia", "autib", "autda", "autdb",
+          "braa", "brab", "blraa", "blrab"])
+
 generate(ThreeRegOp,
          ["udivw", "sdivw", "lslvw", "lsrvw", "asrvw", "rorvw", "udiv", "sdiv",
           "lslv", "lsrv", "asrv", "rorv", "umulh", "smulh"])
@@ -1414,6 +1467,8 @@ generate(FloatConvertOp, [["fcvtzsw", "fcvtzs", "ws"], ["fcvtzs", "fcvtzs", "xs"
                           ["fcvtzdw", "fcvtzs", "wd"], ["fcvtzd", "fcvtzs", "xd"],
                           ["scvtfws", "scvtf", "sw"], ["scvtfs", "scvtf", "sx"],
                           ["scvtfwd", "scvtf", "dw"], ["scvtfd", "scvtf", "dx"],
+                          ["fcvtassw", "fcvtas", "ws"], ["fcvtasd", "fcvtas", "xd"],
+                          ["fcvtmssw", "fcvtms", "ws"], ["fcvtmsd", "fcvtms", "xd"],
                           ["fmovs", "fmov", "ws"], ["fmovd", "fmov", "xd"],
                           ["fmovs", "fmov", "sw"], ["fmovd", "fmov", "dx"]])
 
@@ -1560,6 +1615,8 @@ generate(ThreeRegNEONOp,
           ["fcmge", "fcmge", "2D"],
           ])
 
+generate(SVEComparisonWithZero, ["EQ", "GT", "GE", "LT", "LE", "NE"])
+
 generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",                "ccmn\txzr, xzr, #3, LE"],
                         ["ccmnw",  "__ ccmnw(zr, zr, 5u, Assembler::EQ);",               "ccmn\twzr, wzr, #5, EQ"],
                         ["ccmp",   "__ ccmp(zr, 1, 4u, Assembler::NE);",                 "ccmp\txzr, 1, #4, NE"],
@@ -1583,8 +1640,12 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["umov",   "__ umov(r0, v1, __ H, 2);",                          "umov\tw0, v1.h[2]"],
                         ["umov",   "__ umov(r0, v1, __ B, 3);",                          "umov\tw0, v1.b[3]"],
                         ["fmov",   "__ fmovhid(r0, v1);",                                "fmov\tx0, v1.d[1]"],
+                        ["fmov",   "__ fmovs(v9, __ T2S, 0.5f);",                        "fmov\tv9.2s, 0.5"],
+                        ["fmov",   "__ fmovd(v14, __ T2D, 0.5f);",                       "fmov\tv14.2d, 0.5"],
                         ["ld1",    "__ ld1(v31, v0, __ T2D, Address(__ post(r1, r0)));", "ld1\t{v31.2d, v0.2d}, [x1], x0"],
-                        ["fcvtzs", "__ fcvtzs(v0, __ T4S, v1);",                         "fcvtzs\tv0.4s, v1.4s"],
+                        ["fcvtzs", "__ fcvtzs(v0, __ T2S, v1);",                         "fcvtzs\tv0.2s, v1.2s"],
+                        ["fcvtas", "__ fcvtas(v2, __ T4S, v3);",                         "fcvtas\tv2.4s, v3.4s"],
+                        ["fcvtms", "__ fcvtms(v4, __ T2D, v5);",                         "fcvtms\tv4.2d, v5.2d"],
                         # SVE instructions
                         ["cpy",     "__ sve_cpy(z0, __ S, p0, v1);",                      "mov\tz0.s, p0/m, s1"],
                         ["cpy",     "__ sve_cpy(z0, __ B, p0, 127, true);",               "mov\tz0.b, p0/m, 127"],
@@ -1750,6 +1811,7 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["uzp2",    "__ sve_uzp2(p0, __ D, p0, p1);",                     "uzp2\tp0.d, p0.d, p1.d"],
                         ["punpklo", "__ sve_punpklo(p1, p0);",                            "punpklo\tp1.h, p0.b"],
                         ["punpkhi", "__ sve_punpkhi(p1, p0);",                            "punpkhi\tp1.h, p0.b"],
+                        ["ext",     "__ sve_ext(z17, z16, 63);",                          "ext\tz17.b, z17.b, z16.b, #63"],
 ])
 
 print "\n// FloatImmediateOp"
@@ -1792,6 +1854,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["add", "ZPZ", "m", "dn"],
                        ["and", "ZPZ", "m", "dn"],
                        ["asr", "ZPZ", "m", "dn"],
+                       ["bic", "ZPZ", "m", "dn"],
                        ["cnt", "ZPZ", "m"],
                        ["eor", "ZPZ", "m", "dn"],
                        ["lsl", "ZPZ", "m", "dn"],
@@ -1818,6 +1881,9 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["fmad", "ZPZZ", "m"],
                        ["fmla", "ZPZZ", "m"],
                        ["fmls", "ZPZZ", "m"],
+                       ["fmsb", "ZPZZ", "m"],
+                       ["fnmad", "ZPZZ", "m"],
+                       ["fnmsb", "ZPZZ", "m"],
                        ["fnmla", "ZPZZ", "m"],
                        ["fnmls", "ZPZZ", "m"],
                        ["mla", "ZPZZ", "m"],
@@ -1828,6 +1894,8 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["bic", "ZZZ"],
                        ["uzp1", "ZZZ"],
                        ["uzp2", "ZZZ"],
+                       # SVE2 instructions
+                       ["bext", "ZZZ"],
                       ])
 
 generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],
@@ -1838,8 +1906,9 @@ outfile.write("forth:\n")
 
 outfile.close()
 
-# compile for sve with 8.2 and sha3 because of SHA3 crypto extension.
-subprocess.check_call([AARCH64_AS, "-march=armv8.2-a+sha3+sve", "aarch64ops.s", "-o", "aarch64ops.o"])
+# compile for sve with armv9-a+sha3+sve2-bitperm because of SHA3 crypto extension and SVE2 bitperm instructions.
+# armv9-a enables sve and sve2 by default.
+subprocess.check_call([AARCH64_AS, "-march=armv9-a+sha3+sve2-bitperm", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
 print "/*"

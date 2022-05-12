@@ -246,7 +246,7 @@ class os: AllStatic {
     // which being declared MP when in fact not, is a problem - then
     // the bootstrap routine for the stub generator needs to check
     // the processor count directly and leave the bootstrap routine
-    // in place until called after initialization has ocurred.
+    // in place until called after initialization has occurred.
     return (_processor_count != 1);
   }
 
@@ -287,6 +287,22 @@ class os: AllStatic {
   static void map_stack_shadow_pages(address sp);
   static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp);
 
+ private:
+  // Minimum stack size a thread can be created with (allowing
+  // the VM to completely create the thread and enter user code).
+  // The initial values exclude any guard pages (by HotSpot or libc).
+  // set_minimum_stack_sizes() will add the size required for
+  // HotSpot guard pages depending on page size and flag settings.
+  // Libc guard pages are never considered by these values.
+  static size_t _compiler_thread_min_stack_allowed;
+  static size_t _java_thread_min_stack_allowed;
+  static size_t _vm_internal_thread_min_stack_allowed;
+  static size_t _os_min_stack_allowed;
+
+  // Check and sets minimum stack sizes
+  static jint set_minimum_stack_sizes();
+
+ public:
   // Find committed memory region within specified range (start, start + size),
   // return true if found any
   static bool committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size);
@@ -365,10 +381,9 @@ class os: AllStatic {
   // Prints all mappings
   static void print_memory_mappings(outputStream* st);
 
-  // Touch memory pages that cover the memory range from start to end (exclusive)
-  // to make the OS back the memory range with actual memory.
-  // Current implementation may not touch the last page if unaligned addresses
-  // are passed.
+  // Touch memory pages that cover the memory range from start to end
+  // (exclusive) to make the OS back the memory range with actual memory.
+  // Other threads may use the memory range concurrently with pretouch.
   static void   pretouch_memory(void* start, void* end, size_t page_size = vm_page_size());
 
   enum ProtType { MEM_PROT_NONE, MEM_PROT_READ, MEM_PROT_RW, MEM_PROT_RWX };
@@ -550,8 +565,6 @@ class os: AllStatic {
   // the input pointer.
   static char* native_path(char *path);
   static int ftruncate(int fd, jlong length);
-  static int fsync(int fd);
-  static int available(int fd, jlong *bytes);
   static int get_fileno(FILE* fp);
   static void flockfile(FILE* fp);
   static void funlockfile(FILE* fp);

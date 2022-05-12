@@ -47,6 +47,7 @@ import sun.datatransfer.DataFlavorUtil;
  * @see java.desktop/java.awt.Toolkit#getSystemSelection
  * @since 1.1
  */
+@SuppressWarnings("doclint:reference") // cross-module links
 public class Clipboard {
 
     String name;

@@ -114,7 +114,7 @@ class RegionTypeCounter {
 private:
   const char* _name;
 
-  size_t _rs_wasted_mem_size;
+  size_t _rs_unused_mem_size;
   size_t _rs_mem_size;
   size_t _cards_occupied;
   size_t _amount;
@@ -144,12 +144,12 @@ private:
 
 public:
 
-  RegionTypeCounter(const char* name) : _name(name), _rs_wasted_mem_size(0), _rs_mem_size(0), _cards_occupied(0),
+  RegionTypeCounter(const char* name) : _name(name), _rs_unused_mem_size(0), _rs_mem_size(0), _cards_occupied(0),
     _amount(0), _amount_tracked(0), _code_root_mem_size(0), _code_root_elems(0) { }
 
-  void add(size_t rs_wasted_mem_size, size_t rs_mem_size, size_t cards_occupied,
+  void add(size_t rs_unused_mem_size, size_t rs_mem_size, size_t cards_occupied,
            size_t code_root_mem_size, size_t code_root_elems, bool tracked) {
-    _rs_wasted_mem_size += rs_wasted_mem_size;
+    _rs_unused_mem_size += rs_unused_mem_size;
     _rs_mem_size += rs_mem_size;
     _cards_occupied += cards_occupied;
     _code_root_mem_size += code_root_mem_size;
@@ -158,7 +158,7 @@ public:
     _amount_tracked += tracked ? 1 : 0;
   }
 
-  size_t rs_wasted_mem_size() const { return _rs_wasted_mem_size; }
+  size_t rs_unused_mem_size() const { return _rs_unused_mem_size; }
   size_t rs_mem_size() const { return _rs_mem_size; }
   size_t cards_occupied() const { return _cards_occupied; }
 
@@ -167,10 +167,10 @@ public:
 
   void print_rs_mem_info_on(outputStream * out, size_t total) {
     out->print_cr("    " SIZE_FORMAT_W(8) " (%5.1f%%) by " SIZE_FORMAT " "
-                  "(" SIZE_FORMAT ") %s regions wasted " SIZE_FORMAT,
+                  "(" SIZE_FORMAT ") %s regions unused " SIZE_FORMAT,
                   rs_mem_size(), rs_mem_size_percent_of(total),
                   amount_tracked(), amount(),
-                  _name, rs_wasted_mem_size());
+                  _name, rs_unused_mem_size());
   }
 
   void print_cards_occupied_info_on(outputStream * out, size_t total) {
@@ -206,7 +206,7 @@ private:
   size_t _max_rs_mem_sz;
   HeapRegion* _max_rs_mem_sz_region;
 
-  size_t total_rs_wasted_mem_sz() const     { return _all.rs_wasted_mem_size(); }
+  size_t total_rs_unused_mem_sz() const     { return _all.rs_unused_mem_size(); }
   size_t total_rs_mem_sz() const            { return _all.rs_mem_size(); }
   size_t total_cards_occupied() const       { return _all.cards_occupied(); }
 
@@ -233,20 +233,20 @@ public:
     HeapRegionRemSet* hrrs = r->rem_set();
 
     // HeapRegionRemSet::mem_size() includes the
-    // size of the strong code roots
-    size_t rs_wasted_mem_sz = hrrs->wasted_mem_size();
+    // size of the code roots
+    size_t rs_unused_mem_sz = hrrs->unused_mem_size();
     size_t rs_mem_sz = hrrs->mem_size();
     if (rs_mem_sz > _max_rs_mem_sz) {
       _max_rs_mem_sz = rs_mem_sz;
       _max_rs_mem_sz_region = r;
     }
     size_t occupied_cards = hrrs->occupied();
-    size_t code_root_mem_sz = hrrs->strong_code_roots_mem_size();
+    size_t code_root_mem_sz = hrrs->code_roots_mem_size();
     if (code_root_mem_sz > max_code_root_mem_sz()) {
       _max_code_root_mem_sz = code_root_mem_sz;
       _max_code_root_mem_sz_region = r;
     }
-    size_t code_root_elems = hrrs->strong_code_roots_list_length();
+    size_t code_root_elems = hrrs->code_roots_list_length();
 
     RegionTypeCounter* current = NULL;
     if (r->is_free()) {
@@ -262,9 +262,9 @@ public:
     } else {
       ShouldNotReachHere();
     }
-    current->add(rs_wasted_mem_sz, rs_mem_sz, occupied_cards,
+    current->add(rs_unused_mem_sz, rs_mem_sz, occupied_cards,
                  code_root_mem_sz, code_root_elems, r->rem_set()->is_tracked());
-    _all.add(rs_wasted_mem_sz, rs_mem_sz, occupied_cards,
+    _all.add(rs_unused_mem_sz, rs_mem_sz, occupied_cards,
              code_root_mem_sz, code_root_elems, r->rem_set()->is_tracked());
 
     return false;
@@ -275,10 +275,10 @@ public:
 
     out->print_cr(" Current rem set statistics");
     out->print_cr("  Total per region rem sets sizes = " SIZE_FORMAT
-                  " Max = " SIZE_FORMAT " wasted = " SIZE_FORMAT,
+                  " Max = " SIZE_FORMAT " unused = " SIZE_FORMAT,
                   total_rs_mem_sz(),
                   max_rs_mem_sz(),
-                  total_rs_wasted_mem_sz());
+                  total_rs_unused_mem_sz());
     for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
       (*current)->print_rs_mem_info_on(out, total_rs_mem_sz());
     }
@@ -300,14 +300,14 @@ public:
     HeapRegionRemSet::print_static_mem_size(out);
     G1CardSetFreePool::free_list_pool()->print_on(out);
 
-    // Strong code root statistics
+    // Code root statistics
     HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();
     out->print_cr("  Total heap region code root sets sizes = " SIZE_FORMAT "%s."
                   "  Max = " SIZE_FORMAT "%s.",
                   byte_size_in_proper_unit(total_code_root_mem_sz()),
                   proper_unit_for_byte_size(total_code_root_mem_sz()),
-                  byte_size_in_proper_unit(max_code_root_rem_set->strong_code_roots_mem_size()),
-                  proper_unit_for_byte_size(max_code_root_rem_set->strong_code_roots_mem_size()));
+                  byte_size_in_proper_unit(max_code_root_rem_set->code_roots_mem_size()),
+                  proper_unit_for_byte_size(max_code_root_rem_set->code_roots_mem_size()));
     for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
       (*current)->print_code_root_mem_info_on(out, total_code_root_mem_sz());
     }
@@ -321,9 +321,9 @@ public:
     out->print_cr("    Region with largest amount of code roots = " HR_FORMAT ", "
                   "size = " SIZE_FORMAT "%s, num_slots = " SIZE_FORMAT ".",
                   HR_FORMAT_PARAMS(max_code_root_mem_sz_region()),
-                  byte_size_in_proper_unit(max_code_root_rem_set->strong_code_roots_mem_size()),
-                  proper_unit_for_byte_size(max_code_root_rem_set->strong_code_roots_mem_size()),
-                  max_code_root_rem_set->strong_code_roots_list_length());
+                  byte_size_in_proper_unit(max_code_root_rem_set->code_roots_mem_size()),
+                  proper_unit_for_byte_size(max_code_root_rem_set->code_roots_mem_size()),
+                  max_code_root_rem_set->code_roots_list_length());
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc/shared/ageTable.inline.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -288,7 +289,6 @@ void DefNewGeneration::swap_spaces() {
 }
 
 bool DefNewGeneration::expand(size_t bytes) {
-  MutexLocker x(ExpandHeap_lock);
   HeapWord* prev_high = (HeapWord*) _virtual_space.high();
   bool success = _virtual_space.expand_by(bytes);
   if (success && ZapUnusedHeapArea) {
@@ -669,9 +669,21 @@ void DefNewGeneration::init_assuming_no_promotion_failure() {
 }
 
 void DefNewGeneration::remove_forwarding_pointers() {
-  RemoveForwardedPointerClosure rspc;
-  eden()->object_iterate(&rspc);
-  from()->object_iterate(&rspc);
+  assert(_promotion_failed, "precondition");
+
+  // Will enter Full GC soon due to failed promotion. Must reset the mark word
+  // of objs in young-gen so that no objs are marked (forwarded) when Full GC
+  // starts. (The mark word is overloaded: `is_marked()` == `is_forwarded()`.)
+  struct ResetForwardedMarkWord : ObjectClosure {
+    void do_object(oop obj) override {
+      if (obj->is_forwarded()) {
+        obj->init_mark();
+      }
+    }
+  } cl;
+  eden()->object_iterate(&cl);
+  from()->object_iterate(&cl);
+
   restore_preserved_marks();
 }
 
@@ -685,6 +697,9 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
   _preserved_marks_set.get()->push_if_necessary(old, old->mark());
+
+  ContinuationGCSupport::transform_stack_chunk(old);
+
   // forward to self
   old->forward_to(old);
 
@@ -725,6 +740,8 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
 
     // Copy obj
     Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), cast_from_oop<HeapWord*>(obj), s);
+
+    ContinuationGCSupport::transform_stack_chunk(obj);
 
     // Increment age if obj still in new generation
     obj->incr_age();

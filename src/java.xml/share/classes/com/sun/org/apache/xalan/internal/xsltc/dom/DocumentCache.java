@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -50,6 +50,7 @@ import org.xml.sax.XMLReader;
 
 /**
  * @author Morten Jorgensen
+ * @LastModified: Apr 2022
  */
 public final class DocumentCache implements DOMCache {
 
@@ -168,7 +169,7 @@ public final class DocumentCache implements DOMCache {
         _count = 0;
         _current = 0;
         _size  = size;
-        _references = new HashMap<>(_size+2);
+        _references = HashMap.newHashMap(_size);
         _URIs = new String[_size];
 
         try {

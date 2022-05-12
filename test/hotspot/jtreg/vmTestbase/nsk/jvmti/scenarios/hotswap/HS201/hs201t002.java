@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package nsk.jvmti.scenarios.hotswap.HS201;
 
 import java.io.PrintStream;
+import java.util.concurrent.CountDownLatch;
 
 import nsk.share.*;
 import nsk.share.jvmti.*;
@@ -73,13 +74,22 @@ public class hs201t002 extends DebugeeClass {
         timeout = argHandler.getWaitTime() * 60 * 1000; // milliseconds
 
         log.display(">>> starting tested thread");
-        Thread thread = new hs201t002Thread();
+        hs201t002Thread thread = new hs201t002Thread();
 
         // testing sync
         status = checkStatus(status);
 
-        setThread(thread);
         thread.start();
+
+        // setThread(thread) enables JVMTI events, and that can only be done on a live thread,
+        // so wait until the thread has started.
+        try {
+            thread.ready.await();
+        } catch (InterruptedException e) {
+        }
+        setThread(thread);
+
+        thread.go.countDown();
 
         while (currentStep != 4) {
             try {
@@ -114,6 +124,10 @@ public class hs201t002 extends DebugeeClass {
             }
 
             log.display("Thread suspended in a wrong moment. Retrying...");
+            for (int i = 0; i < stackTrace.length; i++) {
+                log.display("\t" + i + ". " + stackTrace[i]);
+            }
+            log.display("Retrying...");
             resumeThread(thread);
             suspendTry++;
             // Test thread will be suspended at the top of the loop. Let it run for a while.
@@ -136,12 +150,20 @@ public class hs201t002 extends DebugeeClass {
 
 class hs201t002Thread extends Thread {
 
+    CountDownLatch ready = new CountDownLatch(1);
+    CountDownLatch go = new CountDownLatch(1);
+
     hs201t002Thread() {
         setName("hs201t002Thread");
     }
 
     public void run() {
         // run method
+        ready.countDown();
+        try {
+            go.await();
+        } catch (InterruptedException e) {
+        }
         try {
             throwException();
         } catch (Exception e) {

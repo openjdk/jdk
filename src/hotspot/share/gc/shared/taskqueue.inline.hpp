@@ -254,7 +254,7 @@ bool OverflowTaskQueue<E, F, N>::pop_overflow(E& t)
 // reads elems[oldAge.top].  The owner's bottom == the thief's oldAge.top.
 // (4) Thief will discard the read value, because its cmpxchg of age will fail.
 template<class E, MEMFLAGS F, unsigned int N>
-bool GenericTaskQueue<E, F, N>::pop_global(E& t) {
+typename GenericTaskQueue<E, F, N>::PopResult GenericTaskQueue<E, F, N>::pop_global(E& t) {
   Age oldAge = age_relaxed();
 
   // Architectures with non-multi-copy-atomic memory model require a
@@ -275,7 +275,7 @@ bool GenericTaskQueue<E, F, N>::pop_global(E& t) {
   uint localBot = bottom_acquire();
   uint n_elems = clean_size(localBot, oldAge.top());
   if (n_elems == 0) {
-    return false;
+    return PopResult::Empty;
   }
 
   t = _elems[oldAge.top()];
@@ -289,7 +289,7 @@ bool GenericTaskQueue<E, F, N>::pop_global(E& t) {
   // Note that using "bottom" here might fail, since a pop_local might
   // have decremented it.
   assert_not_underflow(localBot, newAge.top());
-  return resAge == oldAge;
+  return resAge == oldAge ? PopResult::Success : PopResult::Contended;
 }
 
 inline int randomParkAndMiller(int *seed0) {
@@ -316,10 +316,10 @@ int GenericTaskQueue<E, F, N>::next_random_queue_id() {
   return randomParkAndMiller(&_seed);
 }
 
-template<class T, MEMFLAGS F> bool
-GenericTaskQueueSet<T, F>::steal_best_of_2(uint queue_num, E& t) {
+template<class T, MEMFLAGS F>
+typename GenericTaskQueueSet<T, F>::PopResult GenericTaskQueueSet<T, F>::steal_best_of_2(uint queue_num, E& t) {
+  T* const local_queue = queue(queue_num);
   if (_n > 2) {
-    T* const local_queue = _queues[queue_num];
     uint k1 = queue_num;
 
     if (local_queue->is_last_stolen_queue_id_valid()) {
@@ -336,21 +336,23 @@ GenericTaskQueueSet<T, F>::steal_best_of_2(uint queue_num, E& t) {
       k2 = local_queue->next_random_queue_id() % _n;
     }
     // Sample both and try the larger.
-    uint sz1 = _queues[k1]->size();
-    uint sz2 = _queues[k2]->size();
+    uint sz1 = queue(k1)->size();
+    uint sz2 = queue(k2)->size();
 
     uint sel_k = 0;
-    bool suc = false;
+    PopResult suc = PopResult::Empty;
 
     if (sz2 > sz1) {
       sel_k = k2;
-      suc = _queues[k2]->pop_global(t);
+      suc = queue(k2)->pop_global(t);
+      TASKQUEUE_STATS_ONLY(local_queue->record_steal_attempt(suc);)
     } else if (sz1 > 0) {
       sel_k = k1;
-      suc = _queues[k1]->pop_global(t);
+      suc = queue(k1)->pop_global(t);
+      TASKQUEUE_STATS_ONLY(local_queue->record_steal_attempt(suc);)
     }
 
-    if (suc) {
+    if (suc == PopResult::Success) {
       local_queue->set_last_stolen_queue_id(sel_k);
     } else {
       local_queue->invalidate_last_stolen_queue_id();
@@ -360,21 +362,33 @@ GenericTaskQueueSet<T, F>::steal_best_of_2(uint queue_num, E& t) {
   } else if (_n == 2) {
     // Just try the other one.
     uint k = (queue_num + 1) % 2;
-    return _queues[k]->pop_global(t);
+    PopResult res = queue(k)->pop_global(t);
+    TASKQUEUE_STATS_ONLY(local_queue->record_steal_attempt(res);)
+    return res;
   } else {
     assert(_n == 1, "can't be zero.");
-    return false;
+    TASKQUEUE_STATS_ONLY(local_queue->record_steal_attempt(PopResult::Empty);)
+    return PopResult::Empty;
   }
 }
 
-template<class T, MEMFLAGS F> bool
-GenericTaskQueueSet<T, F>::steal(uint queue_num, E& t) {
-  assert(queue_num < _n, "index out of range.");
-  for (uint i = 0; i < 2 * _n; i++) {
-    TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal_attempt());
-    if (steal_best_of_2(queue_num, t)) {
-      TASKQUEUE_STATS_ONLY(queue(queue_num)->stats.record_steal());
+template<class T, MEMFLAGS F>
+bool GenericTaskQueueSet<T, F>::steal(uint queue_num, E& t) {
+  uint const num_retries = 2 * _n;
+
+  TASKQUEUE_STATS_ONLY(uint contended_in_a_row = 0;)
+  for (uint i = 0; i < num_retries; i++) {
+    PopResult sr = steal_best_of_2(queue_num, t);
+    if (sr == PopResult::Success) {
       return true;
+    } else if (sr == PopResult::Contended) {
+      TASKQUEUE_STATS_ONLY(
+        contended_in_a_row++;
+        queue(queue_num)->stats.record_contended_in_a_row(contended_in_a_row);
+      )
+    } else {
+      assert(sr == PopResult::Empty, "must be");
+      TASKQUEUE_STATS_ONLY(contended_in_a_row = 0;)
     }
   }
   return false;

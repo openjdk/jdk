@@ -41,6 +41,7 @@ import javax.management.MBeanServer;
  * @see java.rmi/java.rmi.ServerError
  * @since 1.5
  */
+@SuppressWarnings("doclint:reference") // cross-module links
 public class JMXServerErrorException extends IOException {
 
     private static final long serialVersionUID = 3996732239558744666L;

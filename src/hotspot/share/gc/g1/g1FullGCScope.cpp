@@ -38,7 +38,7 @@ G1FullGCJFRTracerMark::~G1FullGCJFRTracerMark() {
 G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
                              bool explicit_gc,
                              bool clear_soft,
-                             bool do_maximum_compaction) :
+                             bool do_maximal_compaction) :
     _rm(),
     _explicit_gc(explicit_gc),
     _g1h(G1CollectedHeap::heap()),
@@ -50,7 +50,7 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
     _soft_refs(clear_soft, _g1h->soft_ref_policy()),
     _monitoring_scope(monitoring_support, true /* full_gc */, true /* all_memory_pools_affected */),
     _heap_printer(_g1h),
-    _region_compaction_threshold(do_maximum_compaction ?
+    _region_compaction_threshold(do_maximal_compaction ?
                                  HeapRegion::GrainWords :
                                  (1 - MarkSweepDeadRatio / 100.0) * HeapRegion::GrainWords) { }
 

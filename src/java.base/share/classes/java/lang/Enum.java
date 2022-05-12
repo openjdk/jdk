@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,9 @@ import static java.util.Objects.requireNonNull;
  * by the serialization mechanism. The serialized representation used
  * for enum constants cannot be customized. Declarations of methods
  * and fields that would otherwise interact with serialization are
- * ignored, including {@code serialVersionUID}; see the <cite>Java
- * Object Serialization Specification</cite> for details.
+ * ignored, including {@code serialVersionUID}; see the
+ * <a href="{@docRoot}/../specs/serialization/index.html"><cite>Java
+ * Object Serialization Specification</cite></a> for details.
  *
  * <p> Note that when using an enumeration type as the type of a set
  * or as the type of the keys in a map, specialized and efficient

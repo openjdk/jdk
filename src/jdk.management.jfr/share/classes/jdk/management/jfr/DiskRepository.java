@@ -134,7 +134,7 @@ final class DiskRepository implements Closeable {
     private int bufferIndex;
     private State state = State.HEADER;
     private byte[] currentByteArray;
-    private int typeId;
+    private long typeId;
     private int typeIdshift;
     private int sizeShift;
     private int payLoadSize;
@@ -179,7 +179,7 @@ final class DiskRepository implements Closeable {
                 bufferIndex = 0;
                 break;
             case CHECKPOINT_EVENT_HEADER_BYTE_ARRAY_CONTENT:
-                processCheckPointHeader();
+                processCheckpointHeader();
                 break;
             case CHECKPOINT_EVENT_FLUSH_TYPE:
                 processFlush();
@@ -258,7 +258,7 @@ final class DiskRepository implements Closeable {
 
         eventFieldSize++;
         byte b = nextByte(false);
-        long v = (b & 0x7FL);
+        int v = (b & 0x7F);
         payLoadSize += (v << sizeShift);
         if (b >= 0) {
             if (payLoadSize == 0) {
@@ -286,10 +286,10 @@ final class DiskRepository implements Closeable {
         }
     }
 
-    private void processCheckPointHeader() throws IOException {
+    private void processCheckpointHeader() throws IOException {
         buffer.put(bufferIndex, nextByte(true));
         if (bufferIndex == HEADER_SIZE) {
-            writeCheckPointHeader();
+            writeCheckpointHeader();
             state = State.EVENT_PAYLOAD;
             bufferIndex = 0;
         }
@@ -321,7 +321,7 @@ final class DiskRepository implements Closeable {
         }
     }
 
-    private void writeCheckPointHeader() throws IOException {
+    private void writeCheckpointHeader() throws IOException {
         Objects.requireNonNull(raf);
         byte state = buffer.get(HEADER_FILE_STATE_POSITION);
         boolean complete = state == COMPLETE_STATE;

@@ -600,7 +600,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         }
     }
 
-    /* adds the standard key/val pairs to reqests if necessary & write to
+    /* adds the standard key/val pairs to requests if necessary & write to
      * given PrintStream
      */
     private void writeRequests() throws IOException {
@@ -1465,9 +1465,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 }
                 return poster;
             }
-        } catch (RuntimeException e) {
-            disconnectInternal();
-            throw e;
         } catch (ProtocolException e) {
             // Save the response code which may have been set while enforcing
             // the 100-continue. disconnectInternal() forces it to -1
@@ -1475,7 +1472,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             disconnectInternal();
             responseCode = i;
             throw e;
-        } catch (IOException e) {
+        } catch (RuntimeException | IOException e) {
             disconnectInternal();
             throw e;
         }
@@ -1739,7 +1736,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     AuthenticationHeader authhdr = new AuthenticationHeader (
                             "Proxy-Authenticate",
                             responses,
-                            new HttpCallerInfo(url,
+                            getHttpCallerInfo(url,
                                                http.getProxyHostUsed(),
                                                http.getProxyPortUsed(),
                                                authenticator),
@@ -1814,7 +1811,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                     srvHdr = new AuthenticationHeader (
                             "WWW-Authenticate", responses,
-                            new HttpCallerInfo(url, authenticator),
+                            getHttpCallerInfo(url, authenticator),
                             dontUseNegotiate
                     );
 
@@ -1902,7 +1899,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                 // some flags should be reset to its initialized form so that
                 // even after a redirect the necessary checks can still be
-                // preformed.
+                // performed.
                 inNegotiate = false;
                 inNegotiateProxy = false;
 
@@ -2210,7 +2207,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     AuthenticationHeader authhdr = new AuthenticationHeader(
                             "Proxy-Authenticate",
                             responses,
-                            new HttpCallerInfo(url,
+                            getHttpCallerInfo(url,
                                                http.getProxyHostUsed(),
                                                http.getProxyPortUsed(),
                                                authenticator),
@@ -2277,6 +2274,21 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
         // reset responses
         responses.reset();
+    }
+
+    /**
+     * Overridden in https to also include the server certificate
+     */
+    protected HttpCallerInfo getHttpCallerInfo(URL url, String proxy, int port,
+                                               Authenticator authenticator) {
+        return new HttpCallerInfo(url, proxy, port, authenticator);
+    }
+
+    /**
+     * Overridden in https to also include the server certificate
+     */
+    protected HttpCallerInfo getHttpCallerInfo(URL url, Authenticator authenticator) {
+        return new HttpCallerInfo(url, authenticator);
     }
 
     static String connectRequestURI(URL url) {
@@ -3072,7 +3084,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
              * can be considered an approximation in that we may close a
              * different idle connection to that used by the request.
              * Additionally it's possible that we close two connections
-             * - the first becuase it wasn't an EOF (and couldn't be
+             * - the first because it wasn't an EOF (and couldn't be
              * hurried) - the second, another idle connection to the
              * same server. The is okay because "disconnect" is an
              * indication that the application doesn't intend to access
@@ -3100,7 +3112,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
 
             } else {
-                // We are deliberatly being disconnected so HttpClient
+                // We are deliberately being disconnected so HttpClient
                 // should not try to resend the request no matter what stage
                 // of the connection we are in.
                 http.setDoNotRetry(true);

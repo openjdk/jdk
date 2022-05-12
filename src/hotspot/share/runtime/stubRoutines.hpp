@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,8 @@ class StubRoutines: AllStatic {
   static address _fence_entry;
 
   static BufferBlob* _code1;                               // code buffer for initial routines
-  static BufferBlob* _code2;                               // code buffer for all other routines
+  static BufferBlob* _code2;
+  static BufferBlob* _code3;                               // code buffer for all other routines
 
   // Leaf routines which implement arraycopy and their addresses
   // arraycopy operands aligned on element type boundary
@@ -250,13 +251,14 @@ class StubRoutines: AllStatic {
   static address _dlibm_tan_cot_huge;
   static address _dtan;
 
-  // Safefetch stubs.
-  static address _safefetch32_entry;
-  static address _safefetch32_fault_pc;
-  static address _safefetch32_continuation_pc;
-  static address _safefetchN_entry;
-  static address _safefetchN_fault_pc;
-  static address _safefetchN_continuation_pc;
+  static RuntimeStub* _cont_doYield_stub;
+  static address _cont_doYield;
+  static address _cont_thaw;
+  static address _cont_returnBarrier;
+  static address _cont_returnBarrierExc;
+
+  JFR_ONLY(static RuntimeStub* _jfr_write_checkpoint_stub;)
+  JFR_ONLY(static address _jfr_write_checkpoint;)
 
   // Vector Math Routines
   static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
@@ -266,6 +268,7 @@ class StubRoutines: AllStatic {
   // Initialization/Testing
   static void    initialize1();                            // must happen before universe::genesis
   static void    initialize2();                            // must happen after  universe::genesis
+  static void    initializeContinuationStubs();            // must happen after  universe::genesis
 
   static bool is_stub_code(address addr)                   { return contains(addr); }
 
@@ -277,6 +280,7 @@ class StubRoutines: AllStatic {
 
   static RuntimeBlob* code1() { return _code1; }
   static RuntimeBlob* code2() { return _code2; }
+  static RuntimeBlob* code3() { return _code3; }
 
   // Debugging
   static jint    verify_oop_count()                        { return _verify_oop_count; }
@@ -426,35 +430,15 @@ class StubRoutines: AllStatic {
   static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
   static address dtan()                { return _dtan; }
 
+  static RuntimeStub* cont_doYield_stub() { return _cont_doYield_stub; }
+  static address cont_doYield()        { return _cont_doYield; }
+  static address cont_thaw()           { return _cont_thaw; }
+  static address cont_returnBarrier()  { return _cont_returnBarrier; }
+  static address cont_returnBarrierExc(){return _cont_returnBarrierExc; }
+
+  JFR_ONLY(static address jfr_write_checkpoint() { return _jfr_write_checkpoint; })
+
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
-
-  //
-  // Safefetch stub support
-  //
-
-  typedef int      (*SafeFetch32Stub)(int*      adr, int      errValue);
-  typedef intptr_t (*SafeFetchNStub) (intptr_t* adr, intptr_t errValue);
-
-  static SafeFetch32Stub SafeFetch32_stub() { return CAST_TO_FN_PTR(SafeFetch32Stub, _safefetch32_entry); }
-  static SafeFetchNStub  SafeFetchN_stub()  { return CAST_TO_FN_PTR(SafeFetchNStub,  _safefetchN_entry); }
-
-  static bool is_safefetch_fault(address pc) {
-    return pc != NULL &&
-          (pc == _safefetch32_fault_pc ||
-           pc == _safefetchN_fault_pc);
-  }
-
-  static address continuation_for_safefetch_fault(address pc) {
-    assert(_safefetch32_continuation_pc != NULL &&
-           _safefetchN_continuation_pc  != NULL,
-           "not initialized");
-
-    if (pc == _safefetch32_fault_pc) return _safefetch32_continuation_pc;
-    if (pc == _safefetchN_fault_pc)  return _safefetchN_continuation_pc;
-
-    ShouldNotReachHere();
-    return NULL;
-  }
 
   //
   // Default versions of the above arraycopy functions for platforms which do

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -380,7 +380,7 @@ static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, c
     case Type::KlassPtr:
     case Type::AryKlassPtr:
     case Type::InstKlassPtr:
-      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,p2i(t->make_ptr()->isa_klassptr()->klass()));
+      st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,p2i(t->make_ptr()->isa_klassptr()->exact_klass()));
       break;
     case Type::MetadataPtr:
       st->print(" %s%d]=#Ptr" INTPTR_FORMAT,msg,i,p2i(t->make_ptr()->isa_metadataptr()->metadata()));
@@ -471,7 +471,7 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
       st->cr();
       st->print("        # ScObj" INT32_FORMAT " ", i);
       SafePointScalarObjectNode* spobj = scobjs.at(i);
-      ciKlass* cik = spobj->bottom_type()->is_oopptr()->klass();
+      ciKlass* cik = spobj->bottom_type()->is_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
       ciInstanceKlass *iklass = NULL;
@@ -807,11 +807,11 @@ bool CallNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
     return false;
   }
   if (t_oop->is_ptr_to_boxed_value()) {
-    ciKlass* boxing_klass = t_oop->klass();
+    ciKlass* boxing_klass = t_oop->is_instptr()->instance_klass();
     if (is_CallStaticJava() && as_CallStaticJava()->is_boxing_method()) {
       // Skip unrelated boxing methods.
       Node* proj = proj_out_or_null(TypeFunc::Parms);
-      if ((proj == NULL) || (phase->type(proj)->is_instptr()->klass() != boxing_klass)) {
+      if ((proj == NULL) || (phase->type(proj)->is_instptr()->instance_klass() != boxing_klass)) {
         return false;
       }
     }
@@ -826,7 +826,7 @@ bool CallNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
       if (proj != NULL) {
         const TypeInstPtr* inst_t = phase->type(proj)->isa_instptr();
         if ((inst_t != NULL) && (!inst_t->klass_is_exact() ||
-                                 (inst_t->klass() == boxing_klass))) {
+                                 (inst_t->instance_klass() == boxing_klass))) {
           return true;
         }
       }
@@ -834,7 +834,7 @@ bool CallNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
       for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
         const TypeInstPtr* inst_t = d->field_at(i)->isa_instptr();
         if ((inst_t != NULL) && (!inst_t->klass_is_exact() ||
-                                 (inst_t->klass() == boxing_klass))) {
+                                 (inst_t->instance_klass() == boxing_klass))) {
           return true;
         }
       }
@@ -906,7 +906,7 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
       {
         // For Control (fallthrough) and I_O (catch_all_index) we have CatchProj -> Catch -> Proj
         projs->fallthrough_proj = pn;
-        const Node *cn = pn->unique_ctrl_out();
+        const Node* cn = pn->unique_ctrl_out_or_null();
         if (cn != NULL && cn->is_Catch()) {
           ProjNode *cpn = NULL;
           for (DUIterator_Fast kmax, k = cn->fast_outs(kmax); k < kmax; k++) {
@@ -1363,7 +1363,7 @@ void SafePointNode::set_local(JVMState* jvms, uint idx, Node *c) {
   if (in(loc)->is_top() && idx > 0 && !c->is_top() ) {
     // If current local idx is top then local idx - 1 could
     // be a long/double that needs to be killed since top could
-    // represent the 2nd half ofthe long/double.
+    // represent the 2nd half of the long/double.
     uint ideal = in(loc -1)->ideal_reg();
     if (ideal == Op_RegD || ideal == Op_RegL) {
       // set other (low index) half to top
@@ -1414,7 +1414,7 @@ Node* SafePointNode::Identity(PhaseGVN* phase) {
 
   // If you have back to back safepoints, remove one
   if (in(TypeFunc::Control)->is_SafePoint()) {
-    Node* out_c = unique_ctrl_out();
+    Node* out_c = unique_ctrl_out_or_null();
     // This can be the safepoint of an outer strip mined loop if the inner loop's backedge was removed. Replacing the
     // outer loop's safepoint could confuse removal of the outer loop.
     if (out_c != NULL && !out_c->is_OuterStripMinedLoopEnd()) {
@@ -1567,20 +1567,17 @@ SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
                                                      Node* alloc,
 #endif
                                                      uint first_index,
-                                                     uint n_fields,
-                                                     bool is_auto_box) :
+                                                     uint n_fields) :
   TypeNode(tp, 1), // 1 control input -- seems required.  Get from root.
   _first_index(first_index),
-  _n_fields(n_fields),
-  _is_auto_box(is_auto_box)
+  _n_fields(n_fields)
 #ifdef ASSERT
   , _alloc(alloc)
 #endif
 {
 #ifdef ASSERT
   if (!alloc->is_Allocate()
-      && !(alloc->Opcode() == Op_VectorBox)
-      && (!alloc->is_CallStaticJava() || !alloc->as_CallStaticJava()->is_boxing_method())) {
+      && !(alloc->Opcode() == Op_VectorBox)) {
     alloc->dump();
     assert(false, "unexpected call node");
   }
@@ -1656,6 +1653,7 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
   init_req( KlassNode          , klass_node);
   init_req( InitialTest        , initial_test);
   init_req( ALength            , topnode);
+  init_req( ValidLengthTest    , topnode);
   C->add_macro_node(this);
 }
 
@@ -1680,54 +1678,6 @@ Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, N
   // For now only enable fast locking for non-array types
   mark_node = phase->MakeConX(markWord::prototype().value());
   return mark_node;
-}
-
-//=============================================================================
-Node* AllocateArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (remove_dead_region(phase, can_reshape))  return this;
-  // Don't bother trying to transform a dead node
-  if (in(0) && in(0)->is_top())  return NULL;
-
-  const Type* type = phase->type(Ideal_length());
-  if (type->isa_int() && type->is_int()->_hi < 0) {
-    if (can_reshape) {
-      PhaseIterGVN *igvn = phase->is_IterGVN();
-      // Unreachable fall through path (negative array length),
-      // the allocation can only throw so disconnect it.
-      Node* proj = proj_out_or_null(TypeFunc::Control);
-      Node* catchproj = NULL;
-      if (proj != NULL) {
-        for (DUIterator_Fast imax, i = proj->fast_outs(imax); i < imax; i++) {
-          Node *cn = proj->fast_out(i);
-          if (cn->is_Catch()) {
-            catchproj = cn->as_Multi()->proj_out_or_null(CatchProjNode::fall_through_index);
-            break;
-          }
-        }
-      }
-      if (catchproj != NULL && catchproj->outcnt() > 0 &&
-          (catchproj->outcnt() > 1 ||
-           catchproj->unique_out()->Opcode() != Op_Halt)) {
-        assert(catchproj->is_CatchProj(), "must be a CatchProjNode");
-        Node* nproj = catchproj->clone();
-        igvn->register_new_node_with_optimizer(nproj);
-
-        Node *frame = new ParmNode( phase->C->start(), TypeFunc::FramePtr );
-        frame = phase->transform(frame);
-        // Halt & Catch Fire
-        Node* halt = new HaltNode(nproj, frame, "unexpected negative array length");
-        phase->C->root()->add_req(halt);
-        phase->transform(halt);
-
-        igvn->replace_node(catchproj, phase->C->top());
-        return this;
-      }
-    } else {
-      // Can't correct it during regular GVN so register for IGVN
-      phase->C->record_for_igvn(this);
-    }
-  }
-  return NULL;
 }
 
 // Retrieve the length from the AllocateArrayNode. Narrow the type with a
@@ -1802,7 +1752,7 @@ uint LockNode::size_of() const { return sizeof(*this); }
 //
 // Either of these cases subsumes the simple case of sequential control flow
 //
-// Addtionally we can eliminate versions without the else case:
+// Additionally we can eliminate versions without the else case:
 //
 //   s();
 //   if (p)
@@ -2359,7 +2309,7 @@ bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeO
     return dest_t->instance_id() == t_oop->instance_id();
   }
 
-  if (dest_t->isa_instptr() && !dest_t->klass()->equals(phase->C->env()->Object_klass())) {
+  if (dest_t->isa_instptr() && !dest_t->is_instptr()->instance_klass()->equals(phase->C->env()->Object_klass())) {
     // clone
     if (t_oop->isa_aryptr()) {
       return false;
@@ -2367,7 +2317,7 @@ bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeO
     if (!t_oop->isa_instptr()) {
       return true;
     }
-    if (dest_t->klass()->is_subtype_of(t_oop->klass()) || t_oop->klass()->is_subtype_of(dest_t->klass())) {
+    if (dest_t->maybe_java_subtype_of(t_oop) || t_oop->maybe_java_subtype_of(dest_t)) {
       return true;
     }
     // unrelated

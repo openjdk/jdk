@@ -415,7 +415,7 @@ public class isvisible001 {
                         expresult = returnCode1;
                     }
                 } catch ( IllegalArgumentException e ) {
-                    log3("ERROR:  IllegalArgumentException for i3 in stackFrame");;
+                    log3("ERROR:  IllegalArgumentException for i3 in stackFrame");
                     expresult = returnCode1;
                 }
             }

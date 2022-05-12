@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public class TestMisc {
             testMinusContainerSupport();
             testIsContainerized();
             testPrintContainerInfo();
+            testPrintContainerInfoActiveProcessorCount();
         } finally {
             DockerTestUtils.removeDockerImage(imageName);
         }
@@ -92,6 +93,15 @@ public class TestMisc {
         checkContainerInfo(Common.run(opts));
     }
 
+    private static void testPrintContainerInfoActiveProcessorCount() throws Exception {
+        Common.logNewTestCase("Test print_container_info()");
+
+        DockerRunOptions opts = Common.newOpts(imageName, "PrintContainerInfo").addJavaOpts("-XX:ActiveProcessorCount=2");
+        Common.addWhiteBoxOpts(opts);
+
+        OutputAnalyzer out = Common.run(opts);
+        out.shouldContain("but overridden by -XX:ActiveProcessorCount 2");
+    }
 
     private static void checkContainerInfo(OutputAnalyzer out) throws Exception {
         String[] expectedToContain = new String[] {

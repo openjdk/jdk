@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,9 +55,9 @@ static bool initialize(TRAPS) {
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
     jvm_upcalls_class_sym = SymbolTable::new_permanent_symbol("jdk/jfr/internal/JVMUpcalls");
     on_retransform_method_sym = SymbolTable::new_permanent_symbol("onRetransform");
-    on_retransform_signature_sym = SymbolTable::new_permanent_symbol("(JZLjava/lang/Class;[B)[B");
+    on_retransform_signature_sym = SymbolTable::new_permanent_symbol("(JZZLjava/lang/Class;[B)[B");
     bytes_for_eager_instrumentation_sym = SymbolTable::new_permanent_symbol("bytesForEagerInstrumentation");
-    bytes_for_eager_instrumentation_sig_sym = SymbolTable::new_permanent_symbol("(JZLjava/lang/Class;[B)[B");
+    bytes_for_eager_instrumentation_sig_sym = SymbolTable::new_permanent_symbol("(JZZLjava/lang/Class;[B)[B");
     unhide_internal_types_sym = SymbolTable::new_permanent_symbol("unhideInternalTypes");
     unhide_internal_types_sig_sym = SymbolTable::new_permanent_symbol("()V");
     initialized = unhide_internal_types_sig_sym != NULL;
@@ -67,6 +67,7 @@ static bool initialize(TRAPS) {
 
 static const typeArrayOop invoke(jlong trace_id,
                                  jboolean force_instrumentation,
+                                 jboolean boot_class_loader,
                                  jclass class_being_redefined,
                                  jint class_data_len,
                                  const unsigned char* class_data,
@@ -83,6 +84,7 @@ static const typeArrayOop invoke(jlong trace_id,
   JfrJavaArguments args(&result, klass, method_sym, signature_sym);
   args.push_long(trace_id);
   args.push_int(force_instrumentation);
+  args.push_int(boot_class_loader);
   args.push_jobject(class_being_redefined);
   args.push_oop(old_byte_array);
   JfrJavaSupport::call_static(&args, THREAD);
@@ -129,6 +131,7 @@ void JfrUpcalls::on_retransform(jlong trace_id,
   initialize(THREAD);
   const typeArrayOop new_byte_array = invoke(trace_id,
                                              false,
+                                             false, // not used
                                              class_being_redefined,
                                              class_data_len,
                                              class_data,
@@ -152,6 +155,7 @@ void JfrUpcalls::on_retransform(jlong trace_id,
 
 void JfrUpcalls::new_bytes_eager_instrumentation(jlong trace_id,
                                                  jboolean force_instrumentation,
+                                                 jboolean boot_class_loader,
                                                  jclass super,
                                                  jint class_data_len,
                                                  const unsigned char* class_data,
@@ -167,6 +171,7 @@ void JfrUpcalls::new_bytes_eager_instrumentation(jlong trace_id,
   initialize(THREAD);
   const typeArrayOop new_byte_array = invoke(trace_id,
                                              force_instrumentation,
+                                             boot_class_loader,
                                              super,
                                              class_data_len,
                                              class_data,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1042,8 +1042,8 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
   resize_heap_if_necessary();
   uncommit_regions_if_necessary();
 
-  // Rebuild the strong code root lists for each region
-  rebuild_strong_code_roots();
+  // Rebuild the code root lists for each region
+  rebuild_code_roots();
 
   // Purge code root memory
   purge_code_root_memory();
@@ -1098,7 +1098,7 @@ void G1CollectedHeap::verify_after_full_collection() {
 
 bool G1CollectedHeap::do_full_collection(bool explicit_gc,
                                          bool clear_all_soft_refs,
-                                         bool do_maximum_compaction) {
+                                         bool do_maximal_compaction) {
   assert_at_safepoint_on_vm_thread();
 
   if (GCLocker::check_active_before_gc()) {
@@ -1111,7 +1111,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
 
   G1FullGCMark gc_mark;
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
-  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximum_compaction);
+  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximal_compaction);
 
   collector.prepare_collection();
   collector.collect();
@@ -1125,12 +1125,12 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
   // Currently, there is no facility in the do_full_collection(bool) API to notify
   // the caller that the collection did not succeed (e.g., because it was locked
   // out by the GC locker). So, right now, we'll ignore the return value.
-  // When clear_all_soft_refs is set we want to do a maximum compaction
+  // When clear_all_soft_refs is set we want to do a maximal compaction
   // not leaving any dead wood.
-  bool do_maximum_compaction = clear_all_soft_refs;
+  bool do_maximal_compaction = clear_all_soft_refs;
   bool dummy = do_full_collection(true,                /* explicit_gc */
                                   clear_all_soft_refs,
-                                  do_maximum_compaction);
+                                  do_maximal_compaction);
 }
 
 bool G1CollectedHeap::upgrade_to_full_collection() {
@@ -1138,7 +1138,7 @@ bool G1CollectedHeap::upgrade_to_full_collection() {
   log_info(gc, ergo)("Attempting full compaction clearing soft references");
   bool success = do_full_collection(false /* explicit gc */,
                                     true  /* clear_all_soft_refs */,
-                                    false /* do_maximum_compaction */);
+                                    false /* do_maximal_compaction */);
   // do_full_collection only fails if blocked by GC locker and that can't
   // be the case here since we only call this when already completed one gc.
   assert(success, "invariant");
@@ -1162,7 +1162,7 @@ void G1CollectedHeap::resize_heap_if_necessary() {
 
 HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
                                                             bool do_gc,
-                                                            bool maximum_compaction,
+                                                            bool maximal_compaction,
                                                             bool expect_null_mutator_alloc_region,
                                                             bool* gc_succeeded) {
   *gc_succeeded = true;
@@ -1186,16 +1186,16 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
   if (do_gc) {
     GCCauseSetter compaction(this, GCCause::_g1_compaction_pause);
     // Expansion didn't work, we'll try to do a Full GC.
-    // If maximum_compaction is set we clear all soft references and don't
+    // If maximal_compaction is set we clear all soft references and don't
     // allow any dead wood to be left on the heap.
-    if (maximum_compaction) {
-      log_info(gc, ergo)("Attempting maximum full compaction clearing soft references");
+    if (maximal_compaction) {
+      log_info(gc, ergo)("Attempting maximal full compaction clearing soft references");
     } else {
       log_info(gc, ergo)("Attempting full compaction");
     }
     *gc_succeeded = do_full_collection(false, /* explicit_gc */
-                                       maximum_compaction /* clear_all_soft_refs */ ,
-                                       maximum_compaction /* do_maximum_compaction */);
+                                       maximal_compaction /* clear_all_soft_refs */ ,
+                                       maximal_compaction /* do_maximal_compaction */);
   }
 
   return NULL;
@@ -1493,6 +1493,9 @@ G1CollectedHeap::G1CollectedHeap() :
   // objects are created.
   _filler_array_max_size = _humongous_object_threshold_in_words;
 
+  // Override the default _stack_chunk_max_size so that no humongous stack chunks are created
+  _stack_chunk_max_size = _humongous_object_threshold_in_words;
+
   uint n_queues = ParallelGCThreads;
   _task_queues = new G1ScannerTasksQueueSet(n_queues);
 
@@ -1726,12 +1729,6 @@ jint G1CollectedHeap::initialize() {
   _free_segmented_array_memory_task = new G1SegmentedArrayFreeMemoryTask("Card Set Free Memory Task");
   _service_thread->register_task(_free_segmented_array_memory_task);
 
-  {
-    G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    dcqs.set_process_cards_threshold(concurrent_refine()->yellow_zone());
-    dcqs.set_max_cards(concurrent_refine()->red_zone());
-  }
-
   // Here we allocate the dummy HeapRegion that is required by the
   // G1AllocRegion class.
   HeapRegion* dummy_region = _hrm.get_dummy_region();
@@ -1899,6 +1896,7 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     case GCCause::_g1_humongous_allocation: return true;
     case GCCause::_g1_periodic_collection:  return G1PeriodicGCInvokesConcurrent;
     case GCCause::_wb_breakpoint:           return true;
+    case GCCause::_codecache_GC_threshold:  return true;
     default:                                return is_user_requested_concurrent_full_gc(cause);
   }
 }
@@ -2285,7 +2283,7 @@ void G1CollectedHeap::object_iterate_parallel(ObjectClosure* cl, uint worker_id,
 }
 
 void G1CollectedHeap::keep_alive(oop obj) {
-  G1BarrierSet::enqueue(obj);
+  G1BarrierSet::enqueue_preloaded(obj);
 }
 
 void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
@@ -2411,7 +2409,6 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
                                        const VerifyOption vo) const {
   switch (vo) {
   case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj, hr);
-  case VerifyOption_G1UseNextMarking: return is_obj_ill(obj, hr);
   case VerifyOption_G1UseFullMarking: return is_obj_dead_full(obj, hr);
   default:                            ShouldNotReachHere();
   }
@@ -2422,7 +2419,6 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
                                        const VerifyOption vo) const {
   switch (vo) {
   case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj);
-  case VerifyOption_G1UseNextMarking: return is_obj_ill(obj);
   case VerifyOption_G1UseFullMarking: return is_obj_dead_full(obj);
   default:                            ShouldNotReachHere();
   }
@@ -3295,7 +3291,6 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
   _bytes_used_during_gc += allocated_bytes;
   if (dest.is_old()) {
     old_set_add(alloc_region);
-    alloc_region->update_bot_threshold();
   } else {
     assert(dest.is_young(), "Retiring alloc region should be young (%d)", dest.type());
     _survivor.add_used_bytes(allocated_bytes);
@@ -3322,6 +3317,13 @@ HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
   return NULL;
 }
 
+void G1CollectedHeap::mark_evac_failure_object(const oop obj, uint worker_id) const {
+  // All objects failing evacuation are live. What we'll do is
+  // that we'll update the prev marking info so that they are
+  // all under PTAMS and explicitly marked.
+  _cm->par_mark_in_prev_bitmap(obj);
+}
+
 // Optimized nmethod scanning
 
 class RegisterNMethodOopClosure: public OopClosure {
@@ -3342,8 +3344,8 @@ public:
              " starting at " HR_FORMAT,
              p2i(_nm), HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region()));
 
-      // HeapRegion::add_strong_code_root_locked() avoids adding duplicate entries.
-      hr->add_strong_code_root_locked(_nm);
+      // HeapRegion::add_code_root_locked() avoids adding duplicate entries.
+      hr->add_code_root_locked(_nm);
     }
   }
 
@@ -3368,7 +3370,7 @@ public:
              " starting at " HR_FORMAT,
              p2i(_nm), HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region()));
 
-      hr->remove_strong_code_root(_nm);
+      hr->remove_code_root(_nm);
     }
   }
 
@@ -3411,11 +3413,11 @@ void G1CollectedHeap::purge_code_root_memory() {
   G1CodeRootSet::purge();
 }
 
-class RebuildStrongCodeRootClosure: public CodeBlobClosure {
+class RebuildCodeRootClosure: public CodeBlobClosure {
   G1CollectedHeap* _g1h;
 
 public:
-  RebuildStrongCodeRootClosure(G1CollectedHeap* g1h) :
+  RebuildCodeRootClosure(G1CollectedHeap* g1h) :
     _g1h(g1h) {}
 
   void do_code_blob(CodeBlob* cb) {
@@ -3428,8 +3430,8 @@ public:
   }
 };
 
-void G1CollectedHeap::rebuild_strong_code_roots() {
-  RebuildStrongCodeRootClosure blob_cl(this);
+void G1CollectedHeap::rebuild_code_roots() {
+  RebuildCodeRootClosure blob_cl(this);
   CodeCache::blobs_do(&blob_cl);
 }
 
@@ -3452,4 +3454,17 @@ GrowableArray<MemoryPool*> G1CollectedHeap::memory_pools() {
 void G1CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) {
   HeapRegion* region = heap_region_containing(start);
   region->fill_with_dummy_object(start, pointer_delta(end, start), zap);
+}
+
+void G1CollectedHeap::start_codecache_marking_cycle_if_inactive() {
+  if (!Continuations::is_gc_marking_cycle_active()) {
+    // This is the normal case when we do not call collect when a
+    // concurrent mark is ongoing. We then start a new code marking
+    // cycle. If, on the other hand, a concurrent mark is ongoing, we
+    // will be conservative and use the last code marking cycle. Code
+    // caches marked between the two concurrent marks will live a bit
+    // longer than needed.
+    Continuations::on_gc_marking_cycle_start();
+    Continuations::arm_all_nmethods();
+  }
 }

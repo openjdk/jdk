@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ void C2_MacroAssembler::string_indexof(Register str2, Register str1,
   // if (substr.count == 0) return 0;
 
   // We have two strings, a source string in str2, cnt2 and a pattern string
-  // in str1, cnt1. Find the 1st occurence of pattern in source or return -1.
+  // in str1, cnt1. Find the 1st occurrence of pattern in source or return -1.
 
   // For larger pattern and source we use a simplified Boyer Moore algorithm.
   // With a small pattern and source we use linear scan.
@@ -676,8 +676,7 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1,
 // Compare strings.
 void C2_MacroAssembler::string_compare(Register str1, Register str2,
     Register cnt1, Register cnt2, Register result, Register tmp1, Register tmp2,
-    FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3,
-    PRegister pgtmp1, PRegister pgtmp2, int ae) {
+    FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3, int ae) {
   Label DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, TAIL, STUB,
       DIFF, NEXT_WORD, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
       SHORT_LOOP_START, TAIL_CHECK;
@@ -959,32 +958,74 @@ void C2_MacroAssembler::bytemask_compress(Register dst) {
 
 // Pack the lowest-numbered bit of each mask element in src into a long value
 // in dst, at most the first 64 lane elements.
-// Clobbers: rscratch1
+// Clobbers: rscratch1 if hardware doesn't support FEAT_BITPERM.
 void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
-                                         FloatRegister vtmp1, FloatRegister vtmp2, PRegister pgtmp) {
-  assert(pgtmp->is_governing(), "This register has to be a governing predicate register.");
+                                         FloatRegister vtmp1, FloatRegister vtmp2) {
   assert(lane_cnt <= 64 && is_power_of_2(lane_cnt), "Unsupported lane count");
   assert_different_registers(dst, rscratch1);
+  assert_different_registers(vtmp1, vtmp2);
 
   Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
+  // Example:   src = 0b01100101 10001101, bt = T_BYTE, lane_cnt = 16
+  // Expected:  dst = 0x658D
 
-  // Pack the mask into vector with sequential bytes.
+  // Convert the mask into vector with sequential bytes.
+  // vtmp1 = 0x00010100 0x00010001 0x01000000 0x01010001
   sve_cpy(vtmp1, size, src, 1, false);
   if (bt != T_BYTE) {
     sve_vector_narrow(vtmp1, B, vtmp1, size, vtmp2);
   }
 
-  // Compress the lowest 8 bytes.
-  fmovd(dst, vtmp1);
-  bytemask_compress(dst);
-  if (lane_cnt <= 8) return;
+  if (UseSVE > 0 && !VM_Version::supports_svebitperm()) {
+    // Compress the lowest 8 bytes.
+    fmovd(dst, vtmp1);
+    bytemask_compress(dst);
+    if (lane_cnt <= 8) return;
 
-  // Repeat on higher bytes and join the results.
-  // Compress 8 bytes in each iteration.
-  for (int idx = 1; idx < (lane_cnt / 8); idx++) {
-    idx == 1 ? fmovhid(rscratch1, vtmp1) : sve_extract(rscratch1, D, pgtmp, vtmp1, idx);
-    bytemask_compress(rscratch1);
-    orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
+    // Repeat on higher bytes and join the results.
+    // Compress 8 bytes in each iteration.
+    for (int idx = 1; idx < (lane_cnt / 8); idx++) {
+      sve_extract_integral(rscratch1, D, vtmp1, idx, /* is_signed */ false, vtmp2);
+      bytemask_compress(rscratch1);
+      orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
+    }
+  } else if (UseSVE == 2 && VM_Version::supports_svebitperm()) {
+    // Given by the vector with value 0x00 or 0x01 in each byte, the basic idea
+    // is to compress each significant bit of the byte in a cross-lane way. Due
+    // to the lack of cross-lane bit-compress instruction, here we use BEXT
+    // (bit-compress in each lane) with the biggest lane size (T = D) and
+    // concatenates the results then.
+
+    // The second source input of BEXT, initialized with 0x01 in each byte.
+    // vtmp2 = 0x01010101 0x01010101 0x01010101 0x01010101
+    sve_dup(vtmp2, B, 1);
+
+    // BEXT vtmp1.D, vtmp1.D, vtmp2.D
+    // vtmp1 = 0x0001010000010001 | 0x0100000001010001
+    // vtmp2 = 0x0101010101010101 | 0x0101010101010101
+    //         ---------------------------------------
+    // vtmp1 = 0x0000000000000065 | 0x000000000000008D
+    sve_bext(vtmp1, D, vtmp1, vtmp2);
+
+    // Concatenate the lowest significant 8 bits in each 8 bytes, and extract the
+    // result to dst.
+    // vtmp1 = 0x0000000000000000 | 0x000000000000658D
+    // dst   = 0x658D
+    if (lane_cnt <= 8) {
+      // No need to concatenate.
+      umov(dst, vtmp1, B, 0);
+    } else if (lane_cnt <= 16) {
+      ins(vtmp1, B, vtmp1, 1, 8);
+      umov(dst, vtmp1, H, 0);
+    } else {
+      // As the lane count is 64 at most, the final expected value must be in
+      // the lowest 64 bits after narrowing vtmp1 from D to B.
+      sve_vector_narrow(vtmp1, B, vtmp1, D, vtmp2);
+      umov(dst, vtmp1, D, 0);
+    }
+  } else {
+    assert(false, "unsupported");
+    ShouldNotReachHere();
   }
 }
 
@@ -1267,4 +1308,89 @@ void C2_MacroAssembler::sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, i
       assert(false, "unsupported");
       ShouldNotReachHere();
   }
+}
+
+// Extract a scalar element from an sve vector at position 'idx'.
+// The input elements in src are expected to be of integral type.
+void C2_MacroAssembler::sve_extract_integral(Register dst, SIMD_RegVariant size, FloatRegister src, int idx,
+                                             bool is_signed, FloatRegister vtmp) {
+  assert(UseSVE > 0 && size != Q, "unsupported");
+  assert(!(is_signed && size == D), "signed extract (D) not supported.");
+  if (regVariant_to_elemBits(size) * idx < 128) { // generate lower cost NEON instruction
+    is_signed ? smov(dst, src, size, idx) : umov(dst, src, size, idx);
+  } else {
+    sve_orr(vtmp, src, src);
+    sve_ext(vtmp, vtmp, idx << size);
+    is_signed ? smov(dst, vtmp, size, 0) : umov(dst, vtmp, size, 0);
+  }
+}
+
+// java.lang.Math::round intrinsics
+
+void C2_MacroAssembler::vector_round_neon(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
+                                       FloatRegister tmp2, FloatRegister tmp3, SIMD_Arrangement T) {
+  assert_different_registers(tmp1, tmp2, tmp3, src, dst);
+  switch (T) {
+    case T2S:
+    case T4S:
+      fmovs(tmp1, T, 0.5f);
+      mov(rscratch1, jint_cast(0x1.0p23f));
+      break;
+    case T2D:
+      fmovd(tmp1, T, 0.5);
+      mov(rscratch1, julong_cast(0x1.0p52));
+      break;
+    default:
+      assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
+  }
+  fadd(tmp1, T, tmp1, src);
+  fcvtms(tmp1, T, tmp1);
+  // tmp1 = floor(src + 0.5, ties to even)
+
+  fcvtas(dst, T, src);
+  // dst = round(src), ties to away
+
+  fneg(tmp3, T, src);
+  dup(tmp2, T, rscratch1);
+  cmhs(tmp3, T, tmp3, tmp2);
+  // tmp3 is now a set of flags
+
+  bif(dst, T16B, tmp1, tmp3);
+  // result in dst
+}
+
+void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
+                                      FloatRegister tmp2, PRegister ptmp, SIMD_RegVariant T) {
+  assert_different_registers(tmp1, tmp2, src, dst);
+
+  switch (T) {
+    case S:
+      mov(rscratch1, jint_cast(0x1.0p23f));
+      break;
+    case D:
+      mov(rscratch1, julong_cast(0x1.0p52));
+      break;
+    default:
+      assert(T == S || T == D, "invalid arrangement");
+  }
+
+  sve_frinta(dst, T, ptrue, src);
+  // dst = round(src), ties to away
+
+  Label none;
+
+  sve_fneg(tmp1, T, ptrue, src);
+  sve_dup(tmp2, T, rscratch1);
+  sve_cmp(HS, ptmp, T, ptrue, tmp2, tmp1);
+  br(EQ, none);
+  {
+    sve_cpy(tmp1, T, ptmp, 0.5);
+    sve_fadd(tmp1, T, ptmp, src);
+    sve_frintm(dst, T, ptmp, tmp1);
+    // dst = floor(src + 0.5, ties to even)
+  }
+  bind(none);
+
+  sve_fcvtzs(dst, T, ptrue, dst, T);
+  // result in dst
 }

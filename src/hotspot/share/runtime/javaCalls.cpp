@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -119,7 +119,7 @@ JavaCallWrapper::~JavaCallWrapper() {
   // State has been restored now make the anchor frame visible for the profiler.
   // Do this after the transition because this allows us to put an assert
   // the Java->vm transition which checks to see that stack is not walkable
-  // on sparc/ia64 which will catch violations of the reseting of last_Java_frame
+  // on sparc/ia64 which will catch violations of the resetting of last_Java_frame
   // invariants (i.e. _flags always cleared on return to Java)
 
   _thread->frame_anchor()->copy(&_anchor);
@@ -374,13 +374,13 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
   // Find receiver
   Handle receiver = (!method->is_static()) ? args->receiver() : Handle();
 
-  // When we reenter Java, we need to reenable the reserved/yellow zone which
+  // When we reenter Java, we need to re-enable the reserved/yellow zone which
   // might already be disabled when we are in VM.
   thread->stack_overflow_state()->reguard_stack_if_needed();
 
   // Check that there are shadow pages available before changing thread state
   // to Java. Calculate current_stack_pointer here to make sure
-  // stack_shadow_pages_available() and bang_stack_shadow_pages() use the same sp.
+  // stack_shadow_pages_available() and map_stack_shadow_pages() use the same sp.
   address sp = os::current_stack_pointer();
   if (!os::stack_shadow_pages_available(THREAD, method, sp)) {
     // Throw stack overflow exception with preinitialized exception.

@@ -10,5 +10,8 @@ MissingParamsTest.java:20: warning: no @param for param
 MissingParamsTest.java:23: warning: no @param for <T>
     <T> void missingTyparam() { }
              ^
-4 warnings
+MissingParamsTest.java:26: warning: no @param for <T>
+    public class MissingTyparam<T> { /** . */ MissingTyparam() { } }
+           ^
+5 warnings
 

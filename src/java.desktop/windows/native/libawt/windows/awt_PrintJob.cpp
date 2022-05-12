@@ -64,8 +64,8 @@ extern "C" {
 
 /*** Private Constants ***/
 
-static char *kJavaIntStr = "I";
-static char *kJavaLongStr = "J";
+static const char *kJavaIntStr = "I";
+static const char *kJavaLongStr = "J";
 
 /* 2D printing uses 3 byte BGR pixels in Raster printing */
 static int J2DRasterBPP = 3;
@@ -1353,7 +1353,7 @@ Java_sun_awt_windows_WPrinterJob__1startDoc(JNIEnv *env, jobject self,
     } else {
         destination = VerifyDestination(env, self);
     }
-    LPTSTR docname = NULL;
+    LPCTSTR docname = NULL;
     if (jobname != NULL) {
         LPTSTR tmp = (LPTSTR)JNU_GetStringPlatformChars(env, jobname, NULL);
         if (tmp == NULL) {

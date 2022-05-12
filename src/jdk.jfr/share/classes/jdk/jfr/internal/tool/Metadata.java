@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,6 +163,7 @@ final class Metadata extends Command {
         boolean showIds = false;
         boolean foundEventFilter = false;
         boolean foundCategoryFilter = false;
+        List<Predicate<EventType>> filters = new ArrayList<>();
         Predicate<EventType> filter = null;
         int optionCount = options.size();
         while (optionCount > 0) {
@@ -177,7 +178,7 @@ final class Metadata extends Command {
                 foundEventFilter = true;
                 String filterStr = options.remove();
                 warnForWildcardExpansion("--events", filterStr);
-                filter = addEventFilter(filterStr, filter);
+                filters.add(Filters.createEventTypeFilter(filterStr));
             }
             if (acceptFilterOption(options, "--categories")) {
                 if (foundCategoryFilter) {
@@ -186,7 +187,7 @@ final class Metadata extends Command {
                 foundCategoryFilter = true;
                 String filterStr = options.remove();
                 warnForWildcardExpansion("--categories", filterStr);
-                filter = addCategoryFilter(filterStr, filter);
+                filters.add(Filters.createCategoryFilter(filterStr));
             }
             if (optionCount == options.size()) {
                 // No progress made
@@ -200,8 +201,8 @@ final class Metadata extends Command {
         try (PrintWriter pw = new PrintWriter(System.out, false, UTF_8)) {
             PrettyWriter prettyWriter = new PrettyWriter(pw);
             prettyWriter.setShowIds(showIds);
-            if (filter != null) {
-                filter = addCache(filter, type -> type.getId());
+            if (!filters.isEmpty()) {
+                filter =  Filters.matchAny(filters);
             }
 
             List<Type> types = findTypes(file);

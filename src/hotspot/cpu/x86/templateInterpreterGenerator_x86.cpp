@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -365,8 +366,16 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
         TosState state,
         address runtime_entry) {
   address entry = __ pc();
+
+  const Register rthread = NOT_LP64(rcx) LP64_ONLY(r15_thread);
+
   __ push(state);
+  NOT_LP64(__ get_thread(rthread);)
+  __ push_cont_fastpath(rthread);
   __ call_VM(noreg, runtime_entry);
+  NOT_LP64(__ get_thread(rthread);)
+  __ pop_cont_fastpath(rthread);
+
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
 }
@@ -388,7 +397,6 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
 void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
   Label done;
   // Note: In tiered we increment either counters in Method* or in MDO depending if we're profiling or not.
-  int increment = InvocationCounter::count_increment;
   Label no_mdo;
   if (ProfileInterpreter) {
     // Are we profiling?
@@ -399,7 +407,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
     const Address mdo_invocation_counter(rax, in_bytes(MethodData::invocation_counter_offset()) +
         in_bytes(InvocationCounter::counter_offset()));
     const Address mask(rax, in_bytes(MethodData::invoke_mask_offset()));
-    __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, rcx, false, Assembler::zero, overflow);
+    __ increment_mask_and_jump(mdo_invocation_counter, mask, rcx, overflow);
     __ jmp(done);
   }
   __ bind(no_mdo);
@@ -409,8 +417,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
       InvocationCounter::counter_offset());
   __ get_method_counters(rbx, rax, done);
   const Address mask(rax, in_bytes(MethodCounters::invoke_mask_offset()));
-  __ increment_mask_and_jump(invocation_counter, increment, mask, rcx,
-      false, Assembler::zero, overflow);
+  __ increment_mask_and_jump(invocation_counter, mask, rcx, overflow);
   __ bind(done);
 }
 
@@ -601,6 +608,10 @@ void TemplateInterpreterGenerator::lock_method() {
   const Register lockreg = NOT_LP64(rdx) LP64_ONLY(c_rarg1);
   __ movptr(lockreg, rsp); // object address
   __ lock_object(lockreg);
+
+  Register rthread = NOT_LP64(rax) LP64_ONLY(r15_thread);
+  NOT_LP64(__ get_thread(rthread);)
+  __ inc_held_monitor_count(rthread);
 }
 
 // Generate a fixed interpreter frame. This is identical setup for
@@ -651,6 +662,29 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 }
 
 // End of helpers
+
+address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
+  if (!Continuations::enabled()) return nullptr;
+
+#ifdef _LP64
+  address entry = __ pc();
+  assert(StubRoutines::cont_doYield() != NULL, "stub not yet generated");
+
+  // __ movl(c_rarg1, Address(rsp, wordSize)); // scopes
+  const Register thread1 = NOT_LP64(rdi) LP64_ONLY(r15_thread);
+  NOT_LP64(__ get_thread(thread1));
+  __ push_cont_fastpath(thread1);
+
+  __ jump(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::cont_doYield())));
+  // return value is in rax
+
+  return entry;
+#else
+  // Not implemented. Allow startup of legacy Java code that does not touch
+  // Continuation.doYield yet. Throw AbstractMethodError on access.
+  return generate_abstract_entry();
+#endif
+}
 
 // Method entry for java.lang.ref.Reference.get.
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
@@ -713,23 +747,59 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 }
 
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
-  // Quick & dirty stack overflow checking: bang the stack & handle trap.
+  // See more discussion in stackOverflow.hpp.
+
   // Note that we do the banging after the frame is setup, since the exception
   // handling code expects to find a valid interpreter frame on the stack.
   // Doing the banging earlier fails if the caller frame is not an interpreter
   // frame.
   // (Also, the exception throwing code expects to unlock any synchronized
-  // method receiever, so do the banging after locking the receiver.)
+  // method receiver, so do the banging after locking the receiver.)
 
-  // Bang each page in the shadow zone. We can't assume it's been done for
-  // an interpreter frame with greater than a page of locals, so each page
-  // needs to be checked.  Only true for non-native.
+  const int shadow_zone_size = checked_cast<int>(StackOverflow::stack_shadow_zone_size());
   const int page_size = os::vm_page_size();
-  const int n_shadow_pages = ((int)StackOverflow::stack_shadow_zone_size()) / page_size;
-  const int start_page = native_call ? n_shadow_pages : 1;
-  for (int pages = start_page; pages <= n_shadow_pages; pages++) {
-    __ bang_stack_with_offset(pages*page_size);
+  const int n_shadow_pages = shadow_zone_size / page_size;
+
+  const Register thread = NOT_LP64(rsi) LP64_ONLY(r15_thread);
+#ifndef _LP64
+  __ push(thread);
+  __ get_thread(thread);
+#endif
+
+#ifdef ASSERT
+  Label L_good_limit;
+  __ cmpptr(Address(thread, JavaThread::shadow_zone_safe_limit()), (int32_t)NULL_WORD);
+  __ jcc(Assembler::notEqual, L_good_limit);
+  __ stop("shadow zone safe limit is not initialized");
+  __ bind(L_good_limit);
+
+  Label L_good_watermark;
+  __ cmpptr(Address(thread, JavaThread::shadow_zone_growth_watermark()), (int32_t)NULL_WORD);
+  __ jcc(Assembler::notEqual, L_good_watermark);
+  __ stop("shadow zone growth watermark is not initialized");
+  __ bind(L_good_watermark);
+#endif
+
+  Label L_done;
+
+  __ cmpptr(rsp, Address(thread, JavaThread::shadow_zone_growth_watermark()));
+  __ jcc(Assembler::above, L_done);
+
+  for (int p = 1; p <= n_shadow_pages; p++) {
+    __ bang_stack_with_offset(p*page_size);
   }
+
+  // Record the new watermark, but only if update is above the safe limit.
+  // Otherwise, the next time around the check above would pass the safe limit.
+  __ cmpptr(rsp, Address(thread, JavaThread::shadow_zone_safe_limit()));
+  __ jccb(Assembler::belowEqual, L_done);
+  __ movptr(Address(thread, JavaThread::shadow_zone_growth_watermark()), rsp);
+
+  __ bind(L_done);
+
+#ifndef _LP64
+  __ pop(thread);
+#endif
 }
 
 // Interpreter stub for calling a native method. (asm interpreter)
@@ -1013,7 +1083,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // It is safe to do this push because state is _thread_in_native and return address will be found
   // via _last_native_pc and not via _last_jave_sp
 
-  // NOTE: the order of theses push(es) is known to frame::interpreter_frame_result.
+  // NOTE: the order of these push(es) is known to frame::interpreter_frame_result.
   // If the order changes or anything else is added to the stack the code in
   // interpreter_frame_result will have to be changed.
 
@@ -1209,6 +1279,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
       __ bind(unlock);
       __ unlock_object(regmon);
+      NOT_LP64(__ get_thread(thread);)
+      __ dec_held_monitor_count(thread);
     }
     __ bind(L);
   }
@@ -1277,7 +1349,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
   // ebx: Method*
-  // rbcp: sender sp
+  // rbcp: sender sp (set in InterpreterMacroAssembler::prepare_to_jump_from_interpreted / generate_call_stub)
   address entry_point = __ pc();
 
   const Address constMethod(rbx, Method::const_offset());
@@ -1702,21 +1774,21 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
 #ifndef _LP64
   fep = __ pc();     // ftos entry point
       __ push(ftos);
-      __ jmp(L);
+      __ jmpb(L);
   dep = __ pc();     // dtos entry point
       __ push(dtos);
-      __ jmp(L);
+      __ jmpb(L);
 #else
   fep = __ pc();     // ftos entry point
       __ push_f(xmm0);
-      __ jmp(L);
+      __ jmpb(L);
   dep = __ pc();     // dtos entry point
       __ push_d(xmm0);
-      __ jmp(L);
+      __ jmpb(L);
 #endif // _LP64
   lep = __ pc();     // ltos entry point
       __ push_l();
-      __ jmp(L);
+      __ jmpb(L);
   aep = bep = cep = sep = iep = __ pc();      // [abcsi]tos entry point
       __ push_i_or_ptr();
   vep = __ pc();    // vtos entry point

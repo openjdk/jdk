@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ class JfrJavaSupport : public AllStatic {
   static jweak global_weak_jni_handle(const jobject handle, JavaThread* t);
   static void destroy_global_weak_jni_handle(jweak handle);
 
+  static oop resolve(jobject obj);
   static oop resolve_non_null(jobject obj);
   static void notify_all(jobject obj, TRAPS);
   static void set_array_element(jobjectArray arr, jobject element, int index, JavaThread* t);
@@ -74,6 +75,14 @@ class JfrJavaSupport : public AllStatic {
   static jobject new_java_lang_Integer(jint value, TRAPS);
   static jobject new_java_lang_Long(jlong value, TRAPS);
 
+  // fields
+  static bool compute_field_offset(int &dest_offset,
+                                   Klass* klass,
+                                   Symbol* name_symbol,
+                                   Symbol* signature_symbol,
+                                   bool is_static = false,
+                                   bool allow_super = false);
+
   // misc
   static Klass* klass(const jobject handle);
   static const char* c_str(jstring string, Thread* thread, bool c_heap = false);
@@ -90,22 +99,31 @@ class JfrJavaSupport : public AllStatic {
   static bool is_jdk_jfr_module_available();
   static bool is_jdk_jfr_module_available(outputStream* stream, TRAPS);
 
-  static jlong jfr_thread_id(jobject thread);
-  static void exclude(jobject thread);
-  static void include(jobject thread);
+  static jlong jfr_thread_id(JavaThread* jt, jobject thread);
+  static void exclude(JavaThread* jt, jobject thread);
+  static void include(JavaThread* jt, jobject thread);
   static bool is_excluded(jobject thread);
-  static void on_thread_start(Thread* t);
+  static void exclude(Thread* thread);
+  static void exclude(JavaThread* jt, oop ref, jobject thread);
+  static void include(Thread* thread);
+  static void include(JavaThread* jt, oop ref, jobject thread);
+  static bool is_excluded(Thread* thread);
+  static bool on_thread_start(Thread* t);
 
-  static jobject get_handler(jobject clazz, TRAPS);
-  static bool set_handler(jobject clazz, jobject handler, TRAPS);
+  static jobject get_configuration(jobject clazz, TRAPS);
+  static bool set_configuration(jobject clazz, jobject configuration, TRAPS);
+
+  static bool is_instrumented(jobject clazz, TRAPS);
 
   // critical
   static void abort(jstring errorMsg, TRAPS);
+  static void abort(const char* error_msg, bool dump_core = true);
   static void uncaught_exception(jthrowable throwable, JavaThread* t);
 
   // asserts
   DEBUG_ONLY(static void check_java_thread_in_vm(JavaThread* t);)
   DEBUG_ONLY(static void check_java_thread_in_native(JavaThread* t);)
+  DEBUG_ONLY(static void check_java_thread_in_java(JavaThread* t););
 
   enum CAUSE {
     VM_ERROR,

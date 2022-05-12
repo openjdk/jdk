@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
   CompileTask* first()                           { return _first; }
   CompileTask* last()                            { return _last;  }
 
-  CompileTask* get();
+  CompileTask* get(CompilerThread* thread);
 
   bool         is_empty() const                  { return _first == NULL; }
   int          size()     const                  { return _size;          }
@@ -222,7 +222,7 @@ class CompileBroker: AllStatic {
   static int _sum_standard_bytes_compiled;
   static int _sum_nmethod_size;
   static int _sum_nmethod_code_size;
-  static long _peak_compilation_time;
+  static jlong _peak_compilation_time;
 
   static CompilerStatistics _stats_per_level[];
 
@@ -370,7 +370,7 @@ public:
   // Redefine Classes support
   static void mark_on_stack();
 
-  // Print curent compilation time stats for a given compiler
+  // Print current compilation time stats for a given compiler
   static void print_times(const char* name, CompilerStatistics* stats);
 
   // Print a detailed accounting of compilation time
@@ -411,8 +411,8 @@ public:
   static int get_sum_standard_bytes_compiled() {    return _sum_standard_bytes_compiled; }
   static int get_sum_nmethod_size() {               return _sum_nmethod_size;}
   static int get_sum_nmethod_code_size() {          return _sum_nmethod_code_size; }
-  static long get_peak_compilation_time() {         return _peak_compilation_time; }
-  static long get_total_compilation_time() {        return _t_total_compilation.milliseconds(); }
+  static jlong get_peak_compilation_time() {        return _peak_compilation_time; }
+  static jlong get_total_compilation_time() {       return _t_total_compilation.milliseconds(); }
 
   // Log that compilation profiling is skipped because metaspace is full.
   static void log_metaspace_failure();
