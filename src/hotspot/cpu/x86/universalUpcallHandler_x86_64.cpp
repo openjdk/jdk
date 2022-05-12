@@ -219,6 +219,7 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
 
   int frame_size = frame_bottom_offset;
   frame_size = align_up(frame_size, StackAlignmentInBytes);
+  int frame_size_slots = frame_size >> LogBytesPerInt;
 
   // Ok The space we have allocated will look like:
   //
@@ -256,6 +257,7 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   }
   // allocate frame (frame_size is also aligned, so stack is still aligned)
   __ subptr(rsp, frame_size);
+  int frame_complete = __ pc() - start;
 
   // we have to always spill args since we need to do a call to get the thread
   // (and maybe attach it).
@@ -388,6 +390,8 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   OptimizedEntryBlob* blob
     = OptimizedEntryBlob::create(name,
                                  &buffer,
+                                 frame_complete,
+                                 frame_size_slots,
                                  exception_handler_offset,
                                  receiver,
                                  in_ByteSize(frame_data_offset));
