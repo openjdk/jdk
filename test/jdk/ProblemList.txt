@@ -690,7 +690,6 @@ sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-all
 javax/swing/JTable/8236907/LastVisibleRow.java 8284619 macosx-all
-javax/swing/JInternalFrame/8146321/JInternalFrameIconTest.java 8284888 macosx-aarch64
 
 ############################################################################
 
