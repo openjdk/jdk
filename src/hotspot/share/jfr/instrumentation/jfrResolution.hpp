@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,16 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @summary Run of ShortResponseBody with -Djdk.httpclient.enableAllMethodRetry
- * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext
- * @build ShortResponseBody
- * @run testng/othervm
- *       -Djdk.httpclient.HttpClient.log=headers,errors,channel
- *       -Djdk.httpclient.enableAllMethodRetry
- *       ShortResponseBody
- */
+#ifndef SHARE_JFR_INSTRUMENTATION_JFRRESOLUTION_HPP
+#define SHARE_JFR_INSTRUMENTATION_JFRRESOLUTION_HPP
+
+#include "memory/allocation.hpp"
+#include "utilities/exceptions.hpp"
+
+class CallInfo;
+class ciKlass;
+class ciMethod;
+class GraphBuilder;
+class Parse;
+
+class JfrResolution : AllStatic {
+ public:
+  static void on_runtime_resolution(const CallInfo & info, TRAPS);
+  static void on_c1_resolution(const GraphBuilder * builder, const ciKlass * holder, const ciMethod * target);
+  static void on_c2_resolution(const Parse * parse, const ciKlass * holder, const ciMethod * target);
+};
+
+#endif // SHARE_JFR_INSTRUMENTATION_JFRRESOLUTION_HPP
+
