@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,16 @@
  * questions.
  */
 
-// key: compiler.err.duplicate.total.pattern
+// key: compiler.err.unconditional.pattern.and.default
 // key: compiler.misc.feature.pattern.switch
 // key: compiler.warn.preview.feature.use.plural
 // options: --enable-preview -source ${jdk.version} -Xlint:preview
 
-class DuplicateTotalPattern {
+class UnconditionalPatternAndDefault {
     private void doSwitch(Object o) {
         switch (o) {
             case Object obj: break;
-            case Object obj: break;
+            default: break;
         }
     }
 }

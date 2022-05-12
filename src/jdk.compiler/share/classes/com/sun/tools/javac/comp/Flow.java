@@ -671,7 +671,7 @@ public class Flow {
                 JCCase c = l.head;
                 for (JCCaseLabel pat : c.labels) {
                     scan(pat);
-                    if (TreeInfo.unrefinedCaseLabel(pat)) {
+                    if (TreeInfo.unguardedCaseLabel(pat)) {
                         handleConstantCaseLabel(constants, pat);
                     }
                 }
@@ -688,7 +688,7 @@ public class Flow {
                                 l.tail.head.pos(),
                                 Warnings.PossibleFallThroughIntoCase);
             }
-            tree.isExhaustive = tree.hasTotalPattern ||
+            tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
                 tree.isExhaustive |= isExhaustive(tree.selector.pos(), tree.selector.type, constants);
@@ -696,7 +696,7 @@ public class Flow {
                     log.error(tree, Errors.NotExhaustiveStatement);
                 }
             }
-            if (!tree.hasTotalPattern) {
+            if (!tree.hasUnconditionalPattern) {
                 alive = Liveness.ALIVE;
             }
             alive = alive.or(resolveBreaks(tree, prevPendingExits));
@@ -714,7 +714,7 @@ public class Flow {
                 JCCase c = l.head;
                 for (JCCaseLabel pat : c.labels) {
                     scan(pat);
-                    if (TreeInfo.unrefinedCaseLabel(pat)) {
+                    if (TreeInfo.unguardedCaseLabel(pat)) {
                         handleConstantCaseLabel(constants, pat);
                     }
                 }
@@ -729,7 +729,7 @@ public class Flow {
                     }
                 }
             }
-            tree.isExhaustive = tree.hasTotalPattern ||
+            tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) ||
                                 isExhaustive(tree.selector.pos(), tree.selector.type, constants);
             if (!tree.isExhaustive) {

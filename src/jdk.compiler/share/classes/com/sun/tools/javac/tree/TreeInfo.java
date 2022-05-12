@@ -1331,7 +1331,7 @@ public class TreeInfo {
                          .anyMatch(l -> TreeInfo.isNull(l));
     }
 
-    public static boolean unrefinedCaseLabel(JCCaseLabel cse) {
+    public static boolean unguardedCaseLabel(JCCaseLabel cse) {
         if (!cse.isPattern()) {
             return true;
         }

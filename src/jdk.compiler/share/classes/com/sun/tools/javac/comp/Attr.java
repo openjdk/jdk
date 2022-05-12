@@ -220,7 +220,7 @@ public class Attr extends JCTree.Visitor {
      */
     private final boolean allowPatternSwitch;
 
-    /** Are total patterns in instanceof allowed
+    /** Are unconditional patterns in instanceof allowed
      */
     private final boolean allowUnconditionalPatternsInstance;
 
@@ -1692,7 +1692,7 @@ public class Attr extends JCTree.Visitor {
             List<Type> coveredTypesForPatterns = List.nil();
             List<Type> coveredTypesForConstants = List.nil();
             boolean hasDefault = false;           // Is there a default label?
-            boolean hasTotalPattern = false;      // Is there a total pattern?
+            boolean hasUnconditionalPattern = false; // Is there a unconditional pattern?
             boolean lastPatternErroneous = false; // Has the last pattern erroneous type?
             boolean hasNullPattern = false;       // Is there a null pattern?
             CaseTree.CaseKind caseKind = null;
@@ -1708,7 +1708,7 @@ public class Attr extends JCTree.Visitor {
                     wasError = true;
                 }
                 MatchBindings currentBindings = prevBindings;
-                boolean wasTotalPattern = hasTotalPattern;
+                boolean wasUnconditionalPattern = hasUnconditionalPattern;
                 for (JCCaseLabel pat : c.labels) {
                     if (pat.isExpression()) {
                         JCExpression expr = (JCExpression) pat;
@@ -1716,7 +1716,7 @@ public class Attr extends JCTree.Visitor {
                             preview.checkSourceLevel(expr.pos(), Feature.CASE_NULL);
                             if (hasNullPattern) {
                                 log.error(pat.pos(), Errors.DuplicateCaseLabel);
-                            } else if (wasTotalPattern) {
+                            } else if (wasUnconditionalPattern) {
                                 log.error(pat.pos(), Errors.PatternDominated);
                             }
                             hasNullPattern = true;
@@ -1769,8 +1769,8 @@ public class Attr extends JCTree.Visitor {
                     } else if (pat.hasTag(DEFAULTCASELABEL)) {
                         if (hasDefault) {
                             log.error(pat.pos(), Errors.DuplicateDefaultLabel);
-                        } else if (hasTotalPattern) {
-                            log.error(pat.pos(), Errors.TotalPatternAndDefault);
+                        } else if (hasUnconditionalPattern) {
+                            log.error(pat.pos(), Errors.UnconditionalPatternAndDefault);
                         }
                         hasDefault = true;
                         matchBindings = MatchBindingsComputer.EMPTY;
@@ -1795,24 +1795,25 @@ public class Attr extends JCTree.Visitor {
                             }
                             matchBindings = matchBindingsComputer.caseGuard(c, afterPattern, matchBindings);
                         }
-                        boolean unconditional = TreeInfo.unrefinedCaseLabel(pat);
-                        boolean isTotal = unconditional &&
-                                          !patternType.isErroneous() &&
-                                          types.isSubtype(types.boxedTypeOrType(types.erasure(seltype)),
-                                                          patternType);
-                        if (isTotal) {
-                            if (hasTotalPattern) {
-                                log.error(pat.pos(), Errors.DuplicateTotalPattern);
+                        boolean unguarded = TreeInfo.unguardedCaseLabel(pat);
+                        boolean unconditional =
+                                unguarded &&
+                                !patternType.isErroneous() &&
+                                types.isSubtype(types.boxedTypeOrType(types.erasure(seltype)),
+                                                patternType);
+                        if (unconditional) {
+                            if (hasUnconditionalPattern) {
+                                log.error(pat.pos(), Errors.DuplicateUnconditionalPattern);
                             } else if (hasDefault) {
-                                log.error(pat.pos(), Errors.TotalPatternAndDefault);
+                                log.error(pat.pos(), Errors.UnconditionalPatternAndDefault);
                             }
-                            hasTotalPattern = true;
+                            hasUnconditionalPattern = true;
                         }
                         lastPatternErroneous = patternType.isErroneous();
                         checkCaseLabelDominated(pat.pos(), coveredTypesForPatterns, patternType);
                         if (!patternType.isErroneous()) {
                             coveredTypesForConstants = coveredTypesForConstants.prepend(patternType);
-                            if (unconditional) {
+                            if (unguarded) {
                                 coveredTypesForPatterns = coveredTypesForPatterns.prepend(patternType);
                             }
                         }
@@ -1839,12 +1840,12 @@ public class Attr extends JCTree.Visitor {
                 chk.checkSwitchCaseStructure(cases);
             }
             if (switchTree.hasTag(SWITCH)) {
-                ((JCSwitch) switchTree).hasTotalPattern =
-                        hasDefault || hasTotalPattern || lastPatternErroneous;
+                ((JCSwitch) switchTree).hasUnconditionalPattern =
+                        hasDefault || hasUnconditionalPattern || lastPatternErroneous;
                 ((JCSwitch) switchTree).patternSwitch = patternSwitch;
             } else if (switchTree.hasTag(SWITCH_EXPRESSION)) {
-                ((JCSwitchExpression) switchTree).hasTotalPattern =
-                        hasDefault || hasTotalPattern || lastPatternErroneous;
+                ((JCSwitchExpression) switchTree).hasUnconditionalPattern =
+                        hasDefault || hasUnconditionalPattern || lastPatternErroneous;
                 ((JCSwitchExpression) switchTree).patternSwitch = patternSwitch;
             } else {
                 Assert.error(switchTree.getTag().name());

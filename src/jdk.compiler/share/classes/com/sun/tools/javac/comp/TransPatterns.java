@@ -256,18 +256,20 @@ public class TransPatterns extends TreeTranslator {
 
     @Override
     public void visitSwitch(JCSwitch tree) {
-        handleSwitch(tree, tree.selector, tree.cases, tree.hasTotalPattern, tree.patternSwitch);
+        handleSwitch(tree, tree.selector, tree.cases,
+                     tree.hasUnconditionalPattern, tree.patternSwitch);
     }
 
     @Override
     public void visitSwitchExpression(JCSwitchExpression tree) {
-        handleSwitch(tree, tree.selector, tree.cases, tree.hasTotalPattern, tree.patternSwitch);
+        handleSwitch(tree, tree.selector, tree.cases,
+                     tree.hasUnconditionalPattern, tree.patternSwitch);
     }
 
     private void handleSwitch(JCTree tree,
                               JCExpression selector,
                               List<JCCase> cases,
-                              boolean hasTotalPattern,
+                              boolean hasUnconditionalPattern,
                               boolean patternSwitch) {
         if (patternSwitch) {
             Type seltype = selector.type.hasTag(BOT)
@@ -426,10 +428,11 @@ public class TransPatterns extends TreeTranslator {
                     if (p.hasTag(Tag.DEFAULTCASELABEL)) {
                         translatedLabels.add(p);
                         hasDefault = true;
-                    } else if (hasTotalPattern && !hasDefault &&
+                    } else if (hasUnconditionalPattern && !hasDefault &&
                                c == lastCase && p.isPattern()) {
-                        //If the switch has total pattern, the last case will contain it.
-                        //Convert the total pattern to default:
+                        //If the switch has unconditional pattern,
+                        //the last case will contain it.
+                        //Convert the unconditional pattern to default:
                         translatedLabels.add(make.DefaultCaseLabel());
                     } else {
                         int value;

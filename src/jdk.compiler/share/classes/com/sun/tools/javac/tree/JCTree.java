@@ -1283,7 +1283,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCCase> cases;
         /** Position of closing brace, optional. */
         public int endpos = Position.NOPOS;
-        public boolean hasTotalPattern;
+        public boolean hasUnconditionalPattern;
         public boolean isExhaustive;
         public boolean patternSwitch;
         public boolean wasEnumSelector;
@@ -1371,7 +1371,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCCase> cases;
         /** Position of closing brace, optional. */
         public int endpos = Position.NOPOS;
-        public boolean hasTotalPattern;
+        public boolean hasUnconditionalPattern;
         public boolean isExhaustive;
         public boolean patternSwitch;
         public boolean wasEnumSelector;
