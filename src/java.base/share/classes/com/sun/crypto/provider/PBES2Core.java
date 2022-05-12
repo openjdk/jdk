@@ -181,7 +181,7 @@ abstract class PBES2Core extends CipherSpi {
             throw new InvalidAlgorithmParameterException(
                     "Iteration count must be a positive number");
         }
-        return iCount == 0? DEFAULT_COUNT : iCount;
+        return iCount == 0 ? DEFAULT_COUNT : iCount;
     }
 
     protected void engineInit(int opmode, Key key,
@@ -197,6 +197,7 @@ abstract class PBES2Core extends CipherSpi {
         char[] passwdChars = null;
         salt = null;
         iCount = 0;
+        ivSpec = null;
 
         PBEKeySpec pbeSpec;
         try {
@@ -241,12 +242,10 @@ abstract class PBES2Core extends CipherSpi {
                     // use default iteration count
                     iCount = DEFAULT_COUNT;
                 }
-                //if (ivSpec == null) { // old behavior always generate
-                    // generate random IV
-                    byte[] ivBytes = new byte[blkSize];
-                    random.nextBytes(ivBytes);
-                    ivSpec = new IvParameterSpec(ivBytes);
-                //}
+                // generate random IV
+                byte[] ivBytes = new byte[blkSize];
+                random.nextBytes(ivBytes);
+                ivSpec = new IvParameterSpec(ivBytes);
             } else {
                 throw new InvalidAlgorithmParameterException
                         ("Wrong parameter type: PBE expected");
