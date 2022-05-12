@@ -34,18 +34,12 @@
 class CallInfo;
 class ciKlass;
 class ciMethod;
+class GraphBuilder;
 class JavaThread;
 class Klass;
 class outputStream;
-class Thread;
-
-#ifdef COMPILER1
-class GraphBuilder;
-#endif
-
-#ifdef COMPILER2
 class Parse;
-#endif
+class Thread;
 
 extern "C" void JNICALL jfr_register_natives(JNIEnv*, jclass);
 
@@ -67,12 +61,8 @@ class Jfr : AllStatic {
   static void on_thread_start(Thread* thread);
   static void on_thread_exit(Thread* thread);
   static void on_resolution(const CallInfo& info, TRAPS);
-#ifdef COMPILER2
   static void on_resolution(const Parse* parse, const ciKlass* holder, const ciMethod* target);
-#endif
-#ifdef COMPILER1
   static void on_resolution(const GraphBuilder* builder, const ciKlass* holder, const ciMethod* target);
-#endif
   static void on_java_thread_start(JavaThread* starter, JavaThread* startee);
   static void on_set_current_thread(JavaThread* jt, oop thread);
   static void on_vm_shutdown(bool exception_handler = false);
