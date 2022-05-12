@@ -603,6 +603,7 @@ li.result-item {
 ul.ui-autocomplete {
     position:fixed;
     z-index:1;
+    background-color: #FFFFFF;
 }
 ul.ui-autocomplete li {
     float:left;
