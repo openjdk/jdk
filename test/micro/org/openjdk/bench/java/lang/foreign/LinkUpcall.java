@@ -32,7 +32,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
@@ -50,7 +50,7 @@ import static java.lang.invoke.MethodHandles.lookup;
 @Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
 public class LinkUpcall extends CLayouts {
 
-    static final CLinker LINKER = CLinker.systemCLinker();
+    static final Linker LINKER = Linker.nativeLinker();
     static final MethodHandle BLANK;
     static final FunctionDescriptor BLANK_DESC = FunctionDescriptor.ofVoid();
 
