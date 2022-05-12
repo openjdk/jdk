@@ -157,13 +157,18 @@ class name com/sun/jdi/MonitorInfo
 header extends java/lang/Object implements com/sun/jdi/Mirror flags 601
 
 class name com/sun/jdi/NativeMethodException
-header extends java/lang/RuntimeException flags 21
+header extends com/sun/jdi/OpaqueFrameException flags 21
 
 class name com/sun/jdi/ObjectCollectedException
 header extends java/lang/RuntimeException flags 21
 
 class name com/sun/jdi/ObjectReference
 header extends java/lang/Object implements com/sun/jdi/Value flags 601
+
+class name com/sun/jdi/OpaqueFrameException
+header extends java/lang/RuntimeException sealed true flags 21
+method name <init> descriptor ()V flags 1
+method name <init> descriptor (Ljava/lang/String;)V flags 1
 
 class name com/sun/jdi/PathSearchingVirtualMachine
 header extends java/lang/Object implements com/sun/jdi/VirtualMachine flags 601
@@ -194,6 +199,7 @@ header extends java/lang/Object implements com/sun/jdi/ObjectReference flags 601
 
 class name com/sun/jdi/ThreadReference
 header extends java/lang/Object implements com/sun/jdi/ObjectReference flags 601
+method name isVirtual descriptor ()Z flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VIRTUAL_THREADS;)
 
 class name com/sun/jdi/Type
 header extends java/lang/Object implements com/sun/jdi/Mirror flags 601
@@ -383,9 +389,11 @@ header extends java/lang/Object implements com/sun/jdi/request/EventRequest flag
 
 class name com/sun/jdi/request/ThreadDeathRequest
 header extends java/lang/Object implements com/sun/jdi/request/EventRequest flags 601
+method name addPlatformThreadsOnlyFilter descriptor ()V flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VIRTUAL_THREADS;)
 
 class name com/sun/jdi/request/ThreadStartRequest
 header extends java/lang/Object implements com/sun/jdi/request/EventRequest flags 601
+method name addPlatformThreadsOnlyFilter descriptor ()V flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VIRTUAL_THREADS;)
 
 class name com/sun/jdi/request/VMDeathRequest
 header extends java/lang/Object implements com/sun/jdi/request/EventRequest flags 601
