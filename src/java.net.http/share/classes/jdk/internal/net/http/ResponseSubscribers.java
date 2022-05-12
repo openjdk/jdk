@@ -502,7 +502,7 @@ public class ResponseSubscribers {
             // don't attempt to read more than what is available
             // in the current buffer.
             int read = Math.min(buffer.remaining(), len);
-            assert read > 0 && read <= buffer.remaining();
+            assert read >= 0 && read <= buffer.remaining();
 
             // buffer.get() will do the boundary check for us.
             buffer.get(bytes, off, read);
