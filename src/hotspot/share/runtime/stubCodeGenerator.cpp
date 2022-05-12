@@ -69,7 +69,7 @@ void StubCodeDesc::print() const { print_on(tty); }
 // Implementation of StubCodeGenerator
 
 StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, bool print_code) {
-  _masm = new MacroAssembler(code );
+  _masm = new MacroAssembler(code);
   _print_code = PrintStubCode || print_code;
 }
 
