@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,10 @@ package jdk.jfr.internal.instrument;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import jdk.jfr.events.Handlers;
-import jdk.jfr.internal.handlers.EventHandler;
+import jdk.jfr.events.EventConfigurations;
+import jdk.jfr.events.ErrorThrownEvent;
+import jdk.jfr.events.ExceptionThrownEvent;
+import jdk.jfr.internal.event.EventConfiguration;
 
 public final class ThrowableTracer {
 
@@ -38,24 +40,24 @@ public final class ThrowableTracer {
         if (e instanceof OutOfMemoryError) {
             return;
         }
-        long timestamp = EventHandler.timestamp();
+        long timestamp = EventConfiguration.timestamp();
 
-        EventHandler h1 = Handlers.ERROR_THROWN;
-        if (h1.isEnabled()) {
-            h1.write(timestamp, 0L, message, e.getClass());
+        EventConfiguration eventConfiguration1 = EventConfigurations.ERROR_THROWN;
+        if (eventConfiguration1.isEnabled()) {
+            ErrorThrownEvent.commit(timestamp, 0L, message, e.getClass());
         }
-        EventHandler h2 = Handlers.EXCEPTION_THROWN;
-        if (h2.isEnabled()) {
-            h2.write(timestamp, 0L, message, e.getClass());
+        EventConfiguration eventConfiguration2 = EventConfigurations.EXCEPTION_THROWN;
+        if (eventConfiguration2.isEnabled()) {
+            ExceptionThrownEvent.commit(timestamp, 0L, message, e.getClass());
         }
         numThrowables.incrementAndGet();
     }
 
     public static void traceThrowable(Throwable t, String message) {
-        EventHandler h = Handlers.EXCEPTION_THROWN;
-        if (h.isEnabled()) {
-            long timestamp = EventHandler.timestamp();
-            h.write(timestamp, 0L, message, t.getClass());
+        EventConfiguration eventConfiguration = EventConfigurations.EXCEPTION_THROWN;
+        if (eventConfiguration.isEnabled()) {
+            long timestamp = EventConfiguration.timestamp();
+            ExceptionThrownEvent.commit(timestamp, 0L, message, t.getClass());
         }
         numThrowables.incrementAndGet();
     }

@@ -40,6 +40,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -365,8 +366,16 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
         TosState state,
         address runtime_entry) {
   address entry = __ pc();
+
+  const Register rthread = NOT_LP64(rcx) LP64_ONLY(r15_thread);
+
   __ push(state);
+  NOT_LP64(__ get_thread(rthread);)
+  __ push_cont_fastpath(rthread);
   __ call_VM(noreg, runtime_entry);
+  NOT_LP64(__ get_thread(rthread);)
+  __ pop_cont_fastpath(rthread);
+
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
 }
@@ -599,6 +608,10 @@ void TemplateInterpreterGenerator::lock_method() {
   const Register lockreg = NOT_LP64(rdx) LP64_ONLY(c_rarg1);
   __ movptr(lockreg, rsp); // object address
   __ lock_object(lockreg);
+
+  Register rthread = NOT_LP64(rax) LP64_ONLY(r15_thread);
+  NOT_LP64(__ get_thread(rthread);)
+  __ inc_held_monitor_count(rthread);
 }
 
 // Generate a fixed interpreter frame. This is identical setup for
@@ -649,6 +662,29 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 }
 
 // End of helpers
+
+address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
+  if (!Continuations::enabled()) return nullptr;
+
+#ifdef _LP64
+  address entry = __ pc();
+  assert(StubRoutines::cont_doYield() != NULL, "stub not yet generated");
+
+  // __ movl(c_rarg1, Address(rsp, wordSize)); // scopes
+  const Register thread1 = NOT_LP64(rdi) LP64_ONLY(r15_thread);
+  NOT_LP64(__ get_thread(thread1));
+  __ push_cont_fastpath(thread1);
+
+  __ jump(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::cont_doYield())));
+  // return value is in rax
+
+  return entry;
+#else
+  // Not implemented. Allow startup of legacy Java code that does not touch
+  // Continuation.doYield yet. Throw AbstractMethodError on access.
+  return generate_abstract_entry();
+#endif
+}
 
 // Method entry for java.lang.ref.Reference.get.
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
@@ -1243,6 +1279,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
       __ bind(unlock);
       __ unlock_object(regmon);
+      NOT_LP64(__ get_thread(thread);)
+      __ dec_held_monitor_count(thread);
     }
     __ bind(L);
   }
@@ -1311,7 +1349,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
   // ebx: Method*
-  // rbcp: sender sp
+  // rbcp: sender sp (set in InterpreterMacroAssembler::prepare_to_jump_from_interpreted / generate_call_stub)
   address entry_point = __ pc();
 
   const Address constMethod(rbx, Method::const_offset());
