@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,16 @@
 
 /*
  * @test
+ * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestIllegalLink
  */
 
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.NativeSymbol;
-import jdk.incubator.foreign.ResourceScope;
+import java.lang.foreign.Addressable;
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -42,8 +42,8 @@ import static org.testng.Assert.fail;
 
 public class TestIllegalLink extends NativeTestHelper {
 
-    private static final NativeSymbol DUMMY_TARGET = NativeSymbol.ofAddress("dummy", MemoryAddress.ofLong(1), ResourceScope.globalScope());
-    private static final CLinker ABI = CLinker.systemCLinker();
+    private static final Addressable DUMMY_TARGET = MemoryAddress.ofLong(1);
+    private static final Linker ABI = Linker.nativeLinker();
 
     @Test(dataProvider = "types")
     public void testTypeMismatch(FunctionDescriptor desc, String expectedExceptionMessage) {
@@ -67,12 +67,12 @@ public class TestIllegalLink extends NativeTestHelper {
                 "Unsupported layout: x64"
             },
             {
-                    FunctionDescriptor.of(MemoryLayout.sequenceLayout(C_INT)),
-                    "Unsupported layout: [:b32]"
+                    FunctionDescriptor.of(MemoryLayout.sequenceLayout(2, C_INT)),
+                    "Unsupported layout: [2:i32]"
             },
             {
-                    FunctionDescriptor.ofVoid(MemoryLayout.sequenceLayout(C_INT)),
-                    "Unsupported layout: [:b32]"
+                    FunctionDescriptor.ofVoid(MemoryLayout.sequenceLayout(2, C_INT)),
+                    "Unsupported layout: [2:i32]"
             },
         };
     }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,19 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng TestSegmentOffset
  */
 
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntFunction;
 import static java.lang.System.out;
-import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static org.testng.Assert.*;
 
 public class TestSegmentOffset {
@@ -78,7 +79,7 @@ public class TestSegmentOffset {
     static class SegmentSlice {
 
         enum Kind {
-            NATIVE(i -> MemorySegment.allocateNative(i, ResourceScope.newConfinedScope())),
+            NATIVE(i -> MemorySegment.allocateNative(i, MemorySession.openConfined())),
             ARRAY(i -> MemorySegment.ofArray(new byte[i]));
 
             final IntFunction<MemorySegment> segmentFactory;
