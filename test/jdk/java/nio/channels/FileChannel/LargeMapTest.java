@@ -21,8 +21,8 @@
  * questions.
  */
 
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,11 +30,11 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
+import static java.nio.file.StandardOpenOption.*;
 
 /*
  * @test
  * @enablePreview
- * @modules jdk.incubator.foreign
  * @bug 8286637
  * @requires os.family == "windows"
  * @summary Ensure that memory mapping beyond 32-bit range does not cause an
@@ -61,18 +61,20 @@ public class LargeMapTest {
         long offset = OFFSET;
         ByteBuffer bb = ByteBuffer.allocateDirect(BUFSIZ);
 
-        MemorySegment mbb = MemorySegment.ofByteBuffer(bb);
-        MemorySegment mappedMemorySegment = MemorySegment.mapFile(p, 0,
-            p.toFile().length(), FileChannel.MapMode.READ_WRITE,
-            ResourceScope.newSharedScope());
+        try (FileChannel fc = FileChannel.open(p, READ, WRITE);) {
+            MemorySegment mbb = MemorySegment.ofByteBuffer(bb);
+            MemorySegment mappedMemorySegment =
+                fc.map(FileChannel.MapMode.READ_WRITE, 0, p.toFile().length(),
+                       MemorySession.openImplicit());
 
-        final int interval = BUFSIZ*1000;
-        while (offset < LENGTH) {
-            if (offset % interval == 0)
-                System.out.println("offset: " + offset);
-            MemorySegment target = mappedMemorySegment.asSlice(offset, BUFSIZ);
-            offset = offset + BUFSIZ;
-            target.copyFrom(mbb);
+            final int interval = BUFSIZ*1000;
+            while (offset < LENGTH) {
+                if (offset % interval == 0)
+                    System.out.println("offset: " + offset);
+                MemorySegment target = mappedMemorySegment.asSlice(offset, BUFSIZ);
+                offset = offset + BUFSIZ;
+                target.copyFrom(mbb);
+            }
         }
     }
 }
