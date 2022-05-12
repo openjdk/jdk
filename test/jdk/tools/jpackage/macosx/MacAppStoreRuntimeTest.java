@@ -32,6 +32,7 @@ import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Annotations.Parameter;
 
 
 /**
@@ -86,18 +87,16 @@ public class MacAppStoreRuntimeTest {
     }
 
     @Test
-    public static void test() throws Exception {
+    @Parameter("true")
+    @Parameter("false")
+    public static void test(boolean stripNativeCommands) throws Exception {
         JPackageCommand cmd = JPackageCommand.helloAppImage();
-        cmd.addArguments("--mac-app-store", "--runtime-image", getRuntimeImage(true));
+        cmd.addArguments("--mac-app-store", "--runtime-image", getRuntimeImage(stripNativeCommands));
 
-        cmd.executeAndAssertHelloAppImageCreated();
-    }
-
-    @Test
-    public static void test2() throws Exception {
-        JPackageCommand cmd = JPackageCommand.helloAppImage();
-        cmd.addArguments("--mac-app-store", "--runtime-image", getRuntimeImage(false));
-
-        cmd.execute(1);
+        if (stripNativeCommands) {
+            cmd.executeAndAssertHelloAppImageCreated();
+        } else {
+            cmd.execute(1);
+        }
     }
 }

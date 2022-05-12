@@ -45,7 +45,7 @@ import jdk.jpackage.test.Annotations.Test;
 public class MacAppStoreJLinkOptionsTest {
 
     @Test
-    public static void test() throws Exception {
+    public static void testWithStripNativeCommands() throws Exception {
         JPackageCommand cmd = JPackageCommand.helloAppImage();
         cmd.addArguments("--mac-app-store", "--jlink-options",
                 "--strip-debug --no-man-pages --no-header-files --strip-native-commands");
@@ -54,7 +54,7 @@ public class MacAppStoreJLinkOptionsTest {
     }
 
     @Test
-    public static void test2() throws Exception {
+    public static void testWithoutStripNativeCommands() throws Exception {
         JPackageCommand cmd = JPackageCommand.helloAppImage();
         cmd.addArguments("--mac-app-store", "--jlink-options",
                 "--strip-debug --no-man-pages --no-header-files");
