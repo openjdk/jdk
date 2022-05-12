@@ -3062,7 +3062,9 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   jcc(Assembler::equal, END);
 
   // cnt1 /= elsize
-  shrl(cnt1, Address::times(elsize));
+  if (Address::times(elsize) != 0) {
+    shrl(cnt1, Address::times(elsize));
+  }
 
   // } else if (cnt1 < 32) {
   bind(SHORT);
@@ -3100,7 +3102,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   // i < cnt1;
   cmpl(i, cnt1);
   jcc(Assembler::greaterEqual, SHORT_SCALAR_LOOP_END);
-  // h = h << 5 - 31;
+  // h = h << 5 - h;
   movl(tmp, result);
   shll(result, 5);
   subl(result, tmp);
@@ -3160,11 +3162,10 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   // int i = cnt1 - 1;
   movl(i, cnt1);
   subl(i, 1);
-  // bound = cnt1 - (cnt1 & (32-1));
+  // bound = cnt1 & ~(32-1);
   bound = cnt1;
-  movl(tmp, cnt1);
-  andl(tmp, 32-1);
-  subl(bound, tmp);
+  movl(bound, cnt1);
+  andl(bound, ~(32-1));
 
   if (!is_string_hashcode) {
     // result = 0;
@@ -3189,15 +3190,12 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
   bind(LONG_SCALAR_LOOP_END);
   // }
 
-  movl(tmp, 0);
   for (int idx = 0; idx < 4; idx++) {
     // vresult = IntVector.zero(I256);
-    movdl(vresult[idx], tmp);
-    vpbroadcastd(vresult[idx], vresult[idx], Assembler::AVX_256bit);
+    vpxor(vresult[idx], vresult[idx]);
   }
   // vnext = IntVector.broadcast(I256, power_of_31_backwards[0]);
-  lea(tmp, InternalAddress(power_of_31_backwards+(0*sizeof(jint))));
-  movdl(vnext, tmp);
+  movdl(vnext, InternalAddress(power_of_31_backwards+(0*sizeof(jint))));
   vpbroadcastd(vnext, vnext, Assembler::AVX_256bit);
   // vcoef = IntVector.fromArray(I256, power_of_31_backwards, 1);
   for (int idx = 0; idx < 4; idx++) {
@@ -3210,13 +3208,10 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
     vpmulld(vcoef[idx], vcoef[idx], vtmp0, Assembler::AVX_256bit);
   }
 
-  // for (i &= ~(32-1); i >= 0; i -= 32) {
-  // i &= ~(32-1);
-  andl(i, ~(32-1));
+  // for (i &= ~(8*4-1); i >= 0; i -= 8*4) {
+  // i &= ~(8*4-1);
+  andl(i, ~(8*4-1));
   bind(LONG_VECTOR_LOOP_BEGIN);
-  // i >= 0;
-  cmpl(i, 0);
-  jcc(Assembler::less, LONG_VECTOR_LOOP_END);
   // loop fission to upfront the cost of fetching from memory, OOO execution
   // can then hopefully do a better job of prefetching
   for (int idx = 0; idx < 4; idx++) {
@@ -3229,10 +3224,11 @@ void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register r
     vpaddd(vresult[idx], vresult[idx], vtmp[idx], Assembler::AVX_256bit);
     vpmulld(vcoef[idx], vcoef[idx], vnext, Assembler::AVX_256bit);
   }
-  // i -= 32;
-  subl(i, 32);
-  jmp(LONG_VECTOR_LOOP_BEGIN);
-  bind(LONG_VECTOR_LOOP_END);
+  // i -= 8*4;
+  subl(i, 8*4);
+  // i >= 0;
+  cmpl(i, 0);
+  jcc(Assembler::greaterEqual, LONG_VECTOR_LOOP_BEGIN);
   // }
 
   if (!is_string_hashcode) {
