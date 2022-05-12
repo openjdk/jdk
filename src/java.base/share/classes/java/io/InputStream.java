@@ -173,9 +173,6 @@ public abstract class InputStream implements Closeable {
      * blocks until input data is available, the end of the stream is detected,
      * or an exception is thrown.
      *
-     * @apiNote
-     * A subclass must provide an implementation of this method.
-     *
      * @return     the next byte of data, or {@code -1} if the end of the
      *             stream is reached.
      * @throws     IOException  if an I/O error occurs.
@@ -684,8 +681,7 @@ public abstract class InputStream implements Closeable {
      * <p> Marking a closed stream should not have any effect on the stream.
      *
      * @implSpec
-     * The {@code mark} method of {@code InputStream} does
-     * nothing.
+     * The {@code mark} method of {@code InputStream} does nothing.
      *
      * @param   readlimit   the maximum limit of bytes that can be read before
      *                      the mark position becomes invalid.

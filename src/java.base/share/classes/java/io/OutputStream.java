@@ -103,10 +103,6 @@ public abstract class OutputStream implements Closeable, Flushable {
      * low-order bits of the argument {@code b}. The 24
      * high-order bits of {@code b} are ignored.
      *
-     * @apiNote
-     * Subclasses of {@code OutputStream} must provide an
-     * implementation for this method.
-     *
      * @param      b   the {@code byte}.
      * @throws     IOException  if an I/O error occurs. In particular,
      *             an {@code IOException} may be thrown if the
@@ -148,7 +144,10 @@ public abstract class OutputStream implements Closeable, Flushable {
      * @implSpec
      * The {@code write} method of {@code OutputStream} calls
      * the write method of one argument on each of the bytes to be
-     * written out. Subclasses are encouraged to override this method and
+     * written out.
+     *
+     * @apiNote
+     * Subclasses are encouraged to override this method and
      * provide a more efficient implementation.
      *
      * @param      b     the data.
