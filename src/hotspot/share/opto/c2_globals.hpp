@@ -411,7 +411,7 @@
           "Set level of loop optimization for tier 1 compiles")             \
           range(5, 43)                                                      \
                                                                             \
-  develop(bool, AggressiveLivenessForUnstableIf, true,                      \
+  product(bool, AggressiveLivenessForUnstableIf, true, DIAGNOSTIC,          \
           "Use aggressive liveness for UnstableIf traps")                   \
                                                                             \
   /* controls for heat-based inlining */                                    \
