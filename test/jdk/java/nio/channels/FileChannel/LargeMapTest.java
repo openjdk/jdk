@@ -33,12 +33,16 @@ import java.nio.file.Path;
 
 /*
  * @test
+ * @enablePreview
+ * @modules jdk.incubator.foreign
  * @bug 8286637
  * @requires os.family == "windows"
  * @summary Ensure that memory mapping beyond 32-bit range does not cause an
  *          EXCEPTION_ACCESS_VIOLATION.
+ * @run main/othervm LargeMapTest
  */
 public class LargeMapTest {
+    private static final String FILE = "test.dat";
     private static final long LENGTH = 8000000000L;
     private static final long OFFSET = 3704800000L;
     private static final int  BUFSIZ = 100000;
@@ -48,12 +52,11 @@ public class LargeMapTest {
         System.out.println(System.getProperty("os.arch"));
         System.out.println(System.getProperty("java.version"));
 
-        Path p = Path.of("test.dat");
-        RandomAccessFile raf = new RandomAccessFile("test.dat", "rw");
-        raf.setLength(LENGTH); //~8gb
-        raf.close();
+        Path p = Path.of(FILE);
         p.toFile().deleteOnExit();
-
+        try (RandomAccessFile raf = new RandomAccessFile(FILE, "rw");) {
+            raf.setLength(LENGTH); //~8gb
+        }
 
         long offset = OFFSET;
         ByteBuffer bb = ByteBuffer.allocateDirect(BUFSIZ);
@@ -63,8 +66,10 @@ public class LargeMapTest {
             p.toFile().length(), FileChannel.MapMode.READ_WRITE,
             ResourceScope.newSharedScope());
 
+        final int interval = BUFSIZ*1000;
         while (offset < LENGTH) {
-            System.out.println("offset: " + offset);
+            if (offset % interval == 0)
+                System.out.println("offset: " + offset);
             MemorySegment target = mappedMemorySegment.asSlice(offset, BUFSIZ);
             offset = offset + BUFSIZ;
             target.copyFrom(mbb);
