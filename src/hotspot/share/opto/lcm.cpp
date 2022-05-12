@@ -331,7 +331,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
        // mach use (faulting) trying to hoist
        // n might be blocker to hoisting
        // This assert ensures that the following code should be run
-       assert(mb != block, "mb should be distinct from block"); 
+       assert(mb != block, "mb should be distinct from block");
        uint k;
        uint num_nodes = mb->number_of_nodes();
        for (k = 1; k < num_nodes; k++) {
