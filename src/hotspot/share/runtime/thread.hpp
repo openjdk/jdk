@@ -843,9 +843,6 @@ class JavaThread: public Thread {
   bool has_async_exception_condition(bool ThreadDeath_only = false);
   inline void set_pending_unsafe_access_error();
   static void send_async_exception(JavaThread* jt, oop java_throwable);
-  inline bool async_exceptions_blocked();
-  inline void block_async_exceptions();
-  inline void unblock_async_exceptions();
 
   class NoAsyncExceptionDeliveryMark : public StackObj {
     friend JavaThread;

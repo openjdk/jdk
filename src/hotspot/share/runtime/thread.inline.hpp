@@ -187,24 +187,12 @@ inline bool JavaThread::has_async_exception_condition(bool ThreadDeath_only) {
   return handshake_state()->has_async_exception_operation(ThreadDeath_only);
 }
 
-inline bool JavaThread::async_exceptions_blocked() {
-  return handshake_state()->async_exceptions_blocked();
-}
-
-inline void JavaThread::block_async_exceptions() {
-  handshake_state()->set_async_exceptions_blocked(true);
-}
-
-inline void JavaThread::unblock_async_exceptions() {
-  handshake_state()->set_async_exceptions_blocked(false);
-}
-
 inline JavaThread::NoAsyncExceptionDeliveryMark::NoAsyncExceptionDeliveryMark(JavaThread *t) : _target(t) {
-  assert(!_target->async_exceptions_blocked(), "Nesting is not supported");
-  _target->block_async_exceptions();
+  assert(!_target->handshake_state()->async_exceptions_blocked(), "Nesting is not supported");
+  _target->handshake_state()->set_async_exceptions_blocked(true);
 }
 inline JavaThread::NoAsyncExceptionDeliveryMark::~NoAsyncExceptionDeliveryMark() {
-  _target->unblock_async_exceptions();
+  _target->handshake_state()->set_async_exceptions_blocked(false);
 }
 
 inline JavaThreadState JavaThread::thread_state() const    {
