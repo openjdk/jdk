@@ -34,13 +34,13 @@ import jdk.internal.platform.Metrics;
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.platform
  * @library /test/lib
- * @build sun.hotspot.WhiteBox PrintContainerInfo
+ * @build sun.hotspot.WhiteBox PrintContainerInfo CheckOperatingSystemMXBean
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run main TestMemoryWithCgroupV1
  */
 public class TestMemoryWithCgroupV1 {
 
-    private static final String imageName = Common.imageName("misc");
+    private static final String imageName = Common.imageName("memory");
 
     public static void main(String[] args) throws Exception {
         // If cgroups is not configured, report success.
@@ -58,7 +58,10 @@ public class TestMemoryWithCgroupV1 {
             DockerTestUtils.buildJdkContainerImage(imageName);
 
             try {
-                testMemoryLimitWithSwappiness("100M", "150M");
+                testMemoryLimitWithSwappiness("100M", "150M", "100.00M",
+                        Integer.toString(((int) Math.pow(2, 20)) * 150),
+                        Integer.toString(((int) Math.pow(2, 20)) * 100));
+                testOperatingSystemMXBeanAwareness("200m", "250m", "0", "0");
             } finally {
                 DockerTestUtils.removeDockerImage(imageName);
             }
@@ -68,7 +71,8 @@ public class TestMemoryWithCgroupV1 {
         System.out.println("TEST PASSED!!!");
     }
 
-    private static void testMemoryLimitWithSwappiness(String dockerMemLimit, String dockerSwapMemLimit)
+    private static void testMemoryLimitWithSwappiness(String dockerMemLimit, String dockerSwapMemLimit,
+            String expectedLimit, String expectedReadLimit, String expectedResetLimit)
             throws Exception {
         Common.logNewTestCase("Test print_container_info()");
 
@@ -77,9 +81,34 @@ public class TestMemoryWithCgroupV1 {
         Common.addWhiteBoxOpts(opts);
 
         OutputAnalyzer out = Common.run(opts);
-        out.shouldContain("Memory and Swap Limit is: 157286400")
-           .shouldContain("Memory and Swap Limit has been reset to 104857600 because swappiness is 0")
-           .shouldContain("Memory & Swap Limit: 100.00M");
+        out.shouldContain("Memory and Swap Limit is: " + expectedReadLimit)
+                .shouldContain(
+                        "Memory and Swap Limit has been reset to " + expectedResetLimit + " because swappiness is 0")
+                .shouldContain("Memory & Swap Limit: " + expectedLimit);
+    }
+
+    private static void testOperatingSystemMXBeanAwareness(String memoryAllocation, String swapAllocation,
+            String swappiness, String expectedSwap) throws Exception {
+        Common.logNewTestCase("Check OperatingSystemMXBean");
+        DockerRunOptions opts = Common.newOpts(imageName, "CheckOperatingSystemMXBean")
+                .addDockerOpts(
+                        "--memory", memoryAllocation,
+                        "--memory-swappiness", swappiness,
+                        "--memory-swap", swapAllocation)
+                // CheckOperatingSystemMXBean uses Metrics (jdk.internal.platform) for
+                // diagnostics
+                .addJavaOpts("--add-exports")
+                .addJavaOpts("java.base/jdk.internal.platform=ALL-UNNAMED");
+        OutputAnalyzer out = DockerTestUtils.dockerRunJava(opts);
+        // in case of warnings like : "Your kernel does not support swap limit
+        // capabilities or the cgroup is not mounted. Memory limited without swap."
+        // the getTotalSwapSpaceSize and getFreeSwapSpaceSize return the system
+        // values as the container setup isn't supported in that case.
+        try {
+            out.shouldContain("OperatingSystemMXBean.getTotalSwapSpaceSize: " + expectedSwap);
+        } catch (RuntimeException ex) {
+            out.shouldMatch("OperatingSystemMXBean.getTotalSwapSpaceSize: [0-9]+");
+        }
     }
 
 }
