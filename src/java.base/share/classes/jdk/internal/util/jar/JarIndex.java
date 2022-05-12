@@ -32,7 +32,7 @@ import java.util.*;
 import java.util.jar.*;
 import java.util.zip.*;
 
-import static sun.security.action.GetBooleanAction.privilegedGetProperty;
+import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
 /**
  * This class is used to maintain mappings from packages, classes
@@ -76,7 +76,7 @@ public class JarIndex {
      * be added to the index. Otherwise, just the directory names are added.
      */
     private static final boolean metaInfFilenames =
-        privilegedGetProperty("sun.misc.JarIndex.metaInfFilenames");
+        "true".equals(privilegedGetProperty("sun.misc.JarIndex.metaInfFilenames"));
 
     /**
      * Constructs a new, empty jar index.
