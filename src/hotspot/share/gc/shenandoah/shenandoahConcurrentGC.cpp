@@ -1140,6 +1140,24 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
     heap->verifier()->verify_roots_in_to_space();
   }
 
+  if (heap->mode()->is_generational() && heap->is_concurrent_old_mark_in_progress()) {
+    // When the SATB barrier is left on to support concurrent old gen mark, it may pick up writes to
+    // objects in the collection set. After those objects are evacuated, the pointers in the
+    // SATB are no longer safe. Once we have finished update references, we are guaranteed that
+    // no more writes to the collection set are possible.
+    //
+    // This will transfer any old pointers in _active_ regions from the SATB to the old gen
+    // mark queues. All other pointers will be discarded. This would also discard any pointers
+    // in old regions that were included in a mixed evacuation. We aren't using the SATB filter
+    // methods here because we cannot control when they execute. If the SATB filter runs _after_
+    // a region has been recycled, we will not be able to detect the bad pointer.
+    //
+    // We are not concerned about skipping this step in abbreviated cycles because regions
+    // with no live objects cannot have been written to and so cannot have entries in the SATB
+    // buffers.
+    heap->transfer_old_pointers_from_satb();
+  }
+
   heap->update_heap_region_states(true /*concurrent*/);
 
   heap->set_update_refs_in_progress(false);
