@@ -656,15 +656,14 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
 
 
 //----------------------------PreserveJVMState---------------------------------
-PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map, bool recover_bci) {
+PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map) {
   debug_only(kit->verify_map());
   _kit    = kit;
   _map    = kit->map();   // preserve the map
   _sp     = kit->sp();
-  _bci    = kit->bci();
-  _recover_bci = recover_bci;
   kit->set_map(clone_map ? kit->clone_map() : NULL);
 #ifdef ASSERT
+  _bci    = kit->bci();
   Parse* parser = kit->is_Parse();
   int block = (parser == NULL || parser->block() == NULL) ? -1 : parser->block()->rpo();
   _block  = block;
@@ -673,14 +672,11 @@ PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map, bool recover_b
 PreserveJVMState::~PreserveJVMState() {
   GraphKit* kit = _kit;
 #ifdef ASSERT
-  assert(_recover_bci || kit->bci() == _bci, "bci must not shift");
+  assert(kit->bci() == _bci, "bci must not shift");
   Parse* parser = kit->is_Parse();
   int block = (parser == NULL || parser->block() == NULL) ? -1 : parser->block()->rpo();
   assert(block == _block,    "block must not shift");
 #endif
-  if (_recover_bci) {
-    kit->set_bci(_bci);
-  }
   kit->set_map(_map);
   kit->set_sp(_sp);
 }

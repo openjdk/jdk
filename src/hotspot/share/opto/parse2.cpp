@@ -1398,7 +1398,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   IfNode *iff = create_and_xform_if( control(), tst, prob, cnt );
   assert(iff->_prob > 0.0f,"Optimizer made bad probability in parser");
   // True branch
-  { PreserveJVMState pjvms(this, true, true/*recover_bci*/);
+  { PreserveJVMState pjvms(this);
     Node* iftrue  = _gvn.transform( new IfTrueNode (iff) );
     set_control(iftrue);
 
@@ -1512,7 +1512,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   }
 
   // Branch is taken:
-  { PreserveJVMState pjvms(this, true, true/*recover_bci*/);
+  { PreserveJVMState pjvms(this);
     taken_branch = _gvn.transform(taken_branch);
     set_control(taken_branch);
 
