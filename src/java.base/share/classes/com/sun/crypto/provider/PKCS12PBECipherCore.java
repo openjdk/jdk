@@ -310,11 +310,11 @@ final class PKCS12PBECipherCore {
             Arrays.fill(derivedKey, (byte)0);
 
             return switch (algo) {
-                case "RC4"-> new KeyAndIv(cipherKey, null);
-                case "RC2", "DESede"-> new KeyAndIv(cipherKey,
+                case "RC4" -> new KeyAndIv(cipherKey, null);
+                case "RC2", "DESede" -> new KeyAndIv(cipherKey,
                     new IvParameterSpec(derive(passwdChars, salt, iCount, 8,
                             CIPHER_IV)));
-                default->
+                default ->
                     throw new ProviderException("Unsupported cipher impl: "
                             + algo);
             };
