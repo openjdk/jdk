@@ -68,7 +68,9 @@ public final class QuickHuffman {
         // is code on 5 bits which means casting to int here is safe: the
         // returned value is expected to be in the range (5..30) and will
         // never be negative.
-        return (int) (codes[c] & 0x00000000ffffffffL);
+        int len = (int) (codes[c] & 0x00000000ffffffffL);
+        assert len >= 0;
+        return len;
     }
 
     private static final int EOS_LENGTH = 30;
@@ -737,7 +739,6 @@ public final class QuickHuffman {
                         throw new IllegalArgumentException("char=" + ((int) c));
                     }
                     int len = codeLengthOf(c);
-                    assert len >= 0;
                     if (bufferLen + len <= 64) {
                         buffer |= (codeValueOf(c) >>> bufferLen); // append
                         bufferLen += len;
