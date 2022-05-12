@@ -61,7 +61,7 @@ public class TestMemoryWithCgroupV1 {
                 testMemoryLimitWithSwappiness("100M", "150M", "100.00M",
                         Integer.toString(((int) Math.pow(2, 20)) * 150),
                         Integer.toString(((int) Math.pow(2, 20)) * 100));
-                testOperatingSystemMXBeanAwareness("200m", "250m", "0", "0");
+                testOSBeanSwappinessMemory("200m", "250m", "0", "0");
             } finally {
                 DockerTestUtils.removeDockerImage(imageName);
             }
@@ -87,7 +87,7 @@ public class TestMemoryWithCgroupV1 {
                 .shouldContain("Memory & Swap Limit: " + expectedLimit);
     }
 
-    private static void testOperatingSystemMXBeanAwareness(String memoryAllocation, String swapAllocation,
+    private static void testOSBeanSwappinessMemory(String memoryAllocation, String swapAllocation,
             String swappiness, String expectedSwap) throws Exception {
         Common.logNewTestCase("Check OperatingSystemMXBean");
         DockerRunOptions opts = Common.newOpts(imageName, "CheckOperatingSystemMXBean")
