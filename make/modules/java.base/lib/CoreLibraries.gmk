@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
         $(LIBZ_CFLAGS), \
     CFLAGS_unix := $(BUILD_LIBZIP_MMAP) -UDEBUG, \
     DISABLED_WARNINGS_gcc := unused-function implicit-fallthrough, \
+    DISABLED_WARNINGS_clang := format-nonliteral, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm -ljava $(LIBZ_LIBS), \

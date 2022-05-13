@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,23 +53,11 @@ public class PerfDataBuffer extends AbstractPerfDataBuffer {
      */
     public PerfDataBuffer(VmIdentifier vmid) throws MonitorException {
         File f = new File(vmid.getURI());
-        String mode = vmid.getMode();
 
-        try {
-            FileChannel fc = new RandomAccessFile(f, mode).getChannel();
-            ByteBuffer bb = null;
-
-            if (mode.equals("r")) {
-                bb = fc.map(FileChannel.MapMode.READ_ONLY, 0L, (int)fc.size());
-            } else if (mode.equals("rw")) {
-                bb = fc.map(FileChannel.MapMode.READ_WRITE, 0L, (int)fc.size());
-            } else {
-                throw new IllegalArgumentException("Invalid mode: " + mode);
-            }
-
-            fc.close();               // doesn't need to remain open
-
+        try (FileChannel fc = new RandomAccessFile(f, "r").getChannel()) {
+            ByteBuffer bb = fc.map(FileChannel.MapMode.READ_ONLY, 0L, (int)fc.size());
             createPerfDataBuffer(bb, 0);
+            // fc doesn't need to remain open
         } catch (FileNotFoundException e) {
             throw new MonitorException("Could not find " + vmid.toString());
         } catch (IOException e) {
