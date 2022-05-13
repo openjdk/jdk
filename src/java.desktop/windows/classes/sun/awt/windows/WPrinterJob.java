@@ -387,7 +387,7 @@ public final class WPrinterJob extends RasterPrinterJob
 
     /* Implement DisposerTarget. Weak references to an Object can delay
      * its storage reclamation marginally.
-     * It won't make the native resources be release any more quickly, but
+     * It won't make the native resources be released any more quickly, but
      * by pointing the reference held by Disposer at an object which becomes
      * no longer strongly reachable when this WPrinterJob is no longer
      * strongly reachable, we allow the WPrinterJob to be freed more promptly
