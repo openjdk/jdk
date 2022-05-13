@@ -93,7 +93,7 @@ void setCachedColor(QuartzSDOps *qsdo, UInt32 color)
 
     // The colors passed have low randomness. That means we need to scramble the bits of the color
     // to produce a good hash key. After some analysis, it looks like Thomas's Wang integer hashing algorithm
-    // seems a nice trade off between performance and effectiveness.
+    // seems a nice trade-off between performance and effectiveness.
     UInt32 index = color;
     index += ~(index << 15);
     index ^=  (index >> 10);
