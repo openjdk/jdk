@@ -549,7 +549,7 @@ AWT_ASSERT_APPKIT_THREAD;
     return isVisible;
 }
 
-// Orders window's children based on the current focus state
+// Orders window children based on the current focus state
 - (void) orderChildWindows:(BOOL)focus {
 AWT_ASSERT_APPKIT_THREAD;
 
