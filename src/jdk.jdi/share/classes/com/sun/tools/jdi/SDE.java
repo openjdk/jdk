@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ class SDE {
 
         /**
          * Return all the sourceNames for this stratum.
-         * Look from our starting fileIndex upto the starting
+         * Look from our starting fileIndex up to the starting
          * fileIndex of next stratum - can do this since there
          * is always a terminator stratum.
          * Default sourceName (the first one) must be first.
@@ -124,7 +124,7 @@ class SDE {
 
         /**
          * Return all the sourcePaths for this stratum.
-         * Look from our starting fileIndex upto the starting
+         * Look from our starting fileIndex up to the starting
          * fileIndex of next stratum - can do this since there
          * is always a terminator stratum.
          * Default sourcePath (the first one) must be first.
@@ -526,7 +526,7 @@ class SDE {
 
     /**
      * Until the next stratum section, everything after this
-     * is in stratumId - so, store the current indicies.
+     * is in stratumId - so, store the current indices.
      */
     void storeStratum(String stratumId) {
         /* remove redundant strata */

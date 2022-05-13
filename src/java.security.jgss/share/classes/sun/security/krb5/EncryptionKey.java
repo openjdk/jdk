@@ -112,7 +112,7 @@ public class EncryptionKey
 
         if (princ == null)
             throw new IllegalArgumentException(
-                "Cannot have null pricipal name to look in keytab.");
+                "Cannot have null principal name to look in keytab.");
 
         // KeyTab getInstance(keytab) will call KeyTab.getInstance()
         // if keytab is null

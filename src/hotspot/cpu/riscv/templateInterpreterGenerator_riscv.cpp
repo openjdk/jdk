@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -797,6 +797,12 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
 // End of helpers
 
+address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
+  if (!Continuations::enabled()) return nullptr;
+  Unimplemented();
+  return NULL;
+}
+
 // Various method entries
 //------------------------------------------------------------------------------------------------------------------------
 //
@@ -1228,11 +1234,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ addi(t1, zr, (u1)StackOverflow::stack_guard_yellow_reserved_disabled);
     __ bne(t0, t1, no_reguard);
 
-    __ pusha(); // only save smashed registers
+    __ push_call_clobbered_registers();
     __ mv(c_rarg0, xthread);
     __ mv(t1, CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
     __ jalr(t1);
-    __ popa(); // only restore smashed registers
+    __ pop_call_clobbered_registers();
     __ bind(no_reguard);
   }
 

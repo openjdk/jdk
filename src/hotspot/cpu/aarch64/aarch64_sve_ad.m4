@@ -144,6 +144,8 @@ source %{
       case Op_LoadVector:
       case Op_StoreVector:
         return Matcher::vector_size_supported(bt, vlen);
+      case Op_VectorMaskToLong:
+        if (vlen > 64) return false;
       default:
         break;
     }
@@ -2962,6 +2964,21 @@ instruct loadconB(vReg dst, immI0 src) %{
   ins_pipe(pipe_slow);
 %}
 
+// -------------------------- Populate Index to a Vector --------------------------
+
+instruct populateindex(vReg dst, iRegIorL2I src1, immI src2) %{
+  predicate(UseSVE > 0);
+  match(Set dst (PopulateIndex src1 src2));
+  ins_cost(SVE_COST);
+  format %{ "sve_index $dst, $src1, $src2\t # populate index (sve)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_index(as_FloatRegister($dst$$reg), __ elemType_to_regVariant(bt),
+                 as_Register($src1$$reg), $src2$$constant);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // Intrisics for String.indexOf(char)
 
 dnl
@@ -3040,8 +3057,7 @@ instruct vmask_lasttrue(iRegINoSp dst, pReg src, pReg ptmp) %{
 %}
 
 instruct vmask_tolong(iRegLNoSp dst, pReg src, vReg vtmp1, vReg vtmp2) %{
-  predicate(UseSVE > 0 &&
-            n->in(1)->bottom_type()->is_vect()->length() <= 64);
+  predicate(UseSVE > 0);
   match(Set dst (VectorMaskToLong src));
   effect(TEMP vtmp1, TEMP vtmp2);
   ins_cost(13 * SVE_COST);

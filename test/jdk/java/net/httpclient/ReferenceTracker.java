@@ -25,7 +25,10 @@ import jdk.internal.net.http.common.OperationTrackers;
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
 
 import java.io.PrintStream;
+import java.lang.management.LockInfo;
 import java.lang.management.ManagementFactory;
+import java.lang.management.MonitorInfo;
+import java.lang.management.ThreadInfo;
 import java.net.http.HttpClient;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -89,10 +92,84 @@ public class ReferenceTracker {
                 "outstanding operations", true);
     }
 
+    // This method is copied from ThreadInfo::toString, but removes the
+    // limit on the stack trace depth (8 frames max) that ThreadInfo::toString
+    // forcefully implement. We want to print all frames for better diagnosis.
+    private static String toString(ThreadInfo info) {
+        StringBuilder sb = new StringBuilder("\"" + info.getThreadName() + "\"" +
+                (info.isDaemon() ? " daemon" : "") +
+                " prio=" + info.getPriority() +
+                " Id=" + info.getThreadId() + " " +
+                info.getThreadState());
+        if (info.getLockName() != null) {
+            sb.append(" on " + info.getLockName());
+        }
+        if (info.getLockOwnerName() != null) {
+            sb.append(" owned by \"" + info.getLockOwnerName() +
+                    "\" Id=" + info.getLockOwnerId());
+        }
+        if (info.isSuspended()) {
+            sb.append(" (suspended)");
+        }
+        if (info.isInNative()) {
+            sb.append(" (in native)");
+        }
+        sb.append('\n');
+        int i = 0;
+        var stackTrace = info.getStackTrace();
+        for (; i < stackTrace.length ; i++) {
+            StackTraceElement ste = stackTrace[i];
+            sb.append("\tat " + ste.toString());
+            sb.append('\n');
+            if (i == 0 && info.getLockInfo() != null) {
+                Thread.State ts = info.getThreadState();
+                switch (ts) {
+                    case BLOCKED:
+                        sb.append("\t-  blocked on " + info.getLockInfo());
+                        sb.append('\n');
+                        break;
+                    case WAITING:
+                        sb.append("\t-  waiting on " + info.getLockInfo());
+                        sb.append('\n');
+                        break;
+                    case TIMED_WAITING:
+                        sb.append("\t-  waiting on " + info.getLockInfo());
+                        sb.append('\n');
+                        break;
+                    default:
+                }
+            }
+
+            for (MonitorInfo mi : info.getLockedMonitors()) {
+                if (mi.getLockedStackDepth() == i) {
+                    sb.append("\t-  locked " + mi);
+                    sb.append('\n');
+                }
+            }
+        }
+        if (i < stackTrace.length) {
+            sb.append("\t...");
+            sb.append('\n');
+        }
+
+        LockInfo[] locks = info.getLockedSynchronizers();
+        if (locks.length > 0) {
+            sb.append("\n\tNumber of locked synchronizers = " + locks.length);
+            sb.append('\n');
+            for (LockInfo li : locks) {
+                sb.append("\t- " + li);
+                sb.append('\n');
+            }
+        }
+        sb.append('\n');
+        return sb.toString();
+    }
+
     private void printThreads(String why, PrintStream out) {
         out.println(why);
         Arrays.stream(ManagementFactory.getThreadMXBean()
                         .dumpAllThreads(true, true))
+                .map(ReferenceTracker::toString)
                 .forEach(out::println);
     }
 

@@ -1113,6 +1113,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
   BaseCountedLoopNode* cl = _head->as_BaseCountedLoop();
   Node *trip_counter = cl->phi();
   assert(!cl->is_LongCountedLoop() || bt == T_LONG, "only long range checks in long counted loops");
+  assert(cl->is_valid_counted_loop(cl->bt()), "only for well formed loops");
 
   // Check loop body for tests of trip-counter plus loop-invariant vs
   // loop-invariant.
@@ -1606,6 +1607,15 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   _igvn.register_new_node_with_optimizer(new_pre_exit);
   set_idom(new_pre_exit, pre_end, dd_main_head);
   set_loop(new_pre_exit, outer_loop->_parent);
+
+  if (peel_only) {
+    // Nodes in the peeled iteration that were marked as reductions within the
+    // original loop might not be reductions within their new outer loop.
+    for (uint i = 0; i < loop->_body.size(); i++) {
+      Node* n = old_new[loop->_body[i]->_idx];
+      n->remove_flag(Node::Flag_is_reduction);
+    }
+  }
 
   // Step B2: Build a zero-trip guard for the main-loop.  After leaving the
   // pre-loop, the main-loop may not execute at all.  Later in life this
