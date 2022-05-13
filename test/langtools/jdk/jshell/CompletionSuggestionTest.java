@@ -777,6 +777,7 @@ public class CompletionSuggestionTest extends KullaTesting {
     public void testStatements() {
         assertEval("String s = \"\";");
         assertCompletion("if (s.conta|", (Boolean) null, "contains(");
+        assertCompletion("if (s.ch|", (Boolean) null, "charAt(", "chars()");
         assertCompletion("while (s.conta|", (Boolean) null, "contains(");
         assertCompletion("do {} while (s.conta|", (Boolean) null, "contains(");
         assertCompletion("try (var v = s.conta|", (Boolean) null, "contains(");
