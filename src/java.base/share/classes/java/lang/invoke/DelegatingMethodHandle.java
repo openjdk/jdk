@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,11 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * @author jrose
  */
 /*non-public*/
-abstract class DelegatingMethodHandle extends MethodHandle {
+abstract sealed class DelegatingMethodHandle extends MethodHandle
+    permits MethodHandleImpl.AsVarargsCollector,
+            MethodHandleImpl.WrappedMember,
+            MethodHandleImpl.IntrinsicMethodHandle,
+            MethodHandleImpl.CountingWrapper {
     protected DelegatingMethodHandle(MethodHandle target) {
         this(target.type(), target);
     }

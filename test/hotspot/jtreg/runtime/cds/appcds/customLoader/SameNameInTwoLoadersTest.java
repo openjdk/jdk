@@ -54,7 +54,7 @@ public class SameNameInTwoLoadersTest {
         customJar = JarBuilder.build("SameNameInTwoLoadersTest_custom", "CustomLoadee", "CustomLoadee3");
 
         useWbParam = "-Xbootclasspath/a:" +
-            JarBuilder.build(true, "WhiteBox", "sun/hotspot/WhiteBox");;
+            JarBuilder.build(true, "WhiteBox", "sun/hotspot/WhiteBox");
 
         // ====== unrelated loaders
         executeTestCase(getClassList_FP(),

@@ -109,7 +109,7 @@
         <os family="windows"/>
     </condition>
 
-    <!-- Standard property values, if not overriden by earlier settings. -->
+    <!-- Standard property values, if not overridden by earlier settings. -->
     <property file="${make.dir}/build.properties"/>
 
     <condition property="langtools.jdk.home" value="${jdk.home}">

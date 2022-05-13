@@ -61,7 +61,7 @@ Node* SubNode::Identity(PhaseGVN* phase) {
   }
 
   // Convert "(X+Y) - Y" into X and "(X+Y) - X" into Y
-  if (in(1)->Opcode() == Op_AddI) {
+  if (in(1)->Opcode() == Op_AddI || in(1)->Opcode() == Op_AddL) {
     if (in(1)->in(2) == in(2)) {
       return in(1)->in(1);
     }
@@ -416,6 +416,10 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert "x - (x+y)" into "-y"
   if (op2 == Op_AddL && in1 == in2->in(1)) {
     return new SubLNode(phase->makecon(TypeLong::ZERO), in2->in(2));
+  }
+  // Convert "(x-y) - x" into "-y"
+  if (op1 == Op_SubL && in1->in(1) == in2) {
+    return new SubLNode(phase->makecon(TypeLong::ZERO), in1->in(2));
   }
   // Convert "x - (y+x)" into "-y"
   if (op2 == Op_AddL && in1 == in2->in(2)) {
@@ -966,77 +970,44 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
   }
 
   // See if it is 2 unrelated classes.
-  const TypeOopPtr* oop_p0 = r0->isa_oopptr();
-  const TypeOopPtr* oop_p1 = r1->isa_oopptr();
-  bool both_oop_ptr = oop_p0 && oop_p1;
-
-  if (both_oop_ptr) {
-    Node* in1 = in(1)->uncast();
-    Node* in2 = in(2)->uncast();
-    AllocateNode* alloc1 = AllocateNode::Ideal_allocation(in1, NULL);
-    AllocateNode* alloc2 = AllocateNode::Ideal_allocation(in2, NULL);
-    if (MemNode::detect_ptr_independence(in1, alloc1, in2, alloc2, NULL)) {
-      return TypeInt::CC_GT;  // different pointers
-    }
-  }
-
-  const TypeKlassPtr* klass_p0 = r0->isa_klassptr();
-  const TypeKlassPtr* klass_p1 = r1->isa_klassptr();
-
-  if (both_oop_ptr || (klass_p0 && klass_p1)) { // both or neither are klass pointers
-    ciKlass* klass0 = NULL;
-    bool    xklass0 = false;
-    ciKlass* klass1 = NULL;
-    bool    xklass1 = false;
-
-    if (oop_p0) {
-      klass0 = oop_p0->klass();
-      xklass0 = oop_p0->klass_is_exact();
-    } else {
-      assert(klass_p0, "must be non-null if oop_p0 is null");
-      klass0 = klass_p0->klass();
-      xklass0 = klass_p0->klass_is_exact();
-    }
-
-    if (oop_p1) {
-      klass1 = oop_p1->klass();
-      xklass1 = oop_p1->klass_is_exact();
-    } else {
-      assert(klass_p1, "must be non-null if oop_p1 is null");
-      klass1 = klass_p1->klass();
-      xklass1 = klass_p1->klass_is_exact();
-    }
-
-    if (klass0 && klass1 &&
-        klass0->is_loaded() && !klass0->is_interface() && // do not trust interfaces
-        klass1->is_loaded() && !klass1->is_interface() &&
-        (!klass0->is_obj_array_klass() ||
-         !klass0->as_obj_array_klass()->base_element_klass()->is_interface()) &&
-        (!klass1->is_obj_array_klass() ||
-         !klass1->as_obj_array_klass()->base_element_klass()->is_interface())) {
-      bool unrelated_classes = false;
-      // See if neither subclasses the other, or if the class on top
-      // is precise.  In either of these cases, the compare is known
-      // to fail if at least one of the pointers is provably not null.
-      if (klass0->equals(klass1)) {  // if types are unequal but klasses are equal
-        // Do nothing; we know nothing for imprecise types
-      } else if (klass0->is_subtype_of(klass1)) {
-        // If klass1's type is PRECISE, then classes are unrelated.
-        unrelated_classes = xklass1;
-      } else if (klass1->is_subtype_of(klass0)) {
-        // If klass0's type is PRECISE, then classes are unrelated.
-        unrelated_classes = xklass0;
-      } else {                  // Neither subtypes the other
-        unrelated_classes = true;
+  const TypeOopPtr* p0 = r0->isa_oopptr();
+  const TypeOopPtr* p1 = r1->isa_oopptr();
+  const TypeKlassPtr* k0 = r0->isa_klassptr();
+  const TypeKlassPtr* k1 = r1->isa_klassptr();
+  if ((p0 && p1) || (k0 && k1)) {
+    if (p0 && p1) {
+      Node* in1 = in(1)->uncast();
+      Node* in2 = in(2)->uncast();
+      AllocateNode* alloc1 = AllocateNode::Ideal_allocation(in1, NULL);
+      AllocateNode* alloc2 = AllocateNode::Ideal_allocation(in2, NULL);
+      if (MemNode::detect_ptr_independence(in1, alloc1, in2, alloc2, NULL)) {
+        return TypeInt::CC_GT;  // different pointers
       }
-      if (unrelated_classes) {
-        // The oops classes are known to be unrelated. If the joined PTRs of
-        // two oops is not Null and not Bottom, then we are sure that one
-        // of the two oops is non-null, and the comparison will always fail.
-        TypePtr::PTR jp = r0->join_ptr(r1->_ptr);
-        if (jp != TypePtr::Null && jp != TypePtr::BotPTR) {
-          return TypeInt::CC_GT;
-        }
+    }
+    bool    xklass0 = p0 ? p0->klass_is_exact() : k0->klass_is_exact();
+    bool    xklass1 = p1 ? p1->klass_is_exact() : k1->klass_is_exact();
+    bool unrelated_classes = false;
+
+    if ((p0 && p0->is_same_java_type_as(p1)) ||
+        (k0 && k0->is_same_java_type_as(k1))) {
+    } else if ((p0 && !p1->maybe_java_subtype_of(p0) && !p0->maybe_java_subtype_of(p1)) ||
+               (k0 && !k1->maybe_java_subtype_of(k0) && !k0->maybe_java_subtype_of(k1))) {
+      unrelated_classes = true;
+    } else if ((p0 && !p1->maybe_java_subtype_of(p0)) ||
+               (k0 && !k1->maybe_java_subtype_of(k0))) {
+      unrelated_classes = xklass1;
+    } else if ((p0 && !p0->maybe_java_subtype_of(p1)) ||
+               (k0 && !k0->maybe_java_subtype_of(k1))) {
+      unrelated_classes = xklass0;
+    }
+
+    if (unrelated_classes) {
+      // The oops classes are known to be unrelated. If the joined PTRs of
+      // two oops is not Null and not Bottom, then we are sure that one
+      // of the two oops is non-null, and the comparison will always fail.
+      TypePtr::PTR jp = r0->join_ptr(r1->_ptr);
+      if (jp != TypePtr::Null && jp != TypePtr::BotPTR) {
+        return TypeInt::CC_GT;
       }
     }
   }
@@ -1066,7 +1037,7 @@ static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n) {
   if (n->Opcode() != Op_LoadP) return NULL;
 
   const TypeInstPtr* tp = phase->type(n)->isa_instptr();
-  if (!tp || tp->klass() != phase->C->env()->Class_klass()) return NULL;
+  if (!tp || tp->instance_klass() != phase->C->env()->Class_klass()) return NULL;
 
   Node* adr = n->in(MemNode::Address);
   // First load from OopHandle: ((OopHandle)mirror)->resolve(); may need barrier.
@@ -1146,7 +1117,7 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   if (t2 == NULL || !t2->klass_is_exact())
     return NULL;
   // Get the constant klass we are comparing to.
-  ciKlass* superklass = t2->klass();
+  ciKlass* superklass = t2->exact_klass();
 
   // Now check for LoadKlass on left.
   Node* ldk1 = in(1);

@@ -56,11 +56,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * Converts Java Source Code to HTML.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class SourceToHTMLConverter {
 
@@ -207,8 +202,8 @@ public class SourceToHTMLConverter {
                     .resolve(configuration.docPaths.forPackage(te))
                     .invert();
             Content body = getHeader();
-            Content pre = new HtmlTree(TagName.PRE);
-            try (LineNumberReader reader = new LineNumberReader(r)) {
+            var pre = new HtmlTree(TagName.PRE);
+            try (var reader = new LineNumberReader(r)) {
                 while ((line = reader.readLine()) != null) {
                     addLineNo(pre, lineno);
                     addLine(pre, line, lineno);
@@ -216,7 +211,7 @@ public class SourceToHTMLConverter {
                 }
             }
             addBlankLines(pre);
-            Content div = HtmlTree.DIV(HtmlStyle.sourceContainer, pre);
+            var div = HtmlTree.DIV(HtmlStyle.sourceContainer, pre);
             body.add(HtmlTree.MAIN(div));
             writeToFile(body, outputdir.resolve(configuration.docPaths.forClass(te)), te);
         } catch (IOException e) {
@@ -240,16 +235,16 @@ public class SourceToHTMLConverter {
                 .setGenerator(HtmlDocletWriter.getGenerator(getClass()))
                 .addDefaultScript(false)
                 .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets());
-        Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body);
-        HtmlDocument htmlDocument = new HtmlDocument(htmlTree);
+        var html = HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body);
+        HtmlDocument document = new HtmlDocument(html);
         messages.notice("doclet.Generating_0", path.getPath());
-        htmlDocument.write(DocFile.createFileForOutput(configuration, path));
+        document.write(DocFile.createFileForOutput(configuration, path));
     }
 
     /**
      * Returns a link to the stylesheet file.
      *
-     * @param head an HtmlTree to which the stylesheet links will be added
+     * @param head the content to which the stylesheet links will be added
      */
     public void addStyleSheetProperties(Content head) {
         String filename = options.stylesheetFile();
@@ -261,18 +256,18 @@ public class SourceToHTMLConverter {
             stylesheet = DocPaths.STYLESHEET;
         }
         DocPath p = relativePath.resolve(stylesheet);
-        HtmlTree link = HtmlTree.LINK("stylesheet", "text/css", p.getPath(), "Style");
+        var link = HtmlTree.LINK("stylesheet", "text/css", p.getPath(), "Style");
         head.add(link);
         addStylesheets(head);
     }
 
-    protected void addStylesheets(Content tree) {
+    protected void addStylesheets(Content head) {
         options.additionalStylesheets().forEach(css -> {
             DocFile file = DocFile.createFileForInput(configuration, css);
             DocPath cssPath = DocPath.create(file.getName());
-            HtmlTree slink = HtmlTree.LINK("stylesheet", "text/css", relativePath.resolve(cssPath).getPath(),
-                                           "Style");
-            tree.add(slink);
+            var slink = HtmlTree.LINK("stylesheet", "text/css", relativePath.resolve(cssPath).getPath(),
+                                      "Style");
+            head.add(slink);
         });
     }
 
@@ -288,11 +283,11 @@ public class SourceToHTMLConverter {
     /**
      * Add the line numbers for the source code.
      *
-     * @param pre the content tree to which the line number will be added
+     * @param pre the content to which the line number will be added
      * @param lineno The line number
      */
     private static void addLineNo(Content pre, int lineno) {
-        HtmlTree span = new HtmlTree(TagName.SPAN);
+        var span = new HtmlTree(TagName.SPAN);
         span.setStyle(HtmlStyle.sourceLineNo);
         if (lineno < 10) {
             span.add("00" + Integer.toString(lineno));
@@ -307,13 +302,13 @@ public class SourceToHTMLConverter {
     /**
      * Add a line from source to the HTML file that is generated.
      *
-     * @param pre the content tree to which the line will be added.
+     * @param pre the content to which the line will be added.
      * @param line the string to format.
      * @param currentLineNo the current number.
      */
     private void addLine(Content pre, String line, int currentLineNo) {
         if (line != null) {
-            Content anchor = HtmlTree.SPAN_ID(
+            var anchor = HtmlTree.SPAN_ID(
                     HtmlIds.forLine(currentLineNo),
                     Text.of(utils.replaceTabs(line)));
             pre.add(anchor);
@@ -324,7 +319,7 @@ public class SourceToHTMLConverter {
     /**
      * Add trailing blank lines at the end of the page.
      *
-     * @param pre the content tree to which the blank lines will be added.
+     * @param pre the content to which the blank lines will be added.
      */
     private static void addBlankLines(Content pre) {
         for (int i = 0; i < NUM_BLANK_LINES; i++) {

@@ -128,9 +128,15 @@ class PipeImpl
                             sa = ssc.getLocalAddress();
                         }
 
-                        // Establish connection (assume connections are eagerly
-                        // accepted)
-                        sc1 = SocketChannel.open(sa);
+                        // Establish connection (assume connection is eagerly accepted)
+                        if (sa instanceof InetSocketAddress
+                                && Thread.currentThread().isVirtual()) {
+                            // workaround "lost event" issue on older releases of Windows
+                            sc1 = SocketChannel.open();
+                            sc1.socket().connect(sa, 10_000);
+                        } else {
+                            sc1 = SocketChannel.open(sa);
+                        }
                         RANDOM_NUMBER_GENERATOR.nextBytes(secret.array());
                         do {
                             sc1.write(secret);
@@ -179,7 +185,7 @@ class PipeImpl
      * Creates a (TCP) Pipe implementation that supports buffering.
      */
     PipeImpl(SelectorProvider sp) throws IOException {
-        this(sp, true, false);
+        this(sp, false, true);
     }
 
     /**

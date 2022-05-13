@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,11 @@ void MethodHandles::generate_adapters() {
 
   ResourceMark rm;
   TraceTime timer("MethodHandles adapters generation", TRACETIME_LOG(Info, startuptime));
-  _adapter_code = MethodHandlesAdapterBlob::create(adapter_code_size);
+  // The adapter entry is required to be aligned to CodeEntryAlignment.
+  // So we need additional bytes due to alignment.
+  int adapter_num = (int)Interpreter::method_handle_invoke_LAST - (int)Interpreter::method_handle_invoke_FIRST + 1;
+  int max_aligned_bytes = adapter_num * CodeEntryAlignment;
+  _adapter_code = MethodHandlesAdapterBlob::create(adapter_code_size + max_aligned_bytes);
   CodeBuffer code(_adapter_code);
   MethodHandlesAdapterGenerator g(&code);
   g.generate();

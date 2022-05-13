@@ -29,6 +29,7 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -180,8 +181,7 @@ PSPromotionManager::PSPromotionManager() {
   uint queue_size;
   queue_size = claimed_stack_depth()->max_elems();
 
-  _totally_drain = (ParallelGCThreads == 1) || (GCDrainStackTargetSize == 0);
-  if (_totally_drain) {
+  if (ParallelGCThreads == 1) {
     _target_stack_size = 0;
   } else {
     // don't let the target stack size to be more than 1/4 of the entries
@@ -227,7 +227,7 @@ void PSPromotionManager::restore_preserved_marks() {
 }
 
 void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
-  totally_drain = totally_drain || _totally_drain;
+  totally_drain = totally_drain || (_target_stack_size == 0);
 
   PSScannerTasksQueue* const tq = claimed_stack_depth();
   do {
@@ -336,6 +336,8 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
     assert(obj == obj->forwardee(), "Sanity");
 
     _promotion_failed_info.register_copy_failure(obj->size());
+
+    ContinuationGCSupport::transform_stack_chunk(obj);
 
     push_contents(obj);
 

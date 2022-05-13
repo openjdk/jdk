@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,42 +21,62 @@
  * questions.
  */
 
-
-import java.applet.Applet;
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Panel;
+import java.awt.Frame;
 import java.awt.TextArea;
+import java.lang.reflect.InvocationTargetException;
 
-public final class SelectionVisible extends Applet {
+import static java.awt.EventQueue.invokeAndWait;
 
-    private TextArea ta;
+/*
+  @test
+  @key headful
+  @bug 4082144 7150100
+  @summary  Ensures that TextArea.select() works when called
+            before setVisible()
+  @run main SelectionVisible
+*/
 
-    @Override
-    public void init() {
+public class SelectionVisible {
+
+    private static TextArea ta;
+    private static Frame frame;
+
+    public static void createTestUI() {
+        frame = new Frame("Test 4082144 7150100");
         ta = new TextArea(4, 20);
         ta.setText("01234\n56789");
         ta.select(3, 9);
 
-        final TextArea instruction = new TextArea("INSTRUCTIONS:\n"
-                                                 + "The text 34567 should be selected in the TextArea.\n"
-                                                 + "If this is what you observe, then the test passes.\n"
-                                                 + "Otherwise, the test fails.", 40, 5,
-                                         TextArea.SCROLLBARS_NONE);
-        instruction.setEditable(false);
-        instruction.setPreferredSize(new Dimension(300, 70));
-        final Panel panel = new Panel();
-        panel.setLayout(new FlowLayout());
-        panel.add(ta);
-        setLayout(new BorderLayout());
-        add(instruction, BorderLayout.CENTER);
-        add(panel, BorderLayout.PAGE_END);
-    }
+        frame.add(ta);
+        frame.setLocationRelativeTo(null);
+        frame.pack();
+        frame.setVisible(true);
 
-    @Override
-    public void start() {
-        setVisible(true);
         ta.requestFocus();
     }
+
+    public static void test() throws InterruptedException,
+            InvocationTargetException {
+        String selectedText = ta.getSelectedText();
+        System.out.println("selectedText : " + selectedText);
+        invokeAndWait(SelectionVisible::disposeFrame);
+        if (!selectedText.equals("34\n567")) {
+            throw new RuntimeException("Expected '34\n567' to be " +
+                    "selected text, but got " + selectedText);
+        }
+        System.out.println("Test passed");
+    }
+
+    public static void disposeFrame() {
+        if (frame != null) {
+            frame.dispose();
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException,
+            InvocationTargetException {
+        invokeAndWait(SelectionVisible::createTestUI);
+        test();
+    }
+
 }

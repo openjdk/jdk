@@ -339,7 +339,7 @@ function convert_path() {
   fi
 }
 
-# Treat $1 as name of a file containg paths. Convert those paths to Windows style,
+# Treat $1 as name of a file containing paths. Convert those paths to Windows style,
 # in a new temporary file, and return a string "@<temp file>" pointing to that
 # new file.
 function convert_at_file() {

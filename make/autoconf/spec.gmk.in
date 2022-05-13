@@ -38,7 +38,7 @@ CONFIGURE_START_DIR:=@CONFIGURE_START_DIR@
 # A self-referential reference to this file.
 SPEC:=@SPEC@
 
-# Path to autoconf if overriden by the user, to be used by "make reconfigure"
+# Path to autoconf if overridden by the user, to be used by "make reconfigure"
 AUTOCONF := @AUTOCONF@
 
 # SPACE and COMMA are defined in MakeBase.gmk, but they are also used in
@@ -130,6 +130,13 @@ RELEASE_FILE_LIBC:=@RELEASE_FILE_LIBC@
 
 SOURCE_DATE := @SOURCE_DATE@
 ENABLE_REPRODUCIBLE_BUILD := @ENABLE_REPRODUCIBLE_BUILD@
+ISO_8601_FORMAT_STRING := @ISO_8601_FORMAT_STRING@
+
+ifneq ($(SOURCE_DATE), updated)
+  # For "updated" source date value, these are set in InitSupport.gmk
+  export SOURCE_DATE_EPOCH := $(SOURCE_DATE)
+  SOURCE_DATE_ISO_8601 := @SOURCE_DATE_ISO_8601@
+endif
 
 LIBM:=@LIBM@
 LIBDL:=@LIBDL@
@@ -141,7 +148,7 @@ ifneq ($(findstring windows.wsl, @OPENJDK_BUILD_OS_ENV@), )
   # Tell WSL to convert PATH between linux and windows
   export WSLENV := PATH/l
 else ifeq (@OPENJDK_BUILD_OS_ENV@, windows.msys2)
-  # Prohibit msys2 from attemping any path wrangling
+  # Prohibit msys2 from attempting any path wrangling
   export MSYS2_ARG_CONV_EXCL := "*"
 endif
 
@@ -360,6 +367,7 @@ ENABLE_COMPATIBLE_CDS_ALIGNMENT := @ENABLE_COMPATIBLE_CDS_ALIGNMENT@
 ALLOW_ABSOLUTE_PATHS_IN_OUTPUT := @ALLOW_ABSOLUTE_PATHS_IN_OUTPUT@
 
 HSDIS_BACKEND := @HSDIS_BACKEND@
+ENABLE_HSDIS_BUNDLING := @ENABLE_HSDIS_BUNDLING@
 HSDIS_CFLAGS := @HSDIS_CFLAGS@
 HSDIS_LDFLAGS := @HSDIS_LDFLAGS@
 HSDIS_LIBS := @HSDIS_LIBS@
@@ -407,6 +415,7 @@ LIBFFI_CFLAGS:=@LIBFFI_CFLAGS@
 ENABLE_LIBFFI_BUNDLING:=@ENABLE_LIBFFI_BUNDLING@
 LIBFFI_LIB_FILE:=@LIBFFI_LIB_FILE@
 FILE_MACRO_CFLAGS := @FILE_MACRO_CFLAGS@
+BRANCH_PROTECTION_CFLAGS := @BRANCH_PROTECTION_CFLAGS@
 
 STATIC_LIBS_CFLAGS := @STATIC_LIBS_CFLAGS@
 
@@ -614,7 +623,7 @@ SET_SHARED_LIBRARY_NAME=@SET_SHARED_LIBRARY_NAME@
 
 SHARED_LIBRARY_FLAGS=@SHARED_LIBRARY_FLAGS@
 
-# Set origin using the linker, ie use the relative path to the dependent library to find the dependees.
+# Set origin using the linker, ie use the relative path to the dependent library to find the dependencies.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)
 SET_SHARED_LIBRARY_ORIGIN=@SET_SHARED_LIBRARY_ORIGIN@
 SET_EXECUTABLE_ORIGIN=@SET_EXECUTABLE_ORIGIN@

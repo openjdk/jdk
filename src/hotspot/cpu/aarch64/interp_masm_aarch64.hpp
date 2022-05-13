@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,7 @@
 #include "interpreter/invocationCounter.hpp"
 #include "runtime/frame.hpp"
 
-// This file specializes the assember with interpreter-specific macros
+// This file specializes the assembler with interpreter-specific macros
 
 typedef ByteSize (*OffsetFunction)(uint);
 
@@ -277,7 +277,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Debugging
   // only if +VerifyOops && state == atos
-  void verify_oop(Register reg, TosState state = atos);
+#define interp_verify_oop(reg, state) _interp_verify_oop(reg, state, __FILE__, __LINE__);
+  void _interp_verify_oop(Register reg, TosState state, const char* file, int line);
   // only if +VerifyFPU  && (state == ftos || state == dtos)
   void verify_FPU(int stack_depth, TosState state = ftos);
 

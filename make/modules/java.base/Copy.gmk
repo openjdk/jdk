@@ -247,6 +247,23 @@ ifeq ($(ENABLE_LIBFFI_BUNDLING), true)
 endif
 
 ################################################################################
+# Optionally copy hsdis into the the image
+
+ifeq ($(ENABLE_HSDIS_BUNDLING), true)
+  HSDIS_NAME := hsdis-$(OPENJDK_TARGET_CPU_LEGACY_LIB)$(SHARED_LIBRARY_SUFFIX)
+  HSDIS_PATH := $(SUPPORT_OUTPUTDIR)/hsdis/$(HSDIS_NAME)
+
+  $(eval $(call SetupCopyFiles, COPY_HSDIS, \
+      FILES := $(HSDIS_PATH), \
+      DEST := $(call FindLibDirForModule, $(MODULE)), \
+      FLATTEN := true, \
+      MACRO := install-file-nolink, \
+  ))
+
+  TARGETS += $(COPY_HSDIS)
+endif
+
+################################################################################
 # Generate classfile_constants.h
 
 $(eval $(call SetupTextFileProcessing, CREATE_CLASSFILE_CONSTANTS_H, \

@@ -97,8 +97,8 @@ public final class EventFactory {
      * @see Event#set(int, Object)
      */
     public static EventFactory create(List<AnnotationElement> annotationElements, List<ValueDescriptor> fields) {
-        Objects.requireNonNull(fields);
-        Objects.requireNonNull(annotationElements);
+        Objects.requireNonNull(annotationElements, "annotationElements");
+        Objects.requireNonNull(fields, "fields");
         JVMSupport.ensureWithInternalError();
 
         Utils.checkRegisterPermission();
@@ -150,9 +150,9 @@ public final class EventFactory {
         try {
             return new EventFactory(eventClass, sanitizedAnnotation, sanitizedFields);
         } catch (IllegalAccessException e) {
-            throw new IllegalAccessError("Could not access constructor of generated event handler, " + e.getMessage());
+            throw new IllegalAccessError("Could not access constructor of generated event class, " + e.getMessage());
         } catch (NoSuchMethodException e) {
-            throw new InternalError("Could not find constructor in generated event handler, " + e.getMessage());
+            throw new InternalError("Could not find constructor in generated event class, " + e.getMessage());
         }
     }
 

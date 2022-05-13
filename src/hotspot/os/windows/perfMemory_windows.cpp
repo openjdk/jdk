@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,9 +143,9 @@ static void save_memory_to_file(char* addr, size_t size) {
 // user specific directory and the backing store file be stored in either a
 // RAM based file system or a local disk based file system. Network based
 // file systems are not recommended for performance reasons. In addition,
-// use of SMB network based file systems may result in unsuccesful cleanup
+// use of SMB network based file systems may result in unsuccessful cleanup
 // of the disk based resource on exit of the VM. The Windows TMP and TEMP
-// environement variables, as used by the GetTempPath() Win32 API (see
+// environment variables, as used by the GetTempPath() Win32 API (see
 // os::get_temp_directory() in os_win32.cpp), control the location of the
 // user specific directory and the shared memory backing store file.
 
@@ -1546,7 +1546,7 @@ static size_t sharedmem_filesize(const char* filename, TRAPS) {
   //
   // on win95/98/me, _stat returns a file size of 0 bytes, but on
   // winnt/2k the appropriate file size is returned. support for
-  // the sharable aspects of performance counters was abandonded
+  // the shareable aspects of performance counters was abandoned
   // on the non-nt win32 platforms due to this and other api
   // inconsistencies
   //
@@ -1573,36 +1573,17 @@ static size_t sharedmem_filesize(const char* filename, TRAPS) {
 // this method opens a file mapping object and maps the object
 // into the address space of the process
 //
-static void open_file_mapping(const char* user, int vmid,
-                              PerfMemory::PerfMemoryMode mode,
-                              char** addrp, size_t* sizep, TRAPS) {
+static void open_file_mapping(const char* user, int vmid, char** addrp, size_t* sizep, TRAPS) {
 
   ResourceMark rm;
 
   void *mapAddress = 0;
   size_t size = 0;
   HANDLE fmh;
-  DWORD ofm_access;
-  DWORD mv_access;
+  DWORD ofm_access = FILE_MAP_READ;
+  DWORD mv_access = FILE_MAP_READ;
   const char* luser = NULL;
 
-  if (mode == PerfMemory::PERF_MODE_RO) {
-    ofm_access = FILE_MAP_READ;
-    mv_access = FILE_MAP_READ;
-  }
-  else if (mode == PerfMemory::PERF_MODE_RW) {
-#ifdef LATER
-    ofm_access = FILE_MAP_READ | FILE_MAP_WRITE;
-    mv_access = FILE_MAP_READ | FILE_MAP_WRITE;
-#else
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Unsupported access mode");
-#endif
-  }
-  else {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Illegal access mode");
-  }
 
   // if a user name wasn't specified, then find the user name for
   // the owner of the target vm.
@@ -1796,7 +1777,7 @@ void PerfMemory::delete_memory_region() {
 // the indicated process's PerfData memory region into this JVMs
 // address space.
 //
-void PerfMemory::attach(const char* user, int vmid, PerfMemoryMode mode,
+void PerfMemory::attach(const char* user, int vmid,
                         char** addrp, size_t* sizep, TRAPS) {
 
   if (vmid == 0 || vmid == os::current_process_id()) {
@@ -1805,7 +1786,7 @@ void PerfMemory::attach(const char* user, int vmid, PerfMemoryMode mode,
      return;
   }
 
-  open_file_mapping(user, vmid, mode, addrp, sizep, CHECK);
+  open_file_mapping(user, vmid, addrp, sizep, CHECK);
 }
 
 // detach from the PerfData memory region of another JVM

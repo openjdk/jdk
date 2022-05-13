@@ -120,7 +120,7 @@ public final class FlightRecorder {
      *         does not have {@code FlightRecorderPermission("registerEvent")}
      */
     public static void register(Class<? extends Event> eventClass) {
-        Objects.requireNonNull(eventClass);
+        Objects.requireNonNull(eventClass, "eventClass");
         if (JVMSupport.isNotAvailable()) {
             return;
         }
@@ -142,7 +142,7 @@ public final class FlightRecorder {
      *         does not have {@code FlightRecorderPermission("registerEvent")}
      */
     public static void unregister(Class<? extends Event> eventClass) {
-        Objects.requireNonNull(eventClass);
+        Objects.requireNonNull(eventClass, "eventClass");
         if (JVMSupport.isNotAvailable()) {
             return;
         }
@@ -215,8 +215,8 @@ public final class FlightRecorder {
      *         does not have {@code FlightRecorderPermission("registerEvent")}
      */
     public static void addPeriodicEvent(Class<? extends Event> eventClass, Runnable hook) throws SecurityException {
-        Objects.requireNonNull(eventClass);
-        Objects.requireNonNull(hook);
+        Objects.requireNonNull(eventClass, "eventClass");
+        Objects.requireNonNull(hook, "hook");
         if (JVMSupport.isNotAvailable()) {
             return;
         }
@@ -237,7 +237,7 @@ public final class FlightRecorder {
      *         does not have {@code FlightRecorderPermission("registerEvent")}
      */
     public static boolean removePeriodicEvent(Runnable hook) throws SecurityException {
-        Objects.requireNonNull(hook);
+        Objects.requireNonNull(hook, "hook");
         Utils.checkRegisterPermission();
         if (JVMSupport.isNotAvailable()) {
             return false;
@@ -274,7 +274,7 @@ public final class FlightRecorder {
      *         {@code FlightRecorderPermission("accessFlightRecorder")}
      */
     public static void addListener(FlightRecorderListener changeListener) {
-        Objects.requireNonNull(changeListener);
+        Objects.requireNonNull(changeListener, "changeListener");
         Utils.checkAccessFlightRecorder();
         if (JVMSupport.isNotAvailable()) {
             return;
@@ -298,7 +298,7 @@ public final class FlightRecorder {
      *         otherwise
      */
     public static boolean removeListener(FlightRecorderListener changeListener) {
-        Objects.requireNonNull(changeListener);
+        Objects.requireNonNull(changeListener, "changeListener");
         Utils.checkAccessFlightRecorder();
         if (JVMSupport.isNotAvailable()) {
             return false;

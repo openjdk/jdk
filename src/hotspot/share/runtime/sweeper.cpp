@@ -130,8 +130,7 @@ Tickspan NMethodSweeper::_peak_sweep_fraction_time;            // Peak time swee
 class MarkActivationClosure: public CodeBlobClosure {
 public:
   virtual void do_code_blob(CodeBlob* cb) {
-    assert(cb->is_nmethod(), "CodeBlob should be nmethod");
-    nmethod* nm = (nmethod*)cb;
+    nmethod* nm = cb->as_nmethod();
     nm->set_hotness_counter(NMethodSweeper::hotness_counter_reset_val());
     // If we see an activation belonging to a non_entrant nmethod, we mark it.
     if (nm->is_not_entrant()) {
@@ -198,6 +197,10 @@ CodeBlobClosure* NMethodSweeper::prepare_mark_active_nmethods() {
   */
 void NMethodSweeper::do_stack_scanning() {
   assert(!CodeCache_lock->owned_by_self(), "just checking");
+  if (Continuations::enabled()) {
+    // There are continuation stacks in the heap that need to be scanned.
+    Universe::heap()->collect(GCCause::_codecache_GC_threshold);
+  }
   if (wait_for_stack_scanning()) {
     CodeBlobClosure* code_cl;
     {
@@ -266,7 +269,7 @@ void NMethodSweeper::force_sweep() {
  */
 void NMethodSweeper::handle_safepoint_request() {
   JavaThread* thread = JavaThread::current();
-  if (SafepointMechanism::should_process(thread)) {
+  if (SafepointMechanism::local_poll_armed(thread)) {
     if (PrintMethodFlushing && Verbose) {
       tty->print_cr("### Sweep at %d out of %d, yielding to safepoint", _seen, CodeCache::nmethod_count());
     }
@@ -342,6 +345,7 @@ void NMethodSweeper::sweep_code_cache() {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     while (!_current.end()) {
+      CodeCache::Sweep::begin();
       swept_count++;
       // Since we will give up the CodeCache_lock, always skip ahead
       // to the next nmethod.  Other blobs can be deleted by other
@@ -387,6 +391,7 @@ void NMethodSweeper::sweep_code_cache() {
       }
 
       _seen++;
+      CodeCache::Sweep::end();
       handle_safepoint_request();
     }
   }

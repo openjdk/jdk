@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
@@ -936,6 +937,8 @@ public:
 
   void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) override;
 
+  static void start_codecache_marking_cycle_if_inactive();
+
   // Apply the given closure on all cards in the Hot Card Cache, emptying it.
   void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_id);
 
@@ -1178,7 +1181,8 @@ public:
   size_t max_tlab_size() const override;
   size_t unsafe_max_tlab_alloc(Thread* ignored) const override;
 
-  inline bool is_in_young(const oop obj);
+  inline bool is_in_young(const oop obj) const;
+  inline bool requires_barriers(stackChunkOop obj) const override;
 
   // Returns "true" iff the given word_size is "very large".
   static bool is_humongous(size_t word_size) {
@@ -1248,7 +1252,7 @@ public:
   inline bool is_obj_dead_full(const oop obj) const;
 
   // Mark the live object that failed evacuation in the prev bitmap.
-  inline void mark_evac_failure_object(const oop obj, uint worker_id) const;
+  void mark_evac_failure_object(const oop obj, uint worker_id) const;
 
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 

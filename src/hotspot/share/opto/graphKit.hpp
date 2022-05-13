@@ -266,12 +266,8 @@ class GraphKit : public Phase {
   JVMState* transfer_exceptions_into_jvms();
 
   // Helper to throw a built-in exception.
-  // Range checks take the offending index.
-  // Cast and array store checks take the offending class.
-  // Others do not take the optional argument.
-  // The JVMS must allow the bytecode to be re-executed
-  // via an uncommon trap.
-  void builtin_throw(Deoptimization::DeoptReason reason, Node* arg = NULL);
+  // The JVMS must allow the bytecode to be re-executed via an uncommon trap.
+  void builtin_throw(Deoptimization::DeoptReason reason);
 
   // Helper to check the JavaThread::_should_post_on_exceptions flag
   // and branch to an uncommon_trap if it is true (with the specified reason and must_throw)
@@ -424,7 +420,7 @@ class GraphKit : public Phase {
 
   // Use the type profile to narrow an object type.
   Node* maybe_cast_profiled_receiver(Node* not_null_obj,
-                                     ciKlass* require_klass,
+                                     const TypeKlassPtr* require_klass,
                                      ciKlass* spec,
                                      bool safe_for_replace);
 
@@ -593,7 +589,7 @@ class GraphKit : public Phase {
   // Perform decorated accesses
 
   Node* access_store_at(Node* obj,   // containing obj
-                        Node* adr,   // actual adress to store val at
+                        Node* adr,   // actual address to store val at
                         const TypePtr* adr_type,
                         Node* val,
                         const Type* val_type,
@@ -601,13 +597,13 @@ class GraphKit : public Phase {
                         DecoratorSet decorators);
 
   Node* access_load_at(Node* obj,   // containing obj
-                       Node* adr,   // actual adress to load val at
+                       Node* adr,   // actual address to load val at
                        const TypePtr* adr_type,
                        const Type* val_type,
                        BasicType bt,
                        DecoratorSet decorators);
 
-  Node* access_load(Node* adr,   // actual adress to load val at
+  Node* access_load(Node* adr,   // actual address to load val at
                     const Type* val_type,
                     BasicType bt,
                     DecoratorSet decorators);

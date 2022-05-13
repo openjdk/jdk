@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,9 @@ import java.nio.file.LinkPermission;
 import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-
+import jdk.internal.misc.Blocker;
 import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
-
 
 /**
  * Unix implementation of Path#copyTo and Path#moveTo methods.
@@ -186,7 +185,7 @@ class UnixCopyFile {
                 }
                 if (sfd >= 0) {
                     source.getFileSystem().copyNonPosixAttributes(sfd, dfd);
-                    close(sfd);
+                    close(sfd, e -> null);
                 }
             }
             // copy time stamps last
@@ -210,7 +209,7 @@ class UnixCopyFile {
             done = true;
         } finally {
             if (dfd >= 0)
-                close(dfd);
+                close(dfd, e -> null);
             if (!done) {
                 // rollback
                 try { rmdir(target); } catch (UnixException ignore) { }
@@ -251,7 +250,12 @@ class UnixCopyFile {
             try {
                 // transfer bytes to target file
                 try {
-                    transfer(fo, fi, addressToPollForCancel);
+                    long comp = Blocker.begin();
+                    try {
+                        transfer(fo, fi, addressToPollForCancel);
+                    } finally {
+                        Blocker.end(comp);
+                    }
                 } catch (UnixException x) {
                     x.rethrowAsIOException(source, target);
                 }
@@ -288,7 +292,7 @@ class UnixCopyFile {
                 }
                 complete = true;
             } finally {
-                close(fo);
+                close(fo, e -> null);
 
                 // copy of file or attributes failed so rollback
                 if (!complete) {
@@ -298,7 +302,7 @@ class UnixCopyFile {
                 }
             }
         } finally {
-            close(fi);
+            close(fi, e -> null);
         }
     }
 
