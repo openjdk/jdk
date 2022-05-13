@@ -63,9 +63,9 @@ import jdk.internal.vm.annotation.ForceInline;
  * a file into main memory ({@code mmap}); the contents of a mapped memory segments can be {@linkplain #force() persisted} and
  * {@linkplain #load() loaded} to and from the underlying memory-mapped file;</li>
  *     <li>{@linkplain MemorySegment#ofArray(int[]) array segments}, wrapping an existing, heap-allocated Java array; and</li>
- *     <li>{@linkplain MemorySegment#ofBuffer(Buffer) buffer segments}, wrapping an existing {@link ByteBuffer} instance;
+ *     <li>{@linkplain MemorySegment#ofBuffer(Buffer) buffer segments}, wrapping an existing {@link Buffer} instance;
  * buffer memory segments might be backed by either off-heap memory or on-heap memory, depending on the characteristics of the
- * wrapped byte buffer instance. For instance, a buffer memory segment obtained from a byte buffer created with the
+ * wrapped buffer instance. For instance, a buffer memory segment obtained from a byte buffer created with the
  * {@link ByteBuffer#allocateDirect(int)} method will be backed by off-heap memory.</li>
  * </ul>
  *
@@ -85,8 +85,11 @@ import jdk.internal.vm.annotation.ForceInline;
  * session; that is, if the segment is associated with a shared session, it can be accessed by multiple threads;
  * if it is associated with a confined session, it can only be accessed by the thread which owns the memory session.
  * <p>
- * Heap and buffer segments are always associated with a <em>global</em>, shared memory session. This session cannot be closed,
- * and segments associated with it can be considered as <em>always alive</em>.
+ * Heap segments are always associated with the {@linkplain MemorySession#global() global} memory session.
+ * This session cannot be closed, and segments associated with it can be considered as <em>always alive</em>.
+ * Buffer segments are typically associated with the global memory session, with one exception: buffer segments created
+ * from byte buffer instances obtained calling the {@link #asByteBuffer()} method on a memory segment {@code S}
+ * are associated with the same memory session as {@code S}.
  *
  * <h2><a id = "segment-deref">Dereferencing memory segments</a></h2>
  *
