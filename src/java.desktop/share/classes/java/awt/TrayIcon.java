@@ -707,13 +707,6 @@ public class TrayIcon {
         peer.setToolTip(tooltip);
     }
 
-    void updateNotify() {
-        TrayIconPeer peer = this.peer;
-        if (peer != null) {
-            peer.updateImage();
-        }
-    }
-
     void removeNotify() {
         TrayIconPeer p = null;
         synchronized (this) {

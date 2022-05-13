@@ -70,10 +70,12 @@ typedef struct tagBitmapheader  {
 
 jfieldID AwtTrayIcon::idID;
 jfieldID AwtTrayIcon::actionCommandID;
+jmethodID AwtTrayIcon::idUpdateImage = NULL;
 
 HWND AwtTrayIcon::sm_msgWindow = NULL;
 AwtTrayIcon::TrayIconListItem* AwtTrayIcon::sm_trayIconList = NULL;
 int AwtTrayIcon::sm_instCount = 0;
+bool AwtTrayIcon::m_bDPIChanged = false;
 
 /************************************************************************
  * AwtTrayIcon methods
@@ -221,23 +223,19 @@ void AwtTrayIcon::InitNID(UINT uID)
     m_nid.uVersion = NOTIFYICON_VERSION;
 }
 
-// trayicon update handler called when Screen scale changes
-void AwtTrayIcon::UpdateTrayIconHandler()
+// Call updateImage() method on the peer when screen scale changes
+void AwtTrayIcon::UpdateImageDPI()
 {
-    jmethodID updateTrayFn;
-    jclass systemTrayClass;
-
     JNIEnv *env =(JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    systemTrayClass = env->FindClass("java/awt/SystemTray");
 
-    if (systemTrayClass != NULL) {
-         updateTrayFn = env->GetStaticMethodID(
-                     systemTrayClass, "updateTrayIcons", "()V");
-         if (updateTrayFn != NULL) {
-             env->CallStaticVoidMethod(systemTrayClass,
-                      updateTrayFn);
-         }
-         env->DeleteLocalRef(systemTrayClass);
+    jobject peer = GetPeer(env);
+    if (peer != NULL) {
+        env->CallVoidMethod(peer, idUpdateImage);
+    }
+
+    if (safe_ExceptionOccurred(env)) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
     }
 }
 
@@ -268,11 +266,13 @@ LRESULT CALLBACK AwtTrayIcon::TrayWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
                 }
             }
             break;
+        case WM_DPICHANGED:
+            // Set the flag to update icon images, see WmTaskbarCreated
+            m_bDPIChanged = true;
+            break;
         default:
             if(uMsg == s_msgTaskbarCreated) {
                 if (hwnd == AwtTrayIcon::sm_msgWindow) {
-                    // call tray icon update when taskbar reloads
-                    AwtTrayIcon::UpdateTrayIconHandler();
                     mr = WmTaskbarCreated();
                 }
             }
@@ -496,12 +496,17 @@ MsgRouting AwtTrayIcon::WmContextMenu(UINT flags, int x, int y)
 MsgRouting AwtTrayIcon::WmTaskbarCreated() {
     TrayIconListItem* item;
     for (item = sm_trayIconList; item != NULL; item = item->m_next) {
+        if (m_bDPIChanged) {
+            // Update the icon image
+            item->m_trayIcon->UpdateImageDPI();
+        }
         BOOL result = item->m_trayIcon->SendTrayMessage(NIM_ADD);
         // 6270114: Instructs the taskbar to behave according to the Shell version 5.0
         if (result) {
             item->m_trayIcon->SendTrayMessage(NIM_SETVERSION);
         }
     }
+    m_bDPIChanged = false;
     return mrDoDefault;
 }
 
@@ -938,6 +943,14 @@ Java_java_awt_TrayIcon_initIDs(JNIEnv *env, jclass cls)
     AwtTrayIcon::actionCommandID = env->GetFieldID(cls, "actionCommand", "Ljava/lang/String;");
     DASSERT(AwtTrayIcon::actionCommandID != NULL);
     CHECK_NULL( AwtTrayIcon::actionCommandID);
+
+    jclass wPeerCls = env->FindClass("sun/awt/windows/WTrayIconPeer");
+    DASSERT(wPeerCls != NULL);
+    CHECK_NULL(wPeerCls);
+
+    AwtTrayIcon::idUpdateImage = env->GetMethodID(wPeerCls, "updateImage", "()V");
+    DASSERT(AwtTrayIcon::idUpdateImageDPI != NULL);
+    CHECK_NULL(AwtTrayIcon::idUpdateImage);
 
     CATCH_BAD_ALLOC;
 }

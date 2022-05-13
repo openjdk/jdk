@@ -29,7 +29,6 @@ import java.awt.event.ActionListener;
 import java.awt.peer.SystemTrayPeer;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import javax.swing.SwingUtilities;
 import java.util.Vector;
 
 import sun.awt.AWTAccessor;
@@ -284,17 +283,6 @@ public class SystemTray {
             throw e;
         }
         firePropertyChange("trayIcons", oldArray, newArray);
-    }
-
-    // updateTrayIcons method called from native side
-    // when WM_WINDOWPOSCHANGING msg received
-    static void updateTrayIcons() {
-        SwingUtilities.invokeLater(()->{
-            TrayIcon[] trayIconList = systemTray.getTrayIcons();
-            for (TrayIcon trayIcon : trayIconList) {
-                trayIcon.updateNotify();
-            }
-        });
     }
 
     /**

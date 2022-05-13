@@ -86,6 +86,8 @@ public:
 
     void DisplayMessage(LPCTSTR caption, LPCTSTR text, LPCTSTR msgType);
 
+    void UpdateImageDPI();
+
     // Adds to the head of the list
     INLINE void AddTrayIconItem(UINT id) {
         TrayIconListItem* item = new TrayIconListItem(id, this);
@@ -109,7 +111,6 @@ public:
     static void DestroyMessageWindow();
 
     static HBITMAP CreateBMP(HWND hW,int* imageData,int nSS, int nW, int nH);
-    static void UpdateTrayIconHandler();
 
     // methods called on Toolkit thread
     static void _SetToolTip(void *param);
@@ -122,6 +123,7 @@ public:
      */
     static jfieldID idID;
     static jfieldID actionCommandID;
+    static jmethodID idUpdateImage;
 
     // ************************
 
@@ -151,6 +153,8 @@ private:
         AwtTrayIcon* m_trayIcon;
         TrayIconListItem* m_next;
     };
+
+    static bool m_bDPIChanged;
 
 public:
     static TrayIconListItem* sm_trayIconList;
