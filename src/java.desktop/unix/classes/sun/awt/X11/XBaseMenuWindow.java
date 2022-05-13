@@ -482,7 +482,7 @@ public abstract class XBaseMenuWindow extends XWindow {
 
     /**
      * returns item which mapped coordinates contain
-     * specified point, null of none.
+     * the specified point, null if none.
      * @param pt the point in this window's coordinate system
      */
     XMenuItemPeer getItemFromPoint(Point pt) {
