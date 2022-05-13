@@ -90,7 +90,7 @@ public class TestSnippetUnnamedPackage extends SnippetTester {
                         <div class="snippet-container"><button class="snippet-copy" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="copy.svg" alt="Copy"></button>
                         <pre class="snippet"><code class="language-java">public class S { }</code></pre>
                         </div>
-                                                 
+
                          After.""");
     }
 }
