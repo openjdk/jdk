@@ -139,7 +139,7 @@ typedef struct {
     /* Indication that the agent has been loaded */
     jboolean isLoaded;
 
-    /* Indication that VM_DEATH has been recieved and the JVMTI callbacks have been cleared. */
+    /* Indication that VM_DEATH has been received and the JVMTI callbacks have been cleared. */
     volatile jboolean jvmtiCallBacksCleared;
 
 } BackendGlobalData;
@@ -278,7 +278,7 @@ typedef struct ObjectBatch {
 #define MOD_FINAL        0x0010     /* no further subclassing, overriding */
 #define MOD_SYNCHRONIZED 0x0020     /* wrap method call in monitor lock */
 #define MOD_VOLATILE     0x0040     /* can cache in registers */
-#define MOD_TRANSIENT    0x0080     /* not persistant */
+#define MOD_TRANSIENT    0x0080     /* not persistent */
 #define MOD_NATIVE       0x0100     /* implemented in C */
 #define MOD_INTERFACE    0x0200     /* class is an interface */
 #define MOD_ABSTRACT     0x0400     /* no definition provided */

@@ -164,7 +164,7 @@ classesForSignature(PacketInputStream *in, PacketOutputStream *out)
             }
 
             /* At this point matching prepared classes occupy
-             * indicies 0 thru matchCount-1 of theClasses.
+             * indices 0 thru matchCount-1 of theClasses.
              */
 
             if ( error ==  JVMTI_ERROR_NONE ) {
@@ -277,7 +277,7 @@ allClasses1(PacketInputStream *in, PacketOutputStream *out, int outputGenerics)
             }
 
             /* At this point prepared classes occupy
-             * indicies 0 thru prepCount-1 of theClasses.
+             * indices 0 thru prepCount-1 of theClasses.
              */
 
             (void)outStream_writeInt(out, prepCount);
