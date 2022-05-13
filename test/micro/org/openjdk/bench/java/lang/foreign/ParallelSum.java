@@ -61,7 +61,7 @@ public class ParallelSum extends JavaLayouts {
     final static int CARRIER_SIZE = 4;
     final static int ALLOC_SIZE = CARRIER_SIZE * 1024 * 1024 * 256;
     final static int ELEM_SIZE = ALLOC_SIZE / CARRIER_SIZE;
-    
+
     final static MemoryLayout ELEM_LAYOUT = ValueLayout.JAVA_INT;
     final static int BULK_FACTOR = 512;
     final static SequenceLayout ELEM_LAYOUT_BULK = MemoryLayout.sequenceLayout(BULK_FACTOR, ELEM_LAYOUT);
