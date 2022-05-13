@@ -32,21 +32,6 @@
  *   TestIntrinsics
  */
 
-/*
- * @test
- * @bug 8286681
- * @summary ShenandoahControlThread::request_gc misses the case of GCCause::_codecache_GC_threshold
- * @enablePreview
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
- * @requires vm.gc.Shenandoah
- * @run testng/othervm
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   --enable-native-access=ALL-UNNAMED
- *   -Xbatch
- *   -XX:+UseShenandoahGC
- *   TestIntrinsics
- */
-
 import java.lang.foreign.Addressable;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
