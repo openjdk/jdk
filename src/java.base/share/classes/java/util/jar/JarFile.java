@@ -27,6 +27,7 @@ package java.util.jar;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaUtilZipFileAccess;
+import jdk.internal.misc.ThreadTracker;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.ManifestEntryVerifier;
 
@@ -44,10 +45,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -150,7 +149,6 @@ public class JarFile extends ZipFile {
     private static final Runtime.Version RUNTIME_VERSION;
     private static final boolean MULTI_RELEASE_ENABLED;
     private static final boolean MULTI_RELEASE_FORCED;
-    private static final ThreadLocal<Boolean> isInitializing = new ThreadLocal<>();
     // The maximum size of array to allocate. Some VMs reserve some header words in an array.
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
@@ -1036,6 +1034,18 @@ public class JarFile extends ZipFile {
         }
     }
 
+    private static class ThreadTrackHolder {
+        static final ThreadTracker TRACKER = new ThreadTracker();
+    }
+
+    private static Object beginInit() {
+        return ThreadTrackHolder.TRACKER.begin();
+    }
+
+    private static void endInit(Object key) {
+        ThreadTrackHolder.TRACKER.end(key);
+    }
+
     synchronized void ensureInitialization() {
         try {
             maybeInstantiateVerifier();
@@ -1043,19 +1053,18 @@ public class JarFile extends ZipFile {
             throw new RuntimeException(e);
         }
         if (jv != null && !jvInitialized) {
-            isInitializing.set(Boolean.TRUE);
+            Object key = beginInit();
             try {
                 initializeVerifier();
                 jvInitialized = true;
             } finally {
-                isInitializing.set(Boolean.FALSE);
+                endInit(key);
             }
         }
     }
 
     static boolean isInitializing() {
-        Boolean value = isInitializing.get();
-        return (value == null) ? false : value;
+        return ThreadTrackHolder.TRACKER.contains(Thread.currentThread());
     }
 
     /*

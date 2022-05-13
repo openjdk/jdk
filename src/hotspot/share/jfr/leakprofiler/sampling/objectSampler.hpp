@@ -25,6 +25,7 @@
 #ifndef SHARE_JFR_LEAKPROFILER_SAMPLING_OBJECTSAMPLER_HPP
 #define SHARE_JFR_LEAKPROFILER_SAMPLING_OBJECTSAMPLER_HPP
 
+#include "jfr/utilities/jfrBlob.hpp"
 #include "memory/allocation.hpp"
 
 typedef u8 traceid;
@@ -60,7 +61,7 @@ class ObjectSampler : public CHeapObj<mtTracing> {
 
   // Sampling
   static void sample(HeapWord* object, size_t size, JavaThread* thread);
-  void add(HeapWord* object, size_t size, traceid thread_id, JavaThread* thread);
+  void add(HeapWord* object, size_t size, traceid thread_id, bool virtual_thread, const JfrBlobHandle& bh, JavaThread* thread);
   void scavenge();
   void remove_dead(ObjectSample* sample);
 
