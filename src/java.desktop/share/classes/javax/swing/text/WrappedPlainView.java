@@ -657,8 +657,8 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * Simple view of a line that wraps if it doesn't
      * fit within the horizontal space allocated.
      * This class tries to be lightweight by carrying little
-     * state of it's own and sharing the state of the outer class
-     * with it's sibblings.
+     * state of its own and sharing the state of the outer class
+     * with its siblings.
      */
     class WrappedLine extends View {
 
