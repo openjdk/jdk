@@ -1696,6 +1696,292 @@ bool Node::add_to_worklist(Node* n, Node_List* worklist, Arena* old_arena, Vecto
   return false;
 }
 
+class PrintBFS {
+public:
+  PrintBFS(Node* start, const int max_distance, Node* target, char const* options)
+  : _start(start), _max_distance(max_distance), _target(target), _options(options),
+    _parent((CmpKey)&cmp, hashkey), _distance((CmpKey)&cmp, hashkey) {};
+  void run();
+private:
+  void traversal();
+  void backtrack();
+
+  // inputs
+  Node* _start;
+  const int _max_distance;
+  Node* _target;
+  char const* _options;
+
+  // options
+  bool _traverse_inputs = false;
+  bool _traverse_outputs = false;
+  bool _traverse_control = false;
+  bool _traverse_memory = false;
+  bool _traverse_data = false;
+  bool _traverse_mixed = false;
+  bool _traverse_other = false;
+  bool _use_color = false;
+  bool _print_blocks = false;
+  bool _print_old = false;
+  void parse_options_helper(bool &variable, const char* character);
+  void parse_options();
+
+  // node category
+  bool is_visitable_category(Node* n); // filter node category agains options
+  const char* category_string(Node* n); // (colored) category
+
+  // node info
+  Node* old_node (Node* n); // mach node -> prior IR node
+  void print_node_idx (Node* n); // to tty
+  void print_node_block (Node* n); // to tty: head idx, _idom, _dom_depth
+
+  // traversal data structures
+  Node_List _worklist; // BFS queue
+  void worklist_maybe_push(Node* n, Node* p, const int d);
+  static int cmp(const Node* n1, const Node* n2) { return n1 != n2; }
+  Dict _parent;   // node -> parent (one step closer to _start)
+  Dict _distance; // node -> distance to start
+  int distance(Node* n);
+  Node* parent(Node* n);
+
+  // print header + node table
+  void print_header(bool print_parent);
+  void print_node(Node* n, bool print_parent);
+};
+
+void PrintBFS::run() {
+  if(_max_distance < 0) {
+    tty->print("print_bfs: max_distance must be non-negative!\n");
+    return;
+  }
+  parse_options();
+
+  if (_target == nullptr) {
+    tty->print("No target: perform BFS.\n");
+    print_header(true);
+  } else {
+    tty->print("Find shortest path:");
+    print_node_idx(_start);
+    tty->print(" ->");
+    print_node_idx(_target);
+    tty->print("\n");
+  }
+
+  traversal();
+  backtrack();
+}
+
+void PrintBFS::traversal() {
+  worklist_maybe_push(_start, _start, 0);
+  uint pos = 0;
+  while (pos < _worklist.size()) {
+    Node* n = _worklist.at(pos++);
+    int d = abs(distance(n));
+    if (_target == nullptr) {
+      print_node(n, true);
+    }
+    if (n->is_Con()) {
+      continue; // don't traverse through constant or top node
+    }
+    if (_traverse_inputs && _max_distance > d) {
+      for (uint i = 0; i < n->req(); i++) {
+        worklist_maybe_push(n->in(i), n, d+1); // positive for input
+      }
+    }
+    if (_traverse_outputs && _max_distance > d) {
+      for (uint i = 0; i < n->outcnt(); i++) {
+        worklist_maybe_push(n->raw_out(i), n, -d-1); // negative for output
+      }
+    }
+  }
+}
+
+void PrintBFS::backtrack() {
+  if (_target != nullptr) {
+    if (parent(_target) == nullptr) {
+      tty->print("Could not find target in BFS.\n");
+      return;
+    }
+    print_header(false);
+    Node* current = _target;
+    while (current != parent(current)) {
+      print_node(current, false);
+      current = parent(current);
+    }
+    print_node(_start, false);
+  }
+}
+
+void PrintBFS::parse_options_helper(bool &variable, const char* character) {
+  if (strstr(_options, character) != nullptr) {
+    variable = true;
+  }
+}
+
+void PrintBFS::parse_options() {
+  if (_options == nullptr) {
+    _options = "+-cmdxoOB"; // default options
+  }
+  parse_options_helper(_traverse_inputs,  "+");
+  parse_options_helper(_traverse_outputs, "-");
+  parse_options_helper(_traverse_control, "c");
+  parse_options_helper(_traverse_memory,  "m");
+  parse_options_helper(_traverse_data,    "d");
+  parse_options_helper(_traverse_mixed,   "x");
+  parse_options_helper(_traverse_other,   "o");
+  parse_options_helper(_use_color,        "#");
+  parse_options_helper(_print_blocks,     "B");
+  parse_options_helper(_print_old,        "O");
+  Compile* C = Compile::current();
+  _print_old &= (C->matcher() != nullptr); // only show old if there are new
+  _print_blocks &= (C->cfg() != nullptr); // only show blocks if available
+}
+
+bool PrintBFS::is_visitable_category(Node* n) {
+  const Type *t = n->bottom_type();
+  switch (t->category()) {
+    case Type::Category::Data:
+      return _traverse_data;
+    case Type::Category::Memory:
+      return _traverse_memory;
+    case Type::Category::Mixed:
+      return _traverse_mixed;
+    case Type::Category::Control:
+      return _traverse_control;
+    case Type::Category::Other:
+      return _traverse_other;
+    case Type::Category::Undef:
+      n->dump();
+      assert(false, "category undef ??");
+    default:
+      n->dump();
+      assert(false, "not covered");
+  }
+  return false;
+}
+
+const char* PrintBFS::category_string(Node* n) {
+  const Type *t = n->bottom_type();
+  switch (t->category()) {
+    case Type::Category::Data:
+      return _use_color ? "\u001b[34md\u001b[0m" : "d";
+    case Type::Category::Memory:
+      return _use_color ? "\u001b[32mm\u001b[0m" : "m";
+    case Type::Category::Mixed:
+      return _use_color ? "\u001b[35mx\u001b[0m" : "x";
+    case Type::Category::Control:
+      return _use_color ? "\u001b[31mc\u001b[0m" : "c";
+    case Type::Category::Other:
+      return _use_color ? "\u001b[33mo\u001b[0m" : "o";
+    case Type::Category::Undef:
+      n->dump();
+      assert(false, "category undef ??");
+    default:
+      n->dump();
+      assert(false, "not covered");
+  }
+  return "?";
+}
+
+Node* PrintBFS::old_node (Node* n) {
+  Compile* C = Compile::current();
+  if (C->matcher() == nullptr || !C->node_arena()->contains(n)) {
+    return (Node*)nullptr;
+  } else {
+    return C->matcher()->find_old_node(n);
+  }
+}
+
+void PrintBFS::print_node_idx (Node* n) {
+  Compile* C = Compile::current();
+  char buf[30];
+  if (n == nullptr) {
+    sprintf(buf,"_");           // null
+  } else if (C->node_arena()->contains(n)) {
+    sprintf(buf, "%d", n->_idx);  // new node
+  } else {
+    sprintf(buf, "o%d", n->_idx); // old node
+  }
+  tty->print("%6s", buf);
+}
+
+void PrintBFS::print_node_block (Node* n) {
+  Compile* C = Compile::current();
+  Block* b = C->node_arena()->contains(n)
+             ? C->cfg()->get_block_for_node(n)
+             : nullptr; // guard against old nodes
+  if (b == nullptr) {
+    tty->print("     _");
+    tty->print("     _");
+    tty->print("   _");
+  } else {
+    print_node_idx(b->head());
+    if(b->_idom) {
+      print_node_idx(b->_idom->head());
+    } else {
+      tty->print("     _");
+    }
+    tty->print("%4d", b->_dom_depth);
+  }
+}
+
+void PrintBFS::worklist_maybe_push(Node* n, Node* p, const int d) {
+  if (n != nullptr &&
+      parent(n) == nullptr && // visited before?
+      (is_visitable_category(n) || n == _start)) { // correct category or start?
+    _worklist.push(n);
+    _parent.Insert(n, p);
+    _distance.Insert(n, (void*)(size_t)d);
+  }
+}
+
+int PrintBFS::distance(Node* n) {
+  return (int)(size_t)_distance[n];
+  // storing int in a (void*), must do double casting
+}
+
+Node* PrintBFS::parent(Node* n) {
+  return (Node*)_parent[n];
+}
+
+void PrintBFS::print_header(bool print_parent) {
+  tty->print("dis");                          // distance
+  if (_print_blocks) {
+    tty->print(" [head  idom  d]");           // block
+  }
+  if(_print_old) {
+    tty->print("   old");                     // old node
+  }
+  if (print_parent) {
+    tty->print("   par");                     // parent
+  }
+  if (_traverse_inputs && _traverse_outputs) {
+    tty->print(" e");                         // edge
+  }
+  tty->print(" c dump\n");                    // category and dump
+  tty->print("---------------------------------------------\n");
+}
+
+void PrintBFS::print_node(Node* n, bool print_parent) {
+  tty->print("%3d", abs(distance(n)));        // distance
+  if (_print_blocks) {
+    print_node_block(n);                      // block
+  }
+  if (_print_old) {
+    print_node_idx(old_node(n));              // old node
+  }
+  if (print_parent) {
+    print_node_idx(parent(n));                // parent
+  }
+  if (_traverse_inputs && _traverse_outputs) {
+    int dd = distance(n);
+    const char* edge = (dd >=0 ) ? ((dd > 0) ? "+" : " " ) : "-";
+    tty->print(" %s", edge);                  // edge
+  }
+  tty->print(" %s ", category_string(n));     // category
+  n->dump();                                  // node dump
+}
+
 //------------------------------print_bfs--------------------------------------
 // Call this from debugger:
 // BFS traversal of graph, starting at node this/start
@@ -1743,275 +2029,6 @@ bool Node::add_to_worklist(Node* n, Node_List* worklist, Arena* old_arena, Vecto
 //   edge:     input (+) or output (-)
 //   category: characters cmdxo from options string
 //   dump
-class PrintBFS {
-public:
-  PrintBFS(Node* start, const int max_distance, Node* target, char const* options)
-  : _start(start), _max_distance(max_distance), _target(target), _options(options),
-    _parent((CmpKey)&cmp, hashkey), _distance((CmpKey)&cmp, hashkey) {};
-  void run();
-  void traversal();
-  void backtrack();
-private:
-  // inputs
-  Node* _start;
-  const int _max_distance;
-  Node* _target;
-  char const* _options;
-
-  // options
-  bool _traverse_inputs = false;
-  bool _traverse_outputs = false;
-  bool _traverse_control = false;
-  bool _traverse_memory = false;
-  bool _traverse_data = false;
-  bool _traverse_mixed = false;
-  bool _traverse_other = false;
-  bool _use_color = false;
-  bool _print_blocks = false;
-  bool _print_old = false;
-  void parse_options_helper(bool &variable, const char* character);
-  void parse_options();
-
-  // node category
-  bool is_visitable_category(Node* n); // filter node category agains options
-  const char* category_string(Node* n); // (colored) category
-
-  // node info
-  Node* old_node (Node* n); // mach node -> prior IR node
-  void print_node_idx (Node* n); // to tty
-  void print_node_block (Node* n); // to tty: head idx, _idom, _dom_depth
-
-  // traversal data structures
-  Node_List _worklist; // BFS queue
-  void worklist_maybe_push(Node* n, Node* p, const int d);
-  static int cmp(const Node* n1, const Node* n2) { return n1 != n2; }
-  Dict _parent;   // node -> parent (one step closer to _start)
-  Dict _distance; // node -> distance to start
-  int distance(Node* n);
-  Node* parent(Node* n);
-
-  // print header + node table
-  void print_header(bool print_parent);
-  void print_node(Node* n, bool print_parent);
-};
-void PrintBFS::run() {
-  if(_max_distance < 0) {
-    tty->print("print_bfs: max_distance must be non-negative!\n");
-    return;
-  }
-  parse_options();
-
-  if (_target == nullptr) {
-    tty->print("No target: perform BFS.\n");
-    print_header(true);
-  } else {
-    tty->print("Find shortest path:");
-    print_node_idx(_start);
-    tty->print(" ->");
-    print_node_idx(_target);
-    tty->print("\n");
-  }
-
-  traversal();
-  backtrack();
-}
-void PrintBFS::traversal() {
-  worklist_maybe_push(_start, _start, 0);
-  uint pos = 0;
-  while (pos < _worklist.size()) {
-    Node* n = _worklist.at(pos++);
-    int d = abs(distance(n));
-    if (_target == nullptr) {
-      print_node(n, true);
-    }
-    if (n->is_Con()) {
-      continue; // don't traverse through constant or top node
-    }
-    if (_traverse_inputs && _max_distance > d) {
-      for (uint i = 0; i < n->req(); i++) {
-        worklist_maybe_push(n->in(i), n, d+1); // positive for input
-      }
-    }
-    if (_traverse_outputs && _max_distance > d) {
-      for (uint i = 0; i < n->outcnt(); i++) {
-        worklist_maybe_push(n->raw_out(i), n, -d-1); // negative for output
-      }
-    }
-  }
-}
-void PrintBFS::backtrack() {
-  if (_target != nullptr) {
-    if (parent(_target) == nullptr) {
-      tty->print("Could not find target in BFS.\n");
-      return;
-    }
-    print_header(false);
-    Node* current = _target;
-    while (current != parent(current)) {
-      print_node(current, false);
-      current = parent(current);
-    }
-    print_node(_start, false);
-  }
-}
-void PrintBFS::parse_options_helper(bool &variable, const char* character) {
-  if (strstr(_options, character) != nullptr) {
-    variable = true;
-  }
-}
-void PrintBFS::parse_options() {
-  if (_options == nullptr) {
-    _options = "+-cmdxoOB"; // default options
-  }
-  parse_options_helper(_traverse_inputs,  "+");
-  parse_options_helper(_traverse_outputs, "-");
-  parse_options_helper(_traverse_control, "c");
-  parse_options_helper(_traverse_memory,  "m");
-  parse_options_helper(_traverse_data,    "d");
-  parse_options_helper(_traverse_mixed,   "x");
-  parse_options_helper(_traverse_other,   "o");
-  parse_options_helper(_use_color,        "#");
-  parse_options_helper(_print_blocks,     "B");
-  parse_options_helper(_print_old,        "O");
-  Compile* C = Compile::current();
-  _print_old &= (C->matcher() != nullptr); // only show old if there are new
-  _print_blocks &= (C->cfg() != nullptr); // only show blocks if available
-}
-bool PrintBFS::is_visitable_category(Node* n) {
-  const Type *t = n->bottom_type();
-  switch (t->category()) {
-    case Type::Category::Data:
-      return _traverse_data;
-    case Type::Category::Memory:
-      return _traverse_memory;
-    case Type::Category::Mixed:
-      return _traverse_mixed;
-    case Type::Category::Control:
-      return _traverse_control;
-    case Type::Category::Other:
-      return _traverse_other;
-    case Type::Category::Undef:
-      n->dump();
-      assert(false, "category undef ??");
-    default:
-      n->dump();
-      assert(false, "not covered");
-  }
-  return false;
-}
-const char* PrintBFS::category_string(Node* n) {
-  const Type *t = n->bottom_type();
-  switch (t->category()) {
-    case Type::Category::Data:
-      return _use_color ? "\u001b[34md\u001b[0m" : "d";
-    case Type::Category::Memory:
-      return _use_color ? "\u001b[32mm\u001b[0m" : "m";
-    case Type::Category::Mixed:
-      return _use_color ? "\u001b[35mx\u001b[0m" : "x";
-    case Type::Category::Control:
-      return _use_color ? "\u001b[31mc\u001b[0m" : "c";
-    case Type::Category::Other:
-      return _use_color ? "\u001b[33mo\u001b[0m" : "o";
-    case Type::Category::Undef:
-      n->dump();
-      assert(false, "category undef ??");
-    default:
-      n->dump();
-      assert(false, "not covered");
-  }
-  return "?";
-}
-Node* PrintBFS::old_node (Node* n) {
-  Compile* C = Compile::current();
-  if (C->matcher() == nullptr || !C->node_arena()->contains(n)) {
-    return (Node*)nullptr;
-  } else {
-    return C->matcher()->find_old_node(n);
-  }
-}
-void PrintBFS::print_node_idx (Node* n) {
-  Compile* C = Compile::current();
-  char buf[30];
-  if (n == nullptr) {
-    sprintf(buf,"_");           // null
-  } else if (C->node_arena()->contains(n)) {
-    sprintf(buf, "%d", n->_idx);  // new node
-  } else {
-    sprintf(buf, "o%d", n->_idx); // old node
-  }
-  tty->print("%6s", buf);
-}
-void PrintBFS::print_node_block (Node* n) {
-  Compile* C = Compile::current();
-  Block* b = C->node_arena()->contains(n)
-             ? C->cfg()->get_block_for_node(n)
-             : nullptr; // guard against old nodes
-  if (b == nullptr) {
-    tty->print("     _");
-    tty->print("     _");
-    tty->print("   _");
-  } else {
-    print_node_idx(b->head());
-    if(b->_idom) {
-      print_node_idx(b->_idom->head());
-    } else {
-      tty->print("     _");
-    }
-    tty->print("%4d", b->_dom_depth);
-  }
-}
-void PrintBFS::worklist_maybe_push(Node* n, Node* p, const int d) {
-  if (n != nullptr &&
-      parent(n) == nullptr && // visited before?
-      (is_visitable_category(n) || n == _start)) { // correct category or start?
-    _worklist.push(n);
-    _parent.Insert(n, p);
-    _distance.Insert(n, (void*)(size_t)d);
-  }
-}
-int PrintBFS::distance(Node* n) {
-  return (int)(size_t)_distance[n];
-  // storing int in a (void*), must do double casting
-}
-Node* PrintBFS::parent(Node* n) {
-  return (Node*)_parent[n];
-}
-void PrintBFS::print_header(bool print_parent) {
-  tty->print("dis");                          // distance
-  if (_print_blocks) {
-    tty->print(" [head  idom  d]");           // block
-  }
-  if(_print_old) {
-    tty->print("   old");                     // old node
-  }
-  if (print_parent) {
-    tty->print("   par");                     // parent
-  }
-  if (_traverse_inputs && _traverse_outputs) {
-    tty->print(" e");                         // edge
-  }
-  tty->print(" c dump\n");                    // category and dump
-  tty->print("---------------------------------------------\n");
-}
-void PrintBFS::print_node(Node* n, bool print_parent) {
-  tty->print("%3d", abs(distance(n)));        // distance
-  if (_print_blocks) {
-    print_node_block(n);                      // block
-  }
-  if (_print_old) {
-    print_node_idx(old_node(n));              // old node
-  }
-  if (print_parent) {
-    print_node_idx(parent(n));                // parent
-  }
-  if (_traverse_inputs && _traverse_outputs) {
-    int dd = distance(n);
-    const char* edge = (dd >=0 ) ? ((dd > 0) ? "+" : " " ) : "-";
-    tty->print(" %s", edge);                  // edge
-  }
-  tty->print(" %s ", category_string(n));     // category
-  n->dump();                                  // node dump
-}
 void Node::print_bfs(const int max_distance, Node* target, char const* options) {
   PrintBFS bfs(this, max_distance, target, options);
   bfs.run();
