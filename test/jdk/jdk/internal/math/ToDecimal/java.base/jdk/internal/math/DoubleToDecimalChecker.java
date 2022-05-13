@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ public class DoubleToDecimalChecker extends ToDecimalChecker {
     }
 
     /*
-     * A few values close to powers of 10 are incorrectly rendered by older JDK.
+     * Some values close to powers of 10 are incorrectly rendered by older JDKs.
      * The rendering is either too long or it is not the closest decimal.
      */
     private static void testPowersOf10() {
@@ -191,7 +191,7 @@ public class DoubleToDecimalChecker extends ToDecimalChecker {
     }
 
     /*
-     * Many values close to powers of 2 are incorrectly rendered by older JDK.
+     * Many values close to powers of 2 are incorrectly rendered by older JDKs.
      * The rendering is either too long or it is not the closest decimal.
      */
     private static void testPowersOf2() {
@@ -201,22 +201,22 @@ public class DoubleToDecimalChecker extends ToDecimalChecker {
     }
 
     /*
-     * There are tons of doubles that are rendered incorrectly by older JDK.
+     * There are tons of doubles that are rendered incorrectly by older JDKs.
      * While the renderings correctly round back to the original value,
      * they are longer than needed or are not the closest decimal to the double.
      * Here are just a very few examples.
      */
     private static final String[] Anomalies = {
-            /* JDK renders these, and others, with 18 digits! */
+            /* Older JDKs render these with 18 digits! */
             "2.82879384806159E17", "1.387364135037754E18",
             "1.45800632428665E17",
 
-            /* JDK renders these longer than needed */
+            /* Older JDKs render these longer than needed */
             "1.6E-322", "6.3E-322",
             "7.3879E20", "2.0E23", "7.0E22", "9.2E22",
             "9.5E21", "3.1E22", "5.63E21", "8.41E21",
 
-            /* JDK does not render these, and many others, as the closest */
+            /* Older JDKs do not render these as the closest */
             "9.9E-324", "9.9E-323",
             "1.9400994884341945E25", "3.6131332396758635E25",
             "2.5138990223946153E25",

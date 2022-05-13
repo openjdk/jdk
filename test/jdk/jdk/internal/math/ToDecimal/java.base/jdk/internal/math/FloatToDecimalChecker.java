@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
     /*
      * Test around v, up to z values below and above v.
      * Don't care when v is at the extremes,
-     * as any value returned by longBitsToDouble() is valid.
+     * as any value returned by intBitsToFloat() is valid.
      */
     private static void testAround(float v, int z) {
         int bits = floatToIntBits(v);
@@ -146,7 +146,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
     }
 
     /*
-     * MIN_NORMAL is incorrectly rendered by the JDK.
+     * MIN_NORMAL is incorrectly rendered by older JDKs.
      */
     private static void testExtremeValues() {
         testDec(NEGATIVE_INFINITY);
@@ -181,7 +181,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
     }
 
     /*
-     * Some "powers of 10" are incorrectly rendered by older JDK.
+     * Some values close to powers of 10 are incorrectly rendered by older JDKs.
      * The rendering is either too long or it is not the closest decimal.
      */
     private static void testPowersOf10() {
@@ -191,7 +191,7 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
     }
 
     /*
-     * Many powers of 2 are incorrectly rendered by older JDK.
+     * Many powers of 2 are incorrectly rendered by older JDKs.
      * The rendering is either too long or it is not the closest decimal.
      */
     private static void testPowersOf2() {
@@ -201,18 +201,18 @@ public class FloatToDecimalChecker extends ToDecimalChecker {
     }
 
     /*
-     * There are tons of doubles that are rendered incorrectly by older JDK.
+     * There are tons of floats that are rendered incorrectly by older JDKs.
      * While the renderings correctly round back to the original value,
-     * they are longer than needed or are not the closest decimal to the double.
+     * they are longer than needed or are not the closest decimal to the float.
      * Here are just a very few examples.
      */
     private static final String[] Anomalies = {
-            /* JDK renders these longer than needed */
+            /* Older JDKs render these longer than needed */
             "1.1754944E-38", "2.2E-44",
             "1.0E16", "2.0E16", "3.0E16", "5.0E16", "3.0E17",
-            "3.2E18", "3.7E18", "3.7E16", "3.72E17",
+            "3.2E18", "3.7E18", "3.7E16", "3.72E17", "2.432902E18",
 
-            /* JDK does not render this as the closest */
+            /* Older JDKs do not render this as the closest */
             "9.9E-44",
     };
 
