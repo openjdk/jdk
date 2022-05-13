@@ -40,7 +40,6 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.Security;
 import java.util.concurrent.ExecutorService;
@@ -48,15 +47,15 @@ import java.util.concurrent.Executors;
 
 public class ReadOnlyEngine {
 
-    private static String pathToStores = "../etc";
-    private static String keyStoreFile = "keystore";
-    private static String trustStoreFile = "truststore";
-    private static char[] passwd = "passphrase".toCharArray();
+    private final static String pathToStores = "../../../../javax/net/ssl/etc/";
+    private final static String keyStoreFile = "keystore";
+    private final static String trustStoreFile = "truststore";
+    private final static char[] passwd = "passphrase".toCharArray();
 
-    private static String keyFilename =
+    private final static String keyFilename =
         System.getProperty("test.src", "./") + "/" + pathToStores +
             "/" + keyStoreFile;
-    private static String trustFilename =
+    private final static String trustFilename =
         System.getProperty("test.src", "./") + "/" + pathToStores +
             "/" + trustStoreFile;
 
@@ -94,7 +93,6 @@ public class ReadOnlyEngine {
                     status = engine.getHandshakeStatus();
                     break;
                 case FINISHED:
-                    break;
                 case NOT_HANDSHAKING:
                     break;
                 default:
@@ -159,7 +157,7 @@ public class ReadOnlyEngine {
         } while (statusClient != HandshakeStatus.NOT_HANDSHAKING ||
             statusServer != HandshakeStatus.NOT_HANDSHAKING);
 
-        // Read NST
+        // Read New Session Ticket
         in.clear();
         receive(client, out, in);
 
@@ -175,7 +173,8 @@ public class ReadOnlyEngine {
         send(client, in.asReadOnlyBuffer(), out);
         in.clear();
         receive(server, out.asReadOnlyBuffer(), in);
-        testResult = StandardCharsets.UTF_8.decode(in.duplicate()).toString();
+        testResult = new String(in.array(), in.position(), in.limit() - in.position());
+
         System.out.println("1: Server receive: " + testResult);
         if (!testString.equalsIgnoreCase(testResult)) {
             throw new Exception("unequal");
@@ -186,10 +185,10 @@ public class ReadOnlyEngine {
         in.clear();
         System.out.println("2: Server send: " + testString);
         in.put(testString.getBytes()).flip();
-        send(server, in, out);
+        send(server, in.asReadOnlyBuffer(), out);
         in.clear();
-        receive(client, out, in);
-        testResult = StandardCharsets.UTF_8.decode(in.duplicate()).toString();
+        receive(client, out.asReadOnlyBuffer() , in);
+        testResult = new String(in.array(), in.position(), in.limit() - in.position());
         System.out.println("2: Client receive: " + testResult);
         if (!testString.equalsIgnoreCase(testResult)) {
             throw new Exception("not equal");

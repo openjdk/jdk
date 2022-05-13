@@ -673,9 +673,6 @@ public abstract class SSLEngine {
      * @throws  IllegalStateException if the client/server mode
      *          has not yet been set.
      * @see     #unwrap(ByteBuffer, ByteBuffer[], int, int)
-     *
-     * @implNote The data in {@code src} may be modified during the decryption
-     * process.
      */
     public SSLEngineResult unwrap(ByteBuffer src,
             ByteBuffer dst) throws SSLException {
@@ -713,9 +710,6 @@ public abstract class SSLEngine {
      * @throws  IllegalStateException if the client/server mode
      *          has not yet been set.
      * @see     #unwrap(ByteBuffer, ByteBuffer[], int, int)
-     *
-     * @implNote The data in {@code src} may be modified during the decryption
-     * process
      */
     public SSLEngineResult unwrap(ByteBuffer src,
             ByteBuffer [] dsts) throws SSLException {
@@ -761,8 +755,8 @@ public abstract class SSLEngine {
      * The underlying memory used by the {@code src} and
      * {@code dsts ByteBuffer}s must not be the same.
      * <P>
-     * The inbound network buffer may be modified as a result of this
-     * call:  therefore if the network data packet is required for some
+     * The inbound network buffer, {@code src}, may be modified as a result of
+     * this call:  therefore if the network data packet is required for some
      * secondary purpose, the data should be duplicated before calling this
      * method.  Note:  the network data will not be useful to a second
      * SSLEngine, as each SSLEngine contains unique random state which
@@ -804,9 +798,6 @@ public abstract class SSLEngine {
      * @see     java.nio.channels.ScatteringByteChannel
      * @see     java.nio.channels.ScatteringByteChannel#read(
      *              ByteBuffer[], int, int)
-     *
-     * @implNote The data in {@code src} may be modified during the decryption
-     * process
      */
     public abstract SSLEngineResult unwrap(ByteBuffer src,
             ByteBuffer [] dsts, int offset, int length) throws SSLException;
