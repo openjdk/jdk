@@ -1792,7 +1792,7 @@ public class SwingUtilities2 {
     /**
      * Returns an integer from the defaults table that is appropriate
      * for the given locale. If {@code key} does not map to a valid
-     * {@code Integer}, or can not be converted from a {@code String}
+     * {@code Integer}, or cannot be converted from a {@code String}
      * to an integer, the value 0 is returned.
      *
      * @param key  an {@code Object} specifying the int. Returned value
