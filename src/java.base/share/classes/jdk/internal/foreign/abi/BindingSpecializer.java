@@ -62,6 +62,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.function.BiPredicate;
 
+import static java.lang.foreign.ValueLayout.*;
 import static java.lang.invoke.MethodType.methodType;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
@@ -713,29 +714,29 @@ public class BindingSpecializer {
     private Class<?> emitLoadLayoutConstant(Class<?> type) {
         Class<?> valueLayoutType = valueLayoutTypeFor(type);
         String valueLayoutConstantName = valueLayoutConstantFor(type);
-        emitGetStatic(ValueLayout.class, valueLayoutConstantName, valueLayoutType.descriptorString());
+        emitGetStatic(BindingSpecializer.class, valueLayoutConstantName, valueLayoutType.descriptorString());
         return valueLayoutType;
     }
 
     private static String valueLayoutConstantFor(Class<?> type) {
         if (type == boolean.class) {
-            return "JAVA_BOOLEAN";
+            return "JAVA_BOOLEAN_UNALIGNED";
         } else if (type == byte.class) {
-            return "JAVA_BYTE";
+            return "JAVA_BYTE_UNALIGNED";
         } else if (type == short.class) {
-            return "JAVA_SHORT";
+            return "JAVA_SHORT_UNALIGNED";
         } else if (type == char.class) {
-            return "JAVA_CHAR";
+            return "JAVA_CHAR_UNALIGNED";
         } else if (type == int.class) {
-            return "JAVA_INT";
+            return "JAVA_INT_UNALIGNED";
         } else if (type == long.class) {
-            return "JAVA_LONG";
+            return "JAVA_LONG_UNALIGNED";
         } else if (type == float.class) {
-            return "JAVA_FLOAT";
+            return "JAVA_FLOAT_UNALIGNED";
         } else if (type == double.class) {
-            return "JAVA_DOUBLE";
+            return "JAVA_DOUBLE_UNALIGNED";
         } else if (type == MemoryAddress.class) {
-            return "ADDRESS";
+            return "ADDRESS_UNALIGNED";
         } else {
             throw new IllegalStateException("Unknown type: " + type);
         }
@@ -961,4 +962,15 @@ public class BindingSpecializer {
             }
         }
     }
+
+    // unaligned constants
+    public final static ValueLayout.OfBoolean JAVA_BOOLEAN_UNALIGNED = JAVA_BOOLEAN;
+    public final static ValueLayout.OfByte JAVA_BYTE_UNALIGNED = JAVA_BYTE;
+    public final static ValueLayout.OfShort JAVA_SHORT_UNALIGNED = JAVA_SHORT.withBitAlignment(8);
+    public final static ValueLayout.OfChar JAVA_CHAR_UNALIGNED = JAVA_CHAR.withBitAlignment(8);
+    public final static ValueLayout.OfInt JAVA_INT_UNALIGNED = JAVA_INT.withBitAlignment(8);
+    public final static ValueLayout.OfLong JAVA_LONG_UNALIGNED = JAVA_LONG.withBitAlignment(8);
+    public final static ValueLayout.OfFloat JAVA_FLOAT_UNALIGNED = JAVA_FLOAT.withBitAlignment(8);
+    public final static ValueLayout.OfDouble JAVA_DOUBLE_UNALIGNED = JAVA_DOUBLE.withBitAlignment(8);
+    public final static ValueLayout.OfAddress ADDRESS_UNALIGNED = ADDRESS.withBitAlignment(8);
 }
