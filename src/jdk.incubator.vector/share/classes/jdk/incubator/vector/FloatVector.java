@@ -2707,11 +2707,11 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                        VectorMask<Float> m) {
         FloatSpecies vsp = (FloatSpecies) species;
         if (offset >= 0 && offset <= (a.length - species.vectorByteSize())) {
-            return vsp.dummyVector().fromByteArray0(a, offset, m, /* offsetInRange */ true).maybeSwap(bo);
+            return vsp.dummyVector().fromByteArray0(a, offset, m, /* offsetInRange */ 1).maybeSwap(bo);
         }
 
         checkMaskFromIndexSize(offset, vsp, m, 4, a.length);
-        return vsp.dummyVector().fromByteArray0(a, offset, m, /* offsetInRange */ false).maybeSwap(bo);
+        return vsp.dummyVector().fromByteArray0(a, offset, m, /* offsetInRange */ 0).maybeSwap(bo);
     }
 
     /**
@@ -2766,11 +2766,11 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                    VectorMask<Float> m) {
         FloatSpecies vsp = (FloatSpecies) species;
         if (offset >= 0 && offset <= (a.length - species.length())) {
-            return vsp.dummyVector().fromArray0(a, offset, m, /* offsetInRange */ true);
+            return vsp.dummyVector().fromArray0(a, offset, m, /* offsetInRange */ 1);
         }
 
         checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
-        return vsp.dummyVector().fromArray0(a, offset, m, /* offsetInRange */ false);
+        return vsp.dummyVector().fromArray0(a, offset, m, /* offsetInRange */ 0);
     }
 
     /**
@@ -2972,11 +2972,11 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                         VectorMask<Float> m) {
         FloatSpecies vsp = (FloatSpecies) species;
         if (offset >= 0 && offset <= (bb.limit() - species.vectorByteSize())) {
-            return vsp.dummyVector().fromByteBuffer0(bb, offset, m, /* offsetInRange */ true).maybeSwap(bo);
+            return vsp.dummyVector().fromByteBuffer0(bb, offset, m, /* offsetInRange */ 1).maybeSwap(bo);
         }
 
         checkMaskFromIndexSize(offset, vsp, m, 4, bb.limit());
-        return vsp.dummyVector().fromByteBuffer0(bb, offset, m, /* offsetInRange */ false).maybeSwap(bo);
+        return vsp.dummyVector().fromByteBuffer0(bb, offset, m, /* offsetInRange */ 0).maybeSwap(bo);
     }
 
     // Memory store operations
@@ -3247,35 +3247,19 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     /*package-private*/
     abstract
-    FloatVector fromArray0(float[] a, int offset, VectorMask<Float> m, boolean offsetInRange);
+    FloatVector fromArray0(float[] a, int offset, VectorMask<Float> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<Float>>
-    FloatVector fromArray0Template(Class<M> maskClass, float[] a, int offset, M m, boolean offsetInRange) {
-        return fromArray0Template(maskClass, a, arrayAddress(a, offset),
-            offset, m, offsetInRange,
-            (arr, off, s, vm) -> s.ldOp(arr, off, vm,
-                                        (arr_, off_, i) -> arr_[off_ + i]));
-    }
-
-    @ForceInline
-    final
-    <C, M extends VectorMask<Float>>
-    FloatVector fromArray0Template(Class<M> maskClass, C base, long offset, int index, M m, boolean offsetInRange,
-                        VectorSupport.LoadVectorMaskedOperation<C, FloatVector, FloatSpecies, M> defaultImpl) {
+    FloatVector fromArray0Template(Class<M> maskClass, float[] a, int offset, M m, int offsetInRange) {
         m.check(species());
         FloatSpecies vsp = vspecies();
-        if (offsetInRange) {
-            return VectorSupport.loadMasked(
-                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                base, offset, m, /* offsetInRange */ 1,
-                base, index, vsp, defaultImpl);
-        } else {
-            return VectorSupport.loadMasked(
-                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                base, offset, m, /* offsetInRange */ 0,
-                base, index, vsp, defaultImpl);
-        }
+        return VectorSupport.loadMasked(
+            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            a, arrayAddress(a, offset), m, offsetInRange,
+            a, offset, vsp,
+            (arr, off, s, vm) -> s.ldOp(arr, off, vm,
+                                        (arr_, off_, i) -> arr_[off_ + i]));
     }
 
     /*package-private*/
@@ -3333,14 +3317,17 @@ public abstract class FloatVector extends AbstractVector<Float> {
     }
 
     abstract
-    FloatVector fromByteArray0(byte[] a, int offset, VectorMask<Float> m, boolean offsetInRange);
+    FloatVector fromByteArray0(byte[] a, int offset, VectorMask<Float> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<Float>>
-    FloatVector fromByteArray0Template(Class<M> maskClass, byte[] a, int offset, M m, boolean offsetInRange) {
-        return fromArray0Template(
-            maskClass, a, byteArrayAddress(a, offset),
-            offset, m, offsetInRange,
+    FloatVector fromByteArray0Template(Class<M> maskClass, byte[] a, int offset, M m, int offsetInRange) {
+        FloatSpecies vsp = vspecies();
+        m.check(vsp);
+        return VectorSupport.loadMasked(
+            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            a, byteArrayAddress(a, offset), m, offsetInRange,
+            a, offset, vsp,
             (arr, off, s, vm) -> {
                 ByteBuffer wb = wrapper(arr, NATIVE_ENDIAN);
                 return s.ldOp(wb, off, vm,
@@ -3365,11 +3352,11 @@ public abstract class FloatVector extends AbstractVector<Float> {
     }
 
     abstract
-    FloatVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Float> m, boolean offsetInRange);
+    FloatVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Float> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<Float>>
-    FloatVector fromByteBuffer0Template(Class<M> maskClass, ByteBuffer bb, int offset, M m, boolean offsetInRange) {
+    FloatVector fromByteBuffer0Template(Class<M> maskClass, ByteBuffer bb, int offset, M m, int offsetInRange) {
         FloatSpecies vsp = vspecies();
         m.check(vsp);
         return ScopedMemoryAccess.loadFromByteBufferMasked(

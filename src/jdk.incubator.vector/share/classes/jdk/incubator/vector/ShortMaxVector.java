@@ -823,7 +823,7 @@ final class ShortMaxVector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m, boolean offsetInRange) {
+    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m, int offsetInRange) {
         return super.fromArray0Template(ShortMaxMask.class, a, offset, (ShortMaxMask) m, offsetInRange);  // specialize
     }
 
@@ -838,7 +838,7 @@ final class ShortMaxVector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m, boolean offsetInRange) {
+    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m, int offsetInRange) {
         return super.fromCharArray0Template(ShortMaxMask.class, a, offset, (ShortMaxMask) m, offsetInRange);  // specialize
     }
 
@@ -853,7 +853,7 @@ final class ShortMaxVector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromByteArray0(byte[] a, int offset, VectorMask<Short> m, boolean offsetInRange) {
+    ShortVector fromByteArray0(byte[] a, int offset, VectorMask<Short> m, int offsetInRange) {
         return super.fromByteArray0Template(ShortMaxMask.class, a, offset, (ShortMaxMask) m, offsetInRange);  // specialize
     }
 
@@ -867,7 +867,7 @@ final class ShortMaxVector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m, boolean offsetInRange) {
+    ShortVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m, int offsetInRange) {
         return super.fromByteBuffer0Template(ShortMaxMask.class, bb, offset, (ShortMaxMask) m, offsetInRange);  // specialize
     }
 

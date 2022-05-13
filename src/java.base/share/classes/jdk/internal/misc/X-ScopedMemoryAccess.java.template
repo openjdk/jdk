@@ -424,7 +424,7 @@ public class ScopedMemoryAccess {
     <V extends VectorSupport.Vector<E>, E, S extends VectorSupport.VectorSpecies<E>,
      M extends VectorSupport.VectorMask<E>>
     V loadFromByteBufferMasked(Class<? extends V> vmClass, Class<M> maskClass, Class<E> e,
-                               int length, ByteBuffer bb, int offset, M m, S s, boolean offsetInRange,
+                               int length, ByteBuffer bb, int offset, M m, S s, int offsetInRange,
                                VectorSupport.LoadVectorMaskedOperation<ByteBuffer, V, S, M> defaultImpl) {
         try {
             return loadFromByteBufferMaskedScoped(
@@ -446,21 +446,15 @@ public class ScopedMemoryAccess {
     V loadFromByteBufferMaskedScoped(ScopedMemoryAccess.Scope scope, Class<? extends V> vmClass,
                                      Class<M> maskClass, Class<E> e, int length,
                                      ByteBuffer bb, int offset, M m,
-                                     S s, boolean offsetInRange,
+                                     S s, int offsetInRange,
                                      VectorSupport.LoadVectorMaskedOperation<ByteBuffer, V, S, M> defaultImpl) {
         try {
             if (scope != null) {
                 scope.checkValidState();
             }
 
-            if (offsetInRange) {
-                return VectorSupport.loadMasked(vmClass, maskClass, e, length,
-                        BufferAccess.bufferBase(bb), BufferAccess.bufferAddress(bb, offset), m, /* offsetInRange */ 1,
-                        bb, offset, s,
-                        defaultImpl);
-            }
             return VectorSupport.loadMasked(vmClass, maskClass, e, length,
-                    BufferAccess.bufferBase(bb), BufferAccess.bufferAddress(bb, offset), m, /* offsetInRange */ 0,
+                    BufferAccess.bufferBase(bb), BufferAccess.bufferAddress(bb, offset), m, offsetInRange,
                     bb, offset, s,
                     defaultImpl);
         } finally {

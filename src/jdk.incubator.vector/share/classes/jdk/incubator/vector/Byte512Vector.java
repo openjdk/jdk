@@ -949,7 +949,7 @@ final class Byte512Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m, int offsetInRange) {
         return super.fromArray0Template(Byte512Mask.class, a, offset, (Byte512Mask) m, offsetInRange);  // specialize
     }
 
@@ -965,7 +965,7 @@ final class Byte512Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m, int offsetInRange) {
         return super.fromBooleanArray0Template(Byte512Mask.class, a, offset, (Byte512Mask) m, offsetInRange);  // specialize
     }
 
@@ -979,7 +979,7 @@ final class Byte512Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m, int offsetInRange) {
         return super.fromByteArray0Template(Byte512Mask.class, a, offset, (Byte512Mask) m, offsetInRange);  // specialize
     }
 
@@ -993,7 +993,7 @@ final class Byte512Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m, int offsetInRange) {
         return super.fromByteBuffer0Template(Byte512Mask.class, bb, offset, (Byte512Mask) m, offsetInRange);  // specialize
     }
 

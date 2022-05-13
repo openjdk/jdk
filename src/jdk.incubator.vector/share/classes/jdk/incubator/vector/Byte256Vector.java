@@ -885,7 +885,7 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m, int offsetInRange) {
         return super.fromArray0Template(Byte256Mask.class, a, offset, (Byte256Mask) m, offsetInRange);  // specialize
     }
 
@@ -901,7 +901,7 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m, int offsetInRange) {
         return super.fromBooleanArray0Template(Byte256Mask.class, a, offset, (Byte256Mask) m, offsetInRange);  // specialize
     }
 
@@ -915,7 +915,7 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m, int offsetInRange) {
         return super.fromByteArray0Template(Byte256Mask.class, a, offset, (Byte256Mask) m, offsetInRange);  // specialize
     }
 
@@ -929,7 +929,7 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m, int offsetInRange) {
         return super.fromByteBuffer0Template(Byte256Mask.class, bb, offset, (Byte256Mask) m, offsetInRange);  // specialize
     }
 

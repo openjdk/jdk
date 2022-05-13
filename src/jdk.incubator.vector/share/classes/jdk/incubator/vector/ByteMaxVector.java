@@ -823,7 +823,7 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m, int offsetInRange) {
         return super.fromArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m, offsetInRange);  // specialize
     }
 
@@ -839,7 +839,7 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m, int offsetInRange) {
         return super.fromBooleanArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m, offsetInRange);  // specialize
     }
 
@@ -853,7 +853,7 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m, int offsetInRange) {
         return super.fromByteArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m, offsetInRange);  // specialize
     }
 
@@ -867,7 +867,7 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m, boolean offsetInRange) {
+    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m, int offsetInRange) {
         return super.fromByteBuffer0Template(ByteMaxMask.class, bb, offset, (ByteMaxMask) m, offsetInRange);  // specialize
     }
 

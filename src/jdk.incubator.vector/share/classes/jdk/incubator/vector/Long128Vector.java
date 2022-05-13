@@ -815,7 +815,7 @@ final class Long128Vector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m, boolean offsetInRange) {
+    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m, int offsetInRange) {
         return super.fromArray0Template(Long128Mask.class, a, offset, (Long128Mask) m, offsetInRange);  // specialize
     }
 
@@ -838,7 +838,7 @@ final class Long128Vector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromByteArray0(byte[] a, int offset, VectorMask<Long> m, boolean offsetInRange) {
+    LongVector fromByteArray0(byte[] a, int offset, VectorMask<Long> m, int offsetInRange) {
         return super.fromByteArray0Template(Long128Mask.class, a, offset, (Long128Mask) m, offsetInRange);  // specialize
     }
 
@@ -852,7 +852,7 @@ final class Long128Vector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Long> m, boolean offsetInRange) {
+    LongVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Long> m, int offsetInRange) {
         return super.fromByteBuffer0Template(Long128Mask.class, bb, offset, (Long128Mask) m, offsetInRange);  // specialize
     }
 

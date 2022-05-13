@@ -1111,7 +1111,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     final
-    $abstractvectortype$ fromArray0($type$[] a, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange) {
+    $abstractvectortype$ fromArray0($type$[] a, int offset, VectorMask<$Boxtype$> m, int offsetInRange) {
         return super.fromArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);  // specialize
     }
 
@@ -1135,7 +1135,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     final
-    $abstractvectortype$ fromCharArray0(char[] a, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange) {
+    $abstractvectortype$ fromCharArray0(char[] a, int offset, VectorMask<$Boxtype$> m, int offsetInRange) {
         return super.fromCharArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);  // specialize
     }
 #end[short]
@@ -1151,7 +1151,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     final
-    $abstractvectortype$ fromBooleanArray0(boolean[] a, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange) {
+    $abstractvectortype$ fromBooleanArray0(boolean[] a, int offset, VectorMask<$Boxtype$> m, int offsetInRange) {
         return super.fromBooleanArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);  // specialize
     }
 #end[byte]
@@ -1166,7 +1166,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     final
-    $abstractvectortype$ fromByteArray0(byte[] a, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange) {
+    $abstractvectortype$ fromByteArray0(byte[] a, int offset, VectorMask<$Boxtype$> m, int offsetInRange) {
         return super.fromByteArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);  // specialize
     }
 
@@ -1180,7 +1180,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     final
-    $abstractvectortype$ fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange) {
+    $abstractvectortype$ fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<$Boxtype$> m, int offsetInRange) {
         return super.fromByteBuffer0Template($masktype$.class, bb, offset, ($masktype$) m, offsetInRange);  // specialize
     }
 

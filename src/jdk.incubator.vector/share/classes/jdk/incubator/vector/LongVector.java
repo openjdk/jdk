@@ -2711,11 +2711,11 @@ public abstract class LongVector extends AbstractVector<Long> {
                                        VectorMask<Long> m) {
         LongSpecies vsp = (LongSpecies) species;
         if (offset >= 0 && offset <= (a.length - species.vectorByteSize())) {
-            return vsp.dummyVector().fromByteArray0(a, offset, m, /* offsetInRange */ true).maybeSwap(bo);
+            return vsp.dummyVector().fromByteArray0(a, offset, m, /* offsetInRange */ 1).maybeSwap(bo);
         }
 
         checkMaskFromIndexSize(offset, vsp, m, 8, a.length);
-        return vsp.dummyVector().fromByteArray0(a, offset, m, /* offsetInRange */ false).maybeSwap(bo);
+        return vsp.dummyVector().fromByteArray0(a, offset, m, /* offsetInRange */ 0).maybeSwap(bo);
     }
 
     /**
@@ -2770,11 +2770,11 @@ public abstract class LongVector extends AbstractVector<Long> {
                                    VectorMask<Long> m) {
         LongSpecies vsp = (LongSpecies) species;
         if (offset >= 0 && offset <= (a.length - species.length())) {
-            return vsp.dummyVector().fromArray0(a, offset, m, /* offsetInRange */ true);
+            return vsp.dummyVector().fromArray0(a, offset, m, /* offsetInRange */ 1);
         }
 
         checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
-        return vsp.dummyVector().fromArray0(a, offset, m, /* offsetInRange */ false);
+        return vsp.dummyVector().fromArray0(a, offset, m, /* offsetInRange */ 0);
     }
 
     /**
@@ -2994,11 +2994,11 @@ public abstract class LongVector extends AbstractVector<Long> {
                                         VectorMask<Long> m) {
         LongSpecies vsp = (LongSpecies) species;
         if (offset >= 0 && offset <= (bb.limit() - species.vectorByteSize())) {
-            return vsp.dummyVector().fromByteBuffer0(bb, offset, m, /* offsetInRange */ true).maybeSwap(bo);
+            return vsp.dummyVector().fromByteBuffer0(bb, offset, m, /* offsetInRange */ 1).maybeSwap(bo);
         }
 
         checkMaskFromIndexSize(offset, vsp, m, 8, bb.limit());
-        return vsp.dummyVector().fromByteBuffer0(bb, offset, m, /* offsetInRange */ false).maybeSwap(bo);
+        return vsp.dummyVector().fromByteBuffer0(bb, offset, m, /* offsetInRange */ 0).maybeSwap(bo);
     }
 
     // Memory store operations
@@ -3288,35 +3288,19 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     /*package-private*/
     abstract
-    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m, boolean offsetInRange);
+    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<Long>>
-    LongVector fromArray0Template(Class<M> maskClass, long[] a, int offset, M m, boolean offsetInRange) {
-        return fromArray0Template(maskClass, a, arrayAddress(a, offset),
-            offset, m, offsetInRange,
-            (arr, off, s, vm) -> s.ldOp(arr, off, vm,
-                                        (arr_, off_, i) -> arr_[off_ + i]));
-    }
-
-    @ForceInline
-    final
-    <C, M extends VectorMask<Long>>
-    LongVector fromArray0Template(Class<M> maskClass, C base, long offset, int index, M m, boolean offsetInRange,
-                        VectorSupport.LoadVectorMaskedOperation<C, LongVector, LongSpecies, M> defaultImpl) {
+    LongVector fromArray0Template(Class<M> maskClass, long[] a, int offset, M m, int offsetInRange) {
         m.check(species());
         LongSpecies vsp = vspecies();
-        if (offsetInRange) {
-            return VectorSupport.loadMasked(
-                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                base, offset, m, /* offsetInRange */ 1,
-                base, index, vsp, defaultImpl);
-        } else {
-            return VectorSupport.loadMasked(
-                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                base, offset, m, /* offsetInRange */ 0,
-                base, index, vsp, defaultImpl);
-        }
+        return VectorSupport.loadMasked(
+            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            a, arrayAddress(a, offset), m, offsetInRange,
+            a, offset, vsp,
+            (arr, off, s, vm) -> s.ldOp(arr, off, vm,
+                                        (arr_, off_, i) -> arr_[off_ + i]));
     }
 
     /*package-private*/
@@ -3392,14 +3376,17 @@ public abstract class LongVector extends AbstractVector<Long> {
     }
 
     abstract
-    LongVector fromByteArray0(byte[] a, int offset, VectorMask<Long> m, boolean offsetInRange);
+    LongVector fromByteArray0(byte[] a, int offset, VectorMask<Long> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<Long>>
-    LongVector fromByteArray0Template(Class<M> maskClass, byte[] a, int offset, M m, boolean offsetInRange) {
-        return fromArray0Template(
-            maskClass, a, byteArrayAddress(a, offset),
-            offset, m, offsetInRange,
+    LongVector fromByteArray0Template(Class<M> maskClass, byte[] a, int offset, M m, int offsetInRange) {
+        LongSpecies vsp = vspecies();
+        m.check(vsp);
+        return VectorSupport.loadMasked(
+            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            a, byteArrayAddress(a, offset), m, offsetInRange,
+            a, offset, vsp,
             (arr, off, s, vm) -> {
                 ByteBuffer wb = wrapper(arr, NATIVE_ENDIAN);
                 return s.ldOp(wb, off, vm,
@@ -3424,11 +3411,11 @@ public abstract class LongVector extends AbstractVector<Long> {
     }
 
     abstract
-    LongVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Long> m, boolean offsetInRange);
+    LongVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Long> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<Long>>
-    LongVector fromByteBuffer0Template(Class<M> maskClass, ByteBuffer bb, int offset, M m, boolean offsetInRange) {
+    LongVector fromByteBuffer0Template(Class<M> maskClass, ByteBuffer bb, int offset, M m, int offsetInRange) {
         LongSpecies vsp = vspecies();
         m.check(vsp);
         return ScopedMemoryAccess.loadFromByteBufferMasked(

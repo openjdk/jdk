@@ -825,7 +825,7 @@ final class Int64Vector extends IntVector {
     @ForceInline
     @Override
     final
-    IntVector fromArray0(int[] a, int offset, VectorMask<Integer> m, boolean offsetInRange) {
+    IntVector fromArray0(int[] a, int offset, VectorMask<Integer> m, int offsetInRange) {
         return super.fromArray0Template(Int64Mask.class, a, offset, (Int64Mask) m, offsetInRange);  // specialize
     }
 
@@ -848,7 +848,7 @@ final class Int64Vector extends IntVector {
     @ForceInline
     @Override
     final
-    IntVector fromByteArray0(byte[] a, int offset, VectorMask<Integer> m, boolean offsetInRange) {
+    IntVector fromByteArray0(byte[] a, int offset, VectorMask<Integer> m, int offsetInRange) {
         return super.fromByteArray0Template(Int64Mask.class, a, offset, (Int64Mask) m, offsetInRange);  // specialize
     }
 
@@ -862,7 +862,7 @@ final class Int64Vector extends IntVector {
     @ForceInline
     @Override
     final
-    IntVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Integer> m, boolean offsetInRange) {
+    IntVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Integer> m, int offsetInRange) {
         return super.fromByteBuffer0Template(Int64Mask.class, bb, offset, (Int64Mask) m, offsetInRange);  // specialize
     }
 

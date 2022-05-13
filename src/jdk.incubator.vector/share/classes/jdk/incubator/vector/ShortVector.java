@@ -2858,11 +2858,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                        VectorMask<Short> m) {
         ShortSpecies vsp = (ShortSpecies) species;
         if (offset >= 0 && offset <= (a.length - species.vectorByteSize())) {
-            return vsp.dummyVector().fromByteArray0(a, offset, m, /* offsetInRange */ true).maybeSwap(bo);
+            return vsp.dummyVector().fromByteArray0(a, offset, m, /* offsetInRange */ 1).maybeSwap(bo);
         }
 
         checkMaskFromIndexSize(offset, vsp, m, 2, a.length);
-        return vsp.dummyVector().fromByteArray0(a, offset, m, /* offsetInRange */ false).maybeSwap(bo);
+        return vsp.dummyVector().fromByteArray0(a, offset, m, /* offsetInRange */ 0).maybeSwap(bo);
     }
 
     /**
@@ -2917,11 +2917,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                    VectorMask<Short> m) {
         ShortSpecies vsp = (ShortSpecies) species;
         if (offset >= 0 && offset <= (a.length - species.length())) {
-            return vsp.dummyVector().fromArray0(a, offset, m, /* offsetInRange */ true);
+            return vsp.dummyVector().fromArray0(a, offset, m, /* offsetInRange */ 1);
         }
 
         checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
-        return vsp.dummyVector().fromArray0(a, offset, m, /* offsetInRange */ false);
+        return vsp.dummyVector().fromArray0(a, offset, m, /* offsetInRange */ 0);
     }
 
     /**
@@ -3065,11 +3065,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                        VectorMask<Short> m) {
         ShortSpecies vsp = (ShortSpecies) species;
         if (offset >= 0 && offset <= (a.length - species.length())) {
-            return vsp.dummyVector().fromCharArray0(a, offset, m, /* offsetInRange */ true);
+            return vsp.dummyVector().fromCharArray0(a, offset, m, /* offsetInRange */ 1);
         }
 
         checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
-        return vsp.dummyVector().fromCharArray0(a, offset, m, /* offsetInRange */ false);
+        return vsp.dummyVector().fromCharArray0(a, offset, m, /* offsetInRange */ 0);
     }
 
     /**
@@ -3249,11 +3249,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                         VectorMask<Short> m) {
         ShortSpecies vsp = (ShortSpecies) species;
         if (offset >= 0 && offset <= (bb.limit() - species.vectorByteSize())) {
-            return vsp.dummyVector().fromByteBuffer0(bb, offset, m, /* offsetInRange */ true).maybeSwap(bo);
+            return vsp.dummyVector().fromByteBuffer0(bb, offset, m, /* offsetInRange */ 1).maybeSwap(bo);
         }
 
         checkMaskFromIndexSize(offset, vsp, m, 2, bb.limit());
-        return vsp.dummyVector().fromByteBuffer0(bb, offset, m, /* offsetInRange */ false).maybeSwap(bo);
+        return vsp.dummyVector().fromByteBuffer0(bb, offset, m, /* offsetInRange */ 0).maybeSwap(bo);
     }
 
     // Memory store operations
@@ -3659,35 +3659,19 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /*package-private*/
     abstract
-    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m, boolean offsetInRange);
+    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<Short>>
-    ShortVector fromArray0Template(Class<M> maskClass, short[] a, int offset, M m, boolean offsetInRange) {
-        return fromArray0Template(maskClass, a, arrayAddress(a, offset),
-            offset, m, offsetInRange,
-            (arr, off, s, vm) -> s.ldOp(arr, off, vm,
-                                        (arr_, off_, i) -> arr_[off_ + i]));
-    }
-
-    @ForceInline
-    final
-    <C, M extends VectorMask<Short>>
-    ShortVector fromArray0Template(Class<M> maskClass, C base, long offset, int index, M m, boolean offsetInRange,
-                        VectorSupport.LoadVectorMaskedOperation<C, ShortVector, ShortSpecies, M> defaultImpl) {
+    ShortVector fromArray0Template(Class<M> maskClass, short[] a, int offset, M m, int offsetInRange) {
         m.check(species());
         ShortSpecies vsp = vspecies();
-        if (offsetInRange) {
-            return VectorSupport.loadMasked(
-                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                base, offset, m, /* offsetInRange */ 1,
-                base, index, vsp, defaultImpl);
-        } else {
-            return VectorSupport.loadMasked(
-                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                base, offset, m, /* offsetInRange */ 0,
-                base, index, vsp, defaultImpl);
-        }
+        return VectorSupport.loadMasked(
+            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            a, arrayAddress(a, offset), m, offsetInRange,
+            a, offset, vsp,
+            (arr, off, s, vm) -> s.ldOp(arr, off, vm,
+                                        (arr_, off_, i) -> arr_[off_ + i]));
     }
 
 
@@ -3708,16 +3692,19 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /*package-private*/
     abstract
-    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m, boolean offsetInRange);
+    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<Short>>
-    ShortVector fromCharArray0Template(Class<M> maskClass, char[] a, int offset, M m, boolean offsetInRange) {
-        return fromArray0Template(
-            maskClass, a, charArrayAddress(a, offset),
-            offset, m, offsetInRange,
-            (arr, off, s, vm) -> s.ldOp(arr, off, vm,
-                                        (arr_, off_, i) -> (short) arr_[off_ + i]));
+    ShortVector fromCharArray0Template(Class<M> maskClass, char[] a, int offset, M m, int offsetInRange) {
+        m.check(species());
+        ShortSpecies vsp = vspecies();
+        return VectorSupport.loadMasked(
+                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+                a, charArrayAddress(a, offset), m, offsetInRange,
+                a, offset, vsp,
+                (arr, off, s, vm) -> s.ldOp(arr, off, vm,
+                                            (arr_, off_, i) -> (short) arr_[off_ + i]));
     }
 
 
@@ -3740,14 +3727,17 @@ public abstract class ShortVector extends AbstractVector<Short> {
     }
 
     abstract
-    ShortVector fromByteArray0(byte[] a, int offset, VectorMask<Short> m, boolean offsetInRange);
+    ShortVector fromByteArray0(byte[] a, int offset, VectorMask<Short> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<Short>>
-    ShortVector fromByteArray0Template(Class<M> maskClass, byte[] a, int offset, M m, boolean offsetInRange) {
-        return fromArray0Template(
-            maskClass, a, byteArrayAddress(a, offset),
-            offset, m, offsetInRange,
+    ShortVector fromByteArray0Template(Class<M> maskClass, byte[] a, int offset, M m, int offsetInRange) {
+        ShortSpecies vsp = vspecies();
+        m.check(vsp);
+        return VectorSupport.loadMasked(
+            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+            a, byteArrayAddress(a, offset), m, offsetInRange,
+            a, offset, vsp,
             (arr, off, s, vm) -> {
                 ByteBuffer wb = wrapper(arr, NATIVE_ENDIAN);
                 return s.ldOp(wb, off, vm,
@@ -3772,11 +3762,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
     }
 
     abstract
-    ShortVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m, boolean offsetInRange);
+    ShortVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<Short>>
-    ShortVector fromByteBuffer0Template(Class<M> maskClass, ByteBuffer bb, int offset, M m, boolean offsetInRange) {
+    ShortVector fromByteBuffer0Template(Class<M> maskClass, ByteBuffer bb, int offset, M m, int offsetInRange) {
         ShortSpecies vsp = vspecies();
         m.check(vsp);
         return ScopedMemoryAccess.loadFromByteBufferMasked(
