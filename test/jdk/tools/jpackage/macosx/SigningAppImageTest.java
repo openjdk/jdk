@@ -26,7 +26,7 @@ import java.util.List;
 
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameters;
+import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.AdditionalLauncher;
 
 /**
@@ -61,19 +61,10 @@ import jdk.jpackage.test.AdditionalLauncher;
  */
 public class SigningAppImageTest {
 
-    final boolean doSign;
-
-    public SigningAppImageTest(String flag) {
-        this.doSign = "true".equals(flag);
-    }
-
-    @Parameters
-    public static List<Object[]> data() {
-        return List.of(new Object[][] {{"true"}, {"false"}});
-    }
-
     @Test
-    public void test() throws Exception {
+    @Parameter("true")
+    @Parameter("false")
+    public void test(boolean doSign) throws Exception {
         SigningCheck.checkCertificates();
 
         JPackageCommand cmd = JPackageCommand.helloAppImage();
