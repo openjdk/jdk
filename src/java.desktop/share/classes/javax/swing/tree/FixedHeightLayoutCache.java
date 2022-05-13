@@ -642,7 +642,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
     }
 
     /**
-     * Ensures that all the path components in path are expanded, accept
+     * Ensures that all the path components in path are expanded, except
      * for the last component which will only be expanded if expandLast
      * is true.
      * Returns true if successful in finding the path.
