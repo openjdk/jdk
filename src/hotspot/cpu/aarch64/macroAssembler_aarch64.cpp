@@ -5532,7 +5532,7 @@ static int reg2offset_out(VMReg r) {
   return (r->reg2stack() + SharedRuntime::out_preserve_stack_slots()) * VMRegImpl::stack_slot_size;
 }
 
-// On64 bit we will store integer like items to the stack as
+// On 64bit we will store integer like items to the stack as
 // 64bits items (AArch64 ABI) even though java would only store
 // 32bits for a parameter. On 32bit it will simply be 32bits
 // So this routine will do 32->32 on 32bit and 32->64 on 64bit
