@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 8281006
+ * @bug 8281001
  * @summary Test uses custom launcher that starts VM using JNI that verifies
  *          Module::getResourceAsStream and Class::getResourceAsStream with
  *          a null caller class functions properly.

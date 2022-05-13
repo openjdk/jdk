@@ -108,6 +108,20 @@ int main(int argc, char** args) {
     }
     assert(n != NULL);
 
+    // 8281001
+    // Try and load a class using Class::forName in the module n which should be
+    // found with the system classloader (to match FindClass() used above).
+        // Class exp = Class.forName("open.OpenResources");
+    jmethodID mid_Class_forName = (*env)->GetStaticMethodID(env, class_Class, "forName", "(Ljava/lang/String;)Ljava/lang/Class;" );
+    assert(mid_Class_forName != NULL);
+    jclass oc =(*env)->CallStaticObjectMethod(env, class_Class, mid_Class_forName,
+            (*env)->NewStringUTF(env, "open.OpenResources"));
+    if ((*env)->ExceptionOccurred(env) != NULL) {
+        printf("ERROR: Exception was thrown calling Class::forName.\n");
+        (*env)->ExceptionDescribe(env);
+        exit(-1);
+    }
+
     // Attempt to fetch an open resource from the module.  It should return a valid stream.
     // InputStream in = n.getResourceAsStream("open/test.txt");
     jclass class_Module = (*env)->FindClass(env, "java/lang/Module");
