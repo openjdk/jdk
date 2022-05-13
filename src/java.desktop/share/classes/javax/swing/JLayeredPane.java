@@ -529,7 +529,7 @@ public class JLayeredPane extends JComponent implements Accessible {
             curLayer = getLayer(getComponent(i));
             if(curLayer == layer) {
                 layerCount++;
-            /// Short circuit the counting when we have them all
+            /// Short-circuit the counting when we have them all
             } else if(layerCount > 0 || curLayer < layer) {
                 break;
             }
