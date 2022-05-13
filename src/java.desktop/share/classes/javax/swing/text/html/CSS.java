@@ -1776,7 +1776,7 @@ public class CSS implements Serializable {
      * formats.
      * <p>
      * The CSS parser uses the parseCssValue method to convert
-     * a string to whatever format is appropriate a given key
+     * a string to whatever format is appropriate for a given key
      * (i.e. these converters are stored in a map using the
      * CSS.Attribute as a key and the CssValue as the value).
      * <p>
