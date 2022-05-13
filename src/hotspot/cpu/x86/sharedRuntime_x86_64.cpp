@@ -179,10 +179,10 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   int off = 0;
   int num_xmm_regs = XMMRegisterImpl::available_xmm_registers();
 #if COMPILER2_OR_JVMCI
-  if (save_vectors && UseAVX == 0) {
-    save_vectors = false; // vectors larger than 16 byte long are supported only with AVX
+  if (save_wide_vectors && UseAVX == 0) {
+    save_wide_vectors = false; // vectors larger than 16 byte long are supported only with AVX
   }
-  assert(!save_vectors || MaxVectorSize <= 64, "Only up to 64 byte long vectors are supported");
+  assert(!save_wide_vectors || MaxVectorSize <= 64, "Only up to 64 byte long vectors are supported");
 #else
   save_wide_vectors = false; // vectors are generated only by C2 and JVMCI
 #endif
