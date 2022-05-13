@@ -36,7 +36,7 @@ import java.io.*;
  * complete state of the parser while reading a document.
  * When a start tag is encountered an element is pushed onto
  * the stack, when an end tag is encountered an element is popped
- * of the stack.
+ * off the stack.
  *
  * @see Parser
  * @see DTD
