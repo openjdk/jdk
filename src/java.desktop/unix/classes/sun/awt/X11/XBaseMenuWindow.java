@@ -941,7 +941,7 @@ public abstract class XBaseMenuWindow extends XWindow {
      * Invokes event processing on eventHandlerThread
      * This function needs to be overridden since
      * XBaseMenuWindow has no corresponding component
-     * so events can not be processed using standard means
+     * so events cannot be processed using standard means
      */
     void postEvent(final AWTEvent event) {
         InvocationEvent ev = new InvocationEvent(event.getSource(), new Runnable() {
