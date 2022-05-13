@@ -82,7 +82,7 @@ public class Krb5NameElement
                 !gssNameType.equals(Krb5MechFactory.NT_GSS_KRB5_PRINCIPAL) &&
                 !gssNameType.equals(GSSName.NT_EXPORT_NAME))
                 throw new GSSException(GSSException.BAD_NAMETYPE, -1,
-                                       gssNameType
+                                       gssNameType.toString()
                                        +" is an unsupported nametype");
 
         PrincipalName principalName;

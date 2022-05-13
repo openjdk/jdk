@@ -98,7 +98,7 @@ class InitSecContextToken extends InitialToken {
                              useSequenceNumber,
                              checksum);
 
-        context.resetMySequenceNumber(apReq.getSeqNumber());
+        context.resetMySequenceNumber(apReq.getSeqNumber().intValue());
 
         EncryptionKey subKey = apReq.getSubKey();
         if (subKey != null)
@@ -109,7 +109,7 @@ class InitSecContextToken extends InitialToken {
         if (!mutualRequired)
             context.resetPeerSequenceNumber(
                     ACCEPTOR_USE_INITIATOR_SEQNUM
-                    ? apReq.getSeqNumber()
+                    ? apReq.getSeqNumber().intValue()
                     : 0);
     }
 
@@ -172,7 +172,8 @@ class InitSecContextToken extends InitialToken {
 
         Integer apReqSeqNumber = apReq.getSeqNumber();
         int peerSeqNumber = (apReqSeqNumber != null ?
-                apReqSeqNumber : 0);
+                             apReqSeqNumber.intValue() :
+                             0);
         context.resetPeerSequenceNumber(peerSeqNumber);
         if (!context.getMutualAuthState()) {
             context.resetMySequenceNumber(

@@ -70,7 +70,7 @@ public class LoginConfigImpl extends Configuration {
         if (mech.equals(GSSUtil.GSS_KRB5_MECH_OID)) {
             mechName = "krb5";
         } else {
-            throw new IllegalArgumentException(mech + " not supported");
+            throw new IllegalArgumentException(mech.toString() + " not supported");
         }
         config = java.security.AccessController.doPrivileged
                 ((PrivilegedAction<Configuration>) Configuration::getConfiguration);

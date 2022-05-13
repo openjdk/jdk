@@ -705,12 +705,12 @@ public class KerberosTicket implements Destroyable, Refreshable,
                 "Postdated Ticket " + flags[POSTDATED_TICKET_FLAG] + "\n" +
                 "Renewable Ticket " + flags[RENEWABLE_TICKET_FLAG] + "\n" +
                 "Initial Ticket " + flags[INITIAL_TICKET_FLAG] + "\n" +
-                "Auth Time = " + authTime + "\n" +
-                "Start Time = " + startTime + "\n" +
+                "Auth Time = " + String.valueOf(authTime) + "\n" +
+                "Start Time = " + String.valueOf(startTime) + "\n" +
                 "End Time = " + endTime.toString() + "\n" +
-                "Renew Till = " + renewTill + "\n" +
+                "Renew Till = " + String.valueOf(renewTill) + "\n" +
                 "Client Addresses " +
-                (clientAddresses == null ? " Null " : caddrString +
+                (clientAddresses == null ? " Null " : caddrString.toString() +
                 (proxy == null ? "" : "\nwith a proxy ticket") +
                 "\n"));
     }

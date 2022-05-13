@@ -413,7 +413,7 @@ public final class GSSNameImpl implements GSSName {
         } catch (IOException e) {
             throw new GSSExceptionImpl(GSSException.FAILURE,
                                    "Could not ASN.1 Encode "
-                                   + oid);
+                                   + oid.toString());
         }
         oidBytes = dout.toByteArray();
 

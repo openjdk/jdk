@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ class AcceptSecContextToken extends InitialToken {
         }
         apRep = new KrbApRep(apReq, useSequenceNumber, subKey);
 
-        context.resetMySequenceNumber(apRep.getSeqNumber());
+        context.resetMySequenceNumber(apRep.getSeqNumber().intValue());
 
         /*
          * Note: The acceptor side context key was set when the
@@ -99,7 +99,8 @@ class AcceptSecContextToken extends InitialToken {
 
         Integer apRepSeqNumber = apRep.getSeqNumber();
         int peerSeqNumber = (apRepSeqNumber != null ?
-                             apRepSeqNumber : 0);
+                             apRepSeqNumber.intValue() :
+                             0);
         context.resetPeerSequenceNumber(peerSeqNumber);
     }
 

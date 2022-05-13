@@ -170,7 +170,7 @@ public final class EncryptionKey implements SecretKey {
         if (destroyed) {
             return "Destroyed EncryptionKey";
         }
-        return "key "  + key;
+        return "key "  + key.toString();
     }
 
     /**

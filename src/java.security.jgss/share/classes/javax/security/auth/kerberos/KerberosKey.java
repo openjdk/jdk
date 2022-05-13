@@ -274,7 +274,7 @@ public class KerberosKey implements SecretKey {
         }
         return "Kerberos Principal " + principal +
                 "Key Version " + versionNum +
-                "key "  + key;
+                "key "  + key.toString();
     }
 
     /**

@@ -289,7 +289,7 @@ public final class KeyTab {
                         principal,
                         keys[i].getBytes(),
                         keys[i].getEType(),
-                        tmp == null ? 0 : tmp);
+                        tmp == null ? 0 : tmp.intValue());
                 keys[i].destroy();
             }
             return kks;

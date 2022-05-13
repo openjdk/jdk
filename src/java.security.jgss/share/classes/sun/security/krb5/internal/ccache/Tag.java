@@ -63,10 +63,10 @@ public class Tag{
         os.write(tag);
         os.write(tagLen);
         if (time_offset != null) {
-            os.write(time_offset);
+            os.write(time_offset.intValue());
         }
         if (usec_offset != null) {
-            os.write(usec_offset);
+            os.write(usec_offset.intValue());
         }
         return os.toByteArray();
     }
