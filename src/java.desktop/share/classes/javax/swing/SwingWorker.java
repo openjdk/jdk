@@ -259,7 +259,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
     private final PropertyChangeSupport propertyChangeSupport;
 
     /**
-     * handler for {@code process} method.
+     * Handler for {@code process} method.
      */
     private AccumulativeRunnable<V> doProcess;
 
