@@ -198,7 +198,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
     /**
      * Overridden to do nothing. We want JMenu to be focusable, but
      * <code>JMenuItem</code> doesn't want to be, thus we override this
-     * do nothing. We don't invoke <code>setFocusable(true)</code> after
+     * to do nothing. We don't invoke <code>setFocusable(true)</code> after
      * super's constructor has completed as this has the side effect that
      * <code>JMenu</code> will be considered traversable via the
      * keyboard, which we don't want. Making a Component traversable by
