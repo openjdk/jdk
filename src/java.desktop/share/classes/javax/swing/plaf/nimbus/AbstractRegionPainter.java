@@ -329,7 +329,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
             NimbusLookAndFeel laf = (NimbusLookAndFeel) UIManager.getLookAndFeel();
             return laf.getDerivedColor(key, hOffset, sOffset, bOffset, aOffset, true);
         } else {
-            // can not give a right answer as painter should not be used outside
+            // cannot give the right answer as painter should not be used outside
             // of nimbus laf but do the best we can
             return Color.getHSBColor(hOffset,sOffset,bOffset);
         }
