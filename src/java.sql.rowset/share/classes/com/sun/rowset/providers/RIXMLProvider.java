@@ -237,7 +237,7 @@ public final class RIXMLProvider extends SyncProvider {
 
     /**
      * Returns the vendor name of the Reference Implementation Optimistic
-     * Syncchronication Provider
+     * Synchronization Provider
      *
      * @return the <code>String</code> detailing the vendor name of this
      *      SyncProvider

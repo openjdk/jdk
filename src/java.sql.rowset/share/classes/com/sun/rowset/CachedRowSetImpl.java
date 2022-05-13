@@ -967,7 +967,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * Before returning, this method moves the cursor before the first row
      * and sends a <code>rowSetChanged</code> event to all registered
      * listeners.
-     * @throws SQLException if an error is occurs rolling back the RowSet
+     * @throws SQLException if an error occurs rolling back the RowSet
      *           state to the defined original value.
      * @see javax.sql.RowSetListener#rowSetChanged
      */

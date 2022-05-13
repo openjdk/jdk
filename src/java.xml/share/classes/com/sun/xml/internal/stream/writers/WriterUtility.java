@@ -94,7 +94,7 @@ public class WriterUtility {
             }
         }
         else{
-            //attempt to retrieve default fEncoderoder
+            //attempt to retrieve default fEncoder
             fEncoder = getDefaultEncoder();
         }
     }
