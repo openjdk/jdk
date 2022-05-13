@@ -2322,7 +2322,7 @@ static void print_stack_element_to_stream(outputStream* st, Handle mirror, int m
         // Neither sourcename nor linenumber
         sprintf(buf + (int)strlen(buf), "Unknown Source)");
       }
-      CodeBlob* nm = method->blob();
+      CodeBlob* nm = method->code();
       if (WizardMode && nm != NULL) {
         sprintf(buf + (int)strlen(buf), "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
       }

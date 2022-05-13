@@ -141,6 +141,16 @@
 bool WhiteBox::_used = false;
 volatile bool WhiteBox::compilation_locked = false;
 
+static CompiledMethod* get_compiled_method(methodHandle &mh, bool is_osr)
+{
+  if (is_osr) {
+    return mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false);
+  } else {
+    CodeBlob* blob = mh->code();
+    return (blob == nullptr) ? nullptr : blob->as_compiled_method_or_null();
+  }
+}
+
 class VM_WhiteBoxOperation : public VM_Operation {
  public:
   VM_WhiteBoxOperation()                         { }
@@ -791,7 +801,7 @@ WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jbool
   if (is_osr) {
     result += mh->mark_osr_nmethods();
   } else if (mh->code() != NULL) {
-    mh->code()->mark_for_deoptimization();
+    mh->code()->as_compiled_method()->mark_for_deoptimization();
     ++result;
   }
   result += CodeCache::mark_for_deoptimization(mh());
@@ -806,7 +816,7 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
   MutexLocker mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompiledMethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  CompiledMethod* code = get_compiled_method(mh, is_osr);
   if (code == NULL) {
     return JNI_FALSE;
   }
@@ -906,7 +916,7 @@ WB_ENTRY(jint, WB_GetMethodCompilationLevel(JNIEnv* env, jobject o, jobject meth
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, CompLevel_none);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompiledMethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  CompiledMethod* code = get_compiled_method(mh, is_osr);
   return (code != NULL ? code->comp_level() : CompLevel_none);
 WB_END
 
@@ -1065,7 +1075,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   }
   // Check code again because compilation may be finished before Compile_lock is acquired.
   if (bci == InvocationEntryBci) {
-    CompiledMethod* code = mh->code();
+    CodeBlob* code = mh->code();
     if (code != NULL && code->as_nmethod_or_null() != NULL) {
       return true;
     }
@@ -1525,7 +1535,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, NULL);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompiledMethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  CompiledMethod* code = get_compiled_method(mh, is_osr);
   jobjectArray result = NULL;
   if (code == NULL) {
     return result;

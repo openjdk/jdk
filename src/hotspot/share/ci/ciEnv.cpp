@@ -1163,7 +1163,8 @@ void ciEnv::register_method(ciMethod* target,
       if (entry_bci == InvocationEntryBci) {
         if (TieredCompilation) {
           // If there is an old version we're done with it
-          CompiledMethod* old = method->code();
+          CodeBlob* old_blob = method->code();
+          CompiledMethod* old = (old_blob == nullptr) ? nullptr : old_blob->as_compiled_method();
           if (TraceMethodReplacement && old != NULL) {
             ResourceMark rm;
             char *method_name = method->name_and_sig_as_C_string();

@@ -112,8 +112,7 @@ class Method : public Metadata {
   // field can come and go.  It can transition from NULL to not-null at any
   // time (whenever a compile completes).  It can transition from not-null to
   // NULL only at safepoints (because of a de-opt).
-  CompiledMethod* volatile _code;                       // Points to the corresponding piece of native code
-  CodeBlob* volatile _blob;
+  CodeBlob* volatile _code;                           // Points to the corresponding piece of native code
   volatile address           _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
 
   // Constructor
@@ -438,8 +437,7 @@ class Method : public Metadata {
   // nmethod/verified compiler entry
   address verified_code_entry();
   bool check_code() const;      // Not inline to avoid circular ref
-  CompiledMethod* volatile code() const;
-  CodeBlob* volatile blob() const;
+  CodeBlob* volatile code() const;
 
   // Locks CompiledMethod_lock if not held.
   void unlink_code(CompiledMethod *compare);

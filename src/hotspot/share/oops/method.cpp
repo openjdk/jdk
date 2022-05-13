@@ -134,7 +134,7 @@ void Method::deallocate_contents(ClassLoaderData* loader_data) {
   MetadataFactory::free_metadata(loader_data, method_counters());
   clear_method_counters();
   // The nmethod will be gone when we get here.
-  if (code() != NULL) _blob = _code = NULL;
+  if (code() != NULL) _code = NULL;
 }
 
 void Method::release_C_heap_structures() {
@@ -1009,9 +1009,9 @@ void Method::set_native_function(address function, bool post_event_flag) {
   // This function can be called more than once. We must make sure that we always
   // use the latest registered method -> check if a stub already has been generated.
   // If so, we have to make it not_entrant.
-  CompiledMethod* nm = code(); // Put it into local variable to guard against concurrent updates
+  CodeBlob* nm = code(); // Put it into local variable to guard against concurrent updates
   if (nm != NULL) {
-    nm->make_not_entrant();
+    nm->as_compiled_method()->make_not_entrant();
   }
 }
 
@@ -1155,7 +1155,6 @@ void Method::clear_code() {
   _from_interpreted_entry = _i2i_entry;
   OrderAccess::storestore();
   _code = NULL;
-  _blob = NULL;
 }
 
 void Method::unlink_code(CompiledMethod *compare) {
@@ -1182,7 +1181,6 @@ void Method::unlink_code() {
 void Method::unlink_method() {
   Arguments::assert_is_dumping_archive();
   _code = NULL;
-  _blob = NULL;
   _adapter = NULL;
   _i2i_entry = NULL;
   _from_compiled_entry = NULL;
@@ -1208,7 +1206,6 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
     return;
   }
   assert( _code == NULL, "nothing compiled yet" );
-  assert( _blob == NULL, "nothing compiled yet" );
 
   // Setup interpreter entrypoint
   assert(this == h_method(), "wrong h_method()" );
@@ -1265,11 +1262,11 @@ void Method::restore_unshareable_info(TRAPS) {
 }
 
 address Method::from_compiled_entry_no_trampoline() const {
-  CodeBlob *blob = Atomic::load_acquire(&_blob);
-  if (blob != nullptr && blob->is_compiled()) {
-    return blob->as_compiled_method()->verified_entry_point();
-  } else if (blob != nullptr && blob->is_mhmethod()) {
-    return blob->as_mhmethod()->code_begin();
+  CodeBlob *code = Atomic::load_acquire(&_code);
+  if (code != nullptr && code->is_compiled()) {
+    return code->as_compiled_method()->verified_entry_point();
+  } else if (code != nullptr && code->is_mhmethod()) {
+    return code->as_mhmethod()->code_begin();
   } else {
     return adapter()->get_c2i_entry();
   }
@@ -1317,8 +1314,7 @@ void Method::set_code(const methodHandle& mh, CodeBlob *code) {
   // These writes must happen in this order, because the interpreter will
   // directly jump to from_interpreted_entry which jumps to an i2c adapter
   // which jumps to _from_compiled_entry.
-  mh->_code = code->as_compiled_method_or_null(); // Assign before allowing compiled code to exec
-  mh->_blob = code;
+  mh->_code = code; // Assign before allowing compiled code to exec
 
   int comp_level = code->is_compiled() ? code->as_compiled_method()->comp_level() : CompLevel_none;
   // In theory there could be a race here. In practice it is unlikely
@@ -2407,9 +2403,9 @@ void Method::print_on(outputStream* st) const {
       }
     }
   }
-  if (blob() != NULL) {
+  if (code() != NULL) {
     st->print   (" - compiled code: ");
-    blob()->print_value_on(st);
+    code()->print_value_on(st);
   }
   if (is_native()) {
     st->print_cr(" - native function:   " INTPTR_FORMAT, p2i(native_function()));
@@ -2440,7 +2436,7 @@ void Method::print_value_on(outputStream* st) const {
   method_holder()->print_value_on(st);
   if (WizardMode) st->print("#%d", _vtable_index);
   if (WizardMode) st->print("[%d,%d]", size_of_parameters(), max_locals());
-  if (WizardMode && blob() != NULL) st->print(" ((nmethod*)%p)", blob());
+  if (WizardMode && code() != NULL) st->print(" ((CodeBlob*)%p)", code());
 }
 
 // LogTouchedMethods and PrintTouchedMethods

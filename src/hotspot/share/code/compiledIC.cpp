@@ -511,7 +511,7 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
                                            bool static_bound,
                                            CompiledICInfo& info,
                                            TRAPS) {
-  CodeBlob* blob = method->blob();
+  CodeBlob* blob = method->code();
   CompiledMethod* method_code = (blob == nullptr) ? nullptr : blob->as_compiled_method_or_null();
 
   address entry = NULL;
@@ -641,7 +641,7 @@ void CompiledStaticCall::set(const StaticCallInfo& info) {
 // Compute settings for a CompiledStaticCall. Since we might have to set
 // the stub when calling to the interpreter, we need to return arguments.
 void CompiledStaticCall::compute_entry(const methodHandle& m, StaticCallInfo& info) {
-  CodeBlob* m_blob = m->blob();
+  CodeBlob* m_blob = m->code();
   CompiledMethod* m_code = (m_blob == nullptr) ? nullptr : m_blob->as_compiled_method_or_null();
   info._callee = m;
   if (m_code != NULL && m_code->is_in_use() && !m_code->is_unloading()) {

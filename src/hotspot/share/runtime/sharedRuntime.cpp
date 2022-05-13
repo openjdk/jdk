@@ -1264,7 +1264,7 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
 
   // Make sure the callee nmethod does not get deoptimized and removed before
   // we are done patching the code.
-  CodeBlob* callee = callee_method->blob();
+  CodeBlob* callee = callee_method->code();
 
   if (callee != NULL) {
     assert(callee->is_compiled() || callee->is_mhmethod(), "must be nmethod or mhmethod for patching");
@@ -1383,7 +1383,7 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
                Bytecodes::name(invoke_code));
     callee_method->print_short_name(tty);
     tty->print_cr(" at pc: " INTPTR_FORMAT " to code: " INTPTR_FORMAT,
-                  p2i(caller_frame.pc()), p2i(callee_method->blob()));
+                  p2i(caller_frame.pc()), p2i(callee_method->code()));
   }
 #endif
 

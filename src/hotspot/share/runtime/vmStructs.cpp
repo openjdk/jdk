@@ -301,7 +301,7 @@
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
   nonstatic_field(Method,                      _flags,                                        u2)                                    \
-  volatile_nonstatic_field(Method,             _code,                                         CompiledMethod*)                       \
+  volatile_nonstatic_field(Method,             _code,                                         CodeBlob*)                             \
   nonstatic_field(Method,                      _i2i_entry,                                    address)                               \
   volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
   volatile_nonstatic_field(Method,             _from_interpreted_entry,                       address)                               \

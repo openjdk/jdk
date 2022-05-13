@@ -1383,7 +1383,7 @@ CodeBlob* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
-    CodeBlob* method_code = method->blob();
+    CodeBlob* method_code = method->code();
     if (method_code != NULL && (method_code->is_nmethod() || method_code->is_mhmethod())) {
       if (compilation_is_complete(method, osr_bci, comp_level)) {
         return method_code;
@@ -1487,7 +1487,7 @@ CodeBlob* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // return requested nmethod
   // We accept a higher level osr method
   if (osr_bci == InvocationEntryBci) {
-    return method->blob();
+    return method->code();
   }
   return method->lookup_osr_nmethod_for(osr_bci, comp_level, false);
 }
@@ -1512,7 +1512,7 @@ bool CompileBroker::compilation_is_complete(const methodHandle& method,
     if (method->is_not_compilable(comp_level)) {
       return true;
     } else {
-      CodeBlob* result = method->blob();
+      CodeBlob* result = method->code();
       if (result != nullptr && result->is_compiled()) {
         return comp_level == result->as_compiled_method()->comp_level();
       } else if (result != nullptr && result->is_mhmethod()) {

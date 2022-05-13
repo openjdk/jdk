@@ -795,7 +795,13 @@ class CompileReplay : public StackObj {
       }
     }
     // Make sure the existence of a prior compile doesn't stop this one
-    CompiledMethod* nm = (entry_bci != InvocationEntryBci) ? method->lookup_osr_nmethod_for(entry_bci, comp_level, true) : method->code();
+    CompiledMethod* nm;
+    if (entry_bci != InvocationEntryBci) {
+      nm = method->lookup_osr_nmethod_for(entry_bci, comp_level, true);
+    } else {
+      CodeBlob* code = method->code();
+      nm = (code == nullptr) ? nullptr : code->as_compiled_method_or_null();
+    }
     if (nm != NULL) {
       nm->make_not_entrant();
     }

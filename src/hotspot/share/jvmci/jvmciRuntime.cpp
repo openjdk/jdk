@@ -1772,7 +1772,8 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
           assert(!nmethod_mirror.is_hotspot() || data->get_nmethod_mirror(nm, /* phantom_ref */ false) == NULL, "must be");
           if (entry_bci == InvocationEntryBci) {
             // If there is an old version we're done with it
-            CompiledMethod* old = method->code();
+            CodeBlob* old_code = method->code();
+            CompiledMethod* old = (old_code == nullptr) ? nullptr : old_code->as_compiled_method();
             if (TraceMethodReplacement && old != NULL) {
               ResourceMark rm;
               char *method_name = method->name_and_sig_as_C_string();

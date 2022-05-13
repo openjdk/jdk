@@ -1121,9 +1121,9 @@ C2V_VMENTRY(void, reprofile, (JNIEnv* env, jobject, jobject jvmci_method))
   }
   NOT_PRODUCT(method->set_compiled_invocation_count(0));
 
-  CompiledMethod* code = method->code();
-  if (code != NULL) {
-    code->make_not_entrant();
+  CodeBlob* code = method->code();
+  if (code != NULL && code->is_compiled()) {
+    code->as_compiled_method()->make_not_entrant();
   }
 
   MethodData* method_data = method->method_data();

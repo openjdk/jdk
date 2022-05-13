@@ -214,9 +214,9 @@ bool CompilationPolicy::force_comp_at_level_simple(const methodHandle& method) {
 }
 
 CompLevel CompilationPolicy::comp_level(Method* method) {
-  CompiledMethod *nm = method->code();
-  if (nm != NULL && nm->is_in_use()) {
-    return (CompLevel)nm->comp_level();
+  CodeBlob *blob = method->code();
+  if (blob != NULL && blob->is_compiled() && blob->as_compiled_method()->is_in_use()) {
+    return (CompLevel)blob->as_compiled_method()->comp_level();
   }
   return CompLevel_none;
 }
@@ -750,7 +750,7 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
       MutexLocker ml(Compile_lock);
       NoSafepointVerifier nsv;
       if (mh->has_compiled_code()) {
-        mh->code()->make_not_used();
+        mh->code()->as_compiled_method()->make_not_used();
       }
       // Deoptimize immediately (we don't have to wait for a compile).
       JavaThread* jt = THREAD;

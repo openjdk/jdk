@@ -162,7 +162,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int methodVtableIndexOffset = getFieldOffset("Method::_vtable_index", Integer.class, "int");
 
     final int methodDataOffset = getFieldOffset("Method::_method_data", Integer.class, "MethodData*");
-    final int methodCodeOffset = getFieldOffset("Method::_code", Integer.class, "CompiledMethod*");
+    final int methodCodeOffset = getFieldOffset("Method::_code", Integer.class, "CodeBlob*");
 
     final int methodFlagsCallerSensitive = getConstant("Method::_caller_sensitive", Integer.class);
     final int methodFlagsForceInline = getConstant("Method::_force_inline", Integer.class);
