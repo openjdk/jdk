@@ -1515,12 +1515,12 @@ public class FileChannelImpl
     // Retrieves the maximum size of a transfer
     private static native int maxDirectTransferSize0();
 
-    // Caches fieldIDs
-    private static native long initIDs();
+    // Retrieves allocation granularity
+    private static native long allocationGranularity0();
 
     static {
         IOUtil.load();
-        allocationGranularity = initIDs();
+        allocationGranularity = allocationGranularity0();
         MAX_DIRECT_TRANSFER_SIZE = maxDirectTransferSize0();
     }
 }

@@ -51,7 +51,7 @@
 #include <assert.h>
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_initIDs(JNIEnv *env, jclass clazz)
+Java_sun_nio_ch_FileChannelImpl_allocationGranularity0(JNIEnv *env, jclass clazz)
 {
     jlong pageSize = sysconf(_SC_PAGESIZE);
     return pageSize;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,10 @@
 #pragma comment(lib, "Mswsock.lib")
 
 /**************************************************************
- * static method to store field ID's in initializers
- * and retrieve the allocation granularity
+ * static method to retrieve the allocation granularity
  */
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_initIDs(JNIEnv *env, jclass clazz)
+Java_sun_nio_ch_FileChannelImpl_allocationGranularity0(JNIEnv *env, jclass clazz)
 {
     SYSTEM_INFO si;
     jint align;
