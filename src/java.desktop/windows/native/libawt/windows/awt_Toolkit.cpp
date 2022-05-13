@@ -1084,7 +1084,7 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
       // ImmXXXX() API must be used in the main thread.
       // In other threads these APIs do not work correctly even if
       // it returns with no error. (This restriction is not documented)
-      // So we must use thse messages to call these APIs in main thread.
+      // So we must use these messages to call these APIs in main thread.
       case WM_AWT_CREATECONTEXT: {
           AwtToolkit& tk = AwtToolkit::GetInstance();
           tk.m_inputMethodData = reinterpret_cast<LRESULT>(
