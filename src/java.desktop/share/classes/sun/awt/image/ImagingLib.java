@@ -68,7 +68,7 @@ public class ImagingLib {
      * Returned value indicates whether the library initialization
      * succeeded.
      *
-     * There could be number of reasons to failure:
+     * There could be a number of reasons for failure:
      * - failed to load library.
      * - failed to get all required entry points.
      */
