@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1626,7 +1626,7 @@ TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***parg
     for (i = 0; i < jargc; i++) {
         const char *arg = jargv[i];
         if (arg[0] == '-' && arg[1] == 'J') {
-            *nargv++ = (arg[2] == '\0') ? NULL : JLI_StringDup(arg + 2);
+            *nargv++ = ((arg + 2) == NULL) ? NULL : JLI_StringDup(arg + 2);
         }
     }
 
