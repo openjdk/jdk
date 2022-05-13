@@ -314,7 +314,7 @@ Java_sun_nio_ch_Net_listen(JNIEnv *env, jclass cl, jobject fdo, jint backlog)
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6,
-                             jobject fdo, jobject iao, jint port)
+                             jobject fdo, jobject iao, jint port, jboolean isBound)
 {
     SOCKETADDRESS sa;
     int sa_len = 0;
@@ -330,6 +330,9 @@ Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6,
             return IOS_UNAVAILABLE;
         } else if (errno == EINTR) {
             return IOS_INTERRUPTED;
+        } else if (isBound == JNI_TRUE && errno == EADDRINUSE) {
+            JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException", "NioSocketError");
+            return IOS_THROWN;
         }
         return handleSocketError(env, errno);
     }
