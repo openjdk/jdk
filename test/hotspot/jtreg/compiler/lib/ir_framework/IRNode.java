@@ -116,6 +116,7 @@ public class IRNode {
     public static final String COUNTEDLOOP = START + "CountedLoop\\b" + MID + END;
     public static final String COUNTEDLOOP_MAIN = START + "CountedLoop\\b" + MID + "main" + END;
     public static final String OUTERSTRIPMINEDLOOP = START + "OuterStripMinedLoop\\b" + MID + END;
+    public static final String LONGCOUNTEDLOOP = START + "LongCountedLoop\\b" + MID + END;
     public static final String IF = START + "If\\b" + MID + END;
 
     public static final String CALL = START + "Call.*Java" + MID + END;
@@ -170,6 +171,7 @@ public class IRNode {
     public static final String MUL = START + "Mul(I|L|F|D)" + MID + END;
     public static final String MUL_I = START + "MulI" + MID + END;
     public static final String MUL_L = START + "MulL" + MID + END;
+    public static final String MUL_F = START + "MulF" + MID + END;
     public static final String DIV = START + "(NoOvf)?Div(I|L|F|D)" + MID + END;
     public static final String DIV_L = START + "(NoOvf)?DivL" + MID + END;
     public static final String CON_I = START + "ConI" + MID + END;
