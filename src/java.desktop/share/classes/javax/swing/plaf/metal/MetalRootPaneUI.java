@@ -313,7 +313,7 @@ public class MetalRootPaneUI extends BasicRootPaneUI
         setTitlePane(root, null);
         uninstallLayout(root);
         // We have to revalidate/repaint root if the style is JRootPane.NONE
-        // only. When we needs to call revalidate/repaint with other styles
+        // only. When we need to call revalidate/repaint with other styles
         // the installClientDecorations is always called after this method
         // immediately and it will cause the revalidate/repaint at the proper
         // time.
