@@ -65,7 +65,7 @@ public class ImagingLib {
     private static Class<?>[] nativeOpClass = new Class<?>[NUM_NATIVE_OPS];
 
     /**
-     * Returned value indicates whether the library initialization was
+     * Returned value indicates whether the library initialization
      * succeeded.
      *
      * There could be number of reasons to failure:
