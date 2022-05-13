@@ -2857,7 +2857,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                                        ByteOrder bo,
                                        VectorMask<Byte> m) {
         ByteSpecies vsp = (ByteSpecies) species;
-        if (offset >= 0 && offset <= (a.length - species.vectorByteSize())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), a.length)) {
             return vsp.dummyVector().fromByteArray0(a, offset, m).maybeSwap(bo);
         }
 
@@ -2919,7 +2919,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                                    byte[] a, int offset,
                                    VectorMask<Byte> m) {
         ByteSpecies vsp = (ByteSpecies) species;
-        if (offset >= 0 && offset <= (a.length - species.length())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
             return vsp.dummyVector().fromArray0(a, offset, m);
         }
 
@@ -3075,7 +3075,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                                           boolean[] a, int offset,
                                           VectorMask<Byte> m) {
         ByteSpecies vsp = (ByteSpecies) species;
-        if (offset >= 0 && offset <= (a.length - species.length())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
             ByteVector zero = vsp.zero();
             return vsp.dummyVector().fromBooleanArray0(a, offset, m);
         }
@@ -3254,7 +3254,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                                         ByteOrder bo,
                                         VectorMask<Byte> m) {
         ByteSpecies vsp = (ByteSpecies) species;
-        if (offset >= 0 && offset <= (bb.limit() - species.vectorByteSize())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), bb.limit())) {
             return vsp.dummyVector().fromByteBuffer0(bb, offset, m).maybeSwap(bo);
         }
 
@@ -3328,7 +3328,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             intoArray(a, offset);
         } else {
             ByteSpecies vsp = vspecies();
-            if (offset < 0 || offset > (a.length - vsp.length())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
                 checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
             }
             intoArray0(a, offset, m);
@@ -3485,7 +3485,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             intoBooleanArray(a, offset);
         } else {
             ByteSpecies vsp = vspecies();
-            if (offset < 0 || offset > (a.length - vsp.length())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
                 checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
             }
             intoBooleanArray0(a, offset, m);
@@ -3608,7 +3608,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             intoByteArray(a, offset, bo);
         } else {
             ByteSpecies vsp = vspecies();
-            if (offset < 0 || offset > (a.length - vsp.vectorByteSize())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), a.length)) {
                 checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
             }
             maybeSwap(bo).intoByteArray0(a, offset, m);
@@ -3646,7 +3646,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                 throw new ReadOnlyBufferException();
             }
             ByteSpecies vsp = vspecies();
-            if (offset < 0 || offset > (bb.limit() - vsp.vectorByteSize())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), bb.limit())) {
                 checkMaskFromIndexSize(offset, vsp, m, 1, bb.limit());
             }
             maybeSwap(bo).intoByteBuffer0(bb, offset, m);

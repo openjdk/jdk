@@ -2682,7 +2682,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                                        ByteOrder bo,
                                        VectorMask<Double> m) {
         DoubleSpecies vsp = (DoubleSpecies) species;
-        if (offset >= 0 && offset <= (a.length - species.vectorByteSize())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), a.length)) {
             return vsp.dummyVector().fromByteArray0(a, offset, m).maybeSwap(bo);
         }
 
@@ -2744,7 +2744,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                                    double[] a, int offset,
                                    VectorMask<Double> m) {
         DoubleSpecies vsp = (DoubleSpecies) species;
-        if (offset >= 0 && offset <= (a.length - species.length())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
             return vsp.dummyVector().fromArray0(a, offset, m);
         }
 
@@ -2969,7 +2969,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                                         ByteOrder bo,
                                         VectorMask<Double> m) {
         DoubleSpecies vsp = (DoubleSpecies) species;
-        if (offset >= 0 && offset <= (bb.limit() - species.vectorByteSize())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), bb.limit())) {
             return vsp.dummyVector().fromByteBuffer0(bb, offset, m).maybeSwap(bo);
         }
 
@@ -3043,7 +3043,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             intoArray(a, offset);
         } else {
             DoubleSpecies vsp = vspecies();
-            if (offset < 0 || offset > (a.length - vsp.length())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
                 checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
             }
             intoArray0(a, offset, m);
@@ -3192,7 +3192,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             intoByteArray(a, offset, bo);
         } else {
             DoubleSpecies vsp = vspecies();
-            if (offset < 0 || offset > (a.length - vsp.vectorByteSize())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), a.length)) {
                 checkMaskFromIndexSize(offset, vsp, m, 8, a.length);
             }
             maybeSwap(bo).intoByteArray0(a, offset, m);
@@ -3230,7 +3230,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                 throw new ReadOnlyBufferException();
             }
             DoubleSpecies vsp = vspecies();
-            if (offset < 0 || offset > (bb.limit() - vsp.vectorByteSize())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), bb.limit())) {
                 checkMaskFromIndexSize(offset, vsp, m, 8, bb.limit());
             }
             maybeSwap(bo).intoByteBuffer0(bb, offset, m);

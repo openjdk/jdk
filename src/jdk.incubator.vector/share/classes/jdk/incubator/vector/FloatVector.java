@@ -2706,7 +2706,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                        ByteOrder bo,
                                        VectorMask<Float> m) {
         FloatSpecies vsp = (FloatSpecies) species;
-        if (offset >= 0 && offset <= (a.length - species.vectorByteSize())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), a.length)) {
             return vsp.dummyVector().fromByteArray0(a, offset, m).maybeSwap(bo);
         }
 
@@ -2768,7 +2768,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                    float[] a, int offset,
                                    VectorMask<Float> m) {
         FloatSpecies vsp = (FloatSpecies) species;
-        if (offset >= 0 && offset <= (a.length - species.length())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
             return vsp.dummyVector().fromArray0(a, offset, m);
         }
 
@@ -2975,7 +2975,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                         ByteOrder bo,
                                         VectorMask<Float> m) {
         FloatSpecies vsp = (FloatSpecies) species;
-        if (offset >= 0 && offset <= (bb.limit() - species.vectorByteSize())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), bb.limit())) {
             return vsp.dummyVector().fromByteBuffer0(bb, offset, m).maybeSwap(bo);
         }
 
@@ -3049,7 +3049,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
             intoArray(a, offset);
         } else {
             FloatSpecies vsp = vspecies();
-            if (offset < 0 || offset > (a.length - vsp.length())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
                 checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
             }
             intoArray0(a, offset, m);
@@ -3179,7 +3179,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
             intoByteArray(a, offset, bo);
         } else {
             FloatSpecies vsp = vspecies();
-            if (offset < 0 || offset > (a.length - vsp.vectorByteSize())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), a.length)) {
                 checkMaskFromIndexSize(offset, vsp, m, 4, a.length);
             }
             maybeSwap(bo).intoByteArray0(a, offset, m);
@@ -3217,7 +3217,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                 throw new ReadOnlyBufferException();
             }
             FloatSpecies vsp = vspecies();
-            if (offset < 0 || offset > (bb.limit() - vsp.vectorByteSize())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), bb.limit())) {
                 checkMaskFromIndexSize(offset, vsp, m, 4, bb.limit());
             }
             maybeSwap(bo).intoByteBuffer0(bb, offset, m);

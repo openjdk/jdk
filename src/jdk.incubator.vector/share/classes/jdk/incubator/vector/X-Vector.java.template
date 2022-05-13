@@ -3375,7 +3375,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                        ByteOrder bo,
                                        VectorMask<$Boxtype$> m) {
         $Type$Species vsp = ($Type$Species) species;
-        if (offset >= 0 && offset <= (a.length - species.vectorByteSize())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), a.length)) {
             return vsp.dummyVector().fromByteArray0(a, offset, m).maybeSwap(bo);
         }
 
@@ -3437,7 +3437,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                    $type$[] a, int offset,
                                    VectorMask<$Boxtype$> m) {
         $Type$Species vsp = ($Type$Species) species;
-        if (offset >= 0 && offset <= (a.length - species.length())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
             return vsp.dummyVector().fromArray0(a, offset, m);
         }
 
@@ -3658,7 +3658,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                        char[] a, int offset,
                                        VectorMask<$Boxtype$> m) {
         $Type$Species vsp = ($Type$Species) species;
-        if (offset >= 0 && offset <= (a.length - species.length())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
             return vsp.dummyVector().fromCharArray0(a, offset, m);
         }
 
@@ -3817,7 +3817,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                           boolean[] a, int offset,
                                           VectorMask<$Boxtype$> m) {
         $Type$Species vsp = ($Type$Species) species;
-        if (offset >= 0 && offset <= (a.length - species.length())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
             $abstractvectortype$ zero = vsp.zero();
             return vsp.dummyVector().fromBooleanArray0(a, offset, m);
         }
@@ -4009,7 +4009,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                         ByteOrder bo,
                                         VectorMask<$Boxtype$> m) {
         $Type$Species vsp = ($Type$Species) species;
-        if (offset >= 0 && offset <= (bb.limit() - species.vectorByteSize())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), bb.limit())) {
             return vsp.dummyVector().fromByteBuffer0(bb, offset, m).maybeSwap(bo);
         }
 
@@ -4083,7 +4083,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             intoArray(a, offset);
         } else {
             $Type$Species vsp = vspecies();
-            if (offset < 0 || offset > (a.length - vsp.length())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
                 checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
             }
             intoArray0(a, offset, m);
@@ -4303,7 +4303,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             intoCharArray(a, offset);
         } else {
             $Type$Species vsp = vspecies();
-            if (offset < 0 || offset > (a.length - vsp.length())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
                 checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
             }
             intoCharArray0(a, offset, m);
@@ -4467,7 +4467,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             intoBooleanArray(a, offset);
         } else {
             $Type$Species vsp = vspecies();
-            if (offset < 0 || offset > (a.length - vsp.length())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
                 checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
             }
             intoBooleanArray0(a, offset, m);
@@ -4591,7 +4591,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             intoByteArray(a, offset, bo);
         } else {
             $Type$Species vsp = vspecies();
-            if (offset < 0 || offset > (a.length - vsp.vectorByteSize())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), a.length)) {
                 checkMaskFromIndexSize(offset, vsp, m, $sizeInBytes$, a.length);
             }
             maybeSwap(bo).intoByteArray0(a, offset, m);
@@ -4629,7 +4629,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 throw new ReadOnlyBufferException();
             }
             $Type$Species vsp = vspecies();
-            if (offset < 0 || offset > (bb.limit() - vsp.vectorByteSize())) {
+            if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), bb.limit())) {
                 checkMaskFromIndexSize(offset, vsp, m, $sizeInBytes$, bb.limit());
             }
             maybeSwap(bo).intoByteBuffer0(bb, offset, m);
