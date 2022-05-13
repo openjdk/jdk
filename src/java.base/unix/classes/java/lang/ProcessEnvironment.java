@@ -65,7 +65,6 @@ final class ProcessEnvironment
     private static final HashMap<Variable,Value> theEnvironment;
     private static final Map<String,String> theUnmodifiableEnvironment;
     static final int MIN_NAME_LENGTH = 0;
-    private static final Charset jnuCharset = StaticProperty.jnuCharset();
 
     static {
         // We cache the C environment.  This means that subsequent calls
@@ -166,7 +165,7 @@ final class ProcessEnvironment
         }
 
         public static Variable valueOfQueryOnly(String str) {
-            return new Variable(str, str.getBytes(jnuCharset));
+            return new Variable(str, str.getBytes(StaticProperty.jnuCharset()));
         }
 
         public static Variable valueOf(String str) {
@@ -175,7 +174,7 @@ final class ProcessEnvironment
         }
 
         public static Variable valueOf(byte[] bytes) {
-            return new Variable(new String(bytes, jnuCharset), bytes);
+            return new Variable(new String(bytes, StaticProperty.jnuCharset()), bytes);
         }
 
         public int compareTo(Variable variable) {
@@ -199,7 +198,7 @@ final class ProcessEnvironment
         }
 
         public static Value valueOfQueryOnly(String str) {
-            return new Value(str, str.getBytes(jnuCharset));
+            return new Value(str, str.getBytes(StaticProperty.jnuCharset()));
         }
 
         public static Value valueOf(String str) {
@@ -208,7 +207,7 @@ final class ProcessEnvironment
         }
 
         public static Value valueOf(byte[] bytes) {
-            return new Value(new String(bytes, jnuCharset), bytes);
+            return new Value(new String(bytes, StaticProperty.jnuCharset()), bytes);
         }
 
         public int compareTo(Value value) {
