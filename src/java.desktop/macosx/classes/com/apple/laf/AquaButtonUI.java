@@ -533,7 +533,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
 
     static class AquaHierarchyButtonListener implements HierarchyListener {
         // Every time a hierarchy is changed we need to check if the button is moved on or from
-        // a toolbar. If that is the case, we need to re-set the border of the button.
+        // the toolbar. If that is the case, we need to re-set the border of the button.
         public void hierarchyChanged(final HierarchyEvent e) {
             if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) == 0) return;
 

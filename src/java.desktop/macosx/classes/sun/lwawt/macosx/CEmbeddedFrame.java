@@ -123,7 +123,7 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         if (globalFocusedWindow == this) {
             // see bug 8010925
             // we can't put this to handleWindowFocusEvent because
-            // it won't be invoked if focus is moved to a html element
+            // it won't be invoked if focus is moved to an html element
             // on the same page.
             CClipboard clipboard = (CClipboard) Toolkit.getDefaultToolkit().getSystemClipboard();
             clipboard.checkPasteboardAndNotify();
