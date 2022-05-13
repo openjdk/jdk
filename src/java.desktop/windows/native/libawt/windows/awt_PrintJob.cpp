@@ -3170,7 +3170,7 @@ LRESULT CALLBACK PageDialogWndProc(HWND hWnd, UINT message,
             if ((LOWORD(wParam) == IDOK) ||
                 (LOWORD(wParam) == IDCANCEL))
             {
-                // If we receive on of these two notifications, the dialog
+                // If we receive one of these two notifications, the dialog
                 // is about to be closed. It's time to unblock all the
                 // windows blocked by this dialog, as doing so from the
                 // WM_DESTROY handler is too late
