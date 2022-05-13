@@ -39,7 +39,6 @@ import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
-import com.sun.tools.javac.tree.TreeInfo.PatternPrimaryType;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
@@ -746,9 +745,9 @@ public class Flow {
                     if (expr.hasTag(IDENT) && ((JCIdent) expr).sym.isEnum())
                         constants.add(((JCIdent) expr).sym);
                 } else if (pat.isPattern()) {
-                    PatternPrimaryType patternType = TreeInfo.primaryPatternType(pat);
+                    Type primaryType = TreeInfo.primaryPatternType(pat);
 
-                    constants.add(patternType.type().tsym);
+                    constants.add(primaryType.tsym);
                 }
             }
         }

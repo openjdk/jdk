@@ -174,7 +174,7 @@ public class Attr extends JCTree.Visitor {
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowPatternSwitch = (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH)) &&
                              Feature.PATTERN_SWITCH.allowedInSource(source);
-        allowUnconditionalPatternsInstance = (preview.isEnabled() || !preview.isPreview(Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF)) &&
+        allowUnconditionalPatternsInstanceOf = (preview.isEnabled() || !preview.isPreview(Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF)) &&
                                      Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.allowedInSource(source);
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
@@ -222,7 +222,7 @@ public class Attr extends JCTree.Visitor {
 
     /** Are unconditional patterns in instanceof allowed
      */
-    private final boolean allowUnconditionalPatternsInstance;
+    private final boolean allowUnconditionalPatternsInstanceOf;
 
     /**
      * Switch: warn about use of variable before declaration?
@@ -1777,8 +1777,7 @@ public class Attr extends JCTree.Visitor {
                     } else {
                         //binding pattern
                         attribExpr(pat, switchEnv);
-                        var primary = TreeInfo.primaryPatternType(pat);
-                        Type primaryType = primary.type();
+                        Type primaryType = TreeInfo.primaryPatternType(pat);
                         if (!primaryType.hasTag(TYPEVAR)) {
                             primaryType = chk.checkClassOrArrayType(pat.pos(), primaryType);
                         }
@@ -1799,7 +1798,7 @@ public class Attr extends JCTree.Visitor {
                         boolean unconditional =
                                 unguarded &&
                                 !patternType.isErroneous() &&
-                                types.isSubtype(types.boxedTypeOrType(types.erasure(seltype)),
+                                types.isSubtype(types.erasure(seltype),
                                                 patternType);
                         if (unconditional) {
                             if (hasUnconditionalPattern) {
@@ -4115,7 +4114,7 @@ public class Attr extends JCTree.Visitor {
             clazztype = tree.pattern.type;
             if (types.isSubtype(exprtype, clazztype) &&
                 !exprtype.isErroneous() && !clazztype.isErroneous()) {
-                if (!allowUnconditionalPatternsInstance) {
+                if (!allowUnconditionalPatternsInstanceOf) {
                     log.error(tree.pos(), Errors.InstanceofPatternNoSubtype(exprtype, clazztype));
                 } else if (preview.isPreview(Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF)) {
                     preview.warnPreview(tree.pattern.pos(), Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF);

@@ -1306,9 +1306,9 @@ public class TreeInfo {
                              .allMatch(p -> p.hasTag(IDENT));
     }
 
-    public static PatternPrimaryType primaryPatternType(JCTree pat) {
+    public static Type primaryPatternType(JCTree pat) {
         return switch (pat.getTag()) {
-            case BINDINGPATTERN -> new PatternPrimaryType(pat.type);
+            case BINDINGPATTERN -> pat.type;
             case PARENTHESIZEDPATTERN -> primaryPatternType(((JCParenthesizedPattern) pat).pattern);
             default -> throw new AssertionError();
         };
@@ -1321,8 +1321,6 @@ public class TreeInfo {
             default -> throw new AssertionError();
         };
     }
-
-    public record PatternPrimaryType(Type type) {}
 
     public static boolean expectedExhaustive(JCSwitch tree) {
         return tree.patternSwitch ||

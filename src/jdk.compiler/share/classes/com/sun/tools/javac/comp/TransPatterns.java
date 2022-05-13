@@ -481,7 +481,7 @@ public class TransPatterns extends TreeTranslator {
     }
 
     private Type principalType(JCTree p) {
-        return types.boxedTypeOrType(types.erasure(TreeInfo.primaryPatternType(p).type()));
+        return types.boxedTypeOrType(types.erasure(TreeInfo.primaryPatternType(p)));
     }
 
     private LoadableConstant toLoadableConstant(JCCaseLabel l, Type selector) {
