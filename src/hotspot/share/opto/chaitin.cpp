@@ -496,61 +496,84 @@ void PhaseChaitin::Register_Allocate() {
         else if ((*l1)->_freq > (*l2)->_freq) return 1;
         return 0;
     });
-    tty->print_cr("XXXXXX");
-    _cfg.dump();
-    tty->print_cr("XXXXXX");
+//    tty->print_cr("XXXXXX");
+//    _cfg.dump();
+//    tty->print_cr("XXXXXX");
 //    leaf_loops.trunc_to(1);
+    VectorSet visited;
     for (int i = 0; i < leaf_loops.length(); i++) {
-      int region = i + 1;
-      Block_List blocks;
-      VectorSet visited;
       CFGLoop* loop = leaf_loops.at(i);
-      assert(loop->head()->head()->is_Loop(), "");
-      assert(loop->head()->num_preds() == 3, "");
-      Block *b = _cfg.get_block_for_node(loop->head()->pred(2));
-      blocks.push(b);
-      visited.set(b->_pre_order);
-      for (uint j = 0; j < blocks.size(); j++) {
-        Block* block = blocks[j];
-        block->dump();
-        block->_region = region;
-        GrowableArray<pred_candidate> freqs;
-        for (uint k = 1; k < block->num_preds(); k++) {
-          Block* b = _cfg.get_block_for_node(block->pred(k));
-          assert(b->_loop == loop, "");
-          double freq = b->_freq;
-          for (uint l = 0; l < b->_num_succs; ++l) {
-            if (block != b->_succs[l]) {
-              freq -= b->_succs[l]->_freq;
-            }
-          }
-          assert(freq >= 0, "");
-          freqs.push({ b, freq});
+      double trip = loop->trip_count();
+      while (trip < RegAllocLoopMinTrip) {
+        loop = loop->_parent;
+        assert(loop != NULL && loop != _cfg._root_loop, "");
+        if (!loop->head()->head()->is_OuterStripMinedLoop()) {
+          trip *= loop->trip_count();
         }
-//        for (uint k = 1; k < block->_num_succs; k++) {
-//          Block* succ = block->_succs[k];
-//          if (succ->_loop != loop || visited.test_set(succ->_pre_order) || succ->_freq / loop->_freq < RegAllocBranchnMinFreq) {
-//            continue;
-//          }
-//#ifdef ASSERT
-//          for (uint l = 0; l < blocks.size(); l++) {
-//            assert(blocks[l] != succ, "");
-//          }
-//#endif
-//          blocks.push(succ);
-//        }
       }
-//#ifdef ASSERT
-//      uint l;
-//      for (l = 0; l < blocks.size(); l++) {
-//        if (blocks[l] == _cfg.get_block_for_node(loop->head()->pred(2))) {
-//          break;
-//        }
-//      }
-//      assert(l < blocks.size(), "not reaching back branch");
-//#endif
+      assert(loop->head()->head()->is_Loop(), "");
+      int region = i + 1;
+//      tty->print_cr("XXXX %f %f %f", loop->_freq, loop->head()->_freq, loop->trip_count());
+      Block_List blocks;
+      if (!visited.test_set(loop->head()->_pre_order)) {
+        blocks.push(loop->head());
+        for (uint j = 0; j < blocks.size(); j++) {
+          Block *block = blocks[j];
+//          block->dump();
+          block->_region = region;
 
-      regions.push(blocks);
+          GrowableArray<Block*> succs;
+          for (uint k = 0; k < block->_num_succs; k++) {
+            Block *succ = block->_succs[k];
+            if (!loop->in_loop_nest(succ)) {
+              continue;
+            }
+            succs.push(succ);
+          }
+
+          {
+            succs.sort([](Block** b1, Block** b2) {
+                if ((*b1)->_freq > (*b2)->_freq) return -1;
+                else if ((*b1)->_freq < (*b2)->_freq) return 1;
+                return 0;
+            });
+//            tty->print_cr("YYY");
+            double f = 0;
+            for (uint k = 0; k < succs.length(); k++) {
+              Block *succ = succs.at(k);
+              assert(loop->in_loop_nest(succ), "");
+//              tty->print_cr("Y %f", succ->_freq);
+              if (visited.test_set(succ->_pre_order)) {
+                continue;
+              }
+#ifdef ASSERT
+              for (uint l = 0; l < blocks.size(); l++) {
+                assert(blocks[l] != succ, "");
+
+              }
+#endif
+              blocks.push(succ);
+              f += succs.at(k)->_freq;
+              if (f/block->_freq > RegAllocBranchAccumulatedFreq) {
+                break;
+              }
+            }
+//            tty->print_cr("YYY");
+          }
+        }
+#ifdef ASSERT
+        uint l;
+        for (l = 0; l < blocks.size(); l++) {
+          if (blocks[l] == _cfg.get_block_for_node(loop->head()->pred(2))) {
+            break;
+          }
+        }
+        assert(l < blocks.size(), "not reaching back branch");
+#endif
+
+        assert(blocks.size() > 0, "");
+        regions.push(blocks);
+      }
 //      GrowableArray<CFGElement*> blocks = leaf_loops.at(i)->_members;
 //      for (int j = 0; j < blocks.length(); ++j) {
 //        CFGElement* block = blocks.at(j);
@@ -581,9 +604,9 @@ void PhaseChaitin::Register_Allocate() {
 //      regions.push(region);
 
     }
-    tty->print_cr("XXXXXX");
-    _cfg.dump();
-    tty->print_cr("XXXXXX");
+//    tty->print_cr("XXXXXX");
+//    _cfg.dump();
+//    tty->print_cr("XXXXXX");
 
     Block_List region;
     for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {

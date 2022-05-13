@@ -782,6 +782,9 @@
                                                                             \
   product(double, RegAllocBranchAccumulatedFreq, 0.8,                       \
           "")                                                               \
+                                                                            \
+  product(uintx, RegAllocLoopMinTrip, 100,                                  \
+          "")                                                               \
 
 // end of C2_FLAGS
 
