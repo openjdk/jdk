@@ -685,7 +685,7 @@ AWT_ASSERT_APPKIT_THREAD;
                 : [self standardFrame];
 }
 
-// Hides/shows window's children during iconify/de-iconify operation
+// Hides/shows window children during iconify/de-iconify operation
 - (void) iconifyChildWindows:(BOOL)iconify {
 AWT_ASSERT_APPKIT_THREAD;
 
