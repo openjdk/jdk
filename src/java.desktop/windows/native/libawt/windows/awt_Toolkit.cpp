@@ -1082,7 +1082,7 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
 
       // Special awt message to call Imm APIs.
       // ImmXXXX() API must be used in the main thread.
-      // In other thread these APIs does not work correctly even if
+      // In other threads these APIs do not work correctly even if
       // it returns with no error. (This restriction is not documented)
       // So we must use thse messages to call these APIs in main thread.
       case WM_AWT_CREATECONTEXT: {
