@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class InternalEventHandler implements Runnable
                 /*
                  * If any of these exceptions below occurs, there is some
                  * sort of programming error that should be addressed in
-                 * the JDI implemementation. However, it would cripple
+                 * the JDI implementation. However, it would cripple
                  * the implementation if we let this thread die due to
                  * one of them. So, a notification of the exception is
                  * given and we attempt to continue.
