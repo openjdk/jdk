@@ -192,7 +192,8 @@ static int find_threads_by_name(jvmtiEnv* jvmti, JNIEnv* jni,
   return NSK_TRUE;
 }
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEnv* jvmti = NULL;
 
   timeout =  60 * 1000;

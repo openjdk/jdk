@@ -44,7 +44,8 @@ static frame_info fi =
     {"Lframeloc02;", "check",
         "(Ljava/lang/Thread;)I", -1};
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res = jvm->GetEnv((void **) &jvmti_env, JVMTI_VERSION_1_1);
   if (res != JNI_OK || jvmti_env == NULL) {
     LOG("Wrong result of a valid call to GetEnv!\n");

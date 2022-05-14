@@ -107,7 +107,7 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
      * @param cm the canonicalization method
      * @param sm the signature method
      * @param references the list of references. The list is copied.
-     * @param id an optional identifer that will allow this
+     * @param id an optional identifier that will allow this
      *    {@code SignedInfo} to be referenced by other signatures and
      *    objects
      * @throws NullPointerException if {@code cm}, {@code sm},
@@ -200,7 +200,7 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
             }
             refList.add(new DOMReference(refElem, context, provider));
             if (secVal && Policy.restrictNumReferences(refList.size())) {
-                String error = "A maxiumum of " + Policy.maxReferences()
+                String error = "A maximum of " + Policy.maxReferences()
                     + " references per Manifest are allowed when"
                     + " secure validation is enabled";
                 throw new MarshalException(error);

@@ -24,17 +24,18 @@
 
 /*
  * @test
- * @modules jdk.incubator.foreign/jdk.internal.foreign
- *          jdk.incubator.foreign/jdk.internal.foreign.abi
- *          jdk.incubator.foreign/jdk.internal.foreign.abi.aarch64
+ * @enablePreview
+ * @modules java.base/jdk.internal.foreign
+ *          java.base/jdk.internal.foreign.abi
+ *          java.base/jdk.internal.foreign.abi.aarch64
  * @build CallArrangerTestBase
  * @run testng TestAarch64CallArranger
  */
 
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemorySegment;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.aarch64.CallArranger;
@@ -86,16 +87,16 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd);
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { vmStore(r0, int.class) },
-            { vmStore(r1, int.class) },
-            { vmStore(r2, int.class) },
-            { vmStore(r3, int.class) },
-            { vmStore(r4, int.class) },
-            { vmStore(r5, int.class) },
-            { vmStore(r6, int.class) },
-            { vmStore(r7, int.class) },
-            { vmStore(stackStorage(0), int.class) },
-            { vmStore(stackStorage(1), int.class) },
+                { vmStore(r0, int.class) },
+                { vmStore(r1, int.class) },
+                { vmStore(r2, int.class) },
+                { vmStore(r3, int.class) },
+                { vmStore(r4, int.class) },
+                { vmStore(r5, int.class) },
+                { vmStore(r6, int.class) },
+                { vmStore(r7, int.class) },
+                { vmStore(stackStorage(0), int.class) },
+                { vmStore(stackStorage(1), int.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -115,10 +116,10 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd);
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { vmStore(r0, int.class) },
-            { vmStore(r1, int.class) },
-            { vmStore(v0, float.class) },
-            { vmStore(v1, float.class) },
+                { vmStore(r0, int.class) },
+                { vmStore(r1, int.class) },
+                { vmStore(v0, float.class) },
+                { vmStore(v1, float.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -136,7 +137,7 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd);
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            expectedBindings
+                expectedBindings
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -146,37 +147,37 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
     public static Object[][] structs() {
         MemoryLayout struct2 = MemoryLayout.structLayout(C_INT, C_INT, C_DOUBLE, C_INT);
         return new Object[][]{
-            // struct s { int32_t a, b; double c; };
-            { MemoryLayout.structLayout(C_INT, C_INT, C_DOUBLE), new Binding[] {
-                dup(),
-                    // s.a & s.b
-                    bufferLoad(0, long.class), vmStore(r0, long.class),
-                    // s.c --> note AArch64 passes this in an *integer* register
-                    bufferLoad(8, long.class), vmStore(r1, long.class),
-            }},
-            // struct s { int32_t a, b; double c; int32_t d };
-            { struct2, new Binding[] {
-                copy(struct2),
-                unboxAddress(MemorySegment.class),
-                vmStore(r0, long.class)
-            }},
-            // struct s { int32_t a[2]; float b[2] };
-            { MemoryLayout.structLayout(C_INT, C_INT, C_FLOAT, C_FLOAT), new Binding[] {
-                dup(),
-                    // s.a[0] & s.a[1]
-                    bufferLoad(0, long.class), vmStore(r0, long.class),
-                    // s.b[0] & s.b[1]
-                    bufferLoad(8, long.class), vmStore(r1, long.class),
-            }},
-            // struct s { float a; /* padding */ double b };
-            { MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(32), C_DOUBLE),
-              new Binding[] {
-                dup(),
-                // s.a
-                bufferLoad(0, long.class), vmStore(r0, long.class),
-                // s.b
-                bufferLoad(8, long.class), vmStore(r1, long.class),
-            }},
+                // struct s { int32_t a, b; double c; };
+                { MemoryLayout.structLayout(C_INT, C_INT, C_DOUBLE), new Binding[] {
+                        dup(),
+                        // s.a & s.b
+                        bufferLoad(0, long.class), vmStore(r0, long.class),
+                        // s.c --> note AArch64 passes this in an *integer* register
+                        bufferLoad(8, long.class), vmStore(r1, long.class),
+                }},
+                // struct s { int32_t a, b; double c; int32_t d };
+                { struct2, new Binding[] {
+                        copy(struct2),
+                        unboxAddress(MemorySegment.class),
+                        vmStore(r0, long.class)
+                }},
+                // struct s { int32_t a[2]; float b[2] };
+                { MemoryLayout.structLayout(C_INT, C_INT, C_FLOAT, C_FLOAT), new Binding[] {
+                        dup(),
+                        // s.a[0] & s.a[1]
+                        bufferLoad(0, long.class), vmStore(r0, long.class),
+                        // s.b[0] & s.b[1]
+                        bufferLoad(8, long.class), vmStore(r1, long.class),
+                }},
+                // struct s { float a; /* padding */ double b };
+                { MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(32), C_DOUBLE),
+                        new Binding[] {
+                                dup(),
+                                // s.a
+                                bufferLoad(0, long.class), vmStore(r0, long.class),
+                                // s.b
+                                bufferLoad(8, long.class), vmStore(r1, long.class),
+                        }},
         };
     }
 
@@ -195,17 +196,17 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd);
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            {
-                copy(struct1),
-                unboxAddress(MemorySegment.class),
-                vmStore(r0, long.class)
-            },
-            {
-                copy(struct2),
-                unboxAddress(MemorySegment.class),
-                vmStore(r1, long.class)
-            },
-            { vmStore(r2, int.class) }
+                {
+                        copy(struct1),
+                        unboxAddress(MemorySegment.class),
+                        vmStore(r0, long.class)
+                },
+                {
+                        copy(struct2),
+                        unboxAddress(MemorySegment.class),
+                        vmStore(r1, long.class)
+                },
+                { vmStore(r2, int.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -225,10 +226,10 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), FunctionDescriptor.ofVoid(C_POINTER));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            {
-                unboxAddress(),
-                vmStore(r8, long.class)
-            }
+                {
+                        unboxAddress(),
+                        vmStore(r8, long.class)
+                }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -250,13 +251,13 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         checkArgumentBindings(callingSequence, new Binding[][]{});
 
         checkReturnBindings(callingSequence, new Binding[]{
-            allocate(struct),
-            dup(),
-            vmLoad(r0, long.class),
-            bufferStore(0, long.class),
-            dup(),
-            vmLoad(r1, long.class),
-            bufferStore(8, long.class),
+                allocate(struct),
+                dup(),
+                vmLoad(r0, long.class),
+                bufferStore(0, long.class),
+                dup(),
+                vmLoad(r1, long.class),
+                bufferStore(8, long.class),
         });
     }
 
@@ -274,25 +275,25 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd);
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { vmStore(v0, float.class) },
-            { vmStore(r0, int.class) },
-            {
-                dup(),
-                bufferLoad(0, float.class),
-                vmStore(v1, float.class),
-                bufferLoad(4, float.class),
-                vmStore(v2, float.class)
-            }
+                { vmStore(v0, float.class) },
+                { vmStore(r0, int.class) },
+                {
+                        dup(),
+                        bufferLoad(0, float.class),
+                        vmStore(v1, float.class),
+                        bufferLoad(4, float.class),
+                        vmStore(v2, float.class)
+                }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{
-            allocate(hfa),
-            dup(),
-            vmLoad(v0, float.class),
-            bufferStore(0, float.class),
-            dup(),
-            vmLoad(v1, float.class),
-            bufferStore(4, float.class),
+                allocate(hfa),
+                dup(),
+                vmLoad(v0, float.class),
+                bufferStore(0, float.class),
+                dup(),
+                vmLoad(v1, float.class),
+                bufferStore(4, float.class),
         });
     }
 
@@ -310,33 +311,33 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd);
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            {
-                dup(),
-                bufferLoad(0, float.class),
-                vmStore(v0, float.class),
-                dup(),
-                bufferLoad(4, float.class),
-                vmStore(v1, float.class),
-                bufferLoad(8, float.class),
-                vmStore(v2, float.class)
-            },
-            {
-                dup(),
-                bufferLoad(0, float.class),
-                vmStore(v3, float.class),
-                dup(),
-                bufferLoad(4, float.class),
-                vmStore(v4, float.class),
-                bufferLoad(8, float.class),
-                vmStore(v5, float.class)
-            },
-            {
-                dup(),
-                bufferLoad(0, long.class),
-                vmStore(stackStorage(0), long.class),
-                bufferLoad(8, int.class),
-                vmStore(stackStorage(1), int.class),
-            }
+                {
+                        dup(),
+                        bufferLoad(0, float.class),
+                        vmStore(v0, float.class),
+                        dup(),
+                        bufferLoad(4, float.class),
+                        vmStore(v1, float.class),
+                        bufferLoad(8, float.class),
+                        vmStore(v2, float.class)
+                },
+                {
+                        dup(),
+                        bufferLoad(0, float.class),
+                        vmStore(v3, float.class),
+                        dup(),
+                        bufferLoad(4, float.class),
+                        vmStore(v4, float.class),
+                        bufferLoad(8, float.class),
+                        vmStore(v5, float.class)
+                },
+                {
+                        dup(),
+                        bufferLoad(0, long.class),
+                        vmStore(stackStorage(0), long.class),
+                        bufferLoad(8, int.class),
+                        vmStore(stackStorage(1), int.class),
+                }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -351,10 +352,10 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         MemoryLayout struct = MemoryLayout.structLayout(C_INT, C_INT, C_DOUBLE, C_INT);
 
         MethodType mt = MethodType.methodType(
-            void.class, MemorySegment.class, MemorySegment.class, int.class, int.class,
-            int.class, int.class, int.class, int.class, MemorySegment.class, int.class);
+                void.class, MemorySegment.class, MemorySegment.class, int.class, int.class,
+                int.class, int.class, int.class, int.class, MemorySegment.class, int.class);
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(
-            struct, struct, C_INT, C_INT, C_INT, C_INT, C_INT, C_INT, struct, C_INT);
+                struct, struct, C_INT, C_INT, C_INT, C_INT, C_INT, C_INT, struct, C_INT);
         CallArranger.Bindings bindings = CallArranger.LINUX.getBindings(mt, fd, false);
 
         assertFalse(bindings.isInMemoryReturn);
@@ -363,16 +364,16 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd);
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { copy(struct), unboxAddress(MemorySegment.class), vmStore(r0, long.class) },
-            { copy(struct), unboxAddress(MemorySegment.class), vmStore(r1, long.class) },
-            { vmStore(r2, int.class) },
-            { vmStore(r3, int.class) },
-            { vmStore(r4, int.class) },
-            { vmStore(r5, int.class) },
-            { vmStore(r6, int.class) },
-            { vmStore(r7, int.class) },
-            { copy(struct), unboxAddress(MemorySegment.class), vmStore(stackStorage(0), long.class) },
-            { vmStore(stackStorage(1), int.class) },
+                { copy(struct), unboxAddress(MemorySegment.class), vmStore(r0, long.class) },
+                { copy(struct), unboxAddress(MemorySegment.class), vmStore(r1, long.class) },
+                { vmStore(r2, int.class) },
+                { vmStore(r3, int.class) },
+                { vmStore(r4, int.class) },
+                { vmStore(r5, int.class) },
+                { vmStore(r6, int.class) },
+                { vmStore(r7, int.class) },
+                { copy(struct), unboxAddress(MemorySegment.class), vmStore(stackStorage(0), long.class) },
+                { vmStore(stackStorage(1), int.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -387,13 +388,13 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         assertFalse(bindings.isInMemoryReturn);
         CallingSequence callingSequence = bindings.callingSequence;
         assertEquals(callingSequence.methodType(), mt);
-        assertEquals(callingSequence.functionDesc(), fd);
+        assertEquals(callingSequence.functionDesc(), FunctionDescriptor.ofVoid(C_INT, C_INT, C_FLOAT));
 
         // This is identical to the non-variadic calling sequence
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { vmStore(r0, int.class) },
-            { vmStore(r1, int.class) },
-            { vmStore(v0, float.class) },
+                { vmStore(r0, int.class) },
+                { vmStore(r1, int.class) },
+                { vmStore(v0, float.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -408,13 +409,13 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
         assertFalse(bindings.isInMemoryReturn);
         CallingSequence callingSequence = bindings.callingSequence;
         assertEquals(callingSequence.methodType(), mt);
-        assertEquals(callingSequence.functionDesc(), fd);
+        assertEquals(callingSequence.functionDesc(), FunctionDescriptor.ofVoid(C_INT, C_INT, C_FLOAT));
 
         // The two variadic arguments should be allocated on the stack
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { vmStore(r0, int.class) },
-            { vmStore(stackStorage(0), int.class) },
-            { vmStore(stackStorage(1), float.class) },
+                { vmStore(r0, int.class) },
+                { vmStore(stackStorage(0), int.class) },
+                { vmStore(stackStorage(1), float.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});

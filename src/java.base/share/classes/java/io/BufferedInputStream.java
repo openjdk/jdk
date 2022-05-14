@@ -436,7 +436,7 @@ public class BufferedInputStream extends FilterInputStream {
         }
 
         long skipped = (avail < n) ? avail : n;
-        pos += skipped;
+        pos += (int)skipped;
         return skipped;
     }
 
