@@ -29,9 +29,6 @@ import javax.swing.plaf.ColorUIResource;
 
 /**
  * Utility class to convert color names to colors.
- *
- * @author Shannon Hickey
- * @author SWinxy
  */
 class XColors {
 
