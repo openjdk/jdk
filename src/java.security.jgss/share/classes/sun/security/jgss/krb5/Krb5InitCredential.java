@@ -147,7 +147,7 @@ public class Krb5InitCredential
                 .kerberosTicketSetServerAlias(this, serverAlias);
         this.name = name;
         // A delegated cred does not have all fields set. So do not try to
-        // creat new Credentials out of the delegatedCred.
+        // create new Credentials out of the delegatedCred.
         this.krb5Credentials = delegatedCred;
     }
 

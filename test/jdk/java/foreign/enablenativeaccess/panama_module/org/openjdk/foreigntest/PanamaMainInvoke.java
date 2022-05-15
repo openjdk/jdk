@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,28 @@
 
 package org.openjdk.foreigntest;
 
+import java.lang.foreign.*;
 import java.lang.invoke.*;
-import jdk.incubator.foreign.*;
 
 public class PanamaMainInvoke {
-   public static void main(String[] args) throws Throwable {
-       var mh = MethodHandles.lookup().findStatic(CLinker.class, "systemCLinker",
-           MethodType.methodType(CLinker.class));
-       var linker = (CLinker)mh.invokeExact();
-   }
+    public static void main(String[] args) throws Throwable {
+       testInvokenativeLinker();
+       testInvokeMemorySegment();
+    }
+
+    public static void testInvokenativeLinker() throws Throwable {
+        System.out.println("Trying to get Linker");
+        var mh = MethodHandles.lookup().findStatic(Linker.class, "nativeLinker",
+                MethodType.methodType(Linker.class));
+        var linker = (Linker)mh.invokeExact();
+        System.out.println("Got Linker");
+    }
+
+    public static void testInvokeMemorySegment() throws Throwable {
+        System.out.println("Trying to get MemorySegment");
+        var mh = MethodHandles.lookup().findStatic(MemorySegment.class, "ofAddress",
+                MethodType.methodType(MemorySegment.class, MemoryAddress.class, long.class, MemorySession.class));
+        var seg = (MemorySegment)mh.invokeExact(MemoryAddress.NULL, 4000L, MemorySession.global());
+        System.out.println("Got MemorySegment");
+    }
 }

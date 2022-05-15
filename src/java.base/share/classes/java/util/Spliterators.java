@@ -1358,6 +1358,8 @@ public final class Spliterators {
      * extending this class, such as when there is already an iterator
      * available to use.
      *
+     * @param <T> the type of elements returned by this Spliterator
+     *
      * @see #spliterator(Iterator, long, int)
      * @since 1.8
      */

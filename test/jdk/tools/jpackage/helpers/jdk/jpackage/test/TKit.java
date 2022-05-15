@@ -178,6 +178,10 @@ final public class TKit {
         return (OS.contains("mac"));
     }
 
+    public static boolean isArmMac() {
+        return (isOSX() && "aarch64".equals(System.getProperty("os.arch")));
+    }
+
     public static boolean isLinux() {
         return ((OS.contains("nix") || OS.contains("nux")));
     }
@@ -234,6 +238,13 @@ final public class TKit {
         ThrowingRunnable.toRunnable(() -> Files.write(propsFilename,
                 props.stream().map(e -> String.join("=", e.getKey(),
                 e.getValue())).peek(TKit::trace).collect(Collectors.toList()))).run();
+        trace("Done");
+    }
+
+    public static void traceFileContents(Path path, String label) throws IOException {
+        assertFileExists(path);
+        trace(String.format("Dump [%s] %s...", path, label));
+        Files.readAllLines(path).forEach(TKit::trace);
         trace("Done");
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,9 @@ public:
   // Returns true if the reference is to an object in the reserved space
   // for the young generation.
   // Assumes the the young gen address range is less than that of the old gen.
-  bool is_in_young(oop p);
+  bool is_in_young(oop p) const;
+
+  virtual bool requires_barriers(stackChunkOop obj) const;
 
 #ifdef ASSERT
   bool is_in_partial_collection(const void* p);
