@@ -94,11 +94,11 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
 
         HttpServerAdapters.HttpTestHandler handler = (exchange) -> {
             // the handler receives a request and sends back a 200 response with the
-            // response body containing the hostname/ip of the client from whom
+            // response body containing the raw IP address (in byte[] form) of the client from whom
             // the request was received
             var clientAddr = exchange.getRemoteAddress();
             System.out.println("Received a request from client address " + clientAddr);
-            var responseContent = clientAddr.getHostName().getBytes(StandardCharsets.UTF_8);
+            var responseContent = clientAddr.getAddress().getAddress();
             exchange.sendResponseHeaders(200, responseContent.length);
             try (var os = exchange.getResponseBody()) {
                 // write out the client address as a response
@@ -257,11 +257,11 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
                 + " against request URI " + requestURI);
         // GET request
         var req = HttpRequest.newBuilder(requestURI).build();
-        var resp = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        var resp = client.send(req, HttpResponse.BodyHandlers.ofByteArray());
         Assert.assertEquals(resp.statusCode(), 200, "Unexpected status code");
         // verify the address only if a specific one was set on the client
         if (localAddress != null && !localAddress.isAnyLocalAddress()) {
-            Assert.assertEquals(resp.body(), localAddress.getHostName(),
+            Assert.assertEquals(resp.body(), localAddress.getAddress(),
                     "Unexpected client address seen by the server handler");
         }
     }
@@ -279,12 +279,12 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
         // GET request
         var req = HttpRequest.newBuilder(requestURI).build();
         var cf = client.sendAsync(req,
-                HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                HttpResponse.BodyHandlers.ofByteArray());
         var resp = cf.get();
         Assert.assertEquals(resp.statusCode(), 200, "Unexpected status code");
         // verify the address only if a specific one was set on the client
         if (localAddress != null && !localAddress.isAnyLocalAddress()) {
-            Assert.assertEquals(resp.body(), localAddress.getHostName(),
+            Assert.assertEquals(resp.body(), localAddress.getAddress(),
                     "Unexpected client address seen by the server handler");
         }
     }
