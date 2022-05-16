@@ -6570,7 +6570,7 @@ class StubGenerator: public StubCodeGenerator {
       __ stp(rscratch1, r0, Address(__ pre(sp, -2 * wordSize)));
     }
 
-    __ movw(c_rarg1, (return_barrier ? 1 : 0);
+    __ movw(c_rarg1, (return_barrier ? 1 : 0));
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, Continuation::prepare_thaw), rthread, c_rarg1);
     __ mov(rscratch2, r0); // r0 contains the size of the frames to thaw, 0 if overflow or no more frames
 
