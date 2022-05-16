@@ -658,10 +658,11 @@ CodeBlob* CodeCache::find_blob(void* start) {
   CodeBlob* result = find_blob_unsafe(start);
   // We could potentially look up non_entrant methods
   bool is_zombie = result != NULL && result->is_zombie();
-  guarantee(!is_zombie || result->is_locked_by_vm() || VMError::is_error_reported() || is_in_asgct(), "unsafe access to zombie method");
+  bool is_result_safe = !is_zombie || result->is_locked_by_vm() || VMError::is_error_reported();
+  guarantee(is_result_safe || is_in_asgct(), "unsafe access to zombie method");
   // When in ASGCT the previous gurantee will pass for a zombie method but we still don't want that code blob returned in order
   // to minimize the chance of accessing dead memory
-  return is_zombie ? NULL : result;
+  return is_result_safe ? result : NULL;
 }
 
 // Lookup that does not fail if you lookup a zombie method (if you call this, be sure to know
