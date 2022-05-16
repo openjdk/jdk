@@ -113,6 +113,7 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
         if (!tooComplex()) {
             return this;
         }
+        this.prepare();
         return makeReinvoker(this);
     }
 
