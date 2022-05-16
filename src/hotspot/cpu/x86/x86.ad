@@ -6177,23 +6177,16 @@ instruct copySignD_imm(regD dst, regD src, regD tmp1, rRegL tmp2, immD zero) %{
   ins_pipe( pipe_slow );
 %}
 
+#endif // _LP64
+
 //----------------------------- CompressBits/ExpandBits ------------------------
+
 instruct compressBitsI_reg(rRegI dst, rRegI src, rRegI mask) %{
   predicate(n->bottom_type()->isa_int());
   match(Set dst (CompressBits src mask));
   format %{ "pextl  $dst, $src, $mask\t! parallel bit extract" %}
   ins_encode %{
     __ pextl($dst$$Register, $src$$Register, $mask$$Register);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct compressBitsL_reg(rRegL dst, rRegL src, rRegL mask) %{
-  predicate(n->bottom_type()->isa_long());
-  match(Set dst (CompressBits src mask));
-  format %{ "pextq  $dst, $src, $mask\t! parallel bit extract" %}
-  ins_encode %{
-    __ pextq($dst$$Register, $src$$Register, $mask$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -6208,32 +6201,12 @@ instruct expandBitsI_reg(rRegI dst, rRegI src, rRegI mask) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct expandBitsL_reg(rRegL dst, rRegL src, rRegL mask) %{
-  predicate(n->bottom_type()->isa_long());
-  match(Set dst (ExpandBits src mask));
-  format %{ "pdepq  $dst, $src, $mask\t! parallel bit deposit" %}
-  ins_encode %{
-    __ pdepq($dst$$Register, $src$$Register, $mask$$Register);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct compressBitsI_mem(rRegI dst, rRegI src, memory mask) %{
   predicate(n->bottom_type()->isa_int());
   match(Set dst (CompressBits src (LoadI mask)));
   format %{ "pextl  $dst, $src, $mask\t! parallel bit extract" %}
   ins_encode %{
     __ pextl($dst$$Register, $src$$Register, $mask$$Address);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct compressBitsL_mem(rRegL dst, rRegL src, memory mask) %{
-  predicate(n->bottom_type()->isa_long());
-  match(Set dst (CompressBits src (LoadL mask)));
-  format %{ "pextq  $dst, $src, $mask\t! parallel bit extract" %}
-  ins_encode %{
-    __ pextq($dst$$Register, $src$$Register, $mask$$Address);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -6248,16 +6221,6 @@ instruct expandBitsI_mem(rRegI dst, rRegI src, memory mask) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct expandBitsL_mem(rRegL dst, rRegL src, memory mask) %{
-  predicate(n->bottom_type()->isa_long());
-  match(Set dst (ExpandBits src (LoadL mask)));
-  format %{ "pdepq  $dst, $src, $mask\t! parallel bit deposit" %}
-  ins_encode %{
-    __ pdepq($dst$$Register, $src$$Register, $mask$$Address);
-  %}
-  ins_pipe( pipe_slow );
-%}
-#endif // _LP64
 // --------------------------------- Sqrt --------------------------------------
 
 instruct vsqrtF_reg(vec dst, vec src) %{

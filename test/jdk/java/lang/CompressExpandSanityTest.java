@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore
  * @summary Test compress expand as if the test methods are the implementation methods
  * @key randomness
  * @run testng CompressExpandSanityTest

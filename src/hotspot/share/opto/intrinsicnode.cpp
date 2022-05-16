@@ -157,18 +157,21 @@ Node* CompressBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 Node* compress_expand_identity(PhaseGVN* phase, Node* n) {
-  BasicType bt = n->bottom_type()->array_element_basic_type();
-  // compress(x, 0) == 0
+  BasicType bt = n->bottom_type()->basic_type();
+  // compress(x, 0) == 0, expand(x, 0) == 0
   if(phase->type(n->in(2))->higher_equal(TypeInteger::zero(bt))) return n->in(2);
-  // compress(x, -1) == x
+  // compress(x, -1) == x, expand(x, -1) == x
   if(phase->type(n->in(2))->higher_equal(TypeInteger::minus_1(bt))) return n->in(1);
+  return n;
+  // expand(-1, x) == x
+  if(n->Opcode() == Op_ExpandBits &&
+     phase->type(n->in(1))->higher_equal(TypeInteger::minus_1(bt))) return n->in(2);
   return n;
 }
 
 Node* CompressBitsNode::Identity(PhaseGVN* phase) {
   return compress_expand_identity(phase, this);
 }
-
 
 Node* ExpandBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* src = in(1);
@@ -212,4 +215,64 @@ Node* ExpandBitsNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 Node* ExpandBitsNode::Identity(PhaseGVN* phase) {
   return compress_expand_identity(phase, this);
+}
+
+const Type* CompressBitsNode::Value(PhaseGVN* phase) const {
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  BasicType bt = bottom_type()->basic_type();
+  const TypeInteger* t1i = t1->is_integer(bt);
+  const TypeInteger* t2i = t2->is_integer(bt);
+  int w = bt == T_INT ? 32 : 64;
+
+  if (t1i->is_con() && t2i->is_con()) {
+     jlong res = 0;
+     jlong src = t1i->get_con_as_long(bt);
+     jlong mask = t2i->get_con_as_long(bt);
+     src = w == 32 ? src & 0xFFFFFFFFL : src;
+     mask = w == 32 ? mask & 0xFFFFFFFFL : mask;
+     for (int i = 0, j = 0; i < w; i++) {
+       if(mask & 0x1) {
+         res |= (src & 0x1) << j++;
+       }
+       src >>= 1;
+       mask >>= 1;
+     }
+     return TypeInteger::make(res, res, w, bt);
+  }
+  return bottom_type();
+}
+
+const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  BasicType bt = bottom_type()->basic_type();
+  const TypeInteger* t1i = t1->is_integer(bt);
+  const TypeInteger* t2i = t2->is_integer(bt);
+  int w = bt == T_INT ? 32 : 64;
+
+  if (t1i->is_con() && t2i->is_con()) {
+     jlong res = 0;
+     jlong src = t1i->get_con_as_long(bt);
+     jlong mask = t2i->get_con_as_long(bt);
+     src = w == 32 ? src & 0xFFFFFFFFL : src;
+     mask = w == 32 ? mask & 0xFFFFFFFFL : mask;
+     for (int i = 0; i < w; i++) {
+       if(mask & 0x1) {
+         res |= (src & 0x1) << i;
+         src >>= 1;
+       }
+       mask >>= 1;
+     }
+     return TypeInteger::make(res, res, w, bt);
+  }
+  return bottom_type();
 }

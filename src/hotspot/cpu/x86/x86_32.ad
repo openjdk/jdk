@@ -213,6 +213,7 @@ reg_class_dynamic long_reg(long_reg_no_ebp, long_reg_with_ebp, %{ PreserveFrameP
 // Class of integer register pairs that aligns with calling convention
 reg_class eadx_reg( EAX,EDX );
 reg_class ebcx_reg( ECX,EBX );
+reg_class ebpd_reg( EBP,EDI );
 
 // Not AX or DX, used in divides
 reg_class nadx_reg_with_ebp(EBX, ECX, ESI, EDI, EBP);
@@ -3892,6 +3893,13 @@ operand eBCXRegL( eRegL reg ) %{
   interface(REG_INTER);
 %}
 
+operand eBDPRegL( eRegL reg ) %{
+  constraint(ALLOC_IN_RC(ebpd_reg));
+  match(reg);
+
+  format %{ "EBP:EDI" %}
+  interface(REG_INTER);
+%}
 // Special case for integer high multiply
 operand eADXRegL_low_only() %{
   constraint(ALLOC_IN_RC(eadx_reg));
@@ -11465,6 +11473,95 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
   ins_pipe( pipe_slow );
 %}
 
+//----------------------------- CompressBits/ExpandBits ------------------------
+
+instruct compressBitsL_reg(eADXRegL dst, eBCXRegL src, eBDPRegL mask, eSIRegI rtmp, regF xtmp) %{
+  predicate(n->bottom_type()->isa_long());
+  match(Set dst (CompressBits src mask));
+  effect(TEMP rtmp, TEMP xtmp);
+  format %{ "compress_bits32 $dst, $src, $mask\t! using $rtmp and $xtmp as TEMP" %}
+  ins_encode %{
+    Label exit, partail_result;
+    // Parallely extract both upper and lower 32 bits of source into destination register pair.
+    // Merge the results of upper and lower destination registers such that upper destination
+    // results are contiguously laid out after the lower destination result.
+    __ pextl($dst$$Register, $src$$Register, $mask$$Register);
+    __ pextl(HIGH_FROM_LOW($dst$$Register), HIGH_FROM_LOW($src$$Register), HIGH_FROM_LOW($mask$$Register));
+    __ popcntl($rtmp$$Register, $mask$$Register);
+    // Skip merging if bit count of lower mask register is equal to 32 (register size).
+    __ cmpl($rtmp$$Register, 32);
+    __ jccb(Assembler::equal, exit);
+    // Due to constraint on number of GPRs on 32 bit target, using XMM registers as potential spill slots.
+    __ movdl($xtmp$$XMMRegister, $rtmp$$Register);
+    // Shift left the contents of upper destination register by true bit count of lower mask register
+    // and merge with lower destination register.
+    __ shlxl($rtmp$$Register, HIGH_FROM_LOW($dst$$Register), $rtmp$$Register);
+    __ orl($dst$$Register, $rtmp$$Register);
+    __ movdl($rtmp$$Register, $xtmp$$XMMRegister);
+    // Zero out upper destination register if true bit count of lower 32 bit mask is zero
+    // since contents of upper destination have already been copied to lower destination
+    // register.
+    __ cmpl($rtmp$$Register, 0);
+    __ jccb(Assembler::greater, partail_result);
+    __ movl(HIGH_FROM_LOW($dst$$Register), 0);
+    __ jmp(exit);
+    __ bind(partail_result);
+    // Perform right shift over upper destination register to move out bits already copied
+    // to lower destination register.
+    __ subl($rtmp$$Register, 32);
+    __ negl($rtmp$$Register);
+    __ shrxl(HIGH_FROM_LOW($dst$$Register), HIGH_FROM_LOW($dst$$Register), $rtmp$$Register);
+    __ bind(exit);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct expandBitsL_reg(eADXRegL dst, eBCXRegL src, eBDPRegL mask, eSIRegI rtmp, regF xtmp) %{
+  predicate(n->bottom_type()->isa_long());
+  match(Set dst (ExpandBits src mask));
+  effect(TEMP rtmp, TEMP xtmp);
+  format %{ "expand_bits32 $dst, $src, $mask\t! using $rtmp and $xtmp as TEMP" %}
+  ins_encode %{
+    // Extraction operation sequentially reads the bits from source register starting from LSB
+    // and lays them out into destination register at bit locations corresponding to true bits
+    // in mask register. Thus number of source bits read are equal to combined true bit count
+    // of mask register pair.
+    Label exit, mask_clipping;
+    __ pdepl($dst$$Register, $src$$Register, $mask$$Register);
+    __ pdepl(HIGH_FROM_LOW($dst$$Register), HIGH_FROM_LOW($src$$Register), HIGH_FROM_LOW($mask$$Register));
+    __ popcntl($rtmp$$Register, $mask$$Register);
+    // If true bit count of lower mask register is 32 then none of bit of lower source register
+    // will feed to upper destination register.
+    __ cmpl($rtmp$$Register, 32);
+    __ jccb(Assembler::equal, exit);
+    // Due to constraint on number of GPRs on 32 bit target, using XMM registers as potential spill slots.
+    __ movdl($xtmp$$XMMRegister, $rtmp$$Register);
+    // Shift right the contents of lower source register to remove already consumed bits.
+    __ shrxl($rtmp$$Register, $src$$Register, $rtmp$$Register);
+    // Extract the bits from lower source register starting from LSB under the influence
+    // of upper mask register.
+    __ pdepl(HIGH_FROM_LOW($dst$$Register), $rtmp$$Register, HIGH_FROM_LOW($mask$$Register));
+    __ movdl($rtmp$$Register, $xtmp$$XMMRegister);
+    __ subl($rtmp$$Register, 32);
+    __ negl($rtmp$$Register);
+    __ movdl($xtmp$$XMMRegister, $mask$$Register);
+    __ movl($mask$$Register, HIGH_FROM_LOW($mask$$Register));
+    // Clear the set bits in upper mask register which have been used to extract the contents
+    // from lower source register.
+    __ bind(mask_clipping);
+    __ blsrl($mask$$Register, $mask$$Register);
+    __ decrementl($rtmp$$Register, 1);
+    __ jccb(Assembler::greater, mask_clipping);
+    // Starting from LSB extract the bits from upper source register under the influence of
+    // remaining set bits in upper mask register.
+    __ pdepl($rtmp$$Register, HIGH_FROM_LOW($src$$Register), $mask$$Register);
+    // Merge the partial results extracted from lower and upper source register bits.
+    __ orl(HIGH_FROM_LOW($dst$$Register), $rtmp$$Register);
+    __ movdl($mask$$Register, $xtmp$$XMMRegister);
+    __ bind(exit);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 // =======================================================================
 // fast clearing of an array

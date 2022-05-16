@@ -9396,6 +9396,48 @@ instruct rorL_rReg_Var(rRegL dst, rcx_RegI shift, rFlagsReg cr)
   ins_pipe(ialu_reg_reg);
 %}
 
+//----------------------------- CompressBits/ExpandBits ------------------------
+
+instruct compressBitsL_reg(rRegL dst, rRegL src, rRegL mask) %{
+  predicate(n->bottom_type()->isa_long());
+  match(Set dst (CompressBits src mask));
+  format %{ "pextq  $dst, $src, $mask\t! parallel bit extract" %}
+  ins_encode %{
+    __ pextq($dst$$Register, $src$$Register, $mask$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct expandBitsL_reg(rRegL dst, rRegL src, rRegL mask) %{
+  predicate(n->bottom_type()->isa_long());
+  match(Set dst (ExpandBits src mask));
+  format %{ "pdepq  $dst, $src, $mask\t! parallel bit deposit" %}
+  ins_encode %{
+    __ pdepq($dst$$Register, $src$$Register, $mask$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct compressBitsL_mem(rRegL dst, rRegL src, memory mask) %{
+  predicate(n->bottom_type()->isa_long());
+  match(Set dst (CompressBits src (LoadL mask)));
+  format %{ "pextq  $dst, $src, $mask\t! parallel bit extract" %}
+  ins_encode %{
+    __ pextq($dst$$Register, $src$$Register, $mask$$Address);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct expandBitsL_mem(rRegL dst, rRegL src, memory mask) %{
+  predicate(n->bottom_type()->isa_long());
+  match(Set dst (ExpandBits src (LoadL mask)));
+  format %{ "pdepq  $dst, $src, $mask\t! parallel bit deposit" %}
+  ins_encode %{
+    __ pdepq($dst$$Register, $src$$Register, $mask$$Address);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 
 // Logical Instructions
 

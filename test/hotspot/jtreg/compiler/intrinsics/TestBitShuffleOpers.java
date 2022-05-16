@@ -28,7 +28,6 @@
  * @summary To test various transforms added for bit COMPRESS_BITS and EXPAND_BITS operations
  * @requires vm.compiler2.enabled
  * @requires vm.cpu.features ~= ".*bmi2.*"
- * @requires os.simpleArch == "x64"
  * @library /test/lib /
  * @run driver compiler.intrinsics.TestBitShuffleOpers
  */
