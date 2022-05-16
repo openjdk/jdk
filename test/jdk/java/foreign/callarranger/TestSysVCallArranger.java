@@ -24,18 +24,19 @@
 
 /*
  * @test
- * @modules jdk.incubator.foreign/jdk.internal.foreign
- *          jdk.incubator.foreign/jdk.internal.foreign.abi
- *          jdk.incubator.foreign/jdk.internal.foreign.abi.x64
- *          jdk.incubator.foreign/jdk.internal.foreign.abi.x64.sysv
+ * @enablePreview
+ * @modules java.base/jdk.internal.foreign
+ *          java.base/jdk.internal.foreign.abi
+ *          java.base/jdk.internal.foreign.abi.x64
+ *          java.base/jdk.internal.foreign.abi.x64.sysv
  * @build CallArrangerTestBase
  * @run testng TestSysVCallArranger
  */
 
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemorySegment;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.x64.sysv.CallArranger;
@@ -65,7 +66,7 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.appendArgumentLayouts(C_LONG));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { vmStore(rax, long.class) }
+                { vmStore(rax, long.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -93,7 +94,7 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
 
         checkArgumentBindings(callingSequence, new Binding[][]{
                 { dup(), bufferLoad(0, long.class), vmStore(rdi, long.class),
-                  bufferLoad(8, int.class), vmStore(rsi, int.class)},
+                        bufferLoad(8, int.class), vmStore(rsi, int.class)},
                 { vmStore(rax, long.class) },
         });
 
@@ -204,13 +205,13 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.appendArgumentLayouts(C_LONG));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { vmStore(rdi, int.class) },
-            { vmStore(rsi, int.class) },
-            { vmStore(rdx, int.class) },
-            { vmStore(rcx, int.class) },
-            { vmStore(r8, int.class) },
-            { vmStore(r9, int.class) },
-            { vmStore(rax, long.class) },
+                { vmStore(rdi, int.class) },
+                { vmStore(rsi, int.class) },
+                { vmStore(rdx, int.class) },
+                { vmStore(rcx, int.class) },
+                { vmStore(r8, int.class) },
+                { vmStore(r9, int.class) },
+                { vmStore(rax, long.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -234,15 +235,15 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.appendArgumentLayouts(C_LONG));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { vmStore(xmm0, double.class) },
-            { vmStore(xmm1, double.class) },
-            { vmStore(xmm2, double.class) },
-            { vmStore(xmm3, double.class) },
-            { vmStore(xmm4, double.class) },
-            { vmStore(xmm5, double.class) },
-            { vmStore(xmm6, double.class) },
-            { vmStore(xmm7, double.class) },
-            { vmStore(rax, long.class) },
+                { vmStore(xmm0, double.class) },
+                { vmStore(xmm1, double.class) },
+                { vmStore(xmm2, double.class) },
+                { vmStore(xmm3, double.class) },
+                { vmStore(xmm4, double.class) },
+                { vmStore(xmm5, double.class) },
+                { vmStore(xmm6, double.class) },
+                { vmStore(xmm7, double.class) },
+                { vmStore(rax, long.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -268,25 +269,25 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.appendArgumentLayouts(C_LONG));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { vmStore(rdi, long.class) },
-            { vmStore(rsi, long.class) },
-            { vmStore(rdx, long.class) },
-            { vmStore(rcx, long.class) },
-            { vmStore(r8, long.class) },
-            { vmStore(r9, long.class) },
-            { vmStore(stackStorage(0), long.class) },
-            { vmStore(stackStorage(1), long.class) },
-            { vmStore(xmm0, float.class) },
-            { vmStore(xmm1, float.class) },
-            { vmStore(xmm2, float.class) },
-            { vmStore(xmm3, float.class) },
-            { vmStore(xmm4, float.class) },
-            { vmStore(xmm5, float.class) },
-            { vmStore(xmm6, float.class) },
-            { vmStore(xmm7, float.class) },
-            { vmStore(stackStorage(2), float.class) },
-            { vmStore(stackStorage(3), float.class) },
-            { vmStore(rax, long.class) },
+                { vmStore(rdi, long.class) },
+                { vmStore(rsi, long.class) },
+                { vmStore(rdx, long.class) },
+                { vmStore(rcx, long.class) },
+                { vmStore(r8, long.class) },
+                { vmStore(r9, long.class) },
+                { vmStore(stackStorage(0), long.class) },
+                { vmStore(stackStorage(1), long.class) },
+                { vmStore(xmm0, float.class) },
+                { vmStore(xmm1, float.class) },
+                { vmStore(xmm2, float.class) },
+                { vmStore(xmm3, float.class) },
+                { vmStore(xmm4, float.class) },
+                { vmStore(xmm5, float.class) },
+                { vmStore(xmm6, float.class) },
+                { vmStore(xmm7, float.class) },
+                { vmStore(stackStorage(2), float.class) },
+                { vmStore(stackStorage(3), float.class) },
+                { vmStore(rax, long.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -324,21 +325,21 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.appendArgumentLayouts(C_LONG));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { vmStore(rdi, int.class) },
-            { vmStore(rsi, int.class) },
-            {
-                dup(),
-                bufferLoad(0, long.class), vmStore(rdx, long.class),
-                bufferLoad(8, double.class), vmStore(xmm0, double.class)
-            },
-            { vmStore(rcx, int.class) },
-            { vmStore(r8, int.class) },
-            { vmStore(xmm1, double.class) },
-            { vmStore(xmm2, double.class) },
-            { vmStore(r9, int.class) },
-            { vmStore(stackStorage(0), int.class) },
-            { vmStore(stackStorage(1), int.class) },
-            { vmStore(rax, long.class) },
+                { vmStore(rdi, int.class) },
+                { vmStore(rsi, int.class) },
+                {
+                        dup(),
+                        bufferLoad(0, long.class), vmStore(rdx, long.class),
+                        bufferLoad(8, double.class), vmStore(xmm0, double.class)
+                },
+                { vmStore(rcx, int.class) },
+                { vmStore(r8, int.class) },
+                { vmStore(xmm1, double.class) },
+                { vmStore(xmm2, double.class) },
+                { vmStore(r9, int.class) },
+                { vmStore(stackStorage(0), int.class) },
+                { vmStore(stackStorage(1), int.class) },
+                { vmStore(rax, long.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -366,8 +367,8 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.appendArgumentLayouts(C_LONG));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(rdi, long.class) },
-            { vmStore(rax, long.class) },
+                { unboxAddress(), vmStore(rdi, long.class) },
+                { vmStore(rax, long.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -387,8 +388,8 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.appendArgumentLayouts(C_LONG));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            expectedBindings,
-            { vmStore(rax, long.class) },
+                expectedBindings,
+                { vmStore(rax, long.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});
@@ -400,34 +401,34 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
     @DataProvider
     public static Object[][] structs() {
         return new Object[][]{
-            { MemoryLayout.structLayout(C_LONG), new Binding[]{
-                    bufferLoad(0, long.class), vmStore(rdi, long.class)
+                { MemoryLayout.structLayout(C_LONG), new Binding[]{
+                        bufferLoad(0, long.class), vmStore(rdi, long.class)
                 }
-            },
-            { MemoryLayout.structLayout(C_LONG, C_LONG), new Binding[]{
-                    dup(),
-                    bufferLoad(0, long.class), vmStore(rdi, long.class),
-                    bufferLoad(8, long.class), vmStore(rsi, long.class)
+                },
+                { MemoryLayout.structLayout(C_LONG, C_LONG), new Binding[]{
+                        dup(),
+                        bufferLoad(0, long.class), vmStore(rdi, long.class),
+                        bufferLoad(8, long.class), vmStore(rsi, long.class)
                 }
-            },
-            { MemoryLayout.structLayout(C_LONG, C_LONG, C_LONG), new Binding[]{
-                    dup(),
-                    bufferLoad(0, long.class), vmStore(stackStorage(0), long.class),
-                    dup(),
-                    bufferLoad(8, long.class), vmStore(stackStorage(1), long.class),
-                    bufferLoad(16, long.class), vmStore(stackStorage(2), long.class)
+                },
+                { MemoryLayout.structLayout(C_LONG, C_LONG, C_LONG), new Binding[]{
+                        dup(),
+                        bufferLoad(0, long.class), vmStore(stackStorage(0), long.class),
+                        dup(),
+                        bufferLoad(8, long.class), vmStore(stackStorage(1), long.class),
+                        bufferLoad(16, long.class), vmStore(stackStorage(2), long.class)
                 }
-            },
-            { MemoryLayout.structLayout(C_LONG, C_LONG, C_LONG, C_LONG), new Binding[]{
-                    dup(),
-                    bufferLoad(0, long.class), vmStore(stackStorage(0), long.class),
-                    dup(),
-                    bufferLoad(8, long.class), vmStore(stackStorage(1), long.class),
-                    dup(),
-                    bufferLoad(16, long.class), vmStore(stackStorage(2), long.class),
-                    bufferLoad(24, long.class), vmStore(stackStorage(3), long.class)
+                },
+                { MemoryLayout.structLayout(C_LONG, C_LONG, C_LONG, C_LONG), new Binding[]{
+                        dup(),
+                        bufferLoad(0, long.class), vmStore(stackStorage(0), long.class),
+                        dup(),
+                        bufferLoad(8, long.class), vmStore(stackStorage(1), long.class),
+                        dup(),
+                        bufferLoad(16, long.class), vmStore(stackStorage(2), long.class),
+                        bufferLoad(24, long.class), vmStore(stackStorage(3), long.class)
                 }
-            },
+                },
         };
     }
 
@@ -445,17 +446,17 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd.appendArgumentLayouts(C_LONG));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { vmStore(rax, long.class) }
+                { vmStore(rax, long.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[] {
-            allocate(struct),
-            dup(),
-            vmLoad(rax, long.class),
-            bufferStore(0, long.class),
-            dup(),
-            vmLoad(rdx, long.class),
-            bufferStore(8, long.class)
+                allocate(struct),
+                dup(),
+                vmLoad(rax, long.class),
+                bufferStore(0, long.class),
+                dup(),
+                vmLoad(rdx, long.class),
+                bufferStore(8, long.class)
         });
 
         assertEquals(bindings.nVectorArgs, 0);
@@ -475,8 +476,8 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), FunctionDescriptor.ofVoid(C_POINTER, C_LONG));
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { unboxAddress(), vmStore(rdi, long.class) },
-            { vmStore(rax, long.class) }
+                { unboxAddress(), vmStore(rdi, long.class) },
+                { vmStore(rax, long.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[] {});
@@ -498,11 +499,11 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
         assertEquals(callingSequence.functionDesc(), fd);
 
         checkArgumentBindings(callingSequence, new Binding[][]{
-            { allocate(struct), dup(), vmLoad(xmm0, float.class), bufferStore(0, float.class) },
+                { allocate(struct), dup(), vmLoad(xmm0, float.class), bufferStore(0, float.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[] {
-            bufferLoad(0, float.class), vmStore(xmm0, float.class)
+                bufferLoad(0, float.class), vmStore(xmm0, float.class)
         });
 
         assertEquals(bindings.nVectorArgs, 1);

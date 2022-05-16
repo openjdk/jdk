@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import jdk.internal.vm.Continuation;
+import jdk.internal.vm.ContinuationScope;
 
 /**
  * A stack walker.
@@ -293,6 +295,8 @@ public final class StackWalker {
     private static final StackWalker DEFAULT_WALKER =
         new StackWalker(DEFAULT_EMPTY_OPTION);
 
+    private final Continuation continuation;
+    private final ContinuationScope contScope;
     private final Set<Option> options;
     private final ExtendedOption extendedOption;
     private final int estimateDepth;
@@ -313,6 +317,24 @@ public final class StackWalker {
     public static StackWalker getInstance() {
         // no permission check needed
         return DEFAULT_WALKER;
+    }
+
+    /**
+     * Returns a {@code StackWalker} instance.
+     *
+     * <p> This {@code StackWalker} is configured to skip all
+     * {@linkplain Option#SHOW_HIDDEN_FRAMES hidden frames} and
+     * no {@linkplain Option#RETAIN_CLASS_REFERENCE class reference} is retained.
+     *
+     * @param contScope the continuation scope up to which (inclusive) to walk the stack
+     *
+     * @return a {@code StackWalker} configured to skip all
+     * {@linkplain Option#SHOW_HIDDEN_FRAMES hidden frames} and
+     * no {@linkplain Option#RETAIN_CLASS_REFERENCE class reference} is retained.
+     *
+     */
+    static StackWalker getInstance(ContinuationScope contScope) {
+        return getInstance(EnumSet.noneOf(Option.class), contScope);
     }
 
     /**
@@ -337,6 +359,28 @@ public final class StackWalker {
     }
 
     /**
+     * Returns a {@code StackWalker} instance with the given option specifying
+     * the stack frame information it can access.
+     *
+     * <p>
+     * If a security manager is present and the given {@code option} is
+     * {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE},
+     * it calls its {@link SecurityManager#checkPermission checkPermission}
+     * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
+     *
+     * @param option {@link Option stack walking option}
+     * @param contScope the continuation scope up to which (inclusive) to walk the stack
+     *
+     * @return a {@code StackWalker} configured with the given option
+     *
+     * @throws SecurityException if a security manager exists and its
+     *         {@code checkPermission} method denies access.
+     */
+    static StackWalker getInstance(Option option, ContinuationScope contScope) {
+        return getInstance(EnumSet.of(Objects.requireNonNull(option)), contScope);
+    }
+
+    /**
      * Returns a {@code StackWalker} instance with the given {@code options} specifying
      * the stack frame information it can access.  If the given {@code options}
      * is empty, this {@code StackWalker} is configured to skip all
@@ -357,13 +401,38 @@ public final class StackWalker {
      *         {@code checkPermission} method denies access.
      */
     public static StackWalker getInstance(Set<Option> options) {
-        if (options.isEmpty()) {
+        return getInstance(options, null);
+    }
+
+    /**
+     * Returns a {@code StackWalker} instance with the given {@code options} specifying
+     * the stack frame information it can access.  If the given {@code options}
+     * is empty, this {@code StackWalker} is configured to skip all
+     * {@linkplain Option#SHOW_HIDDEN_FRAMES hidden frames} and no
+     * {@linkplain Option#RETAIN_CLASS_REFERENCE class reference} is retained.
+     *
+     * <p>
+     * If a security manager is present and the given {@code options} contains
+     * {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE},
+     * it calls its {@link SecurityManager#checkPermission checkPermission}
+     * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
+     *
+     * @param options {@link Option stack walking option}
+     * @param contScope the continuation scope up to which (inclusive) to walk the stack
+     *
+     * @return a {@code StackWalker} configured with the given options
+     *
+     * @throws SecurityException if a security manager exists and its
+     *         {@code checkPermission} method denies access.
+     */
+    static StackWalker getInstance(Set<Option> options, ContinuationScope contScope) {
+        if (options.isEmpty() && contScope == null) {
             return DEFAULT_WALKER;
         }
 
         EnumSet<Option> optionSet = toEnumSet(options);
         checkPermission(optionSet);
-        return new StackWalker(optionSet);
+        return new StackWalker(optionSet, contScope);
     }
 
     /**
@@ -404,16 +473,37 @@ public final class StackWalker {
 
     // ----- private constructors ------
     private StackWalker(EnumSet<Option> options) {
-        this(options, 0, null);
+        this(options, 0, null, null, null);
+    }
+    private StackWalker(EnumSet<Option> options, ContinuationScope contScope) {
+        this(options, 0, null, contScope, null);
+    }
+    private StackWalker(EnumSet<Option> options, ContinuationScope contScope, Continuation continuation) {
+        this(options, 0, null, contScope, continuation);
     }
     private StackWalker(EnumSet<Option> options, int estimateDepth) {
-        this(options, estimateDepth, null);
+        this(options, estimateDepth, null, null, null);
     }
-    private StackWalker(EnumSet<Option> options, int estimateDepth, ExtendedOption extendedOption) {
+    private StackWalker(EnumSet<Option> options, int estimateDepth, ContinuationScope contScope) {
+        this(options, estimateDepth, null, contScope, null);
+    }
+    private StackWalker(EnumSet<Option> options,
+                        int estimateDepth,
+                        ContinuationScope contScope,
+                        Continuation continuation) {
+        this(options, estimateDepth, null, contScope, continuation);
+    }
+    private StackWalker(EnumSet<Option> options,
+                        int estimateDepth,
+                        ExtendedOption extendedOption,
+                        ContinuationScope contScope,
+                        Continuation continuation) {
         this.options = options;
         this.estimateDepth = estimateDepth;
         this.extendedOption = extendedOption;
         this.retainClassRef = hasOption(Option.RETAIN_CLASS_REFERENCE);
+        this.contScope = contScope;
+        this.continuation = continuation;
     }
 
     private static void checkPermission(Set<Option> options) {
@@ -597,6 +687,9 @@ public final class StackWalker {
             throw new UnsupportedOperationException("This stack walker " +
                     "does not have RETAIN_CLASS_REFERENCE access");
         }
+        if (continuation != null) {
+            throw new UnsupportedOperationException("This stack walker walks a continuation");
+        }
 
         return StackStreamFactory.makeCallerFinder(this).findCaller();
     }
@@ -604,9 +697,19 @@ public final class StackWalker {
     // ---- package access ----
 
     static StackWalker newInstance(Set<Option> options, ExtendedOption extendedOption) {
+        return newInstance(options, extendedOption, null);
+    }
+
+    static StackWalker newInstance(Set<Option> options, ExtendedOption extendedOption, ContinuationScope contScope) {
         EnumSet<Option> optionSet = toEnumSet(options);
         checkPermission(optionSet);
-        return new StackWalker(optionSet, 0, extendedOption);
+        return new StackWalker(optionSet, 0, extendedOption, contScope, null);
+    }
+
+    static StackWalker newInstance(Set<Option> options, ExtendedOption extendedOption, ContinuationScope contScope, Continuation continuation) {
+        EnumSet<Option> optionSet = toEnumSet(options);
+        checkPermission(optionSet);
+        return new StackWalker(optionSet, 0, extendedOption, contScope, continuation);
     }
 
     int estimateDepth() {
@@ -619,5 +722,13 @@ public final class StackWalker {
 
     boolean hasLocalsOperandsOption() {
         return extendedOption == ExtendedOption.LOCALS_AND_OPERANDS;
+    }
+
+    ContinuationScope getContScope() {
+        return contScope;
+    }
+
+    Continuation getContinuation() {
+        return continuation;
     }
 }

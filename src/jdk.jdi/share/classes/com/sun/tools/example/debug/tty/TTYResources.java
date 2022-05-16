@@ -141,6 +141,7 @@ public class TTYResources extends java.util.ListResourceBundle {
         {"grouping end character", "}"},
         {"Illegal Argument Exception", "Illegal Argument Exception"},
         {"Illegal connector argument", "Illegal connector argument: {0}"},
+        {"Illegal thread state", "Illegal thread state"},
         {"implementor:", "implementor: {0}"},
         {"implements:", "implements: {0}"},
         {"Initializing progname", "Initializing {0} ..."},
@@ -408,7 +409,7 @@ public class TTYResources extends java.util.ListResourceBundle {
              "trace [go] method exit | exits [thread]\n" +
              "                          -- trace the current method's exit, or all methods' exits\n" +
              "                          -- All threads are suspended unless 'go' is specified\n" +
-             "untrace [methods]         -- stop tracing method entrys and/or exits\n" +
+             "untrace [methods]         -- stop tracing method entries and/or exits\n" +
              "step                      -- execute current line\n" +
              "step up                   -- execute until the current method returns to its caller\n" +
              "stepi                     -- execute current instruction\n" +
@@ -475,11 +476,12 @@ public class TTYResources extends java.util.ListResourceBundle {
              "    -connect <connector-name>:<name1>=<value1>,...\n" +
              "                      connect to target VM using named connector with listed argument values\n" +
              "    -dbgtrace [flags] print info for debugging {0}\n" +
+             "    -trackvthreads    track virtual threads as they are created\n" +
              "    -tclient          run the application in the HotSpot(TM) Client Compiler\n" +
              "    -tserver          run the application in the HotSpot(TM) Server Compiler\n" +
              "    -R<option>        forward <option> to debuggee process if launched by jdb, otherwise ignored\n" +
              "\n" +
-             "options forwarded to debuggee process if lauched by jdb (shorthand instead of using -R):\n" +
+             "options forwarded to debuggee process if launched by jdb (shorthand instead of using -R):\n" +
              "    -v -verbose[:class|gc|jni]\n" +
              "                      turn on verbose mode\n" +
              "    -D<name>=<value>  set a system property\n" +

@@ -843,10 +843,20 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     }
   }
 
-  // May not have gone thru igvn yet so don't use _igvn.type(phi) (PhaseIdealLoop::is_counted_loop() sets the iv phi's type)
-  const TypeInteger* phi_t = phi->bottom_type()->is_integer(bt);
-  assert(phi_t->hi_as_long() >= phi_t->lo_as_long(), "dead phi?");
-  iters_limit = checked_cast<int>(MIN2((julong)iters_limit, (julong)(phi_t->hi_as_long() - phi_t->lo_as_long())));
+  // Take what we know about the number of iterations of the long counted loop into account when computing the limit of
+  // the inner loop.
+  const Node* init = head->init_trip();
+  const TypeInteger* lo = _igvn.type(init)->is_integer(bt);
+  const TypeInteger* hi = _igvn.type(limit)->is_integer(bt);
+  if (stride_con < 0) {
+    swap(lo, hi);
+  }
+  if (hi->hi_as_long() <= lo->lo_as_long()) {
+    // not a loop after all
+    return false;
+  }
+  julong orig_iters = hi->hi_as_long() - lo->lo_as_long();
+  iters_limit = checked_cast<int>(MIN2((julong)iters_limit, orig_iters));
 
   // We need a safepoint to insert empty predicates for the inner loop.
   SafePointNode* safepoint;
@@ -3886,6 +3896,17 @@ uint IdealLoopTree::est_loop_flow_merge_sz() const {
   return 0;
 }
 
+#ifdef ASSERT
+bool IdealLoopTree::has_reduction_nodes() const {
+  for (uint i = 0; i < _body.size(); i++) {
+    if (_body[i]->is_reduction()) {
+      return true;
+    }
+  }
+  return false;
+}
+#endif // ASSERT
+
 #ifndef PRODUCT
 //------------------------------dump_head--------------------------------------
 // Dump 1 liner for loop header info
@@ -4460,6 +4481,7 @@ void PhaseIdealLoop::build_and_optimize() {
       // look for RCE candidates and inhibit split_thru_phi
       // on just their loop-phi's for this pass of loop opts
       if (SplitIfBlocks && do_split_ifs &&
+          head->as_BaseCountedLoop()->is_valid_counted_loop(head->as_BaseCountedLoop()->bt()) &&
           (lpt->policy_range_check(this, true, T_LONG) ||
            (head->is_CountedLoop() && lpt->policy_range_check(this, true, T_INT)))) {
         lpt->_rce_candidate = 1; // = true

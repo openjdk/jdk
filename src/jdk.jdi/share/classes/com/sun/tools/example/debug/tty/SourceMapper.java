@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class SourceMapper {
 
     SourceMapper(List<String> sourcepath) {
         /*
-         * sourcepath can arrive from the debugee as a List.
+         * sourcepath can arrive from the debuggee as a List.
          * (via PathSearchingVirtualMachine.classPath())
          */
         List<String> dirList = new ArrayList<String>();
@@ -69,7 +69,7 @@ class SourceMapper {
          *
          * Using File.pathSeparator as delimiter below is OK
          * because we are on the same machine as the command
-         * line originiated.
+         * line originated.
          */
         StringTokenizer st = new StringTokenizer(sourcepath,
                                                  File.pathSeparator);
@@ -105,7 +105,7 @@ class SourceMapper {
     }
 
     /**
-     * Return a File cooresponding to the source of this location.
+     * Return a File corresponding to the source of this location.
      * Return null if not available.
      */
     File sourceFile(Location loc) {
@@ -128,7 +128,7 @@ class SourceMapper {
     }
 
     /**
-     * Return a BufferedReader cooresponding to the source
+     * Return a BufferedReader corresponding to the source
      * of this location.
      * Return null if not available.
      * Note: returned reader must be closed.

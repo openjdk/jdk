@@ -27,6 +27,7 @@
  * @summary Record null_check traps for calls and array_check traps in the interpreter
  *
  * @requires vm.compiler2.enabled & vm.compMode != "Xcomp"
+ * @requires vm.opt.DeoptimizeALot != true
  *
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -194,6 +195,11 @@ public class OptimizeImplicitExceptions {
             // The fast-throw optimzation only works if we're running with -XX:+ProfileTraps
             return;
         }
+
+        // The following options are both develop, or nops in product build.
+        // If they are set, disable them for test stability. It's fine because we use /othervm above.
+        WB.setBooleanVMFlag("DeoptimizeALot", false);
+        WB.setBooleanVMFlag("DeoptimizeRandom", false);
 
         // Initialize global deopt counts to zero.
         for (ImplicitException impExcp : ImplicitException.values()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,6 +232,20 @@ void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
   __ str(t1, Address(rthread, in_bytes(JavaThread::allocated_bytes_offset())));
 }
 
+static volatile uint32_t _patching_epoch = 0;
+
+address BarrierSetAssembler::patching_epoch_addr() {
+  return (address)&_patching_epoch;
+}
+
+void BarrierSetAssembler::increment_patching_epoch() {
+  Atomic::inc(&_patching_epoch);
+}
+
+void BarrierSetAssembler::clear_patching_epoch() {
+  _patching_epoch = 0;
+}
+
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
@@ -239,27 +253,51 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
     return;
   }
 
-  Label skip, guard;
-  Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()));
+  Label skip_barrier, guard;
 
   __ ldrw(rscratch1, guard);
 
-  // Subsequent loads of oops must occur after load of guard value.
-  // BarrierSetNMethod::disarm sets guard with release semantics.
-  __ membar(__ LoadLoad);
-  __ ldrw(rscratch2, thread_disarmed_addr);
-  __ cmpw(rscratch1, rscratch2);
-  __ br(Assembler::EQ, skip);
+  if (nmethod_code_patching()) {
+    // If we patch code we need both a code patching and a loadload
+    // fence. It's not super cheap, so we use a global epoch mechanism
+    // to hide them in a slow path.
+    // The high level idea of the global epoch mechanism is to detect
+    // when any thread has performed the required fencing, after the
+    // last nmethod was disarmed. This implies that the required
+    // fencing has been performed for all preceding nmethod disarms
+    // as well. Therefore, we do not need any further fencing.
+    __ lea(rscratch2, ExternalAddress((address)&_patching_epoch));
+    // Embed an artificial data dependency to order the guard load
+    // before the epoch load.
+    __ orr(rscratch2, rscratch2, rscratch1, Assembler::LSR, 32);
+    // Read the global epoch value.
+    __ ldrw(rscratch2, rscratch2);
+    // Combine the guard value (low order) with the epoch value (high order).
+    __ orr(rscratch1, rscratch1, rscratch2, Assembler::LSL, 32);
+    // Compare the global values with the thread-local values.
+    Address thread_disarmed_and_epoch_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()));
+    __ ldr(rscratch2, thread_disarmed_and_epoch_addr);
+    __ cmp(rscratch1, rscratch2);
+    __ br(Assembler::EQ, skip_barrier);
+  } else {
+    // Subsequent loads of oops must occur after load of guard value.
+    // BarrierSetNMethod::disarm sets guard with release semantics.
+    __ membar(__ LoadLoad);
+    Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()));
+    __ ldrw(rscratch2, thread_disarmed_addr);
+    __ cmpw(rscratch1, rscratch2);
+    __ br(Assembler::EQ, skip_barrier);
+  }
 
   __ movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
   __ blr(rscratch1);
-  __ b(skip);
+  __ b(skip_barrier);
 
   __ bind(guard);
 
   __ emit_int32(0);   // nmethod guard value. Skipped over in common case.
 
-  __ bind(skip);
+  __ bind(skip_barrier);
 }
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {

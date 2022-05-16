@@ -150,9 +150,9 @@ public final class EventFactory {
         try {
             return new EventFactory(eventClass, sanitizedAnnotation, sanitizedFields);
         } catch (IllegalAccessException e) {
-            throw new IllegalAccessError("Could not access constructor of generated event handler, " + e.getMessage());
+            throw new IllegalAccessError("Could not access constructor of generated event class, " + e.getMessage());
         } catch (NoSuchMethodException e) {
-            throw new InternalError("Could not find constructor in generated event handler, " + e.getMessage());
+            throw new InternalError("Could not find constructor in generated event class, " + e.getMessage());
         }
     }
 
@@ -226,5 +226,4 @@ public final class EventFactory {
     public void unregister() {
         MetadataRepository.getInstance().unregister(eventClass);
     }
-
 }
