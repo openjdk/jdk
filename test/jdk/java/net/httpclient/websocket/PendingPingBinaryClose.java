@@ -74,9 +74,9 @@ public class PendingPingBinaryClose extends PendingOperations {
             assertFails(ISE, webSocket.sendPing(ByteBuffer.allocate(125)));
             assertFails(ISE, webSocket.sendPong(ByteBuffer.allocate(125)));
             cfBinary = webSocket.sendBinary(ByteBuffer.allocate(4), last);
-            assertHangs(cfBinary);
             cfClose = webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "ok");
-            assertHangs(cfClose);
+            assertHangs(cfBinary);
+            assertNotDone(cfClose);
             assertNotDone(cfPing);
             return null;
         }, () -> cfPing.isDone());

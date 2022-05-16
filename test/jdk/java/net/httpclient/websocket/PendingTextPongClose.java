@@ -75,11 +75,11 @@ public class PendingTextPongClose extends PendingOperations {
             assertFails(ISE, webSocket.sendBinary(ByteBuffer.allocate(0), true));
             assertFails(ISE, webSocket.sendBinary(ByteBuffer.allocate(0), false));
             cfPong = webSocket.sendPong(ByteBuffer.allocate(125));
-            assertHangs(cfPong);
             assertFails(ISE, webSocket.sendPing(ByteBuffer.allocate(125)));
             assertFails(ISE, webSocket.sendPong(ByteBuffer.allocate(125)));
             cfClose = webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "ok");
-            assertHangs(cfClose);
+            assertHangs(cfPong);
+            assertNotDone(cfClose);
             assertNotDone(cfText);
             return null;
         }, () -> cfText.isDone());
