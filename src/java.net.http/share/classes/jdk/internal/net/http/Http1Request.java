@@ -294,11 +294,15 @@ class Http1Request {
 
         // GET, HEAD and DELETE with no request body should not set the Content-Length header
         if (requestPublisher != null) {
+            contentLength = requestPublisher.contentLength();
             if (contentLength == 0) {
                 systemHeadersBuilder.setHeader("Content-Length", "0");
             } else if (contentLength > 0) {
                 systemHeadersBuilder.setHeader("Content-Length", Long.toString(contentLength));
                 streaming = false;
+            } else {
+                streaming = true;
+                systemHeadersBuilder.setHeader("Transfer-encoding", "chunked");
             }
         }
         collectHeaders0(sb);
