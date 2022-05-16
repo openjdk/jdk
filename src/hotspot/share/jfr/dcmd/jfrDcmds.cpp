@@ -261,7 +261,7 @@ static char* dcmd_arena_allocate(size_t size) {
   return (char*)dcmd_arena->Amalloc(size);
 }
 
-static const char* get_as_dcmd_arena_string(oop string, JavaThread* jt) {
+static const char* get_as_dcmd_arena_string(oop string) {
   char* str = NULL;
   const typeArrayOop value = java_lang_String::value(string);
   if (value != NULL) {
@@ -282,7 +282,7 @@ static const char* read_string_field(oop argument, const char* field_name, TRAPS
   args.set_receiver(argument);
   JfrJavaSupport::get_field(&args, THREAD);
   const oop string_oop = result.get_oop();
-  return string_oop != NULL ? get_as_dcmd_arena_string(string_oop, (JavaThread*)THREAD) : NULL;
+  return string_oop != NULL ? get_as_dcmd_arena_string(string_oop) : NULL;
 }
 
 static bool read_boolean_field(oop argument, const char* field_name, TRAPS) {
