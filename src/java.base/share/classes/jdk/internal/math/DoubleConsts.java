@@ -25,7 +25,9 @@
 
 package jdk.internal.math;
 
-import static java.lang.Double.*;
+import static java.lang.Double.MIN_EXPONENT;
+import static java.lang.Double.PRECISION;
+import static java.lang.Double.SIZE;
 
 /**
  * This class contains additional constants documenting limits of the

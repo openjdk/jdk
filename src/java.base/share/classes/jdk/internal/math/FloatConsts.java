@@ -25,7 +25,9 @@
 
 package jdk.internal.math;
 
-import static java.lang.Float.*;
+import static java.lang.Float.MIN_EXPONENT;
+import static java.lang.Float.PRECISION;
+import static java.lang.Float.SIZE;
 
 /**
  * This class contains additional constants documenting limits of the
