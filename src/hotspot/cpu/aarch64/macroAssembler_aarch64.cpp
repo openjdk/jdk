@@ -4857,7 +4857,7 @@ address MacroAssembler::zero_words(Register base, uint64_t cnt)
 {
   guarantee(zero_words_block_size < BlockZeroingLowLimit,
             "increase BlockZeroingLowLimit");
-  address result;
+  address result = nullptr;
   if (cnt <= (uint64_t)BlockZeroingLowLimit / BytesPerWord) {
 #ifndef PRODUCT
     {
