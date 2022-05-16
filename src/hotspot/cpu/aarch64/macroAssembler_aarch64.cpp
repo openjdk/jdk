@@ -4820,7 +4820,6 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
       address tpc = trampoline_call(zero_blocks);
       if (tpc == NULL) {
         DEBUG_ONLY(reset_labels(around));
-        assert(false, "failed to allocate space for trampoline");
         return NULL;
       }
     } else {
