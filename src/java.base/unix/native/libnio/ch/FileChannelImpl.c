@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,10 @@
 #include "java_lang_Integer.h"
 #include <assert.h>
 
-static jfieldID chan_fd;        /* jobject 'fd' in sun.nio.ch.FileChannelImpl */
-
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_initIDs(JNIEnv *env, jclass clazz)
+Java_sun_nio_ch_FileChannelImpl_allocationGranularity0(JNIEnv *env, jclass clazz)
 {
     jlong pageSize = sysconf(_SC_PAGESIZE);
-    chan_fd = (*env)->GetFieldID(env, clazz, "fd", "Ljava/io/FileDescriptor;");
     return pageSize;
 }
 
@@ -73,11 +70,10 @@ handle(JNIEnv *env, jlong rv, char *msg)
 
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jobject this,
+Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jobject this, jobject fdo,
                                      jint prot, jlong off, jlong len, jboolean map_sync)
 {
     void *mapAddress = 0;
-    jobject fdo = (*env)->GetObjectField(env, this, chan_fd);
     jint fd = fdval(env, fdo);
     int protections = 0;
     int flags = 0;
@@ -227,8 +223,8 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
     result = send_file(&dstFD, &sf_iobuf, SF_SYNC_CACHE);
 
     /* AIX send_file() will return 0 when this operation complete successfully,
-     * return 1 when partial bytes transfered and return -1 when an error has
-     * Occured.
+     * return 1 when partial bytes transferred and return -1 when an error has
+     * occurred.
      */
     if (result == -1) {
         if (errno == EWOULDBLOCK)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,7 +278,7 @@ const jint  NANOSECS_PER_MILLISEC = 1000000;
 
 
 // Unit conversion functions
-// The caller is responsible for considering overlow.
+// The caller is responsible for considering overflow.
 
 inline int64_t nanos_to_millis(int64_t nanos) {
   return nanos / NANOUNITS_PER_MILLIUNIT;
@@ -472,7 +472,7 @@ extern "C" {
 
 // Unsigned byte types for os and stream.hpp
 
-// Unsigned one, two, four and eigth byte quantities used for describing
+// Unsigned one, two, four and eight byte quantities used for describing
 // the .class file format. See JVM book chapter 4.
 
 typedef jubyte  u1;
@@ -713,8 +713,8 @@ inline bool is_double_word_type(BasicType t) {
   return (t == T_DOUBLE || t == T_LONG);
 }
 
-inline bool is_reference_type(BasicType t) {
-  return (t == T_OBJECT || t == T_ARRAY);
+inline bool is_reference_type(BasicType t, bool include_narrow_oop = false) {
+  return (t == T_OBJECT || t == T_ARRAY || (include_narrow_oop && t == T_NARROWOOP));
 }
 
 inline bool is_integral_type(BasicType t) {
@@ -813,6 +813,9 @@ extern int type2aelembytes(BasicType t, bool allow_address = false); // asserts
 inline int type2aelembytes(BasicType t, bool allow_address = false) { return _type2aelembytes[t]; }
 #endif
 
+inline bool same_type_or_subword_size(BasicType t1, BasicType t2) {
+  return (t1 == t2) || (is_subword_type(t1) && type2aelembytes(t1) == type2aelembytes(t2));
+}
 
 // JavaValue serves as a container for arbitrary Java values.
 
@@ -953,13 +956,13 @@ TosState as_TosState(BasicType type);
 enum JavaThreadState {
   _thread_uninitialized     =  0, // should never happen (missing initialization)
   _thread_new               =  2, // just starting up, i.e., in process of being initialized
-  _thread_new_trans         =  3, // corresponding transition state (not used, included for completness)
+  _thread_new_trans         =  3, // corresponding transition state (not used, included for completeness)
   _thread_in_native         =  4, // running in native code
   _thread_in_native_trans   =  5, // corresponding transition state
   _thread_in_vm             =  6, // running in VM
   _thread_in_vm_trans       =  7, // corresponding transition state
   _thread_in_Java           =  8, // running in Java or in stub code
-  _thread_in_Java_trans     =  9, // corresponding transition state (not used, included for completness)
+  _thread_in_Java_trans     =  9, // corresponding transition state (not used, included for completeness)
   _thread_blocked           = 10, // blocked in vm
   _thread_blocked_trans     = 11, // corresponding transition state
   _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,7 @@ class ResponseContent {
         // A current-state message suitable for inclusion in an exception
         // detail message.
         String currentStateMessage();
+        void onError(Throwable t);
     }
 
     // Returns a parser that will take care of parsing the received byte
@@ -176,6 +177,12 @@ class ResponseContent {
             if (debug.on())
                 debug.log("onSubscribe: "  + pusher.getClass().getName());
             pusher.onSubscribe(this.sub = sub);
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            closedExceptionally = t;
+            onComplete.accept(t);
         }
 
         @Override
@@ -478,6 +485,12 @@ class ResponseContent {
         }
 
         @Override
+        public void onError(Throwable t) {
+            closedExceptionally = t;
+            onComplete.accept(t);
+        }
+
+        @Override
         public String currentStateMessage() {
             return format("http1_0 content, bytes received: %d", breceived);
         }
@@ -560,6 +573,16 @@ class ResponseContent {
                 } finally {
                     onComplete.accept(t);
                 }
+            }
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            if (contentLength != 0) {
+                closedExceptionally = t;
+                onComplete.accept(t);
+            } else {
+                onComplete.accept(null);
             }
         }
 

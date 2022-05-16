@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,10 +107,7 @@ public class Krb5InitCredential
                                               endTime,
                                               renewTill,
                                               clientAddresses);
-        } catch (KrbException e) {
-            throw new GSSException(GSSException.NO_CRED, -1,
-                                   e.getMessage());
-        } catch (IOException e) {
+        } catch (KrbException | IOException e) {
             throw new GSSException(GSSException.NO_CRED, -1,
                                    e.getMessage());
         }
@@ -150,7 +147,7 @@ public class Krb5InitCredential
                 .kerberosTicketSetServerAlias(this, serverAlias);
         this.name = name;
         // A delegated cred does not have all fields set. So do not try to
-        // creat new Credentials out of the delegatedCred.
+        // create new Credentials out of the delegatedCred.
         this.krb5Credentials = delegatedCred;
     }
 

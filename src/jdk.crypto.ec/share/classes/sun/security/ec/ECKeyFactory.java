@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,7 @@ public final class ECKeyFactory extends KeyFactorySpi {
         if (instance == null) {
             try {
                 instance = KeyFactory.getInstance("EC", "SunEC");
-            } catch (NoSuchProviderException e) {
-                throw new RuntimeException(e);
-            } catch (NoSuchAlgorithmException e) {
+            } catch (NoSuchProviderException | NoSuchAlgorithmException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -74,7 +72,7 @@ public final class ECKeyFactory extends KeyFactorySpi {
     }
 
     /**
-     * Static method to convert Key into a useable instance of
+     * Static method to convert Key into a usable instance of
      * ECPublicKey or ECPrivateKey. Check the key and convert it
      * to a Sun key if necessary. If the key is not an EC key
      * or cannot be used, throw an InvalidKeyException.

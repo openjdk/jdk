@@ -71,11 +71,6 @@ import static jdk.javadoc.internal.tool.Main.Result.*;
 /**
  * Main program of Javadoc.
  * Previously named "Main".
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class Start {
 
@@ -214,7 +209,7 @@ public class Start {
     }
 
     private void showToolOptions(ToolOption.Kind kind) {
-        Comparator<ToolOption> comp = new Comparator<ToolOption>() {
+        var comp = new Comparator<ToolOption>() {
             final Collator collator = Collator.getInstance(Locale.US);
             { collator.setStrength(Collator.PRIMARY); }
 
@@ -255,7 +250,7 @@ public class Start {
         }
         showLinesUsingKey("main.doclet.usage.header", name);
 
-        Comparator<Doclet.Option> comp = new Comparator<Doclet.Option>() {
+        var comp = new Comparator<Doclet.Option>() {
             final Collator collator = Collator.getInstance(Locale.US);
             { collator.setStrength(Collator.PRIMARY); }
 

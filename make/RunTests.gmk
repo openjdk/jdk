@@ -139,7 +139,7 @@ endif
 ################################################################################
 
 # Each factor variable comes in 3 variants. The first one is reserved for users
-# to use on command line. The other two are for predifined configurations in JDL
+# to use on command line. The other two are for predefined configurations in JDL
 # and for machine specific configurations respectively.
 TEST_JOBS_FACTOR ?= 1
 TEST_JOBS_FACTOR_JDL ?= 1
@@ -524,7 +524,7 @@ define SetupRunGtestTestBody
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
 	$$(if $$(wildcard $$($1_RESULT_FILE)), \
 	  $$(eval $1_TOTAL := $$(shell $$(AWK) '/==========.* tests? from .* \
-	      test cases? ran/ { print $$$$2 }' $$($1_RESULT_FILE))) \
+	      test (cases?|suites?) ran/ { print $$$$2 }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_TOTAL), , $$(eval $1_TOTAL := 0)) \
 	  $$(eval $1_PASSED := $$(shell $$(AWK) '/\[  PASSED  \] .* tests?./ \
 	      { print $$$$4 }' $$($1_RESULT_FILE))) \
@@ -782,8 +782,6 @@ define SetupRunJtregTestBody
   # Make it possible to specify the JIB_DATA_DIR for tests using the
   # JIB Artifact resolver
   $1_JTREG_BASIC_OPTIONS += -e:JIB_DATA_DIR
-  # Some tests needs to find a boot JDK using the JDK8_HOME variable.
-  $1_JTREG_BASIC_OPTIONS += -e:JDK8_HOME=$$(BOOT_JDK)
   # If running on Windows, propagate the _NT_SYMBOL_PATH to enable
   # symbol lookup in hserr files
   ifeq ($$(call isTargetOs, windows), true)

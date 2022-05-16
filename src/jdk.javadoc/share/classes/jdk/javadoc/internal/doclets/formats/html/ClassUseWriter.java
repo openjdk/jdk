@@ -54,11 +54,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * Generate class usage information.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class ClassUseWriter extends SubWriterHolderWriter {
 
@@ -174,18 +169,13 @@ public class ClassUseWriter extends SubWriterHolderWriter {
 
     private Map<PackageElement, List<Element>> pkgDivide(Map<TypeElement, ? extends List<? extends Element>> classMap) {
         Map<PackageElement, List<Element>> map = new HashMap<>();
-        List<? extends Element> elements = (List<? extends Element>) classMap.get(typeElement);
+        List<? extends Element> elements = classMap.get(typeElement);
         if (elements != null) {
             elements.sort(comparators.makeClassUseComparator());
             for (Element e : elements) {
                 PackageElement pkg = utils.containingPackage(e);
                 pkgSet.add(pkg);
-                List<Element> inPkg = map.get(pkg);
-                if (inPkg == null) {
-                    inPkg = new ArrayList<>();
-                    map.put(pkg, inPkg);
-                }
-                inPkg.add(e);
+                map.computeIfAbsent(pkg, k -> new ArrayList<>()).add(e);
             }
         }
         return map;

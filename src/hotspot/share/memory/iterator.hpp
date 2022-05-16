@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/bitMap.hpp"
 
 class CodeBlob;
 class nmethod;
@@ -98,10 +99,17 @@ class OopIterateClosure : public OopClosure {
   // 1) do_klass on the header klass pointer.
   // 2) do_klass on the klass pointer in the mirrors.
   // 3) do_cld   on the class loader data in class loaders.
+  //
+  // Used to determine metadata liveness for class unloading GCs.
 
   virtual bool do_metadata() = 0;
   virtual void do_klass(Klass* k) = 0;
   virtual void do_cld(ClassLoaderData* cld) = 0;
+
+  // Class redefinition needs to get notified about methods from stackChunkOops
+  virtual void do_method(Method* m) = 0;
+  // The code cache sweeper needs to get notified about methods from stackChunkOops
+  virtual void do_nmethod(nmethod* nm) = 0;
 };
 
 // An OopIterateClosure that can be used when there's no need to visit the Metadata.
@@ -112,6 +120,15 @@ public:
   virtual bool do_metadata() { return false; }
   virtual void do_klass(Klass* k) { ShouldNotReachHere(); }
   virtual void do_cld(ClassLoaderData* cld) { ShouldNotReachHere(); }
+  virtual void do_method(Method* m) { ShouldNotReachHere(); }
+  virtual void do_nmethod(nmethod* nm) { ShouldNotReachHere(); }
+};
+
+enum class derived_pointer : intptr_t;
+class DerivedOopClosure : public Closure {
+ public:
+  enum { SkipNull = true };
+  virtual void do_derived_oop(oop* base, derived_pointer* derived) = 0;
 };
 
 class KlassClosure : public Closure {
@@ -161,6 +178,8 @@ class ClaimMetadataVisitingOopIterateClosure : public OopIterateClosure {
   virtual bool do_metadata() { return true; }
   virtual void do_klass(Klass* k);
   virtual void do_cld(ClassLoaderData* cld);
+  virtual void do_method(Method* m);
+  virtual void do_nmethod(nmethod* nm);
 };
 
 // The base class for all concurrent marking closures,
@@ -234,9 +253,9 @@ class CodeBlobClosure : public Closure {
 // Applies an oop closure to all ref fields in code blobs
 // iterated over in an object iteration.
 class CodeBlobToOopClosure : public CodeBlobClosure {
+ protected:
   OopClosure* _cl;
   bool _fix_relocations;
- protected:
   void do_nmethod(nmethod* nm);
  public:
   // If fix_relocations(), then cl must copy objects to their new location immediately to avoid
@@ -249,10 +268,14 @@ class CodeBlobToOopClosure : public CodeBlobClosure {
 };
 
 class MarkingCodeBlobClosure : public CodeBlobToOopClosure {
- public:
-  MarkingCodeBlobClosure(OopClosure* cl, bool fix_relocations) : CodeBlobToOopClosure(cl, fix_relocations) {}
-  // Called for each code blob, but at most once per unique blob.
+  bool _keepalive_nmethods;
 
+ public:
+  MarkingCodeBlobClosure(OopClosure* cl, bool fix_relocations, bool keepalive_nmethods) :
+      CodeBlobToOopClosure(cl, fix_relocations),
+      _keepalive_nmethods(keepalive_nmethods) {}
+
+  // Called for each code blob, but at most once per unique blob.
   virtual void do_code_blob(CodeBlob* cb);
 };
 
@@ -289,7 +312,7 @@ class VoidClosure : public StackObj {
 
 // YieldClosure is intended for use by iteration loops
 // to incrementalize their work, allowing interleaving
-// of an interruptable task so as to allow other
+// of an interruptible task so as to allow other
 // threads to run (which may not otherwise be able to access
 // exclusive resources, for instance). Additionally, the
 // closure also allows for aborting an ongoing iteration
@@ -355,6 +378,8 @@ class Devirtualizer {
   template <typename OopClosureType>             static void do_klass(OopClosureType* closure, Klass* k);
   template <typename OopClosureType>             static void do_cld(OopClosureType* closure, ClassLoaderData* cld);
   template <typename OopClosureType>             static bool do_metadata(OopClosureType* closure);
+  template <typename DerivedOopClosureType>      static void do_derived_oop(DerivedOopClosureType* closure, oop* base, derived_pointer* derived);
+  template <typename BitMapClosureType>          static bool do_bit(BitMapClosureType* closure, BitMap::idx_t index);
 };
 
 class OopIteratorClosureDispatch {

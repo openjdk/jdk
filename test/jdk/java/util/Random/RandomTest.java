@@ -25,6 +25,9 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.BiConsumer;
+import java.util.random.RandomGenerator;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import org.testng.annotations.Test;
 
@@ -408,6 +411,38 @@ public class RandomTest {
             counter.increment();
         });
         assertEquals(counter.sum(), size);
+    }
+
+    /**
+     * Test shuffling a list with Random.from()
+     */
+    public void testShufflingList() {
+        final var listTest = new ArrayList<Integer>();
+        final RandomGenerator randomGenerator = RandomGenerator.getDefault();
+        final Random random = Random.from(randomGenerator);
+
+        for (int i = 0; i < 100; i++) {
+            listTest.add(i * 2);
+        }
+        final var listCopy = new ArrayList<Integer>(listTest);
+
+        Collections.shuffle(listCopy, random);
+
+        assertFalse(listCopy.equals(listTest));
+    }
+
+    /**
+     * Test if Random.from returns this
+     */
+    public void testRandomFromInstance() {
+        final RandomGenerator randomGenerator = RandomGenerator.getDefault();
+
+        final Random randomInstance = Random.from(randomGenerator);
+
+        // we wrap the same instance again
+        final Random randomInstanceCopy = Random.from(randomInstance);
+
+        assertSame(randomInstance, randomInstanceCopy);
     }
 
 }

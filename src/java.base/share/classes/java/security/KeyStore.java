@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,23 +143,24 @@ import sun.security.util.Debug;
  * to read existing entries from the keystore, or to write new entries
  * into the keystore:
  * <pre>
- *    KeyStore.ProtectionParameter protParam =
+ *    KeyStore.PasswordProtection protParam =
  *        new KeyStore.PasswordProtection(password);
- *
- *    // get my private key
- *    KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
- *        ks.getEntry("privateKeyAlias", protParam);
- *    PrivateKey myPrivateKey = pkEntry.getPrivateKey();
- *
- *    // save my secret key
- *    javax.crypto.SecretKey mySecretKey;
- *    KeyStore.SecretKeyEntry skEntry =
- *        new KeyStore.SecretKeyEntry(mySecretKey);
- *    ks.setEntry("secretKeyAlias", skEntry, protParam);
- *
- *    // store away the keystore
  *    try (FileOutputStream fos = new FileOutputStream("newKeyStoreName")) {
+ *        // get my private key
+ *        KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
+ *            ks.getEntry("privateKeyAlias", protParam);
+ *        PrivateKey myPrivateKey = pkEntry.getPrivateKey();
+ *
+ *        // save my secret key
+ *        javax.crypto.SecretKey mySecretKey;
+ *        KeyStore.SecretKeyEntry skEntry =
+ *            new KeyStore.SecretKeyEntry(mySecretKey);
+ *        ks.setEntry("secretKeyAlias", skEntry, protParam);
+ *
+ *        // store away the keystore
  *        ks.store(fos, password);
+ *    } finally {
+ *        protParam.destroy();
  *    }
  * </pre>
  *
@@ -771,7 +772,7 @@ public class KeyStore {
         }
 
         /**
-         * Gets the trusted {@code Certficate} from this entry.
+         * Gets the trusted {@code Certificate} from this entry.
          *
          * @return the trusted {@code Certificate} from this entry
          */
@@ -867,10 +868,8 @@ public class KeyStore {
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", (String)null);
             return new KeyStore((KeyStoreSpi)objs[0], (Provider)objs[1], type);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new KeyStoreException(type + " not found", nsae);
-        } catch (NoSuchProviderException nspe) {
-            throw new KeyStoreException(type + " not found", nspe);
+        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
+            throw new KeyStoreException(type + " not found", e);
         }
     }
 

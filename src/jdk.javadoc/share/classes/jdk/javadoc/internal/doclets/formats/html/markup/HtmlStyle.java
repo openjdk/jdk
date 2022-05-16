@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,6 @@ import java.util.regex.Pattern;
 
 /**
  * Enum representing HTML styles, with associated entries in the stylesheet files.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  *
  * @apiNote
  * Despite the name, the members of this enum provide values for the HTML {@code class} attribute,
@@ -661,6 +656,21 @@ public enum HtmlStyle {
     // The following constants are used for items in the static and interactive search indexes.
 
     /**
+     * The class for a {@code button} in the search page to copy the search URL to the clipboard.
+     */
+    copyUrl,
+
+    /**
+     * The class for a {@code details} element in the search page to show additional information.
+     */
+    pageSearchDetails,
+
+    /**
+     * The class for a {@code div} element in the search page which contains additional information.
+     */
+    pageSearchInfo,
+
+    /**
      * The class for a link in the static "Index" pages to a custom searchable item,
      * such as defined with an {@code @index} tag.
      */
@@ -779,6 +789,11 @@ public enum HtmlStyle {
      * The class of the {@code body} element for the page listing any preview items.
      */
     previewListPage,
+
+    /**
+     * The class of the {@code body} element for the search page.
+     */
+    searchPage,
 
     /**
      * The class of the {@code body} element for the serialized-forms page.
@@ -906,8 +921,8 @@ public enum HtmlStyle {
     externalLink,
 
     /**
-     *  The class of a {@code section} element containing a hierarchical
-     *  tree view.
+     * The class of a {@code section} element containing a hierarchical
+     * tree view.
      */
     hierarchy,
 

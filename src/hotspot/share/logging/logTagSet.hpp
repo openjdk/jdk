@@ -165,7 +165,7 @@ public:
 // will instantiate the LogTagSetMapping template, which in turn creates the static field for that
 // tagset. This _tagset contains the configuration for those tags.
 template <LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-LogTagSet LogTagSetMapping<T0, T1, T2, T3, T4, GuardTag>::_tagset(&LogPrefix<T0, T1, T2, T3, T4>::prefix, T0, T1, T2, T3, T4);
+LogTagSet LogTagSetMapping<T0, T1, T2, T3, T4, GuardTag>::_tagset{&LogPrefix<T0, T1, T2, T3, T4>::prefix, T0, T1, T2, T3, T4};
 
 extern const size_t vwrite_buffer_size;
 #endif // SHARE_LOGGING_LOGTAGSET_HPP

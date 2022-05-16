@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -778,21 +778,17 @@ public class Krb5LoginModule implements LoginModule {
                     }
                 }
 
-                // we should hava a non-null cred
+                // we should have a non-null cred
                 if (isInitiator && (cred == null)) {
                     throw new LoginException
                         ("TGT Can not be obtained from the KDC ");
                 }
 
             }
-        } catch (KrbException e) {
+        } catch (KrbException | IOException e) {
             LoginException le = new LoginException(e.getMessage());
             le.initCause(e);
             throw le;
-        } catch (IOException ioe) {
-            LoginException ie = new LoginException(ioe.getMessage());
-            ie.initCause(ioe);
-            throw ie;
         }
     }
 

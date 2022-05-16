@@ -59,11 +59,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
  * Class to generate file for each module contents in the right-hand frame. This will list all the
  * required modules, packages and service types for the module. A click on any of the links will update
  * the frame with the clicked element page.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryWriter {
 
@@ -351,14 +346,14 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         utils.getProvidesTrees(mdle).forEach(tree -> {
             TypeElement t = ch.getServiceType(tree);
             if (t != null) {
-                providesTrees.put(t, commentTagsToContent(tree, mdle, ch.getDescription(tree), false, true));
+                providesTrees.put(t, commentTagsToContent(mdle, ch.getDescription(tree), false, true));
             }
         });
         // Generate the map of all services listed using @uses, and the description.
         utils.getUsesTrees(mdle).forEach(tree -> {
             TypeElement t = ch.getServiceType(tree);
             if (t != null) {
-                usesTrees.put(t, commentTagsToContent(tree, mdle, ch.getDescription(tree), false, true));
+                usesTrees.put(t, commentTagsToContent(mdle, ch.getDescription(tree), false, true));
             }
         });
     }

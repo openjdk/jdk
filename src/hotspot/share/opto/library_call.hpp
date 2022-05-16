@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,10 @@ class LibraryCallKit : public GraphKit {
                              RegionNode* region);
   void  generate_string_range_check(Node* array, Node* offset,
                                     Node* length, bool char_count);
+  Node* current_thread_helper(Node* &tls_output, ByteSize handle_offset,
+                              bool is_immutable);
   Node* generate_current_thread(Node* &tls_output);
+  Node* generate_virtual_thread(Node* threadObj);
   Node* load_mirror_from_klass(Node* klass);
   Node* load_klass_from_mirror_common(Node* mirror, bool never_see_null,
                                       RegionNode* region, int null_path,
@@ -181,8 +184,8 @@ class LibraryCallKit : public GraphKit {
   CallJavaNode* generate_method_call_virtual(vmIntrinsics::ID method_id) {
     return generate_method_call(method_id, true, false);
   }
-  Node* load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, DecoratorSet decorators, bool is_static, ciInstanceKlass* fromKls);
-  Node* field_address_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, bool is_exact, bool is_static, ciInstanceKlass* fromKls);
+  Node* load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, DecoratorSet decorators = IN_HEAP, bool is_static = false, ciInstanceKlass* fromKls = NULL);
+  Node* field_address_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, bool is_exact = true, bool is_static = false, ciInstanceKlass* fromKls = NULL);
 
   Node* make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2, StrIntrinsicNode::ArgEnc ae);
   bool inline_string_compareTo(StrIntrinsicNode::ArgEnc ae);
@@ -231,12 +234,20 @@ class LibraryCallKit : public GraphKit {
   bool inline_unsafe_writeback0();
   bool inline_unsafe_writebackSync0(bool is_pre);
   bool inline_unsafe_copyMemory();
+
+  bool inline_native_currentCarrierThread();
   bool inline_native_currentThread();
+  bool inline_native_setCurrentThread();
+
+  bool inline_native_extentLocalCache();
+  Node* extentLocalCache_helper();
+  bool inline_native_setExtentLocalCache();
 
   bool inline_native_time_funcs(address method, const char* funcName);
 #ifdef JFR_HAVE_INTRINSICS
   bool inline_native_classID();
   bool inline_native_getEventWriter();
+  void extend_setCurrentThread(Node* jt, Node* thread);
 #endif
   bool inline_native_Class_query(vmIntrinsics::ID id);
   bool inline_native_subtype_check();
@@ -264,6 +275,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_onspinwait();
   bool inline_fp_conversions(vmIntrinsics::ID id);
   bool inline_number_methods(vmIntrinsics::ID id);
+  bool inline_divmod_methods(vmIntrinsics::ID id);
   bool inline_reference_get();
   bool inline_reference_refersTo0(bool is_phantom);
   bool inline_Class_cast();
@@ -281,9 +293,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_digestBase_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass,
-                                        const char* state_type, address stubAddr, const char *stubName,
+                                        BasicType elem_type, address stubAddr, const char *stubName,
                                         Node* src_start, Node* ofs, Node* limit);
-  Node* get_state_from_digest_object(Node *digestBase_object, const char* state_type);
+  Node* get_state_from_digest_object(Node *digestBase_object, BasicType elem_type);
   Node* get_digest_length_from_digest_object(Node *digestBase_object);
   Node* inline_digestBase_implCompressMB_predicate(int predicate);
   bool inline_encodeISOArray(bool ascii);
@@ -311,6 +323,8 @@ class LibraryCallKit : public GraphKit {
 
   bool inline_profileBoolean();
   bool inline_isCompileConstant();
+
+  bool inline_continuation_do_yield();
 
   // Vector API support
   bool inline_vector_nary_operation(int n);

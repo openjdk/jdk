@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,7 +497,8 @@ class Http1AsyncReceiver {
         final Throwable t = (recorded == null ? ex : recorded);
         if (debug.on())
             debug.log("recorded " + t + "\n\t delegate: " + delegate
-                      + "\t\t queue.isEmpty: " + queue.isEmpty(), ex);
+                      + "\n\t queue.isEmpty: " + queue.isEmpty()
+                      + "\n\tstopRequested: " + stopRequested, ex);
         if (Log.errors()) {
             Log.logError("HTTP/1 read subscriber recorded error: {0} - {1}", describe(), t);
         }
