@@ -25,6 +25,8 @@
 #ifndef SHARE_PRIMS_FORTE_HPP
 #define SHARE_PRIMS_FORTE_HPP
 
+#include "memory/allocation.hpp"
+
 // Interface to Forte support.
 
 class Forte : AllStatic {
@@ -32,6 +34,24 @@ class Forte : AllStatic {
    static void register_stub(const char* name, address start, address end)
                                                  NOT_JVMTI_RETURN;
                                                  // register internal VM stub
+};
+
+// A small RAII mark class to manage 'in_asgct' thread status
+class ASGCTMark : public StackObj {
+ private:
+  // NONCOPYABLE(ASGCTMark);
+  ASGCTMark(JavaThread* thread) {
+    if (thread != nullptr) {
+      assert(thread == JavaThread::current(), "not the current thread");
+      thread->set_in_asgct(true);
+    }
+  }
+
+ public:
+  ASGCTMark() : ASGCTMark(JavaThread::current()) {}
+  ~ASGCTMark() {
+    JavaThread::current()->set_in_asgct(false);
+  }
 };
 
 #endif // SHARE_PRIMS_FORTE_HPP
