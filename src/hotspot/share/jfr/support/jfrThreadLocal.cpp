@@ -39,6 +39,7 @@
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/arena.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadIdentifier.hpp"
@@ -55,6 +56,7 @@ JfrThreadLocal::JfrThreadLocal() :
   _checkpoint_buffer_epoch_0(NULL),
   _checkpoint_buffer_epoch_1(NULL),
   _stackframes(NULL),
+  _dcmd_arena(nullptr),
   _thread(),
   _vthread_id(0),
   _jvm_thread_id(0),
@@ -173,6 +175,10 @@ void JfrThreadLocal::release(Thread* t) {
   if (_checkpoint_buffer_epoch_1 != NULL) {
     _checkpoint_buffer_epoch_1->set_retired();
     _checkpoint_buffer_epoch_1 = NULL;
+  }
+  if (_dcmd_arena != nullptr) {
+    delete _dcmd_arena;
+    _dcmd_arena = nullptr;
   }
 }
 
@@ -461,4 +467,16 @@ void JfrThreadLocal::on_set_current_thread(JavaThread* jt, oop thread) {
     Atomic::store(&tl->_vthread_epoch, static_cast<u2>(epoch_raw & epoch_mask));
   }
   Atomic::release_store(&tl->_vthread, true);
+}
+
+Arena* JfrThreadLocal::dcmd_arena(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  JfrThreadLocal* tl = jt->jfr_thread_local();
+  Arena* arena = tl->_dcmd_arena;
+  if (arena != nullptr) {
+    return arena;
+  }
+  arena = new (mtTracing) Arena(mtTracing);
+  tl->_dcmd_arena = arena;
+  return arena;
 }
