@@ -150,9 +150,21 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_RoundDoubleMode:
     return (bt == T_DOUBLE ? Op_RoundDoubleModeV : 0);
   case Op_RotateLeft:
-    return (is_integral_type(bt) ? Op_RotateLeftV : 0);
+    switch (bt) {
+    case T_INT:
+    case T_LONG: return Op_RotateLeftV;
+    default:     return 0; // RotateLeftV for byte, short values produces incorrect Java result.
+                           // Because java code should convert a byte, short value into int value,
+                           // and then do RotateI.
+    }
   case Op_RotateRight:
-    return (is_integral_type(bt) ? Op_RotateRightV : 0);
+    switch (bt) {
+    case T_INT:
+    case T_LONG: return Op_RotateRightV;
+    default:     return 0; // RotateRightV for byte, short values produces incorrect Java result.
+                           // Because java code should convert a byte, short value into int value,
+                           // and then do RotateI.
+    }
   case Op_SqrtF:
     return (bt == T_FLOAT ? Op_SqrtVF : 0);
   case Op_SqrtD:
