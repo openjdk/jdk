@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import jdk.incubator.foreign.MemorySegment;
+import java.lang.foreign.MemorySegment;
 
 import java.nio.ByteOrder;
 import java.util.Arrays;
@@ -764,7 +764,7 @@ import java.util.Arrays;
  * first vector lane value occupies the first position in memory, and so on,
  * up to the length of the vector. Further, the memory order of stored
  * vector lanes corresponds to increasing index values in a Java array or
- * in a {@link jdk.incubator.foreign.MemorySegment}.
+ * in a {@link java.lang.foreign.MemorySegment}.
  *
  * <p> Byte order for lane storage is chosen such that the stored
  * vector values can be read or written as single primitive values,
@@ -2956,8 +2956,8 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * @return a {@code ByteVector} with the same shape and information content
      * @see Vector#reinterpretShape(VectorSpecies,int)
-     * @see IntVector#intoMemorySegment(jdk.incubator.foreign.MemorySegment, long, java.nio.ByteOrder)
-     * @see FloatVector#intoMemorySegment(jdk.incubator.foreign.MemorySegment, long, java.nio.ByteOrder)
+     * @see IntVector#intoMemorySegment(java.lang.foreign.MemorySegment, long, java.nio.ByteOrder)
+     * @see FloatVector#intoMemorySegment(java.lang.foreign.MemorySegment, long, java.nio.ByteOrder)
      * @see VectorSpecies#withLanes(Class)
      */
     public abstract ByteVector reinterpretAsBytes();

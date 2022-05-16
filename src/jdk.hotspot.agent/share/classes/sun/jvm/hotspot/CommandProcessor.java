@@ -688,7 +688,7 @@ public class CommandProcessor {
                 }
             }
         },
-        // "whatis" is just an alias for "findpc". It's kept around for compatiblity reasons.
+        // "whatis" is just an alias for "findpc". It's kept around for compatibility reasons.
         new Command("whatis", "whatis address", false) {
             public void doit(Tokens t) {
                 if (t.countTokens() != 1) {

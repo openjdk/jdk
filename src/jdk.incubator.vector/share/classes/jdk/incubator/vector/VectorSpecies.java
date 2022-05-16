@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import jdk.incubator.foreign.MemorySegment;
+import java.lang.foreign.MemorySegment;
 
 import java.nio.ByteOrder;
 import java.util.function.IntUnaryOperator;
@@ -499,8 +499,8 @@ public interface VectorSpecies<E> {
      *         if {@code offset+N*ESIZE < 0}
      *         or {@code offset+(N+1)*ESIZE > a.length}
      *         for any lane {@code N} in the vector
-     * @see IntVector#fromMemorySegment(VectorSpecies, jdk.incubator.foreign.MemorySegment, long, java.nio.ByteOrder)
-     * @see FloatVector#fromMemorySegment(VectorSpecies, jdk.incubator.foreign.MemorySegment, long, java.nio.ByteOrder)
+     * @see IntVector#fromMemorySegment(VectorSpecies, java.lang.foreign.MemorySegment, long, java.nio.ByteOrder)
+     * @see FloatVector#fromMemorySegment(VectorSpecies, java.lang.foreign.MemorySegment, long, java.nio.ByteOrder)
      * @since 19
      */
     Vector<E> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo);

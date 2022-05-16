@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @enablePreview
  * @bug 8273322
  * @key randomness
  * @summary Enhance macro logic optimization for masked logic operations.
@@ -30,7 +31,7 @@
  * @requires vm.compiler2.enabled
  * @requires os.simpleArch == "x64"
  * @library /test/lib /
- * @run driver compiler.vectorapi.TestMaskedMacroLogicVector
+ * @run main compiler.vectorapi.TestMaskedMacroLogicVector
  */
 
 package compiler.vectorapi;
@@ -834,6 +835,7 @@ public class TestMaskedMacroLogicVector {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:-TieredCompilation",
+                                   "--enable-preview",
                                    "-XX:UseAVX=3",
                                    "--add-modules=jdk.incubator.vector",
                                    "-XX:CompileThresholdScaling=0.3");

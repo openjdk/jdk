@@ -24,11 +24,11 @@
  */
 package jdk.incubator.vector;
 
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
 
-import jdk.incubator.foreign.MemorySegment;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
@@ -1043,3 +1043,4 @@ final class Byte512Vector extends ByteVector {
     // ================================================
 
 }
+

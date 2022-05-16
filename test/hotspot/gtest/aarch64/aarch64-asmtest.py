@@ -1906,6 +1906,8 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["bic", "ZZZ"],
                        ["uzp1", "ZZZ"],
                        ["uzp2", "ZZZ"],
+                       # SVE2 instructions
+                       ["bext", "ZZZ"],
                       ])
 
 generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],
@@ -1916,9 +1918,9 @@ outfile.write("forth:\n")
 
 outfile.close()
 
-# compile for sve with armv9-a+sha3 because of SHA3 crypto extension and SVE2 instructions.
+# compile for sve with armv9-a+sha3+sve2-bitperm because of SHA3 crypto extension and SVE2 bitperm instructions.
 # armv9-a enables sve and sve2 by default.
-subprocess.check_call([AARCH64_AS, "-march=armv9-a+sha3", "aarch64ops.s", "-o", "aarch64ops.o"])
+subprocess.check_call([AARCH64_AS, "-march=armv9-a+sha3+sve2-bitperm", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
 print "/*"

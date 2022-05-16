@@ -24,14 +24,14 @@
  */
 package jdk.incubator.vector;
 
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ValueLayout;
-import jdk.internal.access.foreign.MemorySegmentProxy;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
@@ -3807,7 +3807,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteSpecies vsp = vspecies();
         return ScopedMemoryAccess.loadFromMemorySegment(
                 vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-                (MemorySegmentProxy) ms, offset, vsp,
+                (AbstractMemorySegmentImpl) ms, offset, vsp,
                 (msp, off, s) -> {
                     return s.ldLongOp((MemorySegment) msp, off, ByteVector::memorySegmentGet);
                 });
@@ -3823,7 +3823,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                (MemorySegmentProxy) ms, offset, m, vsp,
+                (AbstractMemorySegmentImpl) ms, offset, m, vsp,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, ByteVector::memorySegmentGet);
                 });
@@ -3891,7 +3891,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ScopedMemoryAccess.storeIntoMemorySegment(
                 vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
                 this,
-                (MemorySegmentProxy) ms, offset,
+                (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v) -> {
                     v.stLongOp((MemorySegment) msp, off, ByteVector::memorySegmentSet);
                 });
@@ -3908,7 +3908,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ScopedMemoryAccess.storeIntoMemorySegmentMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
                 this, m,
-                (MemorySegmentProxy) ms, offset,
+                (AbstractMemorySegmentImpl) ms, offset,
                 (msp, off, v, vm) -> {
                     v.stLongOp((MemorySegment) msp, off, vm, ByteVector::memorySegmentSet);
                 });
@@ -4412,3 +4412,4 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     public static final VectorSpecies<Byte> SPECIES_PREFERRED
         = (ByteSpecies) VectorSpecies.ofPreferred(byte.class);
 }
+

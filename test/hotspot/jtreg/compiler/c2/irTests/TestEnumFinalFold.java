@@ -37,7 +37,12 @@ import compiler.lib.ir_framework.*;
 public class TestEnumFinalFold {
 
     public static void main(String[] args) {
-        TestFramework.run();
+        TestFramework.runWithFlags(
+            "-XX:+UnlockExperimentalVMOptions",
+            "-XX:CompileCommand=inline,java.lang.Enum::name",
+            "-XX:CompileCommand=inline,java.lang.Enum::ordinal",
+            "-XX:CompileCommand=inline,java.lang.String::length"
+        );
     }
 
     private enum MyEnum {

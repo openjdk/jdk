@@ -23,12 +23,14 @@
  */
 
 #include "precompiled.hpp"
+#include "jfr/instrumentation/jfrResolution.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
+#include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
@@ -97,6 +99,22 @@ void Jfr::on_java_thread_start(JavaThread* starter, JavaThread* startee) {
 void Jfr::on_set_current_thread(JavaThread* jt, oop thread) {
   JfrThreadLocal::on_set_current_thread(jt, thread);
 }
+
+void Jfr::on_resolution(const CallInfo& info, TRAPS) {
+  JfrResolution::on_runtime_resolution(info, THREAD);
+}
+
+#ifdef COMPILER1
+void Jfr::on_resolution(const GraphBuilder* builder, const ciKlass* holder, const ciMethod* target) {
+  JfrResolution::on_c1_resolution(builder, holder, target);
+}
+#endif
+
+#ifdef COMPILER2
+void Jfr::on_resolution(const Parse* parse, const ciKlass* holder, const ciMethod* target) {
+  JfrResolution::on_c2_resolution(parse, holder, target);
+}
+#endif
 
 void Jfr::on_vm_shutdown(bool exception_handler) {
   if (JfrRecorder::is_recording()) {

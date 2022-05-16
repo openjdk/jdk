@@ -333,7 +333,7 @@ public class ThreadInfo {
      *
      * <p>The Java virtual machine may measure the time with a high
      * resolution timer.  This statistic is reset when
-     * the thread contention monitoring is reenabled.
+     * the thread contention monitoring is re-enabled.
      *
      * @return the approximate accumulated elapsed time in milliseconds
      * that a thread entered the {@code BLOCKED} state;
@@ -377,7 +377,7 @@ public class ThreadInfo {
      *
      * <p>The Java virtual machine may measure the time with a high
      * resolution timer.  This statistic is reset when
-     * the thread contention monitoring is reenabled.
+     * the thread contention monitoring is re-enabled.
      *
      * @return the approximate accumulated elapsed time in milliseconds
      * that a thread has been in the {@code WAITING} or

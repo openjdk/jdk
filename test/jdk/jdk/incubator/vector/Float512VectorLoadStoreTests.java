@@ -23,16 +23,17 @@
 
 /*
  * @test
- * @modules jdk.incubator.foreign jdk.incubator.vector java.base/jdk.internal.vm.annotation
+ * @enablePreview
+ * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
  * @run testng/othervm -XX:-TieredCompilation Float512VectorLoadStoreTests
  *
  */
 
 // -- This file was mechanically generated: Do not edit! -- //
 
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.ValueLayout;
 import jdk.incubator.vector.FloatVector;
 import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorSpecies;
@@ -52,6 +53,8 @@ public class Float512VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
                 FloatVector.SPECIES_512;
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
+
+    static final ValueLayout.OfFloat ELEMENT_LAYOUT = ValueLayout.JAVA_FLOAT.withBitAlignment(8);
 
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 512);
@@ -219,13 +222,13 @@ public class Float512VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     static MemorySegment toSegment(float[] a, IntFunction<MemorySegment> fb) {
         MemorySegment ms = fb.apply(a.length * SPECIES.elementSize() / 8);
         for (int i = 0; i < a.length; i++) {
-            ms.set(ValueLayout.JAVA_FLOAT, i * SPECIES.elementSize() / 8 , a[i]);
+            ms.set(ELEMENT_LAYOUT, i * SPECIES.elementSize() / 8 , a[i]);
         }
         return ms;
     }
 
     static float[] segmentToArray(MemorySegment ms) {
-        return ms.toArray(ValueLayout.JAVA_FLOAT);
+        return ms.toArray(ELEMENT_LAYOUT);
     }
 
 
@@ -476,8 +479,8 @@ public class Float512VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "floatByteProviderForIOOBE")
     static void loadMemorySegmentIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, ResourceScope.newImplicitScope()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), ResourceScope.newImplicitScope());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Float.SIZE, MemorySession.openImplicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Float.SIZE, MemorySession.openImplicit());
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -505,8 +508,8 @@ public class Float512VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "floatByteProviderForIOOBE")
     static void storeMemorySegmentIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, ResourceScope.newImplicitScope()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), ResourceScope.newImplicitScope());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Float.SIZE, MemorySession.openImplicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Float.SIZE, MemorySession.openImplicit());
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -569,8 +572,8 @@ public class Float512VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "floatByteMaskProviderForIOOBE")
     static void loadMemorySegmentMaskIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, ResourceScope.newImplicitScope()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), ResourceScope.newImplicitScope());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Float.SIZE, MemorySession.openImplicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Float.SIZE, MemorySession.openImplicit());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromValues(SPECIES, mask);
 
@@ -600,8 +603,8 @@ public class Float512VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "floatByteMaskProviderForIOOBE")
     static void storeMemorySegmentMaskIOOBE(IntFunction<float[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, ResourceScope.newImplicitScope()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), ResourceScope.newImplicitScope());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Float.SIZE, MemorySession.openImplicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Float.SIZE, MemorySession.openImplicit());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromValues(SPECIES, mask);
 

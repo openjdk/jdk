@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @enablePreview
  * @bug 8269335
  * @summary Tests JSVML shared library is loaded successfully.
  * @modules jdk.incubator.vector
@@ -62,7 +63,7 @@ public class LoadJsvmlTest {
     public static void main(String... args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-Xmn8m", "-Xlog:library=info",
-            "--add-modules=jdk.incubator.vector",
+            "--add-modules=jdk.incubator.vector", "--enable-preview",
             VectorTest.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

@@ -28,6 +28,7 @@ import jdk.incubator.vector.VectorSpecies;
 
 /*
  * @test
+ * @enablePreview
  * @bug 8244675
  * @modules jdk.incubator.vector
  *

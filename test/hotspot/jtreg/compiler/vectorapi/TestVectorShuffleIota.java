@@ -29,6 +29,7 @@ import jdk.incubator.vector.VectorShuffle;
 
 /*
  * @test
+ * @enablePreview
  * @bug 8265907
  * @modules jdk.incubator.vector
  * @run main/othervm compiler.vectorapi.TestVectorShuffleIota

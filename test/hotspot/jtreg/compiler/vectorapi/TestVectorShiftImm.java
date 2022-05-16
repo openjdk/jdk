@@ -30,6 +30,7 @@ import jdk.incubator.vector.*;
 
 /**
  * @test
+ * @enablePreview
  * @bug 8261142
  * @summary AArch64: Incorrect instruction encoding when right-shifting vectors with shift amount equals to the element width
  * @modules jdk.incubator.vector

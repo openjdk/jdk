@@ -26,7 +26,7 @@ package compiler.vectorapi.reshape.tests;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.Run;
 import compiler.lib.ir_framework.Test;
-import jdk.incubator.foreign.MemorySegment;
+import java.lang.foreign.MemorySegment;
 
 import static compiler.vectorapi.reshape.utils.VectorReshapeHelper.*;
 

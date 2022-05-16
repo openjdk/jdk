@@ -39,6 +39,7 @@ import org.testng.annotations.Test;
 
 /**
  * @test
+ * @enablePreview
  * @bug 8273264
  * @key randomness
  * @library /test/lib

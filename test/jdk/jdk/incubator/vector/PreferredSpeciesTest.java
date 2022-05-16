@@ -29,12 +29,14 @@ import org.testng.annotations.Test;
 
 /**
  * @test
+ * @enablePreview
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.vector
  * @run testng PreferredSpeciesTest
  */
 
 /**
  * @test
+ * @enablePreview
  * @bug 8262096
  * @requires vm.compiler2.enabled
  * @summary Test the initialization of vector shapes

@@ -39,6 +39,7 @@ import org.testng.annotations.Test;
 
 /**
  * @test
+ * @enablePreview
  * @bug 8268966
  * @key randomness
  * @summary AArch64: 'bad AD file' in some vector conversion tests

@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.incubator.foreign.MemorySegment;
+import java.lang.foreign.MemorySegment;
 import jdk.incubator.vector.*;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
@@ -86,7 +86,7 @@ public class VectorReshapeHelper {
         var test = new TestFramework(testClass);
         test.setDefaultWarmup(1);
         test.addHelperClasses(VectorReshapeHelper.class);
-        test.addFlags("--add-modules=jdk.incubator.vector", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
+        test.addFlags("--add-modules=jdk.incubator.vector", "--enable-preview", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
         test.addFlags(flags);
         String testMethodNames = testMethods
                 .filter(p -> p.isp().length() <= VectorSpecies.ofLargestShape(p.isp().elementType()).length())

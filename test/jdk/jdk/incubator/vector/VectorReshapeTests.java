@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import jdk.incubator.foreign.MemorySegment;
+import java.lang.foreign.MemorySegment;
 import jdk.incubator.vector.*;
 import jdk.internal.vm.annotation.ForceInline;
 import org.testng.Assert;
@@ -36,6 +36,7 @@ import jdk.incubator.vector.VectorSpecies;
 
 /**
  * @test
+ * @enablePreview
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation
  * @run testng/othervm/timeout=240 --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED

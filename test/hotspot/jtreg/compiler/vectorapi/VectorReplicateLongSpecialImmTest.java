@@ -31,6 +31,7 @@ import org.testng.annotations.Test;
 
 /**
  * @test
+ * @enablePreview
  * @bug 8282528
  * @summary AArch64: Incorrect replicate2L_zero rule
  * @library /test/lib

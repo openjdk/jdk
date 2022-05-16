@@ -26,6 +26,7 @@
 
 /*
  * @test
+ * @enablePreview
  * @summary Test if memory ordering is preserved
  *
  * @run main/othervm -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
@@ -37,7 +38,7 @@
 package compiler.vectorapi;
 
 import java.nio.ByteOrder;
-import jdk.incubator.foreign.MemorySegment;
+import java.lang.foreign.MemorySegment;
 import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.VectorSpecies;
 

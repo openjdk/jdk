@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @enablePreview
  * @modules jdk.incubator.vector
  * @requires vm.compiler2.enabled
  */

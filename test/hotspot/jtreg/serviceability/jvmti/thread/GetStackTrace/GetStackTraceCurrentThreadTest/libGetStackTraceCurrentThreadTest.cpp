@@ -47,7 +47,8 @@ static frame_info expected_platform_frames[] = {
     {"Ljava/lang/Thread;", "run", "()V"}
 };
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
   if (res != JNI_OK || jvmti == NULL) {
     printf("Wrong result of a valid call to GetEnv!\n");

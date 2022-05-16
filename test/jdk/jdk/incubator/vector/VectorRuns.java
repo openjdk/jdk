@@ -27,6 +27,7 @@ import java.util.stream.IntStream;
 
 /**
  * @test
+ * @enablePreview
  * @modules jdk.incubator.vector
  */
 

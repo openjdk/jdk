@@ -42,6 +42,7 @@ import jdk.test.lib.Utils;
 
 /**
  * @test
+ * @enablePreview
  * @bug 8282431
  * @key randomness
  * @library /test/lib /
