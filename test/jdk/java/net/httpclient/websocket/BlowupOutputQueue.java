@@ -111,7 +111,7 @@ public class BlowupOutputQueue extends PendingOperations {
                 System.out.printf("begin cycle #%s at %s%n", i, start);
                 cfText = webSocket.sendText(data, true);
                 try {
-                    cfText.get(MAX_WAIT_SEC, TimeUnit.SECONDS);
+                    cfText.get(maxWaitSec, TimeUnit.SECONDS);
                     data.clear();
                 } catch (TimeoutException e) {
                     break;

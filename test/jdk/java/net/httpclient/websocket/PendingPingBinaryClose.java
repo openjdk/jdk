@@ -62,7 +62,7 @@ public class PendingPingBinaryClose extends PendingOperations {
                 System.out.printf("begin cycle #%s at %s%n", i, start);
                 cfPing = webSocket.sendPing(data);
                 try {
-                    cfPing.get(MAX_WAIT_SEC, TimeUnit.SECONDS);
+                    cfPing.get(maxWaitSec, TimeUnit.SECONDS);
                     data.clear();
                 } catch (TimeoutException e) {
                     break;

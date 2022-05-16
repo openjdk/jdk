@@ -41,10 +41,10 @@ public class PendingOperations {
     static final Class<IllegalStateException> ISE = IllegalStateException.class;
     static final Class<IOException> IOE = IOException.class;
     // Time after which we deem that the local send buffer and remote
-    // receive buffer must be full. This has been heuristically determined.
+    // receive buffer must be full.
     // At the time of writing, using anything <= 5s on Mac will make the
     // tests fail intermittently.
-    static final long MAX_WAIT_SEC = 10; // seconds.
+    long maxWaitSec;
 
     DummyWebSocketServer server;
     WebSocket webSocket;
@@ -99,6 +99,11 @@ public class PendingOperations {
         int iterations = 0;
         do {
             iterations++;
+            if (iterations == 1) {
+                maxWaitSec = 1;
+            } else {
+                maxWaitSec = 10;
+            }
             System.out.println("--- iteration " + iterations + " ---");
             try {
                 callable.call();

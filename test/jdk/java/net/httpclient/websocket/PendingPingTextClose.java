@@ -65,7 +65,7 @@ public class PendingPingTextClose extends PendingOperations {
                     if (debug) System.out.printf("begin cycle #%s at %s%n", i, start);
                     cfPing = webSocket.sendPing(data);
                     try {
-                        cfPing.get(MAX_WAIT_SEC, TimeUnit.SECONDS);
+                        cfPing.get(maxWaitSec, TimeUnit.SECONDS);
                         data.clear();
                     } catch (TimeoutException e) {
                         done = true;
@@ -73,7 +73,7 @@ public class PendingPingTextClose extends PendingOperations {
                         break;
                     } finally {
                         long stop = System.currentTimeMillis();
-                        if (debug || done || (stop - start) > (MAX_WAIT_SEC * 1000L)/2L)
+                        if (debug || done || (stop - start) > (maxWaitSec * 1000L)/2L)
                             System.out.printf("end cycle #%s at %s (%s ms)%n", i, stop, stop - start);
                     }
                 }

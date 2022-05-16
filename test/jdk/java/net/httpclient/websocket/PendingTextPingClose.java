@@ -62,7 +62,7 @@ public class PendingTextPingClose extends PendingOperations {
                 cfText = webSocket.sendText(data, last);
                 try {
                     if (!cfText.isDone()) System.gc();
-                    cfText.get(MAX_WAIT_SEC, TimeUnit.SECONDS);
+                    cfText.get(maxWaitSec, TimeUnit.SECONDS);
                     data.clear();
                 } catch (TimeoutException e) {
                     break;
