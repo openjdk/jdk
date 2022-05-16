@@ -53,13 +53,13 @@ public class FloatConsts {
      * subnormal value would have if it could be normalized.
      */
     public static final int MIN_SUB_EXPONENT =
-            MIN_EXPONENT - (SIGNIFICAND_WIDTH - 1);
+            MIN_EXPONENT - (SIGNIFICAND_WIDTH - 1); // -149
 
     /**
      * Bias used in representing a {@code float} exponent.
      */
     public static final int EXP_BIAS =
-            (1 << (SIZE - SIGNIFICAND_WIDTH - 1)) - 1;
+            (1 << (SIZE - SIGNIFICAND_WIDTH - 1)) - 1; // 127
 
     /**
      * Bit mask to isolate the sign bit of a {@code float}.
