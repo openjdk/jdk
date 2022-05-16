@@ -27,6 +27,7 @@
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
+#include "code/nativeInst.hpp"
 #include "code/relocInfo.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/disassembler.hpp"
@@ -307,6 +308,52 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
   MemoryService::track_code_cache_memory_usage();
 
   return blob;
+}
+
+MethodHandleIntrinsicBlob::MethodHandleIntrinsicBlob(
+  Method* method,
+  int mhi_size,
+  CodeBuffer* code_buffer):
+  BufferBlob("MethodHandle intrinsic", mhi_size, code_buffer),
+  _method(method) {
+  {
+    debug_only(NoSafepointVerifier nsv;)
+    assert_locked_or_safepoint(CodeCache_lock);
+
+    assert(code_buffer->total_oop_size() == 0, "unexpected oop");
+    assert(code_buffer->total_metadata_size() == 0, "unexpected metadata");
+
+    CodeCache::commit(this);
+  }
+}
+
+MethodHandleIntrinsicBlob* MethodHandleIntrinsicBlob::create(const methodHandle& method,
+  CodeBuffer *code_buffer) {
+  code_buffer->finalize_oop_references(method);
+
+  MethodHandleIntrinsicBlob* mhi = NULL;
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    int mhi_size = CodeBlob::allocation_size(code_buffer, sizeof(MethodHandleIntrinsicBlob));
+
+    mhi = new (mhi_size) MethodHandleIntrinsicBlob(method(), mhi_size, code_buffer);
+  }
+
+  if (mhi != NULL) {
+    debug_only(mhi->verify();) // might block
+  }
+  return mhi;
+}
+
+void MethodHandleIntrinsicBlob::verify() {
+  // Make sure all the entry points are correctly aligned for patching.
+  NativeJump::check_verified_entry_alignment(code_begin(), code_begin());
+
+  ResourceMark rm;
+
+  if (!CodeCache::contains((void*)this)) {
+    fatal("MethodHandleIntrinsicBlob at " INTPTR_FORMAT " not in zone", p2i(this));
+  }
 }
 
 void* VtableBlob::operator new(size_t s, unsigned size) throw() {

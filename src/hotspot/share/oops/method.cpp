@@ -1009,7 +1009,7 @@ void Method::set_native_function(address function, bool post_event_flag) {
   // This function can be called more than once. We must make sure that we always
   // use the latest registered method -> check if a stub already has been generated.
   // If so, we have to make it not_entrant.
-  CodeBlob* nm = code(); // Put it into local variable to guard against concurrent updates
+  CodeBlob* nm = code();       // Put it into local variable to guard against concurrent updates
   if (nm != NULL) {
     nm->as_compiled_method()->make_not_entrant();
   }
@@ -1265,8 +1265,8 @@ address Method::from_compiled_entry_no_trampoline() const {
   CodeBlob *code = Atomic::load_acquire(&_code);
   if (code != nullptr && code->is_compiled()) {
     return code->as_compiled_method()->verified_entry_point();
-  } else if (code != nullptr && code->is_mhmethod()) {
-    return code->as_mhmethod()->code_begin();
+  } else if (code != nullptr && code->is_mh_intrinsic()) {
+    return code->as_mh_intrinsic()->code_begin();
   } else {
     return adapter()->get_c2i_entry();
   }
@@ -1297,9 +1297,9 @@ bool Method::check_code() const {
     CompiledMethod* cm = blob->as_compiled_method();
     return (cm->method() == nullptr) || (cm->method() == this && !cm->is_osr_method());
   } else {
-    assert(blob->is_mhmethod(), "must be mhmethod");
-    mhmethod* mhm = blob->as_mhmethod();
-    return (mhm->method() == nullptr) || (mhm->method() == this);
+    assert(blob->is_mh_intrinsic(), "must be MH intrinsic");
+    MethodHandleIntrinsicBlob* mhi = blob->as_mh_intrinsic();
+    return (mhi->method() == nullptr) || (mhi->method() == this);
   }
 }
 
@@ -1314,7 +1314,7 @@ void Method::set_code(const methodHandle& mh, CodeBlob *code) {
   // These writes must happen in this order, because the interpreter will
   // directly jump to from_interpreted_entry which jumps to an i2c adapter
   // which jumps to _from_compiled_entry.
-  mh->_code = code; // Assign before allowing compiled code to exec
+  mh->_code = code;             // Assign before allowing compiled code to exec
 
   int comp_level = code->is_compiled() ? code->as_compiled_method()->comp_level() : CompLevel_none;
   // In theory there could be a race here. In practice it is unlikely

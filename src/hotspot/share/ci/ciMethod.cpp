@@ -1141,11 +1141,8 @@ int ciMethod::instructions_size() {
 void ciMethod::log_nmethod_identity(xmlStream* log) {
   GUARDED_VM_ENTRY(
     CodeBlob* code = get_Method()->code();
-    CompiledMethod* cm = (code == nullptr) ? nullptr : code->as_compiled_method_or_null();
-    if (cm != NULL) {
-      cm->log_identity(log);
-    } else if (code != NULL) {
-      code->as_mhmethod()->log_identity(log);
+    if (code != NULL && code->is_compiled()) {
+      code->as_compiled_method()->log_identity(log);
     }
   )
 }

@@ -1384,7 +1384,7 @@ CodeBlob* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
     CodeBlob* method_code = method->code();
-    if (method_code != NULL && (method_code->is_nmethod() || method_code->is_mhmethod())) {
+    if (method_code != NULL && (method_code->is_nmethod() || method_code->is_mh_intrinsic())) {
       if (compilation_is_complete(method, osr_bci, comp_level)) {
         return method_code;
       }
@@ -1515,7 +1515,7 @@ bool CompileBroker::compilation_is_complete(const methodHandle& method,
       CodeBlob* result = method->code();
       if (result != nullptr && result->is_compiled()) {
         return comp_level == result->as_compiled_method()->comp_level();
-      } else if (result != nullptr && result->is_mhmethod()) {
+      } else if (result != nullptr && result->is_mh_intrinsic()) {
         return comp_level == CompLevel_none;
       } else {
         return false;

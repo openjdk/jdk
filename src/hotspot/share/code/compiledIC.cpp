@@ -320,7 +320,7 @@ bool CompiledIC::is_call_to_compiled() const {
   // method is guaranteed to still exist, since we only remove methods after all inline caches
   // has been cleaned up
   CodeBlob* cb = CodeCache::find_blob_unsafe(ic_destination());
-  bool is_monomorphic = (cb != NULL && (cb->is_compiled() || cb->is_mhmethod()));
+  bool is_monomorphic = (cb != NULL && (cb->is_compiled() || cb->is_mh_intrinsic()));
   // Check that the cached_value is a klass for non-optimized monomorphic calls
   // This assertion is invalid for compiler1: a call that does not look optimized (no static stub) can be used
   // for calling directly to vep without using the inline cache (i.e., cached_value == NULL).
@@ -460,7 +460,7 @@ bool CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
     bool static_bound = info.is_optimized() || (info.cached_metadata() == NULL);
 #ifdef ASSERT
     CodeBlob* cb = CodeCache::find_blob_unsafe(info.entry());
-    assert (cb != NULL && (cb->is_compiled() || cb->is_mhmethod()), "must be compiled!");
+    assert (cb != NULL && (cb->is_compiled() || cb->is_mh_intrinsic()), "must be compiled!");
 #endif /* ASSERT */
 
     // This is MT safe if we come from a clean-cache and go through a
@@ -539,8 +539,8 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
     } else {
       entry      = method_code->entry_point();
     }
-  } else if (blob != nullptr && blob->is_mhmethod()) {
-    entry = blob->as_mhmethod()->code_begin();
+  } else if (blob != nullptr && blob->is_mh_intrinsic()) {
+    entry = blob->as_mh_intrinsic()->code_begin();
   }
   if (entry != NULL) {
     // Call to near compiled code.
@@ -647,7 +647,7 @@ void CompiledStaticCall::compute_entry(const methodHandle& m, StaticCallInfo& in
   if (m_code != NULL && m_code->is_in_use() && !m_code->is_unloading()) {
     info._to_interpreter = false;
     info._entry  = m_code->verified_entry_point();
-  } else if (m_blob != NULL && m_blob->is_mhmethod()) {
+  } else if (m_blob != NULL && m_blob->is_mh_intrinsic()) {
     info._to_interpreter = false;
     info._entry  = m_blob->code_begin();
   } else {

@@ -650,6 +650,8 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
       st->print("v  ~MethodHandlesAdapterBlob");
     } else if (_cb->is_uncommon_trap_stub()) {
       st->print("v  ~UncommonTrapBlob");
+    } else if (_cb->is_mh_intrinsic()) {
+      st->print("v  ~MethodHandleIntrinsicBlob");
     } else {
       st->print("v  blob " PTR_FORMAT, p2i(pc()));
     }

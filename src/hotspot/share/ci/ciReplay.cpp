@@ -795,15 +795,9 @@ class CompileReplay : public StackObj {
       }
     }
     // Make sure the existence of a prior compile doesn't stop this one
-    CompiledMethod* nm;
-    if (entry_bci != InvocationEntryBci) {
-      nm = method->lookup_osr_nmethod_for(entry_bci, comp_level, true);
-    } else {
-      CodeBlob* code = method->code();
-      nm = (code == nullptr) ? nullptr : code->as_compiled_method_or_null();
-    }
+    CodeBlob* nm = (entry_bci != InvocationEntryBci) ? method->lookup_osr_nmethod_for(entry_bci, comp_level, true) : method->code();
     if (nm != NULL) {
-      nm->make_not_entrant();
+      nm->as_compiled_method()->make_not_entrant();
     }
     replay_state = this;
     CompileBroker::compile_method(methodHandle(THREAD, method), entry_bci, comp_level,

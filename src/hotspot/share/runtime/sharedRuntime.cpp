@@ -871,7 +871,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* current,
           // 2. Inline-cache check in nmethod, or
           // 3. Implicit null exception in nmethod
 
-          if (!cb->is_compiled() && !cb->is_mhmethod()) {
+          if (!cb->is_compiled() && !cb->is_mh_intrinsic()) {
             bool is_in_blob = cb->is_adapter_blob() || cb->is_method_handles_adapter_blob();
             if (!is_in_blob) {
               // Allow normal crash reporting to handle this
@@ -903,7 +903,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* current,
             // in which case we want to fall through into the normal
             // error handling code.
           } else {
-            assert(cb->as_mhmethod()->method()->is_method_handle_intrinsic(), "should be MH adapter");
+            assert(cb->as_mh_intrinsic()->method()->is_method_handle_intrinsic(), "should be MH adapter");
             // exception happened inside MH dispatch code, similar to a vtable stub
             Events::log_exception(current, "NullPointerException in MH adapter " INTPTR_FORMAT, p2i(pc));
             return StubRoutines::throw_NullPointerException_at_call_entry();
@@ -1267,7 +1267,7 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
   CodeBlob* callee = callee_method->code();
 
   if (callee != NULL) {
-    assert(callee->is_compiled() || callee->is_mhmethod(), "must be nmethod or mhmethod for patching");
+    assert(callee->is_compiled() || callee->is_mh_intrinsic(), "must be nmethod or MH intrinsic for patching");
   }
 
   if (callee != NULL && callee->is_compiled() && !callee->as_compiled_method()->is_in_use()) {
@@ -1304,13 +1304,13 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
     // which may happen when multiply alive nmethod (tiered compilation)
     // will be supported.
     if (!callee_method->is_old() &&
-        (callee == NULL || callee->is_mhmethod() || (callee->as_compiled_method()->is_in_use() && callee_method->code() == callee))) {
+        (callee == NULL || callee->is_mh_intrinsic() || (callee->as_compiled_method()->is_in_use() && callee_method->code() == callee))) {
       NoSafepointVerifier nsv;
 #ifdef ASSERT
       // We must not try to patch to jump to an already unloaded method.
       if (dest_entry_point != 0) {
         CodeBlob* cb = CodeCache::find_blob(dest_entry_point);
-        assert((cb != NULL) && (cb->is_compiled() || cb->is_mhmethod()) && (cb == callee),
+        assert((cb != NULL) && (cb->is_compiled() || cb->is_mh_intrinsic()) && (cb == callee),
               "should not call unloaded nmethod");
       }
 #endif
@@ -3066,7 +3066,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       if (blob != NULL) {
         {
           MutexLocker pl(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
-          if (blob->is_mhmethod() || blob->as_nmethod()->make_in_use()) {
+          if (blob->is_mh_intrinsic() || blob->as_nmethod()->make_in_use()) {
             method->set_code(method, blob);
           }
         }

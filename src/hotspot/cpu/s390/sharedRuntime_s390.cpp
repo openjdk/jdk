@@ -1293,7 +1293,7 @@ CodeBlob *SharedRuntime::generate_mhi_wrapper(MacroAssembler *masm,
                                               BasicType *in_sig_bt,
                                               VMRegPair *in_regs,
                                               BasicType ret_type) {
-  assert(method->is_method_handle_intrinsic(), "must be MethodHandle method");
+  assert(method->is_method_handle_intrinsic(), "must be MethodHandle intrinsic");
 
   int total_in_args = method->size_of_parameters();
   vmIntrinsics::ID iid = method->intrinsic_id();
@@ -1302,17 +1302,9 @@ CodeBlob *SharedRuntime::generate_mhi_wrapper(MacroAssembler *masm,
   gen_special_dispatch(masm, total_in_args,
                        method->intrinsic_id(), in_sig_bt, in_regs);
 
-  int frame_complete = ((intptr_t)__ pc()) - start; // Not complete, period.
-
   __ flush();
 
-  int stack_slots = SharedRuntime::out_preserve_stack_slots();  // No out slots at all, actually.
-
-  return mhmethod::new_mhmethod(method,
-                               compile_id,
-                               masm->code(),
-                               frame_complete,
-                               stack_slots / VMRegImpl::slots_per_word);
+  return MethodHandleIntrinsicBlob::create(method, masm->code());
 }
 
 //----------------------------------------------------------------------
@@ -1325,7 +1317,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 BasicType *in_sig_bt,
                                                 VMRegPair *in_regs,
                                                 BasicType ret_type) {
-  assert(!method->is_method_handle_intrinsic(), "must not be MethodHandle method");
+  assert(!method->is_method_handle_intrinsic(), "must not be MethodHandle intrinsic");
   int total_in_args = method->size_of_parameters();
 
   ///////////////////////////////////////////////////////////////////////

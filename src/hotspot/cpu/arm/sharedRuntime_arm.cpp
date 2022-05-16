@@ -745,7 +745,7 @@ CodeBlob* SharedRuntime::generate_mhi_wrapper(MacroAssembler* masm,
                                               BasicType* in_sig_bt,
                                               VMRegPair* in_regs,
                                               BasicType ret_type) {
-  assert(method->is_method_handle_intrinsic(), "must be MethodHandle method");
+  assert(method->is_method_handle_intrinsic(), "must be MethodHandle intrinsic");
 
   vmIntrinsics::ID iid = method->intrinsic_id();
   intptr_t start = (intptr_t)__ pc();
@@ -753,14 +753,8 @@ CodeBlob* SharedRuntime::generate_mhi_wrapper(MacroAssembler* masm,
                        method,
                        in_sig_bt,
                        in_regs);
-  int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
   __ flush();
-  int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
-  return mhmethod::new_mhmethod(method,
-                               compile_id,
-                               masm->code(),
-                               frame_complete,
-                               stack_slots / VMRegImpl::slots_per_word);
+  return MethodHandleIntrinsicBlob::create(method, masm->code());
 }
 
 // ---------------------------------------------------------------------------
@@ -775,7 +769,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 BasicType* in_sig_bt,
                                                 VMRegPair* in_regs,
                                                 BasicType ret_type) {
-  assert(!method->is_method_handle_intrinsic(), "must not be MethodHandle method");
+  assert(!method->is_method_handle_intrinsic(), "must not be MethodHandle intrinsic");
   // Arguments for JNI method include JNIEnv and Class if static
 
   // Usage of Rtemp should be OK since scratched by native call
