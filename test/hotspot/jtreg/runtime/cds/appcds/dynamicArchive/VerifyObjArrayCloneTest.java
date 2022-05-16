@@ -25,7 +25,7 @@
  * @test Verifier handling of invoking java/lang/Object::clone() on object arrays.
  * @bug 8286277
  * @requires vm.cds
- * @library /test/lib /test/hotspot/jtreg/runtime/verifier 
+ * @library /test/lib /test/hotspot/jtreg/runtime/verifier
  *          /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build sun.hotspot.WhiteBox
@@ -58,7 +58,7 @@ public class VerifyObjArrayCloneTest extends DynamicArchiveTestBase {
              mainAppClass)
              .assertNormalExit();
 
-        run(topArchiveName, 
+        run(topArchiveName,
             "-cp", cp,
              mainAppClass)
             .assertNormalExit();
@@ -74,7 +74,7 @@ public class VerifyObjArrayCloneTest extends DynamicArchiveTestBase {
              mainAppClass, testsJar)
              .assertNormalExit();
 
-        run(topArchiveName, 
+        run(topArchiveName,
             "-cp", cp,
              mainAppClass, testsJar)
             .assertNormalExit();
