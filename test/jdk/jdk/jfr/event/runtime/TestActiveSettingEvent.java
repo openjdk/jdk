@@ -23,8 +23,10 @@
 package jdk.jfr.event.runtime;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jdk.jfr.Configuration;
 import jdk.jfr.Event;
@@ -60,6 +62,7 @@ public final class TestActiveSettingEvent {
     public static void main(String[] args) throws Throwable {
         testDefaultSettings();
         testProfileSettings();
+        testOnlyOnce();
         testNewSettings();
         testChangedSetting();
         testUnregistered();
@@ -72,6 +75,39 @@ public final class TestActiveSettingEvent {
 
     private static void testDefaultSettings() throws Exception {
         testSettingConfiguration("default");
+    }
+
+    private static void testOnlyOnce() throws Exception {
+        Configuration c = Configuration.getConfiguration("default");
+        try (Recording r = new Recording(c)) {
+            r.enable(ACTIVE_SETTING_EVENT_NAME).withStackTrace();
+            r.start();
+            r.stop();
+            Map<String, RecordedEvent> settings = new HashMap<>();
+            List<RecordedEvent> events = Events.fromRecording(r);
+            for (RecordedEvent e : events) {
+                if (e.getEventType().getName().equals(ACTIVE_SETTING_EVENT_NAME)) {
+                    long id = e.getLong("id");
+                    String name = e.getString("name");
+                    String value = e.getString("value");
+                    String s = id + "#" + name + "=" + value;
+                    if (settings.containsKey(s)) {
+                        System.out.println("Event:");
+                        System.out.println(settings.get(s));
+                        System.out.println("Duplicated by:");
+                        System.out.println(e);
+                        String message = "Found duplicated setting '" + s + "'";
+                        for (EventType type : FlightRecorder.getFlightRecorder().getEventTypes()) {
+                            if (type.getId() == id) {
+                                throw new Exception(message+  " for " + type.getName());
+                            }
+                        }
+                        throw new Exception(message);
+                    }
+                    settings.put(s, e);
+                }
+            }
+        }
     }
 
     private static void testRegistration() throws Exception {
