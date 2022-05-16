@@ -475,7 +475,7 @@ public class BufferedReader extends Reader {
             }
             long d = nChars - nextChar;
             if (r <= d) {
-                nextChar += r;
+                nextChar += (int)r;
                 r = 0;
                 break;
             }

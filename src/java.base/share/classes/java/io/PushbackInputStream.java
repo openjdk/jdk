@@ -323,7 +323,7 @@ public class PushbackInputStream extends FilterInputStream {
             if (n < pskip) {
                 pskip = n;
             }
-            pos += pskip;
+            pos += (int) pskip;
             n -= pskip;
         }
         if (n > 0) {

@@ -73,7 +73,7 @@ public class PKCS11RuntimeException extends RuntimeException {
      * Constructor taking a string that describes the reason of the exception
      * in more detail.
      *
-     * @param message A descrption of the reason for this exception.
+     * @param message A description of the reason for this exception.
      * @preconditions
      * @postconditions
      */

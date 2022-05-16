@@ -1040,7 +1040,7 @@ debugMonitorWait(jrawMonitorID monitor)
      * According to the JLS (17.8), here we have
      * either :
      * a- been notified
-     * b- gotten a suprious wakeup
+     * b- gotten a spurious wakeup
      * c- been interrupted
      * If both a and c have happened, the VM must choose
      * which way to return - a or c.  If it chooses c
@@ -2433,7 +2433,7 @@ log_debugee_location(const char *func,
         }
 
         /* Issue log message */
-        LOG_LOC(("%s: debugee: thread=%p(%s:0x%x),method=%p(%s@%d;%s)",
+        LOG_LOC(("%s: debuggee: thread=%p(%s:0x%x),method=%p(%s@%d;%s)",
                 func,
                 thread, info.name==NULL ? "?" : info.name, state,
                 method, method_name==NULL ? "?" : method_name,

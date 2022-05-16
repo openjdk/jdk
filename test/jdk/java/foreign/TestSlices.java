@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,18 @@
  *
  */
 
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemorySegment;
-
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
 /*
  * @test
+ * @enablePreview
  * @run testng/othervm -Xverify:all TestSlices
  */
 public class TestSlices {
@@ -46,8 +46,8 @@ public class TestSlices {
 
     @Test(dataProvider = "slices")
     public void testSlices(VarHandle handle, int lo, int hi, int[] values) {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(LAYOUT, scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(LAYOUT, session);
             //init
             for (long i = 0 ; i < 2 ; i++) {
                 for (long j = 0 ; j < 5 ; j++) {
