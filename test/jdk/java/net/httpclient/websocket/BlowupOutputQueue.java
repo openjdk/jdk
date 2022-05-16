@@ -124,14 +124,15 @@ public class BlowupOutputQueue extends PendingOperations {
             webSocket.request(N);
             allButCloseReceived.await();
             webSocket.request(1); // Receive the last message: Close
+            List<MockListener.Invocation> invocations = listener.invocations();
+            cfClose = webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "ok");
+
+            assertFalse(invocations.contains(new MockListener.OnError(webSocket, IOException.class)));
+            assertFalse(cfText.isDone());
+            assertFalse(cfPing.isDone());
+            assertFalse(cfClose.isDone());
             return null;
         }, () -> cfText.isDone());
-        List<MockListener.Invocation> invocations = listener.invocations();
-        cfClose = webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "ok");
-
-        assertFalse(invocations.contains(new MockListener.OnError(webSocket, IOException.class)));
-        assertFalse(cfText.isDone());
-        assertFalse(cfPing.isDone());
-        assertFalse(cfClose.isDone());
+        webSocket.abort();
     }
 }
