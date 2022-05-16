@@ -322,7 +322,7 @@ public class Krb5NameElement
      * @return the Oid for the format of the printed name
      */
     public Oid getStringNameType() {
-        // XXX For NT_EXPORT_NAME return a different name type. Infact,
+        // XXX For NT_EXPORT_NAME return a different name type. In fact,
         // don't even store NT_EXPORT_NAME in the cons.
         return (gssNameType);
     }
