@@ -1798,7 +1798,7 @@ public class Attr extends JCTree.Visitor {
                         boolean unconditional =
                                 unguarded &&
                                 !patternType.isErroneous() &&
-                                types.isSubtype(types.erasure(seltype),
+                                types.isSubtype(types.boxedTypeOrType(types.erasure(seltype)),
                                                 patternType);
                         if (unconditional) {
                             if (hasUnconditionalPattern) {
