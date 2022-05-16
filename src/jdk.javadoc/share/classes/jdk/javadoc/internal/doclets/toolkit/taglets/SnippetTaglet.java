@@ -218,10 +218,10 @@ public class SnippetTaglet extends BaseTaglet {
                 // first, look in local snippet-files subdirectory
                 var utils = writer.configuration().utils;
                 var pkg = getPackageElement(holder, utils);
-                var pkgLocn = utils.getLocationForPackage(pkg);
+                var pkgLocation = utils.getLocationForPackage(pkg);
                 var pkgName = pkg.getQualifiedName().toString(); // note: empty string for unnamed package
                 var relativeName = "snippet-files/" + v;
-                fileObject = fileManager.getFileForInput(pkgLocn, pkgName, relativeName);
+                fileObject = fileManager.getFileForInput(pkgLocation, pkgName, relativeName);
 
                 // if not found in local snippet-files directory, look on snippet path
                 if (fileObject == null && fileManager.hasLocation(Location.SNIPPET_PATH)) {
