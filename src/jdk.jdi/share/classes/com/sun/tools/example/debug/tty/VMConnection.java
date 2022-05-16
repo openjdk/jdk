@@ -379,7 +379,7 @@ class VMConnection {
             resolveEventRequests();
         }
         /*
-         * Now that the vm connection is open, fetch the debugee
+         * Now that the vm connection is open, fetch the debuggee
          * classpath and set up a default sourcepath.
          * (Unless user supplied a sourcepath on the command line)
          * (Bug ID 4186582)

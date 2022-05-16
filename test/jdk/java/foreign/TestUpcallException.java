@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
+ * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @library /test/lib
- * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build ThrowingUpcall TestUpcallException
  *
  * @run testng/othervm/native
@@ -69,7 +69,7 @@ public class TestUpcallException {
                      .resolve("java")
                      .toAbsolutePath()
                      .toString(),
-                "--add-modules", "jdk.incubator.foreign",
+                "--enable-preview",
                 "--enable-native-access=ALL-UNNAMED",
                 "-Djava.library.path=" + System.getProperty("java.library.path"),
                 "-Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=" + useSpec,

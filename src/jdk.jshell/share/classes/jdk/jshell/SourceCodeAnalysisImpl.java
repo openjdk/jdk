@@ -876,11 +876,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
                 long start = sp.getStartPosition(topLevel, tree);
                 long end = sp.getEndPosition(topLevel, tree);
-                long prevEnd = deepest[0] != null ? sp.getEndPosition(topLevel, deepest[0].getLeaf()) : -1;
 
                 if (start <= wrapEndPos && wrapEndPos <= end &&
-                    (start != end || prevEnd != end || deepest[0] == null ||
-                     deepest[0].getParentPath().getLeaf() != getCurrentPath().getLeaf())) {
+                    (deepest[0] == null || deepest[0].getLeaf() == getCurrentPath().getLeaf())) {
                     deepest[0] = new TreePath(getCurrentPath(), tree);
                     return super.scan(tree, p);
                 }

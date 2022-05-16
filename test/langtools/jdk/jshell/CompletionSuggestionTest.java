@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658
+ * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658 8278039
  * @summary Test Completion and Documentation
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -772,5 +772,17 @@ public class CompletionSuggestionTest extends KullaTesting {
 
         assertEval("import p.*;");
         assertCompletion("Broke|", "BrokenA", "BrokenC");
+    }
+
+    public void testStatements() {
+        assertEval("String s = \"\";");
+        assertCompletion("if (s.conta|", (Boolean) null, "contains(");
+        assertCompletion("if (s.ch|", (Boolean) null, "charAt(", "chars()");
+        assertCompletion("while (s.conta|", (Boolean) null, "contains(");
+        assertCompletion("do {} while (s.conta|", (Boolean) null, "contains(");
+        assertCompletion("try (var v = s.conta|", (Boolean) null, "contains(");
+        assertCompletion("for (var v = s.conta|", (Boolean) null, "contains(");
+        assertCompletion("for (;;s.conta|", (Boolean) null, "contains(");
+        assertCompletion("for (var v : s.conta|", (Boolean) null, "contains(");
     }
 }
