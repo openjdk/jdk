@@ -26,7 +26,6 @@ import java.lang.foreign.MemorySession;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
@@ -54,8 +53,9 @@ public class LargeMapTest {
 
         Path p = Path.of(FILE);
         p.toFile().deleteOnExit();
-        try (RandomAccessFile raf = new RandomAccessFile(FILE, "rw");) {
-            raf.setLength(LENGTH); //~8gb
+        try (FileChannel fc = FileChannel.open(p, CREATE, WRITE);) {
+            fc.position(LENGTH - 1);
+            fc.write(ByteBuffer.wrap(new byte[] {27}));
         }
 
         long offset = OFFSET;
