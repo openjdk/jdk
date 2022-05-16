@@ -51,7 +51,6 @@ public class TrayIconScalingTest {
 
     private static SystemTray tray;
     private static TrayIcon icon;
-
     private static final String INSTRUCTIONS =
             "This test case checks the scaling of tray icons for on-the-fly" +
                     " DPI/ Scale changes on Windows.\n\n" +
@@ -66,9 +65,8 @@ public class TrayIconScalingTest {
                     " if there is NO distortion then press PASS.\n\n";
 
     private static Font font = new Font("Dialog", Font.BOLD, 12);
-
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
+    public static void main(String[] args)
+            throws InterruptedException, InvocationTargetException {
 
         // Check if SystemTray supported on the machine
         if (!SystemTray.isSupported()) {
@@ -84,15 +82,13 @@ public class TrayIconScalingTest {
             tray.remove(icon);
         }
     }
-
     private static void createAndShowGUI() {
-        // Create Multi Resolution Image
-        ArrayList<Image> images = new ArrayList<>();
+        ArrayList<Image> imageList = new ArrayList<>();
         for (int size = 16; size <= 48; size += 4) {
-            createIcon(size, images);
+            imageList.add(createIcon(size));
         }
         Image mRImage =
-                new BaseMultiResolutionImage(images.toArray(new Image[0]));
+                new BaseMultiResolutionImage(imageList.toArray(new Image[0]));
 
         tray = SystemTray.getSystemTray();
         icon = new TrayIcon(mRImage);
@@ -103,10 +99,7 @@ public class TrayIconScalingTest {
             throw new RuntimeException("Error while adding icon to system tray");
         }
     }
-
-    // to create different size icons for MRI
-    private static void createIcon(int size, ArrayList<Image> imageArrayList) {
-
+    private static Image createIcon(int size) {
         BufferedImage image = new BufferedImage(size, size,
                 BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
@@ -122,8 +115,7 @@ public class TrayIconScalingTest {
         int height = (int) layout.getBounds().getHeight();
         int width = (int) layout.getBounds().getWidth();
         layout.draw(g, (size - width) / 2f - 1, (size + height) / 2f);
-        imageArrayList.add(image);
         g.dispose();
+        return image;
     }
 }
-

@@ -70,7 +70,7 @@ typedef struct tagBitmapheader  {
 
 jfieldID AwtTrayIcon::idID;
 jfieldID AwtTrayIcon::actionCommandID;
-jmethodID AwtTrayIcon::updateImageDpiID;
+jmethodID AwtTrayIcon::updateImageID;
 
 HWND AwtTrayIcon::sm_msgWindow = NULL;
 AwtTrayIcon::TrayIconListItem* AwtTrayIcon::sm_trayIconList = NULL;
@@ -224,13 +224,13 @@ void AwtTrayIcon::InitNID(UINT uID)
 }
 
 // Call updateImage() method on the peer when screen scale changes
-void AwtTrayIcon::UpdateImageDPI()
+void AwtTrayIcon::UpdateImage()
 {
     JNIEnv *env =(JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     jobject peer = GetPeer(env);
     if (peer != NULL) {
-        env->CallVoidMethod(peer, updateImageDpiID);
+        env->CallVoidMethod(peer, updateImageID);
         env->ExceptionClear();
     }
 }
@@ -494,7 +494,7 @@ MsgRouting AwtTrayIcon::WmTaskbarCreated() {
     for (item = sm_trayIconList; item != NULL; item = item->m_next) {
         if (m_bDPIChanged) {
             // Update the icon image
-            item->m_trayIcon->UpdateImageDPI();
+            item->m_trayIcon->UpdateImage();
         }
         BOOL result = item->m_trayIcon->SendTrayMessage(NIM_ADD);
         // 6270114: Instructs the taskbar to behave according to the Shell version 5.0
@@ -944,9 +944,9 @@ Java_java_awt_TrayIcon_initIDs(JNIEnv *env, jclass cls)
     DASSERT(wPeerCls != NULL);
     CHECK_NULL(wPeerCls);
 
-    AwtTrayIcon::updateImageDpiID = env->GetMethodID(wPeerCls, "updateImage", "()V");
-    DASSERT(AwtTrayIcon::updateImageDpiID != NULL);
-    CHECK_NULL(AwtTrayIcon::updateImageDpiID);
+    AwtTrayIcon::updateImageID = env->GetMethodID(wPeerCls, "updateImage", "()V");
+    DASSERT(AwtTrayIcon::updateImageID != NULL);
+    CHECK_NULL(AwtTrayIcon::updateImageID);
 
     CATCH_BAD_ALLOC;
 }

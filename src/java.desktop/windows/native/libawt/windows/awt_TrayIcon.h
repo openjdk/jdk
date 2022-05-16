@@ -86,7 +86,7 @@ public:
 
     void DisplayMessage(LPCTSTR caption, LPCTSTR text, LPCTSTR msgType);
 
-    void UpdateImageDPI();
+    void UpdateImage();
 
     // Adds to the head of the list
     INLINE void AddTrayIconItem(UINT id) {
@@ -123,7 +123,7 @@ public:
      */
     static jfieldID idID;
     static jfieldID actionCommandID;
-    static jmethodID updateImageDpiID;
+    static jmethodID updateImageID;
 
     // ************************
 
