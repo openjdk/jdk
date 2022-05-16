@@ -123,7 +123,7 @@ public:
      */
     static jfieldID idID;
     static jfieldID actionCommandID;
-    static jmethodID idUpdateImage;
+    static jmethodID updateImageDpiID;
 
     // ************************
 

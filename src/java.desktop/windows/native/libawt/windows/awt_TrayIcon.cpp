@@ -70,7 +70,7 @@ typedef struct tagBitmapheader  {
 
 jfieldID AwtTrayIcon::idID;
 jfieldID AwtTrayIcon::actionCommandID;
-jmethodID AwtTrayIcon::idUpdateImage = NULL;
+jmethodID AwtTrayIcon::updateImageDpiID;
 
 HWND AwtTrayIcon::sm_msgWindow = NULL;
 AwtTrayIcon::TrayIconListItem* AwtTrayIcon::sm_trayIconList = NULL;
@@ -230,11 +230,7 @@ void AwtTrayIcon::UpdateImageDPI()
 
     jobject peer = GetPeer(env);
     if (peer != NULL) {
-        env->CallVoidMethod(peer, idUpdateImage);
-    }
-
-    if (safe_ExceptionOccurred(env)) {
-        env->ExceptionDescribe();
+        env->CallVoidMethod(peer, updateImageDpiID);
         env->ExceptionClear();
     }
 }
@@ -948,9 +944,9 @@ Java_java_awt_TrayIcon_initIDs(JNIEnv *env, jclass cls)
     DASSERT(wPeerCls != NULL);
     CHECK_NULL(wPeerCls);
 
-    AwtTrayIcon::idUpdateImage = env->GetMethodID(wPeerCls, "updateImage", "()V");
-    DASSERT(AwtTrayIcon::idUpdateImageDPI != NULL);
-    CHECK_NULL(AwtTrayIcon::idUpdateImage);
+    AwtTrayIcon::updateImageDpiID = env->GetMethodID(wPeerCls, "updateImage", "()V");
+    DASSERT(AwtTrayIcon::updateImageDpiID != NULL);
+    CHECK_NULL(AwtTrayIcon::updateImageDpiID);
 
     CATCH_BAD_ALLOC;
 }
