@@ -26,7 +26,6 @@
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
 JAVAC_FLAGS += -XDstringConcat=inline
-DISABLED_WARNINGS_java += lossy-conversions
 COPY += .icu .dat .spp .nrm content-types.properties \
     hijrah-config-Hijrah-umalqura_islamic-umalqura.properties
 CLEAN += intrinsic.properties

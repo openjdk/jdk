@@ -25,4 +25,3 @@
 
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
-DISABLED_WARNINGS_java += lossy-conversions
