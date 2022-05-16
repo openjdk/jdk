@@ -237,8 +237,9 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       // Save upper bank of XMM registers(16..31) for scalar or 16-byte vector usage
       int base_addr = XSAVE_AREA_UPPERBANK;
       off = 0;
+      int vector_len = VM_Version::supports_avx512vl() ?  Assembler::AVX_128bit : Assembler::AVX_512bit;
       for (int n = 16; n < num_xmm_regs; n++) {
-        __ evmovdqul(Address(rsp, base_addr+(off++*64)), as_XMMRegister(n), Assembler::AVX_128bit);
+        __ evmovdqul(Address(rsp, base_addr+(off++*64)), as_XMMRegister(n), vector_len);
       }
 #if COMPILER2_OR_JVMCI
       base_addr = XSAVE_AREA_OPMASK_BEGIN;
@@ -417,8 +418,9 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_wi
       // Restore upper bank of XMM registers(16..31) for scalar or 16-byte vector usage
       int base_addr = XSAVE_AREA_UPPERBANK;
       int off = 0;
+      int vector_len = VM_Version::supports_avx512vl() ?  Assembler::AVX_128bit : Assembler::AVX_512bit;
       for (int n = 16; n < num_xmm_regs; n++) {
-        __ evmovdqul(as_XMMRegister(n), Address(rsp, base_addr+(off++*64)), Assembler::AVX_128bit);
+        __ evmovdqul(as_XMMRegister(n), Address(rsp, base_addr+(off++*64)), vector_len);
       }
 #if COMPILER2_OR_JVMCI
       base_addr = XSAVE_AREA_OPMASK_BEGIN;
