@@ -729,6 +729,7 @@ public class ObjectOutputStream
      *
      * @throws  IOException {@inheritDoc}
      */
+    @Override
     public void flush() throws IOException {
         bout.flush();
     }
@@ -750,6 +751,7 @@ public class ObjectOutputStream
      *
      * @throws  IOException If an I/O error has occurred.
      */
+    @Override
     public void close() throws IOException {
         flush();
         clear();

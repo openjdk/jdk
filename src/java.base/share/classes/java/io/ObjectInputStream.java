@@ -1228,6 +1228,7 @@ public class ObjectInputStream
      * @return  the actual number of bytes skipped.
      * @throws  IOException If an I/O error has occurred.
      */
+    @Override
     public int skipBytes(int len) throws IOException {
         return bin.skipBytes(len);
     }

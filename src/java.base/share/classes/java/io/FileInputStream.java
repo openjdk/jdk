@@ -296,6 +296,7 @@ public class FileInputStream extends InputStream
         }
     }
 
+    @Override
     public byte[] readAllBytes() throws IOException {
         long length = length();
         long position = position();
@@ -338,6 +339,7 @@ public class FileInputStream extends InputStream
         return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
     }
 
+    @Override
     public byte[] readNBytes(int len) throws IOException {
         if (len < 0)
             throw new IllegalArgumentException("len < 0");
@@ -377,6 +379,7 @@ public class FileInputStream extends InputStream
     /**
      * {@inheritDoc}
      */
+    @Override
     public long transferTo(OutputStream out) throws IOException {
         long transferred = 0L;
         if (out instanceof FileOutputStream fos) {

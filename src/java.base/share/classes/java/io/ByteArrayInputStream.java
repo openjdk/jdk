@@ -189,17 +189,20 @@ public class ByteArrayInputStream extends InputStream {
         return len;
     }
 
+    @Override
     public synchronized byte[] readAllBytes() {
         byte[] result = Arrays.copyOfRange(buf, pos, count);
         pos = count;
         return result;
     }
 
+    @Override
     public int readNBytes(byte[] b, int off, int len) {
         int n = read(b, off, len);
         return n == -1 ? 0 : n;
     }
 
+    @Override
     public synchronized long transferTo(OutputStream out) throws IOException {
         int len = count - pos;
         out.write(buf, pos, len);
@@ -273,6 +276,7 @@ public class ByteArrayInputStream extends InputStream {
      *
      * @since   1.1
      */
+    @Override
     public void mark(int readAheadLimit) {
         mark = pos;
     }

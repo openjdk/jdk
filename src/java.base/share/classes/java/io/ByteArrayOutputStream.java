@@ -214,6 +214,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * @return String decoded from the buffer's contents.
      * @since  1.1
      */
+    @Override
     public synchronized String toString() {
         return new String(buf, 0, count);
     }
