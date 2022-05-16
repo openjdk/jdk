@@ -24,38 +24,6 @@
  */
 package sun.nio.ch;
 
-<<<<<<< HEAD:src/jdk.compiler/share/classes/com/sun/source/tree/DeconstructionPatternTree.java
-package com.sun.source.tree;
-
-import java.util.List;
-import jdk.internal.javac.PreviewFeature;
-
-/**
- * A deconstruction pattern tree.
- *
- * @since 19
- */
-@PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
-public interface DeconstructionPatternTree extends PatternTree {
-
-    /**
-     * Returns the deconstructed type.
-     * @return the deconstructed type
-     */
-    ExpressionTree getDeconstructor();
-
-    /**
-     * Returns the nested patterns.
-     * @return the nested patterns.
-     */
-    List<? extends PatternTree> getNestedPatterns();
-
-    /**
-     * Returns the binding variable.
-     * @return the binding variable
-     */
-    VariableTree getVariable();
-=======
 import java.io.IOException;
 
 /**
@@ -68,11 +36,9 @@ class DefaultPollerProvider extends PollerProvider {
     Poller readPoller() throws IOException {
         return new PollsetPoller(true);
     }
->>>>>>> master:src/java.base/aix/classes/sun/nio/ch/DefaultPollerProvider.java
 
     @Override
     Poller writePoller() throws IOException {
         return new PollsetPoller(false);
     }
 }
-
