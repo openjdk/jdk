@@ -130,7 +130,7 @@ final class SettingsManager {
 
    private Map<String, InternalSetting> availableSettings = new LinkedHashMap<>();
 
-    void setSettings(List<Map<String, String>> activeSettings) {
+    void setSettings(List<Map<String, String>> activeSettings, boolean writeSettingEvents) {
         // store settings so they are available if a new event class is loaded
         availableSettings = createSettingsMap(activeSettings);
         List<EventControl> eventControls = MetadataRepository.getInstance().getEventControls();
@@ -143,7 +143,7 @@ final class SettingsManager {
                 eventControls.sort(Comparator.comparing(x -> x.getEventType().getName()));
             }
             for (EventControl ec : eventControls) {
-                setEventControl(ec);
+                setEventControl(ec, writeSettingEvents);
             }
         }
         if (JVM.getJVM().getAllowedToDoEventRetransforms()) {
@@ -211,7 +211,7 @@ final class SettingsManager {
       return internals.values();
     }
 
-    void setEventControl(EventControl ec) {
+    void setEventControl(EventControl ec, boolean writeSettingEvents) {
         InternalSetting is = getInternalSetting(ec);
         boolean shouldLog = Logger.shouldLog(LogTag.JFR_SETTING, LogLevel.INFO);
         if (shouldLog) {
@@ -250,7 +250,9 @@ final class SettingsManager {
                 }
             }
         }
-        ec.writeActiveSettingEvent();
+        if (writeSettingEvents) {
+            ec.writeActiveSettingEvent();
+        }
         if (shouldLog) {
             Logger.log(LogTag.JFR_SETTING, LogLevel.INFO, "}");
         }
