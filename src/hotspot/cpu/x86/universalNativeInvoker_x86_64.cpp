@@ -107,7 +107,7 @@ RuntimeStub* ProgrammableInvoker::make_native_invoker(BasicType* signature,
                                   g.framesize(),
                                   g.oop_maps(), false);
 
-#ifdef ASSERT
+#ifdef NOT_PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
