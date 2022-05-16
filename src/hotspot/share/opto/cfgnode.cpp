@@ -1177,16 +1177,14 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
   // convert the one to the other.
   const TypePtr* ttp = _type->make_ptr();
   const TypeInstPtr* ttip = (ttp != NULL) ? ttp->isa_instptr() : NULL;
-  const TypeKlassPtr* ttkp = (ttp != NULL) ? ttp->isa_instklassptr() : NULL;
+  const TypeInstKlassPtr* ttkp = (ttp != NULL) ? ttp->isa_instklassptr() : NULL;
   bool is_intf = false;
   if (ttip != NULL) {
-    ciKlass* k = ttip->klass();
-    if (k->is_loaded() && k->is_interface())
+    if (ttip->is_interface())
       is_intf = true;
   }
   if (ttkp != NULL) {
-    ciKlass* k = ttkp->klass();
-    if (k->is_loaded() && k->is_interface())
+    if (ttkp->is_interface())
       is_intf = true;
   }
 
@@ -1205,8 +1203,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
       const TypeInstPtr* tiip = (tip != NULL) ? tip->isa_instptr() : NULL;
       if (tiip) {
         bool ti_is_intf = false;
-        ciKlass* k = tiip->klass();
-        if (k->is_loaded() && k->is_interface())
+        if (tiip->is_interface())
           ti_is_intf = true;
         if (is_intf != ti_is_intf)
           { t = _type; break; }
@@ -1244,14 +1241,14 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
     // be 'I' or 'j/l/O'.  Thus we'll pick 'j/l/O'.  If this then flows
     // into a Phi which "knows" it's an Interface type we'll have to
     // uplift the type.
-    if (!t->empty() && ttip && ttip->is_loaded() && ttip->klass()->is_interface()) {
+    if (!t->empty() && ttip && ttip->is_interface()) {
       assert(ft == _type, ""); // Uplift to interface
-    } else if (!t->empty() && ttkp && ttkp->is_loaded() && ttkp->klass()->is_interface()) {
+    } else if (!t->empty() && ttkp && ttkp->is_interface()) {
       assert(ft == _type, ""); // Uplift to interface
     } else {
       // We also have to handle 'evil cases' of interface- vs. class-arrays
       Type::get_arrays_base_elements(jt, _type, NULL, &ttip);
-      if (!t->empty() && ttip != NULL && ttip->is_loaded() && ttip->klass()->is_interface()) {
+      if (!t->empty() && ttip != NULL && ttip->is_interface()) {
           assert(ft == _type, "");   // Uplift to array of interface
       } else {
         // Otherwise it's something stupid like non-overlapping int ranges
@@ -1270,19 +1267,19 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
     // because the type system doesn't interact well with interfaces.
     const TypePtr *jtp = jt->make_ptr();
     const TypeInstPtr *jtip = (jtp != NULL) ? jtp->isa_instptr() : NULL;
-    const TypeKlassPtr *jtkp = (jtp != NULL) ? jtp->isa_instklassptr() : NULL;
-    if( jtip && ttip ) {
-      if( jtip->is_loaded() &&  jtip->klass()->is_interface() &&
-          ttip->is_loaded() && !ttip->klass()->is_interface() ) {
+    const TypeInstKlassPtr *jtkp = (jtp != NULL) ? jtp->isa_instklassptr() : NULL;
+    if (jtip && ttip) {
+      if (jtip->is_interface() &&
+          !ttip->is_interface()) {
         assert(ft == ttip->cast_to_ptr_type(jtip->ptr()) ||
                ft->isa_narrowoop() && ft->make_ptr() == ttip->cast_to_ptr_type(jtip->ptr()), "");
         jt = ft;
       }
     }
-    if( jtkp && ttkp ) {
-      if( jtkp->is_loaded() &&  jtkp->klass()->is_interface() &&
+    if (jtkp && ttkp) {
+      if (jtkp->is_interface() &&
           !jtkp->klass_is_exact() && // Keep exact interface klass (6894807)
-          ttkp->is_loaded() && !ttkp->klass()->is_interface() ) {
+          ttkp->is_loaded() && !ttkp->is_interface()) {
         assert(ft == ttkp->cast_to_ptr_type(jtkp->ptr()) ||
                ft->isa_narrowklass() && ft->make_ptr() == ttkp->cast_to_ptr_type(jtkp->ptr()), "");
         jt = ft;

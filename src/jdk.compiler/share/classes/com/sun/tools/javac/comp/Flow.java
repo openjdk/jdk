@@ -42,7 +42,6 @@ import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
-import com.sun.tools.javac.tree.TreeInfo.PatternPrimaryType;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
@@ -688,7 +687,7 @@ public class Flow {
                                 l.tail.head.pos(),
                                 Warnings.PossibleFallThroughIntoCase);
             }
-            tree.isExhaustive = tree.hasTotalPattern ||
+            tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
                 Set<Symbol> coveredSymbols = coveredSymbolsForCases(tree.pos(), tree.selector, tree.cases);
@@ -697,7 +696,7 @@ public class Flow {
                     log.error(tree, Errors.NotExhaustiveStatement);
                 }
             }
-            if (!tree.hasTotalPattern) {
+            if (!tree.hasUnconditionalPattern) {
                 alive = Liveness.ALIVE;
             }
             alive = alive.or(resolveBreaks(tree, prevPendingExits));
@@ -727,7 +726,7 @@ public class Flow {
                 }
             }
             Set<Symbol> coveredSymbols = coveredSymbolsForCases(tree.pos(), tree.selector, tree.cases);
-            tree.isExhaustive = tree.hasTotalPattern ||
+            tree.isExhaustive = tree.hasUnconditionalPattern ||
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) ||
                                 isExhaustive(tree.selector.pos(), tree.selector.type, coveredSymbols);
             if (!tree.isExhaustive) {
@@ -741,7 +740,7 @@ public class Flow {
                                                    JCExpression selector, List<JCCase> cases) {
             HashSet<JCCaseLabel> labels = cases.stream()
                                                .flatMap(c -> c.labels.stream())
-                                               .filter(TreeInfo::unrefinedCaseLabel)
+                                               .filter(TreeInfo::unguardedCaseLabel)
                                                .collect(Collectors.toCollection(HashSet::new));
             return coveredSymbols(pos, selector.type, labels);
         }
@@ -754,9 +753,9 @@ public class Flow {
             for (JCCaseLabel label : labels) {
                 switch (label.getTag()) {
                     case BINDINGPATTERN, PARENTHESIZEDPATTERN -> {
-                        PatternPrimaryType primaryPatternType = TreeInfo.primaryPatternType((JCPattern) label);
-                        if (!primaryPatternType.type().hasTag(NONE)) {
-                            coveredSymbols.add(primaryPatternType.type().tsym);
+                        Type primaryPatternType = TreeInfo.primaryPatternType((JCPattern) label);
+                        if (!primaryPatternType.hasTag(NONE)) {
+                            coveredSymbols.add(primaryPatternType.tsym);
                         }
                     }
                     case RECORDPATTERN -> {
@@ -828,9 +827,9 @@ public class Flow {
                 Symbol componentPatternType;
                 switch (nestedPattern.getTag()) {
                     case BINDINGPATTERN, PARENTHESIZEDPATTERN -> {
-                        PatternPrimaryType primaryPatternType =
+                        Type primaryPatternType =
                                 TreeInfo.primaryPatternType(nestedPattern);
-                        componentPatternType = primaryPatternType.type().tsym;
+                        componentPatternType = primaryPatternType.tsym;
                     }
                     case RECORDPATTERN -> {
                         componentPatternType = ((JCRecordPattern) nestedPattern).record;

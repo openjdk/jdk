@@ -69,9 +69,9 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"isAvailable", (char*)"()Z", (void*)jfr_is_available,
       (char*)"getTimeConversionFactor", (char*)"()D", (void*)jfr_time_conv_factor,
       (char*)"getTypeId", (char*)"(Ljava/lang/Class;)J", (void*)jfr_type_id,
-      (char*)"getEventWriter", (char*)"()Ljdk/jfr/internal/EventWriter;", (void*)jfr_get_event_writer,
-      (char*)"newEventWriter", (char*)"()Ljdk/jfr/internal/EventWriter;", (void*)jfr_new_event_writer,
-      (char*)"flush", (char*)"(Ljdk/jfr/internal/EventWriter;II)Z", (void*)jfr_event_writer_flush,
+      (char*)"getEventWriter", (char*)"()Ljdk/jfr/internal/event/EventWriter;", (void*)jfr_get_event_writer,
+      (char*)"newEventWriter", (char*)"()Ljdk/jfr/internal/event/EventWriter;", (void*)jfr_new_event_writer,
+      (char*)"flush", (char*)"(Ljdk/jfr/internal/event/EventWriter;II)Z", (void*)jfr_event_writer_flush,
       (char*)"flush", (char*)"()V", (void*)jfr_flush,
       (char*)"setRepositoryLocation", (char*)"(Ljava/lang/String;)V", (void*)jfr_set_repository_location,
       (char*)"setDumpPath", (char*)"(Ljava/lang/String;)V", (void*)jfr_set_dump_path,
@@ -89,9 +89,11 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"include", (char*)"(Ljava/lang/Thread;)V", (void*)jfr_include_thread,
       (char*)"isExcluded", (char*)"(Ljava/lang/Thread;)Z", (void*)jfr_is_thread_excluded,
       (char*)"getChunkStartNanos", (char*)"()J", (void*)jfr_chunk_start_nanos,
-      (char*)"getHandler", (char*)"(Ljava/lang/Class;)Ljava/lang/Object;", (void*)jfr_get_handler,
-      (char*)"setHandler", (char*)"(Ljava/lang/Class;Ljdk/jfr/internal/handlers/EventHandler;)Z", (void*)jfr_set_handler,
-      (char*)"getTypeId", (char*)"(Ljava/lang/String;)J", (void*)jfr_get_type_id_from_string
+      (char*)"getConfiguration", (char*)"(Ljava/lang/Class;)Ljava/lang/Object;", (void*)jfr_get_configuration,
+      (char*)"setConfiguration", (char*)"(Ljava/lang/Class;Ljdk/jfr/internal/event/EventConfiguration;)Z", (void*)jfr_set_configuration,
+      (char*)"getTypeId", (char*)"(Ljava/lang/String;)J", (void*)jfr_get_type_id_from_string,
+      (char*)"isExcluded", (char*)"(Ljava/lang/Class;)Z", (void*)jfr_is_class_excluded,
+      (char*)"isInstrumented", (char*)"(Ljava/lang/Class;)Z", (void*) jfr_is_class_instrumented
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);
@@ -105,3 +107,4 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
     env->DeleteLocalRef(jfr_clz);
   }
 }
+

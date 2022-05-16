@@ -175,7 +175,7 @@ public class Attr extends JCTree.Visitor {
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowPatternSwitch = (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH)) &&
                              Feature.PATTERN_SWITCH.allowedInSource(source);
-        allowUnconditionalPatternsInstance = (preview.isEnabled() || !preview.isPreview(Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF)) &&
+        allowUnconditionalPatternsInstanceOf = (preview.isEnabled() || !preview.isPreview(Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF)) &&
                                      Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.allowedInSource(source);
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
@@ -221,9 +221,9 @@ public class Attr extends JCTree.Visitor {
      */
     private final boolean allowPatternSwitch;
 
-    /** Are total patterns in instanceof allowed
+    /** Are unconditional patterns in instanceof allowed
      */
-    private final boolean allowUnconditionalPatternsInstance;
+    private final boolean allowUnconditionalPatternsInstanceOf;
 
     /**
      * Switch: warn about use of variable before declaration?
@@ -901,7 +901,12 @@ public class Attr extends JCTree.Visitor {
         Type t = tree.type != null ?
             tree.type :
             attribType(tree, env);
-        return checkBase(t, tree, env, classExpected, interfaceExpected, checkExtensible);
+        try {
+            return checkBase(t, tree, env, classExpected, interfaceExpected, checkExtensible);
+        } catch (CompletionFailure ex) {
+            chk.completionError(tree.pos(), ex);
+            return t;
+        }
     }
     Type checkBase(Type t,
                    JCTree tree,
@@ -1693,7 +1698,7 @@ public class Attr extends JCTree.Visitor {
             List<Type> coveredTypesForPatterns = List.nil();
             List<Type> coveredTypesForConstants = List.nil();
             boolean hasDefault = false;           // Is there a default label?
-            boolean hasTotalPattern = false;      // Is there a total pattern?
+            boolean hasUnconditionalPattern = false; // Is there a unconditional pattern?
             boolean lastPatternErroneous = false; // Has the last pattern erroneous type?
             boolean hasNullPattern = false;       // Is there a null pattern?
             CaseTree.CaseKind caseKind = null;
@@ -1709,7 +1714,7 @@ public class Attr extends JCTree.Visitor {
                     wasError = true;
                 }
                 MatchBindings currentBindings = prevBindings;
-                boolean wasTotalPattern = hasTotalPattern;
+                boolean wasUnconditionalPattern = hasUnconditionalPattern;
                 for (JCCaseLabel pat : c.labels) {
                     if (pat.isExpression()) {
                         JCExpression expr = (JCExpression) pat;
@@ -1717,7 +1722,7 @@ public class Attr extends JCTree.Visitor {
                             preview.checkSourceLevel(expr.pos(), Feature.CASE_NULL);
                             if (hasNullPattern) {
                                 log.error(pat.pos(), Errors.DuplicateCaseLabel);
-                            } else if (wasTotalPattern) {
+                            } else if (wasUnconditionalPattern) {
                                 log.error(pat.pos(), Errors.PatternDominated);
                             }
                             hasNullPattern = true;
@@ -1770,16 +1775,15 @@ public class Attr extends JCTree.Visitor {
                     } else if (pat.hasTag(DEFAULTCASELABEL)) {
                         if (hasDefault) {
                             log.error(pat.pos(), Errors.DuplicateDefaultLabel);
-                        } else if (hasTotalPattern) {
-                            log.error(pat.pos(), Errors.TotalPatternAndDefault);
+                        } else if (hasUnconditionalPattern) {
+                            log.error(pat.pos(), Errors.UnconditionalPatternAndDefault);
                         }
                         hasDefault = true;
                         matchBindings = MatchBindingsComputer.EMPTY;
                     } else {
                         //binding pattern
                         attribExpr(pat, switchEnv);
-                        var primary = TreeInfo.primaryPatternType(pat);
-                        Type primaryType = primary.type();
+                        Type primaryType = TreeInfo.primaryPatternType(pat);
                         if (!primaryType.hasTag(TYPEVAR)) {
                             primaryType = chk.checkClassOrArrayType(pat.pos(), primaryType);
                         }
@@ -1796,24 +1800,25 @@ public class Attr extends JCTree.Visitor {
                             }
                             matchBindings = matchBindingsComputer.caseGuard(c, afterPattern, matchBindings);
                         }
-                        boolean unconditional = TreeInfo.unrefinedCaseLabel(pat) && !pat.hasTag(RECORDPATTERN);
-                        boolean isTotal = unconditional &&
-                                          !patternType.isErroneous() &&
-                                          types.isSubtype(types.boxedTypeOrType(types.erasure(seltype)),
-                                                          patternType);
-                        if (isTotal) {
-                            if (hasTotalPattern) {
-                                log.error(pat.pos(), Errors.DuplicateTotalPattern);
+                        boolean unguarded = TreeInfo.unguardedCaseLabel(pat) && !pat.hasTag(RECORDPATTERN);
+                        boolean unconditional =
+                                unguarded &&
+                                !patternType.isErroneous() &&
+                                types.isSubtype(types.boxedTypeOrType(types.erasure(seltype)),
+                                                patternType);
+                        if (unconditional) {
+                            if (hasUnconditionalPattern) {
+                                log.error(pat.pos(), Errors.DuplicateUnconditionalPattern);
                             } else if (hasDefault) {
-                                log.error(pat.pos(), Errors.TotalPatternAndDefault);
+                                log.error(pat.pos(), Errors.UnconditionalPatternAndDefault);
                             }
-                            hasTotalPattern = true;
+                            hasUnconditionalPattern = true;
                         }
                         lastPatternErroneous = patternType.isErroneous();
                         checkCaseLabelDominated(pat.pos(), coveredTypesForPatterns, patternType);
                         if (!patternType.isErroneous()) {
                             coveredTypesForConstants = coveredTypesForConstants.prepend(patternType);
-                            if (unconditional) {
+                            if (unguarded) {
                                 coveredTypesForPatterns = coveredTypesForPatterns.prepend(patternType);
                             }
                         }
@@ -1840,12 +1845,12 @@ public class Attr extends JCTree.Visitor {
                 chk.checkSwitchCaseStructure(cases);
             }
             if (switchTree.hasTag(SWITCH)) {
-                ((JCSwitch) switchTree).hasTotalPattern =
-                        hasDefault || hasTotalPattern || lastPatternErroneous;
+                ((JCSwitch) switchTree).hasUnconditionalPattern =
+                        hasDefault || hasUnconditionalPattern || lastPatternErroneous;
                 ((JCSwitch) switchTree).patternSwitch = patternSwitch;
             } else if (switchTree.hasTag(SWITCH_EXPRESSION)) {
-                ((JCSwitchExpression) switchTree).hasTotalPattern =
-                        hasDefault || hasTotalPattern || lastPatternErroneous;
+                ((JCSwitchExpression) switchTree).hasUnconditionalPattern =
+                        hasDefault || hasUnconditionalPattern || lastPatternErroneous;
                 ((JCSwitchExpression) switchTree).patternSwitch = patternSwitch;
             } else {
                 Assert.error(switchTree.getTag().name());
@@ -4117,7 +4122,7 @@ public class Attr extends JCTree.Visitor {
             if (types.isSubtype(exprtype, clazztype) &&
                 !exprtype.isErroneous() && !clazztype.isErroneous() &&
                 tree.pattern.getTag() != RECORDPATTERN) {
-                if (!allowUnconditionalPatternsInstance) {
+                if (!allowUnconditionalPatternsInstanceOf) {
                     log.error(tree.pos(), Errors.InstanceofPatternNoSubtype(exprtype, clazztype));
                 } else if (preview.isPreview(Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF)) {
                     preview.warnPreview(tree.pattern.pos(), Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF);
@@ -5256,27 +5261,11 @@ public class Attr extends JCTree.Visitor {
             case MODULEDEF:
                 attribModule(env.tree.pos(), ((JCModuleDecl)env.tree).sym);
                 break;
-            case TOPLEVEL:
-                attribTopLevel(env);
-                break;
             case PACKAGEDEF:
                 attribPackage(env.tree.pos(), ((JCPackageDecl) env.tree).packge);
                 break;
             default:
                 attribClass(env.tree.pos(), env.enclClass.sym);
-        }
-    }
-
-    /**
-     * Attribute a top level tree. These trees are encountered when the
-     * package declaration has annotations.
-     */
-    public void attribTopLevel(Env<AttrContext> env) {
-        JCCompilationUnit toplevel = env.toplevel;
-        try {
-            annotate.flush();
-        } catch (CompletionFailure ex) {
-            chk.completionError(toplevel.pos(), ex);
         }
     }
 

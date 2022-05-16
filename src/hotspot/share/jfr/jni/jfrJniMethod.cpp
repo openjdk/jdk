@@ -366,10 +366,18 @@ JVM_ENTRY_NO_ENV(jlong, jfr_chunk_start_nanos(JNIEnv* env, jobject jvm))
   return JfrRepository::current_chunk_start_nanos();
 JVM_END
 
-JVM_ENTRY_NO_ENV(jobject, jfr_get_handler(JNIEnv * env, jobject jvm, jobject clazz))
-  return JfrJavaSupport::get_handler(clazz, thread);
+JVM_ENTRY_NO_ENV(jobject, jfr_get_configuration(JNIEnv * env, jobject jvm, jobject clazz))
+  return JfrJavaSupport::get_configuration(clazz, thread);
 JVM_END
 
-JVM_ENTRY_NO_ENV(jboolean, jfr_set_handler(JNIEnv * env, jobject jvm, jobject clazz, jobject handler))
-  return JfrJavaSupport::set_handler(clazz, handler, thread);
+JVM_ENTRY_NO_ENV(jboolean, jfr_set_configuration(JNIEnv * env, jobject jvm, jobject clazz, jobject configuration))
+  return JfrJavaSupport::set_configuration(clazz, configuration, thread);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jboolean, jfr_is_class_excluded(JNIEnv * env, jobject jvm, jclass clazz))
+  return JdkJfrEvent::is_excluded(clazz);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jboolean, jfr_is_class_instrumented(JNIEnv* env, jobject jvm, jclass clazz))
+  return JfrJavaSupport::is_instrumented(clazz, thread);
 JVM_END

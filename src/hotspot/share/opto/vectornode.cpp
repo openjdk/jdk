@@ -1438,7 +1438,7 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       // Handled by VectorUnboxNode::Identity()
     } else {
       VectorBoxNode* vbox = static_cast<VectorBoxNode*>(n);
-      ciKlass* vbox_klass = vbox->box_type()->klass();
+      ciKlass* vbox_klass = vbox->box_type()->instance_klass();
       const TypeVect* in_vt = vbox->vec_type();
       const TypeVect* out_vt = type()->is_vect();
 
