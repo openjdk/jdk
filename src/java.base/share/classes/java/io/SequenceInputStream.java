@@ -217,7 +217,7 @@ public class SequenceInputStream extends InputStream {
      * are requested from the enumeration and closed
      * before the {@code close} method returns.
      *
-     * @throws IOException {@inheritDoc}
+     * @throws     IOException {@inheritDoc}
      */
     @Override
     public void close() throws IOException {
