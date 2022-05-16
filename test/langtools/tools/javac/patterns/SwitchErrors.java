@@ -175,20 +175,20 @@ public class SwitchErrors {
     }
     Object guardWithMatchingStatement(Object o1, Object o2) {
         switch (o1) {
-            case String s && s.isEmpty() || o2 instanceof Number n: return n;
+            case String s when s.isEmpty() || o2 instanceof Number n: return n;
             default: return null;
         }
     }
     Object guardWithMatchingExpression(Object o1, Object o2) {
         return switch (o1) {
-            case String s && s.isEmpty() || o2 instanceof Number n -> n;
+            case String s when s.isEmpty() || o2 instanceof Number n -> n;
             default -> null;
         };
     }
     void test8269146a1(Integer i) {
         switch (i) {
             //error - illegal combination of pattern and constant:
-            case 1, Integer o && o != null:
+            case 1, Integer o when o != null:
                 break;
             default:
                 break;
@@ -197,7 +197,7 @@ public class SwitchErrors {
     void test8269146a2(Integer i) {
         switch (i) {
             //error - illegal combination of pattern and constant:
-            case Integer o && o != null, 1:
+            case Integer o when o != null, 1:
                 break;
             default:
                 break;
@@ -206,7 +206,7 @@ public class SwitchErrors {
     void test8269146b(Integer i) {
         switch (i) {
             //error - illegal combination of null and pattern other than type pattern:
-            case null, Integer o && o != null:
+            case null, Integer o when o != null:
                 break;
             default:
                 break;
@@ -222,14 +222,14 @@ public class SwitchErrors {
     void test8269301a(Integer i) {
         switch (i) {
             //error - illegal combination of pattern, constant and default
-            case 1, Integer o && o != null, default:
+            case 1, Integer o when o != null, default:
                 break;
         }
     }
     void test8269301b(Integer i) {
         switch (i) {
             //error - illegal combination of pattern, constant and default
-            case Integer o && o != null, 1, default:
+            case Integer o when o != null, 1, default:
                 break;
         }
     }
@@ -242,6 +242,16 @@ public class SwitchErrors {
         switch (null) {
             case String s: break;
             case CharSequence cs: break;
+        }
+    }
+    void primitiveToReference(int i) {
+        switch (i) {
+            case Integer j: break;
+        }
+    }
+    void referenceToPrimitive(Integer i) {
+        switch (i) {
+            case int j: break;
         }
     }
 }

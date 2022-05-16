@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,28 +21,16 @@
  * questions.
  */
 
-package com.sun.source.tree;
+// key: compiler.err.unconditional.pattern.and.default
+// key: compiler.misc.feature.pattern.switch
+// key: compiler.warn.preview.feature.use.plural
+// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
-import jdk.internal.javac.PreviewFeature;
-
-/**
- * A guard pattern tree.
- *
- * @since 17
- */
-@PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-public interface GuardedPatternTree extends PatternTree {
-
-    /**
-     * The guarded pattern expression.
-     * @return the guarded pattern
-     */
-    public PatternTree getPattern();
-
-    /**
-     * The guard expression.
-     * @return the guard expression
-     */
-    public ExpressionTree getExpression();
-
+class UnconditionalPatternAndDefault {
+    private void doSwitch(Object o) {
+        switch (o) {
+            case Object obj: break;
+            default: break;
+        }
+    }
 }
