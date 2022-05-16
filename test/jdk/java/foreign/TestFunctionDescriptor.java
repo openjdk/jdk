@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,20 @@
 
 /*
  * @test
+ * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestFunctionDescriptor
  */
 
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryLayout;
-import org.testng.annotations.Test;
-
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryLayout;
 import java.util.List;
 import java.util.Optional;
+import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 
 public class TestFunctionDescriptor extends NativeTestHelper {
@@ -92,5 +93,15 @@ public class TestFunctionDescriptor extends NativeTestHelper {
         assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG));
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
         assertFalse(returnLayoutOp.isPresent());
+    }
+
+    @Test
+    public void testEquals() {
+        FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT, C_INT);
+        FunctionDescriptor fd_va1 = FunctionDescriptor.of(C_INT).asVariadic(C_INT, C_INT);
+        FunctionDescriptor fd_va2 = FunctionDescriptor.of(C_INT, C_INT).asVariadic(C_INT);
+        assertEquals(fd, fd);
+        assertNotEquals(fd, fd_va1);
+        assertNotEquals(fd, fd_va2);
     }
 }

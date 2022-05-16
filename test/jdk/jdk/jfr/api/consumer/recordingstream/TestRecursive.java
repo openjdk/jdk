@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class TestRecursive {
                 r2.commit();
                 latch.await();
             }
-            Recorded r3 = new Recorded(); // 2
+            Recorded r3 = new Recorded(); // 3
             r3.commit();
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);

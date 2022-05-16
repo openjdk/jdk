@@ -1,0 +1,3 @@
+InstanceofTotalPattern.java:18:30: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.unconditional.patterns.in.instanceof)
+InstanceofTotalPattern.java:22:28: compiler.warn.preview.feature.use.plural: (compiler.misc.feature.unconditional.patterns.in.instanceof)
+2 warnings
