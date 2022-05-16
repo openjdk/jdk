@@ -122,9 +122,7 @@ int CompilerEvent::PhaseEvent::get_phase_id(const char* phase_name, bool may_exi
 // by transitioning from _thread_in_native to _thread_in_vm.
 template <typename EventType>
 static inline void commit(EventType& event) {
-  JavaThread* thread = JavaThread::current();
-  assert(thread->thread_state() == _thread_in_native, "invariant");
-  ThreadInVMfromNative transition(thread);
+  ThreadInVMfromNative transition(JavaThread::current());
   event.commit();
  }
 
