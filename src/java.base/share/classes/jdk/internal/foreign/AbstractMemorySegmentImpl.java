@@ -569,7 +569,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
         } else if (unmapper == null) {
             return new NativeMemorySegmentImpl(bbAddress + (pos << scaleFactor), size << scaleFactor, modes, bufferSession);
         } else {
-            // we can ignore scale factor here, a mapped buffer is always a byte buffer, so scaleFactor == 1.
+            // we can ignore scale factor here, a mapped buffer is always a byte buffer, so scaleFactor == 0.
             return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, modes, bufferSession);
         }
     }
