@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,33 +21,16 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8262891 8269354
- * @summary Test parenthesized pattern
- * @compile --enable-preview -source ${jdk.version} Parenthesized.java
- * @run main/othervm --enable-preview Parenthesized
- */
-public class Parenthesized {
-    public static void main(String... args) {
-        new Parenthesized().run();
-    }
+// key: compiler.err.duplicate.unconditional.pattern
+// key: compiler.misc.feature.pattern.switch
+// key: compiler.warn.preview.feature.use.plural
+// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
-    void run() {
-        Object o = "";
+class DuplicateUnconditionalPattern {
+    private void doSwitch(Object o) {
         switch (o) {
-            case (String s) when s.isEmpty() -> System.err.println("OK: " + s);
-            default -> throw new AssertionError();
+            case Object obj: break;
+            case Object obj: break;
         }
-        System.err.println(switch (o) {
-            case (String s) when s.isEmpty() -> "OK: " + s;
-            default -> throw new AssertionError();
-        });
-        if (o instanceof (String s) && s.isEmpty()) {
-            System.err.println("OK: " + s);
-        }
-        boolean b1 = o instanceof (String s) && s.isEmpty();
-        boolean b2 = o instanceof String s && s.isEmpty();
     }
-
 }
