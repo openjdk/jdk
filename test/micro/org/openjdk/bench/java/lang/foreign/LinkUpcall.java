@@ -58,7 +58,7 @@ public class LinkUpcall extends CLayouts {
         try {
             BLANK = lookup().findStatic(LinkUpcall.class, "blank", MethodType.methodType(void.class));
         } catch (ReflectiveOperationException e) {
-            throw new BootstrapMethodError(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 
