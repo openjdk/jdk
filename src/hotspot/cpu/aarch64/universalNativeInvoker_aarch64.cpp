@@ -109,7 +109,7 @@ RuntimeStub* ProgrammableInvoker::make_native_invoker(BasicType* signature,
                                   g.oop_maps(), false);
 
 #ifdef ASSERT
-  LogTarget(Trace, panama) lt;
+  LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
@@ -141,8 +141,8 @@ void NativeInvokerGenerator::generate() {
   NativeCallingConvention out_conv(_input_registers);
   ArgumentShuffle arg_shuffle(_signature, _num_args, _signature, _num_args, &in_conv, &out_conv, shuffle_reg->as_VMReg());
 
-#ifdef ASSERT
-  LogTarget(Trace, panama) lt;
+#ifdef NOT_PRODUCT
+  LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
