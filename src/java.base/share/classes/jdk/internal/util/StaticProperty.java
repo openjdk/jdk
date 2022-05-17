@@ -32,7 +32,7 @@ import java.nio.charset.Charset;
  * System Property access for internal use only.
  * Read-only access to System property values initialized during Phase 1
  * are cached.  Setting, clearing, or modifying the value using
- * {@link System#setProperty) or {@link System#getProperties()} is ignored.
+ * {@link System#setProperty} or {@link System#getProperties()} is ignored.
  * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
  * in these access methods. The caller of these methods should take care to ensure
  * that the returned property is not made accessible to untrusted code.</strong>
@@ -91,91 +91,77 @@ public final class StaticProperty {
     }
 
     /**
-     * Return the {@code java.home} system property.
+     * {@return the {@code java.home} system property}
      *
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
      * in this method. The caller of this method should take care to ensure
      * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @return the {@code java.home} system property
      */
     public static String javaHome() {
         return JAVA_HOME;
     }
 
     /**
-     * Return the {@code user.home} system property.
+     * {@return the {@code user.home} system property}
      *
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
      * in this method. The caller of this method should take care to ensure
      * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @return the {@code user.home} system property
      */
     public static String userHome() {
         return USER_HOME;
     }
 
     /**
-     * Return the {@code user.dir} system property.
+     * {@return the {@code user.dir} system property}
      *
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
      * in this method. The caller of this method should take care to ensure
      * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @return the {@code user.dir} system property
      */
     public static String userDir() {
         return USER_DIR;
     }
 
     /**
-     * Return the {@code user.name} system property.
+     * {@return the {@code user.name} system property}
      *
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
      * in this method. The caller of this method should take care to ensure
      * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @return the {@code user.name} system property
      */
     public static String userName() {
         return USER_NAME;
     }
 
     /**
-     * Return the {@code java.library.path} system property.
+     * {@return the {@code java.library.path} system property}
      *
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
      * in this method. The caller of this method should take care to ensure
      * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @return the {@code java.library.path} system property
      */
     public static String javaLibraryPath() {
         return JAVA_LIBRARY_PATH;
     }
 
     /**
-     * Return the {@code java.io.tmpdir} system property.
+     * {@return the {@code java.io.tmpdir} system property}
      *
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
      * in this method. The caller of this method should take care to ensure
      * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @return the {@code java.io.tmpdir} system property
      */
     public static String javaIoTmpDir() {
         return JAVA_IO_TMPDIR;
     }
 
     /**
-     * Return the {@code sun.boot.library.path} system property.
+     * {@return the {@code sun.boot.library.path} system property}
      *
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
      * in this method. The caller of this method should take care to ensure
      * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @return the {@code sun.boot.library.path} system property
      */
     public static String sunBootLibraryPath() {
         return SUN_BOOT_LIBRARY_PATH;
@@ -183,13 +169,11 @@ public final class StaticProperty {
 
 
     /**
-     * Return the {@code jdk.serialFilter} system property.
+     * {@return the {@code jdk.serialFilter} system property}
      *
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
      * in this method. The caller of this method should take care to ensure
      * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @return the {@code jdk.serialFilter} system property
      */
     public static String jdkSerialFilter() {
         return JDK_SERIAL_FILTER;
@@ -197,76 +181,64 @@ public final class StaticProperty {
 
 
     /**
-     * Return the {@code jdk.serialFilterFactory} system property.
+     * {@return the {@code jdk.serialFilterFactory} system property}
      *
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
      * in this method. The caller of this method should take care to ensure
      * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @return the {@code jdk.serialFilterFactory} system property
      */
     public static String jdkSerialFilterFactory() {
         return JDK_SERIAL_FILTER_FACTORY;
     }
 
     /**
-     * Return the {@code native.encoding} system property.
+     * {@return the {@code native.encoding} system property}
      *
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
      * in this method. The caller of this method should take care to ensure
      * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @return the {@code native.encoding} system property
      */
     public static String nativeEncoding() {
         return NATIVE_ENCODING;
     }
 
     /**
-     * Return the {@code file.encoding} system property.
+     * {@return the {@code file.encoding} system property}
      *
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
      * in this method. The caller of this method should take care to ensure
      * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @return the {@code file.encoding} system property
      */
     public static String fileEncoding() {
         return FILE_ENCODING;
     }
 
     /**
-     * Return the {@code java.properties.date} system property.
+     * {@return the {@code java.properties.date} system property}
      *
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
      * in this method.</strong>
-     *
-     * @return the {@code java.properties.date} system property
      */
     public static String javaPropertiesDate() {
         return JAVA_PROPERTIES_DATE;
     }
 
     /**
-     * Return the {@code sun.jnu.encoding} system property.
+     * {@return the {@code sun.jnu.encoding} system property}
      *
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
      * in this method. The caller of this method should take care to ensure
      * that the returned property is not made accessible to untrusted code.</strong>
-     *
-     * @return the {@code sun.jnu.encoding} system property
      */
     public static String jnuEncoding() {
         return SUN_JNU_ENCODING;
     }
 
     /**
-     * Return charset for {@code sun.jnu.encoding} system property.
+     * {@return {@code Charset} for {@code sun.jnu.encoding} system property}
      *
      * <strong>If {@code sun.jnu.encoding} system property has invalid
      * encoding name, {@link Charset#defaultCharset()} is returned.</strong>
-     *
-     * @return charset for {@code sun.jnu.encoding} system property
      */
     public static Charset jnuCharset() {
         return jnuCharset;
