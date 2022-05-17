@@ -78,13 +78,15 @@ public class BindingSpecializer {
     private static final String OBJECT_DESC = Object.class.descriptorString();
     private static final String OBJECT_INTRN = Type.getInternalName(Object.class);
 
+    private static final String VOID_DESC = methodType(void.class).descriptorString();
+
     private static final String BINDING_CONTEXT_DESC = Binding.Context.class.descriptorString();
     private static final String OF_BOUNDED_ALLOCATOR_DESC = methodType(Binding.Context.class, long.class).descriptorString();
     private static final String OF_SESSION_DESC = methodType(Binding.Context.class).descriptorString();
     private static final String ALLOCATOR_DESC = methodType(SegmentAllocator.class).descriptorString();
     private static final String SESSION_DESC = methodType(MemorySession.class).descriptorString();
     private static final String SESSION_IMPL_DESC = methodType(MemorySessionImpl.class).descriptorString();
-    private static final String CLOSE_DESC = methodType(void.class).descriptorString();
+    private static final String CLOSE_DESC = VOID_DESC;
     private static final String ADDRESS_DESC = methodType(MemoryAddress.class).descriptorString();
     private static final String COPY_DESC = methodType(void.class, MemorySegment.class, long.class, MemorySegment.class, long.class, long.class).descriptorString();
     private static final String TO_RAW_LONG_VALUE_DESC = methodType(long.class).descriptorString();
@@ -94,8 +96,8 @@ public class BindingSpecializer {
     private static final String HANDLE_UNCAUGHT_EXCEPTION_DESC = methodType(void.class, Throwable.class).descriptorString();
     private static final String METHOD_HANDLES_INTRN = Type.getInternalName(MethodHandles.class);
     private static final String CLASS_DATA_DESC = methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class).descriptorString();
-    private static final String RELEASE0_DESC = methodType(void.class).descriptorString();
-    private static final String ACQUIRE0_DESC = methodType(void.class).descriptorString();
+    private static final String RELEASE0_DESC = VOID_DESC;
+    private static final String ACQUIRE0_DESC = VOID_DESC;
 
     private static final Handle BSM_CLASS_DATA = new Handle(
             H_INVOKESTATIC,
@@ -128,10 +130,10 @@ public class BindingSpecializer {
     private int[] leafArgSlots;
     private int[] scopeSlots;
     private int curScopeLocalIdx = -1;
-    private int RETURN_ALLOCATOR_IDX = -1;
+    private int returnAllocatorIdx = -1;
     private int CONTEXT_IDX = -1;
-    private int RETURN_BUFFER_IDX = -1;
-    private int RET_VAL_IDX = -1;
+    private int returnBufferIdx = -1;
+    private int retValIdx = -1;
     private Deque<Class<?>> typeStack;
     private List<Class<?>> leafArgTypes;
     private int paramIndex;
@@ -147,31 +149,57 @@ public class BindingSpecializer {
 
     static MethodHandle specialize(MethodHandle leafHandle, CallingSequence callingSequence, ABIDescriptor abi) {
         if (callingSequence.forUpcall()) {
-            MethodHandle wrapper = UPCALL_WRAPPER_CACHE.get(callingSequence.functionDesc(), fd -> doSpecialize(leafHandle, callingSequence, abi));
+            MethodHandle wrapper = UPCALL_WRAPPER_CACHE.get(callingSequence.functionDesc(), fd -> specializeUpcall(leafHandle, callingSequence, abi));
             return MethodHandles.insertArguments(wrapper, 0, leafHandle); // lazily customized for leaf handle instances
         } else {
-            return doSpecialize(leafHandle, callingSequence, abi);
+            return specializeDowncall(leafHandle, callingSequence, abi);
         }
     }
 
-    static MethodHandle doSpecialize(MethodHandle leafHandle, CallingSequence callingSequence, ABIDescriptor abi) {
+    private static MethodHandle specializeDowncall(MethodHandle leafHandle, CallingSequence callingSequence, ABIDescriptor abi) {
+        MethodType callerMethodType = callingSequence.callerMethodType();
+        if (callingSequence.needsReturnBuffer()) {
+            callerMethodType = callerMethodType.dropParameterTypes(0, 1); // Return buffer does not appear in the parameter list
+        }
+        callerMethodType = callerMethodType.insertParameterTypes(0, SegmentAllocator.class);
+
+        byte[] bytes = specializeHelper(leafHandle.type(), callerMethodType, callingSequence, abi);
+
+        try {
+            MethodHandles.Lookup definedClassLookup = MethodHandles.lookup().defineHiddenClassWithClassData(bytes, leafHandle, false);
+            return definedClassLookup.findStatic(definedClassLookup.lookupClass(), METHOD_NAME, callerMethodType);
+        } catch (IllegalAccessException | NoSuchMethodException e) {
+            throw new InternalError("Should not happen", e);
+        }
+    }
+
+    private static MethodHandle specializeUpcall(MethodHandle leafHandle, CallingSequence callingSequence, ABIDescriptor abi) {
+        MethodType callerMethodType = callingSequence.callerMethodType();
+        callerMethodType = callerMethodType.insertParameterTypes(0, MethodHandle.class); // target
+
+        byte[] bytes = specializeHelper(leafHandle.type(), callerMethodType, callingSequence, abi);
+
+        try {
+            // For upcalls, we must initialize the class since the upcall stubs don't have a clinit barrier,
+            // and the slow path in the c2i adapter we end up calling can not handle the particular code shape
+            // where the caller is an upcall stub.
+            MethodHandles.Lookup defineClassLookup = MethodHandles.lookup().defineHiddenClass(bytes, true);
+            return defineClassLookup.findStatic(defineClassLookup.lookupClass(), METHOD_NAME, callerMethodType);
+        } catch (IllegalAccessException | NoSuchMethodException e) {
+            throw new InternalError("Should not happen", e);
+        }
+    }
+
+    private static byte[] specializeHelper(MethodType leafType, MethodType callerMethodType,
+                                           CallingSequence callingSequence, ABIDescriptor abi) {
         String className = callingSequence.forDowncall() ? CLASS_NAME_DOWNCALL : CLASS_NAME_UPCALL;
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
         cw.visit(CLASSFILE_VERSION, ACC_PUBLIC + ACC_FINAL + ACC_SUPER, className, null, SUPER_NAME, null);
 
-        MethodType callerMethodType = callingSequence.callerMethodType();
-        if (callingSequence.forDowncall()) {
-            if (callingSequence.needsReturnBuffer()) {
-                callerMethodType = callerMethodType.dropParameterTypes(0, 1); // Return buffer does not appear in the parameter list
-            }
-            callerMethodType = callerMethodType.insertParameterTypes(0, SegmentAllocator.class);
-        } else { // upcall
-            callerMethodType = callerMethodType.insertParameterTypes(0, MethodHandle.class); // target
-        }
         String descriptor = callerMethodType.descriptorString();
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, METHOD_NAME, descriptor, null, null);
 
-        new BindingSpecializer(mv, callerMethodType, callingSequence, abi, leafHandle.type()).specialize();
+        new BindingSpecializer(mv, callerMethodType, callingSequence, abi, leafType).specialize();
 
         mv.visitMaxs(0, 0);
         mv.visitEnd();
@@ -195,17 +223,7 @@ public class BindingSpecializer {
             CheckClassAdapter.verify(new ClassReader(bytes), null, printResults, new PrintWriter(System.err));
         }
 
-        try {
-            MethodHandles.Lookup defineClassLookup = callingSequence.forUpcall()
-                // For upcalls, we must initialize the class since the upcall stubs don't have a clinit barrier,
-                // and the slow path in the c2i adapter we end up calling can not handle the particular code shape
-                // where the caller is an upcall stub.
-                ? MethodHandles.lookup().defineHiddenClass(bytes, true)
-                : MethodHandles.lookup().defineHiddenClassWithClassData(bytes, leafHandle, false);
-            return defineClassLookup.findStatic(defineClassLookup.lookupClass(), METHOD_NAME, callerMethodType);
-        } catch (IllegalAccessException | NoSuchMethodException e) {
-            throw new InternalError("Should not happen", e);
-        }
+        return bytes;
     }
 
     private static String escapeForFileName(String str) {
@@ -263,7 +281,7 @@ public class BindingSpecializer {
 
         // allocator passed to us for allocating the return MS (downcalls only)
         if (callingSequence.forDowncall()) {
-            RETURN_ALLOCATOR_IDX = 0; // first param
+            returnAllocatorIdx = 0; // first param
 
             // for downcalls we also acquire/release scoped parameters before/after the call
             // create a bunch of locals here to keep track of their scopes (to release later)
@@ -271,10 +289,10 @@ public class BindingSpecializer {
             int numScopes = 0;
             for (int i = 0; i < callerMethodType.parameterCount(); i++) {
                 if (shouldAcquire(callerMethodType.parameterType(i))) {
-                    int scopeLocal = newLocal(BasicType.L);
+                    int scopeLocal = newLocal(Object.class);
                     initialScopeSlots[numScopes++] = scopeLocal;
                     emitConst(null);
-                    emitStore(BasicType.L, scopeLocal); // need to initialize all scope locals here in case an exception occurs
+                    emitStore(Object.class, scopeLocal); // need to initialize all scope locals here in case an exception occurs
                 }
             }
             scopeSlots = Arrays.copyOf(initialScopeSlots, numScopes); // fit to size
@@ -285,21 +303,21 @@ public class BindingSpecializer {
         if (callingSequence.allocationSize() != 0) {
             emitConst(callingSequence.allocationSize());
             emitInvokeStatic(Binding.Context.class, "ofBoundedAllocator", OF_BOUNDED_ALLOCATOR_DESC);
-        } else if (callingSequence.forDowncall()) {
-            emitGetStatic(Binding.Context.class, "DUMMY", BINDING_CONTEXT_DESC);
-        } else {
+        } else if (callingSequence.forUpcall() && needsSession()) {
             emitInvokeStatic(Binding.Context.class, "ofSession", OF_SESSION_DESC);
+        } else {
+            emitGetStatic(Binding.Context.class, "DUMMY", BINDING_CONTEXT_DESC);
         }
-        CONTEXT_IDX = newLocal(BasicType.L);
-        emitStore(BasicType.L, CONTEXT_IDX);
+        CONTEXT_IDX = newLocal(Object.class);
+        emitStore(Object.class, CONTEXT_IDX);
 
         // in case the call needs a return buffer, allocate it here.
         // for upcalls the VM wrapper stub allocates the buffer.
         if (callingSequence.needsReturnBuffer() && callingSequence.forDowncall()) {
             emitLoadInternalAllocator();
             emitAllocateCall(callingSequence.returnBufferSize(), 1);
-            RETURN_BUFFER_IDX = newLocal(BasicType.L);
-            emitStore(BasicType.L, RETURN_BUFFER_IDX);
+            returnBufferIdx = newLocal(Object.class);
+            emitStore(Object.class, returnBufferIdx);
         }
 
         Label tryStart = new Label();
@@ -321,8 +339,8 @@ public class BindingSpecializer {
             if (callingSequence.forDowncall()) {
                 // for downcalls, recipes have an input value, which we set up here
                 if (callingSequence.needsReturnBuffer() && i == 0) {
-                    assert RETURN_BUFFER_IDX != -1;
-                    emitLoad(BasicType.L, RETURN_BUFFER_IDX);
+                    assert returnBufferIdx != -1;
+                    emitLoad(Object.class, returnBufferIdx);
                     pushType(MemorySegment.class);
                 } else {
                     emitGetInput();
@@ -337,8 +355,8 @@ public class BindingSpecializer {
                 if (callingSequence.needsReturnBuffer() && i == 0) {
                     // return buffer ptr is wrapped in a MemorySegment above, but not passed to the leaf handle
                     popType(MemorySegment.class);
-                    RETURN_BUFFER_IDX = newLocal(BasicType.L);
-                    emitStore(BasicType.L, RETURN_BUFFER_IDX);
+                    returnBufferIdx = newLocal(Object.class);
+                    emitStore(Object.class, returnBufferIdx);
                 } else {
                     // for upcalls the recipe result is an argument to the leaf handle
                     emitSetOutput(typeStack.pop());
@@ -353,7 +371,7 @@ public class BindingSpecializer {
         if (callingSequence.forDowncall()) {
             mv.visitLdcInsn(CLASS_DATA_CONDY);
         } else {
-            emitLoad(BasicType.L, 0); // load target arg
+            emitLoad(Object.class, 0); // load target arg
         }
         emitCheckCast(MethodHandle.class);
         // load all the leaf args
@@ -424,6 +442,10 @@ public class BindingSpecializer {
         mv.visitTryCatchBlock(tryStart, tryEnd, catchStart, null);
     }
 
+    private boolean needsSession() {
+        return callingSequence.argumentBindings().anyMatch(Binding.ToSegment.class::isInstance);
+    }
+
     private static boolean shouldAcquire(Class<?> type) {
         return type == Addressable.class;
     }
@@ -453,16 +475,16 @@ public class BindingSpecializer {
     }
 
     private void emitSetOutput(Class<?> storeType) {
-        emitStore(BasicType.of(storeType), leafArgSlots[leafArgTypes.size()]);
+        emitStore(storeType, leafArgSlots[leafArgTypes.size()]);
         leafArgTypes.add(storeType);
     }
 
     private void emitGetInput() {
         Class<?> highLevelType = callerMethodType.parameterType(paramIndex);
-        emitLoad(BasicType.of(highLevelType), paramIndex2ParamSlot[paramIndex]);
+        emitLoad(highLevelType, paramIndex2ParamSlot[paramIndex]);
 
         if (shouldAcquire(highLevelType)) {
-            emitDup(BasicType.L);
+            emitDup(Object.class);
             emitAcquireScope();
         }
 
@@ -480,15 +502,15 @@ public class BindingSpecializer {
         assert curScopeLocalIdx != -1;
         boolean hasOtherScopes = curScopeLocalIdx != 0;
         for (int i = 0; i < curScopeLocalIdx; i++) {
-            emitDup(BasicType.L); // dup for comparison
-            emitLoad(BasicType.L, scopeSlots[i]);
+            emitDup(Object.class); // dup for comparison
+            emitLoad(Object.class, scopeSlots[i]);
             mv.visitJumpInsn(IF_ACMPEQ, skipAcquire);
         }
 
         // 1 scope to acquire on the stack
-        emitDup(BasicType.L);
+        emitDup(Object.class);
         int nextScopeLocal = scopeSlots[curScopeLocalIdx++];
-        emitStore(BasicType.L, nextScopeLocal); // store off one to release later
+        emitStore(Object.class, nextScopeLocal); // store off one to release later
         emitInvokeVirtual(MemorySessionImpl.class, "acquire0", ACQUIRE0_DESC); // call acquire on the other
 
         if (hasOtherScopes) { // avoid ASM generating a bunch of nops for the dead code
@@ -505,50 +527,46 @@ public class BindingSpecializer {
         for (int scopeLocal : scopeSlots) {
             Label skipRelease = new Label();
 
-            emitLoad(BasicType.L, scopeLocal);
+            emitLoad(Object.class, scopeLocal);
             mv.visitJumpInsn(IFNULL, skipRelease);
-            emitLoad(BasicType.L, scopeLocal);
+            emitLoad(Object.class, scopeLocal);
             emitInvokeVirtual(MemorySessionImpl.class, "release0", RELEASE0_DESC);
             mv.visitLabel(skipRelease);
         }
     }
 
     private void emitSaveReturnValue(Class<?> storeType) {
-        RET_VAL_IDX = newLocal(BasicType.of(storeType));
-        emitStore(BasicType.of(storeType), RET_VAL_IDX);
+        retValIdx = newLocal(storeType);
+        emitStore(storeType, retValIdx);
     }
 
     private void emitRestoreReturnValue(Class<?> loadType) {
-        assert RET_VAL_IDX != -1;
-        emitLoad(BasicType.of(loadType), RET_VAL_IDX);
+        assert retValIdx != -1;
+        emitLoad(loadType, retValIdx);
         pushType(loadType);
     }
 
     private int newLocal(Class<?> type) {
-        return newLocal(BasicType.of(type));
-    }
-
-    private int newLocal(BasicType type) {
         int idx = localIdx;
-        localIdx += (type == BasicType.D || type == BasicType.J) ? 2 : 1;
+        localIdx += Type.getType(type).getSize();
         return idx;
     }
 
     private void emitLoadInternalSession() {
         assert CONTEXT_IDX != -1;
-        emitLoad(BasicType.L, CONTEXT_IDX);
+        emitLoad(Object.class, CONTEXT_IDX);
         emitInvokeVirtual(Binding.Context.class, "session", SESSION_DESC);
     }
 
     private void emitLoadInternalAllocator() {
         assert CONTEXT_IDX != -1;
-        emitLoad(BasicType.L, CONTEXT_IDX);
+        emitLoad(Object.class, CONTEXT_IDX);
         emitInvokeVirtual(Binding.Context.class, "allocator", ALLOCATOR_DESC);
     }
 
     private void emitCloseContext() {
         assert CONTEXT_IDX != -1;
-        emitLoad(BasicType.L, CONTEXT_IDX);
+        emitLoad(Object.class, CONTEXT_IDX);
         emitInvokeVirtual(Binding.Context.class, "close", CLOSE_DESC);
     }
 
@@ -576,8 +594,8 @@ public class BindingSpecializer {
 
     private void emitAllocBuffer(Binding.Allocate binding) {
         if (callingSequence.forDowncall()) {
-            assert RETURN_ALLOCATOR_IDX != -1;
-            emitLoad(BasicType.L, RETURN_ALLOCATOR_IDX);
+            assert returnAllocatorIdx != -1;
+            emitLoad(Object.class, returnAllocatorIdx);
         } else {
             emitLoadInternalAllocator();
         }
@@ -591,13 +609,12 @@ public class BindingSpecializer {
 
         popType(storeType);
         popType(MemorySegment.class);
-        BasicType basicStoreType = BasicType.of(storeType);
-        int valueIdx = newLocal(basicStoreType);
-        emitStore(basicStoreType, valueIdx);
+        int valueIdx = newLocal(storeType);
+        emitStore(storeType, valueIdx);
 
         Class<?> valueLayoutType = emitLoadLayoutConstant(storeType);
         emitConst(offset);
-        emitLoad(basicStoreType, valueIdx);
+        emitLoad(storeType, valueIdx);
         String descriptor = methodType(void.class, valueLayoutType, long.class, storeType).descriptorString();
         emitInvokeInterface(MemorySegment.class, "set", descriptor);
     }
@@ -616,15 +633,14 @@ public class BindingSpecializer {
             if (!callingSequence.needsReturnBuffer()) {
                 emitSaveReturnValue(storeType);
             } else {
-                BasicType basicStoreType = BasicType.of(storeType);
-                int valueIdx = newLocal(basicStoreType);
-                emitStore(basicStoreType, valueIdx); // store away the stored value, need it later
+                int valueIdx = newLocal(storeType);
+                emitStore(storeType, valueIdx); // store away the stored value, need it later
 
-                assert RETURN_BUFFER_IDX != -1;
-                emitLoad(BasicType.L, RETURN_BUFFER_IDX);
+                assert returnBufferIdx != -1;
+                emitLoad(Object.class, returnBufferIdx);
                 Class<?> valueLayoutType = emitLoadLayoutConstant(storeType);
                 emitConst(retBufOffset);
-                emitLoad(basicStoreType, valueIdx);
+                emitLoad(storeType, valueIdx);
                 String descriptor = methodType(void.class, valueLayoutType, long.class, storeType).descriptorString();
                 emitInvokeInterface(MemorySegment.class, "set", descriptor);
                 retBufOffset += abi.arch.typeSize(vmStore.storage().type());
@@ -640,8 +656,8 @@ public class BindingSpecializer {
             if (!callingSequence.needsReturnBuffer()) {
                 emitRestoreReturnValue(loadType);
             } else {
-                assert RETURN_BUFFER_IDX != -1;
-                emitLoad(BasicType.L, RETURN_BUFFER_IDX);
+                assert returnBufferIdx != -1;
+                emitLoad(Object.class, returnBufferIdx);
                 Class<?> valueLayoutType = emitLoadLayoutConstant(loadType);
                 emitConst(retBufOffset);
                 String descriptor = methodType(loadType, valueLayoutType, long.class).descriptorString();
@@ -656,7 +672,7 @@ public class BindingSpecializer {
     }
     private void emitDupBinding() {
         Class<?> dupType = typeStack.peek();
-        emitDup(BasicType.of(dupType));
+        emitDup(dupType);
         pushType(dupType);
     }
 
@@ -694,14 +710,14 @@ public class BindingSpecializer {
         //   context.allocator().allocate(size, alignment)
         emitLoadInternalAllocator();
         emitAllocateCall(size, alignment);
-        emitDup(BasicType.L);
-        int storeIdx = newLocal(BasicType.L);
-        emitStore(BasicType.L, storeIdx);
+        emitDup(Object.class);
+        int storeIdx = newLocal(Object.class);
+        emitStore(Object.class, storeIdx);
         emitConst(0L);
         emitConst(size);
         emitInvokeStatic(MemorySegment.class, "copy", COPY_DESC);
 
-        emitLoad(BasicType.L, storeIdx);
+        emitLoad(Object.class, storeIdx);
         pushType(MemorySegment.class);
     }
 
@@ -714,7 +730,7 @@ public class BindingSpecializer {
     private Class<?> emitLoadLayoutConstant(Class<?> type) {
         Class<?> valueLayoutType = valueLayoutTypeFor(type);
         String valueLayoutConstantName = valueLayoutConstantFor(type);
-        emitGetStatic(BindingSpecializer.class, valueLayoutConstantName, valueLayoutType.descriptorString());
+        emitGetStatic(BindingSpecializer.Runtime.class, valueLayoutConstantName, valueLayoutType.descriptorString());
         return valueLayoutType;
     }
 
@@ -786,8 +802,8 @@ public class BindingSpecializer {
         mv.visitTypeInsn(CHECKCAST, Type.getInternalName(cls));
     }
 
-    private void emitDup(BasicType type) {
-        if (type == BasicType.D || type == BasicType.J) {
+    private void emitDup(Class<?> type) {
+        if (type == double.class || type == long.class) {
             mv.visitInsn(DUP2);
         } else {
             mv.visitInsn(Opcodes.DUP);
@@ -799,12 +815,13 @@ public class BindingSpecializer {
      */
 
     private void emitConstZero(Class<?> type) {
-        emitConst(switch (BasicType.of(type)) {
-            case Z, B, S, C, I -> 0;
-            case J -> 0L;
-            case F -> 0F;
-            case D -> 0D;
-            case L -> null;
+        emitConst(switch (Type.getType(type).getSort()) {
+            case Type.BOOLEAN, Type.BYTE, Type.SHORT, Type.CHAR, Type.INT -> 0;
+            case Type.LONG -> 0L;
+            case Type.FLOAT -> 0F;
+            case Type.DOUBLE -> 0D;
+            case Type.OBJECT -> null;
+            default -> throw new IllegalArgumentException("Unknown type: " + type);
         });
     }
 
@@ -813,24 +830,24 @@ public class BindingSpecializer {
             mv.visitInsn(Opcodes.ACONST_NULL);
             return;
         }
-        if (con instanceof Integer) {
-            emitIconstInsn((int) con);
+        if (con instanceof Integer i) {
+            emitIconstInsn(i);
             return;
         }
-        if (con instanceof Byte) {
-            emitIconstInsn((byte)con);
+        if (con instanceof Byte b) {
+            emitIconstInsn(b);
             return;
         }
-        if (con instanceof Short) {
-            emitIconstInsn((short)con);
+        if (con instanceof Short s) {
+            emitIconstInsn(s);
             return;
         }
-        if (con instanceof Character) {
-            emitIconstInsn((char)con);
+        if (con instanceof Character c) {
+            emitIconstInsn(c);
             return;
         }
-        if (con instanceof Long) {
-            long x = (long) con;
+        if (con instanceof Long l) {
+            long x = l;
             short sx = (short)x;
             if (x == sx) {
                 if (sx >= 0 && sx <= 1) {
@@ -842,8 +859,8 @@ public class BindingSpecializer {
                 return;
             }
         }
-        if (con instanceof Float) {
-            float x = (float) con;
+        if (con instanceof Float f) {
+            float x = f;
             short sx = (short)x;
             if (x == sx) {
                 if (sx >= 0 && sx <= 2) {
@@ -855,8 +872,8 @@ public class BindingSpecializer {
                 return;
             }
         }
-        if (con instanceof Double) {
-            double x = (double) con;
+        if (con instanceof Double d) {
+            double x = d;
             short sx = (short)x;
             if (x == sx) {
                 if (sx >= 0 && sx <= 1) {
@@ -868,8 +885,8 @@ public class BindingSpecializer {
                 return;
             }
         }
-        if (con instanceof Boolean) {
-            emitIconstInsn((boolean) con ? 1 : 0);
+        if (con instanceof Boolean b) {
+            emitIconstInsn(b ? 1 : 0);
             return;
         }
         // fall through:
@@ -889,88 +906,32 @@ public class BindingSpecializer {
     }
 
     private void emitLoad(Class<?> type, int index) {
-        emitLoad(BasicType.of(type), index);
-    }
-
-    private void emitLoad(BasicType type, int index) {
-        int opcode = loadOpcode(type);
+        int opcode = Type.getType(type).getOpcode(ILOAD);
         mv.visitVarInsn(opcode, index);
     }
 
-    private static int loadOpcode(BasicType type) throws InternalError {
-        return switch (type) {
-            case Z, B, S, C, I -> ILOAD;
-            case J -> LLOAD;
-            case F -> FLOAD;
-            case D -> DLOAD;
-            case L -> ALOAD;
-        };
-    }
-
-    private void emitStore(BasicType type, int index) {
-        int opcode = storeOpcode(type);
+    private void emitStore(Class<?> type, int index) {
+        int opcode =  Type.getType(type).getOpcode(ISTORE);
         mv.visitVarInsn(opcode, index);
-    }
-
-    private static int storeOpcode(BasicType type) throws InternalError {
-        return switch (type) {
-            case Z, B, S, C, I -> ISTORE;
-            case J -> LSTORE;
-            case F -> FSTORE;
-            case D -> DSTORE;
-            case L -> ASTORE;
-        };
     }
 
     private void emitReturn(Class<?> type) {
-        int opcode = returnOpcode(BasicType.of(type));
+        int opcode = Type.getType(type).getOpcode(IRETURN);
         mv.visitInsn(opcode);
     }
 
-    private static int returnOpcode(BasicType type) {
-       return switch (type) {
-            case Z, B, S, C, I -> IRETURN;
-            case J -> LRETURN;
-            case F -> FRETURN;
-            case D -> DRETURN;
-            case L -> ARETURN;
-        };
+    // constants that are accessed from the generated bytecode
+    // see emitLoadLayoutConstant
+    static class Runtime {
+        // unaligned constants
+        static final ValueLayout.OfBoolean JAVA_BOOLEAN_UNALIGNED = JAVA_BOOLEAN;
+        static final ValueLayout.OfByte JAVA_BYTE_UNALIGNED = JAVA_BYTE;
+        static final ValueLayout.OfShort JAVA_SHORT_UNALIGNED = JAVA_SHORT.withBitAlignment(8);
+        static final ValueLayout.OfChar JAVA_CHAR_UNALIGNED = JAVA_CHAR.withBitAlignment(8);
+        static final ValueLayout.OfInt JAVA_INT_UNALIGNED = JAVA_INT.withBitAlignment(8);
+        static final ValueLayout.OfLong JAVA_LONG_UNALIGNED = JAVA_LONG.withBitAlignment(8);
+        static final ValueLayout.OfFloat JAVA_FLOAT_UNALIGNED = JAVA_FLOAT.withBitAlignment(8);
+        static final ValueLayout.OfDouble JAVA_DOUBLE_UNALIGNED = JAVA_DOUBLE.withBitAlignment(8);
+        static final ValueLayout.OfAddress ADDRESS_UNALIGNED = ADDRESS.withBitAlignment(8);
     }
-
-    private enum BasicType {
-        Z, B, S, C, I, J, F, D, L;
-
-        static BasicType of(Class<?> cls) {
-            if (cls == boolean.class) {
-                return Z;
-            } else if (cls == byte.class) {
-                return B;
-            } else if (cls == short.class) {
-                return S;
-            } else if (cls == char.class) {
-                return C;
-            } else if (cls == int.class) {
-                return I;
-            } else if (cls == long.class) {
-                return J;
-            } else if (cls == float.class) {
-                return F;
-            } else if (cls == double.class) {
-                return D;
-            } else {
-                return L;
-            }
-        }
-    }
-
-    // unaligned constants
-    public final static ValueLayout.OfBoolean JAVA_BOOLEAN_UNALIGNED = JAVA_BOOLEAN;
-    public final static ValueLayout.OfByte JAVA_BYTE_UNALIGNED = JAVA_BYTE;
-    public final static ValueLayout.OfShort JAVA_SHORT_UNALIGNED = JAVA_SHORT.withBitAlignment(8);
-    public final static ValueLayout.OfChar JAVA_CHAR_UNALIGNED = JAVA_CHAR.withBitAlignment(8);
-    public final static ValueLayout.OfInt JAVA_INT_UNALIGNED = JAVA_INT.withBitAlignment(8);
-    public final static ValueLayout.OfLong JAVA_LONG_UNALIGNED = JAVA_LONG.withBitAlignment(8);
-    public final static ValueLayout.OfFloat JAVA_FLOAT_UNALIGNED = JAVA_FLOAT.withBitAlignment(8);
-    public final static ValueLayout.OfDouble JAVA_DOUBLE_UNALIGNED = JAVA_DOUBLE.withBitAlignment(8);
-    public final static ValueLayout.OfAddress ADDRESS_UNALIGNED = ADDRESS.withBitAlignment(8);
 }

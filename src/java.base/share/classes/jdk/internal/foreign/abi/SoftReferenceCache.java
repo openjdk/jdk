@@ -39,7 +39,7 @@ class SoftReferenceCache<K, V> {
     }
 
     private class Node {
-        private SoftReference<V> ref;
+        private volatile SoftReference<V> ref;
 
         public Node() {
         }
