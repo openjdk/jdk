@@ -343,7 +343,7 @@ protected:
 
     // CHeap/CHeap allocated
     {
-      GrowableArray<int>* a = new (ResourceObj::C_HEAP, mtTest) GrowableArray<int>(max, mtTest);
+      GrowableArray<int>* a = new (mtTest) GrowableArray<int>(max, mtTest);
       modify_and_test(a, modify, test);
       delete a;
     }
@@ -439,7 +439,7 @@ TEST_VM_F(GrowableArrayTest, where) {
 
   // CHeap/CHeap allocated
   {
-    GrowableArray<int>* a = new (ResourceObj::C_HEAP, mtTest) GrowableArray<int>(0, mtTest);
+    GrowableArray<int>* a = new (mtTest) GrowableArray<int>(0, mtTest);
     ASSERT_TRUE(a->allocated_on_C_heap());
     ASSERT_TRUE(elements_on_C_heap(a));
     delete a;

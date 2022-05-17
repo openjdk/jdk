@@ -104,7 +104,7 @@ void VM_RedefineClasses::lock_classes() {
   MonitorLocker ml(RedefineClasses_lock);
 
   if (redef_classes == NULL) {
-    redef_classes = new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(1, mtClass);
+    redef_classes = new (mtClass) GrowableArray<Klass*>(1, mtClass);
     state->set_classes_being_redefined(redef_classes);
   }
 

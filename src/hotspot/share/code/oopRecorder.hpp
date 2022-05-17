@@ -91,7 +91,7 @@ template <class T> class ValueRecorder : public StackObj {
   int maybe_find_index(T h);
 
   // leaky hash table of handle => index, to help detect duplicate insertion
-  template <class X> class IndexCache : public ResourceObj {
+  template <class X> class IndexCache : public ArenaObj {
     // This class is only used by the ValueRecorder class.
     friend class ValueRecorder;
     enum {

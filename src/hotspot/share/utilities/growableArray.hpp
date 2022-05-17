@@ -69,7 +69,7 @@
 // Non-template base class responsible for handling the length and max.
 
 
-class GrowableArrayBase : public ResourceObj {
+class GrowableArrayBase : public AnyObj {
   friend class VMStructs;
 
 protected:
@@ -751,11 +751,11 @@ public:
   }
 
   void* operator new(size_t size) throw() {
-    return ResourceObj::operator new(size, ResourceObj::C_HEAP, F);
+    return AnyObj::operator new(size, AnyObj::C_HEAP, F);
   }
 
   void* operator new(size_t size, const std::nothrow_t&  nothrow_constant) throw() {
-    return ResourceObj::operator new(size, nothrow_constant, ResourceObj::C_HEAP, F);
+    return AnyObj::operator new(size, nothrow_constant, AnyObj::C_HEAP, F);
   }
 };
 
