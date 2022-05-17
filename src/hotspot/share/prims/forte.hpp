@@ -36,25 +36,4 @@ class Forte : AllStatic {
                                                  // register internal VM stub
 };
 
-// A small RAII mark class to manage 'in_asgct' thread status
-class ASGCTMark : public StackObj {
- private:
-  JavaThread* _thread;
-  NONCOPYABLE(ASGCTMark);
-
- public:
-  ASGCTMark(JavaThread* thread) : _thread(thread) {
-    if (_thread != nullptr) {
-      assert(_thread == Thread::current_or_null_safe(), "not the current thread");
-      _thread->set_in_asgct(true);
-    }
-  }
-  ~ASGCTMark() {
-    if (_thread != nullptr) {
-      assert(_thread == Thread::current_or_null_safe(), "not the current thread");
-      _thread->set_in_asgct(false);
-    }
-  }
-};
-
 #endif // SHARE_PRIMS_FORTE_HPP

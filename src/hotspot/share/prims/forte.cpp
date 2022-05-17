@@ -591,7 +591,9 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     return;
   }
 
-  ASGCTMark mark(thread);
+  // !important! make sure all return points will reset the IN_ASGCT flag to 'false'
+  thread->set_in_asgct(true);
+
   switch (thread->thread_state()) {
   case _thread_new:
   case _thread_uninitialized:
@@ -649,6 +651,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     trace->num_frames = ticks_unknown_state; // -7
     break;
   }
+  thread->set_in_asgct(false);
 }
 
 
