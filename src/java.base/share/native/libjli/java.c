@@ -51,6 +51,8 @@
  */
 
 
+#include <assert.h>
+
 #include "java.h"
 #include "jni.h"
 
@@ -1626,13 +1628,8 @@ TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***parg
     for (i = 0; i < jargc; i++) {
         const char *arg = jargv[i];
         if (arg[0] == '-' && arg[1] == 'J') {
-            if (arg[2] == '\0') {
-                if (JLI_IsTraceLauncher()) {
-                    printf("Empty option: jargv[%d]\n", i);
-                }
-            } else {
-                *nargv++ = JLI_StringDup(arg + 2);
-            }
+            assert(arg[2] != '\0' && "Invalid JAVA_ARGS or EXTRA_JAVA_ARGS defined by build");
+            *nargv++ = JLI_StringDup(arg + 2);
         }
     }
 
