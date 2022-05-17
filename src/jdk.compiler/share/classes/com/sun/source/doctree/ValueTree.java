@@ -47,10 +47,10 @@ public interface ValueTree extends InlineTagTree {
      *
      * @return the format string
      *
-     * @implSpec This implementation throws {@code UnsupportedOperationException}
+     * @implSpec This implementation retuyrns {@code null}.
      * @since 19
      */
     default TextTree getFormat() {
-        throw new UnsupportedOperationException();
+        return null;
     }
 }
