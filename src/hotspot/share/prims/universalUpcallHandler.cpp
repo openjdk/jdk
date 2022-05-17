@@ -46,6 +46,9 @@ extern struct JavaVM_ main_vm;
 struct UpcallContext {
   Thread* attachedThread;
 
+  #ifdef _AIX
+    UpcallContext() {}
+  #endif
   ~UpcallContext() {
     if (attachedThread != NULL) {
       JavaVM_ *vm = (JavaVM *)(&main_vm);
