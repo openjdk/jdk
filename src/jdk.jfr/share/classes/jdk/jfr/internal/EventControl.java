@@ -279,7 +279,7 @@ public final class EventControl {
         }
     }
 
-    void writeActiveSettingEvent() {
+    void writeActiveSettingEvent(long timestamp) {
         if (!type.isRegistered()) {
             return;
         }
@@ -289,11 +289,9 @@ public final class EventControl {
                 if (value == null) {
                     value = nc.control.getDefaultValue();
                 }
-                ActiveSettingEvent event = new ActiveSettingEvent();
-                event.id = type.getId();
-                event.name = nc.name;
-                event.value = value;
-                event.commit();
+                if (ActiveSettingEvent.EVENT.isEnabled()) {
+                    ActiveSettingEvent.commit(timestamp, 0L, type.getId(), nc.name(), value);
+                }
             }
         }
     }
