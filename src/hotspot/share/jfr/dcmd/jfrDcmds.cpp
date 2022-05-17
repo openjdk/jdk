@@ -249,11 +249,9 @@ static void initialize_dummy_descriptors(GrowableArray<DCmdArgumentInfo*>* array
 static THREAD_LOCAL Arena* dcmd_arena = NULL;
 
 static void prepare_dcmd_string_arena(JavaThread* jt) {
-  if (dcmd_arena == nullptr) {
-    dcmd_arena = JfrThreadLocal::dcmd_arena(jt);
-  } else {
-    dcmd_arena->destruct_contents(); // will grow on next allocation
-  }
+  dcmd_arena = JfrThreadLocal::dcmd_arena(jt);
+  assert(dcmd_arena != nullptr, "invariant");
+  dcmd_arena->destruct_contents(); // will grow on next allocation
 }
 
 static char* dcmd_arena_allocate(size_t size) {
