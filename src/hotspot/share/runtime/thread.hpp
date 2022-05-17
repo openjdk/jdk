@@ -1647,7 +1647,6 @@ public:
   // resource allocation failure.
   static void vm_exit_on_osthread_failure(JavaThread* thread);
 
-
   // AsyncGetCallTrace support
   inline bool in_asgct(void) {return _in_asgct;}
   inline void set_in_asgct(bool value) {_in_asgct = value;}
