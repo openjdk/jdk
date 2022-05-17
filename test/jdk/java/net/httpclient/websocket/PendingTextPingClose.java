@@ -82,11 +82,11 @@ public class PendingTextPingClose extends PendingOperations {
             assertHangs(cfPing);
             assertNotDone(cfClose);
             assertNotDone(cfText);
+            webSocket.abort();
+            assertFails(IOE, cfText);
+            assertFails(IOE, cfPing);
+            assertFails(IOE, cfClose);
             return null;
         }, () -> cfText.isDone());
-        webSocket.abort();
-        assertFails(IOE, cfText);
-        assertFails(IOE, cfPing);
-        assertFails(IOE, cfClose);
     }
 }

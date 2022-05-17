@@ -88,12 +88,12 @@ public class PendingPingTextClose extends PendingOperations {
                 System.out.println("asserting that cfPing is not completed");
                 assertNotDone(cfPing);
                 System.out.println("finishing");
+                webSocket.abort();
+                assertFails(IOE, cfPing);
+                assertFails(IOE, cfText);
+                assertFails(IOE, cfClose);
                 return null;
             }, () -> cfPing.isDone()); // can't use method ref: cfPing not initialized
-            webSocket.abort();
-            assertFails(IOE, cfPing);
-            assertFails(IOE, cfText);
-            assertFails(IOE, cfClose);
         } catch (Throwable t) {
             System.err.printf("pendingPingTextClose(%s) failed: %s%n", last, t);
             t.printStackTrace();

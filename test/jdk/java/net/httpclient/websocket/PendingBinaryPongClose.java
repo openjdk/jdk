@@ -80,11 +80,11 @@ public class PendingBinaryPongClose extends PendingOperations {
             assertHangs(cfPong);
             assertNotDone(cfClose);
             assertNotDone(cfBinary);
+            webSocket.abort();
+            assertFails(IOE, cfBinary);
+            assertFails(IOE, cfPong);
+            assertFails(IOE, cfClose);
             return null;
         }, () -> cfBinary.isDone());
-        webSocket.abort();
-        assertFails(IOE, cfBinary);
-        assertFails(IOE, cfPong);
-        assertFails(IOE, cfClose);
     }
 }

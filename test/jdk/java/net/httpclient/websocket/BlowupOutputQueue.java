@@ -133,6 +133,5 @@ public class BlowupOutputQueue extends PendingOperations {
             assertFalse(cfClose.isDone());
             return null;
         }, () -> cfText.isDone());
-        webSocket.abort();
     }
 }

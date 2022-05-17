@@ -78,12 +78,12 @@ public class PendingPongTextClose extends PendingOperations {
             assertHangs(cfText);
             assertNotDone(cfClose);
             assertNotDone(cfPong);
+            webSocket.abort();
+            assertFails(IOE, cfPong);
+            assertFails(IOE, cfText);
+            assertFails(IOE, cfClose);
             return null;
         }, () -> cfPong.isDone());
-        webSocket.abort();
-        assertFails(IOE, cfPong);
-        assertFails(IOE, cfText);
-        assertFails(IOE, cfClose);
     }
 
     @Override
