@@ -11475,11 +11475,11 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
 
 //----------------------------- CompressBits/ExpandBits ------------------------
 
-instruct compressBitsL_reg(eADXRegL dst, eBCXRegL src, eBDPRegL mask, eSIRegI rtmp, regF xtmp) %{
+instruct compressBitsL_reg(eADXRegL dst, eBCXRegL src, eBDPRegL mask, eSIRegI rtmp, regF xtmp, eFlagsReg cr) %{
   predicate(n->bottom_type()->isa_long());
   match(Set dst (CompressBits src mask));
-  effect(TEMP rtmp, TEMP xtmp);
-  format %{ "compress_bits32 $dst, $src, $mask\t! using $rtmp and $xtmp as TEMP" %}
+  effect(TEMP rtmp, TEMP xtmp, KILL cr);
+  format %{ "compress_bits $dst, $src, $mask\t! using $rtmp and $xtmp as TEMP" %}
   ins_encode %{
     Label exit, partail_result;
     // Parallely extract both upper and lower 32 bits of source into destination register pair.
@@ -11491,7 +11491,7 @@ instruct compressBitsL_reg(eADXRegL dst, eBCXRegL src, eBDPRegL mask, eSIRegI rt
     // Skip merging if bit count of lower mask register is equal to 32 (register size).
     __ cmpl($rtmp$$Register, 32);
     __ jccb(Assembler::equal, exit);
-    // Due to constraint on number of GPRs on 32 bit target, using XMM registers as potential spill slots.
+    // Due to constraint on number of GPRs on 32 bit target, using XMM register as potential spill slot.
     __ movdl($xtmp$$XMMRegister, $rtmp$$Register);
     // Shift left the contents of upper destination register by true bit count of lower mask register
     // and merge with lower destination register.
@@ -11516,11 +11516,11 @@ instruct compressBitsL_reg(eADXRegL dst, eBCXRegL src, eBDPRegL mask, eSIRegI rt
   ins_pipe( pipe_slow );
 %}
 
-instruct expandBitsL_reg(eADXRegL dst, eBCXRegL src, eBDPRegL mask, eSIRegI rtmp, regF xtmp) %{
+instruct expandBitsL_reg(eADXRegL dst, eBCXRegL src, eBDPRegL mask, eSIRegI rtmp, regF xtmp, eFlagsReg cr) %{
   predicate(n->bottom_type()->isa_long());
   match(Set dst (ExpandBits src mask));
-  effect(TEMP rtmp, TEMP xtmp);
-  format %{ "expand_bits32 $dst, $src, $mask\t! using $rtmp and $xtmp as TEMP" %}
+  effect(TEMP rtmp, TEMP xtmp, KILL cr);
+  format %{ "expand_bits $dst, $src, $mask\t! using $rtmp and $xtmp as TEMP" %}
   ins_encode %{
     // Extraction operation sequentially reads the bits from source register starting from LSB
     // and lays them out into destination register at bit locations corresponding to true bits
@@ -11534,7 +11534,7 @@ instruct expandBitsL_reg(eADXRegL dst, eBCXRegL src, eBDPRegL mask, eSIRegI rtmp
     // will feed to upper destination register.
     __ cmpl($rtmp$$Register, 32);
     __ jccb(Assembler::equal, exit);
-    // Due to constraint on number of GPRs on 32 bit target, using XMM registers as potential spill slots.
+    // Due to constraint on number of GPRs on 32 bit target, using XMM register as potential spill slot.
     __ movdl($xtmp$$XMMRegister, $rtmp$$Register);
     // Shift right the contents of lower source register to remove already consumed bits.
     __ shrxl($rtmp$$Register, $src$$Register, $rtmp$$Register);

@@ -1616,8 +1616,12 @@ const bool Matcher::match_rule_supported(int opcode) {
       break;
 #endif // !LP64
     case Op_CompressBits:
+      if (!VM_Version::supports_bmi2() || (!is_LP64 && UseSSE < 2)) {
+        return false;
+      }
+      break;
     case Op_ExpandBits:
-      if (!VM_Version::supports_bmi2()) {
+      if (!VM_Version::supports_bmi2() || (!is_LP64 && (UseSSE < 2 || !VM_Version::supports_bmi1()))) {
         return false;
       }
       break;

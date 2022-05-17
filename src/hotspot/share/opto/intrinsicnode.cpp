@@ -233,8 +233,6 @@ const Type* CompressBitsNode::Value(PhaseGVN* phase) const {
      jlong res = 0;
      jlong src = t1i->get_con_as_long(bt);
      jlong mask = t2i->get_con_as_long(bt);
-     src = w == 32 ? src & 0xFFFFFFFFL : src;
-     mask = w == 32 ? mask & 0xFFFFFFFFL : mask;
      for (int i = 0, j = 0; i < w; i++) {
        if(mask & 0x1) {
          res |= (src & 0x1) << j++;
@@ -242,7 +240,8 @@ const Type* CompressBitsNode::Value(PhaseGVN* phase) const {
        src >>= 1;
        mask >>= 1;
      }
-     return TypeInteger::make(res, res, w, bt);
+     return bt == T_INT ? static_cast<const Type*>(TypeInt::make(res)) :
+                          static_cast<const Type*>(TypeLong::make(res));
   }
   return bottom_type();
 }
@@ -263,8 +262,6 @@ const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
      jlong res = 0;
      jlong src = t1i->get_con_as_long(bt);
      jlong mask = t2i->get_con_as_long(bt);
-     src = w == 32 ? src & 0xFFFFFFFFL : src;
-     mask = w == 32 ? mask & 0xFFFFFFFFL : mask;
      for (int i = 0; i < w; i++) {
        if(mask & 0x1) {
          res |= (src & 0x1) << i;
@@ -272,7 +269,8 @@ const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
        }
        mask >>= 1;
      }
-     return TypeInteger::make(res, res, w, bt);
+     return bt == T_INT ? static_cast<const Type*>(TypeInt::make(res)) :
+                          static_cast<const Type*>(TypeLong::make(res));
   }
   return bottom_type();
 }
