@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ import jdk.test.lib.jfr.Events;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @build jdk.jfr.event.runtime.LatchedThread
- * @run main/othervm jdk.jfr.event.runtime.TestThreadEndEvent
+ * @compile --enable-preview -source ${jdk.version} TestThreadEndEvent.java LatchedThread.java
+ * @run main/othervm --enable-preview jdk.jfr.event.runtime.TestThreadEndEvent
  */
 public class TestThreadEndEvent {
     private final static String EVENT_NAME_THREAD_END = EventNames.ThreadEnd;
@@ -81,6 +81,7 @@ public class TestThreadEndEvent {
         RecordedThread t = event.getThread();
         Asserts.assertEquals(event.getThread("thread").getJavaName(), thread.getName());
         Asserts.assertEquals(t.getThreadGroup().getName(), LatchedThread.THREAD_GROUP.getName());
+        Asserts.assertEquals(t.isVirtual(), false);
     }
 
     private static RecordedEvent findEventByThreadName(List<RecordedEvent> events, String name) {

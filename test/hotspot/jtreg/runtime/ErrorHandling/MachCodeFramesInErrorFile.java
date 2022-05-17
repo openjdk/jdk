@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Asserts;
@@ -55,7 +56,6 @@ import jdk.test.lib.Asserts;
 import jdk.internal.misc.Unsafe;
 
 public class MachCodeFramesInErrorFile {
-
     private static class Crasher {
         // Make Crasher.unsafe a compile-time constant so that
         // C2 intrinsifies calls to Unsafe intrinsics.
@@ -71,7 +71,8 @@ public class MachCodeFramesInErrorFile {
                 crashInJava1(10);
             } else {
                 assert args[0].equals("crashInVM");
-                crashInNative1(10);
+                // Low address reads are allowed on PPC
+                crashInNative1(Platform.isPPC() ? -1 : 10);
             }
         }
 
@@ -127,9 +128,8 @@ public class MachCodeFramesInErrorFile {
         // Extract hs_err_pid file.
         String hs_err_file = output.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
         if (hs_err_file == null) {
-            throw new RuntimeException("Did not find hs_err_pid file in output.\n" +
-                                       "stderr:\n" + output.getStderr() + "\n" +
-                                       "stdout:\n" + output.getStdout());
+            output.reportDiagnosticSummary();
+            throw new RuntimeException("Did not find hs_err_pid file in output");
         }
         Path hsErrPath = Paths.get(hs_err_file);
         if (!Files.exists(hsErrPath)) {
@@ -154,6 +154,17 @@ public class MachCodeFramesInErrorFile {
             return;
         }
 
+        String preCodeBlobSectionHeader = "Stack slot to memory mapping:";
+        if (!hsErr.contains(preCodeBlobSectionHeader) &&
+            System.getProperty("os.arch").equals("aarch64") &&
+            System.getProperty("os.name").toLowerCase().startsWith("mac")) {
+            // JDK-8282607: hs_err can be truncated. If the section preceding
+            // code blob dumping is missing, exit successfully.
+            System.out.println("Could not find \"" + preCodeBlobSectionHeader + "\" in " + hsErrPath);
+            System.out.println("Looks like hs-err is truncated - exiting with success");
+            return;
+        }
+
         Matcher matcher = Pattern.compile("\\[MachCode\\]\\s*\\[Verified Entry Point\\]\\s*  # \\{method\\} \\{[^}]*\\} '([^']+)' '([^']+)' in '([^']+)'", Pattern.DOTALL).matcher(hsErr);
         List<String> machCodeHeaders = matcher.results().map(mr -> String.format("'%s' '%s' in '%s'", mr.group(1), mr.group(2), mr.group(3))).collect(Collectors.toList());
         int minExpectedMachCodeSections = Math.max(1, compiledJavaFrames);
@@ -164,11 +175,12 @@ public class MachCodeFramesInErrorFile {
 
     /**
      * Extracts the lines in {@code hsErr} below the line starting with
-     * "Native frames:" or "Java frames:" up to the next blank line
+     * "Native frame" or "Java frame" up to the next blank line
      * and adds them to {@code frames}.
      */
     private static void extractFrames(String hsErr, Set<String> frames, boolean nativeStack) {
-        String marker = (nativeStack ? "Native" : "Java") + " frames: ";
+        String marker = (nativeStack ? "Native" : "Java") + " frame";
+
         boolean seenMarker = false;
         for (String line : hsErr.split(System.lineSeparator())) {
             if (line.startsWith(marker)) {
@@ -180,6 +192,7 @@ public class MachCodeFramesInErrorFile {
                 frames.add(line);
             }
         }
-        throw new RuntimeException("\"" + marker + "\" line missing in hs_err_pid file:\n" + hsErr);
+        System.err.println(hsErr);
+        throw new RuntimeException("\"" + marker + "\" line missing in hs_err_pid file");
     }
 }

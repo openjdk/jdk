@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -431,6 +431,11 @@ void ZHeap::relocate() {
 
   // Update statistics
   ZStatHeap::set_at_relocate_end(_page_allocator.stats(), _object_allocator.relocated());
+}
+
+bool ZHeap::is_allocating(uintptr_t addr) const {
+  const ZPage* const page = _page_table.get(addr);
+  return page->is_allocating();
 }
 
 void ZHeap::object_iterate(ObjectClosure* cl, bool visit_weaks) {

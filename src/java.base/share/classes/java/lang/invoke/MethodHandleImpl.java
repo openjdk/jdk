@@ -29,7 +29,6 @@ import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.invoke.NativeEntryPoint;
 import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
@@ -323,7 +322,7 @@ abstract class MethodHandleImpl {
                 for (int pos : positions) {
                     ptypes[pos - 1] = newType;
                 }
-                midType = MethodType.makeImpl(midType.rtype(), ptypes, true);
+                midType = MethodType.methodType(midType.rtype(), ptypes, true);
             }
             LambdaForm form2;
             if (positions.length > 1) {
@@ -1586,9 +1585,8 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public VarHandle memoryAccessVarHandle(Class<?> carrier, boolean skipAlignmentMaskCheck, long alignmentMask,
-                                                   ByteOrder order) {
-                return VarHandles.makeMemoryAddressViewHandle(carrier, skipAlignmentMaskCheck, alignmentMask, order);
+            public VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask, ByteOrder order) {
+                return VarHandles.memorySegmentViewHandle(carrier, alignmentMask, order);
             }
 
             @Override

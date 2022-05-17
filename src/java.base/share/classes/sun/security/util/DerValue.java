@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,7 +299,7 @@ public class DerValue {
      *
      * @param tag the tag
      * @param out the DerOutputStream
-     * @returns a new DerValue using out as its content
+     * @return a new DerValue using out as its content
      */
     public static DerValue wrap(byte tag, DerOutputStream out) {
         return new DerValue(tag, out.buf(), 0, out.size(), false);
@@ -311,7 +311,7 @@ public class DerValue {
      * Attention: no cloning is made.
      *
      * @param buf the byte array containing the DER-encoded datum
-     * @returns a new DerValue
+     * @return a new DerValue
      */
     public static DerValue wrap(byte[] buf)
             throws IOException {
@@ -326,7 +326,7 @@ public class DerValue {
      * @param buf the byte array containing the DER-encoded datum
      * @param offset where the encoded datum starts inside {@code buf}
      * @param len length of bytes to parse inside {@code buf}
-     * @returns a new DerValue
+     * @return a new DerValue
      */
     public static DerValue wrap(byte[] buf, int offset, int len)
             throws IOException {
@@ -717,7 +717,7 @@ public class DerValue {
         byte[] retval = Arrays.copyOfRange(buffer, start + 1, end);
         if (numOfPadBits != 0) {
             // get rid of the padding bits
-            retval[end - start - 2] &= (0xff << numOfPadBits);
+            retval[end - start - 2] &= (byte)((0xff << numOfPadBits));
         }
         data.pos = data.end; // Compatibility. Reach end.
         return retval;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dsqrt:             return java_lang_math_sqrt;
       case vmIntrinsics::_dsqrt_strict:      return native;
       case vmIntrinsics::_Reference_get:     return java_lang_ref_reference_get;
+      case vmIntrinsics::_Continuation_doYield: return java_lang_continuation_doYield;
       case vmIntrinsics::_Object_init:
         if (RegisterFinalizersAtInit && m->code_size() == 1) {
           // We need to execute the special return bytecode to check for
@@ -164,6 +165,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 
   // Native method?
   if (m->is_native()) {
+    if (m->is_continuation_enter_intrinsic()) {
+      return zerolocals;
+    }
     assert(!m->is_method_handle_intrinsic(), "overlapping bits here, watch out");
     return m->is_synchronized() ? native_synchronized : native;
   }
@@ -319,7 +323,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       methodHandle mh(thread, method);
       type = Bytecode_invoke(mh, bci).result_type();
       // since the cache entry might not be initialized:
-      // (NOT needed for the old calling convension)
+      // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u2(bcp+1);
         method->constants()->cache()->entry_at(index)->set_parameter_size(callee_parameters);
@@ -333,7 +337,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       methodHandle mh(thread, method);
       type = Bytecode_invoke(mh, bci).result_type();
       // since the cache entry might not be initialized:
-      // (NOT needed for the old calling convension)
+      // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u4(bcp+1);
         method->constants()->invokedynamic_cp_cache_entry_at(index)->set_parameter_size(callee_parameters);
@@ -387,7 +391,7 @@ bool AbstractInterpreter::bytecode_should_reexecute(Bytecodes::Code code) {
     case Bytecodes::_tableswitch:
     case Bytecodes::_fast_binaryswitch:
     case Bytecodes::_fast_linearswitch:
-    // recompute condtional expression folded into _if<cond>
+    // recompute conditional expression folded into _if<cond>
     case Bytecodes::_lcmp      :
     case Bytecodes::_fcmpl     :
     case Bytecodes::_fcmpg     :

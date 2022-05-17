@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,13 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
 #include "runtime/basicLock.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/monitorChunk.hpp"
+#include "runtime/registerMap.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackValue.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -65,13 +68,15 @@ StackValueCollection* compiledVFrame::locals() const {
 
   // Replace the original values with any stores that have been
   // performed through compiledVFrame::update_locals.
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
-  if (list != NULL ) {
-    // In real life this never happens or is typically a single element search
-    for (int i = 0; i < list->length(); i++) {
-      if (list->at(i)->matches(this)) {
-        list->at(i)->update_locals(result);
-        break;
+  if (!register_map()->in_cont()) { // LOOM TODO
+    GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
+    if (list != NULL ) {
+      // In real life this never happens or is typically a single element search
+      for (int i = 0; i < list->length(); i++) {
+        if (list->at(i)->matches(this)) {
+          list->at(i)->update_locals(result);
+          break;
+        }
       }
     }
   }
@@ -104,6 +109,7 @@ void compiledVFrame::update_monitor(int index, MonitorInfo* val) {
 
 void compiledVFrame::update_deferred_value(BasicType type, int index, jvalue value) {
   assert(fr().is_deoptimized_frame(), "frame must be scheduled for deoptimization");
+  assert(!Continuation::is_frame_in_continuation(thread(), fr()), "No support for deferred values in continuations");
   GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred = JvmtiDeferredUpdates::deferred_locals(thread());
   jvmtiDeferredLocalVariableSet* locals = NULL;
   if (deferred != NULL ) {
@@ -139,12 +145,12 @@ void compiledVFrame::update_deferred_value(BasicType type, int index, jvalue val
 // original update is kept.
 void compiledVFrame::create_deferred_updates_after_object_deoptimization() {
   // locals
-  GrowableArray<ScopeValue*>* scopeLocals = scope()->locals();
+  GrowableArray<ScopeValue*>* extentLocals = scope()->locals();
   StackValueCollection* lcls = locals();
   if (lcls != NULL) {
     for (int i2 = 0; i2 < lcls->size(); i2++) {
       StackValue* var = lcls->at(i2);
-      if (var->type() == T_OBJECT && scopeLocals->at(i2)->is_object()) {
+      if (var->type() == T_OBJECT && extentLocals->at(i2)->is_object()) {
         jvalue val;
         val.l = cast_from_oop<jobject>(lcls->at(i2)->get_obj()());
         update_local(T_OBJECT, i2, val);
@@ -193,15 +199,17 @@ StackValueCollection* compiledVFrame::expressions() const {
     result->add(create_stack_value(scv_list->at(i)));
   }
 
-  // Replace the original values with any stores that have been
-  // performed through compiledVFrame::update_stack.
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
-  if (list != NULL ) {
-    // In real life this never happens or is typically a single element search
-    for (int i = 0; i < list->length(); i++) {
-      if (list->at(i)->matches(this)) {
-        list->at(i)->update_stack(result);
-        break;
+  if (!register_map()->in_cont()) { // LOOM TODO
+    // Replace the original values with any stores that have been
+    // performed through compiledVFrame::update_stack.
+    GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
+    if (list != NULL ) {
+      // In real life this never happens or is typically a single element search
+      for (int i = 0; i < list->length(); i++) {
+        if (list->at(i)->matches(this)) {
+          list->at(i)->update_stack(result);
+          break;
+        }
       }
     }
   }
@@ -215,7 +223,15 @@ StackValueCollection* compiledVFrame::expressions() const {
 // rematerialization and relocking of non-escaping objects.
 
 StackValue *compiledVFrame::create_stack_value(ScopeValue *sv) const {
-  return StackValue::create_stack_value(&_fr, register_map(), sv);
+  stackChunkOop c = _reg_map.stack_chunk()();
+  int index = _reg_map.stack_chunk_index();
+  const_cast<RegisterMap*>(&_reg_map)->set_stack_chunk(_chunk());
+
+  StackValue* res = StackValue::create_stack_value(&_fr, register_map(), sv);
+
+  const_cast<RegisterMap*>(&_reg_map)->set_stack_chunk(c);
+  const_cast<RegisterMap*>(&_reg_map)->set_stack_chunk_index(index);
+  return res;
 }
 
 BasicLock* compiledVFrame::resolve_monitor_lock(Location location) const {
@@ -396,7 +412,7 @@ jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(Method* method, int
   _bci = bci;
   _id = id;
   _vframe_id = vframe_id;
-  // Alway will need at least one, must be on C heap
+  // Always will need at least one, must be on C heap
   _locals = new(ResourceObj::C_HEAP, mtCompiler) GrowableArray<jvmtiDeferredLocalVariable*> (1, mtCompiler);
   _objects_are_deoptimized = false;
 }

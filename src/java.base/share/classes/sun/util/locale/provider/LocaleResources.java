@@ -366,7 +366,7 @@ public class LocaleResources {
     String[][] getZoneStrings() {
         TimeZoneNamesBundle rb = localeData.getTimeZoneNames(locale);
         Set<String> keyset = getZoneIDs();
-        // Use a LinkedHashSet to preseve the order
+        // Use a LinkedHashSet to preserve the order
         Set<String[]> value = new LinkedHashSet<>();
         Set<String> tzIds = new HashSet<>(Arrays.asList(TimeZone.getAvailableIDs()));
         for (String key : keyset) {

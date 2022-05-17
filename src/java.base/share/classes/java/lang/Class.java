@@ -3002,9 +3002,9 @@ public final class Class<T> implements java.io.Serializable,
         if (callerModule != thisModule) {
             String pn = Resources.toPackageName(name);
             if (thisModule.getDescriptor().packages().contains(pn)) {
-                if (callerModule == null && !thisModule.isOpen(pn)) {
-                    // no caller, package not open
-                    return false;
+                if (callerModule == null) {
+                    // no caller, return true if the package is open to all modules
+                    return thisModule.isOpen(pn);
                 }
                 if (!thisModule.isOpen(pn, callerModule)) {
                     // package not open to caller
@@ -3125,7 +3125,7 @@ public final class Class<T> implements java.io.Serializable,
         }
         // check package access on the proxy interfaces
         if (checkProxyInterfaces && Proxy.isProxyClass(this)) {
-            ReflectUtil.checkProxyPackageAccess(ccl, this.getInterfaces());
+            ReflectUtil.checkProxyPackageAccess(ccl, this.getInterfaces(/* cloneArray */ false));
         }
     }
 
@@ -3373,7 +3373,7 @@ public final class Class<T> implements java.io.Serializable,
         addAll(fields, privateGetDeclaredFields(true));
 
         // Direct superinterfaces, recursively
-        for (Class<?> si : getInterfaces()) {
+        for (Class<?> si : getInterfaces(/* cloneArray */ false)) {
             addAll(fields, si.privateGetPublicFields());
         }
 
