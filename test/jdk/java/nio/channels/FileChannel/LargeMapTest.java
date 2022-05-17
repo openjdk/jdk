@@ -35,7 +35,6 @@ import static java.nio.file.StandardOpenOption.*;
  * @test
  * @enablePreview
  * @bug 8286637
- * @requires os.family == "windows"
  * @summary Ensure that memory mapping beyond 32-bit range does not cause an
  *          EXCEPTION_ACCESS_VIOLATION.
  * @run main/othervm LargeMapTest
@@ -53,7 +52,7 @@ public class LargeMapTest {
 
         Path p = Path.of(FILE);
         p.toFile().deleteOnExit();
-        try (FileChannel fc = FileChannel.open(p, CREATE, WRITE);) {
+        try (FileChannel fc = FileChannel.open(p, CREATE, WRITE)) {
             fc.position(LENGTH - 1);
             fc.write(ByteBuffer.wrap(new byte[] {27}));
         }
