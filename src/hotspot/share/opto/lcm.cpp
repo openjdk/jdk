@@ -337,12 +337,14 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
        for (k = 1; k < num_nodes; k++) {
          Node *n = mb->get_node(k);
          if (n->needs_anti_dependence_check() &&
-             n->in(LoadNode::Memory) == mach->in(StoreNode::Memory))
+             n->in(LoadNode::Memory) == mach->in(StoreNode::Memory)) {
            break;              // Found anti-dependent load
+         }
        }
-       if (k < num_nodes)
+       if (k < num_nodes) {
          continue;             // Found anti-dependent load
-
+       }
+       
        // Make sure control does not do a merge (would have to check allpaths)
        if (mb->num_preds() != 2) continue;
 
