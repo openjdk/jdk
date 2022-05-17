@@ -23,39 +23,21 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
-import java.io.BufferedReader;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.List;
 
 /**
- * Class representing a normal line read from the hotspot_pid* file.
+ * Class representing a PrintIdeal or PrintOptoAssembly output block read from the hotspot_pid* file.
  */
-class Line extends AbstractLine {
-    public Line(BufferedReader reader, Pattern compileIdPatternForTestClass) {
-        super(reader, compileIdPatternForTestClass);
+record Block(String output, List<String> testClassCompilations) {
+    public String getOutput() {
+        return output;
     }
 
-    /**
-     * Is this line a start of a PrintIdeal or PrintOptoAssembly output block?
-     */
-    public boolean isBlockStart() {
-        return isPrintIdealStart() || isPrintOptoAssemblyStart();
+    public boolean containsTestClassCompilations() {
+        return !testClassCompilations.isEmpty();
     }
 
-    /**
-     * Is this line a start of a PrintIdeal output block?
-     */
-    public boolean isPrintIdealStart() {
-        // Ignore OSR compilations which have compile_kind set.
-        return line.startsWith("<ideal") && notOSRCompilation();
-    }
-
-    /**
-     * Is this line a start of a PrintOptoAssembly output block?
-     */
-    private boolean isPrintOptoAssemblyStart() {
-        // Ignore OSR compilations which have compile_kind set.
-        return line.startsWith("<opto_assembly") && notOSRCompilation();
+    public List<String> getTestClassCompilations() {
+        return testClassCompilations;
     }
 }
-
