@@ -52,23 +52,28 @@ public class TrayIconScalingTest {
     private static TrayIcon icon;
 
     private static final String INSTRUCTIONS =
-            "This test case checks the scaling of tray icons for on-the-fly" +
-                    " DPI/ Scale changes on Windows.\n\n" +
-                    "STEPS: \n\n" +
-                    "1. When you run this test check the system tray/" +
-                    " notification area on windows, a white multi-resolution" +
-                    " image (MRI) icon should be visible.\n\n"+
-                    "2. Navigate to Settings > System > Display and change the" +
-                    " display scale by selecting any value from" +
-                    " Scale & Layout dropdown.\n\n"+
-                    "3. On scale changes observe the white tray icon," +
-                    " if there is NO distortion then press PASS.\n\n";
+            "This test checks if the tray icon gets updated when DPI / Scale" +
+            " is changed on the fly.\n\n" +
+            "STEPS: \n\n" +
+            "1. Check the system tray / notification area on Windows" +
+            " taskbar, you should see a white icon which displays a" +
+            " number.\n\n" +
+            "2. Navigate to Settings > System > Display and change the" +
+            " display scale by selecting any value from" +
+            " Scale & Layout dropdown.\n\n"+
+            "3. When the scale changes, check the white tray icon," +
+            " there should be no distortion, it should be displayed sharp,\n" +
+            " and the displayed number should correspond to the current"+
+            " scale:\n" +
+            " 100% - 16, 125% - 20, 150% - 24, 175% - 28, 200% - 32.\n\n"+
+            " If the icon is displayed sharp and without any distortion," +
+            " press PASS, otherwise press FAIL.\n";
 
-    private static Font font = new Font("Dialog", Font.BOLD, 12);
+    private static final Font font = new Font("Dialog", Font.BOLD, 12);
 
     public static void main(String[] args)
             throws InterruptedException, InvocationTargetException {
-        // Check if SystemTray supported on the machine
+        // check if SystemTray supported on the machine
         if (!SystemTray.isSupported()) {
             System.out.println("SystemTray is not supported");
             return;
@@ -105,7 +110,7 @@ public class TrayIconScalingTest {
         BufferedImage image = new BufferedImage(size, size,
                 BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
-        ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                 RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, size, size);
