@@ -66,7 +66,7 @@ public class SchemaTest {
         "</xs:schema>";
 
     /*
-     * DataProvider: valid xsd
+     * DataProvider: valid xsd strings.
      */
     @DataProvider(name = "xsd")
     Object[][] getXSDString() {
@@ -76,7 +76,7 @@ public class SchemaTest {
     }
 
     /*
-     * DataProvider: valid xsd
+     * DataProvider: valid external xsd files.
      */
     @DataProvider(name = "xsdFile")
     Object[][] getXSDFile() {
