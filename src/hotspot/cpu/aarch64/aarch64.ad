@@ -15423,7 +15423,11 @@ instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 temp, Universe d
   format %{ "ClearArray $cnt, $base" %}
 
   ins_encode %{
-    __ zero_words($base$$Register, (uint64_t)$cnt$$constant);
+    address tpc = __ zero_words($base$$Register, (uint64_t)$cnt$$constant);
+    if (tpc == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
   %}
 
   ins_pipe(pipe_class_memory);
