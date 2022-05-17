@@ -122,10 +122,10 @@ enum X509Authentication implements SSLAuthentication {
         final X509Certificate[]   popCerts;
         final PrivateKey          popPrivateKey;
 
-        private final ECParameterSpec     ecParams;
+        private final ECParameterSpec     ecParamSpec;
         private final NamedGroup          ecNamedGroup;
 
-        private final NamedParameterSpec  xecParams;
+        private final NamedParameterSpec  xecParamSpec;
         private final NamedGroup          xecNamedGroup;
 
         X509Possession(PrivateKey popPrivateKey,
@@ -133,28 +133,28 @@ enum X509Authentication implements SSLAuthentication {
             this.popCerts = popCerts;
             this.popPrivateKey = popPrivateKey;
 
-            ecParams = getECParams();
+            ecParamSpec = getECParamSpec();
 
-            if (ecParams != null) {
-                ecNamedGroup = NamedGroup.valueOf(ecParams);
+            if (ecParamSpec != null) {
+                ecNamedGroup = NamedGroup.valueOf(ecParamSpec);
 
-                xecParams = null;
+                xecParamSpec = null;
                 xecNamedGroup = null;
             } else {
                 ecNamedGroup = null;
 
                 // Wasn't EC, try XEC.
-                xecParams = getXECParams();
-                xecNamedGroup = xecParams != null
-                        ? NamedGroup.nameOf(xecParams.getName()) : null;
+                xecParamSpec = getXECParamSpec();
+                xecNamedGroup = xecParamSpec != null
+                        ? NamedGroup.nameOf(xecParamSpec.getName()) : null;
             }
         }
 
         ECParameterSpec getECParameterSpec() {
-            return ecParams;
+            return ecParamSpec;
         }
 
-        private ECParameterSpec getECParams() {
+        private ECParameterSpec getECParamSpec() {
             if (popPrivateKey == null ||
                     !"EC".equals(popPrivateKey.getAlgorithm())) {
                 return null;
@@ -175,11 +175,11 @@ enum X509Authentication implements SSLAuthentication {
         }
 
         NamedParameterSpec getXECParameterSpec() {
-            return xecParams;
+            return xecParamSpec;
         }
 
         // Similar to above, but for XEC.
-        private NamedParameterSpec getXECParams() {
+        private NamedParameterSpec getXECParamSpec() {
             if (popPrivateKey == null ||
                     !"XEC".equals(popPrivateKey.getAlgorithm())) {
                 return null;

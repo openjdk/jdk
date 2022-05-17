@@ -473,7 +473,6 @@ enum SignatureScheme {
 
         PrivateKey signingKey = x509Possession.popPrivateKey;
 
-        ECParameterSpec params = x509Possession.getECParameterSpec();
         NamedGroup namedGroup = x509Possession.getECNamedGroup();
 
         String keyAlgorithm = signingKey.getAlgorithm();
@@ -503,7 +502,8 @@ enum SignatureScheme {
                             SSLLogger.isOn("ssl,handshake,verbose")) {
                         SSLLogger.finest(
                             "Ignore the signature algorithm (" + ss +
-                            "), unsupported EC parameter spec: " + params);
+                            "), unsupported EC parameter spec: " +
+                            x509Possession.getECParameterSpec());
                     }
                 } else if ("EC".equals(ss.keyAlgorithm)) {
                     // Must be a legacy signature algorithm, which does not
@@ -527,7 +527,8 @@ enum SignatureScheme {
                             SSLLogger.isOn("ssl,handshake,verbose")) {
                         SSLLogger.finest(
                             "Ignore the legacy signature algorithm (" + ss +
-                            "), unsupported EC parameter spec: " + params);
+                            "), unsupported EC parameter spec: " +
+                            x509Possession.getECParameterSpec());
                     }
                 } else {
                     Signature signer = ss.getSigner(signingKey);

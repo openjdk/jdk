@@ -269,17 +269,6 @@ final class ECDHClientKeyExchange {
                     "No expected EC server cert for ECDH client key exchange");
             }
 
-            // Iteratively determine the X509Possession type's ParameterSpec.
-            ECParameterSpec ecParams = x509Possession.getECParameterSpec();
-            NamedParameterSpec namedParams = x509Possession.getXECParameterSpec();
-
-            // Can't figure this out, bail.
-            if ((ecParams == null) && (namedParams == null)) {
-                // unlikely, have been checked during cipher suite negotiation.
-                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Not EC/XDH server cert for ECDH client key exchange");
-            }
-
             // Determine which NamedGroup we'll be using, then use
             // the creator functions.
             NamedGroup namedGroup = x509Possession.getNamedGroup();
@@ -289,6 +278,13 @@ final class ECDHClientKeyExchange {
                 throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Unknown named group in server cert for " +
                         "ECDH client key exchange");
+            }
+
+            // unlikely, have been checked during cipher suite negotiation.
+            if (namedGroup.spec != NamedGroup.NamedGroupSpec.NAMED_GROUP_ECDHE
+                    && namedGroup.spec != NamedGroup.NamedGroupSpec.NAMED_GROUP_XDH) {
+                throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
+                    "Not EC/XDH server cert for ECDH client key exchange");
             }
 
             SSLKeyExchange ke = SSLKeyExchange.valueOf(
