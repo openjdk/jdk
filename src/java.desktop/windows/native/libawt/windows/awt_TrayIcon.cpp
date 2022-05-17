@@ -496,11 +496,7 @@ MsgRouting AwtTrayIcon::WmTaskbarCreated() {
             // Update the icon image
             item->m_trayIcon->UpdateImage();
         }
-        BOOL result = item->m_trayIcon->SendTrayMessage(NIM_ADD);
-        // 6270114: Instructs the taskbar to behave according to the Shell version 5.0
-        if (result) {
-            item->m_trayIcon->SendTrayMessage(NIM_SETVERSION);
-        }
+        item->m_trayIcon->AddTrayIcon();
     }
     m_bDPIChanged = false;
     return mrDoDefault;
@@ -816,10 +812,10 @@ void AwtTrayIcon::_UpdateIcon(void *param)
     JNI_CHECK_PEER_GOTO(self, ret);
     trayIcon = (AwtTrayIcon *)pData;
 
-    BOOL result = trayIcon->SendTrayMessage(jupdate == JNI_TRUE ? NIM_MODIFY : NIM_ADD);
-    // 6270114: Instructs the taskbar to behave according to the Shell version 5.0
-    if (result && jupdate == JNI_FALSE) {
-        trayIcon->SendTrayMessage(NIM_SETVERSION);
+    if (jupdate == JNI_TRUE) {
+        trayIcon->ModifyTrayIcon();
+    } else {
+        trayIcon->AddTrayIcon();
     }
 ret:
     env->DeleteGlobalRef(self);
@@ -913,6 +909,20 @@ ret:
     env->DeleteGlobalRef(jtext);
     env->DeleteGlobalRef(jmsgType);
     delete dms;
+}
+
+void AwtTrayIcon::AddTrayIcon()
+{
+    BOOL result = SendTrayMessage(NIM_ADD);
+    // 6270114: Instructs the taskbar to behave according to the Shell version 5.0
+    if (result) {
+        SendTrayMessage(NIM_SETVERSION);
+    }
+}
+
+void AwtTrayIcon::ModifyTrayIcon()
+{
+    SendTrayMessage(NIM_MODIFY);
 }
 
 /************************************************************************

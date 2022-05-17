@@ -154,6 +154,9 @@ private:
         TrayIconListItem* m_next;
     };
 
+    void AddTrayIcon();
+    void ModifyTrayIcon();
+
     static bool m_bDPIChanged;
 
 public:
