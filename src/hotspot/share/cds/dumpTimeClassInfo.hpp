@@ -209,8 +209,15 @@ public:
     }
   }
 
-  // Overrides ResourceHashtable<>::iterate(ITER*)
+  // Overrides template<class ITER> ResourceHashtable<>::iterate(ITER* iter)
   template<class ITER> void iterate(ITER* iter) const;
+
+  // Overrides template<typename F> ResourceHashtable<>::iterate(F f)
+  template<typename F> void iterate(F f) const;
+
+  // Overrides template<typename F> ResourceHashtable<>::iterate_all(F f)
+  template<typename F> void iterate_all(F f) const;
+
 private:
   template<class ITER> class IterationHelper;
 };

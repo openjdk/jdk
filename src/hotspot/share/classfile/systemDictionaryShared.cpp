@@ -653,29 +653,23 @@ public:
   }
 };
 
-class ExcludeDumpTimeSharedClasses : StackObj {
-public:
-  bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
-    SystemDictionaryShared::check_for_exclusion(k, &info);
-    return true; // keep on iterating
-  }
-};
-
 void SystemDictionaryShared::check_excluded_classes() {
   assert(no_class_loading_should_happen(), "sanity");
   assert_lock_strong(DumpTimeTable_lock);
 
   if (DynamicDumpSharedSpaces) {
     // Do this first -- if a base class is excluded due to duplication,
-    // all of its subclasses will also be excluded by ExcludeDumpTimeSharedClasses
+    // all of its subclasses will also be excluded.
     ResourceMark rm;
     UnregisteredClassesDuplicationChecker dup_checker;
     _dumptime_table->iterate(&dup_checker);
     dup_checker.mark_duplicated_classes();
   }
 
-  ExcludeDumpTimeSharedClasses excl;
-  _dumptime_table->iterate(&excl);
+  auto check_for_exclusion = [] (InstanceKlass* k, DumpTimeClassInfo& info) {
+    SystemDictionaryShared::check_for_exclusion(k, &info);
+  };
+  _dumptime_table->iterate_all(check_for_exclusion);
   _dumptime_table->update_counts();
 
   cleanup_lambda_proxy_class_dictionary();
@@ -725,42 +719,26 @@ bool SystemDictionaryShared::has_class_failed_verification(InstanceKlass* ik) {
   return (p == NULL) ? false : p->failed_verification();
 }
 
-class IterateDumpTimeSharedClassTable : StackObj {
-  MetaspaceClosure *_it;
-public:
-  IterateDumpTimeSharedClassTable(MetaspaceClosure* it) : _it(it) {}
-
-  bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
-    assert_lock_strong(DumpTimeTable_lock);
-    if (k->is_loader_alive() && !info.is_excluded()) {
-      info.metaspace_pointers_do(_it);
-    }
-    return true; // keep on iterating
-  }
-};
-
-class IterateDumpTimeLambdaProxyClassDictionary : StackObj {
-  MetaspaceClosure *_it;
-public:
-  IterateDumpTimeLambdaProxyClassDictionary(MetaspaceClosure* it) : _it(it) {}
-
-  bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
-    assert_lock_strong(DumpTimeTable_lock);
-    if (key.caller_ik()->is_loader_alive()) {
-      info.metaspace_pointers_do(_it);
-      key.metaspace_pointers_do(_it);
-    }
-    return true; // keep on iterating
-  }
-};
-
 void SystemDictionaryShared::dumptime_classes_do(class MetaspaceClosure* it) {
   assert_lock_strong(DumpTimeTable_lock);
-  IterateDumpTimeSharedClassTable iter(it);
-  _dumptime_table->iterate(&iter);
+
+  auto f = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
+    if (k->is_loader_alive() && !info.is_excluded()) {
+      info.metaspace_pointers_do(it);
+    }
+  };
+
+  _dumptime_table->iterate_all(f);
+
   if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    IterateDumpTimeLambdaProxyClassDictionary iter_lambda(it);
-    _dumptime_lambda_proxy_class_dictionary->iterate(&iter_lambda);
+    auto g = [&] (LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+      if (key.caller_ik()->is_loader_alive()) {
+        info.metaspace_pointers_do(it);
+        key.metaspace_pointers_do(it);
+      }
+    };
+
+    _dumptime_lambda_proxy_class_dictionary->iterate_all(g);
   }
 }
 
