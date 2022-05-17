@@ -133,7 +133,7 @@ final class Scrub extends Command {
             input = last;
             output = dir == null ? Path.of(t) : dir.resolve(t);
         }
-        ensureValidOutput(input, output);
+        ensureUsableOutput(input, output);
 
         List<Predicate<RecordedEvent>> filters = new ArrayList<>();
         int optionCount = options.size();
@@ -193,7 +193,7 @@ final class Scrub extends Command {
         println(output.toAbsolutePath().toString());
     }
 
-    private void ensureValidOutput(Path input, Path output) throws UserSyntaxException, UserDataException {
+    private void ensureUsableOutput(Path input, Path output) throws UserSyntaxException, UserDataException {
         if (!Files.exists(output)) {
             return;
         }
