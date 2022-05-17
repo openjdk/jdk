@@ -591,7 +591,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     return;
   }
 
-  // !important! make sure all return points will reset the IN_ASGCT flag to 'false'
+  // !important! make sure all to call thread->set_in_asgct(false) before every return
   thread->set_in_asgct(true);
 
   switch (thread->thread_state()) {
