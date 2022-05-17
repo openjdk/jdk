@@ -344,7 +344,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
        if (k < num_nodes) {
          continue;             // Found anti-dependent load
        }
-       
+
        // Make sure control does not do a merge (would have to check allpaths)
        if (mb->num_preds() != 2) continue;
 
