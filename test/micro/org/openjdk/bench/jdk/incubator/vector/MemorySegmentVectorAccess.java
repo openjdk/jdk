@@ -25,10 +25,10 @@
  */
 package org.openjdk.bench.jdk.incubator.vector;
 
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.VectorSpecies;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -49,8 +49,8 @@ import org.openjdk.jmh.annotations.Warmup;
 @State(org.openjdk.jmh.annotations.Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 1, jvmArgsAppend = {
-    "--add-modules=jdk.incubator.foreign,jdk.incubator.vector",
-    "-Dforeign.restricted=permit",
+    "--add-modules=jdk.incubator.vector",
+    "--enable-preview",
     "--enable-native-access", "ALL-UNNAMED"})
 public class MemorySegmentVectorAccess {
   private static final VectorSpecies<Byte> SPECIES = VectorSpecies.ofLargestShape(byte.class);
@@ -69,8 +69,8 @@ public class MemorySegmentVectorAccess {
 
   @Setup
   public void setup() {
-    nativeIn = MemorySegment.allocateNative(size, ResourceScope.newImplicitScope());
-    nativeOut = MemorySegment.allocateNative(size, ResourceScope.newImplicitScope());
+    nativeIn = MemorySegment.allocateNative(size, MemorySession.openImplicit());
+    nativeOut = MemorySegment.allocateNative(size, MemorySession.openImplicit());
 
     byteIn = new byte[size];
     byteOut = new byte[size];

@@ -30,7 +30,7 @@ import org.openjdk.jmh.annotations.*;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Fork(value = 1, jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
+@Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector", "--enable-preview"})
 public class MaskCastOperationsBenchmark {
     VectorMask<Byte> bmask64;
     VectorMask<Byte> bmask128;

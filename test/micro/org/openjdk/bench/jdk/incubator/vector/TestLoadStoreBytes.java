@@ -23,11 +23,11 @@
  */
 package org.openjdk.bench.jdk.incubator.vector;
 
-import java.nio.ByteOrder;
-import java.util.concurrent.TimeUnit;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
+import java.nio.ByteOrder;
+import java.util.concurrent.TimeUnit;
 import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
@@ -52,7 +52,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 1, jvmArgsAppend = {
     "--add-modules=jdk.incubator.vector",
-    "-Dforeign.restricted=permit",
+    "--enable-preview",
     "--enable-native-access", "ALL-UNNAMED",
     "-Djdk.incubator.vector.VECTOR_ACCESS_OOB_CHECK=1"})
 public class TestLoadStoreBytes {

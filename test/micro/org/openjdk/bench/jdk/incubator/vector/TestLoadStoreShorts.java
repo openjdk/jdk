@@ -52,7 +52,7 @@ import org.openjdk.jmh.annotations.Warmup;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 1, jvmArgsAppend = {
     "--add-modules=jdk.incubator.vector",
-    "-Dforeign.restricted=permit",
+    "--enable-preview",
     "--enable-native-access", "ALL-UNNAMED"})
 public class TestLoadStoreShorts {
   private static final VectorSpecies<Short> SPECIES = VectorSpecies.ofLargestShape(short.class);
