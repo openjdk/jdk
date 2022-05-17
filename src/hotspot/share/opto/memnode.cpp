@@ -1405,14 +1405,10 @@ Node* LoadNode::eliminate_autobox(PhaseIterGVN* igvn) {
             // nof_nonstatic_fields so check it anyway
             ciConstant c = box->field_value(ik->nonstatic_field_at(0));
             BasicType bt = c.basic_type();
-
             // Only integer types have boxing cache.
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_OVERFLOW_IGNORED
             assert(bt == T_BOOLEAN || bt == T_CHAR  ||
                    bt == T_BYTE    || bt == T_SHORT ||
                    bt == T_INT     || bt == T_LONG, "wrong type = %s", type2name(bt));
-PRAGMA_DIAG_POP
             jlong cache_low = (bt == T_LONG) ? c.as_long() : c.as_int();
             if (cache_low != (int)cache_low) {
               return NULL; // should not happen since cache is array indexed by value
