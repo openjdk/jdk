@@ -88,6 +88,7 @@ public class PendingPongBinaryClose extends PendingOperations {
 
     @Override
     long initialWaitSec() {
+        // Some Windows machines increase buffer size after 1-2 seconds
         return isWindows() ? 3 : 1;
     }
 }
