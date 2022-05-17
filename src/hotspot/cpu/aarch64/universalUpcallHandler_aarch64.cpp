@@ -133,7 +133,7 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   int stack_slots = SharedRuntime::out_preserve_stack_slots() + arg_shuffle.out_arg_stack_slots();
   int out_arg_area = align_up(stack_slots * VMRegImpl::stack_slot_size, StackAlignmentInBytes);
 
-#ifdef NOT_PRODUCT
+#ifndef PRODUCT
   LogTarget(Trace, foreign, upcall) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;

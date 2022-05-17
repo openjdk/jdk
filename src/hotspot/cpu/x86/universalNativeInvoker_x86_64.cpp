@@ -107,7 +107,7 @@ RuntimeStub* ProgrammableInvoker::make_native_invoker(BasicType* signature,
                                   g.framesize(),
                                   g.oop_maps(), false);
 
-#ifdef NOT_PRODUCT
+#ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
@@ -137,7 +137,7 @@ void NativeInvokerGenerator::generate() {
   NativeCallingConvention out_conv(_input_registers);
   ArgumentShuffle arg_shuffle(_signature, _num_args, _signature, _num_args, &in_conv, &out_conv, shufffle_reg->as_VMReg());
 
-#ifdef NOT_PRODUCT
+#ifndef PRODUCT
   LogTarget(Trace, foreign, downcall) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
