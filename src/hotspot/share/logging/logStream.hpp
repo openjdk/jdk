@@ -38,8 +38,8 @@ class LogStreamImpl : public outputStream {
   friend class LogStreamTest_TestLineBufferAllocationCap_vm_Test;
 
   // No heap allocation of LogStream.
-  static void *operator new     (size_t) = delete;
-  static void *operator new[]   (size_t) = delete;
+  static void *operator new   (size_t) = delete;
+  static void *operator new[] (size_t) = delete;
 
   // Helper class, maintains the line buffer. For small line lengths,
   // we avoid malloc and use a fixed sized member char array. If LogStream
@@ -65,7 +65,8 @@ private:
 protected:
   BackingLog _backing_log;
 public:
-  explicit LogStreamImpl(BackingLog bl): _backing_log(bl) {};
+  explicit LogStreamImpl(BackingLog bl)
+    : _backing_log(bl) {};
 
   virtual ~LogStreamImpl() {
     if (_current_line.is_empty() == false) {
@@ -178,8 +179,8 @@ class LogStream : public LogStreamImpl<LogTargetHandle>  {
   friend class LogStreamTest_TestLineBufferAllocationCap_vm_Test;
 
   // No heap allocation of LogStream.
-  static void *operator new     (size_t) = delete;
-  static void *operator new[]   (size_t) = delete;
+  static void *operator new   (size_t) = delete;
+  static void *operator new[] (size_t) = delete;
 public:
   LogStream(const LogStream&) = delete;
   virtual ~LogStream() {};
@@ -188,8 +189,8 @@ public:
   // LogTarget(Debug, gc) log;
   // LogStream(log) stream;
   template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-  LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier):
-    LogStreamImpl(LogTargetHandle(level, LogTagSetMapping<T0, T1, T2, T3, T4>::tagset())) {}
+  LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier)
+    : LogStreamImpl(LogTargetHandle(level, LogTagSetMapping<T0, T1, T2, T3, T4>::tagset())) {}
 
   // Constructor to support creation from typed (likely NULL) pointer. Mostly used by the logging framework.
   //
@@ -197,22 +198,22 @@ public:
   //  or
   // LogStream stream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)NULL);
   template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-  LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>* type_carrier):
-    LogStreamImpl(LogTargetHandle(level, LogTagSetMapping<T0, T1, T2, T3, T4>::tagset())){}
+  LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>* type_carrier)
+    : LogStreamImpl(LogTargetHandle(level, LogTagSetMapping<T0, T1, T2, T3, T4>::tagset())) {}
 
   // Constructor to support creation from a LogTargetHandle.
   //
   // LogTarget(Debug, gc) log;
   // LogTargetHandle(log) handle;
   // LogStream stream(handle);
-  LogStream(LogTargetHandle handle) : LogStreamImpl(handle) {}
+  LogStream(LogTargetHandle handle)
+    : LogStreamImpl(handle) {}
 
   // Constructor to support creation from a log level and tagset.
   //
   // LogStream(level, tageset);
-  LogStream(LogLevelType level, LogTagSet& tagset):
-    LogStreamImpl(LogTargetHandle(level, tagset))
-  {}
+  LogStream(LogLevelType level, LogTagSet& tagset)
+    : LogStreamImpl(LogTargetHandle(level, tagset)) {}
 };
 
 
@@ -222,15 +223,16 @@ public:
 template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
 class LogStreamTemplate : public LogStream {
 public:
-  LogStreamTemplate() : LogStream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)NULL) {}
+  LogStreamTemplate()
+    : LogStream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)NULL) {}
 };
 
 class LogMessageHandle {
   const LogLevelType _level;
   LogMessageImpl& _lm;
 public:
-  LogMessageHandle(const LogLevelType level, LogMessageImpl& lm):
-    _level(level), _lm(lm) {}
+  LogMessageHandle(const LogLevelType level, LogMessageImpl& lm)
+    : _level(level), _lm(lm) {}
   bool is_enabled() {
     return _lm.is_level(_level);
   }
@@ -246,11 +248,11 @@ public:
 
 
 class NonInterleavingLogStream : public LogStreamImpl<LogMessageHandle> {
-  static void *operator new     (size_t) = delete;
-  static void *operator new[]   (size_t) = delete;
+  static void *operator new   (size_t) = delete;
+  static void *operator new[] (size_t) = delete;
 public:
-  NonInterleavingLogStream(LogLevelType level, LogMessageImpl& lm) :
-    LogStreamImpl(LogMessageHandle(level, lm)){}
+  NonInterleavingLogStream(LogLevelType level, LogMessageImpl& lm)
+    : LogStreamImpl(LogMessageHandle(level, lm)) {}
 
   virtual ~NonInterleavingLogStream() {};
 };
