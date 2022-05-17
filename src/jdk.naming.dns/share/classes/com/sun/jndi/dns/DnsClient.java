@@ -623,7 +623,7 @@ public class DnsClient {
         }
 
         //
-        // xid mis-match: enqueue the response, it may belong to some other
+        // xid mismatch: enqueue the response, it may belong to some other
         // thread that has not yet had a chance to read its response.
         // enqueue only the first response, responses for retries are ignored.
         //
