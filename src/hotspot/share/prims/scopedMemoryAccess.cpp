@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,6 @@ public:
 
 class CloseScopedMemoryClosure : public HandshakeClosure {
   jobject _deopt;
-  jobject _exception;
 
 public:
   jboolean _found;
@@ -78,7 +77,6 @@ public:
   CloseScopedMemoryClosure(jobject deopt, jobject exception)
     : HandshakeClosure("CloseScopedMemory")
     , _deopt(deopt)
-    , _exception(exception)
     , _found(false) {}
 
   void do_thread(Thread* thread) {
@@ -140,12 +138,11 @@ public:
 };
 
 /*
- * This function issues a global handshake operation with all
- * Java threads. This is useful for implementing asymmetric
- * dekker synchronization schemes, where expensive synchronization
- * in performance sensitive common paths, may be shifted to
- * a less common slow path instead.
- * Top frames containg obj will be deoptimized.
+ * This function performs a thread-local handshake against all threads running at the time
+ * the given session (deopt) was closed. If the handshake for a given thread is processed while
+ * one or more threads is found inside a scoped method (that is, a method inside the ScopedMemoryAccess
+ * class annotated with the '@Scoped' annotation), and whose local variables mention the session being
+ * closed (deopt), this method returns false, signalling that the session cannot be closed safely.
  */
 JVM_ENTRY(jboolean, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, jobject deopt, jobject exception))
   CloseScopedMemoryClosure cl(deopt, exception);
@@ -155,26 +152,26 @@ JVM_END
 
 /// JVM_RegisterUnsafeMethods
 
-#define PKG "Ljdk/internal/misc/"
+#define PKG_MISC "Ljdk/internal/misc/"
+#define PKG_FOREIGN "Ljdk/internal/foreign/"
 
 #define MEMACCESS "ScopedMemoryAccess"
-#define SCOPE PKG MEMACCESS "$Scope;"
-#define SCOPED_ERR PKG MEMACCESS "$Scope$ScopedAccessError;"
+#define SCOPE PKG_FOREIGN "MemorySessionImpl;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
 static JNINativeMethod jdk_internal_misc_ScopedMemoryAccess_methods[] = {
-    {CC "closeScope0",   CC "(" SCOPE SCOPED_ERR ")Z",           FN_PTR(ScopedMemoryAccess_closeScope)},
+    {CC "closeScope0",   CC "(" SCOPE ")Z",           FN_PTR(ScopedMemoryAccess_closeScope)},
 };
 
 #undef CC
 #undef FN_PTR
 
-#undef PKG
+#undef PKG_MISC
+#undef PKG_FOREIGN
 #undef MEMACCESS
 #undef SCOPE
-#undef SCOPED_EXC
 
 // This function is exported, used by NativeLookup.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
 
       // If we don't profile all invoke bytecodes we must make sure
       // it's a bytecode we indeed profile. We can't go back to the
-      // begining of the ProfileData we intend to update to check its
+      // beginning of the ProfileData we intend to update to check its
       // type because we're right after it and we don't known its
       // length
       Label do_profile;
@@ -967,7 +967,7 @@ void InterpreterMacroAssembler::narrow(Register result) {
 //
 // Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
-// Unlock any Java monitors from syncronized blocks.
+// Unlock any Java monitors from synchronized blocks.
 // Remove the activation from the stack.
 //
 // If there are locked Java monitors
@@ -1064,6 +1064,9 @@ void InterpreterMacroAssembler::remove_activation(
 
   bind(unlock);
   unlock_object(robj);
+  NOT_LP64(get_thread(rthread);)
+  dec_held_monitor_count(rthread);
+
   pop(state);
 
   // Check that for block-structured locking (i.e., that all locked
@@ -1108,6 +1111,8 @@ void InterpreterMacroAssembler::remove_activation(
       push(state);
       mov(robj, rmon);   // nop if robj and rmon are the same
       unlock_object(robj);
+      NOT_LP64(get_thread(rthread);)
+      dec_held_monitor_count(rthread);
       pop(state);
 
       if (install_monitor_exception) {
@@ -1168,6 +1173,7 @@ void InterpreterMacroAssembler::remove_activation(
   leave();                           // remove frame anchor
   pop(ret_addr);                     // get return address
   mov(rsp, rbx);                     // set sp to sender sp
+  pop_cont_fastpath(rthread);
 }
 
 void InterpreterMacroAssembler::get_method_counters(Register method,

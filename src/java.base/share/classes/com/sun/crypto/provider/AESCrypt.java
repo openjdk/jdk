@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
     private static final byte[] rcon = new byte[30];
 
 
-    // Static code - to intialise S-boxes and T-boxes
+    // Static code - to initialise S-boxes and T-boxes
     static
     {
         int ROOT = 0x11B;
@@ -217,7 +217,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
             for (t = 0; t < 8; t++) {
                 cox[i][t] = B[t];
                 for (j = 0; j < 8; j++) {
-                    cox[i][t] ^= A[t][j] * box[i][j];
+                    cox[i][t] ^= (byte)(A[t][j] * box[i][j]);
                 }
             }
         }
@@ -227,7 +227,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
         for (i = 0; i < 256; i++) {
             S[i] = (byte)(cox[i][0] << 7);
             for (t = 1; t < 8; t++) {
-                    S[i] ^= cox[i][t] << (7-t);
+                    S[i] ^= (byte)(cox[i][t] << (7-t));
             }
             Si[S[i] & 0xFF] = (byte) i;
         }
@@ -276,7 +276,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
             for (t = 0; t < 4; t++) {
                 if (i != t) {
                     for (j = i+1; j < 8; j++) {
-                        AA[t][j] ^= mul(AA[i][j], AA[t][i]);
+                        AA[t][j] ^= (byte)(mul(AA[i][j], AA[t][i]));
                     }
                     AA[t][i] = 0;
                 }

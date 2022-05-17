@@ -31,7 +31,6 @@ import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MetadataDescriptor;
-import jdk.jfr.internal.Utils;
 
 public final class ChunkHeader {
     public static final long HEADER_SIZE = 68;
@@ -113,7 +112,7 @@ public final class ChunkHeader {
         byte fs;
         input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
         while ((fs = input.readPhysicalByte()) == UPDATING_CHUNK_HEADER) {
-            Utils.takeNap(1);
+            input.pollWait();
             input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
         }
         return fs;
@@ -180,7 +179,7 @@ public final class ChunkHeader {
                     finished = true;
                     return;
                 }
-                Utils.takeNap(1);
+                input.pollWait();
             }
         } finally {
             input.position(pos);

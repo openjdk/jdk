@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 package org.openjdk.foreigntest;
 
-import jdk.incubator.foreign.*;
+import java.lang.foreign.*;
 
 public class PanamaMain {
    public static void main(String[] args) {
-       System.out.println("Trying to get CLinker");
-       CLinker.systemCLinker();
-       System.out.println("Got CLinker");
+       System.out.println("Trying to get Linker");
+       Linker.nativeLinker();
+       System.out.println("Got Linker");
    }
 }

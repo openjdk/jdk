@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef CPU_ZERO_REGISTERMAP_ZERO_HPP
 #define CPU_ZERO_REGISTERMAP_ZERO_HPP
 
-  // machine-dependent implemention for register maps
+  // machine-dependent implementation for register maps
   friend class frame;
 
  private:
@@ -35,7 +35,7 @@
   address pd_location(VMReg reg) const { return NULL; }
 
   address pd_location(VMReg base_reg, int slot_idx) const {
-    return location(base_reg->next(slot_idx));
+    return location(base_reg->next(slot_idx), nullptr);
   }
 
   // no PD state to clear or copy:

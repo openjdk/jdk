@@ -802,7 +802,7 @@ public class RelationSupport
                 signature[0] = "java.lang.String";
                 signature[1] = "java.lang.String";
                 // Can throw InstanceNotFoundException if the Relation
-                // Service is not registered (to be catched in any case and
+                // Service is not registered (to be caught in any case and
                 // transformed into RelationServiceNotRegisteredException).
                 //
                 // Shall not throw a MBeanException, or a ReflectionException

@@ -1017,7 +1017,7 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
       Node* sval = transform_later(
           LoadNode::make(_igvn, *ctrl, (*mem)->memory_at(s_alias_idx), sptr, s_adr_type,
                          TypeInt::INT, T_INT, MemNode::unordered, LoadNode::DependsOnlyOnTest,
-                         false /*unaligned*/, is_mismatched));
+                         false /*require_atomic_access*/, false /*unaligned*/, is_mismatched));
       Node* st = transform_later(
           StoreNode::make(_igvn, *ctrl, (*mem)->memory_at(d_alias_idx), dptr, adr_type,
                           sval, T_INT, MemNode::unordered));
@@ -1292,14 +1292,14 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   BasicType src_elem = T_CONFLICT;
   BasicType dest_elem = T_CONFLICT;
 
-  if (top_dest != NULL && top_dest->klass() != NULL) {
-    dest_elem = top_dest->klass()->as_array_klass()->element_type()->basic_type();
+  if (top_src != NULL && top_src->elem() != Type::BOTTOM) {
+    src_elem = top_src->elem()->array_element_basic_type();
   }
-  if (top_src != NULL && top_src->klass() != NULL) {
-    src_elem = top_src->klass()->as_array_klass()->element_type()->basic_type();
+  if (top_dest != NULL && top_dest->elem() != Type::BOTTOM) {
+    dest_elem = top_dest->elem()->array_element_basic_type();
   }
-  if (is_reference_type(src_elem))  src_elem  = T_OBJECT;
-  if (is_reference_type(dest_elem)) dest_elem = T_OBJECT;
+  if (is_reference_type(src_elem, true)) src_elem = T_OBJECT;
+  if (is_reference_type(dest_elem, true)) dest_elem = T_OBJECT;
 
   if (ac->is_arraycopy_validated() &&
       dest_elem != T_CONFLICT &&

@@ -39,7 +39,7 @@ static bool is_vector(ciKlass* klass) {
 static bool check_vbox(const TypeInstPtr* vbox_type) {
   assert(vbox_type->klass_is_exact(), "");
 
-  ciInstanceKlass* ik = vbox_type->klass()->as_instance_klass();
+  ciInstanceKlass* ik = vbox_type->instance_klass();
   assert(is_vector(ik), "not a vector");
 
   ciField* fd1 = ik->get_field_by_name(ciSymbols::ETYPE_name(), ciSymbols::class_signature(), /* is_static */ true);
@@ -153,7 +153,7 @@ Node* GraphKit::box_vector(Node* vector, const TypeInstPtr* vbox_type, BasicType
   Node* ret = gvn().transform(new ProjNode(alloc, TypeFunc::Parms));
 
   assert(check_vbox(vbox_type), "");
-  const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->klass()));
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->instance_klass()));
   VectorBoxNode* vbox = new VectorBoxNode(C, ret, vector, vbox_type, vt);
   return gvn().transform(vbox);
 }
@@ -161,14 +161,14 @@ Node* GraphKit::box_vector(Node* vector, const TypeInstPtr* vbox_type, BasicType
 Node* GraphKit::unbox_vector(Node* v, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector) {
   assert(EnableVectorSupport, "");
   const TypeInstPtr* vbox_type_v = gvn().type(v)->is_instptr();
-  if (vbox_type->klass() != vbox_type_v->klass()) {
+  if (vbox_type->instance_klass() != vbox_type_v->instance_klass()) {
     return NULL; // arguments don't agree on vector shapes
   }
   if (vbox_type_v->maybe_null()) {
     return NULL; // no nulls are allowed
   }
   assert(check_vbox(vbox_type), "");
-  const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->klass()));
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->instance_klass()));
   Node* unbox = gvn().transform(new VectorUnboxNode(C, vt, v, merged_memory(), shuffle_to_vector));
   return unbox;
 }
@@ -816,7 +816,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
   const TypeLong*    bits_type    = gvn().type(argument(3))->isa_long();
   // Mode argument determines the mode of operation it can take following values:-
-  // MODE_BROADCAST for vector Vector.boradcast and VectorMask.maskAll operations.
+  // MODE_BROADCAST for vector Vector.broadcast and VectorMask.maskAll operations.
   // MODE_BITS_COERCED_LONG_TO_MASK for VectorMask.fromLong operation.
   const TypeInt*     mode         = gvn().type(argument(5))->isa_int();
 

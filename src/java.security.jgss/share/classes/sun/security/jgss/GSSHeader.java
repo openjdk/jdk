@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import sun.security.util.*;
 
 /*
  * The RFC states that implementations should explicitly follow the
- * encoding scheme descibed in this section rather than use ASN.1
+ * encoding scheme described in this section rather than use ASN.1
  * compilers. However, we should consider removing duplicate ASN.1
  * like code from here and depend on sun.security.util if possible.
  */
@@ -131,7 +131,7 @@ public class GSSHeader {
 
     /**
      * Used to obtain the length of the encoding of this GSSHeader.
-     * @return the lenght of the encoding of this GSSHeader instance.
+     * @return the length of the encoding of this GSSHeader instance.
      */
     public int getLength() {
         int lenField = mechOidBytes.length + mechTokenLength;
@@ -280,7 +280,7 @@ public class GSSHeader {
     /**
      * Put the encoding of the length in the specified stream.
      *
-     * @params len the length of the attribute.
+     * @param len the length of the attribute.
      * @param out the outputstream to write the length to
      * @return the number of bytes written
      * @exception IOException on writing errors.

@@ -180,6 +180,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
 
     clang)
       DISABLE_WARNING_PREFIX="-Wno-"
+      BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
 
       # Additional warnings that are not activated by -Wall and -Wextra
@@ -221,7 +222,7 @@ AC_DEFUN([FLAGS_SETUP_QUALITY_CHECKS],
       ;;
     slowdebug )
       # FIXME: By adding this to C(XX)FLAGS_DEBUG_OPTIONS/JVM_CFLAGS_SYMBOLS it
-      # get's added conditionally on whether we produce debug symbols or not.
+      # gets added conditionally on whether we produce debug symbols or not.
       # This is most likely not really correct.
 
       # Add runtime stack smashing and undefined behavior checks.
@@ -457,9 +458,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     ALWAYS_DEFINES_JVM="-D_REENTRANT"
     ALWAYS_DEFINES_JDK="-D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    ALWAYS_DEFINES_JDK="-DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_DEPRECATE \
+    # Access APIs for Windows 8 and above
+    # see https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
+    ALWAYS_DEFINES_JDK="-DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 -D_CRT_SECURE_NO_DEPRECATE \
         -D_CRT_NONSTDC_NO_DEPRECATE -DWIN32 -DIAL"
-    ALWAYS_DEFINES_JVM="-DNOMINMAX -DWIN32_LEAN_AND_MEAN"
+    ALWAYS_DEFINES_JVM="-DNOMINMAX -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602"
   fi
 
   ###############################################################################
@@ -667,7 +670,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     $1_DEFINES_CPU_JVM="${$1_DEFINES_CPU_JVM} -D_LP64=1"
   fi
 
-  # toolchain dependend, per-cpu
+  # toolchain dependent, per-cpu
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     if test "x$FLAGS_CPU" = xaarch64; then
       $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_ARM64_ -Darm64"

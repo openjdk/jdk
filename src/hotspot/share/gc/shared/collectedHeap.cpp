@@ -60,7 +60,9 @@
 
 class ClassLoaderData;
 
+Klass* CollectedHeap::_filler_object_klass = NULL;
 size_t CollectedHeap::_filler_array_max_size = 0;
+size_t CollectedHeap::_stack_chunk_max_size = 0;
 
 class GCMessage : public FormatBuffer<1024> {
  public:
@@ -278,6 +280,7 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
   assert(Heap_lock->is_locked(), "Precondition#2");
   GCCauseSetter gcs(this, cause);
   switch (cause) {
+    case GCCause::_codecache_GC_threshold:
     case GCCause::_heap_inspection:
     case GCCause::_heap_dump:
     case GCCause::_metadata_GC_threshold : {
@@ -447,7 +450,7 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
   const size_t len = payload_size * HeapWordSize / sizeof(jint);
   assert((int)len >= 0, "size too large " SIZE_FORMAT " becomes %d", words, (int)len);
 
-  ObjArrayAllocator allocator(Universe::intArrayKlassObj(), words, (int)len, /* do_zero */ false);
+  ObjArrayAllocator allocator(Universe::fillerArrayKlassObj(), words, (int)len, /* do_zero */ false);
   allocator.initialize(start);
   if (DumpSharedSpaces) {
     // This array is written into the CDS archive. Make sure it
@@ -467,7 +470,7 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words, bool zap)
     fill_with_array(start, words, zap);
   } else if (words > 0) {
     assert(words == min_fill_size(), "unaligned size");
-    ObjAllocator allocator(vmClasses::Object_klass(), words);
+    ObjAllocator allocator(CollectedHeap::filler_object_klass(), words);
     allocator.initialize(start);
   }
 }

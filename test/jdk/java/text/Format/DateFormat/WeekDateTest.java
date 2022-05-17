@@ -96,7 +96,7 @@ public class WeekDateTest {
             date = ymdFormat.parse(regularDate);
             String s = ywdFormat.format(date);
             if (!s.equals(weekDate)) {
-                throw new RuntimeException("format: got="+s+", expecetd="+weekDate);
+                throw new RuntimeException("format: got="+s+", expected="+weekDate);
             }
         }
     }

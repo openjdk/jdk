@@ -262,7 +262,7 @@ final class DigestMD5Client extends DigestMD5Base implements SaslClient {
     * directives not missing from the digest-challenge.
     *
     * @throws SaslException if a sasl is a the mechanism cannot
-    * correcly handle a callbacks or if a violation in the
+    * correctly handle a callbacks or if a violation in the
     * digest challenge format is detected.
     */
     private void processChallenge(byte[][] challengeVal, List<byte[]> realmChoices)
@@ -649,7 +649,7 @@ final class DigestMD5Client extends DigestMD5Base implements SaslClient {
      */
     private void validateResponseValue(byte[] fromServer) throws SaslException {
         if (fromServer == null) {
-            throw new SaslException("DIGEST-MD5: Authenication failed. " +
+            throw new SaslException("DIGEST-MD5: Authentication failed. " +
                 "Expecting 'rspauth' authentication success message");
         }
 

@@ -54,7 +54,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -71,6 +71,10 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+#ifndef _WINDOWS
+# include <poll.h>
+#endif
 
 # include <signal.h>
 # include <errno.h>
@@ -641,7 +645,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   DEBUG_ONLY(check_crash_protection());
 
-  // On malloc(0), implementators of malloc(3) have the choice to return either
+  // On malloc(0), implementations of malloc(3) have the choice to return either
   // NULL or a unique non-NULL pointer. To unify libc behavior across our platforms
   // we chose the latter.
   size = MAX2((size_t)1, size);
@@ -688,7 +692,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
   DEBUG_ONLY(check_crash_protection());
 
-  // On realloc(p, 0), implementators of realloc(3) have the choice to return either
+  // On realloc(p, 0), implementers of realloc(3) have the choice to return either
   // NULL or a unique non-NULL pointer. To unify libc behavior across our platforms
   // we chose the latter.
   size = MAX2((size_t)1, size);
@@ -1045,11 +1049,7 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
 // Check if pointer can be read from (4-byte read access).
 // Helps to prove validity of a not-NULL pointer.
 // Returns true in very early stages of VM life when stub is not yet generated.
-#define SAFEFETCH_DEFAULT true
 bool os::is_readable_pointer(const void* p) {
-  if (!CanUseSafeFetch32()) {
-    return SAFEFETCH_DEFAULT;
-  }
   int* const aligned = (int*) align_down((intptr_t)p, 4);
   int cafebabe = 0xcafebabe;  // tester value 1
   int deadbeef = 0xdeadbeef;  // tester value 2
@@ -1418,6 +1418,35 @@ size_t os::page_size_for_region_aligned(size_t region_size, size_t min_pages) {
 
 size_t os::page_size_for_region_unaligned(size_t region_size, size_t min_pages) {
   return page_size_for_region(region_size, min_pages, false);
+}
+
+#ifndef MAX_PATH
+#define MAX_PATH    (2 * K)
+#endif
+
+void os::pause() {
+  char filename[MAX_PATH];
+  if (PauseAtStartupFile && PauseAtStartupFile[0]) {
+    jio_snprintf(filename, MAX_PATH, "%s", PauseAtStartupFile);
+  } else {
+    jio_snprintf(filename, MAX_PATH, "./vm.paused.%d", current_process_id());
+  }
+
+  int fd = ::open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+  if (fd != -1) {
+    struct stat buf;
+    ::close(fd);
+    while (::stat(filename, &buf) == 0) {
+#if defined(_WINDOWS)
+      Sleep(100);
+#else
+      (void)::poll(NULL, 0, 100);
+#endif
+    }
+  } else {
+    jio_fprintf(stderr,
+                "Could not open pause file '%s', continuing immediately.\n", filename);
+  }
 }
 
 static const char* errno_to_string (int e, bool short_text) {
@@ -1963,4 +1992,70 @@ void os::PageSizes::print_on(outputStream* st) const {
   if (first) {
     st->print("empty");
   }
+}
+
+// Check minimum allowable stack sizes for thread creation and to initialize
+// the java system classes, including StackOverflowError - depends on page
+// size.
+// The space needed for frames during startup is platform dependent. It
+// depends on word size, platform calling conventions, C frame layout and
+// interpreter/C1/C2 design decisions. Therefore this is given in a
+// platform (os/cpu) dependent constant.
+// To this, space for guard mechanisms is added, which depends on the
+// page size which again depends on the concrete system the VM is running
+// on. Space for libc guard pages is not included in this size.
+jint os::set_minimum_stack_sizes() {
+
+  _java_thread_min_stack_allowed = _java_thread_min_stack_allowed +
+                                   StackOverflow::stack_guard_zone_size() +
+                                   StackOverflow::stack_shadow_zone_size();
+
+  _java_thread_min_stack_allowed = align_up(_java_thread_min_stack_allowed, vm_page_size());
+  _java_thread_min_stack_allowed = MAX2(_java_thread_min_stack_allowed, _os_min_stack_allowed);
+
+  size_t stack_size_in_bytes = ThreadStackSize * K;
+  if (stack_size_in_bytes != 0 &&
+      stack_size_in_bytes < _java_thread_min_stack_allowed) {
+    // The '-Xss' and '-XX:ThreadStackSize=N' options both set
+    // ThreadStackSize so we go with "Java thread stack size" instead
+    // of "ThreadStackSize" to be more friendly.
+    tty->print_cr("\nThe Java thread stack size specified is too small. "
+                  "Specify at least " SIZE_FORMAT "k",
+                  _java_thread_min_stack_allowed / K);
+    return JNI_ERR;
+  }
+
+  // Make the stack size a multiple of the page size so that
+  // the yellow/red zones can be guarded.
+  JavaThread::set_stack_size_at_create(align_up(stack_size_in_bytes, vm_page_size()));
+
+  // Reminder: a compiler thread is a Java thread.
+  _compiler_thread_min_stack_allowed = _compiler_thread_min_stack_allowed +
+                                       StackOverflow::stack_guard_zone_size() +
+                                       StackOverflow::stack_shadow_zone_size();
+
+  _compiler_thread_min_stack_allowed = align_up(_compiler_thread_min_stack_allowed, vm_page_size());
+  _compiler_thread_min_stack_allowed = MAX2(_compiler_thread_min_stack_allowed, _os_min_stack_allowed);
+
+  stack_size_in_bytes = CompilerThreadStackSize * K;
+  if (stack_size_in_bytes != 0 &&
+      stack_size_in_bytes < _compiler_thread_min_stack_allowed) {
+    tty->print_cr("\nThe CompilerThreadStackSize specified is too small. "
+                  "Specify at least " SIZE_FORMAT "k",
+                  _compiler_thread_min_stack_allowed / K);
+    return JNI_ERR;
+  }
+
+  _vm_internal_thread_min_stack_allowed = align_up(_vm_internal_thread_min_stack_allowed, vm_page_size());
+  _vm_internal_thread_min_stack_allowed = MAX2(_vm_internal_thread_min_stack_allowed, _os_min_stack_allowed);
+
+  stack_size_in_bytes = VMThreadStackSize * K;
+  if (stack_size_in_bytes != 0 &&
+      stack_size_in_bytes < _vm_internal_thread_min_stack_allowed) {
+    tty->print_cr("\nThe VMThreadStackSize specified is too small. "
+                  "Specify at least " SIZE_FORMAT "k",
+                  _vm_internal_thread_min_stack_allowed / K);
+    return JNI_ERR;
+  }
+  return JNI_OK;
 }
