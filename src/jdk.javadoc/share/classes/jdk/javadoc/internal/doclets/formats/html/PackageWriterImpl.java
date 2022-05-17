@@ -294,7 +294,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
             for (PackageElement pkg : packages) {
                 Content packageLink = getPackageLink(pkg, Text.of(pkg.getQualifiedName()));
-                var moduleLink = HtmlTree.EMPTY;
+                Content moduleLink = Text.EMPTY;
                 if (showModules) {
                     ModuleElement module = (ModuleElement) pkg.getEnclosingElement();
                     if (module != null && !module.isUnnamed()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -56,7 +56,7 @@ public abstract class XMLEntityReader implements XMLLocator {
      * pseudo-attribute.
      * <p>
      * <strong>Note:</strong> The underlying character reader on the
-     * current entity will be changed to accomodate the new encoding.
+     * current entity will be changed to accommodate the new encoding.
      * However, the new encoding is ignored if the current reader was
      * not constructed from an input stream (e.g. an external entity
      * that is resolved directly to the appropriate java.io.Reader

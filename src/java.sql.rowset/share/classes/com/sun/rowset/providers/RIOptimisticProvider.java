@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import com.sun.rowset.internal.*;
  * providing optimistic synchronization with a relational datastore
  * using any JDBC technology-enabled driver.
  *
- * <h2>1.0 Backgroud</h2>
+ * <h2>1.0 Background</h2>
  * This synchronization provider is registered with the
  * <code>SyncFactory</code> by default as the
  * <code>com.sun.rowset.providers.RIOptimisticProvider</code>.
@@ -47,7 +47,7 @@ import com.sun.rowset.internal.*;
  * interface implementations. As a reference implementation,
  * <code>RIOptimisticProvider</code> provides a
  * fully functional implementation offering a medium grade classification of
- * syncrhonization, namely GRADE_CHECK_MODIFIED_AT_COMMIT. A
+ * synchronization, namely GRADE_CHECK_MODIFIED_AT_COMMIT. A
  * disconnected <code>RowSet</code> implementation using the
  * <code>RIOptimisticProvider</code> can expect the writer to
  * check only rows that have been modified in the <code>RowSet</code> against
@@ -171,7 +171,7 @@ public final class RIOptimisticProvider extends SyncProvider implements Serializ
     /**
      * Returns the <code>SyncProvider</code> grade of synchronization that
      * <code>RowSet</code> objects can expect when using this
-     * implementation. As an optimisic synchonization provider, the writer
+     * implementation. As an optimistic synchronization provider, the writer
      * will only check rows that have been modified in the <code>RowSet</code>
      * object.
      */

@@ -1371,12 +1371,14 @@ public class HtmlDocletWriter {
         }
         Content div;
         Content result = commentTagsToContent(element, tags, first, inSummary);
-        if (depr) {
-            div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
-            target.add(div);
-        } else {
-            div = HtmlTree.DIV(HtmlStyle.block, result);
-            target.add(div);
+        if (!result.isEmpty()) {
+            if (depr) {
+                div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
+                target.add(div);
+            } else {
+                div = HtmlTree.DIV(HtmlStyle.block, result);
+                target.add(div);
+            }
         }
         if (tags.isEmpty()) {
             target.add(Entity.NO_BREAK_SPACE);
