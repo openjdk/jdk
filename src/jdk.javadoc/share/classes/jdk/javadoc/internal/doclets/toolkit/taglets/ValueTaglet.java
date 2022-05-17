@@ -109,7 +109,7 @@ public class ValueTaglet extends BaseTaglet {
                 try {
                     text = String.format(configuration.getLocale(), f, field.getConstantValue());
                 } catch (IllegalFormatException e) {
-                    messages.warning(holder,
+                    messages.error(holder,
                             "doclet.value_tag_invalid_format", format);
                     return writer.invalidTagOutput(
                             messages.getResources().getText("doclet.value_tag_invalid_format", format),

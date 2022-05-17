@@ -1597,12 +1597,14 @@ public class DocCommentParser {
                         default -> {
                             format = null;
                         }
-                    };
+                    }
                     DCReference ref = reference(true);
                     skipWhitespace();
                     if (ch == '}') {
                         nextChar();
-                        return m.at(pos).newValueTree(format, ref);
+                        return format == null
+                                ? m.at(pos).newValueTree(ref)
+                                : m.at(pos).newValueTree(format, ref);
                     }
                     nextChar();
                     throw new ParseException("dc.unexpected.content");

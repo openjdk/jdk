@@ -419,11 +419,11 @@ public interface DocTreeFactory {
      * @param ref a reference to the value
      * @return a {@code ValueTree} object
      *
-     * @implSpec This implementation throws {@code UnsupportedOperationException}.
+     * @implSpec This implementation calls {@link #newValueTree(ReferenceTree) newValueTree(ref)}.
      * @since 19
      */
     default ValueTree newValueTree(TextTree format, ReferenceTree ref) {
-        throw new UnsupportedOperationException();
+        return newValueTree(ref);
     }
 
     /**

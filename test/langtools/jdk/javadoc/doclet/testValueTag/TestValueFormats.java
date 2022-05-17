@@ -55,7 +55,7 @@ public class TestValueFormats extends JavadocTester {
     }
 
     @Test
-    public void test(Path base) throws Exception {
+    public void testValid(Path base) throws Exception {
         Path srcDir = base.resolve("src");
         tb.writeJavaFiles(srcDir,
                 """
@@ -87,5 +87,33 @@ public class TestValueFormats extends JavadocTester {
                     <h3>pi</h3>
                     <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type">double</span>&nbsp;<span class="element-name">pi</span></div>
                     <div class="block">The value 3.1415926525 is  3.14.</div>""");
+    }
+
+    @Test
+    public void testBadFormat(Path base) throws Exception {
+        Path srcDir = base.resolve("src");
+        tb.writeJavaFiles(srcDir,
+                """
+                    package p;
+                    /**
+                     * Comment.
+                     */
+                    public class C {
+                        /** The value {@value} is {@value %a}. */
+                        public static final int i65535 = 65535;
+                    }""");
+
+        Path outDir = base.resolve("out");
+        javadoc("-d", outDir.toString(),
+                "-sourcepath", srcDir.toString(),
+                "p");
+
+        checkExit(Exit.ERROR);
+
+        checkOutput("p/C.html", true,
+                """
+                    <h3>i65535</h3>
+                    <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">i65535</span></div>
+                    <div class="block">The value 65535 is <span class="invalid-tag">invalid format: %a</span>.</div>""");
     }
 }
