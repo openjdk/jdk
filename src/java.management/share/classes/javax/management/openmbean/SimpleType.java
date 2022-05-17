@@ -214,7 +214,7 @@ public final class SimpleType<T> extends OpenType<T> {
     }
 
 
-    /* *** Methods overriden from class Object *** */
+    /* *** Methods overridden from class Object *** */
 
     /**
      * Compares the specified <code>obj</code> parameter with this <code>SimpleType</code> instance for equality.

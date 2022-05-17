@@ -1373,7 +1373,7 @@ debugInit_exit(jvmtiError error, const char *msg)
         return;
     }
 
-    // No transport initilized.
+    // No transport initialized.
     // As we don't have any details here exiting with separate exit code
     if (error == AGENT_ERROR_TRANSPORT_INIT) {
         forceExit(EXIT_TRANSPORT_ERROR);

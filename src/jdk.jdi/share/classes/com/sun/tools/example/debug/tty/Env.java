@@ -162,7 +162,7 @@ class Env {
     }
 
     /**
-     * Return a Reader cooresponding to the source of this location.
+     * Return a Reader corresponding to the source of this location.
      * Return null if not available.
      * Note: returned reader must be closed.
      */

@@ -108,7 +108,7 @@ public class TokenTracker {
      * The following represents the number line with positions of
      * initNumber, windowStart, expectedNumber marked on it. Regions in
      * between them show the different sequencing and replay state
-     * possibilites for tokens that fall in there.
+     * possibilities for tokens that fall in there.
      *
      *  (1)      windowStart
      *           initNumber               expectedNumber
@@ -277,7 +277,7 @@ public class TokenTracker {
 
         /*
          * At this point we know that the number will start a new interval
-         * which needs to be added to the list. We might have to recyle an
+         * which needs to be added to the list. We might have to recycle an
          * older entry in the list.
          */
 
@@ -353,7 +353,7 @@ public class TokenTracker {
 
     /**
      * An entry in the list that represents the sequence of received
-     * tokens. Each entry is actaully an interval of numbers, all of which
+     * tokens. Each entry is actually an interval of numbers, all of which
      * have been received.
      */
     class Entry {

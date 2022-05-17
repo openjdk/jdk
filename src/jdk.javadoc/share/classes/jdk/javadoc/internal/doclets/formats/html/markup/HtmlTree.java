@@ -83,12 +83,6 @@ public class HtmlTree extends Content {
     private List<Content> content = List.of();
 
     /**
-     * A sentinel value to explicitly indicate empty content.
-     * The '==' identity of this object is significant.
-     */
-    public static final Content EMPTY = Text.of("");
-
-    /**
      * Creates an {@code HTMLTree} object representing an HTML element
      * with the given name.
      *
@@ -168,15 +162,36 @@ public class HtmlTree extends Content {
     /**
      * Adds additional content for the HTML element.
      *
+     * @implSpec In order to facilitate creation of succinct output this method
+     * silently drops discardable content as determined by {@link #isDiscardable()}.
+     * Use {@link #addUnchecked(Content)} to add content unconditionally.
+     *
      * @param content the content
+     * @return this HTML tree
      */
     @Override
     public HtmlTree add(Content content) {
         if (content instanceof ContentBuilder cb) {
             cb.contents.forEach(this::add);
+        } else if (!content.isDiscardable()) {
+            // quietly avoid adding empty or invalid nodes
+            if (this.content.isEmpty())
+                this.content = new ArrayList<>();
+            this.content.add(content);
         }
-        else if (content == HtmlTree.EMPTY || content.isValid()) {
-            // quietly avoid adding empty or invalid nodes (except EMPTY)
+        return this;
+    }
+
+    /**
+     * Adds content to this HTML tree without checking whether it is discardable.
+     *
+     * @param content the content to add
+     * @return this HTML tree
+     */
+    public HtmlTree addUnchecked(Content content) {
+        if (content instanceof ContentBuilder cb) {
+            cb.contents.forEach(this::addUnchecked);
+        } else {
             if (this.content.isEmpty())
                 this.content = new ArrayList<>();
             this.content.add(content);
@@ -790,6 +805,17 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code SPAN} element with the given style.
+     *
+     * @param styleClass the style
+     * @return the element
+     */
+    public static HtmlTree SPAN(HtmlStyle styleClass) {
+        return new HtmlTree(TagName.SPAN)
+                .setStyle(styleClass);
+    }
+
+    /**
      * Creates an HTML {@code SPAN} element with the given style and some content.
      *
      * @param styleClass the style
@@ -981,37 +1007,19 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Returns true if the HTML tree is valid. This check is more specific to
-     * standard doclet and not exactly similar to W3C specifications. But it
-     * ensures HTML validation.
+     * Returns {@code true} if the HTML tree does not affect the output and can be discarded.
+     * This implementation considers non-void elements without content or {@code id} attribute
+     * as discardable, with the exception of {@code SCRIPT} which can sometimes be used without
+     * content.
      *
-     * @return true if the HTML tree is valid
+     * @return true if the HTML tree can be discarded without affecting the output
      */
     @Override
-    public boolean isValid() {
-        return switch (tagName) {
-            case A ->
-                    hasAttr(HtmlAttr.ID) || (hasAttr(HtmlAttr.HREF) && hasContent());
-            case BR ->
-                    !hasContent() && (!hasAttrs() || hasAttr(HtmlAttr.CLEAR));
-            case HR, INPUT ->
-                    !hasContent();
-            case IMG ->
-                    hasAttr(HtmlAttr.SRC) && hasAttr(HtmlAttr.ALT) && !hasContent();
-            case LINK ->
-                    hasAttr(HtmlAttr.HREF) && !hasContent();
-            case META ->
-                    hasAttr(HtmlAttr.CONTENT) && !hasContent();
-            case SCRIPT ->
-                    (hasAttr(HtmlAttr.TYPE) && hasAttr(HtmlAttr.SRC) && !hasContent())
-                            || (hasAttr(HtmlAttr.TYPE) && hasContent());
-            case SPAN ->
-                    hasAttr(HtmlAttr.ID) || hasContent();
-            case WBR ->
-                    !hasContent();
-            default ->
-                    hasContent();
-        };
+    public boolean isDiscardable() {
+        return !isVoid()
+            && !hasContent()
+            && !hasAttr(HtmlAttr.ID)
+            && tagName != TagName.SCRIPT;
     }
 
     /**

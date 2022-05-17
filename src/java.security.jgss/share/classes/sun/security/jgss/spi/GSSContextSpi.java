@@ -62,7 +62,7 @@ import java.security.Provider;
  * On the other hands, tokens used for per-message calls are generated
  * entirely by the mechanism. It is possible that the mechanism chooses to
  * encase inner-level per-message tokens in a header similar to that used
- * for initial tokens, however, this is upto the mechanism to do. The token
+ * for initial tokens, however, this is up to the mechanism to do. The token
  * to/from the per-message calls are opaque to the GSS-Framework.
  * </strong>
  * <p>
@@ -81,7 +81,7 @@ import java.security.Provider;
  * the token directly form an InputStream but output it to some byte[] for
  * the application to process. Unfortunately the high level GSS bindings
  * do not contain overloaded forms of wrap() and unwrap() that do just
- * this, however we have accomodated those cases here with the expectation
+ * this, however we have accommodated those cases here with the expectation
  * that this will be rolled into the high level bindings sooner or later.
  *
  * @author Mayank Upadhyay
@@ -161,7 +161,7 @@ public interface GSSContextSpi {
      * <p>
      * All overloaded forms of GSSContext.initSecContext() can be handled
      * with this mechanism level initSecContext. Since the output token
-     * from this method is a fixed size, not exeedingly large, and a one
+     * from this method is a fixed size, not exceedingly large, and a one
      * time deal, an overloaded form that takes an OutputStream has not
      * been defined. The GSS-Framwork can write the returned byte[] to any
      * application provided OutputStream. Similarly, any application input
@@ -202,7 +202,7 @@ public interface GSSContextSpi {
      * <p>
      * All overloaded forms of GSSContext.acceptSecContext() can be handled
      * with this mechanism level acceptSecContext. Since the output token
-     * from this method is a fixed size, not exeedingly large, and a one
+     * from this method is a fixed size, not exceedingly large, and a one
      * time deal, an overloaded form that takes an OutputStream has not
      * been defined. The GSS-Framwork can write the returned byte[] to any
      * application provided OutputStream. Similarly, any application input

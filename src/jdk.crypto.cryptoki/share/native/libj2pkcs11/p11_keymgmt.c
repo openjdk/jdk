@@ -819,7 +819,7 @@ void copyBackTLSPrfParams(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism, jobject jM
     jMechanismType = (*env)->GetLongField(env, jMechanism, fieldID);
     ckMechanismType = jLongToCKULong(jMechanismType);
     if (ckMechanismType != ckpMechanism->mechanism) {
-        /* we do not have maching types, this should not occur */
+        /* we do not have matching types, this should not occur */
         return;
     }
 
@@ -967,7 +967,7 @@ static void copyBackClientVersion(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism, jo
     jMechanismType = (*env)->GetLongField(env, jMechanism, fieldID);
     ckMechanismType = jLongToCKULong(jMechanismType);
     if (ckMechanismType != ckpMechanism->mechanism) {
-        /* we do not have maching types, this should not occur */
+        /* we do not have matching types, this should not occur */
         return;
     }
 
@@ -1065,7 +1065,7 @@ static void copyBackKeyMatParams(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism,
     jMechanismType = (*env)->GetLongField(env, jMechanism, fieldID);
     ckMechanismType = jLongToCKULong(jMechanismType);
     if (ckMechanismType != ckpMechanism->mechanism) {
-        /* we do not have maching types, this should not occur */
+        /* we do not have matching types, this should not occur */
         return;
     }
 
