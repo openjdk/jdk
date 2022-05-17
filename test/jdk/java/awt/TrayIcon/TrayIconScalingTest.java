@@ -32,7 +32,6 @@
  * @requires (os.family == "windows")
  */
 
-
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Font;
@@ -51,6 +50,7 @@ public class TrayIconScalingTest {
 
     private static SystemTray tray;
     private static TrayIcon icon;
+
     private static final String INSTRUCTIONS =
             "This test case checks the scaling of tray icons for on-the-fly" +
                     " DPI/ Scale changes on Windows.\n\n" +
@@ -65,9 +65,9 @@ public class TrayIconScalingTest {
                     " if there is NO distortion then press PASS.\n\n";
 
     private static Font font = new Font("Dialog", Font.BOLD, 12);
+
     public static void main(String[] args)
             throws InterruptedException, InvocationTargetException {
-
         // Check if SystemTray supported on the machine
         if (!SystemTray.isSupported()) {
             System.out.println("SystemTray is not supported");
@@ -82,6 +82,7 @@ public class TrayIconScalingTest {
             tray.remove(icon);
         }
     }
+
     private static void createAndShowGUI() {
         ArrayList<Image> imageList = new ArrayList<>();
         for (int size = 16; size <= 48; size += 4) {
@@ -99,6 +100,7 @@ public class TrayIconScalingTest {
             throw new RuntimeException("Error while adding icon to system tray");
         }
     }
+
     private static Image createIcon(int size) {
         BufferedImage image = new BufferedImage(size, size,
                 BufferedImage.TYPE_INT_ARGB);
