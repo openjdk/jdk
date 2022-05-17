@@ -39,18 +39,21 @@ class Forte : AllStatic {
 // A small RAII mark class to manage 'in_asgct' thread status
 class ASGCTMark : public StackObj {
  private:
-  // NONCOPYABLE(ASGCTMark);
-  ASGCTMark(JavaThread* thread) {
-    if (thread != nullptr) {
-      assert(thread == JavaThread::current(), "not the current thread");
-      thread->set_in_asgct(true);
-    }
-  }
+  JavaThread* _thread;
+  NONCOPYABLE(ASGCTMark);
 
  public:
-  ASGCTMark() : ASGCTMark(JavaThread::current()) {}
+  ASGCTMark(JavaThread* thread) : _thread(thread) {
+    if (_thread != nullptr) {
+      assert(_thread == Thread::current_or_null_safe(), "not the current thread");
+      _thread->set_in_asgct(true);
+    }
+  }
   ~ASGCTMark() {
-    JavaThread::current()->set_in_asgct(false);
+    if (_thread != nullptr) {
+      assert(_thread == Thread::current_or_null_safe(), "not the current thread");
+      _thread->set_in_asgct(false);
+    }
   }
 };
 
