@@ -1553,10 +1553,10 @@ CK_VOID_PTR jMechParamToCKMechParamPtrSlow(JNIEnv *env, jobject jParam,
         case CKM_SKIPJACK_PRIVATE_WRAP: // CK_SKIPJACK_PRIVATE_WRAP_PARAMS
         case CKM_SKIPJACK_RELAYX: // CK_SKIPJACK_RELAYX_PARAMS
         case CKM_KEY_WRAP_SET_OAEP: // CK_KEY_WRAP_SET_OAEP_PARAMS
-            throwPKCS11RuntimeException(env, "No parameter support for this mchanism");
+            throwPKCS11RuntimeException(env, "No parameter support for this mechanism");
             break;
         default:
-            /* if everything faild up to here */
+            /* if everything failed up to here */
             /* try if the parameter is a primitive Java type */
             ckpParamPtr = jObjectToPrimitiveCKObjectPtr(env, jParam, ckpLength);
             /* *ckpParamPtr = jObjectToCKVoidPtr(jParam); */
@@ -1905,7 +1905,7 @@ jRsaPkcsPssParamToCKRsaPkcsPssParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pL
  * @param env - used to call JNI funktions to get the Java classes and objects
  * @param jParam - the Java CK_ECDH1_DERIVE_PARAMS object to convert
  * @param pLength - length of the allocated memory of the returned pointer
- * @retur pointer to nthe new CK_ECDH1_DERIVE_PARAMS structure
+ * @return pointer to nthe new CK_ECDH1_DERIVE_PARAMS structure
  */
 CK_ECDH1_DERIVE_PARAMS_PTR
 jEcdh1DeriveParamToCKEcdh1DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)

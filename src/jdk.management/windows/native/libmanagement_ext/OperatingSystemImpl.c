@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -959,7 +959,7 @@ bindPdhFunctionPointers(HMODULE h) {
     assert(h);
     assert(GetCurrentThreadId() == initializationLock.owningThread);
 
-    /* The 'A' at the end means the ANSI (not the UNICODE) vesions of the methods */
+    /* The 'A' at the end means the ANSI (not the UNICODE) versions of the methods */
     PdhAddCounter_i         = (PdhAddCounterFunc)GetProcAddress(h, "PdhAddCounterA");
     PdhOpenQuery_i         = (PdhOpenQueryFunc)GetProcAddress(h, "PdhOpenQueryA");
     PdhCloseQuery_i         = (PdhCloseQueryFunc)GetProcAddress(h, "PdhCloseQuery");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,7 +311,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getOpenFileDescriptorCount0
         return -1;
     }
 
-    // allocate memory to hold the fd information (we don't acutally use this information
+    // allocate memory to hold the fd information (we don't actually use this information
     // but need it to get the number of open files)
     fds_size = bsdinfo.pbi_nfiles * sizeof(struct proc_fdinfo);
     fds = malloc(fds_size);

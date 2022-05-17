@@ -181,7 +181,7 @@ public class ProgrammableInvoker {
         MethodHandle specializedHandle = dropArguments(leafHandle, argContextPos, Binding.Context.class);
         for (int i = 0; i < highLevelType.parameterCount(); i++) {
             List<Binding> bindings = callingSequence.argumentBindings(i);
-            argInsertPos += bindings.stream().filter(Binding.VMStore.class::isInstance).count() + 1;
+            argInsertPos += ((int) bindings.stream().filter(Binding.VMStore.class::isInstance).count()) + 1;
             // We interpret the bindings in reverse since we have to construct a MethodHandle from the bottom up
             for (int j = bindings.size() - 1; j >= 0; j--) {
                 Binding binding = bindings.get(j);

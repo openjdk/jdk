@@ -194,10 +194,6 @@ public:
   size_t free_count() const;
   BufferNode* allocate();
   void release(BufferNode* node);
-
-  // If _free_list has items buffered in the pending list, transfer
-  // these to make them available for re-allocation.
-  bool flush_free_list() { return _free_list.try_transfer_pending(); }
 };
 
 // A PtrQueueSet represents resources common to a set of pointer queues.
