@@ -380,6 +380,12 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
       FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * VM_Version::zva_length());
     }
+    if (!FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
+      // BlockZeroingLowLimit is a limit in bytes. It's not possible
+      // to initialize blocks smaller than wordSize, 8 bytes. As this
+      // flag is a tuning parameter, silently set the limit to 1 word.
+      BlockZeroingLowLimit = MAX2(BlockZeroingLowLimit, (intx)wordSize);
+    }
   } else if (UseBlockZeroing) {
     warning("DC ZVA is not available on this CPU");
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
