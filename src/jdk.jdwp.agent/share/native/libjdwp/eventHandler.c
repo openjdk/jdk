@@ -49,11 +49,11 @@
  * When a JVMTI class prepare event for "Foobar"
  * comes in, the second handler will create one JDI event, the
  * third handler will compare the class signature, and since
- * it matchs create a second event.  There may also be internal
+ * it matches create a second event.  There may also be internal
  * events as there are in this case, one created by the front-end
  * and one by the back-end.
  *
- * Each event kind has a handler chain, which is a doublely linked
+ * Each event kind has a handler chain, which is a doubly linked
  * list of handlers for that kind of event.
  */
 #include "util.h"

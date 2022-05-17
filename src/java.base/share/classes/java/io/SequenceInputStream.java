@@ -162,10 +162,11 @@ public class SequenceInputStream extends InputStream {
     }
 
     /**
-     * Reads up to {@code len} bytes of data from this input stream
-     * into an array of bytes.  If {@code len} is not zero, the method
-     * blocks until at least 1 byte of input is available; otherwise, no
-     * bytes are read and {@code 0} is returned.
+     * Reads up to {@code len} bytes of data from this input stream into an
+     * array of bytes.  If the end of the last contained stream has been reached
+     * then {@code -1} is returned.  Otherwise, if {@code len} is not zero, the
+     * method blocks until at least 1 byte of input is available; if {@code len}
+     * is zero, no bytes are read and {@code 0} is returned.
      * <p>
      * The {@code read} method of {@code SequenceInputStream}
      * tries to read the data from the current substream. If it fails to
@@ -180,8 +181,10 @@ public class SequenceInputStream extends InputStream {
      * @return     the total number of bytes read into the buffer, or
      *             {@code -1} if there is no more data because the end of
      *             the last contained stream has been reached.
-     * @throws     NullPointerException If {@code b} is {@code null}.
-     * @throws     IndexOutOfBoundsException If {@code off} is negative,
+     * @throws     NullPointerException if the end of the last contained
+     *             stream has not been reached and {@code b} is {@code null}.
+     * @throws     IndexOutOfBoundsException if the end of the last contained
+     *             stream has not been reached and {@code off} is negative,
      *             {@code len} is negative, or {@code len} is
      *             greater than {@code b.length - off}
      * @throws     IOException  if an I/O error occurs.

@@ -72,7 +72,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     @Override
     public Content getSerializableFields(String heading, Content source) {
         var section = HtmlTree.SECTION(HtmlStyle.detail);
-        if (source.isValid()) {
+        if (!source.isEmpty()) {
             Content headingContent = Text.of(heading);
             var serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
             section.add(serialHeading);

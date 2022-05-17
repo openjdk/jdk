@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -431,7 +431,7 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
     // HeapVisitor, OopVisitor methods can't throw any non-runtime
     // exception. But, derived class write methods (which are called
     // from visitor callbacks) may throw IOException. Hence, we throw
-    // RuntimeException with origianal IOException as cause from the
+    // RuntimeException with original IOException as cause from the
     // visitor methods. This method gets back the original IOException
     // (if any) and re-throws the same.
     protected void handleRuntimeException(RuntimeException re)

@@ -38,7 +38,7 @@
 class BufferNode::TestSupport : AllStatic {
 public:
   static bool try_transfer_pending(Allocator* allocator) {
-    return allocator->flush_free_list();
+    return allocator->_free_list.try_transfer_pending();
   }
 
   class CompletedList;

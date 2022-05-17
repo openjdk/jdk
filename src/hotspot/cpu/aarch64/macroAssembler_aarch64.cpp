@@ -4831,7 +4831,6 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
       address tpc = trampoline_call(zero_blocks);
       if (tpc == NULL) {
         DEBUG_ONLY(reset_labels(around));
-        assert(false, "failed to allocate space for trampoline");
         return NULL;
       }
     } else {
@@ -4865,10 +4864,11 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
 // cnt:          Immediate count in HeapWords.
 //
 // r10, r11, rscratch1, and rscratch2 are clobbered.
-void MacroAssembler::zero_words(Register base, uint64_t cnt)
+address MacroAssembler::zero_words(Register base, uint64_t cnt)
 {
   guarantee(zero_words_block_size < BlockZeroingLowLimit,
             "increase BlockZeroingLowLimit");
+  address result = nullptr;
   if (cnt <= (uint64_t)BlockZeroingLowLimit / BytesPerWord) {
 #ifndef PRODUCT
     {
@@ -4902,10 +4902,12 @@ void MacroAssembler::zero_words(Register base, uint64_t cnt)
       stp(zr, zr, Address(base, i * wordSize));
     }
     BLOCK_COMMENT("} zero_words");
+    result = pc();
   } else {
     mov(r10, base); mov(r11, cnt);
-    zero_words(r10, r11);
+    result = zero_words(r10, r11);
   }
+  return result;
 }
 
 // Zero blocks of memory by using DC ZVA.
@@ -5532,7 +5534,7 @@ static int reg2offset_out(VMReg r) {
   return (r->reg2stack() + SharedRuntime::out_preserve_stack_slots()) * VMRegImpl::stack_slot_size;
 }
 
-// On64 bit we will store integer like items to the stack as
+// On 64bit we will store integer like items to the stack as
 // 64bits items (AArch64 ABI) even though java would only store
 // 32bits for a parameter. On 32bit it will simply be 32bits
 // So this routine will do 32->32 on 32bit and 32->64 on 64bit

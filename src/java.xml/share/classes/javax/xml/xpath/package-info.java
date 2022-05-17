@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,7 +239,7 @@
  * <p>
  * The return type is specified by a {@link javax.xml.namespace.QName} parameter
  * in method call used to evaluate the expression, which is either a call to
- * {@code XPathExpression.evalute(...)} or {@code XPath.evaluate(...)}
+ * {@code XPathExpression.evaluate(...)} or {@code XPath.evaluate(...)}
  * methods.
  *
  * <p>

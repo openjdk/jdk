@@ -130,7 +130,7 @@ public class SearchWriter extends HtmlDocletWriter {
                         .add(contents.getContent("doclet.search.loading")))
                 .add(HtmlTree.DIV(new HtmlTree(TagName.DIV)
                                 .setId(HtmlId.of("result-container"))
-                                .add(HtmlTree.EMPTY))
+                                .addUnchecked(Text.EMPTY))
                         .setId(HtmlId.of("result-section"))
                         .put(HtmlAttr.STYLE, "display: none;")
                         .add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.SEARCH_PAGE_JS).getPath())));

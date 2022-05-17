@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public interface EntityDeclaration extends XMLEvent {
    * The replacement text of the entity.
    * This method will only return non-null
    * if this is an internal entity.
-   * @return null or the replacment text
+   * @return null or the replacement text
    */
   String getReplacementText();
 
