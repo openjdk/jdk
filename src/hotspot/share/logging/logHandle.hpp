@@ -32,7 +32,7 @@
 // polluting the surrounding API with template functions.
 class LogHandle {
 private:
-  LogTagSet* _tagset;
+  LogTagSet* const _tagset;
 
 public:
   template <LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
@@ -43,7 +43,7 @@ public:
     return _tagset->is_level(level);
   }
 
-  LogTagSet* tagset() const {
+  LogTagSet* const tagset() const {
     return _tagset;
   }
 
@@ -73,10 +73,10 @@ public:
 class LogTargetHandle {
 private:
   const LogLevelType _level;
-  LogTagSet*         _tagset;
+  LogTagSet* const   _tagset;
 
 public:
-  LogTargetHandle(LogLevelType level, LogTagSet* tagset) : _level(level), _tagset(tagset) {}
+  LogTargetHandle(LogLevelType level, LogTagSet* const tagset) : _level(level), _tagset(tagset) {}
 
   template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
   LogTargetHandle(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier) :

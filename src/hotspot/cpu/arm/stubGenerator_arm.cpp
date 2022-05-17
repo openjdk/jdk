@@ -3039,9 +3039,9 @@ class StubGenerator: public StubCodeGenerator {
 }; // end class declaration
 
 #define UCM_TABLE_MAX_ENTRIES 32
-void StubGenerator_generate(CodeBuffer* code, bool all) {
+void StubGenerator_generate(CodeBuffer* code, int phase) {
   if (UnsafeCopyMemory::_table == NULL) {
     UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
   }
-  StubGenerator g(code, all);
+  StubGenerator g(code, phase);
 }

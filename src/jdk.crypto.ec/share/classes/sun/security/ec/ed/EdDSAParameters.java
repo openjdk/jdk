@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,8 +259,8 @@ public class EdDSAParameters {
 
     static {
         // set up Ed25519
-        IntegerFieldModuloP ed25519Field = new IntegerPolynomial25519();
-        IntegerFieldModuloP ed25519OrderField = new Curve25519OrderField();
+        IntegerFieldModuloP ed25519Field = IntegerPolynomial25519.ONE;
+        IntegerFieldModuloP ed25519OrderField = Curve25519OrderField.ONE;
         BigInteger biD = new BigInteger("3709570593466943934313808350875" +
                 "4565189542113879843219016388785533085940283555");
         ImmutableIntegerModuloP d = ed25519Field.getElement(biD);
@@ -280,8 +280,8 @@ public class EdDSAParameters {
         namedParams.put(name, oid, bits, params);
 
         // set up Ed448
-        IntegerFieldModuloP ed448Field = new IntegerPolynomial448();
-        IntegerFieldModuloP ed448OrderField = new Curve448OrderField();
+        IntegerFieldModuloP ed448Field = IntegerPolynomial448.ONE;
+        IntegerFieldModuloP ed448OrderField = Curve448OrderField.ONE;
         biD = ed448Field.getSize().subtract(new BigInteger("39081"));
         d = ed448Field.getElement(biD);
         baseX = new BigInteger("224580040295924300187604334" +

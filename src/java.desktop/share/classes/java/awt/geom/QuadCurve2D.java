@@ -239,19 +239,6 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
         }
 
         /**
-         * {@inheritDoc}
-         * @since 1.2
-         */
-        public Rectangle2D getBounds2D() {
-            float left   = Math.min(Math.min(x1, x2), ctrlx);
-            float top    = Math.min(Math.min(y1, y2), ctrly);
-            float right  = Math.max(Math.max(x1, x2), ctrlx);
-            float bottom = Math.max(Math.max(y1, y2), ctrly);
-            return new Rectangle2D.Float(left, top,
-                                         right - left, bottom - top);
-        }
-
-        /**
          * Use serialVersionUID from JDK 1.6 for interoperability.
          */
         @Serial
@@ -426,19 +413,6 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
             this.ctrly = ctrly;
             this.x2    = x2;
             this.y2    = y2;
-        }
-
-        /**
-         * {@inheritDoc}
-         * @since 1.2
-         */
-        public Rectangle2D getBounds2D() {
-            double left   = Math.min(Math.min(x1, x2), ctrlx);
-            double top    = Math.min(Math.min(y1, y2), ctrly);
-            double right  = Math.max(Math.max(x1, x2), ctrlx);
-            double bottom = Math.max(Math.max(y1, y2), ctrly);
-            return new Rectangle2D.Double(left, top,
-                                          right - left, bottom - top);
         }
 
         /**
@@ -1333,6 +1307,14 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
      */
     public boolean contains(Rectangle2D r) {
         return contains(r.getX(), r.getY(), r.getWidth(), r.getHeight());
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.2
+     */
+    public Rectangle2D getBounds2D() {
+        return Path2D.getBounds2D(getPathIterator(null));
     }
 
     /**
