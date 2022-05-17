@@ -23,11 +23,13 @@
 
 /**
  * @test
- * @bug 8285281
+ * @bug 8283894
  * @key randomness
  * @summary To test various transforms added for bit COMPRESS_BITS and EXPAND_BITS operations
  * @requires vm.compiler2.enabled
  * @requires vm.cpu.features ~= ".*bmi2.*"
+ * @requires vm.cpu.features ~= ".*bmi1.*"
+ * @requires vm.cpu.features ~= ".*sse2.*"
  * @library /test/lib /
  * @run driver compiler.intrinsics.TestBitShuffleOpers
  */
