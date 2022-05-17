@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 
 import jdk.jfr.internal.EventControl.NamedControl;
-import jdk.jfr.internal.handlers.EventHandler;
+import jdk.jfr.internal.event.EventConfiguration;
 
 final class SettingsManager {
 
@@ -130,7 +130,7 @@ final class SettingsManager {
 
    private Map<String, InternalSetting> availableSettings = new LinkedHashMap<>();
 
-    void setSettings(List<Map<String, String>> activeSettings) {
+    void setSettings(List<Map<String, String>> activeSettings, boolean writeSettingEvents) {
         // store settings so they are available if a new event class is loaded
         availableSettings = createSettingsMap(activeSettings);
         List<EventControl> eventControls = MetadataRepository.getInstance().getEventControls();
@@ -142,8 +142,9 @@ final class SettingsManager {
             if (Logger.shouldLog(LogTag.JFR_SETTING, LogLevel.INFO)) {
                 eventControls.sort(Comparator.comparing(x -> x.getEventType().getName()));
             }
+            long timestamp = JVM.counterTime();
             for (EventControl ec : eventControls) {
-                setEventControl(ec);
+                setEventControl(ec, writeSettingEvents, timestamp);
             }
         }
         if (JVM.getJVM().getAllowedToDoEventRetransforms()) {
@@ -154,9 +155,9 @@ final class SettingsManager {
     public void updateRetransform(List<Class<? extends jdk.internal.event.Event>> eventClasses) {
         List<Class<?>> classes = new ArrayList<>();
         for(Class<? extends jdk.internal.event.Event> eventClass: eventClasses) {
-            EventHandler eh = Utils.getHandler(eventClass);
-            if (eh != null ) {
-                PlatformEventType eventType = eh.getPlatformEventType();
+            EventConfiguration ec = Utils.getConfiguration(eventClass);
+            if (ec != null ) {
+                PlatformEventType eventType = ec.getPlatformEventType();
                 if (eventType.isMarkedForInstrumentation()) {
                     classes.add(eventClass);
                     eventType.markForInstrumentation(false);
@@ -211,7 +212,7 @@ final class SettingsManager {
       return internals.values();
     }
 
-    void setEventControl(EventControl ec) {
+    void setEventControl(EventControl ec, boolean writeSettingEvents, long timestamp) {
         InternalSetting is = getInternalSetting(ec);
         boolean shouldLog = Logger.shouldLog(LogTag.JFR_SETTING, LogLevel.INFO);
         if (shouldLog) {
@@ -219,11 +220,11 @@ final class SettingsManager {
         }
         for (NamedControl nc: ec.getNamedControls()) {
             Set<String> values = null;
-            String settingName = nc.name;
+            String settingName = nc.name();
             if (is != null) {
                 values = is.getValues(settingName);
             }
-            Control control = nc.control;
+            Control control = nc.control();
             if (values != null) {
                 control.apply(values);
                 String after = control.getLastValue();
@@ -250,7 +251,9 @@ final class SettingsManager {
                 }
             }
         }
-        ec.writeActiveSettingEvent();
+        if (writeSettingEvents) {
+            ec.writeActiveSettingEvent(timestamp);
+        }
         if (shouldLog) {
             Logger.log(LogTag.JFR_SETTING, LogLevel.INFO, "}");
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class WaitNotifyThreadTest {
 
     private Object monitor = new Object();
     private final String OBJECT = "a java.lang.Object";
-    private final String OBJECT_WAIT = "java.lang.Object.wait";
+    private final String OBJECT_WAIT = "java.lang.Object.wait0";
     private final String RUN_METHOD = "WaitNotifyThreadTest$WaitThread.run";
 
     interface Action {

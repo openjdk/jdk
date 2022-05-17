@@ -75,7 +75,7 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
      * @param principal the principal from which to derive the salt
      * @param password the password that should be used to compute the
      * key.
-     * @param algorithm the name for the algorithm that this key wil be
+     * @param algorithm the name for the algorithm that this key will be
      * used for. This parameter may be null in which case "DES" will be
      * assumed.
      */

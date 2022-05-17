@@ -26,6 +26,8 @@
 package java.lang.invoke;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.Utils;
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassReader;
@@ -42,13 +44,16 @@ import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
 import java.lang.constant.ConstantDescs;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.LambdaForm.BasicType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ReflectPermission;
 import java.nio.ByteOrder;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
@@ -7863,4 +7868,299 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         return expectedType;
     }
 
+    /**
+     * Creates a var handle object, which can be used to dereference a {@linkplain java.lang.foreign.MemorySegment memory segment}
+     * by viewing its contents as a sequence of the provided value layout.
+     *
+     * <p>The provided layout specifies the {@linkplain ValueLayout#carrier() carrier type},
+     * the {@linkplain ValueLayout#byteSize() byte size},
+     * the {@linkplain ValueLayout#byteAlignment() byte alignment} and the {@linkplain ValueLayout#order() byte order}
+     * associated with the returned var handle.
+     *
+     * <p>The returned var handle's type is {@code carrier} and the list of coordinate types is
+     * {@code (MemorySegment, long)}, where the {@code long} coordinate type corresponds to byte offset into
+     * a given memory segment. The returned var handle accesses bytes at an offset in a given
+     * memory segment, composing bytes to or from a value of the type {@code carrier} according to the given endianness;
+     * the alignment constraint (in bytes) for the resulting var handle is given by {@code alignmentBytes}.
+     *
+     * <p>As an example, consider the memory layout expressed by a {@link GroupLayout} instance constructed as follows:
+     * <blockquote><pre>{@code
+     *     GroupLayout seq = java.lang.foreign.MemoryLayout.structLayout(
+     *             MemoryLayout.paddingLayout(32),
+     *             ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withName("value")
+     *     );
+     * }</pre></blockquote>
+     * To access the member layout named {@code value}, we can construct a memory segment view var handle as follows:
+     * <blockquote><pre>{@code
+     *     VarHandle handle = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN)); //(MemorySegment, long) -> int
+     *     handle = MethodHandles.insertCoordinates(handle, 1, 4); //(MemorySegment) -> int
+     * }</pre></blockquote>
+     *
+     * @apiNote The resulting var handle features certain <i>access mode restrictions</i>,
+     * which are common to all memory segment view var handles. A memory segment view var handle is associated
+     * with an access size {@code S} and an alignment constraint {@code B}
+     * (both expressed in bytes). We say that a memory access operation is <em>fully aligned</em> if it occurs
+     * at a memory address {@code A} which is compatible with both alignment constraints {@code S} and {@code B}.
+     * If access is fully aligned then following access modes are supported and are
+     * guaranteed to support atomic access:
+     * <ul>
+     * <li>read write access modes for all {@code T}, with the exception of
+     *     access modes {@code get} and {@code set} for {@code long} and
+     *     {@code double} on 32-bit platforms.
+     * <li>atomic update access modes for {@code int}, {@code long},
+     *     {@code float}, {@code double} or {@link MemoryAddress}.
+     *     (Future major platform releases of the JDK may support additional
+     *     types for certain currently unsupported access modes.)
+     * <li>numeric atomic update access modes for {@code int}, {@code long} and {@link MemoryAddress}.
+     *     (Future major platform releases of the JDK may support additional
+     *     numeric types for certain currently unsupported access modes.)
+     * <li>bitwise atomic update access modes for {@code int}, {@code long} and {@link MemoryAddress}.
+     *     (Future major platform releases of the JDK may support additional
+     *     numeric types for certain currently unsupported access modes.)
+     * </ul>
+     *
+     * If {@code T} is {@code float}, {@code double} or {@link MemoryAddress} then atomic
+     * update access modes compare values using their bitwise representation
+     * (see {@link Float#floatToRawIntBits},
+     * {@link Double#doubleToRawLongBits} and {@link MemoryAddress#toRawLongValue()}, respectively).
+     * <p>
+     * Alternatively, a memory access operation is <em>partially aligned</em> if it occurs at a memory address {@code A}
+     * which is only compatible with the alignment constraint {@code B}; in such cases, access for anything other than the
+     * {@code get} and {@code set} access modes will result in an {@code IllegalStateException}. If access is partially aligned,
+     * atomic access is only guaranteed with respect to the largest power of two that divides the GCD of {@code A} and {@code S}.
+     * <p>
+     * Finally, in all other cases, we say that a memory access operation is <em>misaligned</em>; in such cases an
+     * {@code IllegalStateException} is thrown, irrespective of the access mode being used.
+     *
+     * @param layout the value layout for which a memory access handle is to be obtained.
+     * @return the new memory segment view var handle.
+     * @throws IllegalArgumentException if an illegal carrier type is used, or if {@code alignmentBytes} is not a power of two.
+     * @throws NullPointerException if {@code layout} is {@code null}.
+     * @see MemoryLayout#varHandle(MemoryLayout.PathElement...)
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public static VarHandle memorySegmentViewVarHandle(ValueLayout layout) {
+        Objects.requireNonNull(layout);
+        return Utils.makeSegmentViewVarHandle(layout);
+    }
+
+    /**
+     * Adapts a target var handle by pre-processing incoming and outgoing values using a pair of filter functions.
+     * <p>
+     * When calling e.g. {@link VarHandle#set(Object...)} on the resulting var handle, the incoming value (of type {@code T}, where
+     * {@code T} is the <em>last</em> parameter type of the first filter function) is processed using the first filter and then passed
+     * to the target var handle.
+     * Conversely, when calling e.g. {@link VarHandle#get(Object...)} on the resulting var handle, the return value obtained from
+     * the target var handle (of type {@code T}, where {@code T} is the <em>last</em> parameter type of the second filter function)
+     * is processed using the second filter and returned to the caller. More advanced access mode types, such as
+     * {@link VarHandle.AccessMode#COMPARE_AND_EXCHANGE} might apply both filters at the same time.
+     * <p>
+     * For the boxing and unboxing filters to be well-formed, their types must be of the form {@code (A... , S) -> T} and
+     * {@code (A... , T) -> S}, respectively, where {@code T} is the type of the target var handle. If this is the case,
+     * the resulting var handle will have type {@code S} and will feature the additional coordinates {@code A...} (which
+     * will be appended to the coordinates of the target var handle).
+     * <p>
+     * If the boxing and unboxing filters throw any checked exceptions when invoked, the resulting var handle will
+     * throw an {@link IllegalStateException}.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the target var handle
+     * @param filterToTarget a filter to convert some type {@code S} into the type of {@code target}
+     * @param filterFromTarget a filter to convert the type of {@code target} to some type {@code S}
+     * @return an adapter var handle which accepts a new type, performing the provided boxing/unboxing conversions.
+     * @throws IllegalArgumentException if {@code filterFromTarget} and {@code filterToTarget} are not well-formed, that is, they have types
+     * other than {@code (A... , S) -> T} and {@code (A... , T) -> S}, respectively, where {@code T} is the type of the target var handle,
+     * or if it's determined that either {@code filterFromTarget} or {@code filterToTarget} throws any checked exceptions.
+     * @throws NullPointerException if any of the arguments is {@code null}.
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public static VarHandle filterValue(VarHandle target, MethodHandle filterToTarget, MethodHandle filterFromTarget) {
+        return VarHandles.filterValue(target, filterToTarget, filterFromTarget);
+    }
+
+    /**
+     * Adapts a target var handle by pre-processing incoming coordinate values using unary filter functions.
+     * <p>
+     * When calling e.g. {@link VarHandle#get(Object...)} on the resulting var handle, the incoming coordinate values
+     * starting at position {@code pos} (of type {@code C1, C2 ... Cn}, where {@code C1, C2 ... Cn} are the return types
+     * of the unary filter functions) are transformed into new values (of type {@code S1, S2 ... Sn}, where {@code S1, S2 ... Sn} are the
+     * parameter types of the unary filter functions), and then passed (along with any coordinate that was left unaltered
+     * by the adaptation) to the target var handle.
+     * <p>
+     * For the coordinate filters to be well-formed, their types must be of the form {@code S1 -> T1, S2 -> T1 ... Sn -> Tn},
+     * where {@code T1, T2 ... Tn} are the coordinate types starting at position {@code pos} of the target var handle.
+     * <p>
+     * If any of the filters throws a checked exception when invoked, the resulting var handle will
+     * throw an {@link IllegalStateException}.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the target var handle
+     * @param pos the position of the first coordinate to be transformed
+     * @param filters the unary functions which are used to transform coordinates starting at position {@code pos}
+     * @return an adapter var handle which accepts new coordinate types, applying the provided transformation
+     * to the new coordinate values.
+     * @throws IllegalArgumentException if the handles in {@code filters} are not well-formed, that is, they have types
+     * other than {@code S1 -> T1, S2 -> T2, ... Sn -> Tn} where {@code T1, T2 ... Tn} are the coordinate types starting
+     * at position {@code pos} of the target var handle, if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
+     * or if more filters are provided than the actual number of coordinate types available starting at {@code pos},
+     * or if it's determined that any of the filters throws any checked exceptions.
+     * @throws NullPointerException if any of the arguments is {@code null} or {@code filters} contains {@code null}.
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public static VarHandle filterCoordinates(VarHandle target, int pos, MethodHandle... filters) {
+        return VarHandles.filterCoordinates(target, pos, filters);
+    }
+
+    /**
+     * Provides a target var handle with one or more <em>bound coordinates</em>
+     * in advance of the var handle's invocation. As a consequence, the resulting var handle will feature less
+     * coordinate types than the target var handle.
+     * <p>
+     * When calling e.g. {@link VarHandle#get(Object...)} on the resulting var handle, incoming coordinate values
+     * are joined with bound coordinate values, and then passed to the target var handle.
+     * <p>
+     * For the bound coordinates to be well-formed, their types must be {@code T1, T2 ... Tn },
+     * where {@code T1, T2 ... Tn} are the coordinate types starting at position {@code pos} of the target var handle.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the var handle to invoke after the bound coordinates are inserted
+     * @param pos the position of the first coordinate to be inserted
+     * @param values the series of bound coordinates to insert
+     * @return an adapter var handle which inserts additional coordinates,
+     *         before calling the target var handle
+     * @throws IllegalArgumentException if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
+     * or if more values are provided than the actual number of coordinate types available starting at {@code pos}.
+     * @throws ClassCastException if the bound coordinates in {@code values} are not well-formed, that is, they have types
+     * other than {@code T1, T2 ... Tn }, where {@code T1, T2 ... Tn} are the coordinate types starting at position {@code pos}
+     * of the target var handle.
+     * @throws NullPointerException if any of the arguments is {@code null} or {@code values} contains {@code null}.
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public static VarHandle insertCoordinates(VarHandle target, int pos, Object... values) {
+        return VarHandles.insertCoordinates(target, pos, values);
+    }
+
+    /**
+     * Provides a var handle which adapts the coordinate values of the target var handle, by re-arranging them
+     * so that the new coordinates match the provided ones.
+     * <p>
+     * The given array controls the reordering.
+     * Call {@code #I} the number of incoming coordinates (the value
+     * {@code newCoordinates.size()}), and call {@code #O} the number
+     * of outgoing coordinates (the number of coordinates associated with the target var handle).
+     * Then the length of the reordering array must be {@code #O},
+     * and each element must be a non-negative number less than {@code #I}.
+     * For every {@code N} less than {@code #O}, the {@code N}-th
+     * outgoing coordinate will be taken from the {@code I}-th incoming
+     * coordinate, where {@code I} is {@code reorder[N]}.
+     * <p>
+     * No coordinate value conversions are applied.
+     * The type of each incoming coordinate, as determined by {@code newCoordinates},
+     * must be identical to the type of the corresponding outgoing coordinate
+     * in the target var handle.
+     * <p>
+     * The reordering array need not specify an actual permutation.
+     * An incoming coordinate will be duplicated if its index appears
+     * more than once in the array, and an incoming coordinate will be dropped
+     * if its index does not appear in the array.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     * @param target the var handle to invoke after the coordinates have been reordered
+     * @param newCoordinates the new coordinate types
+     * @param reorder an index array which controls the reordering
+     * @return an adapter var handle which re-arranges the incoming coordinate values,
+     * before calling the target var handle
+     * @throws IllegalArgumentException if the index array length is not equal to
+     * the number of coordinates of the target var handle, or if any index array element is not a valid index for
+     * a coordinate of {@code newCoordinates}, or if two corresponding coordinate types in
+     * the target var handle and in {@code newCoordinates} are not identical.
+     * @throws NullPointerException if any of the arguments is {@code null} or {@code newCoordinates} contains {@code null}.
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public static VarHandle permuteCoordinates(VarHandle target, List<Class<?>> newCoordinates, int... reorder) {
+        return VarHandles.permuteCoordinates(target, newCoordinates, reorder);
+    }
+
+    /**
+     * Adapts a target var handle by pre-processing
+     * a sub-sequence of its coordinate values with a filter (a method handle).
+     * The pre-processed coordinates are replaced by the result (if any) of the
+     * filter function and the target var handle is then called on the modified (usually shortened)
+     * coordinate list.
+     * <p>
+     * If {@code R} is the return type of the filter (which cannot be void), the target var handle must accept a value of
+     * type {@code R} as its coordinate in position {@code pos}, preceded and/or followed by
+     * any coordinate not passed to the filter.
+     * No coordinates are reordered, and the result returned from the filter
+     * replaces (in order) the whole subsequence of coordinates originally
+     * passed to the adapter.
+     * <p>
+     * The argument types (if any) of the filter
+     * replace zero or one coordinate types of the target var handle, at position {@code pos},
+     * in the resulting adapted var handle.
+     * The return type of the filter must be identical to the
+     * coordinate type of the target var handle at position {@code pos}, and that target var handle
+     * coordinate is supplied by the return value of the filter.
+     * <p>
+     * If any of the filters throws a checked exception when invoked, the resulting var handle will
+     * throw an {@link IllegalStateException}.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the var handle to invoke after the coordinates have been filtered
+     * @param pos the position of the coordinate to be filtered
+     * @param filter the filter method handle
+     * @return an adapter var handle which filters the incoming coordinate values,
+     * before calling the target var handle
+     * @throws IllegalArgumentException if the return type of {@code filter}
+     * is void, or it is not the same as the {@code pos} coordinate of the target var handle,
+     * if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
+     * if the resulting var handle's type would have <a href="MethodHandle.html#maxarity">too many coordinates</a>,
+     * or if it's determined that {@code filter} throws any checked exceptions.
+     * @throws NullPointerException if any of the arguments is {@code null}.
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public static VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle filter) {
+        return VarHandles.collectCoordinates(target, pos, filter);
+    }
+
+    /**
+     * Returns a var handle which will discard some dummy coordinates before delegating to the
+     * target var handle. As a consequence, the resulting var handle will feature more
+     * coordinate types than the target var handle.
+     * <p>
+     * The {@code pos} argument may range between zero and <i>N</i>, where <i>N</i> is the arity of the
+     * target var handle's coordinate types. If {@code pos} is zero, the dummy coordinates will precede
+     * the target's real arguments; if {@code pos} is <i>N</i> they will come after.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the var handle to invoke after the dummy coordinates are dropped
+     * @param pos position of the first coordinate to drop (zero for the leftmost)
+     * @param valueTypes the type(s) of the coordinate(s) to drop
+     * @return an adapter var handle which drops some dummy coordinates,
+     *         before calling the target var handle
+     * @throws IllegalArgumentException if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive.
+     * @throws NullPointerException if any of the arguments is {@code null} or {@code valueTypes} contains {@code null}.
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public static VarHandle dropCoordinates(VarHandle target, int pos, Class<?>... valueTypes) {
+        return VarHandles.dropCoordinates(target, pos, valueTypes);
+    }
 }

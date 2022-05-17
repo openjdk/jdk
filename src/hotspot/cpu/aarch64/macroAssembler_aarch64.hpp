@@ -212,7 +212,7 @@ class MacroAssembler: public Assembler {
 
   inline void movw(Register Rd, Register Rn) {
     if (Rd == sp || Rn == sp) {
-      addw(Rd, Rn, 0U);
+      Assembler::addw(Rd, Rn, 0U);
     } else {
       orrw(Rd, zr, Rn);
     }
@@ -221,7 +221,7 @@ class MacroAssembler: public Assembler {
     assert(Rd != r31_sp && Rn != r31_sp, "should be");
     if (Rd == Rn) {
     } else if (Rd == sp || Rn == sp) {
-      add(Rd, Rn, 0U);
+      Assembler::add(Rd, Rn, 0U);
     } else {
       orr(Rd, zr, Rn);
     }
@@ -687,6 +687,9 @@ public:
   // Alignment
   void align(int modulus);
 
+  // nop
+  void post_call_nop();
+
   // Stack frame creation/removal
   void enter(bool strip_ret_addr = false);
   void leave();
@@ -874,6 +877,12 @@ public:
   void pop_CPU_state(bool restore_vectors = false, bool use_sve = false,
                      int sve_vector_size_in_bytes = 0, int total_predicate_in_bytes = 0);
 
+  void push_cont_fastpath(Register java_thread);
+  void pop_cont_fastpath(Register java_thread);
+  void inc_held_monitor_count(Register java_thread);
+  void dec_held_monitor_count(Register java_thread);
+  void reset_held_monitor_count(Register java_thread);
+
   // Round up to a power of two
   void round_to(Register reg, int modulus);
 
@@ -1004,6 +1013,10 @@ public:
 
   void should_not_reach_here()                   { stop("should not reach here"); }
 
+  void _assert_asm(Condition cc, const char* msg);
+#define assert_asm0(cc, msg) _assert_asm(cc, FILE_AND_LINE ": " msg)
+#define assert_asm(masm, command, cc, msg) DEBUG_ONLY(command; (masm)->_assert_asm(cc, FILE_AND_LINE ": " #command " " #cc ": " msg))
+
   // Stack overflow checking
   void bang_stack_with_offset(int offset) {
     // stack grows down, caller passes positive offset
@@ -1084,7 +1097,8 @@ private:
 public:
   // Calls
 
-  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
+  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL) { return trampoline_call1(entry, cbuf, true); }
+  address trampoline_call1(Address entry, CodeBuffer* cbuf, bool check_emit_size = true);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
@@ -1095,8 +1109,19 @@ public:
     return CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
 
-  // Jumps that can reach anywhere in the code cache.
-  // Trashes tmp.
+  // Far_call and far_jump generate a call of/jump to the provided address.
+  // The address must be inside the code cache.
+  // Supported entry.rspec():
+  // - relocInfo::external_word_type
+  // - relocInfo::runtime_call_type
+  // - relocInfo::none
+  // If the distance to the address can exceed the branch range
+  // (128M for the release build, 2M for the debug build; see branch_range definition)
+  // for direct calls(BL)/jumps(B), a call(BLR)/jump(BR) with the address put in
+  // the tmp register is generated. Instructions putting the address in the tmp register
+  // are embedded at a call site. The tmp register is invalidated.
+  // This differs from trampoline_call which puts additional code (trampoline) including
+  // BR into the stub code section and a BL to the trampoline at a call site.
   void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
   int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
 
@@ -1144,17 +1169,17 @@ public:
 
   // If a constant does not fit in an immediate field, generate some
   // number of MOV instructions and then perform the operation
-  void wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned imm,
+  void wrap_add_sub_imm_insn(Register Rd, Register Rn, uint64_t imm,
                              add_sub_imm_insn insn1,
-                             add_sub_reg_insn insn2);
+                             add_sub_reg_insn insn2, bool is32);
   // Separate vsn which sets the flags
-  void wrap_adds_subs_imm_insn(Register Rd, Register Rn, unsigned imm,
-                             add_sub_imm_insn insn1,
-                             add_sub_reg_insn insn2);
+  void wrap_adds_subs_imm_insn(Register Rd, Register Rn, uint64_t imm,
+                               add_sub_imm_insn insn1,
+                               add_sub_reg_insn insn2, bool is32);
 
-#define WRAP(INSN)                                                      \
-  void INSN(Register Rd, Register Rn, unsigned imm) {                   \
-    wrap_add_sub_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN); \
+#define WRAP(INSN, is32)                                                \
+  void INSN(Register Rd, Register Rn, uint64_t imm) {                   \
+    wrap_add_sub_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN, is32); \
   }                                                                     \
                                                                         \
   void INSN(Register Rd, Register Rn, Register Rm,                      \
@@ -1171,12 +1196,12 @@ public:
     Assembler::INSN(Rd, Rn, Rm, option, amount);                        \
   }
 
-  WRAP(add) WRAP(addw) WRAP(sub) WRAP(subw)
+  WRAP(add, false) WRAP(addw, true) WRAP(sub, false) WRAP(subw, true)
 
 #undef WRAP
-#define WRAP(INSN)                                                      \
-  void INSN(Register Rd, Register Rn, unsigned imm) {                   \
-    wrap_adds_subs_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN); \
+#define WRAP(INSN, is32)                                                \
+  void INSN(Register Rd, Register Rn, uint64_t imm) {                   \
+    wrap_adds_subs_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN, is32); \
   }                                                                     \
                                                                         \
   void INSN(Register Rd, Register Rn, Register Rm,                      \
@@ -1193,7 +1218,7 @@ public:
     Assembler::INSN(Rd, Rn, Rm, option, amount);                        \
   }
 
-  WRAP(adds) WRAP(addsw) WRAP(subs) WRAP(subsw)
+  WRAP(adds, false) WRAP(addsw, true) WRAP(subs, false) WRAP(subsw, true)
 
   void add(Register Rd, Register Rn, RegisterOrConstant increment);
   void addw(Register Rd, Register Rn, RegisterOrConstant increment);
@@ -1266,7 +1291,7 @@ public:
                      int elem_size);
 
   void fill_words(Register base, Register cnt, Register value);
-  void zero_words(Register base, uint64_t cnt);
+  address zero_words(Register base, uint64_t cnt);
   address zero_words(Register ptr, Register cnt);
   void zero_dcache_blocks(Register base, Register cnt);
 

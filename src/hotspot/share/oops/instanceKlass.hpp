@@ -474,6 +474,11 @@ private:
   bool has_nest_member(JavaThread* current, InstanceKlass* k) const;
 
 public:
+  // Call this only if you know that the nest host has been initialized.
+  InstanceKlass* nest_host_not_null() {
+    assert(_nest_host != NULL, "must be");
+    return _nest_host;
+  }
   // Used to construct informative IllegalAccessError messages at a higher level,
   // if there was an issue resolving or validating the nest host.
   // Returns NULL if there was no error.
@@ -568,9 +573,6 @@ public:
   void rewrite_class(TRAPS);
   void link_methods(TRAPS);
   Method* class_initializer() const;
-
-  // set the class to initialized if no static initializer is present
-  void eager_initialize(Thread *thread);
 
   // reference type
   ReferenceType reference_type() const     { return (ReferenceType)_reference_type; }
@@ -1174,7 +1176,6 @@ private:
   bool verify_code                               (TRAPS);
   void initialize_impl                           (TRAPS);
   void initialize_super_interfaces               (TRAPS);
-  void eager_initialize_impl                     ();
 
   void add_initialization_error(JavaThread* current, Handle exception);
   oop get_initialization_error(JavaThread* current);

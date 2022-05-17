@@ -55,7 +55,7 @@ public class ForkJoinPool19Test extends JSR166TestCase {
     }
 
     public static Test suite() {
-        return new TestSuite(ForkJoinPool8Test.class);
+        return new TestSuite(ForkJoinPool19Test.class);
     }
 
     /**
@@ -264,21 +264,29 @@ public class ForkJoinPool19Test extends JSR166TestCase {
      * lazySubmit submits a task that is not executed until new
      * workers are created or it is explicitly joined by a worker.
      */
+    @SuppressWarnings("removal")
     public void testLazySubmit() {
+        ForkJoinPool p;
+        try {
+            p = new ForkJoinPool();
+        } catch (java.security.AccessControlException e) {
+            return;
+        }
+        FibAction f = new FibAction(8);
+        RecursiveAction j = new RecursiveAction() {
+                protected void compute() {
+                    f.join();
+                }};
         RecursiveAction a = new CheckedRecursiveAction() {
             protected void realCompute() {
-                final ForkJoinPool p = mainPool();
-                FibAction f = new FibAction(8);
+                p.invoke(new FibAction(8));
                 p.lazySubmit(f);
-                checkNotDone(f);
-                FibAction g = new FibAction(8);
-                p.submit(g);
-                g.join();
-                f.join();
+                p.invoke(new FibAction(8));
+                p.invoke(j);
                 assertEquals(21, f.result);
                 checkCompletedNormally(f);
             }};
-        testInvokeOnPool(mainPool(), a);
+        testInvokeOnPool(p, a);
     }
 
     /**
@@ -489,6 +497,42 @@ public class ForkJoinPool19Test extends JSR166TestCase {
             assertEquals(
                 identityString(task) + "[Wrapped task = " + c.toString() + "]",
                 task.toString());
+        }
+    }
+
+    /**
+     * Implicitly closing a new pool using try-with-resources terminates it
+     */
+    public void testClose() {
+        ForkJoinTask f = new FibAction(8);
+        ForkJoinPool pool = null;
+        try (ForkJoinPool p = new ForkJoinPool()) {
+            pool = p;
+            p.execute(f);
+        }
+        checkCompletedNormally(f);
+        assertTrue(pool != null && pool.isTerminated());
+    }
+
+    /**
+     * Implicitly closing common pool using try-with-resources has no effect.
+     */
+    public void testCloseCommonPool() {
+        ForkJoinTask f = new FibAction(8);
+        ForkJoinPool pool;
+        try (ForkJoinPool p = pool = ForkJoinPool.commonPool()) {
+            p.execute(f);
+        }
+
+        assertFalse(pool.isShutdown());
+        assertFalse(pool.isTerminating());
+        assertFalse(pool.isTerminated());
+
+        String prop = System.getProperty(
+            "java.util.concurrent.ForkJoinPool.common.parallelism");
+        if (! "0".equals(prop)) {
+            f.join();
+            checkCompletedNormally(f);
         }
     }
 

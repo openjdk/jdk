@@ -1314,17 +1314,6 @@ void LIRGenerator::do_getModifiers(Intrinsic* x) {
   __ branch_destination(L_done->label());
 }
 
-// Example: Thread.currentThread()
-void LIRGenerator::do_currentThread(Intrinsic* x) {
-  assert(x->number_of_arguments() == 0, "wrong type");
-  LIR_Opr temp = new_register(T_ADDRESS);
-  LIR_Opr reg = rlock_result(x);
-  __ move(new LIR_Address(getThreadPointer(), in_bytes(JavaThread::threadObj_offset()), T_ADDRESS), temp);
-  // threadObj = ((OopHandle)_threadObj)->resolve();
-  access_load(IN_NATIVE, T_OBJECT,
-              LIR_OprFact::address(new LIR_Address(temp, T_OBJECT)), reg);
-}
-
 void LIRGenerator::do_getObjectSize(Intrinsic* x) {
   assert(x->number_of_arguments() == 3, "wrong type");
   LIR_Opr result_reg = rlock_result(x);
@@ -1429,6 +1418,28 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
 #endif
 
   __ branch_destination(L_done->label());
+}
+
+void LIRGenerator::do_extentLocalCache(Intrinsic* x) {
+  do_JavaThreadField(x, JavaThread::extentLocalCache_offset());
+}
+
+// Example: Thread.currentCarrierThread()
+void LIRGenerator::do_currentCarrierThread(Intrinsic* x) {
+  do_JavaThreadField(x, JavaThread::threadObj_offset());
+}
+
+void LIRGenerator::do_vthread(Intrinsic* x) {
+  do_JavaThreadField(x, JavaThread::vthread_offset());
+}
+
+void LIRGenerator::do_JavaThreadField(Intrinsic* x, ByteSize offset) {
+  assert(x->number_of_arguments() == 0, "wrong type");
+  LIR_Opr temp = new_register(T_ADDRESS);
+  LIR_Opr reg = rlock_result(x);
+  __ move(new LIR_Address(getThreadPointer(), in_bytes(offset), T_ADDRESS), temp);
+  access_load(IN_NATIVE, T_OBJECT,
+              LIR_OprFact::address(new LIR_Address(temp, T_OBJECT)), reg);
 }
 
 void LIRGenerator::do_RegisterFinalizer(Intrinsic* x) {
@@ -2887,31 +2898,6 @@ void LIRGenerator::do_IfOp(IfOp* x) {
   __ cmove(lir_cond(x->cond()), t_val.result(), f_val.result(), reg, as_BasicType(x->x()->type()));
 }
 
-#ifdef JFR_HAVE_INTRINSICS
-
-void LIRGenerator::do_getEventWriter(Intrinsic* x) {
-  LabelObj* L_end = new LabelObj();
-
-  // FIXME T_ADDRESS should actually be T_METADATA but it can't because the
-  // meaning of these two is mixed up (see JDK-8026837).
-  LIR_Address* jobj_addr = new LIR_Address(getThreadPointer(),
-                                           in_bytes(THREAD_LOCAL_WRITER_OFFSET_JFR),
-                                           T_ADDRESS);
-  LIR_Opr result = rlock_result(x);
-  __ move(LIR_OprFact::oopConst(NULL), result);
-  LIR_Opr jobj = new_register(T_METADATA);
-  __ move_wide(jobj_addr, jobj);
-  __ cmp(lir_cond_equal, jobj, LIR_OprFact::metadataConst(0));
-  __ branch(lir_cond_equal, L_end->label());
-
-  access_load(IN_NATIVE, T_OBJECT, LIR_OprFact::address(new LIR_Address(jobj, T_OBJECT)), result);
-
-  __ branch_destination(L_end->label());
-}
-
-#endif
-
-
 void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
   assert(x->number_of_arguments() == 0, "wrong type");
   // Enforce computation of _reserved_argument_area_size which is required on some platforms.
@@ -2937,11 +2923,8 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   }
 
 #ifdef JFR_HAVE_INTRINSICS
-  case vmIntrinsics::_getEventWriter:
-    do_getEventWriter(x);
-    break;
   case vmIntrinsics::_counterTime:
-    do_RuntimeCall(CAST_FROM_FN_PTR(address, JFR_TIME_FUNCTION), x);
+    do_RuntimeCall(CAST_FROM_FN_PTR(address, JfrTime::time_function()), x);
     break;
 #endif
 
@@ -2958,8 +2941,10 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_isPrimitive:    do_isPrimitive(x);   break;
   case vmIntrinsics::_getModifiers:   do_getModifiers(x);  break;
   case vmIntrinsics::_getClass:       do_getClass(x);      break;
-  case vmIntrinsics::_currentThread:  do_currentThread(x); break;
   case vmIntrinsics::_getObjectSize:  do_getObjectSize(x); break;
+  case vmIntrinsics::_currentCarrierThread: do_currentCarrierThread(x); break;
+  case vmIntrinsics::_currentThread:  do_vthread(x);       break;
+  case vmIntrinsics::_extentLocalCache: do_extentLocalCache(x); break;
 
   case vmIntrinsics::_dlog:           // fall through
   case vmIntrinsics::_dlog10:         // fall through
@@ -3025,6 +3010,10 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 
   case vmIntrinsics::_vectorizedMismatch:
     do_vectorizedMismatch(x);
+    break;
+
+  case vmIntrinsics::_Continuation_doYield:
+    do_continuation_doYield(x);
     break;
 
   case vmIntrinsics::_blackhole:

@@ -177,7 +177,7 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oo
         } else if (is_boxed_value_load) {
           Node* klass = alloc->in(AllocateNode::KlassNode);
           const TypeKlassPtr* tklass = phase->type(klass)->is_klassptr();
-          if (tklass->klass_is_exact() && !tklass->klass()->equals(t_oop->klass())) {
+          if (tklass->klass_is_exact() && !tklass->exact_klass()->equals(t_oop->is_instptr()->exact_klass())) {
             result = proj_in->in(TypeFunc::Memory); // not related allocation
           }
         }
@@ -265,11 +265,11 @@ static Node *step_through_mergemem(PhaseGVN *phase, MergeMemNode *mmem,  const T
   // means an array I have not precisely typed yet.  Do not do any
   // alias stuff with it any time soon.
   const TypeOopPtr *toop = tp->isa_oopptr();
-  if( tp->base() != Type::AnyPtr &&
+  if (tp->base() != Type::AnyPtr &&
       !(toop &&
-        toop->klass() != NULL &&
-        toop->klass()->is_java_lang_Object() &&
-        toop->offset() == Type::OffsetBot) ) {
+        toop->isa_instptr() &&
+        toop->is_instptr()->instance_klass()->is_java_lang_Object() &&
+        toop->offset() == Type::OffsetBot)) {
     // compress paths and change unreachable cycles to TOP
     // If not, we can update the input infinitely along a MergeMem cycle
     // Equivalent code in PhiNode::Ideal
@@ -550,7 +550,7 @@ Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, N
     // is known to be within bounds. This is checked below.
     if (ary_t != NULL && ld_addp->is_AddP()) {
       Node* ld_offs = ld_addp->in(AddPNode::Offset);
-      BasicType ary_elem = ary_t->klass()->as_array_klass()->element_type()->basic_type();
+      BasicType ary_elem = ary_t->elem()->array_element_basic_type();
       jlong header = arrayOopDesc::base_offset_in_bytes(ary_elem);
       jlong elemsize = type2aelembytes(ary_elem);
 
@@ -850,12 +850,25 @@ void LoadNode::dump_spec(outputStream *st) const {
 //----------------------------is_immutable_value-------------------------------
 // Helper function to allow a raw load without control edge for some cases
 bool LoadNode::is_immutable_value(Node* adr) {
-  return (adr->is_AddP() && adr->in(AddPNode::Base)->is_top() &&
-          adr->in(AddPNode::Address)->Opcode() == Op_ThreadLocal &&
-          (adr->in(AddPNode::Offset)->find_intptr_t_con(-1) ==
-           in_bytes(JavaThread::osthread_offset()) ||
-           adr->in(AddPNode::Offset)->find_intptr_t_con(-1) ==
-           in_bytes(JavaThread::threadObj_offset())));
+  if (adr->is_AddP() && adr->in(AddPNode::Base)->is_top() &&
+      adr->in(AddPNode::Address)->Opcode() == Op_ThreadLocal) {
+
+    jlong offset = adr->in(AddPNode::Offset)->find_intptr_t_con(-1);
+    int offsets[] = {
+      in_bytes(JavaThread::osthread_offset()),
+      in_bytes(JavaThread::threadObj_offset()),
+      in_bytes(JavaThread::vthread_offset()),
+      in_bytes(JavaThread::extentLocalCache_offset()),
+    };
+
+    for (size_t i = 0; i < sizeof offsets / sizeof offsets[0]; i++) {
+      if (offset == offsets[i]) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 #endif
 
@@ -979,7 +992,9 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
       addp->set_req(AddPNode::Address, src);
 
       const TypeAryPtr* ary_t = phase->type(in(MemNode::Address))->isa_aryptr();
-      BasicType ary_elem  = ary_t->klass()->as_array_klass()->element_type()->basic_type();
+      BasicType ary_elem = ary_t->isa_aryptr()->elem()->array_element_basic_type();
+      if (is_reference_type(ary_elem, true)) ary_elem = T_OBJECT;
+
       uint header = arrayOopDesc::base_offset_in_bytes(ary_elem);
       uint shift  = exact_log2(type2aelembytes(ary_elem));
 
@@ -1929,7 +1944,8 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   } else if (tp->base() == Type::InstPtr) {
     assert( off != Type::OffsetBot ||
             // arrays can be cast to Objects
-            tp->is_oopptr()->klass()->is_java_lang_Object() ||
+            !tp->isa_instptr() ||
+            tp->is_instptr()->instance_klass()->is_java_lang_Object() ||
             // unsafe field access may not have a constant offset
             C->has_unsafe_access(),
             "Field accesses must be precise" );
@@ -1945,13 +1961,14 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
       }
     }
   } else if (tp->base() == Type::KlassPtr || tp->base() == Type::InstKlassPtr || tp->base() == Type::AryKlassPtr) {
-    assert( off != Type::OffsetBot ||
-            // arrays can be cast to Objects
-            tp->is_klassptr()->klass()->is_java_lang_Object() ||
-            // also allow array-loading from the primary supertype
-            // array during subtype checks
-            Opcode() == Op_LoadKlass,
-            "Field accesses must be precise" );
+    assert(off != Type::OffsetBot ||
+            !tp->isa_instklassptr() ||
+           // arrays can be cast to Objects
+           tp->isa_instklassptr()->instance_klass()->is_java_lang_Object() ||
+           // also allow array-loading from the primary supertype
+           // array during subtype checks
+           Opcode() == Op_LoadKlass,
+           "Field accesses must be precise");
     // For klass/static loads, we expect the _type to be precise
   } else if (tp->base() == Type::RawPtr && adr->is_Load() && off == 0) {
     /* With mirrors being an indirect in the Klass*
@@ -1963,8 +1980,8 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     Node* adr2 = adr->in(MemNode::Address);
     const TypeKlassPtr* tkls = phase->type(adr2)->isa_klassptr();
     if (tkls != NULL && !StressReflectiveCode) {
-      ciKlass* klass = tkls->klass();
-      if (klass->is_loaded() && tkls->klass_is_exact() && tkls->offset() == in_bytes(Klass::java_mirror_offset())) {
+      if (tkls->is_loaded() && tkls->klass_is_exact() && tkls->offset() == in_bytes(Klass::java_mirror_offset())) {
+        ciKlass* klass = tkls->exact_klass();
         assert(adr->Opcode() == Op_LoadP, "must load an oop from _java_mirror");
         assert(Opcode() == Op_LoadP, "must load an oop from _java_mirror");
         return TypeInstPtr::make(klass->java_mirror());
@@ -1974,8 +1991,8 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
 
   const TypeKlassPtr *tkls = tp->isa_klassptr();
   if (tkls != NULL && !StressReflectiveCode) {
-    ciKlass* klass = tkls->klass();
-    if (klass->is_loaded() && tkls->klass_is_exact()) {
+    if (tkls->is_loaded() && tkls->klass_is_exact()) {
+      ciKlass* klass = tkls->exact_klass();
       // We are loading a field from a Klass metaobject whose identity
       // is known at compile time (the type is "exact" or "precise").
       // Check for fields we know are maintained as constants by the VM.
@@ -2002,17 +2019,24 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     // We can still check if we are loading from the primary_supers array at a
     // shallow enough depth.  Even though the klass is not exact, entries less
     // than or equal to its super depth are correct.
-    if (klass->is_loaded() ) {
-      ciType *inner = klass;
-      while( inner->is_obj_array_klass() )
-        inner = inner->as_obj_array_klass()->base_element_type();
-      if( inner->is_instance_klass() &&
-          !inner->as_instance_klass()->flags().is_interface() ) {
+    if (tkls->is_loaded()) {
+      ciKlass* klass = NULL;
+      if (tkls->isa_instklassptr()) {
+        klass = tkls->is_instklassptr()->instance_klass();
+      } else {
+        int dims;
+        const Type* inner = tkls->is_aryklassptr()->base_element_type(dims);
+        if (inner->isa_instklassptr()) {
+          klass = inner->is_instklassptr()->instance_klass();
+          klass = ciObjArrayKlass::make(klass, dims);
+        }
+      }
+      if (klass != NULL) {
         // Compute index into primary_supers array
         juint depth = (tkls->offset() - in_bytes(Klass::primary_supers_offset())) / sizeof(Klass*);
         // Check for overflowing; use unsigned compare to handle the negative case.
-        if( depth < ciKlass::primary_super_limit() &&
-            depth <= klass->super_depth() ) { // allow self-depth checks to handle self-check case
+        if (depth < ciKlass::primary_super_limit() &&
+            depth <= klass->super_depth()) { // allow self-depth checks to handle self-check case
           // The field is an element of Klass::_primary_supers.  Return its (constant) value.
           // (Folds up type checking code.)
           assert(Opcode() == Op_LoadKlass, "must load a klass from _primary_supers");
@@ -2025,10 +2049,9 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     // If the type is enough to determine that the thing is not an array,
     // we can give the layout_helper a positive interval type.
     // This will help short-circuit some reflective code.
-    if (tkls->offset() == in_bytes(Klass::layout_helper_offset())
-        && !klass->is_array_klass() // not directly typed as an array
-        && !klass->is_interface()  // specifically not Serializable & Cloneable
-        && !klass->is_java_lang_Object()   // not the supertype of all T[]
+    if (tkls->offset() == in_bytes(Klass::layout_helper_offset()) &&
+        tkls->isa_instklassptr() && // not directly typed as an array
+        !tkls->is_instklassptr()->instance_klass()->is_java_lang_Object() // not the supertype of all T[] and specifically not Serializable & Cloneable
         ) {
       // Note:  When interfaces are reliable, we can narrow the interface
       // test to (klass != Serializable && klass != Cloneable).
@@ -2261,7 +2284,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
   // Return a more precise klass, if possible
   const TypeInstPtr *tinst = tp->isa_instptr();
   if (tinst != NULL) {
-    ciInstanceKlass* ik = tinst->klass()->as_instance_klass();
+    ciInstanceKlass* ik = tinst->instance_klass();
     int offset = tinst->offset();
     if (ik == phase->C->env()->Class_klass()
         && (offset == java_lang_Class::klass_offset() ||
@@ -2289,84 +2312,38 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
       }
       // non-constant mirror, so we can't tell what's going on
     }
-    if( !ik->is_loaded() )
+    if (!tinst->is_loaded())
       return _type;             // Bail out if not loaded
     if (offset == oopDesc::klass_offset_in_bytes()) {
-      if (tinst->klass_is_exact()) {
-        return TypeKlassPtr::make(ik);
-      }
-      // See if we can become precise: no subklasses and no interface
-      // (Note:  We need to support verified interfaces.)
-      if (!ik->is_interface() && !ik->has_subklass()) {
-        // Add a dependence; if any subclass added we need to recompile
-        if (!ik->is_final()) {
-          // %%% should use stronger assert_unique_concrete_subtype instead
-          phase->C->dependencies()->assert_leaf_type(ik);
-        }
-        // Return precise klass
-        return TypeKlassPtr::make(ik);
-      }
-
-      // Return root of possible klass
-      return TypeKlassPtr::make(TypePtr::NotNull, ik, 0/*offset*/);
+      return tinst->as_klass_type(true);
     }
   }
 
   // Check for loading klass from an array
   const TypeAryPtr *tary = tp->isa_aryptr();
-  if( tary != NULL ) {
-    ciKlass *tary_klass = tary->klass();
-    if (tary_klass != NULL   // can be NULL when at BOTTOM or TOP
-        && tary->offset() == oopDesc::klass_offset_in_bytes()) {
-      if (tary->klass_is_exact()) {
-        return TypeKlassPtr::make(tary_klass);
-      }
-      ciArrayKlass *ak = tary->klass()->as_array_klass();
-      // If the klass is an object array, we defer the question to the
-      // array component klass.
-      if( ak->is_obj_array_klass() ) {
-        assert( ak->is_loaded(), "" );
-        ciKlass *base_k = ak->as_obj_array_klass()->base_element_klass();
-        if( base_k->is_loaded() && base_k->is_instance_klass() ) {
-          ciInstanceKlass* ik = base_k->as_instance_klass();
-          // See if we can become precise: no subklasses and no interface
-          if (!ik->is_interface() && !ik->has_subklass()) {
-            // Add a dependence; if any subclass added we need to recompile
-            if (!ik->is_final()) {
-              phase->C->dependencies()->assert_leaf_type(ik);
-            }
-            // Return precise array klass
-            return TypeKlassPtr::make(ak);
-          }
-        }
-        return TypeKlassPtr::make(TypePtr::NotNull, ak, 0/*offset*/);
-      } else {                  // Found a type-array?
-        assert( ak->is_type_array_klass(), "" );
-        return TypeKlassPtr::make(ak); // These are always precise
-      }
-    }
+  if (tary != NULL && tary->elem() != Type::BOTTOM &&
+      tary->offset() == oopDesc::klass_offset_in_bytes()) {
+    return tary->as_klass_type(true);
   }
 
   // Check for loading klass from an array klass
   const TypeKlassPtr *tkls = tp->isa_klassptr();
   if (tkls != NULL && !StressReflectiveCode) {
-    ciKlass* klass = tkls->klass();
-    if( !klass->is_loaded() )
-      return _type;             // Bail out if not loaded
-    if( klass->is_obj_array_klass() &&
+    if (!tkls->is_loaded())
+     return _type;             // Bail out if not loaded
+    if (tkls->isa_aryklassptr() && tkls->is_aryklassptr()->elem()->isa_klassptr() &&
         tkls->offset() == in_bytes(ObjArrayKlass::element_klass_offset())) {
-      ciKlass* elem = klass->as_obj_array_klass()->element_klass();
       // // Always returning precise element type is incorrect,
       // // e.g., element type could be object and array may contain strings
       // return TypeKlassPtr::make(TypePtr::Constant, elem, 0);
 
       // The array's TypeKlassPtr was declared 'precise' or 'not precise'
       // according to the element type's subclassing.
-      return TypeKlassPtr::make(tkls->ptr(), elem, 0/*offset*/);
+      return tkls->is_aryklassptr()->elem();
     }
-    if( klass->is_instance_klass() && tkls->klass_is_exact() &&
+    if (tkls->isa_instklassptr() != NULL && tkls->klass_is_exact() &&
         tkls->offset() == in_bytes(Klass::super_offset())) {
-      ciKlass* sup = klass->as_instance_klass()->super();
+      ciKlass* sup = tkls->is_instklassptr()->instance_klass()->super();
       // The field is Klass::_super.  Return its (constant) value.
       // (Folds up the 2nd indirection in aClassConstant.getSuperClass().)
       return sup ? TypeKlassPtr::make(sup) : TypePtr::NULL_PTR;
@@ -2421,7 +2398,7 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
   // mirrors may appear in debug info, but we could clean them out by
   // introducing a new debug info operator for Klass.java_mirror).
 
-  if (toop->isa_instptr() && toop->klass() == phase->C->env()->Class_klass()
+  if (toop->isa_instptr() && toop->is_instptr()->instance_klass() == phase->C->env()->Class_klass()
       && offset == java_lang_Class::klass_offset()) {
     if (base->is_Load()) {
       Node* base2 = base->in(MemNode::Address);
@@ -2429,8 +2406,7 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
         Node* adr2 = base2->in(MemNode::Address);
         const TypeKlassPtr* tkls = phase->type(adr2)->isa_klassptr();
         if (tkls != NULL && !tkls->empty()
-            && (tkls->klass()->is_instance_klass() ||
-              tkls->klass()->is_array_klass())
+            && (tkls->isa_instklassptr() || tkls->isa_aryklassptr())
             && adr2->is_AddP()
            ) {
           int mirror_field = in_bytes(Klass::java_mirror_offset());
@@ -4484,7 +4460,7 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
       assert(alloc != NULL, "must be present");
       if (alloc != NULL && alloc->Opcode() == Op_Allocate) {
         Node* klass_node = alloc->in(AllocateNode::KlassNode);
-        ciKlass* k = phase->type(klass_node)->is_klassptr()->klass();
+        ciKlass* k = phase->type(klass_node)->is_instklassptr()->instance_klass();
         if (zeroes_done == k->layout_helper())
           zeroes_done = size_limit;
       }

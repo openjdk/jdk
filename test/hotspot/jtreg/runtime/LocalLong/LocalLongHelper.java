@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class LocalLongHelper {
         getMethodType.setAccessible(true);
 
         Class<?> extendedOptionClass = Class.forName("java.lang.StackWalker$ExtendedOption");
-        Method ewsNI = StackWalker.class.getDeclaredMethod("newInstance", Set.class, extendedOptionClass);
+        Method ewsNI = StackWalker.class.getDeclaredMethod("newInstance", Set.class, extendedOptionClass, jdk.internal.vm.ContinuationScope.class);
         ewsNI.setAccessible(true);
         Field f = extendedOptionClass.getDeclaredField("LOCALS_AND_OPERANDS");
         f.setAccessible(true);
@@ -84,6 +84,6 @@ public class LocalLongHelper {
 
         primitiveSize = primitiveValueClass.getDeclaredMethod("size");
         primitiveSize.setAccessible(true);
-        sw = (StackWalker) ewsNI.invoke(null, java.util.Collections.emptySet(), localsAndOperandsOption);
+        sw = (StackWalker) ewsNI.invoke(null, java.util.Collections.emptySet(), localsAndOperandsOption, null);
     }
 }

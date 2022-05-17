@@ -93,6 +93,7 @@ public class Navigation {
         PACKAGE,
         PREVIEW,
         SERIALIZED_FORM,
+        SEARCH,
         SYSTEM_PROPERTIES,
         TREE,
         USE;
@@ -316,6 +317,7 @@ public class Navigation {
             case ALL_PACKAGES:
             case CONSTANT_VALUES:
             case SERIALIZED_FORM:
+            case SEARCH:
             case SYSTEM_PROPERTIES:
                 addOverviewLink(target);
                 addModuleLink(target);
@@ -590,7 +592,8 @@ public class Navigation {
         var inputReset = HtmlTree.INPUT(reset, HtmlIds.RESET_BUTTON)
                 .put(HtmlAttr.VALUE, reset);
         var searchDiv = HtmlTree.DIV(HtmlStyle.navListSearch,
-                HtmlTree.LABEL(HtmlIds.SEARCH_INPUT.name(), searchLabel));
+                links.createLink(pathToRoot.resolve(DocPaths.SEARCH_PAGE),
+                        searchLabel, ""));
         searchDiv.add(inputText);
         searchDiv.add(inputReset);
         target.add(searchDiv);
@@ -611,20 +614,21 @@ public class Navigation {
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         String toggleNavLinks = configuration.getDocResources().getText("doclet.Toggle_navigation_links");
         navigationBar.add(MarkerComments.START_OF_TOP_NAVBAR);
+        HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyle.navBarToggleIcon).addUnchecked(Text.EMPTY);
         navDiv.setStyle(HtmlStyle.topNav)
                 .setId(HtmlIds.NAVBAR_TOP)
                 .add(new HtmlTree(TagName.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)
                         .put(HtmlAttr.ARIA_CONTROLS, HtmlIds.NAVBAR_TOP.name())
                         .put(HtmlAttr.ARIA_EXPANDED, String.valueOf(false))
                         .put(HtmlAttr.ARIA_LABEL, toggleNavLinks)
-                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY))
-                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY))
-                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY)))
+                        .add(iconSpan)
+                        .add(iconSpan)
+                        .add(iconSpan))
                 .add(HtmlTree.DIV(HtmlStyle.skipNav,
                         links.createLink(HtmlIds.SKIP_NAVBAR_TOP, skipNavLinks,
                                 skipNavLinks.toString())));
         Content aboutContent = userHeader;
-        boolean addSearch = options.createIndex();
+        boolean addSearch = options.createIndex() && documentedPage != PageMode.SEARCH;
 
         var aboutDiv = HtmlTree.DIV(HtmlStyle.aboutLanguage, aboutContent);
         navDiv.add(aboutDiv);
@@ -659,7 +663,8 @@ public class Navigation {
         navigationBar.add(subDiv);
 
         navigationBar.add(MarkerComments.END_OF_TOP_NAVBAR);
-        navigationBar.add(HtmlTree.SPAN(HtmlStyle.skipNav, HtmlTree.EMPTY)
+        navigationBar.add(HtmlTree.SPAN(HtmlStyle.skipNav)
+                .addUnchecked(Text.EMPTY)
                 .setId(HtmlIds.SKIP_NAVBAR_TOP));
 
         return navigationBar;

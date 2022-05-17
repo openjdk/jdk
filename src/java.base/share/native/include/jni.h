@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -770,6 +770,11 @@ struct JNINativeInterface_ {
 
     jobject (JNICALL *GetModule)
        (JNIEnv* env, jclass clazz);
+
+    /* Virtual threads */
+
+    jboolean (JNICALL *IsVirtualThread)
+       (JNIEnv* env, jobject obj);
 };
 
 /*
@@ -1866,6 +1871,12 @@ struct JNIEnv_ {
 
     jobject GetModule(jclass clazz) {
         return functions->GetModule(this, clazz);
+    }
+
+    /* Virtual threads */
+
+    jboolean IsVirtualThread(jobject obj) {
+        return functions->IsVirtualThread(this, obj);
     }
 
 #endif /* __cplusplus */
