@@ -307,7 +307,7 @@ final class OverridableResource {
         // Order substitution data by the length of keys.
         // Longer keys go first.
         // This is needed to properly handle cases when one key is
-        // a subtring of another and try the later first.
+        // a substring of another and try the later first.
         var orderedEntries = substitutionData.entrySet().stream()
                 .sorted(Map.Entry.<String, String>comparingByKey(
                         Comparator.comparingInt(String::length)).reversed())
@@ -321,7 +321,7 @@ final class OverridableResource {
                 String newResult = result.replace(entry.getKey(),
                         Optional.ofNullable(entry.getValue()).orElse(""));
                 if (!newResult.equals(result)) {
-                    // Substitution occured.
+                    // Substitution occurred.
                     // Remove the matching substitution key from the list and
                     // go over the list of substitution entries again.
                     if (workEntries == orderedEntries) {

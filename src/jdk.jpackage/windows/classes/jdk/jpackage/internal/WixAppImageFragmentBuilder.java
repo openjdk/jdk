@@ -103,7 +103,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
             // Want absolute paths to source files in generated WiX sources.
             // This is to handle scenario if sources would be processed from
-            // differnt current directory.
+            // different current directory.
             appImage = layout.resolveAt(appImageRoot.toAbsolutePath().normalize());
         } while (false);
 
