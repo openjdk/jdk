@@ -61,7 +61,7 @@ class LogStreamImpl : public outputStream {
   };
 
 private:
-  LineBuffer  _current_line;
+  LineBuffer _current_line;
 protected:
   BackingLog _backing_log;
 public:
