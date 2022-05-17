@@ -67,7 +67,7 @@ public class FloatClassCheck {
     @OperationsPerInvocation(BUFFER_SIZE)
     public void testIsFinite() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
-            outputs[i] = Float.isFinite(inputs[i]);
+            outputs[i] = Float.isFinite(inputs[i]) ? false : true;
         }
     }
 
@@ -75,7 +75,7 @@ public class FloatClassCheck {
     @OperationsPerInvocation(BUFFER_SIZE)
     public void testIsInfinite() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
-            outputs[i] = Float.isInfinite(inputs[i]);
+            outputs[i] = Float.isInfinite(inputs[i]) ? false : true;
         }
     }
 
@@ -83,7 +83,7 @@ public class FloatClassCheck {
     @OperationsPerInvocation(BUFFER_SIZE)
     public void testIsNaN() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
-            outputs[i] = Float.isNaN(inputs[i]);
+            outputs[i] = Float.isNaN(inputs[i]) ? false : true;
         }
     }
 
