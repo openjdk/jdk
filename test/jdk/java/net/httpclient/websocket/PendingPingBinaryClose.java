@@ -62,7 +62,7 @@ public class PendingPingBinaryClose extends PendingOperations {
                 System.out.printf("begin cycle #%s at %s%n", i, start);
                 cfPing = webSocket.sendPing(data);
                 try {
-                    cfPing.get(maxWaitSec, TimeUnit.SECONDS);
+                    cfPing.get(waitSec, TimeUnit.SECONDS);
                     data.clear();
                 } catch (TimeoutException e) {
                     break;
@@ -84,5 +84,10 @@ public class PendingPingBinaryClose extends PendingOperations {
         assertFails(IOE, cfPing);
         assertFails(IOE, cfBinary);
         assertFails(IOE, cfClose);
+    }
+
+    @Override
+    long initialWaitSec() {
+        return isWindows() ? 3 : 1;
     }
 }

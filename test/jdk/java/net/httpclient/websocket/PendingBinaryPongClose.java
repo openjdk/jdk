@@ -38,8 +38,6 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static java.net.http.HttpClient.newBuilder;
 
 public class PendingBinaryPongClose extends PendingOperations {
 
@@ -62,7 +60,7 @@ public class PendingBinaryPongClose extends PendingOperations {
                 System.out.printf("begin cycle #%s at %s%n", i, start);
                 cfBinary = webSocket.sendBinary(data, last);
                 try {
-                    cfBinary.get(maxWaitSec, TimeUnit.SECONDS);
+                    cfBinary.get(waitSec, TimeUnit.SECONDS);
                     data.clear();
                 } catch (TimeoutException e) {
                     break;

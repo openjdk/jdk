@@ -44,7 +44,8 @@ public class PendingOperations {
     // receive buffer must be full.
     // At the time of writing, using anything <= 5s on Mac will make the
     // tests fail intermittently.
-    long maxWaitSec;
+    static final long MAX_WAIT_SEC = 10; // seconds.
+    long waitSec;
 
     DummyWebSocketServer server;
     WebSocket webSocket;
@@ -100,9 +101,9 @@ public class PendingOperations {
         do {
             iterations++;
             if (iterations == 1) {
-                maxWaitSec = 1;
+                waitSec = initialWaitSec();
             } else {
-                maxWaitSec = 10;
+                waitSec = MAX_WAIT_SEC;
             }
             System.out.println("--- iteration " + iterations + " ---");
             try {
@@ -129,5 +130,9 @@ public class PendingOperations {
                 Thread.sleep(100);
             }
         } while (iterations <= ITERATIONS);
+    }
+
+    long initialWaitSec() {
+        return 1;
     }
 }
