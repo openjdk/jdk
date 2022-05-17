@@ -36,8 +36,8 @@ private:
 
 public:
   template <LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-  LogHandle(const LogImpl<T0, T1, T2, T3, T4, GuardTag>& type_carrier) :
-      _tagset(LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()) {}
+  LogHandle(const LogImpl<T0, T1, T2, T3, T4, GuardTag>& type_carrier)
+    : _tagset(LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()) {}
 
   bool is_level(LogLevelType level) {
     return _tagset.is_level(level);
@@ -75,13 +75,13 @@ private:
   const LogLevelType _level;
   LogTagSet&   _tagset;
 public:
-  LogTargetHandle(LogLevelType level, LogTagSet& tagset) : _level(level), _tagset(tagset) {}
+  LogTargetHandle(LogLevelType level, LogTagSet& tagset)
+    : _level(level), _tagset(tagset) {}
 
   template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-  LogTargetHandle(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier) :
-      _level(level),
-      _tagset(LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()) {
-  }
+  LogTargetHandle(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier)
+    : _level(level),
+      _tagset(LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()) {}
 
   template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
   static LogTargetHandle create() {
