@@ -245,6 +245,10 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_VectorCastF2X;
   case Op_ConvD2L:
     return Op_VectorCastD2X;
+  case Op_SignumF:
+    return Op_SignumVF;
+  case Op_SignumD:
+    return Op_SignumVD;
 
   default:
     return 0; // Unimplemented
@@ -646,6 +650,8 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, Node* n3, const TypeV
   switch (vopc) {
   case Op_FmaVD: return new FmaVDNode(n1, n2, n3, vt);
   case Op_FmaVF: return new FmaVFNode(n1, n2, n3, vt);
+  case Op_SignumVD: return new SignumVDNode(n1, n2, n3, vt);
+  case Op_SignumVF: return new SignumVFNode(n1, n2, n3, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return NULL;
@@ -1432,7 +1438,7 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       // Handled by VectorUnboxNode::Identity()
     } else {
       VectorBoxNode* vbox = static_cast<VectorBoxNode*>(n);
-      ciKlass* vbox_klass = vbox->box_type()->klass();
+      ciKlass* vbox_klass = vbox->box_type()->instance_klass();
       const TypeVect* in_vt = vbox->vec_type();
       const TypeVect* out_vt = type()->is_vect();
 

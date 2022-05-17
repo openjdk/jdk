@@ -46,6 +46,10 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 class BlockListBuilder {
  private:
@@ -952,7 +956,7 @@ void GraphBuilder::load_constant() {
       case T_ARRAY  : // fall-through
       case T_OBJECT : {
         ciObject* obj = con.as_object();
-        if (!obj->is_loaded() || (PatchALot && (obj->is_null_object() || obj->klass() != ciEnv::current()->String_klass()))) {
+        if (!obj->is_loaded() || (PatchALot && !stream()->is_string_constant())) {
           // A Class, MethodType, MethodHandle, Dynamic, or String.
           patch_state = copy_state_before();
           t = new ObjectConstant(obj);
@@ -973,7 +977,9 @@ void GraphBuilder::load_constant() {
     }
     Value x;
     if (patch_state != NULL) {
-      bool kills_memory = stream()->is_dynamic_constant(); // arbitrary memory effects from running BSM during linkage
+      // Arbitrary memory effects from running BSM or class loading (using custom loader) during linkage.
+      bool kills_memory = stream()->is_dynamic_constant() ||
+                          (!stream()->is_string_constant() && !method()->holder()->has_trusted_loader());
       x = new Constant(t, patch_state, kills_memory);
     } else {
       x = new Constant(t);
@@ -1909,7 +1915,6 @@ Values* GraphBuilder::collect_args_for_profiling(Values* args, ciMethod* target,
   return obj_args;
 }
 
-
 void GraphBuilder::invoke(Bytecodes::Code code) {
   bool will_link;
   ciSignature* declared_signature = NULL;
@@ -1918,6 +1923,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   const Bytecodes::Code bc_raw = stream()->cur_bc_raw();
   assert(declared_signature != NULL, "cannot be null");
   assert(will_link == target->is_loaded(), "");
+  JFR_ONLY(Jfr::on_resolution(this, holder, target); CHECK_BAILOUT();)
 
   ciInstanceKlass* klass = target->holder();
   assert(!target->is_loaded() || klass->is_loaded(), "loaded target must imply loaded klass");
@@ -2302,6 +2308,7 @@ void GraphBuilder::instance_of(int klass_index) {
 void GraphBuilder::monitorenter(Value x, int bci) {
   // save state before locking in case of deoptimization after a NullPointerException
   ValueStack* state_before = copy_state_for_exception_with_bci(bci);
+  compilation()->set_has_monitors(true);
   append_with_bci(new MonitorEnter(x, state()->lock(x), state_before), bci);
   kill_all();
 }

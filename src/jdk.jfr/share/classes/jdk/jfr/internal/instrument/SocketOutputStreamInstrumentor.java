@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 
-import jdk.jfr.events.Handlers;
-import jdk.jfr.internal.handlers.EventHandler;
+import jdk.jfr.events.EventConfigurations;
+import jdk.jfr.events.SocketWriteEvent;
+import jdk.jfr.internal.event.EventConfiguration;
 
 /**
  * See {@link JITracer} for an explanation of this code.
@@ -44,22 +45,22 @@ final class SocketOutputStreamInstrumentor {
     @SuppressWarnings("deprecation")
     @JIInstrumentationMethod
     public void write(byte b[], int off, int len) throws IOException {
-        EventHandler handler = Handlers.SOCKET_WRITE;
-        if (!handler.isEnabled()) {
+        EventConfiguration eventConfiguration = EventConfigurations.SOCKET_WRITE;
+        if (!eventConfiguration.isEnabled()) {
             write(b, off, len);
             return;
         }
         int bytesWritten = 0;
         long start = 0;
         try {
-            start = EventHandler.timestamp();
+            start = EventConfiguration.timestamp();
             write(b, off, len);
             bytesWritten = len;
         } finally {
-            long duration = EventHandler.timestamp() - start;
-            if (handler.shouldCommit(duration)) {
+            long duration = EventConfiguration.timestamp() - start;
+            if (eventConfiguration.shouldCommit(duration)) {
                 InetAddress remote = parent.getInetAddress();
-                handler.write(
+                SocketWriteEvent.commit(
                         start,
                         duration,
                         remote.getHostName(),

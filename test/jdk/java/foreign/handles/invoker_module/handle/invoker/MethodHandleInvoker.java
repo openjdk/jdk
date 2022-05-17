@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,16 @@
 
 package handle.invoker;
 
-import jdk.incubator.foreign.Addressable;
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SegmentAllocator;
-import jdk.incubator.foreign.SymbolLookup;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.Addressable;
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -64,7 +64,7 @@ public class MethodHandleInvoker {
     }
 
     static {
-        addDefaultMapping(CLinker.class, CLinker.systemCLinker());
+        addDefaultMapping(Linker.class, Linker.nativeLinker());
         addDefaultMapping(Path.class, Path.of("nonExistent"));
         addDefaultMapping(String.class, "Hello!");
         addDefaultMapping(Runnable.class, () -> {});
@@ -75,8 +75,7 @@ public class MethodHandleInvoker {
         addDefaultMapping(Addressable.class, MemoryAddress.NULL);
         addDefaultMapping(MemoryLayout.class, ValueLayout.JAVA_INT);
         addDefaultMapping(FunctionDescriptor.class, FunctionDescriptor.ofVoid());
-        addDefaultMapping(SymbolLookup.class, SymbolLookup.loaderLookup());
-        addDefaultMapping(ResourceScope.class, ResourceScope.newImplicitScope());
+        addDefaultMapping(MemorySession.class, MemorySession.openImplicit());
         addDefaultMapping(SegmentAllocator.class, SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new byte[10])));
         addDefaultMapping(ValueLayout.OfByte.class, ValueLayout.JAVA_BYTE);
         addDefaultMapping(ValueLayout.OfBoolean.class, ValueLayout.JAVA_BOOLEAN);
@@ -87,6 +86,7 @@ public class MethodHandleInvoker {
         addDefaultMapping(ValueLayout.OfLong.class, ValueLayout.JAVA_LONG);
         addDefaultMapping(ValueLayout.OfDouble.class, ValueLayout.JAVA_DOUBLE);
         addDefaultMapping(ValueLayout.OfAddress.class, ValueLayout.ADDRESS);
+        addDefaultMapping(SymbolLookup.class, SymbolLookup.loaderLookup());
         addDefaultMapping(byte.class, (byte)0);
         addDefaultMapping(boolean.class, true);
         addDefaultMapping(char.class, (char)0);

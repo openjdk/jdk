@@ -625,7 +625,7 @@ NotifyEncapsulation * removeFirstNotifyEntry(JNIEnv *env) {
  * back to a NotifyEncapsulation structure and retrieves the Notify object and
  * the application data from it.
  *
- * @param hSession The session, this callback is comming from.
+ * @param hSession The session, this callback is coming from.
  * @param event The type of event that occurred.
  * @param pApplication The application data as passed in upon OpenSession. In
                        this wrapper we always pass in a NotifyEncapsulation
