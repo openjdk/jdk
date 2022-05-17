@@ -334,7 +334,6 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
                 offset = item.offset().top - this.activeMenu.offset().top - borderTop - paddingTop;
                 scroll = this.activeMenu.scrollTop();
                 elementHeight = this.activeMenu.height() - 26;
-                console.log(item)
                 itemHeight = item.outerHeight();
 
                 if ( offset < 0 ) {
