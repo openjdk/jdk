@@ -148,7 +148,7 @@ class RuleBasedBreakIteratorBuilder {
 
     /**
      * Looping states actually have to be backfilled later in the process
-     * than everything else.  This is where a the list of states to backfill
+     * than everything else.  This is where the list of states to backfill
      * is accumulated.  This is also used to handle .*?
      */
     protected Vector<Integer> statesToBackfill = null;
