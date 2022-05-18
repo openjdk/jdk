@@ -29,6 +29,8 @@ import java.io.PrintWriter;
 import java.util.Optional;
 import java.util.spi.ToolProvider;
 
+import com.sun.tools.javac.util.JavacMessages;
+
 /**
  * An implementation of the {@link java.util.spi.ToolProvider ToolProvider} SPI,
  * providing access to JDK Java compiler, javac.
@@ -43,7 +45,8 @@ public class JavacToolProvider implements ToolProvider {
     }
 
     public Optional<String> description() {
-        return Optional.of("Read Java declarations and compile them into class files");
+        JavacMessages messages = new JavacMessages(Main.javacBundleName);
+        return Optional.of(messages.getLocalizedString("javac.description"));
     }
 
     public int run(PrintWriter out, PrintWriter err, String... args) {
