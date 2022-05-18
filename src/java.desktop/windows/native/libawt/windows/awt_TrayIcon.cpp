@@ -744,7 +744,7 @@ void AwtTrayIcon::SetToolTip(LPCTSTR tooltip)
         _tcscpy_s(m_nid.szTip, TRAY_ICON_TOOLTIP_MAX_SIZE, tooltip);
     }
 
-    SendTrayMessage(NIM_MODIFY);
+    ModifyTrayIcon();
 }
 
 void AwtTrayIcon::_SetToolTip(void *param)
@@ -864,7 +864,7 @@ void AwtTrayIcon::DisplayMessage(LPCTSTR caption, LPCTSTR text, LPCTSTR msgType)
         _tcscpy_s(m_nid.szInfo, TRAY_ICON_BALLOON_INFO_MAX_SIZE, text);
     }
 
-    SendTrayMessage(NIM_MODIFY);
+    ModifyTrayIcon();
     m_nid.uFlags &= ~NIF_INFO;
 }
 
