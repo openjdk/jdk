@@ -33,7 +33,7 @@ import java.nio.channels.FileChannel;
 
 /**
  * The concrete PerfDataBuffer implementation for the <em>file:</em>
- * protocol for the HotSpot PerfData monitoring implemetation.
+ * protocol for the HotSpot PerfData monitoring implementation.
  * <p>
  * This class is responsible for acquiring access to the instrumentation
  * buffer stored in a file referenced by a file URI.

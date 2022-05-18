@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,23 @@
  * questions.
  */
 
-// key: compiler.err.total.pattern.and.default
-// key: compiler.misc.feature.pattern.switch
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
+package compiler.lib.ir_framework.driver.irmatching.parser;
 
-class TotalPatternAndDefault {
-    private void doSwitch(Object o) {
-        switch (o) {
-            case Object obj: break;
-            default: break;
-        }
+import java.util.List;
+
+/**
+ * Class representing a PrintIdeal or PrintOptoAssembly output block read from the hotspot_pid* file.
+ */
+record Block(String output, List<String> testClassCompilations) {
+    public String getOutput() {
+        return output;
+    }
+
+    public boolean containsTestClassCompilations() {
+        return !testClassCompilations.isEmpty();
+    }
+
+    public List<String> getTestClassCompilations() {
+        return testClassCompilations;
     }
 }

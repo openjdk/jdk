@@ -62,7 +62,7 @@ import java.security.Provider;
  * On the other hands, tokens used for per-message calls are generated
  * entirely by the mechanism. It is possible that the mechanism chooses to
  * encase inner-level per-message tokens in a header similar to that used
- * for initial tokens, however, this is upto the mechanism to do. The token
+ * for initial tokens, however, this is up to the mechanism to do. The token
  * to/from the per-message calls are opaque to the GSS-Framework.
  * </strong>
  * <p>

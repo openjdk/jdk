@@ -226,5 +226,4 @@ public final class EventFactory {
     public void unregister() {
         MetadataRepository.getInstance().unregister(eventClass);
     }
-
 }

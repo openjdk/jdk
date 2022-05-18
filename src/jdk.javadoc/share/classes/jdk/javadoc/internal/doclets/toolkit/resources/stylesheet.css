@@ -588,9 +588,6 @@ main, nav, header, footer, section {
     background-color:#4D7A97;
     color:#FFFFFF;
 }
-li.result-item {
-    font-size:13px;
-}
 .ui-autocomplete {
     max-height:85%;
     max-width:65%;
@@ -603,6 +600,7 @@ li.result-item {
 ul.ui-autocomplete {
     position:fixed;
     z-index:1;
+    background-color: #FFFFFF;
 }
 ul.ui-autocomplete li {
     float:left;
@@ -625,6 +623,9 @@ li.ui-static-link a, li.ui-static-link a:visited {
     color:#4A6782;
     float:right;
     margin-right:20px;
+}
+.ui-autocomplete .result-item {
+    font-size: inherit;
 }
 .ui-autocomplete .result-highlight {
     font-weight:bold;

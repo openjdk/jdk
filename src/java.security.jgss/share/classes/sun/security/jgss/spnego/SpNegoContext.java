@@ -358,7 +358,7 @@ public class SpNegoContext implements GSSContextSpi {
                 // pull out mechanism
                 internal_mech = targToken.getSupportedMech();
                 if (internal_mech == null) {
-                    // return wth failure
+                    // return with failure
                     throw new GSSException(errorCode, -1,
                                 "supported mechanism from server is null");
                 }

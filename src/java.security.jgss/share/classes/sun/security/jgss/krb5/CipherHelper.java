@@ -983,7 +983,7 @@ class CipherHelper {
      * @param len the length of the encrypted data
      * @param dataOutBuf the output buffer where the application data
      * should be written
-     * @param dataOffset the offser where the application data should
+     * @param dataOffset the offset where the application data should
      * be written.
      * @throws GSSException is an error occurs while decrypting the
      * data

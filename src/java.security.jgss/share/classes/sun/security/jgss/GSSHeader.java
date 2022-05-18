@@ -131,7 +131,7 @@ public class GSSHeader {
 
     /**
      * Used to obtain the length of the encoding of this GSSHeader.
-     * @return the lenght of the encoding of this GSSHeader instance.
+     * @return the length of the encoding of this GSSHeader instance.
      */
     public int getLength() {
         int lenField = mechOidBytes.length + mechTokenLength;

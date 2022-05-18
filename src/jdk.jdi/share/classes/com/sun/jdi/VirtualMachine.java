@@ -155,7 +155,7 @@ public interface VirtualMachine extends Mirror {
      * is called 'equivalent' (to the old version of the
      * method) if
      * <UL>
-     * <LI>their bytecodes are the same except for indicies into
+     * <LI>their bytecodes are the same except for indices into
      *   the constant pool, and
      * <LI>the referenced constants are equal.
      * </UL>
@@ -899,7 +899,7 @@ public interface VirtualMachine extends Mirror {
     int TRACE_RECEIVES    = 0x00000002;
     /** Tracing enabled for internal event handling. */
     int TRACE_EVENTS      = 0x00000004;
-    /** Tracing enabled for internal managment of reference types. */
+    /** Tracing enabled for internal management of reference types. */
     int TRACE_REFTYPES    = 0x00000008;
     /** Tracing enabled for internal management of object references. */
     int TRACE_OBJREFS      = 0x00000010;
