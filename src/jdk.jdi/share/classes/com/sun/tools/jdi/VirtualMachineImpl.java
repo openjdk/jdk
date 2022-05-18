@@ -1324,7 +1324,7 @@ class VirtualMachineImpl extends MirrorImpl
             int size = batchedDisposeRequests.size();
             if (size >= DISPOSE_THRESHOLD) {
                 if ((traceFlags & TRACE_OBJREFS) != 0) {
-                    printTrace("Dispose threashold reached. Will dispose "
+                    printTrace("Dispose threshold reached. Will dispose "
                                + size + " object references...");
                 }
                 requests = new JDWP.VirtualMachine.DisposeObjects.Request[size];

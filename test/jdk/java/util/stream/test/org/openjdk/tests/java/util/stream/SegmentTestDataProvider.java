@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 package org.openjdk.tests.java.util.stream;
 
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemorySegment;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 
 import java.lang.invoke.VarHandle;
 import java.util.Collection;
@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.ValueLayout;
 import org.testng.annotations.DataProvider;
 
 public class SegmentTestDataProvider {
@@ -107,7 +107,7 @@ public class SegmentTestDataProvider {
 
     static Consumer<MemorySegment> segmentCopier(Consumer<MemorySegment> input) {
         return segment -> {
-            MemorySegment dest = MemorySegment.ofArray(new byte[(int)segment.byteSize()]);
+            MemorySegment dest = MemorySegment.ofArray(new long[(int)segment.byteSize() / 8]);
             dest.copyFrom(segment);
             input.accept(dest);
         };

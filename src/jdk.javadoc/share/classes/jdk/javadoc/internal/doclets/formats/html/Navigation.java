@@ -614,15 +614,16 @@ public class Navigation {
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         String toggleNavLinks = configuration.getDocResources().getText("doclet.Toggle_navigation_links");
         navigationBar.add(MarkerComments.START_OF_TOP_NAVBAR);
+        HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyle.navBarToggleIcon).addUnchecked(Text.EMPTY);
         navDiv.setStyle(HtmlStyle.topNav)
                 .setId(HtmlIds.NAVBAR_TOP)
                 .add(new HtmlTree(TagName.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)
                         .put(HtmlAttr.ARIA_CONTROLS, HtmlIds.NAVBAR_TOP.name())
                         .put(HtmlAttr.ARIA_EXPANDED, String.valueOf(false))
                         .put(HtmlAttr.ARIA_LABEL, toggleNavLinks)
-                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY))
-                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY))
-                        .add(HtmlTree.SPAN(HtmlStyle.navBarToggleIcon, HtmlTree.EMPTY)))
+                        .add(iconSpan)
+                        .add(iconSpan)
+                        .add(iconSpan))
                 .add(HtmlTree.DIV(HtmlStyle.skipNav,
                         links.createLink(HtmlIds.SKIP_NAVBAR_TOP, skipNavLinks,
                                 skipNavLinks.toString())));
@@ -662,7 +663,8 @@ public class Navigation {
         navigationBar.add(subDiv);
 
         navigationBar.add(MarkerComments.END_OF_TOP_NAVBAR);
-        navigationBar.add(HtmlTree.SPAN(HtmlStyle.skipNav, HtmlTree.EMPTY)
+        navigationBar.add(HtmlTree.SPAN(HtmlStyle.skipNav)
+                .addUnchecked(Text.EMPTY)
                 .setId(HtmlIds.SKIP_NAVBAR_TOP));
 
         return navigationBar;

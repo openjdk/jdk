@@ -179,7 +179,6 @@ java/awt/Mixing/NonOpaqueInternalFrame.java 7124549 macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264 generic-all
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
 java/awt/datatransfer/SystemFlavorMap/AddFlavorTest.java 8079268 linux-all
-java/awt/Toolkit/ScreenInsetsTest/ScreenInsetsTest.java 6829250 windows-all
 java/awt/Toolkit/RealSync/Test.java 6849383 linux-all
 java/awt/LightweightComponent/LightweightEventTest/LightweightEventTest.java 8159252 windows-all
 java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java 8072110 macosx-all
@@ -486,7 +485,7 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 # jdk_foreign
 
-java/foreign/TestMismatch.java 8249684 macosx-all
+java/foreign/TestUpcallStack.java 8275584 macosx-aarch64
 
 ############################################################################
 
@@ -682,15 +681,10 @@ java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
 java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
 
-# macos12 failure
-javax/swing/JMenu/4515762/bug4515762.java 8276074 macosx-all
-
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
 sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
-javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-all
 javax/swing/JTable/8236907/LastVisibleRow.java 8284619 macosx-all
-javax/swing/JInternalFrame/8146321/JInternalFrameIconTest.java 8284888 macosx-aarch64
 
 ############################################################################
 

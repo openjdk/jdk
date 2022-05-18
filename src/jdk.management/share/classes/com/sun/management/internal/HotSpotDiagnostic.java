@@ -57,7 +57,7 @@ public class HotSpotDiagnostic implements HotSpotDiagnosticMXBean {
         @SuppressWarnings("removal")
         boolean allowAnyFileSuffix = AccessController.doPrivileged(pa);
         if (!allowAnyFileSuffix && !outputFile.endsWith(".hprof")) {
-            throw new IllegalArgumentException("heapdump file must have .hprof extention");
+            throw new IllegalArgumentException("heapdump file must have .hprof extension");
         }
 
         @SuppressWarnings("removal")

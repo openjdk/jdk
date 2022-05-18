@@ -1680,7 +1680,7 @@ public class RelationService extends NotificationBroadcasterSupport
                             mbeanName, relationTypeName, roleName);
 
         // Retrieves the map <relation id> -> <role names> for those
-        // criterias
+        // criteria
         Map<String,List<String>> relId2RoleNamesMap =
             findReferencingRelations(mbeanName,
                                      relationTypeName,
@@ -2877,7 +2877,7 @@ public class RelationService extends NotificationBroadcasterSupport
     // -param roleList  role list to initialize roles of the relation
     //  (can be null)
     //
-    // -exception IllegalArgumentException  if null paramater
+    // -exception IllegalArgumentException  if null parameter
     // -exception RelationServiceNotRegisteredException  if the Relation
     //  Service is not registered in the MBean Server
     // -exception RoleNotFoundException  if a value is provided for a role
@@ -3000,7 +3000,7 @@ public class RelationService extends NotificationBroadcasterSupport
                                relationTypeName,
                                roleInfoList);
 
-        // Creation of relation successfull!!!!
+        // Creation of relation successful!!!!
 
         // Updates internal maps
         // Relation id to object map
@@ -3202,7 +3202,7 @@ public class RelationService extends NotificationBroadcasterSupport
     //  in the Relation Service)
     // -param roleInfoList  list of role infos for roles to be defaulted
     //
-    // -exception IllegalArgumentException  if null paramater
+    // -exception IllegalArgumentException  if null parameter
     // -exception RelationServiceNotRegisteredException  if the Relation
     //  Service is not registered in the MBean Server
     // -exception InvalidRoleValueException  if role must have a non-empty

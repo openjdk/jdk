@@ -91,7 +91,7 @@ public class BodyContents extends Content {
 
         var flexContent = HtmlTree.DIV(HtmlStyle.flexContent)
                 .add(HtmlTree.MAIN().add(mainContents))
-                .add(footer == null ? HtmlTree.EMPTY : footer);
+                .add(footer == null ? Text.EMPTY : footer);
 
         return HtmlTree.DIV(HtmlStyle.flexBox)
                 .add(flexHeader)

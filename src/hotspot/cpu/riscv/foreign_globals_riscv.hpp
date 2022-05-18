@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,5 @@
 #define CPU_RISCV_FOREIGN_GLOBALS_RISCV_HPP
 
 class ABIDescriptor {};
-class BufferLayout {};
 
 #endif // CPU_RISCV_FOREIGN_GLOBALS_RISCV_HPP
