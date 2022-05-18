@@ -35,7 +35,7 @@ public class JarToolProvider implements ToolProvider {
     }
 
     public Optional<String> description() {
-        return Optional.of("Create, manipulate, and extract an archive of classes and resources");
+        return Optional.of(Main.getMsg("jar.description"));
     }
 
     public int run(PrintWriter out, PrintWriter err, String... args) {
