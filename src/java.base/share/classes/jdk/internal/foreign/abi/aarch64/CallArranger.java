@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2021, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -87,7 +87,9 @@ public abstract class CallArranger {
         new VMStorage[] { v16, v17, v18, v19, v20, v21, v22, v23, v25,
                           v26, v27, v28, v29, v30, v31 },
         16,  // Stack is always 16 byte aligned on AArch64
-        0    // No shadow space
+        0,   // No shadow space
+        r9,  // target addr reg
+        r10  // return buffer addr reg
     );
 
     // record
@@ -115,7 +117,7 @@ public abstract class CallArranger {
     protected CallArranger() {}
 
     public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
-        CallingSequenceBuilder csb = new CallingSequenceBuilder(forUpcall);
+        CallingSequenceBuilder csb = new CallingSequenceBuilder(C, forUpcall);
 
         BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
         BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false) : new BoxBindingCalculator(false);
@@ -138,8 +140,6 @@ public abstract class CallArranger {
             }
             csb.addArgumentBindings(carrier, layout, argCalc.getBindings(carrier, layout));
         }
-
-        csb.setTrivial(SharedUtils.isTrivial(cDesc));
 
         return new Bindings(csb.build(), returnInMemory);
     }

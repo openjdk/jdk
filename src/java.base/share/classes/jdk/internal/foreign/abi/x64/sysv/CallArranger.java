@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,9 @@ public class CallArranger {
         new VMStorage[] { r10, r11 },
         new VMStorage[] { xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15 },
         16,
-        0 //no shadow space
+        0, //no shadow space
+        r10, // target addr reg
+        r11  // ret buf addr reg
     );
 
     // record
@@ -83,7 +85,7 @@ public class CallArranger {
     }
 
     public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
-        CallingSequenceBuilder csb = new CallingSequenceBuilder(forUpcall);
+        CallingSequenceBuilder csb = new CallingSequenceBuilder(CSysV, forUpcall);
 
         BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
         BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false) : new BoxBindingCalculator(false);
@@ -110,8 +112,6 @@ public class CallArranger {
             csb.addArgumentBindings(long.class, SysV.C_LONG,
                     List.of(vmStore(rax, long.class)));
         }
-
-        csb.setTrivial(SharedUtils.isTrivial(cDesc));
 
         return new Bindings(csb.build(), returnInMemory, argCalc.storageCalculator.nVectorReg);
     }
