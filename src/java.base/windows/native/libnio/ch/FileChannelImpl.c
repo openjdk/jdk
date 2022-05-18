@@ -105,7 +105,7 @@ Java_sun_nio_ch_FileChannelImpl_map0(JNIEnv *env, jobject this, jobject fdo,
         mapAccess,           /* Read and write access */
         highOffset,          /* High word of offset */
         lowOffset,           /* Low word of offset */
-        (DWORD)len);         /* Number of bytes to map */
+        (SIZE_T)len);        /* Number of bytes to map */
     mapError = GetLastError();
 
     result = CloseHandle(mapping);
