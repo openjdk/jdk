@@ -7452,7 +7452,7 @@ address generate_avx_ghash_processBlocks() {
     __ post_call_nop();
     OopMapSet* oop_maps = new OopMapSet();
     OopMap* map = new OopMap(framesize, 1);
-    oop_maps->add_gc_map(the_pc - start, map);
+    oop_maps->add_gc_map(frame_complete, map);
 
     __ set_last_Java_frame(rsp, rbp, the_pc);
     __ movptr(c_rarg0, r15_thread);
@@ -7662,8 +7662,8 @@ address generate_avx_ghash_processBlocks() {
     __ ret(0);
 
     OopMapSet* oop_maps = new OopMapSet();
-    OopMap* map = new OopMap(framesize, 1); // rbp
-    oop_maps->add_gc_map(the_pc - start, map);
+    OopMap* map = new OopMap(framesize, 1);
+    oop_maps->add_gc_map(frame_complete, map);
 
     RuntimeStub* stub =
       RuntimeStub::new_runtime_stub(code.name(),
