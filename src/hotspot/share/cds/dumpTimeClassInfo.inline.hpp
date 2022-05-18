@@ -40,7 +40,7 @@
 // k->is_loader_alive() will not change.
 template<typename F>
 void DumpTimeSharedClassTable::iterate(F f) const {
-  auto g = [=] (InstanceKlass* k, DumpTimeClassInfo& info) {
+  auto g = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
     assert(SafepointSynchronize::is_at_safepoint(), "invariant");
     assert_lock_strong(DumpTimeTable_lock);
     if (k->is_loader_alive()) {
@@ -61,7 +61,7 @@ void DumpTimeSharedClassTable::iterate(F f) const {
 // same as above, but unconditionally iterate all entries
 template<typename F>
 void DumpTimeSharedClassTable::iterate_all(F f) const {
-  auto g = [=] (InstanceKlass* k, DumpTimeClassInfo& v) {
+  auto g = [&] (InstanceKlass* k, DumpTimeClassInfo& v) {
     f(k, v);
     return true;
   };
@@ -70,7 +70,7 @@ void DumpTimeSharedClassTable::iterate_all(F f) const {
 
 template<class ITER>
 void DumpTimeSharedClassTable::iterate(ITER* iter) const {
-  auto f = [=] (InstanceKlass* k, DumpTimeClassInfo& v) {
+  auto f = [&] (InstanceKlass* k, DumpTimeClassInfo& v) {
     return iter->do_entry(k, v);
   };
   iterate(f);

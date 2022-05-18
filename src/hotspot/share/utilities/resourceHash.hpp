@@ -203,7 +203,7 @@ class ResourceHashtableBase : public STORAGE {
   // the iteration is cancelled.
   template<class ITER>
   void iterate(ITER* iter) const {
-    auto f = [=] (K& k, V& v) {
+    auto f = [&] (K& k, V& v) {
       return iter->do_entry(k, v);
     };
     iterate(f);
@@ -227,7 +227,7 @@ class ResourceHashtableBase : public STORAGE {
   // same as above, but unconditionally iterate all entries
   template<typename F>
   void iterate_all(F f) const { // lambda enabled API
-    auto g = [=] (K& k, V& v) {
+    auto g = [&] (K& k, V& v) {
       f(k, v);
       return true;
     };
