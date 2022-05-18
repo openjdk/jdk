@@ -58,7 +58,7 @@ public class Main {
 
         @Override
         public Optional<String> description() {
-            return Optional.of("Create JMOD files and list the content of existing JMOD files");
+            return Optional.of(JmodTask.getMessage("jmod.description"));
         }
 
         @Override

@@ -64,7 +64,8 @@ public class Main {
 
         @Override
         public Optional<String> description() {
-            return Optional.of("Assemble a set of modules into a custom runtime image");
+            TaskHelper taskHelper = new TaskHelper(TaskHelper.JLINK_BUNDLE);
+            return Optional.of(taskHelper.getMessage("jlink.desciption"));
         }
 
         @Override
