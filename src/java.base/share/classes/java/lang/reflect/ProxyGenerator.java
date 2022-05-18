@@ -732,7 +732,7 @@ final class ProxyGenerator extends ClassWriter {
 
             MethodVisitor mv = cw.visitMethod(accessFlags,
                     method.getName(), desc, null,
-                    typeNames(List.of(exceptionTypes)));
+                    typeNames(Arrays.asList(exceptionTypes)));
 
             int[] parameterSlot = new int[parameterTypes.length];
             int nextSlot = 1;
