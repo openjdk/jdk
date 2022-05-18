@@ -509,7 +509,7 @@ public final class Float extends Number
      *          negative infinity; {@code false} otherwise.
      */
     public static boolean isInfinite(float v) {
-        return Math.abs(v) > MAX_VALUE;
+        return (v == POSITIVE_INFINITY) || (v == NEGATIVE_INFINITY);
     }
 
 
@@ -524,7 +524,7 @@ public final class Float extends Number
      * @since 1.8
      */
     public static boolean isFinite(float f) {
-        return Math.abs(f) <= MAX_VALUE;
+        return Math.abs(f) <= Float.MAX_VALUE;
     }
 
     /**
