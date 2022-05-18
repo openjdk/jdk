@@ -4789,16 +4789,15 @@ void C2_MacroAssembler::float_class_check_vfp(int opcode, Register dst, XMMRegis
 
 
 #ifdef _LP64
-void C2_MacroAssembler::double_class_check(int opcode, XMMRegister src, Register dst, Register temp,
-                                            Register temp1, Register temp2) {
+void C2_MacroAssembler::double_class_check(int opcode, XMMRegister src, Register dst, Register temp, Register temp1) {
   int64_t POS_INF = 0x7ff0000000000000L;
   int64_t KILL_SIGN_MASK = 0x7fffffffffffffffL;
 
   movq(temp, src);
   mov64(temp1, KILL_SIGN_MASK);
   andq(temp, temp1);
-  mov64(temp2, POS_INF);
-  cmpq(temp, temp2);
+  mov64(temp1, POS_INF);
+  cmpq(temp, temp1);
 
   switch (opcode) {
     case Op_IsFiniteD:

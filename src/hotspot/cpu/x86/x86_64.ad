@@ -11165,18 +11165,18 @@ instruct DoubleClassCheck_reg_reg_vfpclass(rRegI dst, regD src, kReg ktmp, rFlag
   ins_pipe(pipe_slow);
 %}
 
-instruct DoubleClassCheck_reg_reg(rRegI dst, regD src, rRegL tmp, rRegL tmp1, rRegL tmp2, rFlagsReg cr)
+instruct DoubleClassCheck_reg_reg(rRegI dst, regD src, rRegL tmp, rRegL tmp1, rFlagsReg cr)
 %{
   predicate(!VM_Version::supports_avx512dq());
   match(Set dst (IsInfiniteD src));
   match(Set dst (IsNaND src));
   match(Set dst (IsFiniteD src));
-  effect(TEMP tmp, TEMP tmp1, TEMP tmp2, KILL cr);
+  effect(TEMP tmp, TEMP tmp1, KILL cr);
   format %{ "double_class_check $dst, $src" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
     __ double_class_check(opcode, $src$$XMMRegister, $dst$$Register, $tmp$$Register,
-                $tmp1$$Register,  $tmp2$$Register);
+                $tmp1$$Register);
   %}
   ins_pipe(pipe_slow);
 %}

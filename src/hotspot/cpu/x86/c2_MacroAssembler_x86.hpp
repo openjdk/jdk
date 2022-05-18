@@ -357,7 +357,7 @@ public:
   void udivL(Register rax, Register divisor, Register rdx);
   void umodL(Register rax, Register divisor, Register rdx);
   void udivmodL(Register rax, Register divisor, Register rdx, Register tmp);
-  void double_class_check(int opcode, XMMRegister src, Register dst, Register temp, Register temp1, Register temp2);
+  void double_class_check(int opcode, XMMRegister src, Register dst, Register temp, Register temp1);
   void double_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp);
 #endif
 
