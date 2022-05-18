@@ -42,7 +42,7 @@ public class JPackageToolProvider implements ToolProvider {
     }
 
     public Optional<String> description() {
-        return Optional.of("Package a self-contained Java application");
+        return Optional.of(jdk.jpackage.main.Main.I18N.getString("jpackage.description"));
     }
 
     public synchronized int run(
