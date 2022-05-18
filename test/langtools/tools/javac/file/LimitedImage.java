@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8153391
- * @summary Verify javac behaves properly in absence of zip/jar FileSystemProvider
+ * @summary Verify javac behaves properly in JDK image limited to jdk.compiler module
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
