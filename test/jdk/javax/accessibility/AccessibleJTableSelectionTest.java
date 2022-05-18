@@ -25,8 +25,8 @@
  * @test
  * @key headful
  * @bug 4495286
- * @summary AccessibleJTable.setAccessibleSelction should
- * select rows/cols if getCellSelectionEnabled() is false
+ * @summary Verify that AccessibleJTable.setAccessibleSelction
+ * selects rows/cols if getCellSelectionEnabled() is false
  * @run main AccessibleJTableSelectionTest
  */
 
