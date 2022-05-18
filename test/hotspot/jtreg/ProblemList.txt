@@ -67,12 +67,7 @@ compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 
 compiler/c2/Test8004741.java 8235801 generic-all
 
-compiler/whitebox/ClearMethodStateTest.java 8265360 macosx-all
-compiler/whitebox/EnqueueMethodForCompilationTest.java 8265360 macosx-all
-compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-all
-
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
-compiler/codecache/TestStressCodeBuffers.java 8272094 generic-aarch64
 
 
 #############################################################################
@@ -159,6 +154,7 @@ vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.ja
 vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/AttachOnDemand/attach002a/TestDescription.java 8277812 generic-all
 
+vmTestbase/gc/gctests/WeakReference/weak006/weak006.java 8286737 generic-all
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
 
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all
@@ -171,5 +167,3 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 8013267 generic-all
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
-
-#############################################################################

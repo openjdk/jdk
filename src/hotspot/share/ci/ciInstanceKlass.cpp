@@ -100,6 +100,8 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
     _is_shared = true;
   }
 
+  _has_trusted_loader = compute_has_trusted_loader();
+
   // Lazy fields get filled in only upon request.
   _super  = NULL;
   _java_mirror = NULL;
@@ -132,6 +134,7 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
   _super = NULL;
   _java_mirror = NULL;
   _field_cache = NULL;
+  _has_trusted_loader = compute_has_trusted_loader();
 }
 
 
@@ -566,6 +569,15 @@ bool ciInstanceKlass::has_object_fields() const {
   GUARDED_VM_ENTRY(
       return get_instanceKlass()->nonstatic_oop_map_size() > 0;
     );
+}
+
+bool ciInstanceKlass::compute_has_trusted_loader() {
+  ASSERT_IN_VM;
+  oop loader_oop = loader();
+  if (loader_oop == NULL) {
+    return true; // bootstrap class loader
+  }
+  return java_lang_ClassLoader::is_trusted_loader(loader_oop);
 }
 
 // ------------------------------------------------------------------

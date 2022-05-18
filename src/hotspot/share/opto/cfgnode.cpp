@@ -1108,18 +1108,55 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
         const TypeInteger* hi = phase->type(limit)->isa_integer(l->bt());
         const TypeInteger* stride_t = phase->type(stride)->isa_integer(l->bt());
         if (lo != NULL && hi != NULL && stride_t != NULL) { // Dying loops might have TOP here
-          assert(stride_t->hi_as_long() >= stride_t->lo_as_long(), "bad stride type");
+          assert(stride_t->is_con(), "bad stride type");
           BoolTest::mask bt = l->loopexit()->test_trip();
           // If the loop exit condition is "not equal", the condition
           // would not trigger if init > limit (if stride > 0) or if
           // init < limit if (stride > 0) so we can't deduce bounds
           // for the iv from the exit condition.
           if (bt != BoolTest::ne) {
-            if (stride_t->hi_as_long() < 0) {          // Down-counter loop
+            jlong stride_con = stride_t->get_con_as_long(l->bt());
+            if (stride_con < 0) {          // Down-counter loop
               swap(lo, hi);
-              return TypeInteger::make(MIN2(lo->lo_as_long(), hi->lo_as_long()), hi->hi_as_long(), 3, l->bt())->filter_speculative(_type);
-            } else if (stride_t->lo_as_long() >= 0) {
-              return TypeInteger::make(lo->lo_as_long(), MAX2(lo->hi_as_long(), hi->hi_as_long()), 3, l->bt())->filter_speculative(_type);
+              jlong iv_range_lower_limit = lo->lo_as_long();
+              // Prevent overflow when adding one below
+              if (iv_range_lower_limit < max_signed_integer(l->bt())) {
+                // The loop exit condition is: iv + stride > limit (iv is this Phi). So the loop iterates until
+                // iv + stride <= limit
+                // We know that: limit >= lo->lo_as_long() and stride <= -1
+                // So when the loop exits, iv has to be at most lo->lo_as_long() + 1
+                iv_range_lower_limit += 1; // lo is after decrement
+                // Exact bounds for the phi can be computed when ABS(stride) greater than 1 if bounds are constant.
+                if (lo->is_con() && hi->is_con() && hi->lo_as_long() > lo->hi_as_long() && stride_con != -1) {
+                  julong uhi = static_cast<julong>(hi->lo_as_long());
+                  julong ulo = static_cast<julong>(lo->hi_as_long());
+                  julong diff = ((uhi - ulo - 1) / (-stride_con)) * (-stride_con);
+                  julong ufirst = hi->lo_as_long() - diff;
+                  iv_range_lower_limit = reinterpret_cast<jlong &>(ufirst);
+                  assert(iv_range_lower_limit >= lo->lo_as_long() + 1, "should end up with narrower range");
+                }
+              }
+              return TypeInteger::make(MIN2(iv_range_lower_limit, hi->lo_as_long()), hi->hi_as_long(), 3, l->bt())->filter_speculative(_type);
+            } else if (stride_con >= 0) {
+              jlong iv_range_upper_limit = hi->hi_as_long();
+              // Prevent overflow when subtracting one below
+              if (iv_range_upper_limit > min_signed_integer(l->bt())) {
+                // The loop exit condition is: iv + stride < limit (iv is this Phi). So the loop iterates until
+                // iv + stride >= limit
+                // We know that: limit <= hi->hi_as_long() and stride >= 1
+                // So when the loop exits, iv has to be at most hi->hi_as_long() - 1
+                iv_range_upper_limit -= 1;
+                // Exact bounds for the phi can be computed when ABS(stride) greater than 1 if bounds are constant.
+                if (lo->is_con() && hi->is_con() && hi->lo_as_long() > lo->hi_as_long() && stride_con != 1) {
+                  julong uhi = static_cast<julong>(hi->lo_as_long());
+                  julong ulo = static_cast<julong>(lo->hi_as_long());
+                  julong diff = ((uhi - ulo - 1) / stride_con) * stride_con;
+                  julong ulast = lo->hi_as_long() + diff;
+                  iv_range_upper_limit = reinterpret_cast<jlong &>(ulast);
+                  assert(iv_range_upper_limit <= hi->hi_as_long() - 1, "should end up with narrower range");
+                }
+              }
+              return TypeInteger::make(lo->lo_as_long(), MAX2(lo->hi_as_long(), iv_range_upper_limit), 3, l->bt())->filter_speculative(_type);
             }
           }
         }
@@ -1140,16 +1177,14 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
   // convert the one to the other.
   const TypePtr* ttp = _type->make_ptr();
   const TypeInstPtr* ttip = (ttp != NULL) ? ttp->isa_instptr() : NULL;
-  const TypeKlassPtr* ttkp = (ttp != NULL) ? ttp->isa_instklassptr() : NULL;
+  const TypeInstKlassPtr* ttkp = (ttp != NULL) ? ttp->isa_instklassptr() : NULL;
   bool is_intf = false;
   if (ttip != NULL) {
-    ciKlass* k = ttip->klass();
-    if (k->is_loaded() && k->is_interface())
+    if (ttip->is_interface())
       is_intf = true;
   }
   if (ttkp != NULL) {
-    ciKlass* k = ttkp->klass();
-    if (k->is_loaded() && k->is_interface())
+    if (ttkp->is_interface())
       is_intf = true;
   }
 
@@ -1168,8 +1203,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
       const TypeInstPtr* tiip = (tip != NULL) ? tip->isa_instptr() : NULL;
       if (tiip) {
         bool ti_is_intf = false;
-        ciKlass* k = tiip->klass();
-        if (k->is_loaded() && k->is_interface())
+        if (tiip->is_interface())
           ti_is_intf = true;
         if (is_intf != ti_is_intf)
           { t = _type; break; }
@@ -1207,14 +1241,14 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
     // be 'I' or 'j/l/O'.  Thus we'll pick 'j/l/O'.  If this then flows
     // into a Phi which "knows" it's an Interface type we'll have to
     // uplift the type.
-    if (!t->empty() && ttip && ttip->is_loaded() && ttip->klass()->is_interface()) {
+    if (!t->empty() && ttip && ttip->is_interface()) {
       assert(ft == _type, ""); // Uplift to interface
-    } else if (!t->empty() && ttkp && ttkp->is_loaded() && ttkp->klass()->is_interface()) {
+    } else if (!t->empty() && ttkp && ttkp->is_interface()) {
       assert(ft == _type, ""); // Uplift to interface
     } else {
       // We also have to handle 'evil cases' of interface- vs. class-arrays
       Type::get_arrays_base_elements(jt, _type, NULL, &ttip);
-      if (!t->empty() && ttip != NULL && ttip->is_loaded() && ttip->klass()->is_interface()) {
+      if (!t->empty() && ttip != NULL && ttip->is_interface()) {
           assert(ft == _type, "");   // Uplift to array of interface
       } else {
         // Otherwise it's something stupid like non-overlapping int ranges
@@ -1233,19 +1267,19 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
     // because the type system doesn't interact well with interfaces.
     const TypePtr *jtp = jt->make_ptr();
     const TypeInstPtr *jtip = (jtp != NULL) ? jtp->isa_instptr() : NULL;
-    const TypeKlassPtr *jtkp = (jtp != NULL) ? jtp->isa_instklassptr() : NULL;
-    if( jtip && ttip ) {
-      if( jtip->is_loaded() &&  jtip->klass()->is_interface() &&
-          ttip->is_loaded() && !ttip->klass()->is_interface() ) {
+    const TypeInstKlassPtr *jtkp = (jtp != NULL) ? jtp->isa_instklassptr() : NULL;
+    if (jtip && ttip) {
+      if (jtip->is_interface() &&
+          !ttip->is_interface()) {
         assert(ft == ttip->cast_to_ptr_type(jtip->ptr()) ||
                ft->isa_narrowoop() && ft->make_ptr() == ttip->cast_to_ptr_type(jtip->ptr()), "");
         jt = ft;
       }
     }
-    if( jtkp && ttkp ) {
-      if( jtkp->is_loaded() &&  jtkp->klass()->is_interface() &&
+    if (jtkp && ttkp) {
+      if (jtkp->is_interface() &&
           !jtkp->klass_is_exact() && // Keep exact interface klass (6894807)
-          ttkp->is_loaded() && !ttkp->klass()->is_interface() ) {
+          ttkp->is_loaded() && !ttkp->is_interface()) {
         assert(ft == ttkp->cast_to_ptr_type(jtkp->ptr()) ||
                ft->isa_narrowklass() && ft->make_ptr() == ttkp->cast_to_ptr_type(jtkp->ptr()), "");
         jt = ft;

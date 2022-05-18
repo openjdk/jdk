@@ -3829,6 +3829,8 @@ encode %{
       }
     }
 
+    __ post_call_nop();
+
     // Only non uncommon_trap calls need to reinitialize ptrue.
     if (Compile::current()->max_vector_size() > 0 && uncommon_trap_request() == 0) {
       __ reinitialize_ptrue();
@@ -3842,7 +3844,9 @@ encode %{
     if (call == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
-    } else if (Compile::current()->max_vector_size() > 0) {
+    }
+    __ post_call_nop();
+    if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();
     }
   %}
@@ -3870,6 +3874,7 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
+      __ post_call_nop();
     } else {
       Label retaddr;
       __ adr(rscratch2, retaddr);
@@ -3878,6 +3883,7 @@ encode %{
       __ stp(zr, rscratch2, Address(__ pre(sp, -2 * wordSize)));
       __ blr(rscratch1);
       __ bind(retaddr);
+      __ post_call_nop();
       __ add(sp, sp, 2 * wordSize);
     }
     if (Compile::current()->max_vector_size() > 0) {
@@ -15417,7 +15423,11 @@ instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 temp, Universe d
   format %{ "ClearArray $cnt, $base" %}
 
   ins_encode %{
-    __ zero_words($base$$Register, (uint64_t)$cnt$$constant);
+    address tpc = __ zero_words($base$$Register, (uint64_t)$cnt$$constant);
+    if (tpc == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
   %}
 
   ins_pipe(pipe_class_memory);

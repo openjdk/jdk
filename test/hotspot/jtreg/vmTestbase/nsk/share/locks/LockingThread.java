@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -487,7 +487,8 @@ public class LockingThread extends Thread {
     // calculate stack depth at which monitor was acquired
     int expectedDepth() {
         // for each monitor call 2 methods: createStackFrame() and method which acquire monitor
-        // + when stack creation is finished call 3 methods: createStackFrame()->doWait()->sleep()
+        // + when stack creation is finished call 2 methods: createStackFrame()->doWait()->sleep()/wait()
+        // implementation of Object.wait() and Thread.sleep() are excluded from comparison
         return (stackFramesDescription.size() - currentIndex) * 2 + 3;
     }
 

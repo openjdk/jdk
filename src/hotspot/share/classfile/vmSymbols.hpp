@@ -62,11 +62,17 @@
   template(java_lang_StringLatin1,                    "java/lang/StringLatin1")                   \
   template(java_lang_StringUTF16,                     "java/lang/StringUTF16")                    \
   template(java_lang_Thread,                          "java/lang/Thread")                         \
+  template(java_lang_Thread_FieldHolder,              "java/lang/Thread$FieldHolder")             \
+  template(java_lang_Thread_Constants,                "java/lang/Thread$Constants")               \
   template(java_lang_ThreadGroup,                     "java/lang/ThreadGroup")                    \
+  template(java_lang_VirtualThread,                   "java/lang/VirtualThread")                  \
   template(java_lang_Cloneable,                       "java/lang/Cloneable")                      \
   template(java_lang_Throwable,                       "java/lang/Throwable")                      \
   template(java_lang_ClassLoader,                     "java/lang/ClassLoader")                    \
   template(java_lang_ThreadDeath,                     "java/lang/ThreadDeath")                    \
+  template(java_lang_Runnable,                        "java/lang/Runnable")                       \
+  template(jdk_internal_vm_ContinuationScope,         "jdk/internal/vm/ContinuationScope")        \
+  template(jdk_internal_vm_StackChunk,                "jdk/internal/vm/StackChunk")               \
   template(java_lang_Boolean,                         "java/lang/Boolean")                        \
   template(java_lang_Character,                       "java/lang/Character")                      \
   template(java_lang_Character_CharacterCache,        "java/lang/Character$CharacterCache")       \
@@ -90,6 +96,8 @@
   template(payload_name,                              "payload")                                            \
   template(ETYPE_name,                                "ETYPE")                                              \
   template(VLENGTH_name,                              "VLENGTH")                                            \
+                                                                                                  \
+  template(jdk_internal_vm_FillerObject,              "jdk/internal/vm/FillerObject")             \
                                                                                                   \
   template(java_lang_Shutdown,                        "java/lang/Shutdown")                       \
   template(java_lang_ref_Reference,                   "java/lang/ref/Reference")                  \
@@ -308,6 +316,10 @@
   template(jdk_internal_misc_Scoped_signature,               "Ljdk/internal/misc/ScopedMemoryAccess$Scoped;") \
   template(jdk_internal_vm_annotation_IntrinsicCandidate_signature, "Ljdk/internal/vm/annotation/IntrinsicCandidate;") \
   template(jdk_internal_vm_annotation_Stable_signature,      "Ljdk/internal/vm/annotation/Stable;") \
+                                                                                                  \
+  template(jdk_internal_vm_annotation_ChangesCurrentThread_signature,  "Ljdk/internal/vm/annotation/ChangesCurrentThread;")  \
+  template(jdk_internal_vm_annotation_JvmtiMountTransition_signature,  "Ljdk/internal/vm/annotation/JvmtiMountTransition;")  \
+                                                                                                  \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
   template(java_lang_invoke_CallSite,                 "java/lang/invoke/CallSite")                \
   template(java_lang_invoke_ConstantCallSite,         "java/lang/invoke/ConstantCallSite")        \
@@ -380,16 +392,15 @@
   template(group_name,                                "group")                                    \
   template(daemon_name,                               "daemon")                                   \
   template(run_method_name,                           "run")                                      \
+  template(interrupt_method_name,                     "interrupt")                                \
   template(exit_method_name,                          "exit")                                     \
-  template(add_method_name,                           "add")                                      \
   template(remove_method_name,                        "remove")                                   \
   template(parent_name,                               "parent")                                   \
-  template(threads_name,                              "threads")                                  \
-  template(groups_name,                               "groups")                                   \
-  template(maxPriority_name,                          "maxPriority")                              \
-  template(destroyed_name,                            "destroyed")                                \
-  template(nthreads_name,                             "nthreads")                                 \
   template(ngroups_name,                              "ngroups")                                  \
+  template(groups_name,                               "groups")                                   \
+  template(nweaks_name,                               "nweaks")                                   \
+  template(weaks_name,                                "weaks")                                    \
+  template(maxPriority_name,                          "maxPriority")                              \
   template(shutdown_name,                             "shutdown")                                 \
   template(finalize_method_name,                      "finalize")                                 \
   template(reference_lock_name,                       "lock")                                     \
@@ -397,6 +408,33 @@
   template(run_finalization_name,                     "runFinalization")                          \
   template(dispatchUncaughtException_name,            "dispatchUncaughtException")                \
   template(loadClass_name,                            "loadClass")                                \
+  template(doYield_name,                              "doYield")                                  \
+  template(enter_name,                                "enter")                                    \
+  template(enterSpecial_name,                         "enterSpecial")                             \
+  template(onContinue_name,                           "onContinue0")                              \
+  template(getStacks_name,                            "getStacks")                                \
+  template(onPinned_name,                             "onPinned0")                                \
+  template(scope_name,                                "scope")                                    \
+  template(yieldInfo_name,                            "yieldInfo")                                \
+  template(tail_name,                                 "tail")                                     \
+  template(size_name,                                 "size")                                     \
+  template(argsize_name,                              "argsize")                                  \
+  template(mode_name,                                 "mode")                                     \
+  template(numFrames_name,                            "numFrames")                                \
+  template(numOops_name,                              "numOops")                                  \
+  template(stack_name,                                "stack")                                    \
+  template(maxSize_name,                              "maxSize")                                  \
+  template(reset_name,                                "reset")                                    \
+  template(done_name,                                 "done")                                     \
+  template(mounted_name,                              "mounted")                                  \
+  template(numInterpretedFrames_name,                 "numInterpretedFrames")                     \
+  template(jfrTraceId_name,                           "jfrTraceId")                               \
+  template(fp_name,                                   "fp")                                       \
+  template(sp_name,                                   "sp")                                       \
+  template(pc_name,                                   "pc")                                       \
+  template(cs_name,                                   "cs")                                       \
+  template(refStack_name,                             "refStack")                                 \
+  template(refSP_name,                                "refSP")                                    \
   template(get_name,                                  "get")                                      \
   template(refersTo0_name,                            "refersTo0")                                \
   template(put_name,                                  "put")                                      \
@@ -416,7 +454,7 @@
   template(contextClassLoader_name,                   "contextClassLoader")                       \
   template(inheritedAccessControlContext_name,        "inheritedAccessControlContext")            \
   template(getClassContext_name,                      "getClassContext")                          \
-  template(wait_name,                                 "wait")                                     \
+  template(wait_name,                                 "wait0")                                    \
   template(checkPackageAccess_name,                   "checkPackageAccess")                       \
   template(newInstance0_name,                         "newInstance0")                             \
   template(forName_name,                              "forName")                                  \
@@ -458,6 +496,7 @@
   template(signers_name,                              "signers_name")                             \
   template(source_file_name,                          "source_file")                              \
   template(loader_data_name,                          "loader_data")                              \
+  template(cont_name,                                 "cont")                                     \
   template(vmdependencies_name,                       "vmdependencies")                           \
   template(last_cleanup_name,                         "last_cleanup")                             \
   template(loader_name,                               "loader")                                   \
@@ -477,6 +516,7 @@
   template(java_lang_Byte_array_signature,            "[Ljava/lang/Byte;")                        \
   template(java_lang_Boolean_signature,               "Ljava/lang/Boolean;")                      \
   template(url_code_signer_array_void_signature,      "(Ljava/net/URL;[Ljava/security/CodeSigner;)V") \
+  template(jvmti_thread_state_name,                   "jvmti_thread_state")                       \
   template(module_entry_name,                         "module_entry")                             \
   template(resolved_references_name,                  "<resolved_references>")                    \
   template(init_lock_name,                            "<init_lock>")                              \
@@ -487,6 +527,8 @@
   template(data_cache_line_flush_size_name,           "DATA_CACHE_LINE_FLUSH_SIZE")               \
   template(during_unsafe_access_name,                 "during_unsafe_access")                     \
   template(checkIndex_name,                           "checkIndex")                               \
+  template(jfr_epoch_name,                            "jfr_epoch")                                \
+  template(maxThawingSize_name,                       "maxThawingSize")                           \
                                                                                                   \
   /* name symbols needed by intrinsics */                                                         \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, template, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -530,6 +572,11 @@
   template(char_array_signature,                      "[C")                                       \
   template(int_array_signature,                       "[I")                                       \
   template(long_array_signature,                      "[J")                                       \
+  template(runnable_signature,                        "Ljava/lang/Runnable;")                     \
+  template(continuation_signature,                    "Ljdk/internal/vm/Continuation;")           \
+  template(continuationscope_signature,               "Ljdk/internal/vm/ContinuationScope;")      \
+  template(stackchunk_signature,                      "Ljdk/internal/vm/StackChunk;")             \
+  template(vthread_signature,                         "Ljava/lang/VirtualThread;")                \
   template(object_void_signature,                     "(Ljava/lang/Object;)V")                    \
   template(object_int_signature,                      "(Ljava/lang/Object;)I")                    \
   template(long_object_long_signature,                "(JLjava/lang/Object;)J")                   \
@@ -537,6 +584,8 @@
   template(object_object_signature,                   "(Ljava/lang/Object;)Ljava/lang/Object;")   \
   template(string_void_signature,                     "(Ljava/lang/String;)V")                    \
   template(string_int_signature,                      "(Ljava/lang/String;)I")                    \
+  template(string_byte_array_signature,               "(Ljava/lang/String;)[B")                   \
+  template(string_bool_byte_array_signature,          "(Ljava/lang/String;Z)[B")                  \
   template(throwable_signature,                       "Ljava/lang/Throwable;")                    \
   template(throwable_void_signature,                  "(Ljava/lang/Throwable;)V")                 \
   template(void_throwable_signature,                  "()Ljava/lang/Throwable;")                  \
@@ -562,7 +611,7 @@
   template(char_array_void_signature,                 "([C)V")                                                    \
   template(int_int_void_signature,                    "(II)V")                                                    \
   template(long_long_void_signature,                  "(JJ)V")                                                    \
-  template(void_byte_array_signature,                 "()[B")                                                    \
+  template(void_byte_array_signature,                 "()[B")                                                     \
   template(void_classloader_signature,                "()Ljava/lang/ClassLoader;")                                \
   template(void_BuiltinClassLoader_signature,         "()Ljdk/internal/loader/BuiltinClassLoader;")               \
   template(void_object_signature,                     "()Ljava/lang/Object;")                                     \
@@ -577,6 +626,7 @@
   template(accesscontrolcontext_signature,            "Ljava/security/AccessControlContext;")                     \
   template(class_protectiondomain_signature,          "(Ljava/lang/Class;Ljava/security/ProtectionDomain;)V")     \
   template(thread_signature,                          "Ljava/lang/Thread;")                                       \
+  template(thread_fieldholder_signature,              "Ljava/lang/Thread$FieldHolder;")                           \
   template(thread_array_signature,                    "[Ljava/lang/Thread;")                                      \
   template(threadgroup_signature,                     "Ljava/lang/ThreadGroup;")                                  \
   template(threadgroup_array_signature,               "[Ljava/lang/ThreadGroup;")                                 \
@@ -589,6 +639,7 @@
   template(string_array_signature,                    "[Ljava/lang/String;")                                      \
   template(reference_signature,                       "Ljava/lang/ref/Reference;")                                \
   template(referencequeue_signature,                  "Ljava/lang/ref/ReferenceQueue;")                           \
+  template(weakreference_array_signature,             "[Ljava/lang/ref/WeakReference;")                           \
   template(executable_signature,                      "Ljava/lang/reflect/Executable;")                           \
   template(module_signature,                          "Ljava/lang/Module;")                                       \
   template(concurrenthashmap_signature,               "Ljava/util/concurrent/ConcurrentHashMap;")                 \
@@ -716,6 +767,11 @@
   template(url_void_signature,                              "(Ljava/net/URL;)V")                                  \
   template(url_array_classloader_void_signature,            "([Ljava/net/URL;Ljava/lang/ClassLoader;)V")          \
                                                                                                                   \
+  /* Thread.dump_to_file jcmd */                                                                                  \
+  template(jdk_internal_vm_ThreadDumper,           "jdk/internal/vm/ThreadDumper")                                \
+  template(dumpThreads_name,                       "dumpThreads")                                                 \
+  template(dumpThreadsToJson_name,                 "dumpThreadsToJson")                                           \
+
   /*end*/
 
 // enum for figuring positions and size of Symbol::_vm_symbols[]
