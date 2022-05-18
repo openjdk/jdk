@@ -754,8 +754,8 @@ public abstract class Binding {
             this.alignment = alignment;
         }
 
-        private static MemorySegment allocateBuffer(long size, long allignment, Context context) {
-            return context.allocator().allocate(size, allignment);
+        private static MemorySegment allocateBuffer(long size, long alignment, Context context) {
+            return context.allocator().allocate(size, alignment);
         }
 
         public long size() {

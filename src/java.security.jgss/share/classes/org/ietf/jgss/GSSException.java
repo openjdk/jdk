@@ -249,7 +249,7 @@ public class GSSException extends Exception {
      * specific major string for it.
      *
      * @param majorCode the fatal error code causing this exception.
-     * @param majorString an expicit message to be included in this exception
+     * @param majorString an explicit message to be included in this exception
      */
     GSSException (int majorCode, String majorString) {
 

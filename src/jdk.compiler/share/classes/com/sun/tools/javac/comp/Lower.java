@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -499,50 +499,56 @@ public class Lower extends TreeTranslator {
 
         // generate the field initializer for the map
         void translate() {
-            make.at(pos.getStartPosition());
-            JCClassDecl owner = classDef((ClassSymbol)mapVar.owner);
+            boolean prevAllowProtectedAccess = attrEnv.info.allowProtectedAccess;
+            try {
+                make.at(pos.getStartPosition());
+                attrEnv.info.allowProtectedAccess = true;
+                JCClassDecl owner = classDef((ClassSymbol)mapVar.owner);
 
-            // synthetic static final int[] $SwitchMap$Color = new int[Color.values().length];
-            MethodSymbol valuesMethod = lookupMethod(pos,
-                                                     names.values,
-                                                     forEnum.type,
-                                                     List.nil());
-            JCExpression size = make // Color.values().length
-                .Select(make.App(make.QualIdent(valuesMethod)),
-                        syms.lengthVar);
-            JCExpression mapVarInit = make
-                .NewArray(make.Type(syms.intType), List.of(size), null)
-                .setType(new ArrayType(syms.intType, syms.arrayClass));
+                // synthetic static final int[] $SwitchMap$Color = new int[Color.values().length];
+                MethodSymbol valuesMethod = lookupMethod(pos,
+                                                         names.values,
+                                                         forEnum.type,
+                                                         List.nil());
+                JCExpression size = make // Color.values().length
+                    .Select(make.App(make.QualIdent(valuesMethod)),
+                            syms.lengthVar);
+                JCExpression mapVarInit = make
+                    .NewArray(make.Type(syms.intType), List.of(size), null)
+                    .setType(new ArrayType(syms.intType, syms.arrayClass));
 
-            // try { $SwitchMap$Color[red.ordinal()] = 1; } catch (java.lang.NoSuchFieldError ex) {}
-            ListBuffer<JCStatement> stmts = new ListBuffer<>();
-            Symbol ordinalMethod = lookupMethod(pos,
-                                                names.ordinal,
-                                                forEnum.type,
-                                                List.nil());
-            List<JCCatch> catcher = List.<JCCatch>nil()
-                .prepend(make.Catch(make.VarDef(new VarSymbol(PARAMETER, names.ex,
-                                                              syms.noSuchFieldErrorType,
-                                                              syms.noSymbol),
-                                                null),
-                                    make.Block(0, List.nil())));
-            for (Map.Entry<VarSymbol,Integer> e : values.entrySet()) {
-                VarSymbol enumerator = e.getKey();
-                Integer mappedValue = e.getValue();
-                JCExpression assign = make
-                    .Assign(make.Indexed(mapVar,
-                                         make.App(make.Select(make.QualIdent(enumerator),
-                                                              ordinalMethod))),
-                            make.Literal(mappedValue))
-                    .setType(syms.intType);
-                JCStatement exec = make.Exec(assign);
-                JCStatement _try = make.Try(make.Block(0, List.of(exec)), catcher, null);
-                stmts.append(_try);
+                // try { $SwitchMap$Color[red.ordinal()] = 1; } catch (java.lang.NoSuchFieldError ex) {}
+                ListBuffer<JCStatement> stmts = new ListBuffer<>();
+                Symbol ordinalMethod = lookupMethod(pos,
+                                                    names.ordinal,
+                                                    forEnum.type,
+                                                    List.nil());
+                List<JCCatch> catcher = List.<JCCatch>nil()
+                    .prepend(make.Catch(make.VarDef(new VarSymbol(PARAMETER, names.ex,
+                                                                  syms.noSuchFieldErrorType,
+                                                                  syms.noSymbol),
+                                                    null),
+                                        make.Block(0, List.nil())));
+                for (Map.Entry<VarSymbol,Integer> e : values.entrySet()) {
+                    VarSymbol enumerator = e.getKey();
+                    Integer mappedValue = e.getValue();
+                    JCExpression assign = make
+                        .Assign(make.Indexed(mapVar,
+                                             make.App(make.Select(make.QualIdent(enumerator),
+                                                                  ordinalMethod))),
+                                make.Literal(mappedValue))
+                        .setType(syms.intType);
+                    JCStatement exec = make.Exec(assign);
+                    JCStatement _try = make.Try(make.Block(0, List.of(exec)), catcher, null);
+                    stmts.append(_try);
+                }
+
+                owner.defs = owner.defs
+                    .prepend(make.Block(STATIC, stmts.toList()))
+                    .prepend(make.VarDef(mapVar, mapVarInit));
+            } finally {
+                attrEnv.info.allowProtectedAccess = prevAllowProtectedAccess;
             }
-
-            owner.defs = owner.defs
-                .prepend(make.Block(STATIC, stmts.toList()))
-                .prepend(make.VarDef(mapVar, mapVarInit));
         }
     }
 
@@ -3615,20 +3621,26 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitSwitch(JCSwitch tree) {
-        List<JCCase> cases = tree.patternSwitch ? addDefaultIfNeeded(tree.cases) : tree.cases;
+        boolean matchException = tree.patternSwitch && !tree.wasEnumSelector;
+        List<JCCase> cases = tree.patternSwitch ? addDefaultIfNeeded(matchException, tree.cases)
+                                                : tree.cases;
         handleSwitch(tree, tree.selector, cases);
     }
 
     @Override
     public void visitSwitchExpression(JCSwitchExpression tree) {
-        List<JCCase> cases = addDefaultIfNeeded(tree.cases);
+        boolean matchException = tree.patternSwitch && !tree.wasEnumSelector;
+        List<JCCase> cases = addDefaultIfNeeded(matchException, tree.cases);
         handleSwitch(tree, tree.selector, cases);
     }
 
-    private List<JCCase> addDefaultIfNeeded(List<JCCase> cases) {
+    private List<JCCase> addDefaultIfNeeded(boolean matchException, List<JCCase> cases) {
         if (cases.stream().flatMap(c -> c.labels.stream()).noneMatch(p -> p.hasTag(Tag.DEFAULTCASELABEL))) {
-            JCThrow thr = make.Throw(makeNewClass(syms.incompatibleClassChangeErrorType,
-                                                  List.nil()));
+            Type exception = matchException ? syms.matchExceptionType
+                                            : syms.incompatibleClassChangeErrorType;
+            List<JCExpression> params = matchException ? List.of(makeNull(), makeNull())
+                                                       : List.nil();
+            JCThrow thr = make.Throw(makeNewClass(exception, params));
             JCCase c = make.Case(JCCase.STATEMENT, List.of(make.DefaultCaseLabel()), List.of(thr), null);
             cases = cases.prepend(c);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class PerfDataBufferPrologue extends AbstractPerfDataBufferPrologue {
     static final int PERFDATA_PROLOG_MODTIMESTAMP_SIZE=8;      // sizeof(long)
     static final int PERFDATA_PROLOG_SIZE=24;  // sizeof(struct PerfDataProlog)
 
-    // counter names for prologue psuedo counters
+    // counter names for prologue pseudo counters
     static final String PERFDATA_BUFFER_SIZE_NAME  = "sun.perfdata.size";
     static final String PERFDATA_BUFFER_USED_NAME  = "sun.perfdata.used";
     static final String PERFDATA_OVERFLOW_NAME     = "sun.perfdata.overflow";

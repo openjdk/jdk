@@ -930,7 +930,7 @@ void MacroAssembler::long_move(VMRegPair src, VMRegPair dst, Register tmp, int i
       }
     } else {
       assert(dst.is_single_reg(), "not a stack pair: (%s, %s), (%s, %s)",
-        src.first()->name(), src.second()->name(), dst.first()->name(), dst.second()->name());
+             src.first()->name(), src.second()->name(), dst.first()->name(), dst.second()->name());
       movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), src.first()->as_Register());
     }
   } else if (dst.is_single_phys_reg()) {
@@ -1999,6 +1999,7 @@ void MacroAssembler::post_call_nop() {
   if (!Continuations::enabled()) {
     return;
   }
+  InstructionMark im(this);
   relocate(post_call_nop_Relocation::spec());
   emit_int8((int8_t)0x0f);
   emit_int8((int8_t)0x1f);
