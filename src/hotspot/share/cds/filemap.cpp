@@ -165,9 +165,9 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
   assert(header_version[JVM_IDENT_MAX-1] == 0, "must be");
 }
 
-FileMapInfo::FileMapInfo(bool is_static) {
-  memset((void*)this, 0, sizeof(FileMapInfo));
-  _is_static = is_static;
+FileMapInfo::FileMapInfo(bool is_static) :
+  _is_static(is_static), _file_open(false), _is_mapped(false), _fd(-1), _file_offset(0),
+  _full_path(nullptr), _base_archive_name(nullptr), _header(nullptr) {
   size_t header_size;
   if (is_static) {
     assert(_current_info == NULL, "must be singleton"); // not thread safe
@@ -183,8 +183,6 @@ FileMapInfo::FileMapInfo(bool is_static) {
   _header->set_header_size(header_size);
   _header->set_version(INVALID_CDS_ARCHIVE_VERSION);
   _header->set_has_platform_or_app_classes(true);
-  _file_offset = 0;
-  _file_open = false;
 }
 
 FileMapInfo::~FileMapInfo() {
@@ -194,6 +192,14 @@ FileMapInfo::~FileMapInfo() {
   } else {
     assert(_dynamic_archive_info == this, "must be singleton"); // not thread safe
     _dynamic_archive_info = NULL;
+  }
+
+  if (_header != nullptr) {
+    os::free(_header);
+  }
+
+  if (_file_open) {
+    ::close(_fd);
   }
 }
 
