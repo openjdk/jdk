@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 SAP SE. All rights reserved.
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,12 @@
 #include "prims/universalUpcallHandler.hpp"
 #include "utilities/debug.hpp"
 
-address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jabi, jobject jlayout) {
-  Unimplemented();
-  return nullptr;
-}
-
-address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject mh, Method* entry, jobject jabi, jobject jconv) {
+address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiver, Method* entry,
+                                                                  BasicType* in_sig_bt, int total_in_args,
+                                                                  BasicType* out_sig_bt, int total_out_args,
+                                                                  BasicType ret_type,
+                                                                  jobject jabi, jobject jconv,
+                                                                  bool needs_return_buffer, int ret_buf_size) {
   ShouldNotCallThis();
   return nullptr;
-}
-
-bool ProgrammableUpcallHandler::supports_optimized_upcalls() {
-  return false;
 }

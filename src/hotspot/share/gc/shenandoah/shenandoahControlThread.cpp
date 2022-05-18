@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,6 +479,7 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
   assert(GCCause::is_user_requested_gc(cause) ||
          GCCause::is_serviceability_requested_gc(cause) ||
          cause == GCCause::_metadata_GC_clear_soft_refs ||
+         cause == GCCause::_codecache_GC_threshold ||
          cause == GCCause::_full_gc_alot ||
          cause == GCCause::_wb_full_gc ||
          cause == GCCause::_wb_breakpoint ||

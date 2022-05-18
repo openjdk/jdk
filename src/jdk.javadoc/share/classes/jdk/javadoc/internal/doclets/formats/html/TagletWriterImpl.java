@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -209,7 +210,7 @@ public class TagletWriterImpl extends TagletWriter {
                              .replaceAll("\\s+", " ");
         }
 
-        Content desc = htmlWriter.commentTagsToContent(tag, element, tag.getDescription(), context.within(tag));
+        Content desc = htmlWriter.commentTagsToContent(element, tag.getDescription(), context.within(tag));
         String descText = extractText(desc);
 
         return createAnchorAndSearchIndex(element, tagText, descText, tag);
@@ -298,7 +299,7 @@ public class TagletWriterImpl extends TagletWriter {
         body.add(HtmlTree.CODE(defineID ? HtmlTree.SPAN_ID(HtmlIds.forParam(paramName), nameContent) : nameContent));
         body.add(" - ");
         List<? extends DocTree> description = ch.getDescription(paramTag);
-        body.add(htmlWriter.commentTagsToContent(paramTag, element, description, context.within(paramTag)));
+        body.add(htmlWriter.commentTagsToContent(element, description, context.within(paramTag)));
         return HtmlTree.DD(body);
     }
 
@@ -306,7 +307,7 @@ public class TagletWriterImpl extends TagletWriter {
     public Content returnTagOutput(Element element, ReturnTree returnTag, boolean inline) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> desc = ch.getDescription(returnTag);
-        Content content = htmlWriter.commentTagsToContent(returnTag, element, desc , context.within(returnTag));
+        Content content = htmlWriter.commentTagsToContent(element, desc , context.within(returnTag));
         return inline
                 ? new ContentBuilder(contents.getContent("doclet.Returns_0", content))
                 : new ContentBuilder(HtmlTree.DT(contents.returns), HtmlTree.DD(content));
@@ -347,7 +348,7 @@ public class TagletWriterImpl extends TagletWriter {
         boolean hasLongLabels = links.stream()
                 .anyMatch(c -> c.charCount() > SEE_TAG_MAX_INLINE_LENGTH || c.toString().contains(","));
         var seeList = HtmlTree.UL(hasLongLabels ? HtmlStyle.seeListLong : HtmlStyle.seeList);
-        links.stream().filter(Content::isValid).forEach(item -> {
+        links.stream().filter(Predicate.not(Content::isEmpty)).forEach(item -> {
             seeList.add(HtmlTree.LI(item));
         });
 
@@ -366,7 +367,7 @@ public class TagletWriterImpl extends TagletWriter {
                 body.add(", ");
             }
             List<? extends DocTree> bodyTags = ch.getBody(simpleTag);
-            body.add(htmlWriter.commentTagsToContent(simpleTag, element, bodyTags, context.within(simpleTag)));
+            body.add(htmlWriter.commentTagsToContent(element, bodyTags, context.within(simpleTag)));
             many = true;
         }
         return new ContentBuilder(
@@ -382,7 +383,7 @@ public class TagletWriterImpl extends TagletWriter {
             pre.put(HtmlAttr.ID, id);
         }
         var code = new HtmlTree(TagName.CODE)
-                .add(HtmlTree.EMPTY); // Make sure the element is always rendered
+                .addUnchecked(Text.EMPTY); // Make sure the element is always rendered
         if (lang != null && !lang.isBlank()) {
             code.addStyle("language-" + lang);
         }
@@ -513,7 +514,7 @@ public class TagletWriterImpl extends TagletWriter {
         }
         body.add(HtmlTree.CODE(excName));
         List<? extends DocTree> description = ch.getDescription(throwsTag);
-        Content desc = htmlWriter.commentTagsToContent(throwsTag, element, description, context.within(throwsTag));
+        Content desc = htmlWriter.commentTagsToContent(element, description, context.within(throwsTag));
         if (desc != null && !desc.isEmpty()) {
             body.add(" - ");
             body.add(desc);
@@ -558,7 +559,7 @@ public class TagletWriterImpl extends TagletWriter {
                                        List<? extends DocTree> tags,
                                        boolean isFirstSentence)
     {
-        return htmlWriter.commentTagsToContent(holderTag, holder,
+        return htmlWriter.commentTagsToContent(holder,
                 tags, holderTag == null ? context : context.within(holderTag));
     }
 

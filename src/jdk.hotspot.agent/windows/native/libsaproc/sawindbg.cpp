@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -772,7 +772,7 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_windbg_WindbgDebuggerLocal
   ULONG id = 0;
   HRESULT hr = ptrIDebugSystemObjects->GetThreadIdBySystemId((ULONG)sysId, &id);
   if (hr != S_OK) {
-    // This is not considered fatal and does happen on occassion, usually with an
+    // This is not considered fatal and does happen on occasion, usually with an
     // 0x80004002 "No such interface supported". The root cause is not fully understood,
     // but by ignoring this error and returning NULL, stacking walking code will get
     // null registers and fallback to using the "last java frame" if setup.

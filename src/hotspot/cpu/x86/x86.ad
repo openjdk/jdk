@@ -1886,6 +1886,12 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    case Op_SignumVD:
+    case Op_SignumVF:
+      if (UseAVX < 1) {
+        return false;
+      }
+      break;
     case Op_PopCountVI:
       if (!VM_Version::supports_avx512_vpopcntdq() &&
           (vlen == 16) && !VM_Version::supports_avx512bw()) {
@@ -2658,10 +2664,10 @@ static inline jlong high_bit_set(BasicType bt) {
 encode %{
 
   enc_class call_epilog %{
+    C2_MacroAssembler _masm(&cbuf);
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
       int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3*VMRegImpl::slots_per_word));
-      C2_MacroAssembler _masm(&cbuf);
       Label L;
       __ cmpptr(Address(rsp, framesize), (int32_t)0xbadb100d);
       __ jccb(Assembler::equal, L);
@@ -6089,6 +6095,36 @@ instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr)
   ins_pipe( pipe_slow );
 %}
 
+instruct signumV_reg_avx(vec dst, vec src, vec zero, vec one, vec xtmp1) %{
+  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_length_in_bytes(n) <= 32);
+  match(Set dst (SignumVF src (Binary zero one)));
+  match(Set dst (SignumVD src (Binary zero one)));
+  effect(TEMP dst, TEMP xtmp1);
+  format %{ "vector_signum_avx $dst, $src\t! using $xtmp1 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vec_enc = vector_length_encoding(this);
+    __ vector_signum_avx(opcode, $dst$$XMMRegister, $src$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister,
+                         $xtmp1$$XMMRegister, vec_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct signumV_reg_evex(vec dst, vec src, vec zero, vec one, kReg ktmp1) %{
+  predicate(VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n) == 64);
+  match(Set dst (SignumVF src (Binary zero one)));
+  match(Set dst (SignumVD src (Binary zero one)));
+  effect(TEMP dst, TEMP ktmp1);
+  format %{ "vector_signum_evex $dst, $src\t! using $ktmp1 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vec_enc = vector_length_encoding(this);
+    __ vector_signum_evex(opcode, $dst$$XMMRegister, $src$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister,
+                          $ktmp1$$KRegister, vec_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // ---------------------------------------
 // For copySign use 0xE4 as writemask for vpternlog
 // Desired Truth Table: A -> xmm0 bit, B -> xmm1 bit, C -> xmm2 bit
@@ -8781,7 +8817,7 @@ instruct vmasked_load64(vec dst, memory mem, kReg mask) %{
   ins_encode %{
     BasicType elmType =  this->bottom_type()->is_vect()->element_basic_type();
     int vector_len = vector_length_encoding(this);
-    __ evmovdqu(elmType, $mask$$KRegister, $dst$$XMMRegister, $mem$$Address, vector_len);
+    __ evmovdqu(elmType, $mask$$KRegister, $dst$$XMMRegister, $mem$$Address, false, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8814,7 +8850,7 @@ instruct vmasked_store64(memory mem, vec src, kReg mask) %{
     const MachNode* src_node = static_cast<const MachNode*>(this->in(this->operand_index($src)));
     BasicType elmType =  src_node->bottom_type()->is_vect()->element_basic_type();
     int vector_len = vector_length_encoding(src_node);
-    __ evmovdqu(elmType, $mask$$KRegister, $mem$$Address, $src$$XMMRegister, vector_len);
+    __ evmovdqu(elmType, $mask$$KRegister, $mem$$Address, $src$$XMMRegister, true, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}

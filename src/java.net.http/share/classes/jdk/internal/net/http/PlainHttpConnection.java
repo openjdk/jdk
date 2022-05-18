@@ -183,6 +183,27 @@ class PlainHttpConnection extends HttpConnection {
                 }
             }
 
+            var localAddr = client().localAddress();
+            if (localAddr != null) {
+                if (debug.on()) {
+                    debug.log("binding to configured local address " + localAddr);
+                }
+                var sockAddr = new InetSocketAddress(localAddr, 0);
+                PrivilegedExceptionAction<SocketChannel> pa = () -> chan.bind(sockAddr);
+                try {
+                    AccessController.doPrivileged(pa);
+                    if (debug.on()) {
+                        debug.log("bind completed " + localAddr);
+                    }
+                } catch (PrivilegedActionException e) {
+                    var cause = e.getCause();
+                    if (debug.on()) {
+                        debug.log("bind to " + localAddr + " failed: " + cause.getMessage());
+                    }
+                    throw cause;
+                }
+            }
+
             PrivilegedExceptionAction<Boolean> pa =
                     () -> chan.connect(Utils.resolveAddress(address));
             try {
