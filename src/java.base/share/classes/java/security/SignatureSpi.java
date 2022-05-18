@@ -373,9 +373,6 @@ public abstract class SignatureSpi {
     /**
      * Initializes this signature object with the specified parameter values.
      *
-     * <p>This method is overridden by providers to initialize
-     * this signature object with the specified parameter set.
-     *
      * @param params the parameters
      *
      * @throws    UnsupportedOperationException if this method is not
@@ -392,9 +389,6 @@ public abstract class SignatureSpi {
 
     /**
      * Returns the parameters used with this signature object.
-     *
-     * <p>This method is overridden by providers to return the parameters
-     * used with this signature object.
      *
      * <p>The returned parameters may be the same that were used to initialize
      * this signature object, or may contain additional default or random

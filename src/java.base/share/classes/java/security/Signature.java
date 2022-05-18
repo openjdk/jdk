@@ -1017,8 +1017,8 @@ public abstract class Signature extends SignatureSpi {
      * returned.
      *
      * @return the parameters used with this signature object, or {@code null}
-     * @throws UnsupportedOperationException if this method is not overridden
-     * by a provider
+     * @throws UnsupportedOperationException if the provider does not support
+     * this method
      *
      * @see #setParameter(AlgorithmParameterSpec)
      * @since 1.4
