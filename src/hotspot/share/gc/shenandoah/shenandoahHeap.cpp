@@ -2315,6 +2315,7 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
   if (is_concurrent_mark_in_progress() && marking_context()->allocated_after_mark_start(obj)) {
     return false;
   }
+
   // Objects allocated after evacuation start are guaranteed in to-space, don't need any barriers
   // during evacuation/update references phases.
   if (has_forwarded_objects() &&
