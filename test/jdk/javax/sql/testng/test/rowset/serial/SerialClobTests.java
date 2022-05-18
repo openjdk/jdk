@@ -323,7 +323,7 @@ public class SerialClobTests extends BaseTest {
     }
 
     /*
-     * Validate that position returned is -1 when an the search string is not
+     * Validate that position returned is -1 when the search string is not
      * part of the SerialClob
      */
     @Test
@@ -336,7 +336,7 @@ public class SerialClobTests extends BaseTest {
     }
 
     /*
-     * Validate that position() returned is -1 when an the search string is not
+     * Validate that position() returned is -1 when the search string is not
      * part of the SerialClob
      */
     @Test
