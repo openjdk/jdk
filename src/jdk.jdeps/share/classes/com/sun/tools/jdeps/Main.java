@@ -71,7 +71,7 @@ public class Main {
         }
 
         public Optional<String> description() {
-            return Optional.of("Analyze dependencies of Java classes");
+            return Optional.of(JdepsTask.getMessage("jdeps.description"));
         }
 
         public int run(PrintWriter out, PrintWriter err, String... args) {

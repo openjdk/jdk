@@ -67,7 +67,8 @@ public class Main {
         }
 
         public Optional<String> description() {
-            return Optional.of("Disassemble one or more Java class files");
+            JavapTask t = new JavapTask();
+            return Optional.of(t.getMessage("javap.description"));
         }
 
         public int run(PrintWriter out, PrintWriter err, String... args) {
