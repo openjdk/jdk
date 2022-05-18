@@ -203,20 +203,20 @@ class ResourceHashtableBase : public STORAGE {
   // the iteration is cancelled.
   template<class ITER>
   void iterate(ITER* iter) const {
-    auto f = [&] (K& k, V& v) {
+    auto function = [&] (K& k, V& v) {
       return iter->do_entry(k, v);
     };
-    iterate(f);
+    iterate(function);
   }
 
-  template<typename F>
-  void iterate(F f) const { // lambda enabled API
+  template<typename Function>
+  void iterate(Function function) const { // lambda enabled API
     Node* const* bucket = table();
     const unsigned sz = table_size();
     while (bucket < bucket_at(sz)) {
       Node* node = *bucket;
       while (node != NULL) {
-        bool cont = f(node->_key, node->_value);
+        bool cont = function(node->_key, node->_value);
         if (!cont) { return; }
         node = node->_next;
       }
@@ -225,13 +225,13 @@ class ResourceHashtableBase : public STORAGE {
   }
 
   // same as above, but unconditionally iterate all entries
-  template<typename F>
-  void iterate_all(F f) const { // lambda enabled API
-    auto g = [&] (K& k, V& v) {
-      f(k, v);
+  template<typename Function>
+  void iterate_all(Function function) const { // lambda enabled API
+    auto wrapper = [&] (K& k, V& v) {
+      function(k, v);
       return true;
     };
-    iterate(g);
+    iterate(wrapper);
   }
 
   // ITER contains bool do_entry(K const&, V const&), which will be

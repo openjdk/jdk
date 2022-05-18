@@ -722,23 +722,21 @@ bool SystemDictionaryShared::has_class_failed_verification(InstanceKlass* ik) {
 void SystemDictionaryShared::dumptime_classes_do(class MetaspaceClosure* it) {
   assert_lock_strong(DumpTimeTable_lock);
 
-  auto f = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
+  auto do_klass = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
     if (k->is_loader_alive() && !info.is_excluded()) {
       info.metaspace_pointers_do(it);
     }
   };
-
-  _dumptime_table->iterate_all(f);
+  _dumptime_table->iterate_all(do_klass);
 
   if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    auto g = [&] (LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+    auto do_lambda = [&] (LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
       if (key.caller_ik()->is_loader_alive()) {
         info.metaspace_pointers_do(it);
         key.metaspace_pointers_do(it);
       }
     };
-
-    _dumptime_lambda_proxy_class_dictionary->iterate_all(g);
+    _dumptime_lambda_proxy_class_dictionary->iterate_all(do_lambda);
   }
 }
 
