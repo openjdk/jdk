@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "memory/resourceArea.hpp"
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logTestFixture.hpp"
@@ -29,6 +28,7 @@
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
+#include "memory/resourceArea.hpp"
 
 class LogStreamTest : public LogTestFixture {
  protected:
