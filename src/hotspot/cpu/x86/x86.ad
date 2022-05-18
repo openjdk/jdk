@@ -1469,10 +1469,10 @@ const bool Matcher::match_rule_supported(int opcode) {
       }
       break;
     case Op_PopulateIndex:
-      if (!is_LP64) {
+      if (!is_LP64 || (UseAVX < 2)) {
         return false;
       }
-      // fallthrough
+      break;
     case Op_RoundVF:
       if (UseAVX < 2) { // enabled for AVX2 only
         return false;
@@ -1817,8 +1817,9 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_PopulateIndex:
-      if (size_in_bits > 256 && !VM_Version::supports_avx512bw())
+      if (size_in_bits > 256 && !VM_Version::supports_avx512bw()) {
         return false;
+      }
     case Op_VectorCastB2X:
     case Op_VectorCastS2X:
     case Op_VectorCastI2X:
