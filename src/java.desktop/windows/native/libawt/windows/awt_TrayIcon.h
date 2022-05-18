@@ -155,8 +155,17 @@ private:
 
     BOOL SendTrayMessage(DWORD dwMessage);
 
-    void AddTrayIcon();
-    void ModifyTrayIcon();
+    INLINE void AddTrayIcon() {
+        BOOL result = SendTrayMessage(NIM_ADD);
+        // 6270114: Instructs the taskbar to behave according to the Shell version 5.0
+        if (result) {
+            SendTrayMessage(NIM_SETVERSION);
+        }
+    }
+
+    INLINE void ModifyTrayIcon() {
+        SendTrayMessage(NIM_MODIFY);
+    }
 
     static bool m_bDPIChanged;
 

@@ -911,20 +911,6 @@ ret:
     delete dms;
 }
 
-void AwtTrayIcon::AddTrayIcon()
-{
-    BOOL result = SendTrayMessage(NIM_ADD);
-    // 6270114: Instructs the taskbar to behave according to the Shell version 5.0
-    if (result) {
-        SendTrayMessage(NIM_SETVERSION);
-    }
-}
-
-void AwtTrayIcon::ModifyTrayIcon()
-{
-    SendTrayMessage(NIM_MODIFY);
-}
-
 /************************************************************************
  * TrayIcon native methods
  */
