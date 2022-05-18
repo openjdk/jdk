@@ -78,7 +78,7 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
 {
     char stackBuf[STACK_BUF_SIZE];
     char *buf = NULL;
-    jint buf_size, read_size;;
+    jint buf_size, read_size;
     jint n, nread;
     FD fd;
 
@@ -215,6 +215,9 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
             }
             off += n;
             len -= n;
+        } else { // ArrayIndexOutOfBoundsException
+            (*env)->ExceptionClear(env);
+            break;
         }
     }
 
