@@ -37,9 +37,9 @@ import jtreg.SkippedException;
  * @bug 8061267
  * @key printer
  * @library /java/awt/regtesthelpers
- * @library /java/awt/jtreg
+ * @library /test/lib
  * @build PassFailJFrame
- * @build SkippedException
+ * @build jtreg.SkippedException
  * @summary The specified page range should be displayed in the dialog
  * @run main/manual PageRangesDlgTest
  */
@@ -58,33 +58,31 @@ public class PageRangesDlgTest implements Printable {
         job = PrinterJob.getPrinterJob();
         job.setPrintable(new PageRangesDlgTest());
         aset.add(DialogTypeSelection.NATIVE);
-        if (job.printDialog()) {
+        if (job.printDialog(aset)) {
             job.print();
         }
     }
 
     public static void main(String[] args) throws Exception {
-        if (PrinterJob.lookupPrintServices().length > 0) {
-
-            String instruction = """
-                    Note: You must have a printer installed for this test.
-                    If printer is not installed then the test passes automatically.
-
-                    This test is to check that the print dialog displays the specified,
-                    page ranges. It is valid only on dialogs which support page ranges,
-                    In each dialog, check that a page range of 2 to 3 is requested,
-                    Optionally press Print instead of Cancel, and verify that the,
-                    correct number/set of pages is printed.
-                    """;
-
-            PassFailJFrame passFailJFrame = new PassFailJFrame(instruction, 10);
-            showPrintDialogs();
-            passFailJFrame.awaitAndCheck();
-
-        } else {
+        if (PrinterJob.lookupPrintServices().length == 0) {
             throw new SkippedException("Printer not configured or available."
                     + " Test cannot continue.");
         }
+
+        String instruction = """
+                Note: You must have a printer installed for this test.
+                If printer is not installed then the test passes automatically.
+
+                This test is to check that the print dialog displays the specified,
+                page ranges. It is valid only on dialogs which support page ranges,
+                In each dialog, check that a page range of 2 to 3 is requested,
+                Optionally press Print instead of Cancel, and verify that the,
+                correct number/set of pages is printed.
+                """;
+
+        PassFailJFrame passFailJFrame = new PassFailJFrame(instruction, 10);
+        showPrintDialogs();
+        passFailJFrame.awaitAndCheck();
     }
 
     public int print(Graphics g, PageFormat pf, int pi)
