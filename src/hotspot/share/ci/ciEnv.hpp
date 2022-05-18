@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,7 +334,7 @@ public:
   // Reason this compilation is failing, such as "too many basic blocks".
   const char* failure_reason() { return _failure_reason; }
 
-  // Return state of appropriate compilability
+  // Return state of appropriate compatibility
   int compilable() { return _compilable; }
 
   const char* retry_message() const {
@@ -392,6 +392,8 @@ public:
                        AbstractCompiler*         compiler,
                        bool                      has_unsafe_access,
                        bool                      has_wide_vectors,
+                       bool                      has_monitors,
+                       int                       immediate_oops_patched,
                        RTMState                  rtm_state = NoRTM,
                        const GrowableArrayView<RuntimeStub*>& native_invokers = GrowableArrayView<RuntimeStub*>::EMPTY);
 
@@ -433,6 +435,8 @@ public:
   ciInstance* unloaded_ciinstance();
 
   ciInstanceKlass* get_box_klass_for_primitive_type(BasicType type);
+
+  ciKlass*  find_system_klass(ciSymbol* klass_name);
 
   // Note:  To find a class from its name string, use ciSymbol::make,
   // but consider adding to vmSymbols.hpp instead.

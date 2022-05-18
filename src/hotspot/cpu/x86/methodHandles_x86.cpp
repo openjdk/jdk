@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -631,7 +631,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ enter();
   __ andptr(rsp, -16); // align stack if needed for FPU state
   __ pusha();
-  __ mov(rbx, rsp); // for retreiving saved_regs
+  __ mov(rbx, rsp); // for retrieving saved_regs
   // Note: saved_regs must be in the entered frame for the
   // robust stack walking implemented in trace_method_handle_stub.
 

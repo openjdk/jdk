@@ -30,7 +30,6 @@
 
 class EdgeStore;
 class InstanceKlass;
-class JavaThread;
 class JfrCheckpointWriter;
 class JfrStackTrace;
 class Klass;
@@ -53,7 +52,7 @@ class ObjectSampleCheckpoint : AllStatic {
  public:
   static void on_type_set(JfrCheckpointWriter& writer);
   static void on_type_set_unload(JfrCheckpointWriter& writer);
-  static void on_thread_exit(JavaThread* jt);
+  static void on_thread_exit(traceid tid);
   static void on_rotation(const ObjectSampler* sampler);
 };
 

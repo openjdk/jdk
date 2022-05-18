@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -284,7 +284,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   // if (pattern.count == 0) return 0;
 
   // We have two strings, a source string in haystack, haystack_len and a pattern string
-  // in needle, needle_len. Find the first occurence of pattern in source or return -1.
+  // in needle, needle_len. Find the first occurrence of pattern in source or return -1.
 
   // For larger pattern and source we use a simplified Boyer Moore algorithm.
   // With a small pattern and source we use linear scan.
@@ -1430,7 +1430,7 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
 
   BLOCK_COMMENT("string_compare {");
 
-  // for Lating strings, 1 byte for 1 character
+  // for Latin strings, 1 byte for 1 character
   // for UTF16 strings, 2 bytes for 1 character
   if (!str1_isL)
     sraiw(cnt1, cnt1, 1);

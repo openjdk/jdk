@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ BitMap::bm_word_t* BitMap::reallocate(const Allocator& allocator, bm_word_t* old
     }
 
     if (clear && (new_size_in_bits > old_size_in_bits)) {
-      // If old_size_in_bits is not word-aligned, then the preceeding
+      // If old_size_in_bits is not word-aligned, then the preceding
       // copy can include some trailing bits in the final copied word
       // that also need to be cleared.  See clear_range_within_word.
       bm_word_t mask = bit_mask(old_size_in_bits) - 1;
@@ -232,10 +232,10 @@ void BitMap::par_put_range_within_word(idx_t beg, idx_t end, bool value) {
   // With a valid range (beg <= end), this test ensures that end != 0, as
   // required by inverted_bit_mask_for_range.  Also avoids an unnecessary write.
   if (beg != end) {
-    bm_word_t* pw = word_addr(beg);
-    bm_word_t  w  = *pw;
-    bm_word_t  mr = inverted_bit_mask_for_range(beg, end);
-    bm_word_t  nw = value ? (w | ~mr) : (w & mr);
+    volatile bm_word_t* pw = word_addr(beg);
+    bm_word_t w = Atomic::load(pw);
+    bm_word_t mr = inverted_bit_mask_for_range(beg, end);
+    bm_word_t nw = value ? (w | ~mr) : (w & mr);
     while (true) {
       bm_word_t res = Atomic::cmpxchg(pw, w, nw);
       if (res == w) break;

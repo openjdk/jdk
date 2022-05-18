@@ -37,7 +37,7 @@ import java.io.File;
 
 //Windows supports the "API: cache" type, which is a shared memory cache.  This is
 //implemented by krbcc32.dll as part of the MIT Kerberos for Win32 distribution.
-//MemoryCredentialsCache will provide future functions to access shared memeory cache on
+//MemoryCredentialsCache will provide future functions to access shared memory cache on
 //Windows platform. Native code implementation may be necessary.
 /**
  * This class extends CredentialsCache. It is used for accessing data in shared memory

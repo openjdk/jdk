@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
 #ifndef CPU_RISCV_REGISTERMAP_RISCV_HPP
 #define CPU_RISCV_REGISTERMAP_RISCV_HPP
 
-// machine-dependent implemention for register maps
+// machine-dependent implementation for register maps
   friend class frame;
 
  private:

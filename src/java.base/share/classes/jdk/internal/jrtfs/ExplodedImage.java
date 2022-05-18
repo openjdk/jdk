@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,7 +245,7 @@ class ExplodedImage extends SystemImage {
 
     // initialize file system Nodes
     private void initNodes() throws IOException {
-        // same package prefix may exist in mutliple modules. This Map
+        // same package prefix may exist in multiple modules. This Map
         // is filled by walking "jdk modules" directory recursively!
         Map<String, List<String>> packageToModules = new HashMap<>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(explodedModulesDir)) {

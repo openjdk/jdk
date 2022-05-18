@@ -102,12 +102,12 @@ public interface MechanismFactory {
      * @param initLifetime indicates the lifetime (in seconds) that is
      * requested for this credential to be used at the context initiator's
      * end. This value should be ignored if the usage is
-     * ACCEPT_ONLY. Predefined contants are available in the
+     * ACCEPT_ONLY. Predefined constants are available in the
      * org.ietf.jgss.GSSCredential interface.
      * @param acceptLifetime indicates the lifetime (in seconds) that is
      * requested for this credential to be used at the context acceptor's
      * end. This value should be ignored if the usage is
-     * INITIATE_ONLY. Predefined contants are available in the
+     * INITIATE_ONLY. Predefined constants are available in the
      * org.ietf.jgss.GSSCredential interface.
      * @param usage One of the values GSSCredential.INIATE_ONLY,
      * GSSCredential.ACCEPT_ONLY, and GSSCredential.INITIATE_AND_ACCEPT.
@@ -169,7 +169,7 @@ public interface MechanismFactory {
      * mechanism's choice should be assumed to be the context initiator and
      * that default credentials should be applied.
      * @param lifetime the requested lifetime (in seconds) for the security
-     * context. Predefined contants are available in the
+     * context. Predefined constants are available in the
      * org.ietf.jgss.GSSContext interface.
      * @throws GSSException if any of the errors described in RFC 2743 in
      * the GSS_Init_Sec_Context call occur.
@@ -184,8 +184,8 @@ public interface MechanismFactory {
      *
      * @param myAcceptorCred a credential element for the context acceptor
      * obtained previously from this mechanism. The identity of the context
-     * acceptor cna be obtained from this credential. Passing a value of
-     * null here indicates that tha default entity of the mechanism's
+     * acceptor can be obtained from this credential. Passing a value of
+     * null here indicates that the default entity of the mechanism's
      * choice should be assumed to be the context acceptor and default
      * credentials should be applied.
      *

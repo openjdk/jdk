@@ -314,6 +314,10 @@ public class Arguments {
 
         MODULE_PATH ("module-path", "p", OptionCategories.MODULAR),
 
+        LAUNCHER_AS_SERVICE ("launcher-as-service", OptionCategories.PROPERTY, () -> {
+            setOptionValue("launcher-as-service", true);
+        }),
+
         MAC_SIGN ("mac-sign", "s", OptionCategories.PLATFORM_MAC, () -> {
             setOptionValue("mac-sign", true);
         }),

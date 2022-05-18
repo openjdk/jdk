@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ class Dict : public ResourceObj { // Dictionary structure
  public:
   friend class DictI;            // Friendly iterator function
 
-  // cmp is a key comparision routine.  hash is a routine to hash a key.
+  // cmp is a key comparison routine.  hash is a routine to hash a key.
   Dict(CmpKey cmp, Hash hash);
   Dict(CmpKey cmp, Hash hash, Arena* arena, int size = 16);
   Dict(const Dict &base, Arena* arena); // Deep-copy

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -591,7 +591,7 @@ void trace_method_handle_stub(const char* adaptername,
     intptr_t *dump_sp = cur_frame.sender_sp();
     intptr_t *dump_fp = cur_frame.link();
 
-    bool walkable = has_mh; // Whether the traced frame shoud be walkable.
+    bool walkable = has_mh; // Whether the traced frame should be walkable.
 
     // The sender for cur_frame is the caller of trace_method_handle.
     if (walkable) {

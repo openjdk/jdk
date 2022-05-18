@@ -379,13 +379,13 @@ void JfrConfigureFlightRecorderDCmd::print_help(const char* name) const {
   out->print_cr("  globalbuffercount  (Optional) Number of global buffers. This option is a legacy");
   out->print_cr("                     option: change the memorysize parameter to alter the number of");
   out->print_cr("                     global buffers. This value cannot be changed once JFR has been");
-  out->print_cr("                     initalized. (STRING, default determined by the value for");
+  out->print_cr("                     initialized. (STRING, default determined by the value for");
   out->print_cr("                     memorysize)");
   out->print_cr("");
   out->print_cr("  globalbuffersize   (Optional) Size of the global buffers, in bytes. This option is a");
   out->print_cr("                     legacy option: change the memorysize parameter to alter the size");
   out->print_cr("                     of the global buffers. This value cannot be changed once JFR has");
-  out->print_cr("                     been initalized. (STRING, default determined by the value for");
+  out->print_cr("                     been initialized. (STRING, default determined by the value for");
   out->print_cr("                     memorysize)");
   out->print_cr("");
   out->print_cr("  maxchunksize       (Optional) Maximum size of an individual data chunk in bytes if");

@@ -36,6 +36,26 @@
 
 extern struct JavaVM_ main_vm;
 
+// When an upcall is invoked from a thread that is not attached to the VM, we need to attach it,
+// and then to detach it at some point later. Detaching a thread as soon as the upcall completes
+// is suboptimal, as the same thread could later upcall to Java again, at which point the VM would
+// create multiple Java views of the same native thread. For this reason, we use thread local storage
+// to keep track of the fact that we have attached a native thread to the VM. When the thread local
+// storage is destroyed (which happens when the native threads is terminated), we check if the
+// storage has an attached thread and, if so, we detach it from the VM.
+struct UpcallContext {
+  Thread* attachedThread;
+
+  ~UpcallContext() {
+    if (attachedThread != NULL) {
+      JavaVM_ *vm = (JavaVM *)(&main_vm);
+      vm->functions->DetachCurrentThread(vm);
+    }
+  }
+};
+
+APPROVED_CPP_THREAD_LOCAL UpcallContext threadContext;
+
 void ProgrammableUpcallHandler::upcall_helper(JavaThread* thread, jobject rec, address buff) {
   JavaThread* THREAD = thread; // For exception macros.
   ThreadInVMfromNative tiv(THREAD);
@@ -51,30 +71,23 @@ void ProgrammableUpcallHandler::upcall_helper(JavaThread* thread, jobject rec, a
   JavaCalls::call_static(&result, upcall_method.klass, upcall_method.name, upcall_method.sig, &args, CATCH);
 }
 
-JavaThread* ProgrammableUpcallHandler::maybe_attach_and_get_thread(bool* should_detach) {
+JavaThread* ProgrammableUpcallHandler::maybe_attach_and_get_thread() {
   JavaThread* thread = JavaThread::current_or_null();
   if (thread == nullptr) {
     JavaVM_ *vm = (JavaVM *)(&main_vm);
     JNIEnv* p_env = nullptr; // unused
-    jint result = vm->functions->AttachCurrentThread(vm, (void**) &p_env, nullptr);
+    jint result = vm->functions->AttachCurrentThreadAsDaemon(vm, (void**) &p_env, nullptr);
     guarantee(result == JNI_OK, "Could not attach thread for upcall. JNI error code: %d", result);
-    *should_detach = true;
     thread = JavaThread::current();
+    threadContext.attachedThread = thread;
     assert(!thread->has_last_Java_frame(), "newly-attached thread not expected to have last Java frame");
-  } else {
-    *should_detach = false;
   }
   return thread;
 }
 
-void ProgrammableUpcallHandler::detach_current_thread() {
-  JavaVM_ *vm = (JavaVM *)(&main_vm);
-  vm->functions->DetachCurrentThread(vm);
-}
-
 // modelled after JavaCallWrapper::JavaCallWrapper
 JavaThread* ProgrammableUpcallHandler::on_entry(OptimizedEntryBlob::FrameData* context) {
-  JavaThread* thread = maybe_attach_and_get_thread(&context->should_detach);
+  JavaThread* thread = maybe_attach_and_get_thread();
   context->thread = thread;
 
   assert(thread->can_call_java(), "must be able to call Java");
@@ -132,23 +145,14 @@ void ProgrammableUpcallHandler::on_exit(OptimizedEntryBlob::FrameData* context) 
   JNIHandleBlock::release_block(context->new_handles, thread);
 
   assert(!thread->has_pending_exception(), "Upcall can not throw an exception");
-
-  if (context->should_detach) {
-    detach_current_thread();
-  }
 }
 
 void ProgrammableUpcallHandler::attach_thread_and_do_upcall(jobject rec, address buff) {
-  bool should_detach = false;
-  JavaThread* thread = maybe_attach_and_get_thread(&should_detach);
+  JavaThread* thread = maybe_attach_and_get_thread();
 
   {
     MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
     upcall_helper(thread, rec, buff);
-  }
-
-  if (should_detach) {
-    detach_current_thread();
   }
 }
 
