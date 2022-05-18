@@ -28,37 +28,55 @@
 #include "cgroupV1Subsystem_linux.hpp"
 #include "unittest.hpp"
 
-TEST(os_linux_cgroup, set_cgroup1_subsystem_path) {
-  int length = 5;
-  const char* mount_paths[] =     { "/sys/fs/cgroup/memory",
-                                    "/sys/fs/cgroup/memory", /* non-matched cg path  */
-                                    "/sys/fs/cgroup/mem",    /* root matched cg path */
-                                    "/sys/fs/cgroup/memory", /* substring match      */
-                                    "/sys/fs/cgroup/m"       /* non-matched cg path  */
-                                  };
-  const char* root_paths[] =      { "/",
-                                    "/user.slice/user-1000.slice/session-50.scope",  /* non-matched cg path  */
-                                    "/user.slice/user-1000.slice/user@1000.service", /* root matched cg path */
-                                    "/user.slice/user-1000.slice",                   /* substring match */
-                                    "/machine.slice/user-2002.slice"                 /* root match only */
-                                  };
-  const char* cgroup_paths[] =    { "/user.slice/user-1000.slice/user@1000.service",
-                                    "/user.slice/user-1000.slice/session-3.scope",   /* non-matched cg path  */
-                                    "/user.slice/user-1000.slice/user@1000.service", /* root matched cg path */
-                                    "/user.slice/user-1000.slice/user@1001.service", /* substring match */
-                                    "/user.sl/user-3000.slice/user@3001.service"     /* root match only */
-                                  };
-  const char* expected_cg_paths[] { "/sys/fs/cgroup/memory/user.slice/user-1000.slice/user@1000.service",
-                                    "/sys/fs/cgroup/memory/user.slice/user-1000.slice", /* closest substring match */
-                                    "/sys/fs/cgroup/mem",                               /* root matched cg path    */
-                                    "/sys/fs/cgroup/memory/user@1001.service",          /* substring match */
-                                    "/sys/fs/cgroup/m"                                  /* root match only */
-                                  };
+typedef struct {
+  const char* mount_path;
+  const char* root_path;
+  const char* cgroup_path;
+  const char* expected_path;
+} TestCase;
 
+TEST(os_linux_cgroup, set_cgroup1_subsystem_path) {
+  TestCase host = {
+    "/sys/fs/cgroup/memory",                                             // mount_path
+    "/",                                                                 // root_path
+    "/user.slice/user-1000.slice/user@1000.service",                     // cgroup_path
+    "/sys/fs/cgroup/memory/user.slice/user-1000.slice/user@1000.service" // expected_path
+  };
+  TestCase container_engine = {
+    "/sys/fs/cgroup/mem",                            // mount_path
+    "/user.slice/user-1000.slice/user@1000.service", // root_path
+    "/user.slice/user-1000.slice/user@1000.service", // cgroup_path
+    "/sys/fs/cgroup/mem"                             // expected_path
+  };
+  TestCase prefix_matched_cg = {
+    "/sys/fs/cgroup/memory",                           // mount_path
+    "/user.slice/user-1000.slice/session-50.scope",    // root_path
+    "/user.slice/user-1000.slice/session-3.scope",     // cgroup_path
+    "/sys/fs/cgroup/memory/user.slice/user-1000.slice" // expected_path
+  };
+  TestCase substring_match = {
+    "/sys/fs/cgroup/memory",                           // mount_path
+    "/user.slice/user-1000.slice",                     // root_path
+    "/user.slice/user-1000.slice/user@1001.service",   // cgroup_path
+    "/sys/fs/cgroup/memory/user@1001.service"          // expected_path
+  };
+  TestCase root_only_match = {
+    "/sys/fs/cgroup/m",                           // mount_path
+    "/machine.slice/user-2002.slice",             // root_path
+    "/user.sl/user-3000.slice/user@3001.service", // cgroup_path
+    "/sys/fs/cgroup/m"                            // expected_path
+  };
+  int length = 5;
+  TestCase* testCases[] = { &host,
+                            &container_engine,
+                            &prefix_matched_cg,
+                            &substring_match,
+                            &root_only_match };
   for (int i = 0; i < length; i++) {
-    CgroupV1Controller* ctrl = new CgroupV1Controller((char*)root_paths[i], (char*)mount_paths[i]);
-    ctrl->set_subsystem_path((char*)cgroup_paths[i]);
-    ASSERT_STREQ(expected_cg_paths[i], ctrl->subsystem_path());
+    CgroupV1Controller* ctrl = new CgroupV1Controller( (char*)testCases[i]->root_path,
+                                                       (char*)testCases[i]->mount_path);
+    ctrl->set_subsystem_path((char*)testCases[i]->cgroup_path);
+    ASSERT_STREQ(testCases[i]->expected_path, ctrl->subsystem_path());
   }
 }
 
