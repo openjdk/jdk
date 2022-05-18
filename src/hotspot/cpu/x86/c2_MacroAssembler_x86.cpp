@@ -2294,6 +2294,7 @@ void C2_MacroAssembler::vpadd(BasicType elem_bt, XMMRegister dst, XMMRegister sr
   }
 }
 
+#ifdef _LP64
 void C2_MacroAssembler::vpbroadcast(BasicType elem_bt, XMMRegister dst, Register src, int vlen_enc) {
   assert(UseAVX >= 2, "required");
   bool is_bw = ((elem_bt == T_BYTE) || (elem_bt == T_SHORT));
@@ -2317,11 +2318,12 @@ void C2_MacroAssembler::vpbroadcast(BasicType elem_bt, XMMRegister dst, Register
       case T_INT: movdl(dst, src); vpbroadcastd(dst, dst, vlen_enc); return;
       case T_FLOAT: movdl(dst, src); vbroadcastss(dst, dst, vlen_enc); return;
       case T_LONG: movdq(dst, src); vpbroadcastq(dst, dst, vlen_enc); return;
-      case T_DOUBLE: movdl(dst, src); vbroadcastsd(dst, dst, vlen_enc); return;
+      case T_DOUBLE: movdq(dst, src); vbroadcastsd(dst, dst, vlen_enc); return;
       default: assert(false, "%s", type2name(elem_bt));
     }
   }
 }
+#endif
 
 void C2_MacroAssembler::vconvert_b2x(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vlen_enc) {
   switch (to_elem_bt) {

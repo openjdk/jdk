@@ -1469,6 +1469,10 @@ const bool Matcher::match_rule_supported(int opcode) {
       }
       break;
     case Op_PopulateIndex:
+      if (!is_LP64) {
+        return false;
+      }
+      // fallthrough
     case Op_RoundVF:
       if (UseAVX < 2) { // enabled for AVX2 only
         return false;
@@ -1814,8 +1818,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_PopulateIndex:
       if (size_in_bits > 256 && !VM_Version::supports_avx512bw())
-        return false;
-      if (!is_LP64 && (bt == T_LONG))
         return false;
     case Op_VectorCastB2X:
     case Op_VectorCastS2X:
@@ -8257,6 +8259,7 @@ instruct loadIotaIndices(vec dst, immI_0 src, rRegP scratch) %{
   ins_pipe( pipe_slow );
 %}
 
+#ifdef _LP64
 instruct VectorPopulateIndex(vec dst, rRegI src1, immI_1 src2, vec vtmp, rRegP scratch) %{
   match(Set dst (PopulateIndex src1 src2));
   effect(TEMP dst, TEMP vtmp, TEMP scratch);
@@ -8276,7 +8279,6 @@ instruct VectorPopulateIndex(vec dst, rRegI src1, immI_1 src2, vec vtmp, rRegP s
   ins_pipe( pipe_slow );
 %}
 
-#ifdef _LP64
 instruct VectorPopulateLIndex(vec dst, rRegL src1, immI_1 src2, vec vtmp, rRegP scratch) %{
   match(Set dst (PopulateIndex src1 src2));
   effect(TEMP dst, TEMP vtmp, TEMP scratch);
