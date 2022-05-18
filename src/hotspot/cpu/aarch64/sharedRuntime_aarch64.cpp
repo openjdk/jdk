@@ -1333,12 +1333,12 @@ static void gen_special_dispatch(MacroAssembler* masm,
                                                  receiver_reg, member_reg, /*for_compiler_entry:*/ true);
 }
 
-CodeBlob* SharedRuntime::generate_mhi_wrapper(MacroAssembler* masm,
-                                              const methodHandle& method,
-                                              int compile_id,
-                                              BasicType* in_sig_bt,
-                                              VMRegPair* in_regs,
-                                              BasicType ret_type) {
+CodeBlob* SharedRuntime::generate_method_handle_intrinsic_wrapper(MacroAssembler* masm,
+                                                                  const methodHandle& method,
+                                                                  int compile_id,
+                                                                  BasicType* in_sig_bt,
+                                                                  VMRegPair* in_regs,
+                                                                  BasicType ret_type) {
   assert(method->is_method_handle_intrinsic(), "should be MH method");
   assert(method->is_native(), "should be native method");
   vmIntrinsics::ID iid = method->intrinsic_id();

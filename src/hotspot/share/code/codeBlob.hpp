@@ -461,16 +461,19 @@ public:
 //----------------------------------------------------------------------------------------------------
 // MethodHandleIntrinsicBlob: used to hold MethodHandle intrinsic
 
-class MethodHandleIntrinsicBlob : public BufferBlob {
+class MethodHandleIntrinsicBlob : public RuntimeBlob {
 private:
   MethodHandleIntrinsicBlob(Method* method, int mhi_size, CodeBuffer *code_buffer);
+
+  void* operator new(size_t s, int size) throw();
 
   Method*   _method;
 
 public:
   static MethodHandleIntrinsicBlob* create(const methodHandle& method, CodeBuffer *code_buffer);
 
-  bool  is_mh_intrinsic() const             { return true; }
+  bool is_alive() const                     { return true; }
+  bool is_mh_intrinsic() const              { return true; }
 
   void verify();
 

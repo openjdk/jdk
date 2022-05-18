@@ -1300,8 +1300,8 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
     bool static_bound = call_info.resolved_method()->can_be_statically_bound();
     Klass* klass = invoke_code == Bytecodes::_invokehandle ? NULL : receiver->klass();
     CompiledIC::compute_monomorphic_entry(callee_method, klass,
-                    is_optimized, static_bound, virtual_call_info,
-                    CHECK_false);
+                     is_optimized, static_bound, virtual_call_info,
+                     CHECK_false);
   } else {
     // static call
     CompiledStaticCall::compute_entry(callee_method, static_call_info);
@@ -1327,7 +1327,7 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
       if (dest_entry_point != 0) {
         CodeBlob* cb = CodeCache::find_blob(dest_entry_point);
         assert((cb != NULL) && (cb->is_compiled() || cb->is_mh_intrinsic()) && (cb == callee),
-              "should not call unloaded nmethod");
+               "should not call unloaded nmethod");
       }
 #endif
       if (is_virtual) {
@@ -3092,7 +3092,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       if (!method->is_method_handle_intrinsic()) {
         blob = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
       } else {
-        blob = SharedRuntime::generate_mhi_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
+        blob = SharedRuntime::generate_method_handle_intrinsic_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
       }
 
       if (blob != NULL) {

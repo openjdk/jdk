@@ -1287,12 +1287,12 @@ static void move32_64(MacroAssembler *masm,
   }
 }
 
-CodeBlob *SharedRuntime::generate_mhi_wrapper(MacroAssembler *masm,
-                                              const methodHandle& method,
-                                              int compile_id,
-                                              BasicType *in_sig_bt,
-                                              VMRegPair *in_regs,
-                                              BasicType ret_type) {
+CodeBlob *SharedRuntime::generate_method_handle_intrinsic_wrapper(MacroAssembler *masm,
+                                                                  const methodHandle& method,
+                                                                  int compile_id,
+                                                                  BasicType *in_sig_bt,
+                                                                  VMRegPair *in_regs,
+                                                                  BasicType ret_type) {
   assert(method->is_method_handle_intrinsic(), "must be MethodHandle intrinsic");
 
   int total_in_args = method->size_of_parameters();

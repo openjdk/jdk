@@ -78,12 +78,12 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   return NULL;
 }
 
-CodeBlob *SharedRuntime::generate_mhi_wrapper(MacroAssembler *masm,
-                                              const methodHandle& method,
-                                              int compile_id,
-                                              BasicType *sig_bt,
-                                              VMRegPair *regs,
-                                              BasicType ret_type) {
+CodeBlob *SharedRuntime::generate_method_handle_intrinsic_wrapper(MacroAssembler *masm,
+                                                                  const methodHandle& method,
+                                                                  int compile_id,
+                                                                  BasicType *sig_bt,
+                                                                  VMRegPair *regs,
+                                                                  BasicType ret_type) {
   ShouldNotCallThis();
   return NULL;
 }

@@ -316,7 +316,7 @@ MethodHandleIntrinsicBlob::MethodHandleIntrinsicBlob(
   Method* method,
   int mhi_size,
   CodeBuffer* code_buffer):
-  BufferBlob("MethodHandle intrinsic", mhi_size, code_buffer),
+  RuntimeBlob("MethodHandle intrinsic", code_buffer, sizeof(MethodHandleIntrinsicBlob), mhi_size, CodeOffsets::frame_never_safe, 0, NULL),
   _method(method) {
   {
     debug_only(NoSafepointVerifier nsv;)
@@ -327,6 +327,10 @@ MethodHandleIntrinsicBlob::MethodHandleIntrinsicBlob(
 
     CodeCache::commit(this);
   }
+}
+
+void* MethodHandleIntrinsicBlob::operator new(size_t s, int size) throw() {
+  return CodeCache::allocate(size, CodeBlobType::NonNMethod);
 }
 
 MethodHandleIntrinsicBlob* MethodHandleIntrinsicBlob::create(const methodHandle& method,
