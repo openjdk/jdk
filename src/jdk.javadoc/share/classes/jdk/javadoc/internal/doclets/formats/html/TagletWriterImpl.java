@@ -519,7 +519,7 @@ public class TagletWriterImpl extends TagletWriter {
     private Content specTagToContent(Element holder, SpecTree specTree) {
         String specTreeURI = specTree.getURI().getBody();
         List<? extends DocTree> specTreeLabel = specTree.getTitle();
-        Content label = htmlWriter.commentTagsToContent(specTree, holder, specTreeLabel, isFirstSentence);
+        Content label = htmlWriter.commentTagsToContent(holder, specTreeLabel, isFirstSentence);
         return getExternalSpecContent(holder, specTree, specTreeURI, textOf(specTreeLabel), label);
     }
 
