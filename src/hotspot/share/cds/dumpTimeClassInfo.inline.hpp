@@ -35,7 +35,7 @@
 
 #if INCLUDE_CDS
 
-// For safety, only iterate over a class if it loader is alive.
+// For safety, only iterate over a class if its loader is alive.
 // This function must be called only inside a safepoint, where the value of
 // k->is_loader_alive() will not change.
 template<typename Function>
