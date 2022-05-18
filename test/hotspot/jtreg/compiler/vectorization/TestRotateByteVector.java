@@ -24,82 +24,78 @@
 
 /**
  * @test
- * @bug 8261022
+ * @bug 8286847
  * @summary Test vectorization of rotate byte
- * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:CompileCommand=compileonly,TestRotateByteVector::testRotate* -Xbatch TestRotateByteVector
+ * @library /test/lib
+ * @run main/othervm -XX:-TieredCompilation -XX:CompileCommand=compileonly,TestRotateByteVector::testRotate* -Xbatch TestRotateByteVector
  */
 
+import java.util.Random;
+import jdk.test.lib.Utils;
+
 public class TestRotateByteVector {
+    private static final Random random = Utils.getRandomInstance();
     private static final int ARRLEN = 512;
-    private static final int ITERS = 50000;
+    private static final int ITERS = 11000;
     private static byte[] arr = new byte[ARRLEN];
-    private static byte[] rolTest = new byte[ARRLEN];
-    private static byte[] rorTest = new byte[ARRLEN];
-    private static byte[] res = new byte[ARRLEN];
+    private static byte[] rol = new byte[ARRLEN];
+    private static byte[] ror = new byte[ARRLEN];
+    private static byte res = 0;
 
     public static void main(String[] args) {
-        // init
-        for (int i = 0; i < ARRLEN; i++) {
-            arr[i] = (byte) i;
-        }
-
         System.out.println("warmup");
         warmup();
 
         System.out.println("Testing rotate byte...");
-        test();
+        runRotateLeftTest();
+        runRotateRightTest();
 
         System.out.println("PASSED");
     }
 
     static void warmup() {
+        random.nextBytes(arr);
         for (int i = 0; i < ITERS; i++) {
-            testRotateLeft(arr, rolTest, i);
-            testRotateRight(arr, rorTest, i);
+            testRotateLeft(rol, arr, i);
+            testRotateRight(ror, arr, i);
         }
     }
 
-    static void test() {
-        for (int shift = 0; shift <= 512; shift++) {
-            testRotateLeft(arr, rolTest, shift);
-            rotateLeftRes(arr, res, shift);
-            verify(rolTest, res, shift, "rol");
-
-            testRotateRight(arr, rorTest, shift);
-            rotateRightRes(arr, res, shift);
-            verify(rorTest, res, shift, "ror");
+    static void runRotateLeftTest() {
+        for (int shift = 0; shift < 64; shift++) {
+            random.nextBytes(arr);
+            testRotateLeft(rol, arr, shift);
+            for (int i = 0; i < ARRLEN; i++) {
+                res = (byte) ((arr[i] << shift) | (arr[i] >>> -shift));
+                if (rol[i] != res) {
+                    throw new RuntimeException("rol value = " + arr[i] + ", shift = " + shift + ", error: " + "expect " + res + " but result is " + rol[i]);
+                }
+            }
         }
     }
 
-    static void testRotateLeft(byte[] arr, byte[] test, int shift) {
+    static void runRotateRightTest() {
+        for (int shift = 0; shift < 64; shift++) {
+            random.nextBytes(arr);
+            testRotateRight(ror, arr, shift);
+            for (int i = 0; i < ARRLEN; i++) {
+                res = (byte) ((arr[i] >>> shift) | (arr[i] << -shift));
+                if (ror[i] != res) {
+                    throw new RuntimeException("ror value = " + arr[i] + ", shift = " + shift + ", error: " + "expect " + res + " but result is " + ror[i]);
+                }
+            }
+        }
+    }
+
+    static void testRotateLeft(byte[] test, byte[] arr, int shift) {
         for (int i = 0; i < ARRLEN; i++) {
             test[i] = (byte) ((arr[i] << shift) | (arr[i] >>> -shift));
         }
     }
 
-    static void testRotateRight(byte[] arr, byte[] test, int shift) {
+    static void testRotateRight(byte[] test, byte[] arr, int shift) {
         for (int i = 0; i < ARRLEN; i++) {
             test[i] = (byte) ((arr[i] >>> shift) | (arr[i] << -shift));
-        }
-    }
-
-    static void rotateLeftRes(byte[] arr, byte[] res, int shift) {
-        for (int i = 0; i < ARRLEN; i++) {
-            res[i] = (byte) ((arr[i] << shift) | (arr[i] >>> -shift));
-        }
-    }
-
-    static void rotateRightRes(byte[] arr, byte[] res, int shift) {
-        for (int i = 0; i < ARRLEN; i++) {
-            res[i] = (byte) ((arr[i] >>> shift) | (arr[i] << -shift));
-        }
-    }
-
-    static void verify(byte[] test, byte[] res, int shift, String op) {
-        for (int i = 0; i < ARRLEN; i++) {
-            if (test[i] != res[i]) {
-                throw new RuntimeException(op + " " + shift + " error: [" + arr[i] + "] expect " + res[i] + " but result is " + test[i]);
-            }
         }
     }
 }

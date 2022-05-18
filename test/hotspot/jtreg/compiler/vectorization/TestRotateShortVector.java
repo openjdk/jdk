@@ -24,82 +24,84 @@
 
 /**
  * @test
- * @bug 8261022
+ * @bug 8286847
  * @summary Test vectorization of rotate short
- * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:CompileCommand=compileonly,TestRotateShortVector::testRotate* -Xbatch TestRotateShortVector
+ * @library /test/lib
+ * @run main/othervm -XX:-TieredCompilation -XX:CompileCommand=compileonly,TestRotateShortVector::testRotate* -Xbatch TestRotateShortVector
  */
 
+import java.util.Random;
+import jdk.test.lib.Utils;
+
 public class TestRotateShortVector {
+    private static final Random random = Utils.getRandomInstance();
     private static final int ARRLEN = 512;
-    private static final int ITERS = 50000;
+    private static final int ITERS = 11000;
     private static short[] arr = new short[ARRLEN];
-    private static short[] rolTest = new short[ARRLEN];
-    private static short[] rorTest = new short[ARRLEN];
-    private static short[] res = new short[ARRLEN];
+    private static short[] rol = new short[ARRLEN];
+    private static short[] ror = new short[ARRLEN];
+    private static short res = 0;
 
     public static void main(String[] args) {
-        // init
-        for (int i = 0; i < ARRLEN; i++) {
-            arr[i] = (short) i;
-        }
-
         System.out.println("warmup");
         warmup();
 
         System.out.println("Testing rotate short...");
-        test();
+        runRotateLeftTest();
+        runRotateRightTest();
 
         System.out.println("PASSED");
     }
 
+    static void randomShorts() {
+        for (int i = 0; i < ARRLEN; i++) {
+            arr[i] = (short) random.nextInt();
+        }
+    }
+
     static void warmup() {
+        randomShorts();
         for (int i = 0; i < ITERS; i++) {
-            testRotateLeft(arr, rolTest, i);
-            testRotateRight(arr, rorTest, i);
+            testRotateLeft(rol, arr, i);
+            testRotateRight(ror, arr, i);
         }
     }
 
-    static void test() {
-        for (int shift = 0; shift <= 512; shift++) {
-            testRotateLeft(arr, rolTest, shift);
-            rotateLeftRes(arr, res, shift);
-            verify(rolTest, res, shift, "rol");
-
-            testRotateRight(arr, rorTest, shift);
-            rotateRightRes(arr, res, shift);
-            verify(rorTest, res, shift, "ror");
+    static void runRotateLeftTest() {
+        for (int shift = 0; shift < 64; shift++) {
+            randomShorts();
+            testRotateLeft(rol, arr, shift);
+            for (int i = 0; i < ARRLEN; i++) {
+                res = (short) ((arr[i] << shift) | (arr[i] >>> -shift));
+                if (rol[i] != res) {
+                    throw new RuntimeException("rol value = " + arr[i] + ", shift = " + shift + ", error: " + "expect " + res + " but result is " + rol[i]);
+                }
+            }
         }
     }
 
-    static void testRotateLeft(short[] arr, short[] test, int shift) {
+    static void runRotateRightTest() {
+        for (int shift = 0; shift < 64; shift++) {
+            randomShorts();
+            testRotateRight(ror, arr, shift);
+            for (int i = 0; i < ARRLEN; i++) {
+                res = (short) ((arr[i] >>> shift) | (arr[i] << -shift));
+                if (ror[i] != res) {
+                    throw new RuntimeException("ror value = " + arr[i] + ", shift = " + shift + ", error: " + "expect " + res + " but result is " + ror[i]);
+                }
+            }
+        }
+    }
+
+    static void testRotateLeft(short[] test, short[] arr, int shift) {
         for (int i = 0; i < ARRLEN; i++) {
             test[i] = (short) ((arr[i] << shift) | (arr[i] >>> -shift));
         }
     }
 
-    static void testRotateRight(short[] arr, short[] test, int shift) {
+    static void testRotateRight(short[] test, short[] arr, int shift) {
         for (int i = 0; i < ARRLEN; i++) {
             test[i] = (short) ((arr[i] >>> shift) | (arr[i] << -shift));
-        }
-    }
-
-    static void rotateLeftRes(short[] arr, short[] res, int shift) {
-        for (int i = 0; i < ARRLEN; i++) {
-            res[i] = (short) ((arr[i] << shift) | (arr[i] >>> -shift));
-        }
-    }
-
-    static void rotateRightRes(short[] arr, short[] res, int shift) {
-        for (int i = 0; i < ARRLEN; i++) {
-            res[i] = (short) ((arr[i] >>> shift) | (arr[i] << -shift));
-        }
-    }
-
-    static void verify(short[] test, short[] res, int shift, String op) {
-        for (int i = 0; i < ARRLEN; i++) {
-            if (test[i] != res[i]) {
-                throw new RuntimeException(op + " " + shift + " error: [" + arr[i] + "] expect " + res[i] + " but result is " + test[i]);
-            }
         }
     }
 }
