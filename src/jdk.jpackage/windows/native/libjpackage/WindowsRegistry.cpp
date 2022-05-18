@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ extern "C" {
         JP_TRY;
 
         if (key != jdk_jpackage_internal_WindowsRegistry_HKEY_LOCAL_MACHINE) {
-            JP_THROW("Inavlid Windows registry key id");
+            JP_THROW("Invalid Windows registry key id");
         }
 
         const std::wstring subKey = jni::toUnicodeString(pEnv, jSubKey);
@@ -126,7 +126,7 @@ extern "C" {
         JP_TRY;
 
         if (key != jdk_jpackage_internal_WindowsRegistry_HKEY_LOCAL_MACHINE) {
-            JP_THROW("Inavlid Windows registry key id");
+            JP_THROW("Invalid Windows registry key id");
         }
 
         const std::wstring subKey = jni::toUnicodeString(pEnv, jSubKey);

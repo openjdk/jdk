@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,37 +19,38 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_CI_CINATIVEENTRYPOINT_HPP
-#define SHARE_VM_CI_CINATIVEENTRYPOINT_HPP
-
-#include "ci/ciInstance.hpp"
-#include "ci/ciMethodType.hpp"
-
+#include "precompiled.hpp"
 #include "code/vmreg.hpp"
+#include "prims/foreign_globals.hpp"
+#include "utilities/debug.hpp"
 
-// ciNativeEntryPoint
-//
-// The class represents a java.lang.invoke.NativeEntryPoint object.
-class ciNativeEntryPoint : public ciInstance {
-private:
-  const char* _name;
-  VMReg* _arg_moves;
-  VMReg* _ret_moves;
-public:
-  ciNativeEntryPoint(instanceHandle h_i);
+class MacroAssembler;
 
-  // What kind of ciObject is this?
-  bool is_native_entry_point() const { return true; }
+const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
+  Unimplemented();
+  return {};
+}
 
-  jint           shadow_space() const;
-  VMReg*         argMoves() const;
-  VMReg*        returnMoves() const;
-  jboolean       need_transition() const;
-  ciMethodType*  method_type() const;
-  const char*    name();
-};
+VMReg ForeignGlobals::vmstorage_to_vmreg(int type, int index) {
+  Unimplemented();
+  return VMRegImpl::Bad();
+}
 
-#endif // SHARE_VM_CI_CINATIVEENTRYPOINT_HPP
+int RegSpiller::pd_reg_size(VMReg reg) {
+  Unimplemented();
+  return -1;
+}
+
+void RegSpiller::pd_store_reg(MacroAssembler* masm, int offset, VMReg reg) {
+  Unimplemented();
+}
+
+void RegSpiller::pd_load_reg(MacroAssembler* masm, int offset, VMReg reg) {
+  Unimplemented();
+}
+
+void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMReg tmp, int in_stk_bias, int out_stk_bias) const {
+  Unimplemented();
+}

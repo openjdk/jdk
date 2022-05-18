@@ -22,6 +22,8 @@
  */
 package jdk.jfr.event.runtime;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -85,8 +87,18 @@ public final class TestActiveSettingEvent {
             r.stop();
             Map<String, RecordedEvent> settings = new HashMap<>();
             List<RecordedEvent> events = Events.fromRecording(r);
+            Instant timestamp = null;
             for (RecordedEvent e : events) {
                 if (e.getEventType().getName().equals(ACTIVE_SETTING_EVENT_NAME)) {
+                    if (!e.getDuration().equals(Duration.ZERO)) {
+                        throw new Exception("Expected event to have zero duration");
+                    }
+                    if (timestamp == null) {
+                        timestamp = e.getStartTime();
+                    }
+                    if (!e.getStartTime().equals(timestamp)) {
+                        throw new Exception("Expected all events to have the same timestamp");
+                    }
                     long id = e.getLong("id");
                     String name = e.getString("name");
                     String value = e.getString("value");
@@ -193,6 +205,13 @@ public final class TestActiveSettingEvent {
             assertSetting(events, type, "threshold", "0 ns"); // initial value
             assertSetting(events, type, "enabled", "true");
             assertSetting(events, type, "threshold", "11 ns"); // changed value
+            Set<Instant> timestamps = new HashSet<>();
+            for (RecordedEvent e : events) {
+                timestamps.add(e.getStartTime());
+            }
+            if (timestamps.size() != 2) {
+                throw new Exception("Expected two batches of Active Setting events, at Recording.start() and during Recording.setSetting(...)");
+            }
         }
     }
 

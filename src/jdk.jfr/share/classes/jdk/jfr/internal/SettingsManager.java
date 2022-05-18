@@ -142,8 +142,9 @@ final class SettingsManager {
             if (Logger.shouldLog(LogTag.JFR_SETTING, LogLevel.INFO)) {
                 eventControls.sort(Comparator.comparing(x -> x.getEventType().getName()));
             }
+            long timestamp = JVM.counterTime();
             for (EventControl ec : eventControls) {
-                setEventControl(ec, writeSettingEvents);
+                setEventControl(ec, writeSettingEvents, timestamp);
             }
         }
         if (JVM.getJVM().getAllowedToDoEventRetransforms()) {
@@ -211,7 +212,7 @@ final class SettingsManager {
       return internals.values();
     }
 
-    void setEventControl(EventControl ec, boolean writeSettingEvents) {
+    void setEventControl(EventControl ec, boolean writeSettingEvents, long timestamp) {
         InternalSetting is = getInternalSetting(ec);
         boolean shouldLog = Logger.shouldLog(LogTag.JFR_SETTING, LogLevel.INFO);
         if (shouldLog) {
@@ -251,7 +252,7 @@ final class SettingsManager {
             }
         }
         if (writeSettingEvents) {
-            ec.writeActiveSettingEvent();
+            ec.writeActiveSettingEvent(timestamp);
         }
         if (shouldLog) {
             Logger.log(LogTag.JFR_SETTING, LogLevel.INFO, "}");

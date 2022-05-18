@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,8 @@ public:
 
     void DisplayMessage(LPCTSTR caption, LPCTSTR text, LPCTSTR msgType);
 
+    void UpdateImage();
+
     // Adds to the head of the list
     INLINE void AddTrayIconItem(UINT id) {
         TrayIconListItem* item = new TrayIconListItem(id, this);
@@ -121,6 +123,7 @@ public:
      */
     static jfieldID idID;
     static jfieldID actionCommandID;
+    static jmethodID updateImageID;
 
     // ************************
 
@@ -150,6 +153,8 @@ private:
         AwtTrayIcon* m_trayIcon;
         TrayIconListItem* m_next;
     };
+
+    static bool m_bDPIChanged;
 
 public:
     static TrayIconListItem* sm_trayIconList;
