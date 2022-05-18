@@ -25,8 +25,6 @@
 #ifndef SHARE_PRIMS_FORTE_HPP
 #define SHARE_PRIMS_FORTE_HPP
 
-#include "memory/allocation.hpp"
-
 // Interface to Forte support.
 
 class Forte : AllStatic {
