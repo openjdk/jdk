@@ -76,7 +76,7 @@ public:
     : _backing_log(bl) {};
 
   virtual ~LogStreamImpl() {
-    if (_current_line.is_empty() == false) {
+    if (!_current_line.is_empty()) {
       _backing_log.print("%s", _current_line.buffer());
       _current_line.reset();
     }
