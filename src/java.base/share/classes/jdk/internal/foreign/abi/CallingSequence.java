@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,21 @@ import java.util.stream.Stream;
 public class CallingSequence {
     private final MethodType mt;
     private final FunctionDescriptor desc;
-    private final boolean isTrivial;
+    private final boolean needsReturnBuffer;
+    private final long returnBufferSize;
+    private final long allocationSize;
 
     private final List<Binding> returnBindings;
     private final List<List<Binding>> argumentBindings;
 
     public CallingSequence(MethodType mt, FunctionDescriptor desc,
-                           boolean isTrivial, List<List<Binding>> argumentBindings, List<Binding> returnBindings) {
+                           boolean needsReturnBuffer, long returnBufferSize, long allocationSize,
+                           List<List<Binding>> argumentBindings, List<Binding> returnBindings) {
         this.mt = mt;
         this.desc = desc;
-        this.isTrivial = isTrivial;
+        this.needsReturnBuffer = needsReturnBuffer;
+        this.returnBufferSize = returnBufferSize;
+        this.allocationSize = allocationSize;
         this.returnBindings = returnBindings;
         this.argumentBindings = argumentBindings;
     }
@@ -89,7 +94,15 @@ public class CallingSequence {
         return desc;
     }
 
-    public boolean isTrivial() {
-        return isTrivial;
+    public boolean needsReturnBuffer() {
+        return needsReturnBuffer;
+    }
+
+    public long returnBufferSize() {
+        return returnBufferSize;
+    }
+
+    public long allocationSize() {
+        return allocationSize;
     }
 }

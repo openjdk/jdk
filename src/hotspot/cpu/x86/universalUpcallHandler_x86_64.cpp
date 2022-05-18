@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "compiler/disassembler.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
+#include "prims/foreign_globals.inline.hpp"
 #include "prims/universalUpcallHandler.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -37,320 +38,6 @@
 #include "utilities/globalDefinitions.hpp"
 
 #define __ _masm->
-
-// 1. Create buffer according to layout
-// 2. Load registers & stack args into buffer
-// 3. Call upcall helper with upcall handler instance & buffer pointer (C++ ABI)
-// 4. Load return value from buffer into foreign ABI registers
-// 5. Return
-address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jabi, jobject jlayout) {
-  ResourceMark rm;
-  const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
-  const BufferLayout layout = ForeignGlobals::parse_buffer_layout(jlayout);
-
-  CodeBuffer buffer("upcall_stub", 1024, upcall_stub_size);
-
-  MacroAssembler* _masm = new MacroAssembler(&buffer);
-  int stack_alignment_C = 16; // bytes
-  int register_size = sizeof(uintptr_t);
-  int buffer_alignment = xmm_reg_size;
-
-  // stub code
-  __ enter();
-
-  // save pointer to JNI receiver handle into constant segment
-  Address rec_adr = __ as_Address(InternalAddress(__ address_constant((address)rec)));
-
-  __ subptr(rsp, (int) align_up(layout.buffer_size, buffer_alignment));
-
-  Register used[] = { c_rarg0, c_rarg1, rax, rbx, rdi, rsi, r12, r13, r14, r15 };
-  GrowableArray<Register> preserved;
-  // TODO need to preserve anything killed by the upcall that is non-volatile, needs XMM regs as well, probably
-  for (size_t i = 0; i < sizeof(used)/sizeof(Register); i++) {
-    Register reg = used[i];
-    if (!abi.is_volatile_reg(reg)) {
-      preserved.push(reg);
-    }
-  }
-
-  int preserved_size = align_up(preserved.length() * register_size, stack_alignment_C); // includes register alignment
-  int buffer_offset = preserved_size; // offset from rsp
-
-  __ subptr(rsp, preserved_size);
-  for (int i = 0; i < preserved.length(); i++) {
-    __ movptr(Address(rsp, i * register_size), preserved.at(i));
-  }
-
-  for (int i = 0; i < abi._integer_argument_registers.length(); i++) {
-    size_t offs = buffer_offset + layout.arguments_integer + i * sizeof(uintptr_t);
-    __ movptr(Address(rsp, (int)offs), abi._integer_argument_registers.at(i));
-  }
-
-  for (int i = 0; i < abi._vector_argument_registers.length(); i++) {
-    XMMRegister reg = abi._vector_argument_registers.at(i);
-    size_t offs = buffer_offset + layout.arguments_vector + i * xmm_reg_size;
-    __ movdqu(Address(rsp, (int)offs), reg);
-  }
-
-  // Capture prev stack pointer (stack arguments base)
-#ifndef _WIN64
-  __ lea(rax, Address(rbp, 16)); // skip frame+return address
-#else
-  __ lea(rax, Address(rbp, 16 + 32)); // also skip shadow space
-#endif
-  __ movptr(Address(rsp, buffer_offset + (int) layout.stack_args), rax);
-#ifndef PRODUCT
-  __ movptr(Address(rsp, buffer_offset + (int) layout.stack_args_bytes), -1); // unknown
-#endif
-
-  // Call upcall helper
-
-  __ movptr(c_rarg0, rec_adr);
-  __ lea(c_rarg1, Address(rsp, buffer_offset));
-
-#ifdef _WIN64
-  __ block_comment("allocate shadow space for argument register spill");
-  __ subptr(rsp, 32);
-#endif
-
-  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, ProgrammableUpcallHandler::attach_thread_and_do_upcall)));
-
-#ifdef _WIN64
-  __ block_comment("pop shadow space");
-  __ addptr(rsp, 32);
-#endif
-
-  for (int i = 0; i < abi._integer_return_registers.length(); i++) {
-    size_t offs = buffer_offset + layout.returns_integer + i * sizeof(uintptr_t);
-    __ movptr(abi._integer_return_registers.at(i), Address(rsp, (int)offs));
-  }
-
-  for (int i = 0; i < abi._vector_return_registers.length(); i++) {
-    XMMRegister reg = abi._vector_return_registers.at(i);
-    size_t offs = buffer_offset + layout.returns_vector + i * xmm_reg_size;
-    __ movdqu(reg, Address(rsp, (int)offs));
-  }
-
-  for (size_t i = abi._X87_return_registers_noof; i > 0 ; i--) {
-      ssize_t offs = buffer_offset + layout.returns_x87 + (i - 1) * (sizeof(long double));
-      __ fld_x (Address(rsp, (int)offs));
-  }
-
-  // Restore preserved registers
-  for (int i = 0; i < preserved.length(); i++) {
-    __ movptr(preserved.at(i), Address(rsp, i * register_size));
-  }
-
-  __ leave();
-  __ ret(0);
-
-  _masm->flush();
-
-  BufferBlob* blob = BufferBlob::create("upcall_stub", &buffer);
-
-  return blob->code_begin();
-}
-
-struct ArgMove {
-  BasicType bt;
-  VMRegPair from;
-  VMRegPair to;
-
-  bool is_identity() const {
-      return from.first() == to.first() && from.second() == to.second();
-  }
-};
-
-static GrowableArray<ArgMove> compute_argument_shuffle(Method* entry, int& out_arg_size_bytes, const CallRegs& conv, BasicType& ret_type) {
-  assert(entry->is_static(), "");
-
-  // Fill in the signature array, for the calling-convention call.
-  const int total_out_args = entry->size_of_parameters();
-  assert(total_out_args > 0, "receiver arg ");
-
-  BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_out_args);
-  VMRegPair* out_regs = NEW_RESOURCE_ARRAY(VMRegPair, total_out_args);
-
-  {
-    int i = 0;
-    SignatureStream ss(entry->signature());
-    for (; !ss.at_return_type(); ss.next()) {
-      out_sig_bt[i++] = ss.type();  // Collect remaining bits of signature
-      if (ss.type() == T_LONG || ss.type() == T_DOUBLE)
-        out_sig_bt[i++] = T_VOID;   // Longs & doubles take 2 Java slots
-    }
-    assert(i == total_out_args, "");
-    ret_type = ss.type();
-  }
-
-  int out_arg_slots = SharedRuntime::java_calling_convention(out_sig_bt, out_regs, total_out_args);
-
-  const int total_in_args = total_out_args - 1; // skip receiver
-  BasicType* in_sig_bt  = NEW_RESOURCE_ARRAY(BasicType, total_in_args);
-  VMRegPair* in_regs    = NEW_RESOURCE_ARRAY(VMRegPair, total_in_args);
-
-  for (int i = 0; i < total_in_args ; i++ ) {
-    in_sig_bt[i] = out_sig_bt[i+1]; // skip receiver
-  }
-
-  // Now figure out where the args must be stored and how much stack space they require.
-  conv.calling_convention(in_sig_bt, in_regs, total_in_args);
-
-  GrowableArray<int> arg_order(2 * total_in_args);
-
-  VMRegPair tmp_vmreg;
-  tmp_vmreg.set2(rbx->as_VMReg());
-
-  // Compute a valid move order, using tmp_vmreg to break any cycles
-  SharedRuntime::compute_move_order(in_sig_bt,
-                                    total_in_args, in_regs,
-                                    total_out_args, out_regs,
-                                    arg_order,
-                                    tmp_vmreg);
-
-  GrowableArray<ArgMove> arg_order_vmreg(total_in_args); // conservative
-
-#ifdef ASSERT
-  bool reg_destroyed[RegisterImpl::number_of_registers];
-  bool freg_destroyed[XMMRegisterImpl::number_of_registers];
-  for ( int r = 0 ; r < RegisterImpl::number_of_registers ; r++ ) {
-    reg_destroyed[r] = false;
-  }
-  for ( int f = 0 ; f < XMMRegisterImpl::number_of_registers ; f++ ) {
-    freg_destroyed[f] = false;
-  }
-#endif // ASSERT
-
-  for (int i = 0; i < arg_order.length(); i += 2) {
-    int in_arg  = arg_order.at(i);
-    int out_arg = arg_order.at(i + 1);
-
-    assert(in_arg != -1 || out_arg != -1, "");
-    BasicType arg_bt = (in_arg != -1 ? in_sig_bt[in_arg] : out_sig_bt[out_arg]);
-    switch (arg_bt) {
-      case T_BOOLEAN:
-      case T_BYTE:
-      case T_SHORT:
-      case T_CHAR:
-      case T_INT:
-      case T_FLOAT:
-        break; // process
-
-      case T_LONG:
-      case T_DOUBLE:
-        assert(in_arg  == -1 || (in_arg  + 1 < total_in_args  &&  in_sig_bt[in_arg  + 1] == T_VOID), "bad arg list: %d", in_arg);
-        assert(out_arg == -1 || (out_arg + 1 < total_out_args && out_sig_bt[out_arg + 1] == T_VOID), "bad arg list: %d", out_arg);
-        break; // process
-
-      case T_VOID:
-        continue; // skip
-
-      default:
-        fatal("found in upcall args: %s", type2name(arg_bt));
-    }
-
-    ArgMove move;
-    move.bt   = arg_bt;
-    move.from = (in_arg != -1 ? in_regs[in_arg] : tmp_vmreg);
-    move.to   = (out_arg != -1 ? out_regs[out_arg] : tmp_vmreg);
-
-    if(move.is_identity()) {
-      continue; // useless move
-    }
-
-#ifdef ASSERT
-    if (in_arg != -1) {
-      if (in_regs[in_arg].first()->is_Register()) {
-        assert(!reg_destroyed[in_regs[in_arg].first()->as_Register()->encoding()], "destroyed reg!");
-      } else if (in_regs[in_arg].first()->is_XMMRegister()) {
-        assert(!freg_destroyed[in_regs[in_arg].first()->as_XMMRegister()->encoding()], "destroyed reg!");
-      }
-    }
-    if (out_arg != -1) {
-      if (out_regs[out_arg].first()->is_Register()) {
-        reg_destroyed[out_regs[out_arg].first()->as_Register()->encoding()] = true;
-      } else if (out_regs[out_arg].first()->is_XMMRegister()) {
-        freg_destroyed[out_regs[out_arg].first()->as_XMMRegister()->encoding()] = true;
-      }
-    }
-#endif /* ASSERT */
-
-    arg_order_vmreg.push(move);
-  }
-
-  int stack_slots = SharedRuntime::out_preserve_stack_slots() + out_arg_slots;
-  out_arg_size_bytes = align_up(stack_slots * VMRegImpl::stack_slot_size, StackAlignmentInBytes);
-
-  return arg_order_vmreg;
-}
-
-static const char* null_safe_string(const char* str) {
-  return str == nullptr ? "NULL" : str;
-}
-
-#ifdef ASSERT
-static void print_arg_moves(const GrowableArray<ArgMove>& arg_moves, Method* entry) {
-  LogTarget(Trace, foreign) lt;
-  if (lt.is_enabled()) {
-    ResourceMark rm;
-    LogStream ls(lt);
-    ls.print_cr("Argument shuffle for %s {", entry->name_and_sig_as_C_string());
-    for (int i = 0; i < arg_moves.length(); i++) {
-      ArgMove arg_mv = arg_moves.at(i);
-      BasicType arg_bt     = arg_mv.bt;
-      VMRegPair from_vmreg = arg_mv.from;
-      VMRegPair to_vmreg   = arg_mv.to;
-
-      ls.print("Move a %s from (", null_safe_string(type2name(arg_bt)));
-      from_vmreg.first()->print_on(&ls);
-      ls.print(",");
-      from_vmreg.second()->print_on(&ls);
-      ls.print(") to ");
-      to_vmreg.first()->print_on(&ls);
-      ls.print(",");
-      to_vmreg.second()->print_on(&ls);
-      ls.print_cr(")");
-    }
-    ls.print_cr("}");
-  }
-}
-#endif
-
-static void save_native_arguments(MacroAssembler* _masm, const CallRegs& conv, int arg_save_area_offset) {
-  __ block_comment("{ save_native_args ");
-  int store_offset = arg_save_area_offset;
-  for (int i = 0; i < conv._args_length; i++) {
-    VMReg reg = conv._arg_regs[i];
-    if (reg->is_Register()) {
-      __ movptr(Address(rsp, store_offset), reg->as_Register());
-      store_offset += 8;
-    } else if (reg->is_XMMRegister()) {
-      // Java API doesn't support vector args
-      __ movdqu(Address(rsp, store_offset), reg->as_XMMRegister());
-      store_offset += 16;
-    }
-    // do nothing for stack
-  }
-  __ block_comment("} save_native_args ");
-}
-
-static void restore_native_arguments(MacroAssembler* _masm, const CallRegs& conv, int arg_save_area_offset) {
-  __ block_comment("{ restore_native_args ");
-  int load_offset = arg_save_area_offset;
-  for (int i = 0; i < conv._args_length; i++) {
-    VMReg reg = conv._arg_regs[i];
-    if (reg->is_Register()) {
-      __ movptr(reg->as_Register(), Address(rsp, load_offset));
-      load_offset += 8;
-    } else if (reg->is_XMMRegister()) {
-      // Java API doesn't support vector args
-      __ movdqu(reg->as_XMMRegister(), Address(rsp, load_offset));
-      load_offset += 16;
-    }
-    // do nothing for stack
-  }
-  __ block_comment("} restore_native_args ");
-}
 
 static bool is_valid_XMM(XMMRegister reg) {
   return reg->is_valid() && (UseAVX >= 3 || (reg->encoding() < 16)); // why is this not covered by is_valid()?
@@ -384,75 +71,6 @@ static int compute_reg_save_area_size(const ABIDescriptor& abi) {
 #endif
 
   return size;
-}
-
-static int compute_arg_save_area_size(const CallRegs& conv) {
-  int result_size = 0;
-  for (int i = 0; i < conv._args_length; i++) {
-    VMReg reg = conv._arg_regs[i];
-    if (reg->is_Register()) {
-      result_size += 8;
-    } else if (reg->is_XMMRegister()) {
-      // Java API doesn't support vector args
-      result_size += 16;
-    }
-    // do nothing for stack
-  }
-  return result_size;
-}
-
-static int compute_res_save_area_size(const CallRegs& conv) {
-  int result_size = 0;
-  for (int i = 0; i < conv._rets_length; i++) {
-    VMReg reg = conv._ret_regs[i];
-    if (reg->is_Register()) {
-      result_size += 8;
-    } else if (reg->is_XMMRegister()) {
-      // Java API doesn't support vector args
-      result_size += 16;
-    } else {
-      ShouldNotReachHere(); // unhandled type
-    }
-  }
-  return result_size;
-}
-
-static void save_java_result(MacroAssembler* _masm, const CallRegs& conv, int res_save_area_offset) {
-  int offset = res_save_area_offset;
-  __ block_comment("{ save java result ");
-  for (int i = 0; i < conv._rets_length; i++) {
-    VMReg reg = conv._ret_regs[i];
-    if (reg->is_Register()) {
-      __ movptr(Address(rsp, offset), reg->as_Register());
-      offset += 8;
-    } else if (reg->is_XMMRegister()) {
-      // Java API doesn't support vector args
-      __ movdqu(Address(rsp, offset), reg->as_XMMRegister());
-      offset += 16;
-    } else {
-      ShouldNotReachHere(); // unhandled type
-    }
-  }
-  __ block_comment("} save java result ");
-}
-
-static void restore_java_result(MacroAssembler* _masm, const CallRegs& conv, int res_save_area_offset) {
-  int offset = res_save_area_offset;
-  __ block_comment("{ restore java result ");
-  for (int i = 0; i < conv._rets_length; i++) {
-    VMReg reg = conv._ret_regs[i];
-    if (reg->is_Register()) {
-      __ movptr(reg->as_Register(), Address(rsp, offset));
-      offset += 8;
-    } else if (reg->is_XMMRegister()) {
-      // Java API doesn't support vector args
-      __ movdqu(reg->as_XMMRegister(), Address(rsp, offset));
-      offset += 16;
-    } else {
-      ShouldNotReachHere(); // unhandled type
-    }
-  }
-  __ block_comment("} restore java result ");
 }
 
 constexpr int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
@@ -546,66 +164,35 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
 
   __ block_comment("} restore_callee_saved_regs ");
 }
-
-static void shuffle_arguments(MacroAssembler* _masm, const GrowableArray<ArgMove>& arg_moves) {
-  for (int i = 0; i < arg_moves.length(); i++) {
-    ArgMove arg_mv = arg_moves.at(i);
-    BasicType arg_bt     = arg_mv.bt;
-    VMRegPair from_vmreg = arg_mv.from;
-    VMRegPair to_vmreg   = arg_mv.to;
-
-    assert(
-      !((from_vmreg.first()->is_Register() && to_vmreg.first()->is_XMMRegister())
-      || (from_vmreg.first()->is_XMMRegister() && to_vmreg.first()->is_Register())),
-       "move between gp and fp reg not supported");
-
-    __ block_comment(err_msg("bt=%s", null_safe_string(type2name(arg_bt))));
-    switch (arg_bt) {
-      case T_BOOLEAN:
-      case T_BYTE:
-      case T_SHORT:
-      case T_CHAR:
-      case T_INT:
-       __ move32_64(from_vmreg, to_vmreg);
-       break;
-
-      case T_FLOAT:
-        __ float_move(from_vmreg, to_vmreg);
-        break;
-
-      case T_DOUBLE:
-        __ double_move(from_vmreg, to_vmreg);
-        break;
-
-      case T_LONG :
-        __ long_move(from_vmreg, to_vmreg);
-        break;
-
-      default:
-        fatal("found in upcall args: %s", type2name(arg_bt));
-    }
-  }
-}
-
 // Register is a class, but it would be assigned numerical value.
 // "0" is assigned for rax and for xmm0. Thus we need to ignore -Wnonnull.
 PRAGMA_DIAG_PUSH
 PRAGMA_NONNULL_IGNORED
-address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiver, Method* entry, jobject jabi, jobject jconv) {
-  ResourceMark rm;
+address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiver, Method* entry,
+                                                                  BasicType* in_sig_bt, int total_in_args,
+                                                                  BasicType* out_sig_bt, int total_out_args,
+                                                                  BasicType ret_type,
+                                                                  jobject jabi, jobject jconv,
+                                                                  bool needs_return_buffer, int ret_buf_size) {
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
-  const CallRegs conv = ForeignGlobals::parse_call_regs(jconv);
-  assert(conv._rets_length <= 1, "no multi reg returns");
+  const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
   CodeBuffer buffer("upcall_stub_linkToNative", /* code_size = */ 2048, /* locs_size = */ 1024);
 
-  int register_size = sizeof(uintptr_t);
-  int buffer_alignment = xmm_reg_size;
+  Register shuffle_reg = rbx;
+  JavaCallingConvention out_conv;
+  NativeCallingConvention in_conv(call_regs._arg_regs);
+  ArgumentShuffle arg_shuffle(in_sig_bt, total_in_args, out_sig_bt, total_out_args, &in_conv, &out_conv, shuffle_reg->as_VMReg());
+  int stack_slots = SharedRuntime::out_preserve_stack_slots() + arg_shuffle.out_arg_stack_slots();
+  int out_arg_area = align_up(stack_slots * VMRegImpl::stack_slot_size, StackAlignmentInBytes);
 
-  int out_arg_area = -1;
-  BasicType ret_type;
-  GrowableArray<ArgMove> arg_moves = compute_argument_shuffle(entry, out_arg_area, conv, ret_type);
-  assert(out_arg_area != -1, "Should have been set");
-  DEBUG_ONLY(print_arg_moves(arg_moves, entry);)
+#ifndef PRODUCT
+  LogTarget(Trace, foreign, upcall) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    arg_shuffle.print_on(&ls);
+  }
+#endif
 
   // out_arg_area (for stack arguments) doubles as shadow space for native calls.
   // make sure it is big enough.
@@ -614,15 +201,21 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   }
 
   int reg_save_area_size = compute_reg_save_area_size(abi);
-  int arg_save_area_size = compute_arg_save_area_size(conv);
-  int res_save_area_size = compute_res_save_area_size(conv);
+  RegSpiller arg_spilller(call_regs._arg_regs);
+  RegSpiller result_spiller(call_regs._ret_regs);
 
   int shuffle_area_offset    = 0;
   int res_save_area_offset   = shuffle_area_offset    + out_arg_area;
-  int arg_save_area_offset   = res_save_area_offset   + res_save_area_size;
-  int reg_save_area_offset   = arg_save_area_offset   + arg_save_area_size;
+  int arg_save_area_offset   = res_save_area_offset   + result_spiller.spill_size_bytes();
+  int reg_save_area_offset   = arg_save_area_offset   + arg_spilller.spill_size_bytes();
   int frame_data_offset      = reg_save_area_offset   + reg_save_area_size;
   int frame_bottom_offset    = frame_data_offset      + sizeof(OptimizedEntryBlob::FrameData);
+
+  int ret_buf_offset = -1;
+  if (needs_return_buffer) {
+    ret_buf_offset = frame_bottom_offset;
+    frame_bottom_offset += ret_buf_size;
+  }
 
   int frame_size = frame_bottom_offset;
   frame_size = align_up(frame_size, StackAlignmentInBytes);
@@ -632,6 +225,9 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   //
   // FP-> |                     |
   //      |---------------------| = frame_bottom_offset = frame_size
+  //      | (optional)          |
+  //      | ret_buf             |
+  //      |---------------------| = ret_buf_offset
   //      |                     |
   //      | FrameData           |
   //      |---------------------| = frame_data_offset
@@ -663,7 +259,7 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
 
   // we have to always spill args since we need to do a call to get the thread
   // (and maybe attach it).
-  save_native_arguments(_masm, conv, arg_save_area_offset);
+  arg_spilller.generate_spill(_masm, arg_save_area_offset);
 
   preserve_callee_saved_registers(_masm, abi, reg_save_area_offset);
 
@@ -677,9 +273,12 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   __ block_comment("} on_entry");
 
   __ block_comment("{ argument shuffle");
-  // TODO merge these somehow
-  restore_native_arguments(_masm, conv, arg_save_area_offset);
-  shuffle_arguments(_masm, arg_moves);
+  arg_spilller.generate_fill(_masm, arg_save_area_offset);
+  if (needs_return_buffer) {
+    assert(ret_buf_offset != -1, "no return buffer allocated");
+    __ lea(abi._ret_buf_addr_reg, Address(rsp, ret_buf_offset));
+  }
+  arg_shuffle.generate(_masm, shuffle_reg->as_VMReg(), abi._shadow_space_bytes, 0);
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");
@@ -693,7 +292,52 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
 
   __ call(Address(rbx, Method::from_compiled_offset()));
 
-  save_java_result(_masm, conv, res_save_area_offset);
+  // return value shuffle
+  if (!needs_return_buffer) {
+#ifdef ASSERT
+    if (call_regs._ret_regs.length() == 1) { // 0 or 1
+      VMReg j_expected_result_reg;
+      switch (ret_type) {
+        case T_BOOLEAN:
+        case T_BYTE:
+        case T_SHORT:
+        case T_CHAR:
+        case T_INT:
+        case T_LONG:
+        j_expected_result_reg = rax->as_VMReg();
+        break;
+        case T_FLOAT:
+        case T_DOUBLE:
+          j_expected_result_reg = xmm0->as_VMReg();
+          break;
+        default:
+          fatal("unexpected return type: %s", type2name(ret_type));
+      }
+      // No need to move for now, since CallArranger can pick a return type
+      // that goes in the same reg for both CCs. But, at least assert they are the same
+      assert(call_regs._ret_regs.at(0) == j_expected_result_reg,
+        "unexpected result register: %s != %s", call_regs._ret_regs.at(0)->name(), j_expected_result_reg->name());
+    }
+#endif
+  } else {
+    assert(ret_buf_offset != -1, "no return buffer allocated");
+    __ lea(rscratch1, Address(rsp, ret_buf_offset));
+    int offset = 0;
+    for (int i = 0; i < call_regs._ret_regs.length(); i++) {
+      VMReg reg = call_regs._ret_regs.at(i);
+      if (reg->is_Register()) {
+        __ movptr(reg->as_Register(), Address(rscratch1, offset));
+        offset += 8;
+      } else if (reg->is_XMMRegister()) {
+        __ movdqu(reg->as_XMMRegister(), Address(rscratch1, offset));
+        offset += 16;
+      } else {
+        ShouldNotReachHere();
+      }
+    }
+  }
+
+  result_spiller.generate_spill(_masm, res_save_area_offset);
 
   __ block_comment("{ on_exit");
   __ vzeroupper();
@@ -705,34 +349,7 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
 
   restore_callee_saved_registers(_masm, abi, reg_save_area_offset);
 
-  restore_java_result(_masm, conv, res_save_area_offset);
-
-  // return value shuffle
-#ifdef ASSERT
-  if (conv._rets_length == 1) { // 0 or 1
-    VMReg j_expected_result_reg;
-    switch (ret_type) {
-      case T_BOOLEAN:
-      case T_BYTE:
-      case T_SHORT:
-      case T_CHAR:
-      case T_INT:
-      case T_LONG:
-       j_expected_result_reg = rax->as_VMReg();
-       break;
-      case T_FLOAT:
-      case T_DOUBLE:
-        j_expected_result_reg = xmm0->as_VMReg();
-        break;
-      default:
-        fatal("unexpected return type: %s", type2name(ret_type));
-    }
-    // No need to move for now, since CallArranger can pick a return type
-    // that goes in the same reg for both CCs. But, at least assert they are the same
-    assert(conv._ret_regs[0] == j_expected_result_reg,
-     "unexpected result register: %s != %s", conv._ret_regs[0]->name(), j_expected_result_reg->name());
-  }
-#endif
+  result_spiller.generate_fill(_masm, res_save_area_offset);
 
   __ leave();
   __ ret(0);
@@ -768,17 +385,17 @@ address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject receiv
   const char* name = "optimized_upcall_stub";
 #endif // PRODUCT
 
-  OptimizedEntryBlob* blob = OptimizedEntryBlob::create(name, &buffer, exception_handler_offset, receiver, in_ByteSize(frame_data_offset));
+  OptimizedEntryBlob* blob
+    = OptimizedEntryBlob::create(name,
+                                 &buffer,
+                                 exception_handler_offset,
+                                 receiver,
+                                 in_ByteSize(frame_data_offset));
 
   if (TraceOptimizedUpcallStubs) {
     blob->print_on(tty);
-    Disassembler::decode(blob, tty);
   }
 
   return blob->code_begin();
 }
 PRAGMA_DIAG_POP
-
-bool ProgrammableUpcallHandler::supports_optimized_upcalls() {
-  return true;
-}

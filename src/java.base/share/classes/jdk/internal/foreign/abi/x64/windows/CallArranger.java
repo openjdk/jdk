@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,9 @@ public class CallArranger {
         new VMStorage[] { rax, r10, r11 },
         new VMStorage[] { xmm4, xmm5 },
         16,
-        32
+        32,
+        r10, // target addr reg
+        r11  // ret buf addr reg
     );
 
     // record
@@ -83,7 +85,7 @@ public class CallArranger {
 
     public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
         class CallingSequenceBuilderHelper {
-            final CallingSequenceBuilder csb = new CallingSequenceBuilder(forUpcall);
+            final CallingSequenceBuilder csb = new CallingSequenceBuilder(CWindows, forUpcall);
             final BindingCalculator argCalc =
                 forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
             final BindingCalculator retCalc =
@@ -114,8 +116,6 @@ public class CallArranger {
         for (int i = 0; i < mt.parameterCount(); i++) {
             csb.addArgumentBindings(mt.parameterType(i), cDesc.argumentLayouts().get(i), SharedUtils.isVarargsIndex(cDesc, i));
         }
-
-        csb.csb.setTrivial(SharedUtils.isTrivial(cDesc));
 
         return new Bindings(csb.csb.build(), returnInMemory);
     }
