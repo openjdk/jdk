@@ -56,6 +56,8 @@
 #include "prims/vectorSupport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/escapeBarrier.hpp"
 #include "runtime/fieldDescriptor.hpp"
@@ -71,6 +73,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
+#include "runtime/stackValue.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
@@ -81,6 +84,7 @@
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/events.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/xmlstream.hpp"
@@ -439,6 +443,11 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   vframeArray* array = create_vframeArray(current, deoptee, &map, chunk, realloc_failures);
 #if COMPILER2_OR_JVMCI
   if (realloc_failures) {
+    // FIXME: This very crudely destroys all ExtentLocal bindings. This
+    // is better than a bound value escaping, but far from ideal.
+    oop java_thread = current->threadObj();
+    current->set_extentLocalCache(NULL);
+    java_lang_Thread::clear_extentLocalBindings(java_thread);
     pop_frames_failed_reallocs(current, array);
   }
 #endif
@@ -582,7 +591,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // QQQ I'd rather see this pushed down into last_frame_adjust
   // and have it take the sender (aka caller).
 
-  if (deopt_sender.is_compiled_caller() || caller_was_method_handle) {
+  if (!deopt_sender.is_interpreted_frame() || caller_was_method_handle) {
     caller_adjustment = last_frame_adjust(0, callee_locals);
   } else if (callee_locals > callee_parameters) {
     // The caller frame may need extending to accommodate
@@ -595,7 +604,10 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // since the frame will "magically" show the original pc before the deopt
   // and we'd undo the deopt.
 
-  frame_pcs[0] = deopt_sender.raw_pc();
+  frame_pcs[0] = Continuation::is_cont_barrier_frame(deoptee) ? StubRoutines::cont_returnBarrier() : deopt_sender.raw_pc();
+  if (Continuation::is_continuation_enterSpecial(deopt_sender)) {
+    ContinuationEntry::from_frame(deopt_sender)->set_argsize(0);
+  }
 
   assert(CodeCache::find_blob_unsafe(frame_pcs[0]) != NULL, "bad pc");
 
@@ -735,6 +747,8 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
   HandleMark hm(thread);
 
   frame stub_frame = thread->last_frame();
+
+  Continuation::notify_deopt(thread, stub_frame.sp());
 
   // Since the frame to unpack is the top frame of this thread, the vframe_array_head
   // must point to the vframeArray for the unpack frame.
@@ -910,9 +924,9 @@ void Deoptimization::deoptimize_all_marked(nmethod* nmethod_only) {
   if (nmethod_only != NULL) {
     nmethod_only->mark_for_deoptimization();
     nmethod_only->make_not_entrant();
+    CodeCache::make_nmethod_deoptimized(nmethod_only);
   } else {
-    MutexLocker mu(SafepointSynchronize::is_at_safepoint() ? NULL : CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    CodeCache::make_marked_nmethods_not_entrant();
+    CodeCache::make_marked_nmethods_deoptimized();
   }
 
   DeoptimizeMarkedClosure deopt;
@@ -1504,6 +1518,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         BasicLock* lock = mon_info->lock();
         ObjectSynchronizer::enter(obj, lock, deoptee_thread);
         assert(mon_info->owner()->is_locked(), "object must be locked now");
+        deoptee_thread->inc_held_monitor_count();
       }
     }
   }
@@ -1578,6 +1593,7 @@ void Deoptimization::pop_frames_failed_reallocs(JavaThread* thread, vframeArray*
         BasicObjectLock* src = monitors->at(j);
         if (src->obj() != NULL) {
           ObjectSynchronizer::exit(src->obj(), src->lock(), thread);
+          thread->dec_held_monitor_count();
         }
       }
       array->element(i)->free_monitors(thread);
@@ -1610,6 +1626,8 @@ void Deoptimization::deoptimize_single_frame(JavaThread* thread, frame fr, Deopt
     }
     xtty->tail("deoptimized");
   }
+
+  Continuation::notify_deopt(thread, fr.sp());
 
   // Patch the compiled method so that when execution returns to it we will
   // deopt the execution state and return to the interpreter.

@@ -140,6 +140,9 @@ class Argument {
     // shows that xlC places all float args after argument 8 on the stack AND
     // in a register. This is not documented, but we follow this convention, too.
     n_regs_not_on_stack_c = 8,
+
+    n_int_register_parameters_j = 8,
+    n_float_register_parameters_j = 13
   };
   // creation
   Argument(int number) : _number(number) {}

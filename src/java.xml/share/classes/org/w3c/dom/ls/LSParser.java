@@ -372,7 +372,7 @@ public interface LSParser {
      * @return  If the <code>LSParser</code> is a synchronous
      *   <code>LSParser</code>, the newly created and populated
      *   <code>Document</code> is returned, or <code>null</code> if an error
-     *   occured. If the <code>LSParser</code> is asynchronous,
+     *   occurred. If the <code>LSParser</code> is asynchronous,
      *   <code>null</code> is returned since the document object may not yet
      *   be constructed when this method returns.
      * @exception DOMException

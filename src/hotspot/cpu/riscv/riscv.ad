@@ -1185,11 +1185,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   }
 }
 
-int MachCallNativeNode::ret_addr_offset() {
-  Unimplemented();
-  return -1;
-}
-
 //
 // Compute padding required for nodes which need alignment
 //
@@ -10565,9 +10560,8 @@ instruct ShouldNotReachHere() %{
   format %{ "#@ShouldNotReachHere" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(&_masm);
     if (is_reachable()) {
-      __ halt();
+      __ stop(_halt_reason);
     }
   %}
 
