@@ -28,9 +28,9 @@
 #include "logging/log.hpp"
 #include "logging/logHandle.hpp"
 #include "logging/logMessage.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/ostream.hpp"
-#include "runtime/os.hpp"
 
 template<typename BackingLog>
 class LogStreamImpl : public outputStream {
@@ -38,8 +38,8 @@ class LogStreamImpl : public outputStream {
   friend class LogStreamTest_TestLineBufferAllocationCap_vm_Test;
 
   // No heap allocation of LogStream.
-  static void *operator new   (size_t) = delete;
-  static void *operator new[] (size_t) = delete;
+  static void* operator new   (size_t) = delete;
+  static void* operator new[] (size_t) = delete;
 
   // Helper class, maintains the line buffer. For small line lengths,
   // we avoid malloc and use a fixed sized member char array. If LogStream
@@ -51,19 +51,26 @@ class LogStreamImpl : public outputStream {
     size_t _cap;
     size_t _pos;
     void try_ensure_cap(size_t cap);
+
   public:
     LineBuffer();
     ~LineBuffer();
-    bool is_empty() const { return _pos == 0; }
-    const char* buffer() const { return _buf; }
+    bool is_empty() const {
+      return _pos == 0;
+    }
+    const char* buffer() const {
+      return _buf;
+    }
     void append(const char* s, size_t len);
     void reset();
   };
 
 private:
   LineBuffer _current_line;
+
 protected:
   BackingLog _backing_log;
+
 public:
   explicit LogStreamImpl(BackingLog bl)
     : _backing_log(bl) {};
@@ -93,8 +100,7 @@ public:
 
 template<typename T>
 LogStreamImpl<T>::LineBuffer::LineBuffer()
- : _buf(_smallbuf), _cap(sizeof(_smallbuf)), _pos(0)
-{
+  : _buf(_smallbuf), _cap(sizeof(_smallbuf)), _pos(0) {
   _buf[0] = '\0';
 }
 
@@ -125,11 +131,11 @@ void LogStreamImpl<T>::LineBuffer::try_ensure_cap(size_t atleast) {
     size_t newcap = align_up(atleast + additional_expansion, additional_expansion);
     if (newcap > reasonable_max) {
       log_info(logging)("Suspiciously long log line: \"%.100s%s",
-              _buf, (_pos >= 100 ? "..." : ""));
+                        _buf, (_pos >= 100 ? "..." : ""));
       newcap = reasonable_max;
     }
 
-    char* const newbuf = (char*) os::malloc(newcap, mtLogging);
+    char* const newbuf = (char*)os::malloc(newcap, mtLogging);
     if (newbuf == NULL) { // OOM. Leave object unchanged.
       return;
     }
@@ -144,7 +150,6 @@ void LogStreamImpl<T>::LineBuffer::try_ensure_cap(size_t atleast) {
   }
   assert(_cap >= atleast, "sanity");
 }
-
 
 template<typename T>
 void LogStreamImpl<T>::LineBuffer::append(const char* s, size_t len) {
@@ -172,15 +177,15 @@ void LogStreamImpl<T>::LineBuffer::reset() {
   _buf[_pos] = '\0';
 }
 
-
-class LogStream : public LogStreamImpl<LogTargetHandle>  {
+class LogStream : public LogStreamImpl<LogTargetHandle> {
   // see test/hotspot/gtest/logging/test_logStream.cpp
   friend class LogStreamTest_TestLineBufferAllocation_vm_Test;
   friend class LogStreamTest_TestLineBufferAllocationCap_vm_Test;
 
   // No heap allocation of LogStream.
-  static void *operator new   (size_t) = delete;
-  static void *operator new[] (size_t) = delete;
+  static void* operator new   (size_t) = delete;
+  static void* operator new[] (size_t) = delete;
+
 public:
   LogStream(const LogStream&) = delete;
   virtual ~LogStream() {};
@@ -188,7 +193,8 @@ public:
   //
   // LogTarget(Debug, gc) log;
   // LogStream(log) stream;
-  template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
+  template<LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3,
+           LogTagType T4, LogTagType GuardTag>
   LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier)
     : LogStreamImpl(LogTargetHandle(level, LogTagSetMapping<T0, T1, T2, T3, T4>::tagset())) {}
 
@@ -197,7 +203,8 @@ public:
   // LogStream stream(log.debug());
   //  or
   // LogStream stream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)NULL);
-  template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
+  template<LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3,
+           LogTagType T4, LogTagType GuardTag>
   LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>* type_carrier)
     : LogStreamImpl(LogTargetHandle(level, LogTagSetMapping<T0, T1, T2, T3, T4>::tagset())) {}
 
@@ -216,11 +223,11 @@ public:
     : LogStreamImpl(LogTargetHandle(level, tagset)) {}
 };
 
-
 // Support creation of a LogStream without having to provide a LogTarget pointer.
 #define LogStreamHandle(level, ...) LogStreamTemplate<LogLevel::level, LOG_TAGS(__VA_ARGS__)>
 
-template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
+template<LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3,
+         LogTagType T4, LogTagType GuardTag>
 class LogStreamTemplate : public LogStream {
 public:
   LogStreamTemplate()
@@ -230,6 +237,7 @@ public:
 class LogMessageHandle {
   const LogLevelType _level;
   LogMessageImpl& _lm;
+
 public:
   LogMessageHandle(const LogLevelType level, LogMessageImpl& lm)
     : _level(level), _lm(lm) {}
@@ -246,16 +254,15 @@ public:
   }
 };
 
-
 class NonInterleavingLogStream : public LogStreamImpl<LogMessageHandle> {
-  static void *operator new   (size_t) = delete;
-  static void *operator new[] (size_t) = delete;
+  static void* operator new   (size_t) = delete;
+  static void* operator new[] (size_t) = delete;
+
 public:
   NonInterleavingLogStream(LogLevelType level, LogMessageImpl& lm)
     : LogStreamImpl(LogMessageHandle(level, lm)) {}
 
   virtual ~NonInterleavingLogStream() {};
 };
-
 
 #endif // SHARE_LOGGING_LOGSTREAM_HPP
