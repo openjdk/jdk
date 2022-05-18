@@ -523,7 +523,7 @@ public final class Float extends Number
      * floating-point value, {@code false} otherwise.
      * @since 1.8
      */
-    public static boolean isFinite(float f) {
+     public static boolean isFinite(float f) {
         return Math.abs(f) <= Float.MAX_VALUE;
     }
 
