@@ -515,7 +515,8 @@ abstract class ECDSASignature extends SignatureSpi {
             return;
         }
         if (!(params instanceof ECParameterSpec ecparams)) {
-            throw new InvalidAlgorithmParameterException("No parameter accepted");
+            throw new InvalidAlgorithmParameterException(
+                    "Parameters must be of type ECParameterSpec");
         }
         ECKey key = (this.privateKey == null? this.publicKey : this.privateKey);
         if ((key != null) && !ECUtil.equals(ecparams, key.getParams())) {
