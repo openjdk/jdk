@@ -100,13 +100,24 @@ G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
   _log2_cards_per_card_region(log2i_exact(_max_cards_in_card_set)) {
 
   assert(_inline_ptr_bits_per_card <= G1CardSetContainer::LogCardsPerRegionLimit,
-         "inline_ptr_bits_per_card (%u) can not represent all card indexes (%u)",
+         "inline_ptr_bits_per_card (%u) is wasteful, can represent more than maximum possible card indexes (%u)",
          _inline_ptr_bits_per_card, G1CardSetContainer::LogCardsPerRegionLimit);
+  assert(_inline_ptr_bits_per_card >= _log2_cards_per_card_region,
+         "inline_ptr_bits_per_card (%u) must be larger than possible card indexes (%u)",
+         _inline_ptr_bits_per_card, _log2_cards_per_card_region);
+
+  assert(cards_in_bitmap_threshold_percent >= 0.0 && cards_in_bitmap_threshold_percent <= 1.0,
+         "cards_in_bitmap_threshold_percent (%1.2f) out of range", cards_in_bitmap_threshold_percent);
+
+  assert(cards_in_howl_threshold_percent >= 0.0 && cards_in_howl_threshold_percent <= 1.0,
+         "cards_in_howl_threshold_percent (%1.2f) out of range", cards_in_howl_threshold_percent);
+
   assert(is_power_of_2(_max_cards_in_card_set),
          "max_cards_in_card_set must be a power of 2: %u", _max_cards_in_card_set);
   assert(_max_cards_in_card_set <= G1CardSetContainer::cards_per_region_limit(),
          "Specified number of cards (%u) exceeds maximum representable (%u)",
          _max_cards_in_card_set, G1CardSetContainer::cards_per_region_limit());
+
   assert(_cards_in_howl_bitmap_threshold <= _max_cards_in_howl_bitmap,
          "Threshold to coarsen Howl Bitmap to Howl Full (%u) must be "
          "smaller than or equal to max number of cards in Howl bitmap (%u)",
