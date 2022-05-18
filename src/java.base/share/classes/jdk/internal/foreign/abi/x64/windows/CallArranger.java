@@ -56,6 +56,7 @@ import static jdk.internal.foreign.abi.x64.X86_64Architecture.*;
  * This includes taking care of synthetic arguments like pointers to return buffers for 'in-memory' returns.
  */
 public class CallArranger {
+    public static final int MAX_REGISTER_ARGUMENTS = 4;
     private static final int STACK_SLOT_SIZE = 8;
 
     private static final ABIDescriptor CWindows = X86_64Architecture.abiFor(
@@ -160,7 +161,7 @@ public class CallArranger {
         }
 
         VMStorage nextStorage(int type, MemoryLayout layout) {
-            if (nRegs >= Windowsx64Linker.MAX_REGISTER_ARGUMENTS) {
+            if (nRegs >= MAX_REGISTER_ARGUMENTS) {
                 assert forArguments : "no stack returns";
                 // stack
                 long alignment = Math.max(SharedUtils.alignment(layout, true), STACK_SLOT_SIZE);

@@ -24,6 +24,18 @@
  */
 package jdk.internal.foreign.abi;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.JavaLangInvokeAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.CABI;
+import jdk.internal.foreign.MemoryAddressImpl;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.Scoped;
+import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
+import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
+import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
+import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
+
 import java.lang.foreign.Addressable;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
@@ -36,55 +48,22 @@ import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.VaList;
 import java.lang.foreign.ValueLayout;
-import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
-import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
-import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.JavaLangInvokeAccess;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.Scoped;
-import jdk.internal.foreign.CABI;
-import jdk.internal.foreign.MemoryAddressImpl;
-import jdk.internal.foreign.Utils;
-import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
-import jdk.internal.vm.annotation.ForceInline;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Reference;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.lang.invoke.MethodHandles.collectArguments;
-import static java.lang.invoke.MethodHandles.constant;
-import static java.lang.invoke.MethodHandles.dropArguments;
-import static java.lang.invoke.MethodHandles.dropReturn;
-import static java.lang.invoke.MethodHandles.empty;
-import static java.lang.invoke.MethodHandles.foldArguments;
-import static java.lang.invoke.MethodHandles.identity;
-import static java.lang.invoke.MethodHandles.insertArguments;
-import static java.lang.invoke.MethodHandles.permuteArguments;
-import static java.lang.invoke.MethodHandles.tryFinally;
+import static java.lang.foreign.ValueLayout.*;
+import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
-import static java.lang.foreign.ValueLayout.JAVA_BOOLEAN;
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_CHAR;
-import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
-import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
-import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 
 public class SharedUtils {
 
@@ -94,13 +73,7 @@ public class SharedUtils {
     private static final MethodHandle MH_ALLOC_BUFFER;
     private static final MethodHandle MH_BASEADDRESS;
     private static final MethodHandle MH_BUFFER_COPY;
-    private static final MethodHandle MH_MAKE_CONTEXT_NO_ALLOCATOR;
-    private static final MethodHandle MH_MAKE_CONTEXT_BOUNDED_ALLOCATOR;
-    private static final MethodHandle MH_CLOSE_CONTEXT;
     private static final MethodHandle MH_REACHBILITY_FENCE;
-    private static final MethodHandle MH_HANDLE_UNCAUGHT_EXCEPTION;
-    private static final MethodHandle ACQUIRE_MH;
-    private static final MethodHandle RELEASE_MH;
 
     static {
         try {
@@ -111,20 +84,8 @@ public class SharedUtils {
                     methodType(MemoryAddress.class));
             MH_BUFFER_COPY = lookup.findStatic(SharedUtils.class, "bufferCopy",
                     methodType(MemoryAddress.class, MemoryAddress.class, MemorySegment.class));
-            MH_MAKE_CONTEXT_NO_ALLOCATOR = lookup.findStatic(Binding.Context.class, "ofScope",
-                    methodType(Binding.Context.class));
-            MH_MAKE_CONTEXT_BOUNDED_ALLOCATOR = lookup.findStatic(Binding.Context.class, "ofBoundedAllocator",
-                    methodType(Binding.Context.class, long.class));
-            MH_CLOSE_CONTEXT = lookup.findVirtual(Binding.Context.class, "close",
-                    methodType(void.class));
             MH_REACHBILITY_FENCE = lookup.findStatic(Reference.class, "reachabilityFence",
                     methodType(void.class, Object.class));
-            MH_HANDLE_UNCAUGHT_EXCEPTION = lookup.findStatic(SharedUtils.class, "handleUncaughtException",
-                    methodType(void.class, Throwable.class));
-            ACQUIRE_MH = MethodHandles.lookup().findStatic(SharedUtils.class, "acquire",
-                    MethodType.methodType(void.class, Scoped[].class));
-            RELEASE_MH = MethodHandles.lookup().findStatic(SharedUtils.class, "release",
-                    MethodType.methodType(void.class, Scoped[].class));
         } catch (ReflectiveOperationException e) {
             throw new BootstrapMethodError(e);
         }
@@ -235,6 +196,10 @@ public class SharedUtils {
 
         if (dropReturn) { // no handling for return value, need to drop it
             target = dropReturn(target);
+        } else {
+            // adjust return type so it matches the inferred type of the effective
+            // function descriptor
+            target = target.asType(target.type().changeReturnType(Addressable.class));
         }
 
         return target;
@@ -346,186 +311,6 @@ public class SharedUtils {
         if (t != null) {
             t.printStackTrace();
             JLA.exit(1);
-        }
-    }
-
-    static MethodHandle wrapWithAllocator(MethodHandle specializedHandle,
-                                          int allocatorPos, long allocationSize,
-                                          boolean upcall) {
-        // insert try-finally to close the NativeScope used for Binding.Copy
-        MethodHandle closer;
-        int insertPos;
-        if (specializedHandle.type().returnType() == void.class) {
-            if (!upcall) {
-                closer = empty(methodType(void.class, Throwable.class)); // (Throwable) -> void
-            } else {
-                closer = MH_HANDLE_UNCAUGHT_EXCEPTION;
-            }
-            insertPos = 1;
-        } else {
-            closer = identity(specializedHandle.type().returnType()); // (V) -> V
-            if (!upcall) {
-                closer = dropArguments(closer, 0, Throwable.class); // (Throwable, V) -> V
-            } else {
-                closer = collectArguments(closer, 0, MH_HANDLE_UNCAUGHT_EXCEPTION); // (Throwable, V) -> V
-            }
-            insertPos = 2;
-        }
-
-        // downcalls get the leading SegmentAllocator param as well
-        if (!upcall) {
-            closer = dropArguments(closer, insertPos++, SegmentAllocator.class); // (Throwable, V?, SegmentAllocator, Addressable) -> V/void
-        }
-
-        closer = collectArguments(closer, insertPos, MH_CLOSE_CONTEXT); // (Throwable, V?, SegmentAllocator?, BindingContext) -> V/void
-
-        MethodHandle contextFactory;
-
-        if (allocationSize > 0) {
-            contextFactory = MethodHandles.insertArguments(MH_MAKE_CONTEXT_BOUNDED_ALLOCATOR, 0, allocationSize);
-        } else if (upcall) {
-            contextFactory = MH_MAKE_CONTEXT_NO_ALLOCATOR;
-        } else {
-            // this path is probably never used now, since ProgrammableInvoker never calls this routine with bufferCopySize == 0
-            contextFactory = constant(Binding.Context.class, Binding.Context.DUMMY);
-        }
-
-        specializedHandle = tryFinally(specializedHandle, closer);
-        specializedHandle = collectArguments(specializedHandle, allocatorPos, contextFactory);
-        return specializedHandle;
-    }
-
-    @ForceInline
-    @SuppressWarnings("fallthrough")
-    public static void acquire(Scoped[] args) {
-        MemorySessionImpl scope4 = null;
-        MemorySessionImpl scope3 = null;
-        MemorySessionImpl scope2 = null;
-        MemorySessionImpl scope1 = null;
-        MemorySessionImpl scope0 = null;
-        switch (args.length) {
-            default:
-                // slow path, acquire all remaining addressable parameters in isolation
-                for (int i = 5 ; i < args.length ; i++) {
-                    acquire(args[i].sessionImpl());
-                }
-            // fast path, acquire only scopes not seen in other parameters
-            case 5:
-                scope4 = args[4].sessionImpl();
-                acquire(scope4);
-            case 4:
-                scope3 = args[3].sessionImpl();
-                if (scope3 != scope4)
-                    acquire(scope3);
-            case 3:
-                scope2 = args[2].sessionImpl();
-                if (scope2 != scope3 && scope2 != scope4)
-                    acquire(scope2);
-            case 2:
-                scope1 = args[1].sessionImpl();
-                if (scope1 != scope2 && scope1 != scope3 && scope1 != scope4)
-                    acquire(scope1);
-            case 1:
-                scope0 = args[0].sessionImpl();
-                if (scope0 != scope1 && scope0 != scope2 && scope0 != scope3 && scope0 != scope4)
-                    acquire(scope0);
-            case 0: break;
-        }
-    }
-
-    @ForceInline
-    @SuppressWarnings("fallthrough")
-    public static void release(Scoped[] args) {
-        MemorySessionImpl scope4 = null;
-        MemorySessionImpl scope3 = null;
-        MemorySessionImpl scope2 = null;
-        MemorySessionImpl scope1 = null;
-        MemorySessionImpl scope0 = null;
-        switch (args.length) {
-            default:
-                // slow path, release all remaining addressable parameters in isolation
-                for (int i = 5 ; i < args.length ; i++) {
-                    release(args[i].sessionImpl());
-                }
-            // fast path, release only scopes not seen in other parameters
-            case 5:
-                scope4 = args[4].sessionImpl();
-                release(scope4);
-            case 4:
-                scope3 = args[3].sessionImpl();
-                if (scope3 != scope4)
-                    release(scope3);
-            case 3:
-                scope2 = args[2].sessionImpl();
-                if (scope2 != scope3 && scope2 != scope4)
-                    release(scope2);
-            case 2:
-                scope1 = args[1].sessionImpl();
-                if (scope1 != scope2 && scope1 != scope3 && scope1 != scope4)
-                    release(scope1);
-            case 1:
-                scope0 = args[0].sessionImpl();
-                if (scope0 != scope1 && scope0 != scope2 && scope0 != scope3 && scope0 != scope4)
-                    release(scope0);
-            case 0: break;
-        }
-    }
-
-    @ForceInline
-    private static void acquire(MemorySessionImpl session) {
-        session.acquire0();
-    }
-
-    @ForceInline
-    private static void release(MemorySessionImpl session) {
-        session.release0();
-    }
-
-    /*
-     * This method adds a try/finally block to a downcall method handle, to make sure that all by-reference
-     * parameters (including the target address of the native function) are kept alive for the duration of
-     * the downcall.
-     */
-    public static MethodHandle wrapDowncall(MethodHandle downcallHandle, FunctionDescriptor descriptor) {
-        boolean hasReturn = descriptor.returnLayout().isPresent();
-        MethodHandle tryBlock = downcallHandle;
-        MethodHandle cleanup = hasReturn ?
-                MethodHandles.identity(downcallHandle.type().returnType()) :
-                MethodHandles.empty(MethodType.methodType(void.class));
-        int addressableCount = 0;
-        List<UnaryOperator<MethodHandle>> adapters = new ArrayList<>();
-        for (int i = 0 ; i < downcallHandle.type().parameterCount() ; i++) {
-            Class<?> ptype = downcallHandle.type().parameterType(i);
-            if (ptype == Addressable.class) {
-                addressableCount++;
-            } else {
-                int pos = i;
-                adapters.add(mh -> dropArguments(mh, pos, ptype));
-            }
-        }
-
-        if (addressableCount > 0) {
-            cleanup = dropArguments(cleanup, 0, Throwable.class);
-
-            MethodType adapterType = MethodType.methodType(void.class);
-            for (int i = 0 ; i < addressableCount ; i++) {
-                adapterType = adapterType.appendParameterTypes(Addressable.class);
-            }
-
-            MethodHandle acquireHandle = ACQUIRE_MH.asCollector(Scoped[].class, addressableCount).asType(adapterType);
-            MethodHandle releaseHandle = RELEASE_MH.asCollector(Scoped[].class, addressableCount).asType(adapterType);
-
-            for (UnaryOperator<MethodHandle> adapter : adapters) {
-                acquireHandle = adapter.apply(acquireHandle);
-                releaseHandle = adapter.apply(releaseHandle);
-            }
-
-            tryBlock = foldArguments(tryBlock, acquireHandle);
-            cleanup = collectArguments(cleanup, hasReturn ? 2 : 1, releaseHandle);
-
-            return tryFinally(tryBlock, cleanup);
-        } else {
-            return downcallHandle;
         }
     }
 
