@@ -4762,6 +4762,7 @@ void C2_MacroAssembler::float_class_check(int opcode, Register dst, XMMRegister 
     default:
       assert(false, "%s", NodeClassNames[opcode]);
   }
+  andl(dst, 0xff);
 }
 
 void C2_MacroAssembler::float_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp) {
@@ -4798,7 +4799,6 @@ void C2_MacroAssembler::double_class_check(int opcode, XMMRegister src, Register
   andq(temp, temp1);
   mov64(temp1, POS_INF);
   cmpq(temp, temp1);
-
   switch (opcode) {
     case Op_IsFiniteD:
       setb(Assembler::below, dst);
@@ -4812,6 +4812,7 @@ void C2_MacroAssembler::double_class_check(int opcode, XMMRegister src, Register
     default:
       assert(false, "%s", NodeClassNames[opcode]);
   }
+  andq(dst, 0xffL);
 }
 
 
