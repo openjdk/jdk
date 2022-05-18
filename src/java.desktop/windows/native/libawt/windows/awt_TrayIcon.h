@@ -52,7 +52,6 @@ public:
 
     virtual void Dispose();
 
-    BOOL SendTrayMessage(DWORD dwMessage);
     void LinkObjects(JNIEnv *env, jobject peer);
     void UnlinkObjects();
 
@@ -153,6 +152,8 @@ private:
         AwtTrayIcon* m_trayIcon;
         TrayIconListItem* m_next;
     };
+
+    BOOL SendTrayMessage(DWORD dwMessage);
 
     void AddTrayIcon();
     void ModifyTrayIcon();
