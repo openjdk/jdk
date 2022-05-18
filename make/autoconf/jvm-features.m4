@@ -44,7 +44,7 @@
 m4_define(jvm_features_valid, m4_normalize( \
     ifdef([custom_jvm_features_valid], custom_jvm_features_valid) \
     \
-    cds compiler1 compiler2 dtrace epsilongc g1gc jfr jni-check \
+    cds compiler1 compiler2 dtrace epsilongc g1gc hardlse jfr jni-check \
     jvmci jvmti link-time-opt management minimal opt-size parallelgc \
     serialgc services shenandoahgc static-build vm-structs zero zgc \
 ))
@@ -61,6 +61,7 @@ m4_define(jvm_feature_desc_compiler2, [enable hotspot compiler C2])
 m4_define(jvm_feature_desc_dtrace, [enable dtrace support])
 m4_define(jvm_feature_desc_epsilongc, [include the epsilon (no-op) garbage collector])
 m4_define(jvm_feature_desc_g1gc, [include the G1 garbage collector])
+m4_define(jvm_feature_desc_hardlse, [use lse atomics instructions])
 m4_define(jvm_feature_desc_jfr, [enable JDK Flight Recorder (JFR)])
 m4_define(jvm_feature_desc_jni_check, [enable -Xcheck:jni support])
 m4_define(jvm_feature_desc_jvmci, [enable JVM Compiler Interface (JVMCI)])
@@ -438,6 +439,8 @@ AC_DEFUN([JVM_FEATURES_PREPARE_VARIANT],
   else
     JVM_FEATURES_VARIANT_FILTER="link-time-opt opt-size"
   fi
+  # Filter out hardlse feature by default
+  JVM_FEATURES_PLATFORM_FILTER="$JVM_FEATURES_PLATFORM_FILTER hardlse"
 ])
 
 ###############################################################################
