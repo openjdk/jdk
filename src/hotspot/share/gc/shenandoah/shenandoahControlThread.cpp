@@ -195,9 +195,18 @@ void ShenandoahControlThread::run_service() {
       // We should only be here if the regulator requested a cycle or if
       // there is an old generation mark in progress.
       if (_requested_gc_cause == GCCause::_shenandoah_concurrent_gc) {
+        if (_requested_generation == OLD && heap->doing_mixed_evacuations()) {
+          // If a request to start an old cycle arrived while an old cycle was running, but _before_
+          // it chose any regions for evacuation we don't want to start a new old cycle. Rather, we want
+          // the heuristic to run a young collection so that we can evacuate some old regions.
+          assert(!heap->is_concurrent_old_mark_in_progress(), "Should not be running mixed collections and concurrent marking.");
+          generation = YOUNG;
+        } else {
+          generation = _requested_generation;
+        }
+
         // preemption was requested or this is a regular cycle
         cause = GCCause::_shenandoah_concurrent_gc;
-        generation = _requested_generation;
         set_gc_mode(default_mode);
 
         // Don't start a new old marking if there is one already in progress.

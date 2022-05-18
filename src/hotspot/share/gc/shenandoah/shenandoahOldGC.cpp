@@ -132,6 +132,7 @@ void ShenandoahOldGC::op_final_mark() {
 
 bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+  assert(!heap->doing_mixed_evacuations(), "Should not start an old gc with pending mixed evacuations");
 
   if (!heap->is_concurrent_prep_for_mixed_evacuation_in_progress()) {
     // Skip over the initial phases of old collect if we're resuming mixed evacuation preparation.
