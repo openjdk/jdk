@@ -410,13 +410,13 @@ public class FtpURLConnection extends URLConnection {
     }
 
     /**
-     * Get the InputStream to retreive the remote file. It will issue the
+     * Get the InputStream to retrieve the remote file. It will issue the
      * "get" (or "dir") command to the ftp server.
      *
      * @return  the {@code InputStream} to the connection.
      *
      * @throws  IOException if already opened for output
-     * @throws  FtpProtocolException if errors occur during the transfert.
+     * @throws  FtpProtocolException if errors occur during the transfer.
      */
     @Override
     public InputStream getInputStream() throws IOException {
@@ -543,7 +543,7 @@ public class FtpURLConnection extends URLConnection {
      *
      * @throws  IOException if already opened for input or the URL
      *          points to a directory
-     * @throws  FtpProtocolException if errors occur during the transfert.
+     * @throws  FtpProtocolException if errors occur during the transfer.
      */
     @Override
     public OutputStream getOutputStream() throws IOException {
@@ -553,7 +553,7 @@ public class FtpURLConnection extends URLConnection {
 
         if (http != null) {
             OutputStream out = http.getOutputStream();
-            // getInputStream() is neccessary to force a writeRequests()
+            // getInputStream() is necessary to force a writeRequests()
             // on the http client.
             http.getInputStream();
             return out;

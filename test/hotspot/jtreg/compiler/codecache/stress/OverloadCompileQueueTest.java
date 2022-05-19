@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,19 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:CompileCommand=exclude,java.lang.Thread::sleep
+ *                   -XX:CompileCommand=exclude,jdk.internal.event.ThreadSleepEvent::*
+ *                   -XX:CompileCommand=exclude,jdk.internal.event.SleepEvent::*
+ *                   -XX:CompileCommand=exclude,jdk.internal.event.Event::*
  *                   -XX:-SegmentedCodeCache
  *                   compiler.codecache.stress.OverloadCompileQueueTest
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:CompileCommand=exclude,java.lang.Thread::sleep
+ *                   -XX:CompileCommand=exclude,jdk.internal.event.ThreadSleepEvent::*
+ *                   -XX:CompileCommand=exclude,jdk.internal.event.SleepEvent::*
+ *                   -XX:CompileCommand=exclude,jdk.internal.event.Event::*
  *                   -XX:+SegmentedCodeCache
  *                   compiler.codecache.stress.OverloadCompileQueueTest
  */

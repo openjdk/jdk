@@ -1384,7 +1384,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
       uint const region_idx = _ct->region_idx_for(card_ptr);
 
-      // The second clause must come after - the log buffers might contain cards to uncommited
+      // The second clause must come after - the log buffers might contain cards to uncommitted
       // regions.
       // This code may count duplicate entries in the log buffers (even if rare) multiple
       // times.

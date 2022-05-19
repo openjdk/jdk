@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,8 @@ import java.util.jar.*;
 final class ProviderVerifier {
 
     // The URL for the JAR file we want to verify.
-    private URL jarURL;
-    private Provider provider;
-    private boolean savePerms;
+    private final URL jarURL;
+    private final boolean savePerms;
     private CryptoPermissions appPerms = null;
 
     /**
@@ -72,7 +71,6 @@ final class ProviderVerifier {
      */
     ProviderVerifier(URL jarURL, Provider provider, boolean savePerms) {
         this.jarURL = jarURL;
-        this.provider = provider;
         this.savePerms = savePerms;
     }
 
@@ -94,7 +92,7 @@ final class ProviderVerifier {
         // construct a JAR URL so we can open a JarURLConnection
         // for verifying this provider.
         final URL url = jarURL.getProtocol().equalsIgnoreCase("jar")?
-                        jarURL : new URL("jar:" + jarURL.toString() + "!/");
+                        jarURL : new URL("jar:" + jarURL + "!/");
 
         JarFile jf = null;
         try {
@@ -103,19 +101,17 @@ final class ProviderVerifier {
             try {
                 @SuppressWarnings("removal")
                 var tmp = AccessController.doPrivileged(
-                         new PrivilegedExceptionAction<JarFile>() {
-                             public JarFile run() throws Exception {
-                                 JarURLConnection conn =
-                                     (JarURLConnection) url.openConnection();
-                                 // You could do some caching here as
-                                 // an optimization.
-                                 conn.setUseCaches(false);
-                                 return conn.getJarFile();
-                             }
-                         });
+                        (PrivilegedExceptionAction<JarFile>) () -> {
+                            JarURLConnection conn =
+                                (JarURLConnection) url.openConnection();
+                            // You could do some caching here as
+                            // an optimization.
+                            conn.setUseCaches(false);
+                            return conn.getJarFile();
+                        });
                 jf = tmp;
             } catch (java.security.PrivilegedActionException pae) {
-                throw new SecurityException("Cannot load " + url.toString(),
+                throw new SecurityException("Cannot load " + url,
                     pae.getCause());
             }
 
@@ -130,8 +126,7 @@ final class ProviderVerifier {
                     appPerms.load(jf.getInputStream(je));
                 } catch (Exception ex) {
                     JarException jex =
-                        new JarException("Cannot load/parse" +
-                            jarURL.toString());
+                        new JarException("Cannot load/parse" + jarURL);
                     jex.initCause(ex);
                     throw jex;
                 }

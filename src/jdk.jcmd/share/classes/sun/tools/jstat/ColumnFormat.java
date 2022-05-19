@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class ColumnFormat extends OptionFormat {
     public void validate() throws ParserException {
 
         // if we allow column spanning, then this method must change. it
-        // should allow null data statments
+        // should allow null data statements
 
         if (expression == null) {
             // current policy is that a data statement must be specified
@@ -66,7 +66,7 @@ public class ColumnFormat extends OptionFormat {
             throw new ParserException("Missing header statement in column " + number);
         }
         if (format == null) {
-            // if no formating is specified, then the format is set to output
+            // if no formatting is specified, then the format is set to output
             // the raw data.
             format="0";
         }

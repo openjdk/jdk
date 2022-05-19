@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,22 @@ final class OverridableResource {
         setSourceOrder(Source.values());
     }
 
+    Path getResourceDir() {
+        return resourceDir;
+    }
+
+    String getDefaultName() {
+        return defaultName;
+    }
+
+    Path getPublicName() {
+        return publicName;
+    }
+
+    Path getExternalPath() {
+        return externalPath;
+    }
+
     OverridableResource setSubstitutionData(Map<String, String> v) {
         if (v != null) {
             // Disconnect `v`
@@ -83,6 +99,13 @@ final class OverridableResource {
         } else {
             substitutionData = null;
         }
+        return this;
+    }
+
+    OverridableResource addSubstitutionDataEntry(String key, String value) {
+        var entry = Map.of(key, value);
+        Optional.ofNullable(substitutionData).ifPresentOrElse(v -> v.putAll(
+                entry), () -> setSubstitutionData(entry));
         return this;
     }
 
@@ -163,6 +186,10 @@ final class OverridableResource {
         });
     }
 
+    Source saveInFolder(Path folderPath) throws IOException {
+        return saveToFile(folderPath.resolve(getPublicName()));
+    }
+
     Source saveToFile(Path dest) throws IOException {
         if (dest == null) {
             return sendToConsumer(null);
@@ -240,12 +267,8 @@ final class OverridableResource {
             final Path customResource = resourceDir.resolve(resourceName);
             used = Files.exists(customResource);
             if (used && dest != null) {
-                final Path logResourceName;
-                if (logPublicName != null) {
-                    logResourceName = logPublicName.normalize();
-                } else {
-                    logResourceName = resourceName.normalize();
-                }
+                final Path logResourceName = Optional.ofNullable(logPublicName).orElse(
+                        resourceName).normalize();
 
                 Log.verbose(MessageFormat.format(I18N.getString(
                         "message.using-custom-resource"), getPrintableCategory(),
@@ -284,7 +307,7 @@ final class OverridableResource {
         // Order substitution data by the length of keys.
         // Longer keys go first.
         // This is needed to properly handle cases when one key is
-        // a subtring of another and try the later first.
+        // a substring of another and try the later first.
         var orderedEntries = substitutionData.entrySet().stream()
                 .sorted(Map.Entry.<String, String>comparingByKey(
                         Comparator.comparingInt(String::length)).reversed())
@@ -298,7 +321,7 @@ final class OverridableResource {
                 String newResult = result.replace(entry.getKey(),
                         Optional.ofNullable(entry.getValue()).orElse(""));
                 if (!newResult.equals(result)) {
-                    // Substitution occured.
+                    // Substitution occurred.
                     // Remove the matching substitution key from the list and
                     // go over the list of substitution entries again.
                     if (workEntries == orderedEntries) {

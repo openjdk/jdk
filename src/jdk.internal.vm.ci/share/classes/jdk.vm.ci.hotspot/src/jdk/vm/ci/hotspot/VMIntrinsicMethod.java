@@ -30,9 +30,9 @@ import jdk.vm.ci.meta.Signature;
 public final class VMIntrinsicMethod {
 
     /**
-     * The name of the class declaring the intrinsified method. The name is in
-     * <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.2.1">class
-     * file format</a> (e.g., {@code "java/lang/Thread"} instead of {@code "java.lang.Thread"}).
+     * The name of the class declaring the intrinsified method. The name is in class file format
+     * (see JVMS {@jvms 4.2.1}). For example, {@code "java/lang/Thread"} instead of
+     * {@code "java.lang.Thread"}.
      */
     public final String declaringClass;
 

@@ -27,7 +27,7 @@
 //----------REGISTER DEFINITION BLOCK------------------------------------------
 // This information is used by the matcher and the register allocator to
 // describe individual registers and classes of registers within the target
-// archtecture.
+// architecture.
 
 register %{
 //----------Architecture Description Register Definitions----------------------
@@ -486,12 +486,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   if (this->ideal_Opcode() != Op_CallLeafVector) {
     offset += clear_avx_size();
   }
-  return offset;
-}
-
-int MachCallNativeNode::ret_addr_offset() {
-  int offset = 13; // movq r10,#addr; callq (r10)
-  offset += clear_avx_size();
   return offset;
 }
 //
@@ -2152,19 +2146,7 @@ encode %{
     MacroAssembler _masm(&cbuf);
     __ mov64(r10, (int64_t) $meth$$method);
     __ call(r10);
-  %}
-
-  enc_class Java_To_Interpreter(method meth)
-  %{
-    // CALL Java_To_Interpreter
-    // This is the instruction starting address for relocation info.
-    cbuf.set_insts_mark();
-    $$$emit8$primary;
-    // CALL directly to the runtime
-    emit_d32_reloc(cbuf,
-                   (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
-                   runtime_call_Relocation::spec(),
-                   RELOC_DISP32);
+    __ post_call_nop();
   %}
 
   enc_class Java_Static_Call(method meth)
@@ -2172,6 +2154,7 @@ encode %{
     // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to
     // determine who we intended to call.
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     $$$emit8$primary;
 
@@ -2193,31 +2176,14 @@ encode %{
         return;
       }
     }
+    _masm.clear_inst_mark();
+    __ post_call_nop();
   %}
 
   enc_class Java_Dynamic_Call(method meth) %{
     MacroAssembler _masm(&cbuf);
     __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
-  %}
-
-  enc_class Java_Compiled_Call(method meth)
-  %{
-    // JAVA COMPILED CALL
-    int disp = in_bytes(Method:: from_compiled_offset());
-
-    // XXX XXX offset is 128 is 1.5 NON-PRODUCT !!!
-    // assert(-0x80 <= disp && disp < 0x80, "compiled_code_offset isn't small");
-
-    // callq *disp(%rax)
-    cbuf.set_insts_mark();
-    $$$emit8$primary;
-    if (disp < 0x80) {
-      emit_rm(cbuf, 0x01, $secondary, RAX_enc); // R/M byte
-      emit_d8(cbuf, disp); // Displacement
-    } else {
-      emit_rm(cbuf, 0x02, $secondary, RAX_enc); // R/M byte
-      emit_d32(cbuf, disp); // Displacement
-    }
+    __ post_call_nop();
   %}
 
   enc_class reg_opc_imm(rRegI dst, immI8 shift)
@@ -2790,10 +2756,10 @@ encode %{
 //         Region 6-7 is determined per call site.
 // Note 2: If the calling convention leaves holes in the incoming argument
 //         area, those holes are owned by SELF.  Holes in the outgoing area
-//         are owned by the CALLEE.  Holes should not be nessecary in the
+//         are owned by the CALLEE.  Holes should not be necessary in the
 //         incoming area, as the Java calling convention is completely under
 //         the control of the AD file.  Doubles can be sorted and packed to
-//         avoid holes.  Holes in the outgoing arguments may be nessecary for
+//         avoid holes.  Holes in the outgoing arguments may be necessary for
 //         varargs C calling conventions.
 // Note 3: Region 0-3 is even aligned, with pad2 as needed.  Region 3-5 is
 //         even aligned with pad0 as needed.
@@ -3243,7 +3209,7 @@ operand immL_32bits()
   interface(CONST_INTER);
 %}
 
-// Int Immediate: 2^n-1, postive
+// Int Immediate: 2^n-1, positive
 operand immI_Pow2M1()
 %{
   predicate((n->get_int() > 0)
@@ -4272,7 +4238,7 @@ operand stackSlotL(sRegL reg)
 // the flags (produced by the Cmp) specifies the coding of the comparison op
 // by matching a specific subtype of Bool operand below, such as cmpOpU.
 
-// Comparision Code
+// Comparison Code
 operand cmpOp()
 %{
   match(Bool);
@@ -13256,18 +13222,6 @@ instruct CallLeafDirectVector(method meth)
   ins_pipe(pipe_slow);
 %}
 
-//
-instruct CallNativeDirect(method meth)
-%{
-  match(CallNative);
-  effect(USE meth);
-
-  ins_cost(300);
-  format %{ "call_native " %}
-  ins_encode(clear_avx, Java_To_Runtime(meth));
-  ins_pipe(pipe_slow);
-%}
-
 // Call runtime without safepoint
 instruct CallLeafNoFPDirect(method meth)
 %{
@@ -13416,7 +13370,7 @@ instruct tlsLoadP(r15_RegP dst) %{
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch ( incI_rReg movI );
 //   // require that the destination register of the increment
 //   // match the destination register of the move

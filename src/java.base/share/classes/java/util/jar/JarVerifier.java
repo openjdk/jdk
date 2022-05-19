@@ -672,7 +672,7 @@ class JarVerifier {
              * only about the asserted signatures. Verification of
              * signature validity happens via the JarEntry apis.
              */
-            signerMap = new HashMap<>(verifiedSigners.size() + sigFileSigners.size());
+            signerMap = HashMap.newHashMap(verifiedSigners.size() + sigFileSigners.size());
             signerMap.putAll(verifiedSigners);
             signerMap.putAll(sigFileSigners);
         }

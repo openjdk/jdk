@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class Packet extends Object {
         int b3 = b[3] & 0xff;
         int len = ((b0 << 24) | (b1 << 16) | (b2 << 8) | (b3 << 0));
         if (len != b.length) {
-            throw new IOException("length size mis-match");
+            throw new IOException("length size mismatch");
         }
 
         int b4 = b[4] & 0xff;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,11 +201,12 @@ class ConstantPool : public Metadata {
 
   void copy_fields(const ConstantPool* orig);
 
-  // Redefine classes support.  If a method refering to this constant pool
+  // Redefine classes support.  If a method referring to this constant pool
   // is on the executing stack, or as a handle in vm code, this constant pool
   // can't be removed from the set of previous versions saved in the instance
   // class.
-  bool on_stack() const                      { return (_flags &_on_stack) != 0; }
+  bool on_stack() const;
+  bool is_maybe_on_continuation_stack() const;
   void set_on_stack(const bool value);
 
   // Faster than MetaspaceObj::is_shared() - used by set_on_stack()
@@ -885,7 +886,7 @@ class ConstantPool : public Metadata {
   void deallocate_contents(ClassLoaderData* loader_data);
   void release_C_heap_structures();
 
-  // JVMTI accesss - GetConstantPool, RetransformClasses, ...
+  // JVMTI access - GetConstantPool, RetransformClasses, ...
   friend class JvmtiConstantPoolReconstituter;
 
  private:

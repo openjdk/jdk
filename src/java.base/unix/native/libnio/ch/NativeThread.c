@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,13 +72,13 @@ Java_sun_nio_ch_NativeThread_init(JNIEnv *env, jclass cl)
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_NativeThread_current(JNIEnv *env, jclass cl)
+Java_sun_nio_ch_NativeThread_current0(JNIEnv *env, jclass cl)
 {
     return (jlong)pthread_self();
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_NativeThread_signal(JNIEnv *env, jclass cl, jlong thread)
+Java_sun_nio_ch_NativeThread_signal0(JNIEnv *env, jclass cl, jlong thread)
 {
     int ret;
     ret = pthread_kill((pthread_t)thread, INTERRUPT_SIGNAL);

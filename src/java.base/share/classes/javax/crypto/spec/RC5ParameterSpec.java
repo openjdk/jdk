@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,9 @@ import java.security.spec.AlgorithmParameterSpec;
 public class RC5ParameterSpec implements AlgorithmParameterSpec {
 
     private byte[] iv = null;
-    private int version;
-    private int rounds;
-    private int wordSize; // the word size in bits
+    private final int version;
+    private final int rounds;
+    private final int wordSize; // the word size in bits
 
     /**
      * Constructs a parameter set for RC5 from the given version, number of
@@ -180,10 +180,9 @@ public class RC5ParameterSpec implements AlgorithmParameterSpec {
         if (obj == this) {
             return true;
         }
-        if (!(obj instanceof RC5ParameterSpec)) {
+        if (!(obj instanceof RC5ParameterSpec other)) {
             return false;
         }
-        RC5ParameterSpec other = (RC5ParameterSpec) obj;
 
         return ((version == other.version) &&
                 (rounds == other.rounds) &&

@@ -64,16 +64,16 @@ public:
   // Constructor to support creation from a LogTarget instance.
   //
   // LogTarget(Debug, gc) log;
-  // LogStreamBase(log) stream;
+  // LogStream(log) stream;
   template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
   LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier) :
       _log_handle(level, &LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()) {}
 
   // Constructor to support creation from typed (likely NULL) pointer. Mostly used by the logging framework.
   //
-  // LogStreamBase stream(log.debug());
+  // LogStream stream(log.debug());
   //  or
-  // LogStreamBase stream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)NULL);
+  // LogStream stream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)NULL);
   template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
   LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>* type_carrier) :
       _log_handle(level, &LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()) {}
@@ -85,13 +85,13 @@ public:
   //
   // LogTarget(Debug, gc) log;
   // LogTargetHandle(log) handle;
-  // LogStreamBase stream(handle);
+  // LogStream stream(handle);
   LogStream(LogTargetHandle handle) : _log_handle(handle) {}
 
   // Constructor to support creation from a log level and tagset.
   //
-  // LogStreamBase(level, tageset);
-  LogStream(LogLevelType level, LogTagSet* tagset) : _log_handle(level, tagset) {}
+  // LogStream(level, tageset);
+  LogStream(LogLevelType level, LogTagSet* const tagset) : _log_handle(level, tagset) {}
 
   bool is_enabled() const {
     return _log_handle.is_enabled();

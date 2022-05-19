@@ -124,7 +124,7 @@ int CgroupV2Subsystem::cpu_period() {
 
 /* memory_usage_in_bytes
  *
- * Return the amount of used memory used by this cgroup and decendents
+ * Return the amount of used memory used by this cgroup and descendents
  *
  * return:
  *    memory usage in bytes or

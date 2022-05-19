@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ void MacroAssembler::atomic_cas_bool(Register oldval, Register newval, Register 
     // with these arguments and results
     //
     // input:
-    //  r0 = oldval, r1 = newval, r2 = ptr, lr = return adress
+    //  r0 = oldval, r1 = newval, r2 = ptr, lr = return address
     // output:
     //  r0 = 0 carry set on success
     //  r0 != 0 carry clear on failure
@@ -181,7 +181,7 @@ void MacroAssembler::atomic_cas(Register temp1, Register temp2, Register oldval,
     // This is a special routine at a fixed address 0xffff0fc0
     //
     // input:
-    //  r0 = oldval, r1 = newval, r2 = ptr, lr = return adress
+    //  r0 = oldval, r1 = newval, r2 = ptr, lr = return address
     // output:
     //  r0 = 0 carry set on success
     //  r0 != 0 carry clear on failure
@@ -270,7 +270,7 @@ void MacroAssembler::atomic_cas64(Register memval_lo, Register memval_hi, Regist
     //
     // input:
     //  r0 = (long long *)oldval, r1 = (long long *)newval,
-    //  r2 = ptr, lr = return adress
+    //  r2 = ptr, lr = return address
     // output:
     //  r0 = 0 carry set on success
     //  r0 != 0 carry clear on failure

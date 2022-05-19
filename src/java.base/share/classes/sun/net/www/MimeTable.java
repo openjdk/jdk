@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ public class MimeTable implements FileNameMap {
         }
 
         i = fname.lastIndexOf('.');
-        // REMIND: OS specific delimters appear here
+        // REMIND: OS specific delimiters appear here
         i = Math.max(i, fname.lastIndexOf('/'));
         i = Math.max(i, fname.lastIndexOf('?'));
 
