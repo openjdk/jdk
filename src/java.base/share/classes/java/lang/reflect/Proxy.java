@@ -495,13 +495,14 @@ public class Proxy implements java.io.Serializable {
         private static final ClassLoaderValue<Boolean> reverseProxyCache =
             new ClassLoaderValue<>();
 
-        private record ProxyContext(Module module, String pkg, boolean packagePrivate) {}
+        private record ProxyClassContext(Module module, String pkg, int accessFlags) { }
 
-        private static Class<?> defineProxyClass(ProxyContext context, List<Class<?>> interfaces) {
+        private static Class<?> defineProxyClass(ProxyClassContext context, List<Class<?>> interfaces) {
             String proxyPkg = context.pkg;
+            int accessFlags = context.accessFlags;
             Module m = context.module;
 
-            if (!context.packagePrivate) {
+            if (Modifier.isPublic(accessFlags)) {
                 // all proxy interfaces are public
                 if (!m.isNamed())
                     throw new InternalError("unnamed module: " + m);
@@ -530,7 +531,7 @@ public class Proxy implements java.io.Serializable {
             /*
              * Generate the specified proxy class.
              */
-            int accessFlags = (context.packagePrivate ? 0 : Modifier.PUBLIC) | Modifier.FINAL;
+            accessFlags |= Modifier.FINAL;
             byte[] proxyClassFile = ProxyGenerator.generateProxyClass(loader, proxyName, interfaces, accessFlags);
             try {
                 Class<?> pc = JLA.defineClass(loader, proxyName, proxyClassFile,
@@ -551,7 +552,7 @@ public class Proxy implements java.io.Serializable {
 
         /**
          * Test if given class is a class defined by
-         * {@link #defineProxyClass(ProxyContext, List)}
+         * {@link #defineProxyClass(ProxyClassContext, List)}
          */
         static boolean isProxyClass(Class<?> c) {
             return Objects.equals(reverseProxyCache.sub(c).get(c.getClassLoader()),
@@ -607,7 +608,7 @@ public class Proxy implements java.io.Serializable {
         // ProxyBuilder instance members start here....
 
         private final List<Class<?>> interfaces;
-        private final ProxyContext context;
+        private final ProxyClassContext context;
         ProxyBuilder(ClassLoader loader, List<Class<?>> interfaces) {
             if (!VM.isModuleSystemInited()) {
                 throw new InternalError("Proxy is not supported until "
@@ -624,7 +625,7 @@ public class Proxy implements java.io.Serializable {
             validateProxyInterfaces(loader, interfaces, refTypes);
 
             this.interfaces = interfaces;
-            this.context = setupContext(loader, interfaces, refTypes);
+            this.context = proxyClassContext(loader, interfaces, refTypes);
             assert getLoader(context.module) == loader;
         }
 
@@ -763,9 +764,9 @@ public class Proxy implements java.io.Serializable {
          *
          * Reads edge and qualified exports are added for dynamic module to access.
          */
-        private static ProxyContext setupContext(ClassLoader loader,
-                                                 List<Class<?>> interfaces,
-                                                 Set<Class<?>> refTypes) {
+        private static ProxyClassContext proxyClassContext(ClassLoader loader,
+                                                           List<Class<?>> interfaces,
+                                                           Set<Class<?>> refTypes) {
             Map<Class<?>, Module> packagePrivateTypes = new HashMap<>();
             boolean nonExported = false;
 
@@ -823,13 +824,12 @@ public class Proxy implements java.io.Serializable {
                     Modules.addOpens(targetModule, targetPackageName, Proxy.class.getModule());
                 }
                 // return the module of the package-private interface
-                return new ProxyContext(targetModule, targetPackageName, true);
+                return new ProxyClassContext(targetModule, targetPackageName, 0);
             }
 
             // All proxy interfaces are public.  So maps to a dynamic proxy module
             // and add reads edge and qualified exports, if necessary
-            var context = getDynamicModuleContext(loader, nonExported);
-            Module targetModule = context.module;
+            Module targetModule = getDynamicModule(loader);
 
             // set up proxy class access to proxy interfaces and types
             // referenced in the method signature
@@ -838,7 +838,10 @@ public class Proxy implements java.io.Serializable {
             for (Class<?> c : types) {
                 ensureAccess(targetModule, c);
             }
-            return context;
+
+            var pkgName = nonExported ? PROXY_PACKAGE_PREFIX + '.' + targetModule.getName()
+                                      : targetModule.getName();
+            return new ProxyClassContext(targetModule, pkgName, Modifier.PUBLIC);
         }
 
         /*
@@ -890,8 +893,8 @@ public class Proxy implements java.io.Serializable {
          *
          * Each class loader will have one dynamic module.
          */
-        private static ProxyContext getDynamicModuleContext(ClassLoader loader, boolean nonExported) {
-            var module = dynProxyModules.computeIfAbsent(loader, (ld, clv) -> {
+        private static Module getDynamicModule(ClassLoader loader) {
+            return dynProxyModules.computeIfAbsent(loader, (ld, clv) -> {
                 // create a dynamic module and setup module access
                 String mn = "jdk.proxy" + counter.incrementAndGet();
                 String pn = PROXY_PACKAGE_PREFIX + "." + mn;
@@ -908,9 +911,6 @@ public class Proxy implements java.io.Serializable {
                 Modules.addOpens(m, mn, Proxy.class.getModule());
                 return m;
             });
-            return new ProxyContext(module, nonExported
-                    ? PROXY_PACKAGE_PREFIX + '.' + module.getName()
-                    : module.getName(), false);
         }
     }
 
