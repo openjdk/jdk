@@ -159,8 +159,8 @@ void ShenandoahConcurrentRootScanner::roots_do(OopClosure* oops, uint worker_id)
 
     {
       ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
-      CodeBlobToOopClosure blobs(oops, !CodeBlobToOopClosure::FixRelocations);
-      _codecache_snapshot->parallel_blobs_do(&blobs);
+      ShenandoahNMethodClosure nm_cl(oops);
+      _codecache_snapshot->concurrent_nmethods_do(&nm_cl);
     }
   }
 

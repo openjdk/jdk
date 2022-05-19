@@ -244,7 +244,13 @@ public:
     if (_bs->is_armed(nm)) {
       ShenandoahEvacOOMScope oom_evac_scope;
       ShenandoahNMethod::heal_nmethod_metadata(nm_data);
-      _bs->disarm(nm);
+      if (Continuations::enabled()) {
+        // Loom needs to know about visited nmethods. Arm the nmethods to get
+        // mark_as_maybe_on_continuation() callbacks when they are used again.
+        _bs->arm(nm, 0);
+      } else {
+        _bs->disarm(nm);
+      }
     }
 
     // Clear compiled ICs and exception caches

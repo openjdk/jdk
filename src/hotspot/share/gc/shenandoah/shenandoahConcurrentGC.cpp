@@ -26,6 +26,7 @@
 
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
@@ -45,6 +46,7 @@
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "memory/allocation.hpp"
 #include "prims/jvmtiTagMap.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
@@ -545,6 +547,9 @@ void ShenandoahConcurrentGC::op_init_mark() {
     ShenandoahCodeRoots::arm_nmethods();
   }
 
+  // Tell the sweeper that we start a marking cycle.
+  Continuations::on_gc_marking_cycle_start();
+
   ShenandoahStackWatermark::change_epoch_id();
   if (ShenandoahPacing) {
     heap->pacer()->setup_for_mark();
@@ -571,6 +576,11 @@ void ShenandoahConcurrentGC::op_final_mark() {
   if (!heap->cancelled_gc()) {
     _mark.finish_mark();
     assert(!heap->cancelled_gc(), "STW mark cannot OOM");
+
+    // Tell the sweeper that we finished a marking cycle.
+    // Unlike other GCs, we do not arm the nmethods
+    // when marking terminates.
+    Continuations::on_gc_marking_cycle_finish();
 
     // Notify JVMTI that the tagmap table will need cleaning.
     JvmtiTagMap::set_needs_cleaning();

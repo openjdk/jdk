@@ -116,6 +116,10 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }
   virtual bool do_metadata()        { return false; }
+  virtual void do_nmethod(nmethod* nm) {
+    assert(!is_weak(), "Can't handle weak marking of nmethods");
+    nm->run_nmethod_entry_barrier();
+  }
 };
 
 
