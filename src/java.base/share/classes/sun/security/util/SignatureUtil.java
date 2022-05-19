@@ -151,7 +151,8 @@ public class SignatureUtil {
                     createAlgorithmParameters(sigName, paramBytes);
                 paramSpec = RSAUtil.getParamSpec(params);
             } else if (sigName.contains("ECDSA")) {
-                // Some certificates have params in an ECDSA algorithmID,
+                // Some certificates have params in an ECDSA algorithmID.
+                // According to RFC 3279 2.2.3 and RFC 5758 3.2,
                 // they are useless and should be ignored.
                 return null;
             } else {
