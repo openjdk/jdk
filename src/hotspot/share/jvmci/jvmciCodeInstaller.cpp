@@ -662,7 +662,9 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, bo
   // section itself so they don't need to be accounted for in the
   // locs_buffer above.
   int stubs_size = estimate_stubs_size(JVMCI_CHECK_OK);
-  int total_size = align_up(_code_size, buffer.insts()->alignment()) + align_up(_constants_size, buffer.consts()->alignment()) + align_up(stubs_size, buffer.stubs()->alignment());
+  int total_size = align_up(_constants_size, CodeSection::alignment(CodeBuffer::SECT_INSTS)) +
+                   align_up(_code_size, CodeSection::alignment(CodeBuffer::SECT_STUBS)) +
+                   stubs_size;
 
   if (check_size && total_size > JVMCINMethodSizeLimit) {
     return JVMCI::code_too_large;

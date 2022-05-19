@@ -252,17 +252,19 @@ class CodeSection {
   void relocate(address at, RelocationHolder const& rspec, int format = 0);
   void relocate(address at,    relocInfo::relocType rtype, int format = 0, jint method_index = 0);
 
-  // internal code sections alignment
-  int alignment() const {
-    // TODO: move InteriorEntryAlignment to common c1/c2 header
-    int code_entry_aliginment = (int) COMPILER2_PRESENT(InteriorEntryAlignment) NOT_COMPILER2(CodeEntryAlignment);
-    return MAX2((int)sizeof(jdouble), code_entry_aliginment);
-  }
+  static int alignment(int section);
+  int alignment() { return alignment(_index); }
 
   // Slop between sections, used only when allocating temporary BufferBlob buffers.
   static csize_t end_slop()         { return MAX2((int)sizeof(jdouble), (int)CodeEntryAlignment); }
 
-  csize_t align_at_start(csize_t off) const { return (csize_t) align_up(off, alignment()); }
+  csize_t align_at_start(csize_t off, int section) const {
+    return (csize_t) align_up(off, alignment(section));
+  }
+
+  csize_t align_at_start(csize_t off) const {
+    return (csize_t) align_up(off, alignment(_index));
+  }
 
   // Ensure there's enough space left in the current section.
   // Return true if there was an expansion.
@@ -702,6 +704,24 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 inline bool CodeSection::maybe_expand_to_ensure_remaining(csize_t amount) {
   if (remaining() < amount) { _outer->expand(this, amount); return true; }
   return false;
+}
+
+inline int CodeSection::alignment(int section) {
+  if (section == CodeBuffer::SECT_CONSTS) {
+    return (int) sizeof(jdouble);
+  }
+  if (section == CodeBuffer::SECT_INSTS) {
+    return (int) CodeEntryAlignment;
+  }
+  if (CodeBuffer::SECT_STUBS) {
+    // The stub section is hardly on a hot path, and it doesn't need to align to a cache line or so.
+    // Use C2 specific InteriorEntryAlignment to get the smallest alignment
+    int entry_alignment = (int) COMPILER2_PRESENT(InteriorEntryAlignment) NOT_COMPILER2(CodeEntryAlignment);
+    // CodeBuffer installer expects sections to be HeapWordSize aligned
+    return MAX2(entry_alignment, HeapWordSize);
+  }
+  ShouldNotReachHere();
+  return 0;
 }
 
 #endif // SHARE_ASM_CODEBUFFER_HPP

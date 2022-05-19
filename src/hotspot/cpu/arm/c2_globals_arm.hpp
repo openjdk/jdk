@@ -46,7 +46,7 @@ define_pd_global(intx, OnStackReplacePercentage,     140);
 define_pd_global(intx, ConditionalMoveLimit,         4);
 // C2 gets to use all the float/double registers
 define_pd_global(intx, FreqInlineSize,               175);
-define_pd_global(intx, InteriorEntryAlignment,       8);
+define_pd_global(intx, InteriorEntryAlignment,       16);  // = CodeEntryAlignment
 define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 // The default setting 16/16 seems to work best.
 // (For _228_jack 16/16 is 2% better than 4/4, 16/4, 32/32, 32/16, or 16/32.)
