@@ -152,7 +152,7 @@ public class Functional {
     public static RuntimeException rethrowUnchecked(Throwable throwable) throws
             ExceptionBox {
         if (throwable instanceof RuntimeException) {
-            throw (RuntimeException) throwable;
+            throw (RuntimeException)throwable;
         }
 
         if (throwable instanceof InvocationTargetException) {
