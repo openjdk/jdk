@@ -65,9 +65,18 @@ inline void ContinuationHelper::update_register_map_with_callee(const frame& f, 
 }
 
 inline void ContinuationHelper::push_pd(const frame& f) {
+  intptr_t* orig_fp = *ContinuationHelper::Frame::callee_link_address(f);
+
+  // Updating the FP requires resigning of the return address.
+  intptr_t* ret_pc_addr = (f.sp() - frame::return_addr_offset);
+  pauth_resign_return_address((address *)ret_pc_addr, (address)orig_fp, (address)f.fp());
+
   *(intptr_t**)(f.sp() - frame::sender_sp_offset) = f.fp();
 }
 
+inline address ContinuationHelper::return_pc_at(intptr_t *sp) {
+  return pauth_strip_pointer(*(address*)sp);
+}
 
 inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, ContinuationEntry* entry) {
   anchor->set_last_Java_fp(entry->entry_fp());
@@ -81,7 +90,7 @@ inline void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t*
 
 inline bool ContinuationHelper::Frame::assert_frame_laid_out(frame f) {
   intptr_t* sp = f.sp();
-  address pc = *(address*)(sp - frame::sender_sp_ret_address_offset());
+  address pc = ContinuationHelper::return_pc_at(sp - frame::sender_sp_ret_address_offset());
   intptr_t* fp = *(intptr_t**)(sp - frame::sender_sp_offset);
   assert(f.raw_pc() == pc, "f.ra_pc: " INTPTR_FORMAT " actual: " INTPTR_FORMAT, p2i(f.raw_pc()), p2i(pc));
   assert(f.fp() == fp, "f.fp: " INTPTR_FORMAT " actual: " INTPTR_FORMAT, p2i(f.fp()), p2i(fp));
@@ -109,12 +118,13 @@ inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, intp
 
 inline address ContinuationHelper::Frame::real_pc(const frame& f) {
   address* pc_addr = &(((address*) f.sp())[-1]);
-  return *pc_addr;
+  return pauth_strip_pointer(*pc_addr);
 }
 
 inline void ContinuationHelper::Frame::patch_pc(const frame& f, address pc) {
   address* pc_addr = &(((address*) f.sp())[-1]);
-  *pc_addr = pc;
+  address signing_sp = ((address*) f.sp())[-2];
+  *pc_addr = pauth_sign_return_address(pc, signing_sp);
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, InterpreterOopMap* mask) { // inclusive; this will be copied with the frame

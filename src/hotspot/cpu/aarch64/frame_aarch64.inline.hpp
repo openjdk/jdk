@@ -152,7 +152,10 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
   setup(pc);
 }
 
-inline frame::frame(intptr_t* sp) : frame(sp, sp, *(intptr_t**)(sp - frame::sender_sp_offset), *(address*)(sp - 1)) {}
+inline frame::frame(intptr_t* sp)
+  : frame(sp, sp, *(intptr_t**)(sp - frame::sender_sp_offset),
+          pauth_strip_verifiable(*(address*)(sp - frame::return_addr_offset),
+                                 *(address*)(sp - frame::sender_sp_offset))) {}
 
 inline frame::frame(intptr_t* sp, intptr_t* fp) {
   intptr_t a = intptr_t(sp);

@@ -48,6 +48,10 @@ inline Method* ContinuationHelper::Frame::frame_method(const frame& f) {
   return f.is_interpreted_frame() ? f.interpreter_frame_method() : f.cb()->as_compiled_method()->method();
 }
 
+inline address ContinuationHelper::Frame::return_pc(const frame& f) {
+  return return_pc_at((intptr_t *)return_pc_address(f));
+}
+
 #ifdef ASSERT
 inline intptr_t* ContinuationHelper::Frame::frame_top(const frame &f) {
   if (f.is_interpreted_frame()) {
@@ -89,7 +93,7 @@ inline bool ContinuationHelper::InterpretedFrame::is_instance(const frame& f) {
 }
 
 inline address ContinuationHelper::InterpretedFrame::return_pc(const frame& f) {
-  return *return_pc_address(f);
+  return return_pc_at((intptr_t *)return_pc_address(f));
 }
 
 inline int ContinuationHelper::InterpretedFrame::size(const frame&f) {

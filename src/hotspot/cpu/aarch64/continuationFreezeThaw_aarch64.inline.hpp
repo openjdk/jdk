@@ -32,14 +32,24 @@
 
 
 inline void patch_callee_link(const frame& f, intptr_t* fp) {
-  DEBUG_ONLY(intptr_t* orig = *ContinuationHelper::Frame::callee_link_address(f));
+  intptr_t* orig_fp = *ContinuationHelper::Frame::callee_link_address(f);
+
+  // Updating the FP requires resigning of the return address.
+  intptr_t* ret_pc_addr = (f.sp() - frame::return_addr_offset);
+  pauth_resign_return_address((address *)ret_pc_addr, (address)orig_fp, (address)fp);
+
   *ContinuationHelper::Frame::callee_link_address(f) = fp;
 }
 
 inline void patch_callee_link_relative(const frame& f, intptr_t* fp) {
   intptr_t* la = (intptr_t*)ContinuationHelper::Frame::callee_link_address(f);
-  intptr_t new_value = fp - la;
-  *la = new_value;
+  intptr_t new_fp_value = fp - la;
+
+  // Updating the FP requires resigning of the return address.
+  intptr_t* ret_pc_addr = (f.sp() - frame::return_addr_offset);
+  pauth_resign_return_address((address *)ret_pc_addr, (address)*la, (address)new_fp_value);
+
+  *la = new_fp_value;
 }
 
 ////// Freeze
@@ -62,7 +72,7 @@ inline frame FreezeBase::sender(const frame& f) {
   intptr_t** link_addr = link_address<FKind>(f);
 
   intptr_t* sender_sp = (intptr_t*)(link_addr + frame::sender_sp_offset); //  f.unextended_sp() + (fsize/wordSize); //
-  address sender_pc = (address) *(sender_sp-1);
+  address sender_pc = ContinuationHelper::return_pc_at(sender_sp-1);
   assert(sender_sp != f.sp(), "must have changed");
 
   int slot = 0;

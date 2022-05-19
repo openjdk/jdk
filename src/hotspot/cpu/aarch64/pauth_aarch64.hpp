@@ -85,4 +85,11 @@ inline address pauth_strip_verifiable(address ret_addr, address modifier) {
   return ret_addr;
 }
 
+// Authenticate then sign a return value using different sp values.
+//
+inline void pauth_resign_return_address(address *ret_addr, address old_sp, address new_sp) {
+  address orig_ret_pc = pauth_authenticate_return_address(*ret_addr, old_sp);
+  *ret_addr = pauth_sign_return_address(orig_ret_pc, new_sp);
+}
+
 #endif // CPU_AARCH64_PAUTH_AARCH64_HPP
