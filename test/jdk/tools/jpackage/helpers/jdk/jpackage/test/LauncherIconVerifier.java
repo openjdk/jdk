@@ -97,6 +97,8 @@ public final class LauncherIconVerifier {
 
                 lockResource = executableRebranderClass.getDeclaredMethod(
                         "lockResource", String.class);
+                // Note: these reflection call requires
+                // --add-opens jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED
                 lockResource.setAccessible(true);
 
                 unlockResource = executableRebranderClass.getDeclaredMethod(
