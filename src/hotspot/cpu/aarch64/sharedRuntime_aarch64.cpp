@@ -1039,7 +1039,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   address mark = __ pc();
 
-  __ trampoline_call1(resolve, NULL, false);
+  __ trampoline_call(resolve);
 
   oop_maps->add_gc_map(__ pc() - start, map);
   __ post_call_nop();

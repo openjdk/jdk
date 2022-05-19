@@ -1113,10 +1113,51 @@ private:
 #endif
 
 public:
-  // Calls
+  // AArch64 OpenJDK uses four different types of calls:
+  //   - direct call: bl pc_relative_offset
+  //     This is the shortest and the fastest, but the offset has the range:
+  //     +/-128MB for the release build, +/-2MB for the debug build.
+  //
+  //   - far call: adrp reg, pc_relative_offset; add; bl reg
+  //     This is longer and slower than a direct call. The offset has
+  //     the range +/-4GB. As the code cache size is limited to 4GB,
+  //     far calls can reach anywhere in the code cache. If the sematic of
+  //     the call is not needed, a far jump 'b reg' can be used instead.
+  //     All instructions are embedded at a call site.
+  //
+  //   - trampoline call:
+  //     This is only available in C1/C2-generated code (nmethod). It is a combination
+  //     of a direct call, which is used if the destination of a call is in range,
+  //     and a register-indirect call. It has the advantages of reaching anywhere in
+  //     the AArch64 address space and being patchable at runtime when the generated
+  //     code is being executed by other threads.
+  //
+  //     [Main code section]
+  //       bl trampoline
+  //     [Stub code section]
+  //     trampoline:
+  //       ldr reg, pc + 8
+  //       br reg
+  //       <64-bit destination address>
+  //
+  //     A link-time optimization can be applied to a trampoline call when the generated
+  //     code is moved to the code cache. A trampoline call is replaced with by a direct call.
+  //     The optimization does not remove the trampoline from the stub section.
+  //
+  //   - indirect call: move reg, address; blr reg
+  //     This too can reach anywhere in the address space, but it cannot be
+  //     patch while code is running, so it must be used at a safepoint.
 
-  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL) { return trampoline_call1(entry, cbuf, true); }
-  address trampoline_call1(Address entry, CodeBuffer* cbuf, bool check_emit_size = true);
+  // Emit a direct call if the entry address is always in range,
+  // otherwise a trampoline call.
+  // Supported entry.rspec():
+  // - relocInfo::runtime_call_type
+  // - relocInfo::opt_virtual_call_type
+  // - relocInfo::static_call_type
+  // - relocInfo::virtual_call_type
+  //
+  // Return: address of the generated call in the code section of CodeBuffer.
+  address trampoline_call(Address entry);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
@@ -1127,21 +1168,19 @@ public:
     return CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
 
-  // Far_call and far_jump generate a call of/jump to the provided address.
+  // Emit a direct call/jump if the entry address is always in range,
+  // otherwise a far call/jump.
   // The address must be inside the code cache.
   // Supported entry.rspec():
   // - relocInfo::external_word_type
   // - relocInfo::runtime_call_type
   // - relocInfo::none
-  // If the distance to the address can exceed the branch range
-  // (128M for the release build, 2M for the debug build; see branch_range definition)
-  // for direct calls(BL)/jumps(B), a call(BLR)/jump(BR) with the address put in
-  // the tmp register is generated. Instructions putting the address in the tmp register
-  // are embedded at a call site. The tmp register is invalidated.
-  // This differs from trampoline_call which puts additional code (trampoline) including
-  // BR into the stub code section and a BL to the trampoline at a call site.
-  void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
-  int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
+  // In the case of a far call/jump, the entry address is put in the tmp register.
+  // The tmp register is invalidated.
+  //
+  // Far_jump returns the amount of the emitted code.
+  void far_call(Address entry, Register tmp = rscratch1);
+  int far_jump(Address entry, Register tmp = rscratch1);
 
   static int far_codestub_branch_size() {
     if (codestub_branch_needs_far_jump()) {
