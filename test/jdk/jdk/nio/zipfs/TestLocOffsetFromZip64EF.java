@@ -81,7 +81,7 @@ public class TestLocOffsetFromZip64EF {
     }
 
     /**
-     * Create a Zip file that will result in an Zip64 Extra (EXT) header
+     * Create a Zip file that will result in a Zip64 Extra (EXT) header
      * being added to the CEN entry in order to find the LOC offset for
      * SMALL_FILE_NAME.
      */
