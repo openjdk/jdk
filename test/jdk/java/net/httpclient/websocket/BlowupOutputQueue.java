@@ -57,10 +57,10 @@ public class BlowupOutputQueue extends PendingOperations {
      * utilized and then make sure there won't be any errors caused by that.
      *
      * First, fill the queue with Text messages. Once done, send a Ping message.
-     * At this stage, there are at least 2 messages are in queue. Now, start
+     * At this stage, there are at least 2 messages in queue. Now, start
      * receiving. Received Ping messages will cause automatic Pong replies. When
      * all done, there will be at least 3 messages in the queue. (As at least
-     * the a single Ping has to be replied). Then send a Close message. Now
+     * a single Ping has to be replied). Then send a Close message. Now
      * there are at least 4 messages in the queue. Finally, receive the last
      * message which is a Close message. This will cause an automatic reply with
      * a Close message from the client side. All in all there should be at least
