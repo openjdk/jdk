@@ -2210,7 +2210,6 @@ instruct vpopcountI(vReg dst, vReg src) %{
   ins_cost(SVE_COST);
   format %{ "sve_cnt $dst, $src\t# vector (sve) (B/H/S)" %}
   ins_encode %{
-    assert(UsePopCountInstruction, "unsupported");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_cnt(as_FloatRegister($dst$$reg), __ elemType_to_regVariant(bt),
          ptrue, as_FloatRegister($src$$reg));
@@ -2226,7 +2225,6 @@ instruct vpopcountL(vReg dst, vReg src) %{
   ins_cost(SVE_COST);
   format %{ "sve_cnt $dst, $src\t# vector (sve) (D)" %}
   ins_encode %{
-    assert(UsePopCountInstruction, "unsupported");
     __ sve_cnt(as_FloatRegister($dst$$reg), __ D,
          ptrue, as_FloatRegister($src$$reg));
   %}
@@ -2248,7 +2246,6 @@ instruct vpopcountLI(vReg dst, vReg src, vReg vtmp) %{
             "sve_dup $vtmp, #0\n\t"
             "sve_uzp1 $dst, $dst, $vtmp\t# vector (sve) (S)" %}
   ins_encode %{
-    assert(UsePopCountInstruction, "unsupported");
     __ sve_cnt(as_FloatRegister($dst$$reg), __ D,
          ptrue, as_FloatRegister($src$$reg));
     __ sve_vector_narrow(as_FloatRegister($dst$$reg), __ S,
@@ -2265,7 +2262,6 @@ instruct vpopcountI_masked(vReg dst_src, pRegGov pg) %{
   ins_cost(SVE_COST);
   format %{ "sve_cnt $dst_src, $pg, $dst_src\t# vector (sve) (B/H/S)" %}
   ins_encode %{
-    assert(UsePopCountInstruction, "unsupported");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_cnt(as_FloatRegister($dst_src$$reg), __ elemType_to_regVariant(bt),
          as_PRegister($pg$$reg), as_FloatRegister($dst_src$$reg));
@@ -2280,7 +2276,6 @@ instruct vpopcountL_masked(vReg dst_src, pRegGov pg) %{
   ins_cost(SVE_COST);
   format %{ "sve_cnt $dst_src, $pg, $dst_src\t# vector (sve) (D)" %}
   ins_encode %{
-    assert(UsePopCountInstruction, "unsupported");
     __ sve_cnt(as_FloatRegister($dst_src$$reg), __ D,
          as_PRegister($pg$$reg), as_FloatRegister($dst_src$$reg));
   %}

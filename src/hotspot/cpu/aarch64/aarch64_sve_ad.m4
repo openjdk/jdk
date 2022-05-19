@@ -1185,8 +1185,7 @@ instruct vpopcount$1(vReg dst, vReg src) %{
   match(Set dst (PopCountV$1 src));
   ins_cost(SVE_COST);
   format %{ "sve_cnt $dst, $src\t# vector (sve) ($2)" %}
-  ins_encode %{
-    assert(UsePopCountInstruction, "unsupported");dnl
+  ins_encode %{dnl
 ifelse($1, `I', `
     BasicType bt = Matcher::vector_element_basic_type(this);', `')
     __ sve_cnt(as_FloatRegister($dst$$reg), ifelse($1, `I', `__ elemType_to_regVariant(bt)', `__ D'),
@@ -1214,7 +1213,6 @@ instruct vpopcountLI(vReg dst, vReg src, vReg vtmp) %{
             "sve_dup $vtmp, #0\n\t"
             "sve_uzp1 $dst, $dst, $vtmp\t# vector (sve) (S)" %}
   ins_encode %{
-    assert(UsePopCountInstruction, "unsupported");
     __ sve_cnt(as_FloatRegister($dst$$reg), __ D,
          ptrue, as_FloatRegister($src$$reg));
     __ sve_vector_narrow(as_FloatRegister($dst$$reg), __ S,
@@ -1233,8 +1231,7 @@ instruct vpopcount$1_masked(vReg dst_src, pRegGov pg) %{
   match(Set dst_src (PopCountV$1 dst_src pg));
   ins_cost(SVE_COST);
   format %{ "sve_cnt $dst_src, $pg, $dst_src\t# vector (sve) ($2)" %}
-  ins_encode %{
-    assert(UsePopCountInstruction, "unsupported");dnl
+  ins_encode %{dnl
 ifelse($1, `I', `
     BasicType bt = Matcher::vector_element_basic_type(this);', `')
     __ sve_cnt(as_FloatRegister($dst_src$$reg), ifelse($1, `I', `__ elemType_to_regVariant(bt)', `__ D'),

@@ -47,7 +47,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.sun.tools.javac.code.Flags.PREVIEW_API;
 import static com.sun.tools.javac.code.Flags.RECORD;
 import static com.sun.tools.javac.code.Flags.SEALED;
 import static com.sun.tools.javac.code.Flags.NON_SEALED;
@@ -122,14 +121,14 @@ public class Preview {
     }
 
     /**
-     * Returns true if {@code s} is participating in the preview of {@code previewSymbol}, and
+     * Returns true if {@code s} is deemed to participate in the preview of {@code previewSymbol}, and
      * therefore no warnings or errors will be produced.
      *
      * @param s the symbol depending on the preview symbol
      * @param previewSymbol the preview symbol marked with @Preview
      * @return true if {@code s} is participating in the preview of {@code previewSymbol}
      */
-    public boolean isPreviewParticipating(Symbol s, Symbol previewSymbol) {
+    public boolean participatesInPreview(Symbol s, Symbol previewSymbol) {
         // Hardcode the incubating vector API module for now
         // Will generalize with an annotation, @PreviewParticipating say, later
         return previewSymbol.packge().modle == s.packge().modle ||

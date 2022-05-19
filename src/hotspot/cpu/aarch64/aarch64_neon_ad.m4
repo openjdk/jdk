@@ -2458,8 +2458,7 @@ instruct vpopcount$1$2`'(vec$2 dst, vec$3 src) %{
   match(Set dst (PopCountV$1 src));
   ins_cost($5 * INSN_COST);
   format %{ "vpopcount$1  $dst, $src\t# vector ($6)" %}
-  ins_encode %{
-    assert(UsePopCountInstruction, "unsupported");dnl
+  ins_encode %{dnl
 ifelse($1, `I', `
     BasicType bt = Matcher::vector_element_basic_type(this);', `')
     __ cnt(as_FloatRegister($dst$$reg), __ T`'ifelse($3, D, 8, 16)B,

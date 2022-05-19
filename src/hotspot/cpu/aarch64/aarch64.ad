@@ -2427,14 +2427,6 @@ const bool Matcher::match_rule_supported(int opcode) {
         ret_value = false;
       }
       break;
-    case Op_PopCountI:
-    case Op_PopCountL:
-    case Op_PopCountVI:
-    case Op_PopCountVL:
-      if (!UsePopCountInstruction) {
-        ret_value = false;
-      }
-      break;
   }
 
   return ret_value; // Per default match rules are supported.
@@ -8679,7 +8671,6 @@ instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
             "addv   $tmp, $tmp\t# vector (8B)\n\t"
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
-    assert(UsePopCountInstruction, "unsupported");
     __ movw($src$$Register, $src$$Register); // ensure top 32 bits 0
     __ mov($tmp$$FloatRegister, __ D, 0, $src$$Register);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
@@ -8700,7 +8691,6 @@ instruct popCountI_mem(iRegINoSp dst, memory4 mem, vRegF tmp) %{
             "addv   $tmp, $tmp\t# vector (8B)\n\t"
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
-    assert(UsePopCountInstruction, "unsupported");
     FloatRegister tmp_reg = as_FloatRegister($tmp$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrs, tmp_reg, $mem->opcode(),
               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
@@ -8723,7 +8713,6 @@ instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
             "addv   $tmp, $tmp\t# vector (8B)\n\t"
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
-    assert(UsePopCountInstruction, "unsupported");
     __ mov($tmp$$FloatRegister, __ D, 0, $src$$Register);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
@@ -8743,7 +8732,6 @@ instruct popCountL_mem(iRegINoSp dst, memory8 mem, vRegD tmp) %{
             "addv   $tmp, $tmp\t# vector (8B)\n\t"
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
-    assert(UsePopCountInstruction, "unsupported");
     FloatRegister tmp_reg = as_FloatRegister($tmp$$reg);
     loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrd, tmp_reg, $mem->opcode(),
               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
