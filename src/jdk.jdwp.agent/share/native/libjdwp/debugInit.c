@@ -877,7 +877,8 @@ printUsage(void)
  "onthrow=<exception name>         debug on throw                    none\n"
  "onuncaught=y|n                   debug on any uncaught?            n\n"
  "timeout=<timeout value>          for listen/attach in milliseconds n\n"
- "enumeratevthreads=y|n            thread lists include all vthreads n\n"
+ "enumeratevthreads=y|n            (Preview Feature) thread lists include all vthreads\n"
+ "                                                                   n\n"
  "mutf8=y|n                        output modified utf-8             n\n"
  "quiet=y|n                        control over terminal messages    n\n"));
 
