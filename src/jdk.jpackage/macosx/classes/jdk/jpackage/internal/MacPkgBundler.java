@@ -400,7 +400,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     // will be included as well. It does have "--filter" option which use regex
     // to exclude files/folder, but it will overwrite default one which excludes
     // based on doc "any .svn or CVS directories, and any .DS_Store files".
-    // So easy aproach will be to copy user provided app-image into temp folder
+    // So easy approach will be to copy user provided app-image into temp folder
     // if root path contains other files.
     private String getRoot(Map<String, ? super Object> params,
             Path appLocation) throws IOException {

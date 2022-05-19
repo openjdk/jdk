@@ -394,8 +394,7 @@ public:
                        bool                      has_wide_vectors,
                        bool                      has_monitors,
                        int                       immediate_oops_patched,
-                       RTMState                  rtm_state = NoRTM,
-                       const GrowableArrayView<RuntimeStub*>& native_invokers = GrowableArrayView<RuntimeStub*>::EMPTY);
+                       RTMState                  rtm_state = NoRTM);
 
 
   // Access to certain well known ciObjects.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,37 +19,18 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_CI_CINATIVEENTRYPOINT_HPP
-#define SHARE_VM_CI_CINATIVEENTRYPOINT_HPP
+// key: compiler.err.unconditional.pattern.and.default
+// key: compiler.misc.feature.pattern.switch
+// key: compiler.warn.preview.feature.use.plural
+// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
-#include "ci/ciInstance.hpp"
-#include "ci/ciMethodType.hpp"
-
-#include "code/vmreg.hpp"
-
-// ciNativeEntryPoint
-//
-// The class represents a java.lang.invoke.NativeEntryPoint object.
-class ciNativeEntryPoint : public ciInstance {
-private:
-  const char* _name;
-  VMReg* _arg_moves;
-  VMReg* _ret_moves;
-public:
-  ciNativeEntryPoint(instanceHandle h_i);
-
-  // What kind of ciObject is this?
-  bool is_native_entry_point() const { return true; }
-
-  jint           shadow_space() const;
-  VMReg*         argMoves() const;
-  VMReg*        returnMoves() const;
-  jboolean       need_transition() const;
-  ciMethodType*  method_type() const;
-  const char*    name();
-};
-
-#endif // SHARE_VM_CI_CINATIVEENTRYPOINT_HPP
+class UnconditionalPatternAndDefault {
+    private void doSwitch(Object o) {
+        switch (o) {
+            case Object obj: break;
+            default: break;
+        }
+    }
+}

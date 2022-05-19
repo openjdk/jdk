@@ -123,13 +123,13 @@ public abstract class Content {
     public abstract boolean isEmpty();
 
     /**
-     * Returns true if the content is valid. This allows filtering during
-     * {@link #add(Content) addition}.
+     * Returns true if this content does not affect the output and can be discarded.
+     * The default implementation considers empty content as discardable.
      *
-     * @return true if the content is valid else return false
+     * @return true if this content can be discarded without affecting the output
      */
-    public boolean isValid() {
-        return !isEmpty();
+    public boolean isDiscardable() {
+        return isEmpty();
     }
 
     /**

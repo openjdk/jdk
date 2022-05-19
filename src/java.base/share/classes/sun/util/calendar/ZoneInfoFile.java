@@ -178,15 +178,16 @@ public final class ZoneInfoFile {
 
     public static String toCustomID(int gmtOffset) {
         char sign;
-        int offset = gmtOffset / 60000;
+        int offset = gmtOffset / 1_000;
         if (offset >= 0) {
             sign = '+';
         } else {
             sign = '-';
             offset = -offset;
         }
-        int hh = offset / 60;
-        int mm = offset % 60;
+        int hh = offset / 3_600;
+        int mm = (offset % 3_600) / 60;
+        int ss = offset % 60;
 
         char[] buf = new char[] { 'G', 'M', 'T', sign, '0', '0', ':', '0', '0' };
         if (hh >= 10) {
@@ -197,7 +198,13 @@ public final class ZoneInfoFile {
             buf[7] += (char)(mm / 10);
             buf[8] += (char)(mm % 10);
         }
-        return new String(buf);
+        var id = new String(buf);
+        if (ss != 0) {
+            buf[7] = (char)('0' + ss / 10);
+            buf[8] = (char)('0' + ss % 10);
+            id += new String(buf, 6, 3);
+        }
+        return id;
     }
 
     ///////////////////////////////////////////////////////////

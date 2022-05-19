@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,30 @@
  * questions.
  */
 
-// key: compiler.err.total.pattern.and.default
-// key: compiler.misc.feature.pattern.switch
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
+#ifndef SHARE_OOPS_OOPCAST_INLINE_HPP
+#define SHARE_OOPS_OOPCAST_INLINE_HPP
 
-class TotalPatternAndDefault {
-    private void doSwitch(Object o) {
-        switch (o) {
-            case Object obj: break;
-            default: break;
-        }
-    }
+#include "oops/oopsHierarchy.hpp"
+#include "oops/oop.inline.hpp"
+
+template<typename T>
+static bool is_oop_type(oop theOop) {
+  static_assert(sizeof(T) == 0, "No is_oop_type specialization found for this type");
+  return false;
 }
+template<>
+inline bool is_oop_type<instanceOop>(oop theOop) { return theOop->is_instance(); }
+template<>
+inline bool is_oop_type<arrayOop>(oop theOop) { return theOop->is_array(); }
+template<>
+inline bool is_oop_type<objArrayOop>(oop theOop) { return theOop->is_objArray(); }
+template<>
+inline bool is_oop_type<typeArrayOop>(oop theOop) { return theOop->is_typeArray(); }
+
+template<typename R>
+R oop_cast(oop theOop) {
+  assert(is_oop_type<R>(theOop), "Invalid cast");
+  return (R) theOop;
+}
+
+#endif // SHARE_OOPS_OOPCAST_INLINE_HPP

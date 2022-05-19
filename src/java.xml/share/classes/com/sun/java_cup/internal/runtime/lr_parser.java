@@ -363,7 +363,7 @@ public abstract class lr_parser {
    *  Once end of file has been reached, all subsequent calls to scan
    *  should return an EOF Symbol (which is Symbol number 0).  By default
    *  this method returns getScanner().next_token(); this implementation
-   *  can be overriden by the generated parser using the code declared in
+   *  can be overridden by the generated parser using the code declared in
    *  the "scan with" clause.  Do not recycle objects; every call to
    *  scan() should return a fresh object.
    */

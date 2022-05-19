@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,28 +21,36 @@
  * questions.
  */
 
-package com.sun.source.tree;
+#include "precompiled.hpp"
+#include "code/vmreg.hpp"
+#include "prims/foreign_globals.hpp"
+#include "utilities/debug.hpp"
 
-import jdk.internal.javac.PreviewFeature;
+class MacroAssembler;
 
-/**
- * A guard pattern tree.
- *
- * @since 17
- */
-@PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-public interface GuardedPatternTree extends PatternTree {
+const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
+  Unimplemented();
+  return {};
+}
 
-    /**
-     * The guarded pattern expression.
-     * @return the guarded pattern
-     */
-    public PatternTree getPattern();
+VMReg ForeignGlobals::vmstorage_to_vmreg(int type, int index) {
+  Unimplemented();
+  return VMRegImpl::Bad();
+}
 
-    /**
-     * The guard expression.
-     * @return the guard expression
-     */
-    public ExpressionTree getExpression();
+int RegSpiller::pd_reg_size(VMReg reg) {
+  Unimplemented();
+  return -1;
+}
 
+void RegSpiller::pd_store_reg(MacroAssembler* masm, int offset, VMReg reg) {
+  Unimplemented();
+}
+
+void RegSpiller::pd_load_reg(MacroAssembler* masm, int offset, VMReg reg) {
+  Unimplemented();
+}
+
+void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMReg tmp, int in_stk_bias, int out_stk_bias) const {
+  Unimplemented();
 }
