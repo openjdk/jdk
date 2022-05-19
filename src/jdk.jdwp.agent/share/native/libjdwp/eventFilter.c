@@ -421,7 +421,7 @@ eventFilterRestricted_passesFilter(JNIEnv *env,
                 }
                 break;
 
-            /* This is kinda cheating assumming the event
+            /* This is kinda cheating assuming the event
              * fields will be in the same locations, but it is
              * true now.
              */
@@ -1014,7 +1014,7 @@ findFilter(HandlerNode *node, jint modifier)
  * same location as the LocationFilter passed in arg.
  *
  * This is a match function called by a
- * eventHandlerRestricted_iterator invokation.
+ * eventHandlerRestricted_iterator invocation.
  */
 static jboolean
 matchBreakpoint(JNIEnv *env, HandlerNode *node, void *arg)
@@ -1119,7 +1119,7 @@ isBreakpointSet(jclass clazz, jmethodID method, jlocation location)
  * same field as the FieldFilter passed in arg.
  *
  * This is a match function called by a
- * eventHandlerRestricted_iterator invokation.
+ * eventHandlerRestricted_iterator invocation.
  */
 static jboolean
 matchWatchpoint(JNIEnv *env, HandlerNode *node, void *arg)
@@ -1229,7 +1229,7 @@ requestThread(HandlerNode *node)
  * thread filter with the thread passed in arg.
  *
  * This is a match function called by a
- * eventHandlerRestricted_iterator invokation.
+ * eventHandlerRestricted_iterator invocation.
  */
 static jboolean
 matchThread(JNIEnv *env, HandlerNode *node, void *arg)

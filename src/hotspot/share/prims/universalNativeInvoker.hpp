@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,19 @@
 #ifndef SHARE_VM_PRIMS_UNIVERSALNATIVEINVOKER_HPP
 #define SHARE_VM_PRIMS_UNIVERSALNATIVEINVOKER_HPP
 
-#include "runtime/stubCodeGenerator.hpp"
 #include "prims/foreign_globals.hpp"
 
+class RuntimeStub;
+
 class ProgrammableInvoker: AllStatic {
-private:
-  static constexpr CodeBuffer::csize_t native_invoker_size = 1024;
-
-  class Generator : StubCodeGenerator {
-  private:
-    const ABIDescriptor* _abi;
-    const BufferLayout* _layout;
-  public:
-    Generator(CodeBuffer* code, const ABIDescriptor* abi, const BufferLayout* layout);
-
-    void generate();
-  };
 public:
-  using Stub = void(*)(address);
-
-  static void invoke_native(Stub stub, address buff, JavaThread* thread);
-  static address generate_adapter(jobject abi, jobject layout);
+  static RuntimeStub* make_native_invoker(BasicType*,
+                                          int num_args,
+                                          BasicType ret_bt,
+                                          const ABIDescriptor& abi,
+                                          const GrowableArray<VMReg>& input_registers,
+                                          const GrowableArray<VMReg>& output_registers,
+                                          bool needs_return_buffer);
 };
 
 #endif // SHARE_VM_PRIMS_UNIVERSALNATIVEINVOKER_HPP

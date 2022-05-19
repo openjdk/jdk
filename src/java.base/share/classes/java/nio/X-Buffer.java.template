@@ -37,8 +37,8 @@ import java.util.stream.StreamSupport;
 import java.util.stream.$Streamtype$Stream;
 #end[streamableType]
 
+import java.lang.foreign.MemorySegment;
 import java.util.Objects;
-import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.util.ArraysSupport;
 
 /**
@@ -293,7 +293,7 @@ public abstract sealed class $Type$Buffer
     // backing array, and array offset
     //
     $Type$Buffer(int mark, int pos, int lim, int cap,   // package-private
-                 $type$[] hb, int offset, MemorySegmentProxy segment)
+                 $type$[] hb, int offset, MemorySegment segment)
     {
         super(mark, pos, lim, cap, segment);
         this.hb = hb;
@@ -302,13 +302,13 @@ public abstract sealed class $Type$Buffer
 
     // Creates a new buffer with the given mark, position, limit, and capacity
     //
-    $Type$Buffer(int mark, int pos, int lim, int cap, MemorySegmentProxy segment) { // package-private
+    $Type$Buffer(int mark, int pos, int lim, int cap, MemorySegment segment) { // package-private
         this(mark, pos, lim, cap, null, 0, segment);
     }
 
     // Creates a new buffer with given base, address and capacity
     //
-    $Type$Buffer($type$[] hb, long addr, int cap, MemorySegmentProxy segment) { // package-private
+    $Type$Buffer($type$[] hb, long addr, int cap, MemorySegment segment) { // package-private
         super(addr, cap, segment);
         this.hb = hb;
         this.offset = 0;
@@ -935,12 +935,12 @@ public abstract sealed class $Type$Buffer
 #if[!byte]
                 if (order() != ByteOrder.nativeOrder())
                     SCOPED_MEMORY_ACCESS.copySwapMemory(
-                            scope(), null, base(), bufAddr,
+                            session(), null, base(), bufAddr,
                             dst, dstOffset, len, $Fulltype$.BYTES);
                 else
 #end[!byte]
                     SCOPED_MEMORY_ACCESS.copyMemory(
-                            scope(), null, base(), bufAddr,
+                            session(), null, base(), bufAddr,
                             dst, dstOffset, len);
             } finally {
                 Reference.reachabilityFence(this);
@@ -1105,12 +1105,12 @@ public abstract sealed class $Type$Buffer
 #if[!byte]
                 if (this.order() != src.order())
                     SCOPED_MEMORY_ACCESS.copySwapMemory(
-                            src.scope(), scope(), srcBase, srcAddr,
+                            src.session(), session(), srcBase, srcAddr,
                             base, addr, len, $Fulltype$.BYTES);
                 else
 #end[!byte]
                     SCOPED_MEMORY_ACCESS.copyMemory(
-                            src.scope(), scope(), srcBase, srcAddr,
+                            src.session(), session(), srcBase, srcAddr,
                             base, addr, len);
             } finally {
                 Reference.reachabilityFence(src);
@@ -1325,12 +1325,12 @@ public abstract sealed class $Type$Buffer
 #if[!byte]
                 if (order() != ByteOrder.nativeOrder())
                     SCOPED_MEMORY_ACCESS.copySwapMemory(
-                            null, scope(), src, srcOffset,
+                            null, session(), src, srcOffset,
                             base(), bufAddr, len, $Fulltype$.BYTES);
                 else
 #end[!byte]
                     SCOPED_MEMORY_ACCESS.copyMemory(
-                            null, scope(), src, srcOffset,
+                            null, session(), src, srcOffset,
                             base(), bufAddr, len);
             } finally {
                 Reference.reachabilityFence(this);

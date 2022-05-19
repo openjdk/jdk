@@ -141,7 +141,7 @@ public final class EncryptionKey implements SecretKey {
     /**
      * Destroys this key by clearing out the key material of this key.
      *
-     * @throws DestroyFailedException if some error occurs while destorying
+     * @throws DestroyFailedException if some error occurs while destroying
      * this key.
      */
     @Override

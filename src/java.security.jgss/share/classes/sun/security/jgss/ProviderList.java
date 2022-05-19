@@ -396,9 +396,9 @@ public final class ProviderList {
     }
 
     /**
-     * Helper routine to go through all properties contined in a
+     * Helper routine to go through all properties continued in a
      * provider and add its mechanisms to the list of supported
-     * mechanisms. If no default mechanism has been assinged so far,
+     * mechanisms. If no default mechanism has been assigned so far,
      * it sets the default MechanismFactory and Oid as well.
      * @param p the provider to query
      * @return true if there is at least one mechanism that this

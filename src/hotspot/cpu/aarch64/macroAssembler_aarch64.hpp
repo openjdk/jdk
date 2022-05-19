@@ -27,10 +27,13 @@
 #define CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+class OopMap;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -104,7 +107,8 @@ class MacroAssembler: public Assembler {
  virtual void check_and_handle_popframe(Register java_thread);
  virtual void check_and_handle_earlyret(Register java_thread);
 
-  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
+  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
+  void rt_call(address dest, Register tmp = rscratch1);
 
   // Helper functions for statistics gathering.
   // Unconditional atomic increment.
@@ -212,7 +216,7 @@ class MacroAssembler: public Assembler {
 
   inline void movw(Register Rd, Register Rn) {
     if (Rd == sp || Rn == sp) {
-      addw(Rd, Rn, 0U);
+      Assembler::addw(Rd, Rn, 0U);
     } else {
       orrw(Rd, zr, Rn);
     }
@@ -221,7 +225,7 @@ class MacroAssembler: public Assembler {
     assert(Rd != r31_sp && Rn != r31_sp, "should be");
     if (Rd == Rn) {
     } else if (Rd == sp || Rn == sp) {
-      add(Rd, Rn, 0U);
+      Assembler::add(Rd, Rn, 0U);
     } else {
       orr(Rd, zr, Rn);
     }
@@ -706,6 +710,20 @@ public:
   // The pointer will be loaded into the thread register.
   void get_thread(Register thread);
 
+  // support for argument shuffling
+  void move32_64(VMRegPair src, VMRegPair dst, Register tmp = rscratch1);
+  void float_move(VMRegPair src, VMRegPair dst, Register tmp = rscratch1);
+  void long_move(VMRegPair src, VMRegPair dst, Register tmp = rscratch1);
+  void double_move(VMRegPair src, VMRegPair dst, Register tmp = rscratch1);
+  void object_move(
+                   OopMap* map,
+                   int oop_handle_offset,
+                   int framesize_in_slots,
+                   VMRegPair src,
+                   VMRegPair dst,
+                   bool is_receiver,
+                   int* receiver_offset);
+
 
   // Support for VM calls
   //
@@ -964,7 +982,7 @@ public:
 
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
-  void verify_sve_vector_length();
+  void verify_sve_vector_length(Register tmp = rscratch1);
   void reinitialize_ptrue() {
     if (UseSVE > 0) {
       sve_ptrue(ptrue, B);
@@ -1169,17 +1187,17 @@ public:
 
   // If a constant does not fit in an immediate field, generate some
   // number of MOV instructions and then perform the operation
-  void wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned imm,
+  void wrap_add_sub_imm_insn(Register Rd, Register Rn, uint64_t imm,
                              add_sub_imm_insn insn1,
-                             add_sub_reg_insn insn2);
+                             add_sub_reg_insn insn2, bool is32);
   // Separate vsn which sets the flags
-  void wrap_adds_subs_imm_insn(Register Rd, Register Rn, unsigned imm,
-                             add_sub_imm_insn insn1,
-                             add_sub_reg_insn insn2);
+  void wrap_adds_subs_imm_insn(Register Rd, Register Rn, uint64_t imm,
+                               add_sub_imm_insn insn1,
+                               add_sub_reg_insn insn2, bool is32);
 
-#define WRAP(INSN)                                                      \
-  void INSN(Register Rd, Register Rn, unsigned imm) {                   \
-    wrap_add_sub_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN); \
+#define WRAP(INSN, is32)                                                \
+  void INSN(Register Rd, Register Rn, uint64_t imm) {                   \
+    wrap_add_sub_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN, is32); \
   }                                                                     \
                                                                         \
   void INSN(Register Rd, Register Rn, Register Rm,                      \
@@ -1196,12 +1214,12 @@ public:
     Assembler::INSN(Rd, Rn, Rm, option, amount);                        \
   }
 
-  WRAP(add) WRAP(addw) WRAP(sub) WRAP(subw)
+  WRAP(add, false) WRAP(addw, true) WRAP(sub, false) WRAP(subw, true)
 
 #undef WRAP
-#define WRAP(INSN)                                                      \
-  void INSN(Register Rd, Register Rn, unsigned imm) {                   \
-    wrap_adds_subs_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN); \
+#define WRAP(INSN, is32)                                                \
+  void INSN(Register Rd, Register Rn, uint64_t imm) {                   \
+    wrap_adds_subs_imm_insn(Rd, Rn, imm, &Assembler::INSN, &Assembler::INSN, is32); \
   }                                                                     \
                                                                         \
   void INSN(Register Rd, Register Rn, Register Rm,                      \
@@ -1218,7 +1236,7 @@ public:
     Assembler::INSN(Rd, Rn, Rm, option, amount);                        \
   }
 
-  WRAP(adds) WRAP(addsw) WRAP(subs) WRAP(subsw)
+  WRAP(adds, false) WRAP(addsw, true) WRAP(subs, false) WRAP(subsw, true)
 
   void add(Register Rd, Register Rn, RegisterOrConstant increment);
   void addw(Register Rd, Register Rn, RegisterOrConstant increment);
@@ -1291,7 +1309,7 @@ public:
                      int elem_size);
 
   void fill_words(Register base, Register cnt, Register value);
-  void zero_words(Register base, uint64_t cnt);
+  address zero_words(Register base, uint64_t cnt);
   address zero_words(Register ptr, Register cnt);
   void zero_dcache_blocks(Register base, Register cnt);
 

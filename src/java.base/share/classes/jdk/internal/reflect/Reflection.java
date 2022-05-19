@@ -30,8 +30,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
+import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -108,10 +110,37 @@ public class Reflection {
     }
 
     @ForceInline
-    public static void ensureNativeAccess(Class<?> currentClass) {
-        Module module = currentClass.getModule();
-        if (!SharedSecrets.getJavaLangAccess().isEnableNativeAccess(module)) {
-            throw new IllegalCallerException("Illegal native access from: " + module);
+    public static void ensureNativeAccess(Class<?> currentClass, Class<?> owner, String methodName) {
+        // if there is no caller class, act as if the call came from unnamed module of system class loader
+        Module module = currentClass != null ?
+                currentClass.getModule() :
+                ClassLoader.getSystemClassLoader().getUnnamedModule();
+        boolean isNativeAccessEnabled = SharedSecrets.getJavaLangAccess().isEnableNativeAccess(module);
+        if (!isNativeAccessEnabled) {
+            synchronized(module) {
+                isNativeAccessEnabled = SharedSecrets.getJavaLangAccess().isEnableNativeAccess(module);
+                if (isNativeAccessEnabled) {
+                    // some other thread got to it, do nothing
+                } else if (ModuleBootstrap.hasEnableNativeAccessFlag()) {
+                    throw new IllegalCallerException("Illegal native access from: " + module);
+                } else {
+                    // warn and set flag, so that only one warning is reported per module
+                    String cls = owner.getName();
+                    String mtd = cls + "::" + methodName;
+                    String mod = module.isNamed() ? "module " + module.getName() : "the unnamed module";
+                    String modflag = module.isNamed() ? module.getName() : "ALL-UNNAMED";
+                    System.err.printf("""
+                            WARNING: A restricted method in %s has been called
+                            WARNING: %s has been called by %s
+                            WARNING: Use --enable-native-access=%s to avoid a warning for this module
+                            %n""", cls, mtd, mod, modflag);
+                    if (module.isNamed()) {
+                        SharedSecrets.getJavaLangAccess().addEnableNativeAccess(module);
+                    } else {
+                        SharedSecrets.getJavaLangAccess().addEnableNativeAccessAllUnnamed();
+                    }
+                }
+            }
         }
     }
 
