@@ -200,6 +200,8 @@ header extends java/lang/Object implements com/sun/source/tree/StatementTree fla
 class name com/sun/source/tree/ForLoopTree
 header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
 
+-class name com/sun/source/tree/GuardedPatternTree
+
 class name com/sun/source/tree/IdentifierTree
 header extends java/lang/Object implements com/sun/source/tree/ExpressionTree flags 601
 
@@ -254,6 +256,9 @@ header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
 class name com/sun/source/tree/ParenthesizedTree
 header extends java/lang/Object implements com/sun/source/tree/ExpressionTree flags 601
 
+class name com/sun/source/tree/PatternTree
+method name getGuard descriptor ()Lcom/sun/source/tree/ExpressionTree; flags 401 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SWITCH_PATTERN_MATCHING;,reflective=Ztrue)
+
 class name com/sun/source/tree/PrimitiveTypeTree
 header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
 
@@ -281,8 +286,12 @@ header extends java/lang/Object implements com/sun/source/tree/StatementTree fla
 class name com/sun/source/tree/ThrowTree
 header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
 
+class name com/sun/source/tree/Tree$Kind
+-field name GUARDED_PATTERN descriptor Lcom/sun/source/tree/Tree$Kind;
+
 class name com/sun/source/tree/TreeVisitor
 header extends java/lang/Object flags 601 signature <R:Ljava/lang/Object;P:Ljava/lang/Object;>Ljava/lang/Object;
+-method name visitGuardedPattern descriptor (Lcom/sun/source/tree/GuardedPatternTree;Ljava/lang/Object;)Ljava/lang/Object;
 
 class name com/sun/source/tree/TryTree
 header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
@@ -341,6 +350,7 @@ header extends java/lang/Object implements com/sun/source/doctree/DocTreeVisitor
 
 class name com/sun/source/util/SimpleTreeVisitor
 header extends java/lang/Object implements com/sun/source/tree/TreeVisitor flags 21 signature <R:Ljava/lang/Object;P:Ljava/lang/Object;>Ljava/lang/Object;Lcom/sun/source/tree/TreeVisitor<TR;TP;>;
+-method name visitGuardedPattern descriptor (Lcom/sun/source/tree/GuardedPatternTree;Ljava/lang/Object;)Ljava/lang/Object;
 
 class name com/sun/source/util/SourcePositions
 header extends java/lang/Object flags 601
@@ -350,6 +360,9 @@ header extends java/lang/Object flags 601
 
 class name com/sun/source/util/TreePathScanner
 header extends com/sun/source/util/TreeScanner flags 21 signature <R:Ljava/lang/Object;P:Ljava/lang/Object;>Lcom/sun/source/util/TreeScanner<TR;TP;>;
+
+class name com/sun/source/util/TreeScanner
+-method name visitGuardedPattern descriptor (Lcom/sun/source/tree/GuardedPatternTree;Ljava/lang/Object;)Ljava/lang/Object;
 
 class name com/sun/source/util/Trees
 header extends java/lang/Object flags 421
