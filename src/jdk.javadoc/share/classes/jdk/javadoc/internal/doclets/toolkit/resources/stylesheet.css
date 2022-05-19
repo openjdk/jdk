@@ -62,6 +62,45 @@ h5 {
 h6 {
     font-size:13px;
 }
+h1, h2, h3, h4, h5, h6 {
+    max-height: 2em;
+}
+button.copy-header {
+    opacity: 80%;
+    transition: opacity 0.2s;
+    border: none;
+    border-radius: 3px;
+    margin: 0 0.1em;
+    padding: 1px 5px;
+    background:none;
+    cursor: pointer;
+    position:relative;
+    height: 1.35em;
+}
+button.copy-header:hover {
+    opacity: 100%;
+}
+button.copy-header img {
+    position: relative;
+    height: 1em;
+    top: 0.1em;
+}
+button.copy-header span {
+    color: #303030;
+    content: attr(aria-label);
+    font-size: 85%;
+    position: relative;
+    top: -0.1em;
+    transition: all 0.2s;
+    opacity: 0;
+}
+button.copy-header:hover span {
+    opacity: 100%;
+}
+button.copy-header:active {
+    background-color: rgba(128, 128, 160, 0.2);
+    opacity: 100%;
+}
 ul {
     list-style-type:disc;
 }
@@ -747,7 +786,6 @@ div.page-search-info button.copy-url:hover {
 button.copy-url span {
     color: #000000;
     content: attr(aria-label);
-    font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;
     font-size: 85%;
     line-height: 1.2em;
     padding: 0.2em;
@@ -1094,7 +1132,6 @@ div.snippet-container button.snippet-copy:hover {
 button.snippet-copy span {
     color: #3d3d3d;
     content: attr(aria-label);
-    font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;
     font-size: 85%;
     line-height: 1.2em;
     padding: 0.2em;
