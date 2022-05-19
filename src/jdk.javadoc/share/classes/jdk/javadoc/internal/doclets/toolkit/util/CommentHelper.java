@@ -25,15 +25,16 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.AttributeTree;
@@ -157,7 +158,10 @@ public class CommentHelper {
             return null;
         }
         DocTrees doctrees = configuration.docEnv.getDocTrees();
-        return doctrees.getElement(docTreePath);
+        // Workaround for JDK-8284193
+        // DocTrees.getElement(DocTreePath) returns javac-internal Symbols
+        var e = doctrees.getElement(docTreePath);
+        return e == null || e.getKind() == ElementKind.CLASS && e.asType().getKind() != TypeKind.DECLARED ? null : e;
     }
 
     public TypeMirror getType(ReferenceTree rtree) {
@@ -573,10 +577,9 @@ public class CommentHelper {
 
     public List<? extends DocTree> getTags(DocTree dtree) {
         return new SimpleDocTreeVisitor<List<? extends DocTree>, Void>() {
-            List<? extends DocTree> asList(String content) {
-                List<DocTree> out = new ArrayList<>();
-                out.add(configuration.cmtUtils.makeTextTree(content));
-                return out;
+
+            private List<DocTree> asList(String content) {
+                return List.of(configuration.cmtUtils.makeTextTree(content));
             }
 
             @Override
@@ -606,7 +609,7 @@ public class CommentHelper {
 
             @Override
             public List<? extends DocTree> visitProvides(ProvidesTree node, Void p) {
-                 return node.getDescription();
+                return node.getDescription();
             }
 
             @Override
@@ -626,7 +629,7 @@ public class CommentHelper {
 
             @Override
             public List<? extends DocTree> visitParam(ParamTree node, Void p) {
-               return node.getDescription();
+                return node.getDescription();
             }
 
             @Override
@@ -656,7 +659,7 @@ public class CommentHelper {
 
             @Override
             public List<? extends DocTree> visitThrows(ThrowsTree node, Void p) {
-                 return node.getDescription();
+                return node.getDescription();
             }
 
             @Override
@@ -666,12 +669,12 @@ public class CommentHelper {
 
             @Override
             public List<? extends DocTree> visitUses(UsesTree node, Void p) {
-                 return node.getDescription();
+                return node.getDescription();
             }
 
             @Override
             protected List<? extends DocTree> defaultAction(DocTree node, Void p) {
-               return List.of();
+                return List.of();
             }
         }.visit(dtree, null);
     }
@@ -708,7 +711,7 @@ public class CommentHelper {
         DocFinder.Output inheritedDoc =
                 DocFinder.search(configuration,
                         new DocFinder.Input(utils, ee));
-        return inheritedDoc == null || inheritedDoc.holder == ee
+        return inheritedDoc.holder == ee
                 ? null
                 : utils.getCommentHelper(inheritedDoc.holder).getDocTreePath(dtree);
     }

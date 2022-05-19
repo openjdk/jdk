@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,10 +285,10 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
 }
 
 
-LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
+LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
   assert(type == T_LONG || type == T_INT, "should be");
   LIR_Opr r = make_constant(type, x);
-  bool imm_in_range = AsmOperand::is_rotated_imm(x);
+  bool imm_in_range = AsmOperand::is_rotated_imm((unsigned int)(x));
   if (!imm_in_range) {
     LIR_Opr tmp = new_register(type);
     __ move(r, tmp);
@@ -1327,4 +1327,8 @@ void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
     return;
   }
   __ load(address, result, info, lir_patch_none);
+}
+
+void LIRGenerator::do_continuation_doYield(Intrinsic* x) {
+  fatal("Continuation.doYield intrinsic is not implemented on this platform");
 }

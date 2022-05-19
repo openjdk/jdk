@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -241,7 +241,7 @@ inline bool MacroAssembler::is_bc_far_variant3_at(address instruction_addr) {
 // if CCR0bi is "equal", dst is set to 0, otherwise it's set to -1.
 inline void MacroAssembler::set_cmp3(Register dst) {
   assert_different_registers(dst, R0);
-  // P10, prefer using setbc intructions
+  // P10, prefer using setbc instructions
   if (VM_Version::has_brw()) {
     setbc(R0, CCR0, Assembler::greater); // Set 1 to R0 if CCR0bi is "greater than", otherwise 0
     setnbc(dst, CCR0, Assembler::less); // Set -1 to dst if CCR0bi is "less than", otherwise 0

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -20,6 +20,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bm" draft="contributed">bamanankan</language>
 			<language type="bn" draft="contributed">bangla</language>
 			<language type="de" draft="contributed">njemački</language>
+			<language type="de_CH">švajcarski visoki njemački</language>
 			<language type="en_GB">engleski (Velika Britanija)</language>
 			<language type="es_ES">španski (Evropa)</language>
 			<language type="fa_AF" draft="contributed">dari</language>
@@ -1648,6 +1649,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="few" draft="contributed">sjevernokorejska vona</displayName>
 				<displayName count="other" draft="contributed">sjevernokorejskih vona</displayName>
 			</currency>
+			<currency type="NIO">
+				<displayName>Nikaragvanska zlatna kordoba</displayName>
+				<displayName count="one">nikaragvanska zlatna kordoba</displayName>
+				<displayName count="few">nikaragvanske zlatne kordobe</displayName>
+				<displayName count="other">nikaragvanskih zlatnih kordoba</displayName>
+			</currency>
 		</currencies>
 	</numbers>
 	<units>
@@ -1733,21 +1740,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</unitLength>
 	</units>
 	<characterLabels>
-		<characterLabel type="body" draft="contributed">tijelo</characterLabel>
-		<characterLabel type="bullets_stars" draft="contributed">Znakovi za nabrajanje/zvjezdice</characterLabel>
-		<characterLabel type="downwards_arrows" draft="contributed">Strelice nadolje</characterLabel>
-		<characterLabel type="downwards_upwards_arrows" draft="contributed">Strelice nadolje i nagore</characterLabel>
-		<characterLabel type="leftwards_arrows" draft="contributed">Strelice nalijevo</characterLabel>
-		<characterLabel type="leftwards_rightwards_arrows" draft="contributed">Strelice nalijevo i nadesno</characterLabel>
-		<characterLabel type="place" draft="contributed">mjesto</characterLabel>
-		<characterLabel type="travel_places" draft="contributed">Putovanja i mjesta</characterLabel>
-		<characterLabel type="weather" draft="contributed">vrijeme</characterLabel>
+		<characterLabel type="body">tijelo</characterLabel>
+		<characterLabel type="bullets_stars">Znakovi za nabrajanje/zvjezdice</characterLabel>
+		<characterLabel type="downwards_arrows">Strelice nadolje</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">Strelice nadolje i nagore</characterLabel>
+		<characterLabel type="leftwards_arrows">Strelice nalijevo</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">Strelice nalijevo i nadesno</characterLabel>
+		<characterLabel type="place">mjesto</characterLabel>
+		<characterLabel type="travel_places">Putovanja i mjesta</characterLabel>
+		<characterLabel type="weather">vrijeme</characterLabel>
 	</characterLabels>
 	<typographicNames>
-		<styleName type="slnt" subtype="-12" draft="contributed">nagnut ulijevo</styleName>
-		<styleName type="wght" subtype="200" draft="contributed">ekstrasvijetao</styleName>
-		<styleName type="wght" subtype="200" alt="ultra" draft="contributed">ultrasvijetao</styleName>
-		<styleName type="wght" subtype="300" draft="contributed">svijetao</styleName>
-		<styleName type="wght" subtype="350" draft="contributed">polusvijetao</styleName>
+		<styleName type="slnt" subtype="-12">nagnut ulijevo</styleName>
+		<styleName type="wght" subtype="200">ekstrasvijetao</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">ultrasvijetao</styleName>
+		<styleName type="wght" subtype="300">svijetao</styleName>
+		<styleName type="wght" subtype="350">polusvijetao</styleName>
 	</typographicNames>
 </ldml>

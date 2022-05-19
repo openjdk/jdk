@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,7 +309,7 @@ public class LocaleEnhanceTest extends IntlTest {
         for (int i = 0; i < tests.length; ++ i) {
             String[] test = tests[i];
             String id = String.valueOf(i);
-            Locale locale = new Locale(test[0], test[1], test[2]);
+            Locale locale = Locale.of(test[0], test[1], test[2]);
             assertEquals(id + " lang", test.length > 3 ? test[3] : test[0], locale.getLanguage());
             assertEquals(id + " region", test.length > 4 ? test[4] : test[1], locale.getCountry());
             assertEquals(id + " variant", test.length > 5 ? test[5] : test[2], locale.getVariant());
@@ -480,7 +480,7 @@ public class LocaleEnhanceTest extends IntlTest {
         };
         for (int i = 0; i < tests.length; ++i) {
             String[] test = tests[i];
-            Locale locale = new Locale(test[0], test[1], test[2]);
+            Locale locale = Locale.of(test[0], test[1], test[2]);
             assertEquals("case " + i, test[3], locale.toLanguageTag());
         }
 
@@ -638,11 +638,11 @@ public class LocaleEnhanceTest extends IntlTest {
     public void testGetDisplayName() {
         final Locale[] testLocales = {
                 Locale.ROOT,
-                new Locale("en"),
-                new Locale("en", "US"),
-                new Locale("", "US"),
-                new Locale("no", "NO", "NY"),
-                new Locale("", "", "NY"),
+                Locale.ENGLISH,
+                Locale.US,
+                Locale.of("", "US"),
+                Locale.of("no", "NO", "NY"),
+                Locale.of("", "", "NY"),
                 Locale.forLanguageTag("zh-Hans"),
                 Locale.forLanguageTag("zh-Hant"),
                 Locale.forLanguageTag("zh-Hans-CN"),
@@ -709,15 +709,15 @@ public class LocaleEnhanceTest extends IntlTest {
 
         // builder canonicalizes the three legacy locales:
         // ja_JP_JP, th_TH_TH, no_NY_NO.
-        locale = builder.setLocale(new Locale("ja", "JP", "JP")).build();
+        locale = builder.setLocale(Locale.of("ja", "JP", "JP")).build();
         assertEquals("ja_JP_JP languagetag", "ja-JP-u-ca-japanese", locale.toLanguageTag());
         assertEquals("ja_JP_JP variant", "", locale.getVariant());
 
-        locale = builder.setLocale(new Locale("th", "TH", "TH")).build();
+        locale = builder.setLocale(Locale.of("th", "TH", "TH")).build();
         assertEquals("th_TH_TH languagetag", "th-TH-u-nu-thai", locale.toLanguageTag());
         assertEquals("th_TH_TH variant", "", locale.getVariant());
 
-        locale = builder.setLocale(new Locale("no", "NO", "NY")).build();
+        locale = builder.setLocale(Locale.of("no", "NO", "NY")).build();
         assertEquals("no_NO_NY languagetag", "nn-NO", locale.toLanguageTag());
         assertEquals("no_NO_NY language", "nn", locale.getLanguage());
         assertEquals("no_NO_NY variant", "", locale.getVariant());
@@ -725,7 +725,7 @@ public class LocaleEnhanceTest extends IntlTest {
         // non-canonical, non-legacy locales are invalid
         new BuilderILE("123_4567_89") {
             public void call() {
-                b.setLocale(new Locale("123", "4567", "89"));
+                b.setLocale(Locale.of("123", "4567", "89"));
             }
         };
     }
@@ -1119,24 +1119,24 @@ public class LocaleEnhanceTest extends IntlTest {
     public void testSerialize() {
         final Locale[] testLocales = {
             Locale.ROOT,
-            new Locale("en"),
-            new Locale("en", "US"),
-            new Locale("en", "US", "Win"),
-            new Locale("en", "US", "Win_XP"),
-            new Locale("ja", "JP"),
-            new Locale("ja", "JP", "JP"),
-            new Locale("th", "TH"),
-            new Locale("th", "TH", "TH"),
-            new Locale("no", "NO"),
-            new Locale("nb", "NO"),
-            new Locale("nn", "NO"),
-            new Locale("no", "NO", "NY"),
-            new Locale("nn", "NO", "NY"),
-            new Locale("he", "IL"),
-            new Locale("he", "IL", "var"),
-            new Locale("Language", "Country", "Variant"),
-            new Locale("", "US"),
-            new Locale("", "", "Java"),
+            Locale.ENGLISH,
+            Locale.US,
+            Locale.of("en", "US", "Win"),
+            Locale.of("en", "US", "Win_XP"),
+            Locale.JAPAN,
+            Locale.of("ja", "JP", "JP"),
+            Locale.of("th", "TH"),
+            Locale.of("th", "TH", "TH"),
+            Locale.of("no", "NO"),
+            Locale.of("nb", "NO"),
+            Locale.of("nn", "NO"),
+            Locale.of("no", "NO", "NY"),
+            Locale.of("nn", "NO", "NY"),
+            Locale.of("he", "IL"),
+            Locale.of("he", "IL", "var"),
+            Locale.of("Language", "Country", "Variant"),
+            Locale.of("", "US"),
+            Locale.of("", "", "Java"),
             Locale.forLanguageTag("en-Latn-US"),
             Locale.forLanguageTag("zh-Hans"),
             Locale.forLanguageTag("zh-Hant-TW"),
@@ -1209,7 +1209,7 @@ public class LocaleEnhanceTest extends IntlTest {
                 String lang = fields[0];
                 String country = (fields.length >= 2) ? fields[1] : "";
                 String variant = (fields.length == 3) ? fields[2] : "";
-                locale = new Locale(lang, country, variant);
+                locale = Locale.of(lang, country, variant);
             }
 
             // deserialize
@@ -1287,17 +1287,17 @@ public class LocaleEnhanceTest extends IntlTest {
      * 7033504: (lc) incompatible behavior change for ja_JP_JP and th_TH_TH locales
      */
     public void testBug7033504() {
-        checkCalendar(new Locale("ja", "JP", "jp"), "java.util.GregorianCalendar");
-        checkCalendar(new Locale("ja", "jp", "jp"), "java.util.GregorianCalendar");
-        checkCalendar(new Locale("ja", "JP", "JP"), "java.util.JapaneseImperialCalendar");
-        checkCalendar(new Locale("ja", "jp", "JP"), "java.util.JapaneseImperialCalendar");
+        checkCalendar(Locale.of("ja", "JP", "jp"), "java.util.GregorianCalendar");
+        checkCalendar(Locale.of("ja", "jp", "jp"), "java.util.GregorianCalendar");
+        checkCalendar(Locale.of("ja", "JP", "JP"), "java.util.JapaneseImperialCalendar");
+        checkCalendar(Locale.of("ja", "jp", "JP"), "java.util.JapaneseImperialCalendar");
         checkCalendar(Locale.forLanguageTag("en-u-ca-japanese"),
                       "java.util.JapaneseImperialCalendar");
 
-        checkDigit(new Locale("th", "TH", "th"), '0');
-        checkDigit(new Locale("th", "th", "th"), '0');
-        checkDigit(new Locale("th", "TH", "TH"), '\u0e50');
-        checkDigit(new Locale("th", "TH", "TH"), '\u0e50');
+        checkDigit(Locale.of("th", "TH", "th"), '0');
+        checkDigit(Locale.of("th", "th", "th"), '0');
+        checkDigit(Locale.of("th", "TH", "TH"), '\u0e50');
+        checkDigit(Locale.of("th", "TH", "TH"), '\u0e50');
         checkDigit(Locale.forLanguageTag("en-u-nu-thai"), '\u0e50');
     }
 

@@ -1040,7 +1040,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     }
 
     /**
-     * Nulls out slots starting at array index i, upto index end.
+     * Nulls out slots starting at array index i, up to index end.
      * Condition i == end means "empty" - nothing to do.
      */
     private static void circularClear(Object[] es, int i, int end) {

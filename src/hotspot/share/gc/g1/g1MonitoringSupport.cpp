@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,7 @@ void G1MonitoringSupport::recalculate_sizes() {
 
   // _overall_used and _eden_space_used are obtained concurrently so
   // may be inconsistent with each other. To prevent _old_gen_used going negative,
-  // use smaller value to substract.
+  // use smaller value to subtract.
   _old_gen_used = _overall_used - MIN2(_overall_used, _eden_space_used + _survivor_space_used);
 
   uint survivor_list_length = _g1h->survivor_regions_count();

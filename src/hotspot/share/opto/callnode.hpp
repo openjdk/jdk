@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@ class     CallRuntimeNode;
 class       CallLeafNode;
 class         CallLeafNoFPNode;
 class         CallLeafVectorNode;
-class     CallNativeNode;
 class     AllocateNode;
 class       AllocateArrayNode;
 class     AbstractLockNode;
@@ -205,7 +204,7 @@ private:
   uint              _monoff;    // Offset to monitors in input edge mapping
   uint              _scloff;    // Offset to fields of scalar objs in input edge mapping
   uint              _endoff;    // Offset to end of input edge mapping
-  uint              _sp;        // Jave Expression Stack Pointer for this state
+  uint              _sp;        // Java Expression Stack Pointer for this state
   int               _bci;       // Byte Code Index of this JVM point
   ReexecuteState    _reexecute; // Whether this bytecode need to be re-executed
   ciMethod*         _method;    // Method Pointer
@@ -512,7 +511,6 @@ class SafePointScalarObjectNode: public TypeNode {
                      // states of the scalarized object fields are collected.
                      // It is relative to the last (youngest) jvms->_scloff.
   uint _n_fields;    // Number of non-static fields of the scalarized object.
-  bool _is_auto_box; // True if the scalarized object is an auto box.
   DEBUG_ONLY(Node* _alloc;)
 
   virtual uint hash() const ; // { return NO_HASH; }
@@ -525,7 +523,7 @@ public:
 #ifdef ASSERT
                             Node* alloc,
 #endif
-                            uint first_index, uint n_fields, bool is_auto_box = false);
+                            uint first_index, uint n_fields);
   virtual int Opcode() const;
   virtual uint           ideal_reg() const;
   virtual const RegMask &in_RegMask(uint) const;
@@ -538,7 +536,6 @@ public:
   }
   uint n_fields()    const { return _n_fields; }
 
-  bool is_auto_box() const { return _is_auto_box; }
 #ifdef ASSERT
   Node* alloc() const { return _alloc; }
 #endif
@@ -819,42 +816,6 @@ public:
   }
   virtual int   Opcode() const;
   virtual bool        guaranteed_safepoint()  { return false; }
-#ifndef PRODUCT
-  virtual void  dump_spec(outputStream *st) const;
-#endif
-};
-
-//------------------------------CallNativeNode-----------------------------------
-// Make a direct call into a foreign function with an arbitrary ABI
-// safepoints
-class CallNativeNode : public CallNode {
-  friend class MachCallNativeNode;
-  virtual bool cmp( const Node &n ) const;
-  virtual uint size_of() const;
-  static void print_regs(const GrowableArray<VMReg>& regs, outputStream* st);
-public:
-  GrowableArray<VMReg> _arg_regs;
-  GrowableArray<VMReg> _ret_regs;
-  const int _shadow_space_bytes;
-  const bool _need_transition;
-
-  CallNativeNode(const TypeFunc* tf, address addr, const char* name,
-                 const TypePtr* adr_type,
-                 const GrowableArray<VMReg>& arg_regs,
-                 const GrowableArray<VMReg>& ret_regs,
-                 int shadow_space_bytes,
-                 bool need_transition)
-    : CallNode(tf, addr, adr_type), _arg_regs(arg_regs),
-      _ret_regs(ret_regs), _shadow_space_bytes(shadow_space_bytes),
-      _need_transition(need_transition)
-  {
-    init_class_id(Class_CallNative);
-    _name = name;
-  }
-  virtual int   Opcode() const;
-  virtual bool  guaranteed_safepoint()  { return _need_transition; }
-  virtual Node* match(const ProjNode *proj, const Matcher *m);
-  virtual void  calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const;
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
 #endif

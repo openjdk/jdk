@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -207,7 +207,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
   return generate_address(array_opr, index_opr, shift, offset_in_bytes, type);
 }
 
-LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
+LIR_Opr LIRGenerator::load_immediate(jlong x, BasicType type) {
   LIR_Opr r;
   if (type == T_LONG) {
     r = LIR_OprFact::longConst(x);
@@ -217,7 +217,7 @@ LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
       return tmp;
     }
   } else if (type == T_INT) {
-    r = LIR_OprFact::intConst(x);
+    r = LIR_OprFact::intConst(checked_cast<jint>(x));
     if (!Assembler::operand_valid_for_logical_immediate(true, x)) {
       // This is all rather nasty.  We don't know whether our constant
       // is required for a logical or an arithmetic operation, wo we
@@ -338,6 +338,17 @@ void LIRGenerator::do_MonitorExit(MonitorExit* x) {
   monitor_exit(obj_temp, lock, syncTempOpr(), LIR_OprFact::illegalOpr, x->monitor_no());
 }
 
+void LIRGenerator::do_continuation_doYield(Intrinsic* x) {
+  BasicTypeList signature(0);
+  CallingConvention* cc = frame_map()->java_calling_convention(&signature, true);
+
+  const LIR_Opr result_reg = result_register_for(x->type());
+  address entry = StubRoutines::cont_doYield();
+  LIR_Opr result = rlock_result(x);
+  CodeEmitInfo* info = state_for(x, x->state());
+  __ call_runtime(entry, LIR_OprFact::illegalOpr, result_reg, cc->args(), info);
+  __ move(result_reg, result);
+}
 
 void LIRGenerator::do_NegateOp(NegateOp* x) {
 

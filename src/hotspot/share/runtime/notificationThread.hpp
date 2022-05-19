@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 // A JavaThread for low memory detection support, GC and
 // diagnostic framework notifications. This thread is not hidden
 // from the external view to allow the debugger to stop at the
-// breakpoints inside registred MXBean notification listeners.
+// breakpoints inside registered MXBean notification listeners.
 
 class NotificationThread : public JavaThread {
   friend class VMStructs;

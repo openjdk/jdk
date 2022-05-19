@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/thread.hpp"
@@ -159,6 +160,10 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
   NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
 
   barrier->set_value(disarmed_value());
+}
+
+void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
+  Unimplemented();
 }
 
 bool BarrierSetNMethod::is_armed(nmethod* nm) {

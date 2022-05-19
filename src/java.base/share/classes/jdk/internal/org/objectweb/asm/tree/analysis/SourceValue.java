@@ -97,7 +97,7 @@ public class SourceValue implements Value {
       *     short, int, float, object and array types, and 2 for long and double.
       */
     public SourceValue(final int size) {
-        this(size, new SmallSet<AbstractInsnNode>());
+        this(size, new SmallSet<>());
     }
 
     /**

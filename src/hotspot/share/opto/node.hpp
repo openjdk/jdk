@@ -55,7 +55,6 @@ class CallLeafNode;
 class CallLeafNoFPNode;
 class CallNode;
 class CallRuntimeNode;
-class CallNativeNode;
 class CallStaticJavaNode;
 class CastFFNode;
 class CastDDNode;
@@ -104,7 +103,6 @@ class MachCallDynamicJavaNode;
 class MachCallJavaNode;
 class MachCallLeafNode;
 class MachCallNode;
-class MachCallNativeNode;
 class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
 class MachConstantBaseNode;
@@ -149,6 +147,7 @@ class PhaseTransform;
 class PhaseValues;
 class PhiNode;
 class Pipeline;
+class PopulateIndexNode;
 class ProjNode;
 class RangeCheckNode;
 class RegMask;
@@ -176,12 +175,6 @@ class VectorUnboxNode;
 class VectorSet;
 class VectorReinterpretNode;
 class ShiftVNode;
-
-// The type of all node counts and indexes.
-// It must hold at least 16 bits, but must also be fast to load and store.
-// This type, if less than 32 bits, could limit the number of possible nodes.
-// (To make this type platform-specific, move to globalDefinitions_xxx.hpp.)
-typedef unsigned int node_idx_t;
 
 
 #ifndef OPTO_DU_ITERATOR_ASSERT
@@ -652,7 +645,6 @@ public:
             DEFINE_CLASS_ID(Lock,             AbstractLock, 0)
             DEFINE_CLASS_ID(Unlock,           AbstractLock, 1)
           DEFINE_CLASS_ID(ArrayCopy,        Call, 4)
-          DEFINE_CLASS_ID(CallNative,       Call, 5)
       DEFINE_CLASS_ID(MultiBranch, Multi, 1)
         DEFINE_CLASS_ID(PCTable,     MultiBranch, 0)
           DEFINE_CLASS_ID(Catch,       PCTable, 0)
@@ -678,7 +670,6 @@ public:
               DEFINE_CLASS_ID(MachCallDynamicJava,  MachCallJava, 1)
             DEFINE_CLASS_ID(MachCallRuntime,      MachCall, 1)
               DEFINE_CLASS_ID(MachCallLeaf,         MachCallRuntime, 0)
-            DEFINE_CLASS_ID(MachCallNative,       MachCall, 2)
       DEFINE_CLASS_ID(MachBranch, Mach, 1)
         DEFINE_CLASS_ID(MachIf,         MachBranch, 0)
         DEFINE_CLASS_ID(MachGoto,       MachBranch, 1)
@@ -850,7 +841,6 @@ public:
   DEFINE_CLASS_QUERY(Bool)
   DEFINE_CLASS_QUERY(BoxLock)
   DEFINE_CLASS_QUERY(Call)
-  DEFINE_CLASS_QUERY(CallNative)
   DEFINE_CLASS_QUERY(CallDynamicJava)
   DEFINE_CLASS_QUERY(CallJava)
   DEFINE_CLASS_QUERY(CallLeaf)
@@ -896,7 +886,6 @@ public:
   DEFINE_CLASS_QUERY(Mach)
   DEFINE_CLASS_QUERY(MachBranch)
   DEFINE_CLASS_QUERY(MachCall)
-  DEFINE_CLASS_QUERY(MachCallNative)
   DEFINE_CLASS_QUERY(MachCallDynamicJava)
   DEFINE_CLASS_QUERY(MachCallJava)
   DEFINE_CLASS_QUERY(MachCallLeaf)
@@ -1031,7 +1020,7 @@ public:
 
   // Return a node which is more "ideal" than the current node.
   // The invariants on this call are subtle.  If in doubt, read the
-  // treatise in node.cpp above the default implemention AND TEST WITH
+  // treatise in node.cpp above the default implementation AND TEST WITH
   // +VerifyIterativeGVN!
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
@@ -1852,6 +1841,14 @@ Op_IL(URShift)
 Op_IL(LShift)
 Op_IL(Xor)
 Op_IL(Cmp)
+
+inline int Op_ConIL(BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "only for int or longs");
+  if (bt == T_INT) {
+    return Op_ConI;
+  }
+  return Op_ConL;
+}
 
 inline int Op_Cmp_unsigned(BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "only for int or longs");

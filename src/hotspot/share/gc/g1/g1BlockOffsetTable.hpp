@@ -117,13 +117,8 @@ private:
   // The region that owns this subregion.
   HeapRegion* _hr;
 
-  // Sets the entries
-  // corresponding to the cards starting at "start" and ending at "end"
-  // to point back to the card before "start": the interval [start, end)
-  // is right-open.
-  void set_remainder_to_point_to_start(HeapWord* start, HeapWord* end);
-  // Same as above, except that the args here are a card _index_ interval
-  // that is closed: [start_index, end_index]
+  // Sets the entries corresponding to the cards starting at "start" and ending
+  // at "end" to point back to the card before "start"; [start, end]
   void set_remainder_to_point_to_start_incl(size_t start, size_t end);
 
   inline size_t block_size(const HeapWord* p) const;

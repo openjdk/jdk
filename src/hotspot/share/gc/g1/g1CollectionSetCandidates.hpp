@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public:
 
   // Iterate over all remaining collection set candidate regions.
   void iterate(HeapRegionClosure* cl);
-  // Iterate over all remaining collectin set candidate regions from the end
+  // Iterate over all remaining collection set candidate regions from the end
   // to the beginning of the set.
   void iterate_backwards(HeapRegionClosure* cl);
 

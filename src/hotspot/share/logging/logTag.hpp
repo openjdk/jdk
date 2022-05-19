@@ -58,6 +58,7 @@ class outputStream;
   LOG_TAG(constantpool) \
   LOG_TAG(constraints) \
   LOG_TAG(container) \
+  LOG_TAG(continuations) \
   LOG_TAG(coops) \
   LOG_TAG(cpu) \
   LOG_TAG(cset) \
@@ -67,6 +68,7 @@ class outputStream;
   LOG_TAG(decoder) \
   LOG_TAG(defaultmethods) \
   LOG_TAG(director) \
+  NOT_PRODUCT(LOG_TAG(downcall)) \
   LOG_TAG(dump) \
   NOT_PRODUCT(LOG_TAG(dwarf)) \
   LOG_TAG(dynamic) \
@@ -76,7 +78,7 @@ class outputStream;
   LOG_TAG(exit) \
   LOG_TAG(finalizer) \
   LOG_TAG(fingerprint) \
-  DEBUG_ONLY(LOG_TAG(foreign)) \
+  NOT_PRODUCT(LOG_TAG(foreign)) \
   LOG_TAG(free) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
@@ -143,6 +145,7 @@ class outputStream;
   LOG_TAG(phases) \
   LOG_TAG(plab) \
   LOG_TAG(placeholders) \
+  LOG_TAG(preempt) \
   LOG_TAG(preorder)  /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(preview)   /* Trace loading of preview feature types */ \
   LOG_TAG(promotion) \
@@ -191,6 +194,7 @@ class outputStream;
   LOG_TAG(tracking) \
   LOG_TAG(unload) /* Trace unloading of classes */ \
   LOG_TAG(unshareable) \
+  NOT_PRODUCT(LOG_TAG(upcall)) \
   LOG_TAG(update) \
   LOG_TAG(valuebasedclasses) \
   LOG_TAG(verification) \

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -12,8 +12,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<localeDisplayPattern>
-			<localePattern draft="contributed">{0} ({1})</localePattern>
-			<localeSeparator draft="contributed">{0}, {1}</localeSeparator>
+			<localePattern>{0} ({1})</localePattern>
+			<localeSeparator>{0}, {1}</localeSeparator>
 		</localeDisplayPattern>
 		<languages>
 			<language type="aa" draft="contributed">afar</language>
@@ -689,7 +689,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Zzzz">scrittira nunenconuschenta</script>
 		</scripts>
 		<territories>
-			<territory type="001" draft="contributed">mund</territory>
+			<territory type="001">mund</territory>
 			<territory type="002" draft="contributed">Africa</territory>
 			<territory type="003" draft="contributed">America dal Nord</territory>
 			<territory type="005" draft="contributed">America dal Sid</territory>
@@ -770,7 +770,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CK" draft="contributed">Inslas Cook</territory>
 			<territory type="CL" draft="contributed">Chile</territory>
 			<territory type="CM" draft="contributed">Camerun</territory>
-			<territory type="CN" draft="contributed">China</territory>
+			<territory type="CN">China</territory>
 			<territory type="CO" draft="contributed">Columbia</territory>
 			<territory type="CP">Insla da Clipperton</territory>
 			<territory type="CR" draft="contributed">Costa Rica</territory>
@@ -837,7 +837,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IE" draft="contributed">Irlanda</territory>
 			<territory type="IL" draft="contributed">Israel</territory>
 			<territory type="IM" draft="contributed">Insla da Man</territory>
-			<territory type="IN" draft="contributed">India</territory>
+			<territory type="IN">India</territory>
 			<territory type="IO" draft="contributed">Territori Britannic en l’Ocean Indic</territory>
 			<territory type="IQ" draft="contributed">Irac</territory>
 			<territory type="IR" draft="contributed">Iran</territory>
@@ -906,7 +906,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="NU" draft="contributed">Niue</territory>
 			<territory type="NZ" draft="contributed">Nova Zelanda</territory>
 			<territory type="OM" draft="contributed">Oman</territory>
-			<territory type="PA" draft="contributed">Panama</territory>
+			<territory type="PA">Panama</territory>
 			<territory type="PE" draft="contributed">Peru</territory>
 			<territory type="PF" draft="contributed">Polinesia Franzosa</territory>
 			<territory type="PG" draft="contributed">Papua Nova Guinea</territory>
@@ -926,7 +926,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="RE" draft="contributed">Réunion</territory>
 			<territory type="RO" draft="contributed">Rumenia</territory>
 			<territory type="RS" draft="contributed">Serbia</territory>
-			<territory type="RU" draft="contributed">Russia</territory>
+			<territory type="RU">Russia</territory>
 			<territory type="RW" draft="contributed">Ruanda</territory>
 			<territory type="SA" draft="contributed">Arabia Saudita</territory>
 			<territory type="SB">Inslas Salomonas</territory>
@@ -1083,9 +1083,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<measurementSystemName type="US">american</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language" draft="contributed">Lingua: {0}</codePattern>
-			<codePattern type="script" draft="contributed">Scrittira: {0}</codePattern>
-			<codePattern type="territory" draft="contributed">Regiun: {0}</codePattern>
+			<codePattern type="language">Lingua: {0}</codePattern>
+			<codePattern type="script">Scrittira: {0}</codePattern>
+			<codePattern type="territory">Regiun: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
@@ -1107,21 +1107,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="contributed">EEEE, 'ils' d MMMM y G</pattern>
+							<datetimeSkeleton draft="contributed">GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="contributed">d MMMM y G</pattern>
+							<datetimeSkeleton draft="contributed">GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="contributed">dd-MM-y G</pattern>
+							<datetimeSkeleton draft="contributed">GyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern draft="contributed">dd-MM-y GGGGG</pattern>
+							<datetimeSkeleton draft="contributed">GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1565,21 +1569,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, 'ils' d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>dd-MM-y</pattern>
+							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd-MM-yy</pattern>
+							<datetimeSkeleton>yyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1587,21 +1595,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
+							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1635,6 +1647,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">dd-MM-y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">LLL y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">dd-MM-y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, dd-MM-y GGGGG</dateFormatItem>
@@ -1658,6 +1671,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMEd">E, dd-MM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">W. 'emna' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">W. 'emna' MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">LL-y</dateFormatItem>
@@ -1671,6 +1686,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMMEd">E, d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">w. 'dal' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">w. 'emna' 'dal' Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1804,6 +1821,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="quarter">
 				<displayName>quartal</displayName>
 			</field>
+			<field type="quarter-short">
+				<displayName>qrtl</displayName>
+			</field>
+			<field type="quarter-narrow">
+				<displayName>qrtl</displayName>
+			</field>
 			<field type="month">
 				<displayName draft="contributed">mais</displayName>
 			</field>
@@ -1825,7 +1848,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>d</displayName>
 			</field>
 			<field type="weekday">
-				<displayName draft="contributed">di da l’emna</displayName>
+				<displayName>di da l’emna</displayName>
 			</field>
 			<field type="sun-short">
 				<relativeTime type="future">
@@ -1834,19 +1857,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="dayperiod">
-				<displayName draft="contributed">mesadad dal di</displayName>
+				<displayName>mesadad dal di</displayName>
 			</field>
 			<field type="hour">
-				<displayName draft="contributed">ura</displayName>
+				<displayName>ura</displayName>
 			</field>
 			<field type="minute">
-				<displayName draft="contributed">minuta</displayName>
+				<displayName>minuta</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName>min</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName>min</displayName>
 			</field>
 			<field type="second">
-				<displayName draft="contributed">secunda</displayName>
+				<displayName>secunda</displayName>
+			</field>
+			<field type="second-short">
+				<displayName>s</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName>s</displayName>
 			</field>
 			<field type="zone">
-				<displayName draft="contributed">zona d’urari</displayName>
+				<displayName>zona d’urari</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
@@ -1994,6 +2029,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<exemplarCity draft="contributed">Inslas Feroe</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
+				<long>
+					<daylight>temp da stad britannic</daylight>
+				</long>
 				<exemplarCity>Londra</exemplarCity>
 			</zone>
 			<zone type="Europe/Guernsey">
@@ -2336,6 +2374,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign>%</percentSign>
 			<plusSign>+</plusSign>
 			<minusSign>−</minusSign>
+			<approximatelySign>≈</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -2614,7 +2653,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BRL">
 				<displayName>real brasilian</displayName>
-				<displayName count="one">reals brasilians</displayName>
+				<displayName count="one">real brasilian</displayName>
 				<displayName count="other">reals brasilians</displayName>
 			</currency>
 			<currency type="BRN">
@@ -3876,16 +3915,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
+			<pattern type="approximately">≈{0}</pattern>
 			<pattern type="atLeast">≥{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
 			<pluralMinimalPairs count="one" draft="contributed">{0} di</pluralMinimalPairs>
 			<pluralMinimalPairs count="other" draft="contributed">{0} dis</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Prender la {0}. a dretga.</ordinalMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="per">
+				<compoundUnitPattern>{0} per {1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="digital-petabyte">
 				<displayName>petabytes</displayName>
 				<unitPattern count="one">{0} petabyte</unitPattern>
@@ -4034,6 +4078,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} liters</unitPattern>
 				<perUnitPattern>{0} per liter</perUnitPattern>
 			</unit>
+			<coordinateUnit>
+				<displayName>direcziun</displayName>
+				<coordinateUnitPattern type="east">{0} ost</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} nord</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} sid</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} vest</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
 			<unit type="digital-petabyte">
@@ -4179,6 +4230,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} l</unitPattern>
 				<unitPattern count="other">{0} l</unitPattern>
 			</unit>
+			<coordinateUnit>
+				<displayName>direcziun</displayName>
+				<coordinateUnitPattern type="east">{0} O</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} V</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
 			<unit type="duration-year">
@@ -4220,6 +4278,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ms</displayName>
 				<unitPattern count="one">{0}ms</unitPattern>
 				<unitPattern count="other">{0}ms</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<unitPattern count="one">{0}kWh/100km</unitPattern>
+				<unitPattern count="other">{0}kWh/100km</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -4266,6 +4328,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} l</unitPattern>
 				<unitPattern count="other">{0} l</unitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<unitPattern count="one">{0} gal imp</unitPattern>
+				<unitPattern count="other">{0} gal imp</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<unitPattern count="one">{0} fl oz imp</unitPattern>
+				<unitPattern count="other">{0} fl oz imp</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<unitPattern count="one">{0}dsp-Imp</unitPattern>
+				<unitPattern count="other">{0}dsp-Imp</unitPattern>
+			</unit>
+			<coordinateUnit>
+				<displayName>direcziun</displayName>
+				<coordinateUnitPattern type="east">{0}O</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0}V</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
 			<durationUnitPattern>h:mm</durationUnitPattern>

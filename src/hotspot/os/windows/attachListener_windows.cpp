@@ -193,7 +193,7 @@ int Win32AttachListener::enqueue(char* cmd, char* arg0, char* arg1, char* arg2, 
     }
   }
 
-  // check that all paramteres to the operation
+  // check that all parameters to the operation
   if (strlen(cmd) > AttachOperation::name_length_max) return ATTACH_ERROR_ILLEGALARG;
   if (strlen(arg0) > AttachOperation::arg_length_max) return ATTACH_ERROR_ILLEGALARG;
   if (strlen(arg1) > AttachOperation::arg_length_max) return ATTACH_ERROR_ILLEGALARG;

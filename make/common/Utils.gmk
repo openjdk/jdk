@@ -146,7 +146,7 @@ RelativePathHelper = \
         $(if $($2_dotdots), $($2_dotdots), .))
 
 ################################################################################
-# Filter out duplicate sub strings while preserving order. Keeps the first occurance.
+# Filter out duplicate sub strings while preserving order. Keeps the first occurrence.
 uniq = \
     $(strip $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1))))
 
