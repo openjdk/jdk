@@ -67,9 +67,9 @@ public class PlatformGraphicsInfo {
          * code is also set up as headless from the start - it is not so easy
          * to try headful and then unwind that and then retry as headless.
          */
-        final String[] libDirs = System.getProperty("sun.boot.library.path", "").split(":");
         boolean headless =
             AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> {
+                String[] libDirs = System.getProperty("sun.boot.library.path", "").split(":");
                 for (String libDir : libDirs) {
                     File headlessLib = new File(libDir, "libawt_headless.so");
                     File xawtLib = new File(libDir, "libawt_xawt.so");
