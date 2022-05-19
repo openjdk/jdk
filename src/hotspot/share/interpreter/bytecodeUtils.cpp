@@ -183,7 +183,7 @@ class ExceptionMessageBuilder : public StackObj {
 
   static const int _max_cause_detail = 5;
 
-  // Merges the stack the given bci with the given stack. If there
+  // Merges the stack at the given bci with the given stack. If there
   // is no stack at the bci, we just put the given stack there. This
   // method doesn't takes ownership of the stack.
   void merge(int bci, SimulatedOperandStack* stack);
