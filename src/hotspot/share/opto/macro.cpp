@@ -160,7 +160,9 @@ void PhaseMacroExpand::eliminate_gc_barrier(Node* p2x) {
   BarrierSetC2 *bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->eliminate_gc_barrier(this, p2x);
 #ifndef PRODUCT
-  Atomic::add(&PhaseMacroExpand::_GC_barriers_removed_counter, 1);
+  if (PrintOptoStatistics) {
+    Atomic::add(&PhaseMacroExpand::_GC_barriers_removed_counter, 1);
+  }
 #endif
 }
 
@@ -2312,10 +2314,8 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
 void PhaseMacroExpand::eliminate_macro_nodes() {
   if (C->macro_count() == 0)
     return;
+    NOT_PRODUCT(int membar_before = count_MemBar();)
 
-  #ifndef PRODUCT
-    int membar_before = count_MemBar();
-  #endif
 
   // Before elimination may re-mark (change to Nested or NonEscObj)
   // all associated (same box and obj) lock and unlock nodes.
@@ -2342,7 +2342,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       if (n->is_AbstractLock()) {
         success = eliminate_locking_node(n->as_AbstractLock());
 #ifndef PRODUCT
-        if(success) {
+        if(success && PrintOptoStatistics) {
           Atomic::add(&PhaseMacroExpand::_monitor_objects_removed_counter, 1);
         }
 #endif
@@ -2365,9 +2365,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       case Node::Class_AllocateArray:
         success = eliminate_allocate_node(n->as_Allocate());
 #ifndef PRODUCT
-        if(success){
+        if (success && PrintOptoStatistics) {
           Atomic::add(&PhaseMacroExpand::_objs_scalar_replaced_counter, 1);
-          _local_scalar_replaced++;
         }
 #endif
         break;
@@ -2400,8 +2399,10 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
     }
   }
 #ifndef PRODUCT
-  int membar_after = count_MemBar();
-  Atomic::add(&PhaseMacroExpand::_memory_barriers_removed_counter, membar_before - membar_after);
+  if (PrintOptoStatistics) {
+    int membar_after = count_MemBar();
+    Atomic::add(&PhaseMacroExpand::_memory_barriers_removed_counter, membar_before - membar_after);
+  }
 #endif
 }
 
@@ -2606,6 +2607,9 @@ void PhaseMacroExpand::print_statistics() {
 }
 
 int PhaseMacroExpand::count_MemBar() {
+  if(!PrintOptoStatistics) { 
+    return 0; 
+  }
   Unique_Node_List ideal_nodes;
   int total = 0;
   ideal_nodes.map(C->live_nodes(), NULL);

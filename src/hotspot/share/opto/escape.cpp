@@ -97,7 +97,9 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
 
 #ifndef PRODUCT
   elapsedTimer et;
-  et.start();
+  if (PrintOptoStatistics) {
+    et.start();
+  }
 #endif
   // Add ConP#NULL and ConN#NULL nodes before ConnectionGraph construction
   // to create space for them in ConnectionGraph::_nodes[].
@@ -122,9 +124,11 @@ void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   }
 
 #ifndef PRODUCT
-  et.stop();
-  // casting jlong to long since Atomic needs Integral type
-  Atomic::add(&ConnectionGraph::_time_elapsed, (long)et.milliseconds());
+  if (PrintOptoStatistics) {
+    et.stop();
+    // casting jlong to long since Atomic needs Integral type
+    Atomic::add(&ConnectionGraph::_time_elapsed, (long)et.milliseconds());
+  }
 #endif
 }
 
@@ -276,9 +280,7 @@ bool ConnectionGraph::compute_escape() {
   // referenced in bytecode. During symbol resolution VM may throw
   // an exception which CI cleans and converts to compilation failure.
   if (C->failing()) {
-#ifndef PRODUCT
-    escape_state_statistics(java_objects_worklist);
-#endif
+    NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
     return false;
   }
 
@@ -288,9 +290,7 @@ bool ConnectionGraph::compute_escape() {
                                  java_objects_worklist, oop_fields_worklist)) {
     // All objects escaped or hit time or iterations limits.
     _collecting = false;
-#ifndef PRODUCT
-    escape_state_statistics(java_objects_worklist);
-#endif
+    NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
     return false;
   }
 
@@ -361,9 +361,7 @@ bool ConnectionGraph::compute_escape() {
     // scalar replaceable objects.
     split_unique_types(alloc_worklist, arraycopy_worklist, mergemem_worklist);
     if (C->failing()) {
-#ifndef PRODUCT
-      escape_state_statistics(java_objects_worklist);
-#endif
+      NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
       return false;
     }
     C->print_method(PHASE_AFTER_EA, 2);
@@ -400,10 +398,8 @@ bool ConnectionGraph::compute_escape() {
       }
     }
   }
-
-#ifndef PRODUCT
-  escape_state_statistics(java_objects_worklist);
-#endif
+  
+  NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
   return has_non_escaping_obj;
 }
 
@@ -3775,26 +3771,24 @@ void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist) {
 
 void ConnectionGraph::print_statistics() {
   tty->print("No escape = %d, Arg escape = %d, Global escape = %d", Atomic::load(&_no_escape_counter), Atomic::load(&_arg_escape_counter), Atomic::load(&_global_escape_counter));
-  tty->print_cr(" (EA executed in %7.2f seconds)", Atomic::load(&_time_elapsed) * 0.001);
+  tty->print(" (EA executed in %7.2f seconds)", Atomic::load(&_time_elapsed) * 0.001);
+  tty->print_cr("   ** EA stats might be slightly off since objects might be double counted due to iterative EA **");
 }
 
 void ConnectionGraph::escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist) {
-  _compile->_local_no_escape_ctr = 0;
-  _compile->_local_arg_escape_ctr = 0;
-  _compile->_local_global_escape_ctr = 0;
+  if (!PrintOptoStatistics) {
+    return;
+  }
   for (int next = 0; next < java_objects_worklist.length(); ++next) {
     JavaObjectNode* ptn = java_objects_worklist.at(next);
     if (ptn->ideal_node()->is_Allocate()) {
       if(ptn->escape_state() == PointsToNode::NoEscape) {
-        _compile->_local_no_escape_ctr++;
-      }
-      else if (ptn->escape_state() == PointsToNode::ArgEscape) {
-        _compile->_local_arg_escape_ctr++;
-      }
-      else if (ptn->escape_state() == PointsToNode::GlobalEscape) {
-        _compile->_local_global_escape_ctr++;
-      }
-      else {
+        _no_escape_counter++;
+      } else if (ptn->escape_state() == PointsToNode::ArgEscape) {
+        _arg_escape_counter++;
+      } else if (ptn->escape_state() == PointsToNode::GlobalEscape) {
+        _global_escape_counter++;
+      } else {
         assert(false, "Unexpected Escape State");
       }
     }

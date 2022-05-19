@@ -200,7 +200,7 @@ private:
   Node* make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc);
 
 public:
-  PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn), _has_locks(false) NOT_PRODUCT(COMMA _local_scalar_replaced(0)) {
+  PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn), _has_locks(false) {
     _igvn.set_delay_transform(true);
   }
   void eliminate_macro_nodes();
@@ -213,7 +213,6 @@ public:
     static int _monitor_objects_removed_counter;
     static int _GC_barriers_removed_counter;
     static int _memory_barriers_removed_counter;
-    int _local_scalar_replaced;
     static void print_statistics();
     int count_MemBar();
 #endif

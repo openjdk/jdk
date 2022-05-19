@@ -2177,7 +2177,6 @@ void Compile::Optimize() {
     }
     bool progress;
 
-    NOT_PRODUCT(int total_scalar_replaced = 0;)
     do {
       ConnectionGraph::do_analysis(this, &igvn);
 
@@ -2197,7 +2196,6 @@ void Compile::Optimize() {
         mexp.eliminate_macro_nodes();
         igvn.set_delay_transform(false);
 
-        NOT_PRODUCT(total_scalar_replaced += mexp._local_scalar_replaced;)
         igvn.optimize();
         print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
 
@@ -2210,11 +2208,6 @@ void Compile::Optimize() {
       // by removing some allocations and/or locks.
     } while (progress);
 
-#ifndef PRODUCT
-    Atomic::add(&ConnectionGraph::_no_escape_counter, _local_no_escape_ctr + total_scalar_replaced);
-    Atomic::add(&ConnectionGraph::_arg_escape_counter, _local_arg_escape_ctr);
-    Atomic::add(&ConnectionGraph::_global_escape_counter, _local_global_escape_ctr);
-#endif
   }
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
