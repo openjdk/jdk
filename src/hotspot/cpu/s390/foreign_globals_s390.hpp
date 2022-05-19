@@ -24,7 +24,6 @@
 #ifndef CPU_S390_VM_FOREIGN_GLOBALS_S390_HPP
 #define CPU_S390_VM_FOREIGN_GLOBALS_S390_HPP
 
-class BufferLayout {};
 class ABIDescriptor {};
 
 #endif // CPU_S390_VM_FOREIGN_GLOBALS_S390_HPP

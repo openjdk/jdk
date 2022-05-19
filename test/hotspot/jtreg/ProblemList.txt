@@ -68,7 +68,6 @@ compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 compiler/c2/Test8004741.java 8235801 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
-compiler/codecache/TestStressCodeBuffers.java 8272094 generic-aarch64
 
 
 #############################################################################

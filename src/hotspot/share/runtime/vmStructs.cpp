@@ -1500,7 +1500,6 @@
   declare_c2_type(CallDynamicJavaNode, CallJavaNode)                      \
   declare_c2_type(CallRuntimeNode, CallNode)                              \
   declare_c2_type(CallLeafNode, CallRuntimeNode)                          \
-  declare_c2_type(CallNativeNode, CallNode)                               \
   declare_c2_type(CallLeafNoFPNode, CallLeafNode)                         \
   declare_c2_type(CallLeafVectorNode, CallLeafNode)                       \
   declare_c2_type(AllocateNode, CallNode)                                 \
@@ -1588,23 +1587,17 @@
   declare_c2_type(DivDNode, Node)                                         \
   declare_c2_type(UDivINode, Node)                                        \
   declare_c2_type(UDivLNode, Node)                                        \
-  declare_c2_type(NoOvfDivINode, DivINode)                                \
-  declare_c2_type(NoOvfDivLNode, DivLNode)                                \
   declare_c2_type(ModINode, Node)                                         \
   declare_c2_type(ModLNode, Node)                                         \
   declare_c2_type(ModFNode, Node)                                         \
   declare_c2_type(ModDNode, Node)                                         \
   declare_c2_type(UModINode, Node)                                        \
   declare_c2_type(UModLNode, Node)                                        \
-  declare_c2_type(NoOvfModINode, ModINode)                                \
-  declare_c2_type(NoOvfModLNode, ModLNode)                                \
   declare_c2_type(DivModNode, MultiNode)                                  \
   declare_c2_type(DivModINode, DivModNode)                                \
   declare_c2_type(DivModLNode, DivModNode)                                \
   declare_c2_type(UDivModINode, DivModNode)                               \
   declare_c2_type(UDivModLNode, DivModNode)                               \
-  declare_c2_type(NoOvfDivModINode, DivModINode)                          \
-  declare_c2_type(NoOvfDivModLNode, DivModLNode)                          \
   declare_c2_type(BoxLockNode, Node)                                      \
   declare_c2_type(LoopNode, RegionNode)                                   \
   declare_c2_type(CountedLoopNode, LoopNode)                              \
@@ -1630,7 +1623,6 @@
   declare_c2_type(MachCallStaticJavaNode, MachCallJavaNode)               \
   declare_c2_type(MachCallDynamicJavaNode, MachCallJavaNode)              \
   declare_c2_type(MachCallRuntimeNode, MachCallNode)                      \
-  declare_c2_type(MachCallNativeNode, MachCallNode)                       \
   declare_c2_type(MachHaltNode, MachReturnNode)                           \
   declare_c2_type(MachTempNode, MachNode)                                 \
   declare_c2_type(MemNode, Node)                                          \

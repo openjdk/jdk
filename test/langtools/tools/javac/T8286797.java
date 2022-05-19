@@ -19,29 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
+/*
+ * @test
+ * @bug 8286797
+ * @summary  Guards of constant value false are not permitted
+ * @compile/fail/ref=T8286797.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW T8286797.java
+ */
 
-#ifdef COMPILER2
+public class T8286797 {
 
-#include "opto/parse.hpp"
-#include "interpreter/bytecodes.hpp"
+    public void testWithConstant(Object o) {
+        switch (o) {
+            case String s when false -> {}
+            default -> {}
+        }
+    }
 
-bool Parse::do_one_bytecode_targeted() {
-  switch (bc()) {
-    case Bytecodes::_idiv: // fallthrough
-    case Bytecodes::_irem: // fallthrough
-#ifdef _LP64
-    case Bytecodes::_ldiv: // fallthrough
-    case Bytecodes::_lrem:
-#endif
-      do_divmod_fixup();
-      return true;
-    default:
-      return false;
-  }
+    public void testWithSimpleName(Object o) {
+        final int x = 0;
+        switch (o) {
+            case String s when x == 42 -> {}
+            default -> {}
+        }
+    }
 }
-
-#endif // COMPILER2

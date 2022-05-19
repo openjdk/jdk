@@ -215,10 +215,11 @@ class MacroAssembler: public Assembler {
 #ifdef _LP64
   // Support for argument shuffling
 
-  void move32_64(VMRegPair src, VMRegPair dst);
-  void long_move(VMRegPair src, VMRegPair dst);
-  void float_move(VMRegPair src, VMRegPair dst);
-  void double_move(VMRegPair src, VMRegPair dst);
+  // bias in bytes
+  void move32_64(VMRegPair src, VMRegPair dst, Register tmp = rax, int in_stk_bias = 0, int out_stk_bias = 0);
+  void long_move(VMRegPair src, VMRegPair dst, Register tmp = rax, int in_stk_bias = 0, int out_stk_bias = 0);
+  void float_move(VMRegPair src, VMRegPair dst, Register tmp = rax, int in_stk_bias = 0, int out_stk_bias = 0);
+  void double_move(VMRegPair src, VMRegPair dst, Register tmp = rax, int in_stk_bias = 0, int out_stk_bias = 0);
   void move_ptr(VMRegPair src, VMRegPair dst);
   void object_move(OopMap* map,
                    int oop_handle_offset,
@@ -673,10 +674,6 @@ public:
 
   // prints msg and continues
   void warn(const char* msg);
-
-  void _assert_asm(Condition cc, const char* msg);
-#define assert_asm0(cc, msg) _assert_asm(cc, FILE_AND_LINE ": " msg)
-#define assert_asm(masm, command, cc, msg) DEBUG_ONLY((masm)->command; (masm)->_assert_asm(cc, FILE_AND_LINE ": " #command " " #cc ": " msg))
 
   // dumps registers and other state
   void print_state();
