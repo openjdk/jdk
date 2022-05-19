@@ -65,6 +65,12 @@ public class PendingOperations {
     }
 
     /* shortcut */
+    static void assertAllHang(CompletableFuture<?> cf1,
+                              CompletableFuture<?> cf2) {
+        assertHangs(CompletableFuture.anyOf(cf1, cf2));
+    }
+
+    /* shortcut */
     static void assertHangs(CompletionStage<?> stage) {
         Support.assertHangs(stage);
     }

@@ -81,10 +81,8 @@ public class PendingPingTextClose extends PendingOperations {
                 assertFails(ISE, webSocket.sendPong(ByteBuffer.allocate(125)));
                 cfText = webSocket.sendText("hello", last);
                 cfClose = webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "ok");
-                System.out.println("asserting that sendText hangs");
-                assertHangs(cfText);
-                System.out.println("asserting that sendClose hangs");
-                assertNotDone(cfClose);
+                System.out.println("asserting that sendText and sendClose hang");
+                assertAllHang(cfText, cfClose);
                 System.out.println("asserting that cfPing is not completed");
                 assertNotDone(cfPing);
                 System.out.println("finishing");
