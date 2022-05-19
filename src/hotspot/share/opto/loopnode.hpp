@@ -1339,27 +1339,32 @@ public:
     public:
       // given loop entry, find all predicates above loop
       Predicates(Node* entry);
-      // first node of loop limit checks
+
+      // proj of first loop_limit_check above loop (empty predicate)
       ProjNode* loop_limit_check() {
         return _loop_limit_check;
       }
-      // first node of profile predicates
+
+      // proj of first profile_predicate above loop (empty predicate)
       ProjNode* profile_predicate() {
         return _profile_predicate;
       }
-      // first node of predicates
+
+      // proj of first predicate above loop (empty predicate)
       ProjNode* predicate() {
         return _predicate;
       }
-      // first node above all predicates
+
+      // first control node above all predicates
       Node* skip_all() {
-        return _skip_all;
+        return _entry_to_all_predicates;
       }
+
     private:
       ProjNode*_loop_limit_check = nullptr;
       ProjNode* _profile_predicate = nullptr;
       ProjNode* _predicate = nullptr;
-      Node* _skip_all = nullptr;
+      Node* _entry_to_all_predicates = nullptr;
   };
 
   // Find a predicate

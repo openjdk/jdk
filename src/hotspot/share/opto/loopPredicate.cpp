@@ -560,7 +560,7 @@ PhaseIdealLoop::Predicates::Predicates(Node* entry) {
       entry = skip_loop_predicates(entry);
     }
   }
-  _skip_all = entry;
+  _entry_to_all_predicates = entry;
 }
 
 //--------------------------find_predicate------------------------------------
