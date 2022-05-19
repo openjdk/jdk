@@ -666,7 +666,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //            false  true
 //             |      |
 //             |      v
-//             | instantiated skeleton predicates
+//             | initialized skeleton predicates
 //             |      |
 //             |      v
 //             |     loop<----+
@@ -761,13 +761,13 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 
   // Step 4: Correct dom-depth info.  Set to loop-head depth.
 
-  int dd_main_head = dom_depth(outer_loop_head);
-  set_idom(outer_loop_head, outer_loop_head->in(LoopNode::EntryControl), dd_main_head);
+  int dd_outer_loop_head = dom_depth(outer_loop_head);
+  set_idom(outer_loop_head, outer_loop_head->in(LoopNode::EntryControl), dd_outer_loop_head);
   for (uint j3 = 0; j3 < loop->_body.size(); j3++) {
     Node *old = loop->_body.at(j3);
     Node *nnn = old_new[old->_idx];
     if (!has_ctrl(nnn)) {
-      set_idom(nnn, idom(nnn), dd_main_head-1);
+      set_idom(nnn, idom(nnn), dd_outer_loop_head-1);
     }
   }
 
@@ -777,12 +777,12 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
     ProjNode* predicate;
     find_all_predicates(entry, nullptr, nullptr, &predicate);
 
-    CountedLoopNode *cl_remain = head->as_CountedLoop();
-    Node* init = cl_remain->init_trip();
-    Node* stride = cl_remain->stride();
+    CountedLoopNode *cl_head = head->as_CountedLoop();
+    Node* init = cl_head->init_trip();
+    Node* stride = cl_head->stride();
     IdealLoopTree* outer_loop = get_loop(outer_loop_head);
-    instantiate_skeleton_predicates_to_loop(predicate, outer_loop_head, dd_main_head,
-                                            init, stride, outer_loop, idx_before_clone, old_new);
+    initialize_skeleton_predicates_to_loop(predicate, outer_loop_head, dd_outer_loop_head,
+                                           init, stride, outer_loop, idx_before_clone);
  }
 
   // Now force out all loop-invariant dominating tests.  The optimizer
@@ -2067,20 +2067,19 @@ void PhaseIdealLoop::copy_skeleton_predicates_to_post_loop(LoopNode* main_loop_h
   }
 }
 
-void PhaseIdealLoop::instantiate_skeleton_predicates_to_loop(ProjNode* predicate,
-                                                             LoopNode* instantiate_above,
-                                                             int dd_instantiate_above,
-                                                             Node* init,
-                                                             Node* stride,
-                                                             IdealLoopTree* outer_loop,
-                                                             const uint idx_before_clone,
-                                                             Node_List &old_new)
+void PhaseIdealLoop::initialize_skeleton_predicates_to_loop(ProjNode* predicate,
+                                                            LoopNode* outer_loop_head,
+                                                            int dd_outer_loop_head,
+                                                            Node* init,
+                                                            Node* stride,
+                                                            IdealLoopTree* outer_loop,
+                                                            const uint idx_before_clone)
 {
   if (predicate == nullptr) {
     return;
   }
-  assert(instantiate_above->is_CFG(), "can only instantiate in control flow");
-  Node* control = instantiate_above->in(LoopNode::EntryControl);
+  assert(outer_loop_head->is_CFG(), "can only initialize skeleton predicate in control flow");
+  Node* control = outer_loop_head->in(LoopNode::EntryControl);
   Node* input_proj = control;
 
   predicate = next_predicate(predicate);
@@ -2094,11 +2093,10 @@ void PhaseIdealLoop::instantiate_skeleton_predicates_to_loop(ProjNode* predicate
       // Rewrite any control inputs from the cloned skeleton predicate
       for (DUIterator i = predicate->outs(); predicate->has_out(i); i++) {
         Node* loop_node = predicate->out(i);
-        Node* new_loop_node = old_new[loop_node->_idx];
 
         if (!loop_node->is_CFG() && loop_node->_idx < idx_before_clone) {
           // The old nodes from the remaining loop still point to the predicate above the peeled loop
-          // We need to rewrite the dependencies to the newly instantiated predicates
+          // We need to rewrite the dependencies to the newly initialized predicates
           _igvn.replace_input_of(loop_node, 0, input_proj);
           --i; // correct for just deleted predicate->out(i)
         }
@@ -2107,8 +2105,8 @@ void PhaseIdealLoop::instantiate_skeleton_predicates_to_loop(ProjNode* predicate
     predicate = next_predicate(predicate);
   }
 
-  _igvn.replace_input_of(instantiate_above, LoopNode::EntryControl, input_proj);
-  set_idom(instantiate_above, input_proj, dd_instantiate_above);
+  _igvn.replace_input_of(outer_loop_head, LoopNode::EntryControl, input_proj);
+  set_idom(outer_loop_head, input_proj, dd_outer_loop_head);
 }
 
 //------------------------------do_unroll--------------------------------------
