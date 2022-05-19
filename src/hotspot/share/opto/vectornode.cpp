@@ -1696,6 +1696,38 @@ Node* NegVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return NULL;
 }
 
+Node* ReverseBytesVNode::Identity(PhaseGVN* phase) {
+  if (is_predicated_using_blend()) {
+    return this;
+  }
+  // ReverseBytesV (ReverseBytesV X , MASK) , MASK =>  X
+  if (in(1)->Opcode() == Op_ReverseBytesV) {
+    if (is_predicated_vector() && in(1)->is_predicated_vector() && in(2) == in(1)->in(2)) {
+      return in(1)->in(1);
+    } else {
+      // ReverseBytesV (ReverseBytesV X) =>  X
+      return in(1)->in(1);
+    }
+  }
+  return this;
+}
+
+Node* ReverseVNode::Identity(PhaseGVN* phase) {
+  if (is_predicated_using_blend()) {
+    return this;
+  }
+  // ReverseV (ReverseV X , MASK) , MASK =>  X
+  if (in(1)->Opcode() == Op_ReverseV) {
+    if (is_predicated_vector() && in(1)->is_predicated_vector() && in(2) == in(1)->in(2)) {
+      return in(1)->in(1);
+    } else {
+      // ReverseV (ReverseV X) =>  X
+      return in(1)->in(1);
+    }
+  }
+  return this;
+}
+
 #ifndef PRODUCT
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
   CallStaticJavaNode::dump_spec(st);

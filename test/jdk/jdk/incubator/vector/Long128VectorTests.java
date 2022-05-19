@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @modules jdk.incubator.vector
  * @run testng/othervm -ea -esa -Xbatch -XX:-TieredCompilation Long128VectorTests
  */

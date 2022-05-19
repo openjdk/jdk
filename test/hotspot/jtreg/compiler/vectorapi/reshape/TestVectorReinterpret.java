@@ -34,9 +34,9 @@ import jdk.incubator.vector.VectorSpecies;
 
 /*
  * @test
- * @enablePreview
  * @bug 8259610
  * @key randomness
+ * @enablePreview
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
  * @summary Test that vector reinterpret intrinsics work as intended.

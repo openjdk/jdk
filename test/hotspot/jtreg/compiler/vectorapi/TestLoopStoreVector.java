@@ -29,7 +29,6 @@ import jdk.incubator.vector.VectorSpecies;
 
 /*
  * @test
- * @enablePreview
  * @bug 8260339
  * @summary StoreVectorNode is not considered with -XX:+OptimizeFill
  * @modules jdk.incubator.vector

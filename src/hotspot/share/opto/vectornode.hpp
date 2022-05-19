@@ -1726,6 +1726,7 @@ public:
   ReverseVNode(Node* in, const TypeVect* vt)
   : VectorNode(in, vt) {}
 
+  virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
 
@@ -1734,6 +1735,7 @@ public:
   ReverseBytesVNode(Node* in, const TypeVect* vt)
   : VectorNode(in, vt) {}
 
+  virtual Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
 

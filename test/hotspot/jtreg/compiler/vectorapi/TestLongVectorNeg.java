@@ -27,7 +27,6 @@ import jdk.incubator.vector.LongVector;
 
 /*
  * @test
- * @enablePreview
  * @bug 8275643
  * @summary Test that LongVector.neg is properly handled by the _VectorUnaryOp C2 intrinsic
  * @modules jdk.incubator.vector

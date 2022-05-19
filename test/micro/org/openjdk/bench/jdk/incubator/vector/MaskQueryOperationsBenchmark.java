@@ -31,7 +31,7 @@ import org.openjdk.jmh.infra.Blackhole;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector", "--enable-preview"})
+@Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
 public class MaskQueryOperationsBenchmark {
     @Param({"128","256","512"})
     int bits;

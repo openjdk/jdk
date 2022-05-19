@@ -34,7 +34,6 @@ import java.util.List;
 
 /**
  * @test
- * @enablePreview
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation
  * @run testng/othervm  -XX:-TieredCompilation --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
@@ -43,7 +42,6 @@ import java.util.List;
 
 /*
  * @test
- * @enablePreview
  * @bug 8281544
  * @summary Test that ZGC and vectorapi with KNL work together.
  * @requires vm.gc.Z

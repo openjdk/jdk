@@ -24,4 +24,3 @@
 #
 
 DOCLINT += -Xdoclint:all/protected
-JAVAC_FLAGS += --enable-preview -Xlint:-preview

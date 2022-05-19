@@ -29,7 +29,6 @@ import jdk.incubator.vector.VectorSpecies;
 
 /*
  * @test
- * @enablePreview
  * @bug 8259775
  * @summary Incorrect code-gen for VectorReinterpret operation
  * @modules jdk.incubator.vector

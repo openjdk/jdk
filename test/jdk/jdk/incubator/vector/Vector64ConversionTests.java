@@ -34,7 +34,6 @@ import java.util.List;
 
 /**
  * @test
- * @enablePreview
  * @requires (os.arch != "ppc64") & (os.arch != "ppc64le")
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation

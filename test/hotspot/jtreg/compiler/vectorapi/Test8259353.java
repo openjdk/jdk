@@ -33,7 +33,6 @@ import jdk.test.lib.format.ArrayDiff;
 
 /*
  * @test
- * @enablePreview
  * @bug 8259353 8259601
  * @summary VectorReinterpretNode is incorrectly optimized out
  * @modules jdk.incubator.vector

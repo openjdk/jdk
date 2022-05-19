@@ -40,7 +40,6 @@ import org.testng.annotations.Test;
 
 /**
  * @test
- * @enablePreview
  * @bug 8274569
  * @key randomness
  * @library /test/lib
@@ -52,7 +51,6 @@ import org.testng.annotations.Test;
 
 /**
  * @test
- * @enablePreview
  * @bug 8278584
  * @library /test/lib
  * @summary Test the codegen for C2's VectorLongToMaskNode
