@@ -59,7 +59,6 @@ public class TestPopulateIndex {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = {"PopulateIndex", ">= 1"})
     public void indexArrayFill() {
         for (int i = 0; i < count; i++) {
@@ -78,7 +77,6 @@ public class TestPopulateIndex {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = {"PopulateIndex", ">= 1"})
     public void exprWithIndex1() {
         for (int i = 0; i < count; i++) {
@@ -97,7 +95,6 @@ public class TestPopulateIndex {
     }
 
     @Test
-    @Warmup(10000)
     @IR(counts = {"PopulateIndex", ">= 1"})
     public void exprWithIndex2() {
         for (int i = 0; i < count; i++) {
