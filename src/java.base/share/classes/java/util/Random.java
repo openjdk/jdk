@@ -256,7 +256,8 @@ public class Random implements RandomGenerator, java.io.Serializable {
     private static final long addend = 0xBL;
     private static final long mask = (1L << 48) - 1;
 
-    private static final double DOUBLE_UNIT = 0x1.0p-53; // 1.0 / (1L << 53)
+    private static final double DOUBLE_UNIT = 0x1.0p-53; // 1.0 / (1L << Double.PRECISION)
+    private static final float FLOAT_UNIT = 0x1.0p-24f; // 1.0f / (1 << Float.PRECISION)
 
     /**
      * Creates a new random number generator. This constructor sets
@@ -598,12 +599,12 @@ public class Random implements RandomGenerator, java.io.Serializable {
      * low-order bit of the significand would be 0 than that it would be 1.]
      *
      * @return the next pseudorandom, uniformly distributed {@code float}
-     *         value between {@code 0.0} and {@code 1.0} from this
+     *         value between {@code 0.0f} and {@code 1.0f} from this
      *         random number generator's sequence
      */
     @Override
     public float nextFloat() {
-        return next(24) / ((float)(1 << 24));
+        return next(Float.PRECISION) * FLOAT_UNIT;
     }
 
     /**
@@ -644,7 +645,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
      */
     @Override
     public double nextDouble() {
-        return (((long)(next(26)) << 27) + next(27)) * DOUBLE_UNIT;
+        return (((long)(next(Double.PRECISION - 27)) << 27) + next(27)) * DOUBLE_UNIT;
     }
 
     private double nextNextGaussian;
@@ -1029,8 +1030,8 @@ public class Random implements RandomGenerator, java.io.Serializable {
 
     /**
      * Returns a stream producing the given {@code streamSize} number of
-     * pseudorandom {@code double} values, each between zero
-     * (inclusive) and one (exclusive).
+     * pseudorandom {@code double} values, each (approximately) uniformly
+     * distributed between zero (inclusive) and one (exclusive).
      *
      * <p>A pseudorandom {@code double} value is generated as if it's the result
      * of calling the method {@link #nextDouble()}.
@@ -1048,8 +1049,8 @@ public class Random implements RandomGenerator, java.io.Serializable {
 
     /**
      * Returns an effectively unlimited stream of pseudorandom {@code
-     * double} values, each between zero (inclusive) and one
-     * (exclusive).
+     * double} values, each (approximately) uniformly
+     * distributed between zero (inclusive) and one (exclusive).
      *
      * <p>A pseudorandom {@code double} value is generated as if it's the result
      * of calling the method {@link #nextDouble()}.
@@ -1067,19 +1068,8 @@ public class Random implements RandomGenerator, java.io.Serializable {
 
    /**
      * Returns a stream producing the given {@code streamSize} number of
-     * pseudorandom {@code double} values, each conforming to the given origin
-     * (inclusive) and bound (exclusive).
-     *
-     * <p>A pseudorandom {@code double} value is generated as if it's the result
-     * of calling the following method with the origin and bound:
-     * <pre> {@code
-     * double nextDouble(double origin, double bound) {
-     *   double r = nextDouble();
-     *   r = r * (bound - origin) + origin;
-     *   if (r >= bound) // correct for rounding
-     *     r = Math.nextDown(bound);
-     *   return r;
-     * }}</pre>
+     * pseudorandom {@code double} values, each uniformly distributed between
+     * the given origin (inclusive) and bound (exclusive).
      *
      * @param streamSize the number of values to generate
      * @param randomNumberOrigin the origin (inclusive) of each random value
@@ -1099,20 +1089,9 @@ public class Random implements RandomGenerator, java.io.Serializable {
 
     /**
      * Returns an effectively unlimited stream of pseudorandom {@code
-     * double} values, each conforming to the given origin (inclusive) and bound
-     * (exclusive).
-     *
-     * <p>A pseudorandom {@code double} value is generated as if it's the result
-     * of calling the following method with the origin and bound:
-     * <pre> {@code
-     * double nextDouble(double origin, double bound) {
-     *   double r = nextDouble();
-     *   r = r * (bound - origin) + origin;
-     *   if (r >= bound) // correct for rounding
-     *     r = Math.nextDown(bound);
-     *   return r;
-     * }}</pre>
-     *
+     * double} values, each uniformly distributed between
+     * the given origin (inclusive) and bound (exclusive).
+
      * @implNote This method is implemented to be equivalent to {@code
      * doubles(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
      *
