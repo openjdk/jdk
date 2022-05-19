@@ -396,7 +396,7 @@ bool ConnectionGraph::compute_escape() {
       }
     }
   }
-  
+
   NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
   return has_non_escaping_obj;
 }
