@@ -293,6 +293,9 @@ import java.util.Objects;
  * @see     RoundingMode
  * @see     java.util.SortedMap
  * @see     java.util.SortedSet
+ * @see <a href="https://standards.ieee.org/ieee/754/6210/">
+ *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ *
  * @author  Josh Bloch
  * @author  Mike Cowlishaw
  * @author  Joseph D. Darcy
@@ -412,6 +415,14 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     public static final BigDecimal ONE =
         ZERO_THROUGH_TEN[1];
+
+    /**
+     * The value 2, with a scale of 0.
+     *
+     * @since  19
+     */
+    public static final BigDecimal TWO =
+        ZERO_THROUGH_TEN[2];
 
     /**
      * The value 10, with a scale of 0.

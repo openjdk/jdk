@@ -202,6 +202,7 @@ void InterpreterOopMap::initialize() {
   _mask_size = USHRT_MAX;  // This value should cause a failure quickly
   _bci       = 0;
   _expression_stack_size = 0;
+  _num_oops  = 0;
   for (int i = 0; i < N; i++) _bit_mask[i] = 0;
 }
 
@@ -358,6 +359,7 @@ void OopMapCacheEntry::set_mask(CellTypeState *vars, CellTypeState *stack, int s
   uintptr_t value = 0;
   uintptr_t mask = 1;
 
+  _num_oops = 0;
   CellTypeState* cell = vars;
   for (int entry_index = 0; entry_index < n_entries; entry_index++, mask <<= bits_per_entry, cell++) {
     // store last word
@@ -375,6 +377,7 @@ void OopMapCacheEntry::set_mask(CellTypeState *vars, CellTypeState *stack, int s
     // set oop bit
     if ( cell->is_reference()) {
       value |= (mask << oop_bit_number );
+      _num_oops++;
     }
 
     // set dead bit
@@ -407,6 +410,7 @@ void InterpreterOopMap::resource_copy(OopMapCacheEntry* from) {
   set_bci(from->bci());
   set_mask_size(from->mask_size());
   set_expression_stack_size(from->expression_stack_size());
+  _num_oops = from->num_oops();
 
   // Is the bit mask contained in the entry?
   if (from->mask_size() <= small_mask_limit) {

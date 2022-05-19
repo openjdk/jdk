@@ -496,7 +496,7 @@ public final class Utils {
      * the seed based on string representation of {@link Runtime#version()} is used.
      * Otherwise, the seed is randomly generated.
      * The used seed printed to stdout.
-     *
+     * The printing is not in the synchronized block so as to prevent carrier threads starvation.
      * @return {@link java.util.Random} generator with particular seed.
      */
     public static Random getRandomInstance() {
@@ -504,10 +504,12 @@ public final class Utils {
             synchronized (Utils.class) {
                 if (RANDOM_GENERATOR == null) {
                     RANDOM_GENERATOR = new Random(SEED);
-                    System.out.printf("For random generator using seed: %d%n", SEED);
-                    System.out.printf("To re-run test with same seed value please add \"-D%s=%d\" to command line.%n", SEED_PROPERTY_NAME, SEED);
+                } else {
+                    return RANDOM_GENERATOR;
                 }
             }
+            System.out.printf("For random generator using seed: %d%n", SEED);
+            System.out.printf("To re-run test with same seed value please add \"-D%s=%d\" to command line.%n", SEED_PROPERTY_NAME, SEED);
         }
         return RANDOM_GENERATOR;
     }
