@@ -700,9 +700,9 @@ G1CardSetHashTableValue* G1CardSet::get_container(uint card_region) {
   return _table->get(card_region);
 }
 
-void G1CardSet::split_card(uintptr_t offset, uint& card_region, uint& card_within_region) const {
-  card_region = (uint)(offset >> _split_card_shift);
-  card_within_region = (uint)(offset & _split_card_mask);
+void G1CardSet::split_card(uintptr_t card, uint& card_region, uint& card_within_region) const {
+  card_region = (uint)(card >> _split_card_shift);
+  card_within_region = (uint)(card & _split_card_mask);
   assert(card_within_region < _config->max_cards_in_region(), "must be");
 }
 

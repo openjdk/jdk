@@ -301,7 +301,7 @@ private:
   uint8_t* allocate_mem_object(uintptr_t type);
   void free_mem_object(ContainerPtr container);
 
-  void split_card(uintptr_t offset, uint& card_region, uint& card_within_region) const;
+  void split_card(uintptr_t card, uint& card_region, uint& card_within_region) const;
 
   G1AddCardResult add_card(uint card_region, uint card_in_region, bool increment_total = true);
 
