@@ -4034,38 +4034,6 @@ class StubGenerator: public StubCodeGenerator {
   // keystream (byte[256]) = c_rarg1
   // return - number of bytes of keystream (always 256)
   address generate_chacha20Block_qr() {
-    // Macro to expand the quarter round for the a/b/c/d vectors
-    // for a given state block.
-    // -------------------------------------------------------
-    // a += b, d ^= a, d <<<= 16
-    // c += d, b ^= c, b <<<= 12
-    // a += b, d ^= a, d <<<= 8
-    // c += d, b ^= c, b <<<= 7
-    #define FOUR_QTR_ROUND(a, b, c, d)      \
-        __ addv(a, __ T4S, a, b);           \
-        __ eor(d, __ T16B, d, a);           \
-        __ rev32(d, __ T8H, d);             \
-                                            \
-        __ addv(c, __ T4S, c, d);           \
-        __ eor(scratch, __ T16B, b, c);     \
-        __ ushr(b, __ T4S, scratch, 20);    \
-        __ sli(b, __ T4S, scratch, 12);     \
-                                            \
-        __ addv(a, __ T4S, a, b);           \
-        __ eor(d, __ T16B, d, a);           \
-        __ tbl(d, __ T16B, d,  1, lrot8Tbl);\
-                                            \
-        __ addv(c, __ T4S, c, d);           \
-        __ eor(scratch, __ T16B, b, c);     \
-        __ ushr(b, __ T4S, scratch, 25);    \
-        __ sli(b, __ T4S, scratch, 7);      \
-
-    // Lane shifting used for column-to-diagonal and vice-versa
-    #define SHIFT_LANES(b, bCnt, c, cCnt, d, dCnt)  \
-        __ ext(b, __ T16B, b, b, bCnt);             \
-        __ ext(c, __ T16B, c, c, cCnt);             \
-        __ ext(d, __ T16B, d, d, dCnt);             \
-
     __ align(CodeEntryAlignment);
      StubCodeMark mark(this, "StubRoutines", "chacha20Block");
     address start = __ pc();
@@ -4151,17 +4119,17 @@ class StubGenerator: public StubCodeGenerator {
     //  Qround(state, 1, 5, 9,13)
     //  Qround(state, 2, 6,10,14)
     //  Qround(state, 3, 7,11,15)
-    FOUR_QTR_ROUND(a1Vec, b1Vec, c1Vec, d1Vec)
-    FOUR_QTR_ROUND(a2Vec, b2Vec, c2Vec, d2Vec)
-    FOUR_QTR_ROUND(a3Vec, b3Vec, c3Vec, d3Vec)
-    FOUR_QTR_ROUND(a4Vec, b4Vec, c4Vec, d4Vec)
+    __ cc20_quarter_round(a1Vec, b1Vec, c1Vec, d1Vec, scratch, lrot8Tbl);
+    __ cc20_quarter_round(a2Vec, b2Vec, c2Vec, d2Vec, scratch, lrot8Tbl);
+    __ cc20_quarter_round(a3Vec, b3Vec, c3Vec, d3Vec, scratch, lrot8Tbl);
+    __ cc20_quarter_round(a4Vec, b4Vec, c4Vec, d4Vec, scratch, lrot8Tbl);
 
     // Shuffle the b1Vec/c1Vec/d1Vec to reorganize the state vectors to
     // diagonals. The a1Vec does not need to change orientation.
-    SHIFT_LANES(b1Vec, 4, c1Vec, 8, d1Vec, 12)
-    SHIFT_LANES(b2Vec, 4, c2Vec, 8, d2Vec, 12)
-    SHIFT_LANES(b3Vec, 4, c3Vec, 8, d3Vec, 12)
-    SHIFT_LANES(b4Vec, 4, c4Vec, 8, d4Vec, 12)
+    __ cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, true);
+    __ cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, true);
+    __ cc20_shift_lane_org(b3Vec, c3Vec, d3Vec, true);
+    __ cc20_shift_lane_org(b4Vec, c4Vec, d4Vec, true);
 
     // The second set of operations on the vectors covers the second 4 quarter
     // round operations, now acting on the diagonals:
@@ -4169,18 +4137,18 @@ class StubGenerator: public StubCodeGenerator {
     //  Qround(state, 1, 6,11,12)
     //  Qround(state, 2, 7, 8,13)
     //  Qround(state, 3, 4, 9,14)
-    FOUR_QTR_ROUND(a1Vec, b1Vec, c1Vec, d1Vec)
-    FOUR_QTR_ROUND(a2Vec, b2Vec, c2Vec, d2Vec)
-    FOUR_QTR_ROUND(a3Vec, b3Vec, c3Vec, d3Vec)
-    FOUR_QTR_ROUND(a4Vec, b4Vec, c4Vec, d4Vec)
+    __ cc20_quarter_round(a1Vec, b1Vec, c1Vec, d1Vec, scratch, lrot8Tbl);
+    __ cc20_quarter_round(a2Vec, b2Vec, c2Vec, d2Vec, scratch, lrot8Tbl);
+    __ cc20_quarter_round(a3Vec, b3Vec, c3Vec, d3Vec, scratch, lrot8Tbl);
+    __ cc20_quarter_round(a4Vec, b4Vec, c4Vec, d4Vec, scratch, lrot8Tbl);
 
     // Before we start the next iteration, we need to perform shuffles
     // on the b/c/d vectors to move them back to columnar organizations
     // from their current diagonal orientation.
-    SHIFT_LANES(b1Vec, 12, c1Vec, 8, d1Vec, 4)
-    SHIFT_LANES(b2Vec, 12, c2Vec, 8, d2Vec, 4)
-    SHIFT_LANES(b3Vec, 12, c3Vec, 8, d3Vec, 4)
-    SHIFT_LANES(b4Vec, 12, c4Vec, 8, d4Vec, 4)
+    __ cc20_shift_lane_org(b1Vec, c1Vec, d1Vec, false);
+    __ cc20_shift_lane_org(b2Vec, c2Vec, d2Vec, false);
+    __ cc20_shift_lane_org(b3Vec, c3Vec, d3Vec, false);
+    __ cc20_shift_lane_org(b4Vec, c4Vec, d4Vec, false);
 
     // Decrement and iterate
     __ subs(loopCtr, loopCtr, 1);
@@ -4231,9 +4199,6 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret(lr);
 
-    #undef SHIFT_LANES
-    #undef FOUR_QTR_ROUND
-
     return start;
   }
 
@@ -4257,42 +4222,6 @@ class StubGenerator: public StubCodeGenerator {
   // keystream (byte[256]) = c_rarg1
   // return - number of bytes of keystream (always 256)
   address generate_chacha20Block_block() {
-
-    // Perform calculations where each vector is a string of
-    // elements at the same state position from successive key
-    // stream blocks.
-    // -------------------------------------------------------
-    // a += b, d ^= a, d <<<= 16
-    // c += d, b ^= c, b <<<= 12
-    // a += b, d ^= a, d <<<= 8
-    // c += d, b ^= c, b <<<= 7
-    #define QTR_ROUND(a, b, c, d, scr)          \
-        __ addv(a, __ T4S, a, b);               \
-        __ eor(d, __ T16B, d, a);               \
-        __ rev32(d, __ T8H, d);                 \
-                                                \
-        __ addv(c, __ T4S, c, d);               \
-        __ eor(scr, __ T16B, b, c);             \
-        __ ushr(b, __ T4S, scr, 20);            \
-        __ sli(b, __ T4S, scr, 12);             \
-                                                \
-        __ addv(a, __ T4S, a, b);               \
-        __ eor(d, __ T16B, d, a);               \
-        __ tbl(d, __ T16B, d,  1, lrot8Tbl);    \
-                                                \
-        __ addv(c, __ T4S, c, d);               \
-        __ eor(scr, __ T16B, b, c);             \
-        __ ushr(b, __ T4S, scr, 25);            \
-        __ sli(b, __ T4S, scr, 7);              \
-
-    // Duplicate an individual state element to a scratch register
-    // and then add it into the working state vector for that element.
-    // This is used to do the final start-state add-back at the end of
-    // the ChaCha20 block function.
-    #define ADD_START_STATE(destVec, srcVec, index, scratch)    \
-        __ dup(scratch, __ T4S, srcVec, index);                 \
-        __ addv(destVec, __ T4S, destVec, scratch);             \
-
     __ align(CodeEntryAlignment);
      StubCodeMark mark(this, "StubRoutines", "chacha20Block");
     address start = __ pc();
@@ -4348,41 +4277,21 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(loopCtr, 10);
     __ BIND(L_twoRounds);
 
-    QTR_ROUND(wkState0, wkState4, wkState8, wkState12, scratch)
-    QTR_ROUND(wkState1, wkState5, wkState9, wkState13, scratch)
-    QTR_ROUND(wkState2, wkState6, wkState10, wkState14, scratch)
-    QTR_ROUND(wkState3, wkState7, wkState11, wkState15, scratch)
+    __ cc20_quarter_round(wkState0, wkState4, wkState8, wkState12, scratch, lrot8Tbl);
+    __ cc20_quarter_round(wkState1, wkState5, wkState9, wkState13, scratch, lrot8Tbl);
+    __ cc20_quarter_round(wkState2, wkState6, wkState10, wkState14, scratch, lrot8Tbl);
+    __ cc20_quarter_round(wkState3, wkState7, wkState11, wkState15, scratch, lrot8Tbl);
 
-    QTR_ROUND(wkState0, wkState5, wkState10, wkState15, scratch)
-    QTR_ROUND(wkState1, wkState6, wkState11, wkState12, scratch)
-    QTR_ROUND(wkState2, wkState7, wkState8, wkState13, scratch)
-    QTR_ROUND(wkState3, wkState4, wkState9, wkState14, scratch)
+    __ cc20_quarter_round(wkState0, wkState5, wkState10, wkState15, scratch, lrot8Tbl);
+    __ cc20_quarter_round(wkState1, wkState6, wkState11, wkState12, scratch, lrot8Tbl);
+    __ cc20_quarter_round(wkState2, wkState7, wkState8, wkState13, scratch, lrot8Tbl);
+    __ cc20_quarter_round(wkState3, wkState4, wkState9, wkState14, scratch, lrot8Tbl);
 
     // Decrement and iterate
     __ subs(loopCtr, loopCtr, 1);
     __ cmp(loopCtr, (u1)0);
     __ br(Assembler::NE, L_twoRounds);
 
-/* JJN OLD ADD-BACK
-    // Add the starting state back into the current working state
-    ADD_START_STATE(wkState0, stateFirst, 0, scratch)
-    ADD_START_STATE(wkState1, stateFirst, 1, scratch)
-    ADD_START_STATE(wkState2, stateFirst, 2, scratch)
-    ADD_START_STATE(wkState3, stateFirst, 3, scratch)
-    ADD_START_STATE(wkState4, stateSecond, 0, scratch)
-    ADD_START_STATE(wkState5, stateSecond, 1, scratch)
-    ADD_START_STATE(wkState6, stateSecond, 2, scratch)
-    ADD_START_STATE(wkState7, stateSecond, 3, scratch)
-    ADD_START_STATE(wkState8, stateThird, 0, scratch)
-    ADD_START_STATE(wkState9, stateThird, 1, scratch)
-    ADD_START_STATE(wkState10, stateThird, 2, scratch)
-    ADD_START_STATE(wkState11, stateThird, 3, scratch)
-    // For state[12] the original state vector is origCtrState
-    __ addv(wkState12, __ T4S, wkState12, origCtrState);
-    ADD_START_STATE(wkState13, stateFourth, 1, scratch)
-    ADD_START_STATE(wkState14, stateFourth, 2, scratch)
-    ADD_START_STATE(wkState15, stateFourth, 3, scratch)
-*/
     __ mov(tmpAddr, state);
     __ ld4r(stateFirst, stateSecond, stateThird, stateFourth, __ T4S, __ post(tmpAddr, 16));
     __ addv(wkState0, __ T4S, wkState0, stateFirst);
