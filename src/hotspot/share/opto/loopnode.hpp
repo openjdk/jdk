@@ -1335,12 +1335,32 @@ public:
   // Find a good location to insert a predicate
   static ProjNode* find_predicate_insertion_point(Node* start_c, Deoptimization::DeoptReason reason);
 
-  // Find all predicates, write them pack to input variables if they are not nullptr
-  static void find_all_predicates(Node* entry,                  // first node above loop
-                                  ProjNode** loop_limit_check,  // first node of loop limit checks
-                                  ProjNode** profile_predicate, // first node of profile predicates
-                                  ProjNode** predicate,         // first node of predicates
-                                  Node** skip_all = nullptr);   // first node above all predicates
+  class Predicates {
+    public:
+      // given loop entry, find all predicates above loop
+      Predicates(Node* entry);
+      // first node of loop limit checks
+      ProjNode* loop_limit_check() {
+        return _loop_limit_check;
+      }
+      // first node of profile predicates
+      ProjNode* profile_predicate() {
+        return _profile_predicate;
+      }
+      // first node of predicates
+      ProjNode* predicate() {
+        return _predicate;
+      }
+      // first node above all predicates
+      Node* skip_all() {
+        return _skip_all;
+      }
+    private:
+      ProjNode*_loop_limit_check = nullptr;
+      ProjNode* _profile_predicate = nullptr;
+      ProjNode* _predicate = nullptr;
+      Node* _skip_all = nullptr;
+  };
 
   // Find a predicate
   static Node* find_predicate(Node* entry);

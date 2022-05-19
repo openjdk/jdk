@@ -773,15 +773,17 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 
   // Step 5: skeleton_predicates instantiation
   if (counted_loop && UseLoopPredicate) {
-    Node* entry = new_head->in(LoopNode::EntryControl);
-    ProjNode* predicate;
-    find_all_predicates(entry, nullptr, nullptr, &predicate);
+    Predicates predicates(new_head->in(LoopNode::EntryControl));
+    ProjNode* profile_predicate = predicates.profile_predicate();
+    ProjNode* predicate = predicates.predicate();
 
     CountedLoopNode *cl_head = head->as_CountedLoop();
     Node* init = cl_head->init_trip();
     Node* stride = cl_head->stride();
     IdealLoopTree* outer_loop = get_loop(outer_loop_head);
     initialize_skeleton_predicates_to_loop(predicate, outer_loop_head, dd_outer_loop_head,
+                                           init, stride, outer_loop, idx_before_clone);
+    initialize_skeleton_predicates_to_loop(profile_predicate, outer_loop_head, dd_outer_loop_head,
                                            init, stride, outer_loop, idx_before_clone);
  }
 
