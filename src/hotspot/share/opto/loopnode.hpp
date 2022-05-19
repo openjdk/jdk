@@ -929,6 +929,8 @@ private:
   static void get_skeleton_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
   void copy_skeleton_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head, Node* init, Node* stride);
+  void instantiate_skeleton_predicates_to_loop(ProjNode* predicate, LoopNode* instantiate_above, int dd_instantiate_above,
+                                               Node* init, Node* stride, IdealLoopTree* outer_loop, const uint idx_before_clone, Node_List &old_new);
   void insert_loop_limit_check(ProjNode* limit_check_proj, Node* cmp_limit, Node* bol);
 #ifdef ASSERT
   bool only_has_infinite_loops();
@@ -1323,9 +1325,18 @@ public:
 
   static Node* skip_all_loop_predicates(Node* entry);
   static Node* skip_loop_predicates(Node* entry);
+  static ProjNode* next_predicate(ProjNode* predicate);
 
   // Find a good location to insert a predicate
   static ProjNode* find_predicate_insertion_point(Node* start_c, Deoptimization::DeoptReason reason);
+
+  // Find all predicates, write them pack to input variables if they are not nullptr
+  static void find_all_predicates(Node* entry,                  // first node above loop
+                                  ProjNode** loop_limit_check,  // first node of loop limit checks
+                                  ProjNode** profile_predicate, // first node of profile predicates
+                                  ProjNode** predicate,         // first node of predicates
+                                  Node** skip_all = nullptr);   // first node above all predicates
+
   // Find a predicate
   static Node* find_predicate(Node* entry);
   // Construct a range check for a predicate if

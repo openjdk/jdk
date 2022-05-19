@@ -491,24 +491,26 @@ Node* PhaseIdealLoop::skip_loop_predicates(Node* entry) {
 }
 
 Node* PhaseIdealLoop::skip_all_loop_predicates(Node* entry) {
-  Node* predicate = NULL;
-  predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
-  if (predicate != NULL) {
-    entry = skip_loop_predicates(entry);
+  Node* skip_all;
+  find_all_predicates(entry, nullptr, nullptr, nullptr, &skip_all);
+  return skip_all;
+}
+
+//--------------------------next_predicate---------------------------------
+// Find next related predicate, useful for iterating over all related predicates
+ProjNode* PhaseIdealLoop::next_predicate(ProjNode* predicate) {
+  IfNode* iff = predicate->in(0)->as_If();
+  ProjNode* uncommon_proj = iff->proj_out(1 - predicate->_con);
+  Node* rgn = uncommon_proj->unique_ctrl_out();
+  assert(rgn->is_Region() || rgn->is_Call(), "must be a region or call uct");
+  Node* next = iff->in(0);
+  if (next != nullptr && next->is_Proj() && next->in(0)->is_If()) {
+    uncommon_proj = next->in(0)->as_If()->proj_out(1 - next->as_Proj()->_con);
+    if (uncommon_proj->unique_ctrl_out() != rgn)
+      return nullptr; // not related
+    return next->as_Proj();
   }
-  if (UseProfiledLoopPredicate) {
-    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
-    if (predicate != NULL) { // right pattern that can be used by loop predication
-      entry = skip_loop_predicates(entry);
-    }
-  }
-  if (UseLoopPredicate) {
-    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
-    if (predicate != NULL) { // right pattern that can be used by loop predication
-      entry = skip_loop_predicates(entry);
-    }
-  }
-  return entry;
+  return nullptr;
 }
 
 //--------------------------find_predicate_insertion_point-------------------
@@ -520,6 +522,49 @@ ProjNode* PhaseIdealLoop::find_predicate_insertion_point(Node* start_c, Deoptimi
     return start_c->as_Proj();
   }
   return NULL;
+}
+
+//--------------------------find_all_predicates-------------------------------
+// Find all predicates, write them pack to input variables if they are not nullptr
+void PhaseIdealLoop::find_all_predicates(Node* entry,
+                                         ProjNode** loop_limit_check,
+                                         ProjNode** profile_predicate,
+                                         ProjNode** predicate,
+                                         Node** skip_all)
+{
+  ProjNode* tmp_loop_limit_check = nullptr;
+  ProjNode* tmp_profile_predicate = nullptr;
+  ProjNode* tmp_predicate = nullptr;
+
+  tmp_loop_limit_check = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
+  if (tmp_loop_limit_check != nullptr) {
+    entry = skip_loop_predicates(entry);
+  }
+  if (UseProfiledLoopPredicate) {
+    tmp_profile_predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
+    if (tmp_profile_predicate != nullptr) {
+      entry = skip_loop_predicates(entry);
+    }
+  }
+  if (UseLoopPredicate) {
+    tmp_predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
+    if (tmp_predicate != nullptr) {
+      entry = skip_loop_predicates(entry);
+    }
+  }
+
+  if (loop_limit_check != nullptr) {
+    *loop_limit_check = tmp_loop_limit_check;
+  }
+  if (profile_predicate != nullptr) {
+    *profile_predicate = tmp_profile_predicate;
+  }
+  if (predicate != nullptr) {
+    *predicate = tmp_predicate;
+  }
+  if (skip_all != nullptr) {
+    *skip_all = entry;
+  }
 }
 
 //--------------------------find_predicate------------------------------------

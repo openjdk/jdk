@@ -614,13 +614,16 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //         after peel and predicate move
 //
 //                   stmt1
+//                     |
+//                     v
+//               loop predicate
 //                    /
 //                   /
 //        clone     /            orig
 //                 /
 //                /              +----------+
 //               /               |          |
-//              /          loop predicate   |
+//              /                |          |
 //             /                 |          |
 //            v                  v          |
 //   TOP-->loop clone          loop<----+   |
@@ -647,7 +650,10 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //
 //              final graph
 //
-//                  stmt1
+//                 stmt1
+//                    |
+//                    v
+//              loop predicate
 //                    |
 //                    v
 //                  stmt2 clone
@@ -660,7 +666,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //            false  true
 //             |      |
 //             |      v
-//             | loop predicate
+//             | instantiated skeleton predicates
 //             |      |
 //             |      v
 //             |     loop<----+
@@ -714,7 +720,9 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 
   // Step 1: Clone the loop body.  The clone becomes the peeled iteration.
   //         The pre-loop illegally has 2 control users (old & new loops).
-  clone_loop(loop, old_new, dom_depth(head->skip_strip_mined()), ControlAroundStripMined);
+  const uint idx_before_clone = Compile::current()->unique();
+  LoopNode* outer_loop_head = head->skip_strip_mined();
+  clone_loop(loop, old_new, dom_depth(outer_loop_head), ControlAroundStripMined);
 
   // Step 2: Make the old-loop fall-in edges point to the peeled iteration.
   //         Do this by making the old-loop fall-in edges act as if they came
@@ -723,8 +731,8 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
   //         the pre-loop with only 1 user (the new peeled iteration), but the
   //         peeled-loop backedge has 2 users.
   Node* new_entry = old_new[head->in(LoopNode::LoopBackControl)->_idx];
-  _igvn.hash_delete(head->skip_strip_mined());
-  head->skip_strip_mined()->set_req(LoopNode::EntryControl, new_entry);
+  _igvn.hash_delete(outer_loop_head);
+  outer_loop_head->set_req(LoopNode::EntryControl, new_entry);
   for (DUIterator_Fast jmax, j = head->fast_outs(jmax); j < jmax; j++) {
     Node* old = head->fast_out(j);
     if (old->in(0) == loop->_head && old->req() == 3 && old->is_Phi()) {
@@ -753,15 +761,29 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 
   // Step 4: Correct dom-depth info.  Set to loop-head depth.
 
-  int dd = dom_depth(head->skip_strip_mined());
-  set_idom(head->skip_strip_mined(), head->skip_strip_mined()->in(LoopNode::EntryControl), dd);
+  int dd_main_head = dom_depth(outer_loop_head);
+  set_idom(outer_loop_head, outer_loop_head->in(LoopNode::EntryControl), dd_main_head);
   for (uint j3 = 0; j3 < loop->_body.size(); j3++) {
     Node *old = loop->_body.at(j3);
     Node *nnn = old_new[old->_idx];
     if (!has_ctrl(nnn)) {
-      set_idom(nnn, idom(nnn), dd-1);
+      set_idom(nnn, idom(nnn), dd_main_head-1);
     }
   }
+
+  // Step 5: skeleton_predicates instantiation
+  if (counted_loop && UseLoopPredicate) {
+    Node* entry = new_head->in(LoopNode::EntryControl);
+    ProjNode* predicate;
+    find_all_predicates(entry, nullptr, nullptr, &predicate);
+
+    CountedLoopNode *cl_remain = head->as_CountedLoop();
+    Node* init = cl_remain->init_trip();
+    Node* stride = cl_remain->stride();
+    IdealLoopTree* outer_loop = get_loop(outer_loop_head);
+    instantiate_skeleton_predicates_to_loop(predicate, outer_loop_head, dd_main_head,
+                                            init, stride, outer_loop, idx_before_clone, old_new);
+ }
 
   // Now force out all loop-invariant dominating tests.  The optimizer
   // finds some, but we _know_ they are all useless.
@@ -2033,6 +2055,50 @@ void PhaseIdealLoop::copy_skeleton_predicates_to_post_loop(LoopNode* main_loop_h
     _igvn.replace_input_of(post_loop_head, LoopNode::EntryControl, prev_proj);
     set_idom(post_loop_head, prev_proj, dom_depth(post_loop_head));
   }
+}
+
+void PhaseIdealLoop::instantiate_skeleton_predicates_to_loop(ProjNode* predicate,
+                                                             LoopNode* instantiate_above,
+                                                             int dd_instantiate_above,
+                                                             Node* init,
+                                                             Node* stride,
+                                                             IdealLoopTree* outer_loop,
+                                                             const uint idx_before_clone,
+                                                             Node_List &old_new)
+{
+  if (predicate == nullptr) {
+    return;
+  }
+  assert(instantiate_above->is_CFG(), "can only instantiate in control flow");
+  Node* control = instantiate_above->in(LoopNode::EntryControl);
+  Node* input_proj = control;
+
+  predicate = next_predicate(predicate);
+  while (predicate != nullptr) {
+    IfNode* iff = predicate->in(0)->as_If();
+    if (iff->in(1)->Opcode() == Op_Opaque4) {
+      assert(skeleton_predicate_has_opaque(iff), "unexpected");
+      ProjNode* uncommon_proj = iff->proj_out(1 - predicate->as_Proj()->_con);
+      input_proj = clone_skeleton_predicate_for_main_or_post_loop(iff, init, stride, predicate, uncommon_proj, control, outer_loop, input_proj);
+
+      // Rewrite any control inputs from the cloned skeleton predicate
+      for (DUIterator i = predicate->outs(); predicate->has_out(i); i++) {
+        Node* loop_node = predicate->out(i);
+        Node* new_loop_node = old_new[loop_node->_idx];
+
+        if (!loop_node->is_CFG() && loop_node->_idx < idx_before_clone) {
+          // The old nodes from the remaining loop still point to the predicate above the peeled loop
+          // We need to rewrite the dependencies to the newly instantiated predicates
+          _igvn.replace_input_of(loop_node, 0, input_proj);
+          --i; // correct for just deleted predicate->out(i)
+        }
+      }
+    }
+    predicate = next_predicate(predicate);
+  }
+
+  _igvn.replace_input_of(instantiate_above, LoopNode::EntryControl, input_proj);
+  set_idom(instantiate_above, input_proj, dd_instantiate_above);
 }
 
 //------------------------------do_unroll--------------------------------------
