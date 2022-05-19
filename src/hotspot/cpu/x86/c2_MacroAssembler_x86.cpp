@@ -4783,7 +4783,7 @@ void C2_MacroAssembler::float_class_check_vfp(int opcode, Register dst, XMMRegis
   vfpclassss(tmp, src, imm8);
   kmovbl(dst, tmp);
   if (opcode == Op_IsFiniteF) {
-    xorl(dst, 0x1);
+    xorl(dst, 0x1); // flip last bit
   }
 }
 
@@ -4834,7 +4834,7 @@ void C2_MacroAssembler::double_class_check_vfp(int opcode, Register dst, XMMRegi
   vfpclasssd(tmp, src, imm8);
   kmovbl(dst, tmp);
   if (opcode == Op_IsFiniteD) {
-    xorl(dst, 0x1);
+    xorl(dst, 0x1); // flip last bit
   }
 }
 #endif
