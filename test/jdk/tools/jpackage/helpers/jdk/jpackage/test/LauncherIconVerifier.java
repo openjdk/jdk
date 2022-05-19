@@ -81,40 +81,9 @@ public final class LauncherIconVerifier {
         }
     }
 
-    private static class WinIconVerifierException extends RuntimeException {
-
-        public WinIconVerifierException(String msg) {
-            super(msg);
-        }
-    }
-
     private static class WinIconVerifier {
 
-        WinIconVerifier() {
-            try {
-                executableRebranderClass = Class.forName(
-                        "jdk.jpackage.internal.ExecutableRebrander");
-
-                lockResource = executableRebranderClass.getDeclaredMethod(
-                        "lockResource", String.class);
-                // Note: these reflection call requires
-                // --add-opens jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED
-                lockResource.setAccessible(true);
-
-                unlockResource = executableRebranderClass.getDeclaredMethod(
-                        "unlockResource", long.class);
-                unlockResource.setAccessible(true);
-
-                iconSwap = executableRebranderClass.getDeclaredMethod("iconSwap",
-                        long.class, String.class);
-                iconSwap.setAccessible(true);
-            } catch (ClassNotFoundException | NoSuchMethodException
-                    | SecurityException ex) {
-                throw Functional.rethrowUnchecked(ex);
-            }
-        }
-
-        private void verifyLauncherIcon(JPackageCommand cmd, String launcherName,
+        void verifyLauncherIcon(JPackageCommand cmd, String launcherName,
                 Path expectedIcon, boolean expectedDefault) {
             TKit.withTempDirectory("icons", tmpDir -> {
                 Path launcher = cmd.appLauncherPath(launcherName);
@@ -139,6 +108,30 @@ public final class LauncherIconVerifier {
                                 Optional.ofNullable(launcherName).orElse("main"),
                                 extractedExpectedIcon));
             });
+        }
+
+        private WinIconVerifier() {
+            try {
+                executableRebranderClass = Class.forName(
+                        "jdk.jpackage.internal.ExecutableRebrander");
+
+                lockResource = executableRebranderClass.getDeclaredMethod(
+                        "lockResource", String.class);
+                // Note: this reflection call requires
+                // --add-opens jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED
+                lockResource.setAccessible(true);
+
+                unlockResource = executableRebranderClass.getDeclaredMethod(
+                        "unlockResource", long.class);
+                unlockResource.setAccessible(true);
+
+                iconSwap = executableRebranderClass.getDeclaredMethod("iconSwap",
+                        long.class, String.class);
+                iconSwap.setAccessible(true);
+            } catch (ClassNotFoundException | NoSuchMethodException
+                    | SecurityException ex) {
+                throw Functional.rethrowUnchecked(ex);
+            }
         }
 
         private Path extractIconFromExecutable(Path outputDir, Path executable,
@@ -191,7 +184,7 @@ public final class LauncherIconVerifier {
                         lock = (Long) lockResource.invoke(null, new Object[]{
                             launcherPath.toAbsolutePath().normalize().toString()});
                         if (lock == 0) {
-                            throw new WinIconVerifierException(String.format(
+                            throw new RuntimeException(String.format(
                                     "Failed to lock [%s] executable",
                                     launcherPath));
                         }
@@ -210,7 +203,7 @@ public final class LauncherIconVerifier {
             }
         }
 
-        private final static WinIconVerifier instance = new WinIconVerifier();
+        final static WinIconVerifier instance = new WinIconVerifier();
 
         private final Class executableRebranderClass;
         private final Method lockResource;
