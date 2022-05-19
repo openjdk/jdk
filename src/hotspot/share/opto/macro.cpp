@@ -2314,8 +2314,7 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
 void PhaseMacroExpand::eliminate_macro_nodes() {
   if (C->macro_count() == 0)
     return;
-    NOT_PRODUCT(int membar_before = count_MemBar();)
-
+  NOT_PRODUCT(int membar_before = count_MemBar();)
 
   // Before elimination may re-mark (change to Nested or NonEscObj)
   // all associated (same box and obj) lock and unlock nodes.

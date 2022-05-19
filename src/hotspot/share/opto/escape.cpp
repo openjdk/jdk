@@ -247,9 +247,7 @@ bool ConnectionGraph::compute_escape() {
 
   if (non_escaped_allocs_worklist.length() == 0) {
     _collecting = false;
-#ifndef PRODUCT
-    escape_state_statistics(java_objects_worklist);
-#endif
+    NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
     return false; // Nothing to do.
   }
   // Add final simple edges to graph.
