@@ -214,7 +214,7 @@ public:
     static int _GC_barriers_removed_counter;
     static int _memory_barriers_removed_counter;
     static void print_statistics();
-    int count_MemBar();
+    int count_MemBar(Compile *C);
 #endif
 
   // Members accessed from BarrierSetC2

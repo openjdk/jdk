@@ -639,10 +639,9 @@ public:
   static int _no_escape_counter;
   static int _arg_escape_counter;
   static int _global_escape_counter;
-  static long _time_elapsed;
   void dump(GrowableArray<PointsToNode*>& ptnodes_worklist);
   static void print_statistics();
-  void escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist);
+  static void escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist);
 #endif
 };
 
