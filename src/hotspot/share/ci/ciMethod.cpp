@@ -82,7 +82,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _max_stack          = h_m->max_stack();
   _max_locals         = h_m->max_locals();
   _code_size          = h_m->code_size();
-  _intrinsic_id       = h_m->intrinsic_id();
   _handler_count      = h_m->exception_table_length();
   _size_of_parameters = h_m->size_of_parameters();
   _uses_monitors      = h_m->access_flags().has_monitor_bytecodes();
@@ -102,6 +101,10 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _bcea               = NULL;
 #endif // COMPILER2
 
+  // Check for blackhole intrinsic and then populate the intrinsic ID.
+  CompilerOracle::tag_blackhole_if_possible(h_m);
+  _intrinsic_id       = h_m->intrinsic_id();
+
   ciEnv *env = CURRENT_ENV;
   if (env->jvmti_can_hotswap_or_post_breakpoint()) {
     // 6328518 check hotswap conditions under the right lock.
@@ -117,9 +120,11 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
 
   if (h_m->method_holder()->is_linked()) {
     _can_be_statically_bound = h_m->can_be_statically_bound();
+    _can_omit_stack_trace = h_m->can_omit_stack_trace();
   } else {
     // Have to use a conservative value in this case.
     _can_be_statically_bound = false;
+    _can_omit_stack_trace = true;
   }
 
   // Adjust the definition of this condition to be more useful:
@@ -155,8 +160,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
     ciReplay::initialize(this);
   }
 #endif
-
-  CompilerOracle::tag_blackhole_if_possible(h_m);
 }
 
 
@@ -176,6 +179,7 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   _intrinsic_id(           vmIntrinsics::_none),
   _instructions_size(-1),
   _can_be_statically_bound(false),
+  _can_omit_stack_trace(true),
   _liveness(               NULL)
 #if defined(COMPILER2)
   ,
@@ -764,6 +768,20 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
 // Tries to determine whether a method can be statically bound in some context.
 bool ciMethod::can_be_statically_bound(ciInstanceKlass* context) const {
   return (holder() == context) && can_be_statically_bound();
+}
+
+// ------------------------------------------------------------------
+// ciMethod::can_omit_stack_trace
+//
+// Tries to determine whether a method can omit stack trace in throw in compiled code.
+bool ciMethod::can_omit_stack_trace() const {
+  if (!StackTraceInThrowable) {
+    return true; // stack trace is switched off.
+  }
+  if (!OmitStackTraceInFastThrow) {
+    return false; // Have to provide stack trace.
+  }
+  return _can_omit_stack_trace;
 }
 
 // ------------------------------------------------------------------

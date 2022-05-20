@@ -345,6 +345,16 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     (s, p) -> s
     );
 
+    static final StandardBundlerParam<Boolean> LAUNCHER_AS_SERVICE =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.LAUNCHER_AS_SERVICE.getId(),
+                    Boolean.class,
+                    params -> false,
+                    // valueOf(null) is false, and we actually do want null
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                            true : Boolean.valueOf(s)
+            );
+
 
     @SuppressWarnings("unchecked")
     static final StandardBundlerParam<List<Map<String, ? super Object>>> ADD_LAUNCHERS =
@@ -405,13 +415,21 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
             );
 
     @SuppressWarnings("unchecked")
+    static final BundlerParamInfo<List<String>> DMG_CONTENT =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.DMG_CONTENT.getId(),
+                    (Class<List<String>>) (Object)List.class,
+                    p -> Collections.emptyList(),
+                    (s, p) -> Arrays.asList(s.split(","))
+            );
+
+    @SuppressWarnings("unchecked")
     static final StandardBundlerParam<List<String>> APP_CONTENT =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.APP_CONTENT.getId(),
                     (Class<List<String>>) (Object)List.class,
                     p->Collections.emptyList(),
                     (s, p) -> Arrays.asList(s.split(","))
-
             );
 
     @SuppressWarnings("unchecked")

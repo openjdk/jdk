@@ -149,4 +149,21 @@
     TEST_VM_ASSERT_MSG is only available in debug builds
 #endif
 
+#define TEST_VM_FATAL_ERROR_MSG(category, name, msg)                \
+  static void test_  ## category ## _ ## name ## _();               \
+                                                                    \
+  static void child_ ## category ## _ ## name ## _() {              \
+    ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
+    test_ ## category ## _ ## name ## _();                          \
+    exit(0);                                                        \
+  }                                                                 \
+                                                                    \
+  TEST(category, CONCAT(name, _vm_assert)) {                        \
+    ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
+                ::testing::ExitedWithCode(1),                       \
+                msg);                            \
+  }                                                                 \
+                                                                    \
+  void test_ ## category ## _ ## name ## _()
+
 #endif // UNITTEST_HPP

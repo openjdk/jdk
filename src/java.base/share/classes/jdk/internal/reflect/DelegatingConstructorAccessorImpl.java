@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.util.Objects;
 
 class DelegatingConstructorAccessorImpl extends ConstructorAccessorImpl {
     // initial non-null delegate
-    @Stable
     private final ConstructorAccessorImpl initialDelegate;
     // alternative delegate: starts as null;
     // only single change from null -> non-null is guaranteed

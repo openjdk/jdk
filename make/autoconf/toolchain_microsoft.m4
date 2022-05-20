@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 ################################################################################
 # The order of these defines the priority by which we try to find them.
-VALID_VS_VERSIONS="2019 2017"
+VALID_VS_VERSIONS="2019 2017 2022"
 
 VS_DESCRIPTION_2017="Microsoft Visual Studio 2017"
 VS_VERSION_INTERNAL_2017=141
@@ -55,6 +55,21 @@ VS_VS_PLATFORM_NAME_2019="v142"
 VS_SDK_PLATFORM_NAME_2019=
 VS_SUPPORTED_2019=true
 VS_TOOLSET_SUPPORTED_2019=true
+
+VS_DESCRIPTION_2022="Microsoft Visual Studio 2022"
+VS_VERSION_INTERNAL_2022=143
+VS_MSVCR_2022=vcruntime140.dll
+VS_VCRUNTIME_1_2022=vcruntime140_1.dll
+VS_MSVCP_2022=msvcp140.dll
+VS_ENVVAR_2022="VS170COMNTOOLS"
+VS_USE_UCRT_2022="true"
+VS_VS_INSTALLDIR_2022="Microsoft Visual Studio/2022"
+VS_EDITIONS_2022="BuildTools Community Professional Enterprise"
+VS_SDK_INSTALLDIR_2022=
+VS_VS_PLATFORM_NAME_2022="v143"
+VS_SDK_PLATFORM_NAME_2022=
+VS_SUPPORTED_2022=true
+VS_TOOLSET_SUPPORTED_2022=true
 
 ################################################################################
 
@@ -88,6 +103,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
             vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
       elif test "x$TARGET_CPU" = xaarch64; then
         # for host x86-64, target aarch64
+        # aarch64 requires Visual Studio 16.8 or higher
         VCVARSFILES="vc/auxiliary/build/vcvarsamd64_arm64.bat \
             vc/auxiliary/build/vcvarsx86_arm64.bat"
       fi
@@ -339,7 +355,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_VISUAL_STUDIO_ENV],
   PATH="$OLDPATH"
 
   if test ! -s $VS_ENV_TMP_DIR/set-vs-env.sh; then
-    AC_MSG_NOTICE([Could not succesfully extract the environment variables needed for the VS setup.])
+    AC_MSG_NOTICE([Could not successfully extract the environment variables needed for the VS setup.])
     AC_MSG_NOTICE([Try setting --with-tools-dir to the VC/bin directory within the VS installation.])
     AC_MSG_NOTICE([To analyze the problem, see extract-vs-env.log and extract-vs-env.bat in])
     AC_MSG_NOTICE([$VS_ENV_TMP_DIR.])
@@ -465,6 +481,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL],
 AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
 [
   DLL_NAME="$1"
+  DLL_HELP="$2"
   MSVC_DLL=
 
   if test "x$OPENJDK_TARGET_CPU" = xx86; then
@@ -549,7 +566,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
   if test "x$MSVC_DLL" = x; then
     AC_MSG_CHECKING([for $DLL_NAME])
     AC_MSG_RESULT([no])
-    AC_MSG_ERROR([Could not find $DLL_NAME. Please specify using --with-msvcr-dll.])
+    AC_MSG_ERROR([Could not find $DLL_NAME. Please specify using ${DLL_HELP}.])
   fi
 ])
 
@@ -572,7 +589,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
     fi
     MSVCR_DLL="$MSVC_DLL"
   else
-    TOOLCHAIN_SETUP_MSVC_DLL([${MSVCR_NAME}])
+    TOOLCHAIN_SETUP_MSVC_DLL([${MSVCR_NAME}], [--with-msvcr-dll])
     MSVCR_DLL="$MSVC_DLL"
   fi
   AC_SUBST(MSVCR_DLL)
@@ -595,7 +612,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
       fi
       MSVCP_DLL="$MSVC_DLL"
     else
-      TOOLCHAIN_SETUP_MSVC_DLL([${MSVCP_NAME}])
+      TOOLCHAIN_SETUP_MSVC_DLL([${MSVCP_NAME}], [--with-msvcp-dll])
       MSVCP_DLL="$MSVC_DLL"
     fi
     AC_SUBST(MSVCP_DLL)
@@ -620,7 +637,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
       fi
       VCRUNTIME_1_DLL="$MSVC_DLL"
     else
-      TOOLCHAIN_SETUP_MSVC_DLL([${VCRUNTIME_1_NAME}])
+      TOOLCHAIN_SETUP_MSVC_DLL([${VCRUNTIME_1_NAME}], [--with-vcruntime-1-dll])
       VCRUNTIME_1_DLL="$MSVC_DLL"
     fi
   fi

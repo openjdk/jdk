@@ -669,18 +669,9 @@ public class PNGImageReader extends ImageReader {
 
     private static byte[] inflate(byte[] b) throws IOException {
         InputStream bais = new ByteArrayInputStream(b);
-        InputStream iis = new InflaterInputStream(bais);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        int c;
-        try {
-            while ((c = iis.read()) != -1) {
-                baos.write(c);
-            }
-        } finally {
-            iis.close();
+        try (InputStream iis = new InflaterInputStream(bais)) {
+            return iis.readAllBytes();
         }
-        return baos.toByteArray();
     }
 
     private void parse_zTXt_chunk(int chunkLength) throws IOException {
@@ -1423,6 +1414,13 @@ public class PNGImageReader extends ImageReader {
 
         int width = metadata.IHDR_width;
         int height = metadata.IHDR_height;
+
+        if ((long)width * height > Integer.MAX_VALUE - 2) {
+            // We are not able to properly decode image that has number
+            // of pixels greater than Integer.MAX_VALUE - 2
+            throw new IIOException("Can not read image of the size "
+                    + width + " by " + height);
+        }
 
         // Init default values
         sourceXSubsampling = 1;

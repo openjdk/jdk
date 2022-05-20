@@ -1,0 +1,6 @@
+ImproperReturnTypes.java:24:17: compiler.warn.serial.method.unexpected.return.type: writeObject, int, void
+ImproperReturnTypes.java:29:17: compiler.warn.serial.method.unexpected.return.type: writeReplace, int, java.lang.Object
+ImproperReturnTypes.java:33:17: compiler.warn.serial.method.unexpected.return.type: readObject, int, void
+ImproperReturnTypes.java:39:17: compiler.warn.serial.method.unexpected.return.type: readObjectNoData, int, void
+ImproperReturnTypes.java:43:17: compiler.warn.serial.method.unexpected.return.type: readResolve, int, java.lang.Object
+5 warnings

@@ -70,7 +70,7 @@ public final class WindowsAnsiWriter extends AnsiWriter {
             BACKGROUND_WHITE,
     };
 
-    private final static int MAX_ESCAPE_SEQUENCE_LENGTH = 100;
+    private static final int MAX_ESCAPE_SEQUENCE_LENGTH = 100;
 
     private final Pointer console;
 

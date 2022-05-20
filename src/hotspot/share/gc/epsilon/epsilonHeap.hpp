@@ -82,6 +82,8 @@ public:
     return _space->is_in(p);
   }
 
+  virtual bool requires_barriers(stackChunkOop obj) const { return false; }
+
   virtual bool is_maximal_no_gc() const {
     // No GC is going to happen. Return "we are at max", when we are about to fail.
     return used() == capacity();
@@ -132,7 +134,7 @@ public:
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
   // Support for loading objects from CDS archive into the heap
-  virtual bool can_load_archived_objects() const { return true; }
+  virtual bool can_load_archived_objects() const { return UseCompressedOops; }
   virtual HeapWord* allocate_loaded_archive_space(size_t size);
 
   virtual void print_on(outputStream* st) const;

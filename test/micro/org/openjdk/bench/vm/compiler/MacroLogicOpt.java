@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.Random;
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
 public class MacroLogicOpt {
-  @Param({"64","128","256","512","1024","2048","4096"}) private int VECLEN;
+  @Param({"64","128","256","512","1024"}) private int VECLEN;
 
   private  int [] ai = new int[VECLEN];
   private  int [] bi = new int[VECLEN];

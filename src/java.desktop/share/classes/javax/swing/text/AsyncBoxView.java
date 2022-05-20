@@ -640,7 +640,7 @@ public class AsyncBoxView extends View {
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
-     * @exception IllegalArgumentException for an invalid axis type
+     * @throws IllegalArgumentException for an invalid axis type
      */
     public float getPreferredSpan(int axis) {
         float margin = getInsetSpan(axis);
@@ -665,7 +665,7 @@ public class AsyncBoxView extends View {
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
-     * @exception IllegalArgumentException for an invalid axis type
+     * @throws IllegalArgumentException for an invalid axis type
      */
     public float getMinimumSpan(int axis) {
         if (axis == this.axis) {
@@ -693,7 +693,7 @@ public class AsyncBoxView extends View {
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
-     * @exception IllegalArgumentException for an invalid axis type
+     * @throws IllegalArgumentException for an invalid axis type
      */
     public float getMaximumSpan(int axis) {
         if (axis == this.axis) {
@@ -773,9 +773,9 @@ public class AsyncBoxView extends View {
      *  next character represented by the offset, in case the
      *  position is a boundary of two views.
      * @return the bounding box of the given position is returned
-     * @exception BadLocationException  if the given position does
+     * @throws BadLocationException  if the given position does
      *   not represent a valid location in the associated document
-     * @exception IllegalArgumentException for an invalid bias argument
+     * @throws IllegalArgumentException for an invalid bias argument
      * @see View#viewToModel
      */
     public Shape modelToView(int pos, Shape a, Position.Bias b) throws BadLocationException {
@@ -864,9 +864,9 @@ public class AsyncBoxView extends View {
      * @param biasRet an array contain the bias that was checked
      * @return the location within the model that best represents the next
      *  location visual position
-     * @exception BadLocationException the given position is not a valid
+     * @throws BadLocationException the given position is not a valid
      *                                 position within the document
-     * @exception IllegalArgumentException if <code>direction</code> is invalid
+     * @throws IllegalArgumentException if <code>direction</code> is invalid
      */
     public int getNextVisualPositionFrom(int pos, Position.Bias b, Shape a,
                                          int direction,

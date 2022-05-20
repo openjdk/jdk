@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -114,12 +114,26 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_MISC],
     HOTSPOT_TARGET_CPU_ARCH=zero
   fi
 
+
   AC_ARG_WITH([hotspot-build-time], [AS_HELP_STRING([--with-hotspot-build-time],
-  [timestamp to use in hotspot version string, empty for on-the-fly @<:@empty@:>@])])
+  [timestamp to use in hotspot version string, empty means determined at build time @<:@source-date/empty@:>@])])
+
+  AC_MSG_CHECKING([what hotspot build time to use])
 
   if test "x$with_hotspot_build_time" != x; then
     HOTSPOT_BUILD_TIME="$with_hotspot_build_time"
+    AC_MSG_RESULT([$HOTSPOT_BUILD_TIME (from --with-hotspot-build-time)])
+  else
+    if test "x$SOURCE_DATE" = xupdated; then
+      HOTSPOT_BUILD_TIME=""
+      AC_MSG_RESULT([determined at build time (default)])
+    else
+      # If we have a fixed value for SOURCE_DATE, use it as default
+      HOTSPOT_BUILD_TIME="$SOURCE_DATE_ISO_8601"
+      AC_MSG_RESULT([$HOTSPOT_BUILD_TIME (from --with-source-date)])
+    fi
   fi
+
   AC_SUBST(HOTSPOT_BUILD_TIME)
 
 

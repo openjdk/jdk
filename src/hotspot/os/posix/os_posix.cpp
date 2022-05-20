@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@
 #include <dirent.h>
 #include <dlfcn.h>
 #include <grp.h>
+#include <locale.h>
 #include <netdb.h>
 #include <pwd.h>
 #include <pthread.h>
@@ -60,6 +61,7 @@
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
+#include <spawn.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
@@ -92,6 +94,9 @@
 static jlong initial_time_count = 0;
 
 static int clock_tics_per_sec = 100;
+
+// Platform minimum stack allowed
+size_t os::_os_min_stack_allowed = PTHREAD_STACK_MIN;
 
 // Check core dump limit and report possible place where core can be found
 void os::check_dump_limit(char* buffer, size_t bufferSize) {
@@ -240,6 +245,25 @@ int os::create_file_for_heap(const char* dir) {
   }
 
   return fd;
+}
+
+// Is a (classpath) directory empty?
+bool os::dir_is_empty(const char* path) {
+  DIR *dir = NULL;
+  struct dirent *ptr;
+
+  dir = ::opendir(path);
+  if (dir == NULL) return true;
+
+  // Scan the directory
+  bool result = true;
+  while (result && (ptr = ::readdir(dir)) != NULL) {
+    if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
+      result = false;
+    }
+  }
+  ::closedir(dir);
+  return result;
 }
 
 static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
@@ -547,6 +571,33 @@ void os::Posix::print_user_info(outputStream* st) {
   st->cr();
 }
 
+// Print all active locale categories, one line each
+void os::Posix::print_active_locale(outputStream* st) {
+  st->print_cr("Active Locale:");
+  // Posix is quiet about how exactly LC_ALL is implemented.
+  // Just print it out too, in case LC_ALL is held separately
+  // from the individual categories.
+  #define LOCALE_CAT_DO(f) \
+    f(LC_ALL) \
+    f(LC_COLLATE) \
+    f(LC_CTYPE) \
+    f(LC_MESSAGES) \
+    f(LC_MONETARY) \
+    f(LC_NUMERIC) \
+    f(LC_TIME)
+  #define XX(cat) { cat, #cat },
+  const struct { int c; const char* name; } categories[] = {
+      LOCALE_CAT_DO(XX)
+      { -1, NULL }
+  };
+  #undef XX
+  #undef LOCALE_CAT_DO
+  for (int i = 0; categories[i].c != -1; i ++) {
+    const char* locale = setlocale(categories[i].c, NULL);
+    st->print_cr("%s=%s", categories[i].name,
+                 ((locale != NULL) ? locale : "<unknown>"));
+  }
+}
 
 bool os::get_host_name(char* buf, size_t buflen) {
   struct utsname name;
@@ -662,10 +713,6 @@ jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) BSD_ONLY(::lseek) NOT_BSD(::lseek64)(fd, offset, whence);
 }
 
-int os::fsync(int fd) {
-  return ::fsync(fd);
-}
-
 int os::ftruncate(int fd, jlong length) {
    return BSD_ONLY(::ftruncate) NOT_BSD(::ftruncate64)(fd, length);
 }
@@ -674,22 +721,18 @@ const char* os::get_current_directory(char *buf, size_t buflen) {
   return getcwd(buf, buflen);
 }
 
-FILE* os::open(int fd, const char* mode) {
+FILE* os::fdopen(int fd, const char* mode) {
   return ::fdopen(fd, mode);
 }
 
-size_t os::write(int fd, const void *buf, unsigned int nBytes) {
-  size_t res;
-  RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
+ssize_t os::write(int fd, const void *buf, unsigned int nBytes) {
+  ssize_t res;
+  RESTARTABLE(::write(fd, buf, (size_t) nBytes), res);
   return res;
 }
 
 ssize_t os::read_at(int fd, void *buf, unsigned int nBytes, jlong offset) {
   return ::pread(fd, buf, nBytes, offset);
-}
-
-int os::close(int fd) {
-  return ::close(fd);
 }
 
 void os::flockfile(FILE* fp) {
@@ -717,10 +760,6 @@ int os::closedir(DIR *dirp) {
 
 int os::socket_close(int fd) {
   return ::close(fd);
-}
-
-int os::socket(int domain, int type, int protocol) {
-  return ::socket(domain, type, protocol);
 }
 
 int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
@@ -908,73 +947,6 @@ bool os::same_files(const char* file1, const char* file2) {
   return is_same;
 }
 
-// Check minimum allowable stack sizes for thread creation and to initialize
-// the java system classes, including StackOverflowError - depends on page
-// size.
-// The space needed for frames during startup is platform dependent. It
-// depends on word size, platform calling conventions, C frame layout and
-// interpreter/C1/C2 design decisions. Therefore this is given in a
-// platform (os/cpu) dependent constant.
-// To this, space for guard mechanisms is added, which depends on the
-// page size which again depends on the concrete system the VM is running
-// on. Space for libc guard pages is not included in this size.
-jint os::Posix::set_minimum_stack_sizes() {
-  size_t os_min_stack_allowed = PTHREAD_STACK_MIN;
-
-  _java_thread_min_stack_allowed = _java_thread_min_stack_allowed +
-                                   StackOverflow::stack_guard_zone_size() +
-                                   StackOverflow::stack_shadow_zone_size();
-
-  _java_thread_min_stack_allowed = align_up(_java_thread_min_stack_allowed, vm_page_size());
-  _java_thread_min_stack_allowed = MAX2(_java_thread_min_stack_allowed, os_min_stack_allowed);
-
-  size_t stack_size_in_bytes = ThreadStackSize * K;
-  if (stack_size_in_bytes != 0 &&
-      stack_size_in_bytes < _java_thread_min_stack_allowed) {
-    // The '-Xss' and '-XX:ThreadStackSize=N' options both set
-    // ThreadStackSize so we go with "Java thread stack size" instead
-    // of "ThreadStackSize" to be more friendly.
-    tty->print_cr("\nThe Java thread stack size specified is too small. "
-                  "Specify at least " SIZE_FORMAT "k",
-                  _java_thread_min_stack_allowed / K);
-    return JNI_ERR;
-  }
-
-  // Make the stack size a multiple of the page size so that
-  // the yellow/red zones can be guarded.
-  JavaThread::set_stack_size_at_create(align_up(stack_size_in_bytes, vm_page_size()));
-
-  // Reminder: a compiler thread is a Java thread.
-  _compiler_thread_min_stack_allowed = _compiler_thread_min_stack_allowed +
-                                       StackOverflow::stack_guard_zone_size() +
-                                       StackOverflow::stack_shadow_zone_size();
-
-  _compiler_thread_min_stack_allowed = align_up(_compiler_thread_min_stack_allowed, vm_page_size());
-  _compiler_thread_min_stack_allowed = MAX2(_compiler_thread_min_stack_allowed, os_min_stack_allowed);
-
-  stack_size_in_bytes = CompilerThreadStackSize * K;
-  if (stack_size_in_bytes != 0 &&
-      stack_size_in_bytes < _compiler_thread_min_stack_allowed) {
-    tty->print_cr("\nThe CompilerThreadStackSize specified is too small. "
-                  "Specify at least " SIZE_FORMAT "k",
-                  _compiler_thread_min_stack_allowed / K);
-    return JNI_ERR;
-  }
-
-  _vm_internal_thread_min_stack_allowed = align_up(_vm_internal_thread_min_stack_allowed, vm_page_size());
-  _vm_internal_thread_min_stack_allowed = MAX2(_vm_internal_thread_min_stack_allowed, os_min_stack_allowed);
-
-  stack_size_in_bytes = VMThreadStackSize * K;
-  if (stack_size_in_bytes != 0 &&
-      stack_size_in_bytes < _vm_internal_thread_min_stack_allowed) {
-    tty->print_cr("\nThe VMThreadStackSize specified is too small. "
-                  "Specify at least " SIZE_FORMAT "k",
-                  _vm_internal_thread_min_stack_allowed / K);
-    return JNI_ERR;
-  }
-  return JNI_OK;
-}
-
 // Called when creating the thread.  The minimum stack sizes have already been calculated
 size_t os::Posix::get_initial_stack_size(ThreadType thr_type, size_t req_stack_size) {
   size_t stack_size;
@@ -1076,7 +1048,8 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
     if (thread->thread_state() == _thread_in_Java) {
 #ifndef ARM
       // arm32 doesn't have this
-      if (overflow_state->in_stack_reserved_zone(addr)) {
+      // vthreads don't support this
+      if (!thread->is_vthread_mounted() && overflow_state->in_stack_reserved_zone(addr)) {
         frame fr;
         if (get_frame_at_stack_banging_point(thread, pc, ucVoid, &fr)) {
           assert(fr.is_java_frame(), "Must be a Java frame");
@@ -1099,7 +1072,7 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
         }
       }
 #endif // ARM
-      // Throw a stack overflow exception.  Guard pages will be reenabled
+      // Throw a stack overflow exception.  Guard pages will be re-enabled
       // while unwinding the stack.
       overflow_state->disable_stack_yellow_reserved_zone();
       *stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
@@ -1609,9 +1582,7 @@ int os::PlatformEvent::park(jlong millis) {
       status = pthread_cond_timedwait(_cond, _mutex, &abst);
       assert_status(status == 0 || status == ETIMEDOUT,
                     status, "cond_timedwait");
-      // OS-level "spurious wakeups" are ignored unless the archaic
-      // FilterSpuriousWakeups is set false. That flag should be obsoleted.
-      if (!FilterSpuriousWakeups) break;
+      // OS-level "spurious wakeups" are ignored
       if (status == ETIMEDOUT) break;
     }
     --_nParked;
@@ -1955,40 +1926,16 @@ char** os::get_environ() { return environ; }
 //         doesn't block SIGINT et al.
 //        -this function is unsafe to use in non-error situations, mainly
 //         because the child process will inherit all parent descriptors.
-int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
-  const char * argv[4] = {"sh", "-c", cmd, NULL};
-
-  pid_t pid ;
-
+int os::fork_and_exec(const char* cmd) {
+  const char* argv[4] = {"sh", "-c", cmd, NULL};
+  pid_t pid = -1;
   char** env = os::get_environ();
-
-  // Use always vfork on AIX, since its safe and helps with analyzing OOM situations.
-  // Otherwise leave it up to the caller.
-  AIX_ONLY(prefer_vfork = true;)
-  #ifdef __APPLE__
-  pid = ::fork();
-  #else
-  pid = prefer_vfork ? ::vfork() : ::fork();
-  #endif
-
-  if (pid < 0) {
-    // fork failed
-    return -1;
-
-  } else if (pid == 0) {
-    // child process
-
-    ::execve("/bin/sh", (char* const*)argv, env);
-
-    // execve failed
-    ::_exit(-1);
-
-  } else  {
-    // copied from J2SE ..._waitForProcessExit() in UNIXProcess_md.c; we don't
-    // care about the actual exit code, for now.
-
+  // Note: cast is needed because posix_spawn() requires - for compatibility with ancient
+  // C-code - a non-const argv/envp pointer array. But it is fine to hand in literal
+  // strings and just cast the constness away. See also ProcessImpl_md.c.
+  int rc = ::posix_spawn(&pid, "/bin/sh", NULL, NULL, (char**) argv, env);
+  if (rc == 0) {
     int status;
-
     // Wait for the child process to exit.  This returns immediately if
     // the child has already exited. */
     while (::waitpid(pid, &status, 0) < 0) {
@@ -1998,7 +1945,6 @@ int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
       default: return -1;
       }
     }
-
     if (WIFEXITED(status)) {
       // The child exited normally; get its exit code.
       return WEXITSTATUS(status);
@@ -2013,6 +1959,9 @@ int os::fork_and_exec(const char* cmd, bool prefer_vfork) {
       // Unknown exit code; pass it through
       return status;
     }
+  } else {
+    // Don't log, we are inside error handling
+    return -1;
   }
 }
 

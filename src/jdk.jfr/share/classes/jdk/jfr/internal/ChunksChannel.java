@@ -135,11 +135,4 @@ final class ChunksChannel implements ReadableByteChannel {
     public boolean isOpen() {
         return channel != null;
     }
-
-    @Override
-    @SuppressWarnings("deprecation")
-    protected void finalize() throws Throwable {
-        super.finalize();
-        close();
-    }
 }

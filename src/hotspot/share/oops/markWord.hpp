@@ -176,7 +176,7 @@ class markWord {
     return (BasicLock*) value();
   }
   bool has_monitor() const {
-    return ((value() & monitor_value) != 0);
+    return ((value() & lock_mask_in_place) == monitor_value);
   }
   ObjectMonitor* monitor() const {
     assert(has_monitor(), "check");

@@ -66,8 +66,8 @@ LIR_Opr FrameMap::Double_result_opr;
 LIR_Opr FrameMap::Exception_oop_opr;
 LIR_Opr FrameMap::Exception_pc_opr;
 
-LIR_Opr FrameMap::_caller_save_cpu_regs[] = { 0 };
-LIR_Opr FrameMap::_caller_save_fpu_regs[];  // same as initialize to zero
+LIR_Opr FrameMap::_caller_save_cpu_regs[] = {};
+LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
 
 LIR_Opr FrameMap::map_to_opr(BasicType type, VMRegPair* reg, bool) {
   LIR_Opr opr = LIR_OprFact::illegalOpr;

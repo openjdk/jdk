@@ -72,7 +72,7 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
         }
         // read ConstantCallSite.isFrozen as a volatile field
         HotSpotResolvedJavaField field = HotSpotMethodHandleAccessProvider.Internals.instance().constantCallSiteFrozenField;
-        boolean isFrozen = readFieldValue(field, true /* volatile */).asBoolean();
+        boolean isFrozen = readFieldValue(field).asBoolean();
         // isFrozen true implies fully-initialized
         return isFrozen;
     }
@@ -80,7 +80,7 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
     private HotSpotObjectConstantImpl readTarget() {
         // read CallSite.target as a volatile field
         HotSpotResolvedJavaField field = HotSpotMethodHandleAccessProvider.Internals.instance().callSiteTargetField;
-        return (HotSpotObjectConstantImpl) readFieldValue(field, true /* volatile */);
+        return (HotSpotObjectConstantImpl) readFieldValue(field);
     }
 
     @Override
@@ -184,7 +184,7 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
         return (compressed ? "NarrowOop" : getJavaKind().getJavaName()) + "[" + runtime().reflection.formatString(this) + "]";
     }
 
-    public JavaConstant readFieldValue(HotSpotResolvedJavaField field, boolean isVolatile) {
+    public JavaConstant readFieldValue(HotSpotResolvedJavaField field) {
         if (IS_IN_NATIVE_IMAGE && this instanceof DirectHotSpotObjectConstantImpl) {
             // cannot read fields from objects due to lack of
             // general reflection support in native image
@@ -193,7 +193,7 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
         if (field.isStatic()) {
             return null;
         }
-        return runtime().compilerToVm.readFieldValue(this, (HotSpotResolvedObjectTypeImpl) field.getDeclaringClass(), field.getOffset(), isVolatile, field.getType().getJavaKind());
+        return runtime().compilerToVm.readFieldValue(this, (HotSpotResolvedObjectTypeImpl) field.getDeclaringClass(), field.getOffset(), field.getType().getJavaKind());
     }
 
     public ResolvedJavaType asJavaType() {

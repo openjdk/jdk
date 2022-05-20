@@ -201,7 +201,7 @@ public final class ObjID implements Serializable {
      */
     @Override
     public int hashCode() {
-        return Long.hashCode(objNum);
+        return (int) objNum;
     }
 
     /**

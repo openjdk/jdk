@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -972,7 +972,7 @@ void GenerateOopMap::init_basic_blocks() {
 
       bbNo++;
     }
-    // Remember prevous bci.
+    // Remember previous bci.
     prev_bci = bci;
   }
   // Set
@@ -1156,7 +1156,7 @@ void GenerateOopMap::interp_bb(BasicBlock *bb) {
 
     if (itr.code() == Bytecodes::_ret) {
       assert(!fall_through, "cannot be set if ret instruction");
-      // Automatically handles 'wide' ret indicies
+      // Automatically handles 'wide' ret indices
       ret_jump_targets_do(&itr, GenerateOopMap::merge_state, itr.get_index(), NULL);
     } else if (fall_through) {
      // Hit end of BB, but the instr. was a fall-through instruction,
@@ -1754,7 +1754,7 @@ void GenerateOopMap::ppop_any(int poplen) {
   }
 }
 
-// Replace all occurences of the state 'match' with the state 'replace'
+// Replace all occurrences of the state 'match' with the state 'replace'
 // in our current state vector.
 void GenerateOopMap::replace_all_CTS_matches(CellTypeState match,
                                              CellTypeState replace) {
@@ -2346,7 +2346,7 @@ bool GenerateOopMap::rewrite_refval_conflict_inst(BytecodeStream *itr, int from,
       return rewrite_load_or_store(itr, Bytecodes::_astore, Bytecodes::_astore_0, to);
     } else {
       if (TraceOopMapRewrites) {
-        tty->print_cr("Supress rewriting of astore at bci: %d", bci);
+        tty->print_cr("Suppress rewriting of astore at bci: %d", bci);
       }
     }
   }
@@ -2377,7 +2377,7 @@ bool GenerateOopMap::rewrite_load_or_store(BytecodeStream *bcs, Bytecodes::Code 
   // If we need to relocate in order to patch the byte, we
   // do the patching in a temp. buffer, that is passed to the reloc.
   // The patching of the bytecode stream is then done by the Relocator.
-  // This is neccesary, since relocating the instruction at a certain bci, might
+  // This is necessary, since relocating the instruction at a certain bci, might
   // also relocate that instruction, e.g., if a _goto before it gets widen to a _goto_w.
   // Hence, we do not know which bci to patch after relocation.
 
@@ -2429,7 +2429,7 @@ class RelocCallback : public RelocatorListener {
   }
 };
 
-// Returns true if expanding was succesful. Otherwise, reports an error and
+// Returns true if expanding was successful. Otherwise, reports an error and
 // returns false.
 void GenerateOopMap::expand_current_instr(int bci, int ilen, int newIlen, u_char inst_buffer[]) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.

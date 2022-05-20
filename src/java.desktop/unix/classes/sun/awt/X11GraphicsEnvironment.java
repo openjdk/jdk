@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
                 System.loadLibrary("awt");
 
                 /*
-                 * Note: The MToolkit object depends on the static initializer
+                 * Note: The XToolkit object depends on the static initializer
                  * of X11GraphicsEnvironment to initialize the connection to
                  * the X11 server.
                  */

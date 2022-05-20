@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,117 +24,127 @@
 
 /*
  * @test
+ * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
- * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncall
  *
  * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
  *   --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17
  *   TestDowncall
+ *
+ * @run testng/othervm -Xint -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
+ *   --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=100000
+ *   TestDowncall
  */
 
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.SymbolLookup;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
+import java.lang.foreign.Addressable;
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
 
+import java.lang.foreign.MemorySession;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.SegmentAllocator;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
 public class TestDowncall extends CallGeneratorHelper {
 
-    static CLinker abi = CLinker.getInstance();
+    static Linker abi = Linker.nativeLinker();
     static {
         System.loadLibrary("TestDowncall");
+        System.loadLibrary("TestDowncallStack");
     }
-
-    static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
 
     @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
     public void testDowncall(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> checks = new ArrayList<>();
-        MemoryAddress addr = LOOKUP.lookup(fName).get();
-        MethodType mt = methodType(ret, paramTypes, fields);
+        Addressable addr = findNativeOrThrow(fName);
         FunctionDescriptor descriptor = function(ret, paramTypes, fields);
         Object[] args = makeArgs(paramTypes, fields, checks);
-        try (NativeScope scope = new NativeScope()) {
-            boolean needsScope = mt.returnType().equals(MemorySegment.class);
-            Object res = doCall(addr, scope, mt, descriptor, args);
+        try (MemorySession session = MemorySession.openShared()) {
+            boolean needsScope = descriptor.returnLayout().map(GroupLayout.class::isInstance).orElse(false);
+            SegmentAllocator allocator = needsScope ?
+                    SegmentAllocator.newNativeArena(session) :
+                    THROWING_ALLOCATOR;
+            Object res = doCall(addr, allocator, descriptor, args);
             if (ret == Ret.NON_VOID) {
                 checks.forEach(c -> c.accept(res));
                 if (needsScope) {
                     // check that return struct has indeed been allocated in the native scope
-                    assertEquals(((MemorySegment) res).scope(), scope.scope());
-                    assertEquals(scope.allocatedBytes(), descriptor.returnLayout().get().byteSize());
-                } else {
-                    // if here, there should be no allocation through the scope!
-                    assertEquals(scope.allocatedBytes(), 0L);
+                    assertEquals(((MemorySegment)res).session(), session);
                 }
-            } else {
-                // if here, there should be no allocation through the scope!
-                assertEquals(scope.allocatedBytes(), 0L);
             }
         }
     }
 
     @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
-    public void testDowncallNoScope(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
+    public void testDowncallStack(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> checks = new ArrayList<>();
-        MemoryAddress addr = LOOKUP.lookup(fName).get();
-        MethodType mt = methodType(ret, paramTypes, fields);
-        FunctionDescriptor descriptor = function(ret, paramTypes, fields);
-        Object[] args = makeArgs(paramTypes, fields, checks);
-        boolean needsScope = mt.returnType().equals(MemorySegment.class);
-        Object res = doCall(addr, IMPLICIT_ALLOCATOR, mt, descriptor, args);
-        if (ret == Ret.NON_VOID) {
-            checks.forEach(c -> c.accept(res));
-            if (needsScope) {
-                // check that return struct has indeed been allocated in the default scope
-                try {
-                    ((MemorySegment)res).scope().close(); // should throw
-                    fail("Expected exception!");
-                } catch (UnsupportedOperationException ex) {
-                    // ok
+        Addressable addr = findNativeOrThrow("s" + fName);
+        FunctionDescriptor descriptor = functionStack(ret, paramTypes, fields);
+        Object[] args = makeArgsStack(paramTypes, fields, checks);
+        try (MemorySession session = MemorySession.openShared()) {
+            boolean needsScope = descriptor.returnLayout().map(GroupLayout.class::isInstance).orElse(false);
+            SegmentAllocator allocator = needsScope ?
+                    SegmentAllocator.newNativeArena(session) :
+                    THROWING_ALLOCATOR;
+            Object res = doCall(addr, allocator, descriptor, args);
+            if (ret == Ret.NON_VOID) {
+                checks.forEach(c -> c.accept(res));
+                if (needsScope) {
+                    // check that return struct has indeed been allocated in the native scope
+                    assertEquals(((MemorySegment)res).session(), session);
                 }
             }
         }
     }
 
-    Object doCall(MemoryAddress addr, SegmentAllocator allocator, MethodType type, FunctionDescriptor descriptor, Object[] args) throws Throwable {
-        MethodHandle mh = abi.downcallHandle(addr, allocator, type, descriptor);
+    Object doCall(Addressable symbol, SegmentAllocator allocator, FunctionDescriptor descriptor, Object[] args) throws Throwable {
+        MethodHandle mh = downcallHandle(abi, symbol, allocator, descriptor);
         Object res = mh.invokeWithArguments(args);
         return res;
     }
 
-    static MethodType methodType(Ret ret, List<ParamType> params, List<StructFieldType> fields) {
-        MethodType mt = ret == Ret.VOID ?
-                MethodType.methodType(void.class) : MethodType.methodType(paramCarrier(params.get(0).layout(fields)));
-        for (ParamType p : params) {
-            mt = mt.appendParameterTypes(paramCarrier(p.layout(fields)));
-        }
-        return mt;
+    static FunctionDescriptor functionStack(Ret ret, List<ParamType> params, List<StructFieldType> fields) {
+        return function(ret, params, fields, STACK_PREFIX_LAYOUTS);
     }
 
     static FunctionDescriptor function(Ret ret, List<ParamType> params, List<StructFieldType> fields) {
-        MemoryLayout[] paramLayouts = params.stream().map(p -> p.layout(fields)).toArray(MemoryLayout[]::new);
+        return function(ret, params, fields, List.of());
+    }
+
+    static FunctionDescriptor function(Ret ret, List<ParamType> params, List<StructFieldType> fields, List<MemoryLayout> prefix) {
+        List<MemoryLayout> pLayouts = params.stream().map(p -> p.layout(fields)).toList();
+        MemoryLayout[] paramLayouts = Stream.concat(prefix.stream(), pLayouts.stream()).toArray(MemoryLayout[]::new);
         return ret == Ret.VOID ?
                 FunctionDescriptor.ofVoid(paramLayouts) :
-                FunctionDescriptor.of(paramLayouts[0], paramLayouts);
+                FunctionDescriptor.of(paramLayouts[prefix.size()], paramLayouts);
+    }
+
+    static Object[] makeArgsStack(List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks) throws ReflectiveOperationException {
+        return makeArgs(params, fields, checks, STACK_PREFIX_LAYOUTS);
     }
 
     static Object[] makeArgs(List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks) throws ReflectiveOperationException {
-        Object[] args = new Object[params.size()];
+        return makeArgs(params, fields, checks, List.of());
+    }
+
+    static Object[] makeArgs(List<ParamType> params, List<StructFieldType> fields, List<Consumer<Object>> checks, List<MemoryLayout> prefix) throws ReflectiveOperationException {
+        Object[] args = new Object[prefix.size() + params.size()];
+        int argNum = 0;
+        for (MemoryLayout layout : prefix) {
+            args[argNum++] = makeArg(layout, null, false);
+        }
         for (int i = 0 ; i < params.size() ; i++) {
-            args[i] = makeArg(params.get(i).layout(fields), checks, i == 0);
+            args[argNum++] = makeArg(params.get(i).layout(fields), checks, i == 0);
         }
         return args;
     }

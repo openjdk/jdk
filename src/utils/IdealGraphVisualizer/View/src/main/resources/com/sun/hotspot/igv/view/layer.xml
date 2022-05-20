@@ -17,7 +17,10 @@
             <file name="com-sun-hotspot-igv-view-actions-ZoomOutAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-OverviewAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-PredSuccAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-ShowEmptyBlocksAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-EnableSeaLayoutAction.instance"><attr name="position" intvalue="2001"/></file>
             <file name="com-sun-hotspot-igv-view-actions-EnableBlockLayoutAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-EnableCFGLayoutAction.instance"><attr name="position" intvalue="2001"/></file>
         </folder>
     </folder>
     <folder name="Menu">
@@ -79,6 +82,11 @@
             <attr name="command" stringvalue="n"/>
             <attr name="position" intvalue="0"/>
             <file name="com-sun-hotspot-igv-view-NodeQuickSearch.instance"/>
+        </folder>
+        <folder name="Blocks">
+            <attr name="command" stringvalue="n"/>
+            <attr name="position" intvalue="1"/>
+            <file name="com-sun-hotspot-igv-view-BlockQuickSearch.instance"/>
         </folder>
         <file name="Projects_hidden"/>
     </folder>

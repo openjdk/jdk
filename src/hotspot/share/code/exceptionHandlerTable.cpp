@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ ExceptionHandlerTable::ExceptionHandlerTable(int initial_size) {
 ExceptionHandlerTable::ExceptionHandlerTable(const CompiledMethod* cm) {
   _table  = (HandlerTableEntry*)cm->handler_table_begin();
   _length = cm->handler_table_size() / sizeof(HandlerTableEntry);
-  _size   = 0; // no space allocated by ExeptionHandlerTable!
+  _size   = 0; // no space allocated by ExceptionHandlerTable!
 }
 
 
@@ -191,7 +191,7 @@ uint ImplicitExceptionTable::continuation_offset( uint exec_off ) const {
   for( uint i=0; i<l; i++ )
     if( *adr(i) == exec_off )
       return *(adr(i)+1);
-  return 0;                     // Failed to find any execption offset
+  return 0;                     // Failed to find any exception offset
 }
 
 void ImplicitExceptionTable::print(address base) const {

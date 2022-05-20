@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,11 @@
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -54,6 +57,9 @@
 #endif
 #if INCLUDE_ZGC
 #include "gc/z/zThreadLocalData.hpp"
+#endif
+#if INCLUDE_JFR
+#include "jfr/support/jfrIntrinsics.hpp"
 #endif
 
 // Declaration and definition of StubGenerator (no .hpp file).
@@ -72,6 +78,10 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 const int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
+
+OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots);
+void fill_continuation_entry(MacroAssembler* masm);
+void continuation_enter_cleanup(MacroAssembler* masm);
 
 // Stub Code definitions
 
@@ -382,6 +392,8 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L3);
     }
 #endif
+
+    __ pop_cont_fastpath(r15_thread);
 
     // restore regs belonging to calling function
 #ifdef _WIN64
@@ -792,6 +804,21 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ret(0);
 
+    return start;
+  }
+
+  address generate_popcount_avx_lut(const char *stub_name) {
+    __ align64();
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0302020102010100, relocInfo::none);
+    __ emit_data64(0x0403030203020201, relocInfo::none);
+    __ emit_data64(0x0302020102010100, relocInfo::none);
+    __ emit_data64(0x0403030203020201, relocInfo::none);
+    __ emit_data64(0x0302020102010100, relocInfo::none);
+    __ emit_data64(0x0403030203020201, relocInfo::none);
+    __ emit_data64(0x0302020102010100, relocInfo::none);
+    __ emit_data64(0x0403030203020201, relocInfo::none);
     return start;
   }
 
@@ -1221,11 +1248,6 @@ class StubGenerator: public StubCodeGenerator {
       }
       __ addptr(qword_count, 4);
       __ BIND(L_end);
-      if (UseAVX >= 2) {
-        // clean upper bits of YMM registers
-        __ vpxor(xmm0, xmm0);
-        __ vpxor(xmm1, xmm1);
-      }
     } else {
       // Copy 32-bytes per iteration
       __ BIND(L_loop);
@@ -1299,11 +1321,6 @@ class StubGenerator: public StubCodeGenerator {
       }
       __ subptr(qword_count, 4);
       __ BIND(L_end);
-      if (UseAVX >= 2) {
-        // clean upper bits of YMM registers
-        __ vpxor(xmm0, xmm0);
-        __ vpxor(xmm1, xmm1);
-      }
     } else {
       // Copy 32-bytes per iteration
       __ BIND(L_loop);
@@ -1384,8 +1401,8 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
-
-    bool use64byteVector = MaxVectorSize > 32 && AVX3Threshold == 0;
+    int avx3threshold = VM_Version::avx3_threshold();
+    bool use64byteVector = (MaxVectorSize > 32) && (avx3threshold == 0);
     Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
     Label L_repmovs, L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
     const Register from        = rdi;  // source array address
@@ -1448,7 +1465,7 @@ class StubGenerator: public StubCodeGenerator {
       // PRE-MAIN-POST loop for aligned copy.
       __ BIND(L_entry);
 
-      if (AVX3Threshold != 0) {
+      if (avx3threshold != 0) {
         __ cmpq(count, threshold[shift]);
         if (MaxVectorSize == 64) {
           // Copy using 64 byte vectors.
@@ -1460,7 +1477,7 @@ class StubGenerator: public StubCodeGenerator {
         }
       }
 
-      if (MaxVectorSize < 64  || AVX3Threshold != 0) {
+      if ((MaxVectorSize < 64)  || (avx3threshold != 0)) {
         // Partial copy to make dst address 32 byte aligned.
         __ movq(temp2, to);
         __ andq(temp2, 31);
@@ -1603,7 +1620,8 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
 
-    bool use64byteVector = MaxVectorSize > 32 && AVX3Threshold == 0;
+    int avx3threshold = VM_Version::avx3_threshold();
+    bool use64byteVector = (MaxVectorSize > 32) && (avx3threshold == 0);
 
     Label L_main_pre_loop, L_main_pre_loop_64bytes, L_pre_main_post_64;
     Label L_main_loop, L_main_loop_64bytes, L_tail, L_tail64, L_exit, L_entry;
@@ -1668,12 +1686,12 @@ class StubGenerator: public StubCodeGenerator {
       // PRE-MAIN-POST loop for aligned copy.
       __ BIND(L_entry);
 
-      if (MaxVectorSize > 32 && AVX3Threshold != 0) {
+      if ((MaxVectorSize > 32) && (avx3threshold != 0)) {
         __ cmpq(temp1, threshold[shift]);
         __ jcc(Assembler::greaterEqual, L_pre_main_post_64);
       }
 
-      if (MaxVectorSize < 64  || AVX3Threshold != 0) {
+      if ((MaxVectorSize < 64)  || (avx3threshold != 0)) {
         // Partial copy to make dst address 32 byte aligned.
         __ leaq(temp2, Address(to, temp1, (Address::ScaleFactor)(shift), 0));
         __ andq(temp2, 31);
@@ -2113,13 +2131,14 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT("Entry:");
 
-    const Register to       = c_rarg0;  // source array address
+    const Register to       = c_rarg0;  // destination array address
     const Register value    = c_rarg1;  // value
     const Register count    = c_rarg2;  // elements count
+    __ mov(r11, count);
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-    __ generate_fill(t, aligned, to, value, count, rax, xmm0);
+    __ generate_fill(t, aligned, to, value, r11, rax, xmm0);
 
     __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2240,7 +2259,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   // Side Effects:
   //   disjoint_int_copy_entry is set to the no-overlap entry point
@@ -2354,7 +2373,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
-  // cache line boundaries will still be loaded and stored atomicly.
+  // cache line boundaries will still be loaded and stored atomically.
   //
   address generate_conjoint_int_oop_copy(bool aligned, bool is_oop, address nooverlap_target,
                                          address *entry, const char *name,
@@ -2841,7 +2860,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
 
     __ BIND(L_store_element);
-    __ store_heap_oop(to_element_addr, rax_oop, noreg, noreg, AS_RAW);  // store the oop
+    __ store_heap_oop(to_element_addr, rax_oop, noreg, noreg, noreg, AS_RAW);  // store the oop
     __ increment(count);               // increment the count toward zero
     __ jcc(Assembler::zero, L_do_card_marks);
 
@@ -3829,46 +3848,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Safefetch stubs.
-  void generate_safefetch(const char* name, int size, address* entry,
-                          address* fault_pc, address* continuation_pc) {
-    // safefetch signatures:
-    //   int      SafeFetch32(int*      adr, int      errValue);
-    //   intptr_t SafeFetchN (intptr_t* adr, intptr_t errValue);
-    //
-    // arguments:
-    //   c_rarg0 = adr
-    //   c_rarg1 = errValue
-    //
-    // result:
-    //   PPC_RET  = *adr or errValue
-
-    StubCodeMark mark(this, "StubRoutines", name);
-
-    // Entry point, pc or function descriptor.
-    *entry = __ pc();
-
-    // Load *adr into c_rarg1, may fault.
-    *fault_pc = __ pc();
-    switch (size) {
-      case 4:
-        // int32_t
-        __ movl(c_rarg1, Address(c_rarg0, 0));
-        break;
-      case 8:
-        // int64_t
-        __ movq(c_rarg1, Address(c_rarg0, 0));
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-
-    // return errValue or *adr
-    *continuation_pc = __ pc();
-    __ movq(rax, c_rarg1);
-    __ ret(0);
-  }
-
   // This is a version of CBC/AES Decrypt which does 4 blocks in a loop at a time
   // to hide instruction latency
   //
@@ -3980,7 +3959,7 @@ class StubGenerator: public StubCodeGenerator {
       } else if (k == 2) {
         __ subptr(rsp, 10 * wordSize);
         __ movdqu(Address(rsp, 0), xmm15); //save last_key from xmm15
-        load_key(xmm15, key, 0xd0); // 0xd0; 256-bit key goes upto 0xe0
+        load_key(xmm15, key, 0xd0); // 0xd0; 256-bit key goes up to 0xe0
         __ movdqu(Address(rsp, 6 * wordSize), xmm15);
         load_key(xmm1, key, 0xe0);  // 0xe0;
         __ movdqu(Address(rsp, 8 * wordSize), xmm1);
@@ -4072,11 +4051,11 @@ class StubGenerator: public StubCodeGenerator {
       __ jcc(Assembler::equal, L_exit);
       __ BIND(L_singleBlock_loopTopHead2[k]);
       if (k == 1) {
-        load_key(xmm_key11, key, 0xb0); // 0xb0; 192-bit key goes upto 0xc0
-        load_key(xmm_key12, key, 0xc0); // 0xc0; 192-bit key goes upto 0xc0
+        load_key(xmm_key11, key, 0xb0); // 0xb0; 192-bit key goes up to 0xc0
+        load_key(xmm_key12, key, 0xc0); // 0xc0; 192-bit key goes up to 0xc0
       }
       if (k == 2) {
-        load_key(xmm_key11, key, 0xb0); // 0xb0; 256-bit key goes upto 0xe0
+        load_key(xmm_key11, key, 0xb0); // 0xb0; 256-bit key goes up to 0xe0
       }
       __ align(OptoLoopAlignment);
       __ BIND(L_singleBlock_loopTop[k]);
@@ -4136,6 +4115,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register len = c_rarg3;  // src len (must be multiple of blocksize 16)
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     __ aesecb_encrypt(from, to, key, len);
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
     return start;
@@ -4151,6 +4131,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register len = c_rarg3;  // src len (must be multiple of blocksize 16)
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     __ aesecb_decrypt(from, to, key, len);
+    __ vzeroupper();
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
     return start;
@@ -4412,9 +4393,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register state = c_rarg5;
     const Address subkeyH_mem(rbp, 2 * wordSize);
     const Register subkeyHtbl = r11;
-    const Address avx512_subkeyH_mem(rbp, 3 * wordSize);
     const Register avx512_subkeyHtbl = r13;
-    const Address counter_mem(rbp, 4 * wordSize);
+    const Address counter_mem(rbp, 3 * wordSize);
     const Register counter = r12;
 #else
     const Address key_mem(rbp, 6 * wordSize);
@@ -4423,9 +4403,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register state = r13;
     const Address subkeyH_mem(rbp, 8 * wordSize);
     const Register subkeyHtbl = r14;
-    const Address avx512_subkeyH_mem(rbp, 9 * wordSize);
     const Register avx512_subkeyHtbl = r12;
-    const Address counter_mem(rbp, 10 * wordSize);
+    const Address counter_mem(rbp, 9 * wordSize);
     const Register counter = rsi;
 #endif
     __ enter();
@@ -4442,10 +4421,20 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(state, state_mem);
 #endif
     __ movptr(subkeyHtbl, subkeyH_mem);
-    __ movptr(avx512_subkeyHtbl, avx512_subkeyH_mem);
     __ movptr(counter, counter_mem);
+// Save rbp and rsp
+    __ push(rbp);
+    __ movq(rbp, rsp);
+// Align stack
+    __ andq(rsp, -64);
+    __ subptr(rsp, 96 * longSize); // Create space on the stack for htbl entries
+    __ movptr(avx512_subkeyHtbl, rsp);
 
     __ aesgcm_encrypt(in, len, ct, out, key, state, subkeyHtbl, avx512_subkeyHtbl, counter);
+    __ vzeroupper();
+
+    __ movq(rsp, rbp);
+    __ pop(rbp);
 
     // Restore state before leaving routine
 #ifdef _WIN64
@@ -4562,6 +4551,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif
     __ push(rbx);
     __ aesctr_encrypt(from, to, key, counter, len_reg, used, used_addr, saved_encCounter_start);
+    __ vzeroupper();
     // Restore state before leaving routine
     __ pop(rbx);
 #ifdef _WIN64
@@ -5182,6 +5172,7 @@ address generate_cipherBlockChaining_decryptVectorAESCrypt() {
     __ evpxorq(RK14, RK14, RK14, Assembler::AVX_512bit);
 
     __ BIND(Lcbc_exit);
+    __ vzeroupper();
     __ pop(rbx);
 #ifdef _WIN64
     __ movl(rax, len_mem);
@@ -5626,7 +5617,7 @@ address generate_avx_ghash_processBlocks() {
       // operation (vpmulhuw) which effectively shifts c right by 6
       // bits and a right by 10 bits.  We similarly mask bits 10-15
       // (d5..d0) and 22-27 (b5..b0) and shift them left by 8 and 4
-      // bits respecively.  This is done using vpmullw.  We end up
+      // bits respectively.  This is done using vpmullw.  We end up
       // with 4 6-bit values, thus splitting the 3 input bytes,
       // ready for encoding:
       //    0 0 d5..d0 0 0 c5..c0 0 0 b5..b0 0 0 a5..a0
@@ -6259,6 +6250,9 @@ address generate_avx_ghash_processBlocks() {
       __ cmpl(length, 63);
       __ jcc(Assembler::lessEqual, L_finalBit);
 
+      __ mov64(rax, 0x0000ffffffffffff);
+      __ kmovql(k2, rax);
+
       __ align32();
       __ BIND(L_process64Loop);
 
@@ -6280,7 +6274,7 @@ address generate_avx_ghash_processBlocks() {
       __ vpmaddwd(merged0, merge_ab_bc0, pack32_op, Assembler::AVX_512bit);
       __ vpermb(merged0, pack24bits, merged0, Assembler::AVX_512bit);
 
-      __ evmovdquq(Address(dest, dp), merged0, Assembler::AVX_512bit);
+      __ evmovdqub(Address(dest, dp), k2, merged0, true, Assembler::AVX_512bit);
 
       __ subl(length, 64);
       __ addptr(source, 64);
@@ -6500,7 +6494,7 @@ address generate_avx_ghash_processBlocks() {
    *   c_rarg1   - byte* buf
    *   c_rarg2   - int length
    *
-   * Ouput:
+   * Output:
    *       rax   - int crc result
    */
   address generate_updateBytesCRC32() {
@@ -6527,7 +6521,13 @@ address generate_avx_ghash_processBlocks() {
     if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
         VM_Version::supports_avx512bw() &&
         VM_Version::supports_avx512vl()) {
+        // The constants used in the CRC32 algorithm requires the 1's compliment of the initial crc value.
+        // However, the constant table for CRC32-C assumes the original crc value.  Account for this
+        // difference before calling and after returning.
+      __ lea(table, ExternalAddress(StubRoutines::x86::crc_table_avx512_addr()));
+      __ notl(crc);
       __ kernel_crc32_avx512(crc, buf, len, table, tmp1, tmp2);
+      __ notl(crc);
     } else {
       __ kernel_crc32(crc, buf, len, table, tmp1);
     }
@@ -6550,7 +6550,7 @@ address generate_avx_ghash_processBlocks() {
   *   c_rarg3   - table_start - optional (present only when doing a library_call,
   *              not used by x86 algorithm)
   *
-  * Ouput:
+  * Output:
   *       rax   - int crc result
   */
   address generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
@@ -6579,20 +6579,27 @@ address generate_avx_ghash_processBlocks() {
 
       BLOCK_COMMENT("Entry:");
       __ enter(); // required for proper stackwalking of RuntimeStub frame
+      if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
+          VM_Version::supports_avx512bw() &&
+          VM_Version::supports_avx512vl()) {
+        __ lea(j, ExternalAddress(StubRoutines::x86::crc32c_table_avx512_addr()));
+        __ kernel_crc32_avx512(crc, buf, len, j, l, k);
+      } else {
 #ifdef _WIN64
-      __ push(y);
-      __ push(z);
+        __ push(y);
+        __ push(z);
 #endif
-      __ crc32c_ipl_alg2_alt2(crc, buf, len,
-                              a, j, k,
-                              l, y, z,
-                              c_farg0, c_farg1, c_farg2,
-                              is_pclmulqdq_supported);
+        __ crc32c_ipl_alg2_alt2(crc, buf, len,
+                                a, j, k,
+                                l, y, z,
+                                c_farg0, c_farg1, c_farg2,
+                                is_pclmulqdq_supported);
+#ifdef _WIN64
+        __ pop(z);
+        __ pop(y);
+#endif
+      }
       __ movl(rax, crc);
-#ifdef _WIN64
-      __ pop(z);
-      __ pop(y);
-#endif
       __ vzeroupper();
       __ leave(); // required for proper stackwalking of RuntimeStub frame
       __ ret(0);
@@ -6763,7 +6770,7 @@ address generate_avx_ghash_processBlocks() {
   //    c_rarg0   - x address
   //    c_rarg1   - x length
   //    c_rarg2   - z address
-  //    c_rarg3   - z lenth
+  //    c_rarg3   - z length
    *
    */
   address generate_squareToLen() {
@@ -7041,6 +7048,7 @@ address generate_avx_ghash_processBlocks() {
     __ shrdl(tmp4, tmp3);
     __ movl(Address(newArr, nIdx, Address::times_4), tmp4);
     __ BIND(Exit);
+    __ vzeroupper();
     // Restore callee save registers.
     __ pop(tmp5);
 #ifdef _WINDOWS
@@ -7162,6 +7170,7 @@ address generate_avx_ghash_processBlocks() {
     __ movl(Address(newArr, idx, Address::times_4), tmp3);
 
     __ BIND(Exit);
+    __ vzeroupper();
     // Restore callee save registers.
     __ pop(tmp5);
 #ifdef _WINDOWS
@@ -7417,6 +7426,257 @@ address generate_avx_ghash_processBlocks() {
 
   }
 
+  RuntimeStub* generate_cont_doYield() {
+    if (!Continuations::enabled()) return nullptr;
+
+    enum layout {
+      rbp_off,
+      rbpH_off,
+      return_off,
+      return_off2,
+      framesize // inclusive of return address
+    };
+
+    CodeBuffer code("cont_doYield", 512, 64);
+    MacroAssembler* _masm = new MacroAssembler(&code);
+
+    address start = __ pc();
+    __ enter();
+    address the_pc = __ pc();
+
+    int frame_complete = the_pc - start;
+
+    // This nop must be exactly at the PC we push into the frame info.
+    // We use this nop for fast CodeBlob lookup, associate the OopMap
+    // with it right away.
+    __ post_call_nop();
+    OopMapSet* oop_maps = new OopMapSet();
+    OopMap* map = new OopMap(framesize, 1);
+    oop_maps->add_gc_map(frame_complete, map);
+
+    __ set_last_Java_frame(rsp, rbp, the_pc);
+    __ movptr(c_rarg0, r15_thread);
+    __ movptr(c_rarg1, rsp);
+    __ call_VM_leaf(Continuation::freeze_entry(), 2);
+    __ reset_last_Java_frame(true);
+
+    Label L_pinned;
+
+    __ testptr(rax, rax);
+    __ jcc(Assembler::notZero, L_pinned);
+
+    __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+    continuation_enter_cleanup(_masm);
+    __ pop(rbp);
+    __ ret(0);
+
+    __ bind(L_pinned);
+
+    // Pinned, return to caller
+    __ leave();
+    __ ret(0);
+
+    RuntimeStub* stub =
+      RuntimeStub::new_runtime_stub(code.name(),
+                                    &code,
+                                    frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps,
+                                    false);
+    return stub;
+  }
+
+  address generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
+    if (!Continuations::enabled()) return nullptr;
+
+    bool return_barrier = Continuation::is_thaw_return_barrier(kind);
+    bool return_barrier_exception = Continuation::is_thaw_return_barrier_exception(kind);
+
+    StubCodeMark mark(this, "StubRoutines", label);
+    address start = __ pc();
+
+    // TODO: Handle Valhalla return types. May require generating different return barriers.
+
+    if (!return_barrier) {
+      // Pop return address. If we don't do this, we get a drift,
+      // where the bottom-most frozen frame continuously grows.
+      __ pop(c_rarg3);
+    } else {
+      __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+    }
+
+#ifdef ASSERT
+    {
+      Label L_good_sp;
+      __ cmpptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+      __ jcc(Assembler::equal, L_good_sp);
+      __ stop("Incorrect rsp at thaw entry");
+      __ BIND(L_good_sp);
+    }
+#endif
+
+    if (return_barrier) {
+      // Preserve possible return value from a method returning to the return barrier.
+      __ push(rax);
+      __ push_d(xmm0);
+    }
+
+    __ movptr(c_rarg0, r15_thread);
+    __ movptr(c_rarg1, (return_barrier ? 1 : 0));
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, Continuation::prepare_thaw), 2);
+    __ movptr(rbx, rax);
+
+    if (return_barrier) {
+      // Restore return value from a method returning to the return barrier.
+      // No safepoint in the call to thaw, so even an oop return value should be OK.
+      __ pop_d(xmm0);
+      __ pop(rax);
+    }
+
+#ifdef ASSERT
+    {
+      Label L_good_sp;
+      __ cmpptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+      __ jcc(Assembler::equal, L_good_sp);
+      __ stop("Incorrect rsp after prepare thaw");
+      __ BIND(L_good_sp);
+    }
+#endif
+
+    // rbx contains the size of the frames to thaw, 0 if overflow or no more frames
+    Label L_thaw_success;
+    __ testptr(rbx, rbx);
+    __ jccb(Assembler::notZero, L_thaw_success);
+    __ jump(ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
+    __ bind(L_thaw_success);
+
+    // Make room for the thawed frames and align the stack.
+    __ subptr(rsp, rbx);
+    __ andptr(rsp, -StackAlignmentInBytes);
+
+    if (return_barrier) {
+      // Preserve possible return value from a method returning to the return barrier. (Again.)
+      __ push(rax);
+      __ push_d(xmm0);
+    }
+
+    // If we want, we can templatize thaw by kind, and have three different entries.
+    __ movptr(c_rarg0, r15_thread);
+    __ movptr(c_rarg1, kind);
+    __ call_VM_leaf(Continuation::thaw_entry(), 2);
+    __ movptr(rbx, rax);
+
+    if (return_barrier) {
+      // Restore return value from a method returning to the return barrier. (Again.)
+      // No safepoint in the call to thaw, so even an oop return value should be OK.
+      __ pop_d(xmm0);
+      __ pop(rax);
+    } else {
+      // Return 0 (success) from doYield.
+      __ xorptr(rax, rax);
+    }
+
+    // After thawing, rbx is the SP of the yielding frame.
+    // Move there, and then to saved RBP slot.
+    __ movptr(rsp, rbx);
+    __ subptr(rsp, 2*wordSize);
+
+    if (return_barrier_exception) {
+      __ movptr(c_rarg0, r15_thread);
+      __ movptr(c_rarg1, Address(rsp, wordSize)); // return address
+
+      // rax still holds the original exception oop, save it before the call
+      __ push(rax);
+
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), 2);
+      __ movptr(rbx, rax);
+
+      // rbx now holds the exception handler.
+      // Prepare for its invocation; see OptoRuntime::generate_exception_blob.
+      __ pop(rax); // exception oop
+      __ pop(rbp);
+      __ pop(rdx); // exception pc
+      __ jmp(rbx);
+    }
+
+    // We are "returning" into the topmost thawed frame; see Thaw::push_return_frame
+    __ pop(rbp);
+    __ ret(0);
+
+    return start;
+  }
+
+  address generate_cont_thaw() {
+    return generate_cont_thaw("Cont thaw", Continuation::thaw_top);
+  }
+
+  // TODO: will probably need multiple return barriers depending on return type
+
+  address generate_cont_returnBarrier() {
+    return generate_cont_thaw("Cont thaw return barrier", Continuation::thaw_return_barrier);
+  }
+
+  address generate_cont_returnBarrier_exception() {
+    return generate_cont_thaw("Cont thaw return barrier exception", Continuation::thaw_return_barrier_exception);
+  }
+
+#if INCLUDE_JFR
+
+  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
+  // It returns a jobject handle to the event writer.
+  // The handle is dereferenced and the return value is the event writer oop.
+  RuntimeStub* generate_jfr_write_checkpoint() {
+    enum layout {
+      rbp_off,
+      rbpH_off,
+      return_off,
+      return_off2,
+      framesize // inclusive of return address
+    };
+
+    CodeBuffer code("jfr_write_checkpoint", 512, 64);
+    MacroAssembler* _masm = new MacroAssembler(&code);
+
+    address start = __ pc();
+    __ enter();
+    address the_pc = __ pc();
+
+    int frame_complete = the_pc - start;
+
+    __ set_last_Java_frame(rsp, rbp, the_pc);
+    __ movptr(c_rarg0, r15_thread);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
+    __ reset_last_Java_frame(true);
+
+    // rax is jobject handle result, unpack and process it through a barrier.
+    Label L_null_jobject;
+    __ testptr(rax, rax);
+    __ jcc(Assembler::zero, L_null_jobject);
+
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->load_at(_masm, ACCESS_READ | IN_NATIVE, T_OBJECT, rax, Address(rax, 0), c_rarg0, r15_thread);
+
+    __ bind(L_null_jobject);
+
+    __ leave();
+    __ ret(0);
+
+    OopMapSet* oop_maps = new OopMapSet();
+    OopMap* map = new OopMap(framesize, 1);
+    oop_maps->add_gc_map(frame_complete, map);
+
+    RuntimeStub* stub =
+      RuntimeStub::new_runtime_stub(code.name(),
+                                    &code,
+                                    frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps,
+                                    false);
+    return stub;
+  }
+
+#endif // INCLUDE_JFR
+
 #undef __
 #define __ masm->
 
@@ -7635,14 +7895,19 @@ address generate_avx_ghash_processBlocks() {
         StubRoutines::_dtan = generate_libmTan();
       }
     }
+  }
 
-    // Safefetch stubs.
-    generate_safefetch("SafeFetch32", sizeof(int),     &StubRoutines::_safefetch32_entry,
-                                                       &StubRoutines::_safefetch32_fault_pc,
-                                                       &StubRoutines::_safefetch32_continuation_pc);
-    generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
-                                                       &StubRoutines::_safefetchN_fault_pc,
-                                                       &StubRoutines::_safefetchN_continuation_pc);
+  void generate_phase1() {
+    // Continuation stubs:
+    StubRoutines::_cont_thaw          = generate_cont_thaw();
+    StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
+    StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+    StubRoutines::_cont_doYield_stub = generate_cont_doYield();
+    StubRoutines::_cont_doYield      = StubRoutines::_cont_doYield_stub == nullptr ? nullptr
+                                        : StubRoutines::_cont_doYield_stub->entry_point();
+
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
   }
 
   void generate_all() {
@@ -7675,6 +7940,7 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::x86::_vector_double_sign_mask = generate_vector_mask("vector_double_sign_mask", 0x7FFFFFFFFFFFFFFF);
     StubRoutines::x86::_vector_double_sign_flip = generate_vector_mask("vector_double_sign_flip", 0x8000000000000000);
     StubRoutines::x86::_vector_all_bits_set = generate_vector_mask("vector_all_bits_set", 0xFFFFFFFFFFFFFFFF);
+    StubRoutines::x86::_vector_int_mask_cmp_bits = generate_vector_mask("vector_int_mask_cmp_bits", 0x0000000100000001);
     StubRoutines::x86::_vector_short_to_byte_mask = generate_vector_mask("vector_short_to_byte_mask", 0x00ff00ff00ff00ff);
     StubRoutines::x86::_vector_byte_perm_mask = generate_vector_byte_perm_mask("vector_byte_perm_mask");
     StubRoutines::x86::_vector_int_to_byte_mask = generate_vector_mask("vector_int_to_byte_mask", 0x000000ff000000ff);
@@ -7689,6 +7955,11 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::x86::_vector_long_shuffle_mask = generate_vector_mask("vector_long_shuffle_mask", 0x0000000100000000);
     StubRoutines::x86::_vector_long_sign_mask = generate_vector_mask("vector_long_sign_mask", 0x8000000000000000);
     StubRoutines::x86::_vector_iota_indices = generate_iota_indices("iota_indices");
+
+    if (UsePopCountInstruction && VM_Version::supports_avx2() && !VM_Version::supports_avx512_vpopcntdq()) {
+      // lut implementation influenced by counting 1s algorithm from section 5-1 of Hackers' Delight.
+      StubRoutines::x86::_vector_popcount_lut = generate_popcount_avx_lut("popcount_lut");
+    }
 
     // support for verify_oop (must happen after universe_init)
     if (VerifyOops) {
@@ -7832,15 +8103,15 @@ address generate_avx_ghash_processBlocks() {
     }
 
     // Get svml stub routine addresses
-    void *libsvml = NULL;
+    void *libjsvml = NULL;
     char ebuf[1024];
     char dll_name[JVM_MAXPATHLEN];
-    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "svml")) {
-      libsvml = os::dll_load(dll_name, ebuf, sizeof ebuf);
+    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "jsvml")) {
+      libjsvml = os::dll_load(dll_name, ebuf, sizeof ebuf);
     }
-    if (libsvml != NULL) {
+    if (libjsvml != NULL) {
       // SVML method naming convention
-      //   All the methods are named as __svml_op<T><N>_ha_<VV>
+      //   All the methods are named as __jsvml_op<T><N>_ha_<VV>
       //   Where:
       //      ha stands for high accuracy
       //      <T> is optional to indicate float/double
@@ -7851,10 +8122,10 @@ address generate_avx_ghash_processBlocks() {
       //              e.g. 128 bit float vector has 4 float elements
       //      <VV> indicates the avx/sse level:
       //              z0 is AVX512, l9 is AVX2, e9 is AVX1 and ex is for SSE2
-      //      e.g. __svml_expf16_ha_z0 is the method for computing 16 element vector float exp using AVX 512 insns
-      //           __svml_exp8_ha_z0 is the method for computing 8 element vector double exp using AVX 512 insns
+      //      e.g. __jsvml_expf16_ha_z0 is the method for computing 16 element vector float exp using AVX 512 insns
+      //           __jsvml_exp8_ha_z0 is the method for computing 8 element vector double exp using AVX 512 insns
 
-      log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "svml" JNI_LIB_SUFFIX, p2i(libsvml));
+      log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "jsvml" JNI_LIB_SUFFIX, p2i(libjsvml));
       if (UseAVX > 2) {
         for (int op = 0; op < VectorSupport::NUM_SVML_OP; op++) {
           int vop = VectorSupport::VECTOR_OP_SVML_START + op;
@@ -7862,11 +8133,11 @@ address generate_avx_ghash_processBlocks() {
               (vop == VectorSupport::VECTOR_OP_LOG || vop == VectorSupport::VECTOR_OP_LOG10 || vop == VectorSupport::VECTOR_OP_POW)) {
             continue;
           }
-          snprintf(ebuf, sizeof(ebuf), "__svml_%sf16_ha_z0", VectorSupport::svmlname[op]);
-          StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_512][op] = (address)os::dll_lookup(libsvml, ebuf);
+          snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf16_ha_z0", VectorSupport::svmlname[op]);
+          StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_512][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-          snprintf(ebuf, sizeof(ebuf), "__svml_%s8_ha_z0", VectorSupport::svmlname[op]);
-          StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_512][op] = (address)os::dll_lookup(libsvml, ebuf);
+          snprintf(ebuf, sizeof(ebuf), "__jsvml_%s8_ha_z0", VectorSupport::svmlname[op]);
+          StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_512][op] = (address)os::dll_lookup(libjsvml, ebuf);
         }
       }
       const char* avx_sse_str = (UseAVX >= 2) ? "l9" : ((UseAVX == 1) ? "e9" : "ex");
@@ -7875,23 +8146,23 @@ address generate_avx_ghash_processBlocks() {
         if (vop == VectorSupport::VECTOR_OP_POW) {
           continue;
         }
-        snprintf(ebuf, sizeof(ebuf), "__svml_%sf4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
-        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libsvml, ebuf);
+        snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-        snprintf(ebuf, sizeof(ebuf), "__svml_%sf4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
-        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libsvml, ebuf);
+        snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-        snprintf(ebuf, sizeof(ebuf), "__svml_%sf8_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
-        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libsvml, ebuf);
+        snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf8_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-        snprintf(ebuf, sizeof(ebuf), "__svml_%s1_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
-        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libsvml, ebuf);
+        snprintf(ebuf, sizeof(ebuf), "__jsvml_%s1_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-        snprintf(ebuf, sizeof(ebuf), "__svml_%s2_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
-        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libsvml, ebuf);
+        snprintf(ebuf, sizeof(ebuf), "__jsvml_%s2_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-        snprintf(ebuf, sizeof(ebuf), "__svml_%s4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
-        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libsvml, ebuf);
+        snprintf(ebuf, sizeof(ebuf), "__jsvml_%s4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libjsvml, ebuf);
       }
     }
 #endif // COMPILER2
@@ -7902,19 +8173,117 @@ address generate_avx_ghash_processBlocks() {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, bool all) : StubCodeGenerator(code) {
-    if (all) {
-      generate_all();
-    } else {
+  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
+    if (phase == 0) {
       generate_initial();
+    } else if (phase == 1) {
+      generate_phase1(); // stubs that must be available for the interpreter
+    } else {
+      generate_all();
     }
   }
 }; // end class declaration
 
 #define UCM_TABLE_MAX_ENTRIES 16
-void StubGenerator_generate(CodeBuffer* code, bool all) {
+void StubGenerator_generate(CodeBuffer* code, int phase) {
   if (UnsafeCopyMemory::_table == NULL) {
     UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
   }
-  StubGenerator g(code, all);
+  StubGenerator g(code, phase);
 }
+
+#undef __
+#define __ masm->
+
+//---------------------------- continuation_enter_setup ---------------------------
+//
+// Arguments:
+//   None.
+//
+// Results:
+//   rsp: pointer to blank ContinuationEntry
+//
+// Kills:
+//   rax
+//
+OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) {
+  assert(ContinuationEntry::size() % VMRegImpl::stack_slot_size == 0, "");
+  assert(in_bytes(ContinuationEntry::cont_offset())  % VMRegImpl::stack_slot_size == 0, "");
+  assert(in_bytes(ContinuationEntry::chunk_offset()) % VMRegImpl::stack_slot_size == 0, "");
+
+  stack_slots += checked_cast<int>(ContinuationEntry::size()) / wordSize;
+  __ subptr(rsp, checked_cast<int32_t>(ContinuationEntry::size()));
+
+  int frame_size = (checked_cast<int>(ContinuationEntry::size()) + wordSize) / VMRegImpl::stack_slot_size;
+  OopMap* map = new OopMap(frame_size, 0);
+  ContinuationEntry::setup_oopmap(map);
+
+  __ movptr(rax, Address(r15_thread, JavaThread::cont_entry_offset()));
+  __ movptr(Address(rsp, ContinuationEntry::parent_offset()), rax);
+  __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rsp);
+
+  return map;
+}
+
+//---------------------------- fill_continuation_entry ---------------------------
+//
+// Arguments:
+//   rsp: pointer to blank Continuation entry
+//   c_rarg1: pointer to the continuation
+//   c_rarg3: flags
+//
+// Results:
+//   rsp: pointer to filled out ContinuationEntry
+//
+// Kills:
+//   rax
+//
+void fill_continuation_entry(MacroAssembler* masm) {
+  DEBUG_ONLY(__ movl(Address(rsp, ContinuationEntry::cookie_offset()), ContinuationEntry::cookie_value());)
+
+  __ movptr(Address(rsp, ContinuationEntry::cont_offset()), c_rarg1);
+  __ movl  (Address(rsp, ContinuationEntry::flags_offset()), c_rarg3);
+  __ movptr(Address(rsp, ContinuationEntry::chunk_offset()), 0);
+  __ movl(Address(rsp, ContinuationEntry::argsize_offset()), 0);
+  __ movl(Address(rsp, ContinuationEntry::pin_count_offset()), 0);
+
+  __ movptr(rax, Address(r15_thread, JavaThread::cont_fastpath_offset()));
+  __ movptr(Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()), rax);
+  __ movl(rax, Address(r15_thread, JavaThread::held_monitor_count_offset()));
+  __ movl(Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()), rax);
+
+  __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
+  __ reset_held_monitor_count(r15_thread);
+}
+
+//---------------------------- continuation_enter_cleanup ---------------------------
+//
+// Arguments:
+//   rsp: pointer to the ContinuationEntry
+//
+// Results:
+//   rsp: pointer to the spilled rbp in the entry frame
+//
+// Kills:
+//   rbx
+//
+void continuation_enter_cleanup(MacroAssembler* masm) {
+#ifdef ASSERT
+  Label L_good_sp;
+  __ cmpptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+  __ jcc(Assembler::equal, L_good_sp);
+  __ stop("Incorrect rsp at continuation_enter_cleanup");
+  __ bind(L_good_sp);
+#endif
+
+  __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
+  __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
+  __ movl(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
+  __ movl(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
+
+  __ movptr(rbx, Address(rsp, ContinuationEntry::parent_offset()));
+  __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rbx);
+  __ addptr(rsp, (int32_t)ContinuationEntry::size());
+}
+
+#undef __

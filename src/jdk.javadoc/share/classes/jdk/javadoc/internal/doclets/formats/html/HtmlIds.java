@@ -83,7 +83,6 @@ public class HtmlIds {
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
     static final HtmlId HELP_NAVIGATION = HtmlId.of("help-navigation");
     static final HtmlId HELP_PAGES = HtmlId.of("help-pages");
-    static final HtmlId HELP_SEARCH = HtmlId.of("help-search");
     static final HtmlId METHOD_DETAIL = HtmlId.of("method-detail");
     static final HtmlId METHOD_SUMMARY = HtmlId.of("method-summary");
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
@@ -417,8 +416,7 @@ public class HtmlIds {
             case INTERFACE -> "interface";
             case CLASS -> "class";
             case ENUM -> "enum-class";
-            case EXCEPTION -> "exception";
-            case ERROR -> "error";
+            case EXCEPTION_CLASS -> "exception-class";
             case ANNOTATION_TYPE -> "annotation-interface";
             case FIELD -> "field";
             case METHOD -> "method";
@@ -443,6 +441,8 @@ public class HtmlIds {
             case FIELDS -> FIELD_SUMMARY;
             case CONSTRUCTORS -> CONSTRUCTOR_SUMMARY;
             case METHODS -> METHOD_SUMMARY;
+            // We generate separate summaries for optional and required annotation members
+            case ANNOTATION_TYPE_MEMBER -> throw new IllegalArgumentException("unsupported member kind");
             case ANNOTATION_TYPE_MEMBER_OPTIONAL -> ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY;
             case ANNOTATION_TYPE_MEMBER_REQUIRED -> ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY;
             case PROPERTIES -> PROPERTY_SUMMARY;

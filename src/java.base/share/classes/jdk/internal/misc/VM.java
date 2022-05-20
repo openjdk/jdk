@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,13 @@ package jdk.internal.misc;
 
 import static java.lang.Thread.State.*;
 
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import jdk.internal.access.SharedSecrets;
-
+import jdk.internal.vm.annotation.Stable;
 import sun.nio.ch.FileChannelImpl;
 
 public class VM {
@@ -75,8 +74,6 @@ public class VM {
 
     /**
      * Waits for the init level to get the given value.
-     *
-     * @see java.lang.ref.Finalizer
      */
     public static void awaitInitLevel(int value) throws InterruptedException {
         synchronized (lock) {
@@ -91,7 +88,19 @@ public class VM {
      * @see java.lang.System#initPhase2
      */
     public static boolean isModuleSystemInited() {
-        return VM.initLevel() >= MODULE_SYSTEM_INITED;
+        return initLevel >= MODULE_SYSTEM_INITED;
+    }
+
+    private static @Stable boolean javaLangInvokeInited;
+    public static void setJavaLangInvokeInited() {
+        if (javaLangInvokeInited) {
+            throw new InternalError("java.lang.invoke already inited");
+        }
+        javaLangInvokeInited = true;
+    }
+
+    public static boolean isJavaLangInvokeInited() {
+        return javaLangInvokeInited;
     }
 
     /**

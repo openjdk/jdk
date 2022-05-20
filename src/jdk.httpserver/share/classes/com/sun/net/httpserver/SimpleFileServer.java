@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -104,12 +106,12 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  *    server.start();
  * }</pre>
  *
- * <h2>Main entry point</h2>
+ * <h2>jwebserver Tool</h2>
  *
- * <p>A <a id="server-impl">simple HTTP file server implementation</a> is
- * provided via the
- * <a href="{@docRoot}/jdk.httpserver/module-summary.html#entry-point">main entry point</a>
- * of the {@code jdk.httpserver} module.
+ * <p>A simple HTTP file server implementation is provided via the
+ * {@code jwebserver} tool.
+ *
+ * @toolGuide jwebserver
  *
  * @since 18
  */
@@ -164,14 +166,15 @@ public final class SimpleFileServer {
     }
 
     /**
-     * Creates a <i>file server</i> the serves files from a given path.
+     * Creates a <i>file server</i> that serves files from a given path.
      *
      * <p> The server is configured with an initial context that maps the
      * URI {@code path} to a <i>file handler</i>. The <i>file handler</i> is
      * created as if by an invocation of
      * {@link #createFileHandler(Path) createFileHandler(rootDirectory)}, and is
      * associated to a context created as if by an invocation of
-     * {@link HttpServer#createContext(String) createContext("/")}.
+     * {@link HttpServer#createContext(String) createContext("/")}. The returned
+     * server is not started.
      *
      * <p> An output level can be given to print log messages relating to the
      * exchanges handled by the server. The log messages, if any, are printed to

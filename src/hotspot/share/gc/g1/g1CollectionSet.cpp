@@ -513,7 +513,7 @@ bool G1CollectionSet::finalize_optional_for_evacuation(double remaining_pause_ti
 
   stop_incremental_building();
 
-  _g1h->verify_region_attr_remset_update();
+  _g1h->verify_region_attr_remset_is_tracked();
 
   return num_selected_regions > 0;
 }
@@ -530,7 +530,7 @@ void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* p
   }
   free_optional_regions();
 
-  _g1h->verify_region_attr_remset_update();
+  _g1h->verify_region_attr_remset_is_tracked();
 }
 
 #ifdef ASSERT

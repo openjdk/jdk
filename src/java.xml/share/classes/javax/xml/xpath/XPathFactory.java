@@ -275,8 +275,9 @@ public abstract class XPathFactory {
     public abstract boolean isObjectModelSupported(String objectModel);
 
     /**
-     * <p>Set a feature for this {@code XPathFactory} and
-     * <code>XPath</code>s created by this factory.</p>
+     * Sets a feature for this {@code XPathFactory}. The feature applies to
+     * {@code XPath} objects that the {@code XPathFactory} creates. It has no
+     * impact on {@code XPath} objects that are already created.
      *
      * <p>
      * Feature names are fully qualified {@link java.net.URI}s.
@@ -369,4 +370,60 @@ public abstract class XPathFactory {
     * @return New instance of an <code>XPath</code>.
     */
     public abstract XPath newXPath();
+
+    /**
+     * Sets a property for this {@code XPathFactory}. The property applies to
+     * {@code XPath} objects that the {@code XPathFactory} creates. It has no
+     * impact on {@code XPath} objects that are already created.
+     * <p>
+     * A property can either be defined in this {@code XPathFactory}, or by the
+     * underlying implementation.
+     *
+     * @implSpec
+     * The default implementation throws
+     * {@link java.lang.UnsupportedOperationException}.
+     *
+     * @param name the property name
+     * @param value the value for the property
+     *
+     * @throws IllegalArgumentException if the property name is not recognized,
+     * or the value can not be assigned
+     * @throws UnsupportedOperationException if the implementation does not
+     * support the method
+     * @throws NullPointerException if the {@code name} is {@code null}
+     *
+     * @since 18
+     */
+    public void setProperty(String name, String value) {
+
+        if (name == null) {
+            throw new NullPointerException("the name parameter is null");
+        }
+        throw new UnsupportedOperationException("not implemented");
+    }
+
+    /**
+     * Returns the value of the specified property.
+     *
+     * @implSpec
+     * The default implementation throws
+     * {@link java.lang.UnsupportedOperationException}.
+     *
+     * @param name the property name
+     * @return the value of the property.
+     *
+     * @throws IllegalArgumentException if the property name is not recognized
+     * @throws UnsupportedOperationException if the implementation does not
+     * support the method
+     * @throws NullPointerException if the {@code name} is {@code null}
+     *
+     * @since 18
+     */
+    public String getProperty(String name) {
+
+        if (name == null) {
+            throw new NullPointerException("the name parameter is null");
+        }
+        throw new UnsupportedOperationException("not implemented");
+    }
 }

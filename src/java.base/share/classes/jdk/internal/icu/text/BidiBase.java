@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ import jdk.internal.icu.impl.UBiDiProps;
  *
  * This is an implementation of the Unicode Bidirectional Algorithm. The
  * algorithm is defined in the
- * <a href="http://www.unicode.org/reports/tr9/">Unicode Standard Annex #9:
+ * <a href="https://www.unicode.org/reports/tr9/">Unicode Standard Annex #9:
  * Unicode Bidirectional Algorithm</a>.
  * <p>
  *
@@ -985,7 +985,7 @@ public class BidiBase {
     /**
      * Enumerated property Bidi_Paired_Bracket_Type (new in Unicode 6.3).
      * Used in
-     * <a href="http://www.unicode.org/reports/tr9/">Unicode Standard Annex #9:
+     * <a href="https://www.unicode.org/reports/tr9/">Unicode Standard Annex #9:
      * Unicode Bidirectional Algorithm</a>.
      * Returns UCharacter.BidiPairedBracketType values.
      * @stable ICU 52
@@ -3365,7 +3365,7 @@ public class BidiBase {
 
     /**
      * Perform the Unicode Bidi algorithm. It is defined in the
-     * <a href="http://www.unicode.org/reports/tr9/">Unicode Standard Annex #9:
+     * <a href="https://www.unicode.org/reports/tr9/">Unicode Standard Annex #9:
      * Unicode Bidirectional Algorithm</a>, version 13,
      * also described in The Unicode Standard, Version 4.0 .<p>
      *
@@ -3450,7 +3450,7 @@ public class BidiBase {
 
     /**
      * Perform the Unicode Bidi algorithm. It is defined in the
-     * <a href="http://www.unicode.org/reports/tr9/">Unicode Standard Annex #9:
+     * <a href="https://www.unicode.org/reports/tr9/">Unicode Standard Annex #9:
      * Unicode Bidirectional Algorithm</a>, version 13,
      * also described in The Unicode Standard, Version 4.0 .<p>
      *
@@ -3786,7 +3786,7 @@ public class BidiBase {
 
     /**
      * Perform the Unicode Bidi algorithm on a given paragraph, as defined in the
-     * <a href="http://www.unicode.org/reports/tr9/">Unicode Standard Annex #9:
+     * <a href="https://www.unicode.org/reports/tr9/">Unicode Standard Annex #9:
      * Unicode Bidirectional Algorithm</a>, version 13,
      * also described in The Unicode Standard, Version 4.0 .<p>
      *

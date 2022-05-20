@@ -1,5 +1,6 @@
 /*
  * Copyright 2009 Goldman Sachs International.  All Rights Reserved.
+ * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +28,7 @@
  * @bug 6865031
  * @summary Application gives bad result (throws bad exception) with compressed oops
  *
+ * @requires vm.bits == 64
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops
  *      -XX:HeapBaseMinAddress=32g -XX:-LoopUnswitching
  *      -XX:CompileCommand=inline,compiler.c2.cr6865031.AbstractMemoryEfficientList::equals

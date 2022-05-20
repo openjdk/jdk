@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 package sun.net.www;
+
 import jdk.internal.util.StaticProperty;
 
 import java.io.*;
@@ -36,11 +37,11 @@ import java.util.StringTokenizer;
 public class MimeTable implements FileNameMap {
     /** Keyed by content type, returns MimeEntries */
     private Hashtable<String, MimeEntry> entries
-        = new Hashtable<String, MimeEntry>();
+        = new Hashtable<>();
 
     /** Keyed by file extension (with the .), returns MimeEntries */
     private Hashtable<String, MimeEntry> extensionMap
-        = new Hashtable<String, MimeEntry>();
+        = new Hashtable<>();
 
     // Will be reset if in the platform-specific data file
     @SuppressWarnings("removal")
@@ -54,7 +55,6 @@ public class MimeTable implements FileNameMap {
                 });
 
     private static final String filePreamble = "sun.net.www MIME content-types table";
-    private static final String fileMagic = "#" + filePreamble;
 
     MimeTable() {
         load();
@@ -66,7 +66,7 @@ public class MimeTable implements FileNameMap {
         @SuppressWarnings("removal")
         static MimeTable getDefaultInstance() {
             return java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<MimeTable>() {
+                new java.security.PrivilegedAction<>() {
                 public MimeTable run() {
                     MimeTable instance = new MimeTable();
                     URLConnection.setFileNameMap(instance);
@@ -89,7 +89,7 @@ public class MimeTable implements FileNameMap {
      */
     public static FileNameMap loadTable() {
         MimeTable mt = getDefaultTable();
-        return (FileNameMap)mt;
+        return mt;
     }
 
     public synchronized int getSize() {
@@ -164,7 +164,7 @@ public class MimeTable implements FileNameMap {
         }
 
         i = fname.lastIndexOf('.');
-        // REMIND: OS specific delimters appear here
+        // REMIND: OS specific delimiters appear here
         i = Math.max(i, fname.lastIndexOf('/'));
         i = Math.max(i, fname.lastIndexOf('?'));
 
@@ -243,8 +243,8 @@ public class MimeTable implements FileNameMap {
                 throw new InternalError("default mime table not found");
         }
 
-        try (BufferedInputStream bin = new BufferedInputStream(in)) {
-            entries.load(bin);
+        try (in) {
+            entries.load(in);
         } catch (IOException e) {
             System.err.println("Warning: " + e.getMessage());
         }
@@ -348,17 +348,6 @@ public class MimeTable implements FileNameMap {
         // else illegal name exception
     }
 
-    String[] getExtensions(String list) {
-        StringTokenizer tokenizer = new StringTokenizer(list, ",");
-        int n = tokenizer.countTokens();
-        String[] extensions = new String[n];
-        for (int i = 0; i < n; i++) {
-            extensions[i] = tokenizer.nextToken();
-        }
-
-        return extensions;
-    }
-
     int getActionCode(String action) {
         for (int i = 0; i < MimeEntry.actionKeywords.length; i++) {
             if (action.equalsIgnoreCase(MimeEntry.actionKeywords[i])) {
@@ -381,9 +370,7 @@ public class MimeTable implements FileNameMap {
     }
 
     protected boolean saveAsProperties(File file) {
-        FileOutputStream os = null;
-        try {
-            os = new FileOutputStream(file);
+        try (FileOutputStream os = new FileOutputStream(file)) {
             Properties properties = getAsProperties();
             properties.put("temp.file.template", tempFileTemplate);
             String tag;
@@ -405,11 +392,6 @@ public class MimeTable implements FileNameMap {
         catch (IOException e) {
             e.printStackTrace();
             return false;
-        }
-        finally {
-            if (os != null) {
-                try { os.close(); } catch (IOException e) {}
-            }
         }
 
         return true;

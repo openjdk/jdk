@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144095 8164825 8169818 8153402 8165405 8177079 8178013 8167554 8166232
+ * @bug 8144095 8164825 8169818 8153402 8165405 8177079 8178013 8167554 8166232 8277328
  * @summary Test Command Completion
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -332,14 +332,31 @@ public class CommandCompletionTest extends ReplToolTesting {
     }
 
     @Test
+    public void testClassPathWithSpace() throws IOException {
+        Compiler compiler = new Compiler();
+        Path outDir = compiler.getPath("testClassPathWithSpace");
+        Path dirWithSpace = Files.createDirectories(outDir.resolve("dir with space"));
+        Files.createDirectories(dirWithSpace.resolve("nested with space"));
+        String[] pathArray = new String[] {"dir\\ with\\ space/"};
+        String[] pathArray2 = new String[] {"nested\\ with\\ space/"};
+        testNoStartUp(
+                a -> assertCompletion(a, "/env -class-path " + outDir + "/|", false, pathArray),
+                a -> assertCompletion(a, "/env -class-path " + outDir + "/dir|", false, pathArray),
+                a -> assertCompletion(a, "/env -class-path " + outDir + "/dir\\ with|", false, pathArray),
+                a -> assertCompletion(a, "/env -class-path " + outDir + "/dir\\ with\\ space/|", false, pathArray2)
+        );
+    }
+
+    @Test
     public void testUserHome() throws IOException {
         List<String> completions;
         Path home = Paths.get(System.getProperty("user.home"));
         String selectedFile;
         try (Stream<Path> content = Files.list(home)) {
             selectedFile = content.filter(CLASSPATH_FILTER)
+                                  .filter(file -> file.getFileName().toString().contains(" "))
                                   .findAny()
-                                  .map(file -> file.getFileName().toString())
+                                  .map(file -> file.getFileName().toString().replace(" ", "\\ "))
                                   .orElse(null);
         }
         if (selectedFile == null) {
@@ -347,8 +364,8 @@ public class CommandCompletionTest extends ReplToolTesting {
         }
         try (Stream<Path> content = Files.list(home)) {
             completions = content.filter(CLASSPATH_FILTER)
-                                 .filter(file -> file.getFileName().toString().startsWith(selectedFile))
-                                 .map(file -> file.getFileName().toString() + (Files.isDirectory(file) ? "/" : ""))
+                                 .filter(file -> file.getFileName().toString().startsWith(selectedFile.replace("\\ ", " ")))
+                                 .map(file -> file.getFileName().toString().replace(" ", "\\ ") + (Files.isDirectory(file) ? "/" : ""))
                                  .sorted()
                                  .collect(Collectors.toList());
         }

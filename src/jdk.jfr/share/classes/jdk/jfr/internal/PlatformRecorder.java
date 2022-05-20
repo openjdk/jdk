@@ -36,7 +36,6 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -143,7 +142,7 @@ public final class PlatformRecorder {
         return Collections.unmodifiableList(new ArrayList<PlatformRecording>(recordings));
     }
 
-    public synchronized static void addListener(FlightRecorderListener changeListener) {
+    public static synchronized void addListener(FlightRecorderListener changeListener) {
         @SuppressWarnings("removal")
         AccessControlContext context = AccessController.getContext();
         SecureRecorderListener sl = new SecureRecorderListener(context, changeListener);
@@ -157,7 +156,7 @@ public final class PlatformRecorder {
         }
     }
 
-    public synchronized static boolean removeListener(FlightRecorderListener changeListener) {
+    public static synchronized boolean removeListener(FlightRecorderListener changeListener) {
         for (SecureRecorderListener s : new ArrayList<>(changeListeners)) {
             if (s.getChangeListener() == changeListener) {
                 changeListeners.remove(s);
@@ -249,13 +248,13 @@ public final class PlatformRecorder {
             }
             currentChunk = newChunk;
             jvm.beginRecording();
-            startNanos = jvm.getChunkStartNanos();
+            startNanos = Utils.getChunkStartNanos();
             startTime = Utils.epochNanosToInstant(startNanos);
             if (currentChunk != null) {
                 currentChunk.setStartTime(startTime);
             }
             recording.setState(RecordingState.RUNNING);
-            updateSettings();
+            updateSettings(false);
             recording.setStartTime(startTime);
             writeMetaEvents();
         } else {
@@ -270,11 +269,11 @@ public final class PlatformRecorder {
                 startTime = MetadataRepository.getInstance().setOutput(p);
                 newChunk.setStartTime(startTime);
             }
-            startNanos = jvm.getChunkStartNanos();
+            startNanos = Utils.getChunkStartNanos();
             startTime = Utils.epochNanosToInstant(startNanos);
             recording.setStartTime(startTime);
             recording.setState(RecordingState.RUNNING);
-            updateSettings();
+            updateSettings(false);
             writeMetaEvents();
             if (currentChunk != null) {
                 finishChunk(currentChunk, startTime, recording);
@@ -317,7 +316,7 @@ public final class PlatformRecorder {
             }
         }
         OldObjectSample.emit(recording);
-        recording.setFinalStartnanos(jvm.getChunkStartNanos());
+        recording.setFinalStartnanos(Utils.getChunkStartNanos());
 
         if (endPhysical) {
             RequestEngine.doChunkEnd();
@@ -338,7 +337,7 @@ public final class PlatformRecorder {
         } else {
             RepositoryChunk newChunk = null;
             RequestEngine.doChunkEnd();
-            updateSettingsButIgnoreRecording(recording);
+            updateSettingsButIgnoreRecording(recording, false);
 
             String path = null;
             if (toDisk) {
@@ -382,11 +381,11 @@ public final class PlatformRecorder {
         MetadataRepository.getInstance().disableEvents();
     }
 
-    void updateSettings() {
-        updateSettingsButIgnoreRecording(null);
+    void updateSettings(boolean writeSettingEvents) {
+        updateSettingsButIgnoreRecording(null, writeSettingEvents);
     }
 
-    void updateSettingsButIgnoreRecording(PlatformRecording ignoreMe) {
+    void updateSettingsButIgnoreRecording(PlatformRecording ignoreMe, boolean writeSettingEvents) {
         List<PlatformRecording> recordings = getRunningRecordings();
         List<Map<String, String>> list = new ArrayList<>(recordings.size());
         for (PlatformRecording r : recordings) {
@@ -394,7 +393,7 @@ public final class PlatformRecorder {
                 list.add(r.getSettings());
             }
         }
-        MetadataRepository.getInstance().setSettings(list);
+        MetadataRepository.getInstance().setSettings(list, writeSettingEvents);
     }
 
 
@@ -437,7 +436,7 @@ public final class PlatformRecorder {
             }
             // n*log(n), should be able to do n*log(k) with a priority queue,
             // where k = number of recordings, n = number of chunks
-            Collections.sort(chunks, RepositoryChunk.END_TIME_COMPARATOR);
+            chunks.sort(RepositoryChunk.END_TIME_COMPARATOR);
             return chunks;
         }
 
@@ -484,8 +483,9 @@ public final class PlatformRecorder {
             }
         }
         if (activeSettingEvent.isEnabled()) {
+            long timestamp = JVM.counterTime();
             for (EventControl ec : MetadataRepository.getInstance().getEventControls()) {
-                ec.writeActiveSettingEvent();
+                ec.writeActiveSettingEvent(timestamp);
             }
         }
     }

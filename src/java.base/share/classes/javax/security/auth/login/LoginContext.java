@@ -40,6 +40,10 @@ import java.util.ServiceLoader;
 import sun.security.util.PendingException;
 import sun.security.util.ResourcesMgr;
 
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.stream.*;
+import java.util.ServiceLoader.Provider;
 /**
  * <p> The {@code LoginContext} class describes the basic methods used
  * to authenticate Subjects and provides a way to develop an
@@ -222,6 +226,8 @@ public class LoginContext {
 
     private static final sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance("logincontext", "\t[LoginContext]");
+    private static final WeakHashMap<ClassLoader, Set<Provider<LoginModule>>> providersCache =
+        new WeakHashMap<>();
 
     @SuppressWarnings("removal")
     private void init(String name) throws LoginException {
@@ -288,6 +294,7 @@ public class LoginContext {
                     return loader;
                 }
         });
+
     }
 
     @SuppressWarnings("removal")
@@ -691,21 +698,35 @@ public class LoginContext {
                     // locate and instantiate the LoginModule
                     //
                     String name = moduleStack[i].entry.getLoginModuleName();
-                    @SuppressWarnings("removal")
-                    ServiceLoader<LoginModule> sc = AccessController.doPrivileged(
-                            (PrivilegedAction<ServiceLoader<LoginModule>>)
-                                    () -> ServiceLoader.load(
-                                        LoginModule.class, contextClassLoader));
-                    for (LoginModule m: sc) {
-                        if (m.getClass().getName().equals(name)) {
-                            moduleStack[i].module = m;
+                    Set<Provider<LoginModule>> lmProviders;
+                    synchronized(providersCache){
+                        lmProviders = providersCache.get(contextClassLoader);
+                        if (lmProviders == null){
+                            if (debug != null){
+                                debug.println("Build ServiceProviders cache for ClassLoader: " + contextClassLoader.getName());
+                            }
+                            @SuppressWarnings("removal")
+                            ServiceLoader<LoginModule> sc = AccessController.doPrivileged(
+                                    (PrivilegedAction<ServiceLoader<LoginModule>>)
+                                            () -> java.util.ServiceLoader.load(
+                                                LoginModule.class, contextClassLoader));
+                            lmProviders = sc.stream().collect(Collectors.toSet());
+                                if (debug != null){
+                                    debug.println("Discovered ServiceProviders for ClassLoader: " + contextClassLoader.getName());
+                                    lmProviders.forEach(System.err::println);
+                                }
+                            providersCache.put(contextClassLoader,lmProviders);
+                        }
+                    }
+                    for (Provider<LoginModule> lm: lmProviders){
+                        if (lm.type().getName().equals(name)){
+                            moduleStack[i].module = lm.get();
                             if (debug != null) {
                                 debug.println(name + " loaded as a service");
                             }
                             break;
                         }
                     }
-
                     if (moduleStack[i].module == null) {
                         try {
                             @SuppressWarnings("deprecation")

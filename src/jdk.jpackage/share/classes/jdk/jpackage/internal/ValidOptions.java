@@ -87,6 +87,7 @@ class ValidOptions {
         options.put(CLIOptions.LICENSE_FILE.getId(), USE.INSTALL);
         options.put(CLIOptions.INSTALL_DIR.getId(), USE.INSTALL);
         options.put(CLIOptions.PREDEFINED_APP_IMAGE.getId(), USE.INSTALL);
+        options.put(CLIOptions.LAUNCHER_AS_SERVICE.getId(), USE.INSTALL);
 
         options.put(CLIOptions.ABOUT_URL.getId(), USE.INSTALL);
 
@@ -119,6 +120,7 @@ class ValidOptions {
             options.put(CLIOptions.MAC_APP_STORE.getId(), USE.ALL);
             options.put(CLIOptions.MAC_CATEGORY.getId(), USE.ALL);
             options.put(CLIOptions.MAC_ENTITLEMENTS.getId(), USE.ALL);
+            options.put(CLIOptions.DMG_CONTENT.getId(), USE.INSTALL);
         }
 
         if (Platform.getPlatform() == Platform.LINUX) {

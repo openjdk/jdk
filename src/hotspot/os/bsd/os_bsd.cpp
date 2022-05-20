@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,7 +361,7 @@ void os::init_system_properties_values() {
   // Where to look for native libraries.
   //
   // Note: Due to a legacy implementation, most of the library path
-  // is set in the launcher. This was to accomodate linking restrictions
+  // is set in the launcher. This was to accommodate linking restrictions
   // on legacy Bsd implementations (which are no longer supported).
   // Eventually, all the library path setting will be done here.
   //
@@ -442,7 +442,7 @@ void os::init_system_properties_values() {
   // Where to look for native libraries.
   //
   // Note: Due to a legacy implementation, most of the library path
-  // is set in the launcher. This was to accomodate linking restrictions
+  // is set in the launcher. This was to accommodate linking restrictions
   // on legacy Bsd implementations (which are no longer supported).
   // Eventually, all the library path setting will be done here.
   //
@@ -589,7 +589,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   assert(thread->osthread() == NULL, "caller responsible");
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
   if (osthread == NULL) {
     return false;
   }
@@ -682,7 +682,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
 
   if (osthread == NULL) {
     return false;
@@ -838,6 +838,17 @@ int os::current_process_id() {
 
 const char* os::dll_file_extension() { return JNI_LIB_SUFFIX; }
 
+static int local_dladdr(const void* addr, Dl_info* info) {
+#ifdef __APPLE__
+  if (addr == (void*)-1) {
+    // dladdr() in macOS12/Monterey returns success for -1, but that addr
+    // value should not be allowed to work to avoid confusion.
+    return 0;
+  }
+#endif
+  return dladdr(addr, info);
+}
+
 // This must be hard coded because it's the system's temporary
 // directory not the java application's temp directory, ala java.io.tmpdir.
 #ifdef __APPLE__
@@ -877,9 +888,6 @@ bool os::address_is_in_vm(address addr) {
   return false;
 }
 
-
-#define MACH_MAXSYMLEN 256
-
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset,
                                       bool demangle) {
@@ -887,9 +895,8 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   assert(buf != NULL, "sanity check");
 
   Dl_info dlinfo;
-  char localbuf[MACH_MAXSYMLEN];
 
-  if (dladdr((void*)addr, &dlinfo) != 0) {
+  if (local_dladdr((void*)addr, &dlinfo) != 0) {
     // see if we have a matching symbol
     if (dlinfo.dli_saddr != NULL && dlinfo.dli_sname != NULL) {
       if (!(demangle && Decoder::demangle(dlinfo.dli_sname, buf, buflen))) {
@@ -898,6 +905,14 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
       return true;
     }
+
+#ifndef __APPLE__
+    // The 6-parameter Decoder::decode() function is not implemented on macOS.
+    // The Mach-O binary format does not contain a "list of files" with address
+    // ranges like ELF. That makes sense since Mach-O can contain binaries for
+    // than one instruction set so there can be more than one address range for
+    // each "file".
+
     // no matching symbol so try for just file info
     if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
       if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
@@ -906,6 +921,10 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       }
     }
 
+#else  // __APPLE__
+    #define MACH_MAXSYMLEN 256
+
+    char localbuf[MACH_MAXSYMLEN];
     // Handle non-dynamic manually:
     if (dlinfo.dli_fbase != NULL &&
         Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset,
@@ -915,6 +934,9 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       }
       return true;
     }
+
+    #undef MACH_MAXSYMLEN
+#endif  // __APPLE__
   }
   buf[0] = '\0';
   if (offset != NULL) *offset = -1;
@@ -929,7 +951,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 
   Dl_info dlinfo;
 
-  if (dladdr((void*)addr, &dlinfo) != 0) {
+  if (local_dladdr((void*)addr, &dlinfo) != 0) {
     if (dlinfo.dli_fname != NULL) {
       jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
     }
@@ -1109,7 +1131,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
          IA32, AMD64, IA64, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
   #endif
 
-  // Identify compatability class for VM's architecture and library's architecture
+  // Identify compatibility class for VM's architecture and library's architecture
   // Obtain string descriptions for architectures
 
   arch_t lib_arch={elf_head.e_machine,0,elf_head.e_ident[EI_CLASS], elf_head.e_ident[EI_DATA], NULL};
@@ -1958,7 +1980,7 @@ jint os::init_2(void) {
   }
 
   // Check and sets minimum stack sizes against command line options
-  if (Posix::set_minimum_stack_sizes() == JNI_ERR) {
+  if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
 
@@ -2185,25 +2207,6 @@ int os::compare_file_modified_times(const char* file1, const char* file2) {
   return diff;
 }
 
-// Is a (classpath) directory empty?
-bool os::dir_is_empty(const char* path) {
-  DIR *dir = NULL;
-  struct dirent *ptr;
-
-  dir = opendir(path);
-  if (dir == NULL) return true;
-
-  // Scan the directory
-  bool result = true;
-  while (result && (ptr = readdir(dir)) != NULL) {
-    if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
-      result = false;
-    }
-  }
-  closedir(dir);
-  return result;
-}
-
 // This code originates from JDK's sysOpen and open64_w
 // from src/solaris/hpi/src/system_md.c
 
@@ -2284,35 +2287,6 @@ jlong os::current_file_offset(int fd) {
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
-}
-
-// This code originates from JDK's sysAvailable
-// from src/solaris/hpi/src/native_threads/src/sys_api_td.c
-
-int os::available(int fd, jlong *bytes) {
-  jlong cur, end;
-  int mode;
-  struct stat buf;
-
-  if (::fstat(fd, &buf) >= 0) {
-    mode = buf.st_mode;
-    if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      int n;
-      if (::ioctl(fd, FIONREAD, &n) >= 0) {
-        *bytes = n;
-        return 1;
-      }
-    }
-  }
-  if ((cur = ::lseek(fd, 0L, SEEK_CUR)) == -1) {
-    return 0;
-  } else if ((end = ::lseek(fd, 0L, SEEK_END)) == -1) {
-    return 0;
-  } else if (::lseek(fd, cur, SEEK_SET) == -1) {
-    return 0;
-  }
-  *bytes = end - cur;
-  return 1;
 }
 
 // Map a block of memory.
@@ -2451,27 +2425,6 @@ bool os::is_thread_cpu_time_supported() {
 // so just return the system wide load average.
 int os::loadavg(double loadavg[], int nelem) {
   return ::getloadavg(loadavg, nelem);
-}
-
-void os::pause() {
-  char filename[MAX_PATH];
-  if (PauseAtStartupFile && PauseAtStartupFile[0]) {
-    jio_snprintf(filename, MAX_PATH, "%s", PauseAtStartupFile);
-  } else {
-    jio_snprintf(filename, MAX_PATH, "./vm.paused.%d", current_process_id());
-  }
-
-  int fd = ::open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-  if (fd != -1) {
-    struct stat buf;
-    ::close(fd);
-    while (::stat(filename, &buf) == 0) {
-      (void)::poll(NULL, 0, 100);
-    }
-  } else {
-    jio_fprintf(stderr,
-                "Could not open pause file '%s', continuing immediately.\n", filename);
-  }
 }
 
 // Get the kern.corefile setting, or otherwise the default path to the core file

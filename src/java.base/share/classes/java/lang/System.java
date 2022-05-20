@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -45,9 +45,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URL;
-import java.nio.charset.CharacterCodingException;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -63,6 +63,7 @@ import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -79,11 +80,17 @@ import jdk.internal.logger.LoggerFinderLoader;
 import jdk.internal.logger.LazyLoggers;
 import jdk.internal.logger.LocalizedLoggerWrapper;
 import jdk.internal.util.SystemProps;
+import jdk.internal.vm.Continuation;
+import jdk.internal.vm.ContinuationScope;
+import jdk.internal.vm.StackableScope;
+import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.ChangesCurrentThread;
 import sun.nio.fs.DefaultFileSystemProvider;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
+import sun.nio.cs.UTF_8;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -134,7 +141,7 @@ public final class System {
      * specified by the host environment or user. The encoding used
      * in the conversion from characters to bytes is equivalent to
      * {@link Console#charset()} if the {@code Console} exists,
-     * {@link Charset#defaultCharset()} otherwise.
+     * <a href="#stdout.encoding">stdout.encoding</a> otherwise.
      * <p>
      * For simple stand-alone Java applications, a typical way to write
      * a line of output data is:
@@ -155,7 +162,7 @@ public final class System {
      * @see     java.io.PrintStream#println(java.lang.Object)
      * @see     java.io.PrintStream#println(java.lang.String)
      * @see     Console#charset()
-     * @see     Charset#defaultCharset()
+     * @see     <a href="#stdout.encoding">stdout.encoding</a>
      */
     public static final PrintStream out = null;
 
@@ -172,10 +179,10 @@ public final class System {
      * destination that is typically not continuously monitored.
      * The encoding used in the conversion from characters to bytes is
      * equivalent to {@link Console#charset()} if the {@code Console}
-     * exists, {@link Charset#defaultCharset()} otherwise.
+     * exists, <a href="#stderr.encoding">stderr.encoding</a> otherwise.
      *
      * @see     Console#charset()
-     * @see     Charset#defaultCharset()
+     * @see     <a href="#stderr.encoding">stderr.encoding</a>
      */
     public static final PrintStream err = null;
 
@@ -187,6 +194,11 @@ public final class System {
     // current security manager
     @SuppressWarnings("removal")
     private static volatile SecurityManager security;   // read by VM
+
+    // `sun.jnu.encoding` if it is not supported. Otherwise null.
+    // It is initialized in `initPhase1()` before any charset providers
+    // are initialized.
+    private static String notSupportedJnuEncoding;
 
     // return true if a security manager is allowed
     private static boolean allowSecurityManager() {
@@ -331,7 +343,7 @@ public final class System {
     private static class CallersHolder {
         // Remember callers of setSecurityManager() here so that warning
         // is only printed once for each different caller
-        final static Map<Class<?>, Boolean> callers
+        static final Map<Class<?>, Boolean> callers
             = Collections.synchronizedMap(new WeakHashMap<>());
     }
 
@@ -361,9 +373,11 @@ public final class System {
      * the method simply returns.
      *
      * @implNote In the JDK implementation, if the Java virtual machine is
-     * started with the system property {@code java.security.manager} set to
+     * started with the system property {@code java.security.manager} not set or set to
      * the special token "{@code disallow}" then the {@code setSecurityManager}
-     * method cannot be used to set a security manager.
+     * method cannot be used to set a security manager. See the following
+     * <a href="SecurityManager.html#set-security-manager">section of the
+     * {@code SecurityManager} class specification</a> for more details.
      *
      * @param  sm the security manager or {@code null}
      * @throws SecurityException
@@ -725,6 +739,9 @@ public final class System {
      *     <td>Java Runtime Environment specification version, whose value is
      *     the {@linkplain Runtime.Version#feature feature} element of the
      *     {@linkplain Runtime#version() runtime version}</td></tr>
+     * <tr><th scope="row">{@systemProperty java.specification.maintenance.version}</th>
+     *     <td>Java Runtime Environment specification maintenance version,
+     *     may be interpreted as a positive integer <em>(optional, see below)</em></td></tr>
      * <tr><th scope="row">{@systemProperty java.specification.vendor}</th>
      *     <td>Java Runtime Environment specification  vendor</td></tr>
      * <tr><th scope="row">{@systemProperty java.specification.name}</th>
@@ -761,8 +778,26 @@ public final class System {
      * <tr><th scope="row">{@systemProperty native.encoding}</th>
      *     <td>Character encoding name derived from the host environment and/or
      *     the user's settings. Setting this system property has no effect.</td></tr>
+     * <tr><th scope="row">{@systemProperty stdout.encoding}</th>
+     *     <td>Character encoding name for {@link System#out System.out}.
+     *     The Java runtime can be started with the system property set to {@code UTF-8},
+     *     starting it with the property set to another value leads to undefined behavior.
+     * <tr><th scope="row">{@systemProperty stderr.encoding}</th>
+     *     <td>Character encoding name for {@link System#err System.err}.
+     *     The Java runtime can be started with the system property set to {@code UTF-8},
+     *     starting it with the property set to another value leads to undefined behavior.
      * </tbody>
      * </table>
+     * <p>
+     * The {@code java.specification.maintenance.version} property is
+     * defined if the specification implemented by this runtime at the
+     * time of its construction had undergone a <a
+     * href="https://jcp.org/en/procedures/jcp2#3.6.4">maintenance
+     * release</a>. When defined, its value identifies that
+     * maintenance release. To indicate the first maintenance release
+     * this property will have the value {@code "1"}, to indicate the
+     * second maintenance release this property will have the value
+     * {@code "2"}, and so on.
      * <p>
      * Multiple paths in a system property value are separated by the path
      * separator character of the platform.
@@ -1200,7 +1235,7 @@ public final class System {
          * <b>Severity values and Mapping to {@code java.util.logging.Level}.</b>
          * <p>
          * {@linkplain System.Logger.Level System logger levels} are mapped to
-         * {@linkplain java.util.logging.Level  java.util.logging levels}
+         * {@linkplain java.logging/java.util.logging.Level  java.util.logging levels}
          * of corresponding severity.
          * <br>The mapping is as follows:
          * <br><br>
@@ -1212,19 +1247,19 @@ public final class System {
          * </thead>
          * <tbody>
          * <tr><th scope="row">{@link Logger.Level#ALL ALL}</th>
-         *     <td>{@link java.util.logging.Level#ALL ALL}</td>
+         *     <td>{@link java.logging/java.util.logging.Level#ALL ALL}</td>
          * <tr><th scope="row">{@link Logger.Level#TRACE TRACE}</th>
-         *     <td>{@link java.util.logging.Level#FINER FINER}</td>
+         *     <td>{@link java.logging/java.util.logging.Level#FINER FINER}</td>
          * <tr><th scope="row">{@link Logger.Level#DEBUG DEBUG}</th>
-         *     <td>{@link java.util.logging.Level#FINE FINE}</td>
+         *     <td>{@link java.logging/java.util.logging.Level#FINE FINE}</td>
          * <tr><th scope="row">{@link Logger.Level#INFO INFO}</th>
-         *     <td>{@link java.util.logging.Level#INFO INFO}</td>
+         *     <td>{@link java.logging/java.util.logging.Level#INFO INFO}</td>
          * <tr><th scope="row">{@link Logger.Level#WARNING WARNING}</th>
-         *     <td>{@link java.util.logging.Level#WARNING WARNING}</td>
+         *     <td>{@link java.logging/java.util.logging.Level#WARNING WARNING}</td>
          * <tr><th scope="row">{@link Logger.Level#ERROR ERROR}</th>
-         *     <td>{@link java.util.logging.Level#SEVERE SEVERE}</td>
+         *     <td>{@link java.logging/java.util.logging.Level#SEVERE SEVERE}</td>
          * <tr><th scope="row">{@link Logger.Level#OFF OFF}</th>
-         *     <td>{@link java.util.logging.Level#OFF OFF}</td>
+         *     <td>{@link java.logging/java.util.logging.Level#OFF OFF}</td>
          * </tbody>
          * </table>
          *
@@ -1233,6 +1268,7 @@ public final class System {
          * @see java.lang.System.LoggerFinder
          * @see java.lang.System.Logger
          */
+        @SuppressWarnings("doclint:reference") // cross-module links
         public enum Level {
 
             // for convenience, we're reusing java.util.logging.Level int values
@@ -1535,7 +1571,7 @@ public final class System {
      * {@code java.util.logging} as the backend framework when the
      * {@code java.logging} module is present.
      * It returns a {@linkplain System.Logger logger} instance
-     * that will route log messages to a {@link java.util.logging.Logger
+     * that will route log messages to a {@link java.logging/java.util.logging.Logger
      * java.util.logging.Logger}. Otherwise, if {@code java.logging} is not
      * present, the default implementation will return a simple logger
      * instance that will route log messages of {@code INFO} level and above to
@@ -1549,7 +1585,7 @@ public final class System {
      * logging backend, and usually requires using APIs specific to that backend.
      * <p>For the default {@code LoggerFinder} implementation
      * using {@code java.util.logging} as its backend, refer to
-     * {@link java.util.logging java.util.logging} for logging configuration.
+     * {@link java.logging/java.util.logging java.util.logging} for logging configuration.
      * For the default {@code LoggerFinder} implementation returning simple loggers
      * when the {@code java.logging} module is absent, the configuration
      * is implementation dependent.
@@ -1584,7 +1620,7 @@ public final class System {
      * System.Logger.Level} to a level supported by the logging backend it uses.
      * <br>The default LoggerFinder using {@code java.util.logging} as the backend
      * maps {@code System.Logger} levels to
-     * {@linkplain java.util.logging.Level java.util.logging} levels
+     * {@linkplain java.logging/java.util.logging.Level java.util.logging} levels
      * of corresponding severity - as described in {@link Logger.Level
      * Logger.Level}.
      *
@@ -1593,7 +1629,8 @@ public final class System {
      *
      * @since 9
      */
-    public static abstract class LoggerFinder {
+    @SuppressWarnings("doclint:reference") // cross-module links
+    public abstract static class LoggerFinder {
         /**
          * The {@code RuntimePermission("loggerFinder")} is
          * necessary to subclass and instantiate the {@code LoggerFinder} class,
@@ -1915,8 +1952,18 @@ public final class System {
      * Runtime.getRuntime().runFinalization()
      * </pre></blockquote>
      *
+     * @deprecated Finalization has been deprecated for removal.  See
+     * {@link java.lang.Object#finalize} for background information and details
+     * about migration options.
+     * <p>
+     * When running in a JVM in which finalization has been disabled or removed,
+     * no objects will be pending finalization, so this method does nothing.
+     *
      * @see     java.lang.Runtime#runFinalization()
+     * @jls 12.6 Finalization of Class Instances
      */
+    @Deprecated(since="18", forRemoval=true)
+    @SuppressWarnings("removal")
     public static void runFinalization() {
         Runtime.getRuntime().runFinalization();
     }
@@ -2014,13 +2061,12 @@ public final class System {
     /**
      * Create PrintStream for stdout/err based on encoding.
      */
-    private static PrintStream newPrintStream(FileOutputStream fos, String enc) {
-       if (enc != null) {
-            try {
-                return new PrintStream(new BufferedOutputStream(fos, 128), true, enc);
-            } catch (UnsupportedEncodingException uee) {}
+    private static PrintStream newPrintStream(OutputStream out, String enc) {
+        if (enc != null) {
+            return new PrintStream(new BufferedOutputStream(out, 128), true,
+                                   Charset.forName(enc, UTF_8.INSTANCE));
         }
-        return new PrintStream(new BufferedOutputStream(fos, 128), true);
+        return new PrintStream(new BufferedOutputStream(out, 128), true);
     }
 
     /**
@@ -2111,6 +2157,13 @@ public final class System {
         VM.saveProperties(tempProps);
         props = createProperties(tempProps);
 
+        // Check if sun.jnu.encoding is supported. If not, replace it with UTF-8.
+        var jnuEncoding = props.getProperty("sun.jnu.encoding");
+        if (jnuEncoding == null || !Charset.isSupported(jnuEncoding)) {
+            notSupportedJnuEncoding = jnuEncoding == null ? "null" : jnuEncoding;
+            props.setProperty("sun.jnu.encoding", "UTF-8");
+        }
+
         StaticProperty.javaHome();          // Load StaticProperty to cache the property values
 
         lineSeparator = props.getProperty("line.separator");
@@ -2119,11 +2172,11 @@ public final class System {
         FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
         FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);
         setIn0(new BufferedInputStream(fdIn));
-        // sun.stdout/err.encoding are set when the VM is associated with the terminal,
-        // thus they are equivalent to Console.charset(), otherwise the encoding
-        // defaults to native.encoding
-        setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding", StaticProperty.nativeEncoding())));
-        setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding", StaticProperty.nativeEncoding())));
+        // stdout/err.encoding are set when the VM is associated with the terminal,
+        // thus they are equivalent to Console.charset(), otherwise the encodings
+        // of those properties default to native.encoding
+        setOut0(newPrintStream(fdOut, props.getProperty("stdout.encoding")));
+        setErr0(newPrintStream(fdErr, props.getProperty("stderr.encoding")));
 
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();
@@ -2134,18 +2187,10 @@ public final class System {
         // classes are used.
         VM.initializeOSEnvironment();
 
-        // The main thread is not added to its thread group in the same
-        // way as other threads; we must do it ourselves here.
-        Thread current = Thread.currentThread();
-        current.getThreadGroup().add(current);
+        // start Finalizer and Reference Handler threads
+        SharedSecrets.getJavaLangRefAccess().startThreads();
 
-
-        // Subsystems that are invoked during initialization can invoke
-        // VM.isBooted() in order to avoid doing things that should
-        // wait until the VM is fully initialized. The initialization level
-        // is incremented from 0 to 1 here to indicate the first phase of
-        // initialization has completed.
-        // IMPORTANT: Ensure that this remains the last initialization action!
+        // system properties, java.lang and other core classes are now initialized
         VM.initLevel(1);
     }
 
@@ -2237,13 +2282,21 @@ public final class System {
                     allowSecurityManager = MAYBE;
             }
         } else {
-            allowSecurityManager = MAYBE;
+            allowSecurityManager = NEVER;
         }
 
         if (needWarning) {
             System.err.println("""
                     WARNING: A command line option has enabled the Security Manager
                     WARNING: The Security Manager is deprecated and will be removed in a future release""");
+        }
+
+        // Emit a warning if `sun.jnu.encoding` is not supported.
+        if (notSupportedJnuEncoding != null) {
+            System.err.println(
+                    "WARNING: The encoding of the underlying platform's" +
+                    " file system is not supported: " +
+                    notSupportedJnuEncoding);
         }
 
         initialErrStream = System.err;
@@ -2301,7 +2354,7 @@ public final class System {
             public Thread newThreadWithAcc(Runnable target, @SuppressWarnings("removal") AccessControlContext acc) {
                 return new Thread(target, acc);
             }
-            @SuppressWarnings("deprecation")
+            @SuppressWarnings("removal")
             public void invokeFinalize(Object o) throws Throwable {
                 o.finalize();
             }
@@ -2459,6 +2512,104 @@ public final class System {
             @Override
             public void exit(int statusCode) {
                 Shutdown.exit(statusCode);
+            }
+
+            public Thread[] getAllThreads() {
+                return Thread.getAllThreads();
+            }
+
+            public ThreadContainer threadContainer(Thread thread) {
+                return thread.threadContainer();
+            }
+
+            public void start(Thread thread, ThreadContainer container) {
+                thread.start(container);
+            }
+
+            public StackableScope headStackableScope(Thread thread) {
+                return thread.headStackableScopes();
+            }
+
+            public void setHeadStackableScope(StackableScope scope) {
+                Thread.setHeadStackableScope(scope);
+            }
+
+            public Thread currentCarrierThread() {
+                return Thread.currentCarrierThread();
+            }
+
+            @ChangesCurrentThread
+            public <V> V executeOnCarrierThread(Callable<V> task) throws Exception {
+                Thread thread = Thread.currentThread();
+                if (thread.isVirtual()) {
+                    Thread carrier = Thread.currentCarrierThread();
+                    carrier.setCurrentThread(carrier);
+                    try {
+                        return task.call();
+                    } finally {
+                        carrier.setCurrentThread(thread);
+                    }
+                } else {
+                    return task.call();
+                }
+            }
+
+            public <T> T getCarrierThreadLocal(ThreadLocal<T> local) {
+                return local.getCarrierThreadLocal();
+            }
+
+            public <T> void setCarrierThreadLocal(ThreadLocal<T> local, T value) {
+                local.setCarrierThreadLocal(value);
+            }
+
+            public Object[] extentLocalCache() {
+                return Thread.extentLocalCache();
+            }
+
+            public void setExtentLocalCache(Object[] cache) {
+                Thread.setExtentLocalCache(cache);
+            }
+
+            public Object extentLocalBindings() {
+                return Thread.extentLocalBindings();
+            }
+
+            public void setExtentLocalBindings(Object bindings) {
+                Thread.setExtentLocalBindings(bindings);
+            }
+
+            public Continuation getContinuation(Thread thread) {
+                return thread.getContinuation();
+            }
+
+            public void setContinuation(Thread thread, Continuation continuation) {
+                thread.setContinuation(continuation);
+            }
+
+            public ContinuationScope virtualThreadContinuationScope() {
+                return VirtualThread.continuationScope();
+            }
+
+            public void parkVirtualThread() {
+                VirtualThread.park();
+            }
+
+            public void parkVirtualThread(long nanos) {
+                VirtualThread.parkNanos(nanos);
+            }
+
+            public void unparkVirtualThread(Thread thread) {
+                if (thread instanceof VirtualThread vthread) {
+                    vthread.unpark();
+                } else {
+                    throw new IllegalArgumentException("Not a virtual thread");
+                }
+            }
+
+            public StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,
+                                                      ContinuationScope contScope,
+                                                      Continuation continuation) {
+                return StackWalker.newInstance(options, null, contScope, continuation);
             }
         });
     }

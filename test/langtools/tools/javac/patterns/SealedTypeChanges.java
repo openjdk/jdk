@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,11 @@ public class SealedTypeChanges {
     }
 
     void run() throws Exception {
-        doRun(this::expressionIntf, this::validateIncompatibleClassChangeError);
-        doRun(this::statementIntf, this::validateIncompatibleClassChangeError);
-        doRun(this::expressionCls, this::validateIncompatibleClassChangeError);
-        doRun(this::statementCls, this::validateIncompatibleClassChangeError);
-        doRun(this::statementFallThrough, this::validateIncompatibleClassChangeError);
+        doRun(this::expressionIntf, this::validateMatchException);
+        doRun(this::statementIntf, this::validateMatchException);
+        doRun(this::expressionCls, this::validateMatchException);
+        doRun(this::statementCls, this::validateMatchException);
+        doRun(this::statementFallThrough, this::validateMatchException);
         doRun(this::expressionCoveredIntf, this::validateTestException);
         doRun(this::statementCoveredIntf, this::validateTestException);
         doRun(this::expressionCoveredCls, this::validateTestException);
@@ -60,8 +60,8 @@ public class SealedTypeChanges {
         }
     }
 
-    void validateIncompatibleClassChangeError(Throwable t) {
-        if (!(t instanceof IncompatibleClassChangeError)) {
+    void validateMatchException(Throwable t) {
+        if (!(t instanceof MatchException)) {
             throw new AssertionError("Unexpected exception", t);
         }
     }

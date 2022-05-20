@@ -177,7 +177,7 @@ static void delete_rel_file_w(const wchar_t* path) {
   EXPECT_TRUE(result) << "Failed to delete file \"" << path << "\": " << GetLastError();
 }
 
-static bool convert_to_cstring(char* c_str, size_t size, wchar_t* w_str) {
+static bool convert_to_cstring(char* c_str, size_t size, const wchar_t* w_str) {
   size_t converted;
   errno_t err = wcstombs_s(&converted, c_str, size, w_str, size - 1);
   EXPECT_EQ(err, ERROR_SUCCESS) << "Could not convert \"" << w_str << "\" to c-string";
@@ -307,7 +307,7 @@ static void check_file_impl(wchar_t* path) {
   }
 }
 
-static void check_file_not_present_impl(wchar_t* path) {
+static void check_file_not_present_impl(const wchar_t* path) {
   char buf[JVM_MAXPATHLEN];
 
   if (convert_to_cstring(buf, JVM_MAXPATHLEN, path)) {
@@ -361,7 +361,7 @@ static void check_file(wchar_t* path) {
   }
 }
 
-static void check_file_not_present(wchar_t* path) {
+static void check_file_not_present(const wchar_t* path) {
   check_file_not_present_impl(path);
 
   for (int i = 0; mods_filter != Allow_None && i < mods_per_path; ++i) {
@@ -455,7 +455,7 @@ static void bench_path(wchar_t* path) {
   }
 }
 
-static void print_attr_result_for_path(wchar_t* path) {
+static void print_attr_result_for_path(const wchar_t* path) {
   WIN32_FILE_ATTRIBUTE_DATA file_data;
   struct stat st;
   char buf[JVM_MAXPATHLEN];
@@ -476,7 +476,7 @@ static void print_attr_result_for_path(wchar_t* path) {
   }
 }
 
-static void print_attr_result(wchar_t* format, ...) {
+static void print_attr_result(const wchar_t* format, ...) {
   va_list argptr;
   wchar_t buf[JVM_MAXPATHLEN];
 
@@ -513,10 +513,10 @@ TEST_VM(os_windows, handle_long_paths) {
   static wchar_t root_dir_path[JVM_MAXPATHLEN];
   static wchar_t root_rel_dir_path[JVM_MAXPATHLEN];
 
-  wchar_t* dir_prefix = L"os_windows_long_paths_dir_";
-  wchar_t* empty_dir_name = L"empty_directory_with_long_path";
-  wchar_t* not_empty_dir_name = L"not_empty_directory_with_long_path";
-  wchar_t* file_name = L"file";
+  const wchar_t* dir_prefix = L"os_windows_long_paths_dir_";
+  const wchar_t* empty_dir_name = L"empty_directory_with_long_path";
+  const wchar_t* not_empty_dir_name = L"not_empty_directory_with_long_path";
+  const wchar_t* file_name = L"file";
   wchar_t dir_letter;
   WIN32_FILE_ATTRIBUTE_DATA file_data;
   bool can_test_unc = false;
@@ -683,7 +683,7 @@ TEST_VM(os_windows, handle_long_paths) {
     // The other drive letter should not overwrite the original one.
     if (dir_letter) {
       static wchar_t tmp[JVM_MAXPATHLEN];
-      wchar_t* other_letter = dir_letter == L'D' ? L"C" : L"D";
+      const wchar_t* other_letter = dir_letter == L'D' ? L"C" : L"D";
       wsprintfW(tmp, L"%2ls\\..\\%ls:%ls", nearly_long_file_path, other_letter, nearly_long_file_path + 2);
       check_file_not_present(tmp);
       wsprintfW(tmp, L"%2ls\\..\\%ls:%ls", file_path, other_letter, file_path + 2);

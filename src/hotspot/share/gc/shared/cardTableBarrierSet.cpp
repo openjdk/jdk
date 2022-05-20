@@ -168,7 +168,7 @@ void CardTableBarrierSet::flush_deferred_card_mark_barrier(JavaThread* thread) {
       assert(!_card_table->is_in_young(old_obj),
              "Else should have been filtered in on_slowpath_allocation_exit()");
       assert(oopDesc::is_oop(old_obj, true), "Not an oop");
-      assert(deferred.word_size() == (size_t)(old_obj->size()),
+      assert(deferred.word_size() == old_obj->size(),
              "Mismatch: multiple objects?");
     }
     write_region(deferred);

@@ -547,8 +547,8 @@ class Interval : public CompilationResourceObj {
   // accessors
   int              reg_num() const               { return _reg_num; }
   void             set_reg_num(int r)            { assert(_reg_num == -1, "cannot change reg_num"); _reg_num = r; }
-  BasicType        type() const                  { assert(_reg_num == -1 || _reg_num >= LIR_OprDesc::vreg_base, "cannot access type for fixed interval"); return _type; }
-  void             set_type(BasicType type)      { assert(_reg_num < LIR_OprDesc::vreg_base || _type == T_ILLEGAL || _type == type, "overwriting existing type"); _type = type; }
+  BasicType        type() const                  { assert(_reg_num == -1 || _reg_num >= LIR_Opr::vreg_base, "cannot access type for fixed interval"); return _type; }
+  void             set_type(BasicType type)      { assert(_reg_num < LIR_Opr::vreg_base || _type == T_ILLEGAL || _type == type, "overwriting existing type"); _type = type; }
 
   Range*           first() const                 { return _first; }
   int              from() const                  { return _first->from(); }

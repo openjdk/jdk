@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "Generated {0} secret key"}, //-genseckey
         {"Generated.keysize.bit.keyAlgName.secret.key",
                 "Generated {0}-bit {1} secret key"}, //-genseckey
+        {"key.algorithm.weak", "%1$s uses the %2$s algorithm which is considered a security risk."},
+        {"key.size.weak", "%1$s uses a %2$s which is considered a security risk."},
         {"Imports.entries.from.a.JDK.1.1.x.style.identity.database",
                 "Imports entries from a JDK 1.1.x-style identity database"}, //-identitydb
         {"Imports.a.certificate.or.a.certificate.chain",
@@ -97,6 +99,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"Changes.the.store.password.of.a.keystore",
                 "Changes the store password of a keystore"}, //-storepasswd
         {"showinfo.command.help", "Displays security-related information"},
+        {"Prints.the.program.version", "Prints the program version"},
 
         // keytool: help: options
         {"alias.name.of.the.entry.to.process",
@@ -371,6 +374,8 @@ public class Resources extends java.util.ListResourceBundle {
         {"Enter.alias.name.", "Enter alias name:  "},
         {".RETURN.if.same.as.for.otherAlias.",
                 "\t(RETURN if same as for <{0}>)"},
+        {"enter.dname.components",
+                "Enter the distinguished name. Provide a single dot (.) to leave a sub-component empty or press ENTER to use the default value in braces."},
         {"What.is.your.first.and.last.name.",
                 "What is your first and last name?"},
         {"What.is.the.name.of.your.organizational.unit.",
@@ -383,6 +388,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "What is the name of your State or Province?"},
         {"What.is.the.two.letter.country.code.for.this.unit.",
                 "What is the two-letter country code for this unit?"},
+        {"no.field.in.dname",
+                "At least one field must be provided. Enter again."},
         {"Is.name.correct.", "Is {0} correct?"},
         {"no", "no"},
         {"yes", "yes"},
@@ -396,8 +403,8 @@ public class Resources extends java.util.ListResourceBundle {
         {".WARNING.WARNING.WARNING.",
             "*****************  WARNING WARNING WARNING  *****************"},
         {"Signer.d.", "Signer #%d:"},
+        {"Certificate.d.", "Certificate #%d:"},
         {"Timestamp.", "Timestamp:"},
-        {"Signature.", "Signature:"},
         {"Certificate.owner.", "Certificate owner: "},
         {"Not.a.signed.jar.file", "Not a signed jar file"},
         {"No.certificate.from.the.SSL.server",
@@ -455,6 +462,7 @@ public class Resources extends java.util.ListResourceBundle {
         // generating cert/cert req using weak algorithms
         {"the.certificate.request", "The certificate request"},
         {"the.issuer", "The issuer"},
+        {"the.generated.secretkey", "The generated secret key"},
         {"the.generated.certificate", "The generated certificate"},
         {"the.generated.crl", "The generated CRL"},
         {"the.generated.certificate.request", "The generated certificate request"},
@@ -464,6 +472,9 @@ public class Resources extends java.util.ListResourceBundle {
         {"the.input", "The input"},
         {"reply", "Reply"},
         {"one.in.many", "%1$s #%2$d of %3$d"},
+        {"one.in.many1", "%1$s #%2$d"},
+        {"one.in.many2", "%1$s of signer #%2$d"},
+        {"one.in.many3", "%1$s #%2$d of signer #%3$d"},
         {"alias.in.cacerts", "Issuer <%s> in cacerts"},
         {"alias.in.keystore", "Issuer <%s>"},
         {"with.weak", "%s (weak)"},
@@ -479,7 +490,9 @@ public class Resources extends java.util.ListResourceBundle {
                         "Subject: %1$s\nFormat: %2$s\nPublic Key: %3$s\nSignature algorithm: %4$s\n"},
         {"verified.by.s.in.s.weak", "Verified by %1$s in %2$s with a %3$s"},
         {"whose.sigalg.disabled", "%1$s uses the %2$s signature algorithm which is considered a security risk and is disabled."},
-        {"whose.sigalg.weak", "%1$s uses the %2$s signature algorithm which is considered a security risk. This algorithm will be disabled in a future update."},
+        {"whose.sigalg.usagesignedjar", "%1$s uses the %2$s signature algorithm which is considered a security risk and cannot be used to sign JARs after %3$s."},
+        {"Unable.to.parse.denyAfter.string.in.exception.message", "Unable to parse denyAfter date string in exception message"},
+        {"whose.sigalg.weak", "%1$s uses the %2$s signature algorithm which is considered a security risk."},
         {"whose.key.disabled", "%1$s uses a %2$s which is considered a security risk and is disabled."},
         {"whose.key.weak", "%1$s uses a %2$s which is considered a security risk. This key size will be disabled in a future update."},
         {"jks.storetype.warning", "The %1$s keystore uses a proprietary format. It is recommended to migrate to PKCS12 which is an industry standard format using \"keytool -importkeystore -srckeystore %2$s -destkeystore %2$s -deststoretype pkcs12\"."},

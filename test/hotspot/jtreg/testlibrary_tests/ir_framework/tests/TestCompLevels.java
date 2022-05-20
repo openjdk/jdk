@@ -25,6 +25,7 @@ package ir_framework.tests;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.test.TestVM;
+import jdk.test.lib.Platform;
 
 import java.lang.reflect.Method;
 
@@ -57,10 +58,12 @@ public class TestCompLevels {
             }
         }
         TestFramework framework = new TestFramework(TestNoTiered.class);
-        framework.setDefaultWarmup(10).addFlags("-XX:-TieredCompilation").start();
-        framework = new TestFramework(TestNoTiered.class);
-        framework.setDefaultWarmup(10).addScenarios(new Scenario(0, "-XX:-TieredCompilation")).start();
-        framework = new TestFramework(TestStopAtLevel1.class);
+        if (!Platform.isClient()) {
+            framework.setDefaultWarmup(10).addFlags("-XX:-TieredCompilation").start();
+            framework = new TestFramework(TestNoTiered.class);
+            framework.setDefaultWarmup(10).addScenarios(new Scenario(0, "-XX:-TieredCompilation")).start();
+            framework = new TestFramework(TestStopAtLevel1.class);
+        }
         framework.setDefaultWarmup(10).addFlags("-XX:TieredStopAtLevel=1").start();
         framework = new TestFramework(TestStopAtLevel1.class);
         framework.setDefaultWarmup(10).addScenarios(new Scenario(0, "-XX:TieredStopAtLevel=1")).start();
@@ -119,7 +122,9 @@ class TestNoTiered {
 
     @Check(test = "level1")
     public void check1(TestInfo info) {
-        TestFramework.assertNotCompiled(info.getTest()); // Never compiled without C1
+        if (!Platform.isClient()) {
+            TestFramework.assertNotCompiled(info.getTest()); // Never compiled without C1
+        }
     }
 
     @Test(compLevel = CompLevel.C1_LIMITED_PROFILE)

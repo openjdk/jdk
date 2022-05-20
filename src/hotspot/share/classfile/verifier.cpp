@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1219,7 +1219,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
                 bad_type_msg, "aastore");
             return;
           }
-          // 4938384: relaxed constraint in JVMS 3nd edition.
+          // 4938384: relaxed constraint in JVMS 3rd edition.
           no_control_flow = false; break;
         case Bytecodes::_pop :
           current_frame.pop_stack(
@@ -1805,7 +1805,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
           no_control_flow = true; break;
         default:
           // We only need to check the valid bytecodes in class file.
-          // And jsr and ret are not in the new class file format in JDK1.5.
+          // And jsr and ret are not in the new class file format in JDK1.6.
           verify_error(ErrorContext::bad_code(bci),
               "Bad instruction: %02x", opcode);
           no_control_flow = false;
@@ -2424,7 +2424,8 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
           verify_error(ErrorContext::bad_type(bci,
               current_frame->stack_top_ctx(),
               TypeOrigin::implicit(current_type())),
-              "Bad access to protected data in getfield");
+              "Bad access to protected data in %s",
+              is_getfield ? "getfield" : "putfield");
           return;
         }
       }

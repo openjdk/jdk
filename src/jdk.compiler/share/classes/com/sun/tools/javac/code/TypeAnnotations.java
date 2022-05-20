@@ -56,18 +56,27 @@ import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.TreeInfo;
+import com.sun.tools.javac.tree.JCTree.JCAnnotatedType;
+import com.sun.tools.javac.tree.JCTree.JCAnnotation;
+import com.sun.tools.javac.tree.JCTree.JCArrayTypeTree;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
+import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCLambda;
+import com.sun.tools.javac.tree.JCTree.JCMemberReference;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
+import com.sun.tools.javac.tree.JCTree.JCNewArray;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCTypeApply;
+import com.sun.tools.javac.tree.JCTree.JCTypeIntersection;
+import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
+import com.sun.tools.javac.tree.JCTree.JCTypeUnion;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
+import com.sun.tools.javac.tree.JCTree.Tag;
+import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
-import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
@@ -1132,7 +1141,7 @@ public class TypeAnnotations {
             }
             scan(tree.defs);
             if (tree.sym.isRecord()) {
-                tree.sym.getRecordComponents().stream().forEach(rc -> scan(rc.accessorMeth));
+                tree.sym.getRecordComponents().forEach(rc -> scan(rc.accessorMeth));
             }
         }
 

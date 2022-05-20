@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import sun.security.util.*;
  *     signature            BIT STRING  }
  * </pre>
  * More information can be found in
- * <a href="http://tools.ietf.org/html/rfc5280">RFC 5280: Internet X.509
+ * <a href="https://tools.ietf.org/html/rfc5280">RFC 5280: Internet X.509
  * Public Key Infrastructure Certificate and CRL Profile</a>.
  * <p>
  * The ASN.1 definition of <code>tbsCertList</code> is:
@@ -1047,7 +1047,6 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      *
      * @param oid ObjectIdentifier of extension desired
      * @return Object of type {@code <extension>} or null, if not found
-     * @throws IOException on error
      */
     public Object getExtension(ObjectIdentifier oid) {
         if (extensions == null)

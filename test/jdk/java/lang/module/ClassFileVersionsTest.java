@@ -43,74 +43,65 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class ClassFileVersionsTest {
+    private static final int FEATURE;
+    static {
+        FEATURE = Runtime.version().feature();
+        assert FEATURE >= 10;
+    }
 
     // major, minor, modifiers for requires java.base
     @DataProvider(name = "supported")
     public Object[][] supported() {
-        return new Object[][]{
-                { 53,   0,  Set.of() },                      // JDK 9
-                { 53,   0,  Set.of(STATIC) },
-                { 53,   0,  Set.of(TRANSITIVE) },
-                { 53,   0,  Set.of(STATIC, TRANSITIVE) },
+        /*
+         * There are four test cases for JDK 9 and then one test case
+         * for each subsequent JDK version from JDK 10 to the current
+         * feature release for a total of (4 + (FEATURE - 9) ) =>
+         * (feature - 5) rows.
+         */
+        Object[][] result = new Object[(FEATURE - 5)][];
 
-                { 54,   0,  Set.of() },                      // JDK 10
-                { 55,   0,  Set.of() },                      // JDK 11
-                { 56,   0,  Set.of() },                      // JDK 12
-                { 57,   0,  Set.of() },                      // JDK 13
-                { 58,   0,  Set.of() },                      // JDK 14
-                { 59,   0,  Set.of() },                      // JDK 15
-                { 60,   0,  Set.of() },                      // JDK 16
-                { 61,   0,  Set.of() },                      // JDK 17
-                { 62,   0,  Set.of() },                      // JDK 18
-        };
+        // Class file version of JDK 9 is 53.0
+        result[0] = new Object[]{ 53, 0, Set.of()};
+        result[1] = new Object[]{ 53, 0, Set.of(STATIC) };
+        result[2] = new Object[]{ 53, 0, Set.of(TRANSITIVE) };
+        result[3] = new Object[]{ 53, 0, Set.of(STATIC, TRANSITIVE) };
+
+        // Major class file version of JDK N is 44 + n. Create rows
+        // for JDK 10 through FEATURE.
+        for (int i = 4; i < (FEATURE - 5) ; i++) {
+            result[i] = new Object[]{i + 50, 0, Set.of()};
+        }
+
+        return result;
     }
 
     // major, minor, modifiers for requires java.base
     @DataProvider(name = "unsupported")
     public Object[][] unsupported() {
-        return new Object[][]{
-                { 50,   0,  Set.of()},                       // JDK 6
-                { 51,   0,  Set.of()},                       // JDK 7
-                { 52,   0,  Set.of()},                       // JDK 8
+        /*
+         * There are three test cases for releases prior to JDK 9,
+         * three test cases for each JDK version from JDK 10 to the
+         * current feature release, plus one addition test case for
+         * the next release for a total of (3 + (FEATURE - 9) * 3 + 1)
+         * rows.
+         */
+        int unsupportedCount = 3 + (FEATURE - 9)*3 + 1;
+        Object[][] result = new Object[unsupportedCount][];
 
-                { 54,   0,  Set.of(STATIC) },                // JDK 10
-                { 54,   0,  Set.of(TRANSITIVE) },
-                { 54,   0,  Set.of(STATIC, TRANSITIVE) },
+        result[0] = new Object[]{50, 0, Set.of()}; // JDK 6
+        result[1] = new Object[]{51, 0, Set.of()}; // JDK 7
+        result[2] = new Object[]{52, 0, Set.of()}; // JDK 8
 
-                { 55,   0,  Set.of(STATIC) },                // JDK 11
-                { 55,   0,  Set.of(TRANSITIVE) },
-                { 55,   0,  Set.of(STATIC, TRANSITIVE) },
+        for (int i = 10; i <= FEATURE ; i++) {
+            int base = 3 + (i-10)*3;
+            // Major class file version of JDK N is 44+n
+            result[base]     = new Object[]{i + 44, 0, Set.of(STATIC)};
+            result[base + 1] = new Object[]{i + 44, 0, Set.of(TRANSITIVE)};
+            result[base + 2] = new Object[]{i + 44, 0, Set.of(STATIC, TRANSITIVE)};
+        }
 
-                { 56,   0,  Set.of(STATIC) },                // JDK 12
-                { 56,   0,  Set.of(TRANSITIVE) },
-                { 56,   0,  Set.of(STATIC, TRANSITIVE) },
-
-                { 57,   0,  Set.of(STATIC) },                // JDK 13
-                { 57,   0,  Set.of(TRANSITIVE) },
-                { 57,   0,  Set.of(STATIC, TRANSITIVE) },
-
-                { 58,   0,  Set.of(STATIC) },                // JDK 14
-                { 58,   0,  Set.of(TRANSITIVE) },
-                { 58,   0,  Set.of(STATIC, TRANSITIVE) },
-
-                { 59,   0,  Set.of(STATIC) },                // JDK 15
-                { 59,   0,  Set.of(TRANSITIVE) },
-                { 59,   0,  Set.of(STATIC, TRANSITIVE) },
-
-                { 60,   0,  Set.of(STATIC) },                // JDK 16
-                { 60,   0,  Set.of(TRANSITIVE) },
-                { 60,   0,  Set.of(STATIC, TRANSITIVE) },
-
-                { 61,   0,  Set.of(STATIC) },                // JDK 17
-                { 61,   0,  Set.of(TRANSITIVE) },
-                { 61,   0,  Set.of(STATIC, TRANSITIVE) },
-
-                { 62,   0,  Set.of(STATIC) },                // JDK 18
-                { 62,   0,  Set.of(TRANSITIVE) },
-                { 62,   0,  Set.of(STATIC, TRANSITIVE) },
-
-                { 63,   0,  Set.of()},                       // JDK 19
-        };
+        result[unsupportedCount - 1] = new Object[]{FEATURE+1+44, 0, Set.of()};
+        return result;
     }
 
     @Test(dataProvider = "supported")

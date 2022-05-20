@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,11 +459,26 @@ bool os::supports_sse() {
 }
 
 juint os::cpu_microcode_revision() {
+  // Note: this code runs on startup, and therefore should not be slow,
+  // see JDK-8283200.
+
   juint result = 0;
-  char data[2048] = {0}; // lines should fit in 2K buf
-  size_t len = sizeof(data);
-  FILE *fp = fopen("/proc/cpuinfo", "r");
+
+  // Attempt 1 (faster): Read the microcode version off the sysfs.
+  FILE *fp = os::fopen("/sys/devices/system/cpu/cpu0/microcode/version", "r");
   if (fp) {
+    int read = fscanf(fp, "%x", &result);
+    fclose(fp);
+    if (read > 0) {
+      return result;
+    }
+  }
+
+  // Attempt 2 (slower): Read the microcode version off the procfs.
+  fp = os::fopen("/proc/cpuinfo", "r");
+  if (fp) {
+    char data[2048] = {0}; // lines should fit in 2K buf
+    size_t len = sizeof(data);
     while (!feof(fp)) {
       if (fgets(data, len, fp)) {
         if (strstr(data, "microcode") != NULL) {
@@ -475,6 +490,7 @@ juint os::cpu_microcode_revision() {
     }
     fclose(fp);
   }
+
   return result;
 }
 
@@ -483,12 +499,12 @@ juint os::cpu_microcode_revision() {
 
 // Minimum usable stack sizes required to get to user code. Space for
 // HotSpot guard pages is added later.
-size_t os::Posix::_compiler_thread_min_stack_allowed = 48 * K;
-size_t os::Posix::_java_thread_min_stack_allowed = 40 * K;
+size_t os::_compiler_thread_min_stack_allowed = 48 * K;
+size_t os::_java_thread_min_stack_allowed = 40 * K;
 #ifdef _LP64
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = 64 * K;
+size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
 #else
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
+size_t os::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
 #endif // _LP64
 
 // return default stack size for thr_type
@@ -509,6 +525,7 @@ void os::print_context(outputStream *st, const void *context) {
   if (context == NULL) return;
 
   const ucontext_t *uc = (const ucontext_t*)context;
+
   st->print_cr("Registers:");
 #ifdef AMD64
   st->print(  "RAX=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RAX]);
@@ -554,6 +571,12 @@ void os::print_context(outputStream *st, const void *context) {
 #endif // AMD64
   st->cr();
   st->cr();
+}
+
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  const ucontext_t* uc = (const ucontext_t*)context;
 
   intptr_t *sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));

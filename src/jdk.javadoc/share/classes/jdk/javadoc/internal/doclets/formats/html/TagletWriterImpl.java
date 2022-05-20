@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,9 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -53,6 +55,7 @@ import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.util.DocTreePath;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -74,16 +77,11 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewFlagProvider;
 
 /**
  * The taglet writer that writes HTML.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
-
 public class TagletWriterImpl extends TagletWriter {
     /**
      * A class that provides the information about the enclosing context for
@@ -199,8 +197,7 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     protected Content codeTagOutput(Element element, DocTree tag) {
         CommentHelper ch = utils.getCommentHelper(element);
-        Content result = HtmlTree.CODE(Text.of(utils.normalizeNewlines(ch.getText(tag))));
-        return result;
+        return HtmlTree.CODE(Text.of(utils.normalizeNewlines(ch.getText(tag))));
     }
 
     @Override
@@ -213,14 +210,14 @@ public class TagletWriterImpl extends TagletWriter {
                              .replaceAll("\\s+", " ");
         }
 
-        Content desc = htmlWriter.commentTagsToContent(tag, element, tag.getDescription(), context.within(tag));
+        Content desc = htmlWriter.commentTagsToContent(element, tag.getDescription(), context.within(tag));
         String descText = extractText(desc);
 
         return createAnchorAndSearchIndex(element, tagText, descText, tag);
     }
 
     // ugly but simple;
-    // alternatives would be to walk the Content tree, or to add new functionality to Content
+    // alternatives would be to walk the Content's tree structure, or to add new functionality to Content
     private String extractText(Content c) {
         return c.toString().replaceAll("<[^>]+>", "");
     }
@@ -298,11 +295,11 @@ public class TagletWriterImpl extends TagletWriter {
         // define id attributes for state components so that generated descriptions may refer to them
         boolean defineID = (element.getKind() == ElementKind.RECORD)
                 && !paramTag.isTypeParameter();
-        Content nameTree = Text.of(paramName);
-        body.add(HtmlTree.CODE(defineID ? HtmlTree.SPAN_ID(HtmlIds.forParam(paramName), nameTree) : nameTree));
+        Content nameContent = Text.of(paramName);
+        body.add(HtmlTree.CODE(defineID ? HtmlTree.SPAN_ID(HtmlIds.forParam(paramName), nameContent) : nameContent));
         body.add(" - ");
         List<? extends DocTree> description = ch.getDescription(paramTag);
-        body.add(htmlWriter.commentTagsToContent(paramTag, element, description, context.within(paramTag)));
+        body.add(htmlWriter.commentTagsToContent(element, description, context.within(paramTag)));
         return HtmlTree.DD(body);
     }
 
@@ -310,7 +307,7 @@ public class TagletWriterImpl extends TagletWriter {
     public Content returnTagOutput(Element element, ReturnTree returnTag, boolean inline) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> desc = ch.getDescription(returnTag);
-        Content content = htmlWriter.commentTagsToContent(returnTag, element, desc , context.within(returnTag));
+        Content content = htmlWriter.commentTagsToContent(element, desc , context.within(returnTag));
         return inline
                 ? new ContentBuilder(contents.getContent("doclet.Returns_0", content))
                 : new ContentBuilder(HtmlTree.DT(contents.returns), HtmlTree.DD(content));
@@ -350,9 +347,8 @@ public class TagletWriterImpl extends TagletWriter {
         // Use a different style if any link label is longer than 30 chars or contains commas.
         boolean hasLongLabels = links.stream()
                 .anyMatch(c -> c.charCount() > SEE_TAG_MAX_INLINE_LENGTH || c.toString().contains(","));
-        HtmlTree seeList = new HtmlTree(TagName.UL)
-                .setStyle(hasLongLabels ? HtmlStyle.seeListLong : HtmlStyle.seeList);
-        links.stream().filter(Content::isValid).forEach(item -> {
+        var seeList = HtmlTree.UL(hasLongLabels ? HtmlStyle.seeListLong : HtmlStyle.seeList);
+        links.stream().filter(Predicate.not(Content::isEmpty)).forEach(item -> {
             seeList.add(HtmlTree.LI(item));
         });
 
@@ -371,7 +367,7 @@ public class TagletWriterImpl extends TagletWriter {
                 body.add(", ");
             }
             List<? extends DocTree> bodyTags = ch.getBody(simpleTag);
-            body.add(htmlWriter.commentTagsToContent(simpleTag, element, bodyTags, context.within(simpleTag)));
+            body.add(htmlWriter.commentTagsToContent(element, bodyTags, context.within(simpleTag)));
             many = true;
         }
         return new ContentBuilder(
@@ -380,17 +376,27 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @Override
-    protected Content snippetTagOutput(Element element, SnippetTree tag, StyledText content) {
-        HtmlTree result = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
-        result.add(Text.of(utils.normalizeNewlines("\n")));
+    protected Content snippetTagOutput(Element element, SnippetTree tag, StyledText content,
+                                       String id, String lang) {
+        var pre = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
+        if (id != null && !id.isBlank()) {
+            pre.put(HtmlAttr.ID, id);
+        }
+        var code = new HtmlTree(TagName.CODE)
+                .addUnchecked(Text.EMPTY); // Make sure the element is always rendered
+        if (lang != null && !lang.isBlank()) {
+            code.addStyle("language-" + lang);
+        }
+
         content.consumeBy((styles, sequence) -> {
             CharSequence text = utils.normalizeNewlines(sequence);
             if (styles.isEmpty()) {
-                result.add(text);
+                code.add(text);
             } else {
                 Element e = null;
                 String t = null;
                 boolean linkEncountered = false;
+                boolean markupEncountered = false;
                 Set<String> classes = new HashSet<>();
                 for (Style s : styles) {
                     if (s instanceof Style.Name n) {
@@ -404,6 +410,8 @@ public class TagletWriterImpl extends TagletWriter {
                             // TODO: diagnostic output
                         }
                     } else if (s instanceof Style.Markup) {
+                        markupEncountered = true;
+                        break;
                     } else {
                         // TODO: transform this if...else into an exhaustive
                         // switch over the sealed Style hierarchy when "Pattern
@@ -413,28 +421,47 @@ public class TagletWriterImpl extends TagletWriter {
                     }
                 }
                 Content c;
-                if (linkEncountered) {
+                if (markupEncountered) {
+                    return;
+                } else if (linkEncountered) {
                     assert e != null;
                     String line = sequence.toString();
                     String strippedLine = line.strip();
                     int idx = line.indexOf(strippedLine);
                     assert idx >= 0; // because the stripped line is a substring of the line being stripped
-                    Text whitespace = Text.of(line.substring(0, idx));
-                    // If the leading whitespace is not excluded from the link,
-                    // browsers might exhibit unwanted behavior. For example, a
-                    // browser might display hand-click cursor while user hovers
-                    // over that whitespace portion of the line; or use
-                    // underline decoration.
-                    c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
+                    Text whitespace = Text.of(utils.normalizeNewlines(line.substring(0, idx)));
+                    //disable preview tagging inside the snippets:
+                    PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
+                    try {
+                        // If the leading whitespace is not excluded from the link,
+                        // browsers might exhibit unwanted behavior. For example, a
+                        // browser might display hand-click cursor while user hovers
+                        // over that whitespace portion of the line; or use
+                        // underline decoration.
+                        c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
+                    } finally {
+                        utils.setPreviewFlagProvider(prevPreviewProvider);
+                    }
                     // We don't care about trailing whitespace.
                 } else {
-                    c = HtmlTree.SPAN(Text.of(sequence));
+                    c = HtmlTree.SPAN(Text.of(text));
                     classes.forEach(((HtmlTree) c)::addStyle);
                 }
-                result.add(c);
+                code.add(c);
             }
         });
-        return result;
+        String copyText = resources.getText("doclet.Copy_snippet_to_clipboard");
+        String copiedText = resources.getText("doclet.Copied_snippet_to_clipboard");
+        var snippetContainer = HtmlTree.DIV(HtmlStyle.snippetContainer,
+                new HtmlTree(TagName.BUTTON)
+                        .add(HtmlTree.SPAN(Text.of(copyText))
+                                .put(HtmlAttr.DATA_COPIED, copiedText))
+                        .add(new HtmlTree(TagName.IMG)
+                                .put(HtmlAttr.SRC, htmlWriter.pathToRoot.resolve(DocPaths.CLIPBOARD_SVG).getPath())
+                                .put(HtmlAttr.ALT, copyText))
+                        .addStyle(HtmlStyle.snippetCopy)
+                        .put(HtmlAttr.ONCLICK, "copySnippet(this)"));
+        return snippetContainer.add(pre.add(code));
     }
 
     /*
@@ -487,20 +514,18 @@ public class TagletWriterImpl extends TagletWriter {
         }
         body.add(HtmlTree.CODE(excName));
         List<? extends DocTree> description = ch.getDescription(throwsTag);
-        Content desc = htmlWriter.commentTagsToContent(throwsTag, element, description, context.within(throwsTag));
+        Content desc = htmlWriter.commentTagsToContent(element, description, context.within(throwsTag));
         if (desc != null && !desc.isEmpty()) {
             body.add(" - ");
             body.add(desc);
         }
-        HtmlTree result = HtmlTree.DD(body);
-        return result;
+        return HtmlTree.DD(body);
     }
 
     @Override
     public Content throwsTagOutput(TypeMirror throwsType) {
-        HtmlTree result = HtmlTree.DD(HtmlTree.CODE(htmlWriter.getLink(
+        return HtmlTree.DD(HtmlTree.CODE(htmlWriter.getLink(
                 new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER, throwsType))));
-        return result;
     }
 
     @Override
@@ -508,6 +533,14 @@ public class TagletWriterImpl extends TagletWriter {
         return includeLink
                 ? htmlWriter.getDocLink(HtmlLinkInfo.Kind.VALUE_TAG, field, constantVal)
                 : Text.of(constantVal);
+    }
+
+    @Override
+    protected Content invalidTagOutput(String summary, Optional<String> detail) {
+        return htmlWriter.invalidTagOutput(summary,
+                detail.isEmpty() || detail.get().isEmpty()
+                        ? Optional.empty()
+                        : Optional.of(Text.of(utils.normalizeNewlines(detail.get()))));
     }
 
     @Override
@@ -526,7 +559,7 @@ public class TagletWriterImpl extends TagletWriter {
                                        List<? extends DocTree> tags,
                                        boolean isFirstSentence)
     {
-        return htmlWriter.commentTagsToContent(holderTag, holder,
+        return htmlWriter.commentTagsToContent(holder,
                 tags, holderTag == null ? context : context.within(holderTag));
     }
 

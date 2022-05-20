@@ -485,7 +485,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         subscriber.subscriptionCF.thenAccept(s -> s.request(1));
         List<ByteBuffer> result = subscriber.resultCF.join();
         assertEquals(result, List.of());
-        assertTrue(subscriber.items.isEmpty());;
+        assertTrue(subscriber.items.isEmpty());
     }
 
     // verifies that error emitted by upstream publishers are propagated downstream.

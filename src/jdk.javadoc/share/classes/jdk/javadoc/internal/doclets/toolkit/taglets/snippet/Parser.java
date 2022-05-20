@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import jdk.javadoc.internal.doclets.toolkit.Resources;
+import jdk.javadoc.internal.doclets.toolkit.taglets.SnippetTaglet;
 
 /*
  * Semantics of a EOL comment; plus
@@ -68,18 +69,13 @@ import jdk.javadoc.internal.doclets.toolkit.Resources;
  */
 /**
  * A parser of snippet content.
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own risk.
- * This code and its internal interfaces are subject to change or
- * deletion without notice.</b>
  */
 public final class Parser {
 
-    // next-line tag behaves as if it were specified on the next line
-
-    private String eolMarker;
-    private Matcher markedUpLine;
+    private static final Pattern JAVA_COMMENT = Pattern.compile(
+            "^(?<payload>.*)//(?<markup>\\s*@\\s*\\w+.+?)$");
+    private static final Pattern PROPERTIES_COMMENT = Pattern.compile(
+            "^(?<payload>[ \t]*([#!].*)?)[#!](?<markup>\\s*@\\s*\\w+.+?)$");
 
     private final Resources resources;
     private final MarkupParser markupParser;
@@ -93,32 +89,23 @@ public final class Parser {
         this.markupParser = new MarkupParser(resources);
     }
 
-    public Result parse(String source) throws ParseException {
-        return parse("//", source);
+    public Result parse(SnippetTaglet.Diags diags, Optional<SnippetTaglet.Language> language, String source) throws ParseException {
+        SnippetTaglet.Language lang = language.orElse(SnippetTaglet.Language.JAVA);
+        var p = switch (lang) {
+            case JAVA -> JAVA_COMMENT;
+            case PROPERTIES -> PROPERTIES_COMMENT;
+        };
+        return parse(diags, p, source);
     }
 
     /*
      * Newline characters in the returned text are of the \n form.
      */
-    public Result parse(String eolMarker, String source) throws ParseException {
-        Objects.requireNonNull(eolMarker);
+    private Result parse(SnippetTaglet.Diags diags, Pattern commentPattern, String source) throws ParseException {
+        Objects.requireNonNull(commentPattern);
         Objects.requireNonNull(source);
-        if (!Objects.equals(eolMarker, this.eolMarker)) {
-            if (eolMarker.length() < 1) {
-                throw new IllegalArgumentException();
-            }
-            for (int i = 0; i < eolMarker.length(); i++) {
-                switch (eolMarker.charAt(i)) {
-                    case '\f', '\n', '\r' -> throw new IllegalArgumentException();
-                }
-            }
-            this.eolMarker = eolMarker;
-            // capture the rightmost eolMarker (e.g. "//")
-            // The below Pattern.compile should never throw PatternSyntaxException
-            Pattern pattern = Pattern.compile("^(.*)(" + Pattern.quote(eolMarker)
-                    + "(\\s*@\\s*\\w+.+?))$");
-            this.markedUpLine = pattern.matcher(""); // reusable matcher
-        }
+
+        Matcher markedUpLine = commentPattern.matcher(""); // reusable matcher
 
         tags.clear();
         regions.clear();
@@ -147,21 +134,22 @@ public final class Parser {
             String rawLine = next.line();
             boolean addLineTerminator = iterator.hasNext() || trailingNewline;
             String line;
+            boolean hasMarkup = false;
             markedUpLine.reset(rawLine);
             if (!markedUpLine.matches()) { // (1)
                 line = rawLine + (addLineTerminator ? "\n" : "");
             } else {
-                String maybeMarkup = markedUpLine.group(3);
-                List<Tag> parsedTags = null;
+                String maybeMarkup = rawLine.substring(markedUpLine.start("markup"));
+                List<Tag> parsedTags;
                 try {
                     parsedTags = markupParser.parse(maybeMarkup);
                 } catch (ParseException e) {
-                    // adjust index
-                    throw new ParseException(e::getMessage, markedUpLine.start(3) + e.getPosition());
+                    // translate error position from markup to file line
+                    throw new ParseException(e::getMessage, next.offset() + markedUpLine.start("markup") + e.getPosition());
                 }
                 for (Tag t : parsedTags) {
-                    t.lineSourceOffset = next.offset;
-                    t.markupLineOffset = markedUpLine.start(3);
+                    t.lineSourceOffset = next.offset();
+                    t.markupLineOffset = markedUpLine.start("markup");
                 }
                 thisLineTags.addAll(parsedTags);
                 for (var tagIterator = thisLineTags.iterator(); tagIterator.hasNext(); ) {
@@ -173,10 +161,11 @@ public final class Parser {
                     }
                 }
                 if (parsedTags.isEmpty()) { // (2)
-                    // TODO: log this with NOTICE;
+                    diags.warn(resources.getText("doclet.snippet.markup.spurious"), next.offset() + markedUpLine.start("markup"));
                     line = rawLine + (addLineTerminator ? "\n" : "");
                 } else { // (3)
-                    String payload = markedUpLine.group(1);
+                    hasMarkup = true;
+                    String payload = rawLine.substring(0, markedUpLine.end("payload"));
                     line = payload + (addLineTerminator ? "\n" : "");
                 }
             }
@@ -193,7 +182,7 @@ public final class Parser {
 
             thisLineTags.clear();
 
-            append(text, Set.of(), line);
+            append(text, line.isBlank() && hasMarkup ? Set.of(new Style.Markup()) : Set.of(), line);
             // TODO: mark up trailing whitespace!
             lineStart += line.length();
         }

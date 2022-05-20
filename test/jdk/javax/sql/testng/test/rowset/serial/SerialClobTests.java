@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -407,18 +407,21 @@ public class SerialClobTests extends BaseTest {
 
     /*
      * Check that setString() updates the appropriate characters in the
-     * SerialClob
+     * SerialClob (writePos - 1 + val1.length() - offset > sc.length() &&
+     * writePos - 1 + expectedWritten <= sc.length())
      */
-    @Test(enabled = false)
+    @Test
     public void test32() throws Exception {
+        int writePos = 10;
+        int offset = 7;
         int expectedWritten = 9;
         String val = "Hi, I am Catwoman!!!!!!";
         String val1 = "Hahaha the Joker, who are you?!";
-        String expected = "Hi, I am the Joker!";
+        String expected = "Hi, I am the Joker!!!!!";
         SerialClob sc = new SerialClob(val.toCharArray());
-        int written = sc.setString(10, val1, 8, expectedWritten+1);
+        int written = sc.setString(writePos, val1, offset, expectedWritten);
         assertEquals(written, expectedWritten);
-
+        assertEquals(sc.getSubString(1, (int) sc.length()), expected);
     }
 
     /*
@@ -495,5 +498,75 @@ public class SerialClobTests extends BaseTest {
         SerialClob sc = new SerialClob(chars);
         SerialClob sc2 = serializeDeserializeObject(sc);
         assertTrue(sc.equals(sc2), "SerialClobs not equal");
+    }
+
+    /*
+     * Check calling setString() with offset > val1.length() throws a
+     * SerialException
+     */
+    @Test(expectedExceptions = SerialException.class)
+    public void test39() throws Exception {
+        String val1 = "hello";
+        int offset = val1.length() + 1;
+        SerialClob sc = new SerialClob(chars);
+        sc.setString(1, val1, offset, 0);
+    }
+
+    /*
+     * Check that setString() updates the appropriate characters in the
+     * SerialClob (writePos - 1 + expectedWritten > sc.length())
+     */
+    @Test
+    public void test40() throws Exception {
+        int writePos = 13;
+        int offset = 7;
+        int expectedWritten = 24;
+        String val = "Hello, I am Bruce Wayne";
+        String val1 = "Hahaha the Joker, who are you?!";
+        String expected = "Hello, I am the Joker, who are you?!";
+        SerialClob sc = new SerialClob(val.toCharArray());
+        int written = sc.setString(writePos, val1, offset, expectedWritten);
+        assertEquals(written, expectedWritten);
+        assertEquals(sc.getSubString(1, (int) sc.length()), expected);
+    }
+
+    /*
+     * Check that setString() updates the appropriate characters in the
+     * SerialClob (writePos == sc.length() + 1)
+     */
+    @Test
+    public void test41() throws Exception {
+        int writePos = 10;
+        int offset = 7;
+        int expectedWritten = 10;
+        String val = "Hi, I am ";
+        String val1 = "Hahaha the Joker!";
+        String expected = "Hi, I am the Joker!";
+        SerialClob sc = new SerialClob(val.toCharArray());
+        int written = sc.setString(writePos, val1, offset, expectedWritten);
+        assertEquals(written, expectedWritten);
+        assertEquals(sc.getSubString(1, (int) sc.length()), expected);
+    }
+
+    /*
+     * Validate a SerialException is thrown if length < 0 for setString
+     */
+    @Test(expectedExceptions = SerialException.class)
+    public void test42() throws Exception {
+        int length = -1;
+        SerialClob sc = new SerialClob(chars);
+        int written = sc.setString(1, "hello", 1, length);
+    }
+
+    /*
+     * Validate a SerialException is thrown if length + offset >
+     * Integer.MAX_VALUE for setString
+     */
+    @Test(expectedExceptions = SerialException.class)
+    public void test43() throws Exception {
+        int offset = 1;
+        int length = Integer.MAX_VALUE;
+        SerialClob sc = new SerialClob(chars);
+        int written = sc.setString(1, "hello", offset, length);
     }
 }

@@ -51,7 +51,6 @@ extern jfieldID iac_addressID;
 extern jfieldID iac_familyID;
 extern jfieldID iac_hostNameID;
 extern jfieldID iac_origHostNameID;
-extern jfieldID ia_preferIPv6AddressID;
 
 JNIEXPORT void JNICALL initInetAddressIDs(JNIEnv *env);
 
@@ -191,5 +190,9 @@ NET_EnableFastTcpLoopback(int fd);
 unsigned short in_cksum(unsigned short *addr, int len);
 
 jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
+
+int lookupCharacteristicsToAddressFamily(int characteristics);
+
+int addressesInSystemOrder(int characteristics);
 
 #endif /* NET_UTILS_H */

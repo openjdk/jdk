@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,15 @@
 package java.lang.invoke;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.Utils;
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.ValueConversions;
@@ -41,13 +44,16 @@ import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
 import java.lang.constant.ConstantDescs;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.LambdaForm.BasicType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ReflectPermission;
 import java.nio.ByteOrder;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
@@ -63,7 +69,9 @@ import java.util.stream.Stream;
 import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
 import static java.lang.invoke.MethodHandleImpl.Intrinsic;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
+import static java.lang.invoke.MethodHandleStatics.newInternalError;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
@@ -106,25 +114,37 @@ public class MethodHandles {
      * <p>
      * This method is caller sensitive, which means that it may return different
      * values to different callers.
+     * In cases where {@code MethodHandles.lookup} is called from a context where
+     * there is no caller frame on the stack (e.g. when called directly
+     * from a JNI attached thread), {@code IllegalCallerException} is thrown.
+     * To obtain a {@link Lookup lookup object} in such a context, use an auxiliary class that will
+     * implicitly be identified as the caller, or use {@link MethodHandles#publicLookup()}
+     * to obtain a low-privileged lookup instead.
      * @return a lookup object for the caller of this method, with
      * {@linkplain Lookup#ORIGINAL original} and
      * {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access}.
+     * @throws IllegalCallerException if there is no caller frame on the stack.
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
     public static Lookup lookup() {
-        return new Lookup(Reflection.getCallerClass());
+        final Class<?> c = Reflection.getCallerClass();
+        if (c == null) {
+            throw new IllegalCallerException("no caller frame");
+        }
+        return new Lookup(c);
     }
 
     /**
-     * This reflected$lookup method is the alternate implementation of
-     * the lookup method when being invoked by reflection.
+     * This lookup method is the alternate implementation of
+     * the lookup method with a leading caller class argument which is
+     * non-caller-sensitive.  This method is only invoked by reflection
+     * and method handle.
      */
-    @CallerSensitive
-    private static Lookup reflected$lookup() {
-        Class<?> caller = Reflection.getCallerClass();
+    @CallerSensitiveAdapter
+    private static Lookup lookup(Class<?> caller) {
         if (caller.getClassLoader() == null) {
-            throw newIllegalArgumentException("illegal lookupClass: "+caller);
+            throw newInternalError("calling lookup() reflectively is not supported: "+caller);
         }
         return new Lookup(caller);
     }
@@ -329,7 +349,7 @@ public class MethodHandles {
              throw new IllegalAccessException(caller + " does not have ORIGINAL access");
          }
 
-         Object classdata = MethodHandleNatives.classData(caller.lookupClass());
+         Object classdata = classData(caller.lookupClass());
          if (classdata == null) return null;
 
          try {
@@ -339,6 +359,17 @@ public class MethodHandles {
          } catch (Throwable e) {
              throw new InternalError(e);
          }
+    }
+
+    /*
+     * Returns the class data set by the VM in the Class::classData field.
+     *
+     * This is also invoked by LambdaForms as it cannot use condy via
+     * MethodHandles::classData due to bootstrapping issue.
+     */
+    static Object classData(Class<?> c) {
+        UNSAFE.ensureClassInitialized(c);
+        return SharedSecrets.getJavaLangAccess().classData(c);
     }
 
     /**
@@ -860,40 +891,20 @@ public class MethodHandles {
      * with all public types that are accessible to {@code M0}. {@code M0}
      * reads {@code M1} and hence the set of accessible types includes:
      *
-     * <table class="striped">
-     * <caption style="display:none">
-     * Public types in the following packages are accessible to the
-     * lookup class and the previous lookup class.
-     * </caption>
-     * <thead>
-     * <tr>
-     * <th scope="col">Equally accessible types to {@code M0} and {@code M1}</th>
-     * </tr>
-     * </thead>
-     * <tbody>
-     * <tr>
-     * <th scope="row" style="text-align:left">unconditional-exported packages from {@code M1}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">unconditional-exported packages from {@code M0} if {@code M1} reads {@code M0}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">unconditional-exported packages from a third module {@code M2}
-     * if both {@code M0} and {@code M1} read {@code M2}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">qualified-exported packages from {@code M1} to {@code M0}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">qualified-exported packages from {@code M0} to {@code M1}
-     * if {@code M1} reads {@code M0}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">qualified-exported packages from a third module {@code M2} to
-     * both {@code M0} and {@code M1} if both {@code M0} and {@code M1} read {@code M2}</th>
-     * </tr>
-     * </tbody>
-     * </table>
+     * <ul>
+     * <li>unconditional-exported packages from {@code M1}</li>
+     * <li>unconditional-exported packages from {@code M0} if {@code M1} reads {@code M0}</li>
+     * <li>
+     *     unconditional-exported packages from a third module {@code M2}if both {@code M0}
+     *     and {@code M1} read {@code M2}
+     * </li>
+     * <li>qualified-exported packages from {@code M1} to {@code M0}</li>
+     * <li>qualified-exported packages from {@code M0} to {@code M1} if {@code M1} reads {@code M0}</li>
+     * <li>
+     *     qualified-exported packages from a third module {@code M2} to both {@code M0} and
+     *     {@code M1} if both {@code M0} and {@code M1} read {@code M2}
+     * </li>
+     * </ul>
      *
      * <h2><a id="access-modes"></a>Access modes</h2>
      *
@@ -960,7 +971,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.in(D).in(C)} hop back to module</td>
+     * <th scope="row" style="text-align:left">{@code CL.in(D).in(C)} hop back to module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -969,7 +980,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1 = privateLookupIn(C1,CL)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1 = privateLookupIn(C1,CL)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -978,7 +989,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1a = privateLookupIn(C,PRI1)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1a = privateLookupIn(C,PRI1)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -987,7 +998,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.in(C1)} same package</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.in(C1)} same package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -996,7 +1007,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.in(C1)} different package</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.in(C1)} different package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1005,7 +1016,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.in(D)} different module</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.in(D)} different module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1014,7 +1025,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PROTECTED)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PROTECTED)}</th>
      * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
@@ -1023,7 +1034,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PRIVATE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PRIVATE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1032,7 +1043,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PACKAGE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PACKAGE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1041,7 +1052,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(MODULE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(MODULE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1050,7 +1061,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PUBLIC)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PUBLIC)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1058,7 +1069,7 @@ public class MethodHandles {
      * <td></td>
      * <td style="text-align:center">none</td>
      * <tr>
-     * <td>{@code PRI2 = privateLookupIn(D,CL)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2 = privateLookupIn(D,CL)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -1067,7 +1078,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code privateLookupIn(D,PRI1)}</td>
+     * <th scope="row" style="text-align:left">{@code privateLookupIn(D,PRI1)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -1076,7 +1087,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code privateLookupIn(C,PRI2)} fails</td>
+     * <th scope="row" style="text-align:left">{@code privateLookupIn(C,PRI2)} fails</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1085,7 +1096,7 @@ public class MethodHandles {
      * <td style="text-align:center">IAE</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(D2)} same package</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(D2)} same package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1094,7 +1105,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(D2)} different package</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(D2)} different package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1103,7 +1114,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(C1)} hop back to module</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(C1)} hop back to module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1112,7 +1123,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(E)} hop to third module</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(E)} hop to third module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1121,7 +1132,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PROTECTED)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PROTECTED)}</th>
      * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
@@ -1130,7 +1141,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PRIVATE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PRIVATE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1139,7 +1150,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PACKAGE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PACKAGE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1148,7 +1159,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(MODULE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(MODULE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1157,7 +1168,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PUBLIC)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PUBLIC)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1166,7 +1177,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PROTECTED)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PROTECTED)}</th>
      * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
@@ -1175,7 +1186,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PRIVATE)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PRIVATE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1184,7 +1195,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PACKAGE)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PACKAGE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1193,7 +1204,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(MODULE)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(MODULE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1202,7 +1213,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PUBLIC)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PUBLIC)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1211,7 +1222,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB = publicLookup()}</td>
+     * <th scope="row" style="text-align:left">{@code PUB = publicLookup()}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1220,7 +1231,7 @@ public class MethodHandles {
      * <td style="text-align:center">U</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB.in(D)} different module</td>
+     * <th scope="row" style="text-align:left">{@code PUB.in(D)} different module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1229,7 +1240,7 @@ public class MethodHandles {
      * <td style="text-align:center">U</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB.in(D).in(E)} third module</td>
+     * <th scope="row" style="text-align:left">{@code PUB.in(D).in(E)} third module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1238,7 +1249,7 @@ public class MethodHandles {
      * <td style="text-align:center">U</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB.dropLookupMode(UNCONDITIONAL)}</td>
+     * <th scope="row" style="text-align:left">{@code PUB.dropLookupMode(UNCONDITIONAL)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1247,7 +1258,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code privateLookupIn(C1,PUB)} fails</td>
+     * <th scope="row" style="text-align:left">{@code privateLookupIn(C1,PUB)} fails</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1256,7 +1267,7 @@ public class MethodHandles {
      * <td style="text-align:center">IAE</td>
      * </tr>
      * <tr>
-     * <td>{@code ANY.in(X)}, for inaccessible {@code X}</td>
+     * <th scope="row" style="text-align:left">{@code ANY.in(X)}, for inaccessible {@code X}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1878,7 +1889,7 @@ public class MethodHandles {
              * as a normal class or interface has with its own defining loader.
              * This means that the hidden class may be unloaded if and only if
              * its defining loader is not reachable and thus may be reclaimed
-             * by a garbage collector (JLS 12.7).
+             * by a garbage collector (JLS {@jls 12.7}).
              *
              * <p> By default, a hidden class or interface may be unloaded
              * even if the class loader that is marked as its defining loader is
@@ -2007,7 +2018,7 @@ public class MethodHandles {
          * there is no internal form available to record in any class's constant pool.
          * A hidden class or interface is not discoverable by {@link Class#forName(String, boolean, ClassLoader)},
          * {@link ClassLoader#loadClass(String, boolean)}, or {@link #findClass(String)}, and
-         * is not {@linkplain java.lang.instrument.Instrumentation#isModifiableClass(Class)
+         * is not {@linkplain java.instrument/java.lang.instrument.Instrumentation#isModifiableClass(Class)
          * modifiable} by Java agents or tool agents using the <a href="{@docRoot}/../specs/jvmti.html">
          * JVM Tool Interface</a>.
          *
@@ -2018,7 +2029,7 @@ public class MethodHandles {
          * that {@linkplain Class#getClassLoader() defined it}.
          * This means that a class created by a class loader may be unloaded if and
          * only if its defining loader is not reachable and thus may be reclaimed
-         * by a garbage collector (JLS 12.7).
+         * by a garbage collector (JLS {@jls 12.7}).
          *
          * By default, however, a hidden class or interface may be unloaded even if
          * the class loader that is marked as its defining loader is
@@ -2110,6 +2121,7 @@ public class MethodHandles {
          * @jvms 5.5 Initialization
          * @jls 12.7 Unloading of Classes and Interfaces
          */
+        @SuppressWarnings("doclint:reference") // cross-module links
         public Lookup defineHiddenClass(byte[] bytes, boolean initialize, ClassOption... options)
                 throws IllegalAccessException
         {
@@ -2359,15 +2371,16 @@ public class MethodHandles {
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
-         * from the given bytes.  No package name check on the given name.
+         * from the given bytes and the given options.  No package name check on the given name.
          *
          * @param name    fully-qualified name that specifies the prefix of the hidden class
          * @param bytes   class bytes
-         * @return ClassDefiner that defines a hidden class of the given bytes.
+         * @param options class options
+         * @return ClassDefiner that defines a hidden class of the given bytes and options.
          */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes) {
+        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, Set<ClassOption> options) {
             // skip name and access flags validation
-            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), Set.of(), false);
+            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), options, false);
         }
 
         /**
@@ -2751,7 +2764,7 @@ assertEquals("[x, y, z]", pb.command().toString());
         /**
          * Looks up a class by name from the lookup context defined by this {@code Lookup} object,
          * <a href="MethodHandles.Lookup.html#equiv">as if resolved</a> by an {@code ldc} instruction.
-         * Such a resolution, as specified in JVMS 5.4.3.1 section, attempts to locate and load the class,
+         * Such a resolution, as specified in JVMS {@jvms 5.4.3.1}, attempts to locate and load the class,
          * and then determines whether the class is accessible to this lookup object.
          * <p>
          * The lookup context here is determined by the {@linkplain #lookupClass() lookup class},
@@ -4749,15 +4762,15 @@ return invoker;
      *     the boolean is converted to a byte value, 1 for true, 0 for false.
      *     (This treatment follows the usage of the bytecode verifier.)
      * <li>If <em>T1</em> is boolean and <em>T0</em> is another primitive,
-     *     <em>T0</em> is converted to byte via Java casting conversion (JLS 5.5),
+     *     <em>T0</em> is converted to byte via Java casting conversion (JLS {@jls 5.5}),
      *     and the low order bit of the result is tested, as if by {@code (x & 1) != 0}.
      * <li>If <em>T0</em> and <em>T1</em> are primitives other than boolean,
-     *     then a Java casting conversion (JLS 5.5) is applied.
+     *     then a Java casting conversion (JLS {@jls 5.5}) is applied.
      *     (Specifically, <em>T0</em> will convert to <em>T1</em> by
      *     widening and/or narrowing.)
      * <li>If <em>T0</em> is a reference and <em>T1</em> a primitive, an unboxing
      *     conversion will be applied at runtime, possibly followed
-     *     by a Java casting conversion (JLS 5.5) on the primitive value,
+     *     by a Java casting conversion (JLS {@jls 5.5}) on the primitive value,
      *     possibly followed by a conversion from byte to boolean by testing
      *     the low-order bit.
      * <li>If <em>T0</em> is a reference and <em>T1</em> a primitive,
@@ -5593,7 +5606,7 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
         for (int pos : positions) {
             ptypes[pos - 1] = newParamType;
         }
-        MethodType newType = MethodType.makeImpl(targetType.rtype(), ptypes, true);
+        MethodType newType = MethodType.methodType(targetType.rtype(), ptypes, true);
 
         LambdaForm lform = result.editor().filterRepeatedArgumentForm(BasicType.basicType(newParamType), positions);
         return result.copyWithExtendL(newType, lform, filter);
@@ -5868,6 +5881,7 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      * V adapter(A... a, B... b) {
      *     T t = target(a...);
      *     return filter(b..., t);
+     * }
      * }</pre></blockquote>
      * <p>
      * If the filter handle is a unary function, then this method behaves like {@link #filterReturnValue(MethodHandle, MethodHandle)}.
@@ -7854,4 +7868,299 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         return expectedType;
     }
 
+    /**
+     * Creates a var handle object, which can be used to dereference a {@linkplain java.lang.foreign.MemorySegment memory segment}
+     * by viewing its contents as a sequence of the provided value layout.
+     *
+     * <p>The provided layout specifies the {@linkplain ValueLayout#carrier() carrier type},
+     * the {@linkplain ValueLayout#byteSize() byte size},
+     * the {@linkplain ValueLayout#byteAlignment() byte alignment} and the {@linkplain ValueLayout#order() byte order}
+     * associated with the returned var handle.
+     *
+     * <p>The returned var handle's type is {@code carrier} and the list of coordinate types is
+     * {@code (MemorySegment, long)}, where the {@code long} coordinate type corresponds to byte offset into
+     * a given memory segment. The returned var handle accesses bytes at an offset in a given
+     * memory segment, composing bytes to or from a value of the type {@code carrier} according to the given endianness;
+     * the alignment constraint (in bytes) for the resulting var handle is given by {@code alignmentBytes}.
+     *
+     * <p>As an example, consider the memory layout expressed by a {@link GroupLayout} instance constructed as follows:
+     * <blockquote><pre>{@code
+     *     GroupLayout seq = java.lang.foreign.MemoryLayout.structLayout(
+     *             MemoryLayout.paddingLayout(32),
+     *             ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withName("value")
+     *     );
+     * }</pre></blockquote>
+     * To access the member layout named {@code value}, we can construct a memory segment view var handle as follows:
+     * <blockquote><pre>{@code
+     *     VarHandle handle = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN)); //(MemorySegment, long) -> int
+     *     handle = MethodHandles.insertCoordinates(handle, 1, 4); //(MemorySegment) -> int
+     * }</pre></blockquote>
+     *
+     * @apiNote The resulting var handle features certain <i>access mode restrictions</i>,
+     * which are common to all memory segment view var handles. A memory segment view var handle is associated
+     * with an access size {@code S} and an alignment constraint {@code B}
+     * (both expressed in bytes). We say that a memory access operation is <em>fully aligned</em> if it occurs
+     * at a memory address {@code A} which is compatible with both alignment constraints {@code S} and {@code B}.
+     * If access is fully aligned then following access modes are supported and are
+     * guaranteed to support atomic access:
+     * <ul>
+     * <li>read write access modes for all {@code T}, with the exception of
+     *     access modes {@code get} and {@code set} for {@code long} and
+     *     {@code double} on 32-bit platforms.
+     * <li>atomic update access modes for {@code int}, {@code long},
+     *     {@code float}, {@code double} or {@link MemoryAddress}.
+     *     (Future major platform releases of the JDK may support additional
+     *     types for certain currently unsupported access modes.)
+     * <li>numeric atomic update access modes for {@code int}, {@code long} and {@link MemoryAddress}.
+     *     (Future major platform releases of the JDK may support additional
+     *     numeric types for certain currently unsupported access modes.)
+     * <li>bitwise atomic update access modes for {@code int}, {@code long} and {@link MemoryAddress}.
+     *     (Future major platform releases of the JDK may support additional
+     *     numeric types for certain currently unsupported access modes.)
+     * </ul>
+     *
+     * If {@code T} is {@code float}, {@code double} or {@link MemoryAddress} then atomic
+     * update access modes compare values using their bitwise representation
+     * (see {@link Float#floatToRawIntBits},
+     * {@link Double#doubleToRawLongBits} and {@link MemoryAddress#toRawLongValue()}, respectively).
+     * <p>
+     * Alternatively, a memory access operation is <em>partially aligned</em> if it occurs at a memory address {@code A}
+     * which is only compatible with the alignment constraint {@code B}; in such cases, access for anything other than the
+     * {@code get} and {@code set} access modes will result in an {@code IllegalStateException}. If access is partially aligned,
+     * atomic access is only guaranteed with respect to the largest power of two that divides the GCD of {@code A} and {@code S}.
+     * <p>
+     * Finally, in all other cases, we say that a memory access operation is <em>misaligned</em>; in such cases an
+     * {@code IllegalStateException} is thrown, irrespective of the access mode being used.
+     *
+     * @param layout the value layout for which a memory access handle is to be obtained.
+     * @return the new memory segment view var handle.
+     * @throws IllegalArgumentException if an illegal carrier type is used, or if {@code alignmentBytes} is not a power of two.
+     * @throws NullPointerException if {@code layout} is {@code null}.
+     * @see MemoryLayout#varHandle(MemoryLayout.PathElement...)
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public static VarHandle memorySegmentViewVarHandle(ValueLayout layout) {
+        Objects.requireNonNull(layout);
+        return Utils.makeSegmentViewVarHandle(layout);
+    }
+
+    /**
+     * Adapts a target var handle by pre-processing incoming and outgoing values using a pair of filter functions.
+     * <p>
+     * When calling e.g. {@link VarHandle#set(Object...)} on the resulting var handle, the incoming value (of type {@code T}, where
+     * {@code T} is the <em>last</em> parameter type of the first filter function) is processed using the first filter and then passed
+     * to the target var handle.
+     * Conversely, when calling e.g. {@link VarHandle#get(Object...)} on the resulting var handle, the return value obtained from
+     * the target var handle (of type {@code T}, where {@code T} is the <em>last</em> parameter type of the second filter function)
+     * is processed using the second filter and returned to the caller. More advanced access mode types, such as
+     * {@link VarHandle.AccessMode#COMPARE_AND_EXCHANGE} might apply both filters at the same time.
+     * <p>
+     * For the boxing and unboxing filters to be well-formed, their types must be of the form {@code (A... , S) -> T} and
+     * {@code (A... , T) -> S}, respectively, where {@code T} is the type of the target var handle. If this is the case,
+     * the resulting var handle will have type {@code S} and will feature the additional coordinates {@code A...} (which
+     * will be appended to the coordinates of the target var handle).
+     * <p>
+     * If the boxing and unboxing filters throw any checked exceptions when invoked, the resulting var handle will
+     * throw an {@link IllegalStateException}.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the target var handle
+     * @param filterToTarget a filter to convert some type {@code S} into the type of {@code target}
+     * @param filterFromTarget a filter to convert the type of {@code target} to some type {@code S}
+     * @return an adapter var handle which accepts a new type, performing the provided boxing/unboxing conversions.
+     * @throws IllegalArgumentException if {@code filterFromTarget} and {@code filterToTarget} are not well-formed, that is, they have types
+     * other than {@code (A... , S) -> T} and {@code (A... , T) -> S}, respectively, where {@code T} is the type of the target var handle,
+     * or if it's determined that either {@code filterFromTarget} or {@code filterToTarget} throws any checked exceptions.
+     * @throws NullPointerException if any of the arguments is {@code null}.
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public static VarHandle filterValue(VarHandle target, MethodHandle filterToTarget, MethodHandle filterFromTarget) {
+        return VarHandles.filterValue(target, filterToTarget, filterFromTarget);
+    }
+
+    /**
+     * Adapts a target var handle by pre-processing incoming coordinate values using unary filter functions.
+     * <p>
+     * When calling e.g. {@link VarHandle#get(Object...)} on the resulting var handle, the incoming coordinate values
+     * starting at position {@code pos} (of type {@code C1, C2 ... Cn}, where {@code C1, C2 ... Cn} are the return types
+     * of the unary filter functions) are transformed into new values (of type {@code S1, S2 ... Sn}, where {@code S1, S2 ... Sn} are the
+     * parameter types of the unary filter functions), and then passed (along with any coordinate that was left unaltered
+     * by the adaptation) to the target var handle.
+     * <p>
+     * For the coordinate filters to be well-formed, their types must be of the form {@code S1 -> T1, S2 -> T1 ... Sn -> Tn},
+     * where {@code T1, T2 ... Tn} are the coordinate types starting at position {@code pos} of the target var handle.
+     * <p>
+     * If any of the filters throws a checked exception when invoked, the resulting var handle will
+     * throw an {@link IllegalStateException}.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the target var handle
+     * @param pos the position of the first coordinate to be transformed
+     * @param filters the unary functions which are used to transform coordinates starting at position {@code pos}
+     * @return an adapter var handle which accepts new coordinate types, applying the provided transformation
+     * to the new coordinate values.
+     * @throws IllegalArgumentException if the handles in {@code filters} are not well-formed, that is, they have types
+     * other than {@code S1 -> T1, S2 -> T2, ... Sn -> Tn} where {@code T1, T2 ... Tn} are the coordinate types starting
+     * at position {@code pos} of the target var handle, if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
+     * or if more filters are provided than the actual number of coordinate types available starting at {@code pos},
+     * or if it's determined that any of the filters throws any checked exceptions.
+     * @throws NullPointerException if any of the arguments is {@code null} or {@code filters} contains {@code null}.
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public static VarHandle filterCoordinates(VarHandle target, int pos, MethodHandle... filters) {
+        return VarHandles.filterCoordinates(target, pos, filters);
+    }
+
+    /**
+     * Provides a target var handle with one or more <em>bound coordinates</em>
+     * in advance of the var handle's invocation. As a consequence, the resulting var handle will feature less
+     * coordinate types than the target var handle.
+     * <p>
+     * When calling e.g. {@link VarHandle#get(Object...)} on the resulting var handle, incoming coordinate values
+     * are joined with bound coordinate values, and then passed to the target var handle.
+     * <p>
+     * For the bound coordinates to be well-formed, their types must be {@code T1, T2 ... Tn },
+     * where {@code T1, T2 ... Tn} are the coordinate types starting at position {@code pos} of the target var handle.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the var handle to invoke after the bound coordinates are inserted
+     * @param pos the position of the first coordinate to be inserted
+     * @param values the series of bound coordinates to insert
+     * @return an adapter var handle which inserts additional coordinates,
+     *         before calling the target var handle
+     * @throws IllegalArgumentException if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
+     * or if more values are provided than the actual number of coordinate types available starting at {@code pos}.
+     * @throws ClassCastException if the bound coordinates in {@code values} are not well-formed, that is, they have types
+     * other than {@code T1, T2 ... Tn }, where {@code T1, T2 ... Tn} are the coordinate types starting at position {@code pos}
+     * of the target var handle.
+     * @throws NullPointerException if any of the arguments is {@code null} or {@code values} contains {@code null}.
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public static VarHandle insertCoordinates(VarHandle target, int pos, Object... values) {
+        return VarHandles.insertCoordinates(target, pos, values);
+    }
+
+    /**
+     * Provides a var handle which adapts the coordinate values of the target var handle, by re-arranging them
+     * so that the new coordinates match the provided ones.
+     * <p>
+     * The given array controls the reordering.
+     * Call {@code #I} the number of incoming coordinates (the value
+     * {@code newCoordinates.size()}), and call {@code #O} the number
+     * of outgoing coordinates (the number of coordinates associated with the target var handle).
+     * Then the length of the reordering array must be {@code #O},
+     * and each element must be a non-negative number less than {@code #I}.
+     * For every {@code N} less than {@code #O}, the {@code N}-th
+     * outgoing coordinate will be taken from the {@code I}-th incoming
+     * coordinate, where {@code I} is {@code reorder[N]}.
+     * <p>
+     * No coordinate value conversions are applied.
+     * The type of each incoming coordinate, as determined by {@code newCoordinates},
+     * must be identical to the type of the corresponding outgoing coordinate
+     * in the target var handle.
+     * <p>
+     * The reordering array need not specify an actual permutation.
+     * An incoming coordinate will be duplicated if its index appears
+     * more than once in the array, and an incoming coordinate will be dropped
+     * if its index does not appear in the array.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     * @param target the var handle to invoke after the coordinates have been reordered
+     * @param newCoordinates the new coordinate types
+     * @param reorder an index array which controls the reordering
+     * @return an adapter var handle which re-arranges the incoming coordinate values,
+     * before calling the target var handle
+     * @throws IllegalArgumentException if the index array length is not equal to
+     * the number of coordinates of the target var handle, or if any index array element is not a valid index for
+     * a coordinate of {@code newCoordinates}, or if two corresponding coordinate types in
+     * the target var handle and in {@code newCoordinates} are not identical.
+     * @throws NullPointerException if any of the arguments is {@code null} or {@code newCoordinates} contains {@code null}.
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public static VarHandle permuteCoordinates(VarHandle target, List<Class<?>> newCoordinates, int... reorder) {
+        return VarHandles.permuteCoordinates(target, newCoordinates, reorder);
+    }
+
+    /**
+     * Adapts a target var handle by pre-processing
+     * a sub-sequence of its coordinate values with a filter (a method handle).
+     * The pre-processed coordinates are replaced by the result (if any) of the
+     * filter function and the target var handle is then called on the modified (usually shortened)
+     * coordinate list.
+     * <p>
+     * If {@code R} is the return type of the filter (which cannot be void), the target var handle must accept a value of
+     * type {@code R} as its coordinate in position {@code pos}, preceded and/or followed by
+     * any coordinate not passed to the filter.
+     * No coordinates are reordered, and the result returned from the filter
+     * replaces (in order) the whole subsequence of coordinates originally
+     * passed to the adapter.
+     * <p>
+     * The argument types (if any) of the filter
+     * replace zero or one coordinate types of the target var handle, at position {@code pos},
+     * in the resulting adapted var handle.
+     * The return type of the filter must be identical to the
+     * coordinate type of the target var handle at position {@code pos}, and that target var handle
+     * coordinate is supplied by the return value of the filter.
+     * <p>
+     * If any of the filters throws a checked exception when invoked, the resulting var handle will
+     * throw an {@link IllegalStateException}.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the var handle to invoke after the coordinates have been filtered
+     * @param pos the position of the coordinate to be filtered
+     * @param filter the filter method handle
+     * @return an adapter var handle which filters the incoming coordinate values,
+     * before calling the target var handle
+     * @throws IllegalArgumentException if the return type of {@code filter}
+     * is void, or it is not the same as the {@code pos} coordinate of the target var handle,
+     * if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
+     * if the resulting var handle's type would have <a href="MethodHandle.html#maxarity">too many coordinates</a>,
+     * or if it's determined that {@code filter} throws any checked exceptions.
+     * @throws NullPointerException if any of the arguments is {@code null}.
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public static VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle filter) {
+        return VarHandles.collectCoordinates(target, pos, filter);
+    }
+
+    /**
+     * Returns a var handle which will discard some dummy coordinates before delegating to the
+     * target var handle. As a consequence, the resulting var handle will feature more
+     * coordinate types than the target var handle.
+     * <p>
+     * The {@code pos} argument may range between zero and <i>N</i>, where <i>N</i> is the arity of the
+     * target var handle's coordinate types. If {@code pos} is zero, the dummy coordinates will precede
+     * the target's real arguments; if {@code pos} is <i>N</i> they will come after.
+     * <p>
+     * The resulting var handle will feature the same access modes (see {@link VarHandle.AccessMode}) and
+     * atomic access guarantees as those featured by the target var handle.
+     *
+     * @param target the var handle to invoke after the dummy coordinates are dropped
+     * @param pos position of the first coordinate to drop (zero for the leftmost)
+     * @param valueTypes the type(s) of the coordinate(s) to drop
+     * @return an adapter var handle which drops some dummy coordinates,
+     *         before calling the target var handle
+     * @throws IllegalArgumentException if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive.
+     * @throws NullPointerException if any of the arguments is {@code null} or {@code valueTypes} contains {@code null}.
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public static VarHandle dropCoordinates(VarHandle target, int pos, Class<?>... valueTypes) {
+        return VarHandles.dropCoordinates(target, pos, valueTypes);
+    }
 }

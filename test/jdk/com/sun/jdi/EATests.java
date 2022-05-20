@@ -1901,13 +1901,13 @@ class EARelockingObjectCurrentlyWaitingOn extends EATestCaseBaseDebugger {
             Thread.sleep(100);
             env.targetMainThread.suspend();
             printStack(env.targetMainThread);
-            inWait = env.targetMainThread.frame(0).location().method().name().equals("wait");
+            inWait = env.targetMainThread.frame(0).location().method().name().equals("wait0");
             if (!inWait) {
                 msg("Target not yet in java.lang.Object.wait(long).");
                 env.targetMainThread.resume();
             }
         } while(!inWait);
-        StackFrame testMethodFrame = env.targetMainThread.frame(4);
+        StackFrame testMethodFrame = env.targetMainThread.frame(5);
         // Access triggers relocking of all eliminated locks, including nested locks of l1 which references
         // the object on which the target main thread is currently waiting.
         ObjectReference l0 = getLocalRef(testMethodFrame, EARelockingObjectCurrentlyWaitingOnTarget.ForLocking.class.getName(), "l0");
@@ -2198,7 +2198,9 @@ class EADeoptFrameAfterReadLocalObject_02CTarget extends EATestCaseBaseTarget {
     @Override
     public void setUp() {
         super.setUp();
-        testMethodDepth = 8;
+        // the method depth in debuggee is 11 as it includes all hidden frames
+        // the expected method depth is 6 excluding 5 hidden frames
+        testMethodDepth = 11-5;
     }
 
     @Override

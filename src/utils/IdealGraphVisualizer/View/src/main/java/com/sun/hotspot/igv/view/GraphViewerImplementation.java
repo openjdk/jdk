@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,10 @@ public class GraphViewerImplementation implements GraphViewer {
 
         Diagram diagram = Diagram.createDiagram(graph,
                                                 Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT),
-                                                Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT));
+                                                Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT),
+                                                Settings.get().get(Settings.NODE_TINY_TEXT, Settings.NODE_TINY_TEXT_DEFAULT));
         EditorTopComponent tc = new EditorTopComponent(diagram);
+        diagram.setCFG(tc.getModel().getShowCFG());
         tc.open();
         tc.requestActive();
     }

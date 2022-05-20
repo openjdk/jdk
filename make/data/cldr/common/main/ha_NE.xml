@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -25,6 +25,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="es_419">Sifaniyancin Latin Amirka</language>
 			<language type="es_ES">Sifaniyanci Turai</language>
 			<language type="es_MX">Sifaniyanci Mesiko</language>
+			<language type="fa_AF">Vote Farisanci na Afaganistan</language>
 			<language type="fr_CA">Farasanci Kanada</language>
 			<language type="fr_CH">Farasanci Suwizalan</language>
 			<language type="pt_BR">Harshen Potugis na Birazil</language>

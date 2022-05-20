@@ -312,14 +312,14 @@ public:
   template <typename T>
   u4 buffer_to_offset_u4(T p) const {
     uintx offset = buffer_to_offset((address)p);
-    guarantee(offset <= MAX_SHARED_DELTA, "must be 32-bit offset");
+    guarantee(offset <= MAX_SHARED_DELTA, "must be 32-bit offset " INTPTR_FORMAT, offset);
     return (u4)offset;
   }
 
   template <typename T>
   u4 any_to_offset_u4(T p) const {
     uintx offset = any_to_offset((address)p);
-    guarantee(offset <= MAX_SHARED_DELTA, "must be 32-bit offset");
+    guarantee(offset <= MAX_SHARED_DELTA, "must be 32-bit offset " INTPTR_FORMAT, offset);
     return (u4)offset;
   }
 

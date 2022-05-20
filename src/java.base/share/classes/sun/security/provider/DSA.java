@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,7 +362,8 @@ abstract class DSA extends SignatureSpi {
             s = new BigInteger(1, s.toByteArray());
         }
 
-        if ((r.compareTo(presetQ) == -1) && (s.compareTo(presetQ) == -1)) {
+        if ((r.compareTo(presetQ) == -1) && (s.compareTo(presetQ) == -1)
+                && r.signum() > 0 && s.signum() > 0) {
             BigInteger w = generateW(presetP, presetQ, presetG, s);
             BigInteger v = generateV(presetY, presetP, presetQ, presetG, w, r);
             return v.equals(r);

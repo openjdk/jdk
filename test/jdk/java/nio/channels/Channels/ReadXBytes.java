@@ -25,12 +25,12 @@
  * @test
  * @bug 8268435 8274780
  * @summary Verify ChannelInputStream methods readAllBytes and readNBytes
- * @requires vm.bits == 64
+ * @requires (sun.arch.data.model == "64" & os.maxMemory >= 16g)
  * @library ..
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @modules java.base/jdk.internal.util
- * @run testng/othervm/timeout=900 -Xmx8G ReadXBytes
+ * @run testng/othervm/timeout=900 -Xmx12G ReadXBytes
  * @key randomness
  */
 import java.io.File;
@@ -38,7 +38,7 @@ import java.io.FileInputStream;
 import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -46,10 +46,11 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import static java.nio.file.StandardOpenOption.READ;
 import java.util.List;
 import java.util.Random;
 import jdk.internal.util.ArraysSupport;
+
+import static java.nio.file.StandardOpenOption.*;
 
 import jdk.test.lib.RandomFactory;
 
@@ -72,30 +73,51 @@ public class ReadXBytes {
     // A length greater than a 32-bit integer can accommodate
     private static final long HUGE_LENGTH = Integer.MAX_VALUE + 27L;
 
+    // Current directory
+    private static final Path DIR = Path.of(System.getProperty("test.dir", "."));
+
     // --- Framework ---
+
+    // Create a temporary file path
+    static Path createFilePath() {
+        String name = String.format("ReadXBytes%d.tmp", System.nanoTime());
+        return DIR.resolve(name);
+    }
 
     // Creates a temporary file of a specified length with undefined content
     static Path createFile(long length) throws IOException {
-        File file = File.createTempFile("foo", ".bar");
-        file.deleteOnExit();
-        try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
-            raf.setLength(length);
+        Path path = createFilePath();
+        path.toFile().deleteOnExit();
+        try (FileChannel fc = FileChannel.open(path, CREATE_NEW, SPARSE, WRITE)) {
+            if (length > 0) {
+                fc.position(length - 1);
+                fc.write(ByteBuffer.wrap(new byte[] {27}));
+            }
         }
-        return file.toPath();
+        return path;
     }
 
     // Creates a temporary file of a specified length with random content
     static Path createFileWithRandomContent(long length) throws IOException {
         Path file = createFile(length);
-        try (RandomAccessFile raf = new RandomAccessFile(file.toFile(), "rw")) {
-            long written = 0L;
-            int bufLength = Math.min(32768, (int)Math.min(length, BIG_LENGTH));
+        try (FileChannel fc = FileChannel.open(file, WRITE);) {
+            long pos = 0L;
+            // if the length exceeds 2 GB, skip the first 2 GB - 1 MB bytes
+            if (length >= 2L*1024*1024*1024) {
+                // write the last (length - 2GB - 1MB) bytes
+                pos = 2047L*1024*1024;
+            } else if (length > 0) {
+                // write either the first or last bytes only
+                long p = Math.min(Math.abs(RAND.nextLong()), length - 1);
+                pos = RAND.nextBoolean() ? p : length - 1 - p;
+            }
+            fc.position(pos);
+            int bufLength = Math.min(32768, (int)Math.min(length - pos, BIG_LENGTH));
             byte[] buf = new byte[bufLength];
-            while (written < length) {
+            while (pos < length) {
                 RAND.nextBytes(buf);
-                int len = (int)Math.min(bufLength, length - written);
-                raf.write(buf, 0, len);
-                written += len;
+                int len = (int)Math.min(bufLength, length - pos);
+                pos += fc.write(ByteBuffer.wrap(buf, 0, len));
             }
         }
         return file;

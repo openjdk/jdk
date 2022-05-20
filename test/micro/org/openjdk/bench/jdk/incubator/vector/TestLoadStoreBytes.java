@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,9 @@ package org.openjdk.bench.jdk.incubator.vector;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
 import jdk.incubator.vector.ByteVector;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
@@ -46,13 +44,15 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 1, jvmArgsAppend = {
-    "--add-modules=jdk.incubator.foreign,jdk.incubator.vector",
+    "--add-modules=jdk.incubator.vector",
     "-Dforeign.restricted=permit",
     "--enable-native-access", "ALL-UNNAMED",
     "-Djdk.incubator.vector.VECTOR_ACCESS_OOB_CHECK=1"})
@@ -76,7 +76,7 @@ public class TestLoadStoreBytes {
   private ByteBuffer dstBufferNative;
 
 
-  private ResourceScope implicitScope;
+  private MemorySession implicitScope;
 
   private MemorySegment srcSegmentImplicit;
 
@@ -109,15 +109,15 @@ public class TestLoadStoreBytes {
     dstBufferNative = ByteBuffer.allocateDirect(size);
 
 
-    implicitScope = ResourceScope.newImplicitScope();
+    implicitScope = MemorySession.openImplicit();
     srcSegmentImplicit = MemorySegment.allocateNative(size, SPECIES.vectorByteSize(), implicitScope);
     srcBufferSegmentImplicit = srcSegmentImplicit.asByteBuffer();
     dstSegmentImplicit = MemorySegment.allocateNative(size, SPECIES.vectorByteSize(), implicitScope);
     dstBufferSegmentImplicit = dstSegmentImplicit.asByteBuffer();
 
 
-    srcAddress = CLinker.allocateMemory(size);
-    dstAddress = CLinker.allocateMemory(size);
+    srcAddress = MemorySegment.allocateNative(size, implicitScope).address();
+    dstAddress = MemorySegment.allocateNative(size, implicitScope).address();
 
     a = new byte[size];
     b = new byte[size];
@@ -232,16 +232,16 @@ public class TestLoadStoreBytes {
   @CompilerControl(CompilerControl.Mode.PRINT)
   public void segmentImplicitScalar() {
     for (int i = 0; i < SPECIES.loopBound(srcArray.length); i++) {
-      var v = MemoryAccess.getByteAtOffset(srcSegmentImplicit, i);
-      MemoryAccess.setByteAtOffset(dstSegmentImplicit, i, v);
+      var v = srcSegmentImplicit.get(JAVA_BYTE, i);
+      dstSegmentImplicit.set(JAVA_BYTE, i, v);
     }
   }
 
   @Benchmark
   public void bufferSegmentConfined() {
-    try (final var scope = ResourceScope.newConfinedScope()) {
-      final var srcBufferSegmentConfined = srcAddress.asSegment(size, scope).asByteBuffer();
-      final var dstBufferSegmentConfined = dstAddress.asSegment(size, scope).asByteBuffer();
+    try (final var scope = MemorySession.openConfined()) {
+      final var srcBufferSegmentConfined = MemorySegment.ofAddress(srcAddress, size, scope).asByteBuffer();
+      final var dstBufferSegmentConfined = MemorySegment.ofAddress(dstAddress, size, scope).asByteBuffer();
 
       for (int i = 0; i < SPECIES.loopBound(srcArray.length); i += SPECIES.length()) {
         var v = ByteVector.fromByteBuffer(SPECIES, srcBufferSegmentConfined, i, ByteOrder.nativeOrder());

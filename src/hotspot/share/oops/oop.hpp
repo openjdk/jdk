@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,34 +91,36 @@ class oopDesc {
   static inline void release_set_klass(HeapWord* mem, Klass* k);
 
   // For klass field compression
-  inline int klass_gap() const;
-  inline void set_klass_gap(int z);
   static inline void set_klass_gap(HeapWord* mem, int z);
 
   // size of object header, aligned to platform wordSize
-  static int header_size() { return sizeof(oopDesc)/HeapWordSize; }
+  static constexpr int header_size() { return sizeof(oopDesc)/HeapWordSize; }
 
   // Returns whether this is an instance of k or an instance of a subclass of k
   inline bool is_a(Klass* k) const;
 
-  // Returns the actual oop size of the object
-  inline int size();
+  // Returns the actual oop size of the object in machine words
+  inline size_t size();
 
   // Sometimes (for complicated concurrency-related reasons), it is useful
   // to be able to figure out the size of an object knowing its klass.
-  inline int size_given_klass(Klass* klass);
+  inline size_t size_given_klass(Klass* klass);
 
   // type test operations (inlined in oop.inline.hpp)
-  inline bool is_instance()            const;
-  inline bool is_array()               const;
-  inline bool is_objArray()            const;
-  inline bool is_typeArray()           const;
+  inline bool is_instance()    const;
+  inline bool is_instanceRef() const;
+  inline bool is_stackChunk()  const;
+  inline bool is_array()       const;
+  inline bool is_objArray()    const;
+  inline bool is_typeArray()   const;
 
   // type test operations that don't require inclusion of oop.inline.hpp.
-  bool is_instance_noinline()          const;
-  bool is_array_noinline()             const;
-  bool is_objArray_noinline()          const;
-  bool is_typeArray_noinline()         const;
+  bool is_instance_noinline()    const;
+  bool is_instanceRef_noinline() const;
+  bool is_stackChunk_noinline()  const;
+  bool is_array_noinline()       const;
+  bool is_objArray_noinline()    const;
+  bool is_typeArray_noinline()   const;
 
  protected:
   inline oop        as_oop() const { return const_cast<oopDesc*>(this); }
@@ -272,10 +274,10 @@ class oopDesc {
   inline void oop_iterate(OopClosureType* cl, MemRegion mr);
 
   template <typename OopClosureType>
-  inline int oop_iterate_size(OopClosureType* cl);
+  inline size_t oop_iterate_size(OopClosureType* cl);
 
   template <typename OopClosureType>
-  inline int oop_iterate_size(OopClosureType* cl, MemRegion mr);
+  inline size_t oop_iterate_size(OopClosureType* cl, MemRegion mr);
 
   template <typename OopClosureType>
   inline void oop_iterate_backwards(OopClosureType* cl);
@@ -312,9 +314,7 @@ class oopDesc {
   static void* load_klass_raw(oop obj);
   static void* load_oop_raw(oop obj, int offset);
 
-  // Avoid include gc_globals.hpp in oop.inline.hpp
-  DEBUG_ONLY(bool get_UseParallelGC();)
-  DEBUG_ONLY(bool get_UseG1GC();)
+  DEBUG_ONLY(bool size_might_change();)
 };
 
 // An oopDesc is not initialized via a constructor.  Space is allocated in

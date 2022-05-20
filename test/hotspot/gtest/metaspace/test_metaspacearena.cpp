@@ -744,38 +744,36 @@ TEST_VM(metaspace, MetaspaceArena_growth_boot_nc_not_inplace) {
 //  do not increase metaspace usage after the initial allocation (the deallocated
 //  block should be reused by the next allocation).
 static void test_repeatedly_allocate_and_deallocate(bool is_topmost) {
-  if (Settings::handle_deallocations()) {
-    // Test various sizes, including (important) the max. possible block size = 1 root chunk
-    for (size_t blocksize = Metaspace::max_allocation_word_size(); blocksize >= 1; blocksize /= 2) {
-      size_t used1 = 0, used2 = 0, committed1 = 0, committed2 = 0;
-      MetaWord* p = NULL, *p2 = NULL;
+  // Test various sizes, including (important) the max. possible block size = 1 root chunk
+  for (size_t blocksize = Metaspace::max_allocation_word_size(); blocksize >= 1; blocksize /= 2) {
+    size_t used1 = 0, used2 = 0, committed1 = 0, committed2 = 0;
+    MetaWord* p = NULL, *p2 = NULL;
 
-      MetaspaceGtestContext context;
-      MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, false);
+    MetaspaceGtestContext context;
+    MetaspaceArenaTestHelper helper(context, Metaspace::StandardMetaspaceType, false);
 
-      // First allocation
-      helper.allocate_from_arena_with_tests_expect_success(&p, blocksize);
-      if (!is_topmost) {
-        // another one on top, size does not matter.
-        helper.allocate_from_arena_with_tests_expect_success(0x10);
-      }
-
-      // Measure
-      helper.usage_numbers_with_test(&used1, &committed1, NULL);
-
-      // Dealloc, alloc several times with the same size.
-      for (int i = 0; i < 5; i ++) {
-        helper.deallocate_with_tests(p, blocksize);
-        helper.allocate_from_arena_with_tests_expect_success(&p2, blocksize);
-        // We should get the same pointer back.
-        EXPECT_EQ(p2, p);
-      }
-
-      // Measure again
-      helper.usage_numbers_with_test(&used2, &committed2, NULL);
-      EXPECT_EQ(used2, used1);
-      EXPECT_EQ(committed1, committed2);
+    // First allocation
+    helper.allocate_from_arena_with_tests_expect_success(&p, blocksize);
+    if (!is_topmost) {
+      // another one on top, size does not matter.
+      helper.allocate_from_arena_with_tests_expect_success(0x10);
     }
+
+    // Measure
+    helper.usage_numbers_with_test(&used1, &committed1, NULL);
+
+    // Dealloc, alloc several times with the same size.
+    for (int i = 0; i < 5; i ++) {
+      helper.deallocate_with_tests(p, blocksize);
+      helper.allocate_from_arena_with_tests_expect_success(&p2, blocksize);
+      // We should get the same pointer back.
+      EXPECT_EQ(p2, p);
+    }
+
+    // Measure again
+    helper.usage_numbers_with_test(&used2, &committed2, NULL);
+    EXPECT_EQ(used2, used1);
+    EXPECT_EQ(committed1, committed2);
   }
 }
 

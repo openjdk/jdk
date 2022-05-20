@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,8 @@ import javax.lang.model.element.PackageElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -47,11 +45,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  * ClassTree for building the Tree. The name of
  * the generated file is "overview-tree.html" and it is generated in the
  * current or the destination directory.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class TreeWriter extends AbstractTreeWriter {
 
@@ -103,11 +96,11 @@ public class TreeWriter extends AbstractTreeWriter {
      * @throws DocFileIOException if there is a problem generating the overview tree page
      */
     public void generateTreeFile() throws DocFileIOException {
-        HtmlTree body = getTreeHeader();
+        HtmlTree body = getBody();
         Content headContent = contents.hierarchyForAllPackages;
-        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
+        var heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
-        Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+        var div = HtmlTree.DIV(HtmlStyle.header, heading);
         addPackageTreeLinks(div);
         Content mainContent = new ContentBuilder();
         mainContent.add(div);
@@ -124,19 +117,18 @@ public class TreeWriter extends AbstractTreeWriter {
     /**
      * Add the links to all the package tree files.
      *
-     * @param contentTree the content tree to which the links will be added
+     * @param content the content to which the links will be added
      */
-    protected void addPackageTreeLinks(Content contentTree) {
+    protected void addPackageTreeLinks(Content content) {
         //Do nothing if only unnamed package is used
         if (isUnnamedPackage()) {
             return;
         }
         if (!classesOnly) {
-            Content span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
+            var span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
                     contents.packageHierarchies);
-            contentTree.add(span);
-            HtmlTree ul = new HtmlTree(TagName.UL);
-            ul.setStyle(HtmlStyle.horizontal);
+            content.add(span);
+            var ul = HtmlTree.UL(HtmlStyle.horizontal);
             int i = 0;
             for (PackageElement pkg : packages) {
                 // If the package name length is 0 or if -nodeprecated option
@@ -148,7 +140,7 @@ public class TreeWriter extends AbstractTreeWriter {
                     continue;
                 }
                 DocPath link = pathString(pkg, DocPaths.PACKAGE_TREE);
-                Content li = HtmlTree.LI(links.createLink(link,
+                var li = HtmlTree.LI(links.createLink(link,
                         getLocalizedPackageName(pkg)));
                 if (i < packages.size() - 1) {
                     li.add(", ");
@@ -156,16 +148,14 @@ public class TreeWriter extends AbstractTreeWriter {
                 ul.add(li);
                 i++;
             }
-            contentTree.add(ul);
+            content.add(ul);
         }
     }
 
     /**
-     * Get the tree header.
-     *
-     * @return a content tree for the tree header
+     * {@return a new HTML BODY element}
      */
-    protected HtmlTree getTreeHeader() {
+    private HtmlTree getBody() {
         String title = resources.getText("doclet.Window_Class_Hierarchy");
         HtmlTree bodyTree = getBody(getWindowTitle(title));
         bodyContents.setHeader(getHeader(PageMode.TREE));

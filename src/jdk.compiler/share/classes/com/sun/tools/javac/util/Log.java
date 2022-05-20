@@ -90,7 +90,7 @@ public class Log extends AbstractLog {
      * Note that javax.tools.DiagnosticListener (if set) is called later in the
      * diagnostic pipeline.
      */
-    public static abstract class DiagnosticHandler {
+    public abstract static class DiagnosticHandler {
         /**
          * The previously installed diagnostic handler.
          */

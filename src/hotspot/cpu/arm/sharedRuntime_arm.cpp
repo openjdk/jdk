@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,11 +102,11 @@ public:
   };
 
   // all regs but Rthread (R10), FP (R7 or R11), SP and PC
-  // (altFP_7_11 is the one amoung R7 and R11 which is not FP)
+  // (altFP_7_11 is the one among R7 and R11 which is not FP)
 #define SAVED_BASE_REGS (RegisterSet(R0, R6) | RegisterSet(R8, R9) | RegisterSet(R12) | R14 | altFP_7_11)
 
 
-  //  When LR may be live in the nmethod from which we are comming
+  //  When LR may be live in the nmethod from which we are coming
   //  then lr_saved is true, the return address is saved before the
   //  call to save_live_register by the caller and LR contains the
   //  live value.
@@ -750,8 +750,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 int compile_id,
                                                 BasicType* in_sig_bt,
                                                 VMRegPair* in_regs,
-                                                BasicType ret_type,
-                                                address critical_entry) {
+                                                BasicType ret_type) {
   if (method->is_method_handle_intrinsic()) {
     vmIntrinsics::ID iid = method->intrinsic_id();
     intptr_t start = (intptr_t)__ pc();
@@ -777,20 +776,17 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Usage of Rtemp should be OK since scratched by native call
 
-  bool is_static = method->is_static();
+  bool method_is_static = method->is_static();
 
   const int total_in_args = method->size_of_parameters();
-  int total_c_args = total_in_args + 1;
-  if (is_static) {
-    total_c_args++;
-  }
+  int total_c_args = total_in_args + (method_is_static ? 2 : 1);
 
   BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair* out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
 
   int argc = 0;
   out_sig_bt[argc++] = T_ADDRESS;
-  if (is_static) {
+  if (method_is_static) {
     out_sig_bt[argc++] = T_OBJECT;
   }
 
@@ -881,7 +877,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   OopMapSet* oop_maps = new OopMapSet();
   OopMap* map = new OopMap(stack_slots * 2, 0 /* arg_slots*/);
-  const int extra_args = is_static ? 2 : 1;
+  const int extra_args = method_is_static ? 2 : 1;
   int receiver_offset = -1;
   int fp_regs_in_arguments = 0;
 
@@ -904,7 +900,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
         int offset = oop_handle_offset * VMRegImpl::stack_slot_size;
         __ str(src->as_Register(), Address(SP, offset));
         map->set_oop(VMRegImpl::stack2reg(oop_handle_offset));
-        if ((i == 0) && (!is_static)) {
+        if ((i == 0) && (!method_is_static)) {
           receiver_offset = offset;
         }
         oop_handle_offset += VMRegImpl::slots_per_word;
@@ -1116,7 +1112,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Get Klass mirror
   int klass_offset = -1;
-  if (is_static) {
+  if (method_is_static) {
     klass_offset = oop_handle_offset * VMRegImpl::stack_slot_size;
     __ mov_oop(Rtemp, JNIHandles::make_local(method->method_holder()->java_mirror()));
     __ add(c_rarg1, SP, klass_offset);
@@ -1332,7 +1328,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                      vep_offset,
                                      frame_complete,
                                      stack_slots / VMRegImpl::slots_per_word,
-                                     in_ByteSize(is_static ? klass_offset : receiver_offset),
+                                     in_ByteSize(method_is_static ? klass_offset : receiver_offset),
                                      in_ByteSize(lock_slot_offset * VMRegImpl::stack_slot_size),
                                      oop_maps);
 }
@@ -1871,13 +1867,3 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_words, oop_maps, true);
 }
-
-#ifdef COMPILER2
-RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
-                                                int shadow_space_bytes,
-                                                const GrowableArray<VMReg>& input_registers,
-                                                const GrowableArray<VMReg>& output_registers) {
-  Unimplemented();
-  return nullptr;
-}
-#endif

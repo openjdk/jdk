@@ -202,7 +202,7 @@ public class PolicyInformation {
             if (obj instanceof Set) {
                 for (Object obj1 : (Set<?>) obj) {
                     if (!(obj1 instanceof PolicyQualifierInfo)) {
-                        throw new IOException("Attribute value must be a" +
+                        throw new IOException("Attribute value must be a " +
                                     "Set of PolicyQualifierInfo objects.");
                     }
                 }

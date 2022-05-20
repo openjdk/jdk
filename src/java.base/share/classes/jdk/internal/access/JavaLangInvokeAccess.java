@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,14 @@
 
 package jdk.internal.access;
 
-import jdk.internal.invoke.NativeEntryPoint;
+import jdk.internal.foreign.abi.NativeEntryPoint;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Map;
@@ -79,46 +82,45 @@ public interface JavaLangInvokeAccess {
     Map<String, byte[]> generateHolderClasses(Stream<String> traces);
 
     /**
-     * Returns a var handle view of a given memory address.
+     * Returns a var handle view of a given memory segment.
      * Used by {@code jdk.internal.foreign.LayoutPath} and
-     * {@code jdk.incubator.foreign.MemoryHandles}.
+     * {@code java.lang.invoke.MethodHandles}.
      */
-    VarHandle memoryAccessVarHandle(Class<?> carrier, boolean skipAlignmentMaskCheck, long alignmentMask,
-                                    ByteOrder order);
+    VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask, ByteOrder order);
 
     /**
      * Var handle carrier combinator.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
+     * Used by {@code java.lang.invoke.MethodHandles}.
      */
     VarHandle filterValue(VarHandle target, MethodHandle filterToTarget, MethodHandle filterFromTarget);
 
     /**
      * Var handle filter coordinates combinator.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
+     * Used by {@code java.lang.invoke.MethodHandles}.
      */
     VarHandle filterCoordinates(VarHandle target, int pos, MethodHandle... filters);
 
     /**
      * Var handle drop coordinates combinator.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
+     * Used by {@code java.lang.invoke.MethodHandles}.
      */
     VarHandle dropCoordinates(VarHandle target, int pos, Class<?>... valueTypes);
 
     /**
      * Var handle permute coordinates combinator.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
+     * Used by {@code java.lang.invoke.MethodHandles}.
      */
     VarHandle permuteCoordinates(VarHandle target, List<Class<?>> newCoordinates, int... reorder);
 
     /**
      * Var handle collect coordinates combinator.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
+     * Used by {@code java.lang.invoke.MethodHandles}.
      */
     VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle filter);
 
     /**
      * Var handle insert coordinates combinator.
-     * Used by {@code jdk.incubator.foreign.MemoryHandles}.
+     * Used by {@code java.lang.invoke.MethodHandles}.
      */
     VarHandle insertCoordinates(VarHandle target, int pos, Object... values);
 
@@ -128,15 +130,53 @@ public interface JavaLangInvokeAccess {
      * Will allow JIT to intrinsify.
      *
      * @param nep the native entry point
-     * @param fallback the fallback handle
      * @return the native method handle
      */
-    MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback);
+    MethodHandle nativeMethodHandle(NativeEntryPoint nep);
 
     /**
-     * Ensure given method handle is customized
-     *
-     * @param mh the method handle
+     * Produces a method handle unreflecting from a {@code Constructor} with
+     * the trusted lookup
      */
-    void ensureCustomized(MethodHandle mh);
+    MethodHandle unreflectConstructor(Constructor<?> ctor) throws IllegalAccessException;
+
+    /**
+     * Produces a method handle unreflecting from a {@code Field} with
+     * the trusted lookup
+     */
+    MethodHandle unreflectField(Field field, boolean isSetter) throws IllegalAccessException;
+
+    /**
+     * Produces a method handle of a virtual method with the trusted lookup.
+     */
+    MethodHandle findVirtual(Class<?> defc, String name, MethodType type) throws IllegalAccessException;
+
+    /**
+     * Produces a method handle of a static method with the trusted lookup.
+     */
+    MethodHandle findStatic(Class<?> defc, String name, MethodType type) throws IllegalAccessException;
+
+    /**
+     * Returns a method handle of an invoker class injected for core reflection
+     * implementation with the following signature:
+     *     reflect_invoke_V(MethodHandle mh, Object target, Object[] args)
+     *
+     * The invoker class is a hidden class which has the same
+     * defining class loader, runtime package, and protection domain
+     * as the given caller class.
+     */
+    MethodHandle reflectiveInvoker(Class<?> caller);
+
+    /**
+     * Defines a hidden class of the given name and bytes with class data.
+     * The given bytes is trusted.
+     */
+    Lookup defineHiddenClassWithClassData(Lookup caller, String name, byte[] bytes, Object classData, boolean initialize);
+
+    /**
+     * A best-effort method that tries to find any exceptions thrown by the given method handle.
+     * @param handle the handle to check
+     * @return an array of exceptions, or {@code null}.
+     */
+    Class<?>[] exceptionTypes(MethodHandle handle);
 }

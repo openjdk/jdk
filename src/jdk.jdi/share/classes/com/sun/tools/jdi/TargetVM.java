@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@ public class TargetVM implements Runnable {
      * TO DO: The limit numbers below are somewhat arbitrary and should
      * be configurable in the future.
      */
-    static private final int OVERLOADED_QUEUE = 10000;
-    static private final int UNDERLOADED_QUEUE = 100;
+    private static final int OVERLOADED_QUEUE = 10000;
+    private static final int UNDERLOADED_QUEUE = 100;
 
     TargetVM(VirtualMachineImpl vm, Connection connection) {
         this.vm = vm;
@@ -163,7 +163,7 @@ public class TargetVM implements Runnable {
                     // Whoa! a reply without a sender. Problem.
                     // FIX ME! Need to post an error.
 
-                    System.err.println("Recieved reply with no sender!");
+                    System.err.println("Received reply with no sender!");
                     continue;
                 }
                 p2.errorCode = p.errorCode;

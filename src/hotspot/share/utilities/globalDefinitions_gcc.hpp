@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,11 +125,6 @@ inline int g_isnan(double f) { return isnan(f); }
 
 inline int g_isfinite(jfloat  f)                 { return isfinite(f); }
 inline int g_isfinite(jdouble f)                 { return isfinite(f); }
-
-
-// Wide characters
-
-inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 
 
 // Formatting.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,7 +359,9 @@ public class Resolve {
                     ||
                     env.toplevel.packge == c.packge()
                     ||
-                    isInnerSubClass(env.enclClass.sym, c.owner);
+                    isInnerSubClass(env.enclClass.sym, c.owner)
+                    ||
+                    env.info.allowProtectedAccess;
                 break;
         }
         return (checkInner == false || c.type.getEnclosingType() == Type.noType) ?
@@ -1301,7 +1303,7 @@ public class Resolve {
 
                 @Override
                 void skip(JCTree tree) {
-                    result &= false;
+                    result = false;
                 }
 
                 @Override
@@ -1313,9 +1315,9 @@ public class Resolve {
                 @Override
                 public void visitReference(JCMemberReference tree) {
                     if (sRet.hasTag(VOID)) {
-                        result &= true;
+                        // do nothing
                     } else if (tRet.hasTag(VOID)) {
-                        result &= false;
+                        result = false;
                     } else if (tRet.isPrimitive() != sRet.isPrimitive()) {
                         boolean retValIsPrimitive =
                                 tree.refPolyKind == PolyKind.STANDALONE &&
@@ -1335,9 +1337,9 @@ public class Resolve {
                 @Override
                 public void visitLambda(JCLambda tree) {
                     if (sRet.hasTag(VOID)) {
-                        result &= true;
+                        // do nothing
                     } else if (tRet.hasTag(VOID)) {
-                        result &= false;
+                        result = false;
                     } else {
                         List<JCExpression> lambdaResults = lambdaResults(tree);
                         if (!lambdaResults.isEmpty() && unrelatedFunctionalInterfaces(tRet, sRet)) {
@@ -1406,6 +1408,12 @@ public class Resolve {
 
         public JCDiagnostic getDiagnostic() {
             return diagnostic;
+        }
+
+        @Override
+        public Throwable fillInStackTrace() {
+            // This is an internal exception; the stack trace is irrelevant.
+            return this;
         }
     }
 
@@ -2413,7 +2421,7 @@ public class Resolve {
      *                   (a subset of VAL, TYP, PCK).
      */
     Symbol findIdent(DiagnosticPosition pos, Env<AttrContext> env, Name name, KindSelector kind) {
-        return checkRestrictedType(pos, findIdentInternal(env, name, kind), name);
+        return checkNonExistentType(checkRestrictedType(pos, findIdentInternal(env, name, kind), name));
     }
 
     Symbol findIdentInternal(Env<AttrContext> env, Name name, KindSelector kind) {
@@ -2449,7 +2457,7 @@ public class Resolve {
     Symbol findIdentInPackage(DiagnosticPosition pos,
                               Env<AttrContext> env, TypeSymbol pck,
                               Name name, KindSelector kind) {
-        return checkRestrictedType(pos, findIdentInPackageInternal(env, pck, name, kind), name);
+        return checkNonExistentType(checkRestrictedType(pos, findIdentInPackageInternal(env, pck, name, kind), name));
     }
 
     Symbol findIdentInPackageInternal(Env<AttrContext> env, TypeSymbol pck,
@@ -2486,7 +2494,17 @@ public class Resolve {
     Symbol findIdentInType(DiagnosticPosition pos,
                            Env<AttrContext> env, Type site,
                            Name name, KindSelector kind) {
-        return checkRestrictedType(pos, findIdentInTypeInternal(env, site, name, kind), name);
+        return checkNonExistentType(checkRestrictedType(pos, findIdentInTypeInternal(env, site, name, kind), name));
+    }
+
+    private Symbol checkNonExistentType(Symbol symbol) {
+        /*  Guard against returning a type is not on the class path of the current compilation,
+         *  but *was* on the class path of a separate compilation that produced a class file
+         *  that is on the class path of the current compilation. Such a type will fail completion
+         *  but the completion failure may have been silently swallowed (e.g. missing annotation types)
+         *  with an error stub symbol lingering in the symbol tables.
+         */
+        return symbol instanceof ClassSymbol c && c.type.isErroneous() && c.classfile == null ? typeNotFound : symbol;
     }
 
     Symbol findIdentInTypeInternal(Env<AttrContext> env, Type site,
@@ -2942,9 +2960,6 @@ public class Resolve {
                                 sym.kind != WRONG_MTHS) {
                                 sym = super.access(env, pos, location, sym);
                             } else {
-                                final JCDiagnostic details = sym.kind == WRONG_MTH ?
-                                                ((InapplicableSymbolError)sym.baseSymbol()).errCandidate().snd :
-                                                null;
                                 sym = new DiamondError(sym, currentResolutionContext);
                                 sym = accessMethod(sym, pos, site, names.init, true, argtypes, typeargtypes);
                                 env.info.pendingResolutionPhase = currentResolutionContext.step;
@@ -3906,6 +3921,17 @@ public class Resolve {
             }
             return diagArgs;
         }
+    }
+
+    /** check if a type is a subtype of Serializable, if that is available.*/
+    boolean isSerializable(Type t) {
+        try {
+            syms.serializableType.complete();
+        }
+        catch (CompletionFailure e) {
+            return false;
+        }
+        return types.isSubtype(t, syms.serializableType);
     }
 
     /**

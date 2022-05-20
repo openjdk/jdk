@@ -26,10 +26,8 @@
 package sun.print;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.security.AccessController;
@@ -53,6 +51,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.net.URL;
 import java.nio.file.Files;
+
+import sun.awt.util.ThreadGroupUtils;
 
 /*
  * Remind: This class uses solaris commands. We also need a linux
@@ -204,14 +204,18 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         return BSD_LPD;
     }
 
-
+    @SuppressWarnings("removal")
     public PrintServiceLookupProvider() {
         // start the printer listener thread
         if (pollServices) {
-            Thread thr = new Thread(null, new PrinterChangeListener(),
-                                    "PrinterListener", 0, false);
-            thr.setDaemon(true);
-            thr.start();
+            AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
+                Thread thr = new Thread(ThreadGroupUtils.getRootThreadGroup(),
+                                        new PrinterChangeListener(),
+                                        "PrinterListener", 0, false);
+                thr.setContextClassLoader(null);
+                thr.setDaemon(true);
+                return thr;
+            }).start();
             IPPPrintService.debug_println(debugPrefix+"polling turned on");
         }
     }

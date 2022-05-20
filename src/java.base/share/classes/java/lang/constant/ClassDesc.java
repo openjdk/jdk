@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ public sealed interface ClassDesc
      * followed by the field descriptor for the component type.  Examples of
      * valid type descriptor strings include {@code "Ljava/lang/String;"}, {@code "I"},
      * {@code "[I"}, {@code "V"}, {@code "[Ljava/lang/String;"}, etc.
-     * See JVMS 4.3.2 ("Field Descriptors") for more detail.
+     * See JVMS {@jvms 4.3.2 }("Field Descriptors") for more detail.
      *
      * @param descriptor a field descriptor string
      * @return a {@linkplain ClassDesc} describing the desired class
@@ -148,7 +148,8 @@ public sealed interface ClassDesc
      * is described by this {@linkplain ClassDesc}.
      *
      * @return a {@linkplain ClassDesc} describing the array type
-     * @throws IllegalStateException if the resulting {@linkplain ClassDesc} would have an array rank of greater than 255
+     * @throws IllegalStateException if the resulting {@linkplain
+     * ClassDesc} would have an array rank of greater than 255
      * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
     default ClassDesc arrayType() {
@@ -167,14 +168,27 @@ public sealed interface ClassDesc
      *
      * @param rank the rank of the array
      * @return a {@linkplain ClassDesc} describing the array type
-     * @throws IllegalArgumentException if the rank is less than or equal to zero or if the rank of the resulting array type is
+     * @throws IllegalArgumentException if the rank is less than or
+     * equal to zero or if the rank of the resulting array type is
      * greater than 255
      * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
     default ClassDesc arrayType(int rank) {
-        int currentDepth = ConstantUtils.arrayDepth(descriptorString());
-        if (rank <= 0 || currentDepth + rank > ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS)
-            throw new IllegalArgumentException("rank: " + currentDepth + rank);
+        int netRank;
+        if (rank <= 0) {
+            throw new IllegalArgumentException("rank " + rank + " is not a positive value");
+        }
+        try {
+            int currentDepth = ConstantUtils.arrayDepth(descriptorString());
+            netRank = Math.addExact(currentDepth, rank);
+            if (netRank > ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
+                throw new IllegalArgumentException("rank: " + netRank +
+                                                   " exceeds maximum supported dimension of " +
+                                                   ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS);
+            }
+        } catch (ArithmeticException ae) {
+            throw new IllegalArgumentException("Integer overflow in rank computation");
+        }
         return ClassDesc.ofDescriptor("[".repeat(rank) + descriptorString());
     }
 

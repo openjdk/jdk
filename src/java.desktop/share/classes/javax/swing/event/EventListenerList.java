@@ -144,7 +144,7 @@ public class EventListenerList implements Serializable {
      * @param <T> the type of {@code EventListener} to search for
      * @param t the type of {@code EventListener} classes to be returned
      * @return all of the listeners of the specified type.
-     * @exception  ClassCastException if the supplied class
+     * @throws  ClassCastException if the supplied class
      *          is not assignable to EventListener
      *
      * @since 1.3
@@ -283,7 +283,7 @@ public class EventListenerList implements Serializable {
         for (int i = 0; i < lList.length; i+=2) {
             Class<?> t = (Class)lList[i];
             EventListener l = (EventListener)lList[i+1];
-            if ((l!=null) && (l instanceof Serializable)) {
+            if (l instanceof Serializable) {
                 s.writeObject(t.getName());
                 s.writeObject(l);
             }

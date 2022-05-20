@@ -95,7 +95,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
     protected ComboPopup popup;
 
     /**
-     * The Component that the @{code ComboBoxEditor} uses for editing.
+     * The Component that the {@code ComboBoxEditor} uses for editing.
      */
     protected Component editor;
 

@@ -56,7 +56,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleTypeVisitor9
  * @since 14
  */
-@SupportedSourceVersion(RELEASE_18)
+@SupportedSourceVersion(RELEASE_19)
 public class SimpleTypeVisitor14<R, P> extends SimpleTypeVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the

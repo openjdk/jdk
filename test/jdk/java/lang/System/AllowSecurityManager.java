@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8191053
+ * @bug 8191053 8270380
  * @summary Test that the allow/disallow options of the java.security.manager
  *          system property work correctly
  * @run main/othervm AllowSecurityManager
@@ -35,7 +35,7 @@ public class AllowSecurityManager {
 
     public static void main(String args[]) throws Exception {
         String prop = System.getProperty("java.security.manager");
-        boolean disallow = "disallow".equals(prop);
+        boolean disallow = !"allow".equals(prop);
         try {
             System.setSecurityManager(new SecurityManager());
             if (disallow) {

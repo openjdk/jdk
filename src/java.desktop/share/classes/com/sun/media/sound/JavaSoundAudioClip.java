@@ -283,6 +283,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
     }
 
     @Override
+    @SuppressWarnings("removal")
     protected void finalize() {
 
         if (clip != null) {

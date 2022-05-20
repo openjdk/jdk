@@ -75,7 +75,7 @@ public class CodePointInputMethodDescriptor implements InputMethodDescriptor {
      */
     public Locale[] getAvailableLocales() {
         Locale[] locales = {
-            new Locale("", "", ""), };
+            Locale.ROOT, };
         return locales;
     }
 

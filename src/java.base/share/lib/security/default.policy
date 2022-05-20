@@ -21,6 +21,8 @@ grant codeBase "jrt:/java.net.http" {
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
     permission java.lang.RuntimePermission "modifyThread";
     permission java.net.SocketPermission "*","connect,resolve";
+    // required if the HTTPClient is configured to use a local bind address
+    permission java.net.SocketPermission "localhost:*","listen,resolve";
     permission java.net.URLPermission "http:*","*:*";
     permission java.net.URLPermission "https:*","*:*";
     permission java.net.URLPermission "ws:*","*:*";
@@ -111,6 +113,8 @@ grant codeBase "jrt:/jdk.accessibility" {
 grant codeBase "jrt:/jdk.charsets" {
     permission java.util.PropertyPermission "os.name", "read";
     permission java.lang.RuntimePermission "charsetProvider";
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.jdk.internal.access";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.jdk.internal.misc";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.cs";

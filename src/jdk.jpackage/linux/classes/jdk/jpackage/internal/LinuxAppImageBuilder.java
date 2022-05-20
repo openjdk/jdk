@@ -101,7 +101,7 @@ public class LinuxAppImageBuilder extends AbstractAppImageBuilder {
     private void createLauncherLib() throws IOException {
         Path path = appLayout.pathGroup().getPath(
                 ApplicationLayout.PathRole.LINUX_APPLAUNCHER_LIB);
-        try (InputStream resource = getResourceAsStream("libjpackageapplauncher.so")) {
+        try (InputStream resource = getResourceAsStream("libjpackageapplauncheraux.so")) {
             writeEntry(resource, path);
         }
 

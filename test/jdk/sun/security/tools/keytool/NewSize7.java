@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 6561126
+ * @bug 6561126 8267319
  * @summary keytool should use larger default keysize for keypairs
- * @modules java.base/sun.security.tools.keytool
- * @compile -XDignore.symbol.file NewSize7.java
+ * @modules java.base/sun.security.util
+ *          java.base/sun.security.tools.keytool
  * @run main NewSize7
  */
 
@@ -37,6 +37,7 @@ import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
+import sun.security.util.SecurityProviderConstants;
 
 public class NewSize7 {
     public static void main(String[] args) throws Exception {
@@ -52,11 +53,11 @@ public class NewSize7 {
         }
         Files.delete(Paths.get(FILE));
         RSAPublicKey r = (RSAPublicKey)ks.getCertificate("a").getPublicKey();
-        if (r.getModulus().bitLength() != 2048) {
+        if (r.getModulus().bitLength() != 3072) {
             throw new Exception("Bad keysize");
         }
         X509Certificate x = (X509Certificate)ks.getCertificate("a");
-        if (!x.getSigAlgName().equals("SHA256withRSA")) {
+        if (!x.getSigAlgName().equals("SHA384withRSA")) {
             throw new Exception("Bad sigalg");
         }
     }

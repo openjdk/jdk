@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
@@ -75,7 +75,7 @@ public class ToolGuide implements Taglet {
      */
     @Override
     public Set<Location> getAllowedLocations() {
-        return EnumSet.of(MODULE, PACKAGE);
+        return EnumSet.of(MODULE, PACKAGE, TYPE);
     }
 
     @Override
@@ -151,6 +151,12 @@ public class ToolGuide implements Taglet {
                 return pe.getEnclosingElement() != null
                         ? "../" + pkgPart
                         : pkgPart;
+            case CLASS:
+                TypeElement te = (TypeElement)elem;
+                return te.getQualifiedName()
+                        .toString()
+                        .replace('.', '/')
+                        .replaceAll("[^/]+", "..");
 
             default:
                 throw new IllegalArgumentException(elem.getKind().toString());

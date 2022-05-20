@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/stringUtils.hpp"
+
+#include <string.h>
 
 int StringUtils::replace_no_expand(char* string, const char* from, const char* to) {
   int replace_count = 0;

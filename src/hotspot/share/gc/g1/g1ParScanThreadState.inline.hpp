@@ -111,9 +111,9 @@ template <class T> void G1ParScanThreadState::write_ref_field_post(T* p, oop obj
   // References to the current collection set are references to objects that failed
   // evacuation. Currently these regions are always relabelled as old without
   // remembered sets, so skip them.
-  assert(dest_attr.is_in_cset() == (obj->is_forwarded() && obj->forwardee() == obj),
-         "Only evac-failed objects must be in the collection set here but " PTR_FORMAT " is not", p2i(obj));
   if (dest_attr.is_in_cset()) {
+    assert(obj->is_forwarded(), "evac-failed but not forwarded: " PTR_FORMAT, p2i(obj));
+    assert(obj->forwardee() == obj, "evac-failed but not self-forwarded: " PTR_FORMAT, p2i(obj));
     return;
   }
   enqueue_card_if_tracked(dest_attr, p, obj);
@@ -128,13 +128,13 @@ template <class T> void G1ParScanThreadState::enqueue_card_if_tracked(G1HeapRegi
 
 #ifdef ASSERT
   HeapRegion* const hr_obj = _g1h->heap_region_containing(o);
-  assert(region_attr.needs_remset_update() == hr_obj->rem_set()->is_tracked(),
+  assert(region_attr.remset_is_tracked() == hr_obj->rem_set()->is_tracked(),
          "State flag indicating remset tracking disagrees (%s) with actual remembered set (%s) for region %u",
-         BOOL_TO_STR(region_attr.needs_remset_update()),
+         BOOL_TO_STR(region_attr.remset_is_tracked()),
          BOOL_TO_STR(hr_obj->rem_set()->is_tracked()),
          hr_obj->hrm_index());
 #endif
-  if (!region_attr.needs_remset_update()) {
+  if (!region_attr.remset_is_tracked()) {
     return;
   }
   size_t card_index = ct()->index_for(p);

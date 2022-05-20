@@ -24,11 +24,13 @@ package org.openjdk.bench.java.lang.reflect;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -43,9 +45,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * Benchmark measuring field access and method invocation using different conditions:
  * <ul>
- *     <li>Const - Method/Field is constant-foldable</li>
- *     <li>Var - Method/Field is single-instance but not constant-foldable</li>
- *     <li>Poly - multiple Method/Field instances used at single call-site</li>
+ *     <li>Const - Constructor/Method/Field is constant-foldable</li>
+ *     <li>Var - Constructor/Method/Field is single-instance but not constant-foldable</li>
+ *     <li>Poly - multiple Constructor/Method/Field instances used at single call-site</li>
  * </ul>
  */
 @BenchmarkMode(Mode.AverageTime)
@@ -78,8 +80,8 @@ public class ReflectionSpeedBenchmark {
 
     static {
         try {
-            staticMethodConst = staticMethodVar = ReflectionSpeedBenchmark.class.getDeclaredMethod("sumStatic", int.class, int.class);
-            instanceMethodConst = instanceMethodVar = ReflectionSpeedBenchmark.class.getDeclaredMethod("sumInstance", int.class, int.class);
+            staticMethodConst = staticMethodVar = ReflectionSpeedBenchmark.class.getDeclaredMethod("sumStatic", Integer.class, Integer.class);
+            instanceMethodConst = instanceMethodVar = ReflectionSpeedBenchmark.class.getDeclaredMethod("sumInstance", Integer.class, Integer.class);
 
             staticFieldConst = staticFieldVar = ReflectionSpeedBenchmark.class.getDeclaredField("staticField");
             instanceFieldConst = instanceFieldVar = ReflectionSpeedBenchmark.class.getDeclaredField("instanceField");
@@ -268,7 +270,7 @@ public class ReflectionSpeedBenchmark {
     }
 
     private int rnd = 0;
-    private int a, b;
+    private Integer a, b;
     private Object o;
     private NestedInstance instance;
 
@@ -276,58 +278,126 @@ public class ReflectionSpeedBenchmark {
         return rnd += 7;
     }
 
+    // @Param({"true", "false"})
+    private boolean polluteProfile = true;
+
     @Setup(Level.Iteration)
     public void setup() {
         a = nextRnd();
         b = nextRnd();
         o = new Object();
         instance = new NestedInstance();
+
+        if (polluteProfile) {
+            try {
+                Constructor ctor = ReflectionSpeedBenchmark.class.getDeclaredConstructor(Integer.class);
+                Method test1 = ReflectionSpeedBenchmark.class.getDeclaredMethod("test1", Object.class);
+                Method test2 = ReflectionSpeedBenchmark.class.getDeclaredMethod("test2", Object.class, Object.class);
+                Field f = ReflectionSpeedBenchmark.class.getDeclaredField("testField");
+                for (int i = 0; i < 20_000; i++) {
+                    invokeHelper2(staticMethodVar, null, a, b);
+                    invokeHelper2(instanceMethodVar, this, a, b);
+                    invokeHelper2(test2, null, a, b);
+                    invokeHelper1(staticMethodsPoly[i & (staticMethodsPoly.length - 1)], instance, o);
+                    invokeHelper1(instanceMethodsPoly[i & (instanceMethodsPoly.length - 1)], instance, o);
+                    invokeHelper1(test1, null, a);
+
+                    newInstanceHelper(constructorVar, constructorArgs);
+                    int index = i & (constructorsPoly.length - 1);
+                    newInstanceHelper(constructorsPoly[index], constructorsArgsPoly[index]);
+                    newInstanceHelper(ctor, new Object[]{a});
+
+                    getIntHelper(staticFieldVar, null);
+                    getIntHelper(instanceFieldVar, this);
+                    getDoubleHelper(f, null);
+                    getHelper(staticFieldsPoly[i & (staticFieldsPoly.length - 1)], null);
+                    getHelper(instanceFieldsPoly[i & (instanceFieldsPoly.length - 1)], instance);
+                }
+            } catch (ReflectiveOperationException e) {
+                 throw new InternalError(e);
+            }
+        }
     }
 
-    public static int sumStatic(int a, int b) {
-        return a + b;
+    public static Integer sumStatic(Integer a, Integer b) {
+        return a; // a + b;
     }
 
-    public int sumInstance(int a, int b) {
-        return a + b;
+    public Integer sumInstance(Integer a, Integer b) {
+        return a; // a + b;
     }
 
     public static int staticField;
     public int instanceField;
+    public ReflectionSpeedBenchmark() {}
+
+    // used for polluting the profile
+    private ReflectionSpeedBenchmark(Integer a) {}
+    static void test1(Object a) {}
+    static void test2(Object a, Object b) {}
+    static double testField;
 
     // methods
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    static Object invokeHelper1(Method m, Object recv, Object arg1) throws InvocationTargetException, IllegalAccessException {
+        return m.invoke(recv, arg1);
+    }
+
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    static Object invokeHelper2(Method m, Object recv, Object arg1, Object arg2) throws InvocationTargetException, IllegalAccessException {
+        return m.invoke(recv, arg1, arg2);
+    }
+
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    static Object newInstanceHelper(Constructor ctor, Object[] args) throws InvocationTargetException, IllegalAccessException, InstantiationException {
+        return ctor.newInstance(args);
+    }
+
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    static int getIntHelper(Field f, Object recv) throws IllegalAccessException {
+        return f.getInt(recv);
+    }
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    static double getDoubleHelper(Field f, Object recv) throws IllegalAccessException {
+        return f.getDouble(recv);
+    }
+
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    static Object getHelper(Field f, Object recv) throws IllegalAccessException {
+        return f.get(recv);
+    }
 
     @Benchmark
-    public int staticMethodConst() {
+    public Object staticMethodConst() {
         try {
-            return (Integer) staticMethodConst.invoke(null, a, b);
+            return invokeHelper2(staticMethodConst, null, a, b);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new AssertionError(e);
         }
     }
 
     @Benchmark
-    public int instanceMethodConst() {
+    public Object instanceMethodConst() {
         try {
-            return (Integer) instanceMethodConst.invoke(this, a, b);
+            return invokeHelper2(instanceMethodConst, this, a, b);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new AssertionError(e);
         }
     }
 
     @Benchmark
-    public int staticMethodVar() {
+    public Object staticMethodVar() {
         try {
-            return (Integer) staticMethodVar.invoke(null, a, b);
+            return invokeHelper2(staticMethodVar, null, a, b);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new AssertionError(e);
         }
     }
 
     @Benchmark
-    public int instanceMethodVar() {
+    public Object instanceMethodVar() {
         try {
-            return (Integer) instanceMethodVar.invoke(this, a, b);
+            return invokeHelper2(instanceMethodVar, this, a, b);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new AssertionError(e);
         }
@@ -336,7 +406,7 @@ public class ReflectionSpeedBenchmark {
     @Benchmark
     public Object staticMethodPoly() {
         try {
-            return staticMethodsPoly[nextRnd() & (staticMethodsPoly.length - 1)].invoke(null, o);
+            return invokeHelper1(staticMethodsPoly[nextRnd() & (staticMethodsPoly.length - 1)], null, o);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new AssertionError(e);
         }
@@ -345,7 +415,7 @@ public class ReflectionSpeedBenchmark {
     @Benchmark
     public Object instanceMethodPoly() {
         try {
-            return instanceMethodsPoly[nextRnd() & (instanceMethodsPoly.length - 1)].invoke(instance, o);
+            return invokeHelper1(instanceMethodsPoly[nextRnd() & (instanceMethodsPoly.length - 1)], instance, o);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new AssertionError(e);
         }
@@ -356,7 +426,7 @@ public class ReflectionSpeedBenchmark {
     @Benchmark
     public int staticFieldConst() {
         try {
-            return staticFieldConst.getInt(null);
+            return getIntHelper(staticFieldConst, null);
         } catch (IllegalAccessException e) {
             throw new AssertionError(e);
         }
@@ -365,7 +435,7 @@ public class ReflectionSpeedBenchmark {
     @Benchmark
     public int instanceFieldConst() {
         try {
-            return instanceFieldConst.getInt(this);
+            return getIntHelper(instanceFieldConst, this);
         } catch (IllegalAccessException e) {
             throw new AssertionError(e);
         }
@@ -374,7 +444,7 @@ public class ReflectionSpeedBenchmark {
     @Benchmark
     public int staticFieldVar() {
         try {
-            return staticFieldVar.getInt(null);
+            return getIntHelper(staticFieldVar, null);
         } catch (IllegalAccessException e) {
             throw new AssertionError(e);
         }
@@ -383,7 +453,7 @@ public class ReflectionSpeedBenchmark {
     @Benchmark
     public int instanceFieldVar() {
         try {
-            return instanceFieldVar.getInt(this);
+            return getIntHelper(instanceFieldVar, this);
         } catch (IllegalAccessException e) {
             throw new AssertionError(e);
         }
@@ -392,7 +462,7 @@ public class ReflectionSpeedBenchmark {
     @Benchmark
     public Object staticFieldPoly() {
         try {
-            return staticFieldsPoly[nextRnd() & (staticFieldsPoly.length - 1)].get(null);
+            return getHelper(staticFieldsPoly[nextRnd() & (staticFieldsPoly.length - 1)], null);
         } catch (IllegalAccessException e) {
             throw new AssertionError(e);
         }
@@ -401,7 +471,7 @@ public class ReflectionSpeedBenchmark {
     @Benchmark
     public Object instanceFieldPoly() {
         try {
-            return instanceFieldsPoly[nextRnd() & (instanceFieldsPoly.length - 1)].get(instance);
+            return getHelper(instanceFieldsPoly[nextRnd() & (instanceFieldsPoly.length - 1)], instance);
         } catch (IllegalAccessException e) {
             throw new AssertionError(e);
         }
@@ -412,7 +482,7 @@ public class ReflectionSpeedBenchmark {
     @Benchmark
     public Object constructorConst() {
         try {
-            return constructorConst.newInstance(constructorArgs);
+            return newInstanceHelper(constructorConst, constructorArgs);
         } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);
         }
@@ -421,7 +491,7 @@ public class ReflectionSpeedBenchmark {
     @Benchmark
     public Object constructorVar() {
         try {
-            return constructorVar.newInstance(constructorArgs);
+            return newInstanceHelper(constructorVar, constructorArgs);
         } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);
         }
@@ -431,7 +501,7 @@ public class ReflectionSpeedBenchmark {
     public Object constructorPoly() {
         try {
             int i = nextRnd() & (constructorsPoly.length - 1);
-            return constructorsPoly[i].newInstance(constructorsArgsPoly[i]);
+            return newInstanceHelper(constructorsPoly[i], constructorsArgsPoly[i]);
         } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);
         }

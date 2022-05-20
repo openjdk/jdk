@@ -27,7 +27,7 @@
 # This file handles detection of the Boot JDK. The Boot JDK detection
 # process has been developed as a response to solve a complex real-world
 # problem. Initially, it was simple, but it has grown as platform after
-# platform, idiosyncracy after idiosyncracy has been supported.
+# platform, idiosyncrasy after idiosyncrasy has been supported.
 #
 # The basic idea is this:
 # 1) You need an acceptable *) JDK to use as a Boot JDK
@@ -378,6 +378,16 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAR, jar)
 
   # Finally, set some other options...
+
+  # Determine if the boot jdk jar supports the --date option
+  if $JAR --help 2>&1 | $GREP -q "\-\-date=TIMESTAMP"; then
+    BOOT_JDK_JAR_SUPPORTS_DATE=true
+  else
+    BOOT_JDK_JAR_SUPPORTS_DATE=false
+  fi
+  AC_MSG_CHECKING([if Boot JDK jar supports --date=TIMESTAMP])
+  AC_MSG_RESULT([$BOOT_JDK_JAR_SUPPORTS_DATE])
+  AC_SUBST(BOOT_JDK_JAR_SUPPORTS_DATE)
 
   # When compiling code to be executed by the Boot JDK, force compatibility with the
   # oldest supported bootjdk.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ seconds_until(int inputIsUTC, TimeStamp *time)
 }
 
 static void
-show_time(char* label, TimeStamp* ts)
+show_time(const char* label, TimeStamp* ts)
 {
     if (trace) {
         SYSTEMTIME stLocal;
@@ -286,7 +286,7 @@ get_full_name(WCHAR* input)
     }
 
     // Always use the default domain
-    WCHAR* realm = _wgetenv(L"USERDNSDOMAIN");
+    const WCHAR* realm = _wgetenv(L"USERDNSDOMAIN");
     if (realm == NULL) {
         realm = L"";
     }
@@ -653,7 +653,7 @@ gss_acquire_cred(OM_uint32 *minor_status,
         }
         ss = AcquireCredentialsHandle(
                 NULL,
-                L"Kerberos",
+                (LPWSTR)L"Kerberos",
                 cred_usage == 0 ? SECPKG_CRED_BOTH :
                     (cred_usage == 1 ? SECPKG_CRED_OUTBOUND : SECPKG_CRED_INBOUND),
                 NULL,
@@ -683,7 +683,7 @@ gss_acquire_cred(OM_uint32 *minor_status,
         auth.PackageListLength = 8;
         ss = AcquireCredentialsHandle(
                 NULL,
-                L"Negotiate",
+                (LPWSTR)L"Negotiate",
                 cred_usage == 0 ? SECPKG_CRED_BOTH :
                     (cred_usage == 1 ? SECPKG_CRED_OUTBOUND : SECPKG_CRED_INBOUND),
                 NULL,
@@ -945,7 +945,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
             auth.PackageListLength = 8;
             ss = AcquireCredentialsHandle(
                     NULL,
-                    isSPNEGO ? L"Negotiate" : L"Kerberos",
+                    (LPWSTR)(isSPNEGO ? L"Negotiate" : L"Kerberos"),
                     SECPKG_CRED_OUTBOUND,
                     NULL,
                     isSPNEGO ? &auth : NULL,
@@ -1043,6 +1043,10 @@ gss_accept_sec_context(OM_uint32 *minor_status,
 {
     PP(">>>> Calling UNIMPLEMENTED gss_accept_sec_context...");
     PP("gss_accept_sec_context is not supported in this initiator-only library");
+    if (output_token) {
+        output_token->length = 0;
+        output_token->value = NULL;
+    }
     return GSS_S_FAILURE;
 }
 

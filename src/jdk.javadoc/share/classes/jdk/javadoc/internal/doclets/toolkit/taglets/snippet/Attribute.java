@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,14 +52,8 @@ import java.util.Objects;
  */
 /**
  * A markup attribute.
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own risk.
- * This code and its internal interfaces are subject to change or
- * deletion without notice.</b>
  */
-// TODO: uncomment /* sealed */ when minimum boot JDK version >= 17
-public /* sealed */ abstract class Attribute {
+public abstract class Attribute {
 
     private final String name;
 
@@ -83,7 +77,7 @@ public /* sealed */ abstract class Attribute {
      * SinglyQuoted or Unquoted to form a (sealed) hierarchy. In that case,
      * `Valued` should become abstract similarly to `Attribute`.
      */
-    final static class Valued extends Attribute {
+    static final class Valued extends Attribute {
 
         private final String value;
 
@@ -104,7 +98,7 @@ public /* sealed */ abstract class Attribute {
         }
     }
 
-    final static class Valueless extends Attribute {
+    static final class Valueless extends Attribute {
 
         Valueless(String name, int nameStartPosition) {
             super(name, nameStartPosition);

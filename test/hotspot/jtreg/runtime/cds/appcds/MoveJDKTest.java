@@ -47,37 +47,39 @@ public class MoveJDKTest {
     public static void main(String[] args) throws Exception {
         String java_home_src = System.getProperty("java.home");
         String java_home_dst = CDSTestUtils.getOutputDir() + File.separator + "moved_jdk";
+        String homeJava = java_home_src + File.separator + "bin" + File.separator + "java";
+        String dstJava  = java_home_dst + File.separator + "bin" + File.separator + "java";
 
         TestCommon.startNewArchiveName();
         String jsaFile = TestCommon.getCurrentArchiveName();
         String jsaOpt = "-XX:SharedArchiveFile=" + jsaFile;
         {
-            ProcessBuilder pb = makeBuilder(java_home_src + "/bin/java", "-Xshare:dump", jsaOpt);
+            ProcessBuilder pb = CDSTestUtils.makeBuilder(homeJava, "-Xshare:dump", jsaOpt);
             TestCommon.executeAndLog(pb, "dump")
                       .shouldHaveExitValue(0);
         }
         {
-            ProcessBuilder pb = makeBuilder(java_home_src + "/bin/java",
-                                            "-Xshare:auto",
-                                            jsaOpt,
-                                            "-Xlog:class+path=info",
-                                            "-version");
+            ProcessBuilder pb = CDSTestUtils.makeBuilder(homeJava,
+                                                         "-Xshare:auto",
+                                                         jsaOpt,
+                                                         "-Xlog:class+path=info",
+                                                         "-version");
             OutputAnalyzer out = TestCommon.executeAndLog(pb, "exec-src");
             out.shouldHaveExitValue(0);
             out.shouldNotContain("shared class paths mismatch");
             out.shouldNotContain("BOOT classpath mismatch");
         }
 
-        clone(new File(java_home_src), new File(java_home_dst));
+        CDSTestUtils.clone(new File(java_home_src), new File(java_home_dst));
         System.out.println("============== Cloned JDK at " + java_home_dst);
 
         // Test runtime with cloned JDK
         {
-            ProcessBuilder pb = makeBuilder(java_home_dst + "/bin/java",
-                                            "-Xshare:auto",
-                                            jsaOpt,
-                                            "-Xlog:class+path=info",
-                                            "-version");
+            ProcessBuilder pb = CDSTestUtils.makeBuilder(dstJava,
+                                                         "-Xshare:auto",
+                                                         jsaOpt,
+                                                         "-Xlog:class+path=info",
+                                                         "-version");
             OutputAnalyzer out = TestCommon.executeAndLog(pb, "exec-dst");
             out.shouldHaveExitValue(0);
             out.shouldNotContain("shared class paths mismatch");
@@ -89,21 +91,21 @@ public class MoveJDKTest {
         String fake_modules = copyFakeModulesFromHelloJar();
         String dumptimeBootAppendOpt = "-Xbootclasspath/a:" + fake_modules;
         {
-            ProcessBuilder pb = makeBuilder(java_home_src + "/bin/java",
-                                            "-Xshare:dump",
-                                            dumptimeBootAppendOpt,
-                                            jsaOpt);
+            ProcessBuilder pb = CDSTestUtils.makeBuilder(homeJava,
+                                                         "-Xshare:dump",
+                                                         dumptimeBootAppendOpt,
+                                                         jsaOpt);
             TestCommon.executeAndLog(pb, "dump")
                       .shouldHaveExitValue(0);
         }
         {
             String runtimeBootAppendOpt = dumptimeBootAppendOpt + System.getProperty("path.separator") + helloJar;
-            ProcessBuilder pb = makeBuilder(java_home_dst + "/bin/java",
-                                            "-Xshare:auto",
-                                            runtimeBootAppendOpt,
-                                            jsaOpt,
-                                            "-Xlog:class+path=info",
-                                            "-version");
+            ProcessBuilder pb = CDSTestUtils.makeBuilder(dstJava,
+                                                         "-Xshare:auto",
+                                                         runtimeBootAppendOpt,
+                                                         jsaOpt,
+                                                         "-Xlog:class+path=info",
+                                                         "-version");
             OutputAnalyzer out = TestCommon.executeAndLog(pb, "exec-dst");
             out.shouldHaveExitValue(0);
             out.shouldNotContain("shared class paths mismatch");
@@ -111,76 +113,15 @@ public class MoveJDKTest {
         }
 
         // Test with no modules image in the <java home>/lib directory
-        renameModulesFile(java_home_dst);
+        String locDir = java_home_dst + File.separator + "lib";
+        CDSTestUtils.rename(new File(locDir + File.separator + "modules"),
+                            new File(locDir + File.separator + "orig-modules"));
         {
-            ProcessBuilder pb = makeBuilder(java_home_dst + "/bin/java",
-                                            "-version");
+            ProcessBuilder pb = CDSTestUtils.makeBuilder(dstJava, "-version");
             OutputAnalyzer out = TestCommon.executeAndLog(pb, "exec-missing-modules");
             out.shouldHaveExitValue(1);
             out.shouldContain("Failed setting boot class path.");
         }
-    }
-
-    // Do a cheap clone of the JDK. Most files can be sym-linked. However, $JAVA_HOME/bin/java and $JAVA_HOME/lib/.../libjvm.so"
-    // must be copied, because the java.home property is derived from the canonicalized paths of these 2 files.
-    static void clone(File src, File dst) throws Exception {
-        if (dst.exists()) {
-            if (!dst.isDirectory()) {
-                throw new RuntimeException("Not a directory :" + dst);
-            }
-        } else {
-            if (!dst.mkdir()) {
-                throw new RuntimeException("Cannot create directory: " + dst);
-            }
-        }
-        final String jvmLib = System.mapLibraryName("jvm");
-        for (String child : src.list()) {
-            if (child.equals(".") || child.equals("..")) {
-                continue;
-            }
-
-            File child_src = new File(src, child);
-            File child_dst = new File(dst, child);
-            if (child_dst.exists()) {
-                throw new RuntimeException("Already exists: " + child_dst);
-            }
-            if (child_src.isFile()) {
-                if (child.equals(jvmLib) || child.equals("java")) {
-                    Files.copy(child_src.toPath(), /* copy data to -> */ child_dst.toPath());
-                } else {
-                    Files.createSymbolicLink(child_dst.toPath(),  /* link to -> */ child_src.toPath());
-                }
-            } else {
-                clone(child_src, child_dst);
-            }
-        }
-    }
-
-    static void renameModulesFile(String javaHome) throws Exception {
-        String modulesDir = javaHome + File.separator + "lib";
-        File origModules = new File(modulesDir, "modules");
-        if (!origModules.exists()) {
-            throw new RuntimeException("modules file not found");
-        }
-
-        File renamedModules = new File(modulesDir, "orig_modules");
-        if (renamedModules.exists()) {
-            throw new RuntimeException("found orig_modules unexpectedly");
-        }
-
-        boolean success = origModules.renameTo(renamedModules);
-        if (!success) {
-            throw new RuntimeException("rename modules file failed");
-        }
-    }
-
-    static ProcessBuilder makeBuilder(String... args) throws Exception {
-        System.out.print("[");
-        for (String s : args) {
-            System.out.print(" " + s);
-        }
-        System.out.println(" ]");
-        return new ProcessBuilder(args);
     }
 
     private static String copyFakeModulesFromHelloJar() throws Exception {
