@@ -79,7 +79,7 @@ inline HeapWord* HeapRegion::par_allocate_impl(size_t min_word_size,
   } while (true);
 }
 
-inline HeapWord* HeapRegion::block_start(const void* p) {
+inline HeapWord* HeapRegion::block_start(void* const p) {
   return _bot_part.block_start(p);
 }
 
@@ -102,7 +102,7 @@ inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* c
   return obj_is_dead;
 }
 
-inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
+inline bool HeapRegion::block_is_obj(HeapWord* const p) const {
   assert(p >= bottom() && p < top(), "precondition");
   assert(!is_continues_humongous(), "p must point to block-start");
   // When class unloading is enabled it is not safe to only consider top() to conclude if the
@@ -118,7 +118,7 @@ inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
   return true;
 }
 
-inline size_t HeapRegion::block_size_using_bitmap(const HeapWord* addr, const G1CMBitMap* const prev_bitmap) const {
+inline size_t HeapRegion::block_size_using_bitmap(HeapWord* const addr, const G1CMBitMap* const prev_bitmap) const {
   assert(ClassUnloading,
          "All blocks should be objects if class unloading isn't used, so this method should not be called. "
          "HR: [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ") "
@@ -140,7 +140,7 @@ inline bool HeapRegion::is_obj_dead(const oop obj, const G1CMBitMap* const prev_
          !is_closed_archive();
 }
 
-inline size_t HeapRegion::block_size(const HeapWord *addr) const {
+inline size_t HeapRegion::block_size(HeapWord* const addr) const {
   assert(addr < top(), "precondition");
 
   if (block_is_obj(addr)) {

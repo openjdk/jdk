@@ -101,7 +101,7 @@ public:
     assert(is_in(pre_dummy_top) && pre_dummy_top <= top(), "pre-condition");
     _pre_dummy_top = pre_dummy_top;
   }
-  HeapWord* pre_dummy_top() { return (_pre_dummy_top == NULL) ? top() : _pre_dummy_top; }
+  HeapWord* pre_dummy_top() const { return (_pre_dummy_top == NULL) ? top() : _pre_dummy_top; }
   void reset_pre_dummy_top() { _pre_dummy_top = NULL; }
 
   // Returns true iff the given the heap  region contains the
@@ -117,7 +117,7 @@ public:
   // given address.
   bool is_in_reserved(const void* p) const { return _bottom <= p && p < _end; }
 
-  size_t capacity()     const { return byte_size(bottom(), end()); }
+  size_t capacity() const { return byte_size(bottom(), end()); }
   size_t used() const { return byte_size(bottom(), top()); }
   size_t free() const { return byte_size(top(), end()); }
 
@@ -129,8 +129,6 @@ private:
   void reset_after_full_gc_common();
 
   void clear(bool mangle_space);
-
-  HeapWord* block_start_const(const void* p) const;
 
   void mangle_unused_area() PRODUCT_RETURN;
 
@@ -147,7 +145,7 @@ private:
   inline HeapWord* par_allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
 
 public:
-  HeapWord* block_start(const void* p);
+  HeapWord* block_start(void* const p);
 
   void object_iterate(ObjectClosure* blk);
 
@@ -175,7 +173,7 @@ public:
   void reset_skip_compacting_after_full_gc();
 
   // All allocated blocks are occupied by objects in a HeapRegion
-  bool block_is_obj(const HeapWord* p) const;
+  bool block_is_obj(HeapWord* const p) const;
 
   // Returns whether the given object is dead based on TAMS and bitmap.
   // An object is dead iff a) it was not allocated since the last mark (>TAMS), b) it
@@ -184,7 +182,7 @@ public:
 
   // Returns the object size for all valid block starts
   // and the amount of unallocated words if called on top()
-  size_t block_size(const HeapWord* p) const;
+  size_t block_size(HeapWord* const p) const;
 
   // Scans through the region using the bitmap to determine what
   // objects to call size_t ApplyToMarkedClosure::apply(oop) for.
@@ -276,7 +274,7 @@ private:
 
   // Returns the block size of the given (dead, potentially having its class unloaded) object
   // starting at p extending to at most the prev TAMS using the given mark bitmap.
-  inline size_t block_size_using_bitmap(const HeapWord* p, const G1CMBitMap* const prev_bitmap) const;
+  inline size_t block_size_using_bitmap(HeapWord* const p, const G1CMBitMap* const prev_bitmap) const;
 public:
   HeapRegion(uint hrm_index,
              G1BlockOffsetTable* bot,
