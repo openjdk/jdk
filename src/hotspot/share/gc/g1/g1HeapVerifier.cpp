@@ -490,7 +490,7 @@ void G1HeapVerifier::verify(VerifyOption vo) {
 
   log_debug(gc, verify)("HeapRegions");
 
-  uint num_workers = GCParallelVerificationEnabled ? _g1h->workers()->active_workers() : 1u;
+  uint num_workers = UseGCParallelVerification ? _g1h->workers()->active_workers() : 1u;
   G1VerifyTask task(_g1h, vo);
   _g1h->workers()->run_task(&task, num_workers);
   if (task.failures()) {

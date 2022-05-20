@@ -538,7 +538,7 @@
           "dictionary, classloader_data_graph, metaspace, jni_handles, "    \
           "codecache_oops, resolved_method_table, stringdedup")             \
                                                                             \
-  product(bool, GCParallelVerificationEnabled, true, DIAGNOSTIC,            \
+  product(bool, UseGCParallelVerification, true, DIAGNOSTIC,                \
           "Enable parallel memory system verification")                     \
                                                                             \
   product(bool, DeferInitialCardMark, false, DIAGNOSTIC,                    \
