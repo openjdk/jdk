@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,6 +240,13 @@ private:
       case ShenandoahVerifier::_verify_forwarded_none: {
         check(ShenandoahAsserts::_safe_all, obj, (obj == fwd),
                "Should not be forwarded");
+        break;
+      }
+      case ShenandoahVerifier::_verify_forwarded_none_except_cset : {
+        if (!_heap->in_collection_set(obj)) {
+          check(ShenandoahAsserts::_safe_all, obj, (obj == fwd),
+                "Should not be forwarded");
+        }
         break;
       }
       case ShenandoahVerifier::_verify_forwarded_allow: {
@@ -866,10 +873,22 @@ void ShenandoahVerifier::verify_before_updaterefs() {
 void ShenandoahVerifier::verify_after_updaterefs() {
   verify_at_safepoint(
           "After Updating References",
+          _verify_forwarded_none_except_cset, // no forwarded references outside of cset
+          _verify_marked_complete,            // bitmaps might be stale, but alloc-after-mark should be well
+          _verify_cset_disable,               // verify later
+          _verify_liveness_disable,           // no reliable liveness data anymore
+          _verify_regions_disable,            // verify later
+          _verify_gcstate_stable              // update refs had cleaned up forwarded objects
+  );
+}
+
+void ShenandoahVerifier::verify_no_cset_after_updaterefs() {
+  verify_at_safepoint(
+          "After Updating References",
           _verify_forwarded_none,      // no forwarded references
-          _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
-          _verify_cset_none,           // no cset references, all updated
-          _verify_liveness_disable,    // no reliable liveness data anymore
+          _verify_marked_disable,      // already verified
+          _verify_cset_none   ,        // no cset references, all updated
+          _verify_liveness_disable,    // already verified
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
           _verify_gcstate_stable       // update refs had cleaned up forwarded objects
   );

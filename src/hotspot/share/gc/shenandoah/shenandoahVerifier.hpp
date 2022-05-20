@@ -79,6 +79,9 @@ public:
     // Objects should not have forwardees.
     _verify_forwarded_none,
 
+    // Objects should not have forwardees outside of cset
+    _verify_forwarded_none_except_cset,
+
     // Objects may have forwardees.
     _verify_forwarded_allow
   } VerifyForwarded;
@@ -179,6 +182,7 @@ public:
   void verify_after_evacuation();
   void verify_before_updaterefs();
   void verify_after_updaterefs();
+  void verify_no_cset_after_updaterefs();
   void verify_before_fullgc();
   void verify_after_fullgc();
   void verify_after_degenerated();
