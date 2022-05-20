@@ -46,7 +46,7 @@ public final class LazyInitializationTest {
     }
 
     @Test
-    public void testHiddenInterface() {
+    public void testLazyInitialization() {
         Intf value = (Intf) Proxy.newProxyInstance(LazyInitializationTest.class.getClassLoader(),
                 new Class<?>[]{ Intf.class },
                 (proxy, method, args) -> null);
