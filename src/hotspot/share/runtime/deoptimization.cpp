@@ -22,7 +22,6 @@
  *
  */
 
-#include "logging/logLevel.hpp"
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
@@ -40,6 +39,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
+#include "logging/logLevel.hpp"
 #include "logging/logMessage.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
