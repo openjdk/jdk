@@ -27,6 +27,7 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
+#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/continuation.hpp"
 
@@ -160,9 +161,13 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
     ShenandoahKeepAliveClosure cl;
     data->oops_do(&cl);
   } else if (heap->is_concurrent_weak_root_in_progress() ||
-             heap->is_concurrent_strong_root_in_progress()) {
+             heap->is_concurrent_strong_root_in_progress() ||
+             (Continuations::enabled() && heap->is_evacuation_in_progress())) {
     ShenandoahEvacOOMScope evac_scope;
     heal_nmethod_metadata(data);
+  } else if (Continuations::enabled() && heap->is_update_refs_in_progress()) {
+    ShenandoahConcUpdateRefsClosure cl;
+    data->oops_do(&cl, true /*fix relocation*/);
   } else {
     // There is possibility that GC is cancelled when it arrives final mark.
     // In this case, concurrent root phase is skipped and degenerated GC should be

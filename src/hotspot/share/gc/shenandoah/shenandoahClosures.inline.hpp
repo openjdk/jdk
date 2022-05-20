@@ -111,9 +111,9 @@ ShenandoahEvacuateUpdateMetadataClosure<MO>::ShenandoahEvacuateUpdateMetadataClo
 template <DecoratorSet MO>
 template <class T>
 void ShenandoahEvacuateUpdateMetadataClosure<MO>::do_oop_work(T* p) {
-  assert(_heap->is_concurrent_weak_root_in_progress() ||
-         _heap->is_concurrent_strong_root_in_progress(),
-         "Only do this in root processing phase");
+//  assert(_heap->is_concurrent_weak_root_in_progress() ||
+//         _heap->is_concurrent_strong_root_in_progress(),
+//         "Only do this in root processing phase");
   assert(_thread == Thread::current(), "Wrong thread");
 
   T o = RawAccess<>::oop_load(p);
