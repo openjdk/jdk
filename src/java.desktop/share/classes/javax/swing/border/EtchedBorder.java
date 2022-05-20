@@ -30,6 +30,7 @@ import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.beans.ConstructorProperties;
@@ -129,8 +130,8 @@ public class EtchedBorder extends AbstractBorder
 
     private void paintBorderShadow(Graphics g, Color c, int w, int h, int stkWidth) {
         g.setColor(c);
-        g.drawLine((3*stkWidth/2), h-(3*stkWidth/2), (3*stkWidth/2), (3*stkWidth/2)); // left line
-        g.drawLine((3*stkWidth/2), (3*stkWidth/2), w-(3*stkWidth/2), (3*stkWidth/2)); // top line
+        g.drawLine(((3*stkWidth)/2), h-((3*stkWidth)/2), ((3*stkWidth)/2), ((3*stkWidth)/2)); // left line
+        g.drawLine(((3*stkWidth)/2), ((3*stkWidth)/2), w-((3*stkWidth)/2), ((3*stkWidth)/2)); // top line
 
         g.drawLine((stkWidth/2), h-(stkWidth-stkWidth/2),
                 w-(stkWidth-stkWidth/2), h-(stkWidth-stkWidth/2)); // bottom line
@@ -156,11 +157,14 @@ public class EtchedBorder extends AbstractBorder
         Stroke oldStk = new BasicStroke();
         int stkWidth = 1;
         if (g instanceof Graphics2D) {
-            at = ((Graphics2D) g).getTransform();
-            ((Graphics2D) g).setTransform(new AffineTransform());
-            oldStk = ((Graphics2D) g).getStroke();
-            stkWidth = (int) Math.floor(Math.min(at.getScaleX(),at.getScaleY()));
-            ((Graphics2D) g).setStroke(new BasicStroke((float) stkWidth));
+            Graphics2D g2d = (Graphics2D) g;
+            at = g2d.getTransform();
+            g2d.setTransform(new AffineTransform());
+            oldStk = g2d.getStroke();
+            stkWidth = (int) Math.floor(Math.min(at.getScaleX(), at.getScaleY()));
+            g2d.setStroke(new BasicStroke((float) stkWidth));
+            RenderingHints rend =
+                    new RenderingHints(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
         }
 
         int w = (int) Math.floor(at.getScaleX()*width-1);
@@ -175,15 +179,16 @@ public class EtchedBorder extends AbstractBorder
                                                    : getShadowColor(c),
                           w, h, stkWidth);
         paintBorderHighlight(g, (etchType == LOWERED) ? getShadowColor(c)
-                                                   : getHighlightColor(c),
+                                                      : getHighlightColor(c),
                              w, h, stkWidth);
 
         g.translate(-xtranslation, -ytranslation);
 
         // Set the transform we removed earlier
         if (g instanceof Graphics2D) {
-            ((Graphics2D) g).setTransform(at);
-            ((Graphics2D) g).setStroke(oldStk);
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setTransform(at);
+            g2d.setStroke(oldStk);
         }
     }
 

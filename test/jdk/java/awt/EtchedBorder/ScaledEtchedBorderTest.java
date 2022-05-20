@@ -2,12 +2,6 @@
  * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
@@ -43,6 +37,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 /*
  * @test
@@ -50,7 +45,7 @@ import javax.swing.UIManager;
  * @bug 8279614
  * @summary The left line of the TitledBorder is not painted on 150 scale factor
  * @requires (os.family == "windows")
- * @run main TitledBorderTest
+ * @run main ScaledEtchedBorderTest
  */
 
 public class ScaledEtchedBorderTest {
@@ -74,20 +69,18 @@ public class ScaledEtchedBorderTest {
             new ArrayList<>(4);
 
     public static void main(String[] args) throws Exception {
-        boolean showFrame = args.length > 1 && "-show".equals(args[0]);
-        try {
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-        } catch (Exception e) {
-            throw new RuntimeException("Could not get Windows laf.");
+        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+            SwingUtilities.invokeAndWait(ScaledEtchedBorderTest::testScaling);
         }
 
-        testScaling(showFrame);
+        frame.dispose();
     }
 
-    private static void testScaling(boolean show) throws Exception {
-        SwingUtilities.invokeAndWait(() -> createGUI(show));
+    private static void testScaling() {
+        createGUI();
 
-        for (int i = 0; i < images.size(); i++) {
+        for (int i = 0; i < scales.length; i++) {
             BufferedImage img = images.get(i);
             double scaling = scales[i];
             System.out.println("Testing scaling: " + scaling);
@@ -109,7 +102,7 @@ public class ScaledEtchedBorderTest {
         boolean checkShadow = false;
         boolean checkHighlight = false;
         for (int x = 0; x < img.getWidth(); x++) {
-            int color = img.getRGB(x,y);
+            int color = img.getRGB(x, y);
             if (!checkHighlight && !checkShadow) {
                 if (color == shadow.getRGB()) {
                     checkHighlight = true;
@@ -155,7 +148,7 @@ public class ScaledEtchedBorderTest {
         boolean checkShadow = false;
         boolean checkHighlight = false;
         for (int y = 0; y < img.getHeight(); y++) {
-            int color = img.getRGB(x,y);
+            int color = img.getRGB(x, y);
             if (!checkHighlight && !checkShadow) {
                 if (color == shadow.getRGB()) {
                     checkHighlight = true;
@@ -188,7 +181,7 @@ public class ScaledEtchedBorderTest {
         }
     }
 
-    private static void createGUI(boolean showFrame) {
+    private static void createGUI() {
         // Render content panel
         contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
@@ -230,11 +223,7 @@ public class ScaledEtchedBorderTest {
             panelLocations.add(comp.getLocation());
         }
 
-        if (showFrame) {
-            frame.setVisible(true);
-        } else {
-            frame.dispose();
-        }
+        frame.setVisible(true);
     }
 
     private static void saveImage(BufferedImage image, String filename) {
@@ -243,6 +232,18 @@ public class ScaledEtchedBorderTest {
         } catch (IOException e) {
             // Don't propagate the exception
             e.printStackTrace();
+        }
+    }
+
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+            System.out.println(laf.getName());
+        } catch (UnsupportedLookAndFeelException ignored){
+            System.out.println("Unsupported LookAndFeel: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException |
+                IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 }

@@ -34,6 +34,7 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.geom.Path2D;
 import java.beans.ConstructorProperties;
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.ref.WeakReference;
 import javax.swing.JComponent;
