@@ -506,7 +506,12 @@ public class Proxy implements java.io.Serializable {
                 // all proxy interfaces are public
                 if (!m.isNamed())
                     throw new InternalError("unnamed module: " + m);
-            } else if (proxyPkg.isEmpty() && m.isNamed()) {
+            }
+
+            if (proxyPkg.isEmpty() && m.isNamed()) {
+                // Per JLS 7.4.2, unnamed package can only exist in unnamed modules.
+                // This means a package-private superinterface exist in the unnamed
+                // package of a named module.
                 throw new IllegalArgumentException(
                         "Unnamed package cannot be added to " + m);
             }
@@ -531,8 +536,8 @@ public class Proxy implements java.io.Serializable {
             /*
              * Generate the specified proxy class.
              */
-            accessFlags |= Modifier.FINAL;
-            byte[] proxyClassFile = ProxyGenerator.generateProxyClass(loader, proxyName, interfaces, accessFlags);
+            byte[] proxyClassFile = ProxyGenerator.generateProxyClass(loader, proxyName, interfaces,
+                                                                      accessFlags | Modifier.FINAL);
             try {
                 Class<?> pc = JLA.defineClass(loader, proxyName, proxyClassFile,
                                               null, "__dynamic_proxy__");
