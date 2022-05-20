@@ -46,7 +46,9 @@ JVM_ConstantPoolGetSize
 JVM_ConstantPoolGetStringAt
 JVM_ConstantPoolGetTagAt
 JVM_ConstantPoolGetUTF8At
+JVM_CurrentCarrierThread
 JVM_CurrentThread
+JVM_SetCurrentThread
 JVM_CurrentTimeMillis
 JVM_DefineClass
 JVM_DefineClassWithSource
@@ -120,6 +122,7 @@ JVM_GetMethodTypeAnnotations
 JVM_GetNanoTimeAdjustment
 JVM_GetNestHost
 JVM_GetNestMembers
+JVM_GetNextThreadIdOffset
 JVM_GetPermittedSubclasses
 JVM_GetPrimitiveArrayElement
 JVM_GetProperties
@@ -135,6 +138,7 @@ JVM_GetVmArguments
 JVM_Halt
 JVM_HasReferencePendingList
 JVM_HoldsLock
+JVM_GetStackTrace
 JVM_IHashCode
 JVM_InitClassName
 JVM_InitStackTraceElement
@@ -150,6 +154,7 @@ JVM_IsDumpingClassList
 JVM_IsFinalizationEnabled
 JVM_IsHiddenClass
 JVM_IsInterface
+JVM_IsPreviewEnabled
 JVM_IsPrimitiveClass
 JVM_IsRecord
 JVM_IsSameClassPackage
@@ -182,15 +187,19 @@ JVM_RawMonitorEnter
 JVM_RawMonitorExit
 JVM_ReferenceClear
 JVM_ReferenceRefersTo
+JVM_RegisterContinuationMethods
 JVM_RegisterLambdaProxyClassForArchiving
 JVM_RegisterSignal
 JVM_ReleaseUTF
 JVM_ReportFinalizationComplete
 JVM_ResumeThread
+JVM_ExtentLocalCache
+JVM_SetExtentLocalCache
 JVM_SetArrayElement
 JVM_SetClassSigners
 JVM_SetNativeThreadName
 JVM_SetPrimitiveArrayElement
+JVM_SetStackWalkContinuation
 JVM_SetThreadPriority
 JVM_Sleep
 JVM_StartThread
@@ -210,3 +219,10 @@ JVM_AddReadsModule
 JVM_DefineArchivedModules
 JVM_DefineModule
 JVM_SetBootLoaderUnnamedModule
+
+# Virtual thread notifications for JVMTI
+JVM_VirtualThreadMountBegin
+JVM_VirtualThreadMountEnd
+JVM_VirtualThreadUnmountBegin
+JVM_VirtualThreadUnmountEnd
+#

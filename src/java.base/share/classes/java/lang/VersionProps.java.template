@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,10 @@ class VersionProps {
         props.put("java.class.version", CLASSFILE_MAJOR_MINOR);
 
         props.put("java.specification.version", VERSION_SPECIFICATION);
+
+        // Uncomment next props.put call after the first maintenance release for a
+        // platform specification is done and set the MR number, starting at "1".
+        // props.put("java.specification.maintenance.version", "1");
         props.put("java.specification.name", "Java Platform API Specification");
         props.put("java.specification.vendor", "Oracle Corporation");
 

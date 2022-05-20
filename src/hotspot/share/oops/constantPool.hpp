@@ -205,7 +205,8 @@ class ConstantPool : public Metadata {
   // is on the executing stack, or as a handle in vm code, this constant pool
   // can't be removed from the set of previous versions saved in the instance
   // class.
-  bool on_stack() const                      { return (_flags &_on_stack) != 0; }
+  bool on_stack() const;
+  bool is_maybe_on_continuation_stack() const;
   void set_on_stack(const bool value);
 
   // Faster than MetaspaceObj::is_shared() - used by set_on_stack()

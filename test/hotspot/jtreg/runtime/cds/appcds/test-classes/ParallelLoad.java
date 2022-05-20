@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ public class ParallelLoad {
 class ParallelLoadWatchdog extends Thread {
     public void run() {
         try {
-            long timeout = (long) (20 * 1000 * ParallelLoad.timeoutFactor);
+            long timeout = (long) (40 * 1000 * ParallelLoad.timeoutFactor);
             Thread.sleep(timeout);
             System.out.println("ParallelLoadWatchdog: Timeout reached: timeout(ms) = " + timeout);
             System.exit(1);
@@ -224,4 +224,3 @@ class ParallelLoadThread extends Thread {
         }
     }
 }
-
