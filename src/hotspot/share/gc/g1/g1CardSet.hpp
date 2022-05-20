@@ -232,7 +232,7 @@ public:
   // for Howl (0b11) is assumed to be the same as the last two bits for "FullCardSet"; this
   // has been done in various places to not be required to check for a "FullCardSet" first
   // all the time in iteration code (only if there is a Howl card set container, that is
-  // fairly uncommon). 
+  // fairly uncommon).
   using ContainerPtr = void*;
   static const uintptr_t ContainerInlinePtr      = 0x0;
   static const uintptr_t ContainerArrayOfCards   = 0x1;
