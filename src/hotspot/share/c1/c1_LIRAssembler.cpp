@@ -458,7 +458,8 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   if (CodeBuffer::supports_shared_stubs() && op->method()->can_be_statically_bound()) {
     // Calls of the same statically bound method can share
     // a stub to the interpreter.
-    _masm->code()->shared_stub_to_interp_for(op->method(), pc());
+    CodeBuffer::csize_t call_offset = pc() - _masm->code()->insts_begin();
+    _masm->code()->shared_stub_to_interp_for(op->method(), call_offset);
   } else {
     emit_static_call_stub();
   }
