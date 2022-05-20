@@ -417,11 +417,8 @@ public class CDSArchiveUtils {
                                      long length) throws Exception {
         long position = offset;
         long count = length;
-        long n = count;
-        // The count != offset check is for handling the case where the length
-        // of the outputChannel is shorter than the inputChannel.
-        while (count > 0 && n > 0 && count != offset) {
-            n = (long)outputChannel.transferFrom(inputChannel, position, count);
+        while (count > 0 && inputChannel.position() < inputChannel.size()) {
+            long n = outputChannel.transferFrom(inputChannel, position, count);
             if (n < 0 || n > count) {
                 throw new RuntimeException("Incorrect transfer length n = " + n
                                            + " (expected 0 <= n <= " + length + ")");
@@ -455,7 +452,6 @@ public class CDSArchiveUtils {
             long orgSize = inputChannel.size();
             transferFrom(inputChannel, outputChannel, 0, offset);
             inputChannel.position(offset + nBytes);
-            long length = orgSize - nBytes;
             transferFrom(inputChannel, outputChannel, offset, orgSize - nBytes);
         }
         return dstFile;
