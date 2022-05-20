@@ -34,7 +34,75 @@ import java.util.stream.Stream;
 import jdk.test.lib.json.JSONValue;
 
 /**
- * Represents a thread dump that is obtained by parsing JSON text.
+ * Represents a thread dump that is obtained by parsing JSON text. A thread dump in JSON
+ * format is generated with the {@code com.sun.management.HotSpotDiagnosticMXBean} API or
+ * using {@code jcmd <pid> Thread.dump_to_file -format=json <file>}.
+ *
+ * <p> The following is an example thread dump that is parsed by this class. Many of the
+ * objects are collapsed to reduce the size.
+ *
+ * <pre>{@code
+ * {
+ *   "threadDump": {
+ *     "processId": 63406,
+ *     "time": "2022-05-20T07:37:16.308017Z",
+ *     "runtimeVersion": "19",
+ *     "threadContainers": [
+ *       {
+ *         "container": "<root>",
+ *         "parent": null,
+ *         "owner": null,
+ *         "threads": [
+ *          {
+ *            "tid": 1,
+ *            "name": "main",
+ *            "stack": [...]
+ *          },
+ *          {
+ *            "tid": 8,
+ *            "name": "Reference Handler",
+ *            "stack": [
+ *               "java.base\/java.lang.ref.Reference.waitForReferencePendingList(Native Method)",
+ *               "java.base\/java.lang.ref.Reference.processPendingReferences(Reference.java:245)",
+ *               "java.base\/java.lang.ref.Reference$ReferenceHandler.run(Reference.java:207)"
+ *            ]
+ *          },
+ *          {"name": "Finalizer"...},
+ *          {"name": "Signal Dispatcher"...},
+ *          {"name": "Common-Cleaner"...},
+ *          {"name": "Monitor Ctrl-Break"...},
+ *          {"name": "Notification Thread"...}
+ *         ],
+ *         "threadCount": 7
+ *       },
+ *       {
+ *         "container": "ForkJoinPool.commonPool",
+ *         "parent": "<root>",
+ *         "owner": null,
+ *         "threads:": [...],
+ *         "threadCount": 1
+ *       }
+ *     ]
+ *   }
+ * }
+ * }</pre>
+ *
+ * <p> The following is an example using this class to print the tree of thread containers
+ * (grouping of threads) and the threads in each container:
+ *
+ * <pre>{@code
+ *    void printThreadDump(Path file) throws IOException {
+ *         String json = Files.readString(file);
+ *         ThreadDump dump = ThreadDump.parse(json);
+ *         printThreadContainer(dump.rootThreadContainer(), 0);
+ *     }
+ *
+ *     void printThreadContainer(ThreadDump.ThreadContainer container, int indent) {
+ *         out.printf("%s%s%n", " ".repeat(indent), container);
+ *         container.threads().forEach(t -> out.printf("%s%s%n", " ".repeat(indent), t.name()));
+ *         container.children().forEach(c -> printThreadContainer(c, indent + 2));
+ *     }
+ * }</pre>
  */
 public final class ThreadDump {
     private final String processId;
