@@ -928,15 +928,15 @@ final class ProxyGenerator extends ClassWriter {
      * a primitive type in its instance fields. The struct for a particular
      * primitive type can be obtained using the static "get" method.
      */
-    private static final class PrimitiveTypeInfo {
-        private static final PrimitiveTypeInfo BYTE = new PrimitiveTypeInfo(byte.class, 0);
-        private static final PrimitiveTypeInfo CHAR = new PrimitiveTypeInfo(char.class, 0);
-        private static final PrimitiveTypeInfo DOUBLE = new PrimitiveTypeInfo(double.class, 3);
-        private static final PrimitiveTypeInfo FLOAT = new PrimitiveTypeInfo(float.class, 2);
-        private static final PrimitiveTypeInfo INT = new PrimitiveTypeInfo(int.class, 0);
-        private static final PrimitiveTypeInfo LONG = new PrimitiveTypeInfo(long.class, 1);
-        private static final PrimitiveTypeInfo SHORT = new PrimitiveTypeInfo(short.class, 0);
-        private static final PrimitiveTypeInfo BOOLEAN = new PrimitiveTypeInfo(boolean.class, 0);
+    private enum PrimitiveTypeInfo {
+        BYTE(byte.class, 0),
+        CHAR(char.class, 0),
+        DOUBLE(double.class, 3),
+        FLOAT(float.class, 2),
+        INT(int.class, 0),
+        LONG(long.class, 1),
+        SHORT(short.class, 0),
+        BOOLEAN(boolean.class, 0);
 
         /**
          * name of corresponding wrapper class
@@ -960,7 +960,7 @@ final class ProxyGenerator extends ClassWriter {
          */
         private final int opcodeOffset;
 
-        private PrimitiveTypeInfo(Class<?> primitiveClass, int opcodeOffset) {
+        PrimitiveTypeInfo(Class<?> primitiveClass, int opcodeOffset) {
             assert primitiveClass.isPrimitive();
 
             Wrapper wrapper = Wrapper.forPrimitiveType(primitiveClass);
