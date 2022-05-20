@@ -79,7 +79,7 @@ import jdk.test.lib.json.JSONValue;
  *         "container": "ForkJoinPool.commonPool",
  *         "parent": "<root>",
  *         "owner": null,
- *         "threads:": [...],
+ *         "threads": [...],
  *         "threadCount": 1
  *       }
  *     ]
