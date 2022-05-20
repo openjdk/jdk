@@ -399,7 +399,7 @@ class XColors {
             case "olive drab", "olivedrab" -> new ColorUIResource(107, 142, 35);
             case "olivedrab1" -> new ColorUIResource(192, 255, 62);
             case "olivedrab2" -> new ColorUIResource(179, 238, 58);
-            case "olivedrab3", "yellow green", "yellowgreen" -> new ColorUIResource(154, 205, 50);
+            case "olivedrab3", "yellow green" -> new ColorUIResource(154, 205, 50);
             case "olivedrab4" -> new ColorUIResource(105, 139, 34);
             case "orange", "orange1" -> new ColorUIResource(255, 165, 0);
             case "orange2" -> new ColorUIResource(238, 154, 0);
@@ -484,7 +484,8 @@ class XColors {
             case "sienna2" -> new ColorUIResource(238, 121, 66);
             case "sienna3" -> new ColorUIResource(205, 104, 57);
             case "sienna4" -> new ColorUIResource(139, 71, 38);
-            case "sky blue", "skyblue", "skyblue1" -> new ColorUIResource(135, 206, 255);
+            case "sky blue", "skyblue" -> new ColorUIResource(135, 206, 235);
+            case "skyblue1" -> new ColorUIResource(135, 206, 255);
             case "skyblue2" -> new ColorUIResource(126, 192, 238);
             case "skyblue3" -> new ColorUIResource(108, 166, 205);
             case "skyblue4" -> new ColorUIResource(74, 112, 139);
@@ -545,6 +546,7 @@ class XColors {
             case "yellow2" -> new ColorUIResource(238, 238, 0);
             case "yellow3" -> new ColorUIResource(205, 205, 0);
             case "yellow4" -> new ColorUIResource(139, 139, 0);
+            case "yellowgreen" -> new ColorUIResource(154, 205, 5);
 
             default -> null;
         };
