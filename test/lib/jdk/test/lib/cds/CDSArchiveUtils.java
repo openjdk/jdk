@@ -409,6 +409,28 @@ public class CDSArchiveUtils {
          }
     }
 
+    // Helper method for calling FileChannel.transferFrom and checking the
+    // return value.
+    private static void transferFrom(FileChannel inputChannel,
+                                     FileChannel outputChannel,
+                                     long offset,
+                                     long length) throws Exception {
+        long position = offset;
+        long count = length;
+        long n = count;
+        // The count != offset check is for handling the case where the length
+        // of the outputChannel is shorter than the inputChannel.
+        while (count > 0 && n > 0 && count != offset) {
+            n = (long)outputChannel.transferFrom(inputChannel, position, count);
+            if (n < 0 || n > count) {
+                throw new RuntimeException("Incorrect transfer length n = " + n
+                                           + " (expected 0 <= n <= " + length + ")");
+            }
+            position += n;
+            count -= n;
+        }
+    }
+
     // dstFile will keep original size so will remove corresponding bytes.length bytes at end of file
     public static File insertBytesRandomlyAfterHeader(File orgFile, String newFileName, byte[] bytes) throws Exception {
         long offset = fileHeaderSize(orgFile) + getRandomBetween(0L, 4096L);
@@ -416,10 +438,10 @@ public class CDSArchiveUtils {
         try (FileChannel inputChannel = new FileInputStream(orgFile).getChannel();
              FileChannel outputChannel = new FileOutputStream(dstFile).getChannel()) {
             long orgSize = inputChannel.size();
-            outputChannel.transferFrom(inputChannel, 0, offset);
+            transferFrom(inputChannel, outputChannel, 0, offset);
             outputChannel.position(offset);
             outputChannel.write(ByteBuffer.wrap(bytes));
-            outputChannel.transferFrom(inputChannel, offset + bytes.length, orgSize - bytes.length);
+            transferFrom(inputChannel, outputChannel, offset + bytes.length, orgSize - bytes.length);
         }
         return dstFile;
     }
@@ -431,9 +453,10 @@ public class CDSArchiveUtils {
         try (FileChannel inputChannel = new FileInputStream(orgFile).getChannel();
              FileChannel outputChannel = new FileOutputStream(dstFile).getChannel()) {
             long orgSize = inputChannel.size();
-            outputChannel.transferFrom(inputChannel, 0, offset);
+            transferFrom(inputChannel, outputChannel, 0, offset);
             inputChannel.position(offset + nBytes);
-            outputChannel.transferFrom(inputChannel, offset, orgSize - nBytes);
+            long length = orgSize - nBytes;
+            transferFrom(inputChannel, outputChannel, offset, orgSize - nBytes);
         }
         return dstFile;
     }
