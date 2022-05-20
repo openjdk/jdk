@@ -124,7 +124,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
   const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
-  CodeBuffer buffer("upcall_stub_linkToNative", /* code_size = */ 2048, /* locs_size = */ 1024);
+  CodeBuffer buffer("upcall_stub", /* code_size = */ 2048, /* locs_size = */ 1024);
 
   Register shuffle_reg = r19;
   JavaCallingConvention out_conv;
@@ -316,10 +316,10 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
 #ifndef PRODUCT
   stringStream ss;
-  ss.print("optimized_upcall_stub_%s", entry->signature()->as_C_string());
+  ss.print("upcall_stub_%s", entry->signature()->as_C_string());
   const char* name = _masm->code_string(ss.as_string());
 #else // PRODUCT
-  const char* name = "optimized_upcall_stub";
+  const char* name = "upcall_stub";
 #endif // PRODUCT
 
   UpcallStub* blob
