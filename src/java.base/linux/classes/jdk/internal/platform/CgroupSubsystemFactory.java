@@ -108,7 +108,7 @@ public class CgroupSubsystemFactory {
         Map<String, CgroupInfo> infos = result.getInfos();
         if (result.isCgroupV2()) {
             // For unified it doesn't matter which controller we pick.
-            CgroupInfo anyController = infos.get(MEMORY_CTRL);
+            CgroupInfo anyController = infos.values().iterator().next();
             CgroupSubsystem subsystem = CgroupV2Subsystem.getInstance(anyController);
             return subsystem != null ? new CgroupMetrics(subsystem) : null;
         } else {
