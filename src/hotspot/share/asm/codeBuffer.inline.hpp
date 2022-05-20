@@ -54,7 +54,8 @@ bool emit_shared_stubs_to_interp(CodeBuffer* cb, SharedStubToInterpRequests* sha
 
     ciMethod* method = shared_stub_to_interp_requests->at(i).shared_method();
     do {
-      masm.relocate(static_stub_Relocation::spec(shared_stub_to_interp_requests->at(i).caller_pc()), relocate_format);
+      address caller_pc = cb->insts_begin() + shared_stub_to_interp_requests->at(i).call_offset();
+      masm.relocate(static_stub_Relocation::spec(caller_pc), relocate_format);
       ++i;
     } while (i < shared_stub_to_interp_requests->length() && shared_stub_to_interp_requests->at(i).shared_method() == method);
     masm.emit_static_call_stub();

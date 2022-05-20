@@ -38,6 +38,7 @@ class BufferBlob;
 class CodeBuffer;
 class Label;
 class ciMethod;
+class SharedStubToInterpRequest;
 
 class CodeOffsets: public StackObj {
 public:
@@ -344,22 +345,6 @@ class Scrubber {
 };
 #endif // ASSERT
 
-// A Java method can have calls of Java methods which can be statically bound.
-// Calls of Java mehtods need stubs to the interpreter. Calls sharing the same Java method
-// can share a stub to interpreter.
-// A SharedStubToInterpRequest describes a request for a shared stub to the interpreter.
-class SharedStubToInterpRequest : public ResourceObj {
- private:
-  ciMethod* _shared_method;
-  address _caller_pc;
-
- public:
-  SharedStubToInterpRequest(ciMethod* method = NULL, address caller_pc = NULL) : _shared_method(method),
-      _caller_pc(caller_pc) {}
-
-  ciMethod* shared_method() const { return _shared_method; }
-  address caller_pc() const { return _caller_pc; }
-};
 typedef GrowableArray<SharedStubToInterpRequest> SharedStubToInterpRequests;
 
 // A CodeBuffer describes a memory space into which assembly
@@ -711,7 +696,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   void finalize_stubs();
 
   // Request for a shared stub to the interpreter
-  void shared_stub_to_interp_for(ciMethod* callee, address caller_pc);
+  void shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset);
 
 #ifndef PRODUCT
  public:
@@ -726,6 +711,23 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // The following header contains architecture-specific implementations
 #include CPU_HEADER(codeBuffer)
 
+};
+
+// A Java method can have calls of Java methods which can be statically bound.
+// Calls of Java methods need stubs to the interpreter. Calls sharing the same Java method
+// can share a stub to the interpreter.
+// A SharedStubToInterpRequest is a request for a shared stub to the interpreter.
+class SharedStubToInterpRequest : public ResourceObj {
+ private:
+  ciMethod* _shared_method;
+  CodeBuffer::csize_t _call_offset; // The offset of the call in CodeBuffer
+
+ public:
+  SharedStubToInterpRequest(ciMethod* method = NULL, CodeBuffer::csize_t call_offset = -1) : _shared_method(method),
+      _call_offset(call_offset) {}
+
+  ciMethod* shared_method() const { return _shared_method; }
+  CodeBuffer::csize_t call_offset() const { return _call_offset; }
 };
 
 inline bool CodeSection::maybe_expand_to_ensure_remaining(csize_t amount) {
