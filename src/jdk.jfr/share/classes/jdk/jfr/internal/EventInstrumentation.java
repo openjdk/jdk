@@ -114,9 +114,9 @@ public final class EventInstrumentation {
     private final Method staticCommitMethod;
     private final long eventTypeId;
     private final boolean guardEventConfiguration;
-    private final boolean bootClass;
+    private final boolean isJDK;
 
-    EventInstrumentation(Class<?> superClass, byte[] bytes, long id, boolean bootClass, boolean guardEventConfiguration) {
+    EventInstrumentation(Class<?> superClass, byte[] bytes, long id, boolean isJDK, boolean guardEventConfiguration) {
         this.eventTypeId = id;
         this.superClass = superClass;
         this.classNode = createClassNode(bytes);
@@ -124,13 +124,13 @@ public final class EventInstrumentation {
         this.fieldInfos = buildFieldInfos(superClass, classNode);
         String n = annotationValue(classNode, ANNOTATION_NAME_DESCRIPTOR, String.class);
         this.eventName = n == null ? classNode.name.replace("/", ".") : n;
-        this.staticCommitMethod = bootClass ? findStaticCommitMethod(classNode, fieldInfos) : null;
+        this.staticCommitMethod = isJDK ? findStaticCommitMethod(classNode, fieldInfos) : null;
         this.untypedEventConfiguration = hasUntypedConfiguration();
         // Corner case when we are forced to generate bytecode (bytesForEagerInstrumentation)
         // We can't reference EventConfiguration::isEnabled() before event class has been registered,
         // so we add a guard against a null reference.
         this.guardEventConfiguration = guardEventConfiguration;
-        this.bootClass = bootClass;
+        this.isJDK = isJDK;
     }
 
     public static Method findStaticCommitMethod(ClassNode classNode, List<FieldInfo> fields) {
@@ -338,7 +338,7 @@ public final class EventInstrumentation {
     }
 
     private void makeInstrumented() {
-        // MyEvent#isEnabbled()
+        // MyEvent#isEnabled()
         updateEnabledMethod(METHOD_IS_ENABLED);
 
         // MyEvent#begin()
@@ -659,11 +659,11 @@ public final class EventInstrumentation {
             methodVisitor.visitInsn(Opcodes.IRETURN);
         });
 
-        if (bootClass) {
-            if (hasMethod(METHOD_ENABLED)) {
+        if (isJDK) {
+            if (hasStaticMethod(METHOD_ENABLED)) {
                 updateEnabledMethod(METHOD_ENABLED);
             };
-            UpdateIfExists(METHOD_SHOULD_COMMIT_LONG, methodVisitor -> {
+            updateIfStaticMethodExists(METHOD_SHOULD_COMMIT_LONG, methodVisitor -> {
                 Label fail = new Label();
                 if (guardEventConfiguration) {
                     // if (eventConfiguration == null) goto fail;
@@ -683,7 +683,7 @@ public final class EventInstrumentation {
                 methodVisitor.visitMaxs(0, 0);
                 methodVisitor.visitEnd();
             });
-            UpdateIfExists(METHOD_TIME_STAMP, methodVisitor -> {
+            updateIfStaticMethodExists(METHOD_TIME_STAMP, methodVisitor -> {
                 invokeStatic(methodVisitor, TYPE_EVENT_CONFIGURATION.getInternalName(), METHOD_TIME_STAMP);
                 methodVisitor.visitInsn(Opcodes.LRETURN);
                 methodVisitor.visitMaxs(0, 0);
@@ -713,16 +713,16 @@ public final class EventInstrumentation {
         });
     }
 
-    private void UpdateIfExists(Method method, Consumer<MethodVisitor> code) {
-        if (hasMethod(method)) {
+    private void updateIfStaticMethodExists(Method method, Consumer<MethodVisitor> code) {
+        if (hasStaticMethod(method)) {
             updateMethod(method, code);
         }
     }
 
-    private boolean hasMethod(Method method) {
+    private boolean hasStaticMethod(Method method) {
         for (MethodNode m : classNode.methods) {
             if (m.name.equals(method.getName()) && m.desc.equals(method.getDescriptor())) {
-                return true;
+                return Modifier.isStatic(m.access);
             }
         }
         return false;
