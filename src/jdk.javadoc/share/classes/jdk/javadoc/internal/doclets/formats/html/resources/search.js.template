@@ -417,7 +417,7 @@ $(function() {
     $("main").click(collapse);
     $("section[id] > :header, :header[id], :header > a[id]").hover(
         function () {
-            $(this).append($("<button class='copy-header' onclick='copyUrl(this)'> " +
+            $(this).append($("<button class='copy copy-header' onclick='copyUrl(this)'> " +
                 "<img src='" + pathtoroot + "copy.svg' alt='" + messages.copyUrl + "'> " +
                 "<span data-copied='" + messages.urlCopied + "'></span></button>"));
         },
