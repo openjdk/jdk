@@ -222,7 +222,7 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.ref to
         java.desktop,
-        java.naming
+        java.naming;
     exports jdk.internal.reflect to
         java.logging,
         java.sql,
