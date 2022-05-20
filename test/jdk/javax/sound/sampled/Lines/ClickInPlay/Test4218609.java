@@ -31,7 +31,7 @@ import java.awt.event.ActionListener;
 
 /**
  * @test
- * @key headful sound
+ * @key sound
  * @bug 4218609
  * @summary A soft audio click is heard when playing some audio file
  * @build ClickInPlay

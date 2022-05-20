@@ -32,7 +32,7 @@ import javax.sound.sampled.TargetDataLine;
 
 /**
  * @test
- * @key headful sound
+ * @key sound
  * @bug 4479441
  * @summary Verify that the lines report 16KHz and 32KHz capability
  */

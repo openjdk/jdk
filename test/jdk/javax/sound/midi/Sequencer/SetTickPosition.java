@@ -30,7 +30,7 @@ import javax.sound.midi.Track;
 
 /**
  * @test
- * @key headful sound
+ * @key sound
  * @bug 4493775
  * @summary Sequencer method, setTickPosition(long) does not set the Tick position
  */

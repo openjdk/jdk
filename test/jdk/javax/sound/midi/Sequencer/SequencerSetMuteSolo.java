@@ -33,7 +33,7 @@ import javax.sound.midi.Sequencer;
 
 /**
  * @test
- * @key headful sound
+ * @key sound
  * @bug 4713900
  * @summary default Sequencer allows to set Mute for invalid track
  */

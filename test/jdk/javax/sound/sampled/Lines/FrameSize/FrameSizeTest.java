@@ -29,7 +29,7 @@ import javax.sound.sampled.Mixer;
 
 /**
  * @test
- * @key headful sound
+ * @key sound
  * @bug 4469409
  * @summary Check that the frame size in the formats returned by lines is
  *          correct

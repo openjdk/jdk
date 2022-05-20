@@ -32,7 +32,7 @@ import javax.sound.midi.Track;
 
 /**
  * @test
- * @key headful sound
+ * @key sound
  * @bug 5025549
  * @summary Verify that setLoopEndPoint throws IAE
  */

@@ -31,7 +31,7 @@ import java.awt.event.ActionListener;
 
 /**
  * @test
- * @key headful sound
+ * @key sound
  * @bug 5032020
  * @summary Win: Direct Audio is silent after underrun
  * @build DirectSoundUnderrunSilence

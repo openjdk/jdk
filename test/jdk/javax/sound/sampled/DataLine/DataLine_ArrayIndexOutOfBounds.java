@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @key headful sound
+ * @key sound
  * @bug 7088367
  * @summary SourceDataLine.write and TargetDataLine.read don't throw ArrayIndexOutOfBoundsException
  * @author Alex Menkov

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @key headful sound
+ * @key sound
  * @bug 6660470
  * @summary Tests that sequencer correctly opens/closes (implicitly) devices
  * @author Alex Menkov

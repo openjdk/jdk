@@ -30,7 +30,7 @@ import javax.sound.sampled.TargetDataLine;
 
 /**
  * @test
- * @key headful sound
+ * @key sound
  * @bug 4836433
  * @summary Windows: TargetDataLine.flush() does not work. Since this test has
  *          some real-time variance, I disabled it by making it a manual test.
