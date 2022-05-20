@@ -1852,7 +1852,17 @@ public final class URI
     // US-ASCII only
     private static boolean equalIgnoringCase(String s, String t) {
         if (s == t) return true;
-        return s != null && s.equalsIgnoreCase(t);
+        if ((s != null) && (t != null)) {
+            int n = s.length();
+            if (t.length() != n)
+                return false;
+            for (int i = 0; i < n; i++) {
+                if (toLower(s.charAt(i)) != toLower(t.charAt(i)))
+                    return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     private static int hash(int hash, String s) {
@@ -1956,7 +1966,15 @@ public final class URI
         if (s == t) return 0;
         if (s != null) {
             if (t != null) {
-                return s.compareToIgnoreCase(t);
+                int sn = s.length();
+                int tn = t.length();
+                int n = sn < tn ? sn : tn;
+                for (int i = 0; i < n; i++) {
+                    int c = toLower(s.charAt(i)) - toLower(t.charAt(i));
+                    if (c != 0)
+                        return c;
+                }
+                return sn - tn;
             }
             return +1;
         } else {
