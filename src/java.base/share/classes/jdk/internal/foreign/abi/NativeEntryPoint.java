@@ -25,11 +25,12 @@
 
 package jdk.internal.foreign.abi;
 
+import jdk.internal.ref.CleanerFactory;
+
 import java.lang.invoke.MethodType;
+import java.lang.ref.Cleaner;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class describes a 'native invoker', which is used as an appendix argument to linkToNative calls.
@@ -42,7 +43,8 @@ public class NativeEntryPoint {
     private final MethodType methodType;
     private final long invoker; // read by VM
 
-    private static final Map<CacheKey, Long> INVOKER_CACHE = new ConcurrentHashMap<>();
+    private static final Cleaner CLEANER = CleanerFactory.cleaner();
+    private static final SoftReferenceCache<CacheKey, NativeEntryPoint> INVOKER_CACHE = new SoftReferenceCache<>();
     private record CacheKey(MethodType methodType, ABIDescriptor abi,
                             List<VMStorage> argMoves, List<VMStorage> retMoves,
                             boolean needsReturnBuffer) {}
@@ -63,15 +65,24 @@ public class NativeEntryPoint {
         assert (!needsReturnBuffer || methodType.parameterType(1) == long.class) : "return buffer address expected";
 
         CacheKey key = new CacheKey(methodType, abi, Arrays.asList(argMoves), Arrays.asList(returnMoves), needsReturnBuffer);
-        long invoker = INVOKER_CACHE.computeIfAbsent(key, k ->
-            makeInvoker(methodType, abi, argMoves, returnMoves, needsReturnBuffer));
-
-        return new NativeEntryPoint(methodType, invoker);
+        return INVOKER_CACHE.get(key, k -> {
+            long invoker = makeInvoker(methodType, abi, argMoves, returnMoves, needsReturnBuffer);
+            NativeEntryPoint nep = new NativeEntryPoint(methodType, invoker);
+            CLEANER.register(nep, () -> freeInvoker(invoker));
+            return nep;
+        });
     }
 
     private static native long makeInvoker(MethodType methodType, ABIDescriptor abi,
                                            VMStorage[] encArgMoves, VMStorage[] encRetMoves,
                                            boolean needsReturnBuffer);
+
+    private static native boolean freeInvoker0(long invoker);
+    private static void freeInvoker(long invoker) {
+        if (!freeInvoker0(invoker)) {
+            throw new InternalError("Could not free invoker");
+        }
+    }
 
     public MethodType type() {
         return methodType;

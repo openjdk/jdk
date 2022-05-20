@@ -115,6 +115,7 @@ inline void HeapRegionRemSet::iterate_for_merge(CardOrRangeVisitor& cl) {
   _card_set.iterate_containers(&cl2, true /* at_safepoint */);
 }
 
+
 uintptr_t HeapRegionRemSet::to_card(OopOrNarrowOopStar from) const {
   return pointer_delta(from, _heap_base_address, 1) >> CardTable::card_shift();
 }

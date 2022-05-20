@@ -57,6 +57,8 @@ import static jdk.internal.foreign.abi.x64.X86_64Architecture.*;
  * This includes taking care of synthetic arguments like pointers to return buffers for 'in-memory' returns.
  */
 public class CallArranger {
+    public static final int MAX_INTEGER_ARGUMENT_REGISTERS = 6;
+    public static final int MAX_VECTOR_ARGUMENT_REGISTERS = 8;
     private static final ABIDescriptor CSysV = abiFor(
         new VMStorage[] { rdi, rsi, rdx, rcx, r8, r9, rax },
         new VMStorage[] { xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7 },
@@ -159,8 +161,8 @@ public class CallArranger {
 
         private int maxRegisterArguments(int type) {
             return type == StorageClasses.INTEGER ?
-                    SysVx64Linker.MAX_INTEGER_ARGUMENT_REGISTERS :
-                    SysVx64Linker.MAX_VECTOR_ARGUMENT_REGISTERS;
+                    MAX_INTEGER_ARGUMENT_REGISTERS :
+                    MAX_VECTOR_ARGUMENT_REGISTERS;
         }
 
         VMStorage stackAlloc() {
@@ -188,14 +190,14 @@ public class CallArranger {
             }
             long nIntegerReg = typeClass.nIntegerRegs();
 
-            if (this.nIntegerReg + nIntegerReg > SysVx64Linker.MAX_INTEGER_ARGUMENT_REGISTERS) {
+            if (this.nIntegerReg + nIntegerReg > MAX_INTEGER_ARGUMENT_REGISTERS) {
                 //not enough registers - pass on stack
                 return typeClass.classes.stream().map(c -> stackAlloc()).toArray(VMStorage[]::new);
             }
 
             long nVectorReg = typeClass.nVectorRegs();
 
-            if (this.nVectorReg + nVectorReg > SysVx64Linker.MAX_VECTOR_ARGUMENT_REGISTERS) {
+            if (this.nVectorReg + nVectorReg > MAX_VECTOR_ARGUMENT_REGISTERS) {
                 //not enough registers - pass on stack
                 return typeClass.classes.stream().map(c -> stackAlloc()).toArray(VMStorage[]::new);
             }
