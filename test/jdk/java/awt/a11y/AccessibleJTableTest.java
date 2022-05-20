@@ -78,7 +78,7 @@ public class AccessibleJTableTest extends AccessibleComponentTest {
 
     public void  createUIDraggable() {
         INSTRUCTIONS = "INSTRUCTIONS:\n"
-                + "Check that table is properly updated when culumn order is changed.\n\n"
+                + "Check that table is properly updated when column order is changed.\n\n"
                 + "Turn screen reader on, and Tab to the table.\n"
                 + "Using arrow keys navigate to the last cell in the first row in the table."
                 + "Screen reader should announce it as \"Column 3 row 1\"\n\n"
