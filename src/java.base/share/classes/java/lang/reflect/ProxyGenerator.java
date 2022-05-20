@@ -57,7 +57,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 final class ProxyGenerator extends ClassWriter {
     private static final int CLASSFILE_VERSION = VM.classFileVersion();
     private static final String JL_CLASS = "java/lang/Class";
-    private static final String JL_CLASSLOADER = "java/lang/ClassLoader";
     private static final String JL_OBJECT = "java/lang/Object";
     private static final String JL_THROWABLE = "java/lang/Throwable";
     private static final String JL_CLASS_NOT_FOUND_EX = "java/lang/ClassNotFoundException";
