@@ -428,18 +428,22 @@ public class CDSArchiveUtils {
         }
     }
 
-    // dstFile will keep original size so will remove corresponding bytes.length bytes at end of file
-    public static File insertBytesRandomlyAfterHeader(File orgFile, String newFileName, byte[] bytes) throws Exception {
-        long offset = fileHeaderSize(orgFile) + getRandomBetween(0L, 4096L);
+    // dstFile will keep original size
+    public static File insertBytesRandomlyAfterHeader(File orgFile, String newFileName) throws Exception {
+        long headerSize = fileHeaderSize(orgFile);
+        long dupSize = getRandomBetween(0L, headerSize);
         File dstFile = new File(newFileName);
         try (FileChannel inputChannel = new FileInputStream(orgFile).getChannel();
              FileChannel outputChannel = new FileOutputStream(dstFile).getChannel()) {
             long orgSize = inputChannel.size();
-            transferFrom(inputChannel, outputChannel, 0, offset);
-            outputChannel.position(offset);
-            outputChannel.write(ByteBuffer.wrap(bytes));
-            transferFrom(inputChannel, outputChannel, offset + bytes.length, orgSize - bytes.length);
-        }
+            // Copy the header
+            transferFrom(inputChannel, outputChannel, 0, headerSize);
+            // Copy dupSize bytes from the end of the header. Then, copy the rest
+            // of the input such that the new file will have the same size as
+            // the old file.
+            inputChannel.position(headerSize - dupSize);
+            transferFrom(inputChannel, outputChannel, headerSize, orgSize - headerSize);
+            }
         return dstFile;
     }
 
