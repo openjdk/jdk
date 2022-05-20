@@ -1045,6 +1045,8 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
           igvn->remove_dead_node(adjusted_lim);
         }
         igvn->C->record_for_post_loop_opts_igvn(this);
+        // process_unstable_ifs precedes loop optimization. just bail out.
+        dom_iff->set_unc_bci(-1);
         return false;
       }
     }
