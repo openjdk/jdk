@@ -40,6 +40,7 @@ public class VirtualThreadDeadlocks {
     private static final Object LOCK1 = new Object();
     private static final Object LOCK2 = new Object();
 
+    private static volatile boolean lock2Obtained = false;
     /**
      * PP = test deadlock with two platform threads
      * PV = test deadlock with one platform thread and one virtual thread
@@ -53,7 +54,9 @@ public class VirtualThreadDeadlocks {
                 : Thread.ofVirtual();
         Thread thread1 = builder1.start(() -> {
             synchronized (LOCK1) {
-                try { Thread.sleep(1000); } catch (Exception e) { }
+                while (!lock2Obtained) {
+                    try { Thread.sleep(10); } catch (Exception e) { }
+                }
                 synchronized (LOCK2) { }
             }
         });
@@ -65,7 +68,7 @@ public class VirtualThreadDeadlocks {
                 : Thread.ofVirtual();
         Thread thread2 = builder2.start(() -> {
             synchronized (LOCK2) {
-                try { Thread.sleep(1000); } catch (Exception e) { }
+                lock2Obtained = true;
                 synchronized (LOCK1) { }
             }
         });
