@@ -27,7 +27,6 @@
 #
 #############################################################################
 
-
 vmTestbase/nsk/jvmti/SetFieldAccessWatch/setfldw001/TestDescription.java 8205957 generic-all
 
 serviceability/jvmti/vthread/ContFramePopTest/ContFramePopTest.java 8278053 generic-all
