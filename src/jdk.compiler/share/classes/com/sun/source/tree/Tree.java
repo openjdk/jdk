@@ -245,6 +245,22 @@ public interface Tree {
         DEFAULT_CASE_LABEL(DefaultCaseLabelTree.class),
 
         /**
+         * Used for instances of {@link ExpressionCaseLabelTree}.
+         *
+         * @since 19
+         */
+        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+        EXPRESSION_CASE_LABEL(ExpressionCaseLabelTree.class),
+
+        /**
+         * Used for instances of {@link PatternCaseLabelTree}.
+         *
+         * @since 19
+         */
+        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+        PATTERN_CASE_LABEL(PatternCaseLabelTree.class),
+
+        /**
          * Used for instances of {@link PrimitiveTypeTree}.
          */
         PRIMITIVE_TYPE(PrimitiveTypeTree.class),

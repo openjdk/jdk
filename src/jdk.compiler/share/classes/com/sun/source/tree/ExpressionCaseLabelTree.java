@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,17 @@ package com.sun.source.tree;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * A tree node used as the base class for the different kinds of
- * patterns.
- *
- * @since 16
+ * A case label element that refers to an expression
+ * @since 19
  */
-public interface PatternTree extends Tree {
+@PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+public interface ExpressionCaseLabelTree extends CaseLabelTree {
+
+    /**
+     * The expression for the case.
+     *
+     * @return the expression
+     */
+    public ExpressionTree getExpression();
+
 }

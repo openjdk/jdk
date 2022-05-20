@@ -3071,13 +3071,15 @@ public class JavacParser implements Parser {
             if (pattern) {
                 checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
                 JCPattern p = parsePattern(patternPos, mods, null);
+                JCExpression guard = null;
                 if (token.kind == IDENTIFIER && token.name() == names.when) {
                     nextToken();
-                    p.guard = term(EXPR | NOLAMBDA);
+                    guard = term(EXPR | NOLAMBDA);
                 }
-                return p;
+                return toP(F.at(patternPos).PatternCaseLabel(p, guard));
             } else {
-                return term(EXPR | NOLAMBDA);
+                JCExpression expr = term(EXPR | NOLAMBDA);
+                return toP(F.at(patternPos).ExpressionCaseLabel(expr));
             }
         }
 

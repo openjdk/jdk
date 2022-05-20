@@ -494,6 +494,18 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
+    public JCExpressionCaseLabel ExpressionCaseLabel(JCExpression expr) {
+        JCExpressionCaseLabel tree = new JCExpressionCaseLabel(expr);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCPatternCaseLabel PatternCaseLabel(JCPattern pat, JCExpression guard) {
+        JCPatternCaseLabel tree = new JCPatternCaseLabel(pat, guard);
+        tree.pos = pos;
+        return tree;
+    }
+
     public JCParenthesizedPattern ParenthesizedPattern(JCPattern pattern) {
         JCParenthesizedPattern tree = new JCParenthesizedPattern(pattern);
         tree.pos = pos;

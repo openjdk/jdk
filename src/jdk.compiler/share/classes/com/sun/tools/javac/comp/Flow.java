@@ -738,13 +738,14 @@ public class Flow {
             alive = alive.or(resolveYields(tree, prevPendingExits));
         }
 
-        private void handleConstantCaseLabel(Set<Symbol> constants, JCCaseLabel pat) {
+        private void handleConstantCaseLabel(Set<Symbol> constants, JCCaseLabel label) {
             if (constants != null) {
-                if (pat.isExpression()) {
-                    JCExpression expr = (JCExpression) pat;
+                if (label.hasTag(EXPRESSIONCASELABEL)) {
+                    JCExpression expr = ((JCExpressionCaseLabel) label).expr;
                     if (expr.hasTag(IDENT) && ((JCIdent) expr).sym.isEnum())
                         constants.add(((JCIdent) expr).sym);
-                } else if (pat.isPattern()) {
+                } else if (label.hasTag(PATTERNCASELABEL)) {
+                    JCPattern pat = ((JCPatternCaseLabel) label).pat;
                     Type primaryType = TreeInfo.primaryPatternType(pat);
 
                     constants.add(primaryType.tsym);
@@ -2468,8 +2469,8 @@ public class Flow {
                 if (l.head.stats.isEmpty() &&
                     l.tail.nonEmpty() &&
                     l.tail.head.labels.size() == 1 &&
-                    l.tail.head.labels.head.isExpression() &&
-                    TreeInfo.isNull(l.tail.head.labels.head)) {
+                    l.tail.head.labels.head.hasTag(EXPRESSIONCASELABEL) &&
+                    TreeInfo.isNull(((JCExpressionCaseLabel) l.tail.head.labels.head).expr)) {
                     //handling:
                     //case Integer i:
                     //case null:
@@ -2854,6 +2855,11 @@ public class Flow {
         public void visitBindingPattern(JCBindingPattern tree) {
             scan(tree.var);
             initParam(tree.var);
+        }
+
+        @Override
+        public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+            scan(tree.pat);
             scan(tree.guard);
         }
 
@@ -3023,25 +3029,17 @@ public class Flow {
         @Override
         public void visitBindingPattern(JCBindingPattern tree) {
             scan(tree.var);
-            JCTree prevTree = currentTree;
-            try {
-                currentTree = tree;
-                scan(tree.guard);
-            } finally {
-                currentTree = prevTree;
-            }
         }
 
         @Override
         public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
             scan(tree.pattern);
-            JCTree prevTree = currentTree;
-            try {
-                currentTree = tree;
-                scan(tree.guard);
-            } finally {
-                currentTree = prevTree;
-            }
+        }
+
+        @Override
+        public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+            scan(tree.pat);
+            scan(tree.guard);
         }
 
         @Override

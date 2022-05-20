@@ -771,9 +771,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      */
     @Override
     public R visitBindingPattern(BindingPatternTree node, P p) {
-        R r = scan(node.getVariable(), p);
-        r = scanAndReduce(node.getGuard(), p, r);
-        return r;
+        return scan(node.getVariable(), p);
     }
 
     /**
@@ -790,6 +788,40 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
     public R visitDefaultCaseLabel(DefaultCaseLabelTree node, P p) {
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     * @since 19
+     */
+    @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+    public R visitExpressionCaseLabel(ExpressionCaseLabelTree node, P p) {
+        return scan(node.getExpression(), p);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     * @since 19
+     */
+    @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+    public R visitPatternCaseLabel(PatternCaseLabelTree node, P p) {
+        R r = scan(node.getPattern(), p);
+        r = scanAndReduce(node.getGuard(), p, r);
+        return r;
     }
 
     /**
@@ -835,9 +867,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     @Override
     @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
     public R visitParenthesizedPattern(ParenthesizedPatternTree node, P p) {
-        R r = scan(node.getPattern(), p);
-        r = scanAndReduce(node.getGuard(), p, r);
-        return r;
+        return scan(node.getPattern(), p);
     }
 
     /**

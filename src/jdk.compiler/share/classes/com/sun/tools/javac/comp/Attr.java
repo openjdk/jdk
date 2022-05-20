@@ -1688,7 +1688,7 @@ public class Attr extends JCTree.Visitor {
             } else {
                 patternSwitch = cases.stream()
                                      .flatMap(c -> c.labels.stream())
-                                     .anyMatch(l -> l.isPattern());
+                                     .anyMatch(l -> l.hasTag(PATTERNCASELABEL));
             }
 
             // Attribute all cases and
@@ -1714,15 +1714,15 @@ public class Attr extends JCTree.Visitor {
                 }
                 MatchBindings currentBindings = prevBindings;
                 boolean wasUnconditionalPattern = hasUnconditionalPattern;
-                for (JCCaseLabel pat : c.labels) {
-                    if (pat.isExpression()) {
-                        JCExpression expr = (JCExpression) pat;
+                for (JCCaseLabel label : c.labels) {
+                    if (label.hasTag(EXPRESSIONCASELABEL)) {
+                        JCExpression expr = ((JCExpressionCaseLabel) label).expr;
                         if (TreeInfo.isNull(expr)) {
                             preview.checkSourceLevel(expr.pos(), Feature.CASE_NULL);
                             if (hasNullPattern) {
-                                log.error(pat.pos(), Errors.DuplicateCaseLabel);
+                                log.error(label.pos(), Errors.DuplicateCaseLabel);
                             } else if (wasUnconditionalPattern) {
-                                log.error(pat.pos(), Errors.PatternDominated);
+                                log.error(label.pos(), Errors.PatternDominated);
                             }
                             hasNullPattern = true;
                             attribExpr(expr, switchEnv, seltype);
@@ -1732,9 +1732,9 @@ public class Attr extends JCTree.Visitor {
                             if (sym == null) {
                                 log.error(expr.pos(), Errors.EnumLabelMustBeUnqualifiedEnum);
                             } else if (!labels.add(sym)) {
-                                log.error(pat.pos(), Errors.DuplicateCaseLabel);
+                                log.error(label.pos(), Errors.DuplicateCaseLabel);
                             } else {
-                                checkCaseLabelDominated(pat.pos(), coveredTypesForConstants, sym.type);
+                                checkCaseLabelDominated(label.pos(), coveredTypesForConstants, sym.type);
                             }
                         } else if (errorEnumSwitch) {
                             //error recovery: the selector is erroneous, and all the case labels
@@ -1743,7 +1743,7 @@ public class Attr extends JCTree.Visitor {
                             var prevResolveHelper = rs.basicLogResolveHelper;
                             try {
                                 rs.basicLogResolveHelper = rs.silentLogResolveHelper;
-                                attribExpr(pat, switchEnv, seltype);
+                                attribExpr(label, switchEnv, seltype);
                             } finally {
                                 rs.basicLogResolveHelper = prevResolveHelper;
                             }
@@ -1763,24 +1763,25 @@ public class Attr extends JCTree.Visitor {
                                                   (stringSwitch ? Errors.StringConstReq : Errors.ConstExprReq));
                                     }
                                 } else if (!stringSwitch && !types.isAssignable(seltype, syms.intType)) {
-                                    log.error(pat.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
+                                    log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
                                 } else if (!labels.add(pattype.constValue())) {
                                     log.error(c.pos(), Errors.DuplicateCaseLabel);
                                 } else {
-                                    checkCaseLabelDominated(pat.pos(), coveredTypesForConstants, types.boxedTypeOrType(pattype));
+                                    checkCaseLabelDominated(label.pos(), coveredTypesForConstants, types.boxedTypeOrType(pattype));
                                 }
                             }
                         }
-                    } else if (pat.hasTag(DEFAULTCASELABEL)) {
+                    } else if (label.hasTag(DEFAULTCASELABEL)) {
                         if (hasDefault) {
-                            log.error(pat.pos(), Errors.DuplicateDefaultLabel);
+                            log.error(label.pos(), Errors.DuplicateDefaultLabel);
                         } else if (hasUnconditionalPattern) {
-                            log.error(pat.pos(), Errors.UnconditionalPatternAndDefault);
+                            log.error(label.pos(), Errors.UnconditionalPatternAndDefault);
                         }
                         hasDefault = true;
                         matchBindings = MatchBindingsComputer.EMPTY;
                     } else {
-                        //binding pattern
+                        //pattern
+                        JCPattern pat = ((JCPatternCaseLabel) label).pat;
                         attribExpr(pat, switchEnv);
                         Type primaryType = TreeInfo.primaryPatternType(pat);
                         if (!primaryType.hasTag(TYPEVAR)) {
@@ -1788,7 +1789,7 @@ public class Attr extends JCTree.Visitor {
                         }
                         checkCastablePattern(pat.pos(), seltype, primaryType);
                         Type patternType = types.erasure(primaryType);
-                        JCExpression guard = ((JCPattern) pat).guard;
+                        JCExpression guard = ((JCPatternCaseLabel) label).guard;
                         if (guard != null) {
                             MatchBindings afterPattern = matchBindings;
                             Env<AttrContext> bodyEnv = bindingEnv(env, matchBindings.bindingsWhenTrue);
@@ -1822,7 +1823,7 @@ public class Attr extends JCTree.Visitor {
                             }
                         }
                     }
-                    currentBindings = matchBindingsComputer.switchCase(pat, currentBindings, matchBindings);
+                    currentBindings = matchBindingsComputer.switchCase(label, currentBindings, matchBindings);
                 }
 
                 Env<AttrContext> caseEnv =

@@ -3754,15 +3754,15 @@ public class Lower extends TreeTranslator {
         }
         ListBuffer<JCCase> newCases = new ListBuffer<>();
         for (JCCase c : cases) {
-            if (c.labels.head.isExpression()) {
+            if (c.labels.head.hasTag(EXPRESSIONCASELABEL)) {
                 JCExpression pat;
                 if (TreeInfo.isNull(c.labels.head)) {
                     pat = makeLit(syms.intType, -1);
                 } else {
-                    VarSymbol label = (VarSymbol)TreeInfo.symbol((JCExpression) c.labels.head);
+                    VarSymbol label = (VarSymbol)TreeInfo.symbol(((JCExpressionCaseLabel) c.labels.head).expr);
                     pat = map.forConstant(label);
                 }
-                newCases.append(make.Case(JCCase.STATEMENT, List.of(pat), c.stats, null));
+                newCases.append(make.Case(JCCase.STATEMENT, List.of(make.ExpressionCaseLabel(pat)), c.stats, null));
             } else {
                 newCases.append(c);
             }
@@ -3842,12 +3842,12 @@ public class Lower extends TreeTranslator {
             int nullCaseLabel = -1;
 
             for(JCCase oneCase : caseList) {
-                if (oneCase.labels.head.isExpression()) {
+                if (oneCase.labels.head.hasTag(EXPRESSIONCASELABEL)) {
                     if (TreeInfo.isNull(oneCase.labels.head)) {
                         nullCase = oneCase;
                         nullCaseLabel = casePosition;
                     } else {
-                        JCExpression expression = (JCExpression) oneCase.labels.head;
+                        JCExpression expression = ((JCExpressionCaseLabel) oneCase.labels.head).expr;
                         String labelExpr = (String) expression.type.constValue();
                         Integer mapping = caseLabelToPosition.put(labelExpr, casePosition);
                         Assert.checkNull(mapping);
@@ -3932,7 +3932,10 @@ public class Lower extends TreeTranslator {
                 breakStmt.target = switch1;
                 lb.append(elsepart).append(breakStmt);
 
-                caseBuffer.append(make.Case(JCCase.STATEMENT, List.of(make.Literal(hashCode)), lb.toList(), null));
+                caseBuffer.append(make.Case(JCCase.STATEMENT,
+                                            List.of(make.ExpressionCaseLabel(make.Literal(hashCode))),
+                                            lb.toList(),
+                                            null));
             }
 
             switch1.cases = caseBuffer.toList();
@@ -3951,18 +3954,18 @@ public class Lower extends TreeTranslator {
 
             ListBuffer<JCCase> lb = new ListBuffer<>();
             for(JCCase oneCase : caseList ) {
-                boolean isDefault = !oneCase.labels.head.isExpression();
-                JCCaseLabel caseExpr;
+                boolean isDefault = !oneCase.labels.head.hasTag(EXPRESSIONCASELABEL);
+                JCExpression caseExpr;
                 if (isDefault)
                     caseExpr = null;
                 else if (oneCase == nullCase) {
                     caseExpr = make.Literal(nullCaseLabel);
                 } else {
-                    caseExpr = make.Literal(caseLabelToPosition.get((String)TreeInfo.skipParens((JCExpression) oneCase.labels.head).
+                    caseExpr = make.Literal(caseLabelToPosition.get((String)TreeInfo.skipParens(((JCExpressionCaseLabel) oneCase.labels.head).expr).
                                                                     type.constValue()));
                 }
 
-                lb.append(make.Case(JCCase.STATEMENT, caseExpr == null ? List.of(make.DefaultCaseLabel()) : List.of(caseExpr),
+                lb.append(make.Case(JCCase.STATEMENT, caseExpr == null ? List.of(make.DefaultCaseLabel()) : List.of(make.ExpressionCaseLabel(caseExpr)),
                                     oneCase.stats, null));
             }
 
@@ -4023,7 +4026,7 @@ public class Lower extends TreeTranslator {
             while (constants.contains(nullValue)) nullValue++;
 
             constants.add(nullValue);
-            nullCase.labels.head = makeLit(syms.intType, nullValue);
+            nullCase.labels.head = make.ExpressionCaseLabel(makeLit(syms.intType, nullValue));
 
             int replacementValue = nullValue;
 
