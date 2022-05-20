@@ -8266,12 +8266,12 @@ instruct VectorPopulateIndex(vec dst, rRegI src1, immI_1 src2, vec vtmp, rRegP s
   effect(TEMP dst, TEMP vtmp, TEMP scratch);
   format %{ "vector_populate_index $dst $src1 $src2\t! using $vtmp and $scratch as TEMP" %}
   ins_encode %{
-     int vlen_in_bytes = Matcher::vector_length_in_bytes(this);
+     assert($src2$$constant == 1, "required");
+     int vlen = Matcher::vector_length(this);
      int vlen_enc = vector_length_encoding(this);
      BasicType elem_bt = Matcher::vector_element_basic_type(this);
-     assert($src2$$constant == 1, "required");
      __ vpbroadcast(elem_bt, $vtmp$$XMMRegister, $src1$$Register, vlen_enc);
-     __ load_iota_indices($dst$$XMMRegister, $scratch$$Register, vlen_in_bytes/type2aelembytes(elem_bt));
+     __ load_iota_indices($dst$$XMMRegister, $scratch$$Register, vlen);
      if (elem_bt != T_BYTE) {
        __ vconvert_b2x(elem_bt, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
      }
@@ -8285,12 +8285,12 @@ instruct VectorPopulateLIndex(vec dst, rRegL src1, immI_1 src2, vec vtmp, rRegP 
   effect(TEMP dst, TEMP vtmp, TEMP scratch);
   format %{ "vector_populate_index $dst $src1 $src2\t! using $vtmp and $scratch as TEMP" %}
   ins_encode %{
-     int vlen_in_bytes = Matcher::vector_length_in_bytes(this);
+     assert($src2$$constant == 1, "required");
+     int vlen = Matcher::vector_length(this);
      int vlen_enc = vector_length_encoding(this);
      BasicType elem_bt = Matcher::vector_element_basic_type(this);
-     assert($src2$$constant == 1, "required");
      __ vpbroadcast(elem_bt, $vtmp$$XMMRegister, $src1$$Register, vlen_enc);
-     __ load_iota_indices($dst$$XMMRegister, $scratch$$Register, vlen_in_bytes/type2aelembytes(elem_bt));
+     __ load_iota_indices($dst$$XMMRegister, $scratch$$Register, vlen);
      if (elem_bt != T_BYTE) {
        __ vconvert_b2x(elem_bt, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
      }

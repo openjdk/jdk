@@ -23,6 +23,7 @@
 
 /**
 * @test
+* @bug 8286972
 * @summary Test vectorization of loop induction variable usage in the loop
 * @requires vm.compiler2.enabled
 * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") |
@@ -36,7 +37,7 @@ import compiler.lib.ir_framework.*;
 import java.util.Random;
 
 public class TestPopulateIndex {
-    private static final int count = 65536;
+    private static final int count = 10000;
 
     private int[] idx;
     private int[] src;
@@ -68,7 +69,7 @@ public class TestPopulateIndex {
     }
 
     public void checkResultIndexArrayFill() {
-        for (int i = 0; i < count; ++i) {
+        for (int i = 0; i < count; i++) {
             int expected = i;
             if (idx[i] != expected) {
                 throw new RuntimeException("Invalid result: idx[" + i + "] = " + idx[i] + " != " + expected);
@@ -86,7 +87,7 @@ public class TestPopulateIndex {
     }
 
     public void checkResultExprWithIndex1() {
-        for (int i = 0; i < count; ++i) {
+        for (int i = 0; i < count; i++) {
             int expected = src[i] * (i & 7);
             if (dst[i] != expected) {
                 throw new RuntimeException("Invalid result: dst[" + i + "] = " + dst[i] + " != " + expected);
@@ -104,7 +105,7 @@ public class TestPopulateIndex {
     }
 
     public void checkResultExprWithIndex2() {
-        for (int i = 0; i < count; ++i) {
+        for (int i = 0; i < count; i++) {
             float expected = i * i  + 100;
             if (f[i] != expected) {
                 throw new RuntimeException("Invalid result: f[" + i + "] = " + f[i] + " != " + expected);
