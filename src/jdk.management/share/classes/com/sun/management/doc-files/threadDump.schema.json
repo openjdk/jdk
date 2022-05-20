@@ -1,0 +1,99 @@
+{
+  "type": "object",
+  "properties": {
+    "threadDump": {
+      "type": "object",
+      "properties": {
+        "processId": {
+          "type": "integer",
+          "description": "The native process id of the Java virtual machine."
+        },
+        "time": {
+          "type": "string",
+          "description": "The time in ISO 8601 format when the thread dump was generated."
+        },
+        "runtimeVersion": {
+          "type": "string",
+          "description": "The runtime version, see java.lang.Runtime.version()."
+        },
+        "threadContainers": {
+          "type": "array",
+          "description": "The array of thread containers.",
+          "items": [
+            {
+              "type": "object",
+              "properties": {
+                "container": {
+                  "type": "string",
+                  "description": "The container name. The container name is unique."
+                },
+                "parent": {
+                  "type": ["string", "null"],
+                  "description": "The parent container name or null for the root container."
+                },
+                "owner": {
+                  "type": ["integer", "null"],
+                  "description": "The thread identifier of the owner thread or null if not owned."
+                },
+                "threads": {
+                  "type": "array",
+                  "description": "The array of threads in the thread container.",
+                  "items": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "tid": {
+                          "type": "integer",
+                          "description": "The thread identifier, see java.lang.Thread.threadId()."
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "The thread name."
+                        },
+                        "stack": {
+                          "type": "array",
+                          "description": "The thread stack. The first element is the top of the stack.",
+                          "items": [
+                            {
+                              "type": "string",
+                              "description": "A stack trace element, see java.lang.StackTraceElement."
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "tid",
+                        "name",
+                        "stack"
+                      ]
+                    }
+                  ]
+                },
+                "threadCount": {
+                  "type": "integer",
+                  "description": "The number of threads in the thread container."
+                }
+              },
+              "required": [
+                "container",
+                "parent",
+                "owner",
+                "threads",
+                "threadCount"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "processId",
+        "time",
+        "runtimeVersion",
+        "threadContainers"
+      ]
+    }
+  },
+  "required": [
+    "threadDump"
+  ]
+}
