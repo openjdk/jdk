@@ -2606,8 +2606,8 @@ void PhaseMacroExpand::print_statistics() {
 }
 
 int PhaseMacroExpand::count_MemBar() {
-  if(!PrintOptoStatistics) { 
-    return 0; 
+  if(!PrintOptoStatistics) {
+    return 0;
   }
   Unique_Node_List ideal_nodes;
   int total = 0;
