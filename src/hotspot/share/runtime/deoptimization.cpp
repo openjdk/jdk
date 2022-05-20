@@ -22,6 +22,7 @@
  *
  */
 
+#include "logging/logLevel.hpp"
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
@@ -38,6 +39,8 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "logging/log.hpp"
+#include "logging/logMessage.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -1928,6 +1931,19 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       get_method_data(current, profiled_method, create_if_missing);
 
     JFR_ONLY(post_deoptimization_event(nm, trap_method(), trap_bci, trap_bc, reason, action);)
+
+    if(Log(deoptimization)::is_info()) {
+      LogMessage(deoptimization) lm;
+      auto tm = trap_method();
+      lm.info("Deoptimization start {");
+      lm.info("  compileId = %d", nm->compile_id());
+      lm.info("  compiler = %s", compilertype2name(nm->compiler_type()));
+      lm.info("  method:lineno:bci = %s:%d:%d", tm->name_and_sig_as_C_string(), tm->line_number_from_bci(trap_bci), trap_bci);
+      lm.info("  instruction = %s", Bytecodes::name(trap_bc));
+      lm.info("  reason = %s", Deoptimization::trap_reason_name(reason));
+      lm.info("  action = %s", Deoptimization::trap_action_name(action));
+      lm.info("} Deoptimization end");
+    }
 
     // Log a message
     Events::log_deopt_message(current, "Uncommon trap: reason=%s action=%s pc=" INTPTR_FORMAT " method=%s @ %d %s",
