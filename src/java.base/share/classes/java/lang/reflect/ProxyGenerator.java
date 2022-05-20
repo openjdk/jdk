@@ -598,8 +598,6 @@ final class ProxyGenerator extends ClassWriter {
         mv.visitTryCatchBlock(L_startBlock, L_endBlock, L_NoClassHandler,
                 JL_CLASS_NOT_FOUND_EX);
 
-        mv.visitLabel(L_startBlock);
-
         // Put ClassLoader at local variable index 0, used by
         // Class.forName(String, boolean, ClassLoader) calls
         mv.visitLdcInsn(Type.getObjectType(dotToSlash(className)));
@@ -607,6 +605,7 @@ final class ProxyGenerator extends ClassWriter {
                 "getClassLoader", "()" + LJL_CLASSLOADER, false);
         mv.visitVarInsn(ASTORE, 0);
 
+        mv.visitLabel(L_startBlock);
         for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
             for (ProxyMethod pm : sigmethods) {
                 pm.codeFieldInitialization(mv, className);
