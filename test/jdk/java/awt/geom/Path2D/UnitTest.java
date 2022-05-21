@@ -1429,16 +1429,38 @@ public class UnitTest {
     }
 
     public static void main(String argv[]) {
-        int limit = (argv.length > 0) ? 10000 : 1;
+        // as specific failures come up we can add them to this array to make sure they're frequently tested:
+        long[] previousBugSeeds = new long[] {
+
+            // these are all failures related to JDK-8176501
+            4603421469924484958L,
+            4596019360892069260L,
+            4604586530476373958L,
+            4603766396818608126L
+
+        };
+
+        for (long seed : previousBugSeeds) {
+            test("", seed);
+        }
+
+        int limit = (argv.length > 0) ? 10_000_000 : 10_000_000;
         verbose = (argv.length > 1);
         for (int i = 0; i < limit; i++) {
             long seed = Double.doubleToLongBits(Math.random());
-            System.out.println("loop #"+(i+1)+", seed = "+seed);
-
-            UnitTest t = new UnitTest(seed);
-            t.test(new GPCreator());
-            t.test(new FltCreator());
-            t.test(new DblCreator());
+            test("loop #" + (i + 1), seed);
         }
+    }
+
+    private static void test(String logPrefix, long seed) {
+        String msg = "seed = " + seed;
+        if (!logPrefix.isEmpty())
+            msg = logPrefix + ", " + msg;
+        System.out.println(msg);
+
+        UnitTest t = new UnitTest(seed);
+        t.test(new GPCreator());
+        t.test(new FltCreator());
+        t.test(new DblCreator());
     }
 }
