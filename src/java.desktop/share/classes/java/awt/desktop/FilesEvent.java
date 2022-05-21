@@ -38,7 +38,9 @@ import java.util.List;
  *
  * @since 9
  */
-public class FilesEvent extends AppEvent {
+public sealed class FilesEvent extends AppEvent
+    permits OpenFilesEvent,
+            PrintFilesEvent {
 
     /**
      * Use serialVersionUID from JDK 9 for interoperability.

@@ -1493,6 +1493,9 @@ G1CollectedHeap::G1CollectedHeap() :
   // objects are created.
   _filler_array_max_size = _humongous_object_threshold_in_words;
 
+  // Override the default _stack_chunk_max_size so that no humongous stack chunks are created
+  _stack_chunk_max_size = _humongous_object_threshold_in_words;
+
   uint n_queues = ParallelGCThreads;
   _task_queues = new G1ScannerTasksQueueSet(n_queues);
 
@@ -1893,6 +1896,7 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     case GCCause::_g1_humongous_allocation: return true;
     case GCCause::_g1_periodic_collection:  return G1PeriodicGCInvokesConcurrent;
     case GCCause::_wb_breakpoint:           return true;
+    case GCCause::_codecache_GC_threshold:  return true;
     default:                                return is_user_requested_concurrent_full_gc(cause);
   }
 }
@@ -2279,7 +2283,7 @@ void G1CollectedHeap::object_iterate_parallel(ObjectClosure* cl, uint worker_id,
 }
 
 void G1CollectedHeap::keep_alive(oop obj) {
-  G1BarrierSet::enqueue(obj);
+  G1BarrierSet::enqueue_preloaded(obj);
 }
 
 void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
@@ -3450,4 +3454,17 @@ GrowableArray<MemoryPool*> G1CollectedHeap::memory_pools() {
 void G1CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) {
   HeapRegion* region = heap_region_containing(start);
   region->fill_with_dummy_object(start, pointer_delta(end, start), zap);
+}
+
+void G1CollectedHeap::start_codecache_marking_cycle_if_inactive() {
+  if (!Continuations::is_gc_marking_cycle_active()) {
+    // This is the normal case when we do not call collect when a
+    // concurrent mark is ongoing. We then start a new code marking
+    // cycle. If, on the other hand, a concurrent mark is ongoing, we
+    // will be conservative and use the last code marking cycle. Code
+    // caches marked between the two concurrent marks will live a bit
+    // longer than needed.
+    Continuations::on_gc_marking_cycle_start();
+    Continuations::arm_all_nmethods();
+  }
 }

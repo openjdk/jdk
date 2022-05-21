@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -407,7 +407,7 @@
  * <tr>
  * <th scope="row" style="font-weight:normal" id="XPATH">XPath</th>
  * <td style="text-align:center">XPath</td>
- * <td>
+ * <td>N/A
  * </td>
  * <td>
  * {@code XPathFactory factory = XPathFactory.newInstance();} <br>
@@ -432,12 +432,13 @@
  * <th scope="col" rowspan="2">Full Name (<a href="#NamingConvention">prefix + name</a>)
  * <a href="#Note1">[1]</a></th>
  * <th scope="col" rowspan="2">Description</th>
- * <th scope="col" rowspan="2">System Property <a href="#Note2">[2]</a></th>
- * <th scope="col" rowspan="2">jaxp.properties <a href="#Note2">[2]</a></th>
- * <th scope="col" colspan="4" style="text-align:center">Value <a href="#Note3">[3]</a></th>
- * <th scope="col" rowspan="2">Security <a href="#Note4">[4]</a></th>
- * <th scope="col" rowspan="2">Supported Processor <a href="#Note5">[5]</a></th>
- * <th scope="col" rowspan="2">Since <a href="#Note6">[6]</a></th>
+ * <th scope="col" rowspan="2">API Property <a href="#Note2">[2]</a></th>
+ * <th scope="col" rowspan="2">System Property <a href="#Note3">[3]</a></th>
+ * <th scope="col" rowspan="2">jaxp.properties <a href="#Note3">[3]</a></th>
+ * <th scope="col" colspan="4" style="text-align:center">Value <a href="#Note4">[4]</a></th>
+ * <th scope="col" rowspan="2">Security <a href="#Note5">[5]</a></th>
+ * <th scope="col" rowspan="2">Supported Processor <a href="#Note6">[6]</a></th>
+ * <th scope="col" rowspan="2">Since <a href="#Note7">[7]</a></th>
  * </tr>
  * <tr>
  * <th scope="col">Type</th>
@@ -453,6 +454,7 @@
  * <td id="EELimit">{@systemProperty jdk.xml.entityExpansionLimit}</td>
  * <td>Limits the number of entity expansions.
  * </td>
+ * <td style="text-align:center" rowspan="9">yes</td>
  * <td style="text-align:center" rowspan="9">yes</td>
  * <td style="text-align:center" rowspan="9">yes</td>
  * <td style="text-align:center" rowspan="9">Integer</td>
@@ -544,6 +546,7 @@
  * </td>
  * <td style="text-align:center">yes</td>
  * <td style="text-align:center">yes</td>
+ * <td style="text-align:center">yes</td>
  * <td style="text-align:center">boolean</td>
  * <td style="text-align:center">true/false</td>
  * <td style="text-align:center">false</td>
@@ -567,6 +570,7 @@
  * </td>
  * <td style="text-align:center">yes</td>
  * <td style="text-align:center">yes</td>
+ * <td style="text-align:center">yes</td>
  * <td style="text-align:center">String</td>
  * <td style="text-align:center">yes/no</td>
  * <td style="text-align:center">no</td>
@@ -584,6 +588,7 @@
  * </td>
  * <td style="text-align:center">yes</td>
  * <td style="text-align:center">yes</td>
+ * <td style="text-align:center">yes</td>
  * <td style="text-align:center">Integer</td>
  * <td>A positive integer. A value less than
  * or equal to 0 indicates that the property is not specified. If the value is not
@@ -599,6 +604,7 @@
  * <td>Sets a non-null ClassLoader instance to be used for loading XSLTC java
  * extension functions.
  * </td>
+ * <td style="text-align:center">yes</td>
  * <td style="text-align:center">no</td>
  * <td style="text-align:center">no</td>
  * <td style="text-align:center">Object</td>
@@ -608,6 +614,46 @@
  * <td style="text-align:center">No</td>
  * <td style="text-align:center"><a href="#Transform">Transform</a></td>
  * <td style="text-align:center">9</td>
+ * </tr>
+ * <tr>
+ * <td id="extensionClassLoader">jdk.xml.xpathExprGrpLimit</td>
+ * <td>Limits the number of groups an XPath expression can contain.
+ * </td>
+ * <td style="text-align:center" rowspan="2">
+ *     <a href="#Transform">Transform</a>:yes<br>
+ *     <a href="#XPATH">XPath</a>:no
+ * </td>
+ * <td style="text-align:center" rowspan="3">yes</td>
+ * <td style="text-align:center" rowspan="3">yes</td>
+ * <td style="text-align:center" rowspan="3">Integer</td>
+ * <td rowspan="3">A positive integer. A value less than or equal to 0 indicates no limit.
+ * If the value is not an integer, a NumberFormatException is thrown. </td>
+ * <td style="text-align:center">10</td>
+ * <td style="text-align:center">10</td>
+ * <td style="text-align:center" rowspan="3">Yes</td>
+ * <td style="text-align:center" rowspan="2">
+ *     <a href="#Transform">Transform</a><br>
+ *     <a href="#XPath">XPath</a>
+ * </td>
+ * <td style="text-align:center" rowspan="3">19</td>
+ * </tr>
+ * <tr>
+ * <td id="extensionClassLoader">jdk.xml.xpathExprOpLimit</td>
+ * <td>Limits the number of operators an XPath expression can contain.
+ * </td>
+ * <td style="text-align:center">100</td>
+ * <td style="text-align:center">100</td>
+ * </tr>
+ * <tr>
+ * <td id="extensionClassLoader">jdk.xml.xpathTotalOpLimit</td>
+ * <td>Limits the total number of XPath operators in an XSL Stylesheet.
+ * </td>
+ * <td style="text-align:center">yes</td>
+ * <td style="text-align:center">10000</td>
+ * <td style="text-align:center">10000</td>
+ * <td style="text-align:center">
+ *     <a href="#Transform">Transform</a><br>
+ * </td>
  * </tr>
  * </tbody>
  * </table>
@@ -622,12 +668,13 @@
  * <th scope="col" rowspan="2">Full Name (<a href="#NamingConvention">prefix + name</a>)
  * <a href="#Note1">[1]</a></th>
  * <th scope="col" rowspan="2">Description</th>
- * <th scope="col" rowspan="2">System Property <a href="#Note2">[2]</a></th>
- * <th scope="col" rowspan="2">jaxp.properties <a href="#Note2">[2]</a></th>
- * <th scope="col" colspan="4" style="text-align:center">Value <a href="#Note3">[3]</a></th>
- * <th scope="col" rowspan="2">Security <a href="#Note4">[4]</a></th>
- * <th scope="col" rowspan="2">Supported Processor <a href="#Note5">[5]</a></th>
- * <th scope="col" rowspan="2">Since <a href="#Note6">[6]</a></th>
+ * <th scope="col" rowspan="2">API Property <a href="#Note2">[2]</a></th>
+ * <th scope="col" rowspan="2">System Property <a href="#Note3">[3]</a></th>
+ * <th scope="col" rowspan="2">jaxp.properties <a href="#Note3">[3]</a></th>
+ * <th scope="col" colspan="4" style="text-align:center">Value <a href="#Note4">[4]</a></th>
+ * <th scope="col" rowspan="2">Security <a href="#Note5">[5]</a></th>
+ * <th scope="col" rowspan="2">Supported Processor <a href="#Note6">[6]</a></th>
+ * <th scope="col" rowspan="2">Since <a href="#Note7">[7]</a></th>
  * </tr>
  * <tr>
  * <th scope="col">Type</th>
@@ -641,6 +688,7 @@
  * <td id="ExtFunc">{@systemProperty jdk.xml.enableExtensionFunctions}</td>
  * <td>Determines if XSLT and XPath extension functions are to be allowed.
  * </td>
+ * <td style="text-align:center" rowspan="3">yes</td>
  * <td style="text-align:center" rowspan="3">yes</td>
  * <td style="text-align:center" rowspan="3">yes</td>
  * <td style="text-align:center" rowspan="3">Boolean</td>
@@ -700,11 +748,14 @@
  * <p id="Note1">
  * <b>[1]</b> The full name of a property should be used to set the property.
  * <p id="Note2">
- * <b>[2]</b> A value "yes" indicates there is a corresponding System Property
+ * <b>[2]</b> A value "yes" indicates that the property can be set through the
+ * processor or its factory, "no" otherwise.
+ * <p id="Note3">
+ * <b>[3]</b> A value "yes" indicates there is a corresponding System Property
  * for the property, "no" otherwise.
  *
- * <p id="Note3">
- * <b>[3]</b> The value must be exactly as listed in this table, case-sensitive.
+ * <p id="Note4">
+ * <b>[4]</b> The value must be exactly as listed in this table, case-sensitive.
  * The value of the corresponding System Property is the String representation of
  * the property value. If the type is boolean, the system property is true only
  * if it is "true"; If the type is String, the system property is true only if
@@ -713,15 +764,15 @@
  * is Integer, the value of the System Property is the String representation of
  * the value (e.g. "64000" for {@code entityExpansionLimit}).
  *
- * <p id="Note4">
- * <b>[4]</b> A value "yes" indicates the property is a Security Property. Refer
+ * <p id="Note5">
+ * <b>[5]</b> A value "yes" indicates the property is a Security Property. Refer
  * to the <a href="#ScopeAndOrder">Scope and Order</a> on how secure processing
  * may affect the value of a Security Property.
- * <p id="Note5">
- * <b>[5]</b> One or more processors that support the property. The values of the
- * field are IDs described in table <a href="#Processor">Processors</a>.
  * <p id="Note6">
- * <b>[6]</b> Indicates the initial release the property is introduced.
+ * <b>[6]</b> One or more processors that support the property. The values of the
+ * field are IDs described in table <a href="#Processor">Processors</a>.
+ * <p id="Note7">
+ * <b>[7]</b> Indicates the initial release the property is introduced.
  *
  * <h3>Legacy Property Names (deprecated)</h3>
  * JDK releases prior to JDK 17 support the use of URI style prefix for properties.

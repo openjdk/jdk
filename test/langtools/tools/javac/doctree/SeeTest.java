@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8031212 8273244
+ * @bug 7021614 8031212 8273244 8284908
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -168,7 +168,7 @@ DocComment[DOC_COMMENT, pos:1
     Text[TEXT, pos:1, abc.]
   body: empty
   block tags: 1
-    Erroneous[ERRONEOUS, pos:7
+    Erroneous[ERRONEOUS, pos:7, prefPos:19
       code: compiler.err.dc.unexpected.content
       body: @see_123_text
     ]

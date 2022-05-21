@@ -75,8 +75,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * region, or culture.
  *
  * <p> The {@code Locale} class implements IETF BCP 47 which is composed of
- * <a href="http://tools.ietf.org/html/rfc4647">RFC 4647 "Matching of Language
- * Tags"</a> and <a href="http://tools.ietf.org/html/rfc5646">RFC 5646 "Tags
+ * <a href="https://tools.ietf.org/html/rfc4647">RFC 4647 "Matching of Language
+ * Tags"</a> and <a href="https://tools.ietf.org/html/rfc5646">RFC 5646 "Tags
  * for Identifying Languages"</a> with support for the LDML (UTS#35, "Unicode
  * Locale Data Markup Language") BCP 47-compatible extensions for locale data
  * exchange.
@@ -230,9 +230,9 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * implementations in a Java Runtime Environment might not support any
  * particular Unicode locale attributes or key/type pairs.
  *
- * <h3>Creating a Locale</h3>
+ * <h3><a id="ObtainingLocale">Obtaining a Locale</a></h3>
  *
- * <p>There are several different ways to create a {@code Locale}
+ * <p>There are several ways to obtain a {@code Locale}
  * object.
  *
  * <h4>Builder</h4>
@@ -240,36 +240,20 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>Using {@link Builder} you can construct a {@code Locale} object
  * that conforms to BCP 47 syntax.
  *
- * <h4>Constructors</h4>
- *
- * <p>The {@code Locale} class provides three constructors:
- * <blockquote>
- * <pre>
- *     {@link #Locale(String language)}
- *     {@link #Locale(String language, String country)}
- *     {@link #Locale(String language, String country, String variant)}
- * </pre>
- * </blockquote>
- * These constructors allow you to create a {@code Locale} object
- * with language, country and variant, but you cannot specify
- * script or extensions.
- *
  * <h4>Factory Methods</h4>
  *
- * <p>The method {@link #forLanguageTag} creates a {@code Locale}
- * object for a well-formed BCP 47 language tag.
+ * <p>The method {@link #forLanguageTag} obtains a {@code Locale}
+ * object for a well-formed BCP 47 language tag. The method
+ * {@link #of(String, String, String)} and its overloads obtain a
+ * {@code Locale} object from given {@code language}, {@code country},
+ * and/or {@code variant} defined above.
  *
  * <h4>Locale Constants</h4>
  *
  * <p>The {@code Locale} class provides a number of convenient constants
- * that you can use to create {@code Locale} objects for commonly used
- * locales. For example, the following creates a {@code Locale} object
- * for the United States:
- * <blockquote>
- * <pre>
- *     Locale.US
- * </pre>
- * </blockquote>
+ * that you can use to obtain {@code Locale} objects for commonly used
+ * locales. For example, {@code Locale.US} is the {@code Locale} object
+ * for the United States.
  *
  * <h3><a id="LocaleMatching">Locale Matching</a></h3>
  *
@@ -280,7 +264,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * locale matching documentation.
  *
  * <p>In order to do matching a user's preferred locales to a set of language
- * tags, <a href="http://tools.ietf.org/html/rfc4647">RFC 4647 Matching of
+ * tags, <a href="https://tools.ietf.org/html/rfc4647">RFC 4647 Matching of
  * Language Tags</a> defines two mechanisms: filtering and lookup.
  * <em>Filtering</em> is used to get all matching locales, whereas
  * <em>lookup</em> is to choose the best matching locale.
@@ -344,7 +328,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <h3>Use of Locale</h3>
  *
- * <p>Once you've created a {@code Locale} you can query it for information
+ * <p>Once you've obtained a {@code Locale} you can query it for information
  * about itself. Use {@code getCountry} to get the country (or region)
  * code and {@code getLanguage} to get the language code.
  * You can use {@code getDisplayCountry} to get the
@@ -387,7 +371,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <h3>Compatibility</h3>
  *
- * <p>In order to maintain compatibility with existing usage, Locale's
+ * <p>In order to maintain compatibility, Locale's
  * constructors retain their behavior prior to the Java Runtime
  * Environment version 1.7.  The same is largely true for the
  * {@code toString} method. Thus Locale objects can continue to
@@ -741,6 +725,9 @@ public final class Locale implements Cloneable, Serializable {
      * see <a href="#special_cases_constructor">Special Cases</a> for more information.
      * </ul>
      *
+     * @deprecated Locale constructors have been deprecated. See <a href ="#ObtainingLocale">
+     * Obtaining a Locale</a> for other options.
+     *
      * @param language An ISO 639 alpha-2 or alpha-3 language code, or a language subtag
      * up to 8 characters in length.  See the {@code Locale} class description about
      * valid language values.
@@ -750,6 +737,7 @@ public final class Locale implements Cloneable, Serializable {
      * See the {@code Locale} class description for the details.
      * @throws    NullPointerException thrown if any argument is null.
      */
+    @Deprecated(since="19")
     public Locale(String language, String country, String variant) {
         if (language == null || country == null || variant == null) {
             throw new NullPointerException();
@@ -771,6 +759,9 @@ public final class Locale implements Cloneable, Serializable {
      * any syntactic checks on the input.
      * </ul>
      *
+     * @deprecated Locale constructors have been deprecated. See <a href="#ObtainingLocale">
+     * Obtaining a Locale</a> for other options.
+     *
      * @param language An ISO 639 alpha-2 or alpha-3 language code, or a language subtag
      * up to 8 characters in length.  See the {@code Locale} class description about
      * valid language values.
@@ -778,6 +769,7 @@ public final class Locale implements Cloneable, Serializable {
      * See the {@code Locale} class description about valid country values.
      * @throws    NullPointerException thrown if either argument is null.
      */
+    @Deprecated(since="19")
     public Locale(String language, String country) {
         this(language, country, "");
     }
@@ -794,14 +786,94 @@ public final class Locale implements Cloneable, Serializable {
      * any syntactic checks on the input.
      * </ul>
      *
+     * @deprecated Locale constructors have been deprecated. See <a href="#ObtainingLocale">
+     * Obtaining a Locale</a> for other options.
+     *
      * @param language An ISO 639 alpha-2 or alpha-3 language code, or a language subtag
      * up to 8 characters in length.  See the {@code Locale} class description about
      * valid language values.
      * @throws    NullPointerException thrown if argument is null.
      * @since 1.4
      */
+    @Deprecated(since="19")
     public Locale(String language) {
         this(language, "", "");
+    }
+
+    /**
+     * Obtains a locale from language, country and variant.
+     * This method normalizes the language value to lowercase and
+     * the country value to uppercase.
+     * @implNote
+     * <ul>
+     * <li>This method does not make any syntactic checks on the input.
+     * Use {@link Locale.Builder} for full syntactic checks with BCP47.
+     * <li>The two cases ("ja", "JP", "JP") and ("th", "TH", "TH") are handled specially,
+     * see <a href="#special_cases_constructor">Special Cases</a> for more information.
+     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
+     * their current forms. See <a href="#legacy_language_codes">Legacy language
+     * codes</a> for more information.
+     * </ul>
+     *
+     * @param language A language code. See the {@code Locale} class description of
+     * <a href="#def_language">language</a> values.
+     * @param country A country code. See the {@code Locale} class description of
+     * <a href="#def_region">country</a> values.
+     * @param variant Any arbitrary value used to indicate a variation of a {@code Locale}.
+     * See the {@code Locale} class description of <a href="#def_variant">variant</a> values.
+     * @throws    NullPointerException thrown if any argument is null.
+     * @return A {@code Locale} object
+     * @since 19
+     */
+    public static Locale of(String language, String country, String variant) {
+        return getInstance(language, "", country, variant, null);
+    }
+
+    /**
+     * Obtains a locale from language and country.
+     * This method normalizes the language value to lowercase and
+     * the country value to uppercase.
+     * @implNote
+     * <ul>
+     * <li>This method does not make any syntactic checks on the input.
+     * Use {@link Locale.Builder} for full syntactic checks with BCP47.
+     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
+     * their current forms. See <a href="#legacy_language_codes">Legacy language
+     * codes</a> for more information.
+     * </ul>
+     *
+     * @param language A language code. See the {@code Locale} class description of
+     * <a href="#def_language">language</a> values.
+     * @param country A country code. See the {@code Locale} class description of
+     * <a href="#def_region">country</a> values.
+     * @throws    NullPointerException thrown if either argument is null.
+     * @return A {@code Locale} object
+     * @since 19
+     */
+    public static Locale of(String language, String country) {
+        return getInstance(language, "", country, "", null);
+    }
+
+    /**
+     * Obtains a locale from a language code.
+     * This method normalizes the language value to lowercase.
+     * @implNote
+     * <ul>
+     * <li>This method does not make any syntactic checks on the input.
+     * Use {@link Locale.Builder} for full syntactic checks with BCP47.
+     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
+     * their current forms. See <a href="#legacy_language_codes">Legacy language
+     * codes</a> for more information.
+     * </ul>
+     *
+     * @param language A language code. See the {@code Locale} class description of
+     * <a href="#def_language">language</a> values.
+     * @throws    NullPointerException thrown if argument is null.
+     * @return A {@code Locale} object
+     * @since 19
+     */
+    public static Locale of(String language) {
+        return getInstance(language, "", "", "", null);
     }
 
     /**
@@ -1138,14 +1210,14 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * Returns a list of all 2-letter country codes defined in ISO 3166.
-     * Can be used to create Locales.
+     * Can be used to obtain Locales.
      * This method is equivalent to {@link #getISOCountries(Locale.IsoCountryCode type)}
      * with {@code type}  {@link IsoCountryCode#PART1_ALPHA2}.
      * <p>
      * <b>Note:</b> The {@code Locale} class also supports other codes for
      * country (region), such as 3-letter numeric UN M.49 area codes.
      * Therefore, the list returned by this method does not contain ALL valid
-     * codes that can be used to create Locales.
+     * codes that can be used to obtain Locales.
      * <p>
      * Note that this method does not return obsolete 2-letter country codes.
      * ISO3166-3 codes which designate country codes for those obsolete codes,
@@ -1178,7 +1250,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * Returns a list of all 2-letter language codes defined in ISO 639.
-     * Can be used to create Locales.
+     * Can be used to obtain Locales.
      * <p>
      * <b>Note:</b>
      * <ul>
@@ -1187,7 +1259,7 @@ public final class Locale implements Cloneable, Serializable {
      * languages whose codes have changed.
      * <li>The {@code Locale} class also supports language codes up to
      * 8 characters in length.  Therefore, the list returned by this method does
-     * not contain ALL valid codes that can be used to create Locales.
+     * not contain ALL valid codes that can be used to obtain Locales.
      * </ul>
      *
      * @return An array of ISO 639 two-letter language codes.
@@ -1520,12 +1592,12 @@ public final class Locale implements Cloneable, Serializable {
      * "NY", representing Norwegian Nynorsk (Norway), is converted
      * to a language tag "nn-NO".</li></ul>
      *
-     * <p><b>Note:</b> Although the language tag created by this
+     * <p><b>Note:</b> Although the language tag obtained by this
      * method is well-formed (satisfies the syntax requirements
      * defined by the IETF BCP 47 specification), it is not
      * necessarily a valid BCP 47 language tag.  For example,
      * <pre>
-     *   new Locale("xx", "YY").toLanguageTag();</pre>
+     *   Locale.forLanguageTag("xx-YY").toLanguageTag();</pre>
      *
      * will return "xx-YY", but the language subtag "xx" and the
      * region subtag "YY" are invalid because they are not registered
@@ -2510,7 +2582,7 @@ public final class Locale implements Cloneable, Serializable {
      * from values configured by the setters.  Unlike the {@code Locale}
      * constructors, the {@code Builder} checks if a value configured by a
      * setter satisfies the syntax requirements defined by the {@code Locale}
-     * class.  A {@code Locale} object created by a {@code Builder} is
+     * class.  A {@code Locale} object obtained from a {@code Builder} is
      * well-formed and can be transformed to a well-formed IETF BCP 47 language tag
      * without losing information.
      *
@@ -2521,11 +2593,11 @@ public final class Locale implements Cloneable, Serializable {
      * {@code IllformedLocaleException} for a variant that does not satisfy
      * this restriction. If it is necessary to support such a variant, use a
      * Locale constructor.  However, keep in mind that a {@code Locale}
-     * object created this way might lose the variant information when
+     * object obtained this way might lose the variant information when
      * transformed to a BCP 47 language tag.
      *
-     * <p>The following example shows how to create a {@code Locale} object
-     * with the {@code Builder}.
+     * <p>The following example shows how to obtain a {@code Locale} object
+     * using a {@code Builder}.
      * <blockquote>
      * <pre>
      *     Locale aLocale = new Builder().setLanguage("sr").setScript("Latn").setRegion("RS").build();
@@ -2658,7 +2730,7 @@ public final class Locale implements Cloneable, Serializable {
          * <p>The typical region value is a two-letter ISO 3166 code or a
          * three-digit UN M.49 area code.
          *
-         * <p>The country value in the {@code Locale} created by the
+         * <p>The country value in the {@code Locale} obtained from a
          * {@code Builder} is always normalized to upper case.
          *
          * @param region the region
@@ -2831,7 +2903,7 @@ public final class Locale implements Cloneable, Serializable {
         }
 
         /**
-         * Returns an instance of {@code Locale} created from the fields set
+         * Returns an instance of {@code Locale} obtained from the fields set
          * on this builder.
          *
          * <p>This applies the conversions listed in {@link Locale#forLanguageTag}
@@ -2853,7 +2925,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * This enum provides constants to select a filtering mode for locale
-     * matching. Refer to <a href="http://tools.ietf.org/html/rfc4647">RFC 4647
+     * matching. Refer to <a href="https://tools.ietf.org/html/rfc4647">RFC 4647
      * Matching of Language Tags</a> for details.
      *
      * <p>As an example, think of two Language Priority Lists each of which
@@ -2989,7 +3061,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * This class expresses a <em>Language Range</em> defined in
-     * <a href="http://tools.ietf.org/html/rfc4647">RFC 4647 Matching of
+     * <a href="https://tools.ietf.org/html/rfc4647">RFC 4647 Matching of
      * Language Tags</a>. A language range is an identifier which is used to
      * select language tag(s) meeting specific requirements by using the
      * mechanisms described in <a href="Locale.html#LocaleMatching">Locale
@@ -2998,7 +3070,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * <p>There are two types of language ranges: basic and extended. In RFC
      * 4647, the syntax of language ranges is expressed in
-     * <a href="http://tools.ietf.org/html/rfc4234">ABNF</a> as follows:
+     * <a href="https://tools.ietf.org/html/rfc4234">ABNF</a> as follows:
      * <blockquote>
      * <pre>
      *     basic-language-range    = (1*8ALPHA *("-" 1*8alphanum)) / "*"
@@ -3164,7 +3236,7 @@ public final class Locale implements Cloneable, Serializable {
          *
          * In a weighted list, each language range is given a weight value.
          * The weight value is identical to the "quality value" in
-         * <a href="http://tools.ietf.org/html/rfc2616">RFC 2616</a>, and it
+         * <a href="https://tools.ietf.org/html/rfc2616">RFC 2616</a>, and it
          * expresses how much the user prefers  the language. A weight value is
          * specified after a corresponding language range followed by
          * {@code ";q="}, and the default weight value is {@code MAX_WEIGHT}
@@ -3202,7 +3274,7 @@ public final class Locale implements Cloneable, Serializable {
          *
          * @param ranges a list of comma-separated language ranges or a list of
          *     language ranges in the form of the "Accept-Language" header
-         *     defined in <a href="http://tools.ietf.org/html/rfc2616">RFC
+         *     defined in <a href="https://tools.ietf.org/html/rfc2616">RFC
          *     2616</a>
          * @return a Language Priority List consisting of language ranges
          *     included in the given {@code ranges} and their equivalent
@@ -3223,7 +3295,7 @@ public final class Locale implements Cloneable, Serializable {
          *
          * @param ranges a list of comma-separated language ranges or a list
          *     of language ranges in the form of the "Accept-Language" header
-         *     defined in <a href="http://tools.ietf.org/html/rfc2616">RFC
+         *     defined in <a href="https://tools.ietf.org/html/rfc2616">RFC
          *     2616</a>
          * @param map a map containing information to customize language ranges
          * @return a Language Priority List with customization. The list is

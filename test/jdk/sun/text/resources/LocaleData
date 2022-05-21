@@ -2240,7 +2240,7 @@ FormatData/fr/NumberPatterns/0=#,##0.###;-#,##0.###
 # FormatData/fr/NumberPatterns/1=\u00a4 #,##0.00;-\u00a4 #,##0.00 # Changed; see bug 4122840
 # FormatData/fr/NumberPatterns/2=#,##0% # changed, see bug 6547501
 CurrencyNames/fr_FR/FRF=F
-CurrencyNames/fr_FR/EUR=\u20AC
+CurrencyNames/fr_FR/EUR=\u20ac
 FormatData/fr_FR/NumberPatterns/0=#,##0.###;-#,##0.###
 # FormatData/fr_FR/NumberPatterns/1=#,##0.00 F;-#,##0.00 F # Changed; see bug 4122840
 # FormatData/fr_FR/NumberPatterns/2=#,##0% # changed; see bug 6547501
@@ -2389,7 +2389,7 @@ FormatData/es_SV/NumberPatterns/1=\u00a4#,##0.00;(\u00a4#,##0.00)
 FormatData/es_UY/NumberPatterns/1=\u00a4 #,##0.00;(\u00a4#,##0.00)
 FormatData/es_VE/NumberPatterns/1=\u00a4#,##0.00;\u00a4 -#,##0.00
 FormatData/fr_FR/NumberPatterns/1=#,##0.00 \u00a4;-#,##0.00 \u00a4
-FormatData/it_IT/NumberPatterns/1=\u00A4 #,##0.00;-\u00A4 #,##0.00
+FormatData/it_IT/NumberPatterns/1=\u00a4 #,##0.00;-\u00a4 #,##0.00
 #FormatData/ja_JP/NumberPatterns/1=\u00a4#,##0.00  #see bug 4175306
 FormatData/ko_KR/NumberPatterns/1=\u00a4#,##0;-\u00a4#,##0
 FormatData/pl_PL/NumberPatterns/1=#,##0.## \u00a4;-#,##0.## \u00a4
@@ -2399,7 +2399,7 @@ FormatData/ru_RU/NumberPatterns/1=#,##0.## \u00a4;-#,##0.## \u00a4
 FormatData/uk_UA/NumberPatterns/1=#,##0.## \u00a4;-#,##0.## \u00a4
 
 # bug #4122468 # Use common country names
-LocaleNames//CI=C\u00F4te d\u2019Ivoire
+LocaleNames//CI=C\u00f4te d\u2019Ivoire
 LocaleNames//LY=Libya
 LocaleNames//RU=Russia
 LocaleNames//VN=Vietnam
@@ -2409,9 +2409,9 @@ FormatData/cs/DatePatterns/0=EEEE, d. MMMM yyyy
 FormatData/cs/DatePatterns/1=d. MMMM yyyy
 FormatData/cs/DatePatterns/2=d.M.yyyy
 FormatData/cs/DatePatterns/3=d.M.yy
-FormatData/cs/NumberElements/1=\u00A0
+FormatData/cs/NumberElements/1=\u00a0
 FormatData/cs_CZ/NumberPatterns/0=#,##0.##;-#,##0.##
-FormatData/cs_CZ/NumberPatterns/1=#,##0.## \u00A4;-#,##0.## \u00A4
+FormatData/cs_CZ/NumberPatterns/1=#,##0.## \u00a4;-#,##0.## \u00a4
 FormatData/cs_CZ/NumberPatterns/2=#,##0%
 
 #bug #4135752
@@ -2436,7 +2436,7 @@ FormatData/zh_HK/DayNames/2=\u661f\u671f\u4e8c
 FormatData/zh_HK/DayAbbreviations/0=\u65e5
 FormatData/zh_HK/DayAbbreviations/1=\u4e00
 FormatData/zh_HK/DayAbbreviations/2=\u4e8c
-FormatData/zh_HK/NumberPatterns/1=\u00A4#,##0.00;(\u00A4#,##0.00)
+FormatData/zh_HK/NumberPatterns/1=\u00a4#,##0.00;(\u00a4#,##0.00)
 CurrencyNames/zh_HK/HKD=HK$
 FormatData/zh_HK/TimePatterns/0=ahh'\u6642'mm'\u5206'ss'\u79d2' z
 FormatData/zh_HK/TimePatterns/1=ahh'\u6642'mm'\u5206'ss'\u79d2'
@@ -2452,8 +2452,8 @@ FormatData/zh_HK/DateTimePatterns/0={1} {0}
 LocaleNames/tr/TR=T\u00fcrkiye
 
 #bug 4175306
-FormatData/es_ES/NumberPatterns/1=#,##0 \u00A4;-#,##0 \u00A4
-FormatData/ja_JP/NumberPatterns/1=\u00A4#,##0;-\u00A4#,##0
+FormatData/es_ES/NumberPatterns/1=#,##0 \u00a4;-#,##0 \u00a4
+FormatData/ja_JP/NumberPatterns/1=\u00a4#,##0;-\u00a4#,##0
 
 #bug #4215747 - commented out by mfang due to 4900884
 #FormatData/ko/TimePatterns/0=a h'\uc2dc' m'\ubd84' s'\ucd08' z
@@ -2483,7 +2483,7 @@ TimeZoneNames/en_CA/CTT/2=CST
 CurrencyNames/ru_RU/RUB=\u0440\u0443\u0431.
 
 #bug 4826794
-LocaleNames/ru_RU/MM=\u041C\u044C\u044F\u043D\u043C\u0430
+LocaleNames/ru_RU/MM=\u041c\u044c\u044f\u043d\u043c\u0430
 
 #bug 4518811
 CalendarData/ca_ES/minimalDaysInFirstWeek=4
@@ -2502,7 +2502,7 @@ CalendarData/pt_PT/minimalDaysInFirstWeek=4
 
 #bug 4945388
 CurrencyNames/be_BY/BYR=\u0420\u0443\u0431
-CurrencyNames/bg_BG/BGN=\u043B\u0432.
+CurrencyNames/bg_BG/BGN=\u043b\u0432.
 
 #bug 4794068
 FormatData/ca_ES/NumberPatterns/0=#,##0.###;-#,##0.###
@@ -2512,7 +2512,7 @@ FormatData/sk/DayNames/0=Nede\u013ea
 FormatData/sk/DayAbbreviations/5=Pi
 
 #bug 5074431
-FormatData/bg/DayNames/4=\u0427\u0435\u0442\u0432\u044A\u0440\u0442\u044A\u043A
+FormatData/bg/DayNames/4=\u0427\u0435\u0442\u0432\u044a\u0440\u0442\u044a\u043a
 
 #bug 2121133
 FormatData/sv/NumberElements/1=\u00a0
@@ -5538,7 +5538,7 @@ CurrencyNames/ar_SD/SDD=\u062f.\u0633.\u200f
 CurrencyNames/ar_SD/SDG=\u062c.\u0633.\u200f
 
 # bug 6531593
-FormatData/is_IS/NumberPatterns/1=#,##0. \u00A4;-#,##0. \u00A4
+FormatData/is_IS/NumberPatterns/1=#,##0. \u00a4;-#,##0. \u00a4
 
 # bug 6509039
 FormatData/sv/AmPmMarkers/0=fm
@@ -5595,7 +5595,7 @@ FormatData/be_BY/MonthNames/10=\u043b\u0456\u0441\u0442\u0430\u043f\u0430\u0434\
 FormatData/be_BY/MonthAbbreviations/10=\u043b\u0456\u0441
 
 # bug 6645405
-FormatData/hu_HU/NumberPatterns/1=#,##0.## \u00A4;-#,##0.## \u00A4
+FormatData/hu_HU/NumberPatterns/1=#,##0.## \u00a4;-#,##0.## \u00a4
 
 # bug 6650730
 FormatData/lt/NumberElements/1=\u00a0
@@ -6472,27 +6472,27 @@ CurrencyNames//yum=Yugoslavian New Dinar (1994-2002)
 CurrencyNames//zwd=Zimbabwean Dollar (1980-2008)
 
 # bug 7020583
-CurrencyNames/de/azm=Aserbaidschan-Manat (1993-2006)
-CurrencyNames/de/azn=Aserbaidschan-Manat
-CurrencyNames/de/csd=Alter Serbischer Dinar
+CurrencyNames/de/azm=Aserbaidschainischer Manat (1993-2006)
+CurrencyNames/de/azn=Aserbaidschainischer Manat
+CurrencyNames/de/csd=Serbischer Dinar (2002-2006)
 CurrencyNames/de/cyp=Zypern-Pfund
-CurrencyNames/de/esp=Spanische Peseta
+CurrencyNames/de/esp=Spanische Pesete
 CurrencyNames/de/fjd=Fidschi-Dollar
-CurrencyNames/de/fkp=Falkland-Pfund
-CurrencyNames/de/ghs=Ghanaische Cedi
+CurrencyNames/de/fkp=Falklandinseln-Pfund
+CurrencyNames/de/ghs=Ghanaischer Cedi
 CurrencyNames/de/gip=Gibraltar-Pfund
 CurrencyNames/de/gnf=Guinea-Franc
 CurrencyNames/de/gyd=Guyana-Dollar
 CurrencyNames/de/hkd=Hongkong-Dollar
-CurrencyNames/de/itl=Italienische Lira
-CurrencyNames/de/jmd=Jamaika-Dollar
-CurrencyNames/de/kes=Kenia-Schilling
+CurrencyNames/de/itl=Italienische Lire
+CurrencyNames/de/jmd=Jamaikanischer Dollar
+CurrencyNames/de/kes=Kenianischer Schilling
 CurrencyNames/de/mgf=Madagaskar-Franc
 CurrencyNames/de/mur=Mauritius-Rupie
-CurrencyNames/de/mzm=Alter Metical
-CurrencyNames/de/mzn=Metical
-CurrencyNames/de/nad=Namibia-Dollar
-CurrencyNames/de/nzd=Neuseeland-Dollar
+CurrencyNames/de/mzm=Mosambikanischer Metical (1980-2006)
+CurrencyNames/de/mzn=Mosambikanischer Metical
+CurrencyNames/de/nad=Namibischer Dollar
+CurrencyNames/de/nzd=Neuseel\u00e4ndischer Dollar
 CurrencyNames/de/ron=Rum\u00e4nischer Leu
 CurrencyNames/de/rsd=Serbischer Dinar
 CurrencyNames/de/rwf=Ruanda-Franc
@@ -6500,27 +6500,27 @@ CurrencyNames/de/sbd=Salomonen-Dollar
 CurrencyNames/de/scr=Seychellen-Rupie
 CurrencyNames/de/sdg=Sudanesisches Pfund
 CurrencyNames/de/sgd=Singapur-Dollar
-CurrencyNames/de/sos=Somalia-Schilling
-CurrencyNames/de/srd=Surinamischer Dollar
-CurrencyNames/de/tpe=Timor-Escudo
-CurrencyNames/de/trl=Alte T\u00fcrkische Lira
+CurrencyNames/de/sos=Somalischer Schilling
+CurrencyNames/de/srd=Suriname-Dollar
+CurrencyNames/de/tpe=Escudo (Portugiesisch-Timor)
+CurrencyNames/de/trl=T\u00fcrkische Lira (1922-2005)
 CurrencyNames/de/try=T\u00fcrkische Lira
-CurrencyNames/de/ttd=Trinidad- und Tobago-Dollar
-CurrencyNames/de/twd=Neuer Taiwan-Dollar
+CurrencyNames/de/ttd=Trinidad/Tobago-Dollar
+CurrencyNames/de/twd=Neu-Taiwan Dollar
 CurrencyNames/de/tzs=Tansania-Schilling
 CurrencyNames/de/ugx=Uganda-Schilling
 CurrencyNames/de/usd=US-Dollar
-CurrencyNames/de/vef=Bol\u00edvar Fuerte
-CurrencyNames/de/xag=Unze Silber
-CurrencyNames/de/xau=Unze Gold
-CurrencyNames/de/xbb=Europ\u00e4ische W\u00e4hrungseinheit (XBB)
-CurrencyNames/de/xpd=Unze Palladium
-CurrencyNames/de/xpt=Unze Platin
-CurrencyNames/de/xts=Testw\u00e4hrung
+CurrencyNames/de/vef=Venezolanischer Bol\u00edvar Fuerte
+CurrencyNames/de/xag=Silber
+CurrencyNames/de/xau=Gold
+CurrencyNames/de/xbb=European Monetary Unit
+CurrencyNames/de/xpd=Palladium
+CurrencyNames/de/xpt=Platin
+CurrencyNames/de/xts=Testw\u00e4hrungscode
 CurrencyNames/de/xxx=Unbekannte W\u00e4hrung
 CurrencyNames/de/yer=Jemen-Rial
 CurrencyNames/de/zar=S\u00fcdafrikanischer Rand
-CurrencyNames/de/zwd=Simbabwe-Dollar
+CurrencyNames/de/zwd=Simbabwe-Dollar (1980-2008)
 
 CurrencyNames/es/aed=d\u00edrham de los Emiratos \u00c1rabes Unidos
 CurrencyNames/es/azm=manat azer\u00ed (1993-2006)
@@ -6654,23 +6654,23 @@ CurrencyNames/it/vef=Bol\u00edvar venezuelano forte
 CurrencyNames/it/xag=Argento
 CurrencyNames/it/xpd=Palladio
 
-CurrencyNames/ja/azm=\u30a2\u30bc\u30eb\u30d0\u30a4\u30b8\u30e3\u30f3 \u30de\u30ca\u30c8 (1993-2006)
-CurrencyNames/ja/azn=\u30a2\u30bc\u30eb\u30d0\u30a4\u30b8\u30e3\u30f3 \u30de\u30ca\u30c8
-CurrencyNames/ja/ghc=\u30ac\u30fc\u30ca \u30bb\u30c7\u30a3 (1979-2007)
-CurrencyNames/ja/ghs=\u30ac\u30fc\u30ca \u30bb\u30c7\u30a3
-CurrencyNames/ja/mzn=\u30e2\u30b6\u30f3\u30d3\u30fc\u30af \u30e1\u30c6\u30a3\u30ab\u30eb
-CurrencyNames/ja/rol=\u30eb\u30fc\u30de\u30cb\u30a2 \u65e7\u30ec\u30a4
-CurrencyNames/ja/ron=\u30eb\u30fc\u30de\u30cb\u30a2 \u30ec\u30a4
-CurrencyNames/ja/rsd=\u30c7\u30a3\u30ca\u30fc\u30eb (\u30bb\u30eb\u30d3\u30a2)
-CurrencyNames/ja/sdg=\u30b9\u30fc\u30c0\u30f3 \u30dd\u30f3\u30c9
-CurrencyNames/ja/srd=\u30b9\u30ea\u30ca\u30e0 \u30c9\u30eb
-CurrencyNames/ja/vef=\u30d9\u30cd\u30ba\u30a8\u30e9 \u30dc\u30ea\u30d0\u30eb\u30d5\u30a8\u30eb\u30c6
+CurrencyNames/ja/azm=\u30a2\u30bc\u30eb\u30d0\u30a4\u30b8\u30e3\u30f3\u30fb\u30de\u30ca\u30c8(1993-2006)
+CurrencyNames/ja/azn=\u30a2\u30bc\u30eb\u30d0\u30a4\u30b8\u30e3\u30f3\u30fb\u30de\u30ca\u30c8
+CurrencyNames/ja/ghc=\u30ac\u30fc\u30ca\u30fb\u30bb\u30c7\u30a3(1979-2007)
+CurrencyNames/ja/ghs=\u30ac\u30fc\u30ca\u30fb\u30bb\u30c7\u30a3
+CurrencyNames/ja/mzn=\u30e2\u30b6\u30f3\u30d3\u30fc\u30af\u30fb\u30e1\u30c6\u30a3\u30ab\u30eb
+CurrencyNames/ja/rol=\u30eb\u30fc\u30de\u30cb\u30a2\u30fb\u30ec\u30a4(1952-2006)
+CurrencyNames/ja/ron=\u30eb\u30fc\u30de\u30cb\u30a2\u30fb\u30ec\u30a4
+CurrencyNames/ja/rsd=\u30bb\u30eb\u30d3\u30a2\u30fb\u30c7\u30a3\u30ca\u30fc\u30eb
+CurrencyNames/ja/sdg=\u30b9\u30fc\u30c0\u30f3\u30fb\u30dd\u30f3\u30c9
+CurrencyNames/ja/srd=\u30b9\u30ea\u30ca\u30e0\u30fb\u30c9\u30eb
+CurrencyNames/ja/vef=\u30d9\u30cd\u30ba\u30a8\u30e9\u30fb\u30dc\u30ea\u30d0\u30eb
 CurrencyNames/ja/xag=\u9280
 CurrencyNames/ja/xpd=\u30d1\u30e9\u30b8\u30a6\u30e0
 CurrencyNames/ja/xpt=\u30d7\u30e9\u30c1\u30ca
-CurrencyNames/ja/xts=\u30c6\u30b9\u30c8\u7528\u901a\u8ca8\u30b3\u30fc\u30c9
-CurrencyNames/ja/xxx=\u4e0d\u660e\u307e\u305f\u306f\u7121\u52b9\u306a\u901a\u8ca8
-CurrencyNames/ja/zmk=\u30b6\u30f3\u30d3\u30a2 \u30af\u30ef\u30c1\u30e3
+CurrencyNames/ja/xts=\u30c6\u30b9\u30c8\u901a\u8ca8\u30b3\u30fc\u30c9
+CurrencyNames/ja/xxx=\u4e0d\u660e\u306a\u901a\u8ca8
+CurrencyNames/ja/zmk=\u30b6\u30f3\u30d3\u30a2\u30fb\u30af\u30ef\u30c1\u30e3
 
 CurrencyNames/ko/aed=\uc544\ub78d\uc5d0\ubbf8\ub9ac\ud2b8 \ub514\ub974\ud568
 CurrencyNames/ko/ang=\ub124\ub35c\ub780\ub4dc\ub839 \uc548\ud2f8\ub808\uc2a4 \uae38\ub354
@@ -6905,19 +6905,19 @@ CurrencyNames/sv/zar=sydafrikansk rand
 CurrencyNames/sv/zmk=zambisk kwacha
 CurrencyNames/sv/zwd=Zimbabwe-dollar
 
-CurrencyNames/zh_CN/ang=\u8377\u5170\u5b89\u66ff\u5170\u76fe
+CurrencyNames/zh_CN/ang=\u8377\u5c5e\u5b89\u7684\u5217\u65af\u76fe
 CurrencyNames/zh_CN/azm=\u963f\u585e\u62dc\u7586\u9a6c\u7eb3\u7279 (1993-2006)
 CurrencyNames/zh_CN/azn=\u963f\u585e\u62dc\u7586\u9a6c\u7eb3\u7279
-CurrencyNames/zh_CN/csd=\u65e7\u585e\u5c14\u7ef4\u4e9a\u7b2c\u7eb3\u5c14
+CurrencyNames/zh_CN/csd=\u585e\u5c14\u7ef4\u4e9a\u7b2c\u7eb3\u5c14 (2002-2006)
 CurrencyNames/zh_CN/ghs=\u52a0\u7eb3\u585e\u5730
-CurrencyNames/zh_CN/mzm=\u65e7\u83ab\u6851\u6bd4\u514b\u7f8e\u63d0\u5361
+CurrencyNames/zh_CN/mzm=\u83ab\u6851\u6bd4\u514b\u7f8e\u63d0\u5361 (1980-2006)
 CurrencyNames/zh_CN/mzn=\u83ab\u6851\u6bd4\u514b\u7f8e\u63d0\u5361
 CurrencyNames/zh_CN/ron=\u7f57\u9a6c\u5c3c\u4e9a\u5217\u4f0a
 CurrencyNames/zh_CN/rsd=\u585e\u5c14\u7ef4\u4e9a\u7b2c\u7eb3\u5c14
-CurrencyNames/zh_CN/shp=\u5723\u8d6b\u52d2\u62ff\u7fa4\u5c9b\u78c5
+CurrencyNames/zh_CN/shp=\u5723\u8d6b\u52d2\u62ff\u9551
 CurrencyNames/zh_CN/twd=\u65b0\u53f0\u5e01
-CurrencyNames/zh_CN/vef=\u59d4\u5185\u745e\u62c9\u5f3a\u52bf\u73bb\u5229\u74e6
-CurrencyNames/zh_CN/xxx=\u8d27\u5e01\u672a\u77e5\u6216\u65e0\u6548
+CurrencyNames/zh_CN/vef=\u59d4\u5185\u745e\u62c9\u73bb\u5229\u74e6\u5c14
+CurrencyNames/zh_CN/xxx=\u672a\u77e5\u8d27\u5e01
 
 CurrencyNames/zh_TW/afa=\u963f\u5bcc\u6c57\u5c3c (1927-2002)
 CurrencyNames/zh_TW/ang=\u53e4\u82f1\u6587
@@ -6970,11 +6970,11 @@ CurrencyNames/zh_TW/yer=\u8449\u9580\u91cc\u96c5
 # bug 7036905
 CurrencyNames/de/afa=Afghani (1927-2002)
 CurrencyNames/de/afn=Afghani
-CurrencyNames/de/bob=Boliviano
+CurrencyNames/de/bob=Bolivianischer Boliviano
 CurrencyNames/de/dem=Deutsche Mark
-CurrencyNames/de/mwk=Malawi Kwacha
-CurrencyNames/de/mxv=Mexican Unidad de Inversion (UDI)
-CurrencyNames/de/svc=El Salvador Colon
+CurrencyNames/de/mwk=Malawi-Kwacha
+CurrencyNames/de/mxv=Unidad De Inversion (Mexiko)
+CurrencyNames/de/svc=El-Salvador-Col\u00f3n
 
 CurrencyNames/it/bob=Boliviano
 
@@ -6990,8 +6990,8 @@ CurrencyNames//tmt=Turkmenistani Manat
 CurrencyNames//zwl=Zimbabwean Dollar (2009)
 CurrencyNames//zwr=Zimbabwean Dollar (2008)
 
-CurrencyNames/de/cuc=Kubanischer Peso (konvertibel)
-CurrencyNames/de/tmt=Neuer Turkmenistan-Manat
+CurrencyNames/de/cuc=Kubanischer konvertibler Peso
+CurrencyNames/de/tmt=Turkmenistan-Manat
 CurrencyNames/de/zwl=Simbabwe-Dollar (2009)
 
 CurrencyNames/es/cuc=peso cubano convertible
@@ -7008,9 +7008,9 @@ CurrencyNames/et_EE/eur=euro
 CurrencyNames/fr/cuc=peso cubain convertible
 CurrencyNames/fr/tmt=nouveau manat turkm\u00e8ne
 
-CurrencyNames/ja/cuc=\u30ad\u30e5\u30fc\u30d0 \u514c\u63db\u30da\u30bd
-CurrencyNames/ja/tmt=\u30c8\u30eb\u30af\u30e1\u30cb\u30b9\u30bf\u30f3 \u65b0\u30de\u30ca\u30c8
-CurrencyNames/ja/zwl=\u30b8\u30f3\u30d0\u30d6\u30a8 \u30c9\u30eb (2009)
+CurrencyNames/ja/cuc=\u30ad\u30e5\u30fc\u30d0\u514c\u63db\u30da\u30bd
+CurrencyNames/ja/tmt=\u30c8\u30eb\u30af\u30e1\u30cb\u30b9\u30bf\u30f3\u30fb\u30de\u30ca\u30c8
+CurrencyNames/ja/zwl=\u30b8\u30f3\u30d0\u30d6\u30a8\u30fb\u30c9\u30eb(2009)
 
 CurrencyNames/ko/cuc=\ucfe0\ubc14 \ud0dc\ud658 \ud398\uc18c
 
@@ -7024,7 +7024,7 @@ CurrencyNames/sk_SK/skk=Slovensk\u00e1 koruna
 CurrencyNames/sk_SK/EUR=\u20ac
 
 CurrencyNames/zh_CN/cuc=\u53e4\u5df4\u53ef\u5151\u6362\u6bd4\u7d22
-CurrencyNames/zh_CN/tmt=\u571f\u5e93\u66fc\u65af\u5766\u65b0\u9a6c\u7eb3\u7279
+CurrencyNames/zh_CN/tmt=\u571f\u5e93\u66fc\u65af\u5766\u9a6c\u7eb3\u7279
 CurrencyNames/zh_CN/zwl=\u6d25\u5df4\u5e03\u97e6\u5143 (2009)
 
 CurrencyNames/zh_TW/cuc=\u53e4\u5df4\u53ef\u8f49\u63db\u62ab\u7d22
@@ -7670,7 +7670,7 @@ FormatData/pt/MonthAbbreviations/10=nov
 FormatData/pt/MonthAbbreviations/11=dez
 
 # bug 8021121
-CurrencyNames/lv_LV/EUR=\u20AC
+CurrencyNames/lv_LV/EUR=\u20ac
 
 # bug # 6192407
 LocaleNames/ko/PT=\ud3ec\ub974\ud22c\uce7c
@@ -7696,7 +7696,7 @@ FormatData/es_DO/DatePatterns/2=dd/MM/yyyy
 FormatData/es_DO/DatePatterns/3=dd/MM/yy
 
 # bug 8055222
-CurrencyNames/lt_LT/EUR=\u20AC
+CurrencyNames/lt_LT/EUR=\u20ac
 
 # bug 8042126 + missing MonthNarrows data
 FormatData//MonthNarrows/0=1
@@ -8285,13 +8285,13 @@ FormatData/de/standalone.MonthAbbreviations/2=M\u00e4r
 CurrencyNames//hrk=Kuna
 
 # bug #7037368
-CurrencyNames/de/sar=Saudi-Rial
+CurrencyNames/de/sar=Saudischer Rial
 CurrencyNames/de/xpf=CFP-Franc
 CurrencyNames/it/azn=manat azero
 CurrencyNames/it/ron=leu rumeno
 CurrencyNames/it/trl=lira turca (1922-2005)
 CurrencyNames/it/try=lira turca
-CurrencyNames/sv/bgl=bulgarisk h\u00e5rd lev (1962–1999)
+CurrencyNames/sv/bgl=bulgarisk h\u00e5rd lev (1962\u00e2\u0080\u00931999)
 CurrencyNames/sv/xaf=centralafrikansk franc
 CurrencyNames/sv/xfu=internationella j\u00e4rnv\u00e4gsunionens franc
 CurrencyNames/sv/xof=v\u00e4stafrikansk franc
@@ -8359,7 +8359,7 @@ LocaleNames//ht=Haitian Creole
 LocaleNames//kj=Kuanyama
 LocaleNames//kl=Kalaallisut
 LocaleNames//ky=Kyrgyz
-LocaleNames//nb=Norwegian Bokm\u00E5l
+LocaleNames//nb=Norwegian Bokm\u00e5l
 LocaleNames//or=Odia
 LocaleNames//os=Ossetic
 LocaleNames//pa=Punjabi
@@ -8368,7 +8368,7 @@ LocaleNames//rm=Romansh
 LocaleNames//si=Sinhala
 LocaleNames//to=Tongan
 LocaleNames//ug=Uyghur
-LocaleNames//vo=Volap\u00FCk
+LocaleNames//vo=Volap\u00fck
 LocaleNames//ang=Old English
 LocaleNames//arc=Aramaic
 LocaleNames//arn=Mapuche
@@ -8385,26 +8385,26 @@ LocaleNames//fro=Old French
 LocaleNames//gmh=Middle High German
 LocaleNames//goh=Old High German
 LocaleNames//grc=Ancient Greek
-LocaleNames//gwi=Gwich\u02BCin
+LocaleNames//gwi=Gwich\u02bcin
 LocaleNames//luo=Luo
 LocaleNames//lus=Mizo
 LocaleNames//mga=Middle Irish
 LocaleNames//mul=Multiple languages
 LocaleNames//mus=Muscogee
 LocaleNames//new=Newari
-LocaleNames//nob=Bokm\u00E5l, Norwegian
+LocaleNames//nob=Bokm\u00e5l, Norwegian
 LocaleNames//non=Old Norse
 LocaleNames//nqo=N\u2019Ko
 LocaleNames//nso=Northern Sotho
 LocaleNames//ota=Ottoman Turkish
 LocaleNames//peo=Old Persian
-LocaleNames//pro=Old Proven\u00E7al
+LocaleNames//pro=Old Proven\u00e7al
 LocaleNames//sah=Sakha
 LocaleNames//sga=Old Irish
 LocaleNames//sog=Sogdien
 LocaleNames//tog=Nyasa Tonga
 LocaleNames//und=Unknown language
-LocaleNames//vol=Volap\u00FCk
+LocaleNames//vol=Volap\u00fck
 LocaleNames//wal=Wolaytta
 LocaleNames//Beng=Bangla
 LocaleNames//Geok=Georgian Khutsuri
@@ -8423,15 +8423,15 @@ LocaleNames//Zinh=Inherited
 LocaleNames//Zyyy=Common
 LocaleNames//Zzzz=Unknown Script
 LocaleNames//AG=Antigua & Barbuda
-LocaleNames//AX=\u00C5land Islands
+LocaleNames//AX=\u00c5land Islands
 LocaleNames//BA=Bosnia & Herzegovina
-LocaleNames//BL=St. Barth\u00E9lemy
+LocaleNames//BL=St. Barth\u00e9lemy
 LocaleNames//BQ=Caribbean Netherlands
 LocaleNames//CC=Cocos (Keeling) Islands
 LocaleNames//CD=Congo - Kinshasa
 LocaleNames//CG=Congo - Brazzaville
-LocaleNames//CI=C\u00F4te d\u2019Ivoire
-LocaleNames//CW=Cura\u00E7ao
+LocaleNames//CI=C\u00f4te d\u2019Ivoire
+LocaleNames//CW=Cura\u00e7ao
 LocaleNames//CZ=Czechia
 LocaleNames//GS=South Georgia & South Sandwich Islands
 LocaleNames//HK=Hong Kong SAR China
@@ -8446,10 +8446,10 @@ LocaleNames//MO=Macao SAR China
 LocaleNames//PM=St. Pierre & Miquelon
 LocaleNames//PN=Pitcairn Islands
 LocaleNames//PS=Palestinian Territories
-LocaleNames//RE=R\u00E9union
+LocaleNames//RE=R\u00e9union
 LocaleNames//SH=St. Helena
 LocaleNames//SJ=Svalbard & Jan Mayen
-LocaleNames//ST=S\u00E3o Tom\u00E9 & Pr\u00EDncipe
+LocaleNames//ST=S\u00e3o Tom\u00e9 & Pr\u00edncipe
 LocaleNames//SX=Sint Maarten
 LocaleNames//SZ=Eswatini
 LocaleNames//TC=Turks & Caicos Islands

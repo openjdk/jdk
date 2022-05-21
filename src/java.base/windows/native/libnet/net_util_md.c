@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -800,7 +800,7 @@ IsWindows10RS3OrGreater() {
 JNIEXPORT jint JNICALL
 NET_EnableFastTcpLoopbackConnect(int fd) {
     TCP_INITIAL_RTO_PARAMETERS rto = {
-        TCP_INITIAL_RTO_UNSPECIFIED_RTT,    // Use the default or overriden by the Administrator
+        TCP_INITIAL_RTO_UNSPECIFIED_RTT,    // Use the default or overridden by the Administrator
         1                                   // Minimum possible value before Windows 10 RS3
     };
 

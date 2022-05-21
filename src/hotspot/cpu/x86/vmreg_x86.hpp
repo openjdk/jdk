@@ -25,7 +25,7 @@
 #ifndef CPU_X86_VMREG_X86_HPP
 #define CPU_X86_VMREG_X86_HPP
 
-
+#include "register_x86.hpp"
 
 inline bool is_Register() {
   return (unsigned int) value() < (unsigned int) ConcreteRegisterImpl::max_gpr;
@@ -36,14 +36,8 @@ inline bool is_FloatRegister() {
 }
 
 inline bool is_XMMRegister() {
-  int uarch_max_xmm = ConcreteRegisterImpl::max_xmm;
-
-#ifdef _LP64
-  if (UseAVX < 3) {
-    int half_xmm = (XMMRegisterImpl::max_slots_per_register * XMMRegisterImpl::number_of_registers) / 2;
-    uarch_max_xmm -= half_xmm;
-  }
-#endif
+  int uarch_max_xmm = ConcreteRegisterImpl::max_fpr +
+    (XMMRegisterImpl::max_slots_per_register * XMMRegisterImpl::available_xmm_registers());
 
   return (value() >= ConcreteRegisterImpl::max_fpr && value() < uarch_max_xmm);
 }

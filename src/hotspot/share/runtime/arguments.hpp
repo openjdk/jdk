@@ -37,6 +37,8 @@
 
 // Arguments parses the command line and recognizes options
 
+class JVMFlag;
+
 // Invocation API hook typedefs (these should really be defined in jni.h)
 extern "C" {
   typedef void (JNICALL *abort_hook_t)(void);
@@ -464,10 +466,11 @@ class Arguments : AllStatic {
 
   // Return the real name for the flag passed on the command line (either an alias name or "flag_name").
   static const char* real_flag_name(const char *flag_name);
+  static JVMFlag* find_jvm_flag(const char* name, size_t name_length);
 
   // Return the "real" name for option arg if arg is an alias, and print a warning if arg is deprecated.
   // Return NULL if the arg has expired.
-  static const char* handle_aliases_and_deprecation(const char* arg, bool warn);
+  static const char* handle_aliases_and_deprecation(const char* arg);
 
   static char*  SharedArchivePath;
   static char*  SharedDynamicArchivePath;

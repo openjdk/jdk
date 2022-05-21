@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,6 +231,7 @@ final class P11KeyStore extends KeyStoreSpi {
         private PasswordCallbackHandler(char[] password) {
             if (password != null) {
                 this.password = password.clone();
+                P11Util.cleaner.register(this, releaserFor(this.password));
             }
         }
 
@@ -243,12 +244,10 @@ final class P11KeyStore extends KeyStoreSpi {
             pc.setPassword(password);  // this clones the password if not null
         }
 
-        @SuppressWarnings("removal")
-        protected void finalize() throws Throwable {
-            if (password != null) {
+        private static Runnable releaserFor(char[] password) {
+            return () -> {
                 Arrays.fill(password, ' ');
-            }
-            super.finalize();
+            };
         }
     }
 

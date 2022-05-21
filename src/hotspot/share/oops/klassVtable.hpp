@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ class klassVtable {
       bool is_interface);
   void verify_against(outputStream* st, klassVtable* vt, int index);
   inline InstanceKlass* ik() const;
-  // When loading a class from CDS archive at run time, and no class redefintion
+  // When loading a class from CDS archive at run time, and no class redefinition
   // has happened, it is expected that the class's itable/vtables are
   // laid out exactly the same way as they had been during dump time.
   // Therefore, in klassVtable::initialize_[iv]table, we do not layout the

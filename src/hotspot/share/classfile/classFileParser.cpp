@@ -968,6 +968,8 @@ public:
     _method_CallerSensitive,
     _method_ForceInline,
     _method_DontInline,
+    _method_ChangesCurrentThread,
+    _method_JvmtiMountTransition,
     _method_InjectedProfile,
     _method_LambdaForm_Compiled,
     _method_Hidden,
@@ -1646,7 +1648,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
                                    CHECK);
   // Sometimes injected fields already exist in the Java source so
   // the fields array could be too long.  In that case the
-  // fields array is trimed. Also unused slots that were reserved
+  // fields array is trimmed. Also unused slots that were reserved
   // for generic signature indexes are discarded.
   {
     int i = 0;
@@ -1987,6 +1989,16 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _method_DontInline;
     }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_ChangesCurrentThread_signature): {
+      if (_location != _in_method)  break;  // only allow for methods
+      if (!privileged)              break;  // only allow in privileged code
+      return _method_ChangesCurrentThread;
+    }
+    case VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_JvmtiMountTransition_signature): {
+      if (_location != _in_method)  break;  // only allow for methods
+      if (!privileged)              break;  // only allow in privileged code
+      return _method_JvmtiMountTransition;
+    }
     case VM_SYMBOL_ENUM_NAME(java_lang_invoke_InjectedProfile_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
@@ -2033,7 +2045,7 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
     }
     case VM_SYMBOL_ENUM_NAME(jdk_internal_ValueBased_signature): {
       if (_location != _in_class)   break;  // only allow for classes
-      if (!privileged)              break;  // only allow in priviledged code
+      if (!privileged)              break;  // only allow in privileged code
       return _jdk_internal_ValueBased;
     }
     default: {
@@ -2063,6 +2075,10 @@ void MethodAnnotationCollector::apply_to(const methodHandle& m) {
     m->set_force_inline(true);
   if (has_annotation(_method_DontInline))
     m->set_dont_inline(true);
+  if (has_annotation(_method_ChangesCurrentThread))
+    m->set_changes_current_thread(true);
+  if (has_annotation(_method_JvmtiMountTransition))
+    m->set_jvmti_mount_transition(true);
   if (has_annotation(_method_InjectedProfile))
     m->set_has_injected_profile(true);
   if (has_annotation(_method_LambdaForm_Compiled) && m->intrinsic_id() == vmIntrinsics::_none)
@@ -3944,7 +3960,7 @@ void ClassFileParser::create_combined_annotations(TRAPS) {
     // assigned to InstanceKlass being constructed.
     _combined_annotations = annotations;
 
-    // The annotations arrays below has been transfered the
+    // The annotations arrays below has been transferred the
     // _combined_annotations so these fields can now be cleared.
     _class_annotations       = NULL;
     _class_type_annotations  = NULL;
@@ -4101,7 +4117,7 @@ void OopMapBlocksBuilder::compact() {
     return;
   }
   /*
-   * Since field layout sneeks in oops before values, we will be able to condense
+   * Since field layout sneaks in oops before values, we will be able to condense
    * blocks. There is potential to compact between super, own refs and values
    * containing refs.
    *

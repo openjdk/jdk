@@ -65,7 +65,7 @@ import java.security.MessageDigest;
  * </pre>
  * Where "s" indicates the size of the checksum.
  * <p>
- * As always, this is preceeded by a GSSHeader.
+ * As always, this is preceded by a GSSHeader.
  *
  * @author Mayank Upadhyay
  * @author Ram Marti
@@ -141,7 +141,7 @@ abstract class MessageToken extends Krb5Token {
 
     /**
      * Constructs a MessageToken from a byte array. If there are more bytes
-     * in the array than needed, the extra bytes are simply ignroed.
+     * in the array than needed, the extra bytes are simply ignored.
      *
      * @param tokenId the token id that should be contained in this token as
      * it is read.
@@ -536,7 +536,7 @@ abstract class MessageToken extends Krb5Token {
     }
 
     /**
-     * Obtains the conext key that is associated with this token.
+     * Obtains the context key that is associated with this token.
      * @return the context key
      */
     /*

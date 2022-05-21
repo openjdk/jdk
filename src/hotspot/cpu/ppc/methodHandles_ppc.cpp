@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,6 +37,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 
 #define __ _masm->
@@ -533,7 +534,7 @@ void trace_method_handle_stub(const char* adaptername,
       // Current C frame
       frame cur_frame = os::current_frame();
 
-      // Robust search of trace_calling_frame (independant of inlining).
+      // Robust search of trace_calling_frame (independent of inlining).
       assert(cur_frame.sp() <= saved_regs, "registers not saved on stack ?");
       frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
       while (trace_calling_frame.fp() < saved_regs) {

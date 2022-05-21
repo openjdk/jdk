@@ -25,7 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.Collections;
+import java.util.List;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -78,7 +78,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
                 .setTimestamp(!options.noTimestamp())
                 .setDescription("index redirect")
                 .setGenerator(getGenerator(getClass()))
-                .setStylesheets(configuration.getMainStylesheet(), Collections.emptyList()) // avoid reference to default stylesheet
+                .setStylesheets(configuration.getMainStylesheet(), List.of()) // avoid reference to default stylesheet
                 .addDefaultScript(false);
 
         String title = (options.windowTitle().length() > 0)
@@ -93,7 +93,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
         Script script = new Script("window.location.replace(")
                 .appendStringLiteral(targetPath, '\'')
                 .append(")");
-        HtmlTree metaRefresh = new HtmlTree(TagName.META)
+        var metaRefresh = new HtmlTree(TagName.META)
                 .put(HtmlAttr.HTTP_EQUIV, "Refresh")
                 .put(HtmlAttr.CONTENT, "0;" + targetPath);
         head.addContent(script.asContent(), HtmlTree.NOSCRIPT(metaRefresh));
@@ -104,8 +104,8 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
 
         bodyContent.add(HtmlTree.P(HtmlTree.A(targetPath, Text.of(targetPath))));
 
-        Content body = new HtmlTree(TagName.BODY).setStyle(HtmlStyle.indexRedirectPage);
-        HtmlTree main = HtmlTree.MAIN(bodyContent);
+        var body = new HtmlTree(TagName.BODY).setStyle(HtmlStyle.indexRedirectPage);
+        var main = HtmlTree.MAIN(bodyContent);
         body.add(main);
 
         HtmlDocument htmlDocument = new HtmlDocument(

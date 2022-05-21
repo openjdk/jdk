@@ -101,11 +101,6 @@ public class BlockConnection implements Connection {
     }
 
     @Override
-    public boolean isAlwaysVisible() {
-        return true;
-    }
-
-    @Override
     public boolean hasSlots() {
         return false;
     }

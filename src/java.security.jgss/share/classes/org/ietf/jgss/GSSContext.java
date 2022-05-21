@@ -101,7 +101,7 @@ import java.io.OutputStream;
  *
  * The stream-based methods of {@code GSSContext} have been deprecated in
  * Java SE 11. These methods have also been removed from
- * <a href="http://tools.ietf.org/html/rfc8353">
+ * <a href="https://tools.ietf.org/html/rfc8353">
  * RFC 8353: Generic Security Service API Version 2: Java Bindings Update</a>
  * for the following reasons (see section 11): "The overloaded methods of
  * GSSContext that use input and output streams as the means to convey

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,12 @@ package sun.management;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.stream.Stream;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import javax.management.ObjectName;
 import java.util.Objects;
 
@@ -134,7 +140,7 @@ public class ThreadImpl implements ThreadMXBean {
         long[] ids = new long[length];
         for (int i = 0; i < length; i++) {
             Thread t = threads[i];
-            ids[i] = t.getId();
+            ids[i] = t.threadId();
         }
         return ids;
     }
@@ -226,6 +232,9 @@ public class ThreadImpl implements ThreadMXBean {
 
     private boolean verifyCurrentThreadCpuTime() {
         // check if Thread CPU time measurement is supported.
+        if (isVirtual(Thread.currentThread())) {
+            throw new UnsupportedOperationException("Not supported by virtual threads");
+        }
         if (!isCurrentThreadCpuTimeSupported()) {
             throw new UnsupportedOperationException(
                 "Current thread CPU time measurement is not supported.");
@@ -262,7 +271,7 @@ public class ThreadImpl implements ThreadMXBean {
         if (!isThreadCpuTimeSupported()) {
             // support current thread only
             for (int i = 0; i < ids.length; i++) {
-                if (ids[i] != Thread.currentThread().getId()) {
+                if (ids[i] != Thread.currentThread().threadId()) {
                     throw new UnsupportedOperationException(
                         "Thread CPU time measurement is only supported" +
                         " for the current thread.");
@@ -283,10 +292,16 @@ public class ThreadImpl implements ThreadMXBean {
         if (verified) {
             if (length == 1) {
                 long id = ids[0];
-                if (id == Thread.currentThread().getId()) {
-                    id = 0;
+                Thread thread = Thread.currentThread();
+                if (id == thread.threadId()) {
+                    if (isVirtual(thread)) {
+                        times[0] = -1;
+                    } else {
+                        times[0] = getThreadTotalCpuTime0(0);
+                    }
+                } else {
+                    times[0] = getThreadTotalCpuTime0(id);
                 }
-                times[0] = getThreadTotalCpuTime0(id);
             } else {
                 getThreadTotalCpuTime1(ids, times);
             }
@@ -320,10 +335,16 @@ public class ThreadImpl implements ThreadMXBean {
         if (verified) {
             if (length == 1) {
                 long id = ids[0];
-                if (id == Thread.currentThread().getId()) {
-                    id = 0;
+                Thread thread = Thread.currentThread();
+                if (id == thread.threadId()) {
+                    if (isVirtual(thread)) {
+                        times[0] = -1;
+                    } else {
+                        times[0] = getThreadUserCpuTime0(0);
+                    }
+                } else {
+                    times[0] = getThreadUserCpuTime0(id);
                 }
-                times[0] = getThreadUserCpuTime0(id);
             } else {
                 getThreadUserCpuTime1(ids, times);
             }
@@ -350,7 +371,7 @@ public class ThreadImpl implements ThreadMXBean {
     }
 
     protected long getCurrentThreadAllocatedBytes() {
-        if (isThreadAllocatedMemoryEnabled()) {
+        if (isThreadAllocatedMemoryEnabled() && !isVirtual(Thread.currentThread())) {
             return getThreadAllocatedMemory0(0);
         }
         return -1;
@@ -363,10 +384,17 @@ public class ThreadImpl implements ThreadMXBean {
 
     protected long getThreadAllocatedBytes(long id) {
         boolean verified = verifyThreadAllocatedMemory(id);
-
         if (verified) {
-            return getThreadAllocatedMemory0(
-                Thread.currentThread().getId() == id ? 0 : id);
+            Thread thread = Thread.currentThread();
+            if (id == thread.threadId()) {
+                if (isVirtual(thread)) {
+                    return -1L;
+                } else {
+                    return getThreadAllocatedMemory0(0);
+                }
+            } else {
+                return getThreadAllocatedMemory0(id);
+            }
         }
         return -1;
     }
@@ -408,21 +436,29 @@ public class ThreadImpl implements ThreadMXBean {
         }
     }
 
+    /**
+     * Returns an array of thread identifiers for the threads in the given
+     * array. Returns {@code null} if {@code threads} is null or the array
+     * of threads is empty.
+     */
+    private long[] threadsToIds(Thread[] threads) {
+        if (threads != null) {
+            long[] tids = Stream.of(threads)
+                    .mapToLong(Thread::threadId)
+                    .toArray();
+            if (tids.length > 0) {
+                return tids;
+            }
+        }
+        return null;
+    }
+
     @Override
     public long[] findMonitorDeadlockedThreads() {
         Util.checkMonitorAccess();
 
         Thread[] threads = findMonitorDeadlockedThreads0();
-        if (threads == null) {
-            return null;
-        }
-
-        long[] ids = new long[threads.length];
-        for (int i = 0; i < threads.length; i++) {
-            Thread t = threads[i];
-            ids[i] = t.getId();
-        }
-        return ids;
+        return threadsToIds(threads);
     }
 
     @Override
@@ -435,16 +471,7 @@ public class ThreadImpl implements ThreadMXBean {
         Util.checkMonitorAccess();
 
         Thread[] threads = findDeadlockedThreads0();
-        if (threads == null) {
-            return null;
-        }
-
-        long[] ids = new long[threads.length];
-        for (int i = 0; i < threads.length; i++) {
-            Thread t = threads[i];
-            ids[i] = t.getId();
-        }
-        return ids;
+        return threadsToIds(threads);
     }
 
     @Override
@@ -551,4 +578,30 @@ public class ThreadImpl implements ThreadMXBean {
         return Util.newObjectName(ManagementFactory.THREAD_MXBEAN_NAME);
     }
 
+    /**
+     * Returns true if the given Thread is a virutal thread.
+     *
+     * @implNote This method uses reflection because Thread::isVirtual is a preview API
+     * and the java.management cannot be compiled with --enable-preview.
+     */
+    private static boolean isVirtual(Thread thread) {
+        try {
+            return (boolean) IS_VIRTUAL.invoke(thread);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new InternalError(e);
+        }
+    }
+
+    static final Method IS_VIRTUAL;
+    static {
+        try {
+            PrivilegedExceptionAction<Method> pa = () -> Thread.class.getMethod("isVirtual");
+            @SuppressWarnings("removal")
+            Method m = AccessController.doPrivileged(pa);
+            IS_VIRTUAL = m;
+        } catch (PrivilegedActionException e) {
+            throw new InternalError(e);
+        }
+
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 
 /**
  * The interface for writing constants summary output.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
-
 public interface ConstantsSummaryWriter {
 
     /**
@@ -59,27 +53,27 @@ public interface ConstantsSummaryWriter {
     Content getContentsHeader();
 
     /**
-     * Adds the given package name link to the constant content list tree.
+     * Adds the given package name link to the constant content list.
      *
      * @param pkg                    the {@link PackageElement} to index.
      * @param writtenPackageHeaders  the set of package headers that have already
      *                               been indexed, we want to index utmost once.
-     * @param contentListTree        the content tree to which the link will be added
+     * @param content                the content to which the link will be added
      */
     void addLinkToPackageContent(PackageElement pkg, Set<PackageElement> writtenPackageHeaders,
-                                 Content contentListTree);
+                                 Content content);
 
     /**
-     * Add the content list to the documentation tree.
+     * Add the content list to the documentation.
      *
-     * @param contentListTree the content that will be added to the list
+     * @param content the content that will be added to the list
      */
-    void addContentsList(Content contentListTree);
+    void addContentsList(Content content);
 
     /**
      * Get the constant summaries for the document.
      *
-     * @return constant summaries header to be added to the documentation tree
+     * @return constant summaries header to be added to the documentation
      */
     Content getConstantSummaries();
 
@@ -90,11 +84,11 @@ public interface ConstantsSummaryWriter {
      *                          first 2 directory levels of the package
      *                          name. For example, java.lang.ref would be
      *                          indexed as java.lang.*.
-     * @param summariesTree the summaries documentation tree
+     * @param toContent the summaries documentation
      * @param first true if the first package is listed
      *                    be written
      */
-    void addPackageName(PackageElement pkg, Content summariesTree, boolean first);
+    void addPackageName(PackageElement pkg, Content toContent, boolean first);
 
     /**
      * Get the class summary header for the constants summary.
@@ -104,30 +98,29 @@ public interface ConstantsSummaryWriter {
     Content getClassConstantHeader();
 
     /**
-     * Add the content list to the documentation summaries tree.
+     * Add the content list to the documentation summaries.
      *
-     * @param summariesTree the tree to which the class constants list will be added
-     * @param classConstantTree the class constant tree that will be added to the list
+     * @param fromClassConstant the class constant content that will be added to the list
      */
-    void addClassConstant(Content summariesTree, Content classConstantTree);
+    void addClassConstant(Content fromClassConstant);
 
     /**
-     * Adds the constant member table to the documentation tree.
+     * Adds the constant member table to the documentation.
      *
      * @param typeElement the class whose constants are being documented.
      * @param fields the constants being documented.
-     * @param classConstantTree the documentation tree to which the constant member
-     *                    table content will be added
+     * @param target the content to which the constant member
+     *               table content will be added
      */
     void addConstantMembers(TypeElement typeElement, Collection<VariableElement> fields,
-                            Content classConstantTree);
+                            Content target);
 
     /**
-     * Add the summaries list to the content tree.
+     * Add the summaries list to the content.
      *
-     * @param summariesTree the summaries content tree that will be added to the list
+     * @param content the summaries content that will be added to the list
      */
-    void addConstantSummaries(Content summariesTree);
+    void addConstantSummaries(Content content);
 
     /**
      * Adds the footer for the summary documentation.
@@ -137,8 +130,8 @@ public interface ConstantsSummaryWriter {
     /**
      * Print the constants summary document.
      *
-     * @param contentTree content tree which should be printed
+     * @param content the content which should be printed
      * @throws DocFileIOException if there is a problem while writing the document
      */
-    void printDocument(Content contentTree) throws DocFileIOException;
+    void printDocument(Content content) throws DocFileIOException;
 }

@@ -47,7 +47,7 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
@@ -1897,7 +1897,10 @@ int ObjectMonitor::TrySpin(JavaThread* current) {
     // This is in keeping with the "no loitering in runtime" rule.
     // We periodically check to see if there's a safepoint pending.
     if ((ctr & 0xFF) == 0) {
-      if (SafepointMechanism::should_process(current)) {
+      // Can't call SafepointMechanism::should_process() since that
+      // might update the poll values and we could be in a thread_blocked
+      // state here which is not allowed so just check the poll.
+      if (SafepointMechanism::local_poll_armed(current)) {
         goto Abort;           // abrupt spin egress
       }
       SpinPause();

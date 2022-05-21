@@ -157,6 +157,10 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return (bt == T_FLOAT ? Op_SqrtVF : 0);
   case Op_SqrtD:
     return (bt == T_DOUBLE ? Op_SqrtVD : 0);
+  case Op_RoundF:
+    return (bt == T_INT ? Op_RoundVF : 0);
+  case Op_RoundD:
+    return (bt == T_LONG ? Op_RoundVD : 0);
   case Op_PopCountI:
     // Unimplemented for subword types since bit count changes
     // depending on size of lane (and sign bit).
@@ -241,6 +245,10 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_VectorCastF2X;
   case Op_ConvD2L:
     return Op_VectorCastD2X;
+  case Op_SignumF:
+    return Op_SignumVF;
+  case Op_SignumD:
+    return Op_SignumVD;
 
   default:
     return 0; // Unimplemented
@@ -337,7 +345,7 @@ bool VectorNode::is_vector_rotate_supported(int vopc, uint vlen, BasicType bt) {
 
   // If target does not support variable shift operations then no point
   // in creating a rotate vector node since it will not be disintegratable.
-  // Adding a pessimistic check to avoid complex pattern mathing which
+  // Adding a pessimistic check to avoid complex pattern matching which
   // may not be full proof.
   if (!Matcher::supports_vector_variable_shifts()) {
      return false;
@@ -389,6 +397,11 @@ bool VectorNode::is_vector_integral_negate_supported(int opc, uint vlen, BasicTy
     }
   }
   return false;
+}
+
+bool VectorNode::is_populate_index_supported(BasicType bt) {
+  int vlen = Matcher::max_vector_size(bt);
+  return Matcher::match_rule_supported_vector(Op_PopulateIndex, vlen, bt);
 }
 
 bool VectorNode::is_shift_opcode(int opc) {
@@ -585,6 +598,9 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_SqrtVF: return new SqrtVFNode(n1, vt);
   case Op_SqrtVD: return new SqrtVDNode(n1, vt);
 
+  case Op_RoundVF: return new RoundVFNode(n1, vt);
+  case Op_RoundVD: return new RoundVDNode(n1, vt);
+
   case Op_PopCountVI: return new PopCountVINode(n1, vt);
   case Op_PopCountVL: return new PopCountVLNode(n1, vt);
   case Op_RotateLeftV: return new RotateLeftVNode(n1, n2, vt);
@@ -634,6 +650,8 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, Node* n3, const TypeV
   switch (vopc) {
   case Op_FmaVD: return new FmaVDNode(n1, n2, n3, vt);
   case Op_FmaVF: return new FmaVFNode(n1, n2, n3, vt);
+  case Op_SignumVD: return new SignumVDNode(n1, n2, n3, vt);
+  case Op_SignumVF: return new SignumVFNode(n1, n2, n3, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return NULL;
@@ -1420,7 +1438,7 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       // Handled by VectorUnboxNode::Identity()
     } else {
       VectorBoxNode* vbox = static_cast<VectorBoxNode*>(n);
-      ciKlass* vbox_klass = vbox->box_type()->klass();
+      ciKlass* vbox_klass = vbox->box_type()->instance_klass();
       const TypeVect* in_vt = vbox->vec_type();
       const TypeVect* out_vt = type()->is_vect();
 

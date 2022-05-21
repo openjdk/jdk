@@ -65,11 +65,15 @@ class SocketAdaptor
 
     @SuppressWarnings("removal")
     static Socket create(SocketChannelImpl sc) {
-        PrivilegedExceptionAction<Socket> pa = () -> new SocketAdaptor(sc);
         try {
-            return AccessController.doPrivileged(pa);
-        } catch (PrivilegedActionException pae) {
-            throw new InternalError("Should not reach here", pae);
+            if (System.getSecurityManager() == null) {
+                return new SocketAdaptor(sc);
+            } else {
+                PrivilegedExceptionAction<Socket> pa = () -> new SocketAdaptor(sc);
+                return AccessController.doPrivileged(pa);
+            }
+        } catch (SocketException | PrivilegedActionException e) {
+            throw new InternalError(e);
         }
     }
 

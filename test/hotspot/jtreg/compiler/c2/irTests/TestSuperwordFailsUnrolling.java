@@ -32,6 +32,7 @@ import sun.hotspot.WhiteBox;
  * @summary C2: loop candidate for superword not always unrolled fully if superword fails
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
+ * @requires vm.compiler2.enabled
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -DSkipWhiteBoxInstall=true -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.c2.irTests.TestSuperwordFailsUnrolling
  */
@@ -49,7 +50,7 @@ public class TestSuperwordFailsUnrolling {
     }
 
     @Test
-    @IR(applyIf = { "UsePopCountInstruction", "true" }, counts = { IRNode.POPCOUNT_L, "10" })
+    @IR(applyIf = { "UsePopCountInstruction", "true" }, counts = { IRNode.POPCOUNT_L, ">=10" })
     private static int test(long[] array1, long[] array2) {
         v = 0;
         for (int i = 0; i < array1.length; i++) {
