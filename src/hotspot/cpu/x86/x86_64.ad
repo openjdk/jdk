@@ -4182,7 +4182,9 @@ operand cmpOpU()
 %}
 
 
-// Floating comparisons that don't require any fixup for the unordered case
+// Floating comparisons that don't require any fixup for the unordered case,
+// If both inputs of the comparison are the same, ZF is always set so we
+// don't need to use cmpOpUCF2 for eq/ne
 operand cmpOpUCF() %{
   match(Bool);
   predicate(n->as_Bool()->_test._test == BoolTest::lt ||
@@ -6958,6 +6960,8 @@ instruct cmovI_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) 
   ins_pipe(pipe_cmov_reg);
 %}
 
+// Since (x == y) == !(x != y), we can flip the sense of the test by flipping the
+// inputs of the CMove
 instruct cmovI_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveI (Binary cop cr) (Binary src dst)));
@@ -7053,6 +7057,8 @@ instruct cmovN_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegN dst, rRegN src) 
   ins_pipe(pipe_cmov_reg);
 %}
 
+// Since (x == y) == !(x != y), we can flip the sense of the test by flipping the
+// inputs of the CMove
 instruct cmovN_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegN dst, rRegN src) %{
   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveN (Binary cop cr) (Binary src dst)));
@@ -7115,6 +7121,8 @@ instruct cmovP_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) 
   ins_pipe(pipe_cmov_reg);
 %}
 
+// Since (x == y) == !(x != y), we can flip the sense of the test by flipping the
+// inputs of the CMove
 instruct cmovP_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveP (Binary cop cr) (Binary src dst)));
@@ -7214,6 +7222,8 @@ instruct cmovL_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) 
   ins_pipe(pipe_cmov_reg);
 %}
 
+// Since (x == y) == !(x != y), we can flip the sense of the test by flipping the
+// inputs of the CMove
 instruct cmovL_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::eq);
   match(Set dst (CMoveL (Binary cop cr) (Binary src dst)));
