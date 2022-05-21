@@ -110,7 +110,7 @@ public:
   uint howl_bucket_index(uint card_idx) { return card_idx >> _log2_max_cards_in_howl_bitmap; }
 
   // Full card configuration
-  // Maximum number of cards in a non-full card set for a single region. Card sets
+  // Maximum number of cards in a non-full card set for a single card region. Card sets
   // with more entries per region are coarsened to Full.
   uint max_cards_in_region() const { return _max_cards_in_card_set; }
 
@@ -161,6 +161,8 @@ public:
 
   void reset();
 
+  void set(G1CardSetCoarsenStats& other);
+
   void subtract_from(G1CardSetCoarsenStats& other);
 
   // Record a coarsening for the given tag/category. Collision should be true if
@@ -189,7 +191,7 @@ class G1CardSet : public CHeapObj<mtGCCardSet> {
   friend class G1ReleaseCardsets;
 
   static G1CardSetCoarsenStats _coarsen_stats; // Coarsening statistics since VM start.
-  static G1CardSetCoarsenStats _last_coarsen_stats; // Coarsening statistics at last GC.
+  static G1CardSetCoarsenStats _last_coarsen_stats; // Coarsening statistics before last GC.
 public:
   // Two lower bits are used to encode the card set container types
   static const uintptr_t ContainerPtrHeaderSize = 2;
