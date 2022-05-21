@@ -2310,16 +2310,26 @@ void ShenandoahHeap::flush_liveness_cache(uint worker_id) {
 bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
   if (is_idle()) return false;
 
+  uintptr_t* cont_addr = obj->field_addr<uintptr_t>(jdk_internal_vm_StackChunk::cont_offset());
+  oop cont_oop = NULL;
+  if (UseCompressedOops) {
+    narrowOop o = *((narrowOop*)cont_addr);
+    cont_oop = CompressedOops::decode(o);
+  } else {
+    cont_oop = *((oop*)cont_addr);
+  }
+  assert(cont_oop != NULL, "Sanity");
+
   // Objects allocated after marking start are implicitly alive, don't need any barriers during
   // marking phase.
-  if (is_concurrent_mark_in_progress() && marking_context()->allocated_after_mark_start(obj)) {
+  if (is_concurrent_mark_in_progress() && marking_context()->allocated_after_mark_start(cont_oop)) {
     return false;
   }
 
   // Objects allocated after evacuation start are guaranteed in to-space, don't need any barriers
   // during evacuation/update references phases.
   if (has_forwarded_objects() &&
-      cast_from_oop<HeapWord*>(obj) >= heap_region_containing(obj)->get_update_watermark()) {
+      cast_from_oop<HeapWord*>(cont_oop) >= heap_region_containing(cont_oop)->get_update_watermark()) {
     return false;
   }
 

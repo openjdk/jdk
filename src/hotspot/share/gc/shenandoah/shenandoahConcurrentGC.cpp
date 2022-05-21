@@ -974,16 +974,19 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
     heap->clear_cancelled_gc();
   }
 
-  heap->set_update_refs_in_progress(false);
-  heap->set_has_forwarded_objects(false);
-
   // Has to be done before cset is clear
   if (ShenandoahVerify) {
     heap->verifier()->verify_roots_in_to_space();
-    heap->verifier()->verify_after_updaterefs();
   }
 
   heap->update_heap_region_states(true /*concurrent*/);
+
+  heap->set_update_refs_in_progress(false);
+  heap->set_has_forwarded_objects(false);
+
+  if (ShenandoahVerify) {
+    heap->verifier()->verify_after_updaterefs();
+  }
 
   if (VerifyAfterGC) {
     Universe::verify();

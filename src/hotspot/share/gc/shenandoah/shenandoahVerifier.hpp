@@ -79,9 +79,6 @@ public:
     // Objects should not have forwardees.
     _verify_forwarded_none,
 
-    // Objects should not have forwardees outside of cset
-    _verify_forwarded_none_outside_cset,
-
     // Objects may have forwardees.
     _verify_forwarded_allow
   } VerifyForwarded;
@@ -92,9 +89,6 @@ public:
 
     // Should have no references to cset.
     _verify_cset_none,
-
-      // Should have no references to cset for regions outside of cset
-      _verify_cset_none_outside_cset,
 
     // May have references to cset, all should be forwarded.
     // Note: Allowing non-forwarded references to cset is equivalent
@@ -110,6 +104,7 @@ public:
     _verify_liveness_conservative,
 
     // All objects should belong to live regions,
+    // and liveness data should be accurate
     _verify_liveness_complete
   } VerifyLiveness;
 
@@ -184,7 +179,6 @@ public:
   void verify_after_evacuation();
   void verify_before_updaterefs();
   void verify_after_updaterefs();
-  void verify_no_cset_after_updaterefs();
   void verify_before_fullgc();
   void verify_after_fullgc();
   void verify_after_degenerated();
