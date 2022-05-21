@@ -210,7 +210,7 @@ public class StructuredTaskScopeTest {
 
     /**
      * A StructuredTaskScope that collects all Future objects notified to the
-     * handle method.
+     * handleComplete method.
      */
     private static class CollectAll<T> extends StructuredTaskScope<T> {
         private final List<Future<T>> futures = new CopyOnWriteArrayList<>();
@@ -235,11 +235,11 @@ public class StructuredTaskScopeTest {
     }
 
     /**
-     * Test that handle method is invoked for tasks that complete normally and
-     * abnormally.
+     * Test that handleComplete method is invoked for tasks that complete normally
+     * and abnormally.
      */
     @Test(dataProvider = "factories")
-    public void testHandle1(ThreadFactory factory) throws Exception {
+    public void testHandleComplete1(ThreadFactory factory) throws Exception {
         try (var scope = new CollectAll(factory)) {
 
             // completes normally
@@ -263,10 +263,10 @@ public class StructuredTaskScopeTest {
     }
 
     /**
-     * Test that the handle method is not invoked after the scope has been shutdown.
+     * Test that the handeComplete method is not invoked after the scope has been shutdown.
      */
     @Test(dataProvider = "factories")
-    public void testHandle2(ThreadFactory factory) throws Exception {
+    public void testHandleComplete2(ThreadFactory factory) throws Exception {
         try (var scope = new CollectAll(factory)) {
 
             var latch = new CountDownLatch(1);
@@ -295,7 +295,7 @@ public class StructuredTaskScopeTest {
             // let task finish
             latch.countDown();
 
-            // handle should not have been called
+            // handleComplete should not have been called
             assertTrue(future1.isDone());
             assertTrue(scope.futures().count() == 0L);
         }

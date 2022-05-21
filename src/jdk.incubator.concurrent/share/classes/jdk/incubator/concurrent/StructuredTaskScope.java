@@ -891,7 +891,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
-         * The behavior of this method is unspecified when invoking thie method before
+         * The behavior of this method is unspecified when invoking this method before
          * the join is done.
          *
          * @throws ExecutionException if no tasks completed with a result but a task
@@ -926,7 +926,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
-         * The behavior of this method is unspecified when invoking thie method before
+         * The behavior of this method is unspecified when invoking this method before
          * the join is done.
          *
          * @param esf the exception supplying function
@@ -1069,7 +1069,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
-         * The behavior of this method is unspecified when invoking thie method before
+         * The behavior of this method is unspecified when invoking this method before
          * the join is done.
          *
          * @return the exception for a task that completed abnormally or an empty
@@ -1097,7 +1097,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
-         * The behavior of this method is unspecified when invoking thie method before
+         * The behavior of this method is unspecified when invoking this method before
          * the join is done.
          *
          * @throws ExecutionException if a task completed with an exception
@@ -1126,7 +1126,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
-         * The behavior of this method is unspecified when invoking thie method before
+         * The behavior of this method is unspecified when invoking this method before
          * the join is done.
          *
          * @param esf the exception supplying function

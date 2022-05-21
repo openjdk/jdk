@@ -42,7 +42,7 @@ public class PreviewFeaturesNotEnabled {
     }
 
     /**
-     * One-arg constructor does not need --enable-preview.
+     * Two-arg constructor does not need --enable-preview.
      */
     @Test
     public void testNoUnsupportedOperationException() {
