@@ -982,10 +982,6 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
 
   heap->update_heap_region_states(true /*concurrent*/);
 
-  if (ShenandoahVerify) {
-    heap->verifier()->verify_no_cset_after_updaterefs();
-  }
-
   if (VerifyAfterGC) {
     Universe::verify();
   }
