@@ -65,7 +65,7 @@ public class PrintArcTest extends Panel implements ActionListener {
     }
 
     private Frame getFrame() {
-        Container cont = getParent();;
+        Container cont = getParent();
 
         while ( !(cont instanceof Frame  ) ) {
             cont = cont.getParent();

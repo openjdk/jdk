@@ -38,7 +38,6 @@ import java.security.KeyFactory;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
-import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.TrustAnchor;
@@ -57,7 +56,6 @@ import sun.security.util.DisabledAlgorithmConstraints;
 import sun.security.validator.Validator;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X509CertImpl;
-import sun.security.x509.X509CRLImpl;
 
 /**
  * A {@code PKIXCertPathChecker} implementation to check whether a
@@ -226,13 +224,13 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
                 CertPathConstraintsParameters cp =
                     new CertPathConstraintsParameters(trustedPubKey, variant,
                         anchor, date);
-                dac.permits(trustedPubKey.getAlgorithm(), cp);
+                dac.permits(trustedPubKey.getAlgorithm(), cp, true);
             }
             // Check the signature algorithm and parameters against constraints
             CertPathConstraintsParameters cp =
                 new CertPathConstraintsParameters(x509Cert, variant,
                     anchor, date);
-            dac.permits(currSigAlg, currSigAlgParams, cp);
+            dac.permits(currSigAlg, currSigAlgParams, cp, true);
         } else {
             if (prevPubKey != null) {
                 if (!constraints.permits(SIGNATURE_PRIMITIVE_SET,
@@ -366,29 +364,6 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
      * Check the signature algorithm with the specified public key.
      *
      * @param key the public key to verify the CRL signature
-     * @param crl the target CRL
-     * @param variant the Validator variant of the operation. A null value
-     *                passed will set it to Validator.GENERIC.
-     * @param anchor the trust anchor selected to validate the CRL issuer
-     */
-    static void check(PublicKey key, X509CRL crl, String variant,
-                      TrustAnchor anchor) throws CertPathValidatorException {
-
-        X509CRLImpl x509CRLImpl = null;
-        try {
-            x509CRLImpl = X509CRLImpl.toImpl(crl);
-        } catch (CRLException ce) {
-            throw new CertPathValidatorException(ce);
-        }
-
-        AlgorithmId algorithmId = x509CRLImpl.getSigAlgId();
-        check(key, algorithmId, variant, anchor);
-    }
-
-    /**
-     * Check the signature algorithm with the specified public key.
-     *
-     * @param key the public key to verify the CRL signature
      * @param algorithmId signature algorithm Algorithm ID
      * @param variant the Validator variant of the operation. A null
      *                value passed will set it to Validator.GENERIC.
@@ -399,7 +374,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
 
         DisabledAlgorithmConstraints.certPathConstraints().permits(
             algorithmId.getName(), algorithmId.getParameters(),
-            new CertPathConstraintsParameters(key, variant, anchor, null));
+            new CertPathConstraintsParameters(key, variant, anchor, null), true);
     }
 }
 

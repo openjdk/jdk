@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,6 @@ public class MultiLauncherTwoPhaseTest {
         launcher2.applyTo(appImageCmd);
 
         PackageTest packageTest = new PackageTest()
-                .addLauncherName("bar") // Add launchers name for verification
-                .addLauncherName("foo")
                 .addRunOnceInitializer(() -> appImageCmd.execute())
                 .addBundleDesktopIntegrationVerifier(true)
                 .addInitializer(cmd -> {

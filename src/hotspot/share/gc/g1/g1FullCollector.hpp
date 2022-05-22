@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public:
   G1FullCollector(G1CollectedHeap* heap,
                   bool explicit_gc,
                   bool clear_soft_refs,
-                  bool do_maximum_compaction);
+                  bool do_maximal_compaction);
   ~G1FullCollector();
 
   void prepare_collection();
@@ -110,7 +110,7 @@ public:
   G1FullGCCompactionPoint* serial_compaction_point() { return &_serial_compaction_point; }
   G1CMBitMap*              mark_bitmap();
   ReferenceProcessor*      reference_processor();
-  size_t live_words(uint region_index) {
+  size_t live_words(uint region_index) const {
     assert(region_index < _heap->max_regions(), "sanity");
     return _live_stats[region_index]._live_words;
   }
@@ -121,6 +121,9 @@ public:
   inline bool is_skip_compacting(uint region_index) const;
   inline bool is_skip_marking(oop obj) const;
 
+  // Are we (potentially) going to compact into this region?
+  inline bool is_compaction_target(uint region_index) const;
+
   inline void set_free(uint region_idx);
   inline bool is_free(uint region_idx) const;
   inline void update_from_compacting_to_skip_compacting(uint region_idx);
@@ -128,6 +131,11 @@ public:
 private:
   void phase1_mark_live_objects();
   void phase2_prepare_compaction();
+
+  void phase2a_determine_worklists();
+  bool phase2b_forward_oops();
+  void phase2c_prepare_serial_compaction();
+
   void phase3_adjust_pointers();
   void phase4_do_compaction();
 

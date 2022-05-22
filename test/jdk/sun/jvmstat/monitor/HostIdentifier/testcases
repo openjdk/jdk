@@ -218,4 +218,18 @@ special syntax - not a valid URI, but allowed by HostIdentifier
 <HostIdentifier> rmi://10.0.0.1:1234 </HostIdentifier>
 </testcase>
 
+<testcase id="31" HostIdentifierInput="12345">
+<description>
+Purely numeric
+</description>
+<HostIdentifier> //12345 </HostIdentifier>
+</testcase>
+
+<testcase id="32" HostIdentifierInput="12345:123">
+<description>
+Purely numeric
+</description>
+<HostIdentifier> //12345:123 </HostIdentifier>
+</testcase>
+
 </HostIdentifierTests>

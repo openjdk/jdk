@@ -416,11 +416,11 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         // Avoid calling get_constant() which will try to allocate
         // unloaded constant. We need only constant's type.
         int index = s.get_constant_pool_index();
-        constantTag tag = s.get_constant_pool_tag(index);
-        if (tag.is_long() || tag.is_double()) {
+        BasicType con_bt = s.get_basic_type_for_constant_at(index);
+        if (con_bt == T_LONG || con_bt == T_DOUBLE) {
           // Only longs and doubles use 2 stack slots.
           state.lpush();
-        } else if (tag.basic_type() == T_OBJECT) {
+        } else if (con_bt == T_OBJECT) {
           state.apush(unknown_obj);
         } else {
           state.spush();

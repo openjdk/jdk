@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021 SAP SE. All rights reserved.
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
-
-#if INCLUDE_NMT
 
 // This tests the NMTPreInitAllocationTable hash table used to store C-heap allocations before NMT initialization ran.
 
@@ -132,5 +130,3 @@ TEST_VM_ASSERT_MSG(NMTPreInit, assert_on_lu_table_overflow, ".*NMT preinit looku
   table.verify();
 }
 #endif // ASSERT
-
-#endif // INCLUDE_NMT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
 #ifndef SHARE_JFR_LEAKPROFILER_CHECKPOINT_OBJECTSAMPLECHECKPOINT_HPP
 #define SHARE_JFR_LEAKPROFILER_CHECKPOINT_OBJECTSAMPLECHECKPOINT_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 
 class EdgeStore;
 class InstanceKlass;
-class JavaThread;
 class JfrCheckpointWriter;
 class JfrStackTrace;
 class Klass;
@@ -53,7 +52,7 @@ class ObjectSampleCheckpoint : AllStatic {
  public:
   static void on_type_set(JfrCheckpointWriter& writer);
   static void on_type_set_unload(JfrCheckpointWriter& writer);
-  static void on_thread_exit(JavaThread* jt);
+  static void on_thread_exit(traceid tid);
   static void on_rotation(const ObjectSampler* sampler);
 };
 

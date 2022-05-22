@@ -72,9 +72,9 @@ public final class VmFlagTest<T> {
     protected static <T> void runTest(String existentFlag, T[] tests,
             T[] results, BiConsumer<String, T> set, Function<String, T> get) {
         if (existentFlag != null) {
-            new VmFlagTest(existentFlag, set, get, true).test(tests, results);
+            new VmFlagTest<T>(existentFlag, set, get, true).test(tests, results);
         }
-        new VmFlagTest(NONEXISTENT_FLAG, set, get, false).test(tests, results);
+        new VmFlagTest<T>(NONEXISTENT_FLAG, set, get, false).test(tests, results);
     }
 
     public final void test(T[] tests, T[] results) {

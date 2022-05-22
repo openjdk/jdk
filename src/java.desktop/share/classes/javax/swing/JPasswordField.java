@@ -288,7 +288,7 @@ public class JPasswordField extends JTextField {
      * @param offs the offset &gt;= 0
      * @param len the length &gt;= 0
      * @return the text
-     * @exception BadLocationException if the offset or length are invalid
+     * @throws BadLocationException if the offset or length are invalid
      */
     @Deprecated
     public String getText(int offs, int len) throws BadLocationException {

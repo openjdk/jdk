@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TAB
   if (fd != -1) {
     // Obtain a File* from the file descriptor so that fgets()
     // can be used in parse_one_line()
-    _file = os::open(fd, "r");
+    _file = os::fdopen(fd, "r");
   }
   if (_file == NULL) {
     char errmsg[JVM_MAXPATHLEN];
@@ -446,9 +446,9 @@ void ClassListParser::error(const char* msg, ...) {
 // This function is used for loading classes for customized class loaders
 // during archive dumping.
 InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS) {
-#if !(defined(_LP64) && (defined(LINUX) || defined(__APPLE__)))
+#if !(defined(_LP64) && (defined(LINUX) || defined(__APPLE__) || defined(_WINDOWS)))
   // The only supported platforms are: (1) Linux/64-bit and (2) Solaris/64-bit and
-  // (3) MacOSX/64-bit
+  // (3) MacOSX/64-bit and (4) Windowss/64-bit
   // This #if condition should be in sync with the areCustomLoadersSupportedForCDS
   // method in test/lib/jdk/test/lib/Platform.java.
   error("AppCDS custom class loaders not supported on this platform");

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -13,404 +13,595 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<localeDisplayNames>
 		<localeDisplayPattern>
 			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
+			<localeSeparator>{0}፣ {1}</localeSeparator>
+			<localeKeyTypePattern>{0}፦ {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
-			<language type="af">ኣፍሪከንስ</language>
+			<language type="af">ኣፍሪካንስ</language>
+			<language type="agq">ኣገም</language>
+			<language type="ak">ኣካን</language>
 			<language type="am">ኣምሓርኛ</language>
 			<language type="ar">ዓረብ</language>
-			<language type="az">ኣዘርባጃን</language>
-			<language type="be">ቤላሩስ</language>
-			<language type="bg">ቡልጋሪኛ</language>
-			<language type="bn">ባንጋላ</language>
-			<language type="br">ብሬቶን</language>
-			<language type="bs">ቦስኒያን</language>
+			<language type="ar_001">ዘመናዊ ምዱብ ዓረብ</language>
+			<language type="as">ኣሳሜዝኛ</language>
+			<language type="asa">ኣሱ</language>
+			<language type="ast">ኣስቱርያን</language>
+			<language type="az">ኣዘርባጃንኛ</language>
+			<language type="az" alt="short">ኣዘሪ</language>
+			<language type="bas">ባሳ</language>
+			<language type="be">ቤላሩስኛ</language>
+			<language type="bem">ቤምባ</language>
+			<language type="bez">በና</language>
+			<language type="bg">ቡልጋርኛ</language>
+			<language type="bm">ባምባራ</language>
+			<language type="bn">በንጋሊ</language>
+			<language type="bo">ቲበታንኛ</language>
+			<language type="br">ብረቶንኛ</language>
+			<language type="brx">ቦዶ</language>
+			<language type="bs">ቦዝንኛ</language>
 			<language type="ca">ካታላን</language>
-			<language type="cs">ቼክ</language>
-			<language type="cy">ወልሽ</language>
+			<language type="ccp">ቻክማ</language>
+			<language type="ce">ቸቸንይና</language>
+			<language type="ceb">ሰብዋኖ</language>
+			<language type="cgg">ቺጋ</language>
+			<language type="chr">ቸሮኪ</language>
+			<language type="ckb">ሶራኒ ኩርዲሽ</language>
+			<language type="ckb" alt="variant">ማእከላይ ኩርዲሽ</language>
+			<language type="co">ኮርስኛ</language>
+			<language type="cs">ቸክኛ</language>
+			<language type="cu">ቤተ-ክርስትያን ስላቭኛ</language>
+			<language type="cy">ዌልስኛ</language>
 			<language type="da">ዳኒሽ</language>
+			<language type="dav">ታይታ</language>
 			<language type="de">ጀርመን</language>
-			<language type="el">ግሪክ</language>
-			<language type="en">እንግሊዝ</language>
-			<language type="en_GB" alt="short">እንግሊዝ (GB)</language>
-			<language type="en_US" alt="short">እንግሊዝ (US)</language>
+			<language type="dje">ዛርማ</language>
+			<language type="doi">ዶግሪ</language>
+			<language type="dsb">ታሕተዋይ ሶርብኛ</language>
+			<language type="dua">ድዋላ</language>
+			<language type="dyo">ጆላ-ፎኒይ</language>
+			<language type="dz">ድዞንግካ</language>
+			<language type="ebu">ኤምቡ</language>
+			<language type="ee">ኢው</language>
+			<language type="el">ግሪኽኛ</language>
+			<language type="en">እንግሊዝኛ</language>
+			<language type="en_US">እንግሊዝኛ (ሕቡራት መንግስታት)</language>
 			<language type="eo">ኤስፐራንቶ</language>
-			<language type="es">ስፓኒሽ</language>
-			<language type="es_419">ስፓኒሽ (የላቲን አሜሪካ)</language>
-			<language type="et">ኤስቶኒአን</language>
-			<language type="eu">ባስክ</language>
-			<language type="fa">ፋርስ</language>
-			<language type="fi">ፊኒሽ</language>
-			<language type="fil">ፊሊፕን</language>
-			<language type="fo">ፋሮስ</language>
-			<language type="fr">ፈረንሳይን</language>
-			<language type="fy">ምዕራባዊ ፍሪሰኛ</language>
-			<language type="ga">አይሪሽ</language>
-			<language type="gd">ስኮቲሽ ጋአሊክ</language>
-			<language type="gl">ጋሊሻን</language>
+			<language type="es">ስጳንኛ</language>
+			<language type="et">ኤስቶንኛ</language>
+			<language type="eu">ባስክኛ</language>
+			<language type="ewo">ኤዎንዶ</language>
+			<language type="fa">ፋርስኛ</language>
+			<language type="fa_AF">ዳሪ</language>
+			<language type="ff">ፉላ</language>
+			<language type="fi">ፊንላንድኛ</language>
+			<language type="fil">ፊሊፒንኛ</language>
+			<language type="fo">ፋሮእይና</language>
+			<language type="fr">ፈረንሳይኛ</language>
+			<language type="frc">ካጁን ፈረንሳይ</language>
+			<language type="fur">ፍርዩልኛ</language>
+			<language type="fy">ምዕራባዊ ፍሪስኛ</language>
+			<language type="ga">ኣየርላንድኛ</language>
+			<language type="gd">ስኮትላንዳዊ ጋኤሊክኛ</language>
+			<language type="gl">ጋሊሽያን</language>
 			<language type="gn">ጓራኒ</language>
+			<language type="gsw">ስዊዘርላንዳዊ ጀርመን</language>
 			<language type="gu">ጉጃራቲ</language>
-			<language type="he">እብራይስጥ</language>
-			<language type="hi">ህንዲ</language>
-			<language type="hr">ሮኤሽያን</language>
-			<language type="hu">ሃንጋሪ</language>
-			<language type="ia">ኢንቴር ቋንቋ</language>
-			<language type="id">ኢንዶኔዥያን</language>
-			<language type="is">ኣይስላንዲክ</language>
+			<language type="guz">ጉሲ</language>
+			<language type="gv">ማንክስ</language>
+			<language type="ha">ሃውሳ</language>
+			<language type="haw">ሃዋይኛ</language>
+			<language type="he">እብራይስጢ</language>
+			<language type="hi">ሂንዲ</language>
+			<language type="hmn">ህሞንግ</language>
+			<language type="hr">ክሮኤሽያን</language>
+			<language type="hsb">ላዕለዋይ ሶርብኛ</language>
+			<language type="ht">ክርዮል ሃይትኛ</language>
+			<language type="hu">ሃንጋርኛ</language>
+			<language type="hy">ኣርሜንኛ</language>
+			<language type="ia">ኢንተርሊንጓ</language>
+			<language type="id">ኢንዶነዥኛ</language>
+			<language type="ig">ኢግቦ</language>
+			<language type="ii">ሲችዋን ዪ</language>
+			<language type="is">ኣይስላንድኛ</language>
 			<language type="it">ጥልያን</language>
-			<language type="ja">ጃፓን</language>
-			<language type="jv">ጃቫን</language>
-			<language type="ka">ጆርጅየን</language>
-			<language type="kn">ካማደኛ</language>
-			<language type="ko">ኮሪያኛ</language>
-			<language type="ku">ኩርድሽ</language>
-			<language type="ky">ኪሩጋዚ</language>
-			<language type="la">ላቲንኛ</language>
-			<language type="lt">ሊቱወኒየን</language>
-			<language type="lv">ላቲቪያን</language>
-			<language type="mk">መቆዶኒኛ</language>
-			<language type="ml">ማላይያላም</language>
-			<language type="mr">ማራቲኛ</language>
-			<language type="ms">ማላይ</language>
-			<language type="mt">ማልተዘ</language>
+			<language type="ja">ጃፓንኛ</language>
+			<language type="jgo">ንጎምባ</language>
+			<language type="jmc">ማኬም</language>
+			<language type="jv">ጃቫንኛ</language>
+			<language type="ka">ጆርጅያንኛ</language>
+			<language type="kab">ካቢልኛ</language>
+			<language type="kam">ካምባ</language>
+			<language type="kde">ማኮንደ</language>
+			<language type="kea">ክርዮል ኬፕ ቨርድኛ</language>
+			<language type="kgp">ካይንጋንግ</language>
+			<language type="khq">ኮይራ ቺኒ</language>
+			<language type="ki">ኪኩዩ</language>
+			<language type="kk">ካዛክ</language>
+			<language type="kkj">ካኮ</language>
+			<language type="kl">ግሪንላንድኛ</language>
+			<language type="kln">ካለንጂን</language>
+			<language type="km">ክመር</language>
+			<language type="kn">ካንናዳ</language>
+			<language type="ko">ኮርይኛ</language>
+			<language type="kok">ኮንካኒ</language>
+			<language type="ks">ካሽሚሪ</language>
+			<language type="ksb">ሻምባላ</language>
+			<language type="ksf">ባፍያ</language>
+			<language type="ksh">ኮልሽ</language>
+			<language type="ku">ኩርዲሽ</language>
+			<language type="kw">ኮርንኛ</language>
+			<language type="ky">ኪርጊዝኛ</language>
+			<language type="la">ላቲን</language>
+			<language type="lag">ላንጊ</language>
+			<language type="lb">ሉክሰምበርግኛ</language>
+			<language type="lg">ጋንዳ</language>
+			<language type="lij">ሊጉርኛ</language>
+			<language type="lkt">ላኮታ</language>
+			<language type="ln">ሊንጋላ</language>
+			<language type="lo">ላኦ</language>
+			<language type="lou">ክርዮል ሉዊዝያና</language>
+			<language type="lrc">ሰሜናዊ ሉሪ</language>
+			<language type="lt">ሊትዌንኛ</language>
+			<language type="lu">ሉባ-ካታንጋ</language>
+			<language type="luo">ሉኦ</language>
+			<language type="luy">ሉይያ</language>
+			<language type="lv">ላትቭኛ</language>
+			<language type="mai">ማይቲሊ</language>
+			<language type="mas">ማሳይ</language>
+			<language type="mer">መሩ</language>
+			<language type="mfe">ክርዮል ማውሪሽይና</language>
+			<language type="mg">ማላጋሲ</language>
+			<language type="mgh">ማክዋ-ሜቶ</language>
+			<language type="mgo">መታ</language>
+			<language type="mi">ማኦሪ</language>
+			<language type="mk">መቄዶንኛ</language>
+			<language type="ml">ማላያላም</language>
+			<language type="mn">ሞንጎልኛ</language>
+			<language type="mni">ማኒፑሪ</language>
+			<language type="mr">ማራቲ</language>
+			<language type="ms">ማላይኛ</language>
+			<language type="mt">ማልትኛ</language>
+			<language type="mua">ሙንዳንግ</language>
+			<language type="mul">ዝተፈላለዩ ቋንቋታት</language>
+			<language type="my">በርምኛ</language>
+			<language type="mzn">ማዛንደራኒ</language>
+			<language type="naq">ናማ</language>
+			<language type="nb">ኖርወያዊ ቦክማል</language>
+			<language type="nd">ሰሜን ንደበለ</language>
+			<language type="nds">ትሑት ጀርመን</language>
+			<language type="nds_NL">ትሑት ሳክሰን</language>
 			<language type="ne">ኔፓሊ</language>
-			<language type="nl">ደች</language>
-			<language type="nn">ርዌጂያን (ናይ ኝኖርስክ)</language>
-			<language type="no">ርዌጂያን</language>
-			<language type="oc">ኦኪታንኛ</language>
-			<language type="or">ኦዲያ</language>
+			<language type="nl">ዳች</language>
+			<language type="nl_BE">ፍላሚሽ</language>
+			<language type="nmg">ክዋስዮ</language>
+			<language type="nn">ኖርወያዊ ናይኖርስክ</language>
+			<language type="nnh">ንጌምቡን</language>
+			<language type="no">ኖርወይኛ</language>
+			<language type="nus">ንዌር</language>
+			<language type="nv">ናቫሆ</language>
+			<language type="ny">ንያንጃ</language>
+			<language type="nyn">ንያንኮል</language>
+			<language type="oc">ኦክሲታንኛ</language>
+			<language type="om">ኦሮሞ</language>
+			<language type="or">ኦድያ</language>
+			<language type="os">ኦሰትኛ</language>
 			<language type="pa">ፑንጃቢ</language>
+			<language type="pcm">ፒጂን ናይጀርያ</language>
 			<language type="pl">ፖሊሽ</language>
+			<language type="prg">ፕሩስኛ</language>
 			<language type="ps">ፓሽቶ</language>
-			<language type="pt">ፖርቹጋል</language>
-			<language type="pt_BR">ፖርቹጋል (ናይ ብራዚል)</language>
-			<language type="pt_PT">ፖርቹጋል (ናይ ፖርቱጋል)</language>
-			<language type="ro">ሮማኒያን</language>
-			<language type="ru">ሩስያ</language>
-			<language type="sh">ሰርቦ- ክሮዊታን</language>
+			<language type="pt">ፖርቱጊዝኛ</language>
+			<language type="qu">ቀችዋ</language>
+			<language type="rhg">ሮሂንግያ</language>
+			<language type="rm">ሮማንሽ</language>
+			<language type="rn">ኪሩንዲ</language>
+			<language type="ro">ሩማንኛ</language>
+			<language type="ro_MD">ሞልዶቨኛ</language>
+			<language type="rof">ሮምቦ</language>
+			<language type="ru">ሩስኛ</language>
+			<language type="rw">ኪንያርዋንዳ</language>
+			<language type="rwk">ርዋ</language>
+			<language type="sa">ሳንስክሪት</language>
+			<language type="sah">ሳኻ</language>
+			<language type="saq">ሳምቡሩ</language>
+			<language type="sat">ሳንታሊ</language>
+			<language type="sbp">ሳንጉ</language>
+			<language type="sd">ሲንድሂ</language>
+			<language type="se">ሰሜናዊ ሳሚ</language>
+			<language type="seh">ሰና</language>
+			<language type="ses">ኮይራቦሮ ሰኒ</language>
+			<language type="sg">ሳንጎ</language>
+			<language type="sh">ሰርቦ-ክሮኤሽያን</language>
+			<language type="shi">ታቸልሂት</language>
 			<language type="si">ሲንሃላ</language>
-			<language type="sk">ስሎቫክ</language>
-			<language type="sl">ስሎቪኒያ</language>
-			<language type="sq">ኣልበንየን</language>
-			<language type="sr">ሰርብያኛ</language>
-			<language type="st">ሰሴቶ</language>
-			<language type="su">ሱዳን</language>
+			<language type="sk">ስሎቫክኛ</language>
+			<language type="sl">ስሎቬንኛ</language>
+			<language type="sm">ሳሞእኛ</language>
+			<language type="smn">ሳሚ ኢናሪ</language>
+			<language type="sn">ሾና</language>
+			<language type="so">ሶማሊ</language>
+			<language type="sq">ኣልባንኛ</language>
+			<language type="sr">ሰርብኛ</language>
+			<language type="st">ደቡባዊ ሶቶ</language>
+			<language type="su">ሱንዳንኛ</language>
 			<language type="sv">ስዊድንኛ</language>
 			<language type="sw">ስዋሂሊ</language>
-			<language type="ta">ታሚልኛ</language>
-			<language type="te">ተሉጉኛ</language>
+			<language type="sw_CD">ስዋሂሊ (ኮንጎ)</language>
+			<language type="ta">ታሚል</language>
+			<language type="te">ተሉጉ</language>
+			<language type="teo">ተሶ</language>
+			<language type="tg">ታጂክኛ</language>
 			<language type="th">ታይኛ</language>
-			<language type="ti">ትግር</language>
-			<language type="tk">ቱርክሜን</language>
-			<language type="tlh">ክሊንግኦንኛ</language>
-			<language type="tr">ቱርክ</language>
+			<language type="ti">ትግርኛ</language>
+			<language type="tk">ቱርክመንኛ</language>
+			<language type="tlh">ክሊንጎን</language>
+			<language type="to">ቶንጋንኛ</language>
+			<language type="tr">ቱርክኛ</language>
+			<language type="tt">ታታር</language>
 			<language type="tw">ትዊ</language>
-			<language type="uk">ዩክሬን</language>
+			<language type="twq">ታሳዋቅ</language>
+			<language type="tzm">ማእከላይ ኣትላስ ታማዛይት</language>
+			<language type="ug">ኡይጉር</language>
+			<language type="uk">ዩክረይንኛ</language>
+			<language type="und">ዘይተፈልጠ ቋንቋ</language>
 			<language type="ur">ኡርዱ</language>
-			<language type="uz">ኡዝቤክ</language>
-			<language type="vi">ቬትናም</language>
-			<language type="xh">ኢሲቆሳ</language>
-			<language type="yi">ዪዲሽ</language>
-			<language type="zu">ዙሉኛ</language>
+			<language type="uz">ኡዝበክኛ</language>
+			<language type="vai">ቫይ</language>
+			<language type="vi">ቬትናምኛ</language>
+			<language type="vo">ቮላፑክ</language>
+			<language type="vun">ቩንጆ</language>
+			<language type="wae">ዋልሰር</language>
+			<language type="wo">ዎሎፍ</language>
+			<language type="xh">ኮሳ</language>
+			<language type="xog">ሶጋ</language>
+			<language type="yav">ያንግበን</language>
+			<language type="yi">ይሁድኛ</language>
+			<language type="yo">ዮሩባ</language>
+			<language type="yue">ካንቶንኛ</language>
+			<language type="yue" alt="menu">ቻይናዊ ካንቶንኛ</language>
+			<language type="zgh">ሞሮካዊ ምዱብ ታማዛይት</language>
+			<language type="zh">ቻይንኛ</language>
+			<language type="zh" alt="menu">ማንዳሪን ቻይንኛ</language>
+			<language type="zh_Hans">ቀሊል ቻይንኛ</language>
+			<language type="zh_Hans" alt="long">ቀሊል ማንዳሪን ቻይንኛ</language>
+			<language type="zh_Hant">ባህላዊ ቻይንኛ</language>
+			<language type="zh_Hant" alt="long">ባህላዊ ማንዳሪን ቻይንኛ</language>
+			<language type="zu">ዙሉ</language>
+			<language type="zxx">ቋንቋዊ ትሕዝቶ የለን</language>
 		</languages>
 		<scripts>
 			<script type="Ethi">ፊደል</script>
 			<script type="Latn">ላቲን</script>
+			<script type="Zsye">ኢሞጂ</script>
+			<script type="Zsym">ምልክታት</script>
+			<script type="Zxxx">ዘይተጻሕፈ</script>
 		</scripts>
 		<territories>
 			<territory type="001">ዓለም</territory>
-			<territory type="002">አፍሪካ</territory>
-			<territory type="005">ደቡባዊ አሜሪካ</territory>
-			<territory type="009">ኦሽኒያ</territory>
-			<territory type="011">ምዕራባዊ አፍሪካ</territory>
-			<territory type="014">ምስራቃዊ አፍሪካ</territory>
-			<territory type="015">ሰሜናዊ አፍሪካ</territory>
-			<territory type="017">መካከለኛ አፍሪካ</territory>
-			<territory type="018">ደቡባዊ አፍሪካ</territory>
-			<territory type="019">አሜሪካዎች</territory>
-			<territory type="021">ሰሜናዊ አሜሪካ</territory>
-			<territory type="029">ካሪቢያን</territory>
-			<territory type="034">ምሥራቃዊ እስያ</territory>
-			<territory type="039">ደቡባዊ አውሮፓ</territory>
-			<territory type="053">አውስትራሊያ እና ኒው ዚላንድ</territory>
-			<territory type="054">ሜላኔሲያ</territory>
-			<territory type="061">ፖሊኔዢያ</territory>
-			<territory type="142">እስያ</territory>
-			<territory type="145">ምዕራባዊ እስያ</territory>
-			<territory type="150">አውሮፓ</territory>
-			<territory type="151">ምስራቃዊ አውሮፓ</territory>
-			<territory type="154">ሰሜናዊ አውሮፓ</territory>
-			<territory type="155">ምዕራባዊ አውሮፓ</territory>
-			<territory type="AC">አሴንሽን ደሴት</territory>
+			<territory type="002">ኣፍሪቃ</territory>
+			<territory type="003">ሰሜን ኣመሪካ</territory>
+			<territory type="005">ደቡብ ኣመሪካ</territory>
+			<territory type="009">ኦሽያንያ</territory>
+			<territory type="011">ምዕራባዊ ኣፍሪቃ</territory>
+			<territory type="013">ማእከላይ ኣመሪካ</territory>
+			<territory type="014">ምብራቓዊ ኣፍሪቃ</territory>
+			<territory type="015">ሰሜናዊ ኣፍሪቃ</territory>
+			<territory type="017">ማእከላይ ኣፍሪቃ</territory>
+			<territory type="018">ደቡባዊ ኣፍሪቃ</territory>
+			<territory type="019">ኣመሪካታት</territory>
+			<territory type="021">ሰሜናዊ ኣመሪካ</territory>
+			<territory type="029">ካሪብያን</territory>
+			<territory type="030">ምብራቓዊ ኤስያ</territory>
+			<territory type="034">ደቡባዊ ኤስያ</territory>
+			<territory type="035">ደቡባዊ ምብራቕ ኤስያ</territory>
+			<territory type="039">ደቡባዊ ኤውሮጳ</territory>
+			<territory type="053">ኣውስትራሌዥያ</territory>
+			<territory type="054">መላነዥያ</territory>
+			<territory type="057">ዞባ ማይክሮነዥያ</territory>
+			<territory type="061">ፖሊነዥያ</territory>
+			<territory type="142">ኤስያ</territory>
+			<territory type="143">ማእከላይ ኤስያ</territory>
+			<territory type="145">ምዕራባዊ ኤስያ</territory>
+			<territory type="150">ኤውሮጳ</territory>
+			<territory type="151">ምብራቓዊ ኤውሮጳ</territory>
+			<territory type="154">ሰሜናዊ ኤውሮጳ</territory>
+			<territory type="155">ምዕራባዊ ኤውሮጳ</territory>
+			<territory type="202">ንኡስ ሰሃራዊ ኣፍሪቃ</territory>
+			<territory type="419">ላቲን ኣመሪካ</territory>
+			<territory type="AC">ደሴት ኣሰንስዮን</territory>
 			<territory type="AD">ኣንዶራ</territory>
 			<territory type="AE">ሕቡራት ኢማራት ዓረብ</territory>
 			<territory type="AF">ኣፍጋኒስታን</territory>
 			<territory type="AG">ኣንቲጓን ባርቡዳን</territory>
-			<territory type="AI">ኣንጊላ</territory>
-			<territory type="AL">ኣልቤኒያ</territory>
-			<territory type="AM">ኣርሜኒያ</territory>
+			<territory type="AI">ኣንጒላ</territory>
+			<territory type="AL">ኣልባንያ</territory>
+			<territory type="AM">ኣርሜንያ</territory>
 			<territory type="AO">ኣንጎላ</territory>
 			<territory type="AQ">ኣንታርክቲካ</territory>
 			<territory type="AR">ኣርጀንቲና</territory>
-			<territory type="AS">ኣሜሪካ ሳሞኣ</territory>
-			<territory type="AT">ኦስትሪያ</territory>
-			<territory type="AU">ኣውስትራሊያ</territory>
+			<territory type="AS">ኣመሪካዊት ሳሞኣ</territory>
+			<territory type="AT">ኦስትርያ</territory>
+			<territory type="AU">ኣውስትራልያ</territory>
 			<territory type="AW">ኣሩባ</territory>
 			<territory type="AX">ደሴታት ኣላንድ</territory>
-			<territory type="AZ">ኣዘርበጃን</territory>
+			<territory type="AZ">ኣዘርባጃን</territory>
 			<territory type="BA">ቦዝንያን ሄርዘጎቪናን</territory>
 			<territory type="BB">ባርባዶስ</territory>
-			<territory type="BD">ባንግላዲሽ</territory>
-			<territory type="BE">ቤልጀም</territory>
+			<territory type="BD">ባንግላደሽ</territory>
+			<territory type="BE">ቤልጅዩም</territory>
 			<territory type="BF">ቡርኪና ፋሶ</territory>
-			<territory type="BG">ቡልጋሪያ</territory>
+			<territory type="BG">ቡልጋርያ</territory>
 			<territory type="BH">ባሕሬን</territory>
-			<territory type="BI">ቡሩንዲ</territory>
+			<territory type="BI">ብሩንዲ</territory>
 			<territory type="BJ">ቤኒን</territory>
-			<territory type="BL">ቅዱስ ባርተለሚይ</territory>
-			<territory type="BM">ቤርሙዳ</territory>
+			<territory type="BL">ቅዱስ ባርተለሚ</territory>
+			<territory type="BM">በርሙዳ</territory>
 			<territory type="BN">ብሩነይ</territory>
-			<territory type="BO">ቦሊቪያ</territory>
-			<territory type="BQ">ካሪቢያን ኔዘርላንድስ</territory>
+			<territory type="BO">ቦሊቭያ</territory>
+			<territory type="BQ">ካሪብያን ኔዘርላንድ</territory>
 			<territory type="BR">ብራዚል</territory>
 			<territory type="BS">ባሃማስ</territory>
 			<territory type="BT">ቡታን</territory>
-			<territory type="BV">ደሴት ቡቬት</territory>
+			<territory type="BV">ደሴት ቡቨት</territory>
 			<territory type="BW">ቦትስዋና</territory>
 			<territory type="BY">ቤላሩስ</territory>
-			<territory type="BZ">ቤሊዝ</territory>
+			<territory type="BZ">በሊዝ</territory>
 			<territory type="CA">ካናዳ</territory>
-			<territory type="CC">ኮኮስ ኬሊንግ ደሴቶች</territory>
-			<territory type="CD">ኮንጎ</territory>
-			<territory type="CF">ማእከላዊ አፍሪቃ ሪፖብሊክ</territory>
-			<territory type="CG">ኮንጎ ሪፓብሊክ</territory>
+			<territory type="CC">ደሴታት ኮኮስ</territory>
+			<territory type="CD">ደሞክራስያዊት ሪፓብሊክ ኮንጎ</territory>
+			<territory type="CD" alt="variant">ኮንጎ (ደ.ሪ.ኮ.)</territory>
+			<territory type="CF">ሪፓብሊክ ማእከላይ ኣፍሪቃ</territory>
+			<territory type="CG">ኮንጎ</territory>
+			<territory type="CG" alt="variant">ኮንጎ (ሪፓብሊክ)</territory>
 			<territory type="CH">ስዊዘርላንድ</territory>
-			<territory type="CI">ኮት ዲቯር</territory>
-			<territory type="CI" alt="variant">አይቮሪ ኮስት</territory>
+			<territory type="CI">ኮት ዲቭዋር</territory>
+			<territory type="CI" alt="variant">ኣይቮሪ ኮስት</territory>
 			<territory type="CK">ደሴታት ኩክ</territory>
-			<territory type="CL">ቺሊ</territory>
-			<territory type="CM">ካሜሮን</territory>
+			<territory type="CL">ቺሌ</territory>
+			<territory type="CM">ካሜሩን</territory>
 			<territory type="CN">ቻይና</territory>
-			<territory type="CO">ኮሎምቢያ</territory>
-			<territory type="CP">ክሊፐርቶን ደሴት</territory>
+			<territory type="CO">ኮሎምብያ</territory>
+			<territory type="CP">ደሴት ክሊፐርቶን</territory>
 			<territory type="CR">ኮስታ ሪካ</territory>
 			<territory type="CU">ኩባ</territory>
-			<territory type="CV">ኬፕ ቬርዴ</territory>
-			<territory type="CW">ኩራካዎ</territory>
+			<territory type="CV">ኬፕ ቨርደ</territory>
+			<territory type="CW">ኩራሳው</territory>
 			<territory type="CX">ደሴት ክሪስማስ</territory>
-			<territory type="CY">ሳይፕረስ</territory>
-			<territory type="CZ">ቼክ ሪፓብሊክ</territory>
+			<territory type="CY">ቆጵሮስ</territory>
+			<territory type="CZ">ቸክያ</territory>
+			<territory type="CZ" alt="variant">ሪፓብሊክ ቸክ</territory>
 			<territory type="DE">ጀርመን</territory>
-			<territory type="DG">ዲየጎ ጋርሺያ</territory>
-			<territory type="DJ">ጂቡቲ</territory>
-			<territory type="DK">ዴንማርክ</territory>
+			<territory type="DG">ድየጎ ጋርስያ</territory>
+			<territory type="DJ">ጅቡቲ</territory>
+			<territory type="DK">ደንማርክ</territory>
 			<territory type="DM">ዶሚኒካ</territory>
-			<territory type="DO">ዶመኒካ ሪፓብሊክ</territory>
-			<territory type="DZ">ኣልጀሪያ</territory>
-			<territory type="EA">ሲውታን ሜሊላን</territory>
-			<territory type="EC">ኢኳዶር</territory>
-			<territory type="EE">ኤስቶኒያ</territory>
-			<territory type="EG">ግብጽ</territory>
-			<territory type="EH">ምዕራባዊ ሳህራ</territory>
+			<territory type="DO">ዶሚኒካዊት ሪፓብሊክ</territory>
+			<territory type="DZ">ኣልጀርያ</territory>
+			<territory type="EA">ሴውታን መሊላን</territory>
+			<territory type="EC">ኤኳዶር</territory>
+			<territory type="EE">ኤስቶንያ</territory>
+			<territory type="EG">ግብጺ</territory>
+			<territory type="EH">ምዕራባዊ ሰሃራ</territory>
 			<territory type="ER">ኤርትራ</territory>
-			<territory type="ES">ስፔን</territory>
+			<territory type="ES">ስጳኛ</territory>
 			<territory type="ET">ኢትዮጵያ</territory>
+			<territory type="EU">ኤውሮጳዊ ሕብረት</territory>
+			<territory type="EZ">ዞባ ዩሮ</territory>
 			<territory type="FI">ፊንላንድ</territory>
 			<territory type="FJ">ፊጂ</territory>
 			<territory type="FK">ደሴታት ፎክላንድ</territory>
-			<territory type="FM">ሚክሮኔዢያ</territory>
-			<territory type="FO">ደሴታት ፋራኦ</territory>
-			<territory type="FR">ፈረንሳይ</territory>
+			<territory type="FK" alt="variant">ደሴታት ፎክላንድ (ኢስላስ ማልቪናስ)</territory>
+			<territory type="FM">ማይክሮነዥያ</territory>
+			<territory type="FO">ደሴታት ፋሮ</territory>
+			<territory type="FR">ፈረንሳ</territory>
 			<territory type="GA">ጋቦን</territory>
-			<territory type="GB">እንግሊዝ</territory>
-			<territory type="GB" alt="short">ዩኬይ</territory>
-			<territory type="GD">ግሬናዳ</territory>
-			<territory type="GE">ጆርጂያ</territory>
-			<territory type="GF">ናይ ፈረንሳይ ጉይና</territory>
-			<territory type="GG">ገርንሲ</territory>
+			<territory type="GB">ብሪጣንያ</territory>
+			<territory type="GB" alt="short">ዩ.ኪ.</territory>
+			<territory type="GD">ግረናዳ</territory>
+			<territory type="GE">ጆርጅያ</territory>
+			<territory type="GF">ፈረንሳዊት ጊያና</territory>
+			<territory type="GG">ገርንዚ</territory>
 			<territory type="GH">ጋና</territory>
-			<territory type="GI">ጊብራልታር</territory>
+			<territory type="GI">ጂብራልታር</territory>
 			<territory type="GL">ግሪንላንድ</territory>
-			<territory type="GM">ጋምቢያ</territory>
+			<territory type="GM">ጋምብያ</territory>
 			<territory type="GN">ጊኒ</territory>
-			<territory type="GP">ጉዋደሉፕ</territory>
-			<territory type="GQ">ኢኳቶሪያል ጊኒ</territory>
-			<territory type="GR">ግሪክ</territory>
-			<territory type="GS">ደሴታት ደቡብ ጆርጂያን ደቡድ ሳንድዊችን</territory>
-			<territory type="GT">ጉዋቲማላ</territory>
-			<territory type="GU">ጉዋም</territory>
-			<territory type="GW">ቢሳዎ</territory>
+			<territory type="GP">ጓደሉፕ</territory>
+			<territory type="GQ">ኢኳቶርያል ጊኒ</territory>
+			<territory type="GR">ግሪኽ</territory>
+			<territory type="GS">ደሴታት ደቡብ ጆርጅያን ደቡብ ሳንድዊችን</territory>
+			<territory type="GT">ጓቲማላ</territory>
+			<territory type="GU">ጓም</territory>
+			<territory type="GW">ጊኒ-ቢሳው</territory>
 			<territory type="GY">ጉያና</territory>
-			<territory type="HK">ፍሉይ ምምሕዳር ዞባ ሆንግ ኮንግ</territory>
+			<territory type="HK">ፍሉይ ምምሕዳራዊ ዞባ ሆንግ ኮንግ (ቻይና)</territory>
 			<territory type="HK" alt="short">ሆንግ ኮንግ</territory>
-			<territory type="HM">ደሴታት ሀርድን ማክዶናልድን</territory>
+			<territory type="HM">ደሴታት ሄርድን ማክዶናልድን</territory>
 			<territory type="HN">ሆንዱራስ</territory>
 			<territory type="HR">ክሮኤሽያ</territory>
-			<territory type="HT">ሀይቲ</territory>
-			<territory type="HU">ሀንጋሪ</territory>
+			<territory type="HT">ሃይቲ</territory>
+			<territory type="HU">ሃንጋሪ</territory>
 			<territory type="IC">ደሴታት ካናሪ</territory>
-			<territory type="ID">ኢንዶኔዢያ</territory>
-			<territory type="IE">አየርላንድ</territory>
+			<territory type="ID">ኢንዶነዥያ</territory>
+			<territory type="IE">ኣየርላንድ</territory>
 			<territory type="IL">እስራኤል</territory>
-			<territory type="IM">አይል ኦፍ ማን</territory>
+			<territory type="IM">ኣይል ኦፍ ማን</territory>
 			<territory type="IN">ህንዲ</territory>
-			<territory type="IO">ናይ ብሪጣኒያ ህንዲ ውቅያኖስ ግዝኣት</territory>
-			<territory type="IQ">ኢራቅ</territory>
+			<territory type="IO">ብሪጣንያዊ ህንዳዊ ውቅያኖስ ግዝኣት</territory>
+			<territory type="IQ">ዒራቕ</territory>
 			<territory type="IR">ኢራን</territory>
-			<territory type="IS">ኣየርላንድ</territory>
-			<territory type="IT">ጣሊያን</territory>
-			<territory type="JE">ጀርሲ</territory>
+			<territory type="IS">ኣይስላንድ</territory>
+			<territory type="IT">ኢጣልያ</territory>
+			<territory type="JE">ጀርዚ</territory>
 			<territory type="JM">ጃማይካ</territory>
-			<territory type="JO">ጆርዳን</territory>
+			<territory type="JO">ዮርዳኖስ</territory>
 			<territory type="JP">ጃፓን</territory>
 			<territory type="KE">ኬንያ</territory>
-			<territory type="KG">ኪርጂስታን</territory>
-			<territory type="KH">ካምቦዲያ</territory>
+			<territory type="KG">ኪርጊዝስታን</territory>
+			<territory type="KH">ካምቦድያ</territory>
 			<territory type="KI">ኪሪባቲ</territory>
 			<territory type="KM">ኮሞሮስ</territory>
 			<territory type="KN">ቅዱስ ኪትስን ኔቪስን</territory>
-			<territory type="KP">ሰሜን ኮሪያ</territory>
-			<territory type="KR">ደቡብ ኮሪያ</territory>
-			<territory type="KW">ክዌት</territory>
-			<territory type="KY">ደሴታት ኬይማን</territory>
+			<territory type="KP">ሰሜን ኮርያ</territory>
+			<territory type="KR">ደቡብ ኮርያ</territory>
+			<territory type="KW">ኩዌት</territory>
+			<territory type="KY">ደሴታት ካይማን</territory>
 			<territory type="KZ">ካዛኪስታን</territory>
 			<territory type="LA">ላኦስ</territory>
 			<territory type="LB">ሊባኖስ</territory>
-			<territory type="LC">ሴንት ሉቺያ</territory>
-			<territory type="LI">ሊችተንስታይን</territory>
-			<territory type="LK">ሲሪላንካ</territory>
-			<territory type="LR">ላይቤሪያ</territory>
+			<territory type="LC">ቅድስቲ ሉስያ</territory>
+			<territory type="LI">ሊኽተንሽታይን</territory>
+			<territory type="LK">ስሪ ላንካ</territory>
+			<territory type="LR">ላይበርያ</territory>
 			<territory type="LS">ሌሶቶ</territory>
-			<territory type="LT">ሊቱዌኒያ</territory>
+			<territory type="LT">ሊትዌንያ</territory>
 			<territory type="LU">ሉክሰምበርግ</territory>
-			<territory type="LV">ላትቪያ</territory>
-			<territory type="LY">ሊቢያ</territory>
+			<territory type="LV">ላትቭያ</territory>
+			<territory type="LY">ሊብያ</territory>
 			<territory type="MA">ሞሮኮ</territory>
 			<territory type="MC">ሞናኮ</territory>
 			<territory type="MD">ሞልዶቫ</territory>
-			<territory type="ME">ሞንቴኔግሮ</territory>
-			<territory type="MF">ሴንት ማርቲን</territory>
+			<territory type="ME">ሞንተኔግሮ</territory>
+			<territory type="MF">ቅዱስ ማርቲን</territory>
 			<territory type="MG">ማዳጋስካር</territory>
-			<territory type="MH">ማርሻል አይላንድ</territory>
-			<territory type="MK">ሰሜን መቆዶንያ</territory>
+			<territory type="MH">ደሴታት ማርሻል</territory>
+			<territory type="MK">ሰሜን መቄዶንያ</territory>
 			<territory type="ML">ማሊ</territory>
-			<territory type="MM">ማያንማር</territory>
-			<territory type="MN">ሞንጎሊያ</territory>
-			<territory type="MO">ፍሉይ ምምሕዳር ዞባ ማካዎ</territory>
-			<territory type="MO" alt="short">ማካዎ</territory>
-			<territory type="MP">ደሴታት ሰሜናዊ ማሪያና</territory>
+			<territory type="MM">ሚያንማር (በርማ)</territory>
+			<territory type="MN">ሞንጎልያ</territory>
+			<territory type="MO">ፍሉይ ምምሕዳራዊ ዞባ ማካው (ቻይና)</territory>
+			<territory type="MO" alt="short">ማካው</territory>
+			<territory type="MP">ደሴታት ሰሜናዊ ማርያና</territory>
 			<territory type="MQ">ማርቲኒክ</territory>
-			<territory type="MR">ሞሪቴኒያ</territory>
-			<territory type="MS">ሞንትሴራት</territory>
+			<territory type="MR">ማውሪታንያ</territory>
+			<territory type="MS">ሞንትሰራት</territory>
 			<territory type="MT">ማልታ</territory>
-			<territory type="MU">ማሩሸስ</territory>
+			<territory type="MU">ማውሪሸስ</territory>
 			<territory type="MV">ማልዲቭስ</territory>
 			<territory type="MW">ማላዊ</territory>
 			<territory type="MX">ሜክሲኮ</territory>
-			<territory type="MY">ማሌዢያ</territory>
+			<territory type="MY">ማለዥያ</territory>
 			<territory type="MZ">ሞዛምቢክ</territory>
-			<territory type="NA">ናሚቢያ</territory>
-			<territory type="NC">ኒው ካሌዶኒያ</territory>
+			<territory type="NA">ናሚብያ</territory>
+			<territory type="NC">ኒው ካለዶንያ</territory>
 			<territory type="NE">ኒጀር</territory>
-			<territory type="NF">ኖርፎልክ ደሴት</territory>
-			<territory type="NG">ናይጄሪያ</territory>
+			<territory type="NF">ደሴት ኖርፎልክ</territory>
+			<territory type="NG">ናይጀርያ</territory>
 			<territory type="NI">ኒካራጓ</territory>
-			<territory type="NL">ኔዘርላንድስ</territory>
-			<territory type="NO">ኖርዌ</territory>
+			<territory type="NL">ኔዘርላንድ</territory>
+			<territory type="NO">ኖርወይ</territory>
 			<territory type="NP">ኔፓል</territory>
-			<territory type="NR">ናኡሩ</territory>
-			<territory type="NU">ኒኡይ</territory>
+			<territory type="NR">ናውሩ</territory>
+			<territory type="NU">ኒዩ</territory>
 			<territory type="NZ">ኒው ዚላንድ</territory>
-			<territory type="OM">ኦማን</territory>
+			<territory type="OM">ዖማን</territory>
 			<territory type="PA">ፓናማ</territory>
 			<territory type="PE">ፔሩ</territory>
-			<territory type="PF">ናይ ፈረንሳይ ፖሊነዝያ</territory>
-			<territory type="PG">ፓፑዋ ኒው ጊኒ</territory>
+			<territory type="PF">ፈረንሳይ ፖሊነዥያ</territory>
+			<territory type="PG">ፓፕዋ ኒው ጊኒ</territory>
 			<territory type="PH">ፊሊፒንስ</territory>
 			<territory type="PK">ፓኪስታን</territory>
 			<territory type="PL">ፖላንድ</territory>
-			<territory type="PM">ቅዱስ ፒዬርን ሚኩኤሎን</territory>
-			<territory type="PN">ፒትካኢርን</territory>
-			<territory type="PR">ፖርታ ሪኮ</territory>
-			<territory type="PS">የፍልስጤም ግዛት</territory>
+			<territory type="PM">ቅዱስ ፕየርን ሚከሎንን</territory>
+			<territory type="PN">ደሴታት ፒትካርን</territory>
+			<territory type="PR">ፖርቶ ሪኮ</territory>
+			<territory type="PS">ግዝኣታት ፍልስጤም</territory>
 			<territory type="PS" alt="short">ፍልስጤም</territory>
 			<territory type="PT">ፖርቱጋል</territory>
 			<territory type="PW">ፓላው</territory>
 			<territory type="PY">ፓራጓይ</territory>
-			<territory type="QA">ቀጠር</territory>
-			<territory type="QO">ወጣ ያለ ኦሽኒያ</territory>
-			<territory type="RE">ሪዩኒየን</territory>
-			<territory type="RO">ሮሜኒያ</territory>
-			<territory type="RS">ሰርቢያ</territory>
-			<territory type="RU">ራሺያ</territory>
-			<territory type="RW">ሩዋንዳ</territory>
+			<territory type="QA">ቐጠር</territory>
+			<territory type="QO">ካብ ኦሽያንያ ርሒቖም ግዝኣታት</territory>
+			<territory type="RE">ርዩንየን</territory>
+			<territory type="RO">ሩማንያ</territory>
+			<territory type="RS">ሰርብያ</territory>
+			<territory type="RU">ሩስያ</territory>
+			<territory type="RW">ርዋንዳ</territory>
 			<territory type="SA">ስዑዲ ዓረብ</territory>
-			<territory type="SB">ሰሎሞን ደሴት</territory>
-			<territory type="SC">ሲሼልስ</territory>
+			<territory type="SB">ደሴታት ሰሎሞን</territory>
+			<territory type="SC">ሲሸልስ</territory>
 			<territory type="SD">ሱዳን</territory>
-			<territory type="SE">ስዊድን</territory>
+			<territory type="SE">ሽወደን</territory>
 			<territory type="SG">ሲንጋፖር</territory>
-			<territory type="SH">ሴንት ሄለና</territory>
-			<territory type="SI">ስሎቬኒያ</territory>
+			<territory type="SH">ቅድስቲ ሄለና</territory>
+			<territory type="SI">ስሎቬንያ</territory>
 			<territory type="SJ">ስቫልባርድን ጃን ማየንን</territory>
-			<territory type="SK">ስሎቫኪያ</territory>
-			<territory type="SL">ሴራሊዮን</territory>
+			<territory type="SK">ስሎቫክያ</territory>
+			<territory type="SL">ሴራ ልዮን</territory>
 			<territory type="SM">ሳን ማሪኖ</territory>
-			<territory type="SN">ሴኔጋል</territory>
-			<territory type="SO">ሱማሌ</territory>
+			<territory type="SN">ሰነጋል</territory>
+			<territory type="SO">ሶማልያ</territory>
 			<territory type="SR">ሱሪናም</territory>
 			<territory type="SS">ደቡብ ሱዳን</territory>
-			<territory type="ST">ሳኦ ቶሜን ፕሪንሲፔን</territory>
+			<territory type="ST">ሳኦ ቶመን ፕሪንሲፐን</territory>
 			<territory type="SV">ኤል ሳልቫዶር</territory>
-			<territory type="SX">ሲንት ማርቲን</territory>
-			<territory type="SY">ሲሪያ</territory>
-			<territory type="SZ">ኢስዋቲኒ</territory>
+			<territory type="SX">ሲንት ማርተን</territory>
+			<territory type="SY">ሶርያ</territory>
+			<territory type="SZ">ኤስዋቲኒ</territory>
 			<territory type="SZ" alt="variant">ስዋዚላንድ</territory>
-			<territory type="TA">ትሪስን ዳ ኩንሃ</territory>
-			<territory type="TC">ደሴታት ቱርክን ካይኮስን</territory>
+			<territory type="TA">ትሪስታን ዳ ኩንያ</territory>
+			<territory type="TC">ደሴታት ቱርካትን ካይኮስን</territory>
 			<territory type="TD">ጫድ</territory>
-			<territory type="TF">ናይ ፈረንሳይ ደቡባዊ ግዝኣታት</territory>
-			<territory type="TG">ቶጐ</territory>
+			<territory type="TF">ፈረንሳዊ ደቡባዊ ግዝኣታት</territory>
+			<territory type="TG">ቶጎ</territory>
 			<territory type="TH">ታይላንድ</territory>
-			<territory type="TJ">ታጃኪስታን</territory>
-			<territory type="TK">ቶክላው</territory>
-			<territory type="TL">ምብራቕ ቲሞር</territory>
-			<territory type="TM">ቱርክሜኒስታን</territory>
-			<territory type="TN">ቱኒዚያ</territory>
+			<territory type="TJ">ታጂኪስታን</territory>
+			<territory type="TK">ቶከላው</territory>
+			<territory type="TL">ቲሞር-ለስተ</territory>
+			<territory type="TL" alt="variant">ምብራቕ ቲሞር</territory>
+			<territory type="TM">ቱርክመኒስታን</territory>
+			<territory type="TN">ቱኒዝያ</territory>
 			<territory type="TO">ቶንጋ</territory>
-			<territory type="TR">ቱርክ</territory>
+			<territory type="TR">ቱርኪ</territory>
 			<territory type="TT">ትሪኒዳድን ቶባጎን</territory>
 			<territory type="TV">ቱቫሉ</territory>
 			<territory type="TW">ታይዋን</territory>
-			<territory type="TZ">ታንዛኒያ</territory>
+			<territory type="TZ">ታንዛንያ</territory>
 			<territory type="UA">ዩክሬን</territory>
-			<territory type="UG">ዩጋንዳ</territory>
-			<territory type="UM">ናይ ኣሜሪካ ፍንትት ዝበሉ ደሴታት</territory>
-			<territory type="US">አሜሪካ</territory>
-			<territory type="US" alt="short">ዩኤስ</territory>
+			<territory type="UG">ኡጋንዳ</territory>
+			<territory type="UM">ካብ ኣመሪካ ርሒቐን ንኣሽቱ ደሴታት</territory>
+			<territory type="UN">ሕቡራት ሃገራት</territory>
+			<territory type="US">ኣመሪካ</territory>
+			<territory type="US" alt="short">ሕ.መ.</territory>
 			<territory type="UY">ኡራጓይ</territory>
-			<territory type="UZ">ዩዝበኪስታን</territory>
-			<territory type="VA">ቫቲካን</territory>
-			<territory type="VC">ቅዱስ ቪንሴንትን ግሬናዲንስን</territory>
-			<territory type="VE">ቬንዙዌላ</territory>
-			<territory type="VG">ደሴታት ቨርጂን ብሪጣኒያ</territory>
-			<territory type="VI">ቨርጂን ደሴታት ኣሜሪካ</territory>
+			<territory type="UZ">ኡዝበኪስታን</territory>
+			<territory type="VA">ከተማ ቫቲካን</territory>
+			<territory type="VC">ቅዱስ ቪንሰንትን ግረነዲነዝን</territory>
+			<territory type="VE">ቬኔዝዌላ</territory>
+			<territory type="VG">ደሴታት ደናግል ብሪጣንያ</territory>
+			<territory type="VI">ደሴታት ደናግል ኣመሪካ</territory>
 			<territory type="VN">ቬትናም</territory>
-			<territory type="VU">ቫኑአቱ</territory>
+			<territory type="VU">ቫንዋቱ</territory>
 			<territory type="WF">ዋሊስን ፉቱናን</territory>
-			<territory type="WS">ሳሞአ</territory>
+			<territory type="WS">ሳሞኣ</territory>
+			<territory type="XA">ናይ ሓሶት ላህጃታት</territory>
+			<territory type="XB">ናይ ሓሶት ክልተ ኣንፈታዊ</territory>
 			<territory type="XK">ኮሶቮ</territory>
 			<territory type="YE">የመን</territory>
-			<territory type="YT">ሜይኦቴ</territory>
-			<territory type="ZA">ደቡብ አፍሪካ</territory>
-			<territory type="ZM">ዛምቢያ</territory>
-			<territory type="ZW">ዚምቧቤ</territory>
+			<territory type="YT">ማዮት</territory>
+			<territory type="ZA">ደቡብ ኣፍሪቃ</territory>
+			<territory type="ZM">ዛምብያ</territory>
+			<territory type="ZW">ዚምባብዌ</territory>
+			<territory type="ZZ">ዘይተፈልጠ ዞባ</territory>
 		</territories>
+		<variants>
+			<variant type="1959ACAD">ኣካዳምያዊ</variant>
+		</variants>
+		<keys>
+			<key type="calendar">ዓውደ-ኣዋርሕ</key>
+			<key type="cf">ቅርጺ ባጤራ</key>
+			<key type="currency">ባጤራ</key>
+			<key type="numbers">ቁጽርታት</key>
+		</keys>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">ሜትሪክ</measurementSystemName>
+			<measurementSystemName type="UK">ብሪጣንያ</measurementSystemName>
+			<measurementSystemName type="US">ኣመሪካ</measurementSystemName>
+		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language">{0}</codePattern>
-			<codePattern type="script">{0}</codePattern>
-			<codePattern type="territory">{0}</codePattern>
+			<codePattern type="language">ቋንቋ፦ {0}</codePattern>
+			<codePattern type="script">ኢደ-ጽሕፈት፦ {0}</codePattern>
+			<codePattern type="territory">ዞባ፦ {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
@@ -418,41 +609,67 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters type="auxiliary">[᎐ ᎑ ᎒ ᎓ ᎔ ᎕ ᎖ ᎗ ᎘ ᎙ ሇ ⶀ ᎀ ᎁ ᎂ ᎃ ⶁ ⶂ ⶃ ⶄ ቇ ᎄ ᎅ ᎆ ᎇ ⶅ ⶆ ⶇ ኇ ⶈ ⶉ ⶊ ኯ ዏ ⶋ ዯ ⶌ ዸ ዹ ዺ ዻ ዼ ዽ ዾ ዿ ⶍ ⶎ ጏ ጘ ጙ ጚ ጛ ጜ ጝ ጞ ጟ ⶓ ⶔ ⶕ ⶖ ⶏ ⶐ ⶑ ᎈ ᎉ ᎊ ᎋ ᎌ ᎍ ᎎ ᎏ ⶒ ፘ ፙ ፚ ⶠ ⶡ ⶢ ⶣ ⶤ ⶥ ⶦ ⶨ ⶩ ⶪ ⶫ ⶬ ⶭ ⶮ ⶰ ⶱ ⶲ ⶳ ⶴ ⶵ ⶶ ⶸ ⶹ ⶺ ⶻ ⶼ ⶽ ⶾ ⷀ ⷁ ⷂ ⷃ ⷄ ⷅ ⷆ ⷈ ⷉ ⷊ ⷋ ⷌ ⷍ ⷎ ⷐ ⷑ ⷒ ⷓ ⷔ ⷕ ⷖ ⷘ ⷙ ⷚ ⷛ ⷜ ⷝ ⷞ]</exemplarCharacters>
 		<exemplarCharacters type="index">[ሀ ለ ሐ መ ሠ ረ ሰ ሸ ቀ ቈ ቐ ቘ በ ቨ ተ ቸ ኀ ኈ ነ ኘ አ ከ ኰ ኸ ዀ ወ ዐ ዘ ዠ የ ደ ጀ ገ ጐ ጠ ጨ ጰ ጸ ፀ ፈ ፐ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<ellipsis type="final">{0}…</ellipsis>
+		<ellipsis type="word-initial">… {0}</ellipsis>
+		<moreInformation>?</moreInformation>
 	</characters>
+	<delimiters>
+		<quotationStart>«</quotationStart>
+		<quotationEnd>»</quotationEnd>
+		<alternateQuotationStart>“</alternateQuotationStart>
+		<alternateQuotationEnd>”</alternateQuotationEnd>
+	</delimiters>
 	<dates>
 		<calendars>
+			<calendar type="buddhist">
+				<eras>
+					<eraNames>
+						<era type="0">BE</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">BE</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0">BE</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>G y MMMM d, EEEE</pattern>
+							<pattern>EEEE፣ d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>dd MMMM y G</pattern>
+							<pattern>d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>dd-MMM-y G</pattern>
+							<pattern>d MMM y G</pattern>
+							<datetimeSkeleton>GyMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/yy GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -466,12 +683,78 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E፣ d MMM y G</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E፣ d/M</dateFormatItem>
 						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E፣ d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMdd">dd MMMM</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yMM">MM/y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yyyy">y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E፣ d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E፣ d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H">HH–HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H">HH–HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M–M</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
@@ -597,9 +880,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dayWidth type="wide">
 							<day type="sun">ሰንበት</day>
 							<day type="mon">ሰኑይ</day>
-							<day type="tue">ሠሉስ</day>
+							<day type="tue">ሰሉስ</day>
 							<day type="wed">ረቡዕ</day>
-							<day type="thu">ኃሙስ</day>
+							<day type="thu">ሓሙስ</day>
 							<day type="fri">ዓርቢ</day>
 							<day type="sat">ቀዳም</day>
 						</dayWidth>
@@ -617,7 +900,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dayWidth type="narrow">
 							<day type="sun">ሰ</day>
 							<day type="mon">ሰ</day>
-							<day type="tue">ሠ</day>
+							<day type="tue">ሰ</day>
 							<day type="wed">ረ</day>
 							<day type="thu">ሓ</day>
 							<day type="fri">ዓ</day>
@@ -635,9 +918,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dayWidth type="wide">
 							<day type="sun">ሰንበት</day>
 							<day type="mon">ሰኑይ</day>
-							<day type="tue">ሠሉስ</day>
+							<day type="tue">ሰሉስ</day>
 							<day type="wed">ረቡዕ</day>
-							<day type="thu">ኃሙስ</day>
+							<day type="thu">ሓሙስ</day>
 							<day type="fri">ዓርቢ</day>
 							<day type="sat">ቀዳም</day>
 						</dayWidth>
@@ -645,6 +928,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</days>
 				<quarters>
 					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">ር1</quarter>
+							<quarter type="2">ር2</quarter>
+							<quarter type="3">ር3</quarter>
+							<quarter type="4">ር4</quarter>
+						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">1</quarter>
 							<quarter type="2">2</quarter>
@@ -652,10 +941,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1">ቀዳማይ ርብዒ</quarter>
-							<quarter type="2">ካልኣይ ርብዒ</quarter>
-							<quarter type="3">ሳልሳይ ርብዒ</quarter>
-							<quarter type="4">ራብዓይ ርብዒ</quarter>
+							<quarter type="1">1ይ ርብዒ</quarter>
+							<quarter type="2">2ይ ርብዒ</quarter>
+							<quarter type="3">3ይ ርብዒ</quarter>
+							<quarter type="4">4ይ ርብዒ</quarter>
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
@@ -672,40 +961,40 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1">ቀዳማይ ርብዒ</quarter>
-							<quarter type="2">ካልኣይ ርብዒ</quarter>
-							<quarter type="3">ሳልሳይ ርብዒ</quarter>
-							<quarter type="4">ራብዓይ ርብዒ</quarter>
+							<quarter type="1">1ይ ርብዒ</quarter>
+							<quarter type="2">2ይ ርብዒ</quarter>
+							<quarter type="3">3ይ ርብዒ</quarter>
+							<quarter type="4">4ይ ርብዒ</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">ቅ ፍር-መዓ</dayPeriod>
-							<dayPeriod type="pm">ደሕ ፍር-መዓ</dayPeriod>
+							<dayPeriod type="am">ቅ.ቀ.</dayPeriod>
+							<dayPeriod type="pm">ድ.ቀ.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">ንጉሆ ሰዓተ</dayPeriod>
-							<dayPeriod type="pm">ድሕር ሰዓት</dayPeriod>
+							<dayPeriod type="am">ቅ.ቀ.</dayPeriod>
+							<dayPeriod type="pm">ድ.ቀ.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">ቅድመ ፍርቂ-መዓልቲ</dayPeriod>
-							<dayPeriod type="pm">ደሕረ ፍርቀ-መዓልቲ</dayPeriod>
+							<dayPeriod type="am">ቅ.ቀ.</dayPeriod>
+							<dayPeriod type="pm">ድ.ቀ.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">ቅ ፍር-መዓ</dayPeriod>
-							<dayPeriod type="pm">ደሕ ፍር-መዓ</dayPeriod>
+							<dayPeriod type="am">ቅ.ቀ.</dayPeriod>
+							<dayPeriod type="pm">ድ.ቀ.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">ንጉሆ ሰዓተ</dayPeriod>
-							<dayPeriod type="pm">ድሕር ሰዓት</dayPeriod>
+							<dayPeriod type="am">ቅ.ቀ.</dayPeriod>
+							<dayPeriod type="pm">ድ.ቀ.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">ቅድመ ፍርቂ-መዓልቲ</dayPeriod>
-							<dayPeriod type="pm">ደሕረ ፍርቀ-መዓልቲ</dayPeriod>
+							<dayPeriod type="am">ቅ.ቀ.</dayPeriod>
+							<dayPeriod type="pm">ድ.ቀ.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -713,7 +1002,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<eraNames>
 						<era type="0">ቅድመ ክርስቶስ</era>
 						<era type="0" alt="variant">ቅ.ል.ክ</era>
-						<era type="1">ዓመተ ምህረት</era>
+						<era type="1">ዓመተ ምሕረት</era>
 						<era type="1" alt="variant">ድ.ል.ክ</era>
 					</eraNames>
 					<eraAbbr>
@@ -726,22 +1015,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE፣ dd MMMM መዓልቲ y G</pattern>
+							<pattern>EEEE፣ d MMMM y</pattern>
+							<datetimeSkeleton>GyMMMMEEEEdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>dd MMMM y</pattern>
+							<pattern>d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>dd-MMM-y</pattern>
+							<pattern>d MMM y</pattern>
+							<datetimeSkeleton>yMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/yy</pattern>
+							<datetimeSkeleton>yyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -749,33 +1042,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>h:mm a</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -796,15 +1093,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="Ed">d, E</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Ehm">E፣ h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E፣ HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E፣ h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E፣ HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
-						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
+						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E፣ d MMM y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
@@ -816,30 +1114,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">MM-dd</dateFormatItem>
-						<dateFormatItem id="MEd">MM-dd, E</dateFormatItem>
-						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E፣ d/M</dateFormatItem>
+						<dateFormatItem id="MMdd">d/M</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
-						<dateFormatItem id="MMMEd">MMM d, E</dateFormatItem>
-						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
-						<dateFormatItem id="MMMMdd">dd MMMM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E፣ d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMdd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">ሰሙን W ናይ MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">ሰሙን W ናይ MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
-						<dateFormatItem id="yM">y-MM</dateFormatItem>
-						<dateFormatItem id="yMd">y-MM-dd</dateFormatItem>
-						<dateFormatItem id="yMEd">y-MM-dd, E</dateFormatItem>
-						<dateFormatItem id="yMM">MM/y</dateFormatItem>
-						<dateFormatItem id="yMMM">y MMM</dateFormatItem>
-						<dateFormatItem id="yMMMd">y MMM d</dateFormatItem>
+						<dateFormatItem id="yM">M/y</dateFormatItem>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E፣ d/M/y</dateFormatItem>
+						<dateFormatItem id="yMM">M/y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">y MMM d, E</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
-						<dateFormatItem id="yQQQQ">y QQQQ</dateFormatItem>
-						<dateFormatItem id="yw" count="one">መበል w ሰሙን ናይ Y</dateFormatItem>
-						<dateFormatItem id="yw" count="other">መበል w ሰሙን ናይ Y</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">ሰሙን w ናይ Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">ሰሙን w ናይ Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -848,15 +1146,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h B – h B</greatestDifference>
-							<greatestDifference id="h">h – h B</greatestDifference>
+							<greatestDifference id="h">h–h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
 							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm B</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y–y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyM">
+							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMd">
+							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMEd">
+							<greatestDifference id="d">E፣ d/M/y – E፣ d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">E፣ d/M/y GGGGG – E፣ d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E፣ d/M/y – E፣ d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E፣ d/M/y – E፣ d/M/y GGGGG</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMM">
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMd">
+							<greatestDifference id="d">d–d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="GyMMMEd">
+							<greatestDifference id="d">E፣ d MMM – E፣ d MMM y G</greatestDifference>
+							<greatestDifference id="G">E፣ d MMM y G – E፣ d MMM y G</greatestDifference>
+							<greatestDifference id="M">E፣ d MMM – E፣ d MMM y G</greatestDifference>
+							<greatestDifference id="y">E፣ d MMM y – E፣ d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
@@ -867,8 +1203,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
@@ -891,60 +1227,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="H">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M">MM–MM</greatestDifference>
+							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
-							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="d">E፣ d/M – E፣ d/M</greatestDifference>
+							<greatestDifference id="M">E፣ d/M – E፣ d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">LLL–LLL</greatestDifference>
+							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">MMM d–d</greatestDifference>
-							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
+							<greatestDifference id="d">d–d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="d">E፣ d MMM – E፣ d MMM</greatestDifference>
+							<greatestDifference id="M">E፣ d MMM – E፣ d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y">y-MM – y-MM</greatestDifference>
+							<greatestDifference id="M">M/y – M/y</greatestDifference>
+							<greatestDifference id="y">M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="M">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="M">y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="y">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="d">E፣ d/M/y – E፣ d/M/y</greatestDifference>
+							<greatestDifference id="M">E፣ d/M/y – E፣ d/M/y</greatestDifference>
+							<greatestDifference id="y">E፣ d/M/y – E፣ d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">y MMM–MMM</greatestDifference>
-							<greatestDifference id="y">y MMM – y MMM</greatestDifference>
+							<greatestDifference id="M">MMM–MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">y MMM d–d</greatestDifference>
-							<greatestDifference id="M">y MMM d – MMM d</greatestDifference>
-							<greatestDifference id="y">y MMM d – y MMM d</greatestDifference>
+							<greatestDifference id="d">d–d MMM y</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">E, MMM d – E, MMM d, y</greatestDifference>
-							<greatestDifference id="y">E, MMM d, y – E, MMM d, y</greatestDifference>
+							<greatestDifference id="d">E፣ d MMM – E፣ d MMM y</greatestDifference>
+							<greatestDifference id="M">E፣ d MMM – E፣ d MMM y</greatestDifference>
+							<greatestDifference id="y">E፣ d MMM y – E፣ d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="M">MMMM–MMMM y</greatestDifference>
 							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
@@ -1035,7 +1371,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month">
 				<displayName>ወርሒ</displayName>
-				<relative type="-1">last month</relative>
+				<relative type="-1">ዝሓለፈ ወርሒ</relative>
 				<relative type="0">ህሉው ወርሒ</relative>
 				<relative type="1">ዝመጽእ ወርሒ</relative>
 				<relativeTime type="future">
@@ -1076,6 +1412,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="week">
+				<displayName>ሰሙን</displayName>
 				<relative type="-1">ዝሓለፈ ሰሙን</relative>
 				<relative type="0">ህሉው ሰሙን</relative>
 				<relative type="1">ዝመጽእ ሰሙን</relative>
@@ -1456,13 +1793,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="dayperiod-short">
-				<displayName>ቅድመ ፍርቂ-መዓልቲ/ድሕሪ ፍርቂ-መዓልቲ</displayName>
+				<displayName>ቅ.ቀ./ድ.ቀ.</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName>ቅድመ ፍርቂ-መዓልቲ/ድሕሪ ፍርቂ-መዓልቲ</displayName>
+				<displayName>ቅ.ቀ./ድ.ቀ.</displayName>
 			</field>
 			<field type="dayperiod-narrow">
-				<displayName>ቅድመ ፍርቂ-መዓልቲ/ድሕሪ ፍርቂ-መዓልቲ</displayName>
+				<displayName>ቅ.ቀ./ድ.ቀ.</displayName>
 			</field>
 			<field type="hour">
 				<displayName>ሰዓት</displayName>
@@ -1567,1338 +1904,1546 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="zone">
-				<displayName>ክልል</displayName>
+				<displayName>ዞባ ግዜ</displayName>
 			</field>
 			<field type="zone-short">
-				<displayName>ክልል</displayName>
+				<displayName>ዞባ</displayName>
 			</field>
 			<field type="zone-narrow">
-				<displayName>ክልል</displayName>
+				<displayName>ዞባ</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>GMT{0}</gmtFormat>
 			<gmtZeroFormat>GMT</gmtZeroFormat>
-			<regionFormat>{0}</regionFormat>
-			<regionFormat type="daylight">{0} (+1)</regionFormat>
-			<regionFormat type="standard">{0} (+0)</regionFormat>
+			<regionFormat>ግዜ {0}</regionFormat>
+			<regionFormat type="daylight">ግዜ ክረምቲ {0}</regionFormat>
+			<regionFormat type="standard">ምዱብ ግዜ {0}</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="Etc/UTC">
 				<long>
-					<standard>Coordinated Universal Time</standard>
+					<standard>ዝተሳነየ ኣድማሳዊ ግዜ</standard>
 				</long>
 			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>Unknown</exemplarCity>
+				<exemplarCity>ዘይተፈልጠ ከተማ</exemplarCity>
 			</zone>
 			<zone type="Europe/Andorra">
-				<exemplarCity>Andorra</exemplarCity>
+				<exemplarCity>ኣንዶራ</exemplarCity>
 			</zone>
 			<zone type="Asia/Dubai">
-				<exemplarCity>Dubai</exemplarCity>
+				<exemplarCity>ዱባይ</exemplarCity>
 			</zone>
 			<zone type="Asia/Kabul">
-				<exemplarCity>Kabul</exemplarCity>
+				<exemplarCity>ካቡል</exemplarCity>
 			</zone>
 			<zone type="America/Antigua">
-				<exemplarCity>Antigua</exemplarCity>
+				<exemplarCity>ኣንቲጓ</exemplarCity>
 			</zone>
 			<zone type="America/Anguilla">
-				<exemplarCity>Anguilla</exemplarCity>
+				<exemplarCity>ኣንጒላ</exemplarCity>
 			</zone>
 			<zone type="Europe/Tirane">
-				<exemplarCity>Tirane</exemplarCity>
+				<exemplarCity>ቲራና</exemplarCity>
 			</zone>
 			<zone type="Asia/Yerevan">
-				<exemplarCity>Yerevan</exemplarCity>
+				<exemplarCity>የረቫን</exemplarCity>
 			</zone>
 			<zone type="Africa/Luanda">
-				<exemplarCity>Luanda</exemplarCity>
+				<exemplarCity>ሉዋንዳ</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Rothera">
-				<exemplarCity>Rothera</exemplarCity>
+				<exemplarCity>ሮዘራ</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Palmer">
-				<exemplarCity>Palmer</exemplarCity>
+				<exemplarCity>ፓልመር</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Troll">
-				<exemplarCity>Troll</exemplarCity>
+				<exemplarCity>ትሮል</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Syowa">
-				<exemplarCity>Syowa</exemplarCity>
+				<exemplarCity>ስዮዋ</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Mawson">
-				<exemplarCity>Mawson</exemplarCity>
+				<exemplarCity>ማውሰን</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Davis">
-				<exemplarCity>Davis</exemplarCity>
+				<exemplarCity>ደቪስ</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Vostok">
-				<exemplarCity>Vostok</exemplarCity>
+				<exemplarCity>ቮስቶክ</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Casey">
-				<exemplarCity>Casey</exemplarCity>
+				<exemplarCity>ከይዚ</exemplarCity>
 			</zone>
 			<zone type="Antarctica/DumontDUrville">
-				<exemplarCity>Dumont d’Urville</exemplarCity>
+				<exemplarCity>ዱሞንት ዲኡርቪል</exemplarCity>
 			</zone>
 			<zone type="Antarctica/McMurdo">
-				<exemplarCity>McMurdo</exemplarCity>
+				<exemplarCity>ማክሙርዶ</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Rio_Gallegos">
-				<exemplarCity>Rio Gallegos</exemplarCity>
+				<exemplarCity>ርዮ ጋየጎስ</exemplarCity>
 			</zone>
 			<zone type="America/Mendoza">
-				<exemplarCity>Mendoza</exemplarCity>
+				<exemplarCity>መንዶዛ</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/San_Juan">
-				<exemplarCity>San Juan</exemplarCity>
+				<exemplarCity>ሳን ህዋን</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Ushuaia">
-				<exemplarCity>Ushuaia</exemplarCity>
+				<exemplarCity>ኡሽዋያ</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/La_Rioja">
-				<exemplarCity>La Rioja</exemplarCity>
+				<exemplarCity>ላ ርዮሃ</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/San_Luis">
-				<exemplarCity>San Luis</exemplarCity>
+				<exemplarCity>ሳን ልዊስ</exemplarCity>
 			</zone>
 			<zone type="America/Catamarca">
-				<exemplarCity>Catamarca</exemplarCity>
+				<exemplarCity>ካታማርካ</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Salta">
-				<exemplarCity>Salta</exemplarCity>
+				<exemplarCity>ሳልታ</exemplarCity>
 			</zone>
 			<zone type="America/Jujuy">
-				<exemplarCity>Jujuy</exemplarCity>
+				<exemplarCity>ሁሁይ</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Tucuman">
-				<exemplarCity>Tucuman</exemplarCity>
+				<exemplarCity>ቱኩማን</exemplarCity>
 			</zone>
 			<zone type="America/Cordoba">
-				<exemplarCity>Cordoba</exemplarCity>
+				<exemplarCity>ኮርዶባ</exemplarCity>
 			</zone>
 			<zone type="America/Buenos_Aires">
-				<exemplarCity>Buenos Aires</exemplarCity>
+				<exemplarCity>ብወኖስ ኣይረስ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Pago_Pago">
-				<exemplarCity>Pago Pago</exemplarCity>
+				<exemplarCity>ፓጎ ፓጎ</exemplarCity>
 			</zone>
 			<zone type="Europe/Vienna">
-				<exemplarCity>Vienna</exemplarCity>
+				<exemplarCity>ቭየና</exemplarCity>
 			</zone>
 			<zone type="Australia/Perth">
-				<exemplarCity>Perth</exemplarCity>
+				<exemplarCity>ፐርዝ</exemplarCity>
 			</zone>
 			<zone type="Australia/Eucla">
-				<exemplarCity>Eucla</exemplarCity>
+				<exemplarCity>ዩክላ</exemplarCity>
 			</zone>
 			<zone type="Australia/Darwin">
-				<exemplarCity>Darwin</exemplarCity>
+				<exemplarCity>ዳርዊን</exemplarCity>
 			</zone>
 			<zone type="Australia/Adelaide">
-				<exemplarCity>Adelaide</exemplarCity>
+				<exemplarCity>ኣደለይድ</exemplarCity>
 			</zone>
 			<zone type="Australia/Broken_Hill">
-				<exemplarCity>Broken Hill</exemplarCity>
+				<exemplarCity>ብሮክን ሂል</exemplarCity>
 			</zone>
 			<zone type="Australia/Melbourne">
-				<exemplarCity>Melbourne</exemplarCity>
+				<exemplarCity>መልበርን</exemplarCity>
 			</zone>
 			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
+				<exemplarCity>ኩሪ</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
-				<exemplarCity>Hobart</exemplarCity>
+				<exemplarCity>ሆባርት</exemplarCity>
 			</zone>
 			<zone type="Australia/Lindeman">
-				<exemplarCity>Lindeman</exemplarCity>
+				<exemplarCity>ሊንድማን</exemplarCity>
 			</zone>
 			<zone type="Australia/Sydney">
-				<exemplarCity>Sydney</exemplarCity>
+				<exemplarCity>ሲድኒ</exemplarCity>
 			</zone>
 			<zone type="Australia/Brisbane">
-				<exemplarCity>Brisbane</exemplarCity>
+				<exemplarCity>ብሪዝቤን</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Macquarie">
-				<exemplarCity>Macquarie</exemplarCity>
+				<exemplarCity>ማኳሪ</exemplarCity>
 			</zone>
 			<zone type="Australia/Lord_Howe">
-				<exemplarCity>Lord Howe</exemplarCity>
+				<exemplarCity>ሎርድ ሃው</exemplarCity>
 			</zone>
 			<zone type="America/Aruba">
-				<exemplarCity>Aruba</exemplarCity>
+				<exemplarCity>ኣሩባ</exemplarCity>
 			</zone>
 			<zone type="Europe/Mariehamn">
-				<exemplarCity>Mariehamn</exemplarCity>
+				<exemplarCity>ማሪሃምን</exemplarCity>
 			</zone>
 			<zone type="Asia/Baku">
-				<exemplarCity>Baku</exemplarCity>
+				<exemplarCity>ባኩ</exemplarCity>
 			</zone>
 			<zone type="Europe/Sarajevo">
-				<exemplarCity>Sarajevo</exemplarCity>
+				<exemplarCity>ሳራየቮ</exemplarCity>
 			</zone>
 			<zone type="America/Barbados">
-				<exemplarCity>Barbados</exemplarCity>
+				<exemplarCity>ባርባዶስ</exemplarCity>
 			</zone>
 			<zone type="Asia/Dhaka">
-				<exemplarCity>Dhaka</exemplarCity>
+				<exemplarCity>ዳካ</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
-				<exemplarCity>Brussels</exemplarCity>
+				<exemplarCity>ብራስልስ</exemplarCity>
 			</zone>
 			<zone type="Africa/Ouagadougou">
-				<exemplarCity>Ouagadougou</exemplarCity>
+				<exemplarCity>ዋጋዱጉ</exemplarCity>
 			</zone>
 			<zone type="Europe/Sofia">
-				<exemplarCity>Sofia</exemplarCity>
+				<exemplarCity>ሶፍያ</exemplarCity>
 			</zone>
 			<zone type="Asia/Bahrain">
-				<exemplarCity>Bahrain</exemplarCity>
+				<exemplarCity>ባሕሬን</exemplarCity>
 			</zone>
 			<zone type="Africa/Bujumbura">
-				<exemplarCity>Bujumbura</exemplarCity>
+				<exemplarCity>ቡጁምቡራ</exemplarCity>
 			</zone>
 			<zone type="Africa/Porto-Novo">
-				<exemplarCity>Porto-Novo</exemplarCity>
+				<exemplarCity>ፖርቶ ኖቮ</exemplarCity>
 			</zone>
 			<zone type="America/St_Barthelemy">
-				<exemplarCity>St. Barthelemy</exemplarCity>
+				<exemplarCity>ቅዱስ ባርተለሚ</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Bermuda">
-				<exemplarCity>Bermuda</exemplarCity>
+				<exemplarCity>በርሙዳ</exemplarCity>
 			</zone>
 			<zone type="Asia/Brunei">
-				<exemplarCity>Brunei</exemplarCity>
+				<exemplarCity>ብሩነይ</exemplarCity>
 			</zone>
 			<zone type="America/La_Paz">
-				<exemplarCity>La Paz</exemplarCity>
+				<exemplarCity>ላ ፓዝ</exemplarCity>
 			</zone>
 			<zone type="America/Kralendijk">
-				<exemplarCity>Kralendijk</exemplarCity>
+				<exemplarCity>ክራለንዳይክ</exemplarCity>
 			</zone>
 			<zone type="America/Eirunepe">
-				<exemplarCity>Eirunepe</exemplarCity>
+				<exemplarCity>ኤይሩኔፒ</exemplarCity>
 			</zone>
 			<zone type="America/Rio_Branco">
-				<exemplarCity>Rio Branco</exemplarCity>
+				<exemplarCity>ርዮ ብራንኮ</exemplarCity>
 			</zone>
 			<zone type="America/Porto_Velho">
-				<exemplarCity>Porto Velho</exemplarCity>
+				<exemplarCity>ፖርቶ ቨልዮ</exemplarCity>
 			</zone>
 			<zone type="America/Boa_Vista">
-				<exemplarCity>Boa Vista</exemplarCity>
+				<exemplarCity>ቦዋ ቪስታ</exemplarCity>
 			</zone>
 			<zone type="America/Manaus">
-				<exemplarCity>Manaus</exemplarCity>
+				<exemplarCity>ማናውስ</exemplarCity>
 			</zone>
 			<zone type="America/Cuiaba">
-				<exemplarCity>Cuiaba</exemplarCity>
+				<exemplarCity>ኩያባ</exemplarCity>
 			</zone>
 			<zone type="America/Santarem">
-				<exemplarCity>Santarem</exemplarCity>
+				<exemplarCity>ሳንታረም</exemplarCity>
 			</zone>
 			<zone type="America/Campo_Grande">
-				<exemplarCity>Campo Grande</exemplarCity>
+				<exemplarCity>ካምፖ ግራንደ</exemplarCity>
 			</zone>
 			<zone type="America/Belem">
-				<exemplarCity>Belem</exemplarCity>
+				<exemplarCity>በለም</exemplarCity>
 			</zone>
 			<zone type="America/Araguaina">
-				<exemplarCity>Araguaina</exemplarCity>
+				<exemplarCity>ኣራጓይና</exemplarCity>
 			</zone>
 			<zone type="America/Sao_Paulo">
-				<exemplarCity>Sao Paulo</exemplarCity>
+				<exemplarCity>ሳኦ ፓውሎ</exemplarCity>
 			</zone>
 			<zone type="America/Bahia">
-				<exemplarCity>Bahia</exemplarCity>
+				<exemplarCity>ባህያ</exemplarCity>
 			</zone>
 			<zone type="America/Fortaleza">
-				<exemplarCity>Fortaleza</exemplarCity>
+				<exemplarCity>ፎርታለዛ</exemplarCity>
 			</zone>
 			<zone type="America/Maceio">
-				<exemplarCity>Maceio</exemplarCity>
+				<exemplarCity>ማሰዮ</exemplarCity>
 			</zone>
 			<zone type="America/Recife">
-				<exemplarCity>Recife</exemplarCity>
+				<exemplarCity>ረሲፈ</exemplarCity>
 			</zone>
 			<zone type="America/Noronha">
-				<exemplarCity>Noronha</exemplarCity>
+				<exemplarCity>ኖሮንያ</exemplarCity>
 			</zone>
 			<zone type="America/Nassau">
-				<exemplarCity>Nassau</exemplarCity>
+				<exemplarCity>ናሳው</exemplarCity>
 			</zone>
 			<zone type="Asia/Thimphu">
-				<exemplarCity>Thimphu</exemplarCity>
+				<exemplarCity>ቲምፉ</exemplarCity>
 			</zone>
 			<zone type="Africa/Gaborone">
-				<exemplarCity>Gaborone</exemplarCity>
+				<exemplarCity>ጋቦሮን</exemplarCity>
 			</zone>
 			<zone type="Europe/Minsk">
-				<exemplarCity>Minsk</exemplarCity>
+				<exemplarCity>ሚንስክ</exemplarCity>
 			</zone>
 			<zone type="America/Belize">
-				<exemplarCity>Belize</exemplarCity>
+				<exemplarCity>በሊዝ</exemplarCity>
 			</zone>
 			<zone type="America/Dawson">
-				<exemplarCity>Dawson</exemplarCity>
+				<exemplarCity>ዳውሰን</exemplarCity>
 			</zone>
 			<zone type="America/Whitehorse">
-				<exemplarCity>Whitehorse</exemplarCity>
+				<exemplarCity>ዋይትሆዝ</exemplarCity>
 			</zone>
 			<zone type="America/Inuvik">
-				<exemplarCity>Inuvik</exemplarCity>
+				<exemplarCity>ኢኑቪክ</exemplarCity>
 			</zone>
 			<zone type="America/Vancouver">
-				<exemplarCity>Vancouver</exemplarCity>
+				<exemplarCity>ቫንኩቨር</exemplarCity>
 			</zone>
 			<zone type="America/Fort_Nelson">
-				<exemplarCity>Fort Nelson</exemplarCity>
+				<exemplarCity>ፎርት ነልሰን</exemplarCity>
 			</zone>
 			<zone type="America/Dawson_Creek">
-				<exemplarCity>Dawson Creek</exemplarCity>
+				<exemplarCity>ዳውሰን ክሪክ</exemplarCity>
 			</zone>
 			<zone type="America/Creston">
-				<exemplarCity>Creston</exemplarCity>
+				<exemplarCity>ክረስተን</exemplarCity>
 			</zone>
 			<zone type="America/Yellowknife">
-				<exemplarCity>Yellowknife</exemplarCity>
+				<exemplarCity>የለውናይፍ</exemplarCity>
 			</zone>
 			<zone type="America/Edmonton">
-				<exemplarCity>Edmonton</exemplarCity>
+				<exemplarCity>ኤድመንተን</exemplarCity>
 			</zone>
 			<zone type="America/Swift_Current">
-				<exemplarCity>Swift Current</exemplarCity>
+				<exemplarCity>ስዊፍት ካረንት</exemplarCity>
 			</zone>
 			<zone type="America/Cambridge_Bay">
-				<exemplarCity>Cambridge Bay</exemplarCity>
+				<exemplarCity>ካምብሪጅ በይ</exemplarCity>
 			</zone>
 			<zone type="America/Regina">
-				<exemplarCity>Regina</exemplarCity>
+				<exemplarCity>ረጂና</exemplarCity>
 			</zone>
 			<zone type="America/Winnipeg">
-				<exemplarCity>Winnipeg</exemplarCity>
+				<exemplarCity>ዊኒፐግ</exemplarCity>
 			</zone>
 			<zone type="America/Resolute">
-				<exemplarCity>Resolute</exemplarCity>
+				<exemplarCity>ረዞሉት</exemplarCity>
 			</zone>
 			<zone type="America/Rainy_River">
-				<exemplarCity>Rainy River</exemplarCity>
+				<exemplarCity>ረይኒ ሪቨር</exemplarCity>
 			</zone>
 			<zone type="America/Rankin_Inlet">
-				<exemplarCity>Rankin Inlet</exemplarCity>
+				<exemplarCity>ራንኪን ኢንለት</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
-				<exemplarCity>Atikokan</exemplarCity>
+				<exemplarCity>ኣቲኮካን</exemplarCity>
 			</zone>
 			<zone type="America/Thunder_Bay">
-				<exemplarCity>Thunder Bay</exemplarCity>
+				<exemplarCity>ዛንደር በይ</exemplarCity>
 			</zone>
 			<zone type="America/Nipigon">
-				<exemplarCity>Nipigon</exemplarCity>
+				<exemplarCity>ኒፒጎን</exemplarCity>
 			</zone>
 			<zone type="America/Toronto">
-				<exemplarCity>Toronto</exemplarCity>
+				<exemplarCity>ቶሮንቶ</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
-				<exemplarCity>Iqaluit</exemplarCity>
+				<exemplarCity>ኢቃልዊት</exemplarCity>
 			</zone>
 			<zone type="America/Pangnirtung">
-				<exemplarCity>Pangnirtung</exemplarCity>
+				<exemplarCity>ፓንግኒርተንግ</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
-				<exemplarCity>Moncton</exemplarCity>
+				<exemplarCity>ሞንክተን</exemplarCity>
 			</zone>
 			<zone type="America/Halifax">
-				<exemplarCity>Halifax</exemplarCity>
+				<exemplarCity>ሃሊፋክስ</exemplarCity>
 			</zone>
 			<zone type="America/Goose_Bay">
-				<exemplarCity>Goose Bay</exemplarCity>
+				<exemplarCity>ጉዝ በይ</exemplarCity>
 			</zone>
 			<zone type="America/Glace_Bay">
-				<exemplarCity>Glace Bay</exemplarCity>
+				<exemplarCity>ግሌስ በይ</exemplarCity>
 			</zone>
 			<zone type="America/Blanc-Sablon">
-				<exemplarCity>Blanc-Sablon</exemplarCity>
+				<exemplarCity>ብላንክ-ሳብሎን</exemplarCity>
 			</zone>
 			<zone type="America/St_Johns">
-				<exemplarCity>St. John’s</exemplarCity>
+				<exemplarCity>ቅዱስ ዮሃንስ</exemplarCity>
 			</zone>
 			<zone type="Indian/Cocos">
-				<exemplarCity>Cocos</exemplarCity>
+				<exemplarCity>ኮኮስ</exemplarCity>
 			</zone>
 			<zone type="Africa/Kinshasa">
-				<exemplarCity>Kinshasa</exemplarCity>
+				<exemplarCity>ኪንሻሳ</exemplarCity>
 			</zone>
 			<zone type="Africa/Lubumbashi">
-				<exemplarCity>Lubumbashi</exemplarCity>
+				<exemplarCity>ሉቡምባሺ</exemplarCity>
 			</zone>
 			<zone type="Africa/Bangui">
-				<exemplarCity>Bangui</exemplarCity>
+				<exemplarCity>ባንጊ</exemplarCity>
 			</zone>
 			<zone type="Africa/Brazzaville">
-				<exemplarCity>Brazzaville</exemplarCity>
+				<exemplarCity>ብራዛቪል</exemplarCity>
 			</zone>
 			<zone type="Europe/Zurich">
-				<exemplarCity>Zurich</exemplarCity>
+				<exemplarCity>ዙሪክ</exemplarCity>
 			</zone>
 			<zone type="Africa/Abidjan">
-				<exemplarCity>Abidjan</exemplarCity>
+				<exemplarCity>ኣቢጃን</exemplarCity>
 			</zone>
 			<zone type="Pacific/Rarotonga">
-				<exemplarCity>Rarotonga</exemplarCity>
+				<exemplarCity>ራሮቶንጋ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Easter">
-				<exemplarCity>Easter</exemplarCity>
+				<exemplarCity>ደሴት ፋሲካ</exemplarCity>
 			</zone>
 			<zone type="America/Punta_Arenas">
-				<exemplarCity>Punta Arenas</exemplarCity>
+				<exemplarCity>ፑንታ ኣረናስ</exemplarCity>
 			</zone>
 			<zone type="America/Santiago">
-				<exemplarCity>Santiago</exemplarCity>
+				<exemplarCity>ሳንትያጎ</exemplarCity>
 			</zone>
 			<zone type="Africa/Douala">
-				<exemplarCity>Douala</exemplarCity>
+				<exemplarCity>ዱዋላ</exemplarCity>
 			</zone>
 			<zone type="Asia/Urumqi">
-				<exemplarCity>Urumqi</exemplarCity>
+				<exemplarCity>ኡሩምኪ</exemplarCity>
 			</zone>
 			<zone type="Asia/Shanghai">
-				<exemplarCity>Shanghai</exemplarCity>
+				<exemplarCity>ሻንግሃይ</exemplarCity>
 			</zone>
 			<zone type="America/Bogota">
-				<exemplarCity>Bogota</exemplarCity>
+				<exemplarCity>ቦጎታ</exemplarCity>
 			</zone>
 			<zone type="America/Costa_Rica">
-				<exemplarCity>Costa Rica</exemplarCity>
+				<exemplarCity>ኮስታ ሪካ</exemplarCity>
 			</zone>
 			<zone type="America/Havana">
-				<exemplarCity>Havana</exemplarCity>
+				<exemplarCity>ሃቫና</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
-				<exemplarCity>Cape Verde</exemplarCity>
+				<exemplarCity>ኬፕ ቨርደ</exemplarCity>
 			</zone>
 			<zone type="America/Curacao">
-				<exemplarCity>Curacao</exemplarCity>
+				<exemplarCity>ኩራሳው</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
-				<exemplarCity>Christmas</exemplarCity>
+				<exemplarCity>ክሪስማስ</exemplarCity>
 			</zone>
 			<zone type="Asia/Nicosia">
-				<exemplarCity>Nicosia</exemplarCity>
+				<exemplarCity>ኒኮስያ</exemplarCity>
 			</zone>
 			<zone type="Asia/Famagusta">
-				<exemplarCity>Famagusta</exemplarCity>
+				<exemplarCity>ፋማጉስታ</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
-				<exemplarCity>Prague</exemplarCity>
+				<exemplarCity>ፕራግ</exemplarCity>
 			</zone>
 			<zone type="Europe/Busingen">
-				<exemplarCity>Busingen</exemplarCity>
+				<exemplarCity>ቡሲንገን</exemplarCity>
 			</zone>
 			<zone type="Europe/Berlin">
-				<exemplarCity>Berlin</exemplarCity>
+				<exemplarCity>በርሊን</exemplarCity>
 			</zone>
 			<zone type="Africa/Djibouti">
-				<exemplarCity>Djibouti</exemplarCity>
+				<exemplarCity>ጅቡቲ</exemplarCity>
 			</zone>
 			<zone type="Europe/Copenhagen">
-				<exemplarCity>Copenhagen</exemplarCity>
+				<exemplarCity>ኮፐንሃገን</exemplarCity>
 			</zone>
 			<zone type="America/Dominica">
-				<exemplarCity>Dominica</exemplarCity>
+				<exemplarCity>ዶሚኒካ</exemplarCity>
 			</zone>
 			<zone type="America/Santo_Domingo">
-				<exemplarCity>Santo Domingo</exemplarCity>
+				<exemplarCity>ሳንቶ ዶሚንጎ</exemplarCity>
 			</zone>
 			<zone type="Africa/Algiers">
-				<exemplarCity>Algiers</exemplarCity>
+				<exemplarCity>ኣልጀርስ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Galapagos">
-				<exemplarCity>Galapagos</exemplarCity>
+				<exemplarCity>ጋላፓጎስ</exemplarCity>
 			</zone>
 			<zone type="America/Guayaquil">
-				<exemplarCity>Guayaquil</exemplarCity>
+				<exemplarCity>ጓያኪል</exemplarCity>
 			</zone>
 			<zone type="Europe/Tallinn">
-				<exemplarCity>Tallinn</exemplarCity>
+				<exemplarCity>ታሊን</exemplarCity>
 			</zone>
 			<zone type="Africa/Cairo">
-				<exemplarCity>Cairo</exemplarCity>
+				<exemplarCity>ካይሮ</exemplarCity>
 			</zone>
 			<zone type="Africa/El_Aaiun">
-				<exemplarCity>El Aaiun</exemplarCity>
+				<exemplarCity>ኤል ኣዩን</exemplarCity>
 			</zone>
 			<zone type="Africa/Asmera">
-				<exemplarCity>Asmara</exemplarCity>
+				<exemplarCity>ኣስመራ</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Canary">
-				<exemplarCity>Canary</exemplarCity>
+				<exemplarCity>ካናሪ</exemplarCity>
 			</zone>
 			<zone type="Africa/Ceuta">
-				<exemplarCity>Ceuta</exemplarCity>
+				<exemplarCity>ሴውታ</exemplarCity>
 			</zone>
 			<zone type="Europe/Madrid">
-				<exemplarCity>Madrid</exemplarCity>
+				<exemplarCity>ማድሪድ</exemplarCity>
 			</zone>
 			<zone type="Africa/Addis_Ababa">
-				<exemplarCity>Addis Ababa</exemplarCity>
+				<exemplarCity>ኣዲስ ኣበባ</exemplarCity>
 			</zone>
 			<zone type="Europe/Helsinki">
-				<exemplarCity>Helsinki</exemplarCity>
+				<exemplarCity>ሄልሲንኪ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Fiji">
-				<exemplarCity>Fiji</exemplarCity>
+				<exemplarCity>ፊጂ</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Stanley">
-				<exemplarCity>Stanley</exemplarCity>
+				<exemplarCity>ስታንሊ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Truk">
-				<exemplarCity>Chuuk</exemplarCity>
+				<exemplarCity>ቹክ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Ponape">
-				<exemplarCity>Pohnpei</exemplarCity>
+				<exemplarCity>ፖንፐይ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kosrae">
-				<exemplarCity>Kosrae</exemplarCity>
+				<exemplarCity>ኮስሬ</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Faeroe">
-				<exemplarCity>Faroe</exemplarCity>
+				<exemplarCity>ደሴታት ፋሮ</exemplarCity>
 			</zone>
 			<zone type="Europe/Paris">
-				<exemplarCity>Paris</exemplarCity>
+				<exemplarCity>ፓሪስ</exemplarCity>
 			</zone>
 			<zone type="Africa/Libreville">
-				<exemplarCity>Libreville</exemplarCity>
+				<exemplarCity>ሊብረቪል</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
 				<long>
-					<daylight>British Summer Time</daylight>
+					<daylight>ግዜ ክረምቲ ብሪጣንያ</daylight>
 				</long>
-				<exemplarCity>London</exemplarCity>
+				<exemplarCity>ሎንደን</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
-				<exemplarCity>Grenada</exemplarCity>
+				<exemplarCity>ግረናዳ</exemplarCity>
 			</zone>
 			<zone type="Asia/Tbilisi">
-				<exemplarCity>Tbilisi</exemplarCity>
+				<exemplarCity>ትቢሊሲ</exemplarCity>
 			</zone>
 			<zone type="America/Cayenne">
-				<exemplarCity>Cayenne</exemplarCity>
+				<exemplarCity>ካየን</exemplarCity>
 			</zone>
 			<zone type="Europe/Guernsey">
-				<exemplarCity>Guernsey</exemplarCity>
+				<exemplarCity>ገርንዚ</exemplarCity>
 			</zone>
 			<zone type="Africa/Accra">
-				<exemplarCity>Accra</exemplarCity>
+				<exemplarCity>ኣክራ</exemplarCity>
 			</zone>
 			<zone type="Europe/Gibraltar">
-				<exemplarCity>Gibraltar</exemplarCity>
+				<exemplarCity>ጂብራልታር</exemplarCity>
 			</zone>
 			<zone type="America/Thule">
-				<exemplarCity>Thule</exemplarCity>
+				<exemplarCity>ዙል</exemplarCity>
 			</zone>
 			<zone type="America/Godthab">
-				<exemplarCity>Nuuk</exemplarCity>
+				<exemplarCity>ኑክ</exemplarCity>
 			</zone>
 			<zone type="America/Scoresbysund">
-				<exemplarCity>Ittoqqortoormiit</exemplarCity>
+				<exemplarCity>ኢቶቆርቶሚት</exemplarCity>
 			</zone>
 			<zone type="America/Danmarkshavn">
-				<exemplarCity>Danmarkshavn</exemplarCity>
+				<exemplarCity>ዳንማርክሻቭን</exemplarCity>
 			</zone>
 			<zone type="Africa/Banjul">
-				<exemplarCity>Banjul</exemplarCity>
+				<exemplarCity>ባንጁል</exemplarCity>
 			</zone>
 			<zone type="Africa/Conakry">
-				<exemplarCity>Conakry</exemplarCity>
+				<exemplarCity>ኮናክሪ</exemplarCity>
 			</zone>
 			<zone type="America/Guadeloupe">
-				<exemplarCity>Guadeloupe</exemplarCity>
+				<exemplarCity>ጓደሉፕ</exemplarCity>
 			</zone>
 			<zone type="Africa/Malabo">
-				<exemplarCity>Malabo</exemplarCity>
+				<exemplarCity>ማላቦ</exemplarCity>
 			</zone>
 			<zone type="Europe/Athens">
-				<exemplarCity>Athens</exemplarCity>
+				<exemplarCity>ኣቴንስ</exemplarCity>
 			</zone>
 			<zone type="Atlantic/South_Georgia">
-				<exemplarCity>South Georgia</exemplarCity>
+				<exemplarCity>ደቡብ ጆርጅያ</exemplarCity>
 			</zone>
 			<zone type="America/Guatemala">
-				<exemplarCity>Guatemala</exemplarCity>
+				<exemplarCity>ጓቲማላ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Guam">
-				<exemplarCity>Guam</exemplarCity>
+				<exemplarCity>ጓም</exemplarCity>
 			</zone>
 			<zone type="Africa/Bissau">
-				<exemplarCity>Bissau</exemplarCity>
+				<exemplarCity>ቢሳው</exemplarCity>
 			</zone>
 			<zone type="America/Guyana">
-				<exemplarCity>Guyana</exemplarCity>
+				<exemplarCity>ጉያና</exemplarCity>
 			</zone>
 			<zone type="Asia/Hong_Kong">
-				<exemplarCity>Hong Kong</exemplarCity>
+				<exemplarCity>ሆንግ ኮንግ</exemplarCity>
 			</zone>
 			<zone type="America/Tegucigalpa">
-				<exemplarCity>Tegucigalpa</exemplarCity>
+				<exemplarCity>ተጉሲጋልፓ</exemplarCity>
 			</zone>
 			<zone type="Europe/Zagreb">
-				<exemplarCity>Zagreb</exemplarCity>
+				<exemplarCity>ዛግረብ</exemplarCity>
 			</zone>
 			<zone type="America/Port-au-Prince">
-				<exemplarCity>Port-au-Prince</exemplarCity>
+				<exemplarCity>ፖርት-ኦ-ፕሪንስ</exemplarCity>
 			</zone>
 			<zone type="Europe/Budapest">
-				<exemplarCity>Budapest</exemplarCity>
+				<exemplarCity>ቡዳፐስት</exemplarCity>
 			</zone>
 			<zone type="Asia/Jakarta">
-				<exemplarCity>Jakarta</exemplarCity>
+				<exemplarCity>ጃካርታ</exemplarCity>
 			</zone>
 			<zone type="Asia/Pontianak">
-				<exemplarCity>Pontianak</exemplarCity>
+				<exemplarCity>ፖንትያናክ</exemplarCity>
 			</zone>
 			<zone type="Asia/Makassar">
-				<exemplarCity>Makassar</exemplarCity>
+				<exemplarCity>ማካሳር</exemplarCity>
 			</zone>
 			<zone type="Asia/Jayapura">
-				<exemplarCity>Jayapura</exemplarCity>
+				<exemplarCity>ጃያፑራ</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
 				<long>
 					<daylight>Irish Standard Time</daylight>
 				</long>
-				<exemplarCity>Dublin</exemplarCity>
+				<exemplarCity>ደብሊን</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
-				<exemplarCity>Jerusalem</exemplarCity>
+				<exemplarCity>የሩሳሌም</exemplarCity>
 			</zone>
 			<zone type="Europe/Isle_of_Man">
-				<exemplarCity>Isle of Man</exemplarCity>
+				<exemplarCity>ኣይል ኦፍ ማን</exemplarCity>
 			</zone>
 			<zone type="Asia/Calcutta">
-				<exemplarCity>Kolkata</exemplarCity>
+				<exemplarCity>ኮልካታ</exemplarCity>
 			</zone>
 			<zone type="Indian/Chagos">
-				<exemplarCity>Chagos</exemplarCity>
+				<exemplarCity>ቻጎስ</exemplarCity>
 			</zone>
 			<zone type="Asia/Baghdad">
-				<exemplarCity>Baghdad</exemplarCity>
+				<exemplarCity>ባቕዳድ</exemplarCity>
 			</zone>
 			<zone type="Asia/Tehran">
-				<exemplarCity>Tehran</exemplarCity>
+				<exemplarCity>ተህራን</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Reykjavik">
-				<exemplarCity>Reykjavik</exemplarCity>
+				<exemplarCity>ረይክያቪክ</exemplarCity>
 			</zone>
 			<zone type="Europe/Rome">
-				<exemplarCity>Rome</exemplarCity>
+				<exemplarCity>ሮማ</exemplarCity>
 			</zone>
 			<zone type="Europe/Jersey">
-				<exemplarCity>Jersey</exemplarCity>
+				<exemplarCity>ጀርዚ</exemplarCity>
 			</zone>
 			<zone type="America/Jamaica">
-				<exemplarCity>Jamaica</exemplarCity>
+				<exemplarCity>ጃማይካ</exemplarCity>
 			</zone>
 			<zone type="Asia/Amman">
-				<exemplarCity>Amman</exemplarCity>
+				<exemplarCity>ዓማን</exemplarCity>
 			</zone>
 			<zone type="Asia/Tokyo">
-				<exemplarCity>Tokyo</exemplarCity>
+				<exemplarCity>ቶክዮ</exemplarCity>
 			</zone>
 			<zone type="Africa/Nairobi">
-				<exemplarCity>Nairobi</exemplarCity>
+				<exemplarCity>ናይሮቢ</exemplarCity>
 			</zone>
 			<zone type="Asia/Bishkek">
-				<exemplarCity>Bishkek</exemplarCity>
+				<exemplarCity>ቢሽኬክ</exemplarCity>
 			</zone>
 			<zone type="Asia/Phnom_Penh">
-				<exemplarCity>Phnom Penh</exemplarCity>
+				<exemplarCity>ፕኖም ፐን</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderbury</exemplarCity>
+				<exemplarCity>ኤንደርበሪ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
-				<exemplarCity>Kiritimati</exemplarCity>
+				<exemplarCity>ኪሪቲማቲ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Tarawa">
-				<exemplarCity>Tarawa</exemplarCity>
+				<exemplarCity>ታራዋ</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
-				<exemplarCity>Comoro</exemplarCity>
+				<exemplarCity>ኮሞሮ</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
-				<exemplarCity>St. Kitts</exemplarCity>
+				<exemplarCity>ቅዱስ ኪትስ</exemplarCity>
 			</zone>
 			<zone type="Asia/Pyongyang">
-				<exemplarCity>Pyongyang</exemplarCity>
+				<exemplarCity>ፕዮንግያንግ</exemplarCity>
 			</zone>
 			<zone type="Asia/Seoul">
-				<exemplarCity>Seoul</exemplarCity>
+				<exemplarCity>ሶውል</exemplarCity>
 			</zone>
 			<zone type="Asia/Kuwait">
-				<exemplarCity>Kuwait</exemplarCity>
+				<exemplarCity>ኩዌት</exemplarCity>
 			</zone>
 			<zone type="America/Cayman">
-				<exemplarCity>Cayman</exemplarCity>
+				<exemplarCity>ካይማን</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtau">
-				<exemplarCity>Aqtau</exemplarCity>
+				<exemplarCity>ኣክታው</exemplarCity>
 			</zone>
 			<zone type="Asia/Oral">
-				<exemplarCity>Oral</exemplarCity>
+				<exemplarCity>ኦራል</exemplarCity>
 			</zone>
 			<zone type="Asia/Atyrau">
-				<exemplarCity>Atyrau</exemplarCity>
+				<exemplarCity>ኣቲራው</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtobe">
-				<exemplarCity>Aqtobe</exemplarCity>
+				<exemplarCity>ኣክቶበ</exemplarCity>
 			</zone>
 			<zone type="Asia/Qostanay">
-				<exemplarCity>Kostanay</exemplarCity>
+				<exemplarCity>ኮስታናይ</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
-				<exemplarCity>Qyzylorda</exemplarCity>
+				<exemplarCity>ኪዚሎርዳ</exemplarCity>
 			</zone>
 			<zone type="Asia/Almaty">
-				<exemplarCity>Almaty</exemplarCity>
+				<exemplarCity>ኣልማቲ</exemplarCity>
 			</zone>
 			<zone type="Asia/Vientiane">
-				<exemplarCity>Vientiane</exemplarCity>
+				<exemplarCity>ቭየንትያን</exemplarCity>
 			</zone>
 			<zone type="Asia/Beirut">
-				<exemplarCity>Beirut</exemplarCity>
+				<exemplarCity>በይሩት</exemplarCity>
 			</zone>
 			<zone type="America/St_Lucia">
-				<exemplarCity>St. Lucia</exemplarCity>
+				<exemplarCity>ቅድስቲ ሉስያ</exemplarCity>
 			</zone>
 			<zone type="Europe/Vaduz">
-				<exemplarCity>Vaduz</exemplarCity>
+				<exemplarCity>ቫዱዝ</exemplarCity>
 			</zone>
 			<zone type="Asia/Colombo">
-				<exemplarCity>Colombo</exemplarCity>
+				<exemplarCity>ኮሎምቦ</exemplarCity>
 			</zone>
 			<zone type="Africa/Monrovia">
-				<exemplarCity>Monrovia</exemplarCity>
+				<exemplarCity>ሞንሮቭያ</exemplarCity>
 			</zone>
 			<zone type="Africa/Maseru">
-				<exemplarCity>Maseru</exemplarCity>
+				<exemplarCity>ማሰሩ</exemplarCity>
 			</zone>
 			<zone type="Europe/Vilnius">
-				<exemplarCity>Vilnius</exemplarCity>
+				<exemplarCity>ቪልንየስ</exemplarCity>
 			</zone>
 			<zone type="Europe/Luxembourg">
-				<exemplarCity>Luxembourg</exemplarCity>
+				<exemplarCity>ሉክሰምበርግ</exemplarCity>
 			</zone>
 			<zone type="Europe/Riga">
-				<exemplarCity>Riga</exemplarCity>
+				<exemplarCity>ሪጋ</exemplarCity>
 			</zone>
 			<zone type="Africa/Tripoli">
-				<exemplarCity>Tripoli</exemplarCity>
+				<exemplarCity>ትሪፖሊ</exemplarCity>
 			</zone>
 			<zone type="Africa/Casablanca">
-				<exemplarCity>Casablanca</exemplarCity>
+				<exemplarCity>ካዛብላንካ</exemplarCity>
 			</zone>
 			<zone type="Europe/Monaco">
-				<exemplarCity>Monaco</exemplarCity>
+				<exemplarCity>ሞናኮ</exemplarCity>
 			</zone>
 			<zone type="Europe/Chisinau">
-				<exemplarCity>Chisinau</exemplarCity>
+				<exemplarCity>ኪሺናው</exemplarCity>
 			</zone>
 			<zone type="Europe/Podgorica">
-				<exemplarCity>Podgorica</exemplarCity>
+				<exemplarCity>ፖድጎሪጻ</exemplarCity>
 			</zone>
 			<zone type="America/Marigot">
-				<exemplarCity>Marigot</exemplarCity>
+				<exemplarCity>ማሪጎት</exemplarCity>
 			</zone>
 			<zone type="Indian/Antananarivo">
-				<exemplarCity>Antananarivo</exemplarCity>
+				<exemplarCity>ኣንታናናሪቮ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kwajalein">
-				<exemplarCity>Kwajalein</exemplarCity>
+				<exemplarCity>ክዋጃሊን</exemplarCity>
 			</zone>
 			<zone type="Pacific/Majuro">
-				<exemplarCity>Majuro</exemplarCity>
+				<exemplarCity>ማጁሮ</exemplarCity>
 			</zone>
 			<zone type="Europe/Skopje">
-				<exemplarCity>Skopje</exemplarCity>
+				<exemplarCity>ስኮፕየ</exemplarCity>
 			</zone>
 			<zone type="Africa/Bamako">
-				<exemplarCity>Bamako</exemplarCity>
+				<exemplarCity>ባማኮ</exemplarCity>
 			</zone>
 			<zone type="Asia/Rangoon">
-				<exemplarCity>Rangoon</exemplarCity>
+				<exemplarCity>ያንጎን</exemplarCity>
 			</zone>
 			<zone type="Asia/Hovd">
-				<exemplarCity>Hovd</exemplarCity>
+				<exemplarCity>ሆቭድ</exemplarCity>
 			</zone>
 			<zone type="Asia/Ulaanbaatar">
-				<exemplarCity>Ulaanbaatar</exemplarCity>
+				<exemplarCity>ኡላን ባቶር</exemplarCity>
 			</zone>
 			<zone type="Asia/Choibalsan">
-				<exemplarCity>Choibalsan</exemplarCity>
+				<exemplarCity>ቾይባልሳን</exemplarCity>
 			</zone>
 			<zone type="Asia/Macau">
-				<exemplarCity>Macau</exemplarCity>
+				<exemplarCity>ማካው</exemplarCity>
 			</zone>
 			<zone type="Pacific/Saipan">
-				<exemplarCity>Saipan</exemplarCity>
+				<exemplarCity>ሳይፓን</exemplarCity>
 			</zone>
 			<zone type="America/Martinique">
-				<exemplarCity>Martinique</exemplarCity>
+				<exemplarCity>ማርቲኒክ</exemplarCity>
 			</zone>
 			<zone type="Africa/Nouakchott">
-				<exemplarCity>Nouakchott</exemplarCity>
+				<exemplarCity>ንዋክሾት</exemplarCity>
 			</zone>
 			<zone type="America/Montserrat">
-				<exemplarCity>Montserrat</exemplarCity>
+				<exemplarCity>ሞንትሰራት</exemplarCity>
 			</zone>
 			<zone type="Europe/Malta">
-				<exemplarCity>Malta</exemplarCity>
+				<exemplarCity>ማልታ</exemplarCity>
 			</zone>
 			<zone type="Indian/Mauritius">
-				<exemplarCity>Mauritius</exemplarCity>
+				<exemplarCity>ማውሪሸስ</exemplarCity>
 			</zone>
 			<zone type="Indian/Maldives">
-				<exemplarCity>Maldives</exemplarCity>
+				<exemplarCity>ማልዲቭስ</exemplarCity>
 			</zone>
 			<zone type="Africa/Blantyre">
-				<exemplarCity>Blantyre</exemplarCity>
+				<exemplarCity>ብላንታየር</exemplarCity>
 			</zone>
 			<zone type="America/Tijuana">
-				<exemplarCity>Tijuana</exemplarCity>
+				<exemplarCity>ቲጅዋና</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
-				<exemplarCity>Hermosillo</exemplarCity>
+				<exemplarCity>ኤርሞስዮ</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
-				<exemplarCity>Mazatlan</exemplarCity>
+				<exemplarCity>ማዛትላን</exemplarCity>
 			</zone>
 			<zone type="America/Chihuahua">
-				<exemplarCity>Chihuahua</exemplarCity>
+				<exemplarCity>ቺዋዋ</exemplarCity>
 			</zone>
 			<zone type="America/Bahia_Banderas">
-				<exemplarCity>Bahia Banderas</exemplarCity>
+				<exemplarCity>ባእያ ደ ባንደራስ</exemplarCity>
 			</zone>
 			<zone type="America/Ojinaga">
-				<exemplarCity>Ojinaga</exemplarCity>
+				<exemplarCity>ኦጂናጋ</exemplarCity>
 			</zone>
 			<zone type="America/Monterrey">
-				<exemplarCity>Monterrey</exemplarCity>
+				<exemplarCity>ሞንተረይ</exemplarCity>
 			</zone>
 			<zone type="America/Mexico_City">
-				<exemplarCity>Mexico City</exemplarCity>
+				<exemplarCity>ከተማ ሜክሲኮ</exemplarCity>
 			</zone>
 			<zone type="America/Matamoros">
-				<exemplarCity>Matamoros</exemplarCity>
+				<exemplarCity>ማታሞሮስ</exemplarCity>
 			</zone>
 			<zone type="America/Merida">
-				<exemplarCity>Merida</exemplarCity>
+				<exemplarCity>መሪዳ</exemplarCity>
 			</zone>
 			<zone type="America/Cancun">
-				<exemplarCity>Cancun</exemplarCity>
+				<exemplarCity>ካንኩን</exemplarCity>
 			</zone>
 			<zone type="Asia/Kuala_Lumpur">
-				<exemplarCity>Kuala Lumpur</exemplarCity>
+				<exemplarCity>ኳላ ሉምፑር</exemplarCity>
 			</zone>
 			<zone type="Asia/Kuching">
-				<exemplarCity>Kuching</exemplarCity>
+				<exemplarCity>ኩቺንግ</exemplarCity>
 			</zone>
 			<zone type="Africa/Maputo">
-				<exemplarCity>Maputo</exemplarCity>
+				<exemplarCity>ማፑቶ</exemplarCity>
 			</zone>
 			<zone type="Africa/Windhoek">
-				<exemplarCity>Windhoek</exemplarCity>
+				<exemplarCity>ዊንድሆክ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Noumea">
-				<exemplarCity>Noumea</exemplarCity>
+				<exemplarCity>ኑመያ</exemplarCity>
 			</zone>
 			<zone type="Africa/Niamey">
-				<exemplarCity>Niamey</exemplarCity>
+				<exemplarCity>ንያመይ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Norfolk">
-				<exemplarCity>Norfolk</exemplarCity>
+				<exemplarCity>ኖርፎልክ</exemplarCity>
 			</zone>
 			<zone type="Africa/Lagos">
-				<exemplarCity>Lagos</exemplarCity>
+				<exemplarCity>ሌጎስ</exemplarCity>
 			</zone>
 			<zone type="America/Managua">
-				<exemplarCity>Managua</exemplarCity>
+				<exemplarCity>ማናጓ</exemplarCity>
 			</zone>
 			<zone type="Europe/Amsterdam">
-				<exemplarCity>Amsterdam</exemplarCity>
+				<exemplarCity>ኣምስተርዳም</exemplarCity>
 			</zone>
 			<zone type="Europe/Oslo">
-				<exemplarCity>Oslo</exemplarCity>
+				<exemplarCity>ኦስሎ</exemplarCity>
 			</zone>
 			<zone type="Asia/Katmandu">
-				<exemplarCity>Kathmandu</exemplarCity>
+				<exemplarCity>ካትማንዱ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Nauru">
-				<exemplarCity>Nauru</exemplarCity>
+				<exemplarCity>ናውሩ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Niue">
-				<exemplarCity>Niue</exemplarCity>
+				<exemplarCity>ኒዩ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Chatham">
-				<exemplarCity>Chatham</exemplarCity>
+				<exemplarCity>ቻታም</exemplarCity>
 			</zone>
 			<zone type="Pacific/Auckland">
-				<exemplarCity>Auckland</exemplarCity>
+				<exemplarCity>ኦክላንድ</exemplarCity>
 			</zone>
 			<zone type="Asia/Muscat">
-				<exemplarCity>Muscat</exemplarCity>
+				<exemplarCity>ሙስካት</exemplarCity>
 			</zone>
 			<zone type="America/Panama">
-				<exemplarCity>Panama</exemplarCity>
+				<exemplarCity>ፓናማ</exemplarCity>
 			</zone>
 			<zone type="America/Lima">
-				<exemplarCity>Lima</exemplarCity>
+				<exemplarCity>ሊማ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Tahiti">
-				<exemplarCity>Tahiti</exemplarCity>
+				<exemplarCity>ታሂቲ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Marquesas">
-				<exemplarCity>Marquesas</exemplarCity>
+				<exemplarCity>ማርኬሳስ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Gambier">
-				<exemplarCity>Gambier</exemplarCity>
+				<exemplarCity>ጋምብየር</exemplarCity>
 			</zone>
 			<zone type="Pacific/Port_Moresby">
-				<exemplarCity>Port Moresby</exemplarCity>
+				<exemplarCity>ፖርት ሞርስቢ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Bougainville">
-				<exemplarCity>Bougainville</exemplarCity>
+				<exemplarCity>ቡገንቪል</exemplarCity>
 			</zone>
 			<zone type="Asia/Manila">
-				<exemplarCity>Manila</exemplarCity>
+				<exemplarCity>ማኒላ</exemplarCity>
 			</zone>
 			<zone type="Asia/Karachi">
-				<exemplarCity>Karachi</exemplarCity>
+				<exemplarCity>ካራቺ</exemplarCity>
 			</zone>
 			<zone type="Europe/Warsaw">
-				<exemplarCity>Warsaw</exemplarCity>
+				<exemplarCity>ዋርሳው</exemplarCity>
 			</zone>
 			<zone type="America/Miquelon">
-				<exemplarCity>Miquelon</exemplarCity>
+				<exemplarCity>ሚከሎን</exemplarCity>
 			</zone>
 			<zone type="Pacific/Pitcairn">
-				<exemplarCity>Pitcairn</exemplarCity>
+				<exemplarCity>ፒትከርን</exemplarCity>
 			</zone>
 			<zone type="America/Puerto_Rico">
-				<exemplarCity>Puerto Rico</exemplarCity>
+				<exemplarCity>ፖርቶ ሪኮ</exemplarCity>
 			</zone>
 			<zone type="Asia/Gaza">
-				<exemplarCity>Gaza</exemplarCity>
+				<exemplarCity>ቓዛ</exemplarCity>
 			</zone>
 			<zone type="Asia/Hebron">
-				<exemplarCity>Hebron</exemplarCity>
+				<exemplarCity>ኬብሮን</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Azores">
-				<exemplarCity>Azores</exemplarCity>
+				<exemplarCity>ኣዞረስ</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Madeira">
-				<exemplarCity>Madeira</exemplarCity>
+				<exemplarCity>ማደይራ</exemplarCity>
 			</zone>
 			<zone type="Europe/Lisbon">
-				<exemplarCity>Lisbon</exemplarCity>
+				<exemplarCity>ሊዝበን</exemplarCity>
 			</zone>
 			<zone type="Pacific/Palau">
-				<exemplarCity>Palau</exemplarCity>
+				<exemplarCity>ፓላው</exemplarCity>
 			</zone>
 			<zone type="America/Asuncion">
-				<exemplarCity>Asuncion</exemplarCity>
+				<exemplarCity>ኣሱንስዮን</exemplarCity>
 			</zone>
 			<zone type="Asia/Qatar">
-				<exemplarCity>Qatar</exemplarCity>
+				<exemplarCity>ቐጠር</exemplarCity>
 			</zone>
 			<zone type="Indian/Reunion">
-				<exemplarCity>Reunion</exemplarCity>
+				<exemplarCity>ርዩንየን</exemplarCity>
 			</zone>
 			<zone type="Europe/Bucharest">
-				<exemplarCity>Bucharest</exemplarCity>
+				<exemplarCity>ቡካረስት</exemplarCity>
 			</zone>
 			<zone type="Europe/Belgrade">
-				<exemplarCity>Belgrade</exemplarCity>
+				<exemplarCity>በልግሬድ</exemplarCity>
 			</zone>
 			<zone type="Europe/Kaliningrad">
-				<exemplarCity>Kaliningrad</exemplarCity>
+				<exemplarCity>ካሊኒንግራድ</exemplarCity>
 			</zone>
 			<zone type="Europe/Moscow">
-				<exemplarCity>Moscow</exemplarCity>
+				<exemplarCity>ሞስኮ</exemplarCity>
 			</zone>
 			<zone type="Europe/Volgograd">
-				<exemplarCity>Volgograd</exemplarCity>
+				<exemplarCity>ቮልጎግራድ</exemplarCity>
 			</zone>
 			<zone type="Europe/Saratov">
-				<exemplarCity>Saratov</exemplarCity>
+				<exemplarCity>ሳራቶቭ</exemplarCity>
 			</zone>
 			<zone type="Europe/Astrakhan">
-				<exemplarCity>Astrakhan</exemplarCity>
+				<exemplarCity>ኣስትራካን</exemplarCity>
 			</zone>
 			<zone type="Europe/Ulyanovsk">
-				<exemplarCity>Ulyanovsk</exemplarCity>
+				<exemplarCity>ኡልያኖቭስክ</exemplarCity>
 			</zone>
 			<zone type="Europe/Kirov">
-				<exemplarCity>Kirov</exemplarCity>
+				<exemplarCity>ኪሮቭ</exemplarCity>
 			</zone>
 			<zone type="Europe/Samara">
-				<exemplarCity>Samara</exemplarCity>
+				<exemplarCity>ሳማራ</exemplarCity>
 			</zone>
 			<zone type="Asia/Yekaterinburg">
-				<exemplarCity>Yekaterinburg</exemplarCity>
+				<exemplarCity>የካተሪንበርግ</exemplarCity>
 			</zone>
 			<zone type="Asia/Omsk">
-				<exemplarCity>Omsk</exemplarCity>
+				<exemplarCity>ኦምስክ</exemplarCity>
 			</zone>
 			<zone type="Asia/Novosibirsk">
-				<exemplarCity>Novosibirsk</exemplarCity>
+				<exemplarCity>ኖቮሲቢርስክ</exemplarCity>
 			</zone>
 			<zone type="Asia/Barnaul">
-				<exemplarCity>Barnaul</exemplarCity>
+				<exemplarCity>ባርናውል</exemplarCity>
 			</zone>
 			<zone type="Asia/Tomsk">
-				<exemplarCity>Tomsk</exemplarCity>
+				<exemplarCity>ቶምስክ</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
-				<exemplarCity>Novokuznetsk</exemplarCity>
+				<exemplarCity>ኖቮኩዝነትስክ</exemplarCity>
 			</zone>
 			<zone type="Asia/Krasnoyarsk">
-				<exemplarCity>Krasnoyarsk</exemplarCity>
+				<exemplarCity>ክራስኖያርስክ</exemplarCity>
 			</zone>
 			<zone type="Asia/Irkutsk">
-				<exemplarCity>Irkutsk</exemplarCity>
+				<exemplarCity>ኢርኩትስክ</exemplarCity>
 			</zone>
 			<zone type="Asia/Chita">
-				<exemplarCity>Chita</exemplarCity>
+				<exemplarCity>ቺታ</exemplarCity>
 			</zone>
 			<zone type="Asia/Yakutsk">
-				<exemplarCity>Yakutsk</exemplarCity>
+				<exemplarCity>ያኩትስክ</exemplarCity>
 			</zone>
 			<zone type="Asia/Vladivostok">
-				<exemplarCity>Vladivostok</exemplarCity>
+				<exemplarCity>ቭላዲቮስቶክ</exemplarCity>
 			</zone>
 			<zone type="Asia/Khandyga">
-				<exemplarCity>Khandyga</exemplarCity>
+				<exemplarCity>ካንዲጋ</exemplarCity>
 			</zone>
 			<zone type="Asia/Sakhalin">
-				<exemplarCity>Sakhalin</exemplarCity>
+				<exemplarCity>ሳካሊን</exemplarCity>
 			</zone>
 			<zone type="Asia/Ust-Nera">
-				<exemplarCity>Ust-Nera</exemplarCity>
+				<exemplarCity>ኡስት-ኔራ</exemplarCity>
 			</zone>
 			<zone type="Asia/Magadan">
-				<exemplarCity>Magadan</exemplarCity>
+				<exemplarCity>ማጋዳን</exemplarCity>
 			</zone>
 			<zone type="Asia/Srednekolymsk">
-				<exemplarCity>Srednekolymsk</exemplarCity>
+				<exemplarCity>ስሬድነኮሊምስክ</exemplarCity>
 			</zone>
 			<zone type="Asia/Kamchatka">
-				<exemplarCity>Kamchatka</exemplarCity>
+				<exemplarCity>ካምቻትካ</exemplarCity>
 			</zone>
 			<zone type="Asia/Anadyr">
-				<exemplarCity>Anadyr</exemplarCity>
+				<exemplarCity>ኣናዲር</exemplarCity>
 			</zone>
 			<zone type="Africa/Kigali">
-				<exemplarCity>Kigali</exemplarCity>
+				<exemplarCity>ኪጋሊ</exemplarCity>
 			</zone>
 			<zone type="Asia/Riyadh">
-				<exemplarCity>Riyadh</exemplarCity>
+				<exemplarCity>ርያድ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Guadalcanal">
-				<exemplarCity>Guadalcanal</exemplarCity>
+				<exemplarCity>ጓዳልካናል</exemplarCity>
 			</zone>
 			<zone type="Indian/Mahe">
-				<exemplarCity>Mahe</exemplarCity>
+				<exemplarCity>ማሄ</exemplarCity>
 			</zone>
 			<zone type="Africa/Khartoum">
-				<exemplarCity>Khartoum</exemplarCity>
+				<exemplarCity>ካርቱም</exemplarCity>
 			</zone>
 			<zone type="Europe/Stockholm">
-				<exemplarCity>Stockholm</exemplarCity>
+				<exemplarCity>ስቶክሆልም</exemplarCity>
 			</zone>
 			<zone type="Asia/Singapore">
-				<exemplarCity>Singapore</exemplarCity>
+				<exemplarCity>ሲንጋፖር</exemplarCity>
 			</zone>
 			<zone type="Atlantic/St_Helena">
-				<exemplarCity>St. Helena</exemplarCity>
+				<exemplarCity>ቅድስቲ ሄለና</exemplarCity>
 			</zone>
 			<zone type="Europe/Ljubljana">
-				<exemplarCity>Ljubljana</exemplarCity>
+				<exemplarCity>ልዩብልያና</exemplarCity>
 			</zone>
 			<zone type="Arctic/Longyearbyen">
-				<exemplarCity>Longyearbyen</exemplarCity>
+				<exemplarCity>ሎንግየርባየን</exemplarCity>
 			</zone>
 			<zone type="Europe/Bratislava">
-				<exemplarCity>Bratislava</exemplarCity>
+				<exemplarCity>ብራቲስላቫ</exemplarCity>
 			</zone>
 			<zone type="Africa/Freetown">
-				<exemplarCity>Freetown</exemplarCity>
+				<exemplarCity>ፍሪታውን</exemplarCity>
 			</zone>
 			<zone type="Europe/San_Marino">
-				<exemplarCity>San Marino</exemplarCity>
+				<exemplarCity>ሳን ማሪኖ</exemplarCity>
 			</zone>
 			<zone type="Africa/Dakar">
-				<exemplarCity>Dakar</exemplarCity>
+				<exemplarCity>ዳካር</exemplarCity>
 			</zone>
 			<zone type="Africa/Mogadishu">
-				<exemplarCity>Mogadishu</exemplarCity>
+				<exemplarCity>ሞቓድሾ</exemplarCity>
 			</zone>
 			<zone type="America/Paramaribo">
-				<exemplarCity>Paramaribo</exemplarCity>
+				<exemplarCity>ፓራማሪቦ</exemplarCity>
 			</zone>
 			<zone type="Africa/Juba">
-				<exemplarCity>Juba</exemplarCity>
+				<exemplarCity>ጁባ</exemplarCity>
 			</zone>
 			<zone type="Africa/Sao_Tome">
-				<exemplarCity>Sao Tome</exemplarCity>
+				<exemplarCity>ሳኦ ቶመ</exemplarCity>
 			</zone>
 			<zone type="America/El_Salvador">
-				<exemplarCity>El Salvador</exemplarCity>
+				<exemplarCity>ኤል ሳልቫዶር</exemplarCity>
 			</zone>
 			<zone type="America/Lower_Princes">
-				<exemplarCity>Lower Prince’s Quarter</exemplarCity>
+				<exemplarCity>ለወር ፕሪንሰስ ኳርተር</exemplarCity>
 			</zone>
 			<zone type="Asia/Damascus">
-				<exemplarCity>Damascus</exemplarCity>
+				<exemplarCity>ደማስቆ</exemplarCity>
 			</zone>
 			<zone type="Africa/Mbabane">
-				<exemplarCity>Mbabane</exemplarCity>
+				<exemplarCity>ምባባነ</exemplarCity>
 			</zone>
 			<zone type="America/Grand_Turk">
-				<exemplarCity>Grand Turk</exemplarCity>
+				<exemplarCity>ግራንድ ቱርክ</exemplarCity>
 			</zone>
 			<zone type="Africa/Ndjamena">
-				<exemplarCity>Ndjamena</exemplarCity>
+				<exemplarCity>ንጃመና</exemplarCity>
 			</zone>
 			<zone type="Indian/Kerguelen">
-				<exemplarCity>Kerguelen</exemplarCity>
+				<exemplarCity>ከርጉለን</exemplarCity>
 			</zone>
 			<zone type="Africa/Lome">
-				<exemplarCity>Lome</exemplarCity>
+				<exemplarCity>ሎመ</exemplarCity>
 			</zone>
 			<zone type="Asia/Bangkok">
-				<exemplarCity>Bangkok</exemplarCity>
+				<exemplarCity>ባንግኮክ</exemplarCity>
 			</zone>
 			<zone type="Asia/Dushanbe">
-				<exemplarCity>Dushanbe</exemplarCity>
+				<exemplarCity>ዱሻንበ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Fakaofo">
-				<exemplarCity>Fakaofo</exemplarCity>
+				<exemplarCity>ፋካኦፎ</exemplarCity>
 			</zone>
 			<zone type="Asia/Dili">
-				<exemplarCity>Dili</exemplarCity>
+				<exemplarCity>ዲሊ</exemplarCity>
 			</zone>
 			<zone type="Asia/Ashgabat">
-				<exemplarCity>Ashgabat</exemplarCity>
+				<exemplarCity>ኣሽጋባት</exemplarCity>
 			</zone>
 			<zone type="Africa/Tunis">
-				<exemplarCity>Tunis</exemplarCity>
+				<exemplarCity>ቱኒስ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Tongatapu">
-				<exemplarCity>Tongatapu</exemplarCity>
+				<exemplarCity>ቶንጋታፑ</exemplarCity>
 			</zone>
 			<zone type="Europe/Istanbul">
-				<exemplarCity>Istanbul</exemplarCity>
+				<exemplarCity>ኢስታንቡል</exemplarCity>
 			</zone>
 			<zone type="America/Port_of_Spain">
-				<exemplarCity>Port of Spain</exemplarCity>
+				<exemplarCity>ፖርት ኦፍ ስፔን</exemplarCity>
 			</zone>
 			<zone type="Pacific/Funafuti">
-				<exemplarCity>Funafuti</exemplarCity>
+				<exemplarCity>ፉናፉቲ</exemplarCity>
 			</zone>
 			<zone type="Asia/Taipei">
-				<exemplarCity>Taipei</exemplarCity>
+				<exemplarCity>ታይፐይ</exemplarCity>
 			</zone>
 			<zone type="Africa/Dar_es_Salaam">
-				<exemplarCity>Dar es Salaam</exemplarCity>
+				<exemplarCity>ዳር ኤስ ሳላም</exemplarCity>
 			</zone>
 			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Uzhgorod</exemplarCity>
+				<exemplarCity>ኡዝጎሮድ</exemplarCity>
 			</zone>
 			<zone type="Europe/Kiev">
-				<exemplarCity>Kiev</exemplarCity>
+				<exemplarCity>ክየቭ</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol</exemplarCity>
+				<exemplarCity>ሲምፈሮፖል</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporozhye</exemplarCity>
+				<exemplarCity>ዛፖሪዥያ</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
-				<exemplarCity>Kampala</exemplarCity>
+				<exemplarCity>ካምፓላ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Midway">
-				<exemplarCity>Midway</exemplarCity>
+				<exemplarCity>ሚድወይ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Wake">
-				<exemplarCity>Wake</exemplarCity>
+				<exemplarCity>ዌክ</exemplarCity>
 			</zone>
 			<zone type="America/Adak">
-				<exemplarCity>Adak</exemplarCity>
+				<exemplarCity>ኣዳክ</exemplarCity>
 			</zone>
 			<zone type="America/Nome">
-				<exemplarCity>Nome</exemplarCity>
+				<exemplarCity>ነውም</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
+				<exemplarCity>ሆኖሉሉ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
-				<exemplarCity>Johnston</exemplarCity>
+				<exemplarCity>ጆንስተን</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
-				<exemplarCity>Anchorage</exemplarCity>
+				<exemplarCity>ኣንኮረጅ</exemplarCity>
 			</zone>
 			<zone type="America/Yakutat">
-				<exemplarCity>Yakutat</exemplarCity>
+				<exemplarCity>ያኩታት</exemplarCity>
 			</zone>
 			<zone type="America/Sitka">
-				<exemplarCity>Sitka</exemplarCity>
+				<exemplarCity>ሲትካ</exemplarCity>
 			</zone>
 			<zone type="America/Juneau">
-				<exemplarCity>Juneau</exemplarCity>
+				<exemplarCity>ጁነው</exemplarCity>
 			</zone>
 			<zone type="America/Metlakatla">
-				<exemplarCity>Metlakatla</exemplarCity>
+				<exemplarCity>መትላካትላ</exemplarCity>
 			</zone>
 			<zone type="America/Los_Angeles">
-				<exemplarCity>Los Angeles</exemplarCity>
+				<exemplarCity>ሎስ ኣንጀለስ</exemplarCity>
 			</zone>
 			<zone type="America/Boise">
-				<exemplarCity>Boise</exemplarCity>
+				<exemplarCity>ቦይዚ</exemplarCity>
 			</zone>
 			<zone type="America/Phoenix">
-				<exemplarCity>Phoenix</exemplarCity>
+				<exemplarCity>ፊኒክስ</exemplarCity>
 			</zone>
 			<zone type="America/Denver">
-				<exemplarCity>Denver</exemplarCity>
+				<exemplarCity>ደንቨር</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
-				<exemplarCity>Beulah, North Dakota</exemplarCity>
+				<exemplarCity>ብዩላ፣ ሰሜን ዳኮታ</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/New_Salem">
-				<exemplarCity>New Salem, North Dakota</exemplarCity>
+				<exemplarCity>ኒው ሳለም፣ ሰሜን ዳኮታ</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Center">
-				<exemplarCity>Center, North Dakota</exemplarCity>
+				<exemplarCity>ሰንተር፣ ሰሜን ዳኮታ</exemplarCity>
 			</zone>
 			<zone type="America/Chicago">
-				<exemplarCity>Chicago</exemplarCity>
+				<exemplarCity>ቺካጎ</exemplarCity>
 			</zone>
 			<zone type="America/Menominee">
-				<exemplarCity>Menominee</exemplarCity>
+				<exemplarCity>ሜኖሚኒ</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Vincennes">
-				<exemplarCity>Vincennes, Indiana</exemplarCity>
+				<exemplarCity>ቪንሰንስ፣ ኢንድያና</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Petersburg">
-				<exemplarCity>Petersburg, Indiana</exemplarCity>
+				<exemplarCity>ፒተርስበርግ፣ ኢንድያና</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Tell_City">
-				<exemplarCity>Tell City, Indiana</exemplarCity>
+				<exemplarCity>ተል ሲቲ፣ ኢንድያና</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Knox">
-				<exemplarCity>Knox, Indiana</exemplarCity>
+				<exemplarCity>ኖክስ፣ ኢንድያና</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Winamac">
-				<exemplarCity>Winamac, Indiana</exemplarCity>
+				<exemplarCity>ዊናማክ፣ ኢንድያና</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Marengo">
-				<exemplarCity>Marengo, Indiana</exemplarCity>
+				<exemplarCity>ማረንጎ፣ ኢንድያና</exemplarCity>
 			</zone>
 			<zone type="America/Indianapolis">
-				<exemplarCity>Indianapolis</exemplarCity>
+				<exemplarCity>ኢንድያናፖሊስ</exemplarCity>
 			</zone>
 			<zone type="America/Louisville">
-				<exemplarCity>Louisville</exemplarCity>
+				<exemplarCity>ልዊቪል</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Vevay">
-				<exemplarCity>Vevay, Indiana</exemplarCity>
+				<exemplarCity>ቪቪ፣ ኢንድያና</exemplarCity>
 			</zone>
 			<zone type="America/Kentucky/Monticello">
-				<exemplarCity>Monticello, Kentucky</exemplarCity>
+				<exemplarCity>ሞንቲቸሎ፣ ከንታኪ</exemplarCity>
 			</zone>
 			<zone type="America/Detroit">
-				<exemplarCity>Detroit</exemplarCity>
+				<exemplarCity>ዲትሮይት</exemplarCity>
 			</zone>
 			<zone type="America/New_York">
-				<exemplarCity>New York</exemplarCity>
+				<exemplarCity>ኒው ዮርክ</exemplarCity>
 			</zone>
 			<zone type="America/Montevideo">
-				<exemplarCity>Montevideo</exemplarCity>
+				<exemplarCity>ሞንተቪደዮ</exemplarCity>
 			</zone>
 			<zone type="Asia/Samarkand">
-				<exemplarCity>Samarkand</exemplarCity>
+				<exemplarCity>ሳማርካንድ</exemplarCity>
 			</zone>
 			<zone type="Asia/Tashkent">
-				<exemplarCity>Tashkent</exemplarCity>
+				<exemplarCity>ታሽከንት</exemplarCity>
 			</zone>
 			<zone type="Europe/Vatican">
-				<exemplarCity>Vatican</exemplarCity>
+				<exemplarCity>ቫቲካን</exemplarCity>
 			</zone>
 			<zone type="America/St_Vincent">
-				<exemplarCity>St. Vincent</exemplarCity>
+				<exemplarCity>ቅዱስ ቪንሰንት</exemplarCity>
 			</zone>
 			<zone type="America/Caracas">
-				<exemplarCity>Caracas</exemplarCity>
+				<exemplarCity>ካራካስ</exemplarCity>
 			</zone>
 			<zone type="America/Tortola">
-				<exemplarCity>Tortola</exemplarCity>
+				<exemplarCity>ቶርቶላ</exemplarCity>
 			</zone>
 			<zone type="America/St_Thomas">
-				<exemplarCity>St. Thomas</exemplarCity>
+				<exemplarCity>ሰይንት ቶማስ</exemplarCity>
 			</zone>
 			<zone type="Asia/Saigon">
-				<exemplarCity>Ho Chi Minh</exemplarCity>
+				<exemplarCity>ከተማ ሆ ቺ ሚን</exemplarCity>
 			</zone>
 			<zone type="Pacific/Efate">
-				<exemplarCity>Efate</exemplarCity>
+				<exemplarCity>ኤፋቴ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Wallis">
-				<exemplarCity>Wallis</exemplarCity>
+				<exemplarCity>ዋሊስ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Apia">
-				<exemplarCity>Apia</exemplarCity>
+				<exemplarCity>ኣፕያ</exemplarCity>
 			</zone>
 			<zone type="Asia/Aden">
-				<exemplarCity>Aden</exemplarCity>
+				<exemplarCity>ዓደን</exemplarCity>
 			</zone>
 			<zone type="Indian/Mayotte">
-				<exemplarCity>Mayotte</exemplarCity>
+				<exemplarCity>ማዮት</exemplarCity>
 			</zone>
 			<zone type="Africa/Johannesburg">
-				<exemplarCity>Johannesburg</exemplarCity>
+				<exemplarCity>ጆሃንስበርግ</exemplarCity>
 			</zone>
 			<zone type="Africa/Lusaka">
-				<exemplarCity>Lusaka</exemplarCity>
+				<exemplarCity>ሉሳካ</exemplarCity>
 			</zone>
 			<zone type="Africa/Harare">
-				<exemplarCity>Harare</exemplarCity>
+				<exemplarCity>ሃራረ</exemplarCity>
 			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>ግዜ ኣክሪ</generic>
+					<standard>ምዱብ ግዜ ኣክሪ</standard>
+					<daylight>ግዜ ክረምቲ ኣክሪ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>ግዜ ማእከላይ ኣፍሪቃ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>ግዜ ምብራቕ ኣፍሪቃ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>ግዜ ደቡብ ኣፍሪቃ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>ግዜ ምዕራብ ኣፍሪቃ</generic>
+					<standard>ምዱብ ግዜ ምዕራብ ኣፍሪቃ</standard>
+					<daylight>ግዜ ክረምቲ ምዕራብ ኣፍሪቃ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>ግዜ ኣላስካ</generic>
+					<standard>ምዱብ ግዜ ኣላስካ</standard>
+					<daylight>ግዜ ክረምቲ ኣላስካ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>ግዜ ኣማዞን</generic>
+					<standard>ምዱብ ግዜ ኣማዞን</standard>
+					<daylight>ግዜ ክረምቲ ኣማዞን</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>ግዜ ኣርጀንቲና</generic>
+					<standard>ምዱብ ግዜ ኣርጀንቲና</standard>
+					<daylight>ግዜ ክረምቲ ኣርጀንቲና</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>ግዜ ኣዞረስ</generic>
+					<standard>ምዱብ ግዜ ኣዞረስ</standard>
+					<daylight>ግዜ ክረምቲ ኣዞረስ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard>ግዜ ቦሊቭያ</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>ግዜ ብራዚልያ</generic>
+					<standard>ምዱብ ግዜ ብራዚልያ</standard>
+					<daylight>ግዜ ክረምቲ ብራዚልያ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>ግዜ ኬፕ ቨርደ</generic>
+					<standard>ምዱብ ግዜ ኬፕ ቨርደ</standard>
+					<daylight>ግዜ ክረምቲ ኬፕ ቨርደ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>ግዜ ቺሌ</generic>
+					<standard>ምዱብ ግዜ ቺሌ</standard>
+					<daylight>ግዜ ክረምቲ ቺሌ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic>ግዜ ኮሎምብያ</generic>
+					<standard>ምዱብ ግዜ ኮሎምብያ</standard>
+					<daylight>ግዜ ክረምቲ ኮሎምብያ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>ግዜ ደሴት ፋሲካ</generic>
+					<standard>ምዱብ ግዜ ደሴት ፋሲካ</standard>
+					<daylight>ግዜ ክረምቲ ደሴት ፋሲካ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard>ግዜ ኤኳዶር</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>ግዜ ማእከላይ ኤውሮጳ</generic>
+					<standard>ምዱብ ግዜ ማእከላይ ኤውሮጳ</standard>
+					<daylight>ግዜ ክረምቲ ኤውሮጳ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>ግዜ ምብራቕ ኤውሮጳ</generic>
+					<standard>ምዱብ ግዜ ምብራቕ ኤውሮጳ</standard>
+					<daylight>ግዜ ክረምቲ ምብራቕ ኤውሮጳ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>ግዜ ደሴታት ፎክላንድ</generic>
+					<standard>ምዱብ ግዜ ደሴታት ፎክላንድ</standard>
+					<daylight>ግዜ ከረምቲ ደሴታት ፎክላንድ</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard>ግዜ ፈረንሳዊት ጊያና</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>ግዜ ፈረንሳዊ ደቡባዊ ግዝኣታትን ኣንታርቲክን</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>ግዜ ጋላፓጎስ</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard>ግዜ ጉያና</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>ግዜ ህንዳዊ ውቅያኖስ</standard>
+				</long>
+			</metazone>
 			<metazone type="Indonesia_Central">
 				<long>
-					<standard>Central Indonesia Time</standard>
+					<standard>ግዜ ማእከላይ ኢንዶነዥያ</standard>
 				</long>
 			</metazone>
 			<metazone type="Indonesia_Eastern">
 				<long>
-					<standard>Eastern Indonesia Time</standard>
+					<standard>ግዜ ምብራቓዊ ኢንዶነዥያ</standard>
 				</long>
 			</metazone>
 			<metazone type="Indonesia_Western">
 				<long>
-					<standard>Western Indonesia Time</standard>
+					<standard>ግዜ ምዕራባዊ ኢንዶነዥያ</standard>
 				</long>
 			</metazone>
 			<metazone type="Malaysia">
 				<long>
-					<standard>Malaysia Time</standard>
+					<standard>ግዜ ማለዥያ</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>ግዜ ማውሪሸስ</generic>
+					<standard>ምዱብ ግዜ ማውሪሸስ</standard>
+					<daylight>ግዜ ክረምቲ ማውሪሸስ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>ግዜ ፈርናንዶ ደ ኖሮንያ</generic>
+					<standard>ምዱብ ግዜ ፈርናንዶ ደ ኖሮንያ</standard>
+					<daylight>ግዜ ክረምቲ ፈርናንዶ ደ ኖሮንያ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>ግዜ ፓራጓይ</generic>
+					<standard>ምዱብ ግዜ ፓራጓይ</standard>
+					<daylight>ግዜ ክረምቲ ፓራጓይ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>ግዜ ፔሩ</generic>
+					<standard>ምዱብ ግዜ ፔሩ</standard>
+					<daylight>ግዜ ክረምቲ ፔሩ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>ግዜ ርዩንየን</standard>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>ግዜ ሲሸልስ</standard>
 				</long>
 			</metazone>
 			<metazone type="Singapore">
 				<long>
-					<standard>Singapore Standard Time</standard>
+					<standard>ግዜ ሲንጋፖር</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>ግዜ ደቡብ ጆርጅያ</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>ግዜ ሱሪናም</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>ግዜ ኡራጓይ</generic>
+					<standard>ምዱብ ግዜ ኡራጓይ</standard>
+					<daylight>ግዜ ክረምቲ ኡራጓይ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>ግዜ ቬኔዝዌላ</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -2922,7 +3467,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
+			<timeSeparator>:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
@@ -2932,58 +3477,58 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
-					<pattern type="1000" count="one">0K</pattern>
-					<pattern type="1000" count="other">0K</pattern>
-					<pattern type="10000" count="one">00K</pattern>
-					<pattern type="10000" count="other">00K</pattern>
-					<pattern type="100000" count="one">000K</pattern>
-					<pattern type="100000" count="other">000K</pattern>
-					<pattern type="1000000" count="one">0M</pattern>
-					<pattern type="1000000" count="other">0M</pattern>
-					<pattern type="10000000" count="one">00M</pattern>
-					<pattern type="10000000" count="other">00M</pattern>
-					<pattern type="100000000" count="one">000M</pattern>
-					<pattern type="100000000" count="other">000M</pattern>
-					<pattern type="1000000000" count="one">0G</pattern>
-					<pattern type="1000000000" count="other">0G</pattern>
-					<pattern type="10000000000" count="one">00G</pattern>
-					<pattern type="10000000000" count="other">00G</pattern>
-					<pattern type="100000000000" count="one">000G</pattern>
-					<pattern type="100000000000" count="other">000G</pattern>
-					<pattern type="1000000000000" count="one">0T</pattern>
-					<pattern type="1000000000000" count="other">0T</pattern>
-					<pattern type="10000000000000" count="one">00T</pattern>
-					<pattern type="10000000000000" count="other">00T</pattern>
-					<pattern type="100000000000000" count="one">000T</pattern>
-					<pattern type="100000000000000" count="other">000T</pattern>
+					<pattern type="1000" count="one">0 ሽሕ</pattern>
+					<pattern type="1000" count="other">0 ሽሕ</pattern>
+					<pattern type="10000" count="one">00 ሽሕ</pattern>
+					<pattern type="10000" count="other">00 ሽሕ</pattern>
+					<pattern type="100000" count="one">000 ሽሕ</pattern>
+					<pattern type="100000" count="other">000 ሽሕ</pattern>
+					<pattern type="1000000" count="one">0 ሚልዮን</pattern>
+					<pattern type="1000000" count="other">0 ሚልዮን</pattern>
+					<pattern type="10000000" count="one">00 ሚልዮን</pattern>
+					<pattern type="10000000" count="other">00 ሚልዮን</pattern>
+					<pattern type="100000000" count="one">000 ሚልዮን</pattern>
+					<pattern type="100000000" count="other">000 ሚልዮን</pattern>
+					<pattern type="1000000000" count="one">0 ቢልዮን</pattern>
+					<pattern type="1000000000" count="other">0 ቢልዮን</pattern>
+					<pattern type="10000000000" count="one">00 ቢልዮን</pattern>
+					<pattern type="10000000000" count="other">00 ቢልዮን</pattern>
+					<pattern type="100000000000" count="one">000 ቢልዮን</pattern>
+					<pattern type="100000000000" count="other">000 ቢልዮን</pattern>
+					<pattern type="1000000000000" count="one">0 ትሪልዮን</pattern>
+					<pattern type="1000000000000" count="other">0 ትሪልዮን</pattern>
+					<pattern type="10000000000000" count="one">00 ትሪልዮን</pattern>
+					<pattern type="10000000000000" count="other">00 ትሪልዮን</pattern>
+					<pattern type="100000000000000" count="one">000 ትሪልዮን</pattern>
+					<pattern type="100000000000000" count="other">000 ትሪልዮን</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
-					<pattern type="1000" count="one">0K</pattern>
-					<pattern type="1000" count="other">0K</pattern>
-					<pattern type="10000" count="one">00K</pattern>
-					<pattern type="10000" count="other">00K</pattern>
-					<pattern type="100000" count="one">000K</pattern>
-					<pattern type="100000" count="other">000K</pattern>
-					<pattern type="1000000" count="one">0M</pattern>
-					<pattern type="1000000" count="other">0M</pattern>
-					<pattern type="10000000" count="one">00M</pattern>
-					<pattern type="10000000" count="other">00M</pattern>
-					<pattern type="100000000" count="one">000M</pattern>
-					<pattern type="100000000" count="other">000M</pattern>
-					<pattern type="1000000000" count="one">0G</pattern>
-					<pattern type="1000000000" count="other">0G</pattern>
-					<pattern type="10000000000" count="one">00G</pattern>
-					<pattern type="10000000000" count="other">00G</pattern>
-					<pattern type="100000000000" count="one">000G</pattern>
-					<pattern type="100000000000" count="other">000G</pattern>
-					<pattern type="1000000000000" count="one">0T</pattern>
-					<pattern type="1000000000000" count="other">0T</pattern>
-					<pattern type="10000000000000" count="one">00T</pattern>
-					<pattern type="10000000000000" count="other">00T</pattern>
-					<pattern type="100000000000000" count="one">000T</pattern>
-					<pattern type="100000000000000" count="other">000T</pattern>
+					<pattern type="1000" count="one">0 ሽ</pattern>
+					<pattern type="1000" count="other">0 ሽ</pattern>
+					<pattern type="10000" count="one">00 ሽ</pattern>
+					<pattern type="10000" count="other">00 ሽ</pattern>
+					<pattern type="100000" count="one">000 ሽ</pattern>
+					<pattern type="100000" count="other">000 ሽ</pattern>
+					<pattern type="1000000" count="one">0 ሚ</pattern>
+					<pattern type="1000000" count="other">0 ሚ</pattern>
+					<pattern type="10000000" count="one">00 ሚ</pattern>
+					<pattern type="10000000" count="other">00 ሚ</pattern>
+					<pattern type="100000000" count="one">000 ሚ</pattern>
+					<pattern type="100000000" count="other">000 ሚ</pattern>
+					<pattern type="1000000000" count="one">0 ቢ</pattern>
+					<pattern type="1000000000" count="other">0 ቢ</pattern>
+					<pattern type="10000000000" count="one">00 ቢ</pattern>
+					<pattern type="10000000000" count="other">00 ቢ</pattern>
+					<pattern type="100000000000" count="one">000 ቢ</pattern>
+					<pattern type="100000000000" count="other">000 ቢ</pattern>
+					<pattern type="1000000000000" count="one">0 ት</pattern>
+					<pattern type="1000000000000" count="other">0 ት</pattern>
+					<pattern type="10000000000000" count="one">00 ት</pattern>
+					<pattern type="10000000000000" count="other">00 ት</pattern>
+					<pattern type="100000000000000" count="one">000 ት</pattern>
+					<pattern type="100000000000000" count="other">000 ት</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
@@ -3012,48 +3557,67 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one">¤0K</pattern>
-					<pattern type="1000" count="other">¤0K</pattern>
-					<pattern type="10000" count="one">¤00K</pattern>
-					<pattern type="10000" count="other">¤00K</pattern>
-					<pattern type="100000" count="one">¤000K</pattern>
-					<pattern type="100000" count="other">¤000K</pattern>
-					<pattern type="1000000" count="one">¤0M</pattern>
-					<pattern type="1000000" count="other">¤0M</pattern>
-					<pattern type="10000000" count="one">¤00M</pattern>
-					<pattern type="10000000" count="other">¤00M</pattern>
-					<pattern type="100000000" count="one">¤000M</pattern>
-					<pattern type="100000000" count="other">¤000M</pattern>
-					<pattern type="1000000000" count="one">¤0G</pattern>
-					<pattern type="1000000000" count="other">¤0G</pattern>
-					<pattern type="10000000000" count="one">¤00G</pattern>
-					<pattern type="10000000000" count="other">¤00G</pattern>
-					<pattern type="100000000000" count="one">¤000G</pattern>
-					<pattern type="100000000000" count="other">¤000G</pattern>
-					<pattern type="1000000000000" count="one">¤0T</pattern>
-					<pattern type="1000000000000" count="other">¤0T</pattern>
-					<pattern type="10000000000000" count="one">¤00T</pattern>
-					<pattern type="10000000000000" count="other">¤00T</pattern>
-					<pattern type="100000000000000" count="one">¤000T</pattern>
-					<pattern type="100000000000000" count="other">¤000T</pattern>
+					<pattern type="1000" count="one">¤0 ሽ</pattern>
+					<pattern type="1000" count="other">¤0 ሽ</pattern>
+					<pattern type="10000" count="one">¤00 ሽ</pattern>
+					<pattern type="10000" count="other">¤00 ሽ</pattern>
+					<pattern type="100000" count="one">¤000 ሽ</pattern>
+					<pattern type="100000" count="other">¤000 ሽ</pattern>
+					<pattern type="1000000" count="one">¤0 ሚ</pattern>
+					<pattern type="1000000" count="other">¤0 ሚ</pattern>
+					<pattern type="10000000" count="one">¤00 ሚ</pattern>
+					<pattern type="10000000" count="other">¤00 ሚ</pattern>
+					<pattern type="100000000" count="one">¤000 ሚ</pattern>
+					<pattern type="100000000" count="other">¤000 ሚ</pattern>
+					<pattern type="1000000000" count="one">¤0 ቢ</pattern>
+					<pattern type="1000000000" count="other">¤0 ቢ</pattern>
+					<pattern type="10000000000" count="one">¤00 ቢ</pattern>
+					<pattern type="10000000000" count="other">¤00 ቢ</pattern>
+					<pattern type="100000000000" count="one">¤000 ቢ</pattern>
+					<pattern type="100000000000" count="other">¤000 ቢ</pattern>
+					<pattern type="1000000000000" count="one">¤0 ት</pattern>
+					<pattern type="1000000000000" count="other">¤0 ት</pattern>
+					<pattern type="10000000000000" count="one">¤00 ት</pattern>
+					<pattern type="10000000000000" count="other">¤00 ት</pattern>
+					<pattern type="100000000000000" count="one">¤000 ት</pattern>
+					<pattern type="100000000000000" count="other">¤000 ት</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
+			<currency type="BMD">
+				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
 			<currency type="BRL">
 				<displayName>የብራዚል ሪል</displayName>
 			</currency>
 			<currency type="CNY">
-				<displayName>የቻይና ዩአን ረንሚንቢ</displayName>
+				<displayName>ዩዋን ቻይና</displayName>
+				<displayName count="one">ዩዋን ቻይና</displayName>
+				<displayName count="other">ዩዋን ቻይና</displayName>
+				<symbol draft="contributed">CNY</symbol>
+				<symbol alt="narrow" draft="contributed">¥</symbol>
+			</currency>
+			<currency type="ERN">
+				<displayName>ናቕፋ</displayName>
+				<displayName count="one">ናቕፋ</displayName>
+				<displayName count="other">ናቕፋ</displayName>
+				<symbol draft="contributed">ERN</symbol>
 			</currency>
 			<currency type="ETB">
-				<displayName>የኢትዮጵያ ብር</displayName>
+				<displayName>ብር</displayName>
+				<displayName count="one">ብር</displayName>
+				<displayName count="other">ብር</displayName>
 				<symbol>Br</symbol>
 			</currency>
 			<currency type="EUR">
-				<displayName>አውሮ</displayName>
+				<displayName>ዩሮ</displayName>
+				<displayName count="one">ዩሮ</displayName>
+				<displayName count="other">ዩሮ</displayName>
+				<symbol draft="contributed">€</symbol>
+				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>የእንግሊዝ ፓውንድ ስተርሊንግ</displayName>
@@ -3062,13 +3626,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>የሕንድ ሩፒ</displayName>
 			</currency>
 			<currency type="JPY">
-				<displayName>የጃፓን የን</displayName>
+				<displayName>የን ጃፓን</displayName>
+				<displayName count="one">የን ጃፓን</displayName>
+				<displayName count="other">የን ጃፓን</displayName>
+				<symbol draft="contributed">JPY</symbol>
+				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>የራሻ ሩብል</displayName>
 			</currency>
 			<currency type="USD">
-				<displayName>የአሜሪካን ዶላር</displayName>
+				<displayName>ዶላር ኣመሪካ</displayName>
+				<displayName count="one">ዶላር ኣመሪካ</displayName>
+				<displayName count="other">ዶላር ኣመሪካ</displayName>
+				<symbol draft="contributed">US$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="XAG">
+				<displayName>ብሩር</displayName>
+				<displayName count="one">ብሩር</displayName>
+				<displayName count="other">ብሩር</displayName>
+			</currency>
+			<currency type="XAU">
+				<displayName>ወርቂ</displayName>
+				<displayName count="one">ወርቂ</displayName>
+				<displayName count="other">ወርቂ</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName>ዘይተፈልጠ ባጤራ</displayName>
+				<displayName count="one">(ዘይተፈልጠ ባጤራ)</displayName>
+				<displayName count="other">(ዘይተፈልጠ ባጤራ)</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -3077,8 +3664,51 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<pattern type="atMost">≤{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one" draft="contributed">{0} መዓልቲ</pluralMinimalPairs>
+			<pluralMinimalPairs count="other" draft="contributed">{0} መዓልታት</pluralMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
+		<unitLength type="long">
+			<unit type="duration-century">
+				<displayName>ዘመናት</displayName>
+				<unitPattern count="one">{0} ዘመን</unitPattern>
+				<unitPattern count="other">{0} ዘመናት</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ዓሰርተታት ዓመታት</displayName>
+				<unitPattern count="one">{0} ዓሰርተ ዓመት</unitPattern>
+				<unitPattern count="other">{0} ዓሰርተታት ዓመታት</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>ዓመታት</displayName>
+			</unit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="duration-century">
+				<displayName>ዘመን</displayName>
+				<unitPattern count="one">{0} ዘመን</unitPattern>
+				<unitPattern count="other">{0} ዘመናት</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ዓሰርተ ዓመት</displayName>
+				<unitPattern count="one">{0} ዓሰ.ዓመ.</unitPattern>
+				<unitPattern count="other">{0} ዓሰ.ዓመ.</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="duration-century">
+				<displayName>ዘመን</displayName>
+				<unitPattern count="one">{0} ዘመን</unitPattern>
+				<unitPattern count="other">{0} ዘመናት</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ዓሰርተ ዓመት</displayName>
+				<unitPattern count="one">{0} ዓ.ዓ.</unitPattern>
+				<unitPattern count="other">{0} ዓ.ዓ.</unitPattern>
+			</unit>
+		</unitLength>
 		<durationUnit type="hm">
 			<durationUnitPattern>h:mm</durationUnitPattern>
 		</durationUnit>
@@ -3089,4 +3719,102 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<durationUnitPattern>m:ss</durationUnitPattern>
 		</durationUnit>
 	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="end">{0}ን {1}ን</listPatternPart>
+			<listPatternPart type="2">{0}ን {1}ን</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="end">{0} ወይ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ወይ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="end">{0}ን {1}ን</listPatternPart>
+			<listPatternPart type="2">{0}ን {1}ን</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="end">{0}ን {1}ን</listPatternPart>
+			<listPatternPart type="2">{0}ን {1}ን</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start">{0} {1}</listPatternPart>
+			<listPatternPart type="middle">{0} {1}</listPatternPart>
+			<listPatternPart type="end">{0} {1}</listPatternPart>
+			<listPatternPart type="2">{0} {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="start">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="end">{0}፣ {1}</listPatternPart>
+			<listPatternPart type="2">{0}ን {1}ን</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr>እወ:እ</yesstr>
+		</messages>
+	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — ኩሉ</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — ታሪኻዊ</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — ዝተፈላለዩ</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — ካልኦት</characterLabelPattern>
+		<characterLabel type="activities">ንጥፈታት</characterLabel>
+		<characterLabel type="animal">እንስሳታት</characterLabel>
+		<characterLabel type="animals_nature">እንስሳታትን ተፈጥሮን</characterLabel>
+		<characterLabel type="arrows">ፍላጻታት</characterLabel>
+		<characterLabel type="body">ኣካላት</characterLabel>
+		<characterLabel type="building">ህንጻታት</characterLabel>
+		<characterLabel type="digits">ኣሃዛት</characterLabel>
+		<characterLabel type="emoji">ኢሞጂታት</characterLabel>
+		<characterLabel type="female">ደቂ ኣንስትዮ</characterLabel>
+		<characterLabel type="flag">ባንዴራ</characterLabel>
+		<characterLabel type="flags">ባንዴራታት</characterLabel>
+		<characterLabel type="food_drink">መግብን መስተን</characterLabel>
+		<characterLabel type="format">ቅርጽታት</characterLabel>
+		<characterLabel type="heart">ልብታት</characterLabel>
+		<characterLabel type="male">ደቂ ተባዕትዮ</characterLabel>
+		<characterLabel type="miscellaneous">ዝተፈላለዩ</characterLabel>
+		<characterLabel type="modifier">ለወጥቲ</characterLabel>
+		<characterLabel type="nature">ተፈጥሮ</characterLabel>
+		<characterLabel type="numbers">ቁጽርታት</characterLabel>
+		<characterLabel type="objects">ነገራት</characterLabel>
+		<characterLabel type="other">ካልኦት</characterLabel>
+		<characterLabel type="person">ሰባት</characterLabel>
+		<characterLabel type="place">ቦታታት</characterLabel>
+		<characterLabel type="plant">ኣትክልቲ</characterLabel>
+		<characterLabel type="sport">ስፖርት</characterLabel>
+		<characterLabel type="symbols">ምልክታት</characterLabel>
+		<characterLabel type="travel">ጉዕዞታት</characterLabel>
+		<characterLabel type="travel_places">ጉዕዞታትን መዓርፎታትን</characterLabel>
+		<characterLabel type="weather">ኩነታት ኣየር</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<axisName type="ital">ቄናን</axisName>
+		<axisName type="slnt">ዝንባለ</axisName>
+		<axisName type="wdth">ስፍሓት</axisName>
+		<axisName type="wght">ክብደት</axisName>
+		<styleName type="ital" subtype="1">ቄናን</styleName>
+		<styleName type="opsz" subtype="8">መግለጺ ጽሑፍ</styleName>
+		<styleName type="opsz" subtype="12">ጽሑፍ</styleName>
+		<styleName type="opsz" subtype="18">ኣርእስቲ</styleName>
+		<styleName type="opsz" subtype="72">መርኣዪ</styleName>
+		<styleName type="wdth" subtype="100">ልሙድ</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">ሰፊሕ</styleName>
+		<styleName type="wght" subtype="100">ቀጢን</styleName>
+		<styleName type="wght" subtype="300">ፈኲስ</styleName>
+		<styleName type="wght" subtype="380">መጽሓፍ</styleName>
+		<styleName type="wght" subtype="400">ስሩዕ</styleName>
+		<styleName type="wght" subtype="500">ማእከላይ</styleName>
+		<styleName type="wght" subtype="700">ዓጺቕ</styleName>
+		<styleName type="wght" subtype="900">ጸሊም</styleName>
+	</typographicNames>
 </ldml>

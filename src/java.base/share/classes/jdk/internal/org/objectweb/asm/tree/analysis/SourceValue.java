@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.tree.analysis;
 
 import java.util.Set;
@@ -96,7 +97,7 @@ public class SourceValue implements Value {
       *     short, int, float, object and array types, and 2 for long and double.
       */
     public SourceValue(final int size) {
-        this(size, new SmallSet<AbstractInsnNode>());
+        this(size, new SmallSet<>());
     }
 
     /**
@@ -148,3 +149,4 @@ public class SourceValue implements Value {
         return insns.hashCode();
     }
 }
+

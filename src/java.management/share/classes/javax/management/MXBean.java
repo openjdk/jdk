@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -929,7 +929,7 @@ public interface ModuleMXBean {
       <li><p>Otherwise, if <em>J</em> has at least one public
         constructor with either {@link javax.management.ConstructorParameters
         &#64;javax.management.ConstructorParameters} or
-        {@code @java.beans.ConstructoProperties} annotation, then one of those
+        {@code @java.beans.ConstructorProperties} annotation, then one of those
         constructors (not necessarily always the same one) will be called to
         reconstruct an instance of <em>J</em>.
         If a constructor is annotated with both

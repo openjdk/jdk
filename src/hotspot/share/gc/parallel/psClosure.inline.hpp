@@ -60,9 +60,12 @@ private:
   PSPromotionManager* _promotion_manager;
 
   template <class T> void do_oop_work(T *p) {
-    if (PSScavenge::should_scavenge(p)) {
-      // We never card mark roots, maybe call a func without test?
-      _promotion_manager->copy_and_push_safe_barrier<promote_immediately>(p);
+    assert(!ParallelScavengeHeap::heap()->is_in_reserved(p), "roots should be outside of heap");
+    oop o = RawAccess<>::oop_load(p);
+    if (PSScavenge::is_obj_in_young(o)) {
+      assert(!PSScavenge::is_obj_in_to_space(o), "Revisiting roots?");
+      oop new_obj = _promotion_manager->copy_to_survivor_space<promote_immediately>(o);
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }
   }
 public:

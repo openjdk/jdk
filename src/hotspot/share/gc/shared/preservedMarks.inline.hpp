@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,20 +35,17 @@ inline bool PreservedMarks::should_preserve_mark(oop obj, markWord m) const {
   return obj->mark_must_be_preserved(m);
 }
 
-inline void PreservedMarks::push(oop obj, markWord m) {
-  assert(should_preserve_mark(obj, m), "pre-condition");
-  OopAndMarkWord elem(obj, m);
-  _stack.push(elem);
-}
-
 inline void PreservedMarks::push_if_necessary(oop obj, markWord m) {
   if (should_preserve_mark(obj, m)) {
-    push(obj, m);
+    OopAndMarkWord elem(obj, m);
+    _stack.push(elem);
   }
 }
 
-inline void PreservedMarks::init_forwarded_mark(oop obj) {
-  obj->init_mark();
+inline void PreservedMarks::push_always(oop obj, markWord m) {
+  assert(!m.is_marked(), "precondition");
+  OopAndMarkWord elem(obj, m);
+  _stack.push(elem);
 }
 
 inline PreservedMarks::PreservedMarks()

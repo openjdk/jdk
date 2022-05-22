@@ -106,7 +106,7 @@ class JdepsTask {
         }
     }
 
-    static abstract class Option {
+    abstract static class Option {
         Option(boolean hasArg, String... aliases) {
             this.hasArg = hasArg;
             this.aliases = aliases;
@@ -139,7 +139,7 @@ class JdepsTask {
         final String[] aliases;
     }
 
-    static abstract class HiddenOption extends Option {
+    abstract static class HiddenOption extends Option {
         HiddenOption(boolean hasArg, String... aliases) {
             super(hasArg, aliases);
         }

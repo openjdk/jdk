@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -471,7 +471,7 @@ void Bytecodes::initialize() {
   def(_new                 , "new"                 , "bkk"  , NULL    , T_OBJECT ,  1, true );
   def(_newarray            , "newarray"            , "bc"   , NULL    , T_OBJECT ,  0, true );
   def(_anewarray           , "anewarray"           , "bkk"  , NULL    , T_OBJECT ,  0, true );
-  def(_arraylength         , "arraylength"         , "b"    , NULL    , T_VOID   ,  0, true );
+  def(_arraylength         , "arraylength"         , "b"    , NULL    , T_INT    ,  0, true );
   def(_athrow              , "athrow"              , "b"    , NULL    , T_VOID   , -1, true );
   def(_checkcast           , "checkcast"           , "bkk"  , NULL    , T_OBJECT ,  0, true );
   def(_instanceof          , "instanceof"          , "bkk"  , NULL    , T_INT    ,  0, true );

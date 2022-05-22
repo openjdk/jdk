@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1611,7 +1611,7 @@ import javax.swing.text.*;
          *
          * @param axis may be either View.X_AXIS or View.Y_AXIS
          * @return the resize weight
-         * @exception IllegalArgumentException for an invalid axis
+         * @throws IllegalArgumentException for an invalid axis
          */
         public int getResizeWeight(int axis) {
             return 1;
@@ -1691,7 +1691,7 @@ import javax.swing.text.*;
      * Default view of an html table cell.  This needs to be moved
      * somewhere else.
      */
-    class CellView extends BlockView {
+    static class CellView extends BlockView {
 
         /**
          * Constructs a TableCell for the given element.

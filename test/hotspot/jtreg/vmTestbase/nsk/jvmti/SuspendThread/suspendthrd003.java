@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,9 @@ public class suspendthrd003 extends DebugeeClass {
         int res = -1;
         long start_time = System.currentTimeMillis();
         while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
+            // Start each loop with a clear log buffer so we only
+            // track the run that can potentially fail:
+            log.clearLogBuffer();
             count++;
 
             // Original suspendthrd001 test block starts here:

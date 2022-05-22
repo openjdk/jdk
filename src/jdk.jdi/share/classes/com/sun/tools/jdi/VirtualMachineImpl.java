@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ class VirtualMachineImpl extends MirrorImpl
     // "objectsByID" protected by "synchronized(this)".
     private final Map<Long, SoftObjectReference> objectsByID = new HashMap<>();
     private final ReferenceQueue<ObjectReferenceImpl> referenceQueue = new ReferenceQueue<>();
-    static private final int DISPOSE_THRESHOLD = 50;
+    private static final int DISPOSE_THRESHOLD = 50;
     private final List<SoftObjectReference> batchedDisposeRequests =
             Collections.synchronizedList(new ArrayList<>(DISPOSE_THRESHOLD + 10));
 
@@ -832,6 +832,10 @@ class VirtualMachineImpl extends MirrorImpl
         return versionInfo().jdwpMajor >= 9;
     }
 
+    boolean mayCreateVirtualThreads() {
+        return versionInfo().jdwpMajor >= 19;
+    }
+
     public void setDebugTraceMode(int traceFlags) {
         validateVM();
         this.traceFlags = traceFlags;
@@ -1320,7 +1324,7 @@ class VirtualMachineImpl extends MirrorImpl
             int size = batchedDisposeRequests.size();
             if (size >= DISPOSE_THRESHOLD) {
                 if ((traceFlags & TRACE_OBJREFS) != 0) {
-                    printTrace("Dispose threashold reached. Will dispose "
+                    printTrace("Dispose threshold reached. Will dispose "
                                + size + " object references...");
                 }
                 requests = new JDWP.VirtualMachine.DisposeObjects.Request[size];
@@ -1548,7 +1552,7 @@ class VirtualMachineImpl extends MirrorImpl
         return threadGroupForJDI;
     }
 
-   static private class SoftObjectReference extends SoftReference<ObjectReferenceImpl> {
+   private static class SoftObjectReference extends SoftReference<ObjectReferenceImpl> {
        int count;
        Long key;
 

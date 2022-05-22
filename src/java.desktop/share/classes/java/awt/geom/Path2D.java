@@ -70,7 +70,9 @@ import sun.awt.geom.Curve;
  * @author Jim Graham
  * @since 1.6
  */
-public abstract class Path2D implements Shape, Cloneable {
+public abstract sealed class Path2D implements Shape, Cloneable
+    permits Path2D.Double,
+            Path2D.Float   {
     /**
      * An even-odd winding rule for determining the interior of
      * a path.
@@ -191,7 +193,7 @@ public abstract class Path2D implements Shape, Cloneable {
      *
      * @since 1.6
      */
-    public static class Float extends Path2D implements Serializable {
+    public static non-sealed class Float extends Path2D implements Serializable {
         transient float[] floatCoords;
 
         /**
@@ -826,7 +828,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * Creates a new object of the same class as this object.
          *
          * @return     a clone of this instance.
-         * @exception  OutOfMemoryError    if there is not enough memory.
+         * @throws  OutOfMemoryError    if there is not enough memory.
          * @see        java.lang.Cloneable
          * @since      1.6
          */
@@ -1077,7 +1079,7 @@ public abstract class Path2D implements Shape, Cloneable {
      *
      * @since 1.6
      */
-    public static class Double extends Path2D implements Serializable {
+    public static non-sealed class Double extends Path2D implements Serializable {
         transient double[] doubleCoords;
 
         /**
@@ -1606,7 +1608,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * Creates a new object of the same class as this object.
          *
          * @return     a clone of this instance.
-         * @exception  OutOfMemoryError    if there is not enough memory.
+         * @throws  OutOfMemoryError    if there is not enough memory.
          * @see        java.lang.Cloneable
          * @since      1.6
          */
@@ -1986,7 +1988,7 @@ public abstract class Path2D implements Shape, Cloneable {
      *
      * @param rule an integer representing the specified
      *             winding rule
-     * @exception IllegalArgumentException if
+     * @throws IllegalArgumentException if
      *          {@code rule} is not either
      *          {@link #WIND_EVEN_ODD} or
      *          {@link #WIND_NON_ZERO}
@@ -2585,7 +2587,7 @@ public abstract class Path2D implements Shape, Cloneable {
      * Creates a new object of the same class as this object.
      *
      * @return     a clone of this instance.
-     * @exception  OutOfMemoryError            if there is not enough memory.
+     * @throws  OutOfMemoryError            if there is not enough memory.
      * @see        java.lang.Cloneable
      * @since      1.6
      */

@@ -54,7 +54,7 @@ public class RegularHiddenClass extends DynamicArchiveTestBase {
 
         dump(topArchiveName,
             "-Xlog:class+load=debug,cds+dynamic,cds=debug",
-            "-cp", appJar, mainClass)
+            "-cp", appJar, mainClass, "keep-alive")
             .assertNormalExit(output -> {
                 output.shouldMatch("cds.*Skipping.TestClass.0x.*Hidden.class")
                       .shouldNotMatch("cds.dynamic.*Archiving.hidden.TestClass.*")

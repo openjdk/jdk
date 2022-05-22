@@ -81,7 +81,7 @@ public class BeanContextMembershipEvent extends BeanContextEvent {
      *
      * @param bc        The BeanContext source
      * @param changes   The Children effected
-     * @exception       NullPointerException if changes associated with this
+     * @throws       NullPointerException if changes associated with this
      *                  event are null.
      */
 

@@ -1062,8 +1062,7 @@ class PSParallelCompact : AllStatic {
   static void post_compact();
 
   // Mark live objects
-  static void marking_phase(ParCompactionManager* cm,
-                            ParallelOldTracer *gc_tracer);
+  static void marking_phase(ParallelOldTracer *gc_tracer);
 
   // Compute the dense prefix for the designated space.  This is an experimental
   // implementation currently not used in production.
@@ -1123,7 +1122,7 @@ class PSParallelCompact : AllStatic {
 
   static void summarize_spaces_quick();
   static void summarize_space(SpaceId id, bool maximum_compaction);
-  static void summary_phase(ParCompactionManager* cm, bool maximum_compaction);
+  static void summary_phase(bool maximum_compaction);
 
   // Adjust addresses in roots.  Does not adjust addresses in heap.
   static void adjust_roots();

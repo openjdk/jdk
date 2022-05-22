@@ -143,7 +143,7 @@ public class BytePackedRaster extends SunWritableRaster {
      * @param origin          The Point that specifies the origin.
      * @param parent          The parent (if any) of this raster.
      *
-     * @exception RasterFormatException if the parameters do not conform
+     * @throws RasterFormatException if the parameters do not conform
      * to requirements of this Raster type.
      */
     public BytePackedRaster(SampleModel sampleModel,
@@ -1258,7 +1258,7 @@ public class BytePackedRaster extends SunWritableRaster {
      * @param x0              Translated X origin of the subraster.
      * @param y0              Translated Y origin of the subraster.
      * @param bandList        Array of band indices.
-     * @exception RasterFormatException
+     * @throws RasterFormatException
      *            if the specified bounding box is outside of the parent raster.
      */
     public Raster createChild(int x, int y,
@@ -1286,7 +1286,7 @@ public class BytePackedRaster extends SunWritableRaster {
      * @param x0              Translated X origin of the subraster.
      * @param y0              Translated Y origin of the subraster.
      * @param bandList        Array of band indices.
-     * @exception RasterFormatException
+     * @throws RasterFormatException
      *            if the specified bounding box is outside of the parent Raster.
      */
     public WritableRaster createWritableChild(int x, int y,

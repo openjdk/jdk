@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ public class ExpressionParser implements ExpressionParserConstants {
 /*
  * Type, name and expression syntax follows.
  */
-  final public void Type() throws ParseException {
+  public final void Type() throws ParseException {
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case BOOLEAN:
     case BYTE:
@@ -152,7 +152,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void PrimitiveType() throws ParseException {
+  public final void PrimitiveType() throws ParseException {
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case BOOLEAN:
       jj_consume_token(BOOLEAN);
@@ -185,7 +185,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public String Name() throws ParseException {
+  public final String Name() throws ParseException {
     StringBuilder sb = new StringBuilder();
     jj_consume_token(IDENTIFIER);
                  sb.append(token);
@@ -204,7 +204,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     throw new Error("Missing return statement in function");
   }
 
-  final public void NameList() throws ParseException {
+  public final void NameList() throws ParseException {
     Name();
     label_3:
     while (true) {
@@ -224,7 +224,7 @@ public class ExpressionParser implements ExpressionParserConstants {
 /*
  * Expression syntax follows.
  */
-  final public void Expression() throws ParseException {
+  public final void Expression() throws ParseException {
     if (jj_2_2(2147483647)) {
       Assignment();
     } else {
@@ -257,14 +257,14 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void Assignment() throws ParseException {
+  public final void Assignment() throws ParseException {
     PrimaryExpression();
     AssignmentOperator();
     Expression();
           LValue exprVal = pop(); pop().setValue(exprVal); push(exprVal);
   }
 
-  final public void AssignmentOperator() throws ParseException {
+  public final void AssignmentOperator() throws ParseException {
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case ASSIGN:
       jj_consume_token(ASSIGN);
@@ -309,7 +309,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void ConditionalExpression() throws ParseException {
+  public final void ConditionalExpression() throws ParseException {
     ConditionalOrExpression();
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case HOOK:
@@ -332,7 +332,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void ConditionalOrExpression() throws ParseException {
+  public final void ConditionalOrExpression() throws ParseException {
     ConditionalAndExpression();
     label_4:
     while (true) {
@@ -350,7 +350,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void ConditionalAndExpression() throws ParseException {
+  public final void ConditionalAndExpression() throws ParseException {
     InclusiveOrExpression();
     label_5:
     while (true) {
@@ -368,7 +368,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void InclusiveOrExpression() throws ParseException {
+  public final void InclusiveOrExpression() throws ParseException {
     ExclusiveOrExpression();
     label_6:
     while (true) {
@@ -386,7 +386,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void ExclusiveOrExpression() throws ParseException {
+  public final void ExclusiveOrExpression() throws ParseException {
     AndExpression();
     label_7:
     while (true) {
@@ -404,7 +404,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void AndExpression() throws ParseException {
+  public final void AndExpression() throws ParseException {
     EqualityExpression();
     label_8:
     while (true) {
@@ -422,7 +422,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void EqualityExpression() throws ParseException {
+  public final void EqualityExpression() throws ParseException {
  Token tok;
     InstanceOfExpression();
     label_9:
@@ -454,7 +454,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void InstanceOfExpression() throws ParseException {
+  public final void InstanceOfExpression() throws ParseException {
     RelationalExpression();
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case INSTANCEOF:
@@ -468,7 +468,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void RelationalExpression() throws ParseException {
+  public final void RelationalExpression() throws ParseException {
  Token tok;
     ShiftExpression();
     label_10:
@@ -508,7 +508,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void ShiftExpression() throws ParseException {
+  public final void ShiftExpression() throws ParseException {
     AdditiveExpression();
     label_11:
     while (true) {
@@ -542,7 +542,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void AdditiveExpression() throws ParseException {
+  public final void AdditiveExpression() throws ParseException {
  Token tok;
     MultiplicativeExpression();
     label_12:
@@ -574,7 +574,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void MultiplicativeExpression() throws ParseException {
+  public final void MultiplicativeExpression() throws ParseException {
  Token tok;
     UnaryExpression();
     label_13:
@@ -610,7 +610,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void UnaryExpression() throws ParseException {
+  public final void UnaryExpression() throws ParseException {
  Token tok;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case PLUS:
@@ -659,19 +659,19 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void PreIncrementExpression() throws ParseException {
+  public final void PreIncrementExpression() throws ParseException {
     jj_consume_token(INCR);
     PrimaryExpression();
                           {if (true) throw new ParseException("operation not yet supported");}
   }
 
-  final public void PreDecrementExpression() throws ParseException {
+  public final void PreDecrementExpression() throws ParseException {
     jj_consume_token(DECR);
     PrimaryExpression();
                           {if (true) throw new ParseException("operation not yet supported");}
   }
 
-  final public void UnaryExpressionNotPlusMinus() throws ParseException {
+  public final void UnaryExpressionNotPlusMinus() throws ParseException {
  Token tok;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case BANG:
@@ -723,7 +723,7 @@ public class ExpressionParser implements ExpressionParserConstants {
 // This production is to determine lookahead only.  The LOOKAHEAD specifications
 // below are not used, but they are there just to indicate that we know about
 // this.
-  final public void CastLookahead() throws ParseException {
+  public final void CastLookahead() throws ParseException {
     if (jj_2_4(2)) {
       jj_consume_token(LPAREN);
       PrimitiveType();
@@ -783,7 +783,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void PostfixExpression() throws ParseException {
+  public final void PostfixExpression() throws ParseException {
     PrimaryExpression();
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case INCR:
@@ -808,7 +808,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void CastExpression() throws ParseException {
+  public final void CastExpression() throws ParseException {
     if (jj_2_6(2)) {
       jj_consume_token(LPAREN);
       PrimitiveType();
@@ -856,7 +856,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void PrimaryExpression() throws ParseException {
+  public final void PrimaryExpression() throws ParseException {
     PrimaryPrefix();
     label_16:
     while (true) {
@@ -874,7 +874,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void PrimaryPrefix() throws ParseException {
+  public final void PrimaryPrefix() throws ParseException {
  String name;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case FALSE:
@@ -915,7 +915,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void PrimarySuffix() throws ParseException {
+  public final void PrimarySuffix() throws ParseException {
  List<Value> argList;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case LBRACKET:
@@ -941,7 +941,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void Literal() throws ParseException {
+  public final void Literal() throws ParseException {
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case INTEGER_LITERAL:
       jj_consume_token(INTEGER_LITERAL);
@@ -975,7 +975,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void BooleanLiteral() throws ParseException {
+  public final void BooleanLiteral() throws ParseException {
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case TRUE:
       jj_consume_token(TRUE);
@@ -990,11 +990,11 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void NullLiteral() throws ParseException {
+  public final void NullLiteral() throws ParseException {
     jj_consume_token(NULL);
   }
 
-  final public List<Value> Arguments() throws ParseException {
+  public final List<Value> Arguments() throws ParseException {
  List<Value> argList = new ArrayList<>();
     jj_consume_token(LPAREN);
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -1027,7 +1027,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     throw new Error("Missing return statement in function");
   }
 
-  final public void ArgumentList(List<Value> argList) throws ParseException {
+  public final void ArgumentList(List<Value> argList) throws ParseException {
     Expression();
                 argList.add(pop().interiorGetValue());
     label_17:
@@ -1046,7 +1046,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     }
   }
 
-  final public void AllocationExpression() throws ParseException {
+  public final void AllocationExpression() throws ParseException {
  List<Value> argList; String className;
     if (jj_2_7(2)) {
       jj_consume_token(NEW);
@@ -1084,7 +1084,7 @@ public class ExpressionParser implements ExpressionParserConstants {
  * The second LOOKAHEAD specification below is to parse to PrimarySuffix
  * if there is an expression between the "[...]".
  */
-  final public void ArrayDimensions() throws ParseException {
+  public final void ArrayDimensions() throws ParseException {
     label_18:
     while (true) {
       jj_consume_token(LBRACKET);
@@ -2050,11 +2050,11 @@ public class ExpressionParser implements ExpressionParserConstants {
   private Token jj_scanpos, jj_lastpos;
   private int jj_la;
   private int jj_gen;
-  final private int[] jj_la1 = new int[44];
-  static private int[] jj_la1_0;
-  static private int[] jj_la1_1;
-  static private int[] jj_la1_2;
-  static private int[] jj_la1_3;
+  private final int[] jj_la1 = new int[44];
+  private static int[] jj_la1_0;
+  private static int[] jj_la1_1;
+  private static int[] jj_la1_2;
+  private static int[] jj_la1_3;
   static {
       jj_la1_init_0();
       jj_la1_init_1();
@@ -2073,7 +2073,7 @@ public class ExpressionParser implements ExpressionParserConstants {
    private static void jj_la1_init_3() {
       jj_la1_3 = new int[] {0x0,0x0,0x0,0x0,0x0,0xffe00,0x0,0x0,0x0,0x8,0x10,0x4,0x0,0x0,0x0,0x0,0x0,0x1c0,0x1c0,0x0,0x0,0x23,0x23,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,};
    }
-  final private JJCalls[] jj_2_rtns = new JJCalls[9];
+  private final JJCalls[] jj_2_rtns = new JJCalls[9];
   private boolean jj_rescan = false;
   private int jj_gc = 0;
 
@@ -2174,8 +2174,8 @@ public class ExpressionParser implements ExpressionParserConstants {
   }
 
   @SuppressWarnings("serial") // JDK implementation class
-  static private final class LookaheadSuccess extends java.lang.Error { }
-  final private LookaheadSuccess jj_ls = new LookaheadSuccess();
+  private static final class LookaheadSuccess extends java.lang.Error { }
+  private final LookaheadSuccess jj_ls = new LookaheadSuccess();
   private boolean jj_scan_token(int kind) {
     if (jj_scanpos == jj_lastpos) {
       jj_la--;
@@ -2199,7 +2199,7 @@ public class ExpressionParser implements ExpressionParserConstants {
 
 
 /** Get the next Token. */
-  final public Token getNextToken() {
+  public final Token getNextToken() {
     if (token.next != null) token = token.next;
     else token = token.next = token_source.getNextToken();
     jj_ntk = -1;
@@ -2208,7 +2208,7 @@ public class ExpressionParser implements ExpressionParserConstants {
   }
 
 /** Get the specific Token. */
-  final public Token getToken(int index) {
+  public final Token getToken(int index) {
     Token t = token;
     for (int i = 0; i < index; i++) {
       if (t.next != null) t = t.next;
@@ -2299,11 +2299,11 @@ public class ExpressionParser implements ExpressionParserConstants {
   }
 
   /** Enable tracing. */
-  final public void enable_tracing() {
+  public final void enable_tracing() {
   }
 
   /** Disable tracing. */
-  final public void disable_tracing() {
+  public final void disable_tracing() {
   }
 
   private void jj_rescan_token() {

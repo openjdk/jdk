@@ -186,7 +186,7 @@ VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg, JVMCI_TRAPS) {
   if (jvmci_reg < RegisterImpl::number_of_registers) {
     return as_Register(jvmci_reg)->as_VMReg();
   } else {
-    jint floatRegisterNumber = jvmci_reg - RegisterImpl::number_of_registers_for_jvmci;
+    jint floatRegisterNumber = jvmci_reg - RegisterImpl::number_of_declared_registers;
     if (floatRegisterNumber >= 0 && floatRegisterNumber < FloatRegisterImpl::number_of_registers) {
       return as_FloatRegister(floatRegisterNumber)->as_VMReg();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1144,7 +1144,7 @@ FixedSizeCodeBlock::~FixedSizeCodeBlock() {
 
 
 // Serializes memory. Potentially blows flags and reg.
-// tmp is a scratch for v6 co-processor write op (could be noreg for other architecure versions)
+// tmp is a scratch for v6 co-processor write op (could be noreg for other architecture versions)
 // preserve_flags takes a longer path in LoadStore case (dmb rather then control dependency) to preserve status flags. Optional.
 // load_tgt is an ordered load target in a LoadStore case only, to create dependency between the load operation and conditional branch. Optional.
 void MacroAssembler::membar(Membar_mask_bits order_constraint,
@@ -1254,7 +1254,7 @@ void MacroAssembler::cas_for_lock_release(Register oldval, Register newval,
 #ifndef PRODUCT
 
 // Preserves flags and all registers.
-// On SMP the updated value might not be visible to external observers without a sychronization barrier
+// On SMP the updated value might not be visible to external observers without a synchronization barrier
 void MacroAssembler::cond_atomic_inc32(AsmCondition cond, int* counter_addr) {
   if (counter_addr != NULL) {
     InlinedAddress counter_addr_literal((address)counter_addr);

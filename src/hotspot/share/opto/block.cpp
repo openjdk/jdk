@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -905,16 +905,13 @@ void PhaseCFG::fixup_flow() {
       // to succs[0], so we want the fall-thru case as the next block in
       // succs[1].
       if (bnext == bs0) {
-        // Fall-thru case in succs[0], so flip targets in succs map
+        // Fall-thru case in succs[0], should be in succs[1], so flip targets in _succs map
         Block* tbs0 = block->_succs[0];
         Block* tbs1 = block->_succs[1];
         block->_succs.map(0, tbs1);
         block->_succs.map(1, tbs0);
         // Flip projection for each target
-        ProjNode* tmp = proj0;
-        proj0 = proj1;
-        proj1 = tmp;
-
+        swap(proj0, proj1);
       } else if(bnext != bs1) {
         // Need a double-branch
         // The existing conditional branch need not change.
@@ -1086,7 +1083,7 @@ void PhaseCFG::postalloc_expand(PhaseRegAlloc* _ra) {
         // Collect succs of old node in remove (for projections) and in succs (for
         // all other nodes) do _not_ collect projections in remove (but in succs)
         // in case the node is a call. We need the projections for calls as they are
-        // associated with registes (i.e. they are defs).
+        // associated with registers (i.e. they are defs).
         succs.clear();
         for (DUIterator k = n->outs(); n->has_out(k); k++) {
           if (n->out(k)->is_Proj() && !n->is_MachCall() && !n->is_MachBranch()) {
@@ -1648,8 +1645,7 @@ void PhaseBlockLayout::merge_traces(bool fall_thru_only) {
   }
 }
 
-// Order the sequence of the traces in some desirable way, and fixup the
-// jumps at the end of each block.
+// Order the sequence of the traces in some desirable way
 void PhaseBlockLayout::reorder_traces(int count) {
   ResourceArea *area = Thread::current()->resource_area();
   Trace ** new_traces = NEW_ARENA_ARRAY(area, Trace *, count);
@@ -1671,12 +1667,15 @@ void PhaseBlockLayout::reorder_traces(int count) {
   // Sort the new trace list by frequency
   qsort(new_traces + 1, new_count - 1, sizeof(new_traces[0]), trace_frequency_order);
 
-  // Patch up the successor blocks
+  // Collect all blocks from existing Traces
   _cfg.clear_blocks();
   for (int i = 0; i < new_count; i++) {
     Trace *tr = new_traces[i];
     if (tr != NULL) {
-      tr->fixup_blocks(_cfg);
+      // push blocks onto the CFG list
+      for (Block* b = tr->first_block(); b != NULL; b = tr->next(b)) {
+        _cfg.add_block(b);
+      }
     }
   }
 }
@@ -1781,41 +1780,4 @@ bool Trace::backedge(CFGEdge *e) {
   }
 
   return loop_rotated;
-}
-
-// push blocks onto the CFG list
-// ensure that blocks have the correct two-way branch sense
-void Trace::fixup_blocks(PhaseCFG &cfg) {
-  Block *last = last_block();
-  for (Block *b = first_block(); b != NULL; b = next(b)) {
-    cfg.add_block(b);
-    if (!b->is_connector()) {
-      int nfallthru = b->num_fall_throughs();
-      if (b != last) {
-        if (nfallthru == 2) {
-          // Ensure that the sense of the branch is correct
-          Block *bnext = next(b);
-          Block *bs0 = b->non_connector_successor(0);
-
-          MachNode *iff = b->get_node(b->number_of_nodes() - 3)->as_Mach();
-          ProjNode *proj0 = b->get_node(b->number_of_nodes() - 2)->as_Proj();
-          ProjNode *proj1 = b->get_node(b->number_of_nodes() - 1)->as_Proj();
-
-          if (bnext == bs0) {
-            // Fall-thru case in succs[0], should be in succs[1]
-
-            // Flip targets in _succs map
-            Block *tbs0 = b->_succs[0];
-            Block *tbs1 = b->_succs[1];
-            b->_succs.map( 0, tbs1 );
-            b->_succs.map( 1, tbs0 );
-
-            // Flip projections to match targets
-            b->map_node(proj1, b->number_of_nodes() - 2);
-            b->map_node(proj0, b->number_of_nodes() - 1);
-          }
-        }
-      }
-    }
-  }
 }

@@ -77,7 +77,7 @@ public class StackMapTable_attribute extends Attribute {
     public final int number_of_entries;
     public final stack_map_frame entries[];
 
-    public static abstract class stack_map_frame {
+    public abstract static class stack_map_frame {
         static stack_map_frame read(ClassReader cr)
                 throws IOException, InvalidStackMap {
             int frame_type = cr.readUnsignedByte();

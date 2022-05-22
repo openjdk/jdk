@@ -49,6 +49,7 @@ public:
   // sentinel value used to trigger backtracking in compile_method().
   static const char* retry_no_subsuming_loads();
   static const char* retry_no_escape_analysis();
+  static const char* retry_no_iterative_escape_analysis();
   static const char* retry_no_locks_coarsening();
   static const char* retry_class_loading_during_parsing();
 

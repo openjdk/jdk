@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,19 @@
 
 /*
  * @test
+ * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestVarArgs
  */
 
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SymbolLookup;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.Addressable;
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.ValueLayout;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -45,43 +46,40 @@ import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
 
-import static jdk.incubator.foreign.CLinker.*;
-import static jdk.incubator.foreign.MemoryLayout.PathElement.*;
+import static java.lang.foreign.MemoryLayout.PathElement.*;
 import static org.testng.Assert.assertEquals;
 
-public class TestVarArgs {
+public class TestVarArgs extends NativeTestHelper {
 
     static final MemoryLayout ML_CallInfo = MemoryLayout.structLayout(
             C_POINTER.withName("writeback"), // writeback
             C_POINTER.withName("argIDs")); // arg ids
 
-    static final VarHandle VH_CallInfo_writeback = ML_CallInfo.varHandle(long.class, groupElement("writeback"));
-    static final VarHandle VH_CallInfo_argIDs = ML_CallInfo.varHandle(long.class, groupElement("argIDs"));
+    static final VarHandle VH_CallInfo_writeback = ML_CallInfo.varHandle(groupElement("writeback"));
+    static final VarHandle VH_CallInfo_argIDs = ML_CallInfo.varHandle(groupElement("argIDs"));
 
-    static final VarHandle VH_IntArray = MemoryLayout.sequenceLayout(C_INT).varHandle(int.class, sequenceElement());
+    static final VarHandle VH_IntArray = C_INT.arrayElementVarHandle();
 
-    static final CLinker abi = CLinker.getInstance();
+    static final Linker abi = Linker.nativeLinker();
     static {
         System.loadLibrary("VarArgs");
     }
 
-    static final MemoryAddress VARARGS_ADDR =
-            SymbolLookup.loaderLookup()
-                    .lookup("varargs").get();
+    static final Addressable VARARGS_ADDR = findNativeOrThrow("varargs");
 
     static final int WRITEBACK_BYTES_PER_ARG = 8;
 
     @Test(dataProvider = "args")
     public void testVarArgs(List<VarArg> args) throws Throwable {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment writeBack = MemorySegment.allocateNative(args.size() * WRITEBACK_BYTES_PER_ARG, WRITEBACK_BYTES_PER_ARG, scope);
-            MemorySegment callInfo = MemorySegment.allocateNative(ML_CallInfo, scope);
-            MemorySegment argIDs = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(args.size(), C_INT), scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment writeBack = MemorySegment.allocateNative(args.size() * WRITEBACK_BYTES_PER_ARG, WRITEBACK_BYTES_PER_ARG, session);
+            MemorySegment callInfo = MemorySegment.allocateNative(ML_CallInfo, session);
+            MemorySegment argIDs = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(args.size(), C_INT), session);
 
             MemoryAddress callInfoPtr = callInfo.address();
 
-            VH_CallInfo_writeback.set(callInfo, writeBack.address().toRawLongValue());
-            VH_CallInfo_argIDs.set(callInfo, argIDs.address().toRawLongValue());
+            VH_CallInfo_writeback.set(callInfo, writeBack.address());
+            VH_CallInfo_argIDs.set(callInfo, argIDs.address());
 
             for (int i = 0; i < args.size(); i++) {
                 VH_IntArray.set(argIDs, (long) i, args.get(i).id.ordinal());
@@ -90,9 +88,9 @@ public class TestVarArgs {
             List<MemoryLayout> argLayouts = new ArrayList<>();
             argLayouts.add(C_POINTER); // call info
             argLayouts.add(C_INT); // size
-            args.forEach(a -> argLayouts.add(asVarArg(a.layout)));
 
-            FunctionDescriptor desc = FunctionDescriptor.ofVoid(argLayouts.toArray(MemoryLayout[]::new));
+            FunctionDescriptor desc = FunctionDescriptor.ofVoid(argLayouts.stream().toArray(MemoryLayout[]::new))
+                    .asVariadic(args.stream().map(a -> a.layout).toArray(MemoryLayout[]::new));
 
             List<Class<?>> carriers = new ArrayList<>();
             carriers.add(MemoryAddress.class); // call info
@@ -101,7 +99,7 @@ public class TestVarArgs {
 
             MethodType mt = MethodType.methodType(void.class, carriers);
 
-            MethodHandle downcallHandle = abi.downcallHandle(VARARGS_ADDR, mt, desc);
+            MethodHandle downcallHandle = abi.downcallHandle(VARARGS_ADDR, desc);
 
             List<Object> argValues = new ArrayList<>();
             argValues.add(callInfoPtr); // call info
@@ -140,7 +138,7 @@ public class TestVarArgs {
             this.value = value;
             this.layout = layout;
             this.carrier = carrier;
-            this.vh = layout.varHandle(carrier);
+            this.vh = layout.varHandle();
         }
 
         static VarArg intArg(int value) {

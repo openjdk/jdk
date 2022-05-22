@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -493,7 +493,7 @@ public interface DataInput {
      * is encountered, it is discarded and reading
      * ceases. If the character {@code '\r'}
      * is encountered, it is discarded and, if
-     * the following byte converts &#32;to the
+     * the following byte converts to the
      * character {@code '\n'}, then that is
      * discarded also; reading then ceases. If
      * end of file is encountered before either

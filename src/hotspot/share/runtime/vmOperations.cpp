@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,6 +279,18 @@ void VM_ThreadDump::doit() {
     concurrent_locks.dump_at_safepoint();
   }
 
+  ObjectMonitorsHashtable table;
+  ObjectMonitorsHashtable* tablep = nullptr;
+  if (_with_locked_monitors) {
+    // The caller wants locked monitor information and that's expensive to gather
+    // when there are a lot of inflated monitors. So we deflate idle monitors and
+    // gather information about owned monitors at the same time.
+    tablep = &table;
+    while (ObjectSynchronizer::deflate_idle_monitors(tablep) >= (size_t)MonitorDeflationMax) {
+      ; /* empty */
+    }
+  }
+
   if (_num_threads == 0) {
     // Snapshot all live threads
 
@@ -293,7 +305,7 @@ void VM_ThreadDump::doit() {
       if (_with_locked_synchronizers) {
         tcl = concurrent_locks.thread_concurrent_locks(jt);
       }
-      snapshot_thread(jt, tcl);
+      snapshot_thread(jt, tcl, tablep);
     }
   } else {
     // Snapshot threads in the given _threads array
@@ -328,14 +340,15 @@ void VM_ThreadDump::doit() {
       if (_with_locked_synchronizers) {
         tcl = concurrent_locks.thread_concurrent_locks(jt);
       }
-      snapshot_thread(jt, tcl);
+      snapshot_thread(jt, tcl, tablep);
     }
   }
 }
 
-void VM_ThreadDump::snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl) {
+void VM_ThreadDump::snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl,
+                                    ObjectMonitorsHashtable* table) {
   ThreadSnapshot* snapshot = _result->add_thread_snapshot(java_thread);
-  snapshot->dump_stack_at_safepoint(_max_depth, _with_locked_monitors);
+  snapshot->dump_stack_at_safepoint(_max_depth, _with_locked_monitors, table, false);
   snapshot->set_concurrent_locks(tcl);
 }
 

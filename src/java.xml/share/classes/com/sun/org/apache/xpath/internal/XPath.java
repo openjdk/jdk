@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,6 +22,7 @@ package com.sun.org.apache.xpath.internal;
 
 import com.sun.org.apache.xalan.internal.res.XSLMessages;
 import com.sun.org.apache.xml.internal.dtm.DTM;
+import com.sun.org.apache.xml.internal.utils.DefaultErrorHandler;
 import com.sun.org.apache.xml.internal.utils.PrefixResolver;
 import com.sun.org.apache.xml.internal.utils.QName;
 import com.sun.org.apache.xml.internal.utils.SAXSourceLocator;
@@ -35,12 +36,13 @@ import java.util.List;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.SourceLocator;
 import javax.xml.transform.TransformerException;
+import jdk.xml.internal.XMLSecurityManager;
 
 /**
  * The XPath class wraps an expression object and provides general services
  * for execution of that expression.
  * @xsl.usage advanced
- * @LastModified: May 2019
+ * @LastModified: Jan 2022
  */
 public class XPath implements Serializable, ExpressionOwner
 {
@@ -160,40 +162,11 @@ public class XPath implements Serializable, ExpressionOwner
    *
    * @throws javax.xml.transform.TransformerException if syntax or other error.
    */
-  public XPath(
-          String exprString, SourceLocator locator, PrefixResolver prefixResolver, int type,
-          ErrorListener errorListener)
-            throws javax.xml.transform.TransformerException
+  public XPath(String exprString, SourceLocator locator, PrefixResolver prefixResolver,
+          int type, ErrorListener errorListener)
+            throws TransformerException
   {
-    initFunctionTable();
-    if(null == errorListener)
-      errorListener = new com.sun.org.apache.xml.internal.utils.DefaultErrorHandler();
-
-    m_patternString = exprString;
-
-    XPathParser parser = new XPathParser(errorListener, locator);
-    Compiler compiler = new Compiler(errorListener, locator, m_funcTable);
-
-    if (SELECT == type)
-      parser.initXPath(compiler, exprString, prefixResolver);
-    else if (MATCH == type)
-      parser.initMatchPattern(compiler, exprString, prefixResolver);
-    else
-      throw new RuntimeException(XSLMessages.createXPATHMessage(
-              XPATHErrorResources.ER_CANNOT_DEAL_XPATH_TYPE,
-              new Object[]{Integer.toString(type)}));
-
-    // System.out.println("----------------");
-    Expression expr = compiler.compileExpression(0);
-
-    // System.out.println("expr: "+expr);
-    this.setExpression(expr);
-
-    if((null != locator) && locator instanceof ExpressionNode)
-    {
-        expr.exprSetParent((ExpressionNode)locator);
-    }
-
+    this(exprString, locator, prefixResolver, type, errorListener, null);
   }
 
   /**
@@ -207,22 +180,27 @@ public class XPath implements Serializable, ExpressionOwner
    *                       namespace URIs.
    * @param type one of {@link #SELECT} or {@link #MATCH}.
    * @param errorListener The error listener, or null if default should be used.
+   * @param funcTable the function table
+   * @param xmlSecMgr the XML security manager
    *
    * @throws javax.xml.transform.TransformerException if syntax or other error.
    */
-  public XPath(
-          String exprString, SourceLocator locator,
-          PrefixResolver prefixResolver, int type,
-          ErrorListener errorListener, FunctionTable aTable)
-            throws javax.xml.transform.TransformerException
+  public XPath(String exprString, SourceLocator locator, PrefixResolver prefixResolver,
+          int type, ErrorListener errorListener, FunctionTable funcTable,
+          XMLSecurityManager xmlSecMgr)
+            throws TransformerException
   {
-    m_funcTable = aTable;
+    if (funcTable == null) {
+        initFunctionTable();
+    } else {
+        m_funcTable = funcTable;
+    }
     if(null == errorListener)
-      errorListener = new com.sun.org.apache.xml.internal.utils.DefaultErrorHandler();
+      errorListener = new DefaultErrorHandler();
 
     m_patternString = exprString;
 
-    XPathParser parser = new XPathParser(errorListener, locator);
+    XPathParser parser = new XPathParser(errorListener, locator, xmlSecMgr);
     Compiler compiler = new Compiler(errorListener, locator, m_funcTable);
 
     if (SELECT == type)
@@ -261,11 +239,30 @@ public class XPath implements Serializable, ExpressionOwner
    *
    * @throws javax.xml.transform.TransformerException if syntax or other error.
    */
-  public XPath(
-          String exprString, SourceLocator locator, PrefixResolver prefixResolver, int type)
-            throws javax.xml.transform.TransformerException
+  public XPath(String exprString, SourceLocator locator, PrefixResolver prefixResolver,
+          int type)
+            throws TransformerException
   {
     this(exprString, locator, prefixResolver, type, null);
+  }
+
+  /**
+   * Constructs an XPath object.
+   *
+   * @param exprString The XPath expression.
+   * @param locator The location of the expression, may be null.
+   * @param prefixResolver A prefix resolver to use to resolve prefixes to
+   *                       namespace URIs.
+   * @param type one of {@link #SELECT} or {@link #MATCH}.
+   * @param errorListener The error listener, or null if default should be used.
+   * @param funcTable the function table
+   * @throws TransformerException
+   */
+  public XPath(String exprString, SourceLocator locator, PrefixResolver prefixResolver,
+          int type, ErrorListener errorListener, FunctionTable funcTable)
+            throws TransformerException
+  {
+    this(exprString, locator, prefixResolver, type, errorListener, funcTable, null);
   }
 
   /**

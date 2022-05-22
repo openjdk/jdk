@@ -120,7 +120,7 @@ public class RegistryContext implements Context, Referenceable {
         reference = ctx.reference;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() {
         close();
     }
@@ -596,7 +596,7 @@ class BindingEnumeration implements NamingEnumeration<Binding> {
         nextName = 0;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() {
         ctx.close();
     }

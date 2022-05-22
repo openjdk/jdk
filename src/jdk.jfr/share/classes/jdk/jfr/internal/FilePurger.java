@@ -38,14 +38,14 @@ final class FilePurger {
 
     private static final Set<SafePath> paths = new LinkedHashSet<>();
 
-    public synchronized static void add(SafePath p) {
+    public static synchronized void add(SafePath p) {
         paths.add(p);
         if (paths.size() > 1000) {
             removeOldest();
         }
     }
 
-    public synchronized static void purge() {
+    public static synchronized void purge() {
         if (paths.isEmpty()) {
             return;
         }

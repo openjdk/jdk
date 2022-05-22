@@ -38,7 +38,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   BarrierSet* bs = BarrierSet::barrier_set();
   assert(bs->kind() == BarrierSet::CardTableBarrierSet, "Wrong barrier set kind");
 
-  __ lsr(obj, obj, CardTable::card_shift);
+  __ lsr(obj, obj, CardTable::card_shift());
 
   assert(CardTable::dirty_card_val() == 0, "must be");
 
@@ -64,8 +64,8 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
 
   __ lea(end, Address(start, count, Address::lsl(LogBytesPerHeapOop))); // end = start + count << LogBytesPerHeapOop
   __ sub(end, end, BytesPerHeapOop); // last element address to make inclusive
-  __ lsr(start, start, CardTable::card_shift);
-  __ lsr(end, end, CardTable::card_shift);
+  __ lsr(start, start, CardTable::card_shift());
+  __ lsr(end, end, CardTable::card_shift());
   __ sub(count, end, start); // number of bytes to copy
 
   __ load_byte_map_base(scratch);

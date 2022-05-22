@@ -68,8 +68,8 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
 
     /**
      * If this field is 0, this object is in the oops table of the nmethod. Otherwise, the value of
-     * the field records the nmethod's compile identifier. This value is used to confirm an entry in
-     * the code cache retrieved by {@link #address} is indeed the nmethod represented by this
+     * the field records the nmethod's compile identifier. This value is used to confirm if an entry
+     * in the code cache retrieved by {@link #address} is indeed the nmethod represented by this
      * object.
      *
      * @see #inOopsTable
@@ -84,6 +84,23 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
         this.compileIdSnapshot = inOopsTable ? 0L : compileId;
         assert inOopsTable || compileId != 0L : this;
     }
+
+    /**
+     * Attaches {@code log} to this object. If {@code log.managesFailedSpeculations() == true}, this
+     * ensures the failed speculation list lives at least as long as this object.
+     */
+    public void setSpeculationLog(HotSpotSpeculationLog log) {
+        this.speculationLog = log;
+    }
+
+    /**
+     * The speculation log containing speculations embedded in the nmethod.
+     *
+     * If {@code speculationLog.managesFailedSpeculations() == true}, this field ensures the failed
+     * speculation list lives at least as long as this object. This prevents deoptimization from
+     * appending to an already freed list.
+     */
+    @SuppressWarnings("unused") private HotSpotSpeculationLog speculationLog;
 
     /**
      * Determines if the nmethod associated with this object is the compiled entry point for

@@ -114,11 +114,13 @@ class Opaque3Node : public Opaque2Node {
 // GraphKit::must_be_not_null().
 class Opaque4Node : public Node {
   public:
-  Opaque4Node(Compile* C, Node *tst, Node* final_tst) : Node(NULL, tst, final_tst) {}
+  Opaque4Node(Compile* C, Node *tst, Node* final_tst) : Node(NULL, tst, final_tst) {
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
 
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::BOOL; }
-  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 

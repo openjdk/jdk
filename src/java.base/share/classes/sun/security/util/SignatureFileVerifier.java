@@ -383,10 +383,11 @@ public class SignatureFileVerifier {
             try {
                 params.setExtendedExceptionMsg(name + ".SF", key + " attribute");
                 DisabledAlgorithmConstraints
-                    .jarConstraints().permits(algorithm, params);
+                    .jarConstraints().permits(algorithm, params, false);
             } catch (GeneralSecurityException e) {
                 permittedAlgs.put(algorithm, Boolean.FALSE);
-                permittedAlgs.put(key.toUpperCase(), Boolean.FALSE);
+                permittedAlgs.put(key.toUpperCase(Locale.ENGLISH),
+                        Boolean.FALSE);
                 if (debug != null) {
                     if (e.getMessage() != null) {
                         debug.println(key + ":  " + e.getMessage());

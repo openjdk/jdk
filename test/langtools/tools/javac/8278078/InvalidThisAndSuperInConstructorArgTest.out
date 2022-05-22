@@ -1,0 +1,14 @@
+InvalidThisAndSuperInConstructorArgTest.java:23:29: compiler.err.cant.ref.before.ctor.called: super
+InvalidThisAndSuperInConstructorArgTest.java:26:28: compiler.err.cant.ref.before.ctor.called: super
+InvalidThisAndSuperInConstructorArgTest.java:29:29: compiler.err.cant.ref.before.ctor.called: this
+InvalidThisAndSuperInConstructorArgTest.java:32:28: compiler.err.cant.ref.before.ctor.called: this
+InvalidThisAndSuperInConstructorArgTest.java:35:33: compiler.err.not.encl.class: java.lang.AssertionError
+InvalidThisAndSuperInConstructorArgTest.java:38:32: compiler.err.not.encl.class: java.lang.AssertionError
+InvalidThisAndSuperInConstructorArgTest.java:41:33: compiler.err.not.encl.class: java.lang.AssertionError
+InvalidThisAndSuperInConstructorArgTest.java:44:32: compiler.err.not.encl.class: java.lang.AssertionError
+InvalidThisAndSuperInConstructorArgTest.java:47:38: compiler.err.cant.ref.before.ctor.called: super
+InvalidThisAndSuperInConstructorArgTest.java:50:39: compiler.err.not.encl.class: InvalidThisAndSuperInConstructorArgTest.InterfaceWithDefault
+InvalidThisAndSuperInConstructorArgTest.java:53:38: compiler.err.not.encl.class: InvalidThisAndSuperInConstructorArgTest.InterfaceWithDefault
+InvalidThisAndSuperInConstructorArgTest.java:56:39: compiler.err.cant.ref.before.ctor.called: super
+InvalidThisAndSuperInConstructorArgTest.java:59:28: compiler.err.cant.ref.before.ctor.called: this
+13 errors

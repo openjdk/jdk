@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,13 +176,6 @@ void G1PageBasedVirtualSpace::commit_internal(size_t start_page, size_t end_page
 
 char* G1PageBasedVirtualSpace::bounded_end_addr(size_t end_page) const {
   return MIN2(_high_boundary, page_start(end_page));
-}
-
-void G1PageBasedVirtualSpace::pretouch_internal(size_t start_page, size_t end_page) {
-  guarantee(start_page < end_page,
-            "Given start page " SIZE_FORMAT " is larger or equal to end page " SIZE_FORMAT, start_page, end_page);
-
-  os::pretouch_memory(page_start(start_page), bounded_end_addr(end_page), _page_size);
 }
 
 bool G1PageBasedVirtualSpace::commit(size_t start_page, size_t size_in_pages) {

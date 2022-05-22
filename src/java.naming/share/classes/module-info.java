@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,9 +104,11 @@
  *  <li><a href="{@docRoot}/jdk.naming.dns/module-summary.html">DNS Naming Provider</a></li>
  *  <li><a href="{@docRoot}/jdk.naming.rmi/module-summary.html">RMI Naming Provider</a></li>
  * </ul>
- * @provides javax.naming.ldap.spi.LdapDnsProvider
+ * @provides java.security.Provider
  *
+ * @uses javax.naming.ldap.StartTlsResponse
  * @uses javax.naming.ldap.spi.LdapDnsProvider
+ * @uses javax.naming.spi.InitialContextFactory
  *
  * @moduleGraph
  * @since 9

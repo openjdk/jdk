@@ -87,6 +87,11 @@ public abstract class DocTrees extends Trees {
     /**
      * Returns the doc comment tree, if any, for the Tree node identified by a given TreePath.
      * Returns {@code null} if no doc comment was found.
+     *
+     * @implNote The default implementation of this method returns the same
+     * {@code DocCommentTree} instance for repeated invocations
+     * with the same argument.
+     *
      * @param path the path for the tree node
      * @return the doc comment tree
      */
@@ -95,6 +100,11 @@ public abstract class DocTrees extends Trees {
     /**
      * Returns the doc comment tree of the given element.
      * Returns {@code null} if no doc comment was found.
+     *
+     * @implNote The default implementation of this method returns the same
+     * {@code DocCommentTree} instance for repeated invocations
+     * with the same argument.
+     *
      * @param e an element whose documentation is required
      * @return the doc comment tree
      *
@@ -109,6 +119,9 @@ public abstract class DocTrees extends Trees {
      * Returns {@code null} if no doc comment was found.
      * Future releases may support additional file types.
      *
+     * @implNote The default implementation of this method returns a
+     * new {@code DocCommentTree} instance for each invocation.
+     *
      * @param fileObject the content container
      * @return the doc comment tree
      * @since 9
@@ -122,6 +135,9 @@ public abstract class DocTrees extends Trees {
      * of the &lt;body&gt; tag, and any enclosing tags are ignored.
      * Returns {@code null} if no doc comment was found.
      * Future releases may support additional file types.
+     *
+     * @implNote The default implementation of this method returns a
+     * new {@code DocCommentTree} instance for each invocation.
      *
      * @param e an element whose path is used as a reference
      * @param relativePath the relative path from the Element

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -345,7 +345,7 @@ class ImplementsSomeInterfaces extends
 
 // Helper classes to test incompatible class change in itable stub.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //          iA,iB   (interfaces)
 //          /|\ \
@@ -407,7 +407,7 @@ class ICC2_E implements ICC2_iA, ICC2_iB {
 
 // Helper classes to test error where class appears in implements statement.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //       A  Some Class.
 //       |
@@ -421,7 +421,7 @@ class ICC3_B extends ICC3_A {
 
 // Helper classes to test error where interface appears in extends statement.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //       A  Some Interface.
 //       |

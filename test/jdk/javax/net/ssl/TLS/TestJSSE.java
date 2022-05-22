@@ -21,12 +21,13 @@
  * questions.
  */
 
+import java.net.InetAddress;
 import java.security.Provider;
 import java.security.Security;
 
 public class TestJSSE {
 
-    private static final String LOCAL_IP = "127.0.0.1";
+    private static final String LOCAL_IP = InetAddress.getLoopbackAddress().getHostAddress();
 
     public static void main(String... args) throws Exception {
         // reset the security property to make sure that the algorithms

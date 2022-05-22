@@ -447,7 +447,7 @@ public class TestAppletLoggerContext {
                 Logger logger4b = manager.getLogger(Logger.GLOBAL_LOGGER_NAME);
                 assertNotNull(logger4);
                 assertNotNull(logger4b);
-                expected = (System.getSecurityManager() == null ? global : global2);;
+                expected = (System.getSecurityManager() == null ? global : global2);
                 assertEquals(logger4,  expected);
                 assertEquals(logger4b, expected);
 

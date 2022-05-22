@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ static jint get_properties(AttachOperation* op, outputStream* out, Symbol* seria
   JavaCallArguments args;
 
 
-  Symbol* signature = vmSymbols::serializePropertiesToByteArray_signature();
+  Symbol* signature = vmSymbols::void_byte_array_signature();
   JavaCalls::call_static(&result,
                          k,
                          serializePropertiesMethod,
@@ -292,6 +292,7 @@ static jint heap_inspection(AttachOperation* op, outputStream* out) {
     uintx num;
     if (!Arguments::parse_uintx(num_str, &num, 0)) {
       out->print_cr("Invalid parallel thread number: [%s]", num_str);
+      delete fs;
       return JNI_ERR;
     }
     parallel_thread_num = num == 0 ? parallel_thread_num : (uint)num;

@@ -271,13 +271,17 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
   assert(_index >= 0 && _index <= _list->size(), "Sanity");
 
   ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
-  ShenandoahReentrantLocker data_locker(data != NULL ? data->lock() : NULL);
 
   if (data != NULL) {
     assert(contain(nm), "Must have been registered");
     assert(nm == data->nm(), "Must be same nmethod");
+    // Prevent updating a nmethod while concurrent iteration is in progress.
+    wait_until_concurrent_iteration_done();
+    ShenandoahReentrantLocker data_locker(data->lock());
     data->update();
   } else {
+    // For a new nmethod, we can safely append it to the list, because
+    // concurrent iteration will not touch it.
     data = ShenandoahNMethod::for_nmethod(nm);
     assert(data != NULL, "Sanity");
     ShenandoahNMethod::attach_gc_data(nm, data);
@@ -382,11 +386,13 @@ void ShenandoahNMethodTable::rebuild(int size) {
 }
 
 ShenandoahNMethodTableSnapshot* ShenandoahNMethodTable::snapshot_for_iteration() {
+  assert(CodeCache_lock->owned_by_self(), "Must have CodeCache_lock held");
   _itr_cnt++;
   return new ShenandoahNMethodTableSnapshot(this);
 }
 
 void ShenandoahNMethodTable::finish_iteration(ShenandoahNMethodTableSnapshot* snapshot) {
+  assert(CodeCache_lock->owned_by_self(), "Must have CodeCache_lock held");
   assert(iteration_in_progress(), "Why we here?");
   assert(snapshot != NULL, "No snapshot");
   _itr_cnt--;

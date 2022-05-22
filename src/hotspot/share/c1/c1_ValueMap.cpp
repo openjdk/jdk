@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -505,7 +505,7 @@ GlobalValueNumbering::GlobalValueNumbering(IR* ir)
   assert(start_block == ir->start() && start_block->number_of_preds() == 0 && start_block->dominator() == NULL, "must be start block");
   assert(start_block->next()->as_Base() != NULL && start_block->next()->next() == NULL, "start block must not have instructions");
 
-  // method parameters are not linked in instructions list, so process them separateley
+  // method parameters are not linked in instructions list, so process them separately
   for_each_state_value(start_block->state(), value,
      assert(value->as_Local() != NULL, "only method parameters allowed");
      set_processed(value);

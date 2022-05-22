@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -376,7 +376,7 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
     // if the object isn't moving we can just set the mark to the default
     // mark and handle it specially later on.
     q->init_mark();
-    assert(q->forwardee() == NULL, "should be forwarded to NULL");
+    assert(!q->is_forwarded(), "should not be forwarded");
   }
 
   compact_top += size;
@@ -536,7 +536,7 @@ void CompactibleSpace::compact() {
 
   debug_only(HeapWord* prev_obj = NULL);
   while (cur_obj < end_of_live) {
-    if (!cast_to_oop(cur_obj)->is_gc_marked()) {
+    if (!cast_to_oop(cur_obj)->is_forwarded()) {
       debug_only(prev_obj = cur_obj);
       // The first word of the dead object contains a pointer to the next live object or end of space.
       cur_obj = *(HeapWord**)cur_obj;
@@ -555,8 +555,12 @@ void CompactibleSpace::compact() {
       // copy object and reinit its mark
       assert(cur_obj != compaction_top, "everything in this pass should be moving");
       Copy::aligned_conjoint_words(cur_obj, compaction_top, size);
-      cast_to_oop(compaction_top)->init_mark();
-      assert(cast_to_oop(compaction_top)->klass() != NULL, "should have a class");
+      oop new_obj = cast_to_oop(compaction_top);
+
+      ContinuationGCSupport::transform_stack_chunk(new_obj);
+
+      new_obj->init_mark();
+      assert(new_obj->klass() != NULL, "should have a class");
 
       debug_only(prev_obj = cur_obj);
       cur_obj += size;
@@ -728,38 +732,6 @@ HeapWord* ContiguousSpace::allocate(size_t size) {
 // Lock-free.
 HeapWord* ContiguousSpace::par_allocate(size_t size) {
   return par_allocate_impl(size);
-}
-
-void ContiguousSpace::allocate_temporary_filler(int factor) {
-  // allocate temporary type array decreasing free size with factor 'factor'
-  assert(factor >= 0, "just checking");
-  size_t size = pointer_delta(end(), top());
-
-  // if space is full, return
-  if (size == 0) return;
-
-  if (factor > 0) {
-    size -= size/factor;
-  }
-  size = align_object_size(size);
-
-  const size_t array_header_size = typeArrayOopDesc::header_size(T_INT);
-  if (size >= align_object_size(array_header_size)) {
-    size_t length = (size - array_header_size) * (HeapWordSize / sizeof(jint));
-    // allocate uninitialized int array
-    typeArrayOop t = (typeArrayOop) cast_to_oop(allocate(size));
-    assert(t != NULL, "allocation should succeed");
-    t->set_mark(markWord::prototype());
-    t->set_klass(Universe::intArrayKlassObj());
-    t->set_length((int)length);
-  } else {
-    assert(size == CollectedHeap::min_fill_size(),
-           "size for smallest fake object doesn't match");
-    instanceOop obj = (instanceOop) cast_to_oop(allocate(size));
-    obj->set_mark(markWord::prototype());
-    obj->set_klass_gap(0);
-    obj->set_klass(vmClasses::Object_klass());
-  }
 }
 
 void OffsetTableContigSpace::initialize_threshold() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@
 //
 // A queue may temporarily appear to be empty even though elements have been
 // added and not removed.  For example, after running the following program,
-// the value of r may be NULL.
+// the value of r may be nullptr.
 //
 // thread1: q.push(a); r = q.pop();
 // thread2: q.push(b);
@@ -96,22 +96,24 @@ public:
   inline size_t length() const;
 
   // Thread-safe add the object to the end of the queue.
+  // Subject to ABA behavior; callers must ensure usage is safe.
   inline void push(T& node) { append(node, node); }
 
   // Thread-safe add the objects from first to last to the end of the queue.
+  // Subject to ABA behavior; callers must ensure usage is safe.
   inline void append(T& first, T& last);
 
   // Thread-safe attempt to remove and return the first object in the queue.
   // Returns true if successful.  If successful then *node_ptr is the former
-  // first object, or NULL if the queue was empty.  If unsuccessful, because
+  // first object, or nullptr if the queue was empty.  If unsuccessful, because
   // of contention with a concurrent modification, then returns false with
   // the value of *node_ptr unspecified.  Subject to ABA behavior; callers
   // must ensure usage is safe.
   inline bool try_pop(T** node_ptr);
 
-  // Thread-safe remove and return the first object in the queue, or NULL if
-  // the queue was empty.  This just iterates on try_pop() until it
-  // succeeds, returning the (possibly NULL) element obtained from that.
+  // Thread-safe remove and return the first object in the queue, or nullptr
+  // if the queue was empty.  This just iterates on try_pop() until it
+  // succeeds, returning the (possibly nullptr) element obtained from that.
   // Subject to ABA behavior; callers must ensure usage is safe.
   inline T* pop();
 
