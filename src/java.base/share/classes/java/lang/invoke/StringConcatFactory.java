@@ -446,9 +446,9 @@ public final class StringConcatFactory {
      * without copying.
      */
     private static MethodHandle generateMHInlineCopy(MethodType mt, List<String> elements) {
-
+        int elemSize = elements.size();
         // Fast-path unary concatenations
-        if (elements.size() == 1) {
+        if (elemSize == 1) {
             String s0 = elements.get(0);
             if (s0 == null) {
                 return unaryConcat(mt.parameterType(0));
@@ -457,7 +457,7 @@ public final class StringConcatFactory {
             }
         }
         // Fast-path binary concatenations
-        if (elements.size() == 2) {
+        if (elemSize == 2) {
             // Two arguments
             String s0 = elements.get(0);
             String s1 = elements.get(1);
@@ -534,44 +534,64 @@ public final class StringConcatFactory {
         // We need one prepender per argument, but also need to fold in constants. We do so by greedily
         // create prependers that fold in surrounding constants into the argument prepender. This reduces
         // the number of unique MH combinator tree shapes we'll create in an application.
-        String constant = null;
-        int pos = 0;
-        for (String el : elements) {
-            // Do the prepend, and put "new" index at index 1
-            if (el != null) {
-                // Constant element
+        int pos;
+        int elem = 0;
+        for (pos = 0; pos < ptypes.length - 2; pos += 3) {
+            String constant1 = elements.get(elem++);
+            MethodHandle prepend = MethodHandles.dropArguments(prepender(constant1, ptypes[pos]), 3, ptypes[pos + 1], ptypes[pos + 2]);
+            if (constant1 != null) {
+                elem++;
+                initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, constant1);
+            }
+            String constant2 = elements.get(elem++);
+            if (constant2 != null) {
+                elem++;
+                initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, constant2);
+            }
+            String constant3 = elements.get(elem++);
+            if (constant3 != null) {
+                elem++;
+                initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, constant3);
+            }
 
-                // Eagerly update the initialLengthCoder value
-                initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, el);
-
-                // Save the constant and fold it either into the next
-                // argument prepender, or into the newArray combinator
-                assert (constant == null);
-                constant = el;
+            prepend = MethodHandles.filterArgumentsWithCombiner(prepend, 0,
+                    prepender(constant2, ptypes[pos + 1]), 0, 1, 3);
+            prepend = MethodHandles.filterArgumentsWithCombiner(prepend, 0,
+                    prepender(constant3, ptypes[pos + 2]), 0, 1, 4);
+            mh = filterPrepender(mh, prepend, pos, 3);
+        }
+        if (pos < ptypes.length) {
+            String constant1 = elements.get(elem++);
+            if (constant1 != null) {
+                initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, constant1);
+                elem++;
+            }
+            if (pos == ptypes.length - 1) {
+                MethodHandle prepend = prepender(constant1, ptypes[pos]);
+                mh = filterPrepender(mh, prepend, pos, 1);
             } else {
-                // Add prepender, along with any prefix constant
-                mh = MethodHandles.filterArgumentsWithCombiner(
-                        mh, 1,
-                        prepender(constant, ptypes[pos]),
-                        1, 0, // indexCoder, storage
-                        2 + pos  // selected argument
-                );
-                constant = null;
-                pos++;
+                MethodHandle prepend = MethodHandles.dropArguments(prepender(constant1, ptypes[pos]), 3, ptypes[pos + 1]);
+                String constant2 = elements.get(elem++);
+                if (constant2 != null) {
+                    initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, constant2);
+                    elem++;
+                }
+                prepend = MethodHandles.filterArgumentsWithCombiner(prepend, 0,
+                        prepender(constant2, ptypes[pos + 1]), 0, 1, 3);
+                mh = filterPrepender(mh, prepend, pos, 2);
             }
         }
 
         // Fold in byte[] instantiation at argument 0
         MethodHandle newArrayCombinator;
-        if (constant != null) {
-            // newArray variant that deals with prepending the trailing constant
+        if (elem < elemSize) {
+            // newArray variant that deals with prepending any trailing constant
             //
-            // initialLengthCoder has been adjusted to have the correct coder
-            // and length already, but to avoid binding an extra variable to
-            // the method handle we now adjust the length to be correct for the
-            // first prepender above, while adjusting for the missing length of
-            // the constant in StringConcatHelper
-            initialLengthCoder -= constant.length();
+            // initialLengthCoder is adjusted to have the correct coder
+            // and length: The newArrayWithSuffix method expects only the coder of the
+            // suffix to be encoded into indexCoder
+            String constant = elements.get(elem);
+            initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, constant) - constant.length();
             newArrayCombinator = newArrayWithSuffix(constant);
         } else {
             newArrayCombinator = newArray();
@@ -599,32 +619,37 @@ public final class StringConcatFactory {
         // combined in as:
         //   (<args>)String = (<args>)
 
-        pos = -1;
-        MethodHandle mix = null;
-        for (String el : elements) {
-            // Constants already handled in the code above
-            if (el == null) {
-                    if (pos >= 0) {
-                        // Compute new "index" in-place using old value plus the appropriate argument.
-                        mh = MethodHandles.filterArgumentsWithCombiner(mh, 0, mix,
-                                0, // old-index
-                                1 + pos // selected argument
-                        );
-                    }
-
-                    Class<?> argClass = ptypes[++pos];
-                    mix = mixer(argClass);
+        for (pos = 0; pos < ptypes.length - 2; pos += 3) {
+            // Compute new "index" in-place pairwise using old value plus the appropriate arguments.
+            MethodHandle mix = mixer(ptypes[pos], ptypes[pos + 1], ptypes[pos + 2]);
+            if (pos == ptypes.length - 3) {
+                // Insert the initialLengthCoder value into the final mixer, then
+                // fold that into the base method handle
+                mix = MethodHandles.insertArguments(mix, 0, initialLengthCoder);
+                mh = MethodHandles.foldArgumentsWithCombiner(mh, 0,
+                        mix, 1 + pos, 2 + pos, 3 + pos);
+            } else {
+                mh = MethodHandles.filterArgumentsWithCombiner(mh, 0,
+                        mix, 0, 1 + pos, 2 + pos, 3 + pos);
             }
         }
 
-        // Insert the initialLengthCoder value into the final mixer, then
-        // fold that into the base method handle
-        if (pos >= 0) {
-            mix = MethodHandles.insertArguments(mix, 0, initialLengthCoder);
-            mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
-                    1 + pos // selected argument
-            );
-        } else {
+        // Deal with any tail
+        if (pos < ptypes.length) {
+            if (pos == ptypes.length - 1) {
+                MethodHandle mix = mixer(ptypes[pos]);
+                mix = MethodHandles.insertArguments(mix, 0, initialLengthCoder);
+                mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
+                        1 + pos // selected argument
+                );
+            } else {
+                MethodHandle mix = mixer(ptypes[pos], ptypes[pos + 1]);
+                mix = MethodHandles.insertArguments(mix, 0, initialLengthCoder);
+                mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
+                        1 + pos, 2 + pos // selected arguments
+                );
+            }
+        } else if (pos == 0) {
             // No mixer (constants only concat), insert initialLengthCoder directly
             mh = MethodHandles.insertArguments(mh, 0, initialLengthCoder);
         }
@@ -639,6 +664,16 @@ public final class StringConcatFactory {
         return mh;
     }
 
+    private static MethodHandle filterPrepender(MethodHandle mh, MethodHandle prepend, int pos, int count) {
+        int[] argPositions = new int[count + 2];
+        argPositions[0] = 1; // indexCoder
+        argPositions[1] = 0; // storage
+        for (int i = 0; i < count; i++) {
+            argPositions[i + 2] = 2 + pos++;
+        }
+        return MethodHandles.filterArgumentsWithCombiner(mh, 1, prepend, argPositions);
+    }
+
     private static MethodHandle prepender(String prefix, Class<?> cl) {
         if (prefix == null) {
             return NULL_PREPENDERS.computeIfAbsent(cl, NULL_PREPEND);
@@ -649,6 +684,20 @@ public final class StringConcatFactory {
 
     private static MethodHandle mixer(Class<?> cl) {
         return MIXERS.computeIfAbsent(cl, MIX);
+    }
+
+    private static MethodHandle mixer(Class<?> cl, Class<?> cl2) {
+        MethodHandle mix = mixer(cl);
+        mix = MethodHandles.dropArguments(mix, 2, cl2);
+        return MethodHandles.filterArgumentsWithCombiner(mix, 0,
+                mixer(cl2), 0, 2);
+    }
+
+    private static MethodHandle mixer(Class<?> cl, Class<?> cl2, Class<?> cl3) {
+        MethodHandle mix = mixer(cl, cl2);
+        mix = MethodHandles.dropArguments(mix, 2, cl2, cl3);
+        return MethodHandles.filterArgumentsWithCombiner(mix, 0,
+                mixer(cl3), 0, 3);
     }
 
     // These are deliberately not lambdas to optimize startup time:
