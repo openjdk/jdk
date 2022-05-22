@@ -2123,8 +2123,8 @@ public abstract sealed class Path2D implements Shape, Cloneable
         double lastY = 0.0;
         double endX = 0.0;
         double endY = 0.0;
-        double moveX = 0.0;
-        double moveY = 0.0;
+        double startX = 0.0;
+        double startY = 0.0;
 
         for (; !pi.isDone(); pi.next()) {
             final int type = pi.currentSegment(coords);
@@ -2133,8 +2133,8 @@ public abstract sealed class Path2D implements Shape, Cloneable
                     if (bounds == null) {
                         bounds = new double[] { coords[0], coords[0], coords[1], coords[1] };
                     }
-                    moveX = endX = coords[0];
-                    moveY = endY = coords[1];
+                    startX = endX = coords[0];
+                    startY = endY = coords[1];
                     break;
                 case PathIterator.SEG_LINETO:
                     endX = coords[0];
@@ -2149,8 +2149,8 @@ public abstract sealed class Path2D implements Shape, Cloneable
                     endY = coords[5];
                     break;
                 case PathIterator.SEG_CLOSE:
-                    endX = moveX;
-                    endY = moveY;
+                    endX = startX;
+                    endY = startY;
                     break;
                 default:
                     continue;
