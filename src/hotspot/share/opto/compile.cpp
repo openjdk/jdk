@@ -622,7 +622,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _vector_reboxing_late_inlines(comp_arena(), 2, 0, NULL),
                   _late_inlines_pos(0),
                   _number_of_mh_late_inlines(0),
-                  _native_invokers(comp_arena(), 1, 0, NULL),
                   _print_inlining_stream(NULL),
                   _print_inlining_list(NULL),
                   _print_inlining_idx(0),
@@ -896,7 +895,6 @@ Compile::Compile( ciEnv* ci_env,
     _initial_gvn(NULL),
     _for_igvn(NULL),
     _number_of_mh_late_inlines(0),
-    _native_invokers(),
     _print_inlining_stream(NULL),
     _print_inlining_list(NULL),
     _print_inlining_idx(0),
@@ -3090,7 +3088,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   case Op_CallRuntime:
   case Op_CallLeaf:
   case Op_CallLeafVector:
-  case Op_CallNative:
   case Op_CallLeafNoFP: {
     assert (n->is_Call(), "");
     CallNode *call = n->as_Call();
@@ -3556,46 +3553,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
         // Replace them with a fused unsigned divmod if supported
         if (Matcher::has_match_rule(Op_UDivModL)) {
           UDivModLNode* divmod = UDivModLNode::make(n);
-          d->subsume_by(divmod->div_proj(), this);
-          n->subsume_by(divmod->mod_proj(), this);
-        } else {
-          // replace a%b with a-((a/b)*b)
-          Node* mult = new MulLNode(d, d->in(2));
-          Node* sub  = new SubLNode(d->in(1), mult);
-          n->subsume_by(sub, this);
-        }
-      }
-    }
-    break;
-
-  case Op_NoOvfModI:
-    if (UseDivMod) {
-      // Check if a%b and a/b both exist
-      Node* d = n->find_similar(Op_NoOvfDivI);
-      if (d) {
-        // Replace them with a fused divmod if supported
-        if (Matcher::has_match_rule(Op_NoOvfDivModI)) {
-          NoOvfDivModINode* divmod = NoOvfDivModINode::make(n);
-          d->subsume_by(divmod->div_proj(), this);
-          n->subsume_by(divmod->mod_proj(), this);
-        } else {
-          // replace a%b with a-((a/b)*b)
-          Node* mult = new MulINode(d, d->in(2));
-          Node* sub  = new SubINode(d->in(1), mult);
-          n->subsume_by(sub, this);
-        }
-      }
-    }
-    break;
-
-  case Op_NoOvfModL:
-    if (UseDivMod) {
-      // Check if a%b and a/b both exist
-      Node* d = n->find_similar(Op_NoOvfDivL);
-      if (d) {
-        // Replace them with a fused divmod if supported
-        if (Matcher::has_match_rule(Op_NoOvfDivModL)) {
-          NoOvfDivModLNode* divmod = NoOvfDivModLNode::make(n);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -5077,10 +5034,6 @@ void Compile::igv_print_method_to_network(const char* phase_name) {
   _debug_network_printer->print(phase_name, (Node*)C->root());
 }
 #endif
-
-void Compile::add_native_invoker(RuntimeStub* stub) {
-  _native_invokers.append(stub);
-}
 
 Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res) {
   if (type != NULL && phase->type(value)->higher_equal(type)) {
