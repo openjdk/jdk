@@ -1689,12 +1689,12 @@ void PSParallelCompact::invoke(bool maximum_heap_compaction) {
   PSAdaptiveSizePolicy* policy = heap->size_policy();
   IsGCActiveMark mark;
 
-  if (ScavengeBeforeFullGC) {
-    PSScavenge::invoke_no_policy();
-  }
-
   const bool clear_all_soft_refs =
-    heap->soft_ref_policy()->should_clear_all_soft_refs();
+      heap->soft_ref_policy()->should_clear_all_soft_refs();
+
+  if (ScavengeBeforeFullGC) {
+    PSScavenge::invoke_no_policy(clear_all_soft_refs || maximum_heap_compaction);
+  }
 
   PSParallelCompact::invoke_no_policy(clear_all_soft_refs ||
                                       maximum_heap_compaction);

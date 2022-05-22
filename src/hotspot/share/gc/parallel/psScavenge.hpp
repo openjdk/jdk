@@ -109,7 +109,7 @@ class PSScavenge: AllStatic {
   // Scavenge entry point.  This may invoke a full gc; return true if so.
   static bool invoke();
   // Return true if a collection was done; false otherwise.
-  static bool invoke_no_policy();
+  static bool invoke_no_policy(bool clear_all_soft_refs);
 
   template <class T> static inline bool should_scavenge(T* p);
 
