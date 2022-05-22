@@ -1440,12 +1440,13 @@ public class UnitTest {
 
         };
 
+        verbose = (argv.length > 1);
+
         for (long seed : previousBugSeeds) {
             test("", seed);
         }
 
         int limit = (argv.length > 0) ? 10_000_000 : 10_000_000;
-        verbose = (argv.length > 1);
         for (int i = 0; i < limit; i++) {
             long seed = Double.doubleToLongBits(Math.random());
             test("loop #" + (i + 1), seed);
