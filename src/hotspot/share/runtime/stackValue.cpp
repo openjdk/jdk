@@ -130,6 +130,11 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
       }
       // Decode narrowoop
       oop val = read_oop_local(&value.noop);
+#if INCLUDE_SHENANDOAHGC
+      if (UseShenandoahGC) {
+        val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
+      }
+#endif
       Handle h(Thread::current(), val); // Wrap a handle around the oop
       return new StackValue(h);
     }
@@ -151,6 +156,11 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
       }
 #endif
       val = read_oop_local(&val);
+#if INCLUDE_SHENANDOAHGC
+      if (UseShenandoahGC) {
+        val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
+      }
+#endif
       assert(oopDesc::is_oop_or_null(val), "bad oop found at " INTPTR_FORMAT " in_cont: %d compressed: %d",
         p2i(value_addr), reg_map->in_cont(), reg_map->in_cont() && reg_map->stack_chunk()->has_bitmap() && UseCompressedOops);
       Handle h(Thread::current(), val); // Wrap a handle around the oop
