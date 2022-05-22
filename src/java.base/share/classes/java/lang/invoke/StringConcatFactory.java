@@ -695,7 +695,7 @@ public final class StringConcatFactory {
 
     private static MethodHandle mixer(Class<?> cl, Class<?> cl2, Class<?> cl3) {
         MethodHandle mix = mixer(cl, cl2);
-        mix = MethodHandles.dropArguments(mix, 2, cl2, cl3);
+        mix = MethodHandles.dropArguments(mix, 3, cl3);
         return MethodHandles.filterArgumentsWithCombiner(mix, 0,
                 mixer(cl3), 0, 3);
     }
