@@ -1446,7 +1446,7 @@ public class UnitTest {
             test("", seed);
         }
 
-        int limit = (argv.length > 0) ? 10_000_000 : 10_000_000;
+        int limit = (argv.length > 0) ? 10000 : 1;
         for (int i = 0; i < limit; i++) {
             long seed = Double.doubleToLongBits(Math.random());
             test("loop #" + (i + 1), seed);
