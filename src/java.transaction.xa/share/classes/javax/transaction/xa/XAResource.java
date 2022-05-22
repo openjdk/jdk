@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ public interface XAResource {
     /**
      * This method is called to determine if the resource manager
      * instance represented by the target object is the same as the
-     * resouce manager instance represented by the parameter <i>xares</i>.
+     * resource manager instance represented by the parameter <i>xares</i>.
      *
      * @param xares An XAResource object whose resource manager instance
      *      is to be compared with the resource manager instance of the

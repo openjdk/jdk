@@ -51,9 +51,8 @@ private:
   G1CollectedHeap* _g1h;
   VerifyOption     _vo;
   bool             _failures;
+
 public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   VerifyRootsClosure(VerifyOption vo) :
     _g1h(G1CollectedHeap::heap()),
     _vo(vo),
@@ -203,9 +202,8 @@ private:
   size_t _live_bytes;
   HeapRegion *_hr;
   VerifyOption _vo;
+
 public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS.
   VerifyObjsInRegionClosure(HeapRegion *hr, VerifyOption vo)
     : _live_bytes(0), _hr(hr), _vo(vo) {
     _g1h = G1CollectedHeap::heap();
@@ -354,9 +352,8 @@ class VerifyRegionClosure: public HeapRegionClosure {
 private:
   VerifyOption     _vo;
   bool             _failures;
+
 public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   VerifyRegionClosure(VerifyOption vo)
     : _vo(vo),
       _failures(false) {}
@@ -423,8 +420,6 @@ private:
   HeapRegionClaimer _hrclaimer;
 
 public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   G1VerifyTask(G1CollectedHeap* g1h, VerifyOption vo) :
       WorkerTask("Verify task"),
       _g1h(g1h),

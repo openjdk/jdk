@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ import static jdk.internal.foreign.abi.x64.X86_64Architecture.*;
  * This includes taking care of synthetic arguments like pointers to return buffers for 'in-memory' returns.
  */
 public class CallArranger {
+    public static final int MAX_INTEGER_ARGUMENT_REGISTERS = 6;
+    public static final int MAX_VECTOR_ARGUMENT_REGISTERS = 8;
     private static final ABIDescriptor CSysV = abiFor(
         new VMStorage[] { rdi, rsi, rdx, rcx, r8, r9, rax },
         new VMStorage[] { xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7 },
@@ -66,7 +68,9 @@ public class CallArranger {
         new VMStorage[] { r10, r11 },
         new VMStorage[] { xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15 },
         16,
-        0 //no shadow space
+        0, //no shadow space
+        r10, // target addr reg
+        r11  // ret buf addr reg
     );
 
     // record
@@ -83,7 +87,7 @@ public class CallArranger {
     }
 
     public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
-        CallingSequenceBuilder csb = new CallingSequenceBuilder(forUpcall);
+        CallingSequenceBuilder csb = new CallingSequenceBuilder(CSysV, forUpcall);
 
         BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
         BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false) : new BoxBindingCalculator(false);
@@ -110,8 +114,6 @@ public class CallArranger {
             csb.addArgumentBindings(long.class, SysV.C_LONG,
                     List.of(vmStore(rax, long.class)));
         }
-
-        csb.setTrivial(SharedUtils.isTrivial(cDesc));
 
         return new Bindings(csb.build(), returnInMemory, argCalc.storageCalculator.nVectorReg);
     }
@@ -159,8 +161,8 @@ public class CallArranger {
 
         private int maxRegisterArguments(int type) {
             return type == StorageClasses.INTEGER ?
-                    SysVx64Linker.MAX_INTEGER_ARGUMENT_REGISTERS :
-                    SysVx64Linker.MAX_VECTOR_ARGUMENT_REGISTERS;
+                    MAX_INTEGER_ARGUMENT_REGISTERS :
+                    MAX_VECTOR_ARGUMENT_REGISTERS;
         }
 
         VMStorage stackAlloc() {
@@ -188,14 +190,14 @@ public class CallArranger {
             }
             long nIntegerReg = typeClass.nIntegerRegs();
 
-            if (this.nIntegerReg + nIntegerReg > SysVx64Linker.MAX_INTEGER_ARGUMENT_REGISTERS) {
+            if (this.nIntegerReg + nIntegerReg > MAX_INTEGER_ARGUMENT_REGISTERS) {
                 //not enough registers - pass on stack
                 return typeClass.classes.stream().map(c -> stackAlloc()).toArray(VMStorage[]::new);
             }
 
             long nVectorReg = typeClass.nVectorRegs();
 
-            if (this.nVectorReg + nVectorReg > SysVx64Linker.MAX_VECTOR_ARGUMENT_REGISTERS) {
+            if (this.nVectorReg + nVectorReg > MAX_VECTOR_ARGUMENT_REGISTERS) {
                 //not enough registers - pass on stack
                 return typeClass.classes.stream().map(c -> stackAlloc()).toArray(VMStorage[]::new);
             }

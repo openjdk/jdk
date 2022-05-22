@@ -19,29 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
+#ifndef SHARE_OOPS_OOPCAST_INLINE_HPP
+#define SHARE_OOPS_OOPCAST_INLINE_HPP
 
-#ifdef COMPILER2
+#include "oops/oopsHierarchy.hpp"
+#include "oops/oop.inline.hpp"
 
-#include "opto/parse.hpp"
-#include "interpreter/bytecodes.hpp"
+template<typename T>
+static bool is_oop_type(oop theOop) {
+  static_assert(sizeof(T) == 0, "No is_oop_type specialization found for this type");
+  return false;
+}
+template<>
+inline bool is_oop_type<instanceOop>(oop theOop) { return theOop->is_instance(); }
+template<>
+inline bool is_oop_type<arrayOop>(oop theOop) { return theOop->is_array(); }
+template<>
+inline bool is_oop_type<objArrayOop>(oop theOop) { return theOop->is_objArray(); }
+template<>
+inline bool is_oop_type<typeArrayOop>(oop theOop) { return theOop->is_typeArray(); }
 
-bool Parse::do_one_bytecode_targeted() {
-  switch (bc()) {
-    case Bytecodes::_idiv: // fallthrough
-    case Bytecodes::_irem: // fallthrough
-#ifdef _LP64
-    case Bytecodes::_ldiv: // fallthrough
-    case Bytecodes::_lrem:
-#endif
-      do_divmod_fixup();
-      return true;
-    default:
-      return false;
-  }
+template<typename R>
+R oop_cast(oop theOop) {
+  assert(is_oop_type<R>(theOop), "Invalid cast");
+  return (R) theOop;
 }
 
-#endif // COMPILER2
+#endif // SHARE_OOPS_OOPCAST_INLINE_HPP

@@ -654,7 +654,7 @@ jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
 
 jdk.security.legacyAlgorithms=SHA1, \
     RSA keySize < 2048, DSA keySize < 2048, \
-    DES, DESede, MD5
+    DES, DESede, MD5, RC2, ARCFOUR
 
 #
 # Algorithm restrictions for signed JAR files
