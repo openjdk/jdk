@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,30 +63,40 @@ public:
       return (Symbol*)(SharedBaseAddress + _name);
     }
   };
+  struct RTEnumKlassStaticFields {
+    int _num;
+    int _root_indices[1];
+  };
 
   InstanceKlass* _klass;
   int _num_verifier_constraints;
   int _num_loader_constraints;
 
-  // optional CrcInfo              _crc;  (only for UNREGISTERED classes)
-  // optional InstanceKlass*       _nest_host
-  // optional RTLoaderConstraint   _loader_constraint_types[_num_loader_constraints]
-  // optional RTVerifierConstraint _verifier_constraints[_num_verifier_constraints]
-  // optional char                 _verifier_constraint_flags[_num_verifier_constraints]
+  // optional CrcInfo                 _crc;  (only for UNREGISTERED classes)
+  // optional InstanceKlass*          _nest_host
+  // optional RTLoaderConstraint      _loader_constraint_types[_num_loader_constraints]
+  // optional RTVerifierConstraint    _verifier_constraints[_num_verifier_constraints]
+  // optional char                    _verifier_constraint_flags[_num_verifier_constraints]
+  // optional RTEnumKlassStaticFields _enum_klass_static_fields;
 
 private:
   static size_t header_size_size() {
-    return sizeof(RunTimeClassInfo);
+    return align_up(sizeof(RunTimeClassInfo), wordSize);
   }
   static size_t verifier_constraints_size(int num_verifier_constraints) {
-    return sizeof(RTVerifierConstraint) * num_verifier_constraints;
+    return align_up(sizeof(RTVerifierConstraint) * num_verifier_constraints, wordSize);
   }
   static size_t verifier_constraint_flags_size(int num_verifier_constraints) {
-    return sizeof(char) * num_verifier_constraints;
+    return align_up(sizeof(char) * num_verifier_constraints, wordSize);
   }
   static size_t loader_constraints_size(int num_loader_constraints) {
-    return sizeof(RTLoaderConstraint) * num_loader_constraints;
+    return align_up(sizeof(RTLoaderConstraint) * num_loader_constraints, wordSize);
   }
+  static size_t enum_klass_static_fields_size(int num_fields) {
+    size_t size = num_fields <= 0 ? 0 : sizeof(RTEnumKlassStaticFields) + (num_fields - 1) * sizeof(int);
+    return align_up(size, wordSize);
+  }
+
   static size_t nest_host_size(InstanceKlass* klass) {
     if (klass->is_hidden()) {
       return sizeof(InstanceKlass*);
@@ -98,13 +107,15 @@ private:
 
   static size_t crc_size(InstanceKlass* klass);
 public:
-  static size_t byte_size(InstanceKlass* klass, int num_verifier_constraints, int num_loader_constraints) {
+  static size_t byte_size(InstanceKlass* klass, int num_verifier_constraints, int num_loader_constraints,
+                          int num_enum_klass_static_fields) {
     return header_size_size() +
            crc_size(klass) +
            nest_host_size(klass) +
            loader_constraints_size(num_loader_constraints) +
            verifier_constraints_size(num_verifier_constraints) +
-           verifier_constraint_flags_size(num_verifier_constraints);
+           verifier_constraint_flags_size(num_verifier_constraints) +
+           enum_klass_static_fields_size(num_enum_klass_static_fields);
   }
 
 private:
@@ -113,7 +124,7 @@ private:
   }
 
   size_t nest_host_offset() const {
-      return crc_offset() + crc_size(_klass);
+    return crc_offset() + crc_size(_klass);
   }
 
   size_t loader_constraints_offset() const  {
@@ -125,6 +136,9 @@ private:
   size_t verifier_constraint_flags_offset() const {
     return verifier_constraints_offset() + verifier_constraints_size(_num_verifier_constraints);
   }
+  size_t enum_klass_static_fields_offset() const {
+    return verifier_constraint_flags_offset() + verifier_constraint_flags_size(_num_verifier_constraints);
+  }
 
   void check_verifier_constraint_offset(int i) const {
     assert(0 <= i && i < _num_verifier_constraints, "sanity");
@@ -132,6 +146,11 @@ private:
 
   void check_loader_constraint_offset(int i) const {
     assert(0 <= i && i < _num_loader_constraints, "sanity");
+  }
+
+  RTEnumKlassStaticFields* enum_klass_static_fields_addr() const {
+    assert(_klass->has_archived_enum_objs(), "sanity");
+    return (RTEnumKlassStaticFields*)(address(this) + enum_klass_static_fields_offset());
   }
 
 public:
@@ -187,6 +206,23 @@ public:
     return verifier_constraint_flags()[i];
   }
 
+  int num_enum_klass_static_fields(int i) const {
+    return enum_klass_static_fields_addr()->_num;
+  }
+
+  void set_num_enum_klass_static_fields(int num) {
+    enum_klass_static_fields_addr()->_num = num;
+  }
+
+  int enum_klass_static_field_root_index_at(int i) const {
+    assert(0 <= i && i < enum_klass_static_fields_addr()->_num, "must be");
+    return enum_klass_static_fields_addr()->_root_indices[i];
+  }
+
+  void set_enum_klass_static_field_root_index_at(int i, int root_index) {
+    assert(0 <= i && i < enum_klass_static_fields_addr()->_num, "must be");
+    enum_klass_static_fields_addr()->_root_indices[i] = root_index;
+  }
 private:
   // ArchiveBuilder::make_shallow_copy() has reserved a pointer immediately
   // before archived InstanceKlasses. We can use this slot to do a quick

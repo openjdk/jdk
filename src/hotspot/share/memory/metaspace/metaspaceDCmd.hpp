@@ -38,6 +38,7 @@ class MetaspaceDCmd : public DCmdWithParser {
   DCmdArgument<bool> _by_spacetype;
   DCmdArgument<bool> _by_chunktype;
   DCmdArgument<bool> _show_vslist;
+  DCmdArgument<bool> _show_chunkfreelist;
   DCmdArgument<char*> _scale;
   DCmdArgument<bool> _show_classes;
 public:

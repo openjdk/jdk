@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
         $(GTEST_FRAMEWORK_SRC)/googletest/src \
         $(GTEST_FRAMEWORK_SRC)/googlemock/src, \
     INCLUDE_FILES := gtest-all.cc gmock-all.cc, \
-    DISABLED_WARNINGS_gcc := undef unused-result format-nonliteral, \
+    DISABLED_WARNINGS_gcc := undef unused-result format-nonliteral maybe-uninitialized, \
     DISABLED_WARNINGS_clang := undef unused-result format-nonliteral, \
     CFLAGS := $(JVM_CFLAGS) \
         -I$(GTEST_FRAMEWORK_SRC)/googletest \

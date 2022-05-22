@@ -85,7 +85,7 @@ class MethodHandleLongFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
         } catch (IllegalArgumentException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
-            throw newGetIllegalArgumentException(obj.getClass());
+            throw newGetIllegalArgumentException(obj);
         } catch (Throwable e) {
             throw new InternalError(e);
         }
@@ -102,8 +102,8 @@ class MethodHandleLongFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
     public void set(Object obj, Object value)
             throws IllegalArgumentException, IllegalAccessException
     {
+        ensureObj(obj);
         if (isReadOnly()) {
-            ensureObj(obj);     // throw NPE if obj is null on instance field
             throwFinalFieldIllegalAccessException(value);
         }
 
@@ -177,7 +177,8 @@ class MethodHandleLongFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
         } catch (IllegalArgumentException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
-            throw newSetIllegalArgumentException(obj.getClass());
+            // receiver is of invalid type
+            throw newSetIllegalArgumentException(obj);
         } catch (Throwable e) {
             throw new InternalError(e);
         }

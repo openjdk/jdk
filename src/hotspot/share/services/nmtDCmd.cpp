@@ -50,9 +50,6 @@ NMTDCmd::NMTDCmd(outputStream* output,
             "comparison against previous baseline, which shows the memory " \
             "allocation activities at different callsites.",
             "BOOLEAN", false, "false"),
-  _shutdown("shutdown", "request runtime to shutdown itself and free the " \
-            "memory used by runtime.",
-            "BOOLEAN", false, "false"),
   _statistics("statistics", "print tracker statistics for tuning purpose.", \
             "BOOLEAN", false, "false"),
   _scale("scale", "Memory usage in which scale, KB, MB or GB",
@@ -62,7 +59,6 @@ NMTDCmd::NMTDCmd(outputStream* output,
   _dcmdparser.add_dcmd_option(&_baseline);
   _dcmdparser.add_dcmd_option(&_summary_diff);
   _dcmdparser.add_dcmd_option(&_detail_diff);
-  _dcmdparser.add_dcmd_option(&_shutdown);
   _dcmdparser.add_dcmd_option(&_statistics);
   _dcmdparser.add_dcmd_option(&_scale);
 }
@@ -79,9 +75,6 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
   if (MemTracker::tracking_level() == NMT_off) {
     output()->print_cr("Native memory tracking is not enabled");
     return;
-  } else if (MemTracker::tracking_level() == NMT_minimal) {
-     output()->print_cr("Native memory tracking has been shutdown");
-     return;
   }
 
   const char* scale_value = _scale.value();
@@ -97,12 +90,11 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
   if (_baseline.is_set() && _baseline.value()) { ++nopt; }
   if (_summary_diff.is_set() && _summary_diff.value()) { ++nopt; }
   if (_detail_diff.is_set() && _detail_diff.value()) { ++nopt; }
-  if (_shutdown.is_set() && _shutdown.value()) { ++nopt; }
   if (_statistics.is_set() && _statistics.value()) { ++nopt; }
 
   if (nopt > 1) {
       output()->print_cr("At most one of the following option can be specified: " \
-        "summary, detail, metadata, baseline, summary.diff, detail.diff, shutdown");
+        "summary, detail, metadata, baseline, summary.diff, detail.diff");
       return;
   } else if (nopt == 0) {
     if (_summary.is_set()) {
@@ -147,9 +139,6 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
     } else {
       output()->print_cr("No detail baseline for comparison");
     }
-  } else if (_shutdown.value()) {
-    MemTracker::shutdown();
-    output()->print_cr("Native memory tracking has been turned off");
   } else if (_statistics.value()) {
     if (check_detail_tracking_level(output())) {
       MemTracker::tuning_statistics(output());

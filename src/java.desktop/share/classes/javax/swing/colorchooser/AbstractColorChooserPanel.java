@@ -161,7 +161,7 @@ public abstract class AbstractColorChooserPanel extends JPanel {
      * If you override this, be sure to call <code>super</code>.
      *
      * @param enclosingChooser the chooser to which the panel is to be added
-     * @exception RuntimeException  if the chooser panel has already been
+     * @throws RuntimeException  if the chooser panel has already been
      *                          installed
      */
     public void installChooserPanel(JColorChooser enclosingChooser) {

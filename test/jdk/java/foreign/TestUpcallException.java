@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
+ * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @library /test/lib
- * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build ThrowingUpcall TestUpcallException
  *
  * @run testng/othervm/native
@@ -33,9 +33,6 @@
  *   TestUpcallException
  */
 
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.ResourceScope;
 import jdk.test.lib.Utils;
 import org.testng.annotations.Test;
 
@@ -54,17 +51,17 @@ public class TestUpcallException {
 
     @Test
     public void testExceptionInterpreted() throws InterruptedException, IOException {
-        boolean useSpec = false;
-        run(useSpec);
+        run(/* useSpec = */ false, /* isVoid = */ true);
+        run(/* useSpec = */ false, /* isVoid = */ false);
     }
 
     @Test
     public void testExceptionSpecialized() throws IOException, InterruptedException {
-        boolean useSpec = true;
-        run(useSpec);
+        run(/* useSpec = */ true, /* isVoid = */ true);
+        run(/* useSpec = */ true, /* isVoid = */ false);
     }
 
-    private void run(boolean useSpec) throws IOException, InterruptedException {
+    private void run(boolean useSpec, boolean isVoid) throws IOException, InterruptedException {
         Process process = new ProcessBuilder()
             .command(
                 Paths.get(Utils.TEST_JDK)
@@ -72,12 +69,13 @@ public class TestUpcallException {
                      .resolve("java")
                      .toAbsolutePath()
                      .toString(),
-                "--add-modules", "jdk.incubator.foreign",
+                "--enable-preview",
                 "--enable-native-access=ALL-UNNAMED",
                 "-Djava.library.path=" + System.getProperty("java.library.path"),
                 "-Djdk.internal.foreign.ProgrammableUpcallHandler.USE_SPEC=" + useSpec,
                 "-cp", Utils.TEST_CLASS_PATH,
-                "ThrowingUpcall")
+                "ThrowingUpcall",
+                isVoid ? "void" : "non-void")
             .start();
 
         int result = process.waitFor();

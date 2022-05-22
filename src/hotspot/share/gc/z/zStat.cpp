@@ -31,6 +31,7 @@
 #include "gc/z/zPageAllocator.inline.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zStat.hpp"
+#include "gc/z/zThread.inline.hpp"
 #include "gc/z/zTracer.inline.hpp"
 #include "gc/z/zUtils.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -736,8 +737,13 @@ ZStatSubPhase::ZStatSubPhase(const char* name) :
     ZStatPhase("Subphase", name) {}
 
 void ZStatSubPhase::register_start(const Ticks& start) const {
-  LogTarget(Debug, gc, phases, start) log;
-  log_start(log, true /* thread */);
+  if (ZThread::is_worker()) {
+    LogTarget(Trace, gc, phases, start) log;
+    log_start(log, true /* thread */);
+  } else {
+    LogTarget(Debug, gc, phases, start) log;
+    log_start(log, false /* thread */);
+  }
 }
 
 void ZStatSubPhase::register_end(const Ticks& start, const Ticks& end) const {
@@ -750,8 +756,13 @@ void ZStatSubPhase::register_end(const Ticks& start, const Ticks& end) const {
   const Tickspan duration = end - start;
   ZStatSample(_sampler, duration.value());
 
-  LogTarget(Debug, gc, phases) log;
-  log_end(log, duration, true /* thread */);
+  if (ZThread::is_worker()) {
+    LogTarget(Trace, gc, phases) log;
+    log_end(log, duration, true /* thread */);
+  } else {
+    LogTarget(Debug, gc, phases) log;
+    log_end(log, duration, false /* thread */);
+  }
 }
 
 ZStatCriticalPhase::ZStatCriticalPhase(const char* name, bool verbose) :

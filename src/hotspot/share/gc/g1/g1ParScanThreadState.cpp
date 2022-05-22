@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1YoungGCEvacFailureInjector.inline.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
@@ -263,7 +264,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
                                    _partial_objarray_chunk_size);
 
   // Push any needed partial scan tasks.  Pushed before processing the
-  // intitial chunk to allow other workers to steal while we're processing.
+  // initial chunk to allow other workers to steal while we're processing.
   for (uint i = 0; i < step._ncreate; ++i) {
     push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
   }
@@ -421,8 +422,8 @@ HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
 }
 
 #if EVAC_FAILURE_INJECTOR
-bool G1ParScanThreadState::inject_evacuation_failure() {
-  return _g1h->evac_failure_injector()->evacuation_should_fail(_evac_failure_inject_counter);
+bool G1ParScanThreadState::inject_evacuation_failure(uint region_idx) {
+  return _g1h->evac_failure_injector()->evacuation_should_fail(_evac_failure_inject_counter, region_idx);
 }
 #endif
 
@@ -432,6 +433,12 @@ void G1ParScanThreadState::undo_allocation(G1HeapRegionAttr dest_attr,
                                            size_t word_sz,
                                            uint node_index) {
   _plab_allocator->undo_allocation(dest_attr, obj_ptr, word_sz, node_index);
+}
+
+void G1ParScanThreadState::update_bot_after_copying(oop obj, size_t word_sz) {
+  HeapWord* obj_start = cast_from_oop<HeapWord*>(obj);
+  HeapRegion* region = _g1h->heap_region_containing(obj_start);
+  region->update_bot_for_obj(obj_start, word_sz);
 }
 
 // Private inline function, for direct internal use and providing the
@@ -470,7 +477,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   assert(_g1h->is_in_reserved(obj_ptr), "Allocated memory should be in the heap");
 
   // Should this evacuation fail?
-  if (inject_evacuation_failure()) {
+  if (inject_evacuation_failure(from_region->hrm_index())) {
     // Doing this after all the allocation attempts also tests the
     // undo_allocation() method too.
     undo_allocation(dest_attr, obj_ptr, word_sz, node_index);
@@ -482,6 +489,10 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), obj_ptr, word_sz);
 
   const oop obj = cast_to_oop(obj_ptr);
+  // Because the forwarding is done with memory_order_relaxed there is no
+  // ordering with the above copy.  Clients that get the forwardee must not
+  // examine its contents without other synchronization, since the contents
+  // may not be up to date for them.
   const oop forward_ptr = old->forward_to_atomic(obj, old_mark, memory_order_relaxed);
   if (forward_ptr == NULL) {
 
@@ -498,6 +509,8 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
         obj->incr_age();
       }
       _age_table.add(age, word_sz);
+    } else {
+      update_bot_after_copying(obj, word_sz);
     }
 
     // Most objects are not arrays, so do one array check rather than
@@ -513,6 +526,8 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       }
       return obj;
     }
+
+    ContinuationGCSupport::transform_stack_chunk(obj);
 
     // Check for deduplicating young Strings.
     if (G1StringDedup::is_candidate_from_evacuation(klass,
@@ -608,11 +623,19 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
 
+    // Objects failing evacuation will turn into old objects since the regions
+    // are relabeled as such. We mark the failing objects in the prev bitmap and
+    // later use it to handle all failed objects.
+    _g1h->mark_evac_failure_object(old, _worker_id);
+
     if (_evac_failure_regions->record(r->hrm_index())) {
       _g1h->hr_printer()->evac_failure(r);
     }
 
     _preserved_marks->push_if_necessary(old, m);
+
+    ContinuationGCSupport::transform_stack_chunk(old);
+
     _evacuation_failed_info.register_copy_failure(word_sz);
 
     // For iterating objects that failed evacuation currently we can reuse the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,6 @@ import java.util.regex.Pattern;
 
 /**
  * An action that replaces characters in text.
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own risk.
- * This code and its internal interfaces are subject to change or
- * deletion without notice.</b>
  */
 public final class Replace implements Action {
 
@@ -66,7 +61,7 @@ public final class Replace implements Action {
         Matcher matcher = pattern.matcher(textString);
         var replacements = new ArrayList<Replacement>();
         StringBuilder b = new StringBuilder();
-        int off = 0; // offset because of the replacements (can be negative)
+        int off = 0; // cumulative offset caused by replacements (can become negative)
         while (matcher.find()) {
             int start = matcher.start();
             int end = matcher.end();
@@ -79,7 +74,7 @@ public final class Replace implements Action {
         // there's no need to call matcher.appendTail(b)
         for (int i = replacements.size() - 1; i >= 0; i--) {
             Replacement r = replacements.get(i);
-            text.subText(r.start, r.end).replace(Set.of(), r.value);
+            text.subText(r.start(), r.end()).replace(Set.of(), r.value());
         }
     }
 }

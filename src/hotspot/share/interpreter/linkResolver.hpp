@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,6 @@ class CallInfo : public StackObj {
                    const methodHandle& resolved_method,
                    const methodHandle& selected_method,
                    int vtable_index, TRAPS);
-  void set_handle(const methodHandle& resolved_method,
-                  Handle resolved_appendix, TRAPS);
   void set_handle(Klass* resolved_klass,
                   const methodHandle& resolved_method,
                   Handle resolved_appendix, TRAPS);
@@ -249,6 +247,11 @@ class LinkResolver: AllStatic {
                                                  Klass* recv_klass,
                                                  bool check_null_and_abstract, TRAPS);
 
+  static bool resolve_previously_linked_invokehandle(CallInfo& result,
+                                                     const LinkInfo& link_info,
+                                                     const constantPoolHandle& pool,
+                                                     int index, TRAPS);
+
   static void check_field_accessability(Klass* ref_klass,
                                         Klass* resolved_klass,
                                         Klass* sel_klass,
@@ -280,6 +283,8 @@ class LinkResolver: AllStatic {
   static Method* resolve_method_statically(Bytecodes::Code code,
                                            const constantPoolHandle& pool,
                                            int index, TRAPS);
+
+  static void resolve_continuation_enter(CallInfo& callinfo, TRAPS);
 
   static void resolve_field_access(fieldDescriptor& result,
                                    const constantPoolHandle& pool,
@@ -337,7 +342,6 @@ class LinkResolver: AllStatic {
                              const methodHandle& attached_method,
                              Bytecodes::Code byte, TRAPS);
 
- public:
   // Only resolved method known.
   static void throw_abstract_method_error(const methodHandle& resolved_method, TRAPS) {
     throw_abstract_method_error(resolved_method, methodHandle(), NULL, CHECK);

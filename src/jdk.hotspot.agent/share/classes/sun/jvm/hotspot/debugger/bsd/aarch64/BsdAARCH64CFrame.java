@@ -32,7 +32,7 @@ import sun.jvm.hotspot.debugger.bsd.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
 
-final public class BsdAARCH64CFrame extends BasicCFrame {
+public final class BsdAARCH64CFrame extends BasicCFrame {
    public BsdAARCH64CFrame(BsdDebugger dbg, Address fp, Address pc) {
       super(dbg.getCDebugger());
       this.fp = fp;

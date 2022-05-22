@@ -299,8 +299,9 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
     _direct_allocated[state] = 0;
     uint length = alloc_buffers_length(state);
     _alloc_buffers[state] = NEW_C_HEAP_ARRAY(PLAB*, length, mtGC);
+    size_t word_sz = _g1h->desired_plab_sz(state);
     for (uint node_index = 0; node_index < length; node_index++) {
-      _alloc_buffers[state][node_index] = new PLAB(_g1h->desired_plab_sz(state));
+      _alloc_buffers[state][node_index] = new PLAB(word_sz);
     }
   }
 }

@@ -183,7 +183,7 @@ class Module extends Archive {
         return name();
     }
 
-    public final static class Builder {
+    public static final class Builder {
         final String name;
         final ModuleDescriptor descriptor;
         final boolean isSystem;

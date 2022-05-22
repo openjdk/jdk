@@ -73,7 +73,7 @@ import static java.nio.file.StandardCopyOption.*;
  * @test
  * @bug 6990846 7009092 7009085 7015391 7014948 7005986 7017840 7007596
  *      7157656 8002390 7012868 7012856 8015728 8038500 8040059 8069211
- *      8131067 8034802 8210899 8273961
+ *      8131067 8034802 8210899 8273961 8271079
  * @summary Test Zip filesystem provider
  * @modules jdk.zipfs
  * @run main ZipFSTester

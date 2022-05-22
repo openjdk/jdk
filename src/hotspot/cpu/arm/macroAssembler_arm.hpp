@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -998,7 +998,7 @@ public:
 
 #ifndef PRODUCT
   // Preserves flags and all registers.
-  // On SMP the updated value might not be visible to external observers without a sychronization barrier
+  // On SMP the updated value might not be visible to external observers without a synchronization barrier
   void cond_atomic_inc32(AsmCondition cond, int* counter_addr);
 #endif // !PRODUCT
 

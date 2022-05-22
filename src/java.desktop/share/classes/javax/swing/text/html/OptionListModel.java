@@ -464,7 +464,7 @@ class OptionListModel<E> extends DefaultListModel<E> implements ListSelectionMod
      * <code>listenerLists</code> are not duplicated.
      *
      * @return a clone of the receiver
-     * @exception CloneNotSupportedException if the receiver does not
+     * @throws CloneNotSupportedException if the receiver does not
      *    both (a) implement the <code>Cloneable</code> interface
      *    and (b) define a <code>clone</code> method
      */

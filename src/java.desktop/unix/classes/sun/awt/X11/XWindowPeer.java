@@ -416,10 +416,10 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
         for (int i = 0; i < cnt; i++) {
             final ComponentPeer childPeer = acc.getPeer(children[i]);
-            if (childPeer != null && childPeer instanceof XWindowPeer) {
-                if (((XWindowPeer)childPeer).winAttr.iconsInherited) {
-                    ((XWindowPeer)childPeer).winAttr.icons = icons;
-                    ((XWindowPeer)childPeer).recursivelySetIcon(icons);
+            if (childPeer instanceof XWindowPeer xWindowPeer) {
+                if (xWindowPeer.winAttr.iconsInherited) {
+                    xWindowPeer.winAttr.icons = icons;
+                    xWindowPeer.recursivelySetIcon(icons);
                 }
             }
         }

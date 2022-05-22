@@ -131,7 +131,7 @@ public abstract class RMISocketFactory
      * @see java.lang.SecurityManager#checkSetFactory()
      * @since 1.1
      */
-    public synchronized static void setSocketFactory(RMISocketFactory fac)
+    public static synchronized void setSocketFactory(RMISocketFactory fac)
         throws IOException
     {
         if (factory != null) {
@@ -153,7 +153,7 @@ public abstract class RMISocketFactory
      * @see #setSocketFactory(RMISocketFactory)
      * @since 1.1
      */
-    public synchronized static RMISocketFactory getSocketFactory()
+    public static synchronized RMISocketFactory getSocketFactory()
     {
         return factory;
     }
@@ -166,7 +166,7 @@ public abstract class RMISocketFactory
      * @return the default RMI socket factory
      * @since 1.1
      */
-    public synchronized static RMISocketFactory getDefaultSocketFactory() {
+    public static synchronized RMISocketFactory getDefaultSocketFactory() {
         if (defaultSocketFactory == null) {
             defaultSocketFactory =
                 new sun.rmi.transport.tcp.TCPDirectSocketFactory();
@@ -193,7 +193,7 @@ public abstract class RMISocketFactory
      * @see java.rmi.server.RMIFailureHandler#failure(Exception)
      * @since 1.1
      */
-    public synchronized static void setFailureHandler(RMIFailureHandler fh)
+    public static synchronized void setFailureHandler(RMIFailureHandler fh)
     {
         @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
@@ -210,7 +210,7 @@ public abstract class RMISocketFactory
      * @see #setFailureHandler(RMIFailureHandler)
      * @since 1.1
      */
-    public synchronized static RMIFailureHandler getFailureHandler()
+    public static synchronized RMIFailureHandler getFailureHandler()
     {
         return handler;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "compiler/oopMap.hpp"
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
@@ -58,47 +58,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/ticks.hpp"
-
-#if TASKQUEUE_STATS
-uint G1YoungCollector::num_task_queues() const {
-  return task_queues()->size();
-}
-
-void G1YoungCollector::print_taskqueue_stats_hdr(outputStream* const st) {
-  st->print_raw_cr("GC Task Stats");
-  st->print_raw("thr "); TaskQueueStats::print_header(1, st); st->cr();
-  st->print_raw("--- "); TaskQueueStats::print_header(2, st); st->cr();
-}
-
-void G1YoungCollector::print_taskqueue_stats() const {
-  if (!log_is_enabled(Trace, gc, task, stats)) {
-    return;
-  }
-  Log(gc, task, stats) log;
-  ResourceMark rm;
-  LogStream ls(log.trace());
-  outputStream* st = &ls;
-
-  print_taskqueue_stats_hdr(st);
-
-  TaskQueueStats totals;
-  const uint n = num_task_queues();
-  for (uint i = 0; i < n; ++i) {
-    st->print("%3u ", i); _g1h->task_queue(i)->stats.print(st); st->cr();
-    totals += _g1h->task_queue(i)->stats;
-  }
-  st->print_raw("tot "); totals.print(st); st->cr();
-
-  DEBUG_ONLY(totals.verify());
-}
-
-void G1YoungCollector::reset_taskqueue_stats() {
-  const uint n = num_task_queues();
-  for (uint i = 0; i < n; ++i) {
-    _g1h->task_queue(i)->stats.reset();
-  }
-}
-#endif // TASKQUEUE_STATS
 
 // GCTraceTime wrapper that constructs the message according to GC pause type and
 // GC cause.
@@ -330,7 +289,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
     uint _worker_humongous_total;
     uint _worker_humongous_candidates;
 
-    G1CardSetMemoryStats _card_set_stats;
+    G1SegmentedArrayMemoryStats _card_set_stats;
 
     void sample_card_set_size(HeapRegion* hr) {
       // Sample card set sizes for young gen and humongous before GC: this makes
@@ -436,7 +395,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
                                cast_to_oop(hr->bottom())->size() * HeapWordSize,
                                p2i(hr->bottom()),
                                hr->rem_set()->occupied(),
-                               hr->rem_set()->strong_code_roots_list_length(),
+                               hr->rem_set()->code_roots_list_length(),
                                _g1h->concurrent_mark()->next_mark_bitmap()->is_marked(hr->bottom()),
                                _g1h->is_humongous_reclaim_candidate(index),
                                cast_to_oop(hr->bottom())->is_typeArray()
@@ -446,7 +405,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       return false;
     }
 
-    G1CardSetMemoryStats card_set_stats() const {
+    G1SegmentedArrayMemoryStats card_set_stats() const {
       return _card_set_stats;
     }
   };
@@ -456,7 +415,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
   volatile uint _humongous_total;
   volatile uint _humongous_candidates;
 
-  G1CardSetMemoryStats _all_card_set_stats;
+  G1SegmentedArrayMemoryStats _all_card_set_stats;
 
 public:
   G1PrepareEvacuationTask(G1CollectedHeap* g1h) :
@@ -490,7 +449,7 @@ public:
     return _humongous_total;
   }
 
-  const G1CardSetMemoryStats all_card_set_stats() const {
+  const G1SegmentedArrayMemoryStats all_card_set_stats() const {
     return _all_card_set_stats;
   }
 };
@@ -856,7 +815,7 @@ public:
       return;
     }
     if (region_attr.is_in_cset()) {
-      assert( obj->is_forwarded(), "invariant" );
+      assert(obj->is_forwarded(), "invariant" );
       *p = obj->forwardee();
     } else {
       assert(!obj->is_forwarded(), "invariant" );
@@ -985,12 +944,6 @@ void G1YoungCollector::process_discovered_references(G1ParScanThreadStateSet* pe
   _g1h->make_pending_list_reachable();
 
   phase_times()->record_ref_proc_time((Ticks::now() - start).seconds() * MILLIUNITS);
-}
-
-bool G1STWIsAliveClosure::do_object_b(oop p) {
-  // An object is reachable if it is outside the collection set,
-  // or is inside and copied.
-  return !_g1h->is_in_cset(p) || p->is_forwarded();
 }
 
 void G1YoungCollector::post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thread_states) {
@@ -1153,6 +1106,5 @@ void G1YoungCollector::collect() {
 
     policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_failed());
   }
-  TASKQUEUE_STATS_ONLY(print_taskqueue_stats());
-  TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
+  TASKQUEUE_STATS_ONLY(_g1h->task_queues()->print_and_reset_taskqueue_stats("Oop Queue");)
 }

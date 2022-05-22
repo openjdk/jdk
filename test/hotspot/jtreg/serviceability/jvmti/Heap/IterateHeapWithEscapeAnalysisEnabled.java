@@ -590,7 +590,7 @@ public class IterateHeapWithEscapeAnalysisEnabled {
             // The new instance is an ArgEscape instance and escapes to the JVMTI agent
             // while the target thread is in the call to dontinline_endlessLoop(). At this
             // location there is no local variable that references the ArgEscape.
-            ((ABBox) dontinline_endlessLoop(new ABBox(this))).synchronizedSlowInc();;
+            ((ABBox) dontinline_endlessLoop(new ABBox(this))).synchronizedSlowInc();
         }
     }
 

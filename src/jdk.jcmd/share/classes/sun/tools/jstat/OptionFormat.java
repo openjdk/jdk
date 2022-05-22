@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,15 +77,14 @@ public class OptionFormat {
 
     public void apply(Closure c) throws MonitorException {
 
-      for (Iterator<OptionFormat> i = children.iterator(); i.hasNext(); /* empty */) {
-          OptionFormat o = i.next();
-          c.visit(o, i.hasNext());
-      }
+        for (Iterator<OptionFormat> i = children.iterator(); i.hasNext(); /* empty */) {
+            OptionFormat o = i.next();
+            c.visit(o, i.hasNext());
+        }
 
-      for (Iterator <OptionFormat>i = children.iterator(); i.hasNext(); /* empty */) {
-          OptionFormat o = i.next();
-          o.apply(c);
-      }
+        for (OptionFormat o : children) {
+            o.apply(c);
+        }
     }
 
     public void printFormat() {

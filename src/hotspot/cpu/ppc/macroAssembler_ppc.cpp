@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,7 +233,7 @@ address MacroAssembler::patch_set_narrow_oop(address a, address bound, narrowOop
   return inst1_addr;
 }
 
-// Get compressed oop or klass constant.
+// Get compressed oop constant.
 narrowOop MacroAssembler::get_narrow_oop(address a, address bound) {
   assert(UseCompressedOops, "Should only patch compressed oops");
 
@@ -1460,7 +1460,7 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
     modval = tmp1;
     shift_amount = tmp2;
     val32 = tmp3;
-    // Need some preperation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
+    // Need some preparation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
 #ifdef VM_LITTLE_ENDIAN
     rldic(shift_amount, addr_base, 3, 64-5); // (dest & 3) * 8;
     clrrdi(addr_base, addr_base, 2);
@@ -1537,7 +1537,7 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
     shift_amount = tmp1;
     val32 = tmp2;
     modval = tmp2;
-    // Need some preperation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
+    // Need some preparation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
 #ifdef VM_LITTLE_ENDIAN
     rldic(shift_amount, addr_base, 3, 64-5); // (dest & 3) * 8;
     clrrdi(addr_base, addr_base, 2);
@@ -1669,7 +1669,7 @@ void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_curre
   // (flag == eq) => (dest_current_value == compare_value), ( swapped)
 }
 
-// Preforms atomic compare exchange:
+// Performs atomic compare exchange:
 //   if (compare_value == *addr_base)
 //     *addr_base = exchange_value
 //     int_flag_success = 1;
@@ -2275,7 +2275,7 @@ void MacroAssembler::rtm_counters_update(Register abort_status, Register rtm_cou
           if (failure_bit[nbit] == tm_transaction_level) {
             // Don't check outer transaction, TL = 1 (bit 63). Hence only
             // 11 bits in the TL field are checked to find out if failure
-            // occured in a nested transaction. This check also matches
+            // occurred in a nested transaction. This check also matches
             // the case when nesting_of = 1 (nesting overflow).
             rldicr_(temp_Reg, abort_status_R0, failure_bit[nbit], 10);
           } else if (failure_bit[nbit] == tm_failure_code) {
@@ -2414,7 +2414,7 @@ void MacroAssembler::rtm_retry_lock_on_abort(Register retry_count_Reg, Register 
   // transactional state, like for instance trying to write the TFHAR after a
   // transaction is started; or when there is (B) a Nesting Overflow (too many
   // nested transactions); or when (C) the Footprint overflows (too many
-  // addressess touched in TM state so there is no more space in the footprint
+  // addresses touched in TM state so there is no more space in the footprint
   // area to track them); or in case of (D) a Self-Induced Conflict, i.e. a
   // store is performed to a given address in TM state, then once in suspended
   // state the same address is accessed. Failure (A) is very unlikely to occur
@@ -2660,27 +2660,32 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   andi_(temp, displaced_header, markWord::monitor_value);
   bne(CCR0, object_has_monitor);
 
-  // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
-  ori(displaced_header, displaced_header, markWord::unlocked_value);
+  if (!UseHeavyMonitors) {
+    // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
+    ori(displaced_header, displaced_header, markWord::unlocked_value);
 
-  // Load Compare Value application register.
+    // Load Compare Value application register.
 
-  // Initialize the box. (Must happen before we update the object mark!)
-  std(displaced_header, BasicLock::displaced_header_offset_in_bytes(), box);
+    // Initialize the box. (Must happen before we update the object mark!)
+    std(displaced_header, BasicLock::displaced_header_offset_in_bytes(), box);
 
-  // Must fence, otherwise, preceding store(s) may float below cmpxchg.
-  // Compare object markWord with mark and if equal exchange scratch1 with object markWord.
-  cmpxchgd(/*flag=*/flag,
-           /*current_value=*/current_header,
-           /*compare_value=*/displaced_header,
-           /*exchange_value=*/box,
-           /*where=*/oop,
-           MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
-           MacroAssembler::cmpxchgx_hint_acquire_lock(),
-           noreg,
-           &cas_failed,
-           /*check without membar and ldarx first*/true);
-  assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+    // Must fence, otherwise, preceding store(s) may float below cmpxchg.
+    // Compare object markWord with mark and if equal exchange scratch1 with object markWord.
+    cmpxchgd(/*flag=*/flag,
+             /*current_value=*/current_header,
+             /*compare_value=*/displaced_header,
+             /*exchange_value=*/box,
+             /*where=*/oop,
+             MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
+             MacroAssembler::cmpxchgx_hint_acquire_lock(),
+             noreg,
+             &cas_failed,
+             /*check without membar and ldarx first*/true);
+    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+  } else {
+    // Set NE to indicate 'failure' -> take slow-path.
+    crandc(flag, Assembler::equal, flag, Assembler::equal);
+  }
 
   // If the compare-and-exchange succeeded, then we found an unlocked
   // object and we have now locked it.
@@ -2727,16 +2732,17 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
   // Store a non-null value into the box.
   std(box, BasicLock::displaced_header_offset_in_bytes(), box);
+  beq(flag, cont);
 
-# ifdef ASSERT
+  // Check for recursive locking.
+  cmpd(flag, current_header, R16_thread);
   bne(flag, cont);
-  // We have acquired the monitor, check some invariants.
-  addi(/*monitor=*/temp, temp, -ObjectMonitor::owner_offset_in_bytes());
-  // Invariant 1: _recursions should be 0.
-  //assert(ObjectMonitor::recursions_size_in_bytes() == 8, "unexpected size");
-  asm_assert_mem8_is_zero(ObjectMonitor::recursions_offset_in_bytes(), temp,
-                            "monitor->_recursions should be 0");
-# endif
+
+  // Current thread already owns the lock. Just increment recursions.
+  Register recursions = displaced_header;
+  ld(recursions, ObjectMonitor::recursions_offset_in_bytes()-ObjectMonitor::owner_offset_in_bytes(), temp);
+  addi(recursions, recursions, 1);
+  std(recursions, ObjectMonitor::recursions_offset_in_bytes()-ObjectMonitor::owner_offset_in_bytes(), temp);
 
 #if INCLUDE_RTM_OPT
   } // use_rtm()
@@ -2752,8 +2758,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
                                                  bool use_rtm) {
   assert_different_registers(oop, box, temp, displaced_header, current_header);
   assert(flag != CCR0, "bad condition register");
-  Label cont;
-  Label object_has_monitor;
+  Label cont, object_has_monitor, notRecursive;
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
@@ -2768,12 +2773,14 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   }
 #endif
 
-  // Find the lock address and load the displaced header from the stack.
-  ld(displaced_header, BasicLock::displaced_header_offset_in_bytes(), box);
+  if (!UseHeavyMonitors) {
+    // Find the lock address and load the displaced header from the stack.
+    ld(displaced_header, BasicLock::displaced_header_offset_in_bytes(), box);
 
-  // If the displaced header is 0, we have a recursive unlock.
-  cmpdi(flag, displaced_header, 0);
-  beq(flag, cont);
+    // If the displaced header is 0, we have a recursive unlock.
+    cmpdi(flag, displaced_header, 0);
+    beq(flag, cont);
+  }
 
   // Handle existing monitor.
   // The object has an existing monitor iff (mark & monitor_value) != 0.
@@ -2782,20 +2789,24 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   andi_(R0, current_header, markWord::monitor_value);
   bne(CCR0, object_has_monitor);
 
-  // Check if it is still a light weight lock, this is is true if we see
-  // the stack address of the basicLock in the markWord of the object.
-  // Cmpxchg sets flag to cmpd(current_header, box).
-  cmpxchgd(/*flag=*/flag,
-           /*current_value=*/current_header,
-           /*compare_value=*/box,
-           /*exchange_value=*/displaced_header,
-           /*where=*/oop,
-           MacroAssembler::MemBarRel,
-           MacroAssembler::cmpxchgx_hint_release_lock(),
-           noreg,
-           &cont);
-
-  assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+  if (!UseHeavyMonitors) {
+    // Check if it is still a light weight lock, this is is true if we see
+    // the stack address of the basicLock in the markWord of the object.
+    // Cmpxchg sets flag to cmpd(current_header, box).
+    cmpxchgd(/*flag=*/flag,
+             /*current_value=*/current_header,
+             /*compare_value=*/box,
+             /*exchange_value=*/displaced_header,
+             /*where=*/oop,
+             MacroAssembler::MemBarRel,
+             MacroAssembler::cmpxchgx_hint_release_lock(),
+             noreg,
+             &cont);
+    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+  } else {
+    // Set NE to indicate 'failure' -> take slow-path.
+    crandc(flag, Assembler::equal, flag, Assembler::equal);
+  }
 
   // Handle existing monitor.
   b(cont);
@@ -2819,11 +2830,16 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 #endif
 
   ld(displaced_header, ObjectMonitor::recursions_offset_in_bytes(), current_header);
-  xorr(temp, R16_thread, temp);      // Will be 0 if we are the owner.
-  orr(temp, temp, displaced_header); // Will be 0 if there are 0 recursions.
-  cmpdi(flag, temp, 0);
+
+  cmpd(flag, temp, R16_thread);
   bne(flag, cont);
 
+  addic_(displaced_header, displaced_header, -1);
+  blt(CCR0, notRecursive); // Not recursive if negative after decrement.
+  std(displaced_header, ObjectMonitor::recursions_offset_in_bytes(), current_header);
+  b(cont); // flag is already EQ here.
+
+  bind(notRecursive);
   ld(temp,             ObjectMonitor::EntryList_offset_in_bytes(), current_header);
   ld(displaced_header, ObjectMonitor::cxq_offset_in_bytes(), current_header);
   orr(temp, temp, displaced_header); // Will be 0 if both are 0.

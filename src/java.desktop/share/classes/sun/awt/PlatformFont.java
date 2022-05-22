@@ -428,8 +428,7 @@ public abstract class PlatformFont implements FontPeer {
      */
     private static native void initIDs();
 
-    class PlatformFontCache
-    {
+    static class PlatformFontCache {
         char uniChar;
         FontDescriptor fontDescriptor;
         ByteBuffer bb = ByteBuffer.allocate(4);

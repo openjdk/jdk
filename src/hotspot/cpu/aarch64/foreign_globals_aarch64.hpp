@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,19 +42,11 @@ struct ABIDescriptor {
   int32_t _stack_alignment_bytes;
   int32_t _shadow_space_bytes;
 
+  Register _target_addr_reg;
+  Register _ret_buf_addr_reg;
+
   bool is_volatile_reg(Register reg) const;
   bool is_volatile_reg(FloatRegister reg) const;
-};
-
-struct BufferLayout {
-  size_t stack_args_bytes;
-  size_t stack_args;
-  size_t arguments_vector;
-  size_t arguments_integer;
-  size_t arguments_next_pc;
-  size_t returns_vector;
-  size_t returns_integer;
-  size_t buffer_size;
 };
 
 #endif // CPU_AARCH64_VM_FOREIGN_GLOBALS_AARCH64_HPP

@@ -30,10 +30,68 @@
 #include "runtime/basicLock.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/linkedlist.hpp"
+#include "utilities/resourceHash.hpp"
 
 class LogStream;
 class ObjectMonitor;
 class ThreadsList;
+
+// Hash table of void* to a list of ObjectMonitor* owned by the JavaThread.
+// The JavaThread's owner key is either a JavaThread* or a stack lock
+// address in the JavaThread so we use "void*".
+//
+class ObjectMonitorsHashtable {
+ private:
+  static unsigned int ptr_hash(void* const& s1) {
+    // 2654435761 = 2^32 * Phi (golden ratio)
+    return (unsigned int)(((uint32_t)(uintptr_t)s1) * 2654435761u);
+  }
+
+ public:
+  typedef LinkedListImpl<ObjectMonitor*,
+                         ResourceObj::C_HEAP, mtThread,
+                         AllocFailStrategy::RETURN_NULL> PtrList;
+
+  // ResourceHashtable SIZE is specified at compile time so we
+  // use 1031 which is the first prime after 1024.
+  typedef ResourceHashtable<void*, PtrList*, 1031, ResourceObj::C_HEAP, mtThread,
+                            &ObjectMonitorsHashtable::ptr_hash> PtrTable;
+ private:
+  PtrTable* _ptrs;
+  size_t _key_count;
+  size_t _om_count;
+
+ public:
+  // ResourceHashtable is passed to various functions and populated in
+  // different places so we allocate it using C_HEAP to make it immune
+  // from any ResourceMarks that happen to be in the code paths.
+  ObjectMonitorsHashtable() : _ptrs(new (ResourceObj::C_HEAP, mtThread) PtrTable()), _key_count(0), _om_count(0) {}
+
+  ~ObjectMonitorsHashtable();
+
+  void add_entry(void* key, ObjectMonitor* om);
+
+  void add_entry(void* key, PtrList* list) {
+    _ptrs->put(key, list);
+    _key_count++;
+  }
+
+  PtrList* get_entry(void* key) {
+    PtrList** listpp = _ptrs->get(key);
+    return (listpp == nullptr) ? nullptr : *listpp;
+  }
+
+  bool has_entry(void* key) {
+    PtrList** listpp = _ptrs->get(key);
+    return listpp != nullptr && *listpp != nullptr;
+  }
+
+  bool has_entry(void* key, ObjectMonitor* om);
+
+  size_t key_count() { return _key_count; }
+  size_t om_count() { return _om_count; }
+};
 
 class MonitorList {
   friend class VMStructs;
@@ -133,21 +191,30 @@ class ObjectSynchronizer : AllStatic {
 
   // JNI detach support
   static void release_monitors_owned_by_thread(JavaThread* current);
+
+  // Iterate ObjectMonitors where the owner == thread; this does NOT include
+  // ObjectMonitors where owner is set to a stack lock address in thread:
+  //
+  // This version of monitors_iterate() works with the in-use monitor list.
   static void monitors_iterate(MonitorClosure* m, JavaThread* thread);
+  // This version of monitors_iterate() works with the specified linked list.
+  static void monitors_iterate(MonitorClosure* closure,
+                               ObjectMonitorsHashtable::PtrList* list,
+                               JavaThread* thread);
 
   // Initialize the gInflationLocks
   static void initialize();
 
-  // GC: we current use aggressive monitor deflation policy
+  // GC: we currently use aggressive monitor deflation policy
   // Basically we try to deflate all monitors that are not busy.
-  static size_t deflate_idle_monitors();
+  static size_t deflate_idle_monitors(ObjectMonitorsHashtable* table);
 
   // Deflate idle monitors:
   static void chk_for_block_req(JavaThread* current, const char* op_name,
                                 const char* cnt_name, size_t cnt, LogStream* ls,
                                 elapsedTimer* timer_p);
-  static size_t deflate_monitor_list(Thread* current, LogStream* ls,
-                                     elapsedTimer* timer_p);
+  static size_t deflate_monitor_list(Thread* current, LogStream* ls, elapsedTimer* timer_p,
+                                     ObjectMonitorsHashtable* table);
   static size_t in_use_list_ceiling();
   static void dec_in_use_list_ceiling();
   static void inc_in_use_list_ceiling();

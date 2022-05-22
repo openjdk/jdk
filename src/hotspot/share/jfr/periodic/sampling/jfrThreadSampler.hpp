@@ -28,6 +28,7 @@
 #include "jfr/utilities/jfrAllocation.hpp"
 
 class JavaThread;
+class JfrBuffer;
 class JfrStackFrame;
 class JfrThreadSampler;
 class Thread;

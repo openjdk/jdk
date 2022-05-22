@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,6 @@ import javax.lang.model.type.*;
  * instance) of a class or interface, including annotation type
  * elements.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see ExecutableType
  * @since 1.6
  */
@@ -130,6 +127,12 @@ public interface ExecutableElement extends Element, Parameterizable {
      * @return the default value, or {@code null} if none
      */
     AnnotationValue getDefaultValue();
+
+    /**
+     * {@return the class or interface defining the executable}
+     */
+    @Override
+    Element getEnclosingElement();
 
     /**
      * {@return the simple name of a constructor, method, or

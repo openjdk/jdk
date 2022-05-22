@@ -146,7 +146,7 @@ abstract class ConnectorImpl implements Connector {
     }
 
     @SuppressWarnings("serial") // JDK implementation class
-    abstract class ArgumentImpl implements Connector.Argument, Cloneable {
+    abstract static class ArgumentImpl implements Connector.Argument, Cloneable {
         private String name;
         private String label;
         private String description;
@@ -192,8 +192,7 @@ abstract class ConnectorImpl implements Connector {
         }
 
         public boolean equals(Object obj) {
-            if ((obj != null) && (obj instanceof Connector.Argument)) {
-                Connector.Argument other = (Connector.Argument)obj;
+            if (obj instanceof Argument other) {
                 return (name().equals(other.name())) &&
                        (description().equals(other.description())) &&
                        (mustSpecify() == other.mustSpecify()) &&
@@ -276,7 +275,7 @@ abstract class ConnectorImpl implements Connector {
         }
     }
 
-    class IntegerArgumentImpl extends ConnectorImpl.ArgumentImpl
+    static class IntegerArgumentImpl extends ConnectorImpl.ArgumentImpl
                               implements Connector.IntegerArgument {
         private static final long serialVersionUID = 763286081923797770L;
         private final int min;
@@ -377,7 +376,7 @@ abstract class ConnectorImpl implements Connector {
         }
     }
 
-    class StringArgumentImpl extends ConnectorImpl.ArgumentImpl
+    static class StringArgumentImpl extends ConnectorImpl.ArgumentImpl
                              implements Connector.StringArgument {
         private static final long serialVersionUID = 7500484902692107464L;
         StringArgumentImpl(String name, String label, String description,
@@ -394,7 +393,7 @@ abstract class ConnectorImpl implements Connector {
         }
     }
 
-    class SelectedArgumentImpl extends ConnectorImpl.ArgumentImpl
+    static class SelectedArgumentImpl extends ConnectorImpl.ArgumentImpl
                               implements Connector.SelectedArgument {
         private static final long serialVersionUID = -5689584530908382517L;
         @SuppressWarnings("serial") // Type of field is not Serializable

@@ -59,7 +59,7 @@ extern "C" {
         DWORD cchSize = 0;
 
         UINT result = MsiGetProperty(hInstall, TEXT("INSTALLDIR"),
-                TEXT(""), &cchSize);
+                (LPTSTR)TEXT(""), &cchSize);
         if (result == ERROR_MORE_DATA) {
             cchSize = cchSize + 1; // NULL termination
             szValue = new TCHAR[cchSize];

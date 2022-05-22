@@ -87,6 +87,7 @@ import java.time.LocalTime;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.chrono.ChronoZonedDateTime;
@@ -133,6 +134,10 @@ final class Parsed implements TemporalAccessor {
      */
     ZoneId zone;
     /**
+     * The parsed zone name type.
+     */
+    int zoneNameType = DateTimeFormatterBuilder.ZoneTextPrinterParser.UNDEFINED;
+    /**
      * The parsed chronology.
      */
     Chronology chrono;
@@ -175,6 +180,7 @@ final class Parsed implements TemporalAccessor {
         Parsed cloned = new Parsed();
         cloned.fieldValues.putAll(this.fieldValues);
         cloned.zone = this.zone;
+        cloned.zoneNameType = this.zoneNameType;
         cloned.chrono = this.chrono;
         cloned.leapSecond = this.leapSecond;
         cloned.dayPeriod = this.dayPeriod;
@@ -652,8 +658,12 @@ final class Parsed implements TemporalAccessor {
                 fieldValues.put(INSTANT_SECONDS, instant);
             } else {
                 if (zone != null) {
-                    long instant = date.atTime(time).atZone(zone).toEpochSecond();
-                    fieldValues.put(INSTANT_SECONDS, instant);
+                    var czdt = date.atTime(time).atZone(zone);
+                    if (zoneNameType == DateTimeFormatterBuilder.ZoneTextPrinterParser.STD ||
+                        zoneNameType == DateTimeFormatterBuilder.ZoneTextPrinterParser.GENERIC) {
+                        czdt = czdt.withLaterOffsetAtOverlap();
+                    }
+                    fieldValues.put(INSTANT_SECONDS, czdt.toEpochSecond());
                 }
             }
         }
@@ -718,6 +728,7 @@ final class Parsed implements TemporalAccessor {
         buf.append(fieldValues).append(',').append(chrono);
         if (zone != null) {
             buf.append(',').append(zone);
+            buf.append(',').append(zoneNameType);
         }
         if (date != null || time != null) {
             buf.append(" resolved to ");

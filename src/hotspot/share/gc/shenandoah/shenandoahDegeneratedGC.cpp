@@ -113,8 +113,10 @@ void ShenandoahDegenGC::op_degenerated() {
       op_mark();
 
     case _degenerated_mark:
-      // No fallthrough. Continue mark, handed over from concurrent mark
-      if (_degen_point == ShenandoahDegenPoint::_degenerated_mark) {
+      // No fallthrough. Continue mark, handed over from concurrent mark if
+      // concurrent mark has yet completed
+      if (_degen_point == ShenandoahDegenPoint::_degenerated_mark &&
+          heap->is_concurrent_mark_in_progress()) {
         op_finish_mark();
       }
       assert(!heap->cancelled_gc(), "STW mark can not OOM");

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8270139
+ * @bug 8270139 8273039
  * @summary Verify error recovery in JShell
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -37,6 +37,7 @@
 import org.testng.annotations.Test;
 import static jdk.jshell.Snippet.Status.NONEXISTENT;
 import static jdk.jshell.Snippet.Status.RECOVERABLE_NOT_DEFINED;
+import static jdk.jshell.Snippet.Status.REJECTED;
 
 @Test
 public class ErrorRecoveryTest extends KullaTesting {
@@ -48,5 +49,12 @@ public class ErrorRecoveryTest extends KullaTesting {
                    @interface Foo { int value(); }
                    """,
                    ste(MAIN_SNIPPET, NONEXISTENT, RECOVERABLE_NOT_DEFINED, false, null));
+    }
+
+    public void testBrokenName() {
+        assertEval("int strictfp = 0;",
+                   DiagCheck.DIAG_ERROR,
+                   DiagCheck.DIAG_IGNORE,
+                   ste(MAIN_SNIPPET, NONEXISTENT, REJECTED, false, null));
     }
 }

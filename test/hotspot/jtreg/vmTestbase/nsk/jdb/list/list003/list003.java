@@ -85,10 +85,11 @@ public class list003 extends JdbTest {
         return line.trim().equals("main[1]");
     }
 
-    protected static List<ListLine> parseListOutput(String[] lines) {
+    protected List<ListLine> parseListOutput(String[] lines) {
         List<String> lineList = new ArrayList<>(Arrays.asList(lines));
         if (!isPrompt(lineList.remove(lineList.size() - 1))) {
-            throw new AssertionError("Expected trailing prompt");
+            failure("Expected trailing prompt");
+            return null;
         } else if (lineList.size() == 1 && lineList.get(0).equals("EOF")) {
             return new ArrayList<>();
         } else {
@@ -117,14 +118,14 @@ public class list003 extends JdbTest {
 
     protected void runCasesNoCleanup() {
         if (jdb.receiveReplyFor(JdbCommand.repeat + "on").length != 1) {
-            throw new AssertionError("Missing or unexpected output");
+            failure("Missing or unexpected output");
         }
 
         List<ListLine> autoList = parseListOutput(jdb.receiveReplyFor(JdbCommand.list));
         int lineNo = autoList.stream().filter(ListLine::active).findFirst().get().number();
         List<ListLine> manualList = parseListOutput(jdb.receiveReplyFor(JdbCommand.list + (lineNo - 1)));
         if (manualList.stream().filter(ListLine::active).findFirst().get().number() != lineNo) {
-            throw new AssertionError("Manual listing didn't mark the active source line");
+            failure("Manual listing didn't mark the active source line");
         }
 
         // Verify that we can correctly list by auto-advance all the way to EOF
@@ -137,36 +138,36 @@ public class list003 extends JdbTest {
             List<ListLine> currList = parseListOutput(jdb.receiveReplyFor(command));
             if (currList.equals(prevList)) {
                 // This guards against infinite looping
-                throw new AssertionError("Consecutive listings were identical");
+                failure("Consecutive listings were identical");
             }
             int prevEnd = prevList.get(prevList.size() - 1).number();
             if (!currList.isEmpty() && currList.get(0).number() != prevEnd + 1) {
-                throw new AssertionError("Consecutive listings weren't for consecutive source chunks");
+                failure("Consecutive listings weren't for consecutive source chunks");
             }
             prevList = currList;
         }
         if (reps < 2) {
-            throw new AssertionError("Didn't get enough consecutive list reps");
+            failure("Didn't get enough consecutive list reps");
         }
 
         String[] lines = jdb.receiveReplyFor(JdbCommand.up);
         if (!lines[0].equals("End of stack.") || !isPrompt(lines[1])) {
-            throw new AssertionError("Unexpected output from `up'");
+            failure("Unexpected output from `up'");
         }
         List<ListLine> resetList = parseListOutput(jdb.receiveReplyFor(JdbCommand.list));
         if (!resetList.stream().anyMatch(ListLine::active)) {
-            throw new AssertionError("List target didn't reset to active line");
+            failure("List target didn't reset to active line");
         }
 
         List<ListLine> listing = parseListOutput(jdb.receiveReplyFor(JdbCommand.list + "1"));
         if (!listing.stream().anyMatch(l -> l.number() == 1)) {
-            throw new AssertionError("Manual listing displayed the wrong lines");
+            failure("Manual listing displayed the wrong lines");
         }
 
         List<ListLine> targetedList = parseListOutput(jdb.receiveReplyFor(JdbCommand.list + "1"));
         autoList = parseListOutput(jdb.receiveReplyFor(JdbCommand.list));
         if (autoList.get(0).number() != targetedList.get(targetedList.size() - 1).number() + 1) {
-            throw new AssertionError("Auto-advance didn't work after targeted list");
+            failure("Auto-advance didn't work after targeted list");
         }
     }
 }

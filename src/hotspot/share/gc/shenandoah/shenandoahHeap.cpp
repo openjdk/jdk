@@ -39,6 +39,7 @@
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -416,7 +417,7 @@ void ShenandoahHeap::initialize_mode() {
       vm_exit_during_initialization("Unknown -XX:ShenandoahGCMode option");
     }
   } else {
-    ShouldNotReachHere();
+    vm_exit_during_initialization("Unknown -XX:ShenandoahGCMode option (null)");
   }
   _gc_mode->initialize_flags();
   if (_gc_mode->is_diagnostic() && !UnlockDiagnosticVMOptions) {
@@ -1366,7 +1367,7 @@ public:
 // parallel marking queues.
 // Every worker processes it's own marking queue. work-stealing is used
 // to balance workload.
-class ShenandoahParallelObjectIterator : public ParallelObjectIterator {
+class ShenandoahParallelObjectIterator : public ParallelObjectIteratorImpl {
 private:
   uint                         _num_workers;
   bool                         _init_ready;
@@ -1465,7 +1466,7 @@ private:
   }
 };
 
-ParallelObjectIterator* ShenandoahHeap::parallel_object_iterator(uint workers) {
+ParallelObjectIteratorImpl* ShenandoahHeap::parallel_object_iterator(uint workers) {
   return new ShenandoahParallelObjectIterator(workers, &_aux_bit_map);
 }
 
@@ -2304,4 +2305,23 @@ void ShenandoahHeap::flush_liveness_cache(uint worker_id) {
       ld[i] = 0;
     }
   }
+}
+
+bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
+  if (is_idle()) return false;
+
+  // Objects allocated after marking start are implicitly alive, don't need any barriers during
+  // marking phase.
+  if (is_concurrent_mark_in_progress() && marking_context()->allocated_after_mark_start(obj)) {
+    return false;
+  }
+
+  // Objects allocated after evacuation start are guaranteed in to-space, don't need any barriers
+  // during evacuation/update references phases.
+  if (has_forwarded_objects() &&
+      cast_from_oop<HeapWord*>(obj) >= heap_region_containing(obj)->get_update_watermark()) {
+    return false;
+  }
+
+  return true;
 }

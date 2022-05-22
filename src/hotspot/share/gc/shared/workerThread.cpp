@@ -59,8 +59,9 @@ void WorkerTaskDispatcher::worker_run_task() {
   // Wait for the coordinator to dispatch a task.
   _start_semaphore.wait();
 
-  // Get worker id.
+  // Get and set worker id.
   const uint worker_id = Atomic::fetch_and_add(&_started, 1u);
+  WorkerThread::set_worker_id(worker_id);
 
   // Run task.
   GCIdMark gc_id_mark(_task->gc_id());
@@ -91,17 +92,19 @@ void WorkerThreads::initialize_workers() {
   }
 }
 
-WorkerThread* WorkerThreads::create_worker(uint id) {
+WorkerThread* WorkerThreads::create_worker(uint name_suffix) {
   if (is_init_completed() && InjectGCWorkerCreationFailure) {
     return NULL;
   }
 
-  WorkerThread* const worker = new WorkerThread(_name, id, &_dispatcher);
+  WorkerThread* const worker = new WorkerThread(_name, name_suffix, &_dispatcher);
 
   if (!os::create_thread(worker, os::gc_thread)) {
     delete worker;
     return NULL;
   }
+
+  on_create_worker(worker);
 
   os::start_thread(worker);
 
@@ -146,10 +149,11 @@ void WorkerThreads::run_task(WorkerTask* task, uint num_workers) {
   run_task(task);
 }
 
-WorkerThread::WorkerThread(const char* name_prefix, uint id, WorkerTaskDispatcher* dispatcher) :
-    _dispatcher(dispatcher),
-    _id(id) {
-  set_name("%s#%d", name_prefix, id);
+THREAD_LOCAL uint WorkerThread::_worker_id = UINT_MAX;
+
+WorkerThread::WorkerThread(const char* name_prefix, uint name_suffix, WorkerTaskDispatcher* dispatcher) :
+    _dispatcher(dispatcher) {
+  set_name("%s#%u", name_prefix, name_suffix);
 }
 
 void WorkerThread::run() {

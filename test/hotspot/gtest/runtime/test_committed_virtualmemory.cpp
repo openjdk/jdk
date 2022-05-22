@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 // Included early because the NMT flags don't include it.
 #include "utilities/macros.hpp"
-
-#if INCLUDE_NMT
 
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
@@ -223,5 +221,3 @@ TEST_VM(CommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
   }
 
 }
-
-#endif // INCLUDE_NMT

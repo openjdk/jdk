@@ -121,7 +121,7 @@ class ModuleReferences {
      * A base module reader that encapsulates machinery required to close the
      * module reader safely.
      */
-    static abstract class SafeCloseModuleReader implements ModuleReader {
+    abstract static class SafeCloseModuleReader implements ModuleReader {
 
         // RW lock to support safe close
         private final ReadWriteLock lock = new ReentrantReadWriteLock();

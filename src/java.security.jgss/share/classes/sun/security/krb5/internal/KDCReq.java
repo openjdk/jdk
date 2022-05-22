@@ -31,7 +31,6 @@
 package sun.security.krb5.internal;
 
 import sun.security.krb5.*;
-import java.util.Vector;
 import sun.security.util.*;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -191,9 +190,5 @@ public class KDCReq {
         out.write(DerValue.createTag(DerValue.TAG_APPLICATION,
                 true, (byte) msgType), bytes);
         return out.toByteArray();
-    }
-
-    public byte[] asn1EncodeReqBody() throws Asn1Exception, IOException {
-        return reqBody.asn1Encode(msgType);
     }
 }

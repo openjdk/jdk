@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Huawei Technologies Co. Ltd. All rights reserved.
+ * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/g1/heapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 G1EvacFailureRegions::G1EvacFailureRegions() :
   _regions_failed_evacuation(mtGC),
@@ -56,7 +57,7 @@ void G1EvacFailureRegions::post_collection() {
 
 void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
                                        HeapRegionClaimer* _hrclaimer,
-                                       uint worker_id) {
+                                       uint worker_id) const {
   G1CollectedHeap::heap()->par_iterate_regions_array(closure,
                                                      _hrclaimer,
                                                      _evac_failure_regions,

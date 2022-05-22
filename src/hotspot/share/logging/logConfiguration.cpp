@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,9 +365,9 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
     // Find the next colon or quote
     char* next = strpbrk(str, ":\"");
 #ifdef _WINDOWS
-    // Skip over Windows paths such as "C:\..."
-    // Handle both C:\... and file=C:\..."
-    if (next != NULL && next[0] == ':' && next[1] == '\\') {
+    // Skip over Windows paths such as "C:\..." and "C:/...".
+    // Handles both "C:\..." and "file=C:\...".
+    if (next != NULL && next[0] == ':' && (next[1] == '\\' || next[1] == '/')) {
       if (next == str + 1 || (strncmp(str, "file=", 5) == 0)) {
         next = strpbrk(next + 1, ":\"");
       }

@@ -683,7 +683,7 @@ public class Utilities {
      * @param offs the offset in the document &gt;= 0
      * @return the position &gt;= 0 if the request can be computed, otherwise
      *  a value of -1 will be returned.
-     * @exception BadLocationException if the offset is out of range
+     * @throws BadLocationException if the offset is out of range
      */
     @SuppressWarnings("deprecation")
     public static final int getRowStart(JTextComponent c, int offs) throws BadLocationException {
@@ -714,7 +714,7 @@ public class Utilities {
      * @param offs the offset in the document &gt;= 0
      * @return the position &gt;= 0 if the request can be computed, otherwise
      *  a value of -1 will be returned.
-     * @exception BadLocationException if the offset is out of range
+     * @throws BadLocationException if the offset is out of range
      */
     @SuppressWarnings("deprecation")
     public static final int getRowEnd(JTextComponent c, int offs) throws BadLocationException {
@@ -747,7 +747,7 @@ public class Utilities {
      * @param x the X coordinate &gt;= 0
      * @return the position &gt;= 0 if the request can be computed, otherwise
      *  a value of -1 will be returned.
-     * @exception BadLocationException if the offset is out of range
+     * @throws BadLocationException if the offset is out of range
      *
      * @deprecated replaced by
      *     {@link #getPositionAbove(JTextComponent, int, float)}
@@ -802,7 +802,7 @@ public class Utilities {
      * @param x the X coordinate {@code >= 0}
      * @return the position {@code >= 0} if the request can be computed, otherwise
      *  a value of -1 will be returned.
-     * @exception BadLocationException if the offset is out of range
+     * @throws BadLocationException if the offset is out of range
      *
      * @since 9
      */
@@ -822,7 +822,7 @@ public class Utilities {
      * @param x the X coordinate &gt;= 0
      * @return the position &gt;= 0 if the request can be computed, otherwise
      *  a value of -1 will be returned.
-     * @exception BadLocationException if the offset is out of range
+     * @throws BadLocationException if the offset is out of range
      *
      * @deprecated replaced by
      *     {@link #getPositionBelow(JTextComponent, int, float)}
@@ -878,7 +878,7 @@ public class Utilities {
      * @param x the X coordinate {@code >= 0}
      * @return the position {@code >= 0} if the request can be computed, otherwise
      *  a value of -1 will be returned.
-     * @exception BadLocationException if the offset is out of range
+     * @throws BadLocationException if the offset is out of range
      *
      * @since 9
      */
@@ -894,7 +894,7 @@ public class Utilities {
      * @param c the editor
      * @param offs the offset in the document &gt;= 0
      * @return the location in the model of the word start &gt;= 0
-     * @exception BadLocationException if the offset is out of range
+     * @throws BadLocationException if the offset is out of range
      */
     public static final int getWordStart(JTextComponent c, int offs) throws BadLocationException {
         Document doc = c.getDocument();
@@ -928,7 +928,7 @@ public class Utilities {
      * @param c the editor
      * @param offs the offset in the document &gt;= 0
      * @return the location in the model of the word end &gt;= 0
-     * @exception BadLocationException if the offset is out of range
+     * @throws BadLocationException if the offset is out of range
      */
     public static final int getWordEnd(JTextComponent c, int offs) throws BadLocationException {
         Document doc = c.getDocument();
@@ -961,7 +961,7 @@ public class Utilities {
      * @param c the editor
      * @param offs the offset in the document &gt;= 0
      * @return the location in the model of the word start &gt;= 0
-     * @exception BadLocationException if the offset is out of range
+     * @throws BadLocationException if the offset is out of range
      */
     public static final int getNextWord(JTextComponent c, int offs) throws BadLocationException {
         int nextWord;
@@ -1039,7 +1039,7 @@ public class Utilities {
      * @param c the editor
      * @param offs the offset in the document &gt;= 0
      * @return the location in the model of the word start &gt;= 0
-     * @exception BadLocationException if the offset is out of range
+     * @throws BadLocationException if the offset is out of range
      */
     public static final int getPreviousWord(JTextComponent c, int offs) throws BadLocationException {
         int prevWord;
@@ -1271,8 +1271,8 @@ public class Utilities {
      * @param biasRet an array contain the bias that was checked
      * @return the location within the model that best represents the next
      *  location visual position
-     * @exception BadLocationException
-     * @exception IllegalArgumentException if <code>direction</code> is invalid
+     * @throws BadLocationException
+     * @throws IllegalArgumentException if <code>direction</code> is invalid
      */
     static int getNextVisualPositionFrom(View v, int pos, Position.Bias b,
                                           Shape alloc, int direction,

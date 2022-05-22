@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -557,7 +557,7 @@ public class ImageView extends View {
      * @param pos the position to convert
      * @param a the allocated region to render into
      * @return the bounding box of the given position
-     * @exception BadLocationException  if the given position does not represent a
+     * @throws BadLocationException  if the given position does not represent a
      *   valid location in the associated document
      * @see View#modelToView
      */
@@ -1056,7 +1056,7 @@ public class ImageView extends View {
      * the attribute specified an alt attribute. It overriden a handle of
      * methods as the text is hardcoded and does not come from the document.
      */
-    private class ImageLabelView extends InlineView {
+    private static class ImageLabelView extends InlineView {
         private Segment segment;
         private Color fg;
 

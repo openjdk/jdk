@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2009, 2010 Red Hat, Inc.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,4 +34,41 @@ frame JavaThread::pd_last_frame() {
 
 void JavaThread::cache_global_variables() {
   // nothing to do
+}
+
+bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr,
+                                         void* ucontext,
+                                         bool isInJava) {
+  if (has_last_Java_frame()) {
+    *fr_addr = pd_last_frame();
+    return true;
+  }
+
+  if (isInJava) {
+    // We know we are in Java, but there is no frame?
+    // Try to find the top-most Java frame on Zero stack then.
+    intptr_t* sp = zero_stack()->sp();
+    ZeroFrame* zf = top_zero_frame();
+    while (zf != NULL) {
+      if (zf->is_interpreter_frame()) {
+        interpreterState istate = zf->as_interpreter_frame()->interpreter_state();
+        if (istate->self_link() == istate) {
+          // Valid interpreter state found, this is our frame.
+          *fr_addr = frame(zf, sp);
+          return true;
+        }
+      }
+      sp = ((intptr_t *) zf) + 1;
+      zf = zf->next();
+    }
+  }
+
+  // No dice.
+  return false;
+}
+
+bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr,
+                                    void* ucontext,
+                                    bool isInJava) {
+  return pd_get_top_frame_for_signal_handler(fr_addr, ucontext, isInJava);
 }

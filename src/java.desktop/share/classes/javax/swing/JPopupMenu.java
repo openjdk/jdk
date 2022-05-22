@@ -475,7 +475,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * Removes the component at the specified index from this popup menu.
      *
      * @param       pos the position of the item to be removed
-     * @exception   IllegalArgumentException if the value of
+     * @throws   IllegalArgumentException if the value of
      *                          <code>pos</code> &lt; 0, or if the value of
      *                          <code>pos</code> is greater than the
      *                          number of items
@@ -573,7 +573,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * @param a  the <code>Action</code> object to insert
      * @param index      specifies the position at which to insert the
      *                   <code>Action</code>, where 0 is the first
-     * @exception IllegalArgumentException if <code>index</code> &lt; 0
+     * @throws IllegalArgumentException if <code>index</code> &lt; 0
      * @see Action
      */
     public void insert(Action a, int index) {
@@ -589,7 +589,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * @param component  the <code>Component</code> to insert
      * @param index      specifies the position at which
      *                   to insert the component, where 0 is the first
-     * @exception IllegalArgumentException if <code>index</code> &lt; 0
+     * @throws IllegalArgumentException if <code>index</code> &lt; 0
      */
     public void insert(Component component, int index) {
         if (index < 0) {
@@ -988,10 +988,9 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         JPopupMenu mp = this;
         while((mp!=null) && (mp.isPopupMenu()!=true) &&
               (mp.getInvoker() != null) &&
-              (mp.getInvoker().getParent() != null) &&
-              (mp.getInvoker().getParent() instanceof JPopupMenu)
+              (mp.getInvoker().getParent() instanceof JPopupMenu popupMenu)
               ) {
-            mp = (JPopupMenu) mp.getInvoker().getParent();
+            mp = popupMenu;
         }
         return mp;
     }
@@ -1330,13 +1329,13 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         Vector<Object> values = new Vector<Object>();
 
         s.defaultWriteObject();
-        // Save the invoker, if its Serializable.
-        if(invoker != null && invoker instanceof Serializable) {
+        // Save the invoker if != null, (Component implements Serializable)
+        if (invoker != null) {
             values.addElement("invoker");
             values.addElement(invoker);
         }
-        // Save the popup, if its Serializable.
-        if(popup != null && popup instanceof Serializable) {
+        // Save the popup, if it's Serializable.
+        if (popup instanceof Serializable) {
             values.addElement("popup");
             values.addElement(popup);
         }

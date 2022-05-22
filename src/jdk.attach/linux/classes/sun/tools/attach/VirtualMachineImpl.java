@@ -139,10 +139,10 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     }
 
     // protocol version
-    private final static String PROTOCOL_VERSION = "1";
+    private static final String PROTOCOL_VERSION = "1";
 
     // known errors
-    private final static int ATTACH_ERROR_BADVERSION = 101;
+    private static final int ATTACH_ERROR_BADVERSION = 101;
 
     /**
      * Execute the given command in the target VM.

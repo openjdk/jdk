@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.ScopedMemoryAccess.Scope;
 
 /**
  * File-descriptor based I/O utilities that are shared by NIO classes.
@@ -475,15 +474,15 @@ public class IOUtil {
 
     private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
-    static Scope.Handle acquireScope(ByteBuffer bb, boolean async) {
-        return NIO_ACCESS.acquireScope(bb, async);
+    static Runnable acquireScope(ByteBuffer bb, boolean async) {
+        return NIO_ACCESS.acquireSession(bb, async);
     }
 
-    private static void releaseScope(Scope.Handle handle) {
+    private static void releaseScope(Runnable handle) {
         if (handle == null)
             return;
         try {
-            handle.scope().release(handle);
+            handle.run();
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -535,11 +534,11 @@ public class IOUtil {
         }
     }
 
-    static record Releaser(Scope.Handle handle) implements Runnable {
+    static record Releaser(Runnable handle) implements Runnable {
         Releaser { Objects.requireNonNull(handle) ; }
         @Override public void run() { releaseScope(handle); }
-        static Runnable of(Scope.Handle handle) { return new Releaser(handle); }
-        static Runnable ofNullable(Scope.Handle handle) {
+        static Runnable of(Runnable handle) { return new Releaser(handle); }
+        static Runnable ofNullable(Runnable handle) {
             if (handle == null)
                 return () -> { };
             return new Releaser(handle);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,16 +45,16 @@ import org.testng.annotations.Test;
 public class TestMutatingInstance {
 
     private static final NumberFormat FORMAT_FRACTION = NumberFormat
-            .getCompactNumberInstance(new Locale("en"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.ENGLISH, NumberFormat.Style.LONG);
 
     private static final CompactNumberFormat FORMAT_GROUPING = (CompactNumberFormat) NumberFormat
-            .getCompactNumberInstance(new Locale("en"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.ENGLISH, NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_MININTEGER = NumberFormat
-            .getCompactNumberInstance(new Locale("en"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.ENGLISH, NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_PARSEINTONLY = NumberFormat
-            .getCompactNumberInstance(new Locale("en"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.ENGLISH, NumberFormat.Style.LONG);
 
     // No compact patterns are specified for this instance except at index 4.
     // This is to test how the behaviour differs between compact number formatting

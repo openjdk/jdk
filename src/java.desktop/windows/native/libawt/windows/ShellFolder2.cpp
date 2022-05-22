@@ -1056,38 +1056,57 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
             bmi.bmiHeader.biCompression = BI_RGB;
             // Extract the color bitmap
             int nBits = iconSize * iconSize;
-            long colorBits[MAX_ICON_SIZE * MAX_ICON_SIZE];
-            GetDIBits(dc, iconInfo.hbmColor, 0, iconSize, colorBits, &bmi, DIB_RGB_COLORS);
-            // XP supports alpha in some icons, and depending on device.
-            // This should take precedence over the icon mask bits.
-            BOOL hasAlpha = FALSE;
-            if (IS_WINXP) {
-                for (int i = 0; i < nBits; i++) {
-                    if ((colorBits[i] & 0xff000000) != 0) {
-                        hasAlpha = TRUE;
-                        break;
+
+            long *colorBits = NULL;
+            long *maskBits = NULL;
+
+            try {
+                entry_point();
+                colorBits = (long*)safe_Malloc(MAX_ICON_SIZE * MAX_ICON_SIZE * sizeof(long));
+                GetDIBits(dc, iconInfo.hbmColor, 0, iconSize, colorBits, &bmi, DIB_RGB_COLORS);
+                // XP supports alpha in some icons, and depending on device.
+                // This should take precedence over the icon mask bits.
+                BOOL hasAlpha = FALSE;
+                if (IS_WINXP) {
+                    for (int i = 0; i < nBits; i++) {
+                        if ((colorBits[i] & 0xff000000) != 0) {
+                            hasAlpha = TRUE;
+                            break;
+                        }
                     }
                 }
-            }
-            if (!hasAlpha) {
-                // Extract the mask bitmap
-                long maskBits[MAX_ICON_SIZE * MAX_ICON_SIZE];
-                GetDIBits(dc, iconInfo.hbmMask, 0, iconSize, maskBits, &bmi, DIB_RGB_COLORS);
-                // Copy the mask alphas into the color bits
-                for (int i = 0; i < nBits; i++) {
-                    if (maskBits[i] == 0) {
-                        colorBits[i] |= 0xff000000;
+                if (!hasAlpha) {
+                    // Extract the mask bitmap
+                    maskBits = (long*)safe_Malloc(MAX_ICON_SIZE * MAX_ICON_SIZE * sizeof(long));
+                    GetDIBits(dc, iconInfo.hbmMask, 0, iconSize, maskBits, &bmi, DIB_RGB_COLORS);
+                    // Copy the mask alphas into the color bits
+                    for (int i = 0; i < nBits; i++) {
+                        if (maskBits[i] == 0) {
+                            colorBits[i] |= 0xff000000;
+                        }
                     }
                 }
+                // Create java array
+                iconBits = env->NewIntArray(nBits);
+                if (!(env->ExceptionCheck())) {
+                    // Copy values to java array
+                    env->SetIntArrayRegion(iconBits, 0, nBits, colorBits);
+                }
+            } catch(std::bad_alloc&) {
+                handle_bad_alloc();
             }
+
             // Release DC
             ReleaseDC(NULL, dc);
-            // Create java array
-            iconBits = env->NewIntArray(nBits);
-            if (!(env->ExceptionCheck())) {
-            // Copy values to java array
-            env->SetIntArrayRegion(iconBits, 0, nBits, colorBits);
-        }
+
+            // Free bitmap buffers if they were allocated
+            if (colorBits != NULL) {
+                free(colorBits);
+            }
+
+            if (maskBits != NULL) {
+                free(maskBits);
+            }
         }
         // Fix 4745575 GDI Resource Leak
         // MSDN

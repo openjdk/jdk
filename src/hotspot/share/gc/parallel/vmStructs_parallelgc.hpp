@@ -57,7 +57,6 @@
   nonstatic_field(PSYoungGen,                  _min_gen_size,                                 const size_t)                          \
   nonstatic_field(PSYoungGen,                  _max_gen_size,                                 const size_t)                          \
                                                                                                                                      \
-  nonstatic_field(PSOldGen,                    _reserved,                                     MemRegion)                             \
   nonstatic_field(PSOldGen,                    _virtual_space,                                PSVirtualSpace*)                       \
   nonstatic_field(PSOldGen,                    _object_space,                                 MutableSpace*)                         \
   nonstatic_field(PSOldGen,                    _min_gen_size,                                 const size_t)                          \

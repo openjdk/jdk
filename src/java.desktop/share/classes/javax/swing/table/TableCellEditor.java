@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,11 @@ package javax.swing.table;
 
 import java.awt.Component;
 import javax.swing.CellEditor;
-import javax.swing.*;
+import javax.swing.JTable;
 
 /**
- * This interface defines the method any object that would like to be
- * an editor of values for components such as <code>JListBox</code>,
- * <code>JComboBox</code>, <code>JTree</code>, or <code>JTable</code>
- * needs to implement.
+ * This interface must be implemented to provide an editor of cell values
+ * for a {@code JTable}.
  *
  * @author Alan Chung
  */

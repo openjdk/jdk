@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,13 @@ import sun.jvm.hotspot.HotSpotTypeDataBase;
  Various subclasses provide different mechanisms for identifying the
  appropriate wrapper. */
 
-abstract public class InstanceConstructor<T> {
+public abstract class InstanceConstructor<T> {
   /** Instantiate the most-precisely typed wrapper object available
       for the type of the given Address. If no type in the mapping
       matched the type of the Address, throws a WrongTypeException.
       Returns null for a null address (similar behavior to
       VMObjectFactory). */
-  abstract public T instantiateWrapperFor(Address addr) throws WrongTypeException;
+  public abstract T instantiateWrapperFor(Address addr) throws WrongTypeException;
 
   protected WrongTypeException newWrongTypeException(Address addr) {
     String message = "No suitable match for type of address " + addr;

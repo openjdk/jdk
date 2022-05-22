@@ -272,7 +272,9 @@ int LogFileOutput::write_blocking(const LogDecorations& decorations, const char*
     return 0;
   }
 
-  int written = LogFileStreamOutput::write(decorations, msg);
+  int written = write_internal(decorations, msg);
+  // Need to flush to the filesystem before should_rotate()
+  written = flush() ? written : -1;
   if (written > 0) {
     _current_size += written;
 

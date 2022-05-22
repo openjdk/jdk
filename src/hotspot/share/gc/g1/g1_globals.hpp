@@ -73,7 +73,13 @@
                                                                             \
   product(bool, G1EvacuationFailureALotDuringMixedGC, true,                 \
           "Force use of evacuation failure handling during mixed "          \
-          "evacuation pauses")
+          "evacuation pauses")                                              \
+                                                                            \
+  product(uint, G1EvacuationFailureALotCSetPercent, 100,                    \
+          "The percentage of regions in the collection set starting "       \
+          "from the beginning where the forced evacuation failure "         \
+          "injection will be applied.")                                     \
+          range(1, 100)
 #else
 #define GC_G1_EVACUATION_FAILURE_FLAGS(develop,                             \
                                        develop_pd,                          \
@@ -257,7 +263,7 @@
                                                                             \
   product(size_t, G1HeapRegionSize, 0,                                      \
           "Size of the G1 regions.")                                        \
-          range(0, 32*M)                                                    \
+          range(0, NOT_LP64(32*M) LP64_ONLY(512*M))                         \
           constraint(G1HeapRegionSizeConstraintFunc,AfterMemoryInit)        \
                                                                             \
   product(uint, G1ConcRefinementThreads, 0,                                 \

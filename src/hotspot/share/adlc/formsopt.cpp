@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ RegDef::RegDef(char *regname, char *callconv, char *c_conv, char * idealtype, ch
     _concrete(concrete),
     _register_num(0) {
 
-  // Chunk and register mask are determined by the register number
+  // AdlChunk and register mask are determined by the register number
   // _register_num is set when registers are added to an allocation class
 }
 RegDef::~RegDef() {                      // Destructor

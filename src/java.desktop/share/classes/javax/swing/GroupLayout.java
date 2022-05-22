@@ -1267,7 +1267,7 @@ public class GroupLayout implements LayoutManager2 {
      * min/max/pref.  If the min/pref/max has internally changes, or needs
      * to be updated you must invoke clear.
      */
-    private abstract class Spring {
+    private abstract static class Spring {
         private int size;
         private int min;
         private int max;
@@ -1479,7 +1479,10 @@ public class GroupLayout implements LayoutManager2 {
      * @see #createParallelGroup
      * @since 1.6
      */
-    public abstract class Group extends Spring {
+    public abstract sealed class Group extends Spring
+        permits ParallelGroup,
+                SequentialGroup {
+
         // private int origin;
         // private int size;
         List<Spring> springs;
@@ -1758,7 +1761,7 @@ public class GroupLayout implements LayoutManager2 {
      * @see #createSequentialGroup
      * @since 1.6
      */
-    public class SequentialGroup extends Group {
+    public final class SequentialGroup extends Group {
         private Spring baselineSpring;
 
         SequentialGroup() {
@@ -2454,7 +2457,9 @@ public class GroupLayout implements LayoutManager2 {
      * @see #createBaselineGroup(boolean,boolean)
      * @since 1.6
      */
-    public class ParallelGroup extends Group {
+    public sealed class ParallelGroup extends Group
+         permits BaselineGroup {
+
         // How children are layed out.
         private final Alignment childAlignment;
         // Whether or not we're resizable.
@@ -2654,7 +2659,7 @@ public class GroupLayout implements LayoutManager2 {
      * An extension of {@code ParallelGroup} that aligns its
      * constituent {@code Spring}s along the baseline.
      */
-    private class BaselineGroup extends ParallelGroup {
+    private final class BaselineGroup extends ParallelGroup {
         // Whether or not all child springs have a baseline
         private boolean allSpringsHaveBaseline;
 
@@ -3167,7 +3172,7 @@ public class GroupLayout implements LayoutManager2 {
     /**
      * Spring represented a certain amount of space.
      */
-    private class GapSpring extends Spring {
+    private static class GapSpring extends Spring {
         private final int min;
         private final int pref;
         private final int max;

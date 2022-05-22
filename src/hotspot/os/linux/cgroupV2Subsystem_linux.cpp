@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Red Hat Inc.
+ * Copyright (c) 2020, 2022, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  */
 int CgroupV2Subsystem::cpu_shares() {
   GET_CONTAINER_INFO(int, _unified, "/cpu.weight",
-                     "Raw value for CPU shares is: %d", "%d", shares);
+                     "Raw value for CPU Shares is: %d", "%d", shares);
   // Convert default value of 100 to no shares setup
   if (shares == 100) {
     log_debug(os, container)("CPU Shares is: %d", -1);
@@ -124,7 +124,7 @@ int CgroupV2Subsystem::cpu_period() {
 
 /* memory_usage_in_bytes
  *
- * Return the amount of used memory used by this cgroup and decendents
+ * Return the amount of used memory used by this cgroup and descendents
  *
  * return:
  *    memory usage in bytes or

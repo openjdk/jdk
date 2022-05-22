@@ -94,55 +94,55 @@ public class repeat001 extends JdbTest {
         // Verify that repeat is off initially
         String[] reply = jdb.receiveReplyFor(JdbCommand.repeat);
         if (reply.length != 2 || !isPrompt(reply[1])) {
-            throw new AssertionError("Unexpected output");
+            failure("Unexpected output");
         }
         if (!reply[0].equals("Repeat is off")) {
-            throw new AssertionError("Incorrect initial repeat setting");
+            failure("Incorrect initial repeat setting");
         }
 
         // Verify that list auto-advance is disabled
         String[] firstList = jdb.receiveReplyFor(JdbCommand.list);
         String[] secondList = jdb.receiveReplyFor(JdbCommand.list);
         if (!Arrays.equals(firstList, secondList)) {
-            throw new AssertionError("Listing inconsistent with repeat off");
+            failure("Listing inconsistent with repeat off");
         }
 
         // Verify that command repetition doesn't happen when disabled
         reply = jdb.receiveReplyFor("");
         if (reply.length != 1 || !isPrompt(reply[0])) {
-            throw new AssertionError("Unexpected output");
+            failure("Unexpected output");
         }
 
         reply = jdb.receiveReplyFor(JdbCommand.repeat + "on");
         if (reply.length != 1 || !isPrompt(reply[0])) {
-            throw new AssertionError("Unexpected output");
+            failure("Unexpected output");
         }
 
         // Verify that repeat is reported on
         reply = jdb.receiveReplyFor(JdbCommand.repeat);
         if (reply.length != 2 || !isPrompt(reply[1])) {
-            throw new AssertionError("Unexpected output");
+            failure("Unexpected output");
         }
         if (!reply[0].equals("Repeat is on")) {
-            throw new AssertionError("Incorrect repeat status reported");
+            failure("Incorrect repeat status reported");
         }
 
         // Verify that non-repeatable commands still don't repeat
         if (jdb.receiveReplyFor(JdbCommand.print + "0").length != 2) {
-            throw new AssertionError("Unexpected output");
+            failure("Unexpected output");
         }
         if (jdb.receiveReplyFor("").length != 1) {
-            throw new AssertionError("Unexpected output");
+            failure("Unexpected output");
         }
 
         // Verify that repeated commands are repeatable
         // (`up' just prints `End of stack.' since we're stopped in `main')
-        reply = jdb.receiveReplyFor("2 2 " + JdbCommand.up);
+        reply = jdb.receiveReplyFor("2 2 " + JdbCommand.up, true, 4);
         if (reply.length != 5 || !isPrompt(reply[4])) {
-            throw new AssertionError("Unexpected output");
+            failure("Unexpected output");
         }
-        if (!Arrays.equals(reply, jdb.receiveReplyFor(""))) {
-            throw new AssertionError("Repeated command didn't repeat correctly");
+        if (!Arrays.equals(reply, jdb.receiveReplyFor("", true, 4))) {
+            failure("Repeated command didn't repeat correctly");
         }
     }
 }

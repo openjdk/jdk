@@ -300,6 +300,24 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
     out->cr();
   }
 
+  // -- Print Chunkmanager details.
+  if ((flags & (int)Option::ShowChunkFreeList) > 0) {
+    out->cr();
+    out->print_cr("Chunk freelist details:");
+    if (Metaspace::using_class_space()) {
+      out->print_cr("   Non-Class:");
+    }
+    ChunkManager::chunkmanager_nonclass()->print_on(out);
+    out->cr();
+    if (Metaspace::using_class_space()) {
+      out->print_cr("       Class:");
+      ChunkManager::chunkmanager_class()->print_on(out);
+      out->cr();
+    }
+  }
+  out->cr();
+
+
   //////////// Waste section ///////////////////////////
   // As a convenience, print a summary of common waste.
   out->cr();

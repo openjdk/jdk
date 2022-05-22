@@ -26,7 +26,6 @@
 #define SHARE_GC_SHARED_VMSTRUCTS_GC_HPP
 
 #include "gc/shared/ageTable.hpp"
-#include "gc/shared/cardGeneration.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -101,11 +100,11 @@
   nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_threshold,                        HeapWord*)                             \
   nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_index,                            size_t)                                \
                                                                                                                                      \
-  nonstatic_field(CardGeneration,              _rs,                                           CardTableRS*)                          \
-  nonstatic_field(CardGeneration,              _bts,                                          BlockOffsetSharedArray*)               \
-  nonstatic_field(CardGeneration,              _shrink_factor,                                size_t)                                \
-  nonstatic_field(CardGeneration,              _capacity_at_prologue,                         size_t)                                \
-  nonstatic_field(CardGeneration,              _used_at_prologue,                             size_t)                                \
+  nonstatic_field(TenuredGeneration,           _rs,                                           CardTableRS*)                          \
+  nonstatic_field(TenuredGeneration,           _bts,                                          BlockOffsetSharedArray*)               \
+  nonstatic_field(TenuredGeneration,           _shrink_factor,                                size_t)                                \
+  nonstatic_field(TenuredGeneration,           _capacity_at_prologue,                         size_t)                                \
+  nonstatic_field(TenuredGeneration,           _used_at_prologue,                             size_t)                                \
                                                                                                                                      \
   nonstatic_field(CardTable,                   _whole_heap,                                   const MemRegion)                       \
   nonstatic_field(CardTable,                   _guard_index,                                  const size_t)                          \
@@ -186,7 +185,6 @@
   declare_toplevel_type(CollectedHeap)                                    \
            declare_type(GenCollectedHeap,             CollectedHeap)      \
   declare_toplevel_type(Generation)                                       \
-           declare_type(CardGeneration,               Generation)         \
   declare_toplevel_type(Space)                                            \
            declare_type(CompactibleSpace,             Space)              \
            declare_type(ContiguousSpace,              CompactibleSpace)   \
@@ -261,10 +259,6 @@
   declare_constant(BarrierSet::ModRef)                                      \
   declare_constant(BarrierSet::CardTableBarrierSet)                         \
                                                                             \
-  declare_constant(BOTConstants::LogN)                                      \
-  declare_constant(BOTConstants::LogN_words)                                \
-  declare_constant(BOTConstants::N_bytes)                                   \
-  declare_constant(BOTConstants::N_words)                                   \
   declare_constant(BOTConstants::LogBase)                                   \
   declare_constant(BOTConstants::Base)                                      \
   declare_constant(BOTConstants::N_powers)                                  \
@@ -274,9 +268,6 @@
   declare_constant(CardTable::dirty_card)                                   \
   declare_constant(CardTable::Precise)                                      \
   declare_constant(CardTable::ObjHeadPreciseArray)                          \
-  declare_constant(CardTable::card_shift)                                   \
-  declare_constant(CardTable::card_size)                                    \
-  declare_constant(CardTable::card_size_in_words)                           \
                                                                             \
   declare_constant(CollectedHeap::Serial)                                   \
   declare_constant(CollectedHeap::Parallel)                                 \
