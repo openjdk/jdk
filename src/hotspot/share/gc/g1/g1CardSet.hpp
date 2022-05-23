@@ -226,7 +226,7 @@ public:
   // Howl containers are basically arrays of containers. An entry starts off with
   // Free. Further corsening of containers inside the ContainerHowl happens in the order:
   //
-  //   ContainerInlinePtr -> ContainerArrayOfCards -> ContainerBitMap -> Full
+  //   Free -> ContainerInlinePtr -> ContainerArrayOfCards -> ContainerBitMap -> Full
   //
   // Throughout the code it is assumed (and checked) that the last two bits of the encoding
   // for Howl (0b11) is assumed to be the same as the last two bits for "FullCardSet"; this
