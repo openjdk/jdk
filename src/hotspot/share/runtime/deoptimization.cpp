@@ -1930,25 +1930,27 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     MethodData* trap_mdo =
       get_method_data(current, profiled_method, create_if_missing);
 
-    JFR_ONLY(post_deoptimization_event(nm, trap_method(), trap_bci, trap_bc, reason, action);)
-
-    if(Log(deoptimization)::is_info()) {
-      LogMessage(deoptimization) lm;
-      auto tm = trap_method();
-      lm.info("Deoptimization start {");
-      lm.info("  compileId = %d", nm->compile_id());
-      lm.info("  compiler = %s", compilertype2name(nm->compiler_type()));
-      lm.info("  method:lineno:bci = %s:%d:%d", tm->name_and_sig_as_C_string(), tm->line_number_from_bci(trap_bci), trap_bci);
-      lm.info("  instruction = %s", Bytecodes::name(trap_bc));
-      lm.info("  reason = %s", Deoptimization::trap_reason_name(reason));
-      lm.info("  action = %s", Deoptimization::trap_action_name(action));
-      lm.info("} Deoptimization end");
+    { // Log Deoptimization event for JFR, UL and event system
+      Method* tm = trap_method();
+      char* name_sig = tm->name_and_sig_as_C_string();
+      const char* reason_name = Deoptimization::trap_reason_name(reason);
+      const char* reason_action = Deoptimization::trap_action_name(action);
+      JFR_ONLY(post_deoptimization_event(nm, tm, trap_bci, trap_bc, reason, action);)
+      if (Log(deoptimization)::is_info()) {
+        log_debug(deoptimization)("cid: %d osr: %s level: %d %s @ %d %s -> %s",
+                                  nm->compile_id(),
+                                  (nm->is_osr_method() ? "true" : "false"),
+                                  nm->comp_level(),
+                                  name_sig,
+                                  trap_bci,
+                                  reason_name,
+                                  reason_action);
+        }
+      // Log a message
+      Events::log_deopt_message(current, "Uncommon trap: reason=%s action=%s pc=" INTPTR_FORMAT " method=%s @ %d %s",
+                                reason_name, reason_action, p2i(fr.pc()),
+                                name_sig, trap_bci, nm->compiler_name());
     }
-
-    // Log a message
-    Events::log_deopt_message(current, "Uncommon trap: reason=%s action=%s pc=" INTPTR_FORMAT " method=%s @ %d %s",
-                              trap_reason_name(reason), trap_action_name(action), p2i(fr.pc()),
-                              trap_method->name_and_sig_as_C_string(), trap_bci, nm->compiler_name());
 
     // Print a bunch of diagnostics, if requested.
     if (TraceDeoptimization || LogCompilation || is_receiver_constraint_failure) {
