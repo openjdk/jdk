@@ -52,14 +52,12 @@ final class WTrayIconPeer extends WObjectPeer implements TrayIconPeer {
 
     IconObserver observer = new IconObserver();
     boolean firstUpdate = true;
-    Frame popupParent = new Frame("PopupMessageWindow");
+    final Frame popupParent = new Frame("PopupMessageWindow");
     PopupMenu popup;
 
     @Override
     protected void disposeImpl() {
-        if (popupParent != null) {
-            popupParent.dispose();
-        }
+        popupParent.dispose();
         _dispose();
         WToolkit.targetDisposedPeer(target, this);
     }
