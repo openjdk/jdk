@@ -684,7 +684,6 @@ java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 m
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
-sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 javax/swing/JTable/8236907/LastVisibleRow.java 8284619 macosx-all
 
