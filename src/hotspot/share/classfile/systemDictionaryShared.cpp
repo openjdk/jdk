@@ -666,7 +666,7 @@ void SystemDictionaryShared::check_excluded_classes() {
     dup_checker.mark_duplicated_classes();
   }
 
-  auto check_for_exclusion = [] (InstanceKlass* k, DumpTimeClassInfo& info) {
+  auto check_for_exclusion = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
     SystemDictionaryShared::check_for_exclusion(k, &info);
   };
   _dumptime_table->iterate_all(check_for_exclusion);
