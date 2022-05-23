@@ -130,8 +130,6 @@ private:
 
   void clear(bool mangle_space);
 
-  HeapWord* block_start_const(const void* p) const;
-
   void mangle_unused_area() PRODUCT_RETURN;
 
   // Try to allocate at least min_word_size and up to desired_size from this region.
@@ -581,15 +579,6 @@ public:
   void print() const;
   void print_on(outputStream* st) const;
 
-  // vo == UsePrevMarking -> use "prev" marking information,
-  // vo == UseFullMarking -> use "next" marking bitmap but no TAMS
-  //
-  // NOTE: Only the "prev" marking information is guaranteed to be
-  // consistent most of the time, so most calls to this should use
-  // vo == UsePrevMarking.
-  // Currently there is only one place where this is called with
-  // vo == UseFullMarking, which is to verify the marking during a
-  // full GC.
   void verify(VerifyOption vo, bool *failures) const;
 
   void verify_rem_set(VerifyOption vo, bool *failures) const;

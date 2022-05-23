@@ -279,21 +279,19 @@ public final class EventControl {
         }
     }
 
-    void writeActiveSettingEvent() {
+    void writeActiveSettingEvent(long timestamp) {
         if (!type.isRegistered()) {
             return;
         }
-        ActiveSettingEvent event = ActiveSettingEvent.EVENT.get();
         for (NamedControl nc : namedControls) {
             if (Utils.isSettingVisible(nc.control, type.hasEventHook()) && type.isVisible()) {
                 String value = nc.control.getLastValue();
                 if (value == null) {
                     value = nc.control.getDefaultValue();
                 }
-                event.id = type.getId();
-                event.name = nc.name;
-                event.value = value;
-                event.commit();
+                if (ActiveSettingEvent.EVENT.isEnabled()) {
+                    ActiveSettingEvent.commit(timestamp, 0L, type.getId(), nc.name(), value);
+                }
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,19 +65,4 @@ void VMRegImpl::set_regName() {
   for ( ; i < ConcreteRegisterImpl::number_of_registers ; i ++ ) {
     regName[i] = "NON-GPR-FPR-XMM-KREG";
   }
-}
-
-#define INTEGER_TYPE 0
-#define VECTOR_TYPE 1
-#define X87_TYPE 2
-#define STACK_TYPE 3
-
-//TODO: Case for KRegisters
-VMReg VMRegImpl::vmStorageToVMReg(int type, int index) {
-  switch(type) {
-    case INTEGER_TYPE: return ::as_Register(index)->as_VMReg();
-    case VECTOR_TYPE: return ::as_XMMRegister(index)->as_VMReg();
-    case STACK_TYPE: return VMRegImpl::stack2reg(index LP64_ONLY(* 2)); // numbering on x64 goes per 64-bits
-  }
-  return VMRegImpl::Bad();
 }
