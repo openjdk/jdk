@@ -641,7 +641,7 @@ public:
   static int _global_escape_counter;
   void dump(GrowableArray<PointsToNode*>& ptnodes_worklist);
   static void print_statistics();
-  static void escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist);
+  void escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist);
 #endif
 };
 

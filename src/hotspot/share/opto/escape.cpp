@@ -3758,7 +3758,7 @@ void ConnectionGraph::print_statistics() {
 }
 
 void ConnectionGraph::escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist) {
-  if (!PrintOptoStatistics) {
+  if (!PrintOptoStatistics || (_invocation > 0)) { // Collect data only for the first invocation
     return;
   }
   for (int next = 0; next < java_objects_worklist.length(); ++next) {
