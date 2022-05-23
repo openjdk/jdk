@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,15 @@
 #define SHARE_GC_SHARED_VERIFYOPTION_HPP
 
 enum VerifyOption {
-      VerifyOption_Default = 0,
+  VerifyOption_Default = 0,
 
-      // G1
-      VerifyOption_G1UsePrevMarking = VerifyOption_Default,
-      VerifyOption_G1UseFullMarking = VerifyOption_G1UsePrevMarking + 1
+  // G1
+
+  // Use "prev" mark bitmap information using pTAMS.
+  VerifyOption_G1UsePrevMarking = VerifyOption_Default,
+  // Use "next" mark bitmap information from full gc marking. This does not
+  // use (or need) TAMS.
+  VerifyOption_G1UseFullMarking = VerifyOption_G1UsePrevMarking + 1
 };
 
 #endif // SHARE_GC_SHARED_VERIFYOPTION_HPP

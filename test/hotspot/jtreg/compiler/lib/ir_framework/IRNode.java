@@ -172,8 +172,8 @@ public class IRNode {
     public static final String MUL_I = START + "MulI" + MID + END;
     public static final String MUL_L = START + "MulL" + MID + END;
     public static final String MUL_F = START + "MulF" + MID + END;
-    public static final String DIV = START + "(NoOvf)?Div(I|L|F|D)" + MID + END;
-    public static final String DIV_L = START + "(NoOvf)?DivL" + MID + END;
+    public static final String DIV = START + "Div(I|L|F|D)" + MID + END;
+    public static final String DIV_L = START + "DivL" + MID + END;
     public static final String CON_I = START + "ConI" + MID + END;
     public static final String CON_L = START + "ConL" + MID + END;
     public static final String CONV_I2L = START + "ConvI2L" + MID + END;
