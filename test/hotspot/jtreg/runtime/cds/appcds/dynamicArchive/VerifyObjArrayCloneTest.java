@@ -29,7 +29,7 @@
  *          /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build sun.hotspot.WhiteBox
-  * @build InvokeCloneValid InvokeCloneInvalid VerifyObjArrayCloneTestApp
+ * @build InvokeCloneValid InvokeCloneInvalid VerifyObjArrayCloneTestApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar VerifyObjArrayCloneTestApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar tests.jar InvokeCloneValid InvokeCloneInvalid
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
