@@ -180,7 +180,7 @@ public class Distrust {
             }
         } catch (CertificateException ce) {
             // expired TLS certificates should not be treated as failure
-            if(expired(ce)) {
+            if (expired(ce)) {
                 System.err.println("Test is N/A, chain is expired");
                 return;
             }
