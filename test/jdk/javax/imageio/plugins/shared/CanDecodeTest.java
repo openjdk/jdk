@@ -45,7 +45,7 @@ public class CanDecodeTest {
     public static void main(String[] args) {
         for (String format : FORMATS) {
             ImageReader reader =
-                    ImageIO.getImageReadersByFormatName("BMP").next();
+                    ImageIO.getImageReadersByFormatName(format).next();
             ImageReaderSpi spi = reader.getOriginatingProvider();
 
             for (int n=0; n<8; n++) {
