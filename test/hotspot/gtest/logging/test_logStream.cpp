@@ -95,7 +95,7 @@ TEST_VM_F(LogStreamTest, TestLineBufferAllocation) {
 // Compare this to NonInterLeavingLogStreamTest_NonInterleavingStream
 TEST_VM_F(LogStreamTest, InterleavingStream) {
   set_log_config(TestLogFileName, "gc=info");
-  const char* strs[] = {"1", "I am one line", "2", "but", "3", "I am not", NULL};
+  const char* message_order[] = {"1", "I am one line", "2", "but", "3", "I am not", NULL};
   {
     LogStream foo(Log(gc)::info());
     if (foo.is_enabled()) {
@@ -108,14 +108,14 @@ TEST_VM_F(LogStreamTest, InterleavingStream) {
       foo.print_cr("I am not");
     }
   }
-  EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, strs));
+  EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, message_order));
 }
 
 // NonInterleavingLogStream does not allow interleaving of other messages.
 // Compare this to LogStreamTest_InterleavingStream
 TEST_VM_F(LogStreamTest, NonInterleavingStream) {
   set_log_config(TestLogFileName, "gc=info");
-  const char* strs[] = {"1", "2" , "3", "I am one line", "but", "I am not", NULL};
+  const char* message_order[] = {"1", "2" , "3", "I am one line", "but", "I am not", NULL};
   {
     LogMessage(gc) lm ;
     NonInterleavingLogStream foo{LogLevelType::Info, lm};
@@ -129,7 +129,7 @@ TEST_VM_F(LogStreamTest, NonInterleavingStream) {
       foo.print_cr("I am not");
     }
   }
-  EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, strs));
+  EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, message_order));
 }
 
 

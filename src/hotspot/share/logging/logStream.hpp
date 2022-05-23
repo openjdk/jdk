@@ -185,9 +185,9 @@ class LogStream : public LogStreamImpl<LogTargetHandle> {
   // No heap allocation of LogStream.
   static void* operator new   (size_t) = delete;
   static void* operator new[] (size_t) = delete;
+  NONCOPYABLE(LogStream);
 
 public:
-  LogStream(const LogStream&) = delete;
   virtual ~LogStream() {};
   // Constructor to support creation from a LogTarget instance.
   //
@@ -229,6 +229,7 @@ public:
 template<LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3,
          LogTagType T4, LogTagType GuardTag>
 class LogStreamTemplate : public LogStream {
+
 public:
   LogStreamTemplate()
     : LogStream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)NULL) {}
