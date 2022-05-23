@@ -88,7 +88,7 @@ public:
   void vwrite(LogLevelType level, const char* fmt, va_list args) {
     if (!_has_content) {
       _has_content = true;
-      set_prefix(_tagset.get_prefix_fn());
+      set_prefix(_tagset.write_prefix());
     }
     LogMessageBuffer::vwrite(level, fmt, args);
   }
