@@ -82,7 +82,7 @@ import jdk.test.lib.json.JSONValue;
  *         "owner": null,
  *         "threads": [...],
  *         "threadCount": "1"
- *       }
+ *       },
  *       {
  *         "container": "java.util.concurrent.ThreadPoolExecutor@20322d26\/jdk.internal.vm.SharedThreadContainer@184f6be2",
  *         "parent": "<root>",
