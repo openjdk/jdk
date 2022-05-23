@@ -1700,11 +1700,16 @@ class PrintBFS {
 public:
   PrintBFS(Node* start, const int max_distance, Node* target, char const* options)
   : _start(start), _max_distance(max_distance), _target(target), _options(options),
-    _parent((CmpKey)&cmp, hashkey), _distance((CmpKey)&cmp, hashkey) {};
+    _info_uid((CmpKey)&cmp, hashkey) {
+  };
   void run();
 private:
-  void traversal();
-  void backtrack();
+  // pipeline steps
+  bool configure();
+  void collect();
+  void prune();
+  void sort();
+  void print();
 
   // inputs
   Node* _start;
@@ -1737,28 +1742,71 @@ private:
 
   // traversal data structures
   Node_List _worklist; // BFS queue
-  void worklist_maybe_push(Node* n, Node* p, const int d);
+  void maybe_traverse(Node* src, Node* dst);
+
+  // node info annotation
+  class Info {
+  public:
+    Info() : Info(nullptr, 0) {};
+    Info(Node* node, int distance)
+      : _node(node), _distance(distance) {};
+    Node* node() { return _node; };
+    int distance() { return _distance; };
+    Node_List edge_fwd; // pointing away from _start
+    Node_List edge_bwd; // pointing toward _start
+    bool is_marked() { return _mark; } // marked to keep during pruning
+    void set_mark() { _mark = true; }
+  private:
+    Node* _node;
+    int _distance;
+    bool _mark = false;
+  };
   static int cmp(const Node* n1, const Node* n2) { return n1 != n2; }
-  Dict _parent;   // node -> parent (one step closer to _start)
-  Dict _distance; // node -> distance to start
-  int distance(Node* n);
-  Node* parent(Node* n);
+  Dict _info_uid;             // Node -> uid
+  GrowableArray <Info> _info; // uid  -> info
+  Info* find_info(Node* n) {
+    size_t uid = (size_t)_info_uid[n];
+    if (uid == 0) {
+      return nullptr;
+    }
+    return &_info.at(uid);
+  };
+  void make_info(Node* node, int distance) {
+    assert(find_info(node) == nullptr, "node does not yet have info");
+    size_t uid = _info.length()+1;
+    _info_uid.Insert(node, (void*)uid);
+    _info.at_put_grow(uid, Info(node, distance));
+    assert(find_info(node)->node() == node, "stored correct node");
+  };
+
+  // filled by sort, printed by print
+  Node_List _printlist;
 
   // print header + node table
-  void print_header(bool print_parent);
-  void print_node(Node* n, bool print_parent);
+  void print_header();
+  void print_node(Node* n);
 };
 
 void PrintBFS::run() {
+  if (!configure()) {
+    return;
+  }
+  collect();
+  prune();
+  sort();
+  print();
+}
+
+// set up configuration for BFS and print
+bool PrintBFS::configure() {
   if(_max_distance < 0) {
     tty->print("print_bfs: max_distance must be non-negative!\n");
-    return;
+    return false;
   }
   parse_options();
 
   if (_target == nullptr) {
     tty->print("No target: perform BFS.\n");
-    print_header(true);
   } else {
     tty->print("Find shortest path:");
     print_node_idx(_start);
@@ -1766,49 +1814,93 @@ void PrintBFS::run() {
     print_node_idx(_target);
     tty->print("\n");
   }
-
-  traversal();
-  backtrack();
+  return true;
 }
 
-void PrintBFS::traversal() {
-  worklist_maybe_push(_start, _start, 0);
+// BFS traverse according to configuration, fill worklist and info
+void PrintBFS::collect() {
+  maybe_traverse(_start, _start);
   uint pos = 0;
   while (pos < _worklist.size()) {
     Node* n = _worklist.at(pos++);
-    int d = abs(distance(n));
-    if (_target == nullptr) {
-      print_node(n, true);
-    }
+    Info* info = find_info(n);
     if (n->is_Con()) {
       continue; // don't traverse through constant or top node
     }
-    if (_traverse_inputs && _max_distance > d) {
+    if (_traverse_inputs && _max_distance > info->distance()) {
       for (uint i = 0; i < n->req(); i++) {
-        worklist_maybe_push(n->in(i), n, d+1); // positive for input
+        maybe_traverse(n, n->in(i));
       }
     }
-    if (_traverse_outputs && _max_distance > d) {
+    if (_traverse_outputs && _max_distance > info->distance()) {
       for (uint i = 0; i < n->outcnt(); i++) {
-        worklist_maybe_push(n->raw_out(i), n, -d-1); // negative for output
+        maybe_traverse(n, n->raw_out(i));
       }
     }
   }
 }
 
-void PrintBFS::backtrack() {
-  if (_target != nullptr) {
-    if (parent(_target) == nullptr) {
+// go through work list, mark those that we want to print
+void PrintBFS::prune() {
+  if ( _target == nullptr ) {
+    // take all nodes from BFS
+    for (uint i = 0; i < _worklist.size(); i++) {
+      Node* n = _worklist.at(i);
+      Info* info = find_info(n);
+      info->set_mark();
+    }
+  } else {
+    // backtrack shortest path
+    if (find_info(_target) == nullptr) {
       tty->print("Could not find target in BFS.\n");
       return;
     }
-    print_header(false);
     Node* current = _target;
-    while (current != parent(current)) {
-      print_node(current, false);
-      current = parent(current);
+    while (true) {
+      Info* info = find_info(current);
+      info->set_mark();
+      if (current == _start) {
+        break;
+      }
+      // first edge -> leads us one step closer to _start
+      current = info->edge_bwd.at(0);
     }
-    print_node(_start, false);
+  }
+}
+
+// go through worklist in desired order, put the marked ones in printlist
+void PrintBFS::sort() {
+  if(_traverse_inputs && !_traverse_outputs) {
+    // reverse order
+    for (int i = _worklist.size()-1; i >= 0; i--) {
+      Node* n = _worklist.at(i);
+      Info* info = find_info(n);
+      if (info->is_marked()) {
+        _printlist.push(n);
+      }
+    }
+  } else {
+    // same order as worklist
+    for (uint i = 0; i < _worklist.size(); i++) {
+      Node* n = _worklist.at(i);
+      Info* info = find_info(n);
+      if (info->is_marked()) {
+        _printlist.push(n);
+      }
+    }
+  }
+}
+
+// go through printlist and print
+void PrintBFS::print() {
+  if( _printlist.size() > 0 ) {
+    print_header();
+    for (uint i = 0; i < _printlist.size(); i++) {
+      Node* n = _printlist.at(i);
+      print_node(n);
+    }
+  } else {
+    tty->print("No nodes to print.\n");
   }
 }
 
@@ -1925,26 +2017,27 @@ void PrintBFS::print_node_block (Node* n) {
   }
 }
 
-void PrintBFS::worklist_maybe_push(Node* n, Node* p, const int d) {
-  if (n != nullptr &&
-      parent(n) == nullptr && // visited before?
-      (is_visitable_category(n) || n == _start)) { // correct category or start?
-    _worklist.push(n);
-    _parent.Insert(n, p);
-    _distance.Insert(n, (void*)(size_t)d);
+void PrintBFS::maybe_traverse(Node* src, Node* dst) {
+  if (dst != nullptr &&
+     (is_visitable_category(dst) || dst == _start)) { // correct category or start?
+    if( find_info(dst) == nullptr ){
+      // never visited - set up info
+      _worklist.push(dst);
+      int d = 0;
+      if (dst != _start) {
+        d = find_info(src)->distance()+1;
+      }
+      make_info(dst, d);
+    }
+    if (src != dst) {
+      // edges useful during pruning
+      find_info(src)->edge_fwd.push(dst);
+      find_info(dst)->edge_bwd.push(src);
+    }
   }
 }
 
-int PrintBFS::distance(Node* n) {
-  return (int)(size_t)_distance[n];
-  // storing int in a (void*), must do double casting
-}
-
-Node* PrintBFS::parent(Node* n) {
-  return (Node*)_parent[n];
-}
-
-void PrintBFS::print_header(bool print_parent) {
+void PrintBFS::print_header() {
   tty->print("dis");                          // distance
   if (_print_blocks) {
     tty->print(" [head  idom  d]");           // block
@@ -1952,31 +2045,17 @@ void PrintBFS::print_header(bool print_parent) {
   if(_print_old) {
     tty->print("   old");                     // old node
   }
-  if (print_parent) {
-    tty->print("   par");                     // parent
-  }
-  if (_traverse_inputs && _traverse_outputs) {
-    tty->print(" e");                         // edge
-  }
   tty->print(" c dump\n");                    // category and dump
   tty->print("---------------------------------------------\n");
 }
 
-void PrintBFS::print_node(Node* n, bool print_parent) {
-  tty->print("%3d", abs(distance(n)));        // distance
+void PrintBFS::print_node(Node* n) {
+  tty->print("%3d", find_info(n)->distance());// distance
   if (_print_blocks) {
     print_node_block(n);                      // block
   }
   if (_print_old) {
     print_node_idx(old_node(n));              // old node
-  }
-  if (print_parent) {
-    print_node_idx(parent(n));                // parent
-  }
-  if (_traverse_inputs && _traverse_outputs) {
-    int dd = distance(n);
-    const char* edge = (dd >=0 ) ? ((dd > 0) ? "+" : " " ) : "-";
-    tty->print(" %s", edge);                  // edge
   }
   tty->print(" %s ", category_string(n));     // category
   n->dump();                                  // node dump
@@ -2025,8 +2104,6 @@ void PrintBFS::print_node(Node* n, bool print_parent) {
 //   distance: distance to this/start in BFS traversal
 //   block:    block in which the node has been scheduled [head(), _idom->head(), _dom_depth]
 //   old:      old IR node - before matching
-//   parent:   parent node - one distance closer to this/start
-//   edge:     input (+) or output (-)
 //   category: characters cmdxo from options string
 //   dump
 void Node::print_bfs(const int max_distance, Node* target, char const* options) {
