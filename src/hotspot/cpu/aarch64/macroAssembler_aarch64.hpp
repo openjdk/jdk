@@ -194,14 +194,11 @@ class MacroAssembler: public Assembler {
   template<class T>
   inline void cmpw(Register Rd, T imm)  { subsw(zr, Rd, imm); }
 
-  inline void cmp(Register Rd, unsigned char imm8)  { Assembler::subs(zr, Rd, imm8); }
+  inline void cmp(Register Rd, unsigned char imm8)  { subs(zr, Rd, imm8); }
   inline void cmp(Register Rd, unsigned imm) = delete;
 
-  template<class T>
-  inline void cmnw(Register Rd, T imm)  { addsw(zr, Rd, imm); }
-
-  inline void cmn(Register Rd, unsigned char imm8)  { Assembler::adds(zr, Rd, imm8); }
-  inline void cmn(Register Rd, unsigned imm) = delete;
+  inline void cmnw(Register Rd, unsigned imm) { addsw(zr, Rd, imm); }
+  inline void cmn(Register Rd, unsigned imm) { adds(zr, Rd, imm); }
 
   void cset(Register Rd, Assembler::Condition cond) {
     csinc(Rd, zr, zr, ~cond);
