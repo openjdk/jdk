@@ -117,7 +117,7 @@ public class Kinit {
     /**
      * Constructs a new Kinit object.
      * @param args array of ticket request options.
-     * Avaiable options are: -f, -p, -c, principal, password.
+     * Available options are: -f, -p, -c, principal, password.
      * @exception IOException if an I/O error occurs.
      * @exception RealmException if the Realm could not be instantiated.
      * @exception KrbException if error occurs during Kerberos operation.

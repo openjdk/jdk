@@ -28,6 +28,8 @@ package sun.nio.ch;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
 import java.lang.ref.Cleaner.Cleanable;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
@@ -46,6 +48,9 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MappedMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.ExtendedMapMode;
 import jdk.internal.misc.Unsafe;
@@ -536,9 +541,9 @@ public class FileChannelImpl
     }
 
     // Assume at first that the underlying kernel supports sendfile();
-    // set this to false if we find out later that it doesn't
+    // set this to true if we find out later that it doesn't
     //
-    private static volatile boolean transferSupported = true;
+    private static volatile boolean transferToNotSupported;
 
     // Assume that the underlying kernel sendfile() will work if the target
     // fd is a pipe; set this to false if we find out later that it doesn't
@@ -582,7 +587,7 @@ public class FileChannelImpl
             }
             if (n == IOStatus.UNSUPPORTED) {
                 // Don't bother trying again
-                transferSupported = false;
+                transferToNotSupported = true;
                 return IOStatus.UNSUPPORTED;
             }
             return IOStatus.normalize(n);
@@ -596,7 +601,7 @@ public class FileChannelImpl
                                     WritableByteChannel target)
         throws IOException
     {
-        if (!transferSupported)
+        if (transferToNotSupported)
             return IOStatus.UNSUPPORTED;
 
         FileDescriptor targetFD = null;
@@ -641,8 +646,9 @@ public class FileChannelImpl
     }
 
     // Size threshold above which to use a mapped buffer;
-    // transferToArbitraryChannel() is faster for smaller transfers
-    private static final long TRUSTED_TRANSFER_THRESHOLD = 16L*1024L;
+    // transferToArbitraryChannel() and transferFromArbitraryChannel()
+    // are faster for smaller transfers
+    private static final long MAPPED_TRANSFER_THRESHOLD = 16L*1024L;
 
     // Maximum size to map when using a mapped buffer
     private static final long MAPPED_TRANSFER_SIZE = 8L*1024L*1024L;
@@ -651,7 +657,7 @@ public class FileChannelImpl
                                           WritableByteChannel target)
         throws IOException
     {
-        if (count < TRUSTED_TRANSFER_THRESHOLD)
+        if (count < MAPPED_TRANSFER_THRESHOLD)
             return IOStatus.UNSUPPORTED_CASE;
 
         boolean isSelChImpl = (target instanceof SelChImpl);
@@ -776,12 +782,66 @@ public class FileChannelImpl
         return transferToArbitraryChannel(position, count, target);
     }
 
+    // Assume at first that the underlying kernel supports copy_file_range();
+    // set this to true if we find out later that it doesn't
+    //
+    private static volatile boolean transferFromNotSupported;
+
+    private long transferFromDirectlyInternal(FileDescriptor srcFD,
+                                              long position, long count)
+        throws IOException
+    {
+        long n = -1;
+        int ti = -1;
+        try {
+            beginBlocking();
+            ti = threads.add();
+            if (!isOpen())
+                return -1;
+            do {
+                long comp = Blocker.begin();
+                try {
+                    n = transferFrom0(srcFD, fd, position, count);
+                } finally {
+                    Blocker.end(comp);
+                }
+            } while ((n == IOStatus.INTERRUPTED) && isOpen());
+            if (n == IOStatus.UNSUPPORTED) {
+                // Don't bother trying again
+                transferFromNotSupported = true;
+                return IOStatus.UNSUPPORTED;
+            }
+            return IOStatus.normalize(n);
+        } finally {
+            threads.remove(ti);
+            end (n > -1);
+        }
+    }
+
+    private long transferFromDirectly(FileChannelImpl src,
+                                      long position, long count)
+        throws IOException
+    {
+        if (!src.readable)
+            throw new NonReadableChannelException();
+        if (transferFromNotSupported)
+            return IOStatus.UNSUPPORTED;
+        FileDescriptor srcFD = src.fd;
+        if (srcFD == null)
+            return IOStatus.UNSUPPORTED_CASE;
+
+        return transferFromDirectlyInternal(srcFD, position, count);
+    }
+
     private long transferFromFileChannel(FileChannelImpl src,
                                          long position, long count)
         throws IOException
     {
         if (!src.readable)
             throw new NonReadableChannelException();
+        if (count < MAPPED_TRANSFER_THRESHOLD)
+            return IOStatus.UNSUPPORTED_CASE;
+
         synchronized (src.positionLock) {
             long pos = src.position();
             long max = Math.min(count, src.size() - pos);
@@ -871,8 +931,10 @@ public class FileChannelImpl
             return 0;
 
         if (src instanceof FileChannelImpl fci) {
-            long n = transferFromFileChannel(fci, position, count);
-            if (n >= 0)
+            long n;
+            if ((n = transferFromDirectly(fci, position, count)) >= 0)
+                return n;
+            if ((n = transferFromFileChannel(fci, position, count)) >= 0)
                 return n;
         }
 
@@ -1009,6 +1071,10 @@ public class FileChannelImpl
             unmap();
         }
 
+        public long capacity() {
+            return cap;
+        }
+
         public void unmap() {
             if (address == 0)
                 return;
@@ -1121,22 +1187,53 @@ public class FileChannelImpl
             else
                 return Util.newMappedByteBuffer(0, 0, dummy, null, isSync);
         } else if ((!writable) || (prot == MAP_RO)) {
-            return Util.newMappedByteBufferR((int)unmapper.cap,
-                    unmapper.address + unmapper.pagePosition,
-                    unmapper.fd,
-                    unmapper, isSync);
+            return Util.newMappedByteBufferR((int)unmapper.capacity(),
+                    unmapper.address(),
+                    unmapper.fileDescriptor(),
+                    unmapper, unmapper.isSync());
         } else {
-            return Util.newMappedByteBuffer((int)unmapper.cap,
-                    unmapper.address + unmapper.pagePosition,
-                    unmapper.fd,
-                    unmapper, isSync);
+            return Util.newMappedByteBuffer((int)unmapper.capacity(),
+                    unmapper.address(),
+                    unmapper.fileDescriptor(),
+                    unmapper, unmapper.isSync());
         }
     }
 
-    public Unmapper mapInternal(MapMode mode, long position, long size) throws IOException {
-        boolean isSync = isSync(Objects.requireNonNull(mode, "Mode is null"));
+    private static final int MAP_MEM_SEG_DEFAULT_MODES = 0;
+    private static final int MAP_MEM_SEG_READ_ONLY = 1;
+
+    @Override
+    public MemorySegment map(MapMode mode, long offset, long size,
+                             MemorySession session)
+            throws IOException
+    {
+        Objects.requireNonNull(mode,"Mode is null");
+        Objects.requireNonNull(session, "Session is null");
+        MemorySessionImpl sessionImpl = MemorySessionImpl.toSessionImpl(session);
+        sessionImpl.checkValidStateSlow();
+        if (offset < 0) throw new IllegalArgumentException("Requested bytes offset must be >= 0.");
+        if (size < 0) throw new IllegalArgumentException("Requested bytes size must be >= 0.");
+
+        boolean isSync = isSync(mode);
         int prot = toProt(mode);
-        return mapInternal(mode, position, size, prot, isSync);
+        Unmapper unmapper = mapInternal(mode, offset, size, prot, isSync);
+        int modes = MAP_MEM_SEG_DEFAULT_MODES;
+        if (mode == MapMode.READ_ONLY) {
+            modes |= MAP_MEM_SEG_READ_ONLY;
+        }
+        if (unmapper != null) {
+            AbstractMemorySegmentImpl segment = new MappedMemorySegmentImpl(unmapper.address(), unmapper, size,
+                    modes, session);
+            sessionImpl.addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
+                @Override
+                public void cleanup() {
+                    unmapper.unmap();
+                }
+            });
+            return segment;
+        } else {
+            return new MappedMemorySegmentImpl.EmptyMappedMemorySegmentImpl(modes, session);
+        }
     }
 
     private Unmapper mapInternal(MapMode mode, long position, long size, int prot, boolean isSync)
@@ -1203,7 +1300,7 @@ public class FileChannelImpl
                 mapSize = size + pagePosition;
                 try {
                     // If map0 did not throw an exception, the address is valid
-                    addr = map0(prot, mapPosition, mapSize, isSync);
+                    addr = map0(fd, prot, mapPosition, mapSize, isSync);
                 } catch (OutOfMemoryError x) {
                     // An OutOfMemoryError may indicate that we've exhausted
                     // memory so force gc and re-attempt map
@@ -1214,7 +1311,7 @@ public class FileChannelImpl
                         Thread.currentThread().interrupt();
                     }
                     try {
-                        addr = map0(prot, mapPosition, mapSize, isSync);
+                        addr = map0(fd, prot, mapPosition, mapSize, isSync);
                     } catch (OutOfMemoryError y) {
                         // After a second OOME, fail
                         throw new IOException("Map failed", y);
@@ -1464,7 +1561,8 @@ public class FileChannelImpl
     // -- Native methods --
 
     // Creates a new mapping
-    private native long map0(int prot, long position, long length, boolean isSync)
+    private native long map0(FileDescriptor fd, int prot, long position,
+                             long length, boolean isSync)
         throws IOException;
 
     // Removes an existing mapping
@@ -1475,15 +1573,19 @@ public class FileChannelImpl
     private static native long transferTo0(FileDescriptor src, long position,
                                            long count, FileDescriptor dst);
 
+    private static native long transferFrom0(FileDescriptor src,
+                                             FileDescriptor dst,
+                                             long position, long count);
+
     // Retrieves the maximum size of a transfer
     private static native int maxDirectTransferSize0();
 
-    // Caches fieldIDs
-    private static native long initIDs();
+    // Retrieves allocation granularity
+    private static native long allocationGranularity0();
 
     static {
         IOUtil.load();
-        allocationGranularity = initIDs();
+        allocationGranularity = allocationGranularity0();
         MAX_DIRECT_TRANSFER_SIZE = maxDirectTransferSize0();
     }
 }

@@ -29,7 +29,8 @@ extern "C" {
 
 static jvmtiEnv *jvmti_env = NULL;
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jint res;
 

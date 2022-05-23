@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ final class Poly1305 {
     private static final int BLOCK_LENGTH = 16;
     private static final int TAG_LENGTH = 16;
 
-    private static final IntegerFieldModuloP ipl1305 =
-            new IntegerPolynomial1305();
+    private static final IntegerFieldModuloP ipl1305
+            = IntegerPolynomial1305.ONE;
 
     private byte[] keyBytes;
     private final byte[] block = new byte[BLOCK_LENGTH];
@@ -246,9 +246,9 @@ final class Poly1305 {
         keyBytes[7] &= 15;
         keyBytes[11] &= 15;
         keyBytes[15] &= 15;
-        keyBytes[4] &= 252;
-        keyBytes[8] &= 252;
-        keyBytes[12] &= 252;
+        keyBytes[4] &= (byte)252;
+        keyBytes[8] &= (byte)252;
+        keyBytes[12] &= (byte)252;
 
         // Create IntegerModuloP elements from the r and s values
         r = ipl1305.getElement(keyBytes, 0, RS_LENGTH, (byte)0);

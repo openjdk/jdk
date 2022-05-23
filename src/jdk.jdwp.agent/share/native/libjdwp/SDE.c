@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -584,7 +584,7 @@ private jboolean isValid(void);
 
     /**
      * Until the next stratum section, everything after this
-     * is in stratumId - so, store the current indicies.
+     * is in stratumId - so, store the current indices.
      */
     private void storeStratum(String stratumId) {
         /* remove redundant strata */

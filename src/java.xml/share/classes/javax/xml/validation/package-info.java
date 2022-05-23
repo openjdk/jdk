@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@
  * some of which are:
  *
  * <ul>
- *     <li><strong>Support for additional schema langauges.</strong>
+ *     <li><strong>Support for additional schema languages.</strong>
  *         The JAXP parser implementations support only a subset of the available
  *         XML schema languages. The Validation API provides a standard mechanism
  *         through which applications may take of advantage of specialization

@@ -475,7 +475,7 @@ commonRef_refToID(JNIEnv *env, jobject ref)
  * Given an object ID obtained from the debugger front end, return a
  * strong, global reference to that object (or NULL if the object
  * has been collected). The reference can then be used for JNI and
- * JVMTI calls. Caller is resposible for deleting the returned reference.
+ * JVMTI calls. Caller is responsible for deleting the returned reference.
  */
 jobject
 commonRef_idToRef(JNIEnv *env, jlong id)
