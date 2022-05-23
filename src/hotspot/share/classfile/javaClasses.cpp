@@ -4238,11 +4238,11 @@ bool java_lang_invoke_LambdaForm::is_instance(oop obj) {
 }
 
 int jdk_internal_foreign_abi_NativeEntryPoint::_method_type_offset;
-int jdk_internal_foreign_abi_NativeEntryPoint::_invoker_offset;
+int jdk_internal_foreign_abi_NativeEntryPoint::_downcall_stub_address_offset;
 
 #define NEP_FIELDS_DO(macro) \
-  macro(_method_type_offset,     k, "methodType",     java_lang_invoke_MethodType_signature, false); \
-  macro(_invoker_offset,         k, "invoker",        long_signature, false);
+  macro(_method_type_offset,           k, "methodType",          java_lang_invoke_MethodType_signature, false); \
+  macro(_downcall_stub_address_offset, k, "downcallStubAddress", long_signature, false);
 
 bool jdk_internal_foreign_abi_NativeEntryPoint::is_instance(oop obj) {
   return obj != NULL && is_subclass(obj->klass());
@@ -4263,8 +4263,8 @@ oop jdk_internal_foreign_abi_NativeEntryPoint::method_type(oop entry) {
   return entry->obj_field(_method_type_offset);
 }
 
-jlong jdk_internal_foreign_abi_NativeEntryPoint::invoker(oop entry) {
-  return entry->long_field(_invoker_offset);
+jlong jdk_internal_foreign_abi_NativeEntryPoint::downcall_stub_address(oop entry) {
+  return entry->long_field(_downcall_stub_address_offset);
 }
 
 int jdk_internal_foreign_abi_ABIDescriptor::_inputStorage_offset;
