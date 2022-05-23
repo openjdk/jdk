@@ -628,8 +628,6 @@ sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 sun/security/ssl/SSLSessionImpl/NoInvalidateSocketException.java 8277970 linux-all,macosx-x64
 
-sun/security/ssl/X509TrustManagerImpl/Symantec/Distrust.java    8287109 generic-all
-
 ############################################################################
 
 # jdk_sound
