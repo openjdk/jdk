@@ -27,7 +27,6 @@ package java.lang;
 
 import java.util.Random;
 import jdk.internal.math.DoubleConsts;
-import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
