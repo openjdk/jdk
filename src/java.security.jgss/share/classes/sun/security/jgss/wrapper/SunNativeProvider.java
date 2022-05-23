@@ -25,6 +25,7 @@
 
 package sun.security.jgss.wrapper;
 
+import java.io.Serial;
 import java.util.HashMap;
 import java.security.Provider;
 import java.security.AccessController;
@@ -46,6 +47,7 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 public final class SunNativeProvider extends Provider {
 
+    @Serial
     private static final long serialVersionUID = -238911724858694204L;
 
     private static final String NAME = "SunNativeGSS";
