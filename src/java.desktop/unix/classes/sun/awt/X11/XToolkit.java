@@ -1096,7 +1096,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             sunAwtDisableGtkFileDialogs = AccessController.doPrivileged(
                                               new GetBooleanAction("sun.awt.disableGtkFileDialogs"));
         }
-        return sunAwtDisableGtkFileDialogs;
+        return sunAwtDisableGtkFileDialogs.booleanValue();
     }
 
     @Override
