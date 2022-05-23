@@ -415,7 +415,7 @@ $(function() {
     $("ul.sub-nav-list-small li a").click(collapse);
     $("input#search-input").focus(collapse);
     $("main").click(collapse);
-    $("section[id] > :header, :header[id], :header > a[id]").hover(
+    $("section[id] > :header, :header[id], :header:has(a[id])").hover(
         function () {
             $(this).append($("<button class='copy copy-header' onclick='copyUrl(this)'> " +
                 "<img src='" + pathtoroot + "copy.svg' alt='" + messages.copyUrl + "'> " +
