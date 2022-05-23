@@ -199,7 +199,7 @@ public final class ResolverConfigurationImpl
         init0();
 
         // start the address listener thread
-        String name = "Net-address-change-listener";
+        String name = "Jndi-Dns-address-change-listener";
         Thread addrChangeListener = InnocuousThread.newSystemThread(name,
                 new AddressChangeListener());
         addrChangeListener.setDaemon(true);
