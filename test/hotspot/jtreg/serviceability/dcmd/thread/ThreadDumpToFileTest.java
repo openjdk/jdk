@@ -72,7 +72,10 @@ public class ThreadDumpToFileTest {
         String jsonText = Files.readString(file);
         ThreadDump threadDump = ThreadDump.parse(jsonText);
 
-        // test that thread dump contains the id of the current thread
+        // test that the process id is this process
+        assertTrue(threadDump.processId() == ProcessHandle.current().pid());
+
+        // test that the current thread is in the root thread container
         var rootContainer = threadDump.rootThreadContainer();
         var tid = Thread.currentThread().threadId();
         rootContainer.findThread(tid).orElseThrow();

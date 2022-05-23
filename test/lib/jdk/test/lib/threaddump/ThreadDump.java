@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.stream.Stream;
 import jdk.test.lib.json.JSONValue;
@@ -44,7 +45,7 @@ import jdk.test.lib.json.JSONValue;
  * <pre>{@code
  * {
  *   "threadDump": {
- *     "processId": 63406,
+ *     "processId": "63406",
  *     "time": "2022-05-20T07:37:16.308017Z",
  *     "runtimeVersion": "19",
  *     "threadContainers": [
@@ -54,12 +55,12 @@ import jdk.test.lib.json.JSONValue;
  *         "owner": null,
  *         "threads": [
  *          {
- *            "tid": 1,
+ *            "tid": "1",
  *            "name": "main",
  *            "stack": [...]
  *          },
  *          {
- *            "tid": 8,
+ *            "tid": "8",
  *            "name": "Reference Handler",
  *            "stack": [
  *               "java.base\/java.lang.ref.Reference.waitForReferencePendingList(Native Method)",
@@ -73,14 +74,21 @@ import jdk.test.lib.json.JSONValue;
  *          {"name": "Monitor Ctrl-Break"...},
  *          {"name": "Notification Thread"...}
  *         ],
- *         "threadCount": 7
+ *         "threadCount": "7"
  *       },
  *       {
- *         "container": "ForkJoinPool.commonPool",
+ *         "container": "ForkJoinPool.commonPool\/jdk.internal.vm.SharedThreadContainer@56aac163",
  *         "parent": "<root>",
  *         "owner": null,
  *         "threads": [...],
- *         "threadCount": 1
+ *         "threadCount": "1"
+ *       }
+ *       {
+ *         "container": "java.util.concurrent.ThreadPoolExecutor@20322d26\/jdk.internal.vm.SharedThreadContainer@184f6be2",
+ *         "parent": "<root>",
+ *         "owner": null,
+ *         "threads": [...],
+ *         "threadCount": "1"
  *       }
  *     ]
  *   }
@@ -105,7 +113,7 @@ import jdk.test.lib.json.JSONValue;
  * }</pre>
  */
 public final class ThreadDump {
-    private final String processId;
+    private final long processId;
     private final String time;
     private final String runtimeVersion;
     private ThreadContainer rootThreadContainer;
@@ -115,7 +123,7 @@ public final class ThreadDump {
      */
     public static class ThreadContainer {
         private final String name;
-        private long ownerTid;
+        private long owner;
         private ThreadContainer parent;
         private Set<ThreadInfo> threads;
         private final Set<ThreadContainer> children = new HashSet<>();
@@ -132,17 +140,17 @@ public final class ThreadDump {
         }
 
         /**
-         * Return the thread identifier of the owner thread or {@code null} if not owned.
+         * Return the thread identifier of the owner or empty OptionalLong if not owned.
          */
-        public long ownerTid() {
-            return ownerTid;
+        public OptionalLong owner() {
+           return (owner != 0) ? OptionalLong.of(owner) : OptionalLong.empty();
         }
 
         /**
-         * Returns the parent thread container or {@code null} if this is the root.
+         * Returns the parent thread container or empty Optional if this is the root.
          */
-        public ThreadContainer parent() {
-            return parent;
+        public Optional<ThreadContainer> parent() {
+            return Optional.ofNullable(parent);
         }
 
         /**
@@ -298,20 +306,20 @@ public final class ThreadDump {
             // add to map if not already encountered
             var container = map.computeIfAbsent(name, k -> new ThreadContainer(name));
             if (owner != null)
-                container.ownerTid = Long.parseLong(owner);
+                container.owner = Long.parseLong(owner);
             container.threads = threadInfos;
 
             if (parentName == null) {
                 rootThreadContainer = container;
             } else {
-                // add parent to map if not already encountered and add to set of children
-                var parent = map.computeIfAbsent(parentName,k -> new ThreadContainer(parentName));
+                // add parent to map if not already encountered and add to its set of children
+                var parent = map.computeIfAbsent(parentName, k -> new ThreadContainer(parentName));
                 container.parent = parent;
                 parent.children.add(container);
             }
         }
 
-        this.processId = threadDumpObj.get("processId").asString();
+        this.processId = Long.parseLong(threadDumpObj.get("processId").asString());
         this.time = threadDumpObj.get("time").asString();
         this.runtimeVersion = threadDumpObj.get("runtimeVersion").asString();
     }
@@ -319,7 +327,7 @@ public final class ThreadDump {
     /**
      * Returns the value of threadDump/processId.
      */
-    public String processId() {
+    public long processId() {
         return processId;
     }
 

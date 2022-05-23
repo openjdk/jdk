@@ -37,7 +37,7 @@ import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
-import java.util.Objects;
+import java.time.ZonedDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
@@ -111,19 +111,32 @@ public class DumpThreads {
                 String jsonText = Files.readString(file);
                 ThreadDump threadDump = ThreadDump.parse(jsonText);
 
-                // find the thread container that corresponds to the executor
-                String name = Objects.toIdentityString(executor);
-                var container = threadDump.findThreadContainer(name).orElseThrow();
+                // test threadDump/processId
+                assertTrue(threadDump.processId() == ProcessHandle.current().pid());
 
-                // virtual thread should be found
-                container.findThread(vthread.threadId()).orElseThrow();
+                // test threadDump/time can be parsed
+                ZonedDateTime.parse(threadDump.time());
 
-                // if the current thread is a platform thread then will be in root container
+                // test threadDump/runtimeVersion
+                assertEquals(threadDump.runtimeVersion(), Runtime.version().toString());
+
+                // test root container
+                var rootContainer = threadDump.rootThreadContainer();
+                assertFalse(rootContainer.owner().isPresent());
+                assertFalse(rootContainer.parent().isPresent());
+
+                // if the current thread is a platform thread then it will be in root container
                 Thread currentThread = Thread.currentThread();
                 if (!currentThread.isVirtual() || TRACK_ALL_THREADS) {
-                    var rootContainer = threadDump.rootThreadContainer();
                     rootContainer.findThread(currentThread.threadId()).orElseThrow();
                 }
+
+                // find the thread container for the executor
+                String name = executor.toString();
+                var container = threadDump.findThreadContainer(name).orElseThrow();
+                assertFalse(container.owner().isPresent());
+                assertTrue(container.parent().get() == rootContainer);
+                container.findThread(vthread.threadId()).orElseThrow();
             } finally {
                 LockSupport.unpark(vthread);
             }
