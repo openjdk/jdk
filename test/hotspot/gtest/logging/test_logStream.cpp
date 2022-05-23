@@ -98,7 +98,7 @@ TEST_VM_F(LogStreamTest, InterleavingStream) {
   const char* strs[] = {"1", "I am one line", "2", "but", "3", "I am not", NULL};
   {
     LogStream foo(Log(gc)::info());
-    if(foo.is_enabled()) {
+    if (foo.is_enabled()) {
       foo.print("I am");
       log_info(gc)("1");
       foo.print_cr(" one line");
@@ -119,7 +119,7 @@ TEST_VM_F(LogStreamTest, NonInterleavingStream) {
   {
     LogMessage(gc) lm ;
     NonInterleavingLogStream foo{LogLevelType::Info, lm};
-    if(foo.is_enabled()) {
+    if (foo.is_enabled()) {
       foo.print("I am");
       log_info(gc)("1");
       foo.print_cr(" one line");
