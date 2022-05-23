@@ -868,10 +868,12 @@ java/lang/Thread/virtual/stress/GetStackTraceALot.java#id0      8286642 generic-
 java/lang/Thread/virtual/stress/GetStackTraceALot.java#id1      8286642 generic-i586
 java/lang/Thread/virtual/stress/PinALot.java#id0                8286642 generic-i586
 java/lang/Thread/virtual/stress/PinALot.java#id1                8286642 generic-i586
+java/lang/Thread/virtual/stress/PingPong.java                   8286642 generic-i586
 java/lang/Thread/virtual/stress/Skynet.java#id0                 8286642 generic-i586
 java/lang/Thread/virtual/stress/Skynet.java#id1                 8286642 generic-i586
 java/lang/Thread/virtual/stress/SleepALot.java#id0              8286642 generic-i586
 java/lang/Thread/virtual/stress/SleepALot.java#id1              8286642 generic-i586
+java/lang/Thread/virtual/stress/TimedGet.java                   8286642 generic-i586
 java/lang/Thread/virtual/stress/YieldALot.java#id0              8286642 generic-i586
 java/lang/Thread/virtual/stress/YieldALot.java#id1              8286642 generic-i586
 java/net/Socket/Timeouts.java                                   8286642 generic-i586
