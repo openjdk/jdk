@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP
 
+#include "code/nmethod.hpp"
 #include "memory/iterator.hpp"
 #include "oops/accessDecorators.hpp"
 #include "runtime/handshake.hpp"
@@ -99,13 +100,14 @@ private:
 };
 
 // Context free version, cannot cache calling thread
-class ShenandoahEvacuateUpdateRootsClosure : public BasicOopIterateClosure {
+class ShenandoahEvacuateUpdateRootsClosure : public MetadataVisitingOopIterateClosure {
 private:
   ShenandoahHeap* const _heap;
 public:
   inline ShenandoahEvacuateUpdateRootsClosure();
   inline void do_oop(oop* p);
   inline void do_oop(narrowOop* p);
+  virtual bool do_metadata() { return false; }
 protected:
   template <typename T>
   inline void do_oop_work(T* p, Thread* thr);
@@ -118,6 +120,14 @@ public:
   inline ShenandoahContextEvacuateUpdateRootsClosure();
   inline void do_oop(oop* p);
   inline void do_oop(narrowOop* p);
+};
+
+class ShenandoahEvacuateUpdateStackChunckClosure : public ShenandoahEvacuateUpdateRootsClosure {
+public:
+  virtual bool do_metadata() { return true; }
+  virtual void do_nmethod(nmethod* nm) {
+    nm->run_nmethod_entry_barrier();
+  }
 };
 
 template <bool CONCURRENT, typename IsAlive, typename KeepAlive>
