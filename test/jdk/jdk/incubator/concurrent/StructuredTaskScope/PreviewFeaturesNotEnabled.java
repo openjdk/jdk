@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8284199
  * @summary Test StructuredTaskScope without --enable-preview
  * @modules jdk.incubator.concurrent
  * @run testng/othervm PreviewFeaturesNotEnabled

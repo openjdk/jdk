@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug JDK-8284199
  * @summary Basic tests for StructuredTaskScope
  * @enablePreview
  * @modules jdk.incubator.concurrent

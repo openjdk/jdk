@@ -23,10 +23,12 @@
 
 /*
  * @test
+ * @bug 8284199
  * @summary Test thread dumps with StructuredTaskScope
  * @enablePreview
  * @modules jdk.incubator.concurrent
  * @library /test/lib
+ * @ignore // waiting for JDK-8287008
  * @run testng/othervm StructuredThreadDumpTest
  */
 
@@ -67,16 +69,16 @@ public class StructuredThreadDumpTest {
                 var container3 = threadDump.findThreadContainer("child-scope-B").orElseThrow();
 
                 // check parents
-                assertTrue(rootContainer.parent() == null);
-                assertTrue(container1.parent() == rootContainer);
-                assertTrue(container2.parent() == container1);
-                assertTrue(container3.parent() == container1);
+                assertFalse(rootContainer.parent().isPresent());
+                assertTrue(container1.parent().get() == rootContainer);
+                assertTrue(container2.parent().get() == container1);
+                assertTrue(container3.parent().get() == container1);
 
                 // check owners
-                assertTrue(rootContainer.ownerTid() == 0);
-                assertTrue(container1.ownerTid() == Thread.currentThread().threadId());
-                assertTrue(container2.ownerTid() == thread1.threadId());
-                assertTrue(container3.ownerTid() == thread2.threadId());
+                assertFalse(rootContainer.owner().isPresent());
+                assertTrue(container1.owner().getAsLong() == Thread.currentThread().threadId());
+                assertTrue(container2.owner().getAsLong() == thread1.threadId());
+                assertTrue(container3.owner().getAsLong() == thread2.threadId());
 
                 // thread1 and threads2 should be in threads array of "scope"
                 container1.findThread(thread1.threadId()).orElseThrow();
@@ -110,15 +112,15 @@ public class StructuredThreadDumpTest {
                     var container2 = threadDump.findThreadContainer("scope-B").orElseThrow();
 
                     // check parents
-                    assertTrue(rootContainer.parent() == null);
-                    assertTrue(container1.parent() == rootContainer);
-                    assertTrue(container2.parent() == container1);
+                    assertFalse(rootContainer.parent().isPresent());
+                    assertTrue(container1.parent().get() == rootContainer);
+                    assertTrue(container2.parent().get() == container1);
 
                     // check owners
                     long tid = Thread.currentThread().threadId();
-                    assertTrue(rootContainer.ownerTid() == 0);
-                    assertTrue(container1.ownerTid() == tid);
-                    assertTrue(container2.ownerTid() == tid);
+                    assertFalse(rootContainer.owner().isPresent());
+                    assertTrue(container1.owner().getAsLong() == tid);
+                    assertTrue(container2.owner().getAsLong() == tid);
 
                     // thread1 should be in threads array of "scope-A"
                     container1.findThread(thread1.threadId()).orElseThrow();
