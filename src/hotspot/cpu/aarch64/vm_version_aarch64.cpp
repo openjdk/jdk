@@ -250,11 +250,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
-#ifdef HARD_LSE
-  // Compile time LSE support is enabled
-  // Forcibly enable runtime LSE support
-  FLAG_SET_DEFAULT(UseLSE, true);
-#else
   if (VM_Version::supports_lse()) {
     if (FLAG_IS_DEFAULT(UseLSE))
       FLAG_SET_DEFAULT(UseLSE, true);
@@ -264,7 +259,6 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseLSE, false);
     }
   }
-#endif
 
   if (VM_Version::supports_aes()) {
     UseAES = UseAES || FLAG_IS_DEFAULT(UseAES);

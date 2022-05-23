@@ -166,14 +166,6 @@ ifneq ($(call check-jvm-feature, jfr), true)
   JVM_EXCLUDE_FILES += compilerEvent.cpp
 endif
 
-ifeq ($(call check-jvm-feature, hardlse), true)
-  JVM_CFLAGS_FEATURES += -DHARD_LSE=1
-  JVM_EXCLUDE_FILES += atomic_linux_aarch64.S
-else
-  JVM_EXCLUDE_FILES += atomic_linux_aarch64_lse.S
-endif
-
-
 ################################################################################
 
 ifeq ($(call check-jvm-feature, link-time-opt), true)

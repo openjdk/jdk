@@ -6416,10 +6416,6 @@ class StubGenerator: public StubCodeGenerator {
 
 #ifdef LINUX
 
-// Compile time support for LSE is enabled,
-// no needs to rewrite atomic stubs
-#ifndef HARD_LSE
-
   // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
   //
   // If LSE is in use, generate LSE versions of all the stubs. The
@@ -6614,7 +6610,6 @@ class StubGenerator: public StubCodeGenerator {
 
     ICache::invalidate_range(first_entry, __ pc() - first_entry);
   }
-#endif // HARD_LSE
 #endif // LINUX
 
   RuntimeStub* generate_cont_doYield() {
@@ -7995,11 +7990,9 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
 #ifdef LINUX
-#ifndef HARD_LSE
 
     generate_atomic_entry_points();
 
-#endif // HARD_LSE
 #endif // LINUX
 
     StubRoutines::aarch64::set_completed();
