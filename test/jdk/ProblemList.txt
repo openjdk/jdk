@@ -878,6 +878,7 @@ java/lang/Thread/virtual/stress/YieldALot.java#id0              8286642 generic-
 java/lang/Thread/virtual/stress/YieldALot.java#id1              8286642 generic-i586
 java/net/Socket/Timeouts.java                                   8286642 generic-i586
 java/net/vthread/BlockingSocketOps.java                         8286642 generic-i586
+java/net/vthread/HttpALot.java                                  8286642 generic-i586
 java/net/vthread/InterruptHttp.java                             8286642 generic-i586
 java/nio/channels/FileChannel/LargeMapTest.java                 8286642 generic-i586
 java/nio/channels/FileChannel/MapToMemorySegmentTest.java       8286642 generic-i586
