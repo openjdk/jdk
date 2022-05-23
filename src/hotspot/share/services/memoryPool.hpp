@@ -136,6 +136,9 @@ class MemoryPool : public CHeapObj<mtInternal> {
   virtual size_t      used_in_bytes() = 0;
   virtual bool        is_collected_pool()         { return false; }
   virtual MemoryUsage get_last_collection_usage() { return _after_gc_usage; }
+  virtual bool        is_codeheap()               { return false; }
+  virtual bool        is_metaspace()              { return false; }
+  virtual bool        is_compressed_klass_space() { return false; }
 };
 
 class CollectedMemoryPool : public MemoryPool {
@@ -152,6 +155,8 @@ public:
   CodeHeapPool(CodeHeap* codeHeap, const char* name, bool support_usage_threshold);
   MemoryUsage get_memory_usage();
   size_t used_in_bytes()            { return _codeHeap->allocated_capacity(); }
+
+  bool is_codeheap() override { return true; }
 };
 
 class MetaspacePool : public MemoryPool {
@@ -160,6 +165,7 @@ class MetaspacePool : public MemoryPool {
   MetaspacePool();
   MemoryUsage get_memory_usage();
   size_t used_in_bytes();
+  bool is_metaspace() override { return true; }
 };
 
 class CompressedKlassSpacePool : public MemoryPool {
@@ -167,6 +173,7 @@ class CompressedKlassSpacePool : public MemoryPool {
   CompressedKlassSpacePool();
   MemoryUsage get_memory_usage();
   size_t used_in_bytes();
+  bool is_compressed_klass_space() override { return true; }
 };
 
 #endif // SHARE_SERVICES_MEMORYPOOL_HPP
