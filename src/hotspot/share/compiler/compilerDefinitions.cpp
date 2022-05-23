@@ -136,7 +136,8 @@ intx CompilerConfig::scaled_compile_threshold(intx threshold, double scale) {
     }
     int exp;
     (void) frexp(v, &exp);
-    if (exp > LP64_ONLY(63) NOT_LP64(31)) {
+    int max_exp = sizeof(intx) * BitsPerByte - 1;
+    if (exp > max_exp) {
       return max_intx;
     }
     intx r = (intx)(v);
