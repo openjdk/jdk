@@ -477,9 +477,8 @@ protected:
   bool _failures;
   int _n_failures;
   VerifyOption _vo;
+
 public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS.
   G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo) :
     _g1h(g1h), _ct(g1h->card_table()),
     _containing_obj(NULL), _failures(false), _n_failures(0), _vo(vo) {

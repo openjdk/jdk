@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,38 +25,40 @@
  */
 package jdk.internal.foreign.abi.x64.sysv;
 
+import jdk.internal.foreign.abi.ABIDescriptor;
+import jdk.internal.foreign.abi.Binding;
+import jdk.internal.foreign.abi.CallingSequence;
+import jdk.internal.foreign.abi.CallingSequenceBuilder;
+import jdk.internal.foreign.abi.DowncallLinker;
+import jdk.internal.foreign.abi.SharedUtils;
+import jdk.internal.foreign.abi.UpcallLinker;
+import jdk.internal.foreign.abi.VMStorage;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
-import jdk.internal.foreign.abi.ABIDescriptor;
-import jdk.internal.foreign.abi.CallingSequence;
-import jdk.internal.foreign.abi.CallingSequenceBuilder;
-import jdk.internal.foreign.abi.VMStorage;
-import jdk.internal.foreign.abi.Binding;
-import jdk.internal.foreign.abi.ProgrammableInvoker;
-import jdk.internal.foreign.abi.ProgrammableUpcallHandler;
-import jdk.internal.foreign.abi.SharedUtils;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import static jdk.internal.foreign.PlatformLayouts.*;
-import static jdk.internal.foreign.abi.Binding.*;
+import static jdk.internal.foreign.PlatformLayouts.SysV;
+import static jdk.internal.foreign.abi.Binding.vmStore;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.*;
 
 /**
- * For the SysV x64 C ABI specifically, this class uses the ProgrammableInvoker API, namely CallingSequenceBuilder2
+ * For the SysV x64 C ABI specifically, this class uses namely CallingSequenceBuilder
  * to translate a C FunctionDescriptor into a CallingSequence, which can then be turned into a MethodHandle.
  *
  * This includes taking care of synthetic arguments like pointers to return buffers for 'in-memory' returns.
  */
 public class CallArranger {
+    public static final int MAX_INTEGER_ARGUMENT_REGISTERS = 6;
+    public static final int MAX_VECTOR_ARGUMENT_REGISTERS = 8;
     private static final ABIDescriptor CSysV = abiFor(
         new VMStorage[] { rdi, rsi, rdx, rcx, r8, r9, rax },
         new VMStorage[] { xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7 },
@@ -66,7 +68,9 @@ public class CallArranger {
         new VMStorage[] { r10, r11 },
         new VMStorage[] { xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15 },
         16,
-        0 //no shadow space
+        0, //no shadow space
+        r10, // target addr reg
+        r11  // ret buf addr reg
     );
 
     // record
@@ -83,7 +87,7 @@ public class CallArranger {
     }
 
     public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
-        CallingSequenceBuilder csb = new CallingSequenceBuilder(forUpcall);
+        CallingSequenceBuilder csb = new CallingSequenceBuilder(CSysV, forUpcall);
 
         BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
         BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false) : new BoxBindingCalculator(false);
@@ -111,15 +115,13 @@ public class CallArranger {
                     List.of(vmStore(rax, long.class)));
         }
 
-        csb.setTrivial(SharedUtils.isTrivial(cDesc));
-
         return new Bindings(csb.build(), returnInMemory, argCalc.storageCalculator.nVectorReg);
     }
 
     public static MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc) {
         Bindings bindings = getBindings(mt, cDesc, false);
 
-        MethodHandle handle = new ProgrammableInvoker(CSysV, bindings.callingSequence).getBoundMethodHandle();
+        MethodHandle handle = new DowncallLinker(CSysV, bindings.callingSequence).getBoundMethodHandle();
         handle = MethodHandles.insertArguments(handle, handle.type().parameterCount() - 1, bindings.nVectorArgs);
 
         if (bindings.isInMemoryReturn) {
@@ -136,7 +138,7 @@ public class CallArranger {
             target = SharedUtils.adaptUpcallForIMR(target, true /* drop return, since we don't have bindings for it */);
         }
 
-        return ProgrammableUpcallHandler.make(CSysV, target, bindings.callingSequence, session);
+        return UpcallLinker.make(CSysV, target, bindings.callingSequence, session);
     }
 
     private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
@@ -159,8 +161,8 @@ public class CallArranger {
 
         private int maxRegisterArguments(int type) {
             return type == StorageClasses.INTEGER ?
-                    SysVx64Linker.MAX_INTEGER_ARGUMENT_REGISTERS :
-                    SysVx64Linker.MAX_VECTOR_ARGUMENT_REGISTERS;
+                    MAX_INTEGER_ARGUMENT_REGISTERS :
+                    MAX_VECTOR_ARGUMENT_REGISTERS;
         }
 
         VMStorage stackAlloc() {
@@ -188,14 +190,14 @@ public class CallArranger {
             }
             long nIntegerReg = typeClass.nIntegerRegs();
 
-            if (this.nIntegerReg + nIntegerReg > SysVx64Linker.MAX_INTEGER_ARGUMENT_REGISTERS) {
+            if (this.nIntegerReg + nIntegerReg > MAX_INTEGER_ARGUMENT_REGISTERS) {
                 //not enough registers - pass on stack
                 return typeClass.classes.stream().map(c -> stackAlloc()).toArray(VMStorage[]::new);
             }
 
             long nVectorReg = typeClass.nVectorRegs();
 
-            if (this.nVectorReg + nVectorReg > SysVx64Linker.MAX_VECTOR_ARGUMENT_REGISTERS) {
+            if (this.nVectorReg + nVectorReg > MAX_VECTOR_ARGUMENT_REGISTERS) {
                 //not enough registers - pass on stack
                 return typeClass.classes.stream().map(c -> stackAlloc()).toArray(VMStorage[]::new);
             }
