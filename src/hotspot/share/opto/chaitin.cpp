@@ -460,22 +460,12 @@ void PhaseChaitin::Register_Allocate() {
       }
       if (loop->_child == NULL && loop != _cfg._root_loop) {
         GrowableArray<CFGElement*> blocks = loop->_members;
-        bool skip = false;
-        for (int i = 0; i < blocks.length() && !skip; ++i) {
-          Block* block = blocks.at(i)->as_Block();
-          for (uint j = 0; j < block->_num_succs && !skip; ++j) {
-            Block* succ = block->_succs[j];
-            if (succ->_loop != loop) {
-              for (uint k = 1; k < succ->end_idx() && !skip; ++k) {
-                Node* n = succ->get_node(k);
-                if (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
-                  skip = true;
-                }
-              }
-            }
-          }
+        double f = loop->_freq;
+        if (loop->head()->head()->is_CountedLoop() && loop->head()->head()->as_CountedLoop()->is_strip_mined()) {
+          assert(loop->_parent->head()->head()->is_OuterStripMinedLoop(), "");
+          f = loop->_parent->_freq;
         }
-        if (!skip && loop->_freq > RegAllocLoopMinFreq) {
+        if (f > RegAllocLoopMinFreq) {
           leaf_loops.push(loop);
         }
       }
@@ -500,10 +490,15 @@ void PhaseChaitin::Register_Allocate() {
 //    _cfg.dump();
 //    tty->print_cr("XXXXXX");
 //    leaf_loops.trunc_to(1);
-    VectorSet visited;
+    regions.push(Block_List());
     for (int i = 0; i < leaf_loops.length(); i++) {
       CFGLoop* loop = leaf_loops.at(i);
       double trip = loop->trip_count();
+      if (loop->head()->head()->is_CountedLoop() && loop->head()->head()->as_CountedLoop()->is_strip_mined()) {
+        assert(loop->_parent->head()->head()->is_OuterStripMinedLoop(), "");
+        trip = loop->_parent->trip_count();
+        loop = loop->_parent;
+      }
       while (trip < RegAllocLoopMinTrip) {
         loop = loop->_parent;
         assert(loop != NULL && loop != _cfg._root_loop, "");
@@ -512,68 +507,15 @@ void PhaseChaitin::Register_Allocate() {
         }
       }
       assert(loop->head()->head()->is_Loop(), "");
-      int region = i + 1;
+      uint region = i + 1;
 //      tty->print_cr("XXXX %f %f %f", loop->_freq, loop->head()->_freq, loop->trip_count());
       Block_List blocks;
-      if (!visited.test_set(loop->head()->_pre_order)) {
-        blocks.push(loop->head());
-        for (uint j = 0; j < blocks.size(); j++) {
-          Block *block = blocks[j];
-//          block->dump();
-          block->_region = region;
-
-          GrowableArray<Block*> succs;
-          for (uint k = 0; k < block->_num_succs; k++) {
-            Block *succ = block->_succs[k];
-            if (!loop->in_loop_nest(succ)) {
-              continue;
-            }
-            succs.push(succ);
-          }
-
-          {
-            succs.sort([](Block** b1, Block** b2) {
-                if ((*b1)->_freq > (*b2)->_freq) return -1;
-                else if ((*b1)->_freq < (*b2)->_freq) return 1;
-                return 0;
-            });
-//            tty->print_cr("YYY");
-            double f = 0;
-            for (uint k = 0; k < succs.length(); k++) {
-              Block *succ = succs.at(k);
-              assert(loop->in_loop_nest(succ), "");
-//              tty->print_cr("Y %f", succ->_freq);
-              if (visited.test_set(succ->_pre_order)) {
-                continue;
-              }
-#ifdef ASSERT
-              for (uint l = 0; l < blocks.size(); l++) {
-                assert(blocks[l] != succ, "");
-
-              }
-#endif
-              blocks.push(succ);
-              f += succs.at(k)->_freq;
-              if (f/block->_freq > RegAllocBranchAccumulatedFreq) {
-                break;
-              }
-            }
-//            tty->print_cr("YYY");
-          }
-        }
-#ifdef ASSERT
-        uint l;
-        for (l = 0; l < blocks.size(); l++) {
-          if (blocks[l] == _cfg.get_block_for_node(loop->head()->pred(2))) {
-            break;
-          }
-        }
-        assert(l < blocks.size(), "not reaching back branch");
-#endif
-
-        assert(blocks.size() > 0, "");
-        regions.push(blocks);
-      }
+      VectorSet visited;
+      Block_List exits;
+      collect_blocks_for_loop(visited, loop, region, loop, exits, blocks);
+      assert(exits.size() == 0, "");
+      assert(_cfg.get_block_for_node(loop->head()->pred(2))->_region == region, "");
+      regions.push(blocks);
 //      GrowableArray<CFGElement*> blocks = leaf_loops.at(i)->_members;
 //      for (int j = 0; j < blocks.length(); ++j) {
 //        CFGElement* block = blocks.at(j);
@@ -608,29 +550,81 @@ void PhaseChaitin::Register_Allocate() {
 //    _cfg.dump();
 //    tty->print_cr("XXXXXX");
 
-    Block_List region;
+//    Block_List region;
+//    regions.push(region);
     for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
       Block* block = _cfg.get_block(i);
-//        block->dump();
       if (block->_region == 0) {
-        region.push(block);
-        for (uint j = 0; j < block->_num_succs; ++j) {
-          Block* s = block->_succs[j];
-          if (s->_region == 1) {
-            assert(block->_num_succs == 1, "");
-            block->_next_region = 1;
-          }
+        regions.at(block->_region).push(block);
+      } else {
+        Block_List blocks = regions.at(block->_region);
+        uint j;
+        for (j = 0; j < blocks.size() && blocks[j] != block; ++j) {
         }
-        for (uint j = 1; j < block->num_preds(); ++j) {
-          Block* p = _cfg.get_block_for_node(block->pred(j));
-          if (p->_region == 1) {
-            assert(block->num_preds() == 2, "");
-            block->_prev_region = 1;
+        assert(j < blocks.size(), "");
+      }
+//        block->dump();
+//      if (block->_region == 0) {
+//        for (uint j = 0; j < block->_num_succs; ++j) {
+//          Block* s = block->_succs[j];
+//          if (s->_region == 1) {
+//            assert(block->_num_succs == 1, "");
+//            block->_next_region = 1;
+//          }
+//        }
+//        for (uint j = 1; j < block->num_preds(); ++j) {
+//          Block* p = _cfg.get_block_for_node(block->pred(j));
+//          if (p->_region == 1) {
+//            assert(block->num_preds() == 2, "");
+//            block->_prev_region = 1;
+//          }
+//        }
+//        region.push(block);
+//      } else {
+//      }
+    }
+    for (int i = 0; i < regions.length(); ++i) {
+      Block_List region = regions.at(i);
+      bool skip = false;
+      for (uint j = 0; j < region.size() && !skip; ++j) {
+        Block *block = region[j];
+        for (uint l = 0; l < block->_num_succs && !skip; ++l) {
+          Block *succ = block->_succs[l];
+          if (succ->_region != region[0]->_region) {
+            for (uint k = 1; k < succ->end_idx() && !skip; ++k) {
+              Node *n = succ->get_node(k);
+              if (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
+                skip = true;
+              }
+            }
           }
         }
       }
+      if (skip) {
+        for (uint j = 0; j < region.size(); ++j) {
+          Block *block = region[j];
+          block->_region = 0;
+        }
+        regions.at_put(i, Block_List());
+      }
     }
-    regions.push(region);
+    //    for (uint i = 1; i < regions.length(); ++i) {
+//      Block_List region = regions.at(i);
+//      CFGLoop* loop = region[0]->_loop;
+//      while (loop->_parent->head()->_region == region[0]->_region) {
+//        loop = loop->_parent;
+//      }
+//#ifdef ASSERT
+//      uint l;
+//      for (l = 0; l < region.size(); l++) {
+//        if (region[l] == _cfg.get_block_for_node(loop->head()->pred(2))) {
+//          break;
+//        }
+//      }
+//      assert(l < region.size(), "not reaching back branch");
+//#endif
+//    }
+//    _cfg.dump();
   }
   if (regions.length() == 0) {
     regions.push(_cfg._blocks);
@@ -1020,6 +1014,85 @@ void PhaseChaitin::Register_Allocate() {
   _live = NULL;
   _ifg = NULL;
   C->set_indexSet_arena(NULL);  // ResourceArea is at end of scope
+}
+
+void PhaseChaitin::collect_blocks_for_loop(VectorSet &visited, CFGLoop *loop, int region, CFGLoop *root_loop,
+                                           Block_List &exits,
+                                           Block_List &region_blocks) const {
+  Block_List blocks;
+  blocks.push(loop->head());
+  while (blocks.size() > 0) {
+    Block *block = blocks.pop();
+    block->_region = region;
+    assert(block->_loop == loop, "");
+    region_blocks.push(block);
+
+    collect_blocks_for_loop_helper(visited, loop, region, root_loop, exits, block->_num_succs,
+                                   block->_succs, block->_freq, blocks, region_blocks);
+  }
+}
+
+void
+PhaseChaitin::collect_blocks_for_loop_helper(VectorSet &visited, CFGLoop *loop, int region, CFGLoop *root_loop,
+                                             Block_List &exits,
+                                             uint num_succs, Block_Array block_succs, double block_freq,
+                                             Block_List &blocks,
+                                             Block_List &region_blocks) const {
+  GrowableArray<Block*> succs;
+  for (uint k = 0; k < num_succs; k++) {
+    Block *succ = block_succs[k];
+    if (!root_loop->in_loop_nest(succ)) {
+      continue;
+    }
+    if (!loop->in_loop_nest(succ)) {
+#ifdef ASSERT
+      for (uint l = 0; l < exits.size(); l++) {
+        assert(exits[l] != succ, "");
+      }
+#endif
+      exits.push(succ);
+      continue;
+    }
+    succs.push(succ);
+  }
+
+  succs.sort([](Block** b1, Block** b2) {
+      if ((*b1)->_freq > (*b2)->_freq) return -1;
+      else if ((*b1)->_freq < (*b2)->_freq) return 1;
+      return 0;
+  });
+
+  double f = 0;
+  for (int k = 0; k < succs.length(); k++) {
+    Block *succ = succs.at(k);
+    if (f/block_freq > RegAllocBranchAccumulatedFreq && (loop == root_loop || f/block_freq < 0.9 / loop->trip_count())) {
+      break;
+    }
+    f += succs.at(k)->_freq;
+    if (visited.test_set(succ->_pre_order)) {
+      continue;
+    }
+#ifdef ASSERT
+    for (uint l = 0; l < blocks.size(); l++) {
+      assert(blocks[l] != succ, "");
+    }
+#endif
+
+    CFGLoop *succ_loop = succ->_loop;
+    if (succ_loop != loop) { // inner loop
+      assert(loop->in_loop_nest(succ), "");
+      assert(succ == succ_loop->head(), "");
+      Block_List inner_exits;
+      collect_blocks_for_loop(visited, succ_loop, region, root_loop, inner_exits, region_blocks);
+      assert(inner_exits.size() >= 1, "at least one exit");
+      assert(inner_exits.size() <= (uint)succ_loop->_exits.length(), "");
+      collect_blocks_for_loop_helper(visited, loop, region, root_loop, exits, inner_exits.size(),
+                                     inner_exits,
+                                     loop->head()->_freq, blocks, region_blocks);
+    } else {
+      blocks.push(succ);
+    }
+  }
 }
 
 void PhaseChaitin::collect_blocks(int i, GrowableArray<CFGElement*> &blocks, Block_List &region) const {
@@ -2500,7 +2573,7 @@ bool PhaseChaitin::stretch_base_pointer_live_ranges(ResourceArea *a) {
           if (_cfg.get_block_for_node(phi_block->pred(2)) == block) {
             const RegMask *mask = C->matcher()->idealreg2spillmask[Op_RegI];
             Node *spill = new MachSpillCopyNode(MachSpillCopyNode::LoopPhiInput, phi, *mask, *mask);
-            insert_proj( phi_block, 1, spill, maxlrg++ );
+            insert_proj(phi_block, 1, spill, maxlrg++, max_juint);
             n->set_req(1,spill);
             must_recompute_live = true;
           }

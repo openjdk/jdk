@@ -451,8 +451,12 @@ class PhaseChaitin : public PhaseRegAlloc {
   uint _simplified;             // Linked list head of simplified LRGs
 
   // Helper functions for Split()
-  uint split_DEF(Node *def, Block *b, int loc, uint max, Node **Reachblock, Node **debug_defs, GrowableArray<uint> splits, int slidx );
-  int split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, Block *b, Node *use, uint useidx, uint max, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx );
+  uint
+  split_DEF(Node *def, Block *b, int loc, uint max, Node **Reachblock, Node **debug_defs, GrowableArray<uint> splits,
+            int slidx, uint region);
+  int split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, Block *b, Node *use, uint useidx, uint max,
+                bool def_down,
+                bool cisc_sp, GrowableArray<uint> splits, int slidx, uint region);
 
   //------------------------------clone_projs------------------------------------
   // After cloning some rematerialized instruction, clone any MachProj's that
@@ -478,7 +482,7 @@ class PhaseChaitin : public PhaseRegAlloc {
   // Insert the spill at chosen location.  Skip over any intervening Proj's or
   // Phis.  Skip over a CatchNode and projs, inserting in the fall-through block
   // instead.  Update high-pressure indices.  Create a new live range.
-  void insert_proj( Block *b, uint i, Node *spill, uint maxlrg );
+  void insert_proj(Block *b, uint i, Node *spill, uint maxlrg, uint region);
 
   bool is_high_pressure( Block *b, LRG *lrg, uint insidx );
 
@@ -823,9 +827,18 @@ private:
 
   bool is_compatible_with_region(uint region, const Block* b, uint lidx, Node*** Reaches, uint slidx) const;
 
-  bool has_uses_in_region(Node* n, uint region);
+  bool has_uses_in_region(Node *n, uint region, GrowableArray<GrowableArray<uint>> &has_uses_in_region_result, uint slidx);
 
   void collect_blocks(int i, GrowableArray<CFGElement*> &blocks, Block_List &region) const;
+
+    void
+    collect_blocks_for_loop(VectorSet &visited, CFGLoop *loop, int region, CFGLoop *root_loop, Block_List &exits,
+                            Block_List &region_blocks) const;
+
+    void
+    collect_blocks_for_loop_helper(VectorSet &visited, CFGLoop *loop, int region, CFGLoop *root_loop, Block_List &exits,
+                                   uint num_succs, Block_Array block_succs, double block_freq, Block_List &blocks,
+                                   Block_List &region_blocks) const;
 };
 
 #endif // SHARE_OPTO_CHAITIN_HPP
