@@ -89,6 +89,10 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
             this.isSelected = isSelected;
             this.hasFocus = hasFocus;
             this.column = column;
+            if(table != null)
+            {
+                header = table.getTableHeader();
+            }
             this.hasRollover = (column == getRolloverColumn());
             if (skin == null) {
                 XPStyle xp = XPStyle.getXP();
