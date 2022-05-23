@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,11 +100,9 @@ public class ScrollPaneDemoTest {
 
         //this additional instrumentation is related to JDK-8225013
         //after the image has been completely loaded, the UI is supposed to be functional
-        //screenshot and dump are created to know what else to wait for, should the test fail again
-        JemmyExt.save(
-                JemmyExt.getRobot().createScreenCapture(new Rectangle(Toolkit.getDefaultToolkit().getScreenSize())),
-                "after-image-load");
-        Dumper.dumpAll("after-image-load.xml");
+        //screenshot and dump are created to capture the state of the UI, should the test fail again
+        JemmyExt.save(JemmyExt.capture(), "after-image-load");
+        Dumper.dumpAll("after-image-load-" + JemmyExt.lafShortName() + "xml");
 
         // Check scroll to Bottom
         {
