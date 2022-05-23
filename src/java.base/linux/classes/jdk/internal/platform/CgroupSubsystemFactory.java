@@ -149,6 +149,10 @@ public class CgroupSubsystemFactory {
             case MEMORY_CTRL:   infos.put(MEMORY_CTRL, info); break;
             case BLKIO_CTRL:    infos.put(BLKIO_CTRL, info); break;
             case PIDS_CTRL:     infos.put(PIDS_CTRL, info); break;
+            default:
+                // There are some controllers (such as freezer) that Java doesn't
+                // care about. Just ignore them. These are not considered in the
+                // anyCgroupsV1Controller/anyCgroupsV1Controller checks.
             }
         }
 
@@ -220,6 +224,11 @@ public class CgroupSubsystemFactory {
      */
     private static void setCgroupV2Path(Map<String, CgroupInfo> infos,
                                         String[] tokens) {
+        String name = tokens[1];
+        if (!name.equals("")) {
+            // This is probably a v1 controller that we have ignored (e.g., freezer)
+            return;
+        }
         int hierarchyId = Integer.parseInt(tokens[0]);
         String cgroupPath = tokens[2];
         for (CgroupInfo info: infos.values()) {
