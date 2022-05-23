@@ -54,7 +54,7 @@ public class TestVarArgs extends CallGeneratorHelper {
     static final VarHandle VH_IntArray = C_INT.arrayElementVarHandle();
     static final MethodHandle MH_CHECK;
 
-    static final Linker abi = Linker.nativeLinker();
+    static final Linker LINKER = Linker.nativeLinker();
     static {
         System.loadLibrary("VarArgs");
         try {
