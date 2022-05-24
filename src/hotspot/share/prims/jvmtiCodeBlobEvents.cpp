@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ void CodeBlobCollector::do_vtable_stub(VtableStub* vs) {
 //
 // The created list is growable array of JvmtiCodeBlobDesc - each one describes
 // a CodeBlob. Note that the list is static - this is because CodeBlob::blobs_do
-// requires a a C or static function so we can't use an instance function. This
+// requires a C or static function so we can't use an instance function. This
 // isn't a problem as the iteration is serial anyway as we need the CodeCache_lock
 // to iterate over the code cache.
 //
