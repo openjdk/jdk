@@ -1,4 +1,4 @@
-.\" Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,8 @@ keystore
 \f[CB]\-storepasswd\f[R]: Changes the store password of a keystore
 .IP \[bu] 2
 \f[CB]\-showinfo\f[R]: Displays security\-related information
+.IP \[bu] 2
+\f[CB]\-version\f[R]: Prints the program version
 .PP
 See \f[B]Commands and Options\f[R] for a description of these commands
 with their options.
@@ -219,6 +221,10 @@ they perform.
 \f[B]Commands for Displaying Security\-related Information\f[R]:
 .IP \[bu] 2
 \f[CB]\-showinfo\f[R]
+.PP
+\f[B]Commands for Displaying Program Version\f[R]:
+.IP \[bu] 2
+\f[CB]\-version\f[R]
 .SH COMMANDS FOR CREATING OR ADDING DATA TO THE KEYSTORE
 .TP
 .B \f[CB]\-gencert\f[R]
@@ -1314,6 +1320,10 @@ information.
 The \f[CB]\-tls\f[R] option displays TLS configurations, such as the list
 of enabled protocols and cipher suites.
 .RE
+.SH COMMANDS FOR DISPLAYING PROGRAM VERSION
+.PP
+You can use \f[CB]\-version\f[R] to print the program version of
+\f[CB]keytool\f[R].
 .SH COMMANDS FOR DISPLAYING HELP INFORMATION
 .PP
 You can use \f[CB]\-\-help\f[R] to display a list of \f[CB]keytool\f[R]

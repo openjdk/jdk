@@ -127,7 +127,7 @@ final class Configure extends Command {
     }
 
     private void displayParameters(PrintStream stream, SafePath path, String name) throws ParseException, IOException {
-        JFCModel parameters = new JFCModel(path);
+        JFCModel parameters = JFCModel.create(path, l -> stream.println("Warning! " + l));
         stream.println();
         stream.println("Options for " + name + ":");
         stream.println();
@@ -195,7 +195,7 @@ final class Configure extends Command {
                 output = new SafePath(Path.of("custom.jfc"));
             }
             UserInterface ui = new UserInterface();
-            JFCModel model = new JFCModel(inputFiles);
+            JFCModel model = new JFCModel(inputFiles, l -> ui.println("Warning! " + l));
             model.setLabel("Custom");
             if (log) {
                 SettingsLog.enable();

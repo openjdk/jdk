@@ -420,9 +420,9 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   if (is_strong) {
     if (is_narrow) {
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), arg0, arg1);
+      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow), arg0, arg1);
     } else {
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), arg0, arg1);
+      __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong), arg0, arg1);
     }
   } else if (is_weak) {
     if (is_narrow) {
@@ -433,7 +433,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   } else {
     assert(is_phantom, "only remaining strength");
     assert(!is_narrow, "phantom access cannot be narrow");
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), arg0, arg1);
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom), arg0, arg1);
   }
 
 #ifdef _LP64
@@ -591,7 +591,7 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
 }
 
 void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-              Address dst, Register val, Register tmp1, Register tmp2) {
+              Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
 
   bool on_oop = is_reference_type(type);
   bool in_heap = (decorators & IN_HEAP) != 0;
@@ -599,7 +599,6 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
   if (on_oop && in_heap) {
     bool needs_pre_barrier = as_normal;
 
-    Register tmp3 = LP64_ONLY(r8) NOT_LP64(rsi);
     Register rthread = LP64_ONLY(r15_thread) NOT_LP64(rcx);
     // flatten object address if needed
     // We do it regardless of precise because we need the registers
@@ -629,14 +628,14 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
                                    false /* expand_call */);
     }
     if (val == noreg) {
-      BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg);
+      BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg, noreg);
     } else {
       iu_barrier(masm, val, tmp3);
-      BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg);
+      BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg, noreg);
     }
     NOT_LP64(imasm->restore_bcp());
   } else {
-    BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2);
+    BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
   }
 }
 

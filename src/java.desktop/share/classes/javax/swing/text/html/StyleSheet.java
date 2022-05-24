@@ -478,15 +478,12 @@ public class StyleSheet extends StyleContext {
      * @since 1.3
      */
     public void importStyleSheet(URL url) {
-        try {
-            InputStream is;
-
-            is = url.openStream();
-            Reader r = new BufferedReader(new InputStreamReader(is));
+        try (InputStream is = url.openStream();
+             InputStreamReader isr = new InputStreamReader(is);
+             Reader r = new BufferedReader(isr))
+        {
             CssParser parser = new CssParser();
             parser.parse(url, r, false, true);
-            r.close();
-            is.close();
         } catch (Throwable e) {
             // on error we simply have no styles... the html
             // will look mighty wrong but still function.
@@ -1835,7 +1832,7 @@ public class StyleSheet extends StyleContext {
      * is maintained according to the CSS attributes.
      */
     @SuppressWarnings("serial") // Same-version serialization only
-    public static class BoxPainter implements Serializable {
+    public static final class BoxPainter implements Serializable {
 
         BoxPainter(AttributeSet a, CSS css, StyleSheet ss) {
             this.ss = ss;
@@ -1889,7 +1886,7 @@ public class StyleSheet extends StyleContext {
          *  used to get the AttributeSet, and may be used to
          *  resolve percentage arguments.
          * @return the inset needed for the margin, border and padding.
-         * @exception IllegalArgumentException for an invalid direction
+         * @throws IllegalArgumentException for an invalid direction
          */
         public float getInset(int side, View v) {
             AttributeSet a = v.getAttributes();
@@ -2096,7 +2093,7 @@ public class StyleSheet extends StyleContext {
      * are being cached.
      */
     @SuppressWarnings("serial") // Same-version serialization only
-    public static class ListPainter implements Serializable {
+    public static final class ListPainter implements Serializable {
 
         ListPainter(AttributeSet attr, StyleSheet ss) {
             this.ss = ss;

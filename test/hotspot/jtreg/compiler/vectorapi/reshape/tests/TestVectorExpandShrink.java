@@ -32,6 +32,7 @@ import static compiler.vectorapi.reshape.utils.VectorReshapeHelper.*;
 /**
  *  This class contains method to ensure a resizing reinterpretation operations work as
  *  intended.
+ *
  *  In each test, the ReinterpretNode is expected to appear exactly once.
  */
 public class TestVectorExpandShrink {

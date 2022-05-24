@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,7 @@ class Type;
 class TypeData;
 class TypeInt;
 class TypeInteger;
+class TypeKlassPtr;
 class TypePtr;
 class TypeOopPtr;
 class TypeFunc;
@@ -103,7 +104,12 @@ enum LoopOptsMode {
   LoopOptsVerify
 };
 
+// The type of all node counts and indexes.
+// It must hold at least 16 bits, but must also be fast to load and store.
+// This type, if less than 32 bits, could limit the number of possible nodes.
+// (To make this type platform-specific, move to globalDefinitions_xxx.hpp.)
 typedef unsigned int node_idx_t;
+
 class NodeCloneInfo {
  private:
   uint64_t _idx_clone_orig;
@@ -327,12 +333,12 @@ class Compile : public Phase {
 #ifndef PRODUCT
   uint                  _igv_idx;               // Counter for IGV node identifiers
   bool                  _trace_opto_output;
-  bool                  _print_ideal;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
   bool                  _has_irreducible_loop;  // Found irreducible loops
   // JSR 292
   bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
+  bool                  _has_monitors;          // Metadata transfered to nmethod to enable Continuations lock-detection fastpath
   RTMState              _rtm_state;             // State of Restricted Transactional Memory usage
   int                   _loop_opts_cnt;         // loop opts round
   bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
@@ -354,7 +360,7 @@ class Compile : public Phase {
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
-  IdealGraphPrinter*    _printer;
+  IdealGraphPrinter*    _igv_printer;
   static IdealGraphPrinter* _debug_file_printer;
   static IdealGraphPrinter* _debug_network_printer;
 #endif
@@ -420,8 +426,6 @@ class Compile : public Phase {
 
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   uint                          _number_of_mh_late_inlines; // number of method handle late inlining still pending
-
-  GrowableArray<RuntimeStub*>   _native_invokers;
 
   // Inlining may not happen in parse order which would make
   // PrintInlining output confusing. Keep track of PrintInlining
@@ -489,7 +493,7 @@ class Compile : public Phase {
   }
 
 #ifndef PRODUCT
-  IdealGraphPrinter* printer() { return _printer; }
+  IdealGraphPrinter* igv_printer() { return _igv_printer; }
 #endif
 
   void log_late_inline(CallGenerator* cg);
@@ -627,6 +631,8 @@ class Compile : public Phase {
   void          set_max_node_limit(uint n)       { _max_node_limit = n; }
   bool              clinit_barrier_on_entry()       { return _clinit_barrier_on_entry; }
   void          set_clinit_barrier_on_entry(bool z) { _clinit_barrier_on_entry = z; }
+  bool              has_monitors() const         { return _has_monitors; }
+  void          set_has_monitors(bool v)         { _has_monitors = v; }
 
   // check the CompilerOracle for special behaviours for this compile
   bool          method_has_option(enum CompileCommand option) {
@@ -636,7 +642,8 @@ class Compile : public Phase {
 #ifndef PRODUCT
   uint          next_igv_idx()                  { return _igv_idx++; }
   bool          trace_opto_output() const       { return _trace_opto_output; }
-  bool          print_ideal() const             { return _print_ideal; }
+  void          print_ideal_ir(const char* phase_name);
+  bool          should_print_ideal() const      { return _directive->PrintIdealOption; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
   int _in_dump_cnt;  // Required for dumping ir nodes.
@@ -650,36 +657,12 @@ class Compile : public Phase {
 
   Ticks _latest_stage_start_counter;
 
-  void begin_method(int level = 1) {
-#ifndef PRODUCT
-    if (_method != NULL && should_print(level)) {
-      _printer->begin_method();
-    }
-#endif
-    C->_latest_stage_start_counter.stamp();
-  }
+  void begin_method();
+  void end_method();
+  bool should_print_igv(int level);
+  bool should_print_phase(CompilerPhaseType cpt);
 
-  bool should_print(int level = 1) {
-#ifndef PRODUCT
-    if (PrintIdealGraphLevel < 0) { // disabled by the user
-      return false;
-    }
-
-    bool need = directive()->IGVPrintLevelOption >= level;
-    if (need && !_printer) {
-      _printer = IdealGraphPrinter::printer();
-      assert(_printer != NULL, "_printer is NULL when we need it!");
-      _printer->set_compile(this);
-    }
-    return need;
-#else
-    return false;
-#endif
-  }
-
-  void print_method(CompilerPhaseType cpt, const char *name, int level = 1);
-  void print_method(CompilerPhaseType cpt, int level = 1, int idx = 0);
-  void print_method(CompilerPhaseType cpt, Node* n, int level = 3);
+  void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
@@ -687,8 +670,6 @@ class Compile : public Phase {
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif
-
-  void end_method(int level = 1);
 
   int           macro_count()             const { return _macro_nodes.length(); }
   int           predicate_count()         const { return _predicate_opaqs.length(); }
@@ -990,10 +971,6 @@ class Compile : public Phase {
     _vector_reboxing_late_inlines.push(cg);
   }
 
-  void add_native_invoker(RuntimeStub* stub);
-
-  const GrowableArray<RuntimeStub*> native_invokers() const { return _native_invokers; }
-
   void remove_useless_nodes       (GrowableArray<Node*>&        node_list, Unique_Node_List &useful);
 
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
@@ -1190,8 +1167,8 @@ class Compile : public Phase {
   static void pd_compiler2_init();
 
   // Static parse-time type checking logic for gen_subtype_check:
-  enum { SSC_always_false, SSC_always_true, SSC_easy_test, SSC_full_test };
-  int static_subtype_check(ciKlass* superk, ciKlass* subk);
+  enum SubTypeCheckResult { SSC_always_false, SSC_always_true, SSC_easy_test, SSC_full_test };
+  SubTypeCheckResult static_subtype_check(const TypeKlassPtr* superk, const TypeKlassPtr* subk);
 
   static Node* conv_I2X_index(PhaseGVN* phase, Node* offset, const TypeInt* sizetype,
                               // Optional control dependency (for example, on range check)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_METAPROGRAMMING_CONDITIONAL_HPP
 #define SHARE_METAPROGRAMMING_CONDITIONAL_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 // This trait evaluates its typedef called "type" to TrueType iff the condition
 // is true. Otherwise it evaluates to FalseType.

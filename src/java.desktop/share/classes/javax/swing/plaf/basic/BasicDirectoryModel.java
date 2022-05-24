@@ -228,7 +228,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * @param e list data event
      * @deprecated Obsolete method, not used anymore.
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     public void intervalAdded(ListDataEvent e) {
     }
 
@@ -237,7 +237,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * @param e list data event
      * @deprecated Obsolete method, not used anymore.
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     public void intervalRemoved(ListDataEvent e) {
     }
 
@@ -257,7 +257,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
      * @param b another file
      * @deprecated Obsolete method, not used anymore.
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     protected boolean lt(File a, File b) {
         // First ignore case when comparing
         int diff = a.getName().toLowerCase().compareTo(b.getName().toLowerCase());

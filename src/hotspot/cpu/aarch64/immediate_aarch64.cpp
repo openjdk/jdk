@@ -129,8 +129,17 @@ static inline uint32_t uimm(uint32_t val, int hi, int lo)
 
 uint64_t replicate(uint64_t bits, int nbits, int count)
 {
+  assert(count > 0, "must be");
+  assert(nbits > 0, "must be");
+  assert(count * nbits <= 64, "must be");
+
+  // Special case nbits == 64 since the shift below with that nbits value
+  // would result in undefined behavior.
+  if (nbits == 64) {
+    return bits;
+  }
+
   uint64_t result = 0;
-  // nbits may be 64 in which case we want mask to be -1
   uint64_t mask = ones(nbits);
   for (int i = 0; i < count ; i++) {
     result <<= nbits;
@@ -248,7 +257,7 @@ int expandLogicalImmediate(uint32_t immN, uint32_t immr,
 // constructor to initialise the lookup tables
 
 static void initLITables();
-// Use an empty struct with a construtor as MSVC doesn't support `__attribute__ ((constructor))`
+// Use an empty struct with a constructor as MSVC doesn't support `__attribute__ ((constructor))`
 // See https://stackoverflow.com/questions/1113409/attribute-constructor-equivalent-in-vc
 static struct initLITables_t { initLITables_t(void) { initLITables(); } } _initLITables;
 static void initLITables()

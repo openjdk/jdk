@@ -50,8 +50,7 @@ import javax.swing.event.*;
  * @see ListSelectionModel
  * @since 1.2
  */
-@SuppressWarnings({"serial", // Same-version serialization only
-                   "doclint:missing"})
+@SuppressWarnings({"serial"}) // Same-version serialization only
 public class DefaultListSelectionModel implements ListSelectionModel, Cloneable, Serializable
 {
     private static final int MIN = -1;
@@ -206,6 +205,11 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
     }
 
     /**
+     * Notifies <code>ListSelectionListeners</code> that the value
+     * of the selection, in the closed interval <code>firstIndex</code>,
+     * <code>lastIndex</code>, has changed and if this is the final change
+     * in the series of adjustments.
+     *
      * @param firstIndex the first index in the interval
      * @param lastIndex the last index in the interval
      * @param isAdjusting true if this is the final change in a series of
@@ -280,7 +284,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      *          on this model,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if <code>listenerType</code> doesn't
+     * @throws ClassCastException if <code>listenerType</code> doesn't
      *          specify a class or interface that implements
      *          <code>java.util.EventListener</code>
      *
@@ -746,7 +750,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * Returns a clone of this selection model with the same selection.
      * <code>listenerLists</code> are not duplicated.
      *
-     * @exception CloneNotSupportedException if the selection model does not
+     * @throws CloneNotSupportedException if the selection model does not
      *    both (a) implement the Cloneable interface and (b) define a
      *    <code>clone</code> method.
      */

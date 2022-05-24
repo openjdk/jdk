@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,7 +298,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
         if (adr_type->isa_oopptr() && adr_type->is_oopptr()->offset() == oopDesc::mark_offset_in_bytes()) {
           if (trace) {tty->print_cr("Mark load");}
         } else if (adr_type->isa_instptr() &&
-                   adr_type->is_instptr()->klass()->is_subtype_of(Compile::current()->env()->Reference_klass()) &&
+                   adr_type->is_instptr()->instance_klass()->is_subtype_of(Compile::current()->env()->Reference_klass()) &&
                    adr_type->is_instptr()->offset() == java_lang_ref_Reference::referent_offset()) {
           if (trace) {tty->print_cr("Reference.get()");}
         } else if (!verify_helper(n->in(MemNode::Address), phis, visited, ShenandoahLoad, trace, barriers_used)) {
@@ -566,7 +567,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
         { { 2, ShenandoahLoad },                  { 3, ShenandoahLoad } },
         Op_EncodeISOArray,
         { { 2, ShenandoahLoad },                  { 3, ShenandoahStore } },
-        Op_HasNegatives,
+        Op_CountPositives,
         { { 2, ShenandoahLoad },                  { -1, ShenandoahNone} },
         Op_CastP2X,
         { { 1, ShenandoahLoad },                  { -1, ShenandoahNone} },
@@ -706,7 +707,7 @@ Node* ShenandoahBarrierC2Support::no_branches(Node* c, Node* dom, bool allow_one
   Node* iffproj = NULL;
   while (c != dom) {
     Node* next = phase->idom(c);
-    assert(next->unique_ctrl_out() == c || c->is_Proj() || c->is_Region(), "multiple control flow out but no proj or region?");
+    assert(next->unique_ctrl_out_or_null() == c || c->is_Proj() || c->is_Region(), "multiple control flow out but no proj or region?");
     if (c->is_Region()) {
       ResourceMark rm;
       Unique_Node_List wq;
@@ -1360,7 +1361,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     val_phi->init_req(_heap_stable, val);
 
     // Test for in-cset, unless it's a native-LRB. Native LRBs need to return NULL
-    // even for non-cset objects to prevent ressurrection of such objects.
+    // even for non-cset objects to prevent resurrection of such objects.
     // Wires !in_cset(obj) to slot 2 of region and phis
     Node* not_cset_ctrl = NULL;
     if (ShenandoahBarrierSet::is_strong_access(lrb->decorators())) {

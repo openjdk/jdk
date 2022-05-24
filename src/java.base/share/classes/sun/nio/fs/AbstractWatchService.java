@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ abstract class AbstractWatchService implements WatchService {
      */
     abstract WatchKey register(Path path,
                                WatchEvent.Kind<?>[] events,
-                               WatchEvent.Modifier... modifers)
+                               WatchEvent.Modifier... modifiers)
         throws IOException;
 
     // used by AbstractWatchKey to enqueue key

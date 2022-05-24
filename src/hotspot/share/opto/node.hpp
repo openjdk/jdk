@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ class CallLeafNode;
 class CallLeafNoFPNode;
 class CallNode;
 class CallRuntimeNode;
-class CallNativeNode;
 class CallStaticJavaNode;
 class CastFFNode;
 class CastDDNode;
@@ -104,7 +103,6 @@ class MachCallDynamicJavaNode;
 class MachCallJavaNode;
 class MachCallLeafNode;
 class MachCallNode;
-class MachCallNativeNode;
 class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
 class MachConstantBaseNode;
@@ -149,6 +147,7 @@ class PhaseTransform;
 class PhaseValues;
 class PhiNode;
 class Pipeline;
+class PopulateIndexNode;
 class ProjNode;
 class RangeCheckNode;
 class RegMask;
@@ -176,12 +175,6 @@ class VectorUnboxNode;
 class VectorSet;
 class VectorReinterpretNode;
 class ShiftVNode;
-
-// The type of all node counts and indexes.
-// It must hold at least 16 bits, but must also be fast to load and store.
-// This type, if less than 32 bits, could limit the number of possible nodes.
-// (To make this type platform-specific, move to globalDefinitions_xxx.hpp.)
-typedef unsigned int node_idx_t;
 
 
 #ifndef OPTO_DU_ITERATOR_ASSERT
@@ -652,7 +645,6 @@ public:
             DEFINE_CLASS_ID(Lock,             AbstractLock, 0)
             DEFINE_CLASS_ID(Unlock,           AbstractLock, 1)
           DEFINE_CLASS_ID(ArrayCopy,        Call, 4)
-          DEFINE_CLASS_ID(CallNative,       Call, 5)
       DEFINE_CLASS_ID(MultiBranch, Multi, 1)
         DEFINE_CLASS_ID(PCTable,     MultiBranch, 0)
           DEFINE_CLASS_ID(Catch,       PCTable, 0)
@@ -678,7 +670,6 @@ public:
               DEFINE_CLASS_ID(MachCallDynamicJava,  MachCallJava, 1)
             DEFINE_CLASS_ID(MachCallRuntime,      MachCall, 1)
               DEFINE_CLASS_ID(MachCallLeaf,         MachCallRuntime, 0)
-            DEFINE_CLASS_ID(MachCallNative,       MachCall, 2)
       DEFINE_CLASS_ID(MachBranch, Mach, 1)
         DEFINE_CLASS_ID(MachIf,         MachBranch, 0)
         DEFINE_CLASS_ID(MachGoto,       MachBranch, 1)
@@ -782,11 +773,11 @@ public:
     Flag_has_call                    = 1 << 10,
     Flag_is_reduction                = 1 << 11,
     Flag_is_scheduled                = 1 << 12,
-    Flag_has_vector_mask_set         = 1 << 13,
-    Flag_is_expensive                = 1 << 14,
-    Flag_is_predicated_vector        = 1 << 15,
-    Flag_for_post_loop_opts_igvn     = 1 << 16,
-    _last_flag                       = Flag_for_post_loop_opts_igvn
+    Flag_is_expensive                = 1 << 13,
+    Flag_is_predicated_vector        = 1 << 14,
+    Flag_for_post_loop_opts_igvn     = 1 << 15,
+    Flag_is_removed_by_peephole      = 1 << 16,
+    _last_flag                       = Flag_is_removed_by_peephole
   };
 
   class PD;
@@ -850,7 +841,6 @@ public:
   DEFINE_CLASS_QUERY(Bool)
   DEFINE_CLASS_QUERY(BoxLock)
   DEFINE_CLASS_QUERY(Call)
-  DEFINE_CLASS_QUERY(CallNative)
   DEFINE_CLASS_QUERY(CallDynamicJava)
   DEFINE_CLASS_QUERY(CallJava)
   DEFINE_CLASS_QUERY(CallLeaf)
@@ -896,7 +886,6 @@ public:
   DEFINE_CLASS_QUERY(Mach)
   DEFINE_CLASS_QUERY(MachBranch)
   DEFINE_CLASS_QUERY(MachCall)
-  DEFINE_CLASS_QUERY(MachCallNative)
   DEFINE_CLASS_QUERY(MachCallDynamicJava)
   DEFINE_CLASS_QUERY(MachCallJava)
   DEFINE_CLASS_QUERY(MachCallLeaf)
@@ -1000,9 +989,6 @@ public:
 
   bool is_predicated_vector() const { return (_flags & Flag_is_predicated_vector) != 0; }
 
-  // The node is a CountedLoopEnd with a mask annotation so as to emit a restore context
-  bool has_vector_mask_set() const { return (_flags & Flag_has_vector_mask_set) != 0; }
-
   // Used in lcm to mark nodes that have scheduled
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }
 
@@ -1034,7 +1020,7 @@ public:
 
   // Return a node which is more "ideal" than the current node.
   // The invariants on this call are subtle.  If in doubt, read the
-  // treatise in node.cpp above the default implemention AND TEST WITH
+  // treatise in node.cpp above the default implementation AND TEST WITH
   // +VerifyIterativeGVN!
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
@@ -1084,6 +1070,8 @@ public:
   Node* find_similar(int opc);
 
   // Return the unique control out if only one. Null if none or more than one.
+  Node* unique_ctrl_out_or_null() const;
+  // Return the unique control out. Asserts if none or more than one control out.
   Node* unique_ctrl_out() const;
 
   // Set control or add control as precedence edge
@@ -1150,7 +1138,12 @@ public:
 
   jlong get_integer_as_long(BasicType bt) const {
     const TypeInteger* t = find_integer_type(bt);
-    guarantee(t != NULL, "must be con");
+    guarantee(t != NULL && t->is_con(), "must be con");
+    return t->get_con_as_long(bt);
+  }
+  jlong find_integer_as_long(BasicType bt, jlong value_if_unknown) const {
+    const TypeInteger* t = find_integer_type(bt);
+    if (t == NULL || !t->is_con())  return value_if_unknown;
     return t->get_con_as_long(bt);
   }
   const TypePtr* get_ptr_type() const;
@@ -1245,14 +1238,15 @@ public:
 #ifdef ASSERT
   void verify_construction();
   bool verify_jvms(const JVMState* jvms) const;
-  int  _debug_idx;                     // Unique value assigned to every node.
-  int   debug_idx() const              { return _debug_idx; }
-  void  set_debug_idx( int debug_idx ) { _debug_idx = debug_idx; }
 
   Node* _debug_orig;                   // Original version of this, if any.
   Node*  debug_orig() const            { return _debug_orig; }
   void   set_debug_orig(Node* orig);   // _debug_orig = orig
   void   dump_orig(outputStream *st, bool print_key = true) const;
+
+  int  _debug_idx;                     // Unique value assigned to every node.
+  int   debug_idx() const              { return _debug_idx; }
+  void  set_debug_idx( int debug_idx ) { _debug_idx = debug_idx; }
 
   int        _hash_lock;               // Barrier to modifications of nodes in the hash table
   void  enter_hash_lock() { ++_hash_lock; assert(_hash_lock < 99, "in too many hash tables?"); }
@@ -1847,6 +1841,14 @@ Op_IL(URShift)
 Op_IL(LShift)
 Op_IL(Xor)
 Op_IL(Cmp)
+
+inline int Op_ConIL(BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "only for int or longs");
+  if (bt == T_INT) {
+    return Op_ConI;
+  }
+  return Op_ConL;
+}
 
 inline int Op_Cmp_unsigned(BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "only for int or longs");

@@ -116,6 +116,12 @@ void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm,
   }
 }
 
+void Dependencies::assert_unique_implementor(ciInstanceKlass* ctxk, ciInstanceKlass* uniqk) {
+  check_ctxk(ctxk);
+  check_unique_implementor(ctxk, uniqk);
+  assert_common_2(unique_implementor, ctxk, uniqk);
+}
+
 void Dependencies::assert_has_no_finalizable_subclasses(ciKlass* ctxk) {
   check_ctxk(ctxk);
   assert_common_1(no_finalizable_subclasses, ctxk);
@@ -171,6 +177,13 @@ void Dependencies::assert_abstract_with_unique_concrete_subtype(Klass* ctxk, Kla
   DepValue ctxk_dv(_oop_recorder, ctxk);
   DepValue conck_dv(_oop_recorder, conck, &ctxk_dv);
   assert_common_2(abstract_with_unique_concrete_subtype, ctxk_dv, conck_dv);
+}
+
+void Dependencies::assert_unique_implementor(InstanceKlass* ctxk, InstanceKlass* uniqk) {
+  check_ctxk(ctxk);
+  assert(ctxk->is_interface(), "not an interface");
+  assert(ctxk->implementor() == uniqk, "not a unique implementor");
+  assert_common_2(unique_implementor, DepValue(_oop_recorder, ctxk), DepValue(_oop_recorder, uniqk));
 }
 
 void Dependencies::assert_unique_concrete_method(Klass* ctxk, Method* uniqm) {
@@ -580,6 +593,7 @@ const char* Dependencies::_dep_name[TYPE_LIMIT] = {
   "abstract_with_unique_concrete_subtype",
   "unique_concrete_method_2",
   "unique_concrete_method_4",
+  "unique_implementor",
   "no_finalizable_subclasses",
   "call_site_target_value"
 };
@@ -591,6 +605,7 @@ int Dependencies::_dep_args[TYPE_LIMIT] = {
   2, // abstract_with_unique_concrete_subtype ctxk, k
   2, // unique_concrete_method_2 ctxk, m
   4, // unique_concrete_method_4 ctxk, m, resolved_klass, resolved_method
+  2, // unique_implementor ctxk, implementor
   1, // no_finalizable_subclasses ctxk
   2  // call_site_target_value call_site, method_handle
 };
@@ -1813,6 +1828,16 @@ Klass* Dependencies::check_unique_concrete_method(InstanceKlass* ctxk,
   return NULL;
 }
 
+Klass* Dependencies::check_unique_implementor(InstanceKlass* ctxk, Klass* uniqk, NewKlassDepChange* changes) {
+  assert(ctxk->is_interface(), "sanity");
+  assert(ctxk->nof_implementors() > 0, "no implementors");
+  if (ctxk->nof_implementors() == 1) {
+    assert(ctxk->implementor() == uniqk, "sanity");
+    return NULL;
+  }
+  return ctxk; // no unique implementor
+}
+
 // Search for AME.
 // There are two version of checks.
 //   1) Spot checking version(Classload time). Newly added class is checked for AME.
@@ -2061,6 +2086,9 @@ Klass* Dependencies::DepStream::check_new_klass_dependency(NewKlassDepChange* ch
     break;
   case unique_concrete_method_4:
     witness = check_unique_concrete_method(context_type(), method_argument(1), type_argument(2), method_argument(3), changes);
+    break;
+  case unique_implementor:
+    witness = check_unique_implementor(context_type(), type_argument(1), changes);
     break;
   case no_finalizable_subclasses:
     witness = check_has_no_finalizable_subclasses(context_type(), changes);

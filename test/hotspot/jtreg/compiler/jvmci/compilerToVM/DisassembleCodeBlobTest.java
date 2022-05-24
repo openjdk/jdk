@@ -83,6 +83,11 @@ public class DisassembleCodeBlobTest {
                 + " : non-null return value for invalid installCode");
     }
 
+    private void checkLineStart(CompileCodeTestCase testCase, String line, String match) {
+        Asserts.assertTrue(line.startsWith(match),
+                testCase + " : line \"" + line + "\" does not start with: \"" + match +"\"");
+    }
+
     private void check(CompileCodeTestCase testCase) {
         System.out.println(testCase);
         // to have a clean state
@@ -98,19 +103,33 @@ public class DisassembleCodeBlobTest {
         }
         // The very first call to the disassembler contains a string specifying the
         // architecture: [Disassembling for mach='i386:x86-64']
-        // Therefore compare strings 2 and 3.
+        // so discard it and try again.
         String str2 = CompilerToVMHelper.disassembleCodeBlob(installedCode);
-        String str3 = CompilerToVMHelper.disassembleCodeBlob(installedCode);
-        String[] str2Lines = str2.split(System.lineSeparator());
-        String[] str3Lines = str3.split(System.lineSeparator());
-        // skip the first two lines since it contains a timestamp that may vary from different invocations
-        // <empty-line>
-        // Compiled method (c2)     309  463       4       compiler.jvmci.compilerToVM.CompileCodeTestCase$Dummy::staticMethod (1 bytes)
-        // <empty-line>
-        // Compiled method (c2)     310  463       4       compiler.jvmci.compilerToVM.CompileCodeTestCase$Dummy::staticMethod (1 bytes)
-        for (int i = 2; i < str2Lines.length; i++) {
-            Asserts.assertEQ(str2Lines[i], str3Lines[i],
-                testCase + " : 3nd invocation returned different value from 2nd");
+        String[] strLines = str2.split("\\R");
+        // Check some basic layout
+        int MIN_LINES = 5;
+        Asserts.assertTrue(strLines.length > 2,
+            testCase + " : read " + strLines.length + " lines, " + MIN_LINES + " expected");
+        int l = 1;
+        checkLineStart(testCase, strLines[l++], "Compiled method "); // 2
+        checkLineStart(testCase, strLines[l++], " total in heap  "); // 3
+        int foundDisassemblyLine = -1;
+        int foundEntryPointLine = -1;
+        for (; l < strLines.length; ++l) {
+            String line = strLines[l];
+            if (line.equals("[Disassembly]") || line.equals("[MachCode]")) {
+                Asserts.assertTrue(foundDisassemblyLine == -1,
+                    testCase + " : Duplicate disassembly section markers found at lines " + foundDisassemblyLine + " and " + l);
+                foundDisassemblyLine = l;
+            }
+            if (line.equals("[Entry Point]") || line.equals("[Verified Entry Point]")) {
+                Asserts.assertTrue(foundDisassemblyLine != -1,
+                    testCase + " : entry point found but [Disassembly] section missing ");
+                foundEntryPointLine = l;
+                break;
+            }
         }
+        Asserts.assertTrue(foundDisassemblyLine != -1, testCase + " : no disassembly section found");
+        Asserts.assertTrue(foundEntryPointLine != -1, testCase + " : no entry point found");
     }
 }

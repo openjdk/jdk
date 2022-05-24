@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,7 +336,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler* sasm) {
     // Note: the restore live registers includes the jump to LR (patched to R0)
     break;
   case handle_exception_from_callee_id:
-    restore_live_registers_without_return(sasm); // must not jump immediatly to handler
+    restore_live_registers_without_return(sasm); // must not jump immediately to handler
     restore_sp_for_method_handle(sasm);
     __ ret();
     break;

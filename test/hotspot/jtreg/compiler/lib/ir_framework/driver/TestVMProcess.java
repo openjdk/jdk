@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,13 +194,13 @@ public class TestVMProcess {
             if (!testListBuilder.isEmpty()) {
                 System.out.println("Run flag defined test list");
                 System.out.println("--------------------------");
-                System.out.println(testListBuilder.toString());
+                System.out.println(testListBuilder);
                 System.out.println();
             }
             if (!messagesBuilder.isEmpty()) {
                 System.out.println("Messages from Test VM");
                 System.out.println("---------------------");
-                System.out.println(messagesBuilder.toString());
+                System.out.println(messagesBuilder);
             }
             irEncoding = nonStdOutBuilder.toString();
         } else {
@@ -226,7 +226,7 @@ public class TestVMProcess {
      */
     private void throwTestVMException() {
         String stdErr = oa.getStderr();
-        if (stdErr.contains("TestFormat.reportIfAnyFailures")) {
+        if (stdErr.contains("TestFormat.throwIfAnyFailures")) {
             Pattern pattern = Pattern.compile("Violations \\(\\d+\\)[\\s\\S]*(?=/============/)");
             Matcher matcher = pattern.matcher(stdErr);
             TestFramework.check(matcher.find(), "Must find violation matches");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,6 +45,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
+#include "utilities/macros.hpp"
 #include "vmreg_s390.inline.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
@@ -919,8 +920,11 @@ static void gen_special_dispatch(MacroAssembler *masm,
     member_arg_pos = total_args_passed - 1;  // trailing MemberName argument
     member_reg = Z_R9;                       // Known to be free at this point.
     has_receiver = MethodHandles::ref_kind_has_receiver(ref_kind);
+  } else if (special_dispatch == vmIntrinsics::_linkToNative) {
+    member_arg_pos = total_args_passed - 1;  // trailing NativeEntryPoint argument
+    member_reg = Z_R9;  // known to be free at this point
   } else {
-    guarantee(special_dispatch == vmIntrinsics::_invokeBasic || special_dispatch == vmIntrinsics::_linkToNative,
+    guarantee(special_dispatch == vmIntrinsics::_invokeBasic,
               "special_dispatch=%d", vmIntrinsics::as_int(special_dispatch));
     has_receiver = true;
   }
@@ -1265,7 +1269,7 @@ static void move32_64(MacroAssembler *masm,
   if (src.first()->is_stack()) {
     Address memaddr(Z_SP, reg2offset(src.first()) + frame_offset);
     if (dst.first()->is_stack()) {
-      // stack -> stack. MVC not posible due to sign extension.
+      // stack -> stack. MVC not possible due to sign extension.
       Address firstaddr(Z_SP, reg2offset(dst.first()));
       __ mem2reg_signed_opt(Z_R0_scratch, memaddr);
       __ reg2mem_opt(Z_R0_scratch, firstaddr);
@@ -2880,7 +2884,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   // The following is basically a call_VM. However, we need the precise
   // address of the call in order to generate an oopmap. Hence, we do all the
-  // work outselves.
+  // work ourselves.
   __ set_last_Java_frame(Z_SP, noreg);
 
   // call into the runtime to handle the safepoint poll
@@ -2997,7 +3001,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   // get the returned method
   __ get_vm_result_2(Z_method);
 
-  // We are back the the original state on entry and ready to go.
+  // We are back to the original state on entry and ready to go.
   __ z_br(Z_R1_scratch);
 
   // Pending exception after the safepoint
@@ -3219,8 +3223,9 @@ void SharedRuntime::montgomery_multiply(jint *a_ints, jint *b_ints, jint *n_ints
   // Make very sure we don't use so much space that the stack might
   // overflow. 512 jints corresponds to an 16384-bit integer and
   // will use here a total of 8k bytes of stack space.
+  int divisor = sizeof(unsigned long) * 4;
+  guarantee(longwords <= 8192 / divisor, "must be");
   int total_allocation = longwords * sizeof (unsigned long) * 4;
-  guarantee(total_allocation <= 8192, "must be");
   unsigned long *scratch = (unsigned long *)alloca(total_allocation);
 
   // Local scratch arrays
@@ -3249,8 +3254,9 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
   // Make very sure we don't use so much space that the stack might
   // overflow. 512 jints corresponds to an 16384-bit integer and
   // will use here a total of 6k bytes of stack space.
+  int divisor = sizeof(unsigned long) * 3;
+  guarantee(longwords <= (8192 / divisor), "must be");
   int total_allocation = longwords * sizeof (unsigned long) * 3;
-  guarantee(total_allocation <= 8192, "must be");
   unsigned long *scratch = (unsigned long *)alloca(total_allocation);
 
   // Local scratch arrays
@@ -3275,13 +3281,3 @@ extern "C"
 int SpinPause() {
   return 0;
 }
-
-#ifdef COMPILER2
-RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
-                                                int shadow_space_bytes,
-                                                const GrowableArray<VMReg>& input_registers,
-                                                const GrowableArray<VMReg>& output_registers) {
-  Unimplemented();
-  return nullptr;
-}
-#endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,9 +149,7 @@ public class LineNumberInputStream extends FilterInputStream {
                 if (c == -1) {
                     break;
                 }
-                if (b != null) {
-                    b[off + i] = (byte)c;
-                }
+                b[off + i] = (byte)c;
             }
         } catch (IOException ee) {
         }

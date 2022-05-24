@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ int CompileBroker::_sum_standard_bytes_compiled    = 0;
 int CompileBroker::_sum_nmethod_size               = 0;
 int CompileBroker::_sum_nmethod_code_size          = 0;
 
-long CompileBroker::_peak_compilation_time         = 0;
+jlong CompileBroker::_peak_compilation_time        = 0;
 
 CompilerStatistics CompileBroker::_stats_per_level[CompLevel_full_optimization];
 
@@ -225,11 +225,13 @@ class CompilationLog : public StringEventLog {
   }
 
   void log_metaspace_failure(const char* reason) {
+    // Note: This method can be called from non-Java/compiler threads to
+    // log the global metaspace failure that might affect profiling.
     ResourceMark rm;
     StringLogMessage lm;
     lm.print("%4d   COMPILE PROFILING SKIPPED: %s", -1, reason);
     lm.print("\n");
-    log(JavaThread::current(), "%s", (const char*)lm);
+    log(Thread::current(), "%s", (const char*)lm);
   }
 };
 
@@ -420,7 +422,7 @@ void CompileQueue::free_all() {
 /**
  * Get the next CompileTask from a CompileQueue
  */
-CompileTask* CompileQueue::get() {
+CompileTask* CompileQueue::get(CompilerThread* thread) {
   // save methods from RedefineClasses across safepoint
   // across MethodCompileQueue_lock below.
   methodHandle save_method;
@@ -436,6 +438,15 @@ CompileTask* CompileQueue::get() {
     // Exit loop if compilation is disabled forever
     if (CompileBroker::is_compilation_disabled_forever()) {
       return NULL;
+    }
+
+    AbstractCompiler* compiler = thread->compiler();
+    guarantee(compiler != nullptr, "Compiler object must exist");
+    compiler->on_empty_queue(this, thread);
+    if (_first != nullptr) {
+      // The call to on_empty_queue may have temporarily unlocked the MCQ lock
+      // so check again whether any tasks were added to the queue.
+      break;
     }
 
     // If there are no compilation tasks and we can compile new jobs
@@ -614,9 +625,8 @@ void register_jfr_phasetype_serializer(CompilerType compiler_type) {
 #ifdef COMPILER2
   } else if (compiler_type == compiler_c2) {
     assert(first_registration, "invariant"); // c2 must be registered first.
-    GrowableArray<const char*>* c2_phase_names = new GrowableArray<const char*>(PHASE_NUM_TYPES);
     for (int i = 0; i < PHASE_NUM_TYPES; i++) {
-      const char* phase_name = CompilerPhaseTypeHelper::to_string((CompilerPhaseType) i);
+      const char* phase_name = CompilerPhaseTypeHelper::to_description((CompilerPhaseType) i);
       CompilerEvent::PhaseEvent::get_phase_id(phase_name, false, false, false);
     }
     first_registration = false;
@@ -1338,7 +1348,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        const methodHandle& hot_method, int hot_count,
                                        CompileTask::CompileReason compile_reason,
                                        TRAPS) {
-  // Do nothing if compilebroker is not initalized or compiles are submitted on level none
+  // Do nothing if compilebroker is not initialized or compiles are submitted on level none
   if (!_initialized || comp_level == CompLevel_none) {
     return NULL;
   }
@@ -1347,7 +1357,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   assert(comp != NULL, "Ensure we have a compiler");
 
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
-  // CompileBroker::compile_method can trap and can have pending aysnc exception.
+  // CompileBroker::compile_method can trap and can have pending async exception.
   nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
   DirectivesStack::release(directive);
   return nm;
@@ -1931,7 +1941,7 @@ void CompileBroker::compiler_thread_loop() {
     // We need this HandleMark to avoid leaking VM handles.
     HandleMark hm(thread);
 
-    CompileTask* task = queue->get();
+    CompileTask* task = queue->get(thread);
     if (task == NULL) {
       if (UseDynamicNumberOfCompilerThreads) {
         // Access compiler_count under lock to enforce consistency.
@@ -1941,6 +1951,10 @@ void CompileBroker::compiler_thread_loop() {
             tty->print_cr("Removing compiler thread %s after " JLONG_FORMAT " ms idle time",
                           thread->name(), thread->idle_time_millis());
           }
+
+          // Notify compiler that the compiler thread is about to stop
+          thread->compiler()->stopping_compiler_thread(thread);
+
           // Free buffer blob, if allocated
           if (thread->get_buffer_blob() != NULL) {
             MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -1970,6 +1984,8 @@ void CompileBroker::compiler_thread_loop() {
           method->clear_queued_for_compilation();
           task->set_failure_reason("compilation is disabled");
         }
+      } else {
+        task->set_failure_reason("breakpoints are present");
       }
 
       if (UseDynamicNumberOfCompilerThreads) {
@@ -2003,7 +2019,7 @@ void CompileBroker::init_compiler_thread_log() {
                      os::file_separator(), thread_id, os::current_process_id());
       }
 
-      fp = fopen(file_name, "wt");
+      fp = os::fopen(file_name, "wt");
       if (fp != NULL) {
         if (LogCompilation && Verbose) {
           tty->print_cr("Opening compilation log %s", file_name);
@@ -2247,6 +2263,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       post_compilation_event(event, task);
     }
 
+    if (runtime != nullptr) {
+      runtime->post_compile(thread);
+    }
   } else
 #endif // INCLUDE_JVMCI
   {
@@ -2293,8 +2312,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       /* Repeat compilation without installing code for profiling purposes */
       int repeat_compilation_count = directive->RepeatCompilationOption;
       while (repeat_compilation_count > 0) {
+        ResourceMark rm(thread);
         task->print_ul("NO CODE INSTALLED");
-        comp->compile_method(&ci_env, target, osr_bci, false , directive);
+        comp->compile_method(&ci_env, target, osr_bci, false, directive);
         repeat_compilation_count--;
       }
     }

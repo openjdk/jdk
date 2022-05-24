@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 4074599 4939441
  * @summary Tests for {Math, StrictMath}.log10
- * @author Joseph D. Darcy
  */
 
 public class Log10Tests {
@@ -41,11 +40,8 @@ public class Log10Tests {
     static int testLog10Case(double input, double expected) {
         int failures=0;
 
-        failures+=Tests.test("Math.log10(double)", input,
-                             Math.log10(input), expected);
-
-        failures+=Tests.test("StrictMath.log10(double)", input,
-                             StrictMath.log10(input), expected);
+        failures+=Tests.test("Math.log10",       input, Math::log10,       expected);
+        failures+=Tests.test("StrictMath.log10", input, StrictMath::log10, expected);
 
         return failures;
     }
@@ -121,8 +117,6 @@ public class Log10Tests {
                                            "log(input)/log(10): log10(input) = " + result +
                                            "\tlog(input)/log(10) = " + expected);
                     }
-
-
                 }
             }
         }
@@ -205,7 +199,7 @@ public class Log10Tests {
         return failures;
     }
 
-    public static void main(String argv[]) {
+    public static void main(String... argv) {
         int failures = 0;
 
         failures += testLog10();
@@ -216,5 +210,4 @@ public class Log10Tests {
             throw new RuntimeException();
         }
     }
-
 }

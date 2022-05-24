@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -563,13 +563,13 @@ final class HttpsClient extends HttpClient
                 if (isDefaultHostnameVerifier) {
                     // If the HNV is the default from HttpsURLConnection, we
                     // will do the spoof checks in SSLSocket.
-                    SSLParameters paramaters = s.getSSLParameters();
-                    paramaters.setEndpointIdentificationAlgorithm("HTTPS");
+                    SSLParameters parameters = s.getSSLParameters();
+                    parameters.setEndpointIdentificationAlgorithm("HTTPS");
                     // host has been set previously for SSLSocketImpl
                     if (!(s instanceof SSLSocketImpl)) {
-                        paramaters.setServerNames(List.of(new SNIHostName(host)));
+                        parameters.setServerNames(List.of(new SNIHostName(host)));
                     }
-                    s.setSSLParameters(paramaters);
+                    s.setSSLParameters(parameters);
 
                     needToCheckSpoofing = false;
                 }
@@ -661,12 +661,17 @@ final class HttpsClient extends HttpClient
 
     @Override
     protected void putInKeepAliveCache() {
-        if (inCache) {
-            assert false : "Duplicate put to keep alive cache";
-            return;
+        lock();
+        try {
+            if (inCache) {
+                assert false : "Duplicate put to keep alive cache";
+                return;
+            }
+            inCache = true;
+            kac.put(url, sslSocketFactory, this);
+        } finally {
+            unlock();
         }
-        inCache = true;
-        kac.put(url, sslSocketFactory, this);
     }
 
     /*

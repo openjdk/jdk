@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,7 +314,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
                 crc.reset();
                 current = null;
             } catch (IOException e) {
-                if (usesDefaultDeflater && !(e instanceof ZipException))
+                if (def.shouldFinish() && usesDefaultDeflater && !(e instanceof ZipException))
                     def.end();
                 throw e;
             }
@@ -700,8 +700,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             writeShort(45);                // version needed to extract
             writeInt(0);                   // number of this disk
             writeInt(0);                   // central directory start disk
-            writeLong(xentries.size());    // number of directory entires on disk
-            writeLong(xentries.size());    // number of directory entires
+            writeLong(xentries.size());    // number of directory entries on disk
+            writeLong(xentries.size());    // number of directory entries
             writeLong(len);                // length of central directory
             writeLong(off);                // offset of central directory
 

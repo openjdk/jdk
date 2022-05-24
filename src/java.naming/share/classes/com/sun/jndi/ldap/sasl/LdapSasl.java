@@ -42,7 +42,9 @@ import javax.security.sasl.*;
 import com.sun.jndi.ldap.Connection;
 import com.sun.jndi.ldap.LdapClient;
 import com.sun.jndi.ldap.LdapResult;
-import com.sun.jndi.ldap.sasl.TlsChannelBinding.TlsChannelBindingType;
+import sun.security.util.ChannelBindingException;
+import sun.security.util.TlsChannelBinding;
+import sun.security.util.TlsChannelBinding.TlsChannelBindingType;
 
 /**
   * Handles SASL support.
@@ -61,6 +63,14 @@ public final class LdapSasl {
 
     private static final int LDAP_SUCCESS = 0;
     private static final int LDAP_SASL_BIND_IN_PROGRESS = 14;   // LDAPv3
+
+    // TLS channel binding type property
+    private static final String CHANNEL_BINDING_TYPE =
+            "com.sun.jndi.ldap.tls.cbtype";
+
+    // internal TLS channel binding property
+    private static final String CHANNEL_BINDING =
+            "jdk.internal.sasl.tlschannelbinding";
 
     private LdapSasl() {
     }
@@ -113,8 +123,8 @@ public final class LdapSasl {
         String[] mechs = getSaslMechanismNames(authMech);
 
         // Internal TLS Channel Binding property cannot be set explicitly
-        if (env.get(TlsChannelBinding.CHANNEL_BINDING) != null) {
-            throw new NamingException(TlsChannelBinding.CHANNEL_BINDING +
+        if (env.get(CHANNEL_BINDING) != null) {
+            throw new NamingException(CHANNEL_BINDING +
                     " property cannot be set explicitly");
         }
 
@@ -123,17 +133,24 @@ public final class LdapSasl {
         try {
             // Prepare TLS Channel Binding data
             if (conn.isTlsConnection()) {
-                TlsChannelBindingType cbType =
-                        TlsChannelBinding.parseType(
-                                (String)env.get(TlsChannelBinding.CHANNEL_BINDING_TYPE));
+                TlsChannelBindingType cbType;
+                try {
+                    cbType = TlsChannelBinding.parseType((String)env.get(CHANNEL_BINDING_TYPE));
+                } catch (ChannelBindingException e) {
+                    throw wrapInNamingException(e);
+                }
                 if (cbType == TlsChannelBindingType.TLS_SERVER_END_POINT) {
                     // set tls-server-end-point channel binding
                     X509Certificate cert = conn.getTlsServerCertificate();
                     if (cert != null) {
-                        TlsChannelBinding tlsCB =
-                                TlsChannelBinding.create(cert);
+                        TlsChannelBinding tlsCB;
+                        try {
+                            tlsCB = TlsChannelBinding.create(cert);
+                        } catch (ChannelBindingException e) {
+                            throw wrapInNamingException(e);
+                        }
                         envProps = (Hashtable<String, Object>) env.clone();
-                        envProps.put(TlsChannelBinding.CHANNEL_BINDING, tlsCB.getData());
+                        envProps.put(CHANNEL_BINDING, tlsCB.getData());
                     } else {
                         throw new SaslException("No suitable certificate to generate " +
                                 "TLS Channel Binding data");
@@ -225,6 +242,12 @@ public final class LdapSasl {
             mechNames[i] = mechs.get(i);
         }
         return mechNames;
+    }
+
+    private static NamingException wrapInNamingException(Exception e) {
+        NamingException ne = new NamingException();
+        ne.setRootCause(e);
+        return ne;
     }
 
     private static final byte[] NO_BYTES = new byte[0];

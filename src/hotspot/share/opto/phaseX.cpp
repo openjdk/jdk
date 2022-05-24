@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1507,7 +1507,7 @@ void PhaseIterGVN::add_users_to_worklist0( Node *n ) {
 }
 
 // Return counted loop Phi if as a counted loop exit condition, cmp
-// compares the the induction variable with n
+// compares the induction variable with n
 static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
   for (DUIterator_Fast imax, i = cmp->fast_outs(imax); i < imax; i++) {
     Node* bol = cmp->fast_out(i);
@@ -1691,7 +1691,7 @@ bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
     case Op_DivI:
     case Op_ModI: {
       // Type of divisor includes 0?
-      if (n->in(2)->is_top()) {
+      if (type(n->in(2)) == Type::TOP) {
         // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
         return false;
       }
@@ -1701,7 +1701,7 @@ bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
     case Op_DivL:
     case Op_ModL: {
       // Type of divisor includes 0?
-      if (n->in(2)->is_top()) {
+      if (type(n->in(2)) == Type::TOP) {
         // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
         return false;
       }

@@ -373,7 +373,7 @@ public class frames001 {
 
                     log2("       getting new List of frames");
                     try {
-                        frameList = thread2.frames();;
+                        frameList = thread2.frames();
                     } catch ( IndexOutOfBoundsException e1 ) {
                         log3("ERROR: IndexOutOfBoundsException");
                         expresult = returnCode1;

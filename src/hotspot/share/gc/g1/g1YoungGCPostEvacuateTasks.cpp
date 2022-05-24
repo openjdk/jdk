@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : publi
 
 public:
   RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
-    G1AbstractSubTask(G1GCPhaseTimes::RemoveSelfForwardingPtr),
+    G1AbstractSubTask(G1GCPhaseTimes::RestoreRetainedRegions),
     _task(evac_failure_regions),
     _evac_failure_regions(evac_failure_regions) { }
 
@@ -167,7 +167,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
   //
   // Other implementation considerations:
   // - never consider object arrays at this time because they would pose
-  // considerable effort for cleaning up the the remembered sets. This is
+  // considerable effort for cleaning up the remembered sets. This is
   // required because stale remembered sets might reference locations that
   // are currently allocated into.
   bool is_reclaimable(uint region_idx) const {

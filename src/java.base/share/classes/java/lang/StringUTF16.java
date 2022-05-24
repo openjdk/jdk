@@ -1549,13 +1549,9 @@ final class StringUTF16 {
         }
 
         // We know there are at most two digits left at this point.
-        q = i / 10;
-        r = (q * 10) - i;
-        putChar(buf, --charPos, '0' + r);
-
-        // Whatever left is the remaining digit.
-        if (q < 0) {
-            putChar(buf, --charPos, '0' - q);
+        putChar(buf, --charPos, Integer.DigitOnes[-i]);
+        if (i < -9) {
+            putChar(buf, --charPos, Integer.DigitTens[-i]);
         }
 
         if (negative) {
@@ -1604,13 +1600,9 @@ final class StringUTF16 {
         }
 
         // We know there are at most two digits left at this point.
-        q2 = i2 / 10;
-        r  = (q2 * 10) - i2;
-        putChar(buf, --charPos, '0' + r);
-
-        // Whatever left is the remaining digit.
-        if (q2 < 0) {
-            putChar(buf, --charPos, '0' - q2);
+        putChar(buf, --charPos, Integer.DigitOnes[-i2]);
+        if (i2 < -9) {
+            putChar(buf, --charPos, Integer.DigitTens[-i2]);
         }
 
         if (negative) {

@@ -25,8 +25,6 @@
 #ifndef SHARE_SERVICES_THREADSTACKTRACKER_HPP
 #define SHARE_SERVICES_THREADSTACKTRACKER_HPP
 
-#if INCLUDE_NMT
-
 #include "services/allocationSite.hpp"
 #include "services/mallocSiteTable.hpp"
 #include "services/nmtCommon.hpp"
@@ -84,5 +82,5 @@ public:
   static bool walk_simple_thread_stack_site(MallocSiteWalker* walker);
 };
 
-#endif // INCLUDE_NMT
 #endif // SHARE_SERVICES_THREADSTACKTRACKER_HPP
+

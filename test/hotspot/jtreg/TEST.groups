@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,10 @@ hotspot_gc = \
 # By design this group should include ALL tests under runtime sub-directory
 hotspot_runtime = \
   runtime
+
+hotspot_runtime_no_cds = \
+  runtime \
+  -runtime/cds
 
 hotspot_handshake = \
   runtime/handshake
@@ -101,6 +105,25 @@ hotspot_vector_2 = \
   compiler/vectorapi/VectorRebracket128Test.java \
   -compiler/intrinsics/string/TestStringLatin1IndexOfChar.java
 
+hotspot_compiler_arraycopy = \
+  compiler/arraycopy/stress
+
+tier1_loom = \
+  :tier1_loom_runtime \
+  :tier1_loom_serviceability
+
+tier1_loom_runtime = \
+  runtime/vthread \
+  runtime/jni/IsVirtualThread
+
+tier1_loom_serviceability = \
+  serviceability/jvmti/vthread \
+  serviceability/jvmti/events \
+  serviceability/dcmd/thread
+
+hotspot_loom = \
+  :tier1_loom
+
 tier1_common = \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
@@ -122,7 +145,9 @@ hotspot_not_fast_compiler = \
 hotspot_slow_compiler = \
   compiler/codegen/aes \
   compiler/codecache/stress \
-  compiler/gcbarriers/PreserveFPRegistersTest.java
+  compiler/gcbarriers/PreserveFPRegistersTest.java \
+  resourcehogs/compiler \
+  :hotspot_compiler_arraycopy
 
 tier1_compiler_1 = \
   compiler/arraycopy/ \
@@ -139,6 +164,7 @@ tier1_compiler_1 = \
   -compiler/c2/Test6792161.java \
   -compiler/c2/Test6603011.java \
   -compiler/c2/Test6912517.java \
+  -:hotspot_slow_compiler
 
 tier1_compiler_2 = \
   compiler/classUnloading/ \
@@ -379,6 +405,8 @@ hotspot_cds = \
   runtime/cds/ \
   runtime/CompressedOops/
 
+hotspot_cds_only = \
+  runtime/cds/
 
 hotspot_appcds_dynamic = \
   runtime/cds/appcds/ \
@@ -400,6 +428,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/DumpClassList.java \
  -runtime/cds/appcds/DumpClassListWithLF.java \
+ -runtime/cds/appcds/DumpingWithNoCoops.java \
  -runtime/cds/appcds/ExtraSymbols.java \
  -runtime/cds/appcds/LambdaContainsOldInf.java \
  -runtime/cds/appcds/LambdaEagerInit.java \
@@ -416,6 +445,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/StaticArchiveWithLambda.java \
  -runtime/cds/appcds/TestCombinedCompressedFlags.java \
  -runtime/cds/appcds/TestEpsilonGCWithCDS.java \
+ -runtime/cds/appcds/TestParallelGCWithCDS.java \
  -runtime/cds/appcds/TestSerialGCWithCDS.java \
  -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/UnusedCPDuringDump.java \

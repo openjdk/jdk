@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,7 +209,7 @@ bool GCConfig::is_gc_selected_ergonomically() {
 
 const char* GCConfig::hs_err_name() {
   if (is_exactly_one_gc_selected()) {
-    // Exacly one GC selected
+    // Exactly one GC selected
     FOR_EACH_INCLUDED_GC(gc) {
       if (gc->_flag) {
         return gc->_hs_err_name;

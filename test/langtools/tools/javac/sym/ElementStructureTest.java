@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ import toolbox.ToolBox;
 
 /**To generate the hash values for version N, invoke this class like:
  *
- *     java ElementStructureTest generate-hashes $LANGTOOLS_DIR/make/data/symbols/include.list (<classes-for-N> N)+
+ *     java ElementStructureTest generate-hashes $LANGTOOLS_DIR/src/jdk.compiler/share/data/symbols/include.list (<classes-for-N> N)+
  *
  * Where <classes-for-N> is the file produced by make/src/classes/build/tools/symbolgenerator/Probe.java.
  * So, to produce hashes for 6, 7 and 8, this command can be used:
@@ -113,11 +113,11 @@ import toolbox.ToolBox;
  *
  * To inspect differences between the actual and expected output for version N, invoke this class like:
  *
- *     java ElementStructureTest generate-output $LANGTOOLS_DIR/make/data/symbols/include.list (<classes-for-N> N <actual-output-file> <expected-output-file>)+
+ *     java ElementStructureTest generate-output $LANGTOOLS_DIR/src/jdk.compiler/share/data/symbols/include.list (<classes-for-N> N <actual-output-file> <expected-output-file>)+
  *
  * For example, to get the actual and expected output for 6 in /tmp/actual and /tmp/expected, respectively:
  *
- *     java ElementStructureTest generate-output $LANGTOOLS_DIR/make/data/symbols/include.list classes-6 6 /tmp/actual /tmp/expected
+ *     java ElementStructureTest generate-output $LANGTOOLS_DIR/src/jdk.compiler/share/data/symbols/include.list classes-6 6 /tmp/actual /tmp/expected
  */
 public class ElementStructureTest {
 

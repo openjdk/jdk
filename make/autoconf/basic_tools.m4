@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 
   # Optional tools, we can do without them
   UTIL_LOOKUP_PROGS(DF, df)
+  UTIL_LOOKUP_PROGS(GIT, git)
   UTIL_LOOKUP_PROGS(NICE, nice)
   UTIL_LOOKUP_PROGS(READLINK, greadlink readlink)
 
@@ -160,25 +161,23 @@ AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
 AC_DEFUN([BASIC_CHECK_MAKE_OUTPUT_SYNC],
 [
   # Check if make supports the output sync option and if so, setup using it.
-  AC_MSG_CHECKING([if make --output-sync is supported])
-  if $MAKE --version -O > /dev/null 2>&1; then
-    OUTPUT_SYNC_SUPPORTED=true
-    AC_MSG_RESULT([yes])
-    AC_MSG_CHECKING([for output-sync value])
-    AC_ARG_WITH([output-sync], [AS_HELP_STRING([--with-output-sync],
-      [set make output sync type if supported by make. @<:@recurse@:>@])],
-      [OUTPUT_SYNC=$with_output_sync])
-    if test "x$OUTPUT_SYNC" = "x"; then
-      OUTPUT_SYNC=none
-    fi
-    AC_MSG_RESULT([$OUTPUT_SYNC])
-    if ! $MAKE --version -O$OUTPUT_SYNC > /dev/null 2>&1; then
-      AC_MSG_ERROR([Make did not the support the value $OUTPUT_SYNC as output sync type.])
-    fi
-  else
-    OUTPUT_SYNC_SUPPORTED=false
-    AC_MSG_RESULT([no])
-  fi
+  UTIL_ARG_WITH(NAME: output-sync, TYPE: literal,
+      VALID_VALUES: [none recurse line target], DEFAULT: none,
+      OPTIONAL: true, ENABLED_DEFAULT: true,
+      ENABLED_RESULT: OUTPUT_SYNC_SUPPORTED,
+      CHECKING_MSG: [for make --output-sync value],
+      DESC: [set make --output-sync type if supported by make],
+      CHECK_AVAILABLE:
+      [
+        AC_MSG_CHECKING([if make --output-sync is supported])
+        if ! $MAKE --version -O > /dev/null 2>&1; then
+          AC_MSG_RESULT([no])
+          AVAILABLE=false
+        else
+          AC_MSG_RESULT([yes])
+        fi
+      ]
+  )
   AC_SUBST(OUTPUT_SYNC_SUPPORTED)
   AC_SUBST(OUTPUT_SYNC)
 ])
@@ -270,6 +269,8 @@ AC_DEFUN([BASIC_CHECK_TAR],
     TAR_TYPE="bsd"
   elif test "x$($TAR -v | $GREP "bsdtar")" != "x"; then
     TAR_TYPE="bsd"
+  elif test "x$($TAR --version | $GREP "busybox")" != "x"; then
+    TAR_TYPE="busybox"
   elif test "x$OPENJDK_BUILD_OS" = "xaix"; then
     TAR_TYPE="aix"
   fi
@@ -281,8 +282,11 @@ AC_DEFUN([BASIC_CHECK_TAR],
     TAR_SUPPORTS_TRANSFORM="true"
   elif test "x$TAR_TYPE" = "aix"; then
     # -L InputList of aix tar: name of file listing the files and directories
-    # that need to be   archived or extracted
+    # that need to be archived or extracted
     TAR_INCLUDE_PARAM="L"
+    TAR_SUPPORTS_TRANSFORM="false"
+  elif test "x$TAR_TYPE" = "xbusybox"; then
+    TAR_INCLUDE_PARAM="T"
     TAR_SUPPORTS_TRANSFORM="false"
   else
     TAR_INCLUDE_PARAM="I"
@@ -339,7 +343,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   UTIL_LOOKUP_PROGS(READELF, greadelf readelf)
   UTIL_LOOKUP_PROGS(DOT, dot)
   UTIL_LOOKUP_PROGS(HG, hg)
-  UTIL_LOOKUP_PROGS(GIT, git)
   UTIL_LOOKUP_PROGS(STAT, stat)
   UTIL_LOOKUP_PROGS(TIME, time)
   UTIL_LOOKUP_PROGS(FLOCK, flock)
@@ -348,7 +351,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   UTIL_LOOKUP_PROGS(DTRACE, dtrace, $PATH:/usr/sbin)
   UTIL_LOOKUP_PROGS(PATCH, gpatch patch)
   # Check if it's GNU time
-  IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU time'`
+  [ IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU [Tt]ime'` ]
   if test "x$IS_GNU_TIME" != x; then
     IS_GNU_TIME=yes
   else
@@ -356,13 +359,17 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   fi
   AC_SUBST(IS_GNU_TIME)
 
-  # Check if it's GNU date
-  check_date=`$DATE --version 2>&1 | $GREP GNU`
+  # Check if it's a GNU date compatible version
+  AC_MSG_CHECKING([if date is a GNU compatible version])
+  check_date=`$DATE --version 2>&1 | $GREP "GNU\|BusyBox"`
   if test "x$check_date" != x; then
+    AC_MSG_RESULT([yes])
     IS_GNU_DATE=yes
   else
+    AC_MSG_RESULT([no])
     IS_GNU_DATE=no
   fi
+  AC_SUBST(IS_GNU_DATE)
 
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
     UTIL_REQUIRE_PROGS(DSYMUTIL, dsymutil)
@@ -370,17 +377,15 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
     UTIL_REQUIRE_PROGS(XATTR, xattr)
     UTIL_LOOKUP_PROGS(CODESIGN, codesign)
 
+    # Check for user provided code signing identity.
+    UTIL_ARG_WITH(NAME: macosx-codesign-identity, TYPE: string,
+        DEFAULT: openjdk_codesign, CHECK_VALUE: UTIL_CHECK_STRING_NON_EMPTY,
+        DESC: [specify the macosx code signing identity],
+        CHECKING_MSG: [for macosx code signing identity]
+    )
+    AC_SUBST(MACOSX_CODESIGN_IDENTITY)
+
     if test "x$CODESIGN" != "x"; then
-      # Check for user provided code signing identity.
-      # If no identity was provided, fall back to "openjdk_codesign".
-      AC_ARG_WITH([macosx-codesign-identity], [AS_HELP_STRING([--with-macosx-codesign-identity],
-        [specify the code signing identity])],
-        [MACOSX_CODESIGN_IDENTITY=$with_macosx_codesign_identity],
-        [MACOSX_CODESIGN_IDENTITY=openjdk_codesign]
-      )
-
-      AC_SUBST(MACOSX_CODESIGN_IDENTITY)
-
       # Verify that the codesign certificate is present
       AC_MSG_CHECKING([if codesign certificate is present])
       $RM codesign-testfile

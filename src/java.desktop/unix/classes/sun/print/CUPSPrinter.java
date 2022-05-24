@@ -53,6 +53,7 @@ public class CUPSPrinter  {
     private static native String getCupsServer();
     private static native int getCupsPort();
     private static native String getCupsDefaultPrinter();
+    private static native String[] getCupsDefaultPrinters();
     private static native boolean canConnect(String server, int port);
     private static native boolean initIDs();
     // These functions need to be synchronized as
@@ -77,6 +78,7 @@ public class CUPSPrinter  {
 
     private static boolean libFound;
     private static String cupsServer = null;
+    private static String domainSocketPathname = null;
     private static int cupsPort = 0;
 
     static {
@@ -96,6 +98,13 @@ public class CUPSPrinter  {
         libFound = initIDs();
         if (libFound) {
            cupsServer = getCupsServer();
+           // Is this a local domain socket pathname?
+           if (cupsServer != null && cupsServer.startsWith("/")) {
+               if (isSandboxedApp()) {
+                   domainSocketPathname = cupsServer;
+               }
+               cupsServer = "localhost";
+           }
            cupsPort = getCupsPort();
         }
     }
@@ -381,6 +390,20 @@ public class CUPSPrinter  {
      * Get list of all CUPS printers using IPP.
      */
     static String[] getAllPrinters() {
+
+        if (getDomainSocketPathname() != null) {
+            String[] printerNames = getCupsDefaultPrinters();
+            if (printerNames != null && printerNames.length > 0) {
+                String[] printerURIs = new String[printerNames.length];
+                for (int i=0; i< printerNames.length; i++) {
+                    printerURIs[i] = String.format("ipp://%s:%d/printers/%s",
+                            getServer(), getPort(), printerNames[i]);
+                }
+                return printerURIs;
+            }
+            return null;
+        }
+
         try {
             URL url = new URL("http", getServer(), getPort(), "");
 
@@ -465,14 +488,38 @@ public class CUPSPrinter  {
     }
 
     /**
+     * Returns CUPS domain socket pathname.
+     */
+    private static String getDomainSocketPathname() {
+        return domainSocketPathname;
+    }
+
+    @SuppressWarnings("removal")
+    private static boolean isSandboxedApp() {
+        if (PrintServiceLookupProvider.isMac()) {
+            return java.security.AccessController
+                    .doPrivileged((java.security.PrivilegedAction<Boolean>) () ->
+                            System.getenv("APP_SANDBOX_CONTAINER_ID") != null);
+        }
+        return false;
+    }
+
+
+    /**
      * Detects if CUPS is running.
      */
     public static boolean isCupsRunning() {
         IPPPrintService.debug_println(debugPrefix+"libFound "+libFound);
         if (libFound) {
-            IPPPrintService.debug_println(debugPrefix+"CUPS server "+getServer()+
-                                          " port "+getPort());
-            return canConnect(getServer(), getPort());
+            String server = getDomainSocketPathname() != null
+                    ? getDomainSocketPathname()
+                    : getServer();
+            IPPPrintService.debug_println(debugPrefix+"CUPS server "+server+
+                                          " port "+getPort()+
+                                          (getDomainSocketPathname() != null
+                                                  ? " use domain socket pathname"
+                                                  : ""));
+            return canConnect(server, getPort());
         } else {
             return false;
         }

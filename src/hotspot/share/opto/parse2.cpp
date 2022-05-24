@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,9 +124,9 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
     const Type* el = elemtype->make_ptr();
     if (el && el->isa_instptr()) {
       const TypeInstPtr* toop = el->is_instptr();
-      if (toop->klass()->as_instance_klass()->unique_concrete_subklass()) {
+      if (toop->instance_klass()->unique_concrete_subklass()) {
         // If we load from "AbstractClass[]" we must see "ConcreteSubClass".
-        const Type* subklass = Type::get_const_type(toop->klass());
+        const Type* subklass = Type::get_const_type(toop->instance_klass());
         elemtype = subklass->join_speculative(el);
       }
     }
@@ -143,13 +143,14 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
     if (C->log() != NULL)   C->log()->elem("observe that='!need_range_check'");
   }
 
-  ciKlass * arytype_klass = arytype->klass();
-  if ((arytype_klass != NULL) && (!arytype_klass->is_loaded())) {
+  if (!arytype->is_loaded()) {
     // Only fails for some -Xcomp runs
     // The class is unloaded.  We have to run this bytecode in the interpreter.
+    ciKlass* klass = arytype->unloaded_klass();
+
     uncommon_trap(Deoptimization::Reason_unloaded,
                   Deoptimization::Action_reinterpret,
-                  arytype->klass(), "!loaded array");
+                  klass, "!loaded array");
     return top();
   }
 
@@ -194,7 +195,7 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
         // If we have already recompiled with the range-check-widening
         // heroic optimization turned off, then we must really be throwing
         // range check exceptions.
-        builtin_throw(Deoptimization::Reason_range_check, idx);
+        builtin_throw(Deoptimization::Reason_range_check);
       }
     }
   }
@@ -1332,7 +1333,7 @@ bool Parse::seems_never_taken(float prob) const {
 // True if the comparison seems to be the kind that will not change its
 // statistics from true to false.  See comments in adjust_map_after_if.
 // This question is only asked along paths which are already
-// classifed as untaken (by seems_never_taken), so really,
+// classified as untaken (by seems_never_taken), so really,
 // if a path is never taken, its controlling comparison is
 // already acting in a stable fashion.  If the comparison
 // seems stable, we will put an expensive uncommon trap
@@ -1865,33 +1866,33 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_bipush:   push(intcon(iter().get_constant_u1())); break;
   case Bytecodes::_sipush:   push(intcon(iter().get_constant_u2())); break;
   case Bytecodes::_aconst_null: push(null());  break;
+
   case Bytecodes::_ldc:
   case Bytecodes::_ldc_w:
-  case Bytecodes::_ldc2_w:
-    // If the constant is unresolved, run this BC once in the interpreter.
-    {
-      ciConstant constant = iter().get_constant();
-      if (!constant.is_valid() ||
-          (constant.basic_type() == T_OBJECT &&
-           !constant.as_object()->is_loaded())) {
-        int index = iter().get_constant_pool_index();
-        constantTag tag = iter().get_constant_pool_tag(index);
-        uncommon_trap(Deoptimization::make_trap_request
-                      (Deoptimization::Reason_unloaded,
-                       Deoptimization::Action_reinterpret,
-                       index),
-                      NULL, tag.internal_name());
-        break;
-      }
-      assert(constant.basic_type() != T_OBJECT || constant.as_object()->is_instance(),
-             "must be java_mirror of klass");
+  case Bytecodes::_ldc2_w: {
+    ciConstant constant = iter().get_constant();
+    if (constant.is_loaded()) {
       const Type* con_type = Type::make_from_constant(constant);
       if (con_type != NULL) {
         push_node(con_type->basic_type(), makecon(con_type));
       }
-    }
+    } else {
+      // If the constant is unresolved or in error state, run this BC in the interpreter.
+      if (iter().is_in_error()) {
+        uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
+                                                        Deoptimization::Action_none),
+                      NULL, "constant in error state", true /* must_throw */);
 
+      } else {
+        int index = iter().get_constant_pool_index();
+        uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unloaded,
+                                                        Deoptimization::Action_reinterpret,
+                                                        index),
+                      NULL, "unresolved constant", false /* must_throw */);
+      }
+    }
     break;
+  }
 
   case Bytecodes::_aload_0:
     push( local(0) );
@@ -2004,19 +2005,19 @@ void Parse::do_one_bytecode() {
 
   // double stores
   case Bytecodes::_dstore_0:
-    set_pair_local( 0, dstore_rounding(pop_pair()) );
+    set_pair_local( 0, dprecision_rounding(pop_pair()) );
     break;
   case Bytecodes::_dstore_1:
-    set_pair_local( 1, dstore_rounding(pop_pair()) );
+    set_pair_local( 1, dprecision_rounding(pop_pair()) );
     break;
   case Bytecodes::_dstore_2:
-    set_pair_local( 2, dstore_rounding(pop_pair()) );
+    set_pair_local( 2, dprecision_rounding(pop_pair()) );
     break;
   case Bytecodes::_dstore_3:
-    set_pair_local( 3, dstore_rounding(pop_pair()) );
+    set_pair_local( 3, dprecision_rounding(pop_pair()) );
     break;
   case Bytecodes::_dstore:
-    set_pair_local( iter().get_index(), dstore_rounding(pop_pair()) );
+    set_pair_local( iter().get_index(), dprecision_rounding(pop_pair()) );
     break;
 
   case Bytecodes::_pop:  dec_sp(1);   break;
@@ -2295,8 +2296,7 @@ void Parse::do_one_bytecode() {
       // out to memory to round, the machine instruction that implements
       // ConvL2D is responsible for rounding.
       // c = precision_rounding(b);
-      c = _gvn.transform(b);
-      push(c);
+      push(b);
     } else {
       l2f();
     }
@@ -2307,8 +2307,7 @@ void Parse::do_one_bytecode() {
     b = _gvn.transform( new ConvL2DNode(a));
     // For x86_32.ad, rounding is always necessary (see _l2f above).
     // c = dprecision_rounding(b);
-    c = _gvn.transform(b);
-    push_pair(c);
+    push_pair(b);
     break;
 
   case Bytecodes::_f2l:
@@ -2754,8 +2753,8 @@ void Parse::do_one_bytecode() {
   }
 
 #ifndef PRODUCT
-  if (C->should_print(1)) {
-    IdealGraphPrinter* printer = C->printer();
+  if (C->should_print_igv(1)) {
+    IdealGraphPrinter* printer = C->igv_printer();
     char buffer[256];
     jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();

@@ -28,12 +28,13 @@ import java.awt.Graphics;
 import java.awt.Shape;
 
 /**
+ * Implementation of {@code Highlighter} interface to mark up the
+ * background of leaf views with colored areas.
  *
  * @author  Scott Violet
  * @author  Timothy Prinzing
  * @see     Highlighter
  */
-@SuppressWarnings("doclint:missing")
 public abstract class LayeredHighlighter implements Highlighter {
     /**
      * Constructor for subclasses to call.
@@ -68,6 +69,8 @@ public abstract class LayeredHighlighter implements Highlighter {
         protected LayerPainter() {}
 
         /**
+         * Paints a portion of a highlight.
+         *
          * @return a shape
          * @param g Graphics used to draw
          * @param p0 starting offset of view

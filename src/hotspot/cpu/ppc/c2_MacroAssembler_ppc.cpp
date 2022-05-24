@@ -565,16 +565,16 @@ void C2_MacroAssembler::string_indexof_char(Register result, Register haystack, 
 } // string_indexof_char
 
 
-void C2_MacroAssembler::has_negatives(Register src, Register cnt, Register result,
-                                      Register tmp1, Register tmp2) {
+void C2_MacroAssembler::count_positives(Register src, Register cnt, Register result,
+                                        Register tmp1, Register tmp2) {
   const Register tmp0 = R0;
   assert_different_registers(src, result, cnt, tmp0, tmp1, tmp2);
-  Label Lfastloop, Lslow, Lloop, Lnoneg, Ldone;
+  Label Lfastloop, Lslow, Lloop, Ldone;
 
   // Check if cnt >= 8 (= 16 bytes)
   lis(tmp1, (int)(short)0x8080);  // tmp1 = 0x8080808080808080
   srwi_(tmp2, cnt, 4);
-  li(result, 1);                  // Assume there's a negative byte.
+  mr(result, src);                // Use result reg to point to the current position.
   beq(CCR0, Lslow);
   ori(tmp1, tmp1, 0x8080);
   rldimi(tmp1, tmp1, 32, 0);
@@ -582,30 +582,28 @@ void C2_MacroAssembler::has_negatives(Register src, Register cnt, Register resul
 
   // 2x unrolled loop
   bind(Lfastloop);
-  ld(tmp2, 0, src);
-  ld(tmp0, 8, src);
+  ld(tmp2, 0, result);
+  ld(tmp0, 8, result);
 
   orr(tmp0, tmp2, tmp0);
 
   and_(tmp0, tmp0, tmp1);
-  bne(CCR0, Ldone);               // Found negative byte.
-  addi(src, src, 16);
-
+  bne(CCR0, Lslow);               // Found negative byte.
+  addi(result, result, 16);
   bdnz(Lfastloop);
 
-  bind(Lslow);                    // Fallback to slow version
-  rldicl_(tmp0, cnt, 0, 64-4);
-  beq(CCR0, Lnoneg);
+  bind(Lslow);                    // Fallback to slow version.
+  subf(tmp0, src, result);        // Bytes known positive.
+  subf_(tmp0, tmp0, cnt);         // Remaining Bytes.
+  beq(CCR0, Ldone);
   mtctr(tmp0);
   bind(Lloop);
-  lbz(tmp0, 0, src);
-  addi(src, src, 1);
+  lbz(tmp0, 0, result);
   andi_(tmp0, tmp0, 0x80);
   bne(CCR0, Ldone);               // Found negative byte.
+  addi(result, result, 1);
   bdnz(Lloop);
-  bind(Lnoneg);
-  li(result, 0);
 
   bind(Ldone);
+  subf(result, src, result);      // Result is offset from src.
 }
-

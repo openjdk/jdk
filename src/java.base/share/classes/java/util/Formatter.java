@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2008,14 +2008,40 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * @since 1.5
  */
 public final class Formatter implements Closeable, Flushable {
+    // Caching DecimalFormatSymbols. Non-volatile to avoid thread slamming.
+    private static DecimalFormatSymbols DFS = null;
+    private static DecimalFormatSymbols getDecimalFormatSymbols(Locale locale) {
+        // Capture local copy to avoid thread race.
+        DecimalFormatSymbols dfs = DFS;
+        if (dfs != null && dfs.getLocale().equals(locale)) {
+            return dfs;
+        }
+        // Fetch a new local instance of DecimalFormatSymbols. Note that DFS are mutable
+        // and this instance is reserved for Formatter.
+        dfs = DecimalFormatSymbols.getInstance(locale);
+        // Non-volatile here is acceptable heuristic.
+        DFS = dfs;
+        return dfs;
+    }
+
+    // Use zero from cached DecimalFormatSymbols.
+    private static char getZero(Locale locale) {
+        return locale == null ? '0' : getDecimalFormatSymbols(locale).getZeroDigit();
+    }
+
+    // Use decimal separator from cached DecimalFormatSymbols.
+    private static char getDecimalSeparator(Locale locale) {
+        return locale == null ? '.' : getDecimalFormatSymbols(locale).getDecimalSeparator();
+    }
+
+    // Use grouping separator from cached DecimalFormatSymbols.
+    private static char getGroupingSeparator(Locale locale) {
+        return locale == null ? ',' : getDecimalFormatSymbols(locale).getGroupingSeparator();
+    }
+
     private Appendable a;
     private final Locale l;
-
     private IOException lastException;
-
-    // Non-character value used to mark zero as uninitialized
-    private static final char ZERO_SENTINEL = '\uFFFE';
-    private char zero = ZERO_SENTINEL;
 
     /**
      * Returns a charset object for the given charset name.
@@ -2521,20 +2547,6 @@ public final class Formatter implements Closeable, Flushable {
      */
     public Formatter(OutputStream os, Charset charset, Locale l) {
         this(l, new BufferedWriter(new OutputStreamWriter(os, charset)));
-    }
-
-    private char zero() {
-        char zero = this.zero;
-        if (zero == ZERO_SENTINEL) {
-            if ((l != null) && !l.equals(Locale.US)) {
-                DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(l);
-                zero = dfs.getZeroDigit();
-            } else {
-                zero = '0';
-            }
-            this.zero = zero;
-        }
-        return zero;
     }
 
     /**
@@ -4498,14 +4510,6 @@ public final class Formatter implements Closeable, Flushable {
             throw new IllegalFormatConversionException(c, arg.getClass());
         }
 
-        private char getZero(Formatter fmt, Locale l) {
-            if ((l != null) &&  !l.equals(fmt.locale())) {
-                DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(l);
-                return dfs.getZeroDigit();
-            }
-            return fmt.zero();
-        }
-
         private StringBuilder localizedMagnitude(Formatter fmt, StringBuilder sb,
                 long value, int flags, int width, Locale l) {
             return localizedMagnitude(fmt, sb, Long.toString(value, 10), 0, flags, width, l);
@@ -4519,7 +4523,7 @@ public final class Formatter implements Closeable, Flushable {
             }
             int begin = sb.length();
 
-            char zero = getZero(fmt, l);
+            char zero = getZero(l);
 
             // determine localized grouping separator and size
             char grpSep = '\0';
@@ -4536,21 +4540,15 @@ public final class Formatter implements Closeable, Flushable {
             }
 
             if (dot < len) {
-                if (l == null || l.equals(Locale.US)) {
-                    decSep  = '.';
-                } else {
-                    DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(l);
-                    decSep  = dfs.getDecimalSeparator();
-                }
+                decSep  = getDecimalSeparator(l);
             }
 
             if (Flags.contains(f, Flags.GROUP)) {
+                grpSep = getGroupingSeparator(l);
+
                 if (l == null || l.equals(Locale.US)) {
-                    grpSep = ',';
                     grpSize = 3;
                 } else {
-                    DecimalFormatSymbols dfs = DecimalFormatSymbols.getInstance(l);
-                    grpSep = dfs.getGroupingSeparator();
                     DecimalFormat df = null;
                     NumberFormat nf = NumberFormat.getNumberInstance(l);
                     if (nf instanceof DecimalFormat) {
@@ -4567,7 +4565,7 @@ public final class Formatter implements Closeable, Flushable {
                         }
                         String[] all = adapter.getLocaleResources(l)
                                 .getNumberPatterns();
-                        df = new DecimalFormat(all[0], dfs);
+                        df = new DecimalFormat(all[0], getDecimalFormatSymbols(l));
                     }
                     grpSize = df.getGroupingSize();
                     // Some locales do not use grouping (the number
@@ -4612,7 +4610,7 @@ public final class Formatter implements Closeable, Flushable {
         // group separators is added for any locale.
         private void localizedMagnitudeExp(Formatter fmt, StringBuilder sb, char[] value,
                 final int offset, Locale l) {
-            char zero = getZero(fmt, l);
+            char zero = getZero(l);
 
             int len = value.length;
             for (int j = offset; j < len; j++) {

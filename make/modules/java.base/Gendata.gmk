@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ include gendata/GendataPublicSuffixList.gmk
 
 GENDATA_UNINAME := $(JDK_OUTPUTDIR)/modules/java.base/java/lang/uniName.dat
 
-$(GENDATA_UNINAME): $(TOPDIR)/make/data/unicodedata/UnicodeData.txt $(BUILD_TOOLS_JDK)
+$(GENDATA_UNINAME): $(MODULE_SRC)/share/data/unicodedata/UnicodeData.txt $(BUILD_TOOLS_JDK)
 	$(call MakeDir, $(@D))
 	$(TOOL_CHARACTERNAME) $< $@
 
@@ -49,7 +49,7 @@ TARGETS += $(GENDATA_UNINAME)
 
 GENDATA_CURDATA := $(JDK_OUTPUTDIR)/modules/java.base/java/util/currency.data
 
-$(GENDATA_CURDATA): $(TOPDIR)/make/data/currency/CurrencyData.properties $(BUILD_TOOLS_JDK)
+$(GENDATA_CURDATA): $(MODULE_SRC)/share/data/currency/CurrencyData.properties $(BUILD_TOOLS_JDK)
 	$(call MakeDir, $(@D))
 	$(RM) $@
 	$(TOOL_GENERATECURRENCYDATA) -o $@.tmp -i $<
@@ -63,7 +63,7 @@ TARGETS += $(GENDATA_CURDATA)
 ifneq ($(CACERTS_SRC), )
   GENDATA_CACERTS_SRC := $(CACERTS_SRC)
 else
-  GENDATA_CACERTS_SRC := $(TOPDIR)/make/data/cacerts/
+  GENDATA_CACERTS_SRC := $(MODULE_SRC)/share/data/cacerts/
 endif
 GENDATA_CACERTS := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/security/cacerts
 
@@ -78,7 +78,7 @@ endif
 
 ################################################################################
 
-GENDATA_JAVA_SECURITY_SRC := $(TOPDIR)/src/java.base/share/conf/security/java.security
+GENDATA_JAVA_SECURITY_SRC := $(MODULE_SRC)/share/conf/security/java.security
 GENDATA_JAVA_SECURITY := $(SUPPORT_OUTPUTDIR)/modules_conf/java.base/security/java.security
 
 ifeq ($(UNLIMITED_CRYPTO), true)

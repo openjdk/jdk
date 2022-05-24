@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
@@ -232,19 +232,6 @@ OopStorage* ObjectMonitor::_oop_storage = NULL;
 //
 // * See also http://blogs.sun.com/dave
 
-
-void* ObjectMonitor::operator new (size_t size) throw() {
-  return AllocateHeap(size, mtInternal);
-}
-void* ObjectMonitor::operator new[] (size_t size) throw() {
-  return operator new (size);
-}
-void ObjectMonitor::operator delete(void* p) {
-  FreeHeap(p);
-}
-void ObjectMonitor::operator delete[] (void *p) {
-  operator delete(p);
-}
 
 // Check that object() and set_object() are called from the right context:
 static void check_object_context() {
@@ -1499,7 +1486,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // Enter the waiting queue, which is a circular doubly linked list in this case
   // but it could be a priority queue or any data structure.
   // _WaitSetLock protects the wait queue.  Normally the wait queue is accessed only
-  // by the the owner of the monitor *except* in the case where park()
+  // by the owner of the monitor *except* in the case where park()
   // returns because of a timeout of interrupt.  Contention is exceptionally rare
   // so we use a simple spin-lock instead of a heavier-weight blocking lock.
 
@@ -1910,7 +1897,10 @@ int ObjectMonitor::TrySpin(JavaThread* current) {
     // This is in keeping with the "no loitering in runtime" rule.
     // We periodically check to see if there's a safepoint pending.
     if ((ctr & 0xFF) == 0) {
-      if (SafepointMechanism::should_process(current)) {
+      // Can't call SafepointMechanism::should_process() since that
+      // might update the poll values and we could be in a thread_blocked
+      // state here which is not allowed so just check the poll.
+      if (SafepointMechanism::local_poll_armed(current)) {
         goto Abort;           // abrupt spin egress
       }
       SpinPause();

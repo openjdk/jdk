@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,53 +25,81 @@
 #ifndef SHARE_GC_G1_G1FULLGCPREPARETASK_HPP
 #define SHARE_GC_G1_G1FULLGCPREPARETASK_HPP
 
-#include "gc/g1/g1FullGCCompactionPoint.hpp"
-#include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1FullGCTask.hpp"
-#include "gc/g1/g1RootProcessor.hpp"
-#include "gc/g1/heapRegionManager.hpp"
-#include "gc/shared/referenceProcessor.hpp"
+#include "gc/g1/heapRegion.hpp"
+#include "memory/allocation.hpp"
 
+class G1CollectedHeap;
 class G1CMBitMap;
 class G1FullCollector;
+class G1FullGCCompactionPoint;
+class HeapRegion;
+
+// Determines the regions in the heap that should be part of the compaction and
+// distributes them among the compaction queues in round-robin fashion.
+class G1DetermineCompactionQueueClosure : public HeapRegionClosure {
+  G1CollectedHeap* _g1h;
+  G1FullCollector* _collector;
+  uint _cur_worker;
+
+  template<bool is_humongous>
+  inline void free_pinned_region(HeapRegion* hr);
+
+  inline bool should_compact(HeapRegion* hr) const;
+
+  // Returns the current worker id to assign a compaction point to, and selects
+  // the next one round-robin style.
+  inline uint next_worker();
+
+  inline G1FullGCCompactionPoint* next_compaction_point();
+
+  inline void add_to_compaction_queue(HeapRegion* hr);
+
+public:
+  G1DetermineCompactionQueueClosure(G1FullCollector* collector);
+
+  inline bool do_heap_region(HeapRegion* hr) override;
+};
 
 class G1FullGCPrepareTask : public G1FullGCTask {
-protected:
-  volatile bool     _freed_regions;
+  volatile bool     _has_free_compaction_targets;
   HeapRegionClaimer _hrclaimer;
 
-  void set_freed_regions();
+  void set_has_free_compaction_targets();
 
 public:
   G1FullGCPrepareTask(G1FullCollector* collector);
   void work(uint worker_id);
-  void prepare_serial_compaction();
-  bool has_freed_regions();
+  // After the Prepare phase, are there any unused (empty) regions (compaction
+  // targets) at the end of any compaction queues?
+  bool has_free_compaction_targets();
 
-protected:
+private:
   class G1CalculatePointersClosure : public HeapRegionClosure {
-  private:
-    template<bool is_humongous>
-    void free_pinned_region(HeapRegion* hr);
-  protected:
     G1CollectedHeap* _g1h;
     G1FullCollector* _collector;
     G1CMBitMap* _bitmap;
     G1FullGCCompactionPoint* _cp;
-    bool _regions_freed;
 
-    bool should_compact(HeapRegion* hr);
     void prepare_for_compaction(HeapRegion* hr);
-    void prepare_for_compaction_work(G1FullGCCompactionPoint* cp, HeapRegion* hr);
-
-    void reset_region_metadata(HeapRegion* hr);
 
   public:
     G1CalculatePointersClosure(G1FullCollector* collector,
                                G1FullGCCompactionPoint* cp);
 
     bool do_heap_region(HeapRegion* hr);
-    bool freed_regions();
+  };
+
+  class G1ResetMetadataClosure : public HeapRegionClosure {
+    G1CollectedHeap* _g1h;
+    G1FullCollector* _collector;
+
+    void reset_region_metadata(HeapRegion* hr);
+
+  public:
+    G1ResetMetadataClosure(G1FullCollector* collector);
+
+    bool do_heap_region(HeapRegion* hr);
   };
 
   class G1PrepareCompactLiveClosure : public StackObj {
@@ -81,19 +109,20 @@ protected:
     G1PrepareCompactLiveClosure(G1FullGCCompactionPoint* cp);
     size_t apply(oop object);
   };
+};
 
-  class G1RePrepareClosure : public StackObj {
-    G1FullGCCompactionPoint* _cp;
-    HeapRegion* _current;
+// Closure to re-prepare objects in the serial compaction point queue regions for
+// serial compaction.
+class G1SerialRePrepareClosure : public StackObj {
+  G1FullGCCompactionPoint* _cp;
+  HeapRegion* _current;
 
-  public:
-    G1RePrepareClosure(G1FullGCCompactionPoint* hrcp,
-                       HeapRegion* hr) :
-        _cp(hrcp),
-        _current(hr) { }
+public:
+  G1SerialRePrepareClosure(G1FullGCCompactionPoint* hrcp, HeapRegion* hr) :
+    _cp(hrcp),
+    _current(hr) { }
 
-    size_t apply(oop object);
-  };
+  inline size_t apply(oop obj);
 };
 
 #endif // SHARE_GC_G1_G1FULLGCPREPARETASK_HPP

@@ -50,7 +50,7 @@ public:
 
   class G1CompactRegionClosure : public StackObj {
     G1CMBitMap* _bitmap;
-
+    void clear_in_prev_bitmap(oop object);
   public:
     G1CompactRegionClosure(G1CMBitMap* bitmap) : _bitmap(bitmap) { }
     size_t apply(oop object);

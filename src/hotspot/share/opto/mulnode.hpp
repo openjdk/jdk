@@ -83,7 +83,7 @@ public:
 
   static MulNode* make(Node* in1, Node* in2, BasicType bt);
 
-  static bool AndIL_shift_and_mask(PhaseGVN* phase, Node* mask, Node* shift, BasicType bt);
+  static bool AndIL_shift_and_mask_is_always_zero(PhaseGVN* phase, Node* shift, Node* mask, BasicType bt, bool check_reverse);
   Node* AndIL_add_shift_and_mask(PhaseGVN* phase, BasicType bt);
 };
 
@@ -228,6 +228,8 @@ public:
   LShiftNode(Node *in1, Node *in2) : Node(NULL,in1,in2) {
     init_class_id(Class_LShift);
   }
+
+  static LShiftNode* make(Node* in1, Node* in2, BasicType bt);
 };
 
 //------------------------------LShiftINode------------------------------------

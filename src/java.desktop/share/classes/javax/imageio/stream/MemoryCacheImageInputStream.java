@@ -61,7 +61,7 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
      *
      * @param stream an {@code InputStream} to read from.
      *
-     * @exception IllegalArgumentException if {@code stream} is
+     * @throws IllegalArgumentException if {@code stream} is
      * {@code null}.
      */
     public MemoryCacheImageInputStream(InputStream stream) {

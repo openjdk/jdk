@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@
  *          jdk.httpserver
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicLoaderConstraintsTest custom-zgc
+ * @run main/othervm/timeout=180 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicLoaderConstraintsTest custom-zgc
  */
 
 import com.sun.net.httpserver.HttpExchange;
@@ -130,7 +130,7 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
   static void doTest(boolean errorInDump) throws Exception  {
         for (int i = 1; i <= 3; i++) {
             System.out.println("========================================");
-            System.out.println("errorInDump: " + errorInDump + ", useCustomLoader: " + useCustomLoader + ", case: " + i);
+            System.out.println("errorInDump: " + errorInDump + ", useCustomLoader: " + useCustomLoader + ", useZGC: " + useZGC + ", case: " + i);
             System.out.println("========================================");
             String topArchiveName = getNewArchiveName();
             String testCase = Integer.toString(i);
@@ -148,6 +148,7 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
                     cmdLine = TestCommon.concat(cmdLine, "-cp", loaderJar,
                                                 "-XX:+UseZGC", "-XX:ZCollectionInterval=0.01",
                                                 loaderMainClass, appJar);
+                    setBaseArchiveOptions("-XX:+UseZGC", "-Xlog:cds");
                 } else {
                     cmdLine = TestCommon.concat(cmdLine, "-cp", loaderJar,
                                                 loaderMainClass, appJar);
