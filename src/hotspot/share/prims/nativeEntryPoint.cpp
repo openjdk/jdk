@@ -30,12 +30,12 @@
 #include "memory/resourceArea.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
-#include "prims/foreign_globals.inline.hpp"
-#include "prims/universalNativeInvoker.hpp"
+#include "prims/foreignGlobals.inline.hpp"
+#include "prims/downcallLinker.hpp"
 #include "runtime/jniHandles.inline.hpp"
 
-JNI_ENTRY(jlong, NEP_makeInvoker(JNIEnv* env, jclass _unused, jobject method_type, jobject jabi,
-                                 jobjectArray arg_moves, jobjectArray ret_moves, jboolean needs_return_buffer))
+JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject method_type, jobject jabi,
+                                      jobjectArray arg_moves, jobjectArray ret_moves, jboolean needs_return_buffer))
   ResourceMark rm;
   const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
 
@@ -73,11 +73,11 @@ JNI_ENTRY(jlong, NEP_makeInvoker(JNIEnv* env, jclass _unused, jobject method_typ
     output_regs.push(ForeignGlobals::parse_vmstorage(ret_moves_oop->obj_at(i)));
   }
 
-  return (jlong) ProgrammableInvoker::make_native_invoker(
+  return (jlong) DowncallLinker::make_downcall_stub(
     basic_type, pslots, ret_bt, abi, input_regs, output_regs, needs_return_buffer)->code_begin();
 JNI_END
 
-JNI_ENTRY(jboolean, NEP_freeInvoker(JNIEnv* env, jclass _unused, jlong invoker))
+JNI_ENTRY(jboolean, NEP_freeDowncallStub(JNIEnv* env, jclass _unused, jlong invoker))
   // safe to call without code cache lock, because stub is always alive
   CodeBlob* cb = CodeCache::find_blob((char*) invoker);
   if (cb == nullptr) {
@@ -94,8 +94,8 @@ JNI_END
 #define VM_STORAGE_ARR "[Ljdk/internal/foreign/abi/VMStorage;"
 
 static JNINativeMethod NEP_methods[] = {
-  {CC "makeInvoker", CC "(" METHOD_TYPE ABI_DESC VM_STORAGE_ARR VM_STORAGE_ARR "Z)J", FN_PTR(NEP_makeInvoker)},
-  {CC "freeInvoker0", CC "(J)Z", FN_PTR(NEP_freeInvoker)},
+  {CC "makeDowncallStub", CC "(" METHOD_TYPE ABI_DESC VM_STORAGE_ARR VM_STORAGE_ARR "Z)J", FN_PTR(NEP_makeDowncallStub)},
+  {CC "freeDowncallStub0", CC "(J)Z", FN_PTR(NEP_freeDowncallStub)},
 };
 
 #undef METHOD_TYPE

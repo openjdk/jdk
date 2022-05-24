@@ -420,5 +420,5 @@ void G1FullCollector::verify_after_marking() {
   // (including hash values) are restored to the appropriate
   // objects.
   GCTraceTime(Info, gc, verify) tm("Verifying During GC (full)");
-  _heap->verify(VerifyOption_G1UseFullMarking);
+  _heap->verify(VerifyOption::G1UseFullMarking);
 }
