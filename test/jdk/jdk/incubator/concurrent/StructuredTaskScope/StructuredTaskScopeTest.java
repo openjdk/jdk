@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug JDK-8284199
+ * @bug 8284199
  * @summary Basic tests for StructuredTaskScope
  * @enablePreview
  * @modules jdk.incubator.concurrent
@@ -499,7 +499,7 @@ public class StructuredTaskScopeTest {
             long startMillis = millisTime();
             scope.joinUntil(Instant.now().plusSeconds(30));
             assertTrue(future.isDone() && future.resultNow() == null);
-            checkDuration(startMillis, 1900, 4000);
+            expectDuration(startMillis, /*min*/1900, /*max*/20_000);
         }
     }
 
@@ -520,7 +520,7 @@ public class StructuredTaskScopeTest {
             try {
                 scope.joinUntil(Instant.now().plusSeconds(2));
             } catch (TimeoutException e) {
-                checkDuration(startMillis, 1900, 4000);
+                expectDuration(startMillis, /*min*/1900, /*max*/20_000);
             }
             assertFalse(future.isDone());
         }
@@ -1237,7 +1237,7 @@ public class StructuredTaskScopeTest {
      * @param max maximum expected duration, in milliseconds
      * @return the duration (now - start), in milliseconds
      */
-    private static long checkDuration(long start, long min, long max) {
+    private static long expectDuration(long start, long min, long max) {
         long duration = millisTime() - start;
         assertTrue(duration >= min,
                 "Duration " + duration + "ms, expected >= " + min + "ms");

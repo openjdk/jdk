@@ -51,21 +51,21 @@ import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.ThreadFlock;
 
 /**
- * A basic API for <em>structured concurrency</em>. StructuredTaskScope supports cases
- * where a task splits into several concurrent sub-tasks, to be executed in their own
- * threads, and where the sub-tasks must complete before the main task continues. A
- * StructuredTaskScope can be used to ensure that the lifetime of a concurrent operation
- * is confined by a <em>syntax block</em>, just like that of a sequential operation in
- * structured programming.
+ * A basic API for <em>structured concurrency</em>. {@code StructuredTaskScope} supports
+ * cases where a task splits into several concurrent subtasks, to be executed in their
+ * own threads, and where the subtasks must complete before the main task continues. A
+ * {@code StructuredTaskScope} can be used to ensure that the lifetime of a concurrent
+ * operation is confined by a <em>syntax block</em>, just like that of a sequential
+ * operation in structured programming.
  *
  * <h2>Basic usage</h2>
  *
- * A StructuredTaskScope is created with one of its public constructors. It defines
+ * A {@code StructuredTaskScope} is created with one of its public constructors. It defines
  * the {@link #fork(Callable) fork} method to start a thread to execute a task, the {@link
  * #join() join} method to wait for all threads to finish, and the {@link #close() close}
  * method to close the task scope. The API is intended to be used with the {@code
  * try-with-resources} construct. The intention is that code in the <em>block</em> uses
- * the {@code fork} method to fork threads to execute the sub-tasks, wait for the threads
+ * the {@code fork} method to fork threads to execute the subtasks, wait for the threads
  * to finish with the {@code join} method, and then <em>process the results</em>.
  * Processing of results may include handling or re-throwing of exceptions.
  * {@snippet lang=java :
@@ -81,41 +81,44 @@ import jdk.internal.misc.ThreadFlock;
  *     } // close                                         // @highlight substring="close"
  * }
  * To ensure correct usage, the {@code join} and {@code close} methods may only be invoked
- * by the <em>owner</em> (the thread that opened/created the StructuredTaskScope), and the
+ * by the <em>owner</em> (the thread that opened/created the task scope}, and the
  * {@code close} method throws an exception after closing if the owner did not invoke the
  * {@code join} method after forking.
  *
- * <p> StructuredTaskScope defines the {@link #shutdown() shutdown} method to shut down a
- * task scope without closing it. Shutdown is useful for cases where a task completes with
- * a result (or exception) and the results of other unfinished tasks are no longer needed.
- * Invoking {@code shutdown} while the owner is waiting in the {@code join} method will
- * cause {@code join} to wakeup. It also interrupts all unfinished threads and prevents
- * new threads from starting in the task scope.
+ * <p> {@code StructuredTaskScope} defines the {@link #shutdown() shutdown} method to shut
+ * down a task scope without closing it. Shutdown is useful for cases where a subtask
+ * completes with a result (or exception) and the results of other unfinished subtasks are
+ * no longer needed. If a subtask invokes {@code shutdown} while the owner is waiting in
+ * the {@code join} method then it will cause {@code join} to wakeup, all unfinished
+ * threads to be {@linkplain Thread#interrupt() interrupted} and prevents new threads
+ * from starting in the task scope.
  *
  * <h2>Subclasses with policies for common cases</h2>
  *
- * Two subclasses of StructuredTaskScope are defined to implement policy for common cases:
+ * Two subclasses of {@code StructuredTaskScope} are defined to implement policy for
+ * common cases:
  * <ol>
  *   <li> {@link ShutdownOnSuccess ShutdownOnSuccess} captures the first result and
  *   shuts down the task scope to interrupt unfinished threads and wakeup the owner. This
- *   class is intended for cases where the result of any task will do ("invoke any") and
- *   where there is no need to wait for results of other unfinished tasks. It defines
- *   methods to get the first result or throw an exception if all tasks fail.
+ *   class is intended for cases where the result of any subtask will do ("invoke any")
+ *   and where there is no need to wait for results of other unfinished tasks. It defines
+ *   methods to get the first result or throw an exception if all subtasks fail.
  *   <li> {@link ShutdownOnFailure ShutdownOnFailure} captures the first exception and
  *   shuts down the task scope. This class is intended for cases where the results of all
- *   tasks are required ("invoke all"); if any task fails then the results of other
- *   unfinished tasks are no longer needed. If defines methods to throw an exception if
- *   any of the tasks fail.
+ *   subtasks are required ("invoke all"); if any subtask fails then the results of other
+ *   unfinished subtasks are no longer needed. If defines methods to throw an exception if
+ *   any of the subtasks fail.
  * </ol>
  *
  * <p> The following are two examples that use the two classes. In both cases, a pair of
- * tasks are forked to fetch resources from two URL locations "left" and "right". The first
- * example creates a ShutdownOnSuccess object to capture the result of the first task to
- * complete normally, cancelling the other by way of shutting down the task scope. The main
- * task waits in {@code join} until either task completes with a result or both tasks fail.
- * It invokes {@link ShutdownOnSuccess#result(Function) result(Function)} method to get the
- * captured result. If both tasks fail then this method throws WebApplicationException with
- * the exception from one of the tasks as the cause.
+ * subtasks are forked to fetch resources from two URL locations "left" and "right". The
+ * first example creates a ShutdownOnSuccess object to capture the result of the first
+ * subtask to complete normally, cancelling the other by way of shutting down the task
+ * scope. The main task waits in {@code join} until either subtask completes with a result
+ * or both subtasks fail. It invokes {@link ShutdownOnSuccess#result(Function)
+ * result(Function)} method to get the captured result. If both subtasks fail then this
+ * method throws a {@code WebApplicationException} with the exception from one of the
+ * subtasks as the cause.
  * {@snippet lang=java :
  *     try (var scope = new StructuredTaskScope.ShutdownOnSuccess<String>()) {
  *
@@ -131,12 +134,13 @@ import jdk.internal.misc.ThreadFlock;
  *     }
  * }
  * The second example creates a ShutdownOnFailure object to capture the exception of the
- * first task to fail, cancelling the other by way of shutting down the task scope. The
- * main task waits in {@link #joinUntil(Instant)} until both tasks complete with a result,
- * either fails, or a deadline is reached. It invokes {@link
+ * first subtask to fail, cancelling the other by way of shutting down the task scope. The
+ * main task waits in {@link #joinUntil(Instant)} until both subtasks complete with a
+ * result, either fails, or a deadline is reached. It invokes {@link
  * ShutdownOnFailure#throwIfFailed(Function) throwIfFailed(Function)} to throw an exception
- * when either task fails. This method is a no-op if no tasks fail. The main task uses
- * {@code Future}'s {@link Future#resultNow() resultNow()} method to retrieve the results.
+ * when either subtask fails. This method is a no-op if no subtasks fail. The main task
+ * uses {@code Future}'s {@link Future#resultNow() resultNow()} method to retrieve the
+ * results.
  *
  * {@snippet lang=java :
  *    Instant deadline = ...
@@ -151,7 +155,7 @@ import jdk.internal.misc.ThreadFlock;
  *         // @link substring="throwIfFailed" target="ShutdownOnFailure#throwIfFailed" :
  *         scope.throwIfFailed(e -> new WebApplicationException(e));
  *
- *         // both tasks completed successfully
+ *         // both subtasks completed successfully
  *         String result = Stream.of(future1, future2)
  *                 // @link substring="Future::resultNow" target="Future#resultNow" :
  *                 .map(Future::resultNow)
@@ -163,22 +167,23 @@ import jdk.internal.misc.ThreadFlock;
  *
  * <h2>Extending StructuredTaskScope</h2>
  *
- * StructuredTaskScope can be extended, and the {@link #handleComplete(Future) handleComplete}
- * overridden, to implement policies other than those implemented by {@code ShutdownOnSuccess}
- * and {@code ShutdownOnFailure}. The method may be overridden to, for example, collect
- * the results of tasks that complete with a result and ignore tasks that fail. It may
- * collect exceptions when tasks fail. It may invoke the {@link #shutdown() shutdown}
- * method to shut down and cause {@link #join() join} to wakeup when some condition arises.
+ * {@code StructuredTaskScope} can be extended, and the {@link #handleComplete(Future)
+ * handleComplete} overridden, to implement policies other than those implemented by
+ * {@code ShutdownOnSuccess} and {@code ShutdownOnFailure}. The method may be overridden
+ * to, for example, collect the results of subtasks that complete with a result and ignore
+ * subtasks that fail. It may collect exceptions when subtasks fail. It may invoke the
+ * {@link #shutdown() shutdown} method to shut down and cause {@link #join() join} to
+ * wakeup when some condition arises.
  *
  * <p> A subclass will typically define methods to make available results, state, or other
  * outcome to code that executes after the {@code join} method. A subclass that collects
- * results and ignores tasks that fail may define a method that returns a collection of
- * results. A subclass that implements a policy to shut down when a task fails may define
- * a method to retrieve the exception of the first task to fail.
+ * results and ignores subtasks that fail may define a method that returns a collection of
+ * results. A subclass that implements a policy to shut down when a subtask fails may
+ * define a method to retrieve the exception of the first subtask to fail.
  *
- * <p> The following is an example of a StructuredTaskScope implementation that collects the
- * results of tasks that complete successfully. It defines the method <b>{@code results()}</b>
- * to be used by the main task to retrieve the results.
+ * <p> The following is an example of a {@code StructuredTaskScope} implementation that
+ * collects the results of subtasks that complete successfully. It defines the method
+ * <b>{@code results()}</b> to be used by the main task to retrieve the results.
  *
  * {@snippet lang=java :
  *     class MyScope<T> extends StructuredTaskScope<T> {
@@ -197,7 +202,7 @@ import jdk.internal.misc.ThreadFlock;
  *             }
  *         }
  *
- *         // Returns a stream of results from tasks that completed successfully.
+ *         // Returns a stream of results from the subtasks that completed successfully
  *         public Stream<T> results() {     // @highlight substring="results"
  *             return results.stream();
  *         }
@@ -220,20 +225,22 @@ import jdk.internal.misc.ThreadFlock;
  *
  * <p> The tree structure supports confinement checks. The phrase "threads contained in
  * the task scope" in method descriptions means threads started in the task scope or
- * descendant scopes. StructuredTaskScope does not define APIs that exposes the tree
- * structure at this time.
+ * descendant scopes. {@code StructuredTaskScope} does not define APIs that exposes the
+ * tree structure at this time.
  *
  * <p> Unless otherwise specified, passing a {@code null} argument to a constructor
  * or method in this class will cause a {@link NullPointerException} to be thrown.
  *
  * <h2>Memory consistency effects</h2>
  *
- * <p>Actions in the owner thread of, or a thread contained in, the task scope prior to
+ * <p> Actions in the owner thread of, or a thread contained in, the task scope prior to
  * {@linkplain #fork forking} of a {@code Callable} task
  * <a href="../../../../java.base/java/util/concurrent/package-summary.html#MemoryVisibility">
  * <i>happen-before</i></a> any actions taken by that task, which in turn <i>happen-before</i>
  * the task result is retrieved via its {@code Future}, or <i>happen-before</i> any actions
  * taken in a thread after {@linkplain #join() joining} of the task scope.
+ *
+ * @jls 17.4.5 Happens-before Order
  *
  * @param <T> the result type of tasks executed in the scope
  * @since 19
@@ -349,12 +356,12 @@ public class StructuredTaskScope<T> implements AutoCloseable {
     /**
      * Invoked when a task completes before the scope is shut down.
      *
-     * <p> The {@code handleComplete} method should be thread safe. It may be
-     * invoked by several threads at around the same.
+     * <p> The {@code handleComplete} method should be thread safe. It may be invoked by
+     * several threads concurrently.
      *
      * @implSpec The default implementation does nothing.
      *
-     * @param future the Future for the completed task
+     * @param future the completed task
      */
     protected void handleComplete(Future<T> future) { }
 
@@ -373,7 +380,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * is cancelled then the {@code handleComplete} method may or may not be invoked.
      *
      * <p> If this task scope is {@linkplain #shutdown() shutdown} (or in the process
-     * of shutting down) then {@code fork} returns a Future representing a {@link
+     * of shutting down) then {@code fork} returns a {@code Future} representing a {@link
      * Future.State#CANCELLED cancelled} task that was not run.
      *
      * <p> This method may only be invoked by the task scope owner or threads contained
@@ -458,9 +465,9 @@ public class StructuredTaskScope<T> implements AutoCloseable {
     /**
      * Wait for all threads to finish or the task scope to shut down. This method waits
      * until all threads started in the task scope finish execution (of both task and
-     * {@link #handleComplete(Future) handleComplete} method), or the {@link #shutdown()
+     * {@link #handleComplete(Future) handleComplete} method), the {@link #shutdown()
      * shutdown} method is invoked to shut down the task scope, or the current thread
-     * is interrupted.
+     * is {@linkplain Thread#interrupt() interrupted}.
      *
      * <p> This method may only be invoked by the task scope owner.
      *
@@ -483,7 +490,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * deadline. This method waits until all threads started in the task scope finish
      * execution (of both task and {@link #handleComplete(Future) handleComplete} method),
      * the {@link #shutdown() shutdown} method is invoked to shut down the task scope,
-     * the current thread is interrupted, or the deadline is reached.
+     * the current thread is {@linkplain Thread#interrupt() interrupted}, or the deadline
+     * is reached.
      *
      * <p> This method may only be invoked by the task scope owner.
      *
@@ -570,7 +578,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * Shut down the task scope without closing it. Shutting down a task scope prevents
      * new threads from starting, interrupts all unfinished threads, and causes the
      * {@link #join() join} method to wakeup. Shutdown is useful for cases where the
-     * results of unfinished tasks are no longer needed.
+     * results of unfinished subtasks are no longer needed.
      *
      * <p> More specifically, this method:
      * <ul>
@@ -583,9 +591,9 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * join} or {@code joinUntil} will return immediately.
      * </ul>
      *
-     * <p> When this method completes then the Future objects for all tasks will be
-     * {@linkplain Future#isDone() done}, normally or abnormally. There may still be
-     * threads that have not finished because they are executing code that did not
+     * <p> When this method completes then the {@code Future} objects for all tasks will
+     * be {@linkplain Future#isDone() done}, normally or abnormally. There may still
+     * be threads that have not finished because they are executing code that did not
      * respond (or respond promptly) to thread interrupt. This method does not wait
      * for these threads. When the owner invokes the {@link #close() close} method
      * to close the task scope then it will wait for the remaining threads to finish.
@@ -615,11 +623,11 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      *
      * <p> This method may only be invoked by the task scope owner.
      *
-     * <p> A StructuredTaskScope is intended to be used in a <em>structured manner</em>.
-     * If this method is called to close a task scope before nested task scopes are closed
-     * then it closes the underlying construct of each nested task scope (in the reverse
-     * order that they were created in), closes this task scope, and then throws {@link
-     * StructureViolationException}.
+     * <p> A {@code StructuredTaskScope} is intended to be used in a <em>structured
+     * manner</em>. If this method is called to close a task scope before nested task
+     * scopes are closed then it closes the underlying construct of each nested task scope
+     * (in the reverse order that they were created in), closes this task scope, and then
+     * throws {@link StructureViolationException}.
      *
      * @throws IllegalStateException thrown after closing the task scope if the owner
      * did not invoke join after forking
@@ -780,12 +788,12 @@ public class StructuredTaskScope<T> implements AutoCloseable {
             Comparator.comparingInt(StructuredTaskScope::futureStateToInt);
 
     /**
-     * A StructuredTaskScope that captures the result of the first task to complete
-     * successfully. Once captured, it invokes the {@linkplain #shutdown() shutdown}
+     * A {@code StructuredTaskScope} that captures the result of the first subtask to
+     * complete successfully. Once captured, it invokes the {@linkplain #shutdown() shutdown}
      * method to interrupt unfinished threads and wakeup the owner. The policy
-     * implemented by this class is intended for cases where the result of any task will
-     * do ("invoke any") and where the results of other unfinished tasks are no longer
-     * needed.
+     * implemented by this class is intended for cases where the result of any subtask
+     * will do ("invoke any") and where the results of other unfinished subtask are no
+     * longer needed.
      *
      * <p> Unless otherwise specified, passing a {@code null} argument to a method
      * in this class will cause a {@link NullPointerException} to be thrown.
@@ -806,7 +814,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         private volatile Future<T> future;
 
         /**
-         * Constructs a new ShutdownOnSuccess with the given name and thread factory.
+         * Constructs a new {@code ShutdownOnSuccess} with the given name and thread factory.
          * The task scope is optionally named for the purposes of monitoring and management.
          * The thread factory is used to {@link ThreadFactory#newThread(Runnable) create}
          * threads when tasks are {@linkplain #fork(Callable) forked}. The task scope is
@@ -820,7 +828,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         /**
-         * Constructs a new unnamed ShutdownOnSuccess that creates virtual threads.
+         * Constructs a new unnamed {@code ShutdownOnSuccess} that creates virtual threads.
          *
          * <p> This method is equivalent to invoking the 2-arg constructor with a name of
          * {@code null} and a thread factory that creates virtual threads.
@@ -830,8 +838,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         /**
-         * Shut down the given task scope when invoked for the first time with a task
-         * that completed with a result.
+         * Shut down the given task scope when invoked for the first time with a {@code
+         * Future} for a task that completed with a result.
          *
          * @param future the completed task
          * @see #shutdown()
@@ -882,28 +890,29 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         /**
-         * {@return the result of the first task that completed with a result}
+         * {@return the result of the first subtask that completed with a result}
          *
-         * <p> When no task completed with a result but a task completed with an exception
-         * then {@code ExecutionException} is thrown with the exception as the {@linkplain
-         * Throwable#getCause() cause}. If only cancelled tasks were notified to the {@code
-         * handle} method then {@code CancellationException} is thrown.
+         * <p> When no subtask completed with a result but a task completed with an
+         * exception then {@code ExecutionException} is thrown with the exception as the
+         * {@linkplain Throwable#getCause() cause}. If only cancelled subtasks were
+         * notified to the {@code handleComplete} method then {@code CancellationException}
+         * is thrown.
          *
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
          * The behavior of this method is unspecified when invoking this method before
-         * the join is done.
+         * the {@code join} is invoked.
          *
-         * @throws ExecutionException if no tasks completed with a result but a task
+         * @throws ExecutionException if no subtasks completed with a result but a subtask
          * completed with an exception
-         * @throws CancellationException if all tasks were cancelled
+         * @throws CancellationException if all subtasks were cancelled
          * @throws IllegalStateException if the handle method was not invoked with a
-         * completed task
+         * completed subtask
          */
         public T result() throws ExecutionException {
             Future<T> f = future;
             if (f == null) {
-                throw new IllegalStateException("No completed tasks");
+                throw new IllegalStateException("No completed subtasks");
             }
             return switch (f.state()) {
                 case SUCCESS   -> f.resultNow();
@@ -915,32 +924,31 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         /**
-         * Returns the result of the first task that completed with a result, otherwise
+         * Returns the result of the first subtask that completed with a result, otherwise
          * throws an exception produced by the given exception supplying function.
          *
-         * <p> When no task completed with a result but a task completed with an
-         * exception then the exception supplying function is invoked with the
-         * exception. If only cancelled tasks were notified to the {@code handleComplete}
-         * method then the exception supplying function is invoked with a
-         * {@code CancellationException}.
+         * <p> When no subtask completed with a result but a subtask completed with an
+         * exception then the exception supplying function is invoked with the exception.
+         * If only cancelled subtasks were notified to the {@code handleComplete} method
+         * then the exception supplying function is invoked with a {@code CancellationException}.
          *
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
          * The behavior of this method is unspecified when invoking this method before
-         * the join is done.
+         * the {@code join} is invoked.
          *
          * @param esf the exception supplying function
          * @param <X> type of the exception to be thrown
-         * @return the result of the first task that completed with a result
-         * @throws X if no task completed with a result
+         * @return the result of the first subtask that completed with a result
+         * @throws X if no subtask completed with a result
          * @throws IllegalStateException if the handle method was not invoked with a
-         * completed task
+         * completed subtask
          */
         public <X extends Throwable> T result(Function<Throwable, ? extends X> esf) throws X {
             Objects.requireNonNull(esf);
             Future<T> f = future;
             if (f == null) {
-                throw new IllegalStateException("No completed tasks");
+                throw new IllegalStateException("No completed subtasks");
             }
             Future.State state = f.state();
             if (state == Future.State.SUCCESS) {
@@ -957,11 +965,12 @@ public class StructuredTaskScope<T> implements AutoCloseable {
     }
 
     /**
-     * A StructuredTaskScope that captures the exception of the first task to complete
-     * abnormally. Once captured, it invokes the {@linkplain #shutdown() shutdown} method
-     * to interrupt unfinished threads and wakeup the owner. The policy implemented by this
-     * class is intended for cases where the results for all tasks are required ("invoke all");
-     * if any task fails then the results of other unfinished tasks are no longer needed.
+     * A {@code StructuredTaskScope} that captures the exception of the first subtask to
+     * complete abnormally. Once captured, it invokes the {@linkplain #shutdown() shutdown}
+     * method to interrupt unfinished threads and wakeup the owner. The policy implemented
+     * by this class is intended for cases where the results for all subtasks are required
+     * ("invoke all"); if any subtask fails then the results of other unfinished subtasks
+     * are no longer needed.
      *
      * <p> Unless otherwise specified, passing a {@code null} argument to a method
      * in this class will cause a {@link NullPointerException} to be thrown.
@@ -981,11 +990,11 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         private volatile Future<Object> future;
 
         /**
-         * Constructs a new ShutdownOnSuccess with the given name and thread factory.
+         * Constructs a new {@code ShutdownOnFailure} with the given name and thread factory.
          * The task scope is optionally named for the purposes of monitoring and management.
          * The thread factory is used to {@link ThreadFactory#newThread(Runnable) create}
-         * threads when tasks are {@linkplain #fork(Callable) forked}. The task scope is
-         * owned by the current thread.
+         * threads when tasks are {@linkplain #fork(Callable) forked}. The task scope
+         * is owned by the current thread.
          *
          * @param name the name of the task scope, can be null
          * @param factory the thread factory
@@ -995,7 +1004,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         /**
-         * Constructs a new unnamed ShutdownOnFailure that creates virtual threads.
+         * Constructs a new unnamed {@code ShutdownOnFailure} that creates virtual threads.
          *
          * <p> This method is equivalent to invoking the 2-arg constructor with a name of
          * {@code null} and a thread factory that creates virtual threads.
@@ -1005,8 +1014,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         /**
-         * Shut down the given task scope when invoked for the first time with a task
-         * that completed abnormally (exception or cancelled).
+         * Shut down the given task scope when invoked for the first time with a {@code
+         * Future} for a task that completed abnormally (exception or cancelled).
          *
          * @param future the completed task
          * @see #shutdown()
@@ -1061,19 +1070,19 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         /**
-         * Returns the exception for the first task that completed with an exception.
-         * If no task completed with an exception but cancelled tasks were notified
+         * Returns the exception for the first subtask that completed with an exception.
+         * If no subtask completed with an exception but cancelled subtasks were notified
          * to the {@code handleComplete} method then a {@code CancellationException}
-         * is returned. If no tasks completed abnormally then an empty {@code Optional}
+         * is returned. If no subtasks completed abnormally then an empty {@code Optional}
          * is returned.
          *
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
          * The behavior of this method is unspecified when invoking this method before
-         * the join is done.
+         * the {@code join} is invoked.
          *
-         * @return the exception for a task that completed abnormally or an empty
-         * optional if no tasks completed abnormally
+         * @return the exception for a subtask that completed abnormally or an empty
+         * optional if no subtasks completed abnormally
          */
         public Optional<Throwable> exception() {
             Future<Object> f = future;
@@ -1088,21 +1097,21 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         /**
-         * Throws if a task completed abnormally. If any task completed with an exception
-         * then {@code ExecutionException} is thrown with the exception of the first task
-         * to fail as the {@linkplain Throwable#getCause() cause}.
-         * If no task completed with an exception but cancelled tasks were notified to the
+         * Throws if a subtask completed abnormally. If any subtask completed with an
+         * exception then {@code ExecutionException} is thrown with the exception of the
+         * first subtask to fail as the {@linkplain Throwable#getCause() cause}. If no
+         * subtask completed with an exception but cancelled subtasks were notified to the
          * {@code handleComplete} method then {@code CancellationException} is thrown.
-         * This method does nothing if no tasks completed abnormally.
+         * This method does nothing if no subtasks completed abnormally.
          *
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
          * The behavior of this method is unspecified when invoking this method before
-         * the join is done.
+         * the {@code join} is invoked.
          *
-         * @throws ExecutionException if a task completed with an exception
-         * @throws CancellationException if no tasks completed with an exception but
-         * tasks were cancelled
+         * @throws ExecutionException if a subtask completed with an exception
+         * @throws CancellationException if no subtasks completed with an exception but
+         * subtasks were cancelled
          */
         public void throwIfFailed() throws ExecutionException {
             Future<Object> f = future;
@@ -1117,17 +1126,17 @@ public class StructuredTaskScope<T> implements AutoCloseable {
 
         /**
          * Throws the exception produced by the given exception supplying function if
-         * a task completed abnormally. If any task completed with an exception then
-         * the function is invoked with the exception of the first task to fail.
-         * If no task completed with an exception but cancelled tasks were notified to
-         * the {@code handleComplete} method then the function is called with a {@code
+         * a subtask completed abnormally. If any subtask completed with an exception then
+         * the function is invoked with the exception of the first subtask to fail.
+         * If no subtask completed with an exception but cancelled subtasks were notified
+         * to the {@code handleComplete} method then the function is called with a {@code
          * CancellationException}. The exception returned by the function is thrown.
-         * This method does nothing if no tasks completed abnormally.
+         * This method does nothing if no subtasks completed abnormally.
          *
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
          * The behavior of this method is unspecified when invoking this method before
-         * the join is done.
+         * the {@code join} is invoked.
          *
          * @param esf the exception supplying function
          * @param <X> type of the exception to be thrown

@@ -28,7 +28,6 @@
  * @enablePreview
  * @modules jdk.incubator.concurrent
  * @library /test/lib
- * @ignore // waiting for JDK-8287008
  * @run testng/othervm StructuredThreadDumpTest
  */
 

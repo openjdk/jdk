@@ -37,14 +37,14 @@ public final class StructureViolationException extends RuntimeException {
     private static final long serialVersionUID = -7705327650798235468L;
 
     /**
-     * Constructs an {@code StructureViolationException} with no detail message.
+     * Constructs a {@code StructureViolationException} with no detail message.
      */
     public StructureViolationException() {
         super();
     }
 
     /**
-     * Constructs an {@code StructureViolationException} with the specified
+     * Constructs a {@code StructureViolationException} with the specified
      * detail message.
      *
      * @param  message the detail message, can be null
