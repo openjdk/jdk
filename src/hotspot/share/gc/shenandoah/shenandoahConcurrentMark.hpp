@@ -36,7 +36,6 @@ class ShenandoahConcurrentMark: public ShenandoahMark {
 
 public:
   ShenandoahConcurrentMark();
-  void start_mark();
   // Concurrent mark roots
   void mark_concurrent_roots();
   // Concurrent mark

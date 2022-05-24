@@ -33,6 +33,7 @@
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
+#include "runtime/continuation.hpp"
 
 ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q,  ShenandoahReferenceProcessor* rp) :
   MetadataVisitingOopIterateClosure(rp),
@@ -43,6 +44,22 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
 
 ShenandoahMark::ShenandoahMark() :
   _task_queues(ShenandoahHeap::heap()->marking_context()->task_queues()) {
+}
+
+void ShenandoahMark::start_mark() {
+  if (Continuations::enabled()) {
+    // Tell the sweeper that we start a marking cycle.
+    Continuations::on_gc_marking_cycle_start();
+  }
+}
+
+void ShenandoahMark::end_mark() {
+  if (Continuations::enabled()) {
+    // Tell the sweeper that we finished a marking cycle.
+    // Unlike other GCs, we do not arm the nmethods
+    // when marking terminates.
+    Continuations::on_gc_marking_cycle_finish();
+  }
 }
 
 void ShenandoahMark::clear() {

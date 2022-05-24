@@ -50,6 +50,9 @@ public:
 
   static void clear();
 
+  void start_mark();
+  void end_mark();
+
   // Helpers
   inline ShenandoahObjToScanQueueSet* task_queues() const;
   inline ShenandoahObjToScanQueue* get_queue(uint index) const;

@@ -137,11 +137,6 @@ public:
 ShenandoahConcurrentMark::ShenandoahConcurrentMark() :
   ShenandoahMark() {}
 
-void ShenandoahConcurrentMark::start_mark() {
-  // Tell the sweeper that we start a marking cycle.
-  Continuations::on_gc_marking_cycle_start();
-}
-
 // Mark concurrent roots during concurrent phases
 class ShenandoahMarkConcurrentRootsTask : public WorkerTask {
 private:
@@ -245,10 +240,7 @@ void ShenandoahConcurrentMark::finish_mark() {
   heap->set_concurrent_mark_in_progress(false);
   heap->mark_complete_marking_context();
 
-  // Tell the sweeper that we finished a marking cycle.
-  // Unlike other GCs, we do not arm the nmethods
-  // when marking terminates.
-  Continuations::on_gc_marking_cycle_finish();
+  end_mark();
 }
 
 void ShenandoahConcurrentMark::finish_mark_work() {
