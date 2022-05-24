@@ -29,13 +29,16 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Field;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -336,7 +339,25 @@ public class WhiteBoxResizeTest {
         return Arrays.asList(
                 rsc("rshm", size, cap, () -> HashMap.newHashMap(size)),
                 rsc("rslm", size, cap, () -> LinkedHashMap.newLinkedHashMap(size)),
-                rsc("rswm", size, cap, () -> WeakHashMap.newWeakHashMap(size))
+                rsc("rswm", size, cap, () -> WeakHashMap.newWeakHashMap(size)),
+                rsc("rshs", size, cap, () -> {
+                    try {
+                        Field mapField = HashSet.class.getDeclaredField("map");
+                        HashSet<String> set = HashSet.newHashSet(size);
+                        return (Map<String, String>) mapField.get(set);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }),
+                rsc("rsls", size, cap, () -> {
+                    try {
+                        Field mapField = HashSet.class.getDeclaredField("map");
+                        LinkedHashSet<String> set = LinkedHashSet.newLinkedHashSet(size);
+                        return (Map<String, String>) mapField.get(set);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                })
         );
     }
 
