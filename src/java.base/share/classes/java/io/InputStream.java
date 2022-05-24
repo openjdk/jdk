@@ -68,16 +68,20 @@ public abstract class InputStream implements Closeable {
     /**
      * Get or create a byte array for {@link #skip(long) skip}.
      *
+     * <p> Would only allocate new buffer when either the old one be too small or it be destroyed during GC.
+     *
      * @param size minimum length that the skip byte array must have.
      * @return the byte array.
      */
     private byte[] skipBuffer(int size) {
         SoftReference<byte[]> ref = this.skipBufferReference;
         byte[] buffer;
-        if (ref == null || (buffer = ref.get()) == null || buffer.length < size) {
-            buffer = new byte[size];
-            this.skipBufferReference = new SoftReference<>(buffer);
+        if (ref != null && (buffer = ref.get()) != null && buffer.length >= size) {
+            return buffer;
         }
+        // allocate new or larger buffer
+        buffer = new byte[size];
+        this.skipBufferReference = new SoftReference<>(buffer);
         return buffer;
     }
 
