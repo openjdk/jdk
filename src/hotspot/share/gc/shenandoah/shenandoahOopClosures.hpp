@@ -91,7 +91,6 @@ public:
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }
-  virtual bool do_metadata()        { return false; }
 };
 
 class ShenandoahMarkUpdateRefsMetadataClosure : public ShenandoahMarkUpdateRefsSuperClosure {
@@ -105,7 +104,6 @@ public:
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }
-  virtual bool do_metadata()        { return true; }
 };
 
 
@@ -120,7 +118,6 @@ public:
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }
-  virtual bool do_metadata()        { return true; }
 };
 
 
@@ -135,7 +132,6 @@ public:
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }
-  virtual bool do_metadata()        { return true; }
 };
 
 class ShenandoahUpdateRefsSuperClosure : public MetadataVisitingOopIterateClosure {
