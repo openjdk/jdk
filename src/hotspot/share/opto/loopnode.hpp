@@ -935,7 +935,7 @@ private:
   void update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
   void copy_skeleton_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head, Node* init, Node* stride);
   void initialize_skeleton_predicates_to_loop(ProjNode* predicate, LoopNode* outer_loop_head, int dd_outer_loop_head,
-                                              Node* init, Node* stride, IdealLoopTree* outer_loop, const uint idx_before_clone);
+                                              Node* init, Node* stride, IdealLoopTree* outer_loop, const uint idx_before_clone, const Node_List& old_new);
   void insert_loop_limit_check(ProjNode* limit_check_proj, Node* cmp_limit, Node* bol);
 #ifdef ASSERT
   bool only_has_infinite_loops();

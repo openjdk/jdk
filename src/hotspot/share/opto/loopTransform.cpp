@@ -780,10 +780,10 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
     Predicates predicates(new_head->in(LoopNode::EntryControl));
     initialize_skeleton_predicates_to_loop(predicates.predicate(),
                                            outer_loop_head, dd_outer_loop_head,
-                                           init, stride, outer_loop, idx_before_clone);
+                                           init, stride, outer_loop, idx_before_clone, old_new);
     initialize_skeleton_predicates_to_loop(predicates.profile_predicate(),
                                            outer_loop_head, dd_outer_loop_head,
-                                           init, stride, outer_loop, idx_before_clone);
+                                           init, stride, outer_loop, idx_before_clone, old_new);
  }
 
   // Now force out all loop-invariant dominating tests.  The optimizer
@@ -2074,7 +2074,8 @@ void PhaseIdealLoop::initialize_skeleton_predicates_to_loop(ProjNode* predicate,
                                                             Node* init,
                                                             Node* stride,
                                                             IdealLoopTree* outer_loop,
-                                                            const uint idx_before_clone)
+                                                            const uint idx_before_clone,
+                                                            const Node_List &old_new)
 {
   if (predicate == nullptr) {
     return;
@@ -2094,9 +2095,13 @@ void PhaseIdealLoop::initialize_skeleton_predicates_to_loop(ProjNode* predicate,
       // Rewrite any control inputs from the cloned skeleton predicate
       for (DUIterator i = predicate->outs(); predicate->has_out(i); i++) {
         Node* loop_node = predicate->out(i);
+        Node* new_node = old_new[loop_node->_idx];
 
-        if (!loop_node->is_CFG() && loop_node->_idx < idx_before_clone) {
-          // The old nodes from the remaining loop still point to the predicate above the peeled loop
+        if (!loop_node->is_CFG() &&
+            loop_node->_idx < idx_before_clone &&  // old node
+            new_node != nullptr &&                 // that was clond
+            new_node->_idx >= idx_before_clone) {  // for peeling
+          // The old nodes from the peeled loop still point to the predicate above the peeled loop
           // We need to rewrite the dependencies to the newly initialized predicates
           _igvn.replace_input_of(loop_node, 0, input_proj);
           --i; // correct for just deleted predicate->out(i)
