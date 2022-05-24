@@ -103,7 +103,7 @@ public class RemoteVmManager {
                                        + e.getMessage(), e);
         }
 
-        Set<Integer> activeSet = HashSet.newHashSet(active.length);
+        Set<Integer> activeSet = new HashSet<Integer>(active.length);
 
         for (int i = 0; i < active.length; i++) {
             activeSet.add(active[i]);

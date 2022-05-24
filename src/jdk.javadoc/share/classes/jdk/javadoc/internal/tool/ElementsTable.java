@@ -702,11 +702,15 @@ public class ElementsTable {
 
     private void initializeIncludedSets(Set<PackageElement> expandedModulePackages) {
 
-        // process modules, and add all the expanded modules
-        Set<ModuleElement> imodules = new LinkedHashSet<>(specifiedModuleElements);
+        // process modules
+        Set<ModuleElement> imodules = new LinkedHashSet<>();
+        // add all the expanded modules
+        imodules.addAll(specifiedModuleElements);
 
-        // process packages, and add all packages belonging to expanded modules
-        Set<PackageElement> ipackages = new LinkedHashSet<>(expandedModulePackages);
+        // process packages
+        Set<PackageElement> ipackages = new LinkedHashSet<>();
+        // add all packages belonging to expanded modules
+        ipackages.addAll(expandedModulePackages);
         // add all specified packages
         specifiedPackageElements.forEach(pkg -> {
             ModuleElement mdle = toolEnv.elements.getModuleOf(pkg);

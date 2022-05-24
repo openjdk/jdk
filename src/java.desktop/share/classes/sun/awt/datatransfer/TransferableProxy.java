@@ -119,7 +119,7 @@ final class ClassLoaderObjectOutputStream extends ObjectOutputStream {
                 }
             });
 
-        Set<String> s = HashSet.newHashSet(1);
+        Set<String> s = new HashSet<String>(1);
         s.add(cl.getName());
 
         map.put(s, classLoader);
@@ -134,7 +134,7 @@ final class ClassLoaderObjectOutputStream extends ObjectOutputStream {
             });
 
         Class<?>[] interfaces = cl.getInterfaces();
-        Set<String> s = HashSet.newHashSet(interfaces.length);
+        Set<String> s = new HashSet<String>(interfaces.length);
         for (int i = 0; i < interfaces.length; i++) {
             s.add(interfaces[i].getName());
         }
@@ -164,7 +164,7 @@ final class ClassLoaderObjectInputStream extends ObjectInputStream {
       throws IOException, ClassNotFoundException {
         String className = classDesc.getName();
 
-        Set<String> s = HashSet.newHashSet(1);
+        Set<String> s = new HashSet<String>(1);
         s.add(className);
 
         ClassLoader classLoader = map.get(s);
@@ -178,7 +178,7 @@ final class ClassLoaderObjectInputStream extends ObjectInputStream {
     protected Class<?> resolveProxyClass(String[] interfaces)
       throws IOException, ClassNotFoundException {
 
-        Set<String> s = HashSet.newHashSet(interfaces.length);
+        Set<String> s = new HashSet<String>(interfaces.length);
         for (int i = 0; i < interfaces.length; i++) {
             s.add(interfaces[i]);
         }

@@ -549,7 +549,8 @@ public class WinMsiBundler  extends AbstractBundler {
         cultures.add(getCultureFromWxlFile(primaryWxlFile));
 
         // Build ordered list of unique cultures.
-        Set<String> uniqueCultures = new LinkedHashSet<>(cultures);
+        Set<String> uniqueCultures = new LinkedHashSet<>();
+        uniqueCultures.addAll(cultures);
         wixPipeline.addLightOptions(uniqueCultures.stream().collect(
                 Collectors.joining(";", "-cultures:", "")));
 

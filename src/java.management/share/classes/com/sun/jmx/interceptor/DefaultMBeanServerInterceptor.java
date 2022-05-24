@@ -476,7 +476,8 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             // Check if the caller has the right to invoke 'queryMBeans'
             // on each specific classname/objectname in the list.
             //
-            Set<ObjectInstance> allowedList = HashSet.newHashSet(list.size());
+            Set<ObjectInstance> allowedList =
+                new HashSet<ObjectInstance>(list.size());
             for (ObjectInstance oi : list) {
                 try {
                     checkMBeanPermission(oi.getClassName(), null,
@@ -522,7 +523,8 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             // Check if the caller has the right to invoke 'queryNames'
             // on each specific classname/objectname in the list.
             //
-            Set<ObjectInstance> allowedList = HashSet.newHashSet(list.size());
+            Set<ObjectInstance> allowedList =
+                new HashSet<ObjectInstance>(list.size());
             for (ObjectInstance oi : list) {
                 try {
                     checkMBeanPermission(oi.getClassName(), null,
@@ -537,7 +539,7 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             //
             Set<ObjectInstance> queryObjectInstanceList =
                 filterListOfObjectInstances(allowedList, query);
-            queryList = HashSet.newHashSet(queryObjectInstanceList.size());
+            queryList = new HashSet<ObjectName>(queryObjectInstanceList.size());
             for (ObjectInstance oi : queryObjectInstanceList) {
                 queryList.add(oi.getObjectName());
             }
