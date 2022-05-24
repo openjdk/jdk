@@ -4452,7 +4452,7 @@ void C2_MacroAssembler::vector_compress_expand(int opcode, XMMRegister dst, XMMR
       evcompresspd(dst, mask, src, merge, vec_enc);
       break;
     default:
-      fatal("Unsupported type");
+      fatal("Unsupported type %s", type2name(bt));
       break;
     }
   } else {
@@ -4478,7 +4478,7 @@ void C2_MacroAssembler::vector_compress_expand(int opcode, XMMRegister dst, XMMR
       evexpandpd(dst, mask, src, merge, vec_enc);
       break;
     default:
-      fatal("Unsupported type");
+      fatal("Unsupported type %s", type2name(bt));
       break;
     }
   }
@@ -4558,7 +4558,8 @@ void C2_MacroAssembler::vbroadcast(BasicType bt, XMMRegister dst, int imm32, Reg
       case 2 : evpbroadcastw(dst, rtmp, vec_enc); break;
       case 4 : evpbroadcastd(dst, rtmp, vec_enc); break;
       case 8 : evpbroadcastq(dst, rtmp, vec_enc); break;
-      default : ShouldNotReachHere(); break;
+      fatal("Unsupported lane size %d", lane_size);
+      break;
     }
   } else {
     movptr(rtmp, imm32);
@@ -4568,7 +4569,8 @@ void C2_MacroAssembler::vbroadcast(BasicType bt, XMMRegister dst, int imm32, Reg
       case 2 : vpbroadcastw(dst, dst, vec_enc); break;
       case 4 : vpbroadcastd(dst, dst, vec_enc); break;
       case 8 : vpbroadcastq(dst, dst, vec_enc); break;
-      default : ShouldNotReachHere(); break;
+      fatal("Unsupported lane size %d", lane_size);
+      break;
     }
   }
 }
@@ -4663,7 +4665,8 @@ void C2_MacroAssembler::vector_popcount_integral(BasicType bt, XMMRegister dst, 
       vector_popcount_byte(dst, src, xtmp1, xtmp2, rtmp, vec_enc);
       break;
     default:
-      ShouldNotReachHere();
+      fatal("Unsupported type %s", type2name(bt));
+      break;
   }
 }
 
@@ -4690,7 +4693,8 @@ void C2_MacroAssembler::vector_popcount_integral_evex(BasicType bt, XMMRegister 
       evpopcntb(dst, mask, src, merge, vec_enc);
       break;
     default:
-      ShouldNotReachHere();
+      fatal("Unsupported type %s", type2name(bt));
+      break;
   }
 }
 
@@ -4729,37 +4733,22 @@ void C2_MacroAssembler::vector_reverse_bit(BasicType bt, XMMRegister dst, XMMReg
     vporq(xtmp2, dst, xtmp2, vec_enc);
     vector_reverse_byte(bt, dst, xtmp2, rtmp, vec_enc);
 
-  } else if(!VM_Version::supports_avx512vlbw() && vec_enc == Assembler::AVX_512bit) {
-
+  } else if(vec_enc == Assembler::AVX_512bit) {
     // Shift based bit reversal.
     assert(bt == T_LONG || bt == T_INT, "");
-    vbroadcast(T_INT, xtmp1, 0x0F0F0F0F, rtmp, vec_enc);
 
     // Swap lower and upper nibble of each byte.
-    vpandq(dst, xtmp1, src, vec_enc);
-    vpsllq(dst, dst, 4, vec_enc);
-    vpandn(xtmp2, xtmp1, src, vec_enc);
-    vpsrlq(xtmp2, xtmp2, 4, vec_enc);
-    vporq(xtmp1, dst, xtmp2, vec_enc);
+    vector_swap_nbits(4, 0x0F0F0F0F, xtmp1, src, xtmp2, rtmp, vec_enc);
 
     // Swap two least and most significant bits of each nibble.
-    vbroadcast(T_INT, xtmp2, 0x33333333, rtmp, vec_enc);
-    vpandq(dst, xtmp2, xtmp1, vec_enc);
-    vpsllq(dst, dst, 2, vec_enc);
-    vpandn(xtmp2, xtmp2, xtmp1, vec_enc);
-    vpsrlq(xtmp2, xtmp2, 2, vec_enc);
-    vporq(xtmp1, dst, xtmp2, vec_enc);
+    vector_swap_nbits(2, 0x33333333, dst, xtmp1, xtmp2, rtmp, vec_enc);
 
     // Swap adjacent pair of bits.
-    vbroadcast(T_INT, xtmp2, 0x55555555, rtmp, vec_enc);
-    vpandq(dst, xtmp2, xtmp1, vec_enc);
-    vpsllq(dst, dst, 1, vec_enc);
-    vpandn(xtmp2, xtmp2, xtmp1, vec_enc);
-    vpsrlq(xtmp2, xtmp2, 1, vec_enc);
-    vporq(xtmp1, dst, xtmp2, vec_enc);
+    evmovdqul(xtmp1, k0, dst, true, vec_enc);
+    vector_swap_nbits(1, 0x55555555, dst, xtmp1, xtmp2, rtmp, vec_enc);
 
+    evmovdqul(xtmp1, k0, dst, true, vec_enc);
     vector_reverse_byte64(bt, dst, xtmp1, xtmp1, xtmp2, rtmp, vec_enc);
-
   } else {
     vmovdqu(xtmp1, ExternalAddress(StubRoutines::x86::vector_reverse_bit_lut()), rtmp, vec_enc);
     vbroadcast(T_INT, xtmp2, 0x0F0F0F0F, rtmp, vec_enc);
@@ -4791,32 +4780,41 @@ void C2_MacroAssembler::vector_reverse_bit_gfni(BasicType bt, XMMRegister dst, X
   vector_reverse_byte(bt, dst, xtmp, rtmp, vec_enc);
 }
 
+void C2_MacroAssembler::vector_swap_nbits(int nbits, int bitmask, XMMRegister dst, XMMRegister src,
+                                          XMMRegister xtmp1, Register rtmp, int vec_enc) {
+  vbroadcast(T_INT, xtmp1, bitmask, rtmp, vec_enc);
+  vpandq(dst, xtmp1, src, vec_enc);
+  vpsllq(dst, dst, nbits, vec_enc);
+  vpandn(xtmp1, xtmp1, src, vec_enc);
+  vpsrlq(xtmp1, xtmp1, nbits, vec_enc);
+  vporq(dst, dst, xtmp1, vec_enc);
+}
+
 void C2_MacroAssembler::vector_reverse_byte64(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                               XMMRegister xtmp2, Register rtmp, int vec_enc) {
   // Shift based bit reversal.
   assert(VM_Version::supports_evex(), "");
-  evmovdqul(xtmp1, k0, src, true, vec_enc);
   switch(bt) {
     case T_LONG:
       // Swap upper and lower double word of each quad word.
-      evprorq(xtmp1, k0, xtmp1, 32, true, vec_enc);
+      evprorq(xtmp1, k0, src, 32, true, vec_enc);
+      evprord(xtmp1, k0, xtmp1, 16, true, vec_enc);
+      vector_swap_nbits(8, 0x00FF00FF, dst, xtmp1, xtmp2, rtmp, vec_enc);
+      break;
     case T_INT:
       // Swap upper and lower word of each double word.
-      evprord(xtmp1, k0, xtmp1, 16, true, vec_enc);
+      evprord(xtmp1, k0, src, 16, true, vec_enc);
+      vector_swap_nbits(8, 0x00FF00FF, dst, xtmp1, xtmp2, rtmp, vec_enc);
+      break;
     case T_SHORT:
       // Swap upper and lower byte of each word.
-      vbroadcast(T_INT, dst, 0x00FF00FF, rtmp, vec_enc);
-      vpandq(xtmp2, dst, xtmp1, vec_enc);
-      vpsllq(xtmp2, xtmp2, 8, vec_enc);
-      vpandn(xtmp1, dst, xtmp1, vec_enc);
-      vpsrlq(dst, xtmp1, 8, vec_enc);
-      vporq(dst, dst, xtmp2, vec_enc);
+      vector_swap_nbits(8, 0x00FF00FF, dst, src, xtmp2, rtmp, vec_enc);
       break;
     case T_BYTE:
       evmovdquq(dst, k0, src, true, vec_enc);
       break;
     default:
-      fatal("Unsupported type");
+      fatal("Unsupported type %s", type2name(bt));
       break;
   }
 }
@@ -4843,7 +4841,7 @@ void C2_MacroAssembler::vector_reverse_byte(BasicType bt, XMMRegister dst, XMMRe
       vmovdqu(dst, ExternalAddress(StubRoutines::x86::vector_reverse_byte_perm_mask_short()), rtmp, vec_enc);
       break;
     default:
-      fatal("Unsupported type");
+      fatal("Unsupported type %s", type2name(bt));
       break;
   }
   vpshufb(dst, src, dst, vec_enc);
@@ -4889,7 +4887,8 @@ void C2_MacroAssembler::vector_count_leading_zeros_evex(BasicType bt, XMMRegiste
       evpaddb(dst, ktmp, dst, xtmp2, true, vec_enc);
       break;
     default:
-      ShouldNotReachHere();
+      fatal("Unsupported type %s", type2name(bt));
+      break;
   }
 }
 
@@ -5015,7 +5014,8 @@ void C2_MacroAssembler::vector_count_leading_zeros_avx(BasicType bt, XMMRegister
       vector_count_leading_zeros_byte_avx(dst, src, xtmp1, xtmp2, xtmp3, rtmp, vec_enc);
       break;
     default:
-      ShouldNotReachHere();
+      fatal("Unsupported type %s", type2name(bt));
+      break;
   }
 }
 
@@ -5034,7 +5034,8 @@ void C2_MacroAssembler::vpsub(BasicType bt, XMMRegister dst, XMMRegister src1, X
       vpsubq(dst, src1, src2, vec_enc);
       break;
     default:
-      ShouldNotReachHere();
+      fatal("Unsupported type %s", type2name(bt));
+      break;
   }
 }
 
@@ -5053,7 +5054,8 @@ void C2_MacroAssembler::vpadd(BasicType bt, XMMRegister dst, XMMRegister src1, X
       vpaddq(dst, src1, src2, vec_enc);
       break;
     default:
-      ShouldNotReachHere();
+      fatal("Unsupported type %s", type2name(bt));
+      break;
   }
 }
 

@@ -8876,13 +8876,9 @@ instruct vcount_trailing_zeros_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, v
     // should be succeeded by its corresponding vector IR and following
     // special handling should be removed.
     if (bt == T_LONG && rbt == T_INT) {
-      if (VM_Version::supports_avx512vl()) {
-        __ evpmovqd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-      } else {
-        assert(VM_Version::supports_avx2(), "");
-        __ vpshufd($dst$$XMMRegister, $dst$$XMMRegister, 8, vlen_enc);
-        __ vpermq($dst$$XMMRegister, $dst$$XMMRegister, 8, vlen_enc);
-      }
+      assert(VM_Version::supports_avx2(), "");
+      __ vpshufd($dst$$XMMRegister, $dst$$XMMRegister, 8, vlen_enc);
+      __ vpermq($dst$$XMMRegister, $dst$$XMMRegister, 8, vlen_enc);
     }
   %}
   ins_pipe( pipe_slow );

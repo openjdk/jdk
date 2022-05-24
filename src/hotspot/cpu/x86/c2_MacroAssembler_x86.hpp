@@ -386,7 +386,6 @@ public:
   void vector_reverse_byte64(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                              XMMRegister xtmp2, Register rtmp, int vec_enc);
 
-
   void vector_count_leading_zeros_evex(BasicType bt, XMMRegister dst, XMMRegister src,
                                        XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3,
                                        KRegister ktmp, Register rtmp, bool merge, int vec_enc);
@@ -413,6 +412,9 @@ public:
   void vector_count_trailing_zeros_evex(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                         XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4, KRegister ktmp,
                                         Register rtmp, int vec_enc);
+
+  void vector_swap_nbits(int nbits, int bitmask, XMMRegister dst, XMMRegister src,
+                         XMMRegister xtmp1, Register rtmp, int vec_enc);
 
   void vector_count_trailing_zeros_avx(BasicType bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                        XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp, int vec_enc);

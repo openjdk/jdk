@@ -11717,7 +11717,8 @@ void Assembler::evpmovm2b(XMMRegister dst, KRegister src, int vector_len) {
 }
 
 void Assembler::evpcompressb(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
-  assert(VM_Version::supports_avx512_vbmi2() && (vector_len == AVX_512bit || VM_Version::supports_avx512vl()), "");
+  assert(VM_Version::supports_avx512_vbmi2(), "");
+  assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   attributes.set_embedded_opmask_register_specifier(mask);
   attributes.set_is_evex_instruction();
@@ -11729,7 +11730,8 @@ void Assembler::evpcompressb(XMMRegister dst, KRegister mask, XMMRegister src, b
 }
 
 void Assembler::evpcompressw(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
-  assert(VM_Version::supports_avx512_vbmi2() && (vector_len == AVX_512bit || VM_Version::supports_avx512vl()), "");
+  assert(VM_Version::supports_avx512_vbmi2(), "");
+  assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
   InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   attributes.set_embedded_opmask_register_specifier(mask);
   attributes.set_is_evex_instruction();
@@ -11741,7 +11743,8 @@ void Assembler::evpcompressw(XMMRegister dst, KRegister mask, XMMRegister src, b
 }
 
 void Assembler::evpcompressd(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
-  assert(VM_Version::supports_evex() && (vector_len == AVX_512bit || VM_Version::supports_avx512vl()), "");
+  assert(VM_Version::supports_evex(), "");
+  assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   attributes.set_embedded_opmask_register_specifier(mask);
   attributes.set_is_evex_instruction();
@@ -11753,7 +11756,8 @@ void Assembler::evpcompressd(XMMRegister dst, KRegister mask, XMMRegister src, b
 }
 
 void Assembler::evpcompressq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
-  assert(VM_Version::supports_evex() && (vector_len == AVX_512bit || VM_Version::supports_avx512vl()), "");
+  assert(VM_Version::supports_evex(), "");
+  assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
   InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   attributes.set_embedded_opmask_register_specifier(mask);
   attributes.set_is_evex_instruction();
@@ -11765,7 +11769,8 @@ void Assembler::evpcompressq(XMMRegister dst, KRegister mask, XMMRegister src, b
 }
 
 void Assembler::evcompressps(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
-  assert(VM_Version::supports_evex() && (vector_len == AVX_512bit || VM_Version::supports_avx512vl()), "");
+  assert(VM_Version::supports_evex(), "");
+  assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   attributes.set_embedded_opmask_register_specifier(mask);
   attributes.set_is_evex_instruction();
@@ -11777,7 +11782,8 @@ void Assembler::evcompressps(XMMRegister dst, KRegister mask, XMMRegister src, b
 }
 
 void Assembler::evcompresspd(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
-  assert(VM_Version::supports_evex() && (vector_len == AVX_512bit || VM_Version::supports_avx512vl()), "");
+  assert(VM_Version::supports_evex(), "");
+  assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
   InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
   attributes.set_embedded_opmask_register_specifier(mask);
   attributes.set_is_evex_instruction();

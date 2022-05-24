@@ -80,7 +80,9 @@ bool LibraryCallKit::arch_supports_vector_rotate(int opc, int num_elem, BasicTyp
   }
 
   if (is_supported) {
-    // Check whether mask unboxing is supported.
+    // Check if mask unboxing is supported, this is a two step process which first loads the contents
+    // of boolean array into vector followed by either lane expansion to match the lane size of masked
+    // vector operation or populate the predicate register.
     if ((mask_use_type & VecMaskUseLoad) != 0) {
       if (!Matcher::match_rule_supported_vector(Op_VectorLoadMask, num_elem, elem_bt) ||
           !Matcher::match_rule_supported_vector(Op_LoadVector, num_elem, T_BOOLEAN)) {
@@ -261,7 +263,9 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
     return false;
   }
 
-  // Check whether mask unboxing is supported.
+  // Check if mask unboxing is supported, this is a two step process which first loads the contents
+  // of boolean array into vector followed by either lane expansion to match the lane size of masked
+  // vector operation or populate the predicate register.
   if ((mask_use_type & VecMaskUseLoad) != 0) {
     if (!Matcher::match_rule_supported_vector(Op_VectorLoadMask, num_elem, type) ||
         !Matcher::match_rule_supported_vector(Op_LoadVector, num_elem, T_BOOLEAN)) {
@@ -275,7 +279,9 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
     }
   }
 
-  // Check whether mask boxing is supported.
+  // Check if mask boxing is supported, this is a two step process which first stores the contents
+  // of mask vector / predicate register into a boolean vector followed by vector store operation to
+  // transfer the contents to underlined storage of mask boxes which is a boolean array.
   if ((mask_use_type & VecMaskUseStore) != 0) {
     if (!Matcher::match_rule_supported_vector(Op_VectorStoreMask, num_elem, type) ||
         !Matcher::match_rule_supported_vector(Op_StoreVector, num_elem, T_BOOLEAN)) {
