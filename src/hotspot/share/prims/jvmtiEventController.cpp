@@ -772,7 +772,7 @@ void JvmtiEventControllerPrivate::set_event_callbacks(JvmtiEnvBase *env,
 
   env->set_event_callbacks(callbacks, size_of_callbacks);
   // Mask to clear normal event bits.
-  const jlong CLEARING_MASK = (1L >> (TOTAL_MIN_EVENT_TYPE_VAL - TOTAL_MIN_EVENT_TYPE_VAL)) - 1L;
+  const jlong CLEARING_MASK = (1L >> (JVMTI_MIN_EVENT_TYPE_VAL - TOTAL_MIN_EVENT_TYPE_VAL)) - 1L;
   // Avoid cleaning extension event bits.
   jlong enabled_bits = CLEARING_MASK & env->env_event_enable()->_event_callback_enabled.get_bits();
 
