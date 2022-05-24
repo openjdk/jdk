@@ -106,12 +106,8 @@ public class LayoutPath {
         check(SequenceLayout.class, "attempting to select a sequence element from a non-sequence layout");
         SequenceLayout seq = (SequenceLayout)layout;
         checkSequenceBounds(seq, index);
-        long elemOffset = 0;
-        if (index > 0) {
-            //if index == 0, we do not depend on sequence element size, so skip
-            long elemSize = seq.elementLayout().bitSize();
-            elemOffset = elemSize * index;
-        }
+        long elemSize = seq.elementLayout().bitSize();
+        long elemOffset = elemSize * index;
         return LayoutPath.nestedPath(seq.elementLayout(), offset + elemOffset, strides, bounds, this);
     }
 
