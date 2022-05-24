@@ -160,7 +160,7 @@ bool ConnectionGraph::compute_escape(bool only_analysis) {
       ptnodes_worklist.append(ptn);
       if (ptn->is_JavaObject()) {
         java_objects_worklist.append(ptn->as_JavaObject());
-        if ((n->is_Allocate() || n->is_ReducedAllocationMerge() || n->is_CallStaticJava()) &&
+        if ((n->is_Allocate() || n->is_CallStaticJava()) &&
             (ptn->escape_state() < PointsToNode::GlobalEscape)) {
           // Only allocations and java static calls results are interesting.
           non_escaped_allocs_worklist.append(ptn->as_JavaObject());
@@ -476,7 +476,7 @@ bool ConnectionGraph::should_reduce_this_phi(Node* n) {
       return false;
     }
 
-    if (use->is_CallStaticJava() && use->as_CallStaticJava()->uncommon_trap_request() != 0) {
+    if (use->is_CallStaticJava() && !use->as_CallStaticJava()->is_uncommon_trap()) {
       NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. Has Allocate but cannot scalar replace it. CallStaticJava is not a trap.", n->_idx);)
       return false;
     }
@@ -488,13 +488,13 @@ bool ConnectionGraph::should_reduce_this_phi(Node* n) {
 
 void ConnectionGraph::reduce_this_phi(PhiNode* n) {
   // Copy input edges of 'n' to 'reduced'
-  Node* reduced = ReducedAllocationMergeNode::make(_compile, n);
+  Node* reduced = ReducedAllocationMergeNode::make(_compile, _igvn, n);
 
   // Create a type for 'reduced'
-  const TypeOopPtr* reduced_t = TypeOopPtr::make_from_klass(_compile->env()->Object_klass());
-  _igvn->set_type(reduced,  reduced_t);
-  reduced->raise_bottom_type(reduced_t);
-  _igvn->hash_insert(reduced);
+  //const TypeOopPtr* reduced_t = TypeOopPtr::make_from_klass(_compile->env()->Object_klass());
+  //_igvn->set_type(reduced,  reduced_t);
+  //reduced->raise_bottom_type(reduced_t);
+  //_igvn->hash_insert(reduced);
 
   // Patch users of 'n' to instead use 'reduced'
   _igvn->replace_node(n, reduced);
@@ -3410,67 +3410,68 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       }
     }
     else if (n->is_ReducedAllocationMerge()) {
-      // This is necessary because EA put ReducedAllocationMerge nodes
-      // initially into the worklist and the processing of Allocate* nodes
-      // might also add the same node to the worklist.
-      if (visited.test_set(n->_idx)) {
-        continue;  // already processed
-      }
+      continue; // there is no need for this kind of node to have an instance id
+      /////// // This is necessary because EA put ReducedAllocationMerge nodes
+      /////// // initially into the worklist and the processing of Allocate* nodes
+      /////// // might also add the same node to the worklist.
+      /////// if (visited.test_set(n->_idx)) {
+      ///////   continue;  // already processed
+      /////// }
 
-      PointsToNode* ptn = ptnode_adr(n->_idx);
-      PointsToNode::EscapeState es = ptn->escape_state();
-      const TypeOopPtr *t = igvn->type(n)->isa_oopptr();
+      /////// PointsToNode* ptn = ptnode_adr(n->_idx);
+      /////// PointsToNode::EscapeState es = ptn->escape_state();
+      /////// const TypeOopPtr *t = igvn->type(n)->isa_oopptr();
 
-      assert(es == PointsToNode::EscapeState::NoEscape, "This should be NoEscape.");
-      assert(t != NULL, "This should be an oopptr.");
+      /////// assert(es == PointsToNode::EscapeState::NoEscape, "This should be NoEscape.");
+      /////// assert(t != NULL, "This should be an oopptr.");
 
-      // Just to simplify some checks
-      set_map(n, n);
+      /////// // Just to simplify some checks
+      /////// set_map(n, n);
 
-      // ReducedAllocationMerge has it's own instance_id which is it's ID
-      // I'm casting to exactness here because only exact nodes can have an
-      // instance_id and this node will later disappear, in reality the merge
-      // might not be exact.
-      t = t->cast_to_exactness(true)->isa_oopptr();
-      const TypeOopPtr* tinst = t->cast_to_instance_id(ni);
+      /////// // ReducedAllocationMerge has it's own instance_id which is it's ID
+      /////// // I'm casting to exactness here because only exact nodes can have an
+      /////// // instance_id and this node will later disappear, in reality the merge
+      /////// // might not be exact.
+      /////// t = t->cast_to_exactness(true)->isa_oopptr();
+      /////// const TypeOopPtr* tinst = t->cast_to_instance_id(ni);
 
-      igvn->hash_delete(n);
-      igvn->set_type(n,  tinst);
-      n->raise_bottom_type(tinst);
-      igvn->hash_insert(n);
+      /////// igvn->hash_delete(n);
+      /////// igvn->set_type(n,  tinst);
+      /////// n->raise_bottom_type(tinst);
+      /////// igvn->hash_insert(n);
 
-      // TODO: should I keep the find second AddP part? I.e., for the case
-      // when the merge was for array allocations?
+      ///////   // TODO: should I keep the find second AddP part? I.e., for the case
+      ///////   // when the merge was for array allocations?
 
-      for (EdgeIterator e(ptn); e.has_next(); e.next()) {
-        PointsToNode* tgt = e.get();
-        if (tgt->is_Arraycopy()) {
-          continue;
-        }
-        Node* use = tgt->ideal_node();
-        assert(tgt->is_Field() && use->is_AddP(),
-                "only AddP nodes are Field edges in CG");
-        if (use->outcnt() > 0) { // Don't process dead nodes
-          Node* addp2 = find_second_addp(use, use->in(AddPNode::Base));
-          if (addp2 != NULL) {
-            alloc_worklist.append_if_missing(addp2);
-          }
-          alloc_worklist.append_if_missing(use);
-        }
-      }
+      ///////   for (EdgeIterator e(ptn); e.has_next(); e.next()) {
+      ///////     PointsToNode* tgt = e.get();
+      ///////     if (tgt->is_Arraycopy()) {
+      ///////       continue;
+      ///////     }
+      ///////     Node* use = tgt->ideal_node();
+      ///////     assert(tgt->is_Field() && use->is_AddP(),
+      ///////             "only AddP nodes are Field edges in CG");
+      ///////     if (use->outcnt() > 0) { // Don't process dead nodes
+      ///////       Node* addp2 = find_second_addp(use, use->in(AddPNode::Base));
+      ///////       if (addp2 != NULL) {
+      ///////         alloc_worklist.append_if_missing(addp2);
+      ///////       }
+      ///////       alloc_worklist.append_if_missing(use);
+      ///////     }
+      ///////   }
 
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node *use = n->fast_out(i);
-        if (use->is_AddP() && use->outcnt() > 0) { // Don't process dead nodes
-          Node* addp2 = find_second_addp(use, n);
-          if (addp2 != NULL) {
-            alloc_worklist.append_if_missing(addp2);
-          }
-          alloc_worklist.append_if_missing(use);
-        } else if (use->is_MemBar()) {
-          memnode_worklist.append_if_missing(use);
-        }
-      }
+      ///////   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      ///////     Node *use = n->fast_out(i);
+      ///////     if (use->is_AddP() && use->outcnt() > 0) { // Don't process dead nodes
+      ///////       Node* addp2 = find_second_addp(use, n);
+      ///////       if (addp2 != NULL) {
+      ///////         alloc_worklist.append_if_missing(addp2);
+      ///////       }
+      ///////       alloc_worklist.append_if_missing(use);
+      ///////     } else if (use->is_MemBar()) {
+      ///////       memnode_worklist.append_if_missing(use);
+      ///////     }
+      ///////   }
     } else if (n->is_AddP()) {
       JavaObjectNode* jobj = unique_java_object(get_addp_base(n));
       if (jobj == NULL || jobj == phantom_obj) {
