@@ -188,7 +188,7 @@ public class ThreadDumper {
 
         String now = Instant.now().toString();
         String runtimeVersion = Runtime.version().toString();
-        out.format("    \"processId\": %d,%n", processId());
+        out.format("    \"processId\": \"%d\",%n", processId());
         out.format("    \"time\": \"%s\",%n", escape(now));
         out.format("    \"runtimeVersion\": \"%s\",%n", escape(runtimeVersion));
 
@@ -226,7 +226,7 @@ public class ThreadDumper {
         if (owner == null) {
             out.format("        \"owner\": null,%n");
         } else {
-            out.format("        \"owner\": %d,%n", owner.threadId());
+            out.format("        \"owner\": \"%d\",%n", owner.threadId());
         }
 
         long threadCount = 0;
@@ -241,7 +241,7 @@ public class ThreadDumper {
 
         // thread count
         threadCount = Long.max(threadCount, container.threadCount());
-        out.format("        \"threadCount\": %d%n", threadCount);
+        out.format("        \"threadCount\": \"%d\"%n", threadCount);
 
         if (more) {
             out.println("      },");
@@ -255,7 +255,7 @@ public class ThreadDumper {
      */
     private static void dumpThreadToJson(Thread thread, PrintStream out, boolean more) {
         out.println("         {");
-        out.format("           \"tid\": %d,%n", thread.threadId());
+        out.format("           \"tid\": \"%d\",%n", thread.threadId());
         out.format("           \"name\": \"%s\",%n", escape(thread.getName()));
         out.format("           \"stack\": [%n");
         int i = 0;
