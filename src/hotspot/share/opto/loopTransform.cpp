@@ -2100,10 +2100,10 @@ void PhaseIdealLoop::initialize_skeleton_predicates_for_peeled_loop(ProjNode* pr
 
         if (!dependent->is_CFG() &&
             dependent->_idx < idx_before_clone &&  // old node
-            new_node != nullptr &&                 // that was clond
+            new_node != nullptr &&                 // cloned
             new_node->_idx >= idx_before_clone) {  // for peeling
-          // The old nodes from the peeled loop still point to the predicate above the peeled loop
-          // We need to rewrite the dependencies to the newly initialized predicates
+          // The old nodes from the peeled loop still point to the predicate above the peeled loop.
+          // We need to rewire the dependencies to the newly initialized skeleton predicates.
           _igvn.replace_input_of(dependent, 0, input_proj);
           --i; // correct for just deleted predicate->out(i)
         }
