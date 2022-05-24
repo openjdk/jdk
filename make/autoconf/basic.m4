@@ -186,10 +186,6 @@ AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
       AC_MSG_ERROR([Invalid SDK or SYSROOT path, dependent framework headers not found])
     fi
   fi
-
-  # set SDKROOT too, Xcode tools will pick it up
-  SDKROOT="$SYSROOT"
-  AC_SUBST(SDKROOT)
 ])
 
 ###############################################################################
@@ -302,9 +298,12 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
 
   AC_MSG_CHECKING([for sysroot])
   AC_MSG_RESULT([$SYSROOT])
+  AC_SUBST(SYSROOT)
+
   AC_MSG_CHECKING([for toolchain path])
   AC_MSG_RESULT([$TOOLCHAIN_PATH])
   AC_SUBST(TOOLCHAIN_PATH)
+
   AC_MSG_CHECKING([for extra path])
   AC_MSG_RESULT([$EXTRA_PATH])
 ])
