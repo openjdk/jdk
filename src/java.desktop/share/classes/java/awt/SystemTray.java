@@ -345,7 +345,7 @@ public class SystemTray {
         @SuppressWarnings("unchecked")
         Vector<TrayIcon> icons = (Vector<TrayIcon>)AppContext.getAppContext().get(TrayIcon.class);
         if (icons != null) {
-            return icons.toArray(new TrayIcon[0]);
+            return icons.toArray(EMPTY_TRAY_ARRAY);
         }
         return EMPTY_TRAY_ARRAY;
     }
