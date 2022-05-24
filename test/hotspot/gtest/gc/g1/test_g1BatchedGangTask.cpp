@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public:
     return 1.0;
   }
 
-  // Called by G1BatchedTask to provide information about the the maximum
+  // Called by G1BatchedTask to provide information about the maximum
   // number of workers for all subtasks after it has been determined.
   void set_max_workers(uint max_workers) override {
     assert(max_workers >= 1, "must be");

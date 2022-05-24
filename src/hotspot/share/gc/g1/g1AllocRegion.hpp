@@ -92,7 +92,7 @@ protected:
   // The memory node index this allocation region belongs to.
   uint _node_index;
 
-  // Reset the alloc region to point a the dummy region.
+  // Reset the alloc region to point the dummy region.
   void reset_alloc_region();
 
   // Perform a non-MT-safe allocation out of the given region.

@@ -1046,8 +1046,8 @@ public class TreeMaker implements JCTree.Factory {
         return VarDef(new VarSymbol(PARAMETER, name, argtype, owner), null);
     }
 
-    /** Create a a list of value parameter trees x0, ..., xn from a list of
-     *  their types and an their owner.
+    /** Create a list of value parameter trees x0, ..., xn from a list of
+     *  their types and their owner.
      */
     public List<JCVariableDecl> Params(List<Type> argtypes, Symbol owner) {
         ListBuffer<JCVariableDecl> params = new ListBuffer<>();
