@@ -2292,7 +2292,7 @@ void C2_MacroAssembler::vpadd(BasicType elem_bt, XMMRegister dst, XMMRegister sr
     case T_FLOAT: vaddps(dst, src1, src2, vlen_enc); return;
     case T_LONG: vpaddq(dst, src1, src2, vlen_enc); return;
     case T_DOUBLE: vaddpd(dst, src1, src2, vlen_enc); return;
-    default: assert(false, "%s", type2name(elem_bt));
+    default: fatal("Unsupported type %s", type2name(elem_bt)); return;
   }
 }
 
@@ -2309,7 +2309,7 @@ void C2_MacroAssembler::vpbroadcast(BasicType elem_bt, XMMRegister dst, Register
       case T_SHORT: evpbroadcastw(dst, src, vlen_enc); return;
       case T_FLOAT: case T_INT: evpbroadcastd(dst, src, vlen_enc); return;
       case T_DOUBLE: case T_LONG: evpbroadcastq(dst, src, vlen_enc); return;
-      default: assert(false, "%s", type2name(elem_bt));
+      default: fatal("Unsupported type %s", type2name(elem_bt)); return;
     }
   } else {
     assert(vlen_enc != Assembler::AVX_512bit, "required");
@@ -2321,7 +2321,7 @@ void C2_MacroAssembler::vpbroadcast(BasicType elem_bt, XMMRegister dst, Register
       case T_FLOAT: movdl(dst, src); vbroadcastss(dst, dst, vlen_enc); return;
       case T_LONG: movdq(dst, src); vpbroadcastq(dst, dst, vlen_enc); return;
       case T_DOUBLE: movdq(dst, src); vbroadcastsd(dst, dst, vlen_enc); return;
-      default: assert(false, "%s", type2name(elem_bt));
+      default: fatal("Unsupported type %s", type2name(elem_bt)); return;
     }
   }
 }
@@ -2348,7 +2348,9 @@ void C2_MacroAssembler::vconvert_b2x(BasicType to_elem_bt, XMMRegister dst, XMMR
       vcvtdq2pd(dst, dst, vlen_enc);
       break;
     }
-    default: assert(false, "%s", type2name(to_elem_bt));
+    default:
+      fatal("Unsupported type %s", type2name(to_elem_bt));
+      break;
   }
 }
 
@@ -5110,26 +5112,6 @@ void C2_MacroAssembler::vpsub(BasicType bt, XMMRegister dst, XMMRegister src1, X
       break;
     case T_LONG:
       vpsubq(dst, src1, src2, vec_enc);
-      break;
-    default:
-      fatal("Unsupported type %s", type2name(bt));
-      break;
-  }
-}
-
-void C2_MacroAssembler::vpadd(BasicType bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vec_enc) {
-  switch(bt) {
-    case T_BYTE:
-      vpaddb(dst, src1, src2, vec_enc);
-      break;
-    case T_SHORT:
-      vpaddw(dst, src1, src2, vec_enc);
-      break;
-    case T_INT:
-      vpaddd(dst, src1, src2, vec_enc);
-      break;
-    case T_LONG:
-      vpaddq(dst, src1, src2, vec_enc);
       break;
     default:
       fatal("Unsupported type %s", type2name(bt));

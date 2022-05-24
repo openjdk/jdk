@@ -142,7 +142,6 @@ public:
 #ifdef _LP64
  void vpbroadcast(BasicType elem_bt, XMMRegister dst, Register src, int vlen_enc);
 #endif
- void vpadd(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
 
   // blend
   void evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, AddressLiteral adr, int comparison, int vector_len, Register scratch = rscratch1);
