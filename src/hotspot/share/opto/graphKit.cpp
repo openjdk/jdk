@@ -3623,7 +3623,7 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
 // the type to a constant.
 // The optional arguments are for specialized use by intrinsics:
 //  - If 'extra_slow_test' if not null is an extra condition for the slow-path.
-//  - If 'return_size_val', report the the total object size to the caller.
+//  - If 'return_size_val', report the total object size to the caller.
 //  - deoptimize_on_exception controls how Java exceptions are handled (rethrow vs deoptimize)
 Node* GraphKit::new_instance(Node* klass_node,
                              Node* extra_slow_test,
