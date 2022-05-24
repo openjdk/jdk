@@ -30,6 +30,7 @@ import javax.sound.sampled.SourceDataLine;
 
 /**
  * @test
+ * @key sound
  * @bug 4680710
  * @summary SourceDataLine.write() behavior is not correct for not open or not
  *          started lines
