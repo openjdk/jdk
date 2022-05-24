@@ -139,9 +139,9 @@ public class CustomComboBoxFocusTest {
                 if ((Math.abs(red1 - red2) > colorTolerance) ||
                     (Math.abs(green1 - green2) > colorTolerance) ||
                     (Math.abs(blue1 - blue2) > colorTolerance)) {
-		    System.out.println("x " + x + " y " + y +
-				    " refRGB " + refRGB +
-				    " customRGB " + customRGB);
+                    System.out.println("x " + x + " y " + y +
+                                       " refRGB " + refRGB +
+                                       " customRGB " + customRGB);
                     return false;
                 }
             }
