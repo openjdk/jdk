@@ -2898,22 +2898,6 @@ void LIRGenerator::do_IfOp(IfOp* x) {
   __ cmove(lir_cond(x->cond()), t_val.result(), f_val.result(), reg, as_BasicType(x->x()->type()));
 }
 
-#ifdef JFR_HAVE_INTRINSICS
-
-void LIRGenerator::do_getEventWriter(Intrinsic* x) {
-  BasicTypeList signature(0);
-  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
-  LIR_Opr reg = result_register_for(x->type());
-  address entry = StubRoutines::jfr_get_event_writer();
-  CodeEmitInfo* info = state_for(x, x->state());
-  __ call_runtime(entry, getThreadTemp(), reg, cc->args(), info);
-  LIR_Opr result = rlock_result(x);
-  __ move(reg, result);
-}
-
-#endif
-
-
 void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
   assert(x->number_of_arguments() == 0, "wrong type");
   // Enforce computation of _reserved_argument_area_size which is required on some platforms.
@@ -2939,9 +2923,6 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   }
 
 #ifdef JFR_HAVE_INTRINSICS
-  case vmIntrinsics::_getEventWriter:
-    do_getEventWriter(x);
-    break;
   case vmIntrinsics::_counterTime:
     do_RuntimeCall(CAST_FROM_FN_PTR(address, JfrTime::time_function()), x);
     break;

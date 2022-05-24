@@ -27,11 +27,18 @@
 
 #include "jni.h"
 #include "memory/allStatic.hpp"
+#include "utilities/exceptions.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class CallInfo;
+class ciKlass;
+class ciMethod;
+class GraphBuilder;
 class JavaThread;
+class Klass;
 class outputStream;
+class Parse;
 class Thread;
 
 extern "C" void JNICALL jfr_register_natives(JNIEnv*, jclass);
@@ -53,6 +60,9 @@ class Jfr : AllStatic {
   static void exclude_thread(Thread* thread);
   static void on_thread_start(Thread* thread);
   static void on_thread_exit(Thread* thread);
+  static void on_resolution(const CallInfo& info, TRAPS);
+  static void on_resolution(const Parse* parse, const ciKlass* holder, const ciMethod* target);
+  static void on_resolution(const GraphBuilder* builder, const ciKlass* holder, const ciMethod* target);
   static void on_java_thread_start(JavaThread* starter, JavaThread* startee);
   static void on_set_current_thread(JavaThread* jt, oop thread);
   static void on_vm_shutdown(bool exception_handler = false);

@@ -60,7 +60,7 @@ public class TestJFRIntrinsic {
 
     TestJFRIntrinsic() throws Exception {
         // the intrinsic is premised on this class being loaded already - the event writer object is massaged heavily before returning
-        eventWriterClazz = Class.forName("jdk.jfr.internal.EventWriter", true, TestJFRIntrinsic.class.getClassLoader());
+        eventWriterClazz = Class.forName("jdk.jfr.internal.event.EventWriter", true, TestJFRIntrinsic.class.getClassLoader());
     }
 
     public static void main(String... args) throws Exception {
