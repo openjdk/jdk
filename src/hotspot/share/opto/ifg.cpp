@@ -992,6 +992,8 @@ uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List &blocks,
       if (block->_fhrp_index < last_inst + 1) {
         b->_fhrp_index = pos + 1;
       }
+      b->_reg_pressure = block->_reg_pressure;
+      b->_freg_pressure = block->_freg_pressure;
     }
     if (block->_ihrp_index <= block->end_idx()) {
       while (block->get_node(block->_ihrp_index)->is_SpillCopy() &&

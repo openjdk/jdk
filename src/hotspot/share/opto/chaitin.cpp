@@ -562,6 +562,11 @@ void PhaseChaitin::Register_Allocate() {
         for (j = 0; j < blocks.size() && blocks[j] != block; ++j) {
         }
         assert(j < blocks.size(), "");
+        if (block->_region != block->_loop->head()->_region) {
+          regions.at(block->_region).remove(j);
+          block->_region = 0;
+          regions.at(block->_region).push(block);
+        }
       }
 //        block->dump();
 //      if (block->_region == 0) {
@@ -907,12 +912,22 @@ void PhaseChaitin::Register_Allocate() {
         for (uint insidx = 1; insidx <= b->end_idx(); insidx++) {
           Node* n = b->get_node(insidx);
           // Find the defining Node's live range index
-          uint defidx = _lrg_map.find_id(n);
+          uint defidx = _lrg_map.find(n);
           LRG &deflrg = lrgs(defidx);
           uint copyidx = n->is_Copy();
           // Remove coalesced copy from CFG
           if (copyidx) {
-            uint copylidx = _lrg_map.live_range_id(n->in(copyidx));
+            uint copylidx = _lrg_map.find(n->in(copyidx));
+            if (defidx != copylidx && deflrg._region >= region && lrgs(copylidx)._region >= region && deflrg.reg() == lrgs(copylidx).reg()) {
+              if (defidx < copylidx) {
+                Union(n, n->in(copyidx));
+              } else {
+                Union(n->in(copyidx), n);
+              }
+              defidx = _lrg_map.find(n);
+              copylidx = _lrg_map.find(n->in(copyidx));
+              assert(defidx == copylidx, "");
+            }
             if (defidx == copylidx) {
               n->replace_by(n->in(copyidx));
               n->set_req(copyidx, NULL);
@@ -930,6 +945,7 @@ void PhaseChaitin::Register_Allocate() {
           }
         }
       }
+      _lrg_map.compress_uf_map_for_nodes();
       for (uint i = 0; i < _lrg_map.size(); i++) {
         if (_lrg_map.live_range_id(i)) { // Live range associated with Node?
           LRG &lrg = lrgs(_lrg_map.live_range_id(i));
