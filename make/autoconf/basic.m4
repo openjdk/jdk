@@ -132,11 +132,22 @@ AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
   if test "x$DEVKIT_ROOT" != x; then
     # We need to use xcodebuild from the devkit, if provided
     UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild, $DEVKIT_TOOLCHAIN_PATH)
-    if test x$XCODEBUILD = x; then
+    if test "x$XCODEBUILD" = x; then
       AC_MSG_ERROR([No xcodebuild tool found in the provided devkit])
+    fi
+    XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
+    if test $? -ne 0; then
+      AC_MSG_ERROR([The xcodebuild tool in the devkit reports an error: $XCODEBUILD_OUTPUT])
     fi
   else
     UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild)
+    if test "x$XCODEBUILD" != x; then
+      XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
+      if test $? -ne 0; then
+        AC_MSG_WARN([Ignoring the located xcodebuild tool $XCODEBUILD due to an error: $XCODEBUILD_OUTPUT])
+        XCODEBUILD=
+      fi
+    fi
   fi
 
   if test "x$SYSROOT" != x; then
@@ -146,6 +157,7 @@ AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
     if test "x$with_sdk_name" != x; then
       AC_MSG_WARN([--with-sdk-name will be ignored since a sysroot or devkit is provided])
     fi
+    AC_MSG_NOTICE([Setting sysroot from devkit or --with-sysroot])
   else
     if test "x$XCODEBUILD" != x; then
       SYSROOT=`"$XCODEBUILD" -sdk "$SDK_NAME" -version | $GREP '^Path: ' | $SED 's/Path: //'`
@@ -155,16 +167,27 @@ AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
       if ! test -f "$SYSROOT/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h"; then
         AC_MSG_ERROR([Unable to find required framework headers, provide a path to an SDK via --with-sysroot or --with-sdk-name and be sure Xcode is installed properly])
       fi
-    elif test -f /System/Library/Frameworks/Foundation.framework/Headers/Foundation.h; then
-      AC_MSG_WARN([No devkit provided and no xcodebuild found. Proceeding using system headers.])
-      if test "x$with_sdk_name" != x; then
-        AC_MSG_WARN([--with-sdk-name will be ignored since no xcodebuild could be found])
-      fi
+      AC_MSG_NOTICE([Setting sysroot from xcodebuild with SDK $SDK_NAME])
     else
-      AC_MSG_NOTICE([No devkit provided, no xcodebuild tool and no system headers found in the system.])
-      AC_MSG_NOTICE([Check that Xcode is properly installed, or set a devkit with --with-devkit,])
-      AC_MSG_NOTICE([or override SDK selection using --with-sysroot or --with-sdk-name.])
-      AC_MSG_ERROR([Cannot continue])
+      UTIL_LOOKUP_PROGS(XCRUN, xcrun)
+      if test "x$XCRUN" != x; then
+        XCRUN_SDK_PATH=`"$XCRUN" --show-sdk-path -sdk "$SDK_NAME"`
+      fi
+
+      if test "x$XCRUN_SDK_PATH" != x && test -f "$XCRUN_SDK_PATH/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h"; then
+        AC_MSG_NOTICE([Setting sysroot from xcrun with SDK $SDK_NAME])
+        SYSROOT="$XCRUN_SDK_PATH"
+      elif test -f /System/Library/Frameworks/Foundation.framework/Headers/Foundation.h; then
+        AC_MSG_WARN([No devkit provided and no xcodebuild found. Proceeding using system headers.])
+        if test "x$with_sdk_name" != x; then
+          AC_MSG_WARN([--with-sdk-name will be ignored since no xcodebuild could be found])
+        fi
+      else
+        AC_MSG_NOTICE([No devkit provided, no xcodebuild tool and no system headers found in the system.])
+        AC_MSG_NOTICE([Check that Xcode is properly installed, or set a devkit with --with-devkit,])
+        AC_MSG_NOTICE([or override SDK selection using --with-sysroot or --with-sdk-name.])
+        AC_MSG_ERROR([Cannot continue])
+      fi
     fi
   fi
 ])
