@@ -244,8 +244,7 @@ inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index) con
   // The benefit from aligned_left being true is very small. It saves
   // an operation when returning results.
 
-  // The return value of l_index (with found_bit = false) when no bit
-  // is found is arbitrary and should not be relied on.
+  // The return value of l_index when no bit is found is BitMap::NotFound.
 
   if (l_index <= r_index) {
     // Get the word containing r_index, and shift out high bits.
@@ -278,7 +277,7 @@ inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index) con
           if (aligned_left || (result >= l_index)) {
             return result;
           }
-          // Result is beyond range bound; return l_index (with found_bit = false)
+          // Result is beyond range bound; return NotFound
           assert(index == limit, "invariant");
           break;
         }
