@@ -50,7 +50,7 @@ class LogStreamImpl : public outputStream {
     char* _buf;
     size_t _cap;
     size_t _pos;
-    void try_ensure_cap(size_t cap);
+    bool try_ensure_cap(size_t cap);
 
   public:
     LineBuffer();
@@ -114,41 +114,46 @@ LogStreamImpl<T>::LineBuffer::~LineBuffer() {
 
 // try_ensure_cap tries to enlarge the capacity of the internal buffer
 // to the given atleast value. May fail if either OOM happens or atleast
-// is larger than a reasonable max of 1 M. Caller must not assume
-// capacity without checking.
+// is larger than a reasonable max of 1 M.
+// Returns whether the capacity is at least atleast bytes.
 template<typename T>
-void LogStreamImpl<T>::LineBuffer::try_ensure_cap(size_t atleast) {
+bool LogStreamImpl<T>::LineBuffer::try_ensure_cap(size_t atleast) {
+  // Cap out at a reasonable max to prevent runaway leaks.
+  const size_t reasonable_max = 1 * M;
+
   assert(_cap >= sizeof(_smallbuf), "sanity");
-  if (_cap < atleast) {
-    // Cap out at a reasonable max to prevent runaway leaks.
-    const size_t reasonable_max = 1 * M;
-    assert(_cap <= reasonable_max, "sanity");
-    if (_cap == reasonable_max) {
-      return;
-    }
+  assert(_cap <= reasonable_max, "sanity");
 
-    const size_t additional_expansion = 256;
-    size_t newcap = align_up(atleast + additional_expansion, additional_expansion);
-    if (newcap > reasonable_max) {
-      log_info(logging)("Suspiciously long log line: \"%.100s%s",
-                        _buf, (_pos >= 100 ? "..." : ""));
-      newcap = reasonable_max;
-    }
-
-    char* const newbuf = (char*)os::malloc(newcap, mtLogging);
-    if (newbuf == NULL) { // OOM. Leave object unchanged.
-      return;
-    }
-    if (_pos > 0) { // preserve old content
-      memcpy(newbuf, _buf, _pos + 1); // ..including trailing zero
-    }
-    if (_buf != _smallbuf) {
-      os::free(_buf);
-    }
-    _buf = newbuf;
-    _cap = newcap;
+  if (_cap >= atleast) {
+    return true;
   }
-  assert(_cap >= atleast, "sanity");
+  if (_cap == reasonable_max) {
+    return false;
+  }
+
+  const size_t additional_expansion = 256;
+  size_t newcap = align_up(atleast + additional_expansion, additional_expansion);
+
+  if (newcap > reasonable_max) {
+    log_info(logging)("Suspiciously long log line: \"%.100s%s",
+                      _buf, (_pos >= 100 ? "..." : ""));
+    newcap = reasonable_max;
+  }
+
+  char* const newbuf = (char*)os::malloc(newcap, mtLogging);
+  if (newbuf == NULL) { // OOM. Leave object unchanged.
+    return false;
+  }
+  if (_pos > 0) { // preserve old content
+    memcpy(newbuf, _buf, _pos + 1); // ..including trailing zero
+  }
+  if (_buf != _smallbuf) {
+    os::free(_buf);
+  }
+  _buf = newbuf;
+  _cap = newcap;
+
+  return _cap >= atleast;
 }
 
 template<typename T>
@@ -156,11 +161,11 @@ void LogStreamImpl<T>::LineBuffer::append(const char* s, size_t len) {
   assert(_buf[_pos] == '\0', "sanity");
   assert(_pos < _cap, "sanity");
   const size_t minimum_capacity_needed = _pos + len + 1;
-  try_ensure_cap(minimum_capacity_needed);
+  bool has_capacity = try_ensure_cap(minimum_capacity_needed);
   // try_ensure_cap may not have enlarged the capacity to the full requested
-  // extend or may have not worked at all. In that case, just gracefully work
+  // extent or may have not worked at all. In that case, just gracefully work
   // with what we have already; just truncate if necessary.
-  if (_cap < minimum_capacity_needed) {
+  if (!has_capacity) {
     len = _cap - _pos - 1;
     if (len == 0) {
       return;
