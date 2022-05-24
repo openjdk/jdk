@@ -1252,7 +1252,7 @@ public:
   inline bool is_obj_dead_full(const oop obj) const;
 
   // Mark the live object that failed evacuation in the prev bitmap.
-  void mark_evac_failure_object(const oop obj, uint worker_id) const;
+  void mark_evac_failure_object(oop obj) const;
 
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 
@@ -1297,16 +1297,6 @@ public:
   void prepare_for_verify() override;
 
   // Perform verification.
-
-  // vo == UsePrevMarking -> use "prev" marking information,
-  // vo == UseFullMarking -> use "next" marking bitmap but no TAMS
-  //
-  // NOTE: Only the "prev" marking information is guaranteed to be
-  // consistent most of the time, so most calls to this should use
-  // vo == UsePrevMarking.
-  // Currently there is only one place where this is called with
-  // vo == UseFullMarking, which is to verify the marking during a
-  // full GC.
   void verify(VerifyOption vo) override;
 
   // WhiteBox testing support.
