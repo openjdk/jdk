@@ -34,13 +34,13 @@ import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
-import jdk.internal.foreign.abi.ProgrammableUpcallHandler;
+import jdk.internal.foreign.abi.DowncallLinker;
+import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64CallArranger;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64CallArranger;
 import jdk.internal.foreign.Utils;
-import jdk.internal.foreign.abi.ProgrammableInvoker;
 
 import java.lang.foreign.MemorySession;
 import java.lang.invoke.MethodHandle;
@@ -52,8 +52,8 @@ import static jdk.internal.foreign.PlatformLayouts.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.*;
 
 /**
- * For the AArch64 C ABI specifically, this class uses the ProgrammableInvoker API, namely CallingSequenceBuilder2
- * to translate a C FunctionDescriptor into a CallingSequence2, which can then be turned into a MethodHandle.
+ * For the AArch64 C ABI specifically, this class uses CallingSequenceBuilder
+ * to translate a C FunctionDescriptor into a CallingSequence, which can then be turned into a MethodHandle.
  *
  * This includes taking care of synthetic arguments like pointers to return buffers for 'in-memory' returns.
  *
@@ -147,7 +147,7 @@ public abstract class CallArranger {
     public MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc) {
         Bindings bindings = getBindings(mt, cDesc, false);
 
-        MethodHandle handle = new ProgrammableInvoker(C, bindings.callingSequence).getBoundMethodHandle();
+        MethodHandle handle = new DowncallLinker(C, bindings.callingSequence).getBoundMethodHandle();
 
         if (bindings.isInMemoryReturn) {
             handle = SharedUtils.adaptDowncallForIMR(handle, cDesc);
@@ -163,7 +163,7 @@ public abstract class CallArranger {
             target = SharedUtils.adaptUpcallForIMR(target, true /* drop return, since we don't have bindings for it */);
         }
 
-        return ProgrammableUpcallHandler.make(C, target, bindings.callingSequence, session);
+        return UpcallLinker.make(C, target, bindings.callingSequence, session);
     }
 
     private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
