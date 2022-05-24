@@ -331,9 +331,9 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
        if (mb->num_preds() != 2) {
          continue;
        }
-       //mach is a store, hence block is the immediate dominator of mb.
-       //Due to the null-check shape of block (where its successors cannot re-join),
-       //block must be the direct predecessor of mb.
+       // mach is a store, hence block is the immediate dominator of mb.
+       // Due to the null-check shape of block (where its successors cannot re-join),
+       // block must be the direct predecessor of mb.
        assert(get_block_for_node(mb->pred(1)) == block, "Unexpected predecessor block");
        uint k;
        uint num_nodes = mb->number_of_nodes();
