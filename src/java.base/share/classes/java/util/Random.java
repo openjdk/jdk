@@ -1030,8 +1030,8 @@ public class Random implements RandomGenerator, java.io.Serializable {
 
     /**
      * Returns a stream producing the given {@code streamSize} number of
-     * pseudorandom {@code double} values, each (approximately) uniformly
-     * distributed between zero (inclusive) and one (exclusive).
+     * pseudorandom {@code double} values, each between zero
+     * (inclusive) and one (exclusive).
      *
      * <p>A pseudorandom {@code double} value is generated as if it's the result
      * of calling the method {@link #nextDouble()}.
@@ -1049,8 +1049,8 @@ public class Random implements RandomGenerator, java.io.Serializable {
 
     /**
      * Returns an effectively unlimited stream of pseudorandom {@code
-     * double} values, each (approximately) uniformly
-     * distributed between zero (inclusive) and one (exclusive).
+     * double} values, each between zero (inclusive) and one
+     * (exclusive).
      *
      * <p>A pseudorandom {@code double} value is generated as if it's the result
      * of calling the method {@link #nextDouble()}.
@@ -1068,18 +1068,15 @@ public class Random implements RandomGenerator, java.io.Serializable {
 
    /**
      * Returns a stream producing the given {@code streamSize} number of
-     * pseudorandom {@code double} values, each uniformly distributed between
-     * the given origin (inclusive) and bound (exclusive).
+     * pseudorandom {@code double} values, each conforming to the given origin
+     * (inclusive) and bound (exclusive).
      *
      * @param streamSize the number of values to generate
      * @param randomNumberOrigin the origin (inclusive) of each random value
      * @param randomNumberBound the bound (exclusive) of each random value
      * @return a stream of pseudorandom {@code double} values,
      *         each with the given origin (inclusive) and bound (exclusive)
-     * @throws IllegalArgumentException if {@code streamSize} is less than zero,
-     *         or {@code randomNumberOrigin} is not finite,
-     *         or {@code randomNumberBound} is not finite, or {@code randomNumberOrigin}
-     *         is greater than or equal to {@code randomNumberBound}
+    * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
      */
     @Override
@@ -1089,8 +1086,8 @@ public class Random implements RandomGenerator, java.io.Serializable {
 
     /**
      * Returns an effectively unlimited stream of pseudorandom {@code
-     * double} values, each uniformly distributed between
-     * the given origin (inclusive) and bound (exclusive).
+     * double} values, each conforming to the given origin (inclusive) and bound
+     * (exclusive).
 
      * @implNote This method is implemented to be equivalent to {@code
      * doubles(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
@@ -1099,8 +1096,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
      * @param randomNumberBound the bound (exclusive) of each random value
      * @return a stream of pseudorandom {@code double} values,
      *         each with the given origin (inclusive) and bound (exclusive)
-     * @throws IllegalArgumentException if {@code randomNumberOrigin}
-     *         is greater than or equal to {@code randomNumberBound}
+     * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
      */
     @Override
