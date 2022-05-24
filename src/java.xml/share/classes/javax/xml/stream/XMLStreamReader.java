@@ -268,7 +268,7 @@ public interface XMLStreamReader extends XMLStreamConstants {
    * until a START_ELEMENT or END_ELEMENT is reached.
    * If other than white space characters, COMMENT, PROCESSING_INSTRUCTION, START_ELEMENT, END_ELEMENT
    * are encountered, an exception is thrown. This method should
-   * be used when processing element-only content seperated by white space.
+   * be used when processing element-only content separated by white space.
    *
    * <br> Precondition: none
    * <br> Postcondition: the current event is START_ELEMENT or END_ELEMENT
