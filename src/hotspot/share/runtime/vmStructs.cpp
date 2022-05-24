@@ -141,7 +141,6 @@
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
-#include "opto/fpclassnode.hpp"
 #endif // COMPILER2
 
 // Note: the cross-product of (c1, c2, product, nonproduct, ...),

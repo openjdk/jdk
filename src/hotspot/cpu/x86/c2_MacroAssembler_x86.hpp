@@ -356,16 +356,14 @@ public:
   void udivI(Register rax, Register divisor, Register rdx);
   void umodI(Register rax, Register divisor, Register rdx);
   void udivmodI(Register rax, Register divisor, Register rdx, Register tmp);
-  void float_class_check(int opcode, Register dst, XMMRegister src, Register temp);
   void float_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp);
+  void double_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp);
 
 
 #ifdef _LP64
   void udivL(Register rax, Register divisor, Register rdx);
   void umodL(Register rax, Register divisor, Register rdx);
   void udivmodL(Register rax, Register divisor, Register rdx, Register tmp);
-  void double_class_check(int opcode, XMMRegister src, Register dst, Register temp, Register temp1);
-  void double_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp);
 #endif
 
   void vector_popcount_int(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,

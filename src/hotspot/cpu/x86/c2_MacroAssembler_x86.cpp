@@ -4818,31 +4818,6 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
 }
 #endif
 
-void C2_MacroAssembler::float_class_check(int opcode, Register dst, XMMRegister src, Register temp) {
-
-  int32_t POS_INF = 0x7f800000;
-  int32_t KILL_SIGN_MASK = 0x7fffffff;
-
-  movdl(temp, src);
-  andl(temp, KILL_SIGN_MASK);
-  cmpl(temp, POS_INF);
-  switch (opcode) {
-    case Op_IsFiniteF:
-      setb(Assembler::below, dst);
-      break;
-    case Op_IsInfiniteF: {
-      setb(Assembler::equal, dst);
-      break;
-    }
-    case Op_IsNaNF:
-       setb(Assembler::above, dst);
-       break;
-    default:
-      assert(false, "%s", NodeClassNames[opcode]);
-  }
-  andl(dst, 0xff);
-}
-
 void C2_MacroAssembler::float_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp) {
   uint8_t imm8;
   switch (opcode) {
@@ -4865,35 +4840,6 @@ void C2_MacroAssembler::float_class_check_vfp(int opcode, Register dst, XMMRegis
   }
 }
 
-
-
-#ifdef _LP64
-void C2_MacroAssembler::double_class_check(int opcode, XMMRegister src, Register dst, Register temp, Register temp1) {
-  int64_t POS_INF = 0x7ff0000000000000L;
-  int64_t KILL_SIGN_MASK = 0x7fffffffffffffffL;
-
-  movq(temp, src);
-  mov64(temp1, KILL_SIGN_MASK);
-  andq(temp, temp1);
-  mov64(temp1, POS_INF);
-  cmpq(temp, temp1);
-  switch (opcode) {
-    case Op_IsFiniteD:
-      setb(Assembler::below, dst);
-      break;
-    case Op_IsInfiniteD:
-      setb(Assembler::equal, dst);
-      break;
-    case Op_IsNaND:
-      setb(Assembler::above, dst);
-      break;
-    default:
-      assert(false, "%s", NodeClassNames[opcode]);
-  }
-  andq(dst, 0xffL);
-}
-
-
 void C2_MacroAssembler::double_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp) {
   uint8_t imm8;
   switch (opcode) {
@@ -4915,4 +4861,3 @@ void C2_MacroAssembler::double_class_check_vfp(int opcode, Register dst, XMMRegi
     xorl(dst, 0x1); // flip last bit
   }
 }
-#endif

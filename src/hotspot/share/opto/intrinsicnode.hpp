@@ -262,4 +262,60 @@ class SignumFNode : public Node {
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 
+
+//---------- IsInfiniteFNode -----------------------------------------------------
+class IsInfiniteFNode : public Node {
+  public:
+  IsInfiniteFNode(Node* in1) : Node(0, in1) {}
+  virtual int   Opcode() const;
+  const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//---------- IsFiniteFNode -----------------------------------------------------
+class IsFiniteFNode : public Node {
+  public:
+  IsFiniteFNode(Node* in1) : Node(0, in1) {}
+  virtual int   Opcode() const;
+  const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//---------- IsNaNFNode -----------------------------------------------------
+class IsNaNFNode : public Node {
+  public:
+  IsNaNFNode(Node* in1) : Node(0, in1) {}
+  virtual int   Opcode() const;
+  const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//---------- IsInfiniteDNode -----------------------------------------------------
+class IsInfiniteDNode : public Node {
+  public:
+  IsInfiniteDNode(Node* in1) : Node(0, in1) {}
+  virtual int   Opcode() const;
+  const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//---------- IsFiniteDNode -----------------------------------------------------
+class IsFiniteDNode : public Node {
+  public:
+  IsFiniteDNode(Node* in1) : Node(0, in1) {}
+  virtual int   Opcode() const;
+  const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//---------- IsNaNDNode -----------------------------------------------------
+class IsNaNDNode : public Node {
+  public:
+  IsNaNDNode(Node* in1) : Node(0, in1) {}
+  virtual int   Opcode() const;
+  const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+
 #endif // SHARE_OPTO_INTRINSICNODE_HPP
