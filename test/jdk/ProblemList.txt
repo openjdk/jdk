@@ -562,8 +562,6 @@ java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc6
 
 java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
 
-java/nio/channels/FileChannel/LargeMapTest.java                 8286980 windows-all
-
 ############################################################################
 
 # jdk_rmi
