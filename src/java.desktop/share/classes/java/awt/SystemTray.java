@@ -266,7 +266,7 @@ public class SystemTray {
             Vector<TrayIcon> tmp = (Vector<TrayIcon>)AppContext.getAppContext().get(TrayIcon.class);
             icons = tmp;
             if (icons == null) {
-                icons = new Vector<TrayIcon>(3);
+                icons = new Vector<>(3);
                 AppContext.getAppContext().put(TrayIcon.class, icons);
 
             } else if (icons.contains(trayIcon)) {
