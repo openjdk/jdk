@@ -238,7 +238,7 @@ bool PSScavenge::invoke() {
   PSAdaptiveSizePolicy* policy = heap->size_policy();
   IsGCActiveMark mark;
 
-  const bool scavenge_done = PSScavenge::invoke_no_policy(false);
+  const bool scavenge_done = PSScavenge::invoke_no_policy();
   const bool need_full_gc = !scavenge_done ||
     policy->should_full_GC(heap->old_gen()->free_in_bytes());
   bool full_gc_done = false;
@@ -354,7 +354,7 @@ public:
 
 // This method contains no policy. You should probably
 // be calling invoke() instead.
-bool PSScavenge::invoke_no_policy(bool clear_all_soft_refs) {
+bool PSScavenge::invoke_no_policy() {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
 
@@ -435,7 +435,7 @@ bool PSScavenge::invoke_no_policy(bool clear_all_soft_refs) {
     DerivedPointerTable::clear();
 #endif
 
-    reference_processor()->start_discovery(clear_all_soft_refs);
+    reference_processor()->start_discovery(false /* always_clear */);
 
     const PreGenGCValues pre_gc_values = heap->get_pre_gc_values();
 
