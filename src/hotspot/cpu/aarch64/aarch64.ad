@@ -2790,10 +2790,6 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
   return false;
 }
 
-bool Parse::do_one_bytecode_targeted() {
-  return false;
-}
-
 #define MOV_VOLATILE(REG, BASE, INDEX, SCALE, DISP, SCRATCH, INSN)      \
   C2_MacroAssembler _masm(&cbuf);                                       \
   {                                                                     \
@@ -11136,10 +11132,26 @@ instruct mulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2, rFlagsReg cr)
   match(Set dst (MulHiL src1 src2));
 
   ins_cost(INSN_COST * 7);
-  format %{ "smulh   $dst, $src1, $src2, \t# mulhi" %}
+  format %{ "smulh   $dst, $src1, $src2\t# mulhi" %}
 
   ins_encode %{
     __ smulh(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+
+  ins_pipe(lmul_reg_reg);
+%}
+
+instruct umulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2, rFlagsReg cr)
+%{
+  match(Set dst (UMulHiL src1 src2));
+
+  ins_cost(INSN_COST * 7);
+  format %{ "umulh   $dst, $src1, $src2\t# umulhi" %}
+
+  ins_encode %{
+    __ umulh(as_Register($dst$$reg),
              as_Register($src1$$reg),
              as_Register($src2$$reg));
   %}
