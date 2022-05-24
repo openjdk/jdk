@@ -69,7 +69,6 @@ public abstract class InputStream implements Closeable {
      * Get or create a byte array for {@link #skip(long) skip}.
      *
      * @param size minimum length that the skip byte array must have.
-     *             notice that this param input MUST be equal or less than {@link #MAX_SKIP_BUFFER_SIZE MAX_SKIP_BUFFER_SIZE}.
      * @return the byte array.
      */
     private byte[] skipBuffer(int size) {
