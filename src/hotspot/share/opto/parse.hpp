@@ -603,4 +603,50 @@ class Parse : public GraphKit {
 #endif
 };
 
+// Specialized uncommon_trap of unstable_if
+// We have 2 optimizations for them:
+//   1. remove trivial UnstableIf traps, which do not prune any basic block
+//   2. use next_bci of _path to update live locals.
+class UnstableIfTrap {
+  CallStaticJavaNode* _unc;
+  Parse::Block* _path;  // the pruned path, which is only invalid in parse time.
+  int _next_bci;        // speculative bci which takes _path.
+
+public:
+  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _path(path), _next_bci(-1) {
+    assert(_unc != NULL && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
+          "invalid uncommon_trap call!");
+
+    if (_path != NULL) {
+      _next_bci = _path->start();
+    }
+  }
+
+  int next_bci() const { return _next_bci; }
+
+  void set_bci(int bci) {
+    assert(bci == -1 || _next_bci == -1, "attempt to overwrite unc_bci");
+    _next_bci = bci;
+  }
+
+  // This can only be determined in parse-time.
+  // if _path has only one predecessor, it's trivial if this block is smaller.
+  // if _path has more than one predecessor and itself has been parsed, unc does not mask out _path.
+  // It is trivial.
+  bool is_trivial() const {
+    return _path->is_parsed();
+  }
+  Parse::Block* path() const {
+    return _path;
+  }
+  CallStaticJavaNode* uncommon_trap() const {
+    return _unc;
+  }
+
+  inline void* operator new(size_t x) throw() {
+    Compile* C = Compile::current();
+    return C->node_arena()->AmallocWords(x);
+  }
+};
+
 #endif // SHARE_OPTO_PARSE_HPP

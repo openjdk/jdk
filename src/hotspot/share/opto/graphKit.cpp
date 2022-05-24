@@ -2018,12 +2018,12 @@ void GraphKit::increment_counter(Node* counter_addr) {
 // Bail out to the interpreter in mid-method.  Implemented by calling the
 // uncommon_trap blob.  This helper function inserts a runtime call with the
 // right debug info.
-void GraphKit::uncommon_trap(int trap_request,
+Node* GraphKit::uncommon_trap(int trap_request,
                              ciKlass* klass, const char* comment,
                              bool must_throw,
                              bool keep_exact_action) {
   if (failing())  stop();
-  if (stopped())  return; // trap reachable?
+  if (stopped())  return NULL; // trap reachable?
 
   // Note:  If ProfileTraps is true, and if a deopt. actually
   // occurs here, the runtime will make sure an MDO exists.  There is
@@ -2139,6 +2139,7 @@ void GraphKit::uncommon_trap(int trap_request,
   root()->add_req(halt);
 
   stop_and_kill_map();
+  return call;
 }
 
 

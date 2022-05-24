@@ -772,6 +772,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
     if (failing())  return;
 
+    preprocess_unstable_ifs();
+
     print_method(PHASE_BEFORE_REMOVEUSELESS, 3);
 
     // Remove clutter produced by parsing.
@@ -1855,15 +1857,36 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
 
 // only record well-formed if nodes.
 // we only process a node once,so it is fine with duplication.
-void Compile::record_unstable_if(IfNode *iff) {
-  CallStaticJavaNode *unc;
+void Compile::record_unstable_if(UnstableIfTrap* trap) {
+  //CallStaticJavaNode *unc;
 
-  if (aggressive_unstable_if() && iff->unc_bci() != -1 && iff->outcnt() == 2
-      && iff->uncommon_trap_proj(unc, Deoptimization::Reason_unstable_if) != nullptr) {
-    _unstable_ifs.append(iff);
-  }
+  //if (aggressive_unstable_if() && iff->unc_bci() != -1 && iff->outcnt() == 2
+  //    && iff->uncommon_trap_proj(unc, Deoptimization::Reason_unstable_if) != nullptr) {
+  //  _unstable_ifs.append(iff);
+  //}
+
+  _unstable_ifs.append(trap);
 }
 
+uint trivial_unstable_ifs          = 0;
+uint unstable_ifs_all              = 0;
+
+void Compile::preprocess_unstable_ifs() {
+  Atomic::add(&unstable_ifs_all, (uint)_unstable_ifs.length());
+
+  for (int i=0; i < _unstable_ifs.length(); i++) {
+    UnstableIfTrap* trap = _unstable_ifs.at(i);
+    if (trap->is_trivial()) {
+      if (Verbose) {
+        tty->print("trivial unstable_if: ");
+        trap->uncommon_trap()->dump();
+        trap->path()->flow()->print_on(tty);
+      }
+      Atomic::inc(&trivial_unstable_ifs);
+    }
+  }
+}
+#if 0
 // Re-calculate unstable_if traps with the liveness of next_bci, which points to the unlikely path.
 // It needs to be done after igvn because fold-compares may fuse uncommon_traps and
 // before renumbering.
@@ -1925,7 +1948,7 @@ void Compile::process_for_unstable_ifs(PhaseIterGVN& igvn) {
   }
   igvn.optimize();
 }
-
+#endif
 // StringOpts and late inlining of string methods
 void Compile::inline_string_calls(bool parse_time) {
   {
@@ -2212,7 +2235,7 @@ void Compile::Optimize() {
 
   print_method(PHASE_ITER_GVN1, 2);
 
-  process_for_unstable_ifs(igvn);
+  //process_for_unstable_ifs(igvn);
 
   inline_incrementally(igvn);
 
@@ -2233,7 +2256,7 @@ void Compile::Optimize() {
     if (failing())  return;
   }
 
-  process_for_unstable_ifs(igvn);
+  //process_for_unstable_ifs(igvn);
 
   // Remove the speculative part of types and clean up the graph from
   // the extra CastPP nodes whose only purpose is to carry them. Do

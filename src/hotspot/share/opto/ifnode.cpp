@@ -1045,8 +1045,6 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
           igvn->remove_dead_node(adjusted_lim);
         }
         igvn->C->record_for_post_loop_opts_igvn(this);
-        // process_unstable_ifs precedes loop optimization. just bail out.
-        dom_iff->set_unc_bci(-1);
         return false;
       }
     }
@@ -1090,8 +1088,8 @@ Node* IfNode::merge_uncommon_traps(ProjNode* proj, ProjNode* success, ProjNode* 
     igvn->replace_input_of(dom_unc, 0, r);
     igvn->replace_input_of(unc, 0, igvn->C->top());
 
-    // suppress unstable_if optimization for the dominating if.
-    proj->in(0)->as_If()->set_unc_bci(-1);
+    //// suppress unstable_if optimization for the dominating if.
+    //proj->in(0)->as_If()->set_unc_bci(-1);
   }
   int trap_request = dom_unc->uncommon_trap_request();
   Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(trap_request);
@@ -1299,8 +1297,8 @@ void IfNode::reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, Ph
 
   igvn->replace_node(otherproj, igvn->C->top());
   igvn->C->root()->add_req(halt);
-  // suppress unstable_if optimization for the dominating if.
-  c->in(0)->as_If()->set_unc_bci(-1);
+  //// suppress unstable_if optimization for the dominating if.
+  //c->in(0)->as_If()->set_unc_bci(-1);
 }
 
 Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
@@ -1470,8 +1468,6 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (result != NULL) {
     return result;
   }
-
-  igvn->C->record_unstable_if(this);
 
   // Scan for an equivalent test
   int dist = 4;               // Cutoff limit for search

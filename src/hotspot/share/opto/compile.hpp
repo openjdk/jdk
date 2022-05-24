@@ -90,9 +90,11 @@ class TypeOopPtr;
 class TypeFunc;
 class TypeVect;
 class Unique_Node_List;
+class UnstableIfTrap;
 class nmethod;
 class Node_Stack;
 struct Final_Reshape_Counts;
+
 
 enum LoopOptsMode {
   LoopOptsDefault,
@@ -357,7 +359,7 @@ class Compile : public Phase {
   GrowableArray<Node*>  _skeleton_predicate_opaqs; // List of Opaque4 nodes for the loop skeleton predicates.
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
-  GrowableArray<IfNode *> _unstable_ifs;        // List of ifnodes after IGVN
+  GrowableArray<UnstableIfTrap*> _unstable_ifs;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
@@ -737,7 +739,7 @@ class Compile : public Phase {
   void remove_from_post_loop_opts_igvn(Node* n);
   void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
   void process_for_unstable_ifs(PhaseIterGVN& igvn);
-
+  void preprocess_unstable_ifs();
   void sort_macro_nodes();
 
   // remove the opaque nodes that protect the predicates so that the unused checks and
@@ -806,7 +808,7 @@ class Compile : public Phase {
   void         reset_dead_node_list()      { _dead_node_list.reset();
                                              _dead_node_count = 0;
                                            }
-  void         record_unstable_if(IfNode *iff);
+  void         record_unstable_if(UnstableIfTrap* trap);
   uint          live_nodes() const         {
     int  val = _unique - _dead_node_count;
     assert (val >= 0, "number of tracked dead nodes %d more than created nodes %d", _unique, _dead_node_count);
