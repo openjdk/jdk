@@ -244,7 +244,7 @@ public class InputStreamSkipBenchmark {
 
         private SoftReference<byte[]> skipBufferReference;
 
-        private byte[] skipBufferReference(long remaining) {
+        private byte[] skipBuffer(long remaining) {
             int size = (int) Math.min(MAX_SKIP_BUFFER_SIZE, remaining);
             SoftReference<byte[]> ref = this.skipBufferReference;
             byte[] buffer;
@@ -265,7 +265,7 @@ public class InputStreamSkipBenchmark {
 
             int size = (int) Math.min(MAX_SKIP_BUFFER_SIZE, remaining);
 
-            byte[] skipBuffer = this.skipBufferReference(size);
+            byte[] skipBuffer = this.skipBuffer(size);
 
             while (remaining > 0) {
                 int nr = read(skipBuffer, 0, (int) Math.min(size, remaining));

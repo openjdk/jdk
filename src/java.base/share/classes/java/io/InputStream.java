@@ -72,7 +72,7 @@ public abstract class InputStream implements Closeable {
      *             notice that this param input MUST be equal or less than {@link #MAX_SKIP_BUFFER_SIZE MAX_SKIP_BUFFER_SIZE}.
      * @return the byte array.
      */
-    private byte[] skipBufferReference(int size) {
+    private byte[] skipBuffer(int size) {
         SoftReference<byte[]> ref = this.skipBufferReference;
         byte[] buffer;
         if (ref == null || (buffer = ref.get()) == null || buffer.length < size) {
@@ -569,7 +569,7 @@ public abstract class InputStream implements Closeable {
 
         int size = (int) Math.min(MAX_SKIP_BUFFER_SIZE, remaining);
 
-        byte[] skipBuffer = this.skipBufferReference(size);
+        byte[] skipBuffer = this.skipBuffer(size);
 
         while (remaining > 0) {
             int nr = read(skipBuffer, 0, (int) Math.min(size, remaining));
