@@ -707,11 +707,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     public abstract static class JCCaseLabel extends JCTree implements CaseLabelTree {
-//        public abstract boolean isExpression();
-//        public boolean isNullPattern() {
-//            return isExpression() && TreeInfo.isNull((JCExpression) this);
-//        }
-//        public abstract boolean isPattern();
     }
 
     public abstract static class JCExpression extends JCTree implements ExpressionTree {
@@ -1335,8 +1330,15 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public Kind getKind() { return Kind.CASE; }
         @Override @Deprecated @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return getExpressions().head; }
+
         @Override @DefinedBy(Api.COMPILER_TREE)
-        public List<JCExpression> getExpressions() { return labels.stream().filter(p -> p.hasTag(EXPRESSIONCASELABEL)).map(p -> ((JCExpressionCaseLabel) p).expr).collect(List.collector()); }
+        public List<JCExpression> getExpressions() {
+            return labels.stream()
+                         .filter(p -> p.hasTag(EXPRESSIONCASELABEL))
+                         .map(p -> ((JCExpressionCaseLabel) p).expr)
+                         .collect(List.collector());
+        }
+
         @Override @DefinedBy(Api.COMPILER_TREE)
         public List<JCCaseLabel> getLabels() { return labels; }
         @Override @DefinedBy(Api.COMPILER_TREE)

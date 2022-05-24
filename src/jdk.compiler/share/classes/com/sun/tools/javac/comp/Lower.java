@@ -3961,11 +3961,14 @@ public class Lower extends TreeTranslator {
                 else if (oneCase == nullCase) {
                     caseExpr = make.Literal(nullCaseLabel);
                 } else {
-                    caseExpr = make.Literal(caseLabelToPosition.get((String)TreeInfo.skipParens(((JCExpressionCaseLabel) oneCase.labels.head).expr).
-                                                                    type.constValue()));
+                    JCExpression expression = ((JCExpressionCaseLabel) oneCase.labels.head).expr;
+                    String name = (String) TreeInfo.skipParens(expression)
+                                                   .type.constValue();
+                    caseExpr = make.Literal(caseLabelToPosition.get(name));
                 }
 
-                lb.append(make.Case(JCCase.STATEMENT, caseExpr == null ? List.of(make.DefaultCaseLabel()) : List.of(make.ExpressionCaseLabel(caseExpr)),
+                lb.append(make.Case(JCCase.STATEMENT, caseExpr == null ? List.of(make.DefaultCaseLabel())
+                                                                       : List.of(make.ExpressionCaseLabel(caseExpr)),
                                     oneCase.stats, null));
             }
 
