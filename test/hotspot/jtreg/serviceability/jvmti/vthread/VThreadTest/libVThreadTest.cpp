@@ -604,18 +604,6 @@ Agent_OnLoad(JavaVM *jvm, char *options,
     return JNI_ERR;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, NULL);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("error in JVMTI SetEventNotificationMode: %d\n", err);
-    return JNI_ERR;
-  }
-
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_UNMOUNT, NULL);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("error in JVMTI SetEventNotificationMode: %d\n", err);
-    return JNI_ERR;
-  }
-
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
   if (err != JVMTI_ERROR_NONE) {
     LOG("error in JVMTI SetEventNotificationMode: %d\n", err);
@@ -623,6 +611,18 @@ Agent_OnLoad(JavaVM *jvm, char *options,
   }
 
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_END, NULL);
+  if (err != JVMTI_ERROR_NONE) {
+    LOG("error in JVMTI SetEventNotificationMode: %d\n", err);
+    return JNI_ERR;
+  }
+
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, NULL);
+  if (err != JVMTI_ERROR_NONE) {
+    LOG("error in JVMTI SetEventNotificationMode: %d\n", err);
+    return JNI_ERR;
+  }
+
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_UNMOUNT, NULL);
   if (err != JVMTI_ERROR_NONE) {
     LOG("error in JVMTI SetEventNotificationMode: %d\n", err);
     return JNI_ERR;
