@@ -686,7 +686,7 @@ import java.util.Arrays;
  * because it is relatively rare to find algorithms where, given two
  * adjacent vector lanes, one lane is somehow more arithmetically
  * significant than its neighbor, and even in those cases, there is no
- * general way to know which neighbor is the the more significant.
+ * general way to know which neighbor is the more significant.
  *
  * <p> Putting the terms together, we view the information structure
  * of a vector as a temporal sequence of lanes ("first", "next",
@@ -2252,7 +2252,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * <p> The scale must not be so large, and the element size must
      * not be so small, that that there would be an overflow when
      * computing any of the {@code N*scale} or {@code VLENGTH*scale},
-     * when the the result is represented using the vector
+     * when the result is represented using the vector
      * lane type {@code ETYPE}.
      *
      * <p>

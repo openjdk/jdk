@@ -116,7 +116,7 @@ public final class WindowsAnsiWriter extends AnsiWriter {
     }
 
     private short invertAttributeColors(short attributes) {
-        // Swap the the Foreground and Background bits.
+        // Swap the Foreground and Background bits.
         int fg = 0x000F & attributes;
         fg <<= 4;
         int bg = 0X00F0 & attributes;

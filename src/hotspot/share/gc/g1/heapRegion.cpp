@@ -401,7 +401,7 @@ void HeapRegion::verify_code_roots(VerifyOption vo, bool* failures) const {
     // We're not verifying code roots.
     return;
   }
-  if (vo == VerifyOption_G1UseFullMarking) {
+  if (vo == VerifyOption::G1UseFullMarking) {
     // Marking verification during a full GC is performed after class
     // unloading, code cache unloading, etc so the code roots
     // attached to each heap region are in an inconsistent state. They won't
@@ -764,7 +764,7 @@ void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
 
 void HeapRegion::verify_rem_set() const {
   bool failures = false;
-  verify_rem_set(VerifyOption_G1UsePrevMarking, &failures);
+  verify_rem_set(VerifyOption::G1UsePrevMarking, &failures);
   guarantee(!failures, "HeapRegion RemSet verification failed");
 }
 
