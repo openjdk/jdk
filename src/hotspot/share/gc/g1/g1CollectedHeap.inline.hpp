@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,11 +207,16 @@ void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
-inline bool G1CollectedHeap::is_in_young(const oop obj) {
+inline bool G1CollectedHeap::is_in_young(const oop obj) const {
   if (obj == NULL) {
     return false;
   }
   return heap_region_containing(obj)->is_young();
+}
+
+inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
+  assert(obj != NULL, "");
+  return !heap_region_containing(obj)->is_young(); // is_in_young does an unnecessary NULL check
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
@@ -223,20 +228,6 @@ inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
     return false;
   }
   return is_obj_dead(obj, heap_region_containing(obj));
-}
-
-inline bool G1CollectedHeap::is_obj_ill(const oop obj, const HeapRegion* hr) const {
-  return
-    !hr->obj_allocated_since_next_marking(obj) &&
-    !is_marked_next(obj) &&
-    !hr->is_closed_archive();
-}
-
-inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {
-  if (obj == NULL) {
-    return false;
-  }
-  return is_obj_ill(obj, heap_region_containing(obj));
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj, const HeapRegion* hr) const {

@@ -244,7 +244,7 @@ public class CompileCodeTestCase {
     }
 
     static {
-        Map<Class<?>, Object> map = new HashMap<>();;
+        Map<Class<?>, Object> map = new HashMap<>();
         map.put(CompileCodeTestCase.DummyEx.class,
                 new CompileCodeTestCase.DummyEx());
         map.put(CompileCodeTestCase.Dummy.class,

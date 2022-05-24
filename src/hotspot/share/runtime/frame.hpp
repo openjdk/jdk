@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #define SHARE_RUNTIME_FRAME_HPP
 
 #include "code/vmregTypes.hpp"
+#include "compiler/oopMap.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/monitorChunk.hpp"
 #include "utilities/growableArray.hpp"
@@ -39,11 +41,12 @@ typedef class BytecodeInterpreter* interpreterState;
 class CodeBlob;
 class CompiledMethod;
 class FrameValues;
-class vframeArray;
+class InterpreterOopMap;
 class JavaCallWrapper;
 class Method;
 class methodHandle;
 class RegisterMap;
+class vframeArray;
 
 enum class DerivedPointerIterationMode {
   _with_table,
@@ -60,10 +63,13 @@ enum class DerivedPointerIterationMode {
 class frame {
  private:
   // Instance variables:
-  intptr_t* _sp; // stack pointer (from Thread::last_Java_sp)
+  union {
+    intptr_t* _sp; // stack pointer (from Thread::last_Java_sp)
+    int _offset_sp; // used by frames in stack chunks
+  };
   address   _pc; // program counter (the next instruction after the call)
-
-  CodeBlob* _cb; // CodeBlob that "owns" pc
+  mutable CodeBlob* _cb; // CodeBlob that "owns" pc
+  mutable const ImmutableOopMap* _oop_map; // oop map, for compiled/stubs frames only
   enum deopt_state {
     not_deoptimized,
     is_deoptimized,
@@ -72,9 +78,24 @@ class frame {
 
   deopt_state _deopt_state;
 
+  // Do internal pointers in interpreter frames use absolute adddresses or relative (to fp)?
+  // Frames in stack chunks are on the Java heap and use relative addressing; on the stack
+  // they use absolute addressing
+  bool        _on_heap;  // This frame represents a frame on the heap.
+  DEBUG_ONLY(int _frame_index;) // the frame index in a stack chunk; -1 when on a thread stack
+
+  // We use different assertions to allow for intermediate states (e.g. during thawing or relativizing the frame)
+  void assert_on_heap() const  { assert(is_heap_frame(), "Using offset with a non-chunk frame"); }
+  void assert_offset() const   { assert(_frame_index >= 0,  "Using offset with a non-chunk frame"); assert_on_heap(); }
+  void assert_absolute() const { assert(_frame_index == -1, "Using absolute addresses with a chunk frame"); }
+
  public:
   // Constructors
   frame();
+
+  explicit frame(bool dummy) {} // no initialization
+
+  explicit frame(intptr_t* sp);
 
 #ifndef PRODUCT
   // This is a generic constructor which is only used by pns() in debug.cpp.
@@ -98,13 +119,41 @@ class frame {
   // is deoptimization. It likely no one else should ever use it.
   address raw_pc() const;
 
-  void set_pc( address   newpc );
+  void set_pc(address newpc);
+  void set_pc_preserve_deopt(address newpc);
+  void set_pc_preserve_deopt(address newpc, CodeBlob* cb);
 
-  intptr_t* sp() const           { return _sp; }
+  intptr_t* sp() const           { assert_absolute(); return _sp; }
   void set_sp( intptr_t* newsp ) { _sp = newsp; }
 
+  int offset_sp() const           { assert_offset();  return _offset_sp; }
+  void set_offset_sp( int newsp ) { assert_on_heap(); _offset_sp = newsp; }
+
+  int frame_index() const {
+  #ifdef ASSERT
+    return _frame_index;
+  #else
+    return -1;
+  #endif
+  }
+  void set_frame_index( int index ) {
+    #ifdef ASSERT
+      _frame_index = index;
+    #endif
+  }
+
+  static int sender_sp_ret_address_offset();
 
   CodeBlob* cb() const           { return _cb; }
+  inline CodeBlob* get_cb() const;
+  // inline void set_cb(CodeBlob* cb);
+
+  const ImmutableOopMap* oop_map() const {
+    if (_oop_map == NULL) {
+      _oop_map = get_oop_map();
+    }
+    return _oop_map;
+  }
 
   // patching operations
   void   patch_pc(Thread* thread, address pc);
@@ -128,6 +177,7 @@ class frame {
   bool equal(frame other) const;
 
   // type testers
+  bool is_empty()                const { return _pc == NULL; }
   bool is_interpreted_frame()    const;
   bool is_java_frame()           const;
   bool is_entry_frame()          const;             // Java frame called from C?
@@ -138,17 +188,19 @@ class frame {
   bool is_compiled_frame()       const;
   bool is_safepoint_blob_frame() const;
   bool is_deoptimized_frame()    const;
-  bool is_optimized_entry_frame()         const;
+  bool is_upcall_stub_frame()    const;
+  bool is_heap_frame()             const { return _on_heap; }
 
   // testers
   bool is_first_frame() const; // oldest frame? (has no sender)
   bool is_first_java_frame() const;              // same for Java frame
+  bool is_first_vthread_frame(JavaThread* thread) const;
 
   bool is_interpreted_frame_valid(JavaThread* thread) const;       // performs sanity checks on interpreted frames.
 
   // is this frame doing a call using the compiled calling convention?
   bool is_compiled_caller() const {
-    return is_compiled_frame() || is_optimized_entry_frame();
+    return is_compiled_frame() || is_upcall_stub_frame();
   }
 
   // tells whether this frame is marked for deoptimization
@@ -157,28 +209,36 @@ class frame {
   // tells whether this frame can be deoptimized
   bool can_be_deoptimized() const;
 
-  // returns the frame size in stack slots
-  int frame_size(RegisterMap* map) const;
+  // the frame size in machine words
+  inline int frame_size() const;
+
+  // the number of oops in the frame for non-interpreted frames
+  inline int num_oops() const;
+
+  // the size, in words, of stack-passed arguments
+  inline int compiled_frame_stack_argsize() const;
+
+  inline void interpreted_frame_oop_map(InterpreterOopMap* mask) const;
 
   // returns the sending frame
-  frame sender(RegisterMap* map) const;
+  inline frame sender(RegisterMap* map) const;
 
   bool safe_for_sender(JavaThread *thread);
 
   // returns the sender, but skips conversion frames
   frame real_sender(RegisterMap* map) const;
 
-  // returns the the sending Java frame, skipping any intermediate C frames
+  // returns the sending Java frame, skipping any intermediate C frames
   // NB: receiver must not be first frame
   frame java_sender() const;
 
  private:
   // Helper methods for better factored code in frame::sender
-  frame sender_for_compiled_frame(RegisterMap* map) const;
+  inline frame sender_for_compiled_frame(RegisterMap* map) const;
   frame sender_for_entry_frame(RegisterMap* map) const;
   frame sender_for_interpreter_frame(RegisterMap* map) const;
   frame sender_for_native_frame(RegisterMap* map) const;
-  frame sender_for_optimized_entry_frame(RegisterMap* map) const;
+  frame sender_for_upcall_stub_frame(RegisterMap* map) const;
 
   bool is_entry_frame_valid(JavaThread* thread) const;
 
@@ -189,7 +249,13 @@ class frame {
  public:
 
   intptr_t* addr_at(int index) const             { return &fp()[index];    }
-  intptr_t  at(int index) const                  { return *addr_at(index); }
+  intptr_t  at_absolute(int index) const         { return *addr_at(index); }
+  // Interpreter frames in continuation stacks are on the heap, and internal addresses are relative to fp.
+  intptr_t  at_relative(int index) const         { return (intptr_t)(fp() + fp()[index]); }
+
+  intptr_t at(int index) const                   {
+    return _on_heap ? at_relative(index) : at_absolute(index);
+  }
 
   // accessors for locals
   oop obj_at(int offset) const                   { return *obj_at_addr(offset);  }
@@ -207,7 +273,11 @@ class frame {
 
  public:
   // Link (i.e., the pointer to the previous frame)
+  // might crash if the frame has no parent
   intptr_t* link() const;
+
+  // Link (i.e., the pointer to the previous frame) or null if the link cannot be accessed
+  intptr_t* link_or_null() const;
 
   // Return address
   address  sender_pc() const;
@@ -218,6 +288,10 @@ class frame {
   // The frame's original SP, before any extension by an interpreted callee;
   // used for packing debug info into vframeArray objects and vframeArray lookup.
   intptr_t* unextended_sp() const;
+  void set_unextended_sp(intptr_t* value);
+
+  int offset_unextended_sp() const;
+  void set_offset_unextended_sp(int value);
 
   // returns the stack pointer of the calling frame
   intptr_t* sender_sp() const;
@@ -273,7 +347,7 @@ class frame {
 
   // Find receiver for an invoke when arguments are just pushed on stack (i.e., callee stack-frame is
   // not setup)
-  oop interpreter_callee_receiver(Symbol* signature)     { return *interpreter_callee_receiver_addr(signature); }
+  oop interpreter_callee_receiver(Symbol* signature);
 
 
   oop* interpreter_callee_receiver_addr(Symbol* signature);
@@ -346,7 +420,7 @@ class frame {
 
   // tells whether there is another chunk of Delta stack above
   bool entry_frame_is_first() const;
-  bool optimized_entry_frame_is_first() const;
+  bool upcall_stub_frame_is_first() const;
 
   // Safepoints
 
@@ -369,11 +443,13 @@ class frame {
   static void print_C_frame(outputStream* st, char* buf, int buflen, address pc);
 
   // Add annotated descriptions of memory locations belonging to this frame to values
-  void describe(FrameValues& values, int frame_no);
+  void describe(FrameValues& values, int frame_no, const RegisterMap* reg_map=NULL);
 
   // Conversion from a VMReg to physical stack location
-  address oopmapreg_to_location(VMReg reg, const RegisterMap* reg_map) const;
-  oop* oopmapreg_to_oop_location(VMReg reg, const RegisterMap* reg_map) const;
+  template <typename RegisterMapT>
+  address oopmapreg_to_location(VMReg reg, const RegisterMapT* reg_map) const;
+  template <typename RegisterMapT>
+  oop* oopmapreg_to_oop_location(VMReg reg, const RegisterMapT* reg_map) const;
 
   // Oops-do's
   void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, bool has_appendix, const RegisterMap* reg_map, OopClosure* f) const;
@@ -383,17 +459,37 @@ class frame {
   void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f) const;
 
   // Iteration of oops
-  void oops_do_internal(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
-                        bool use_interpreter_oop_map_cache, DerivedPointerIterationMode derived_mode) const;
+  void oops_do_internal(OopClosure* f, CodeBlobClosure* cf,
+                        DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
+                        const RegisterMap* map, bool use_interpreter_oop_map_cache) const;
+
   void oops_entry_do(OopClosure* f, const RegisterMap* map) const;
-  void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
-                         DerivedPointerIterationMode derived_mode) const;
+  void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf,
+                         DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
+                         const RegisterMap* map) const;
   int adjust_offset(Method* method, int index); // helper for above fn
  public:
   // Memory management
+  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) {
+#if COMPILER2_OR_JVMCI
+    DerivedPointerIterationMode dpim = DerivedPointerTable::is_active() ?
+                                       DerivedPointerIterationMode::_with_table :
+                                       DerivedPointerIterationMode::_ignore;
+#else
+    DerivedPointerIterationMode dpim = DerivedPointerIterationMode::_ignore;;
+#endif
+    oops_do_internal(f, cf, NULL, dpim, map, true);
+  }
+
+  void oops_do(OopClosure* f, CodeBlobClosure* cf, DerivedOopClosure* df, const RegisterMap* map) {
+    oops_do_internal(f, cf, df, DerivedPointerIterationMode::_ignore, map, true);
+  }
+
   void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
-               DerivedPointerIterationMode derived_mode) const;
-  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) const;
+               DerivedPointerIterationMode derived_mode) const {
+    oops_do_internal(f, cf, NULL, derived_mode, map, true);
+  }
+
   void nmethods_do(CodeBlobClosure* cf) const;
 
   // RedefineClasses support for finding live interpreted methods on the stack
@@ -424,7 +520,6 @@ class FrameValue {
     owner = -1;
     priority = 0;
   }
-
 };
 
 
@@ -443,6 +538,9 @@ class FrameValues {
     return a->location - b->location;
   }
 
+  void print_on(outputStream* out, int min_index, int max_index, intptr_t* v0, intptr_t* v1,
+                bool on_heap = false);
+
  public:
   // Used by frame functions to describe locations.
   void describe(int owner, intptr_t* location, const char* description, int priority = 0);
@@ -452,6 +550,8 @@ class FrameValues {
 #endif
   void print(JavaThread* thread) { print_on(thread, tty); }
   void print_on(JavaThread* thread, outputStream* out);
+  void print(stackChunkOop chunk) { print_on(chunk, tty); }
+  void print_on(stackChunkOop chunk, outputStream* out);
 };
 
 #endif

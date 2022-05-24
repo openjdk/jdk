@@ -134,7 +134,7 @@ public class ZoneView extends BoxView {
      *
      * @param mzl the desired maximum number of zones
      *  to be actively loaded, must be greater than 0
-     * @exception IllegalArgumentException if <code>mzl</code> is &lt; 1
+     * @throws IllegalArgumentException if <code>mzl</code> is &lt; 1
      */
     public void setMaxZonesLoaded(int mzl) {
         if (mzl < 1) {
@@ -579,7 +579,7 @@ public class ZoneView extends BoxView {
          * @param pos the position to convert
          * @param a the allocated region to render into
          * @return the bounding box of the given position
-         * @exception BadLocationException  if the given position does not represent a
+         * @throws BadLocationException  if the given position does not represent a
          *   valid location in the associated document
          * @see View#modelToView
          */

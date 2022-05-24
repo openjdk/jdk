@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@
           "Maximum size of marking stack")                                  \
           range(1, (max_jint - 1))                                          \
                                                                             \
-  product(size_t, MarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),             \
+  product(size_t, MarkStackSize, NOT_LP64(64*K) LP64_ONLY(4*M),             \
           "Size of marking stack")                                          \
           constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
           range(1, (max_jint - 1))                                          \
@@ -501,10 +501,6 @@
                                                                             \
   product(intx, PrefetchScanIntervalInBytes, -1,                            \
           "How far ahead to prefetch scan area (<= 0 means off)")           \
-          range(-1, max_jint)                                               \
-                                                                            \
-  product(intx, PrefetchFieldsAhead, -1,                                    \
-          "How many fields ahead to prefetch in oop scan (<= 0 means off)") \
           range(-1, max_jint)                                               \
                                                                             \
   product(bool, VerifyDuringStartup, false, DIAGNOSTIC,                     \

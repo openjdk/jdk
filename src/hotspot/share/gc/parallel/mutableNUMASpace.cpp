@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -589,7 +589,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
 
   // Compute chunk sizes
   size_t prev_page_size = page_size();
-  set_page_size(UseLargePages ? alignment() : os::vm_page_size());
+  set_page_size(alignment());
   HeapWord* rounded_bottom = align_up(bottom(), page_size());
   HeapWord* rounded_end = align_down(end(), page_size());
   size_t base_space_size_pages = pointer_delta(rounded_end, rounded_bottom, sizeof(char)) / page_size();
@@ -728,7 +728,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
 }
 
 // Set the top of the whole space.
-// Mark the the holes in chunks below the top() as invalid.
+// Mark the holes in chunks below the top() as invalid.
 void MutableNUMASpace::set_top(HeapWord* value) {
   bool found_top = false;
   for (int i = 0; i < lgrp_spaces()->length();) {

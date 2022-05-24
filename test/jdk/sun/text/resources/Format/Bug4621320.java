@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.Locale;
 public class Bug4621320 {
 
     public static void main(String args[]) {
-        DateFormatSymbols dfs = new DateFormatSymbols(new Locale("uk","UA"));
+        DateFormatSymbols dfs = new DateFormatSymbols(Locale.of("uk","UA"));
         if
 (!dfs.getMonths()[2].equals("\u0431\u0435\u0440\u0435\u0437\u043d\u044f")) {
             throw new RuntimeException();

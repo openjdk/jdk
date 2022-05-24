@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ void PhaseVector::scalarize_vbox_nodes() {
       VectorBoxNode* vbox = static_cast<VectorBoxNode*>(n);
       scalarize_vbox_node(vbox);
       if (C->failing())  return;
-      C->print_method(PHASE_SCALARIZE_VBOX, vbox, 3);
+      C->print_method(PHASE_SCALARIZE_VBOX, 3, vbox);
     }
     if (C->failing())  return;
     macro_idx = MIN2(macro_idx - 1, C->macro_count() - 1);
@@ -131,7 +131,7 @@ void PhaseVector::expand_vunbox_nodes() {
       VectorUnboxNode* vec_unbox = static_cast<VectorUnboxNode*>(n);
       expand_vunbox_node(vec_unbox);
       if (C->failing())  return;
-      C->print_method(PHASE_EXPAND_VUNBOX, vec_unbox, 3);
+      C->print_method(PHASE_EXPAND_VUNBOX, 3, vec_unbox);
     }
     if (C->failing())  return;
     macro_idx = MIN2(macro_idx - 1, C->macro_count() - 1);
@@ -149,7 +149,7 @@ void PhaseVector::eliminate_vbox_alloc_nodes() {
       VectorBoxAllocateNode* vbox_alloc = static_cast<VectorBoxAllocateNode*>(n);
       eliminate_vbox_alloc_node(vbox_alloc);
       if (C->failing())  return;
-      C->print_method(PHASE_ELIMINATE_VBOX_ALLOC, vbox_alloc, 3);
+      C->print_method(PHASE_ELIMINATE_VBOX_ALLOC, 3, vbox_alloc);
     }
     if (C->failing())  return;
     macro_idx = MIN2(macro_idx - 1, C->macro_count() - 1);
@@ -247,7 +247,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     }
   }
 
-  ciInstanceKlass* iklass = vec_box->box_type()->klass()->as_instance_klass();
+  ciInstanceKlass* iklass = vec_box->box_type()->instance_klass();
   int n_fields = iklass->nof_nonstatic_fields();
   assert(n_fields == 1, "sanity");
 
@@ -297,7 +297,7 @@ void PhaseVector::expand_vbox_node(VectorBoxNode* vec_box) {
     Node* vect = vec_box->in(VectorBoxNode::Value);
     Node* result = expand_vbox_node_helper(vbox, vect, vec_box->box_type(), vec_box->vec_type());
     C->gvn_replace_by(vec_box, result);
-    C->print_method(PHASE_EXPAND_VBOX, vec_box, 3);
+    C->print_method(PHASE_EXPAND_VBOX, 3, vec_box);
   }
   C->remove_macro_node(vec_box);
 }
@@ -348,7 +348,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   GraphKit kit(jvms);
   PhaseGVN& gvn = kit.gvn();
 
-  ciInstanceKlass* box_klass = box_type->klass()->as_instance_klass();
+  ciInstanceKlass* box_klass = box_type->instance_klass();
   BasicType bt = vect_type->element_basic_type();
   int num_elem = vect_type->length();
 
@@ -420,7 +420,7 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     Node* obj = vec_unbox->obj();
     const TypeInstPtr* tinst = gvn.type(obj)->isa_instptr();
-    ciInstanceKlass* from_kls = tinst->klass()->as_instance_klass();
+    ciInstanceKlass* from_kls = tinst->instance_klass();
     const TypeVect* vt = vec_unbox->bottom_type()->is_vect();
     BasicType bt = vt->element_basic_type();
     BasicType masktype = bt;

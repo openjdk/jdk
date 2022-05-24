@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ VALID_TOOLCHAINS_all="gcc clang xlc microsoft"
 
 # These toolchains are valid on different platforms
 VALID_TOOLCHAINS_linux="gcc clang"
-VALID_TOOLCHAINS_macosx="gcc clang"
+VALID_TOOLCHAINS_macosx="clang"
 VALID_TOOLCHAINS_aix="xlc"
 VALID_TOOLCHAINS_windows="microsoft"
 
@@ -234,7 +234,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     if test -n "$XCODEBUILD"; then
       # On Mac OS X, default toolchain to clang after Xcode 5
-      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2>&1 | $HEAD -n 1`
+      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version | $HEAD -n 1`
       $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
       if test $? -ne 0; then
         AC_MSG_NOTICE([xcodebuild output: $XCODE_VERSION_OUTPUT])
@@ -698,10 +698,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     AS="$CC -c"
   else
     if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
-      # On 64 bit windows, the assember is "ml64.exe"
+      # On 64 bit windows, the assembler is "ml64.exe"
       UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml64)
     else
-      # otherwise, the assember is "ml.exe"
+      # otherwise, the assembler is "ml.exe"
       UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml)
     fi
   fi
@@ -772,8 +772,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     else
       UTIL_LOOKUP_TOOLCHAIN_PROGS(NM, nm)
     fi
-    GNM="$NM"
-    AC_SUBST(GNM)
   fi
 
   # objcopy is used for moving debug symbols to separate files when
@@ -883,13 +881,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       UTIL_REQUIRE_PROGS(BUILD_CC, cl, [$VS_PATH])
       UTIL_REQUIRE_PROGS(BUILD_CXX, cl, [$VS_PATH])
 
-      # On windows, the assember is "ml.exe". We currently don't need this so
+      # On windows, the assembler is "ml.exe". We currently don't need this so
       # do not require.
       if test "x$OPENJDK_BUILD_CPU_BITS" = "x64"; then
-        # On 64 bit windows, the assember is "ml64.exe"
+        # On 64 bit windows, the assembler is "ml64.exe"
         UTIL_LOOKUP_PROGS(BUILD_AS, ml64, [$VS_PATH])
       else
-        # otherwise the assember is "ml.exe"
+        # otherwise the assembler is "ml.exe"
         UTIL_LOOKUP_PROGS(BUILD_AS, ml, [$VS_PATH])
       fi
 
@@ -903,8 +901,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       BUILD_LDCXX="$BUILD_LD"
     else
       if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-        UTIL_REQUIRE_PROGS(BUILD_CC, clang cc gcc)
-        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++ CC g++)
+        UTIL_REQUIRE_PROGS(BUILD_CC, clang)
+        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++)
       else
         UTIL_REQUIRE_PROGS(BUILD_CC, cc gcc)
         UTIL_REQUIRE_PROGS(BUILD_CXX, CC g++)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,8 +92,9 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
 
 vframeStreamForte::vframeStreamForte(JavaThread *jt,
                                      frame fr,
-                                     bool stop_at_java_call_stub) : vframeStreamCommon(jt, false /* process_frames */) {
-
+                                     bool stop_at_java_call_stub)
+    : vframeStreamCommon(RegisterMap(jt, false, false, false)) {
+  _reg_map.set_async(true);
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _frame = fr;
 
@@ -562,12 +563,14 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
 extern "C" {
 JNIEXPORT
 void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
+
+  // Can't use thread_from_jni_environment as it may also perform a VM exit check that is unsafe to
+  // do from this context.
+  Thread* raw_thread = Thread::current_or_null_safe();
   JavaThread* thread;
 
-  if (trace->env_id == NULL ||
-    (thread = JavaThread::thread_from_jni_environment(trace->env_id)) == NULL ||
-    thread->is_exiting()) {
-
+  if (trace->env_id == NULL || raw_thread == NULL || !raw_thread->is_Java_thread() ||
+      (thread = JavaThread::cast(raw_thread))->is_exiting()) {
     // bad env_id, thread has exited or thread is exiting
     trace->num_frames = ticks_thread_exit; // -8
     return;
@@ -579,7 +582,8 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     return;
   }
 
-  assert(JavaThread::current() == thread,
+  // This is safe now as the thread has not terminated and so no VM exit check occurs.
+  assert(thread == JavaThread::thread_from_jni_environment(trace->env_id),
          "AsyncGetCallTrace must be called by the current interrupted thread");
 
   if (!JvmtiExport::should_post_class_load()) {
@@ -591,6 +595,9 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     trace->num_frames = ticks_GC_active; // -2
     return;
   }
+
+  // !important! make sure all to call thread->set_in_asgct(false) before every return
+  thread->set_in_asgct(true);
 
   switch (thread->thread_state()) {
   case _thread_new:
@@ -649,11 +656,12 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     trace->num_frames = ticks_unknown_state; // -7
     break;
   }
+  thread->set_in_asgct(false);
 }
 
 
 #ifndef _WINDOWS
-// Support for the Forte(TM) Peformance Tools collector.
+// Support for the Forte(TM) Performance Tools collector.
 //
 // The method prototype is derived from libcollector.h. For more
 // information, please see the libcollect man page.

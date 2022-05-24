@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     Label isfloatordouble, isdouble, next;
 
     __ testl(c_rarg3, 1 << (i*2));      // Float or Double?
-    __ jcc(Assembler::notZero, isfloatordouble);
+    __ jccb(Assembler::notZero, isfloatordouble);
 
     // Do Int register here
     switch ( i ) {
@@ -88,15 +88,15 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
         break;
     }
 
-    __ jmp (next);
+    __ jmpb(next);
 
     __ bind(isfloatordouble);
     __ testl(c_rarg3, 1 << ((i*2)+1));     // Double?
-    __ jcc(Assembler::notZero, isdouble);
+    __ jccb(Assembler::notZero, isdouble);
 
 // Do Float Here
     __ movflt(floatreg, Address(rsp, i * wordSize));
-    __ jmp(next);
+    __ jmpb(next);
 
 // Do Double here
     __ bind(isdouble);
@@ -150,9 +150,9 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     Label d, done;
 
     __ testl(c_rarg3, 1 << i);
-    __ jcc(Assembler::notZero, d);
+    __ jccb(Assembler::notZero, d);
     __ movflt(r, Address(rsp, (6 + i) * wordSize));
-    __ jmp(done);
+    __ jmpb(done);
     __ bind(d);
     __ movdbl(r, Address(rsp, (6 + i) * wordSize));
     __ bind(done);
@@ -441,6 +441,21 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   __ pop(rax);
   __ mov(rsp, r13);
   __ jmp(rax);
+
+  return entry_point;
+}
+
+address TemplateInterpreterGenerator::generate_currentThread() {
+
+  address entry_point = __ pc();
+
+  __ movptr(rax, Address(r15_thread, JavaThread::vthread_offset()));
+
+  __ resolve_oop_handle(rax, rscratch1);
+
+  __ pop(rcx);
+  __ mov(rsp, r13);
+  __ jmp(rcx);
 
   return entry_point;
 }

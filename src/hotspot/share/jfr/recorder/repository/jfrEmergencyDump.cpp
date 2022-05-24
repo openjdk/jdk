@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
-char JfrEmergencyDump::_dump_path[JVM_MAXPATHLEN] = { 0 };
-
 static const char vm_error_filename_fmt[] = "hs_err_pid%p.jfr";
 static const char vm_oom_filename_fmt[] = "hs_oom_pid%p.jfr";
 static const char vm_soe_filename_fmt[] = "hs_soe_pid%p.jfr";
@@ -51,6 +49,7 @@ static const size_t iso8601_len = 19; // "YYYY-MM-DDTHH:MM:SS" (note: we just us
 static fio_fd emergency_fd = invalid_fd;
 static const int64_t chunk_file_header_size = 68;
 static const size_t chunk_file_extension_length = sizeof chunk_file_jfr_ext - 1;
+static char _dump_path[JVM_MAXPATHLEN] = { 0 };
 
 /*
  * The emergency dump logic is restrictive when it comes to
@@ -105,7 +104,7 @@ static bool open_emergency_dump_fd(const char* path) {
 
 static void close_emergency_dump_file() {
   if (is_emergency_dump_file_open()) {
-    os::close(emergency_fd);
+    ::close(emergency_fd);
   }
 }
 
@@ -132,7 +131,7 @@ static const char* create_emergency_dump_path() {
   return result ? _path_buffer : NULL;
 }
 
-bool JfrEmergencyDump::open_emergency_dump_file() {
+static bool open_emergency_dump_file() {
   if (is_emergency_dump_file_open()) {
     // opened already
     return true;
@@ -166,12 +165,12 @@ static void report(outputStream* st, bool emergency_file_opened, const char* rep
   }
 }
 
-void JfrEmergencyDump::set_dump_path(const char* dump_path) {
-  if (dump_path == NULL || *dump_path == '\0') {
+void JfrEmergencyDump::set_dump_path(const char* path) {
+  if (path == NULL || *path == '\0') {
     os::get_current_directory(_dump_path, sizeof(_dump_path));
   } else {
-    if (strlen(dump_path) < JVM_MAXPATHLEN) {
-      strncpy(_dump_path, dump_path, JVM_MAXPATHLEN);
+    if (strlen(path) < JVM_MAXPATHLEN) {
+      strncpy(_dump_path, path, JVM_MAXPATHLEN);
       _dump_path[JVM_MAXPATHLEN - 1] = '\0';
     }
   }
@@ -298,7 +297,7 @@ const char* RepositoryIterator::filter(const char* file_name) const {
     return NULL;
   }
   const int64_t size = file_size(fd);
-  os::close(fd);
+  ::close(fd);
   if (size <= chunk_file_header_size) {
     return NULL;
   }
@@ -389,7 +388,7 @@ static void write_repository_files(const RepositoryIterator& iterator, char* con
         bytes_written += (int64_t)os::write(emergency_fd, copy_block, bytes_read - bytes_written);
         assert(bytes_read == bytes_written, "invariant");
       }
-      os::close(current_fd);
+      ::close(current_fd);
     }
   }
 }

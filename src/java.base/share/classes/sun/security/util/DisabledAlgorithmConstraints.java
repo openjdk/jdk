@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.security.util;
 
 import sun.security.validator.Validator;
 
+import java.lang.ref.SoftReference;
 import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
 import java.security.Key;
@@ -39,10 +40,12 @@ import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.security.spec.PSSParameterSpec;
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -51,7 +54,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Collection;
 import java.util.StringTokenizer;
-import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -99,6 +102,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
     private final Set<String> disabledAlgorithms;
     private final Constraints algorithmConstraints;
+    private volatile SoftReference<Map<String, Boolean>> cacheRef =
+            new SoftReference<>(null);
 
     public static DisabledAlgorithmConstraints certPathConstraints() {
         return CertPathHolder.CONSTRAINTS;
@@ -155,8 +160,11 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             throw new IllegalArgumentException("The primitives cannot be null" +
                     " or empty.");
         }
+        if (algorithm == null || algorithm.isEmpty()) {
+            throw new IllegalArgumentException("No algorithm name specified");
+        }
 
-        if (!checkAlgorithm(disabledAlgorithms, algorithm, decomposer)) {
+        if (!cachedCheckAlgorithm(algorithm)) {
             return false;
         }
 
@@ -200,7 +208,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
     }
 
-    private void permits(AlgorithmParameters ap, ConstraintsParameters cp)
+    public void permits(AlgorithmParameters ap, ConstraintsParameters cp)
         throws CertPathValidatorException {
 
         switch (ap.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
@@ -239,7 +247,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             // Check if named curves in the key are disabled.
             for (Key key : cp.getKeys()) {
                 for (String curve : getNamedCurveFromKey(key)) {
-                    if (!checkAlgorithm(disabledAlgorithms, curve, decomposer)) {
+                    if (!cachedCheckAlgorithm(curve)) {
                         throw new CertPathValidatorException(
                             "Algorithm constraints check failed on disabled " +
                                     "algorithm: " + curve,
@@ -451,7 +459,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             for (Constraint constraint : list) {
                 if (!constraint.permits(key)) {
                     if (debug != null) {
-                        debug.println("Constraints: failed key size" +
+                        debug.println("Constraints: failed key size " +
                                 "constraint check " + KeyUtil.getKeySize(key));
                     }
                     return false;
@@ -686,41 +694,30 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * timezone.
      */
     private static class DenyAfterConstraint extends Constraint {
-        private Date denyAfterDate;
+        private ZonedDateTime zdt;
+        private Instant denyAfterDate;
 
         DenyAfterConstraint(String algo, int year, int month, int day) {
-            Calendar c;
 
             algorithm = algo;
 
             if (debug != null) {
-                debug.println("DenyAfterConstraint read in as:  year " +
+                debug.println("DenyAfterConstraint read in as: year " +
                         year + ", month = " + month + ", day = " + day);
             }
 
-            c = new Calendar.Builder().setTimeZone(TimeZone.getTimeZone("GMT"))
-                    .setDate(year, month - 1, day).build();
-
-            if (year > c.getActualMaximum(Calendar.YEAR) ||
-                    year < c.getActualMinimum(Calendar.YEAR)) {
+            try {
+                zdt = ZonedDateTime
+                    .of(year, month, day, 0, 0, 0, 0, ZoneId.of("GMT"));
+                denyAfterDate = zdt.toInstant();
+            } catch (DateTimeException dte) {
                 throw new IllegalArgumentException(
-                        "Invalid year given in constraint: " + year);
-            }
-            if ((month - 1) > c.getActualMaximum(Calendar.MONTH) ||
-                    (month - 1) < c.getActualMinimum(Calendar.MONTH)) {
-                throw new IllegalArgumentException(
-                        "Invalid month given in constraint: " + month);
-            }
-            if (day > c.getActualMaximum(Calendar.DAY_OF_MONTH) ||
-                    day < c.getActualMinimum(Calendar.DAY_OF_MONTH)) {
-                throw new IllegalArgumentException(
-                        "Invalid Day of Month given in constraint: " + day);
+                    "Invalid denyAfter date", dte);
             }
 
-            denyAfterDate = c.getTime();
             if (debug != null) {
                 debug.println("DenyAfterConstraint date set to: " +
-                        denyAfterDate);
+                        zdt.toLocalDate());
             }
         }
 
@@ -735,23 +732,22 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         @Override
         public void permits(ConstraintsParameters cp)
                 throws CertPathValidatorException {
-            Date currentDate;
-            String errmsg;
+            Instant currentDate;
 
             if (cp.getDate() != null) {
-                currentDate = cp.getDate();
+                currentDate = cp.getDate().toInstant();
             } else {
-                currentDate = new Date();
+                currentDate = Instant.now();
             }
 
-            if (!denyAfterDate.after(currentDate)) {
+            if (!denyAfterDate.isAfter(currentDate)) {
                 if (next(cp)) {
                     return;
                 }
                 throw new CertPathValidatorException(
                         "denyAfter constraint check failed: " + algorithm +
                         " used with Constraint date: " +
-                        denyAfterDate + "; params date: " +
+                        zdt.toLocalDate() + "; params date: " +
                         currentDate + cp.extendedExceptionMsg(),
                         null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
             }
@@ -770,7 +766,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 debug.println("DenyAfterConstraints.permits(): " + algorithm);
             }
 
-            return denyAfterDate.after(new Date());
+            return denyAfterDate.isAfter(Instant.now());
         }
     }
 
@@ -793,7 +789,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             for (String usage : usages) {
 
                 boolean match = false;
-                switch (usage.toLowerCase()) {
+                switch (usage.toLowerCase(Locale.ENGLISH)) {
                     case "tlsserver":
                         match = variant.equals(Validator.VAR_TLS_SERVER);
                         break;
@@ -955,6 +951,25 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
             return true;
         }
+    }
+
+    private boolean cachedCheckAlgorithm(String algorithm) {
+        Map<String, Boolean> cache;
+        if ((cache = cacheRef.get()) == null) {
+            synchronized (this) {
+                if ((cache = cacheRef.get()) == null) {
+                    cache = new ConcurrentHashMap<>();
+                    cacheRef = new SoftReference<>(cache);
+                }
+            }
+        }
+        Boolean result = cache.get(algorithm);
+        if (result != null) {
+            return result;
+        }
+        result = checkAlgorithm(disabledAlgorithms, algorithm, decomposer);
+        cache.put(algorithm, result);
+        return result;
     }
 
     /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
 
-// This file specializes the assember with interpreter-specific macros
+// This file specializes the assembler with interpreter-specific macros
 
 typedef ByteSize (*OffsetFunction)(uint);
 
@@ -248,10 +248,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
                              bool decrement = false);
   void increment_mdp_data_at(Register mdp_in, Register reg, int constant,
                              bool decrement = false);
-  void increment_mask_and_jump(Address counter_addr,
-                               int increment, Address mask,
-                               Register scratch, bool preloaded,
-                               Condition cond, Label* where);
+  void increment_mask_and_jump(Address counter_addr, Address mask,
+                               Register scratch, Label* where);
   void set_mdp_flag_at(Register mdp_in, int flag_constant);
   void test_mdp_data_at(Register mdp_in, int offset, Register value,
                         Register test_value_out,

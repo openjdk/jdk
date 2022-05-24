@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.function.Function;
 /**
  * Prints an encoding to the dedicated test framework socket whether @IR rules of @Test methods should be applied or not.
  * This is done during the execution of the test VM by checking the active VM flags. This encoding is eventually parsed
- * and checked by the IRMatcher class in the driver VM after the termination of the test VM.
+ * and checked by the IRMatcher class in the driver VM after the termination of the test VM. IR rule indices start at 1.
  */
 public class IREncodingPrinter {
     public static final String START = "##### IRMatchRulesEncoding - used by TestFramework #####";
@@ -73,7 +73,7 @@ public class IREncodingPrinter {
                 ruleIndex = i + 1;
                 try {
                     if (shouldApplyIrRule(irAnno)) {
-                        validRules.add(i);
+                        validRules.add(ruleIndex);
                     }
                 } catch (TestFormatException e) {
                     // Catch logged failure and continue to check other IR annotations.
@@ -206,11 +206,11 @@ public class IREncodingPrinter {
         }
         actualFlagValue = LONG_GETTERS.stream().map(f -> f.apply(flag)).filter(Objects::nonNull).findAny().orElse(null);
         if (actualFlagValue != null) {
-            return checkLongFlag(flag, value, (Long) actualFlagValue);
+            return checkFlag(Long::parseLong, "integer", flag, value, (Long) actualFlagValue);
         }
         actualFlagValue = WHITE_BOX.getDoubleVMFlag(flag);
         if (actualFlagValue != null) {
-            return checkDoubleFlag(flag, value, (Double) actualFlagValue);
+            return checkFlag(Double::parseDouble, "floating point", flag, value, (Double) actualFlagValue);
         }
         actualFlagValue = WHITE_BOX.getStringVMFlag(flag);
         if (actualFlagValue != null) {
@@ -242,60 +242,20 @@ public class IREncodingPrinter {
         return booleanValue == actualFlagValue;
     }
 
-    private boolean checkLongFlag(String flag, String value, long actualFlagValue) {
-        long longValue;
-        ParsedComparator<Long> parsedComparator;
+    private <T extends Comparable<T>> boolean checkFlag(Function<String, T> parseFunction, String kind, String flag,
+                                                        String value, T actualFlagValue) {
         try {
-            parsedComparator = ParsedComparator.parseComparator(value);
-        } catch (CheckedTestFrameworkException e) {
-            TestFormat.failNoThrow("Invalid comparator in \"" + value + "\" for integer based flag " + flag + failAt());
-            return false;
-        }  catch (IndexOutOfBoundsException e) {
-            TestFormat.failNoThrow("Provided empty value for integer based flag " + flag + failAt());
+            String postFixErrorMsg = "for " + kind + " based flag \"" + flag + "\"" + failAt();
+            Comparison<T> comparison = ComparisonConstraintParser.parse(value, parseFunction, postFixErrorMsg);
+            return comparison.compare(actualFlagValue);
+        } catch (TestFormatException e) {
+            // Format exception, do not apply rule.
             return false;
         }
-        try {
-            longValue = Long.parseLong(parsedComparator.getStrippedString());
-        } catch (NumberFormatException e) {
-            String comparator = parsedComparator.getComparator();
-            if (!comparator.isEmpty()) {
-                comparator = "after comparator \"" + parsedComparator.getComparator() + "\"";
-            }
-            TestFormat.failNoThrow("Invalid value \"" + parsedComparator.getStrippedString() + "\" "
-                            + comparator + " for integer based flag " + flag + failAt());
-            return false;
-        }
-        return parsedComparator.getPredicate().test(actualFlagValue, longValue);
-    }
-
-    private boolean checkDoubleFlag(String flag, String value, double actualFlagValue) {
-        double doubleValue;
-        ParsedComparator<Double> parsedComparator;
-        try {
-            parsedComparator = ParsedComparator.parseComparator(value);
-        } catch (CheckedTestFrameworkException e) {
-            TestFormat.failNoThrow("Invalid comparator in \"" + value + "\" for floating point based flag " + flag + failAt());
-            return false;
-        } catch (IndexOutOfBoundsException e) {
-            TestFormat.failNoThrow("Provided empty value for floating point based flag " + flag + failAt());
-            return false;
-        }
-        try {
-            doubleValue = Double.parseDouble(parsedComparator.getStrippedString());
-        } catch (NumberFormatException e) {
-            String comparator = parsedComparator.getComparator();
-            if (!comparator.isEmpty()) {
-                comparator = "after comparator \"" + parsedComparator.getComparator() + "\"";
-            }
-            TestFormat.failNoThrow("Invalid value \"" + parsedComparator.getStrippedString() + "\" "
-                    + comparator + " for floating point based flag " + flag + failAt());
-            return false;
-        }
-        return parsedComparator.getPredicate().test(actualFlagValue, doubleValue);
     }
 
     private String failAt() {
-        return " for @IR rule " + ruleIndex + " at " + method;
+        return " in @IR rule " + ruleIndex + " at " + method;
     }
 
     public void emit() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandl
 #ifndef AMD64
     // We store the current thread in this wrapperthread location
     // and determine how far away this address is from the structured
-    // execption pointer that FS:[0] points to.  This get_thread
+    // exception pointer that FS:[0] points to.  This get_thread
     // code can then get the thread pointer via FS.
     //
     // Warning:  This routine must NEVER be inlined since we'd end up with
@@ -94,7 +94,7 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandl
       os::win32::set_thread_ptr_offset(thread_ptr_offset);
     }
 #ifdef ASSERT
-    // Verify that the offset hasn't changed since we initally captured
+    // Verify that the offset hasn't changed since we initially captured
     // it. This might happen if we accidentally ended up with an
     // inlined version of this routine.
     else {
@@ -441,6 +441,12 @@ void os::print_context(outputStream *st, const void *context) {
 #endif // AMD64
   st->cr();
   st->cr();
+}
+
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  const CONTEXT* uc = (const CONTEXT*)context;
 
   intptr_t *sp = (intptr_t *)uc->REG_SP;
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
@@ -454,7 +460,6 @@ void os::print_context(outputStream *st, const void *context) {
   print_instructions(st, pc, sizeof(char));
   st->cr();
 }
-
 
 void os::print_register_info(outputStream *st, const void *context) {
   if (context == NULL) return;

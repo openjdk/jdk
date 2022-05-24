@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,9 @@
 #undef PREFETCH_OPCCODE
 #define PREFETCH_OPCCODE
 
+JRT_ENTRY(void, at_safepoint(JavaThread* current)) {}
+JRT_END
+
 /*
   Interpreter safepoint: it is expected that the interpreter will have no live
   handles of its own creation live at an interpreter safepoint. Therefore we
@@ -107,12 +110,10 @@
   There really shouldn't be any handles remaining to trash but this is cheap
   in relation to a safepoint.
 */
-#define RETURN_SAFEPOINT                                                                                  \
-    if (SafepointMechanism::should_process(THREAD)) {                                                     \
-      HandleMarkCleaner __hmc(THREAD);                                                                    \
-      CALL_VM(SafepointMechanism::process_if_requested_with_exit_check(THREAD, true /* check asyncs */),  \
-              handle_exception);                                                                          \
-    }                                                                                                     \
+#define RETURN_SAFEPOINT                                    \
+    if (SafepointMechanism::should_process(THREAD)) {       \
+      CALL_VM(at_safepoint(THREAD), handle_exception);      \
+    }
 
 /*
  * VM_JAVA_ERROR - Macro for throwing a java exception from
@@ -307,7 +308,7 @@
 /*
  * Macros for caching and flushing the interpreter state. Some local
  * variables need to be flushed out to the frame before we do certain
- * things (like pushing frames or becomming gc safe) and some need to
+ * things (like pushing frames or becoming gc safe) and some need to
  * be recached later (like after popping a frame). We could use one
  * macro to cache or decache everything, but this would be less then
  * optimal because we don't always need to cache or decache everything
@@ -754,7 +755,7 @@ run:
       // need at entry to the loop.
       // DEBUGGER_SINGLE_STEP_NOTIFY();
       /* Using this labels avoids double breakpoints when quickening and
-       * when returing from transition frames.
+       * when returning from transition frames.
        */
   opcode_switch:
       assert(istate == orig, "Corrupted istate");
@@ -1563,7 +1564,7 @@ run:
             Klass* rhsKlass = rhsObject->klass(); // EBX (subclass)
             Klass* elemKlass = ObjArrayKlass::cast(arrObj->klass())->element_klass(); // superklass EAX
             //
-            // Check for compatibilty. This check must not GC!!
+            // Check for compatibility. This check must not GC!!
             // Seems way more expensive now that we must dispatch
             //
             if (rhsKlass != elemKlass && !rhsKlass->is_subtype_of(elemKlass)) { // ebx->is...
@@ -1942,12 +1943,12 @@ run:
                 Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
               }
 
-              oop obj = cast_to_oop(result);
+              // Initialize header, mirrors MemAllocator.
+              oopDesc::set_mark(result, markWord::prototype());
+              oopDesc::set_klass_gap(result, 0);
+              oopDesc::release_set_klass(result, ik);
 
-              // Initialize header
-              obj->set_mark(markWord::prototype());
-              obj->set_klass_gap(0);
-              obj->set_klass(ik);
+              oop obj = cast_to_oop(result);
 
               // Must prevent reordering of stores for object initialization
               // with stores that publish the new object.
@@ -2008,7 +2009,7 @@ run:
             Klass* klassOf = (Klass*) METHOD->constants()->resolved_klass_at(index);
             Klass* objKlass = STACK_OBJECT(-1)->klass(); // ebx
             //
-            // Check for compatibilty. This check must not GC!!
+            // Check for compatibility. This check must not GC!!
             // Seems way more expensive now that we must dispatch.
             //
             if (objKlass != klassOf && !objKlass->is_subtype_of(klassOf)) {
@@ -2034,7 +2035,7 @@ run:
             Klass* klassOf = (Klass*) METHOD->constants()->resolved_klass_at(index);
             Klass* objKlass = STACK_OBJECT(-1)->klass();
             //
-            // Check for compatibilty. This check must not GC!!
+            // Check for compatibility. This check must not GC!!
             // Seems way more expensive now that we must dispatch.
             //
             if ( objKlass == klassOf || objKlass->is_subtype_of(klassOf)) {
@@ -2993,6 +2994,8 @@ run:
         SET_STACK_OBJECT(ts->earlyret_oop(), 0);
         MORE_STACK(1);
         break;
+      default:
+        ShouldNotReachHere();
     }
 
     ts->clr_earlyret_value();
@@ -3020,7 +3023,7 @@ run:
     // We'd like a HandleMark here to prevent any subsequent HandleMarkCleaner
     // in any following VM entries from freeing our live handles, but illegal_state_oop
     // isn't really allocated yet and so doesn't become live until later and
-    // in unpredicatable places. Instead we must protect the places where we enter the
+    // in unpredictable places. Instead we must protect the places where we enter the
     // VM. It would be much simpler (and safer) if we could allocate a real handle with
     // a NULL oop in it and then overwrite the oop later as needed. This isn't
     // unfortunately isn't possible.
@@ -3173,7 +3176,7 @@ run:
     // If we notify it again JVMDI will be all confused about how many frames
     // are still on the stack (4340444).
     //
-    // NOTE Further! It turns out the the JVMTI spec in fact expects to see
+    // NOTE Further! It turns out the JVMTI spec in fact expects to see
     // method_exit events whenever we leave an activation unless it was done
     // for popframe. This is nothing like jvmdi. However we are passing the
     // tests at the moment (apparently because they are jvmdi based) so rather
@@ -3241,7 +3244,7 @@ finish:
   return;
 }
 
-// This constructor should only be used to contruct the object to signal
+// This constructor should only be used to construct the object to signal
 // interpreter initialization. All other instances should be created by
 // the frame manager.
 BytecodeInterpreter::BytecodeInterpreter(messages msg) {

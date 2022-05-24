@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,9 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * href="Math.html#Ieee754RecommendedOps">relate to the IEEE 754
  * recommended operations</a>.
  *
+ * @see <a href="https://standards.ieee.org/ieee/754/6210/">
+ *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ *
  * @author  Joseph D. Darcy
  * @since   1.3
  */
@@ -92,27 +95,27 @@ public final class StrictMath {
      * The {@code double} value that is closer than any other to
      * <i>e</i>, the base of the natural logarithms.
      */
-    public static final double E = 2.7182818284590452354;
+    public static final double E = 2.718281828459045;
 
     /**
      * The {@code double} value that is closer than any other to
-     * <i>pi</i>, the ratio of the circumference of a circle to its
+     * <i>pi</i> (&pi;), the ratio of the circumference of a circle to its
      * diameter.
      */
-    public static final double PI = 3.14159265358979323846;
+    public static final double PI = 3.141592653589793;
 
     /**
-     * Constant by which to multiply an angular value in degrees to obtain an
-     * angular value in radians.
+     * The {@code double} value that is closer than any other to
+     * <i>tau</i> (&tau;), the ratio of the circumference of a circle
+     * to its radius.
+     *
+     * @apiNote
+     * The value of <i>pi</i> is one half that of <i>tau</i>; in other
+     * words, <i>tau</i> is double <i>pi</i> .
+     *
+     * @since 19
      */
-    private static final double DEGREES_TO_RADIANS = 0.017453292519943295;
-
-    /**
-     * Constant by which to multiply an angular value in radians to obtain an
-     * angular value in degrees.
-     */
-
-    private static final double RADIANS_TO_DEGREES = 57.29577951308232;
+    public static final double TAU = 2.0 * PI;
 
     /**
      * Returns the trigonometric sine of an angle. Special cases:
@@ -397,7 +400,7 @@ public final class StrictMath {
      * @param a the value to be floored or ceiled
      * @param negativeBoundary result for values in (-1, 0)
      * @param positiveBoundary result for values in (0, 1)
-     * @param increment value to add when the argument is non-integral
+     * @param sign the sign of the result
      */
     private static double floorOrCeil(double a,
                                       double negativeBoundary,
@@ -408,8 +411,8 @@ public final class StrictMath {
         if (exponent < 0) {
             /*
              * Absolute value of argument is less than 1.
-             * floorOrceil(-0.0) => -0.0
-             * floorOrceil(+0.0) => +0.0
+             * floorOrCeil(-0.0) => -0.0
+             * floorOrCeil(+0.0) => +0.0
              */
             return ((a == 0.0) ? a :
                     ( (a < 0.0) ?  negativeBoundary : positiveBoundary) );

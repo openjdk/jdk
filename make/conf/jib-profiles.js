@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,7 +244,7 @@ var getJibProfilesCommon = function (input, data) {
         "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x"
     ];
 
-    // These are the base setttings for all the main build profiles.
+    // These are the base settings for all the main build profiles.
     common.main_profile_base = {
         dependencies: ["boot_jdk", "gnumake", "jtreg", "jib", "autoconf", "jmh", "jcov"],
         default_make_targets: ["product-bundles", "test-bundles", "static-libs-bundles"],
@@ -258,7 +258,6 @@ var getJibProfilesCommon = function (input, data) {
     common.release_profile_base = {
         configure_args: [
             "--enable-reproducible-build",
-            "--with-source-date=current",
         ],
     };
     // Extra settings for debug profiles
@@ -394,8 +393,8 @@ var getJibProfilesCommon = function (input, data) {
         };
     };
 
-    common.boot_jdk_version = "17";
-    common.boot_jdk_build_number = "35";
+    common.boot_jdk_version = "18";
+    common.boot_jdk_build_number = "36";
     common.boot_jdk_home = input.get("boot_jdk", "install_path") + "/jdk-"
         + common.boot_jdk_version
         + (input.build_os == "macosx" ? ".jdk/Contents/Home" : "");
@@ -451,7 +450,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "macosx",
             target_cpu: "aarch64",
             dependencies: ["devkit", "gtest", "pandoc"],
-            configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
+            configure_args: concat(common.configure_args_64bit,
                 "--with-macosx-version-max=11.00.00"),
         },
 
@@ -621,7 +620,7 @@ var getJibProfilesProfiles = function (input, common, data) {
     });
 
     // Define a profile with precompiled headers disabled. This is just used for
-    // verfication of this build configuration.
+    // verification of this build configuration.
     var noPchProfiles = {
         "linux-x64-debug-nopch": {
             target_os: "linux",
@@ -838,7 +837,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         [ "", common.open_suffix ].forEach(function (suffix) {
             var cmpBaselineName = name + suffix + "-cmp-baseline";
             profiles[cmpBaselineName] = clone(profiles[name + suffix]);
-            // Only compare the images target. This should pressumably be expanded
+            // Only compare the images target. This should presumably be expanded
             // to include more build targets when possible.
             profiles[cmpBaselineName].default_make_targets = [ "images", "test-image" ];
             if (name == "linux-x64") {
@@ -1023,10 +1022,10 @@ var getJibProfilesProfiles = function (input, common, data) {
     // get src.full as a dependency, and define the work_dir (where make gets
     // run) to be in the src.full install path. By running in the install path,
     // the same cached installation of the full src can be reused for multiple
-    // test tasks. Care must however be taken not to polute that work dir by
+    // test tasks. Care must however be taken not to pollute that work dir by
     // setting the appropriate make variables to control output directories.
     //
-    // Use the existance of the top level README.md as indication of if this is
+    // Use the existence of the top level README.md as indication of if this is
     // the full source or just src.conf.
     if (!new java.io.File(__DIR__, "../../README.md").exists()) {
         var runTestPrebuiltSrcFullExtra = {
@@ -1053,10 +1052,10 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc10.3.0-OL6.4+1.0",
+        linux_x64: "gcc11.2.0-OL6.4+1.0",
         macosx: "Xcode12.4+1.0",
-        windows_x64: "VS2019-16.9.3+1.0",
-        linux_aarch64: "gcc10.3.0-OL7.6+1.0",
+        windows_x64: "VS2022-17.1.0+1.0",
+        linux_aarch64: "gcc11.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0"
@@ -1165,19 +1164,12 @@ var getJibProfilesDependencies = function (input, common) {
         jmh: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.33+1.0"
+            revision: "1.34+1.0"
         },
 
         jcov: {
-            // Use custom build of JCov
-            // See CODETOOLS-7902734 for more info.
-            // server: "jpg",
-            // product: "jcov",
-            // version: "3.0",
-            // build_number: "b07",
-            // file: "bundles/jcov-3_0.zip",
             organization: common.organization,
-            revision: "3.0-9-jdk-asm+1.0",
+            revision: "3.0-12-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },
@@ -1431,7 +1423,10 @@ var getVersion = function (feature, interim, update, patch, extra1, extra2, extr
  * other version inputs
  */
 var versionArgs = function(input, common) {
-    var args = ["--with-version-build=" + common.build_number];
+    var args = [];
+    if (common.build_number != 0) {
+        args = concat(args, "--with-version-build=" + common.build_number);
+    }
     if (input.build_type == "promoted") {
         args = concat(args,
                       "--with-version-pre=" + version_numbers.get("DEFAULT_PROMOTED_VERSION_PRE"),
@@ -1451,6 +1446,14 @@ var versionArgs = function(input, common) {
     } else {
         args = concat(args, "--with-version-opt=" + common.build_id);
     }
+    var sourceDate
+    if (input.build_id_data && input.build_id_data.creationTime) {
+        sourceDate = Math.floor(Date.parse(input.build_id_data.creationTime)/1000);
+    } else {
+        sourceDate = "current";
+    }
+    args = concat(args, "--with-source-date=" + sourceDate);
+
     return args;
 }
 

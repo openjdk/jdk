@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,7 +294,7 @@ public class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
                 divideUpDictionaryRange(startPos, result);
             }
 
-            // otherwise, the value we got back from the inherited fuction
+            // otherwise, the value we got back from the inherited function
             // is our return value, and we can dump the cache
             else {
                 cachedBreakPositions = null;

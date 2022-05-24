@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package java.lang;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.ContinuationScope;
 
 import java.lang.StackWalker.StackFrame;
 import java.lang.invoke.MethodType;
@@ -35,8 +36,9 @@ class StackFrameInfo implements StackFrame {
         SharedSecrets.getJavaLangInvokeAccess();
 
     private final boolean retainClassRef;
-    private final Object memberName;    // MemberName initialized by VM
-    private int bci;                    // initialized by VM to >= 0
+    private Object memberName;    // MemberName initialized by VM
+    private int bci;              // initialized by VM to >= 0
+    private ContinuationScope contScope;
     private volatile StackTraceElement ste;
 
     /*
@@ -113,6 +115,10 @@ class StackFrameInfo implements StackFrame {
     @Override
     public boolean isNativeMethod() {
         return JLIA.isNative(memberName);
+    }
+
+    private String getContinuationScopeName() {
+        return contScope != null ? contScope.getName() : null;
     }
 
     @Override

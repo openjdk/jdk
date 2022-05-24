@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "code/vmreg.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
@@ -282,7 +282,7 @@ class SharedRuntime: AllStatic {
   static jlong get_java_tid(Thread* thread);
 
 
-  // used by native wrappers to reenable yellow if overflow happened in native code
+  // used by native wrappers to re-enable yellow if overflow happened in native code
   static void reguard_yellow_pages();
 
   // Fill in the "X cannot be cast to a Y" message for ClassCastException
@@ -487,6 +487,7 @@ class SharedRuntime: AllStatic {
 
   // Slow-path Locking and Unlocking
   static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
+  static void complete_monitor_locking_C_inc_held_monitor_count(oopDesc* obj, BasicLock* lock, JavaThread* current);
   static void complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
   // Resolving of calls
@@ -506,19 +507,6 @@ class SharedRuntime: AllStatic {
   static address handle_wrong_method_ic_miss(JavaThread* current);
 
   static address handle_unsafe_access(JavaThread* thread, address next_pc);
-
-#ifdef COMPILER2
-  static RuntimeStub* make_native_invoker(address call_target,
-                                          int shadow_space_bytes,
-                                          const GrowableArray<VMReg>& input_registers,
-                                          const GrowableArray<VMReg>& output_registers);
-#endif
-
-  static void compute_move_order(const BasicType* in_sig_bt,
-                                 int total_in_args, const VMRegPair* in_regs,
-                                 int total_out_args, VMRegPair* out_regs,
-                                 GrowableArray<int>& arg_order,
-                                 VMRegPair tmp_vmreg);
 
 #ifndef PRODUCT
 

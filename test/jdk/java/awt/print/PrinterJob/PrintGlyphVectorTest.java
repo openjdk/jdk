@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,45 @@
 /*
  * @test
  * @bug 8029204
+ * @library ../../regtesthelpers
+ * @build PassFailJFrame
  * @summary Tests GlyphVector is printed in the correct location
- * @run main/manual=yesno PrintGlyphVectorTest
+ * @run main/manual PrintGlyphVectorTest
  */
 
-import java.io.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.font.*;
-import java.awt.geom.*;
-import java.awt.print.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Label;
+import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphVector;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 
 public class PrintGlyphVectorTest extends Component implements Printable {
+
+    private static final String INSTRUCTIONS = """
+            Note: You must have a printer installed for this test.
+            If printer is not available, the test passes automatically.
+
+            Press the PRINT button on the 'Test PrintGlyphVector' frame
+            and press OK/print button on the print dialog.
+
+            Retrieve the output and compare the printed and on-screen
+            text to confirm that in both cases the text is aligned and
+            the boxes are around the text, not offset from the text.
+            """;
 
     public void drawGVs(Graphics g) {
 
@@ -46,9 +73,8 @@ public class PrintGlyphVectorTest extends Component implements Printable {
         FontRenderContext frc = g2d.getFontRenderContext();
         GlyphVector v = font.createGlyphVector(frc, testString);
 
-
-        float x = 50f,
-              y = 50f;
+        float x = 50f;
+        float y = 50f;
 
         g2d.drawGlyphVector(v, x, y);
         Rectangle2D r = v.getVisualBounds();
@@ -69,16 +95,13 @@ public class PrintGlyphVectorTest extends Component implements Printable {
         r = v.getVisualBounds();
         r.setRect(r.getX()+x, r.getY()+y, r.getWidth(), r.getHeight());
         g2d.draw(r);
-
-
-
     }
 
-     public void paint(Graphics g) {
-       g.setColor(Color.white);
-       g.fillRect(0,0,getSize().width, getSize().height);
-       drawGVs(g);
-     }
+    public void paint(Graphics g) {
+        g.setColor(Color.white);
+        g.fillRect(0, 0, getSize().width, getSize().height);
+        drawGVs(g);
+    }
 
     public Dimension getPreferredSize() {
         return new Dimension(600,200);
@@ -97,54 +120,48 @@ public class PrintGlyphVectorTest extends Component implements Printable {
         return Printable.PAGE_EXISTS;
     }
 
+    private static void createTestUI() {
+        PrinterJob pj = PrinterJob.getPrinterJob();
+        if (pj.getPrintService() == null) {
+            System.out.println("Printer not configured or available."
+                    + " Test cannot continue.");
+            PassFailJFrame.forcePass();
+        }
 
-    public static void main(String arg[]) throws Exception {
+        Frame f = new Frame("Test PrintGlyphVector");
+        PrintGlyphVectorTest pvt = new PrintGlyphVectorTest();
+        f.add(pvt, BorderLayout.CENTER);
 
-       Frame f = new Frame();
-       PrintGlyphVectorTest pvt = new PrintGlyphVectorTest();
-       f.add("Center", pvt);
-       f.add("South", new PrintInstructions());
-       f.pack();
-       f.show();
+        Button printButton = new Button("PRINT");
+        printButton.addActionListener((e) -> {
+            pj.setPrintable(new PrintGlyphVectorTest());
+            if (pj.printDialog()) {
+                try {
+                    pj.print();
+                } catch (PrinterException ex) {
+                    throw new RuntimeException(ex.getMessage());
+                }
+            } else {
+                throw new RuntimeException("Test failed : "
+                        + "User selected 'Cancel' button on the print dialog");
+            }
+        });
 
+        f.add(printButton, BorderLayout.SOUTH);
+        f.pack();
+        f.setVisible(true);
 
+        // add the test frame to dispose
+        PassFailJFrame.addTestFrame(f);
+
+        // Arrange the test instruction frame and test frame side by side
+        PassFailJFrame.positionTestFrame(f, PassFailJFrame.Position.HORIZONTAL);
+    }
+
+    public static void main(String[] arg) throws Exception {
+        PassFailJFrame passFailJFrame = new PassFailJFrame(INSTRUCTIONS);
+        createTestUI();
+        passFailJFrame.awaitAndCheck();
     }
 }
 
-class PrintInstructions extends Panel implements ActionListener {
-
-   static final String INSTRUCTIONS =
-       "You must have a printer installed for this test.\n" +
-       "Press the PRINT button below and OK the print dialog\n" +
-       "Retrieve the output and compare the printed and on-screen text\n" +
-       " to confirm that in both cases the text is aligned and the boxes\n" +
-       "are around the text, not offset from the text.";
-
-  PrintInstructions() {
-
-     setLayout(new GridLayout(2,1));
-     TextArea t = new TextArea(INSTRUCTIONS, 8, 80);
-     add(t);
-     Button b = new Button("PRINT");
-     b.setFont(new Font("Dialog", Font.BOLD, 30));
-     b.addActionListener(this);
-     add(b);
-  }
-
-  public void actionPerformed(ActionEvent e) {
-       PrinterJob pj = PrinterJob.getPrinterJob();
-       if (pj == null ||
-           pj.getPrintService() == null ||
-           !pj.printDialog()) {
-           return;
-       }
-
-       pj.setPrintable(new PrintGlyphVectorTest());
-       try {
-           pj.print();
-       } catch (PrinterException ex) {
-           System.err.println(ex);
-       }
-  }
-
-}

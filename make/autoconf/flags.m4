@@ -295,7 +295,7 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
   # FIXME: Don't really know how to do with this, but this was the old behavior
   GLOBAL_CPPFLAGS="$SYSROOT_CFLAGS"
 
-  # FIXME: For compatilibity, export this as EXTRA_CFLAGS for now.
+  # FIXME: For compatibility, export this as EXTRA_CFLAGS for now.
   EXTRA_CFLAGS="$MACHINE_FLAG $USER_CFLAGS"
   EXTRA_CXXFLAGS="$MACHINE_FLAG $USER_CXXFLAGS"
   EXTRA_LDFLAGS="$MACHINE_FLAG $USER_LDFLAGS"
@@ -340,7 +340,7 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
     # Check if @file is supported by gcc
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
       AC_MSG_CHECKING([if @file is supported by gcc])
-      # Extra emtpy "" to prevent ECHO from interpreting '--version' as argument
+      # Extra empty "" to prevent ECHO from interpreting '--version' as argument
       $ECHO "" "--version" > command.file
       if $CXX @command.file 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
         AC_MSG_RESULT(yes)

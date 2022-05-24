@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
@@ -358,15 +359,28 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
 
   // Lock-free access requires load_acquire
   for (Klass* k = Atomic::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
-    // Do not filter ArrayKlass oops here...
-    if (k->is_array_klass() || (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded())) {
-#ifdef ASSERT
-      oop m = k->java_mirror();
-      assert(m != NULL, "NULL mirror");
-      assert(m->is_a(vmClasses::Class_klass()), "invalid mirror");
-#endif
-      klass_closure->do_klass(k);
+    // Filter out InstanceKlasses (or their ObjArrayKlasses) that have not entered the
+    // loaded state.
+    if (k->is_instance_klass()) {
+      if (!InstanceKlass::cast(k)->is_loaded()) {
+        continue;
+      }
+    } else if (k->is_shared() && k->is_objArray_klass()) {
+      Klass* bottom = ObjArrayKlass::cast(k)->bottom_klass();
+      if (bottom->is_instance_klass() && !InstanceKlass::cast(bottom)->is_loaded()) {
+        // This could happen if <bottom> is a shared class that has been restored
+        // but is not yet marked as loaded. All archived array classes of the
+        // bottom class are already restored and placed in the _klasses list.
+        continue;
+      }
     }
+
+#ifdef ASSERT
+    oop m = k->java_mirror();
+    assert(m != NULL, "NULL mirror");
+    assert(m->is_a(vmClasses::Class_klass()), "invalid mirror");
+#endif
+    klass_closure->do_klass(k);
   }
 }
 

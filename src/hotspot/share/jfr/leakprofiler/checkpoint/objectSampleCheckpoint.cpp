@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,10 +84,10 @@ static void add_to_unloaded_thread_set(traceid tid) {
   JfrMutablePredicate<traceid, compare_traceid>::test(unloaded_thread_id_set, tid);
 }
 
-void ObjectSampleCheckpoint::on_thread_exit(JavaThread* jt) {
-  assert(jt != NULL, "invariant");
+void ObjectSampleCheckpoint::on_thread_exit(traceid tid) {
+  assert(tid != 0, "invariant");
   if (LeakProfiler::is_running()) {
-    add_to_unloaded_thread_set(jt->jfr_thread_local()->thread_id());
+    add_to_unloaded_thread_set(tid);
   }
 }
 
@@ -202,7 +202,7 @@ static void prepare_for_resolution() {
 
 static bool stack_trace_precondition(const ObjectSample* sample) {
   assert(sample != NULL, "invariant");
-  return sample->has_stack_trace_id() && !sample->is_dead() && !sample->stacktrace().valid();
+  return sample->has_stack_trace_id() && !sample->is_dead();
 }
 
 class StackTraceBlobInstaller {
@@ -249,7 +249,7 @@ void StackTraceBlobInstaller::install(ObjectSample* sample) {
   writer.write_type(TYPE_STACKTRACE);
   writer.write_count(1);
   ObjectSampleCheckpoint::write_stacktrace(stack_trace, writer);
-  blob = writer.move();
+  blob = writer.copy();
   _cache.put(sample, blob);
   sample->set_stacktrace(blob);
 }
@@ -278,7 +278,7 @@ void ObjectSampleCheckpoint::on_rotation(const ObjectSampler* sampler) {
 }
 
 static bool is_klass_unloaded(traceid klass_id) {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  assert(ClassLoaderDataGraph_lock->owned_by_self(), "invariant");
   return JfrKlassUnloading::is_unloaded(klass_id);
 }
 
@@ -329,7 +329,7 @@ static void write_type_set_blob(const ObjectSample* sample, JfrCheckpointWriter&
 
 static void write_thread_blob(const ObjectSample* sample, JfrCheckpointWriter& writer, bool reset) {
   assert(sample->has_thread(), "invariant");
-  if (has_thread_exited(sample->thread_id())) {
+  if (sample->is_virtual_thread() || has_thread_exited(sample->thread_id())) {
     write_blob(sample->thread(), writer, reset);
   }
 }
@@ -381,12 +381,6 @@ void ObjectSampleCheckpoint::write(const ObjectSampler* sampler, EdgeStore* edge
   assert(sampler != NULL, "invariant");
   assert(edge_store != NULL, "invariant");
   assert(thread != NULL, "invariant");
-  {
-    // First install stacktrace blobs for the most recently added candidates.
-    MutexLocker lock(SafepointSynchronize::is_at_safepoint() ? nullptr : ClassLoaderDataGraph_lock);
-    // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
-    install_stack_traces(sampler);
-  }
   write_sample_blobs(sampler, emit_all, thread);
   // write reference chains
   if (!edge_store->is_empty()) {

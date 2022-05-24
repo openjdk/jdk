@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,10 +276,17 @@ class ResourceBundleGenerator implements BundleGenerator {
                       + "import sun.util.locale.provider.LocaleDataMetaInfo;\n"
                       + "import sun.util.locale.provider.LocaleProviderAdapter;\n\n");
             out.printf("public class %s implements LocaleDataMetaInfo {\n", className);
-            out.printf("    private static final Map<String, String> resourceNameToLocales = new HashMap<>();\n" +
-                       (CLDRConverter.isBaseModule ?
-                       "    private static final Map<Locale, String[]> parentLocalesMap = new HashMap<>();\n" +
-                       "    private static final Map<String, String> languageAliasMap = new HashMap<>();\n\n" :
+            out.printf("    private static final Map<String, String> resourceNameToLocales = new HashMap<>(" +
+                                ((int)(metaInfo.keySet().stream()
+                                    .filter(k -> k.equals("AvailableLocales"))
+                                    .count() / 0.75f) + 1) + ");\n" +
+                    (CLDRConverter.isBaseModule ?
+                       "    private static final Map<Locale, String[]> parentLocalesMap = new HashMap<>(" +
+                                ((int)(metaInfo.keySet().stream()
+                                    .filter(k -> k.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX))
+                                    .count() / 0.75f) + 1) + ");\n" +
+                       "    private static final Map<String, String> languageAliasMap = new HashMap<>(" +
+                                ((int)(CLDRConverter.handlerSupplMeta.getLanguageAliasData().size() / 0.75f) + 1) + ");\n\n" :
                        "\n") +
                        "    static {\n");
 
@@ -328,7 +335,8 @@ class ResourceBundleGenerator implements BundleGenerator {
             // Canonical TZ names for delayed initialization
             if (CLDRConverter.isBaseModule) {
                 out.printf("    private static class TZCanonicalIDMapHolder {\n");
-                out.printf("        static final Map<String, String> tzCanonicalIDMap = new HashMap<>(600);\n");
+                out.printf("        static final Map<String, String> tzCanonicalIDMap = new HashMap<>(" +
+                        ((int)(CLDRConverter.handlerTimeZone.getData().size() / 0.75f) + 1) + ");\n");
                 out.printf("        static {\n");
                 CLDRConverter.handlerTimeZone.getData().entrySet().stream()
                     .forEach(e -> {

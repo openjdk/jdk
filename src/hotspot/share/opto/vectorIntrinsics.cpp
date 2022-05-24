@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ static bool is_vector(ciKlass* klass) {
 static bool check_vbox(const TypeInstPtr* vbox_type) {
   assert(vbox_type->klass_is_exact(), "");
 
-  ciInstanceKlass* ik = vbox_type->klass()->as_instance_klass();
+  ciInstanceKlass* ik = vbox_type->instance_klass();
   assert(is_vector(ik), "not a vector");
 
   ciField* fd1 = ik->get_field_by_name(ciSymbols::ETYPE_name(), ciSymbols::class_signature(), /* is_static */ true);
@@ -153,7 +153,7 @@ Node* GraphKit::box_vector(Node* vector, const TypeInstPtr* vbox_type, BasicType
   Node* ret = gvn().transform(new ProjNode(alloc, TypeFunc::Parms));
 
   assert(check_vbox(vbox_type), "");
-  const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->klass()));
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->instance_klass()));
   VectorBoxNode* vbox = new VectorBoxNode(C, ret, vector, vbox_type, vt);
   return gvn().transform(vbox);
 }
@@ -161,14 +161,14 @@ Node* GraphKit::box_vector(Node* vector, const TypeInstPtr* vbox_type, BasicType
 Node* GraphKit::unbox_vector(Node* v, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector) {
   assert(EnableVectorSupport, "");
   const TypeInstPtr* vbox_type_v = gvn().type(v)->is_instptr();
-  if (vbox_type->klass() != vbox_type_v->klass()) {
+  if (vbox_type->instance_klass() != vbox_type_v->instance_klass()) {
     return NULL; // arguments don't agree on vector shapes
   }
   if (vbox_type_v->maybe_null()) {
     return NULL; // no nulls are allowed
   }
   assert(check_vbox(vbox_type), "");
-  const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->klass()));
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->instance_klass()));
   Node* unbox = gvn().transform(new VectorUnboxNode(C, vt, v, merged_memory(), shuffle_to_vector));
   return unbox;
 }
@@ -197,6 +197,16 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
 #ifndef PRODUCT
       if (C->print_intrinsics()) {
         tty->print_cr("  ** Rejected vector op (%s,%s,%d) because architecture does not support variable vector shifts",
+                      NodeClassNames[sopc], type2name(type), num_elem);
+      }
+#endif
+      return false;
+    }
+  } else if (VectorNode::is_vector_integral_negate(sopc)) {
+    if (!VectorNode::is_vector_integral_negate_supported(sopc, num_elem, type, false)) {
+#ifndef PRODUCT
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** Rejected vector op (%s,%s,%d) because architecture does not support integral vector negate",
                       NodeClassNames[sopc], type2name(type), num_elem);
       }
 #endif
@@ -277,8 +287,16 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
   }
 
   if ((mask_use_type & VecMaskUsePred) != 0) {
-    if (!Matcher::has_predicated_vectors() ||
-        !Matcher::match_rule_supported_vector_masked(sopc, num_elem, type)) {
+    bool is_supported = false;
+    if (Matcher::has_predicated_vectors()) {
+      if (VectorNode::is_vector_integral_negate(sopc)) {
+        is_supported = VectorNode::is_vector_integral_negate_supported(sopc, num_elem, type, true);
+      } else {
+        is_supported = Matcher::match_rule_supported_vector_masked(sopc, num_elem, type);
+      }
+    }
+
+    if (!is_supported) {
     #ifndef PRODUCT
       if (C->print_intrinsics()) {
         tty->print_cr("Rejected vector mask predicate using (%s,%s,%d) because architecture does not support it",
@@ -798,7 +816,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
   const TypeLong*    bits_type    = gvn().type(argument(3))->isa_long();
   // Mode argument determines the mode of operation it can take following values:-
-  // MODE_BROADCAST for vector Vector.boradcast and VectorMask.maskAll operations.
+  // MODE_BROADCAST for vector Vector.broadcast and VectorMask.maskAll operations.
   // MODE_BITS_COERCED_LONG_TO_MASK for VectorMask.fromLong operation.
   const TypeInt*     mode         = gvn().type(argument(5))->isa_int();
 
@@ -2370,9 +2388,11 @@ bool LibraryCallKit::inline_vector_convert() {
     return false;
   }
 
-  assert(opr->get_con() == VectorSupport::VECTOR_OP_CAST ||
+  assert(opr->get_con() == VectorSupport::VECTOR_OP_CAST  ||
+         opr->get_con() == VectorSupport::VECTOR_OP_UCAST ||
          opr->get_con() == VectorSupport::VECTOR_OP_REINTERPRET, "wrong opcode");
-  bool is_cast = (opr->get_con() == VectorSupport::VECTOR_OP_CAST);
+  bool is_cast = (opr->get_con() == VectorSupport::VECTOR_OP_CAST || opr->get_con() == VectorSupport::VECTOR_OP_UCAST);
+  bool is_ucast = (opr->get_con() == VectorSupport::VECTOR_OP_UCAST);
 
   ciKlass* vbox_klass_from = vector_klass_from->const_oop()->as_instance()->java_lang_Class_klass();
   ciKlass* vbox_klass_to = vector_klass_to->const_oop()->as_instance()->java_lang_Class_klass();
@@ -2457,7 +2477,7 @@ bool LibraryCallKit::inline_vector_convert() {
     if (is_mask && is_floating_point_type(elem_bt_from)) {
       new_elem_bt_from = elem_bt_from == T_FLOAT ? T_INT : T_LONG;
     }
-    int cast_vopc = VectorCastNode::opcode(new_elem_bt_from);
+    int cast_vopc = VectorCastNode::opcode(new_elem_bt_from, !is_ucast);
     // Make sure that cast is implemented to particular type/size combination.
     if (!arch_supports_vector(cast_vopc, num_elem_to, elem_bt_to, VecMaskNotUsed)) {
       if (C->print_intrinsics()) {

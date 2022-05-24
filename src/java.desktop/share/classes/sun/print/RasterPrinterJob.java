@@ -714,7 +714,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      *            is cancelled, or a new PageFormat object containing
      *            the format indicated by the user if the dialog is
      *            acknowledged
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since     1.2
@@ -947,7 +947,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      *
      * @param attributes to store changed properties.
      * @return false if the user cancels the dialog and true otherwise.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -1100,7 +1100,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * print job interactively.
      * @return false if the user cancels the dialog and
      *         true otherwise.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -1183,7 +1183,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * for the number of pages as well as the PageFormat and
      * Printable for each page.
      * @param document The document to be printed. It may not be null.
-     * @exception NullPointerException the Pageable passed in was null.
+     * @throws NullPointerException the Pageable passed in was null.
      * @see PageFormat
      * @see Printable
      */
@@ -1477,7 +1477,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
     /**
      * Prints a set of pages.
-     * @exception java.awt.print.PrinterException an error in the print system
+     * @throws java.awt.print.PrinterException an error in the print system
      *                                          caused the job to be aborted
      * @see java.awt.print.Book
      * @see java.awt.print.Pageable

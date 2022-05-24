@@ -508,7 +508,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * to manage the idiosyncrasies of the various UI implementations.
      *
      * @param       d the number of milliseconds to delay
-     * @exception   IllegalArgumentException if <code>d</code>
+     * @throws   IllegalArgumentException if <code>d</code>
      *                       is less than 0
      */
     @BeanProperty(bound = false, expert = true, description
@@ -674,7 +674,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @param s the text for the menu item to add
      * @param pos an integer specifying the position at which to add the
      *               new menu item
-     * @exception IllegalArgumentException when the value of
+     * @throws IllegalArgumentException when the value of
      *                  <code>pos</code> &lt; 0
      */
     public void insert(String s, int pos) {
@@ -693,7 +693,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @param pos an integer specifying the position at which to add the
      *               new <code>JMenuitem</code>
      * @return the new menu item
-     * @exception IllegalArgumentException if the value of
+     * @throws IllegalArgumentException if the value of
      *                  <code>pos</code> &lt; 0
      */
     public JMenuItem insert(JMenuItem mi, int pos) {
@@ -713,7 +713,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @param pos an integer specifying the position at which to add the
      *               new menu item
      * @return the new menu item
-     * @exception IllegalArgumentException if the value of
+     * @throws IllegalArgumentException if the value of
      *                  <code>pos</code> &lt; 0
      */
     public JMenuItem insert(Action a, int pos) {
@@ -734,7 +734,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *
      * @param       index an integer specifying the position at which to
      *                    insert the menu separator
-     * @exception   IllegalArgumentException if the value of
+     * @throws   IllegalArgumentException if the value of
      *                       <code>index</code> &lt; 0
      */
     public void insertSeparator(int index) {
@@ -755,7 +755,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @param pos  an integer specifying the position
      * @return  the menu item at the specified position; or <code>null</code>
      *          if the item as the specified position is not a menu item
-     * @exception  IllegalArgumentException if the value of
+     * @throws  IllegalArgumentException if the value of
      *             {@code pos} &lt; 0
      */
     public JMenuItem getItem(int pos) {
@@ -790,7 +790,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * yet implemented.
      *
      * @return true if the menu can be torn off, else false
-     * @exception  Error  if invoked -- this method is not yet implemented
+     * @throws  Error  if invoked -- this method is not yet implemented
      */
     @BeanProperty(bound = false)
     public boolean isTearOff() {
@@ -812,7 +812,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * Removes the menu item at the specified index from this menu.
      *
      * @param       pos the position of the item to be removed
-     * @exception   IllegalArgumentException if the value of
+     * @throws   IllegalArgumentException if the value of
      *                       <code>pos</code> &lt; 0, or if <code>pos</code>
      *                       is greater than the number of menu items
      */
@@ -1024,7 +1024,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * notification on this event type.  The event instance
      * is created lazily.
      *
-     * @exception Error  if there is a <code>null</code> listener
+     * @throws Error  if there is a <code>null</code> listener
      * @see EventListenerList
      */
     protected void fireMenuSelected() {
@@ -1054,7 +1054,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * notification on this event type.  The event instance
      * is created lazily.
      *
-     * @exception Error if there is a <code>null</code> listener
+     * @throws Error if there is a <code>null</code> listener
      * @see EventListenerList
      */
     protected void fireMenuDeselected() {
@@ -1084,7 +1084,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * notification on this event type.  The event instance
      * is created lazily.
      *
-     * @exception Error if there is a <code>null</code> listener
+     * @throws Error if there is a <code>null</code> listener
      * @see EventListenerList
      */
     protected void fireMenuCanceled() {
@@ -1238,7 +1238,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *
      * @param o the new component orientation of this menu and
      *        the components contained within it.
-     * @exception NullPointerException if <code>orientation</code> is null.
+     * @throws NullPointerException if <code>orientation</code> is null.
      * @see java.awt.Component#setComponentOrientation
      * @see java.awt.Component#getComponentOrientation
      * @since 1.4
@@ -1275,7 +1275,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @param keyStroke  the keystroke combination which will invoke
      *                  the <code>JMenuItem</code>'s actionlisteners
      *                  without navigating the menu hierarchy
-     * @exception Error  if invoked -- this method is not defined for JMenu.
+     * @throws Error  if invoked -- this method is not defined for JMenu.
      *                  Use <code>setMnemonic</code> instead
      */
     public void setAccelerator(KeyStroke keyStroke) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,9 +147,9 @@ public abstract class UCharacterIterator
      */
     public int nextCodePoint(){
         int ch1 = next();
-        if(UTF16.isLeadSurrogate((char)ch1)){
+        if(UTF16.isLeadSurrogate(ch1)){
             int ch2 = next();
-            if(UTF16.isTrailSurrogate((char)ch2)){
+            if(UTF16.isTrailSurrogate(ch2)){
                 return UCharacterProperty.getRawSupplementary((char)ch1,
                                                               (char)ch2);
             }else if (ch2 != DONE) {
@@ -175,7 +175,7 @@ public abstract class UCharacterIterator
     /**
      * Retreat to the start of the previous code point in the text,
      * and return it (pre-decrement semantics).  If the index is not
-     * preceeded by a valid surrogate pair, the behavior is the same
+     * preceded by a valid surrogate pair, the behavior is the same
      * as <code>previous()</code>.  Otherwise the iterator is
      * decremented to the start of the surrogate pair, and the code
      * point represented by the pair is returned.
@@ -185,9 +185,9 @@ public abstract class UCharacterIterator
      */
     public int previousCodePoint(){
         int ch1 = previous();
-        if(UTF16.isTrailSurrogate((char)ch1)){
+        if(UTF16.isTrailSurrogate(ch1)){
             int ch2 = previous();
-            if(UTF16.isLeadSurrogate((char)ch2)){
+            if(UTF16.isLeadSurrogate(ch2)){
                 return UCharacterProperty.getRawSupplementary((char)ch2,
                                                               (char)ch1);
             }else if (ch2 != DONE) {

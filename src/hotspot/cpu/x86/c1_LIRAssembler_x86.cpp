@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -398,13 +398,6 @@ int LIR_Assembler::initial_frame_size_in_bytes() const {
 
 
 int LIR_Assembler::emit_exception_handler() {
-  // if the last instruction is a call (typically to do a throw which
-  // is coming at the end after block reordering) the return address
-  // must still point into the code area in order to avoid assertion
-  // failures when searching for the corresponding bci => add a nop
-  // (was bug 5/14/1999 - gri)
-  __ nop();
-
   // generate code for exception handler
   address handler_base = __ start_a_stub(exception_handler_size());
   if (handler_base == NULL) {
@@ -445,7 +438,7 @@ int LIR_Assembler::emit_unwind_handler() {
 
   // Fetch the exception from TLS and clear out exception related thread state
   Register thread = NOT_LP64(rsi) LP64_ONLY(r15_thread);
-  NOT_LP64(__ get_thread(rsi));
+  NOT_LP64(__ get_thread(thread));
   __ movptr(rax, Address(thread, JavaThread::exception_oop_offset()));
   __ movptr(Address(thread, JavaThread::exception_oop_offset()), (intptr_t)NULL_WORD);
   __ movptr(Address(thread, JavaThread::exception_pc_offset()), (intptr_t)NULL_WORD);
@@ -456,7 +449,7 @@ int LIR_Assembler::emit_unwind_handler() {
     __ mov(rbx, rax);  // Preserve the exception (rbx is always callee-saved)
   }
 
-  // Preform needed unlocking
+  // Perform needed unlocking
   MonitorExitStub* stub = NULL;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::rax_opr);
@@ -467,6 +460,8 @@ int LIR_Assembler::emit_unwind_handler() {
       __ unlock_object(rdi, rsi, rax, *stub->entry());
     }
     __ bind(*stub->continuation());
+    NOT_LP64(__ get_thread(thread);)
+    __ dec_held_monitor_count(thread);
   }
 
   if (compilation()->env()->dtrace_method_probes()) {
@@ -499,13 +494,6 @@ int LIR_Assembler::emit_unwind_handler() {
 
 
 int LIR_Assembler::emit_deopt_handler() {
-  // if the last instruction is a call (typically to do a throw which
-  // is coming at the end after block reordering) the return address
-  // must still point into the code area in order to avoid assertion
-  // failures when searching for the corresponding bci => add a nop
-  // (was bug 5/14/1999 - gri)
-  __ nop();
-
   // generate code for exception handler
   address handler_base = __ start_a_stub(deopt_handler_size());
   if (handler_base == NULL) {
@@ -2010,7 +1998,10 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
   }
 }
 
-void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type) {
+void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type,
+                          LIR_Opr cmp_opr1, LIR_Opr cmp_opr2) {
+  assert(cmp_opr1 == LIR_OprFact::illegalOpr && cmp_opr2 == LIR_OprFact::illegalOpr, "unnecessary cmp oprs on x86");
+
   Assembler::Condition acond, ncond;
   switch (condition) {
     case lir_cond_equal:        acond = Assembler::equal;        ncond = Assembler::notEqual;     break;
@@ -2268,7 +2259,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
         raddr = frame_map()->address_for_slot(right->single_stack_ix());
       } else if (right->is_constant()) {
         address const_addr = float_constant(right->as_jfloat());
-        assert(const_addr != NULL, "incorrect float/double constant maintainance");
+        assert(const_addr != NULL, "incorrect float/double constant maintenance");
         // hack for now
         raddr = __ as_Address(InternalAddress(const_addr));
       } else {
@@ -2875,6 +2866,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
          "must be aligned");
   __ call(AddressLiteral(op->addr(), rtype));
   add_call_info(code_offset(), op->info());
+  __ post_call_nop();
 }
 
 
@@ -2883,6 +2875,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   add_call_info(code_offset(), op->info());
   assert((__ offset() - NativeCall::instruction_size + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
+  __ post_call_nop();
 }
 
 
@@ -3518,7 +3511,38 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   } else {
     Unimplemented();
   }
+  if (op->code() == lir_lock) {
+    // If deoptimization happens in Runtime1::monitorenter, inc_held_monitor_count after backing from slowpath
+    // will be skipped. Solution is
+    // 1. Increase only in fastpath
+    // 2. Runtime1::monitorenter increase count after locking
+#ifndef _LP64
+    Register thread = rsi;
+    __ push(thread);
+    __ get_thread(thread);
+#else
+    Register thread = r15_thread;
+#endif
+    __ inc_held_monitor_count(thread);
+#ifndef _LP64
+    __ pop(thread);
+#endif
+  }
   __ bind(*op->stub()->continuation());
+  if (op->code() == lir_unlock) {
+    // unlock in slowpath is JRT_Leaf stub, no deoptimization can happen
+#ifndef _LP64
+    Register thread = rsi;
+    __ push(thread);
+    __ get_thread(thread);
+#else
+    Register thread = r15_thread;
+#endif
+    __ dec_held_monitor_count(thread);
+#ifndef _LP64
+    __ pop(thread);
+#endif
+  }
 }
 
 void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
@@ -3651,7 +3675,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   } else {
     __ testptr(tmp, tmp);
     __ jcc(Assembler::notZero, update);
-    __ stop("unexpect null obj");
+    __ stop("unexpected null obj");
 #endif
   }
 
@@ -3879,6 +3903,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
   if (info != NULL) {
     add_call_info_here(info);
   }
+  __ post_call_nop();
 }
 
 

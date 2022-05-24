@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -98,21 +98,20 @@ static void save_memory_to_file(char* addr, size_t size) {
   const char* destfile = PerfMemory::get_perfdata_file_path();
   assert(destfile[0] != '\0', "invalid PerfData file path");
 
-  int result;
+  int fd;
 
-  RESTARTABLE(os::open(destfile, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR),
-              result);
-  if (result == OS_ERR) {
+  RESTARTABLE(os::open(destfile, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR), fd);
+  if (fd == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
       warning("Could not create Perfdata save file: %s: %s\n",
               destfile, os::strerror(errno));
     }
   } else {
-    int fd = result;
+    ssize_t result;
 
     for (size_t remaining = size; remaining > 0;) {
 
-      RESTARTABLE(::write(fd, addr, remaining), result);
+      result = os::write(fd, addr, remaining);
       if (result == OS_ERR) {
         if (PrintMiscellaneous && Verbose) {
           warning("Could not write Perfdata save file: %s: %s\n",
@@ -331,7 +330,7 @@ static DIR *open_directory_secure(const char* dirname) {
   // Determine if the open directory is secure.
   if (!is_dirfd_secure(fd)) {
     // The directory is not a secure directory.
-    os::close(fd);
+    ::close(fd);
     return dirp;
   }
 
@@ -339,21 +338,21 @@ static DIR *open_directory_secure(const char* dirname) {
   dirp = ::opendir(dirname);
   if (dirp == NULL) {
     // The directory doesn't exist, close fd and return.
-    os::close(fd);
+    ::close(fd);
     return dirp;
   }
 
   // Check to make sure fd and dirp are referencing the same file system object.
   if (!is_same_fsobject(fd, AIX_ONLY(dirp->dd_fd) NOT_AIX(dirfd(dirp)))) {
     // The directory is not secure.
-    os::close(fd);
+    ::close(fd);
     os::closedir(dirp);
     dirp = NULL;
     return dirp;
   }
 
   // Close initial open now that we know directory is secure
-  os::close(fd);
+  ::close(fd);
 
   return dirp;
 }
@@ -696,7 +695,7 @@ static void remove_file(const char* path) {
 
   // if the file is a directory, the following unlink will fail. since
   // we don't expect to find directories in the user temp directory, we
-  // won't try to handle this situation. even if accidentially or
+  // won't try to handle this situation. even if accidentally or
   // maliciously planted, the directory's presence won't hurt anything.
   //
   RESTARTABLE(::unlink(path), result);
@@ -842,9 +841,9 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   // Open the filename in the current directory.
   // Cannot use O_TRUNC here; truncation of an existing file has to happen
   // after the is_file_secure() check below.
-  int result;
-  RESTARTABLE(os::open(filename, O_RDWR|O_CREAT|O_NOFOLLOW, S_IRUSR|S_IWUSR), result);
-  if (result == OS_ERR) {
+  int fd;
+  RESTARTABLE(os::open(filename, O_RDWR|O_CREAT|O_NOFOLLOW, S_IRUSR|S_IWUSR), fd);
+  if (fd == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
       if (errno == ELOOP) {
         warning("file %s is a symlink and is not secure\n", filename);
@@ -860,14 +859,13 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   // close the directory and reset the current working directory
   close_directory_secure_cwd(dirp, saved_cwd_fd);
 
-  // save the file descriptor
-  int fd = result;
-
   // check to see if the file is secure
   if (!is_file_secure(fd, filename)) {
     ::close(fd);
     return -1;
   }
+
+  ssize_t result;
 
   // truncate the file to get rid of any existing data
   RESTARTABLE(::ftruncate(fd, (off_t)0), result);
@@ -895,7 +893,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
     int zero_int = 0;
     result = (int)os::seek_to_file_offset(fd, (jlong)(seekpos));
     if (result == -1 ) break;
-    RESTARTABLE(::write(fd, &zero_int, 1), result);
+    result = os::write(fd, &zero_int, 1);
     if (result != 1) {
       if (errno == ENOSPC) {
         warning("Insufficient space for shared memory file:\n   %s\nTry using the -Djava.io.tmpdir= option to select an alternate temp location.\n", filename);
@@ -1099,48 +1097,16 @@ static size_t sharedmem_filesize(int fd, TRAPS) {
 
 // attach to a named shared memory region.
 //
-static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemoryMode mode, char** addr, size_t* sizep, TRAPS) {
+static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
 
-  char* mapAddress;
-  int result;
-  int fd;
-  size_t size = 0;
-  const char* luser = NULL;
-
-  int mmap_prot;
-  int file_flags;
+  int mmap_prot = PROT_READ;
+  int file_flags = O_RDONLY | O_NOFOLLOW;
 
   ResourceMark rm;
 
-  // map the high level access mode to the appropriate permission
-  // constructs for the file and the shared memory mapping.
-  if (mode == PerfMemory::PERF_MODE_RO) {
-    mmap_prot = PROT_READ;
-    file_flags = O_RDONLY | O_NOFOLLOW;
-  }
-  else if (mode == PerfMemory::PERF_MODE_RW) {
-#ifdef LATER
-    mmap_prot = PROT_READ | PROT_WRITE;
-    file_flags = O_RDWR | O_NOFOLLOW;
-#else
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Unsupported access mode");
-#endif
-  }
-  else {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Illegal access mode");
-  }
-
   // for linux, determine if vmid is for a containerized process
   int nspid = LINUX_ONLY(os::Linux::get_namespace_pid(vmid)) NOT_LINUX(-1);
-
-  if (user == NULL || strlen(user) == 0) {
-    luser = get_user_name(vmid, &nspid, CHECK);
-  }
-  else {
-    luser = user;
-  }
+  const char* luser = get_user_name(vmid, &nspid, CHECK);
 
   if (luser == NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
@@ -1154,9 +1120,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
   //
   if (!is_directory_secure(dirname)) {
     FREE_C_HEAP_ARRAY(char, dirname);
-    if (luser != user) {
-      FREE_C_HEAP_ARRAY(char, luser);
-    }
+    FREE_C_HEAP_ARRAY(char, luser);
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Process not found");
   }
@@ -1171,12 +1135,12 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
   strcpy(rfilename, filename);
 
   // free the c heap resources that are no longer needed
-  if (luser != user) FREE_C_HEAP_ARRAY(char, luser);
+  FREE_C_HEAP_ARRAY(char, luser);
   FREE_C_HEAP_ARRAY(char, dirname);
   FREE_C_HEAP_ARRAY(char, filename);
 
   // open the shared memory file for the give vmid
-  fd = open_sharedmem_file(rfilename, file_flags, THREAD);
+  int fd = open_sharedmem_file(rfilename, file_flags, THREAD);
 
   if (fd == OS_ERR) {
     return;
@@ -1187,6 +1151,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
     return;
   }
 
+  size_t size;
   if (*sizep == 0) {
     size = sharedmem_filesize(fd, CHECK);
   } else {
@@ -1195,9 +1160,9 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
 
   assert(size > 0, "unexpected size <= 0");
 
-  mapAddress = (char*)::mmap((char*)0, size, mmap_prot, MAP_SHARED, fd, 0);
+  char* mapAddress = (char*)::mmap((char*)0, size, mmap_prot, MAP_SHARED, fd, 0);
 
-  result = ::close(fd);
+  int result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
@@ -1290,7 +1255,7 @@ void PerfMemory::delete_memory_region() {
 // the indicated process's PerfData memory region into this JVMs
 // address space.
 //
-void PerfMemory::attach(const char* user, int vmid, PerfMemoryMode mode, char** addrp, size_t* sizep, TRAPS) {
+void PerfMemory::attach(int vmid, char** addrp, size_t* sizep, TRAPS) {
 
   if (vmid == 0 || vmid == os::current_process_id()) {
      *addrp = start();
@@ -1298,7 +1263,7 @@ void PerfMemory::attach(const char* user, int vmid, PerfMemoryMode mode, char** 
      return;
   }
 
-  mmap_attach_shared(user, vmid, mode, addrp, sizep, CHECK);
+  mmap_attach_shared(vmid, addrp, sizep, CHECK);
 }
 
 // detach from the PerfData memory region of another JVM

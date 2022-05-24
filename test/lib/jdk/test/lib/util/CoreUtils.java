@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,12 +138,12 @@ public class CoreUtils {
             if (!coresDir.canWrite()) {
                 throw new SkippedException("Directory \"" + coresDir + "\" is not writable");
             }
-            if (Platform.isSignedOSX()) {
+            if (Platform.isHardenedOSX()) {
                 if (Platform.getOsVersionMajor() > 10 ||
                     (Platform.getOsVersionMajor() == 10 && Platform.getOsVersionMinor() >= 15))
                 {
-                    // We can't generate cores files with signed binaries on OSX 10.15 and later.
-                    throw new SkippedException("Cannot produce core file with signed binary on OSX 10.15 and later");
+                    // We can't generate cores files with hardened binaries on OSX 10.15 and later.
+                    throw new SkippedException("Cannot produce core file with hardened binary on OSX 10.15 and later");
                 }
             }
         } else if (Platform.isLinux()) {

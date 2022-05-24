@@ -45,12 +45,12 @@ class InstanceMirrorKlass: public InstanceKlass {
   friend class InstanceKlass;
 
  public:
-  static const KlassID ID = InstanceMirrorKlassID;
+  static const KlassKind Kind = InstanceMirrorKlassKind;
 
  private:
   static int _offset_of_static_fields;
 
-  InstanceMirrorKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_kind_mirror, ID) {}
+  InstanceMirrorKlass(const ClassFileParser& parser) : InstanceKlass(parser, Kind) {}
 
  public:
   InstanceMirrorKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
@@ -60,7 +60,7 @@ class InstanceMirrorKlass: public InstanceKlass {
   }
 
   static const InstanceMirrorKlass* cast(const Klass* k) {
-    assert(InstanceKlass::cast(k)->is_mirror_instance_klass(), "cast to InstanceMirrorKlass");
+    assert(k->is_mirror_instance_klass(), "cast to InstanceMirrorKlass");
     return static_cast<const InstanceMirrorKlass*>(k);
   }
 

@@ -131,7 +131,7 @@ JAVA_PLATFORM := Java Platform
 
 ifeq ($(IS_DRAFT), true)
   DRAFT_MARKER_STR := <br><strong>DRAFT $(VERSION_STRING)</strong>
-  ifeq ($(VERSION_BUILD), 0)
+  ifeq ($(VERSION_BUILD), )
     DRAFT_MARKER_TITLE := $(SPACE)[ad-hoc build]
   else
     DRAFT_MARKER_TITLE := $(SPACE)[build $(VERSION_BUILD)]

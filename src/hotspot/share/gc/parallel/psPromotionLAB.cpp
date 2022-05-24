@@ -85,18 +85,19 @@ void PSPromotionLAB::flush() {
   _state = flushed;
 }
 
-bool PSPromotionLAB::unallocate_object(HeapWord* obj, size_t obj_size) {
+void PSPromotionLAB::unallocate_object(HeapWord* obj, size_t obj_size) {
   assert(ParallelScavengeHeap::heap()->is_in(obj), "Object outside heap");
 
+  // If the object is inside this LAB, we just bump-down the `top` pointer.
+  // Otherwise, we overwrite it with a filler object.
   if (contains(obj)) {
     HeapWord* object_end = obj + obj_size;
     assert(object_end == top(), "Not matching last allocation");
 
     set_top(obj);
-    return true;
+  } else {
+    CollectedHeap::fill_with_object(obj, obj_size);
   }
-
-  return false;
 }
 
 // Fill all remaining lab space with an unreachable object.

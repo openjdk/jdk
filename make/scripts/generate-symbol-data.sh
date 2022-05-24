@@ -34,19 +34,19 @@
 # - have a checkout the JDK to which the data should be added (or in which the data should be updated).
 #   The checkout directory will be denoted as "${JDK_CHECKOUT}" in the further text.
 #   The checkout must not have any local changes that could interfere with the new data. In particular,
-#   there must be absolutely no changed, new or removed files under the ${JDK_CHECKOUT}/make/data/symbols
+#   there must be absolutely no changed, new or removed files under the ${JDK_CHECKOUT}/src/jdk.compiler/share/data/symbols
 #   directory.
 # - open a terminal program and run these commands:
-#     cd "${JDK_CHECKOUT}"/make/data/symbols
+#     cd "${JDK_CHECKOUT}"/src/jdk.compiler/share/data/symbols
 #     bash ../../scripts/generate-symbol-data.sh "${JDK_N_INSTALL}"
-# - this command will generate or update data for "--release N" into the ${JDK_CHECKOUT}/make/data/symbols
+# - this command will generate or update data for "--release N" into the ${JDK_CHECKOUT}/src/jdk.compiler/share/data/symbols
 #   directory, updating all registration necessary. If the goal was to update the data, and there are no
-#   new or changed files in the ${JDK_CHECKOUT}/make/data/symbols directory after running this script,
+#   new or changed files in the ${JDK_CHECKOUT}/src/jdk.compiler/share/data/symbols directory after running this script,
 #   there were no relevant changes and no further action is necessary. Note that version for N > 9 are encoded
 #   using capital letters, i.e. A represents version 10, B represents 11, and so on. The version numbers are in
-#   the names of the files in the ${JDK_CHECKOUT}/make/data/symbols directory, as well as in
-#   the ${JDK_CHECKOUT}/make/data/symbols/symbols file.
-# - if there are any changed/new files in the ${JDK_CHECKOUT}/make/data/symbols directory after running this script,
+#   the names of the files in the ${JDK_CHECKOUT}/src/jdk.compiler/share/data/symbols directory, as well as in
+#   the ${JDK_CHECKOUT}/src/jdk.compiler/share/data/symbols/symbols file.
+# - if there are any changed/new files in the ${JDK_CHECKOUT}/src/jdk.compiler/share/data/symbols directory after running this script,
 #   then all the changes in this directory, including any new files, need to be sent for review and eventually pushed.
 #   The commit message should specify which binary build was installed in the ${JDK_N_INSTALL} directory and also
 #   include the SCM state that was used to build it, which can be found in ${JDK_N_INSTALL}/release,
@@ -59,12 +59,12 @@ if [ "$1x" = "x" ] ; then
 fi;
 
 if [ ! -f symbols ] ; then
-    echo "Must run inside the make/data/symbols directory" >&2
+    echo "Must run inside the src/jdk.compiler/share/data/symbols directory" >&2
     exit 1
 fi;
 
 if [ "`git status --porcelain=v1 .`x" != "x" ] ; then
-    echo "The make/data/symbols directory contains local changes!" >&2
+    echo "The src/jdk.compiler/share/data/symbols directory contains local changes!" >&2
     exit 1
 fi;
 

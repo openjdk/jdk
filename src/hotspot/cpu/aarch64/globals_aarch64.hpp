@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -91,7 +91,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseSIMDForArrayEquals, true,                            \
           "Use SIMD instructions in generated array equals code")       \
   product(bool, UseSimpleArrayEquals, false,                            \
-          "Use simpliest and shortest implementation for array equals") \
+          "Use simplest and shortest implementation for array equals")  \
   product(bool, UseSIMDForBigIntegerShiftIntrinsics, true,              \
           "Use SIMD instructions for left/right shift of BigInteger")   \
   product(bool, AvoidUnalignedAccesses, false,                          \
@@ -118,7 +118,9 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(uint, OnSpinWaitInstCount, 1, DIAGNOSTIC,                     \
           "The number of OnSpinWaitInst instructions to generate."      \
           "It cannot be used with OnSpinWaitInst=none.")                \
-          range(1, 99)
+          range(1, 99)                                                  \
+  product(ccstr, UseBranchProtection, "none",                           \
+          "Branch Protection to use: none, standard, pac-ret")          \
 
 // end of ARCH_FLAGS
 

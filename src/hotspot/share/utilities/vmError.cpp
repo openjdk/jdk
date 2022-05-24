@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,7 +44,7 @@
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/thread.inline.hpp"
@@ -101,7 +101,8 @@ static const char* env_list[] = {
   // Env variables that are defined on Linux/BSD
   "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY",
   "HOSTTYPE", "OSTYPE", "ARCH", "MACHTYPE",
-  "LANG", "LC_ALL", "LC_CTYPE", "TZ",
+  "LANG", "LC_ALL", "LC_CTYPE", "LC_NUMERIC", "LC_TIME",
+  "TERM", "TMPDIR", "TZ",
 
   // defined on AIX
   "LIBPATH", "LDR_PRELOAD", "LDR_PRELOAD64",
@@ -115,7 +116,7 @@ static const char* env_list[] = {
   "DYLD_INSERT_LIBRARIES",
 
   // defined on Windows
-  "OS", "PROCESSOR_IDENTIFIER", "_ALT_JAVA_HOME_DIR",
+  "OS", "PROCESSOR_IDENTIFIER", "_ALT_JAVA_HOME_DIR", "TMP", "TEMP",
 
   (const char *)0
 };
@@ -543,21 +544,31 @@ void VMError::report(outputStream* st, bool _verbose) {
 
 #ifdef ASSERT
   // Error handler self tests
+  // Meaning of codes passed through in the tests.
+#define TEST_SECONDARY_CRASH 14
+#define TEST_RESOURCE_MARK_CRASH 2
 
   // test secondary error handling. Test it twice, to test that resetting
   // error handler after a secondary crash works.
   STEP("test secondary crash 1")
-    if (_verbose && TestCrashInErrorHandler != 0) {
+    if (_verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH) {
       st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
 
   STEP("test secondary crash 2")
-    if (_verbose && TestCrashInErrorHandler != 0) {
+    if (_verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH) {
       st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
+    }
+
+  STEP("test missing ResourceMark does not crash")
+    if (_verbose && TestCrashInErrorHandler == TEST_RESOURCE_MARK_CRASH) {
+      stringStream message;
+      message.print("This is a message with no ResourceMark");
+      tty->print_cr("%s", message.as_string());
     }
 
   // TestUnresponsiveErrorHandler: We want to test both step timeouts and global timeout.
@@ -586,18 +597,14 @@ void VMError::report(outputStream* st, bool _verbose) {
     // to test that resetting the signal handler works correctly.
     if (_verbose && TestSafeFetchInErrorHandler) {
       st->print_cr("Will test SafeFetch...");
-      if (CanUseSafeFetch32()) {
-        int* const invalid_pointer = (int*)segfault_address;
-        const int x = 0x76543210;
-        int i1 = SafeFetch32(invalid_pointer, x);
-        int i2 = SafeFetch32(invalid_pointer, x);
-        if (i1 == x && i2 == x) {
-          st->print_cr("SafeFetch OK."); // Correctly deflected and returned default pattern
-        } else {
-          st->print_cr("??");
-        }
+      int* const invalid_pointer = (int*)segfault_address;
+      const int x = 0x76543210;
+      int i1 = SafeFetch32(invalid_pointer, x);
+      int i2 = SafeFetch32(invalid_pointer, x);
+      if (i1 == x && i2 == x) {
+        st->print_cr("SafeFetch OK."); // Correctly deflected and returned default pattern
       } else {
-        st->print_cr("not possible; skipped.");
+        st->print_cr("??");
       }
     }
 #endif // ASSERT
@@ -872,6 +879,14 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
+  STEP("printing registers")
+
+     // printing registers
+     if (_verbose && _context) {
+       os::print_context(st, _context);
+       st->cr();
+     }
+
   STEP("printing register info")
 
      // decode register contents if possible
@@ -881,11 +896,11 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP("printing registers, top of stack, instructions near pc")
+  STEP("printing top of stack, instructions near pc")
 
-     // registers, top of stack, instructions near pc
+     // printing top of stack, instructions near pc
      if (_verbose && _context) {
-       os::print_context(st, _context);
+       os::print_tos_pc(st, _context);
        st->cr();
      }
 
@@ -910,7 +925,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP("printing code blobs if possible")
 
-     if (_verbose && _context) {
+     if (_verbose) {
        const int printed_capacity = max_error_log_print_code;
        address printed[printed_capacity];
        printed[0] = nullptr;
@@ -929,7 +944,8 @@ void VMError::report(outputStream* st, bool _verbose) {
              printed_len++;
            }
          } else {
-           frame fr = os::fetch_frame_from_context(_context);
+           frame fr = _context ? os::fetch_frame_from_context(_context)
+                               : os::current_frame();
            while (printed_len < limit && fr.pc() != nullptr) {
              if (print_code(st, _thread, fr.pc(), fr.pc() == _pc, printed, printed_capacity)) {
                printed_len++;
@@ -1138,6 +1154,15 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
+#ifndef _WIN32
+  STEP("printing locale settings")
+
+     if (_verbose) {
+       os::Posix::print_active_locale(st);
+       st->cr();
+     }
+#endif
+
   STEP("printing signal handlers")
 
      if (_verbose) {
@@ -1318,6 +1343,12 @@ void VMError::print_vm_info(outputStream* st) {
 
   os::print_environment_variables(st, env_list);
   st->cr();
+
+  // STEP("printing locale settings")
+#ifndef _WIN32
+  os::Posix::print_active_locale(st);
+  st->cr();
+#endif
 
   // STEP("printing signal handlers")
 
@@ -1654,7 +1685,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     _current_step_info = "";
 
     if (fd_log > 3) {
-      close(fd_log);
+      ::close(fd_log);
       fd_log = -1;
     }
 
@@ -1676,7 +1707,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       const bool overwrite = false; // We do not overwrite an existing replay file.
       int fd = prepare_log_file(ReplayDataFile, "replay_pid%p.log", overwrite, buffer, sizeof(buffer));
       if (fd != -1) {
-        FILE* replay_data_file = os::open(fd, "w");
+        FILE* replay_data_file = os::fdopen(fd, "w");
         if (replay_data_file != NULL) {
           fileStream replay_data_stream(replay_data_file, /*need_close=*/true);
           env->dump_replay_data_unsafe(&replay_data_stream);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -304,7 +304,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
         CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
         if (nm != NULL && nm->has_unsafe_access()) {
-          // We don't really need a stub here! Just set the pending exeption and
+          // We don't really need a stub here! Just set the pending exception and
           // continue at the next instruction after the faulting read. Returning
           // garbage from this read is ok.
           thread->set_pending_unsafe_access_error();
@@ -329,7 +329,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       } else if ((thread->thread_state() == _thread_in_vm ||
                   thread->thread_state() == _thread_in_native) &&
                  sig == SIGBUS && thread->doing_unsafe_access()) {
-        // We don't really need a stub here! Just set the pending exeption and
+        // We don't really need a stub here! Just set the pending exception and
         // continue at the next instruction after the faulting read. Returning
         // garbage from this read is ok.
         thread->set_pending_unsafe_access_error();
@@ -376,9 +376,9 @@ void os::Linux::set_fpu_control_word(int fpu_control) {
 
 // Minimum usable stack sizes required to get to user code. Space for
 // HotSpot guard pages is added later.
-size_t os::Posix::_compiler_thread_min_stack_allowed = (52 DEBUG_ONLY(+ 32)) * K;
-size_t os::Posix::_java_thread_min_stack_allowed = (32 DEBUG_ONLY(+ 8)) * K;
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = 32 * K;
+size_t os::_compiler_thread_min_stack_allowed = (52 DEBUG_ONLY(+ 32)) * K;
+size_t os::_java_thread_min_stack_allowed = (32 DEBUG_ONLY(+ 8)) * K;
+size_t os::_vm_internal_thread_min_stack_allowed = 32 * K;
 
 // Return default stack size for thr_type.
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
@@ -433,6 +433,12 @@ void os::print_context(outputStream *st, const void *context) {
   }
   st->cr();
   st->cr();
+}
+
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  const ucontext_t* uc = (const ucontext_t*)context;
 
   intptr_t *sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));

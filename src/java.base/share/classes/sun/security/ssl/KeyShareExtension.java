@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,7 +300,7 @@ final class KeyShareExtension {
                 for (SSLPossession pos : poses) {
                     // update the context
                     chc.handshakePossessions.add(pos);
-                    // May need more possesion types in the future.
+                    // May need more possession types in the future.
                     if (pos instanceof NamedGroupPossession) {
                         return pos.encode();
                     }
@@ -544,7 +544,7 @@ final class KeyShareExtension {
             // use requested key share entries
             if ((shc.handshakeCredentials == null) ||
                     shc.handshakeCredentials.isEmpty()) {
-                // Unlikely, HelloRetryRequest should be used ealier.
+                // Unlikely, HelloRetryRequest should be used earlier.
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "No available client key share entries");
@@ -576,7 +576,7 @@ final class KeyShareExtension {
                 SSLPossession[] poses = ke.createPossessions(shc);
                 for (SSLPossession pos : poses) {
                     if (!(pos instanceof NamedGroupPossession)) {
-                        // May need more possesion types in the future.
+                        // May need more possession types in the future.
                         continue;
                     }
 
@@ -600,7 +600,7 @@ final class KeyShareExtension {
             }
 
             if (keyShare == null) {
-                // Unlikely, HelloRetryRequest should be used instead ealier.
+                // Unlikely, HelloRetryRequest should be used instead earlier.
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.warning(
                             "No available server key_share extension");

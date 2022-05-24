@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,9 +55,9 @@
 // Sweeper logging code
 class SweeperRecord {
  public:
-  int traversal;
+  int64_t traversal;
   int compile_id;
-  long traversal_mark;
+  int64_t traversal_mark;
   int state;
   const char* kind;
   address vep;
@@ -65,8 +65,8 @@ class SweeperRecord {
   int line;
 
   void print() {
-      tty->print_cr("traversal = %d compile_id = %d %s uep = " PTR_FORMAT " vep = "
-                    PTR_FORMAT " state = %d traversal_mark %ld line = %d",
+      tty->print_cr("traversal = " INT64_FORMAT " compile_id = %d %s uep = " PTR_FORMAT " vep = "
+                    PTR_FORMAT " state = %d traversal_mark " INT64_FORMAT " line = %d",
                     traversal,
                     compile_id,
                     kind == NULL ? "" : kind,
@@ -107,8 +107,8 @@ void NMethodSweeper::init_sweeper_log() {
 #endif
 
 CompiledMethodIterator NMethodSweeper::_current(CompiledMethodIterator::all_blobs); // Current compiled method
-long     NMethodSweeper::_traversals                   = 0;    // Stack scan count, also sweep ID.
-long     NMethodSweeper::_total_nof_code_cache_sweeps  = 0;    // Total number of full sweeps of the code cache
+int64_t  NMethodSweeper::_traversals                   = 0;    // Stack scan count, also sweep ID.
+int64_t  NMethodSweeper::_total_nof_code_cache_sweeps  = 0;    // Total number of full sweeps of the code cache
 int      NMethodSweeper::_seen                         = 0;    // Nof. nmethod we have currently processed in current pass of CodeCache
 size_t   NMethodSweeper::_sweep_threshold_bytes        = 0;    // Threshold for when to sweep. Updated after ergonomics
 
@@ -119,8 +119,8 @@ volatile size_t NMethodSweeper::_bytes_changed         = 0;    // Counts the tot
                                                                //   2) not_entrant -> zombie
 int    NMethodSweeper::_hotness_counter_reset_val       = 0;
 
-long   NMethodSweeper::_total_nof_methods_reclaimed     = 0;   // Accumulated nof methods flushed
-long   NMethodSweeper::_total_nof_c2_methods_reclaimed  = 0;   // Accumulated nof methods flushed
+int64_t NMethodSweeper::_total_nof_methods_reclaimed    = 0;   // Accumulated nof methods flushed
+int64_t NMethodSweeper::_total_nof_c2_methods_reclaimed = 0;   // Accumulated nof methods flushed
 size_t NMethodSweeper::_total_flushed_size              = 0;   // Total number of bytes flushed from the code cache
 Tickspan NMethodSweeper::_total_time_sweeping;                 // Accumulated time sweeping
 Tickspan NMethodSweeper::_total_time_this_sweep;               // Total time this sweep
@@ -130,8 +130,7 @@ Tickspan NMethodSweeper::_peak_sweep_fraction_time;            // Peak time swee
 class MarkActivationClosure: public CodeBlobClosure {
 public:
   virtual void do_code_blob(CodeBlob* cb) {
-    assert(cb->is_nmethod(), "CodeBlob should be nmethod");
-    nmethod* nm = (nmethod*)cb;
+    nmethod* nm = cb->as_nmethod();
     nm->set_hotness_counter(NMethodSweeper::hotness_counter_reset_val());
     // If we see an activation belonging to a non_entrant nmethod, we mark it.
     if (nm->is_not_entrant()) {
@@ -187,7 +186,7 @@ CodeBlobClosure* NMethodSweeper::prepare_mark_active_nmethods() {
   _total_time_this_sweep = Tickspan();
 
   if (PrintMethodFlushing) {
-    tty->print_cr("### Sweep: stack traversal %ld", _traversals);
+    tty->print_cr("### Sweep: stack traversal " INT64_FORMAT, _traversals);
   }
   return &mark_activation_closure;
 }
@@ -198,6 +197,10 @@ CodeBlobClosure* NMethodSweeper::prepare_mark_active_nmethods() {
   */
 void NMethodSweeper::do_stack_scanning() {
   assert(!CodeCache_lock->owned_by_self(), "just checking");
+  if (Continuations::enabled()) {
+    // There are continuation stacks in the heap that need to be scanned.
+    Universe::heap()->collect(GCCause::_codecache_GC_threshold);
+  }
   if (wait_for_stack_scanning()) {
     CodeBlobClosure* code_cl;
     {
@@ -217,7 +220,7 @@ void NMethodSweeper::sweeper_loop() {
     {
       ThreadBlockInVM tbivm(JavaThread::current());
       MonitorLocker waiter(CodeSweeper_lock, Mutex::_no_safepoint_check_flag);
-      const long wait_time = 60*60*24 * 1000;
+      const int64_t wait_time = 60*60*24 * 1000;
       timeout = waiter.wait(wait_time);
     }
     if (!timeout && (_should_sweep || _force_sweep)) {
@@ -229,19 +232,19 @@ void NMethodSweeper::sweeper_loop() {
 /**
   * Wakes up the sweeper thread to sweep if code cache space runs low
   */
-void NMethodSweeper::report_allocation(int code_blob_type) {
-  if (should_start_aggressive_sweep(code_blob_type)) {
+void NMethodSweeper::report_allocation() {
+  if (should_start_aggressive_sweep()) {
     MonitorLocker waiter(CodeSweeper_lock, Mutex::_no_safepoint_check_flag);
     _should_sweep = true;
     CodeSweeper_lock->notify();
   }
 }
 
-bool NMethodSweeper::should_start_aggressive_sweep(int code_blob_type) {
+bool NMethodSweeper::should_start_aggressive_sweep() {
   // Makes sure that we do not invoke the sweeper too often during startup.
   double start_threshold = 100.0 / (double)StartAggressiveSweepingAt;
   double aggressive_sweep_threshold = MAX2(start_threshold, 1.1);
-  return (CodeCache::reverse_free_ratio(code_blob_type) >= aggressive_sweep_threshold);
+  return (CodeCache::reverse_free_ratio() >= aggressive_sweep_threshold);
 }
 
 /**
@@ -266,7 +269,7 @@ void NMethodSweeper::force_sweep() {
  */
 void NMethodSweeper::handle_safepoint_request() {
   JavaThread* thread = JavaThread::current();
-  if (SafepointMechanism::should_process(thread)) {
+  if (SafepointMechanism::local_poll_armed(thread)) {
     if (PrintMethodFlushing && Verbose) {
       tty->print_cr("### Sweep at %d out of %d, yielding to safepoint", _seen, CodeCache::nmethod_count());
     }
@@ -342,6 +345,7 @@ void NMethodSweeper::sweep_code_cache() {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     while (!_current.end()) {
+      CodeCache::Sweep::begin();
       swept_count++;
       // Since we will give up the CodeCache_lock, always skip ahead
       // to the next nmethod.  Other blobs can be deleted by other
@@ -387,6 +391,7 @@ void NMethodSweeper::sweep_code_cache() {
       }
 
       _seen++;
+      CodeCache::Sweep::end();
       handle_safepoint_request();
     }
   }
@@ -546,8 +551,7 @@ void NMethodSweeper::possibly_flush(nmethod* nm) {
       // ReservedCodeCacheSize
       int reset_val = hotness_counter_reset_val();
       int time_since_reset = reset_val - nm->hotness_counter();
-      int code_blob_type = CodeCache::get_code_blob_type(nm);
-      double threshold = -reset_val + (CodeCache::reverse_free_ratio(code_blob_type) * NmethodSweepActivity);
+      double threshold = -reset_val + (CodeCache::reverse_free_ratio() * NmethodSweepActivity);
       // The less free space in the code cache we have - the bigger reverse_free_ratio() is.
       // I.e., 'threshold' increases with lower available space in the code cache and a higher
       // NmethodSweepActivity. If the current hotness counter - which decreases from its initial
@@ -594,7 +598,7 @@ void NMethodSweeper::possibly_flush(nmethod* nm) {
           } else if (MethodCounters::is_nmethod_age_unset(age)) {
             // No counters were used before. Set the counters to the detection
             // limit value. If the method is going to be used again it will be compiled
-            // with counters that we're going to use for analysis the the next time.
+            // with counters that we're going to use for analysis the next time.
             mc->reset_nmethod_age();
           } else {
             // Method was totally idle for 10 sweeps
@@ -646,7 +650,7 @@ void NMethodSweeper::log_sweep(const char* msg, const char* format, ...) {
     CodeCache::log_state(&s);
 
     ttyLocker ttyl;
-    xtty->begin_elem("sweeper state='%s' traversals='" INTX_FORMAT "' ", msg, (intx)traversal_count());
+    xtty->begin_elem("sweeper state='%s' traversals='" INT64_FORMAT "' ", msg, traversal_count());
     if (format != NULL) {
       va_list ap;
       va_start(ap, format);
@@ -664,8 +668,9 @@ void NMethodSweeper::print(outputStream* out) {
   out = (out == NULL) ? tty : out;
   out->print_cr("Code cache sweeper statistics:");
   out->print_cr("  Total sweep time:                %1.0lf ms", (double)_total_time_sweeping.value()/1000000);
-  out->print_cr("  Total number of full sweeps:     %ld", _total_nof_code_cache_sweeps);
-  out->print_cr("  Total number of flushed methods: %ld (thereof %ld C2 methods)", _total_nof_methods_reclaimed,
+  out->print_cr("  Total number of full sweeps:     " INT64_FORMAT, _total_nof_code_cache_sweeps);
+  out->print_cr("  Total number of flushed methods: " INT64_FORMAT " (thereof " INT64_FORMAT " C2 methods)",
+                                                    _total_nof_methods_reclaimed,
                                                     _total_nof_c2_methods_reclaimed);
   out->print_cr("  Total size of flushed methods:   " SIZE_FORMAT " kB", _total_flushed_size/K);
 }

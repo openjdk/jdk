@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -521,6 +521,18 @@ class ServerImpl implements TimeSource {
         public void run () {
             /* context will be null for new connections */
             logger.log(Level.TRACE, "exchange started");
+
+            if (dispatcherThread == Thread.currentThread()) {
+                try {
+                    // call selector to process cancelled keys
+                    selector.selectNow();
+                } catch (IOException ioe) {
+                    logger.log(Level.DEBUG, "processing of cancelled keys failed: closing");
+                    closeConnection(connection);
+                    return;
+                }
+            }
+
             context = connection.getHttpContext();
             boolean newconnection;
             SSLEngine engine = null;
@@ -618,6 +630,11 @@ class ServerImpl implements TimeSource {
                     headerValue = headers.getFirst("Content-Length");
                     if (headerValue != null) {
                         clen = Long.parseLong(headerValue);
+                        if (clen < 0) {
+                            reject(Code.HTTP_BAD_REQUEST, requestLine,
+                                    "Illegal Content-Length value");
+                            return;
+                        }
                     }
                     if (clen == 0) {
                         requestCompleted(connection);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,9 @@ import sun.hotspot.WhiteBox;
 
 // This class performs operations on shared archive file
 public class CDSArchiveUtils {
+    // Minimum supported CDS file header version
+    private static int genericHeaderMinVersion;    // CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION
+    private static int currentCDSArchiveVersion;   // CURRENT_CDS_ARCHIVE_VERSION
     // offsets
     private static int offsetMagic;                // offset of GenericCDSFileMapHeader::_magic
     private static int offsetCrc;                  // offset of GenericCDSFileMapHeader::_crc
@@ -82,6 +85,9 @@ public class CDSArchiveUtils {
         WhiteBox wb;
         try {
             wb = WhiteBox.getWhiteBox();
+            // genericHeaderMinVersion
+            genericHeaderMinVersion = wb.getCDSGenericHeaderMinVersion();
+            currentCDSArchiveVersion = wb.getCurrentCDSVersion();
             // offsets
             offsetMagic = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_magic");
             offsetCrc = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_crc");
@@ -116,6 +122,10 @@ public class CDSArchiveUtils {
     }
 
     // accessors
+    // minimum supported file header version
+    public static int getGenericHeaderMinVersion()  { return genericHeaderMinVersion;     }
+    // current CDS version
+    public static int getCurrentCDSArchiveVersion() { return currentCDSArchiveVersion;    }
     // offsets
     public static int offsetMagic()                 { return offsetMagic;                 }
     public static int offsetCrc()                   { return offsetCrc;                   }
@@ -331,6 +341,18 @@ public class CDSArchiveUtils {
         return newJsaFile;
     }
 
+    public static File createMagicOnlyFile(String fileName, boolean createStatic) throws Exception {
+        File file = new File(fileName);
+        if (file.exists()) {
+            file.delete();
+        }
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            ByteBuffer buffer = ByteBuffer.allocate(4).putInt(createStatic ? staticMagic: dynamicMagic);
+            out.write(buffer.array(), 0, 4);
+        }
+        return file;
+    }
+
     private static FileChannel getFileChannel(File file, boolean write) throws Exception {
         List<StandardOpenOption> arry = new ArrayList<StandardOpenOption>();
         arry.add(READ);
@@ -387,18 +409,41 @@ public class CDSArchiveUtils {
          }
     }
 
-    // dstFile will keep original size so will remove corresponding bytes.length bytes at end of file
-    public static File insertBytesRandomlyAfterHeader(File orgFile, String newFileName, byte[] bytes) throws Exception {
-        long offset = fileHeaderSize(orgFile) + getRandomBetween(0L, 4096L);
+    // Helper method for calling FileChannel.transferFrom and checking the
+    // return value.
+    private static void transferFrom(FileChannel inputChannel,
+                                     FileChannel outputChannel,
+                                     long offset,
+                                     long length) throws Exception {
+        long position = offset;
+        long count = length;
+        while (count > 0 && inputChannel.position() < inputChannel.size()) {
+            long n = outputChannel.transferFrom(inputChannel, position, count);
+            if (n < 0 || n > count) {
+                throw new RuntimeException("Incorrect transfer length n = " + n
+                                           + " (expected 0 <= n <= " + length + ")");
+            }
+            position += n;
+            count -= n;
+        }
+    }
+
+    // dstFile will keep original size
+    public static File insertBytesRandomlyAfterHeader(File orgFile, String newFileName) throws Exception {
+        long headerSize = fileHeaderSize(orgFile);
+        long dupSize = getRandomBetween(0L, headerSize);
         File dstFile = new File(newFileName);
         try (FileChannel inputChannel = new FileInputStream(orgFile).getChannel();
              FileChannel outputChannel = new FileOutputStream(dstFile).getChannel()) {
             long orgSize = inputChannel.size();
-            outputChannel.transferFrom(inputChannel, 0, offset);
-            outputChannel.position(offset);
-            outputChannel.write(ByteBuffer.wrap(bytes));
-            outputChannel.transferFrom(inputChannel, offset + bytes.length, orgSize - bytes.length);
-        }
+            // Copy the header
+            transferFrom(inputChannel, outputChannel, 0, headerSize);
+            // Copy dupSize bytes from the end of the header. Then, copy the rest
+            // of the input such that the new file will have the same size as
+            // the old file.
+            inputChannel.position(headerSize - dupSize);
+            transferFrom(inputChannel, outputChannel, headerSize, orgSize - headerSize);
+            }
         return dstFile;
     }
 
@@ -409,9 +454,9 @@ public class CDSArchiveUtils {
         try (FileChannel inputChannel = new FileInputStream(orgFile).getChannel();
              FileChannel outputChannel = new FileOutputStream(dstFile).getChannel()) {
             long orgSize = inputChannel.size();
-            outputChannel.transferFrom(inputChannel, 0, offset);
+            transferFrom(inputChannel, outputChannel, 0, offset);
             inputChannel.position(offset + nBytes);
-            outputChannel.transferFrom(inputChannel, offset, orgSize - nBytes);
+            transferFrom(inputChannel, outputChannel, offset, orgSize - nBytes);
         }
         return dstFile;
     }

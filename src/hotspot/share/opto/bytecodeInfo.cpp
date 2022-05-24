@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ static bool is_init_with_ea(ciMethod* callee_method,
     return false; // EA is off
   }
   if (callee_method->is_initializer()) {
-    return true; // constuctor
+    return true; // constructor
   }
   if (caller_method->is_initializer() &&
       caller_method != C->method() &&
@@ -215,6 +215,13 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     fail_msg = "don't inline by annotation";
   }
 
+  // Don't inline a method that changes Thread.currentThread() except
+  // into another method that is annotated @ChangesCurrentThread.
+  if (callee_method->changes_current_thread()
+      && ! C->method()->changes_current_thread()) {
+    fail_msg = "method changes current thread";
+  }
+
   // one more inlining restriction
   if (fail_msg == NULL && callee_method->has_unloaded_classes_in_signature()) {
     fail_msg = "unloaded signature classes";
@@ -316,14 +323,6 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
 
       if (freq < min_freq) {
         set_msg("low call site frequency");
-        return true;
-      }
-    }
-
-    if (MinInliningThreshold > 0) { // Deprecated heuristic
-      intx counter_high_value = TieredCompilation ? InvocationCounter::count_limit / 2 : CompileThreshold / 2;
-      if (!callee_method->was_executed_more_than(MIN2(MinInliningThreshold, counter_high_value))) {
-        set_msg("executed < MinInliningThreshold times");
         return true;
       }
     }

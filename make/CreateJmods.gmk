@@ -226,6 +226,13 @@ else
   JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.diz,*.debuginfo,*.dSYM/**,*.dSYM}'
 endif
 
+# For reproducible builds specify the jmod --date using SOURCE_DATE in ISO-8601
+ifeq ($(ENABLE_REPRODUCIBLE_BUILD), true)
+  JMOD_SOURCE_DATE := --date $(SOURCE_DATE_ISO_8601)
+else
+  JMOD_SOURCE_DATE :=
+endif
+
 # Create jmods in the support dir and then move them into place to keep the
 # module path in $(IMAGES_OUTPUTDIR)/jmods valid at all times.
 $(eval $(call SetupExecute, create_$(JMOD_FILE), \
@@ -237,6 +244,7 @@ $(eval $(call SetupExecute, create_$(JMOD_FILE), \
     COMMAND := $(JMOD) create --module-version $(VERSION_SHORT) \
         --target-platform '$(OPENJDK_MODULE_TARGET_PLATFORM)' \
         --module-path $(JMODS_DIR) $(JMOD_FLAGS) \
+        $(JMOD_SOURCE_DATE) \
         $(JMODS_SUPPORT_DIR)/$(JMOD_FILE), \
     POST_COMMAND := $(MV) $(JMODS_SUPPORT_DIR)/$(JMOD_FILE) $(JMODS_DIR)/$(JMOD_FILE), \
 ))

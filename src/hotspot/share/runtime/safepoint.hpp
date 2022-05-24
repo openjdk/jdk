@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_SAFEPOINT_HPP
 #define SHARE_RUNTIME_SAFEPOINT_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmOperation.hpp"
@@ -126,10 +126,6 @@ class SafepointSynchronize : AllStatic {
                                     JavaThread *thread,
                                     uint64_t safepoint_count);
 
-  static bool is_a_block_safe_state(JavaThreadState state) {
-    // Check that we have a valid thread_state before blocking for safepoints
-    return state == _thread_in_vm || state == _thread_in_Java;
-  }
   // Called when a thread voluntarily blocks
   static void block(JavaThread *thread);
 

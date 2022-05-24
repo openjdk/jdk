@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class GraphUtils {
      */
     public interface Node<D, N extends Node<D, N>> {
         /**
-         * visitor method.
+         * Visitor method.
          */
         <A> void accept(NodeVisitor<D, N, A> visitor, A arg);
     }
@@ -105,7 +105,7 @@ public class GraphUtils {
         public abstract DependencyKind[] getSupportedDependencyKinds();
 
         /**
-         * Get all dependencies of a given kind
+         * Get all dependencies of a given kind.
          */
         public abstract Collection<? extends N> getDependenciesByKind(DependencyKind dk);
 
@@ -126,7 +126,7 @@ public class GraphUtils {
     }
 
     /**
-     * This class specialized Node, by adding elements that are required in order
+     * This class specializes Node, by adding elements that are required in order
      * to perform Tarjan computation of strongly connected components.
      */
     public abstract static class TarjanNode<D, N extends TarjanNode<D, N>> extends AbstractNode<D, N>
@@ -141,13 +141,14 @@ public class GraphUtils {
 
         public abstract Iterable<? extends N> getAllDependencies();
 
+        @Override
         public int compareTo(N o) {
-            return (index < o.index) ? -1 : (index == o.index) ? 0 : 1;
+            return Integer.compare(index, o.index);
         }
     }
 
     /**
-     * Tarjan's algorithm to determine strongly connected components of a
+     * Tarjan's algorithm to determine strongly connected components (SCCs) of a
      * directed graph in linear time. Works on TarjanNode.
      */
     public static <D, N extends TarjanNode<D, N>> List<? extends List<? extends N>> tarjan(Iterable<? extends N> nodes) {
@@ -160,10 +161,10 @@ public class GraphUtils {
         /** Unique node identifier. */
         int index = 0;
 
-        /** List of SCCs found fso far. */
+        /** List of SCCs found so far. */
         ListBuffer<List<N>> sccs = new ListBuffer<>();
 
-        /** Stack of all reacheable nodes from given root. */
+        /** Stack of all reachable nodes from given root. */
         ListBuffer<N> stack = new ListBuffer<>();
 
         private List<? extends List<? extends N>> findSCC(Iterable<? extends N> nodes) {

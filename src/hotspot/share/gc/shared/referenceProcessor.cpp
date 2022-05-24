@@ -483,7 +483,7 @@ void RefProcTask::process_discovered_list(uint worker_id,
                                                                        keep_alive,
                                                                        enqueue,
                                                                        do_enqueue_and_clear);
-    _phase_times->add_ref_cleared(ref_type, removed);
+    _phase_times->add_ref_dropped(ref_type, removed);
   }
 }
 
@@ -748,8 +748,6 @@ void ReferenceProcessor::process_soft_weak_final_refs(RefProcProxyTask& proxy_ta
     maybe_balance_queues(_discoveredFinalRefs);
   }
 
-  RefProcPhaseTimeTracker tt(SoftWeakFinalRefsPhase, &phase_times);
-
   log_reflist("SoftWeakFinalRefsPhase Soft before", _discoveredSoftRefs, _max_num_queues);
   log_reflist("SoftWeakFinalRefsPhase Weak before", _discoveredWeakRefs, _max_num_queues);
   log_reflist("SoftWeakFinalRefsPhase Final before", _discoveredFinalRefs, _max_num_queues);
@@ -780,7 +778,6 @@ void ReferenceProcessor::process_final_keep_alive(RefProcProxyTask& proxy_task,
   }
 
   // Traverse referents of final references and keep them and followers alive.
-  RefProcPhaseTimeTracker tt(KeepAliveFinalRefsPhase, &phase_times);
   RefProcKeepAliveFinalPhaseTask phase_task(*this, &phase_times);
   run_task(phase_task, proxy_task, true);
 
@@ -803,9 +800,6 @@ void ReferenceProcessor::process_phantom_refs(RefProcProxyTask& proxy_task,
     RefProcBalanceQueuesTimeTracker tt(PhantomRefsPhase, &phase_times);
     maybe_balance_queues(_discoveredPhantomRefs);
   }
-
-  // Walk phantom references appropriately.
-  RefProcPhaseTimeTracker tt(PhantomRefsPhase, &phase_times);
 
   log_reflist("PhantomRefsPhase Phantom before", _discoveredPhantomRefs, _max_num_queues);
 
@@ -834,9 +828,6 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
   // Get the discovered queue to which we will add
   DiscoveredList* list = NULL;
   switch (rt) {
-    case REF_OTHER:
-      // Unknown reference type, no special treatment
-      break;
     case REF_SOFT:
       list = &_discoveredSoftRefs[id];
       break;
@@ -849,6 +840,8 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
     case REF_PHANTOM:
       list = &_discoveredPhantomRefs[id];
       break;
+    case REF_OTHER:
+      // Unknown reference type, impossible
     case REF_NONE:
       // we should not reach here if we are an InstanceRefKlass
     default:
@@ -1042,10 +1035,6 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
 
   // Get the right type of discovered queue head.
   DiscoveredList* list = get_discovered_list(rt);
-  if (list == NULL) {
-    return false;   // nothing special needs to be done
-  }
-
   add_to_discovered_list(*list, obj, discovered_addr);
 
   assert(oopDesc::is_oop(obj), "Discovered a bad reference");

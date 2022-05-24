@@ -133,49 +133,4 @@ inline HeapWord* G1PLABAllocator::allocate(G1HeapRegionAttr dest,
   return allocate_direct_or_new_plab(dest, word_sz, refill_failed, node_index);
 }
 
-inline bool G1PLABAllocator::needs_bot_update(G1HeapRegionAttr dest) const {
-  return dest.is_old();
-}
-
-inline void G1PLABAllocator::update_bot_for_direct_allocation(G1HeapRegionAttr attr, HeapWord* addr, size_t size) {
-  if (!needs_bot_update(attr)) {
-    return;
-  }
-
-  // Out of PLAB allocations in an old generation region. Update BOT.
-  HeapRegion* region = _g1h->heap_region_containing(addr);
-  region->update_bot_at(addr, size);
-}
-
-inline void G1PLABAllocator::update_bot_for_plab_allocation(G1HeapRegionAttr dest, size_t word_sz, uint node_index) {
-  assert(needs_bot_update(dest), "Wrong destination: %s", dest.get_type_str());
-  G1BotUpdatingPLAB* plab = static_cast<G1BotUpdatingPLAB*>(alloc_buffer(dest, node_index));
-  plab->update_bot(word_sz);
-}
-
-inline void G1BotUpdatingPLAB::set_buf(HeapWord* buf, size_t word_sz) {
-  PLAB::set_buf(buf, word_sz);
-  // Update the region and threshold to allow efficient BOT updates.
-  _region = G1CollectedHeap::heap()->heap_region_containing(buf);
-  _next_bot_threshold = _region->bot_threshold_for_addr(buf);
-}
-
-inline void G1BotUpdatingPLAB::update_bot(size_t word_sz) {
-  // The last object end is at _top, if it did not cross the
-  // threshold, there is nothing to do.
-  if (_top <= _next_bot_threshold) {
-    return;
-  }
-
-  HeapWord* obj_start = _top - word_sz;
-  assert(contains(obj_start),
-         "Object start outside PLAB. bottom: " PTR_FORMAT " object: " PTR_FORMAT,
-         p2i(_bottom), p2i(obj_start));
-  assert(obj_start <= _next_bot_threshold,
-         "Object start not below or at threshold. threshold: " PTR_FORMAT " object: " PTR_FORMAT,
-         p2i(_next_bot_threshold), p2i(obj_start));
-
-  _region->update_bot_crossing_threshold(&_next_bot_threshold, obj_start, _top);
-}
-
 #endif // SHARE_GC_G1_G1ALLOCATOR_INLINE_HPP

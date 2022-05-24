@@ -419,11 +419,15 @@ modules. If multiple modules are specified, they should be separated by space
 
 #### RETRY_COUNT
 
-Retry failed tests up to a set number of times. Defaults to 0.
+Retry failed tests up to a set number of times, until they pass.
+This allows to pass the tests with intermittent failures.
+Defaults to 0.
 
 #### REPEAT_COUNT
 
-Repeat the tests for a set number of times. Defaults to 0.
+Repeat the tests up to a set number of times, stopping at first failure.
+This helps to reproduce intermittent test failures.
+Defaults to 0.
 
 ### Gtest keywords
 

@@ -220,7 +220,7 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
      * @throws IllegalArgumentException if {@code name} is empty or not valid
      */
     public FlightRecorderPermission(String name) {
-        super(Objects.requireNonNull(name));
+        super(Objects.requireNonNull(name, "name"));
         if (!name.equals(Utils.ACCESS_FLIGHT_RECORDER) && !name.equals(Utils.REGISTER_EVENT)) {
             throw new IllegalArgumentException("name: " + name);
         }

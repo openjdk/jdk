@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,10 +300,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             try {
                 processorIterator = List.of(new PrintingProcessor()).iterator();
             } catch (Throwable t) {
-                AssertionError assertError =
-                    new AssertionError("Problem instantiating PrintingProcessor.");
-                assertError.initCause(t);
-                throw assertError;
+                throw new AssertionError("Problem instantiating PrintingProcessor.", t);
             }
         } else if (processors != null) {
             processorIterator = processors.iterator();
@@ -493,7 +490,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     private class NameServiceIterator extends ServiceIterator {
-        private Map<String, Processor> namedProcessorsMap = new HashMap<>();;
+        private Map<String, Processor> namedProcessorsMap = new HashMap<>();
         private Iterator<String> processorNames = null;
         private Processor nextProc = null;
 
