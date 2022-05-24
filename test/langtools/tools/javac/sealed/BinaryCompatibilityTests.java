@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -381,7 +381,7 @@ public class BinaryCompatibilityTests extends TestRunner {
         );
     }
 
-    /* 1- compiles the the superclass source code along with the first version of the subclass source code
+    /* 1- compiles the superclass source code along with the first version of the subclass source code
      * 2- executes the super class just to make sure that it works
      * 3- compiles the second version of the subclass along with the class file of the superclass
      * 4- executes the super class and makes sure that it executes successfully
