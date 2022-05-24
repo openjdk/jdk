@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,20 +19,42 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "prims/downcallLinker.hpp"
-#include "utilities/debug.hpp"
+/**
+ * @test
+ * @bug 8286177
+ * @summary Test that inconsistent reduction node-loop state does not trigger
+ *          assertion failures when the inconsistency does not lead to a
+ *          miscompilation.
+ * @run main/othervm -Xbatch compiler.loopopts.superword.TestHoistedReductionNode
+ */
+package compiler.loopopts.superword;
 
-RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
-                                                int num_args,
-                                                BasicType ret_bt,
-                                                const ABIDescriptor& abi,
-                                                const GrowableArray<VMReg>& input_registers,
-                                                const GrowableArray<VMReg>& output_registers,
-                                                bool needs_return_buffer) {
-  Unimplemented();
-  return nullptr;
+public class TestHoistedReductionNode {
+
+    static boolean b = true;
+
+    static int test() {
+        int acc = 0;
+        int i = 0;
+        do {
+            int j = 0;
+            do {
+                if (b) {
+                    acc += j;
+                }
+                j++;
+            } while (j < 5);
+            i++;
+        } while (i < 100);
+        return acc;
+
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 10_000; i++) {
+            test();
+        }
+    }
 }
