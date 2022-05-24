@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,20 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "prims/downcallLinker.hpp"
-#include "utilities/debug.hpp"
+/*
+ * @test Verifier handling of invoking java/lang/Object::clone() on object arrays.
+ * @bug 8286277
+ * @build InvokeCloneValid InvokeCloneInvalid
+ * @run main/othervm -Xverify InvokeClone
+ */
 
-RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
-                                                int num_args,
-                                                BasicType ret_bt,
-                                                const ABIDescriptor& abi,
-                                                const GrowableArray<VMReg>& input_registers,
-                                                const GrowableArray<VMReg>& output_registers,
-                                                bool needs_return_buffer) {
-  Unimplemented();
-  return nullptr;
+public class InvokeClone {
+    public static void main(String[] args) throws ClassNotFoundException {
+        try {
+            Class.forName("InvokeCloneValid");
+        }  catch (VerifyError e) {
+            throw new RuntimeException("Unexpected VerifyError", e);
+        }
+
+        try {
+            Class.forName("InvokeCloneInvalid");
+            throw new RuntimeException("VerifyError expected but not thrown");
+        } catch (VerifyError e) {
+            System.out.println("Expected: " + e);
+        }
+    }
 }

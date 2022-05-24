@@ -25,16 +25,18 @@
 #ifndef SHARE_GC_SHARED_VERIFYOPTION_HPP
 #define SHARE_GC_SHARED_VERIFYOPTION_HPP
 
-enum VerifyOption {
-  VerifyOption_Default = 0,
+#include "utilities/globalDefinitions.hpp"
+
+enum class VerifyOption : uint {
+  Default = 0,
 
   // G1
 
   // Use "prev" mark bitmap information using pTAMS.
-  VerifyOption_G1UsePrevMarking = VerifyOption_Default,
+  G1UsePrevMarking = Default,
   // Use "next" mark bitmap information from full gc marking. This does not
   // use (or need) TAMS.
-  VerifyOption_G1UseFullMarking = VerifyOption_G1UsePrevMarking + 1
+  G1UseFullMarking = G1UsePrevMarking + 1
 };
 
 #endif // SHARE_GC_SHARED_VERIFYOPTION_HPP

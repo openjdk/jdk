@@ -97,7 +97,7 @@ class G1VerifyCodeRootOopClosure: public OopClosure {
     }
 
     // Don't check the code roots during marking verification in a full GC
-    if (_vo == VerifyOption_G1UseFullMarking) {
+    if (_vo == VerifyOption::G1UseFullMarking) {
       return;
     }
 
@@ -219,7 +219,7 @@ public:
       // word), it may not be marked, or may have been marked
       // but has since became dead, or may have been allocated
       // since the last marking.
-      if (_vo == VerifyOption_G1UseFullMarking) {
+      if (_vo == VerifyOption::G1UseFullMarking) {
         guarantee(!_g1h->is_obj_dead(o), "Full GC marking and concurrent mark mismatch");
       }
 
@@ -493,7 +493,8 @@ void G1HeapVerifier::verify(VerifyOption vo) {
   }
 
   if (failures) {
-    log_error(gc, verify)("Heap after failed verification (kind %d):", vo);
+    log_error(gc, verify)("Heap after failed verification (kind %u):",
+                          static_cast<std::underlying_type_t<VerifyOption>>(vo));
     // It helps to have the per-region information in the output to
     // help us track down what went wrong. This is why we call
     // print_extended_on() instead of print_on().
@@ -587,11 +588,11 @@ void G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* msg)
 }
 
 void G1HeapVerifier::verify_before_gc(G1VerifyType type) {
-  verify(type, VerifyOption_G1UsePrevMarking, "Before GC");
+  verify(type, VerifyOption::G1UsePrevMarking, "Before GC");
 }
 
 void G1HeapVerifier::verify_after_gc(G1VerifyType type) {
-  verify(type, VerifyOption_G1UsePrevMarking, "After GC");
+  verify(type, VerifyOption::G1UsePrevMarking, "After GC");
 }
 
 
