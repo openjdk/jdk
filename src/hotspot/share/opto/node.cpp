@@ -1720,11 +1720,15 @@ private:
   // options
   bool _traverse_inputs = false;
   bool _traverse_outputs = false;
-  bool _traverse_control = false;
-  bool _traverse_memory = false;
-  bool _traverse_data = false;
-  bool _traverse_mixed = false;
-  bool _traverse_other = false;
+  struct Filter {
+    bool control = false;
+    bool memory = false;
+    bool data = false;
+    bool mixed = false;
+    bool other = false;
+  };
+  Filter filter_visit;
+  Filter filter_boundary;
   bool _use_color = false;
   bool _print_blocks = false;
   bool _print_old = false;
@@ -1732,7 +1736,7 @@ private:
   void parse_options();
 
   // node category
-  bool is_visitable_category(Node* n); // filter node category agains options
+  bool filter_category(Node* n, Filter& filter); // filter node category agains options
   const char* category_string(Node* n); // (colored) category
 
   // node info
@@ -1824,8 +1828,11 @@ void PrintBFS::collect() {
   while (pos < _worklist.size()) {
     Node* n = _worklist.at(pos++);
     Info* info = find_info(n);
-    if (n->is_Con()) {
-      continue; // don't traverse through constant or top node
+    if (!filter_category(n, filter_visit) && n != _start) {
+      continue; // we hit boundary, do not traverse further
+    }
+    if (n->is_Con() || n->is_Root()) {
+      continue; // don't traverse through constant or root node
     }
     if (_traverse_inputs && _max_distance > info->distance()) {
       for (uint i = 0; i < n->req(); i++) {
@@ -1912,36 +1919,41 @@ void PrintBFS::parse_options_helper(bool &variable, const char* character) {
 
 void PrintBFS::parse_options() {
   if (_options == nullptr) {
-    _options = "+-cmdxoOB"; // default options
+    _options = "cmdxo+-@B"; // default options
   }
-  parse_options_helper(_traverse_inputs,  "+");
-  parse_options_helper(_traverse_outputs, "-");
-  parse_options_helper(_traverse_control, "c");
-  parse_options_helper(_traverse_memory,  "m");
-  parse_options_helper(_traverse_data,    "d");
-  parse_options_helper(_traverse_mixed,   "x");
-  parse_options_helper(_traverse_other,   "o");
-  parse_options_helper(_use_color,        "#");
-  parse_options_helper(_print_blocks,     "B");
-  parse_options_helper(_print_old,        "O");
+  parse_options_helper(_traverse_inputs,        "+");
+  parse_options_helper(_traverse_outputs,       "-");
+  parse_options_helper(filter_visit.control,    "c");
+  parse_options_helper(filter_visit.memory,     "m");
+  parse_options_helper(filter_visit.data,       "d");
+  parse_options_helper(filter_visit.mixed,      "x");
+  parse_options_helper(filter_visit.other,      "o");
+  parse_options_helper(filter_boundary.control, "C");
+  parse_options_helper(filter_boundary.memory,  "M");
+  parse_options_helper(filter_boundary.data,    "D");
+  parse_options_helper(filter_boundary.mixed,   "X");
+  parse_options_helper(filter_boundary.other,   "O");
+  parse_options_helper(_use_color,              "#");
+  parse_options_helper(_print_blocks,           "B");
+  parse_options_helper(_print_old,              "@");
   Compile* C = Compile::current();
   _print_old &= (C->matcher() != nullptr); // only show old if there are new
   _print_blocks &= (C->cfg() != nullptr); // only show blocks if available
 }
 
-bool PrintBFS::is_visitable_category(Node* n) {
+bool PrintBFS::filter_category(Node* n, Filter& filter) {
   const Type *t = n->bottom_type();
   switch (t->category()) {
     case Type::Category::Data:
-      return _traverse_data;
+      return filter.data;
     case Type::Category::Memory:
-      return _traverse_memory;
+      return filter.memory;
     case Type::Category::Mixed:
-      return _traverse_mixed;
+      return filter.mixed;
     case Type::Category::Control:
-      return _traverse_control;
+      return filter.control;
     case Type::Category::Other:
-      return _traverse_other;
+      return filter.other;
     case Type::Category::Undef:
       n->dump();
       assert(false, "category undef ??");
@@ -2019,7 +2031,9 @@ void PrintBFS::print_node_block (Node* n) {
 
 void PrintBFS::maybe_traverse(Node* src, Node* dst) {
   if (dst != nullptr &&
-     (is_visitable_category(dst) || dst == _start)) { // correct category or start?
+     (filter_category(dst, filter_visit) ||
+      filter_category(dst, filter_boundary) ||
+      dst == _start)) { // correct category or start?
     if( find_info(dst) == nullptr ){
       // never visited - set up info
       _worklist.push(dst);
@@ -2070,18 +2084,26 @@ void PrintBFS::print_node(Node* n) {
 //   if nullptr: print all nodes visited during BFS
 //   else: find shortest path from this/start to target, via BFS and backtracking
 // options:
-//   if nullptr: same as "+-cmdxoOB"
+//   if nullptr: same as "cmdxo+-@B"
 //   else: use combination of these characters
 //     +: traverse in-edges
 //     -: traverse out-edges
-//     c: traverse control nodes
-//     m: traverse memory nodes
-//     d: traverse data nodes
-//     x: traverse mixed nodes
-//     o: traverse other nodes
+//     c: visit control nodes
+//     m: visit memory nodes
+//     d: visit data nodes
+//     x: visit mixed nodes
+//     o: visit other nodes
+//     C: boundary control nodes
+//     M: boundary memory nodes
+//     D: boundary data nodes
+//     X: boundary mixed nodes
+//     O: boundary other nodes
 //     #: display node category in color (maybe not supported in all terminals)
-//     O: print old nodes - before matching (if available)
+//     @: print old nodes - before matching (if available)
 //     B: print scheduling blocks (if available)
+//
+// recursively follwo edges to nodes with permitted visit types,
+// on the boundary additionally follow nodes allowed in boundary types.
 //
 // examples:
 //   if->print_bfs(10, 0, "+cxo")
