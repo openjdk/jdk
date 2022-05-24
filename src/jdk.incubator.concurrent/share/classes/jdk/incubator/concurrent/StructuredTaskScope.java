@@ -628,6 +628,11 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * scopes are closed then it closes the underlying construct of each nested task scope
      * (in the reverse order that they were created in), closes this task scope, and then
      * throws {@link StructureViolationException}.
+     * If a thread terminates without first closing task scopes that it owns then
+     * termination will cause the underlying construct of each of its open tasks scopes to
+     * be closed. Closing is performed in the reverse order that the task scopes were
+     * created in. Thread termination may therefore be delayed when the owner has to wait
+     * for threads forked in these task scopes to finish.
      *
      * @throws IllegalStateException thrown after closing the task scope if the owner
      * did not invoke join after forking
@@ -901,7 +906,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
          * The behavior of this method is unspecified when invoking this method before
-         * the {@code join} is invoked.
+         * joining.
          *
          * @throws ExecutionException if no subtasks completed with a result but a subtask
          * completed with an exception
@@ -935,7 +940,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
          * The behavior of this method is unspecified when invoking this method before
-         * the {@code join} is invoked.
+         * joining.
          *
          * @param esf the exception supplying function
          * @param <X> type of the exception to be thrown
@@ -1079,7 +1084,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
          * The behavior of this method is unspecified when invoking this method before
-         * the {@code join} is invoked.
+         * joining.
          *
          * @return the exception for a subtask that completed abnormally or an empty
          * optional if no subtasks completed abnormally
@@ -1107,7 +1112,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
          * The behavior of this method is unspecified when invoking this method before
-         * the {@code join} is invoked.
+         * joining.
          *
          * @throws ExecutionException if a subtask completed with an exception
          * @throws CancellationException if no subtasks completed with an exception but
@@ -1136,7 +1141,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * <p> This method is intended to be invoked by the task scope owner after it has
          * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
          * The behavior of this method is unspecified when invoking this method before
-         * the {@code join} is invoked.
+         * joining.
          *
          * @param esf the exception supplying function
          * @param <X> type of the exception to be thrown
