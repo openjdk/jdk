@@ -36,6 +36,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
@@ -245,15 +246,13 @@ public class LayoutPath {
     }
 
     private long[] addStride(long stride) {
-        long[] newStrides = new long[strides.length + 1];
-        System.arraycopy(strides, 0, newStrides, 0, strides.length);
+        long[] newStrides = Arrays.copyOf(strides, strides.length + 1);
         newStrides[strides.length] = stride;
         return newStrides;
     }
 
     private long[] addBound(long maxIndex) {
-        long[] newBounds = new long[bounds.length + 1];
-        System.arraycopy(bounds, 0, newBounds, 0, bounds.length);
+        long[] newBounds = Arrays.copyOf(bounds, bounds.length + 1);
         newBounds[bounds.length] = maxIndex;
         return newBounds;
     }

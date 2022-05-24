@@ -369,9 +369,9 @@ public sealed interface MemoryLayout permits AbstractLayout, SequenceLayout, Gro
      * arguments, whereas {@code c_1}, {@code c_2}, ... {@code c_m} are <em>static</em> offset constants
      * and {@code s_1}, {@code s_2}, ... {@code s_n} are <em>static</em> stride constants which are derived from
      * the layout path.
-     *
+     * <p>
      * Additionally, the provided dynamic values must conform to some bound which is derived from the layout path, that is,
-     * {@code 0 <= x_i <= b_i}, where {@code 0 <= i <= n}, or {@link IndexOutOfBoundsException} is thrown.
+     * {@code 0 <= x_i < b_i}, where {@code 1 <= i <= n}, or {@link IndexOutOfBoundsException} is thrown.
      *
      * @apiNote the resulting var handle will feature an additional {@code long} access coordinate for every
      * unspecified sequence access component contained in this layout path. Moreover, the resulting var handle
