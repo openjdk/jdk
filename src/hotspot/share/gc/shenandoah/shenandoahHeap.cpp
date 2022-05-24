@@ -2314,7 +2314,10 @@ void ShenandoahHeap::flush_liveness_cache(uint worker_id) {
 bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
   if (is_idle()) return false;
 
-  if (is_concurrent_mark_in_progress() && !marking_context()->allocated_after_mark_start(obj)) {
+  // Objects allocated after marking start are implicitly alive, don't need any barriers during
+  // marking phase.
+  if (is_concurrent_mark_in_progress() &&
+     !marking_context()->allocated_after_mark_start(obj)) {
     return true;
   }
 
@@ -2324,6 +2327,9 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
   } else {
     cont_oop = jdk_internal_vm_StackChunk::cont_raw<oop>(obj);
   }
+
+  // We don't update references above update_watermark. If a stackChunkOop has continuation oop
+  // in collection set, barrier is needed to fix it.
   if (has_forwarded_objects() && cont_oop != NULL &&
       cast_from_oop<HeapWord*>(obj) >= heap_region_containing(obj)->get_update_watermark() &&
       in_collection_set(cont_oop)) {

@@ -72,7 +72,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
       // Case 1: Normal oop, process as usual.
       if (ContinuationGCSupport::relativize_stack_chunk(obj)) {
           // Loom doesn't support mixing of weak marking and strong marking of
-          // stack chunks. See: RelativizeDerivedOopClosure.
+          // stack chunks.
           cl->set_weak(false);
       }
 
