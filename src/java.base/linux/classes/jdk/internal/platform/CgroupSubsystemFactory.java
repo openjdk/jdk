@@ -226,7 +226,8 @@ public class CgroupSubsystemFactory {
                                         String[] tokens) {
         String name = tokens[1];
         if (!name.equals("")) {
-            // This is probably a v1 controller that we have ignored (e.g., freezer)
+            // This must be a v1 controller that we have ignored (e.g., freezer)
+            assert infos.get(name) == null;
             return;
         }
         int hierarchyId = Integer.parseInt(tokens[0]);
