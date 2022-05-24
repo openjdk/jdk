@@ -31,16 +31,16 @@ import java.util.List;
  * A tree node for an {@code @spec} block tag.
  *
  * <pre>
- *    &#064;spec uri title
+ *    &#064;spec url title
  * </pre>
  *
- * @since 19
+ * @since 20
  */
 public interface SpecTree extends BlockTagTree {
     /**
-     * {@return the URI}
+     * {@return the URL}
      */
-    TextTree getURI();
+    TextTree getURL();
 
     /**
      * {@return the title}

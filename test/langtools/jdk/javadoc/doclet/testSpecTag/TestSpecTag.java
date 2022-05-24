@@ -55,12 +55,12 @@ public class TestSpecTag extends JavadocTester {
         tb.writeJavaFiles(src, "package p; public class C { }");
 
         javadoc("-d", base.resolve("out").toString(),
-                "--spec-base-uri", "http://[",
+                "--spec-base-url", "http://[",
                 "--source-path", src.toString(),
                 "p");
         checkExit(Exit.CMDERR);
         checkOutput(Output.OUT, true,
-                "error: invalid URI: Expected closing bracket for IPv6 address at index 8: http://[");
+                "error: invalid URL: Expected closing bracket for IPv6 address at index 8: http://[");
     }
 
     @Test
@@ -75,7 +75,7 @@ public class TestSpecTag extends JavadocTester {
 
         checkOutput(Output.OUT, true,
                 "testBadSpecURI/src/p/C.java:1:".replace('/', File.separatorChar)
-                    + " error: invalid URI: Expected closing bracket for IPv6 address at index 8: http://[");
+                    + " error: invalid URL: Expected closing bracket for IPv6 address at index 8: http://[");
 
         checkOutput("p/C.html", true,
                 """
@@ -385,7 +385,7 @@ public class TestSpecTag extends JavadocTester {
         Path src = genSource(dir, lk);
 
         javadoc("-d", dir.resolve("out").toString(),
-                "--spec-base-uri", "http://example.com/",
+                "--spec-base-url", "http://example.com/",
                 "--source-path", src.toString(),
                 "p");
         checkExit(Exit.OK);

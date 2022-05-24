@@ -512,24 +512,24 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
     /**
      * {@inheritDoc}
      *
-     * @param node {@inheritDoc}
-     * @param p    {@inheritDoc}
-     *
-     * @return the result of scanning
-     *
      * @implSpec This implementation scans the children in left to right order.
      *
-     * @since 19
+     * @param node {@inheritDoc}
+     * @param p    {@inheritDoc}
+     * @return the result of scanning
+     * @since 20
      */
     @Override
     public R visitSpec(SpecTree node, P p) {
-        R r = scan(node.getURI(), p);
+        R r = scan(node.getURL(), p);
         r = scanAndReduce(node.getTitle(), p, r);
         return r;
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
@@ -541,7 +541,9 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation scans the children in left to right order.
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}

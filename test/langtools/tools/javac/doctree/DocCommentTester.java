@@ -603,7 +603,7 @@ public class DocCommentTester {
             public Void visitSpec(SpecTree node, Void p) {
                 header(node);
                 indent(+1);
-                print("uri", node.getURI());
+                print("url", node.getURL());
                 print("title", node.getTitle());
                 indent(-1);
                 indent();

@@ -299,8 +299,8 @@ public abstract class BaseOptions {
     private int sourceTabSize;
 
     /**
-     * Argument for command-line option {@code --spec-base-URI}.
-     * The base URI for relative URIs in {@code @spec} tags.
+     * Argument for command-line option {@code --spec-base-url}.
+     * The base URL for relative URLs in {@code @spec} tags.
      */
     private URI specBaseURI;
 
@@ -674,7 +674,7 @@ public abstract class BaseOptions {
                     }
                 },
 
-                new Option(resources, "--spec-base-uri", 1) {
+                new Option(resources, "--spec-base-url", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         String arg = args.get(0);
@@ -687,27 +687,7 @@ public abstract class BaseOptions {
                             return true;
                         } catch (URISyntaxException e) {
                             config.reporter.print(ERROR,
-                                    config.getDocResources().getText("doclet.Invalid_URI",
-                                            e.getMessage()));
-                            return false;
-                        }
-                    }
-                },
-
-                new Option(resources, "--spec-base-uri", 1) {
-                    @Override
-                    public boolean process(String opt, List<String> args) {
-                        String arg = args.get(0);
-                        try {
-                            if (!arg.endsWith("/")) {
-                                // to ensure that URI.resolve works as expected
-                                arg += "/";
-                            }
-                            specBaseURI = new URI(arg);
-                            return true;
-                        } catch (URISyntaxException e) {
-                            config.reporter.print(ERROR,
-                                    config.getDocResources().getText("doclet.Invalid_URI",
+                                    config.getDocResources().getText("doclet.Invalid_URL",
                                             e.getMessage()));
                             return false;
                         }
@@ -1095,7 +1075,7 @@ public abstract class BaseOptions {
     }
 
     /**
-     * Argument for command-line option {@code --spec-base-URI}.
+     * Argument for command-line option {@code --spec-base-url}.
      * The base URI for relative URIs in {@code @spec} tags.
      */
     public URI specBaseURI() {

@@ -64,11 +64,6 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * Generates the file with the summary of all the references to external specifications.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class ExternalSpecsWriter extends HtmlDocletWriter {
 
@@ -134,7 +129,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
         Map<String, Map<String, List<IndexItem>>> itemsByTitle = new HashMap<>();
         for (IndexItem ii : configuration.mainIndex.getItems(DocTree.Kind.SPEC)) {
             if (ii.getDocTree() instanceof SpecTree st) {
-                String url = st.getURI().toString();
+                String url = st.getURL().toString();
                 String title = st.getTitle().toString();
                 itemsByTitle
                         .computeIfAbsent(title, l -> new HashMap<>())
@@ -291,7 +286,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
 
         URI specURI;
         try {
-            specURI = new URI(specTree.getURI().getBody());
+            specURI = new URI(specTree.getURL().getBody());
         } catch (URISyntaxException e) {
             // should not happen: items with bad URIs should not make it into the index
             return title;

@@ -47,7 +47,7 @@ DocComment[DOC_COMMENT, pos:1
   body: empty
   block tags: 1
     Spec[SPEC, pos:7
-      uri:
+      url:
         Text[TEXT, pos:13, http://example.com]
       title: 1
         Text[TEXT, pos:32, title]
@@ -59,7 +59,7 @@ DocComment[DOC_COMMENT, pos:1
      * abc.
      * @spec
      */
-    void bad_no_uri() {}
+    void bad_no_url() {}
 /*
 DocComment[DOC_COMMENT, pos:1
   firstSentence: 1
@@ -67,7 +67,7 @@ DocComment[DOC_COMMENT, pos:1
   body: empty
   block tags: 1
     Erroneous[ERRONEOUS, pos:7, prefPos:11
-      code: compiler.err.dc.no.uri
+      code: compiler.err.dc.no.url
       body: @spec
     ]
 ]

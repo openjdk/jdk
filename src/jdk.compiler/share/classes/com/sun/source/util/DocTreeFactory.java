@@ -339,12 +339,12 @@ public interface DocTreeFactory {
 
     /**
      * Creates a new {@code SpecTree} object, to represent an {@code @spec} tag.
-     * @param uri    the uri
+     * @param url    the url
      * @param title  the title
      * @return a {@code SpecTree} object
-     * @since 19
+     * @since 20
      */
-    SpecTree newSpecTree(TextTree uri, List<? extends DocTree> title);
+    SpecTree newSpecTree(TextTree url, List<? extends DocTree> title);
 
     /**
      * Creates a new {@code StartElementTree} object, to represent the start of an HTML element.

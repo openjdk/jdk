@@ -1532,7 +1532,7 @@ public class DocCommentParser {
                     skipWhitespace();
                     DCText url = inlineWord();
                     if (url == null || url.isBlank()) {
-                        throw new ParseException("dc.no.uri");
+                        throw new ParseException("dc.no.url");
                     }
                     skipWhitespace();
                     List<DCTree> title = blockContent();

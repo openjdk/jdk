@@ -509,7 +509,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         try {
             printTagName(node);
             print(" ");
-            print(node.getURI());
+            print(node.getURL());
             print(" ");
             print(node.getTitle());
         } catch (IOException e) {

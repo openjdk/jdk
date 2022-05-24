@@ -517,21 +517,21 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     private Content specTagToContent(Element holder, SpecTree specTree) {
-        String specTreeURI = specTree.getURI().getBody();
+        String specTreeURL = specTree.getURL().getBody();
         List<? extends DocTree> specTreeLabel = specTree.getTitle();
         Content label = htmlWriter.commentTagsToContent(holder, specTreeLabel, isFirstSentence);
-        return getExternalSpecContent(holder, specTree, specTreeURI, textOf(specTreeLabel), label);
+        return getExternalSpecContent(holder, specTree, specTreeURL, textOf(specTreeLabel), label);
     }
 
-    Content getExternalSpecContent(Element holder, DocTree docTree, String uri, String searchText, Content title) {
+    Content getExternalSpecContent(Element holder, DocTree docTree, String url, String searchText, Content title) {
         URI specURI;
         try {
             // Use the canonical title of the spec if one is available
-            specURI = new URI(uri);
+            specURI = new URI(url);
         } catch (URISyntaxException e) {
             CommentHelper ch = utils.getCommentHelper(holder);
             DocTreePath dtp = ch.getDocTreePath(docTree);
-            htmlWriter.messages.error(dtp, "doclet.Invalid_URI", e.getMessage());
+            htmlWriter.messages.error(dtp, "doclet.Invalid_URL", e.getMessage());
             specURI = null;
         }
 
