@@ -1784,16 +1784,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   }
 }
 
-int MachCallNativeNode::ret_addr_offset() {
-  // This is implemented using aarch64_enc_java_to_runtime as above.
-  CodeBlob *cb = CodeCache::find_blob(_entry_point);
-  if (cb) {
-    return 1 * NativeInstruction::instruction_size;
-  } else {
-    return 6 * NativeInstruction::instruction_size;
-  }
-}
-
 //=============================================================================
 
 #ifndef PRODUCT
@@ -2797,10 +2787,6 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
     mstack.push(m->in(AddPNode::Base), Pre_Visit);
     return true;
   }
-  return false;
-}
-
-bool Parse::do_one_bytecode_targeted() {
   return false;
 }
 
@@ -3832,6 +3818,7 @@ encode %{
       }
     }
 
+    _masm.clear_inst_mark();
     __ post_call_nop();
 
     // Only non uncommon_trap calls need to reinitialize ptrue.
@@ -3848,6 +3835,7 @@ encode %{
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
+    _masm.clear_inst_mark();
     __ post_call_nop();
     if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();
@@ -3877,6 +3865,7 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
+      _masm.clear_inst_mark();
       __ post_call_nop();
     } else {
       Label retaddr;
@@ -16779,21 +16768,6 @@ instruct CallLeafNoFPDirect(method meth)
   ins_cost(CALL_COST);
 
   format %{ "CALL, runtime leaf nofp $meth" %}
-
-  ins_encode( aarch64_enc_java_to_runtime(meth) );
-
-  ins_pipe(pipe_class_call);
-%}
-
-instruct CallNativeDirect(method meth)
-%{
-  match(CallNative);
-
-  effect(USE meth);
-
-  ins_cost(CALL_COST);
-
-  format %{ "CALL, native $meth" %}
 
   ins_encode( aarch64_enc_java_to_runtime(meth) );
 
