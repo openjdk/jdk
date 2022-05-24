@@ -2094,16 +2094,16 @@ void PhaseIdealLoop::initialize_skeleton_predicates_to_loop(ProjNode* predicate,
 
       // Rewrite any control inputs from the cloned skeleton predicate
       for (DUIterator i = predicate->outs(); predicate->has_out(i); i++) {
-        Node* loop_node = predicate->out(i);
-        Node* new_node = old_new[loop_node->_idx];
+        Node* dependent = predicate->out(i);
+        Node* new_node = old_new[dependent->_idx];
 
-        if (!loop_node->is_CFG() &&
-            loop_node->_idx < idx_before_clone &&  // old node
+        if (!dependent->is_CFG() &&
+            dependent->_idx < idx_before_clone &&  // old node
             new_node != nullptr &&                 // that was clond
             new_node->_idx >= idx_before_clone) {  // for peeling
           // The old nodes from the peeled loop still point to the predicate above the peeled loop
           // We need to rewrite the dependencies to the newly initialized predicates
-          _igvn.replace_input_of(loop_node, 0, input_proj);
+          _igvn.replace_input_of(dependent, 0, input_proj);
           --i; // correct for just deleted predicate->out(i)
         }
       }
