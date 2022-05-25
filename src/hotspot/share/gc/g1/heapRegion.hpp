@@ -291,6 +291,8 @@ private:
   inline HeapWord* do_oops_on_memregion_in_humongous(MemRegion mr,
                                                      Closure* cl);
 
+  inline bool is_marked_in_bitmap(oop obj) const;
+
   inline HeapWord* next_live_in_unparsable(G1CMBitMap* bitmap, const HeapWord* p, HeapWord* limit) const;
   inline HeapWord* next_live_in_unparsable(const HeapWord* p, HeapWord* limit) const;
 
