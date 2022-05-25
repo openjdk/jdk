@@ -48,7 +48,9 @@ ShenandoahMark::ShenandoahMark() :
 
 void ShenandoahMark::start_mark() {
   // Tell the sweeper that we start a marking cycle.
-  Continuations::on_gc_marking_cycle_start();
+  if (!Continuations::is_gc_marking_cycle_active()) {
+    Continuations::on_gc_marking_cycle_start();
+  }
 }
 
 void ShenandoahMark::end_mark() {
