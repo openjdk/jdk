@@ -83,6 +83,10 @@ void ZArguments::initialize() {
       }
     }
     FLAG_SET_DEFAULT(MaxTenuringThreshold, tenuring_threshold);
+    if (tenuring_threshold == 0 && FLAG_IS_DEFAULT(AlwaysTenure)) {
+      // Some flag constraint function says AlwaysTenure must be true iff MaxTenuringThreshold == 0
+      FLAG_SET_DEFAULT(AlwaysTenure, true);
+    }
   }
 
   // Large page size must match granule size
