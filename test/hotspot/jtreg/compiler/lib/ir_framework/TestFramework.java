@@ -342,8 +342,9 @@ public class TestFramework {
     }
 
     /**
-     * Try to load the Whitebox class with a user dir custom class loader. If the user has already built the Whitebox,
-     * we can load it. Otherwise, the framework needs to install it.
+     * Try to load the Whitebox class with a user directory custom class loader. If the user has already built the
+     * Whitebox, we can load it. Otherwise, the framework needs to install it.
+     *
      * @return true if the framework needs to install the Whitebox
      */
     private boolean shouldInstallWhiteBox() {
@@ -355,7 +356,7 @@ public class TestFramework {
         } catch (MalformedURLException e) {
             throw new TestFrameworkException("corrupted user.dir property", e);
         } catch (ClassNotFoundException e) {
-            // We need to manually install the WhiteBox if we cannot load the WhiteBox class from the user directory
+            // We need to manually install the WhiteBox if we cannot load the WhiteBox class from the user directory.
             // This happens when the user test does not explicitly install the WhiteBox as part of the test.
             return true;
         }
