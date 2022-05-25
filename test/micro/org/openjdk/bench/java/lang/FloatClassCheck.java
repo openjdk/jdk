@@ -24,6 +24,7 @@ package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OperationsPerInvocation;
@@ -45,45 +46,103 @@ public class FloatClassCheck {
     RandomGenerator rng;
     static final int BUFFER_SIZE = 1024;
     float[] inputs;
-    boolean[] outputs;
+    boolean[] storeOutputs;
+    int[] cmovOutputs;
+    int[] branchOutputs;
+
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    static int call() {
+        return 1;
+    }
 
     @Setup
     public void setup() {
-        outputs = new boolean[BUFFER_SIZE];
+        storeOutputs = new boolean[BUFFER_SIZE];
+        cmovOutputs = new int[BUFFER_SIZE];
+        branchOutputs = new int[BUFFER_SIZE];
         inputs = new float[BUFFER_SIZE];
         RandomGenerator rng = RandomGeneratorFactory.getDefault().create(0);
         float input;
         for (int i = 0; i < BUFFER_SIZE; i++) {
             if (i % 5 == 0) {
-                input = (i%2 == 0) ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
-            }
-            else if (i % 3 == 0) input = Float.NaN;
-            else input = rng.nextFloat();
+                input = (i % 2 == 0) ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
+            } else if (i % 3 == 0)
+                input = Float.NaN;
+            else
+                input = rng.nextFloat();
             inputs[i] = input;
         }
     }
 
     @Benchmark
     @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsFinite() {
+    public void testIsFiniteStore() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
-            outputs[i] = Float.isFinite(inputs[i]) ? false : true;
+            storeOutputs[i] = Float.isFinite(inputs[i]);
         }
     }
 
     @Benchmark
     @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsInfinite() {
+    public void testIsInfiniteStore() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
-            outputs[i] = Float.isInfinite(inputs[i]) ? false : true;
+            storeOutputs[i] = Float.isInfinite(inputs[i]);
         }
     }
 
     @Benchmark
     @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsNaN() {
+    public void testIsNaNStore() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
-            outputs[i] = Float.isNaN(inputs[i]) ? false : true;
+            storeOutputs[i] = Float.isNaN(inputs[i]);
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(BUFFER_SIZE)
+    public void testIsFiniteCMov() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            cmovOutputs[i] = Float.isFinite(inputs[i]) ? 9 : 7;
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(BUFFER_SIZE)
+    public void testIsInfiniteCMov() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            cmovOutputs[i] = Float.isInfinite(inputs[i]) ? 9 : 7;
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(BUFFER_SIZE)
+    public void testIsNaNCMov() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            cmovOutputs[i] = Float.isNaN(inputs[i]) ? 9 : 7;
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(BUFFER_SIZE)
+    public void testIsFiniteBranch() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            cmovOutputs[i] = Float.isFinite(inputs[i]) ? call() : 7;
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(BUFFER_SIZE)
+    public void testIsInfiniteBranch() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            cmovOutputs[i] = Float.isInfinite(inputs[i]) ? call() : 7;
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(BUFFER_SIZE)
+    public void testIsNaNBranch() {
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            cmovOutputs[i] = Float.isNaN(inputs[i]) ? call() : 7;
         }
     }
 

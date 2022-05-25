@@ -24,7 +24,7 @@
 /**
 * @test
 * @summary Test x86_64 intrinsics for Double methods isNaN, isFinite, isInfinite.
-* @requires os.arch=="amd64" | os.arch=="x86_64"
+* @requires vm.cpu.features ~= ".*avx512dq.*"
 * @library /test/lib /
 * @run driver compiler.intrinsics.TestDoubleClassCheck
 */
