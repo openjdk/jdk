@@ -1421,17 +1421,26 @@ static void post_monitor_wait_event(EventJavaMonitorWait* event,
                                     uint64_t notifier_tid,
                                     jlong timeout,
                                     bool timedout) {
+  bool includeEvent = true;
+  Klass* objectMonitorClass;
   assert(event != NULL, "invariant");
   assert(monitor != NULL, "invariant");
-  event->set_monitorClass(monitor->object()->klass());
-  event->set_timeout(timeout);
-  // Set an address that is 'unique enough', such that events close in
-  // time and with the same address are likely (but not guaranteed) to
-  // belong to the same object.
-  event->set_address((uintptr_t)monitor);
-  event->set_notifier(notifier_tid);
-  event->set_timedOut(timedout);
-  event->commit();
+  objectMonitorClass = monitor->object()->klass();
+  if (objectMonitorClass != NULL &&
+      objectMonitorClass->name()->equals("jdk/jfr/internal/FileDeltaChangeLockObject")) {
+    includeEvent = false;
+  }
+  if (includeEvent) {
+    event->set_monitorClass(objectMonitorClass);
+    event->set_timeout(timeout);
+    // Set an address that is 'unique enough', such that events close in
+    // time and with the same address are likely (but not guaranteed) to
+    // belong to the same object.
+    event->set_address((uintptr_t)monitor);
+    event->set_notifier(notifier_tid);
+    event->set_timedOut(timedout);
+    event->commit();
+  }
 }
 
 // -----------------------------------------------------------------------------

@@ -40,7 +40,7 @@ public final class JVM {
     private static final JVM jvm = new JVM();
 
     // JVM signals file changes by doing Object#notify on this object
-    static final Object FILE_DELTA_CHANGE = new Object();
+    static final Object FILE_DELTA_CHANGE = new FileDeltaChangeLockObject();
 
     static final long RESERVED_CLASS_ID_LIMIT = 500;
 
