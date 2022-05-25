@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,19 +47,15 @@ ShenandoahMark::ShenandoahMark() :
 }
 
 void ShenandoahMark::start_mark() {
-  if (Continuations::enabled()) {
-    // Tell the sweeper that we start a marking cycle.
-    Continuations::on_gc_marking_cycle_start();
-  }
+  // Tell the sweeper that we start a marking cycle.
+  Continuations::on_gc_marking_cycle_start();
 }
 
 void ShenandoahMark::end_mark() {
-  if (Continuations::enabled()) {
-    // Tell the sweeper that we finished a marking cycle.
-    // Unlike other GCs, we do not arm the nmethods
-    // when marking terminates.
-    Continuations::on_gc_marking_cycle_finish();
-  }
+  // Tell the sweeper that we finished a marking cycle.
+  // Unlike other GCs, we do not arm the nmethods
+  // when marking terminates.
+  Continuations::on_gc_marking_cycle_finish();
 }
 
 void ShenandoahMark::clear() {

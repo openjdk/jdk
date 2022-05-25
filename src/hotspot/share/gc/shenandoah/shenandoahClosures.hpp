@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ private:
 
 class ShenandoahOopClosureBase : public MetadataVisitingOopIterateClosure {
 public:
-    inline void do_nmethod(nmethod* nm);
+  inline void do_nmethod(nmethod* nm);
 };
 
 class ShenandoahUpdateRefsClosure: public ShenandoahOopClosureBase {
@@ -125,8 +125,6 @@ public:
   inline void do_oop(oop* p);
   inline void do_oop(narrowOop* p);
 };
-
-typedef ShenandoahEvacuateUpdateRootsClosure ShenandoahEvacuateUpdateStackChunckClosure;
 
 template <bool CONCURRENT, typename IsAlive, typename KeepAlive>
 class ShenandoahCleanUpdateWeakOopsClosure : public OopClosure {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -950,8 +950,10 @@ public:
     shenandoah_assert_marked(NULL, p);
     if (!p->is_forwarded()) {
       p = _heap->evacuate_object(p, _thread);
+      // stackChunkOop contains stack frames, we need to treat it
+      // as a root.
       if (ContinuationGCSupport::relativize_stack_chunk(p)) {
-        ShenandoahEvacuateUpdateStackChunckClosure cl;
+        ShenandoahEvacuateUpdateRootsClosure cl;
         p->oop_iterate(&cl);
       }
     }
