@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -347,7 +348,7 @@ public class TagletWriterImpl extends TagletWriter {
         boolean hasLongLabels = links.stream()
                 .anyMatch(c -> c.charCount() > SEE_TAG_MAX_INLINE_LENGTH || c.toString().contains(","));
         var seeList = HtmlTree.UL(hasLongLabels ? HtmlStyle.seeListLong : HtmlStyle.seeList);
-        links.stream().filter(Content::isValid).forEach(item -> {
+        links.stream().filter(Predicate.not(Content::isEmpty)).forEach(item -> {
             seeList.add(HtmlTree.LI(item));
         });
 
@@ -382,7 +383,7 @@ public class TagletWriterImpl extends TagletWriter {
             pre.put(HtmlAttr.ID, id);
         }
         var code = new HtmlTree(TagName.CODE)
-                .add(HtmlTree.EMPTY); // Make sure the element is always rendered
+                .addUnchecked(Text.EMPTY); // Make sure the element is always rendered
         if (lang != null && !lang.isBlank()) {
             code.addStyle("language-" + lang);
         }

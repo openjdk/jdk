@@ -117,7 +117,7 @@ public:
   // given address.
   bool is_in_reserved(const void* p) const { return _bottom <= p && p < _end; }
 
-  size_t capacity()     const { return byte_size(bottom(), end()); }
+  size_t capacity() const { return byte_size(bottom(), end()); }
   size_t used() const { return byte_size(bottom(), top()); }
   size_t free() const { return byte_size(top(), end()); }
 
@@ -129,8 +129,6 @@ private:
   void reset_after_full_gc_common();
 
   void clear(bool mangle_space);
-
-  HeapWord* block_start_const(const void* p) const;
 
   void mangle_unused_area() PRODUCT_RETURN;
 
@@ -581,15 +579,6 @@ public:
   void print() const;
   void print_on(outputStream* st) const;
 
-  // vo == UsePrevMarking -> use "prev" marking information,
-  // vo == UseFullMarking -> use "next" marking bitmap but no TAMS
-  //
-  // NOTE: Only the "prev" marking information is guaranteed to be
-  // consistent most of the time, so most calls to this should use
-  // vo == UsePrevMarking.
-  // Currently there is only one place where this is called with
-  // vo == UseFullMarking, which is to verify the marking during a
-  // full GC.
   void verify(VerifyOption vo, bool *failures) const;
 
   void verify_rem_set(VerifyOption vo, bool *failures) const;

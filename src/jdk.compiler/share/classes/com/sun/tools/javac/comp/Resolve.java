@@ -359,7 +359,9 @@ public class Resolve {
                     ||
                     env.toplevel.packge == c.packge()
                     ||
-                    isInnerSubClass(env.enclClass.sym, c.owner);
+                    isInnerSubClass(env.enclClass.sym, c.owner)
+                    ||
+                    env.info.allowProtectedAccess;
                 break;
         }
         return (checkInner == false || c.type.getEnclosingType() == Type.noType) ?

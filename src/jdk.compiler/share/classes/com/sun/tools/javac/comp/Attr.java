@@ -1799,6 +1799,10 @@ public class Attr extends JCTree.Visitor {
                                 bodyEnv.info.scope.leave();
                             }
                             matchBindings = matchBindingsComputer.caseGuard(c, afterPattern, matchBindings);
+
+                            if (TreeInfo.isBooleanWithValue(guard, 0)) {
+                                log.error(guard.pos(), Errors.GuardHasConstantExpressionFalse);
+                            }
                         }
                         boolean unguarded = TreeInfo.unguardedCaseLabel(pat) && !pat.hasTag(RECORDPATTERN);
                         boolean unconditional =

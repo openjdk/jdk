@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -148,7 +148,8 @@ public class AArch64Architecture implements Architecture {
                                        VMStorage[] volatileIntRegs,
                                        VMStorage[] volatileVectorRegs,
                                        int stackAlignment,
-                                       int shadowSpace) {
+                                       int shadowSpace,
+                                       VMStorage targetAddrStorage, VMStorage retBufAddrStorage) {
         return new ABIDescriptor(
             INSTANCE,
             new VMStorage[][] {
@@ -164,8 +165,8 @@ public class AArch64Architecture implements Architecture {
                 volatileVectorRegs,
             },
             stackAlignment,
-            shadowSpace
-        );
+            shadowSpace,
+            targetAddrStorage, retBufAddrStorage);
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,12 @@
  */
 package jdk.internal.foreign.abi;
 
-import jdk.internal.invoke.ABIDescriptorProxy;
-
-public class ABIDescriptor implements ABIDescriptorProxy {
+/**
+ * Carrier class used to communicate with the VM
+ *
+ * It is particularly low-level since the VM will be accessing these fields directly
+ */
+public class ABIDescriptor {
     final Architecture arch;
 
     public final VMStorage[][] inputStorage;
@@ -37,18 +40,27 @@ public class ABIDescriptor implements ABIDescriptorProxy {
     final int stackAlignment;
     final int shadowSpace;
 
+    final VMStorage targetAddrStorage;
+    final VMStorage retBufAddrStorage;
+
     public ABIDescriptor(Architecture arch, VMStorage[][] inputStorage, VMStorage[][] outputStorage,
-                         VMStorage[][] volatileStorage, int stackAlignment, int shadowSpace) {
+                         VMStorage[][] volatileStorage, int stackAlignment, int shadowSpace,
+                         VMStorage targetAddrStorage, VMStorage retBufAddrStorage) {
         this.arch = arch;
         this.inputStorage = inputStorage;
         this.outputStorage = outputStorage;
         this.volatileStorage = volatileStorage;
         this.stackAlignment = stackAlignment;
         this.shadowSpace = shadowSpace;
+        this.targetAddrStorage = targetAddrStorage;
+        this.retBufAddrStorage = retBufAddrStorage;
     }
 
-    @Override
-    public int shadowSpaceBytes() {
-        return shadowSpace;
+    public VMStorage targetAddrStorage() {
+        return targetAddrStorage;
+    }
+
+    public VMStorage retBufAddrStorage() {
+        return retBufAddrStorage;
     }
 }
