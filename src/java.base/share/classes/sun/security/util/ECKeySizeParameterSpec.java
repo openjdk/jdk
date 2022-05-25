@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import sun.security.util.ObjectIdentifier;
 /**
  * This immutable class is used when randomly generating a key pair and the
  * consumer only specifies the length of the key and therefore a curve for that
- * key size must be picked from a the list of supported curves using this spec.
+ * key size must be picked from the list of supported curves using this spec.
  *
  * @see AlgorithmParameterSpec
  * @see ECGenParameterSpec
