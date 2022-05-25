@@ -1076,7 +1076,7 @@ public abstract class BaseOptions {
 
     /**
      * Argument for command-line option {@code --spec-base-url}.
-     * The base URI for relative URIs in {@code @spec} tags.
+     * The base URL for relative URLs in {@code @spec} tags.
      */
     public URI specBaseURI() {
         return specBaseURI;
