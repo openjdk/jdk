@@ -146,7 +146,7 @@ public class CgroupSubsystemFactory {
             // Only the following controllers are important to Java. All
             // other controllers (such as freezer) are ignored and
             // are not considered in the checks below for
-            // anyCgroupsV1Controller/anyCgroupsV1Controller.
+            // anyCgroupsV1Controller/anyCgroupsV2Controller.
             case CPU_CTRL:      infos.put(CPU_CTRL, info); break;
             case CPUACCT_CTRL:  infos.put(CPUACCT_CTRL, info); break;
             case CPUSET_CTRL:   infos.put(CPUSET_CTRL, info); break;
