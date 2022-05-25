@@ -30,6 +30,7 @@ import javax.sound.midi.Transmitter;
 
 /**
  * @test
+ * @key sound
  * @bug 4931400
  * @summary Clarify default connections in default sequencer
  */

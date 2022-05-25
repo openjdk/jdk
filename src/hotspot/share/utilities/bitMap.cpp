@@ -343,7 +343,7 @@ void BitMap::at_put(idx_t offset, bool value) {
 // if no other thread is executing an action to
 // change the requested bit to a state other than
 // the one that this thread is trying to set it to,
-// then the the bit is in the expected state
+// then the bit is in the expected state
 // at exit from this method. However, rather than
 // make such a strong assertion here, based on
 // assuming such constrained use (which though true

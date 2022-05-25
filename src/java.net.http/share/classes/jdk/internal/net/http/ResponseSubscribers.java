@@ -78,7 +78,7 @@ public class ResponseSubscribers {
      * might be called and might block before the last bit is
      * received (for instance, if a mapping subscriber is used with
      * a mapper function that maps an InputStream to a GZIPInputStream,
-     * as the the constructor of GZIPInputStream calls read()).
+     * as the constructor of GZIPInputStream calls read()).
      * @param <T> The response type.
      */
     public interface TrustedSubscriber<T> extends BodySubscriber<T> {

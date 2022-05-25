@@ -1554,7 +1554,7 @@ class G1CMDrainMarkingStackClosure : public VoidClosure {
       //
       // G1CMTask::do_marking_step() is called in a loop, which we'll exit
       // if there's nothing more to do (i.e. we've completely drained the
-      // entries that were pushed as a a result of applying the 'keep alive'
+      // entries that were pushed as a result of applying the 'keep alive'
       // closure to the entries on the discovered ref lists) or we overflow
       // the global marking stack.
       //
