@@ -896,8 +896,14 @@ void VM_Version::get_processor_features() {
   }
   if (FLAG_IS_DEFAULT(UseAVX)) {
     // Don't use AVX-512 on older Skylakes unless explicitly requested.
-    if (use_avx_limit > 2 && is_intel_skylake() && _stepping < 5) {
-      FLAG_SET_DEFAULT(UseAVX, 2);
+    if (use_avx_limit > 2 && is_intel_skylake()) {
+      if (_stepping < 5) {
+        FLAG_SET_DEFAULT(UseAVX, 2);
+      } else {
+        if (FLAG_IS_DEFAULT(SuperWordMaxVectorLimit)) {
+           FLAG_SET_DEFAULT(SuperWordMaxVectorLimit, 32);
+        }
+      }
     } else {
       FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
     }

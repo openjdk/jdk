@@ -82,6 +82,11 @@
           "actual size could be less depending on elements type")           \
           range(0, max_jint)                                                \
                                                                             \
+  product(intx, SuperWordMaxVectorLimit, -1,                                \
+          "Vector size limit in bytes for superword, "                      \
+          "-1 implies superword vector size limit is same as MaxVectorSize")\
+          range(-1, max_jint)                                               \
+                                                                            \
   product(intx, ArrayOperationPartialInlineSize, 0, DIAGNOSTIC,             \
           "Partial inline size used for small array operations"             \
           "(e.g. copy,cmp) acceleration.")                                  \

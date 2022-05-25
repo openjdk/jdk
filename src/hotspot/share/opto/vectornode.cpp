@@ -282,7 +282,8 @@ int VectorNode::replicate_opcode(BasicType bt) {
 bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      Matcher::vector_size_supported(bt, vlen)) {
+      Matcher::vector_size_supported(bt, vlen) && 
+      (SuperWordMaxVectorLimit == -1 || (vlen * type2aelembytes(bt) <= SuperWordMaxVectorLimit))) {
     int vopc = VectorNode::opcode(opc, bt);
     // For rotate operation we will do a lazy de-generation into
     // OrV/LShiftV/URShiftV pattern if the target does not support
@@ -1275,7 +1276,8 @@ Node* ReductionNode::make_reduction_input(PhaseGVN& gvn, int opc, BasicType bt) 
 bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      Matcher::vector_size_supported(bt, vlen)) {
+      Matcher::vector_size_supported(bt, vlen) &&
+      (SuperWordMaxVectorLimit == -1 || (vlen * type2aelembytes(bt) <= SuperWordMaxVectorLimit))) {
     int vopc = ReductionNode::opcode(opc, bt);
     return vopc != opc && Matcher::match_rule_supported_vector(vopc, vlen, bt);
   }
