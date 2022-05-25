@@ -99,7 +99,17 @@ protected:
 
   // standard operations
   int  length() const                 { return _length; }
-  T* data() const                     { return reinterpret_cast<T*>(reinterpret_cast<uintptr_t>(this) + base_offset_in_bytes()); }
+
+  T* data() {
+    return reinterpret_cast<T*>(
+      reinterpret_cast<char*>(this) + base_offset_in_bytes());
+  }
+
+  const T* data() const {
+    return reinterpret_cast<const T*>(
+      reinterpret_cast<const char*>(this) + base_offset_in_bytes());
+  }
+
   bool is_empty() const               { return length() == 0; }
 
   int index_of(const T& x) const {
