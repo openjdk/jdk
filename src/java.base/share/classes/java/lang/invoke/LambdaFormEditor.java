@@ -71,18 +71,15 @@ class LambdaFormEditor {
             SPREAD_ARGS = 4,
             FILTER_ARG = 5,
             FILTER_RETURN = 6,
-            FILTER_RETURN_TO_ZERO = 7,
-            COLLECT_ARGS = 8,
-            COLLECT_ARGS_TO_VOID = 9,
-            COLLECT_ARGS_TO_ARRAY = 10,
-            FOLD_ARGS = 11,
-            FOLD_ARGS_TO_VOID = 12,
-            PERMUTE_ARGS = 13,
-            LOCAL_TYPES = 14,
-            FOLD_SELECT_ARGS = 15,
-            FOLD_SELECT_ARGS_TO_VOID = 16,
-            FILTER_SELECT_ARGS = 17,
-            REPEAT_FILTER_ARGS = 18;
+            COLLECT_ARGS = 7,
+            COLLECT_ARGS_TO_VOID = 8,
+            REPEAT_FILTER_ARGS = 9,
+            FOLD_ARGS = 10,
+            FOLD_ARGS_TO_VOID = 11,
+            PERMUTE_ARGS = 12,
+            LOCAL_TYPES = 13,
+            FILTER_SELECT_ARGS = 14,
+            FOLD_SELECT_ARGS = 15;
 
     /**
      * A description of a cached transform, possibly associated with the result of the transform.
@@ -159,6 +156,7 @@ class LambdaFormEditor {
         }
 
         private TransformKey(long packedBytes, byte[] fullBytes) {
+            assert(fullBytes == null || packedBytes == 0);
             this.fullBytes = fullBytes;
             this.packedBytes = packedBytes;
         }
@@ -192,17 +190,17 @@ class LambdaFormEditor {
         }
 
         static TransformKey of(byte kind, int b1, int[] b23456) {
+            long packedBytes = packedBytes(kind, b1, b23456);
+            if (packedBytes != 0) {
+                return new TransformKey(packedBytes);
+            }
             byte[] fullBytes = new byte[b23456.length + 2];
             fullBytes[0] = kind;
             fullBytes[1] = bval(b1);
             for (int i = 0; i < b23456.length; i++) {
                 fullBytes[i + 2] = TransformKey.bval(b23456[i]);
             }
-            long packedBytes = packedBytes(fullBytes);
-            if (packedBytes != 0)
-                return new TransformKey(packedBytes);
-            else
-                return new TransformKey(fullBytes);
+            return new TransformKey(fullBytes);
         }
 
         static TransformKey of(byte kind, int b1, int b2, byte[] b345) {
@@ -230,6 +228,22 @@ class LambdaFormEditor {
                 PACKED_BYTE_SIZE = (STRESS_TEST ? 2 : 4),
                 PACKED_BYTE_MASK = (1 << PACKED_BYTE_SIZE) - 1,
                 PACKED_BYTE_MAX_LENGTH = (STRESS_TEST ? 3 : 64 / PACKED_BYTE_SIZE);
+
+        private static long packedBytes(byte b0, int b1, int[] b23456) {
+            if (b23456.length + 2 > PACKED_BYTE_MAX_LENGTH)
+                return 0;
+            long pb = 0;
+            int bitset = b0 | b1;
+            for (int i = 0; i < b23456.length; i++) {
+                int b = b23456[i] & 0xFF;
+                bitset |= b;
+                pb |= (long)b << (i * PACKED_BYTE_SIZE);
+            }
+            if (!inRange(bitset))
+                return 0;
+            pb = pb << (2 * PACKED_BYTE_SIZE) | b1 << PACKED_BYTE_SIZE | b0;
+            return pb;
+        }
 
         private static long packedBytes(byte[] bytes) {
             if (!inRange(bytes[0]) || bytes.length > PACKED_BYTE_MAX_LENGTH)
@@ -320,8 +334,7 @@ class LambdaFormEditor {
         @Override
         public int hashCode() {
             if (packedBytes != 0) {
-                assert(fullBytes == null);
-                return Long.hashCode(packedBytes);
+                return Long.hashCode(packedBytes) ^ (int)(packedBytes >> 8);
             }
             return Arrays.hashCode(fullBytes);
         }
@@ -887,8 +900,7 @@ class LambdaFormEditor {
     }
 
     LambdaForm filterReturnForm(BasicType newType, boolean constantZero) {
-        byte kind = (constantZero ? FILTER_RETURN_TO_ZERO : FILTER_RETURN);
-        TransformKey key = TransformKey.of(kind, newType.ordinal());
+        TransformKey key = TransformKey.of(FILTER_RETURN, constantZero ? (byte) 1 : (byte)0, newType.ordinal());
         LambdaForm form = getInCache(key);
         if (form != null) {
             assert(form.arity == lambdaForm.arity);
@@ -1002,11 +1014,10 @@ class LambdaFormEditor {
     }
 
     LambdaForm foldArgumentsForm(int foldPos, boolean dropResult, MethodType combinerType, int ... argPositions) {
-        byte kind = (dropResult ? FOLD_SELECT_ARGS_TO_VOID : FOLD_SELECT_ARGS);
-        TransformKey key = TransformKey.of(kind, foldPos, argPositions);
+        TransformKey key = TransformKey.of(FOLD_SELECT_ARGS, foldPos << 1 | (dropResult ? 1 : 0), argPositions);
         LambdaForm form = getInCache(key);
         if (form != null) {
-            assert(form.arity == lambdaForm.arity - (kind == FOLD_SELECT_ARGS ? 1 : 0));
+            assert(form.arity == lambdaForm.arity - (dropResult ? 0 : 1));
             return form;
         }
         form = makeArgumentCombinationForm(foldPos, combinerType, argPositions, true, dropResult);
