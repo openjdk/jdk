@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8254721
+ * @bug      8254721 6251738
  * @summary  Improve support for conditionally generated files
  * @library  /tools/lib ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
