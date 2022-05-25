@@ -408,10 +408,6 @@ public class SnippetTaglet extends BaseTaglet {
         return writer.invalidTagOutput(resources.getText("doclet.tag.invalid", "snippet"), details);
     }
 
-    private String packageName(PackageElement pkg, Utils utils) {
-        return utils.getPackageName(pkg);
-    }
-
     private static PackageElement getPackageElement(Element e, Utils utils) {
         if (e instanceof DocletElement de) {
             return de.getPackageElement();
