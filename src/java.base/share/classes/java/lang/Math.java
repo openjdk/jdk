@@ -485,6 +485,9 @@ public final class Math {
      * that the value of {@code Math.ceil(x)} is exactly the
      * value of {@code -Math.floor(-x)}.
      *
+     * @apiNote
+     * This method corresponds to the roundToIntegralTowardPositive
+     * operation defined in IEEE 754.
      *
      * @param   a   a value.
      * @return  the smallest (closest to negative infinity)
@@ -505,6 +508,10 @@ public final class Math {
      * argument.  <li>If the argument is NaN or an infinity or
      * positive zero or negative zero, then the result is the same as
      * the argument.</ul>
+     *
+     * @apiNote
+     * This method corresponds to the roundToIntegralTowardNegative
+     * operation defined in IEEE 754.
      *
      * @param   a   a value.
      * @return  the largest (closest to positive infinity)
@@ -527,8 +534,9 @@ public final class Math {
      * <li>If the argument is NaN or an infinity or positive zero or negative
      * zero, then the result is the same as the argument.</ul>
      *
-     * @apiNote This method corresponds to the
-     * roundToIntegralTiesToEven operation defined in IEEE 754.
+     * @apiNote
+     * This method corresponds to the roundToIntegralTiesToEven
+     * operation defined in IEEE 754.
      *
      * @param   a   a {@code double} value.
      * @return  the closest floating-point value to {@code a} that is
