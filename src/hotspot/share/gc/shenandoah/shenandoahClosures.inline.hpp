@@ -67,6 +67,10 @@ BoolObjectClosure* ShenandoahIsAliveSelector::is_alive_closure() {
          reinterpret_cast<BoolObjectClosure*>(&_alive_cl);
 }
 
+void ShenandoahOopClosureBase::do_nmethod(nmethod* nm) {
+  nm->run_nmethod_entry_barrier();
+}
+
 ShenandoahKeepAliveClosure::ShenandoahKeepAliveClosure() :
   _bs(ShenandoahBarrierSet::barrier_set()) {
 }

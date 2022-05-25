@@ -72,7 +72,12 @@ private:
   void do_oop_work(T* p);
 };
 
-class ShenandoahUpdateRefsClosure: public OopClosure {
+class ShenandoahOopClosureBase : public MetadataVisitingOopIterateClosure {
+public:
+    inline void do_nmethod(nmethod* nm);
+};
+
+class ShenandoahUpdateRefsClosure: public ShenandoahOopClosureBase {
 private:
   ShenandoahHeap* _heap;
 public:
@@ -85,7 +90,7 @@ private:
 };
 
 template <DecoratorSet MO = MO_UNORDERED>
-class ShenandoahEvacuateUpdateMetadataClosure: public BasicOopIterateClosure {
+class ShenandoahEvacuateUpdateMetadataClosure: public ShenandoahOopClosureBase {
 private:
   ShenandoahHeap* const _heap;
   Thread* const         _thread;
@@ -100,14 +105,13 @@ private:
 };
 
 // Context free version, cannot cache calling thread
-class ShenandoahEvacuateUpdateRootsClosure : public MetadataVisitingOopIterateClosure {
+class ShenandoahEvacuateUpdateRootsClosure : public ShenandoahOopClosureBase {
 private:
   ShenandoahHeap* const _heap;
 public:
   inline ShenandoahEvacuateUpdateRootsClosure();
   inline void do_oop(oop* p);
   inline void do_oop(narrowOop* p);
-  virtual bool do_metadata() { return false; }
 protected:
   template <typename T>
   inline void do_oop_work(T* p, Thread* thr);
@@ -122,13 +126,7 @@ public:
   inline void do_oop(narrowOop* p);
 };
 
-class ShenandoahEvacuateUpdateStackChunckClosure : public ShenandoahEvacuateUpdateRootsClosure {
-public:
-  virtual bool do_metadata() { return true; }
-  virtual void do_nmethod(nmethod* nm) {
-    nm->run_nmethod_entry_barrier();
-  }
-};
+typedef ShenandoahEvacuateUpdateRootsClosure ShenandoahEvacuateUpdateStackChunckClosure;
 
 template <bool CONCURRENT, typename IsAlive, typename KeepAlive>
 class ShenandoahCleanUpdateWeakOopsClosure : public OopClosure {
