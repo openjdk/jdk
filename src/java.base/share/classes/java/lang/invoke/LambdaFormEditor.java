@@ -151,6 +151,7 @@ class LambdaFormEditor {
         }
 
         private TransformKey(byte[] fullBytes) {
+            assert(packedBytes(fullBytes) == 0);
             this.fullBytes = fullBytes;
             this.packedBytes = 0;
         }
@@ -165,6 +166,12 @@ class LambdaFormEditor {
             assert((b & 0xFF) == b);  // incoming value must fit in *unsigned* byte
             return (byte)b;
         }
+
+        private static int ival(int b) {
+            assert((b & 0xFF) == b);  // incoming value must fit in *unsigned* byte
+            return b;
+        }
+
         static TransformKey of(byte k, int b1) {
             byte b0 = bval(k);
             if (inRange(b0 | b1))
@@ -184,43 +191,44 @@ class LambdaFormEditor {
             else
                 return new TransformKey(fullBytes(b0, b1, b2, b3));
         }
-        private static final byte[] NO_BYTES = {};
         static TransformKey of(byte kind, int... b123) {
-            return ofBothArrays(kind, b123, NO_BYTES);
-        }
-
-        static TransformKey of(byte kind, int b1, int[] b23456) {
-            long packedBytes = packedBytes(kind, b1, b23456);
+            long packedBytes = packedBytes(kind, b123);
             if (packedBytes != 0) {
                 return new TransformKey(packedBytes);
             }
-            byte[] fullBytes = new byte[b23456.length + 2];
+            byte[] fullBytes = new byte[b123.length + 1];
             fullBytes[0] = kind;
-            fullBytes[1] = bval(b1);
-            for (int i = 0; i < b23456.length; i++) {
-                fullBytes[i + 2] = TransformKey.bval(b23456[i]);
+            for (int i = 0; i < b123.length; i++) {
+                fullBytes[i + 1] = TransformKey.bval(b123[i]);
             }
             return new TransformKey(fullBytes);
         }
-
-        static TransformKey of(byte kind, int b1, int b2, byte[] b345) {
-            return ofBothArrays(kind, new int[]{ b1, b2 }, b345);
-        }
-        private static TransformKey ofBothArrays(byte kind, int[] b123, byte[] b456) {
-            byte[] fullBytes = new byte[1 + b123.length + b456.length];
-            int i = 0;
-            fullBytes[i++] = bval(kind);
-            for (int bv : b123) {
-                fullBytes[i++] = bval(bv);
-            }
-            for (byte bv : b456) {
-                fullBytes[i++] = bv;
-            }
-            long packedBytes = packedBytes(fullBytes);
-            if (packedBytes != 0)
+        static TransformKey of(byte kind, int b1, int... b234) {
+            long packedBytes = packedBytes(kind, b234);
+            if (packedBytes != 0) {
                 return new TransformKey(packedBytes);
-            else
-                return new TransformKey(fullBytes);
+            }
+            byte[] fullBytes = new byte[b234.length + 2];
+            fullBytes[0] = kind;
+            fullBytes[1] = bval(b1);
+            for (int i = 0; i < b234.length; i++) {
+                fullBytes[i + 2] = TransformKey.bval(b234[i]);
+            }
+            return new TransformKey(fullBytes);
+        }
+        static TransformKey of(byte kind, int b1, int b2, int[] b3456) {
+            long packedBytes = packedBytes(kind, b1, b2, b3456);
+            if (packedBytes != 0) {
+                return new TransformKey(packedBytes);
+            }
+            byte[] fullBytes = new byte[b3456.length + 3];
+            fullBytes[0] = kind;
+            fullBytes[1] = bval(b1);
+            fullBytes[2] = bval(b2);
+            for (int i = 0; i < b3456.length; i++) {
+                fullBytes[i + 3] = TransformKey.bval(b3456[i]);
+            }
+            return new TransformKey(fullBytes);
         }
 
         private static final boolean STRESS_TEST = false; // turn on to disable most packing
@@ -229,19 +237,49 @@ class LambdaFormEditor {
                 PACKED_BYTE_MASK = (1 << PACKED_BYTE_SIZE) - 1,
                 PACKED_BYTE_MAX_LENGTH = (STRESS_TEST ? 3 : 64 / PACKED_BYTE_SIZE);
 
-        private static long packedBytes(byte b0, int b1, int[] b23456) {
-            if (b23456.length + 2 > PACKED_BYTE_MAX_LENGTH)
+        private static long packedBytes(byte b0, int b1, int b2, int[] b345) {
+            if (b345.length + 3 > PACKED_BYTE_MAX_LENGTH)
                 return 0;
             long pb = 0;
-            int bitset = b0 | b1;
-            for (int i = 0; i < b23456.length; i++) {
-                int b = b23456[i] & 0xFF;
+            int bitset = b0 | b1 | b2;
+            for (int i = 0; i < b345.length; i++) {
+                int b = ival(b345[i]);
                 bitset |= b;
-                pb |= (long)b << (i * PACKED_BYTE_SIZE);
+                pb |= (long)b << ((i + 3) * PACKED_BYTE_SIZE);
             }
             if (!inRange(bitset))
                 return 0;
-            pb = pb << (2 * PACKED_BYTE_SIZE) | b1 << PACKED_BYTE_SIZE | b0;
+            pb = pb | b2 << (2 * PACKED_BYTE_SIZE) | b1 << PACKED_BYTE_SIZE | b0;
+            return pb;
+        }
+        private static long packedBytes(byte b0, int b1, int[] b234) {
+            if (b234.length + 2 > PACKED_BYTE_MAX_LENGTH)
+                return 0;
+            long pb = 0;
+            int bitset = b0 | b1;
+            for (int i = 0; i < b234.length; i++) {
+                int b = ival(b234[i]);
+                bitset |= b;
+                pb |= (long)b << ((i + 2) * PACKED_BYTE_SIZE);
+            }
+            if (!inRange(bitset))
+                return 0;
+            pb = pb | b1 << PACKED_BYTE_SIZE | b0;
+            return pb;
+        }
+        private static long packedBytes(byte b0, int[] b123) {
+            if (b123.length + 1 > PACKED_BYTE_MAX_LENGTH)
+                return 0;
+            long pb = 0;
+            int bitset = b0;
+            for (int i = 0; i < b123.length; i++) {
+                int b = ival(b123[i]);
+                bitset |= b;
+                pb |= (long)b << ((i + 1) * PACKED_BYTE_SIZE);
+            }
+            if (!inRange(bitset))
+                return 0;
+            pb = pb | b0;
             return pb;
         }
 
@@ -649,7 +687,7 @@ class LambdaFormEditor {
         if (collectorArity == 1 && !dropResult) {
             return filterArgumentForm(pos, basicType(collectorType.parameterType(0)));
         }
-        byte[] newTypes = BasicType.basicTypesOrd(collectorType.ptypes());
+        int[] newTypes = BasicType.basicTypesOrd(collectorType.ptypes());
         byte kind = (dropResult ? COLLECT_ARGS_TO_VOID : COLLECT_ARGS);
         if (dropResult && collectorArity == 0)  pos = 1;  // pure side effect
         TransformKey key = TransformKey.of(kind, pos, collectorArity, newTypes);
@@ -1014,7 +1052,7 @@ class LambdaFormEditor {
     }
 
     LambdaForm foldArgumentsForm(int foldPos, boolean dropResult, MethodType combinerType, int ... argPositions) {
-        TransformKey key = TransformKey.of(FOLD_SELECT_ARGS, foldPos << 1 | (dropResult ? 1 : 0), argPositions);
+        TransformKey key = TransformKey.of(FOLD_SELECT_ARGS, foldPos, dropResult ? 1 : 0, argPositions);
         LambdaForm form = getInCache(key);
         if (form != null) {
             assert(form.arity == lambdaForm.arity - (dropResult ? 0 : 1));
