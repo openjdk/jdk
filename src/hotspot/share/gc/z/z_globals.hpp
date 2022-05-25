@@ -60,14 +60,14 @@
   product(bool, ZUncommit, true,                                            \
           "Uncommit unused memory")                                         \
                                                                             \
-  product(bool, ZBufferStoreBarriers, true,                                 \
+  product(bool, ZBufferStoreBarriers, true, DIAGNOSTIC,                     \
           "Buffer store barriers")                                          \
                                                                             \
   product(uintx, ZUncommitDelay, 5 * 60,                                    \
           "Uncommit memory if it has been unused for the specified "        \
           "amount of time (in seconds)")                                    \
                                                                             \
-  product(uintx, ZIndexDistributorStrategy, 0,                              \
+  product(uintx, ZIndexDistributorStrategy, 0, DIAGNOSTIC,                  \
           "Strategy used to distribute indices to parallel workers "        \
           "0: Claim tree "                                                  \
           "1: Simple Striped ")                                             \
