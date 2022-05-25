@@ -280,6 +280,7 @@ class ResourceBundleGenerator implements BundleGenerator {
                 public class %s implements LocaleDataMetaInfo {
                     private static final Map<String, String> resourceNameToLocales = HashMap.newHashMap(%d);
                 %s
+                    static {
                 """, CLDRConverter.isBaseModule ? "cldr" : "resources.cldr.provider",
                 className, metaInfo.keySet().stream().filter(k -> k.equals("AvailableLocales")).count(),
                 CLDRConverter.isBaseModule ?
@@ -290,7 +291,6 @@ class ResourceBundleGenerator implements BundleGenerator {
                         metaInfo.keySet().stream().filter(k -> k.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)).count(),
                         CLDRConverter.handlerSupplMeta.getLanguageAliasData().size()) :
                     "");
-            out.println("    static {");
 
             for (String key : metaInfo.keySet()) {
                 if (key.startsWith(CLDRConverter.PARENT_LOCALE_PREFIX)) {
