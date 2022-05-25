@@ -1035,7 +1035,7 @@ static bool read_interp_segments(struct ps_prochandle* ph) {
    return true;
 }
 
-// process segments of a a.out
+// process segments of an a.out
 static bool read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehdr) {
    int i = 0;
    ELF_PHDR* phbuf = NULL;

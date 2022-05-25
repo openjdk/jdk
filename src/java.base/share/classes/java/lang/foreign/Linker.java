@@ -25,17 +25,14 @@
  */
 package java.lang.foreign;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-
+import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
-import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
-import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
-import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 
 /**
  * A linker provides access to foreign functions from Java code, and access to Java code from foreign functions.
@@ -130,7 +127,7 @@ import jdk.internal.reflect.Reflection;
  *     <li>The memory session of {@code R} is {@linkplain MemorySession#isAlive() alive}. Otherwise, the invocation throws
  *     {@link IllegalStateException};</li>
  *     <li>The invocation occurs in same thread as the one {@linkplain MemorySession#ownerThread() owning} the memory session of {@code R},
- *     if said session is confined. Otherwise, the invocation throws {@link IllegalStateException}; and</li>
+ *     if said session is confined. Otherwise, the invocation throws {@link WrongThreadException}; and</li>
  *     <li>The memory session of {@code R} is {@linkplain MemorySession#whileAlive(Runnable) kept alive} (and cannot be closed) during the invocation.</li>
  *</ul>
  * <p>
@@ -148,7 +145,7 @@ import jdk.internal.reflect.Reflection;
  * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-public sealed interface Linker permits Windowsx64Linker, SysVx64Linker, LinuxAArch64Linker, MacOsAArch64Linker {
+public sealed interface Linker permits AbstractLinker {
 
     /**
      * Returns a linker for the ABI associated with the underlying native platform. The underlying native platform
@@ -265,8 +262,9 @@ public sealed interface Linker permits Windowsx64Linker, SysVx64Linker, LinuxAAr
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      * @throws IllegalArgumentException if it is determined that the target method handle can throw an exception, or if the target method handle
      * has a type that does not match the upcall stub <a href="CLinker.html#upcall-stubs"><em>inferred type</em></a>.
-     * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}, or if access occurs from
-     * a thread other than the thread {@linkplain MemorySession#ownerThread() owning} {@code session}.
+     * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
+     * @throws WrongThreadException if this method is called from a thread other than the thread
+     * {@linkplain MemorySession#ownerThread() owning} {@code session}.
      */
     MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, MemorySession session);
 

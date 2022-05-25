@@ -576,8 +576,7 @@ public abstract class Charset
     private static void put(Iterator<Charset> i, Map<String,Charset> m) {
         while (i.hasNext()) {
             Charset cs = i.next();
-            if (!m.containsKey(cs.name()))
-                m.put(cs.name(), cs);
+            m.putIfAbsent(cs.name(), cs);
         }
     }
 

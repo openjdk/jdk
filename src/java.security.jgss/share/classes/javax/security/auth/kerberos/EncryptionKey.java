@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.security.auth.kerberos;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Objects;
 import javax.crypto.SecretKey;
@@ -48,6 +49,7 @@ import javax.security.auth.DestroyFailedException;
  */
 public final class EncryptionKey implements SecretKey {
 
+    @Serial
     private static final long serialVersionUID = 9L;
 
    /**
@@ -205,11 +207,10 @@ public final class EncryptionKey implements SecretKey {
         if (other == this)
             return true;
 
-        if (! (other instanceof EncryptionKey)) {
+        if (! (other instanceof EncryptionKey otherKey)) {
             return false;
         }
 
-        EncryptionKey otherKey = ((EncryptionKey) other);
         if (isDestroyed() || otherKey.isDestroyed()) {
             return false;
         }
