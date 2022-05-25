@@ -51,6 +51,7 @@ class AddPNode;
 class Block;
 class Bundle;
 class CallGenerator;
+class CallStaticJavaNode;
 class CloneMap;
 class ConnectionGraph;
 class IdealGraphPrinter;
@@ -809,6 +810,7 @@ class Compile : public Phase {
                                              _dead_node_count = 0;
                                            }
   void         record_unstable_if(UnstableIfTrap* trap);
+  void         invalidate_unstable_if(CallStaticJavaNode* trap);
   uint          live_nodes() const         {
     int  val = _unique - _dead_node_count;
     assert (val >= 0, "number of tracked dead nodes %d more than created nodes %d", _unique, _dead_node_count);

@@ -93,8 +93,12 @@ void Parse::print_statistics() {
     tty->print_cr("%d implicit null exceptions at runtime",
                   SharedRuntime::_implicit_null_throws);
   }
-  tty->print_cr("%u trivial unstable_ifs (%2d%%)", trivial_unstable_ifs,
-                (100 * trivial_unstable_ifs / unstable_ifs_all));
+
+  if (unstable_ifs_all) {
+    tty->print_cr("%u trivial unstable_ifs (%2d%%)", trivial_unstable_ifs,
+                  (100 * trivial_unstable_ifs / unstable_ifs_all));
+  }
+
   if (PrintParseStatistics && BytecodeParseHistogram::initialized()) {
     BytecodeParseHistogram::print();
   }
