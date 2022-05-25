@@ -25,15 +25,15 @@
 
 package javax.swing.text.html.parser;
 
+import java.io.CharArrayReader;
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.io.Reader;
+import java.util.Vector;
+
+import javax.swing.text.ChangedCharSetException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.html.HTML;
-import javax.swing.text.ChangedCharSetException;
-import java.io.*;
-import java.util.Hashtable;
-import java.util.Properties;
-import java.util.Vector;
-import java.util.Enumeration;
-import java.net.URL;
 
 /**
  * A simple DTD-driven HTML parser. The parser reads an
@@ -69,9 +69,8 @@ import java.net.URL;
  * character is encountered. This appears to give behavior closer to
  * the popular browsers.
  * <p>
- * The tag parser does not support script tags. If a tag is encountered,
- * an error will be logged. The script tags are removed, and contents inside
- * the script tag will be handled by <code>handleComment</code>.
+ * Unsupported tags, such as script tags, will be handled by HiddenTagView. The
+ * tags and its contents will be displayed as editable JTextFields and JTextAreas.
  *
  * @see DTD
  * @see TagElement
@@ -299,7 +298,6 @@ class Parser implements DTDConstants {
      * @param text  the comment being handled
      */
     protected void handleComment(char[] text) {
-        System.out.println("Parser");
     }
 
     /**
@@ -1660,7 +1658,6 @@ class Parser implements DTDConstants {
      */
     @SuppressWarnings("fallthrough")
     void parseTag() throws IOException {
-        System.out.println("---- parseTag");
         Element elem;
         boolean net = false;
         boolean warned = false;
@@ -2021,7 +2018,6 @@ class Parser implements DTDConstants {
 
         // ensure a legal context for the tag
         TagElement tag = makeTag(elem, false);
-        System.out.println("still here");
 
 
         /** In dealing with forms, we have decided to treat
@@ -2086,7 +2082,6 @@ class Parser implements DTDConstants {
                                         "</SCRIPT>".toCharArray();
 
     void parseScript() throws IOException {
-        System.out.println("-- parseScript");
         char[] charsToAdd = new char[SCRIPT_END_TAG.length];
         boolean insideComment = false;
 
@@ -2167,7 +2162,6 @@ class Parser implements DTDConstants {
      * Parse Content. [24] 320:1
      */
     void parseContent() throws IOException {
-        System.out.println("-- parseContent");
         Thread curThread = Thread.currentThread();
 
         for (;;) {
@@ -2194,7 +2188,6 @@ class Parser implements DTDConstants {
                                       str.length() - END_COMMENT.length());
                 }
 
-                System.out.println("str: " + str);
                 /* Handle resulting chars as comment */
                 handleComment(str.toCharArray());
                 endTag(false);
