@@ -835,6 +835,10 @@ public final class Double extends Number
      * Returns the value of this {@code Double} as a {@code float}
      * after a narrowing primitive conversion.
      *
+     * @apiNote
+     * This method corresponds to the convertFormat operation defined
+     * in IEEE 754.
+     *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code float}
      * @jls 5.1.3 Narrowing Primitive Conversion
@@ -1143,6 +1147,9 @@ public final class Double extends Number
 
     /**
      * Adds two {@code double} values together as per the + operator.
+     *
+     * @apiNote This method corresponds to the addition operation
+     * defined in IEEE 754.
      *
      * @param a the first operand
      * @param b the second operand

@@ -39,6 +39,21 @@ package java.math;
  * considered as a numerical value, the discarded fraction could have
  * an absolute value greater than one.
  *
+ * <p>More generally, a rounding policy defines a mapping from the
+ * real numbers to a subset of representable values. In the case of
+ * {@link BigDecimal}, the representable values are a function of the
+ * {@linkplain MathContext#getPrecision() precision} being used in the
+ * computation. Assuming the mathematical result is within the
+ * exponent range of {@code BigDecimal}, the mathematical result will
+ * be exactly representable in the result precision or fall between
+ * two representable values. In the case of falling between two
+ * representable values, the rounding policy determines which of those
+ * two bracketing values is the result. For in-range real numbers, for
+ * a given set of representable values, a rounding policy maps a
+ * continuous segment of real number line to a singe representable
+ * value where the real number numerically equal to a representable
+ * value is mapped to that value.
+ *
  * <p>Each rounding mode description includes a table listing how
  * different two-digit decimal values would round to a one digit
  * decimal value under the rounding mode in question.  The result
@@ -98,6 +113,7 @@ package java.math;
  * @see     MathContext
  * @see <a href="https://standards.ieee.org/ieee/754/6210/">
  *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ * @jls 15.4 Floating-point Expressions
  *
  * @author  Josh Bloch
  * @author  Mike Cowlishaw
@@ -140,6 +156,12 @@ public enum RoundingMode {
          * Rounding mode to round towards zero.  Never increments the digit
          * prior to a discarded fraction (i.e., truncates).  Note that this
          * rounding mode never increases the magnitude of the calculated value.
+         *
+         * @apiNote
+         * This rounding mode is analogous to the rounding policy used
+         * for the {@code float} and {@code double} operators
+         * conversion to an integer value and remainder (JLS {@jls
+         * 15.4}).
          * This mode corresponds to the IEEE 754-2019 rounding-direction
          * attribute roundTowardZero.
          *
@@ -297,13 +319,15 @@ public enum RoundingMode {
          * towards the even neighbor.  Behaves as for
          * {@code RoundingMode.HALF_UP} if the digit to the left of the
          * discarded fraction is odd; behaves as for
-         * {@code RoundingMode.HALF_DOWN} if it's even.  Note that this
+         * {@code RoundingMode.HALF_DOWN} if it's even.
+         * @apiNote
+         * Note that this
          * is the rounding mode that statistically minimizes cumulative
          * error when applied repeatedly over a sequence of calculations.
          * It is sometimes known as {@literal "Banker's rounding,"} and is
          * chiefly used in the USA.  This rounding mode is analogous to
-         * the rounding policy used for {@code float} and {@code double}
-         * arithmetic in Java.
+         * the rounding policy used for most {@code float} and {@code double}
+         * arithmetic operators in Java (JLS {@jls 15.4}).
          * This mode corresponds to the IEEE 754-2019 rounding-direction
          * attribute roundTiesToEven.
          *

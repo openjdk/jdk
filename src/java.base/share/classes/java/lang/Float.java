@@ -686,6 +686,10 @@ public final class Float extends Number
      * Returns the value of this {@code Float} as a {@code double}
      * after a widening primitive conversion.
      *
+     * @apiNote
+     * This method corresponds to the convertFormat operation defined
+     * in IEEE 754.
+     *
      * @return the {@code float} value represented by this
      *         object converted to type {@code double}
      * @jls 5.1.2 Widening Primitive Conversion
@@ -970,6 +974,9 @@ public final class Float extends Number
 
     /**
      * Adds two {@code float} values together as per the + operator.
+     *
+     * @apiNote This method corresponds to the addition operation
+     * defined in IEEE 754.
      *
      * @param a the first operand
      * @param b the second operand
