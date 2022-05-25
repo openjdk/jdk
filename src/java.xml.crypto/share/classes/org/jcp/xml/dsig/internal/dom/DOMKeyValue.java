@@ -302,8 +302,9 @@ public abstract class DOMKeyValue<K extends PublicKey> extends DOMStructure impl
             }
             // P, Q, and G are optional according to the XML Signature
             // Recommendation as they might be known from application context,
-            // but this implementation does not support that, so they are
-            // required.
+            // but this implementation does not provide a mechanism or API for
+            // an application to supply the missing parameters, so they are
+            // required to be specified.
             Element curElem =
                 DOMUtils.getFirstChildElement(kvtElem, "P", XMLSignature.XMLNS);
             BigInteger p = decode(curElem);
