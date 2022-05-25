@@ -46,7 +46,7 @@ public final class ResolverConfigurationImpl
 
     // Addresses have changed. We default to true to make sure we
     // resolve the first time it is requested.
-    private static volatile boolean changed = true;
+    private static boolean changed = true;
 
     // Time of last refresh.
     private static long lastRefresh;
