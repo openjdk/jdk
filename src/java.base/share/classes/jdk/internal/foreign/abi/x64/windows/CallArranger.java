@@ -24,34 +24,34 @@
  */
 package jdk.internal.foreign.abi.x64.windows;
 
+import jdk.internal.foreign.Utils;
+import jdk.internal.foreign.abi.ABIDescriptor;
+import jdk.internal.foreign.abi.Binding;
+import jdk.internal.foreign.abi.CallingSequence;
+import jdk.internal.foreign.abi.CallingSequenceBuilder;
+import jdk.internal.foreign.abi.DowncallLinker;
+import jdk.internal.foreign.abi.SharedUtils;
+import jdk.internal.foreign.abi.UpcallLinker;
+import jdk.internal.foreign.abi.VMStorage;
+import jdk.internal.foreign.abi.x64.X86_64Architecture;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
-import jdk.internal.foreign.Utils;
-import jdk.internal.foreign.abi.CallingSequenceBuilder;
-import jdk.internal.foreign.abi.ABIDescriptor;
-import jdk.internal.foreign.abi.Binding;
-import jdk.internal.foreign.abi.CallingSequence;
-import jdk.internal.foreign.abi.ProgrammableInvoker;
-import jdk.internal.foreign.abi.ProgrammableUpcallHandler;
-import jdk.internal.foreign.abi.VMStorage;
-import jdk.internal.foreign.abi.x64.X86_64Architecture;
-import jdk.internal.foreign.abi.SharedUtils;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import static jdk.internal.foreign.PlatformLayouts.*;
+import static jdk.internal.foreign.PlatformLayouts.Win64;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.*;
 
 /**
- * For the Windowx x64 C ABI specifically, this class uses the ProgrammableInvoker API, namely CallingSequenceBuilder2
- * to translate a C FunctionDescriptor into a CallingSequence2, which can then be turned into a MethodHandle.
+ * For the Windowx x64 C ABI specifically, this class uses CallingSequenceBuilder
+ * to translate a C FunctionDescriptor into a CallingSequence, which can then be turned into a MethodHandle.
  *
  * This includes taking care of synthetic arguments like pointers to return buffers for 'in-memory' returns.
  */
@@ -124,7 +124,7 @@ public class CallArranger {
     public static MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc) {
         Bindings bindings = getBindings(mt, cDesc, false);
 
-        MethodHandle handle = new ProgrammableInvoker(CWindows, bindings.callingSequence).getBoundMethodHandle();
+        MethodHandle handle = new DowncallLinker(CWindows, bindings.callingSequence).getBoundMethodHandle();
 
         if (bindings.isInMemoryReturn) {
             handle = SharedUtils.adaptDowncallForIMR(handle, cDesc);
@@ -140,7 +140,7 @@ public class CallArranger {
             target = SharedUtils.adaptUpcallForIMR(target, false /* need the return value as well */);
         }
 
-        return ProgrammableUpcallHandler.make(CWindows, target, bindings.callingSequence, session);
+        return UpcallLinker.make(CWindows, target, bindings.callingSequence, session);
     }
 
     private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
