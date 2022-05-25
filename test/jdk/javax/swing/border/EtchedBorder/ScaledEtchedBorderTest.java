@@ -41,7 +41,6 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 /*
  * @test
- * @key headful
  * @bug 8279614
  * @summary The left line of the TitledBorder is not painted on 150 scale factor
  * @requires (os.family == "windows")
