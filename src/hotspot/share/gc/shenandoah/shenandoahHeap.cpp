@@ -949,13 +949,7 @@ public:
   void do_object(oop p) {
     shenandoah_assert_marked(NULL, p);
     if (!p->is_forwarded()) {
-      p = _heap->evacuate_object(p, _thread);
-      // stackChunkOop contains stack frames, we need to treat it
-      // as a root.
-      if (ContinuationGCSupport::relativize_stack_chunk(p)) {
-        ShenandoahEvacuateUpdateRootsClosure cl;
-        p->oop_iterate(&cl);
-      }
+      _heap->evacuate_object(p, _thread);
     }
   }
 };
@@ -2323,18 +2317,8 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
     return true;
   }
 
-  oop cont_oop;
-  if (UseCompressedOops) {
-    cont_oop = jdk_internal_vm_StackChunk::cont_raw<narrowOop>(obj);
-  } else {
-    cont_oop = jdk_internal_vm_StackChunk::cont_raw<oop>(obj);
-  }
-
-  // We don't update references above update_watermark. If a stackChunkOop has continuation oop
-  // in collection set, barrier is needed to fix it.
-  if (has_forwarded_objects() && cont_oop != NULL &&
-      cast_from_oop<HeapWord*>(obj) >= heap_region_containing(obj)->get_update_watermark() &&
-      in_collection_set(cont_oop)) {
+  // Can not guarantee obj is deeply good.
+  if (has_forwarded_objects()) {
     return true;
   }
 
