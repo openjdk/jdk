@@ -270,7 +270,7 @@ inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index) con
       // Flipped and shifted first word is zero.  Word search through
       // aligned down l_index for a non-zero flipped word.
       idx_t limit = to_words_align_down(l_index); // Minuscule savings when aligned.
-      while (index > 0 && --index >= limit) {
+      while (index-- > limit) {
         cword = map(index) ^ flip;
         if (cword != 0) {
           idx_t result = bit_index(index + 1) - count_leading_zeros(cword) - 1;
