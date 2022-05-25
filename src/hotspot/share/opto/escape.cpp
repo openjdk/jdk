@@ -430,6 +430,44 @@ void ConnectionGraph::reduce_allocation_merges() {
   _igvn->set_delay_transform(prev_delay_transform);
 }
 
+Node* ConnectionGraph::come_from_allocate(Node* n) {
+  while (true) {
+    switch (n->Opcode()) {
+      case Op_CastPP:
+      case Op_CheckCastPP:
+      case Op_EncodeP:
+      case Op_EncodePKlass:
+      case Op_DecodeN:
+      case Op_DecodeNKlass:
+        n = n->in(1);
+        break;
+      case Op_Proj:
+        assert(n->as_Proj()->_con == TypeFunc::Parms, "Should be proj from a call");
+        n = n->in(0);
+        break;
+      case Op_Parm:
+      case Op_LoadP:
+      case Op_LoadN:
+      case Op_LoadNKlass:
+      case Op_ConP:
+      case Op_CreateEx:
+      case Op_AllocateArray:
+      case Op_Phi:
+        return n;
+      case Op_Allocate:
+        return NULL;
+      default:
+        if (n->is_Call()) {
+          return n;
+        }
+        assert(false, "Should not reach here. Unmatched %d %s", n->_idx, n->Name());
+    }
+  }
+
+  // should never reach here
+  return n;
+}
+
 bool ConnectionGraph::should_reduce_this_phi(Node* n) {
   if (!n->is_Phi())                     return false;
   if (!is_ideal_node_in_graph(n->_idx)) return false;
@@ -439,27 +477,14 @@ bool ConnectionGraph::should_reduce_this_phi(Node* n) {
   if (ptn == NULL)                                                return false;
   if (ptn->escape_state() != PointsToNode::EscapeState::NoEscape) return false;
 
-  // Check whether this Phi node actually point to any Allocate node.
-  bool any_allocate = false;
-  bool consumes_phi = false;
-  for (EdgeIterator i(ptn); i.has_next(); i.next()) {
-    PointsToNode* input = i.get();
-
-    if (input->ideal_node()->is_Allocate()) {
-      any_allocate = true;
+  // Check whether this Phi node actually point to Allocate nodes
+  for (uint in_idx=1; in_idx<n->req(); in_idx++) {
+    Node* input = n->in(in_idx);
+    Node* src = come_from_allocate(input);
+    if (src != NULL) {
+      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input does not come from an Allocate -> %d %s", n->_idx, in_idx, src->_idx, src->Name());)
+      return false;
     }
-    else if (input->ideal_node()->is_Phi()) {
-      consumes_phi = true;
-    }
-  }
-
-  if (any_allocate == false) {
-    return false;
-  }
-
-  if (consumes_phi == true) {
-    NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. Has Allocate but it consumes another Phi node.", n->_idx);)
-    return false;
   }
 
   // Check if we can in fact later replace the uses of the
@@ -467,7 +492,8 @@ bool ConnectionGraph::should_reduce_this_phi(Node* n) {
   // Conditions checked:
   //    - The only consumers of the Phi are:
   //        - AddP
-  //        - CallStaticJava (uncommon_trap)
+  //        - Safepoint
+  //        - uncommon_trap
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* use = n->fast_out(i);
 
@@ -480,6 +506,12 @@ bool ConnectionGraph::should_reduce_this_phi(Node* n) {
       NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. Has Allocate but cannot scalar replace it. CallStaticJava is not a trap.", n->_idx);)
       return false;
     }
+
+    if (use->is_AddP() && use->in(AddPNode::Offset)->find_long_con(-1) == -1) {
+      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. Did not find constant input for %d : AddP.", n->_idx, use->_idx);)
+      dump_ir("AddP constant not found.");
+      return false;
+    }
   }
 
   NOT_PRODUCT(if (Verbose) tty->print_cr("Will try to reduce Phi %d.", n->_idx);)
@@ -489,12 +521,6 @@ bool ConnectionGraph::should_reduce_this_phi(Node* n) {
 void ConnectionGraph::reduce_this_phi(PhiNode* n) {
   // Copy input edges of 'n' to 'reduced'
   Node* reduced = ReducedAllocationMergeNode::make(_compile, _igvn, n);
-
-  // Create a type for 'reduced'
-  //const TypeOopPtr* reduced_t = TypeOopPtr::make_from_klass(_compile->env()->Object_klass());
-  //_igvn->set_type(reduced,  reduced_t);
-  //reduced->raise_bottom_type(reduced_t);
-  //_igvn->hash_insert(reduced);
 
   // Patch users of 'n' to instead use 'reduced'
   _igvn->replace_node(n, reduced);
@@ -712,7 +738,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       break;
     }
     case Op_PartialSubtypeCheck: {
-      // Produces Null or notNull and is used in only in CmpP so
+      // Produces Null or notNull and is used only in CmpP so
       // phantom_obj could be used.
       map_ideal_node(n, phantom_obj); // Result is unknown
       break;
@@ -1813,7 +1839,6 @@ int ConnectionGraph::find_init_values_phantom(JavaObjectNode* pta) {
   Node* alloc = pta->ideal_node();
 
   // Do nothing for ReducedAllocationMerges because their fields is "known".
-  // TODO: should I be worried of "unknown field values" returned by Calls participating in the merge?
   //
   // Do nothing for Allocate nodes since its fields values are
   // "known" unless they are initialized by arraycopy/clone.
@@ -2125,8 +2150,8 @@ void ConnectionGraph::verify_connection_graph(
           }
         }
       }
-      // Verify that all fields have initializing values.
-      if (field->edge_count() == 0) {
+      // Verify that all fields have initializing values unless its base is RAM.
+      if (!base->is_ReducedAllocationMerge() && field->edge_count() == 0) {
         tty->print_cr("----------field does not have references----------");
         field->dump();
         for (BaseIterator i(field); i.has_next(); i.next()) {
@@ -2658,7 +2683,7 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
   //     \  |
   //     AddP  ( base == top )
   //
-  // case #10: AddP allocation
+  // case #10: RAM as base
   //        {...}      {...}
   //          \          /
   //     ReducedAllocationMerge
@@ -3705,6 +3730,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           memnode_worklist.append_if_missing(use);
         }
 #ifdef ASSERT
+      } else if(use->is_ReducedAllocationMerge()) {
+        continue; // don't do anything
       } else if(use->is_Mem()) {
         assert(use->in(MemNode::Memory) != n, "EA: missing memory path");
       } else if (use->is_MergeMem()) {

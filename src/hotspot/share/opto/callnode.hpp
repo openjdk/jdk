@@ -1048,13 +1048,13 @@ public:
   }
 };
 
-// This node isn't a real allocation, it's used during EA/SR to simplify allocation merges.
-// It's placed here just because it's closely related to allocation.
+// This node is used during EA/SR to simplify allocation merges.
+// It's placed in this file just because it's closely related to allocation.
 class ReducedAllocationMergeNode : public TypeNode {
 private:
   ciKlass* _klass;                  // Which Klass is the merge for
 
-  uint _num_bases;                  // Number of inputs to the original Phi
+  uint _num_orig_inputs;            // Number of inputs to the original Phi
 
   Node_Array* _in_copy;             // I need a *copy* of the original Phi input node addresses
                                     // because these input nodes are going to go away as we scalar
@@ -1068,52 +1068,57 @@ private:
                                     // a SafepoingScalarObjectNode
 
   Dict* _fields_and_values;
-  Node_Array* _memories;
+
+  bool _found_memory_phi;           // Set to true when we find a matching memory Phi from
+                                    // same Region as original phi.
+
+  uint _memories_indexes_start;
 
 public:
   ReducedAllocationMergeNode(Compile* C, PhaseIterGVN* igvn, const PhiNode* phi) : TypeNode(phi->type(), phi->req()) {
     init_class_id(Class_ReducedAllocationMerge);
     init_flags(Flag_is_macro);
 
-    _num_bases             = phi->req()-1; // -1 to exclude the control input
-    _needs_all_fields      = false;
-    _in_copy               = new Node_Array(Thread::current()->resource_area(), phi->req());
-    _memories              = new Node_Array(Thread::current()->resource_area(), phi->req());
-    _fields_and_values     = new (C->comp_arena()) Dict(cmpkey, hashkey);
+    _num_orig_inputs        = phi->req();
+    _needs_all_fields       = false;
+    _in_copy                = new Node_Array(Thread::current()->resource_area(), phi->req());
+    _memories_indexes_start = -1;
+    _fields_and_values      = new (C->comp_arena()) Dict(cmpkey, hashkey);
+    _found_memory_phi       = false;
 
     const Type* ram_t = Type::TOP;
 
     for (uint i=0; i<phi->req(); i++) {
       init_req(i, phi->in(i));
       _in_copy->map(i, this->_in[i]);
-      if (i>0) {
+
+      if (i > 0) {
         const Type* in_t = igvn->type(phi->in(i));
         ram_t = ram_t->meet_speculative(in_t);
       }
     }
 
-    igvn->hash_insert(this);
-    this->raise_bottom_type(ram_t);
-    igvn->set_type(this, ram_t);
-
     _klass = ram_t->isa_oopptr()->klass();
 
-    // Now let's find a memory Phi coming from same region
+    // Now let's try to find a memory Phi coming from same region
     Node* reg = phi->region();
-    bool found_memory_edge = false;
     for (DUIterator_Fast imax, i = reg->fast_outs(imax); i < imax; i++) {
       Node* n = reg->fast_out(i);
       if (n->is_Phi() && n->bottom_type() == Type::MEMORY) {
-        for (uint i=0; i<n->req(); i++) {
-          _memories->map(i, n->in(i));
+        // Safe the index where we are storing the memory edge
+        _memories_indexes_start = req();
+
+        for (uint j=1; j<n->req(); j++) {
+          add_req(n->in(j));
         }
 
-        found_memory_edge = true;
+        _found_memory_phi = true;
         break;
       }
     }
 
-    assert(found_memory_edge, "Did not find memory phi.");
+    this->raise_bottom_type(ram_t);
+    igvn->set_type(this, ram_t);
 
     C->add_macro_node(this);
   }
@@ -1133,7 +1138,39 @@ public:
       assert(field != -1, "Didn't find constant for AddP.");
 
       if ((*_fields_and_values)[(void*)field] == NULL) {
-        _fields_and_values->Insert((void*)field, (void*)new Node_Array(Compile::current()->node_arena(), _num_bases));
+        _fields_and_values->Insert((void*)field, (void*)new Node_Array(Compile::current()->node_arena(), _num_orig_inputs));
+      }
+
+      // If we didn't find memory edges to use so far then try to
+      // figure out which Memory edge subsequent Loads of this field use
+      if (_found_memory_phi == false) {
+        for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+          Node* addp_use = n->fast_out(i);
+
+          if (addp_use->is_Load()) {
+            Node* load_mem = addp_use->in(LoadNode::Memory);
+
+            // Safe the index where we are storing the memory edge
+            _memories_indexes_start = req();
+
+            if (load_mem->is_Phi()) {
+              for (uint j=1; j<_num_orig_inputs; j++) {
+                add_req(load_mem->in(j));
+              }
+            }
+            else {
+              for (uint j=1; j<_num_orig_inputs; j++) {
+                add_req(load_mem);
+              }
+            }
+
+            _found_memory_phi = true;
+            break;
+          }
+          else {
+            assert(false, "User of AddP in RAM is not a Load.");
+          }
+        }
       }
 
       tty->print_cr("Registering in %d RAM the use of field @ offset %ld.", this->_idx, field);
@@ -1150,13 +1187,15 @@ public:
   }
 
   Node* memory_for(jlong field, Node* base) const {
-    for (uint i=1; i<_num_bases+1; i++) {
+    assert(_found_memory_phi, "Didn't find memory edges yet?");
+
+    for (uint i=1; i<_num_orig_inputs; i++) {
       if (base == _in_copy->at(i)) {
-        return _memories->at(i);
+        return in(_memories_indexes_start + i - 1);
       }
     }
 
-    assert(false, "Shouldn't reach here.");
+    assert(false, "Did not find a matching base when searching for memory.");
     return NULL;
   }
 
@@ -1166,45 +1205,34 @@ public:
     // It's possible that the entry for this field is null because we didn't
     // see a load to it, just a Safepoint using it all fields.
     if ((*_fields_and_values)[(void*)field] == NULL) {
-      _fields_and_values->Insert((void*)field, (void*)new Node_Array(Compile::current()->node_arena(), _num_bases));
+      _fields_and_values->Insert((void*)field, (void*)new Node_Array(Compile::current()->node_arena(), _num_orig_inputs));
     }
 
     Node_Array* values = (Node_Array*) ((*_fields_and_values)[(void*)field]);
 
-    if (_num_bases == 2) {
+    if (_num_orig_inputs == 3) {
       if (base == _in_copy->at(1)) {
-        values->map(0, value);
+        values->map(1, value);
       }
       else if (base == _in_copy->at(2)) {
-        values->map(1, value);
+        values->map(2, value);
       }
       else {
         assert(false, "insanity");
       }
     }
     else {
-      uint i=1;
-      for (; i<req(); i++) {
+      uint i = 1;
+      for (; i<_num_orig_inputs; i++) {
         if (base == _in_copy->at(i)) {
-          values->map(i-1, value);
+          values->map(i, value);
           break;
         }
       }
-      assert(i<req(), "insanity");
+      assert(i < _num_orig_inputs, "insanity");
     }
 
     this->add_req(value);
-
-    #ifdef ASSERT
-      uint i=1;
-      for (; i<req(); i++) {
-        if (base == _in_copy->at(i)) {
-          assert(values->at(i-1) != NULL, "shouldn't be NULL at this point.");
-          break;
-        }
-      }
-      assert(i < req(), "Didn't find producing base.");
-    #endif
   }
 
   Node* value_phi_for_field(jlong field, PhaseIterGVN* igvn) {
@@ -1212,15 +1240,14 @@ public:
     Node_Array* values = (Node_Array*) ((*_fields_and_values)[(void*)field]);
     const Type *t      = Type::TOP;        // Merged type starting value
 
-    //tty->print_cr("Creating value %d phi for field @ %ld", phi->_idx, field);
-
-    for (uint i=0; i<_num_bases; i++) { // the +1 is because earlier we discarded the control input
-      phi->set_req(i+1, values->at(i));
+    for (uint i=1; i<_num_orig_inputs; i++) {
+      assert(values->at(i) != NULL, "shouldn't be null at this point");
+      phi->set_req(i, values->at(i));
       const Type* input_type = igvn->type(values->at(i));
       t = t->meet_speculative(input_type);
-      //tty->print_cr("\t Input[%d]: %d", i+1, values->at(i)->_idx);
     }
     igvn->set_type(phi, t);
+    phi->raise_bottom_type(t);
 
     return phi;
   }
@@ -1228,11 +1255,12 @@ public:
   static ReducedAllocationMergeNode* make(Compile* C, PhaseIterGVN* igvn, PhiNode* phi) {
     ReducedAllocationMergeNode* ram = new ReducedAllocationMergeNode(C, igvn, phi);
 
-    // Collect the offset of AddP's using the original Phi as base+adr
     for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
       Node* n = phi->fast_out(i);
       ram->register_use(n);
     }
+
+    igvn->hash_insert(ram);
 
     return ram;
   }
