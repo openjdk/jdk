@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ TEST_VM(SymbolTable, temp_new_symbol) {
   ASSERT_EQ(s1->refcount(), abccount + 1) << "should be two abc (s1 and ss)";
   ASSERT_EQ(hij->refcount(), hijcount) << "should only have one hij now (s2)";
 
-  s1 = s1; // self assignment
+  s1 = *&s1; // self assignment
   ASSERT_EQ(s1->refcount(), abccount + 1) << "should still be two abc (s1 and ss)";
 
   TempNewSymbol s3;

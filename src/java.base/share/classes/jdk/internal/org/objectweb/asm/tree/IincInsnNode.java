@@ -79,12 +79,12 @@ public class IincInsnNode extends AbstractInsnNode {
     /**
       * Constructs a new {@link IincInsnNode}.
       *
-      * @param var index of the local variable to be incremented.
+      * @param varIndex index of the local variable to be incremented.
       * @param incr increment amount to increment the local variable by.
       */
-    public IincInsnNode(final int var, final int incr) {
+    public IincInsnNode(final int varIndex, final int incr) {
         super(Opcodes.IINC);
-        this.var = var;
+        this.var = varIndex;
         this.incr = incr;
     }
 

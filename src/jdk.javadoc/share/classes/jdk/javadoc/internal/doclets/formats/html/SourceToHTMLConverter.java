@@ -56,11 +56,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * Converts Java Source Code to HTML.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class SourceToHTMLConverter {
 
@@ -292,8 +287,7 @@ public class SourceToHTMLConverter {
      * @param lineno The line number
      */
     private static void addLineNo(Content pre, int lineno) {
-        var span = new HtmlTree(TagName.SPAN);
-        span.setStyle(HtmlStyle.sourceLineNo);
+        var span = HtmlTree.SPAN(HtmlStyle.sourceLineNo);
         if (lineno < 10) {
             span.add("00" + Integer.toString(lineno));
         } else if (lineno < 100) {
@@ -311,12 +305,12 @@ public class SourceToHTMLConverter {
      * @param line the string to format.
      * @param currentLineNo the current number.
      */
-    private void addLine(Content pre, String line, int currentLineNo) {
+    private void addLine(HtmlTree pre, String line, int currentLineNo) {
         if (line != null) {
             var anchor = HtmlTree.SPAN_ID(
                     HtmlIds.forLine(currentLineNo),
                     Text.of(utils.replaceTabs(line)));
-            pre.add(anchor);
+            pre.addUnchecked(anchor);
             pre.add(NEW_LINE);
         }
     }

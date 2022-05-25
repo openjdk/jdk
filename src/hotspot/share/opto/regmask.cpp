@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,7 +432,7 @@ void RegMask::dump(outputStream *st) const {
           st->print("-");
           OptoReg::dump(last, st);
         }
-        st->print(",");         // Seperate start of new run
+        st->print(",");         // Separate start of new run
         start = last = reg;     // Start a new register run
         OptoReg::dump(start, st); // Print register
       } // End of if ending a register run or not

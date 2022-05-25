@@ -91,7 +91,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseSIMDForArrayEquals, true,                            \
           "Use SIMD instructions in generated array equals code")       \
   product(bool, UseSimpleArrayEquals, false,                            \
-          "Use simpliest and shortest implementation for array equals") \
+          "Use simplest and shortest implementation for array equals")  \
   product(bool, UseSIMDForBigIntegerShiftIntrinsics, true,              \
           "Use SIMD instructions for left/right shift of BigInteger")   \
   product(bool, AvoidUnalignedAccesses, false,                          \
@@ -105,7 +105,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use DC ZVA for block zeroing")                               \
   product(intx, BlockZeroingLowLimit, 256,                              \
           "Minimum size in bytes when block zeroing will be used")      \
-          range(1, max_jint)                                            \
+          range(wordSize, max_jint)                                     \
   product(bool, TraceTraps, false, "Trace all traps the signal handler")\
   product(int, SoftwarePrefetchHintDistance, -1,                        \
           "Use prfm hint with specified distance in compiled code."     \

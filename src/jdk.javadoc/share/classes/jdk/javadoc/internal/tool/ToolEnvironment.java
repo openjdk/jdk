@@ -67,11 +67,6 @@ import com.sun.tools.javac.util.Names;
  * Holds only the information needed throughout the
  * run and not the compiler info that could be GC'ed
  * or ported.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class ToolEnvironment {
     protected static final Context.Key<ToolEnvironment> ToolEnvKey = new Context.Key<>();

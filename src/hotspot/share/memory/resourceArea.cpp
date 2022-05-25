@@ -28,6 +28,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/vmError.hpp"
 
 void ResourceArea::bias_to(MEMFLAGS new_flags) {
   if (new_flags != _flags) {
@@ -43,7 +44,7 @@ void ResourceArea::bias_to(MEMFLAGS new_flags) {
 #ifdef ASSERT
 
 void ResourceArea::verify_has_resource_mark() {
-  if (_nesting <= 0) {
+  if (_nesting <= 0 && !VMError::is_error_reported()) {
     // Only report the first occurrence of an allocating thread that
     // is missing a ResourceMark, to avoid possible recursive errors
     // in error handling.

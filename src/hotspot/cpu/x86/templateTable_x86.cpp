@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ static Assembler::Condition j_not(TemplateTable::Condition cc) {
 
 
 
-// Miscelaneous helper routines
+// Miscellaneous helper routines
 // Store an oop (or NULL) at the address described by obj.
 // If val == noreg this means store a NULL
 
@@ -2592,8 +2592,11 @@ void TemplateTable::_return(TosState state) {
 #endif
     __ jcc(Assembler::zero, no_safepoint);
     __ push(state);
+    __ push_cont_fastpath(NOT_LP64(thread) LP64_ONLY(r15_thread));
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                                        InterpreterRuntime::at_safepoint));
+    NOT_LP64(__ get_thread(thread);)
+    __ pop_cont_fastpath(NOT_LP64(thread) LP64_ONLY(r15_thread));
     __ pop(state);
     __ bind(no_safepoint);
   }
@@ -2619,7 +2622,7 @@ void TemplateTable::_return(TosState state) {
 //
 // According to the new Java Memory Model (JMM):
 // (1) All volatiles are serialized wrt to each other.  ALSO reads &
-//     writes act as aquire & release, so:
+//     writes act as acquire & release, so:
 // (2) A read cannot let unrelated NON-volatile memory refs that
 //     happen after the read float up to before the read.  It's OK for
 //     non-volatile memory refs that happen before the volatile read to
@@ -4353,13 +4356,18 @@ void TemplateTable::monitorenter() {
 
   // Increment bcp to point to the next bytecode, so exception
   // handling for async. exceptions work correctly.
-  // The object has already been poped from the stack, so the
+  // The object has already been popped from the stack, so the
   // expression stack looks correct.
   __ increment(rbcp);
 
   // store object
   __ movptr(Address(rmon, BasicObjectLock::obj_offset_in_bytes()), rax);
   __ lock_object(rmon);
+
+  // The object is stored so counter should be increased even if stackoverflow is generated
+  Register rthread = LP64_ONLY(r15_thread) NOT_LP64(rbx);
+  NOT_LP64(__ get_thread(rthread);)
+  __ inc_held_monitor_count(rthread);
 
   // check to make sure this monitor doesn't cause stack overflow after locking
   __ save_bcp();  // in case of exception
@@ -4419,6 +4427,11 @@ void TemplateTable::monitorexit() {
   __ bind(found);
   __ push_ptr(rax); // make sure object is on stack (contract with oopMaps)
   __ unlock_object(rtop);
+
+  Register rthread = LP64_ONLY(r15_thread) NOT_LP64(rax);
+  NOT_LP64(__ get_thread(rthread);)
+  __ dec_held_monitor_count(rthread);
+
   __ pop_ptr(rax); // discard object
 }
 

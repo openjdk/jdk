@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -85,7 +85,7 @@ public:
 
   // Note: limit == 0 means unlimited
   // Reserve limit > 0 simulates a non-expandable VirtualSpaceList (like CompressedClassSpace)
-  // Commit limit > 0 simulates a limit to max commitable space (like MaxMetaspaceSize)
+  // Commit limit > 0 simulates a limit to max committable space (like MaxMetaspaceSize)
   MetaspaceTestContext(const char* name, size_t commit_limit = 0, size_t reserve_limit = 0);
   ~MetaspaceTestContext();
 

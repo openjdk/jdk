@@ -139,7 +139,7 @@ define SetupZipArchiveBody
   # Now $1_ALL_SRCS should contain all sources that are going to be put into the zip.
   # I.e. the zip -i and -x options should match the filtering done in the makefile.
   # Explicitly excluded files can be given with absolute path. The patsubst solution
-  # isn't perfect but the likelyhood of an absolute path to match something in a src
+  # isn't perfect but the likelihood of an absolute path to match something in a src
   # dir is very small.
   # If zip has nothing to do, it returns 12 and would fail the build. Check for 12
   # and only fail if it's not.

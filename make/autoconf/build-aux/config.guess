@@ -67,7 +67,7 @@ fi
 
 # Test and fix architecture string on AIX
 # On AIX 'config.guess' returns 'powerpc' as architecture but 'powerpc' is
-# implicitely handled as 32-bit architecture in 'platform.m4' so we check
+# implicitly handled as 32-bit architecture in 'platform.m4' so we check
 # for the kernel mode rewrite it to 'powerpc64' if we'Re running in 64-bit mode.
 # The check could also be done with `/usr/sbin/prtconf | grep "Kernel Type" | grep "64-bit"`
 echo $OUT | grep powerpc-ibm-aix > /dev/null 2> /dev/null

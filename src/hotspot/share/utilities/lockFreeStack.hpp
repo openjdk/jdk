@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public:
       if (result != NULL) {
         new_top = next(*result);
       }
-      // CAS even on empty pop, for consistent membar bahavior.
+      // CAS even on empty pop, for consistent membar behavior.
       result = Atomic::cmpxchg(&_top, result, new_top);
     } while (result != old);
     if (result != NULL) {

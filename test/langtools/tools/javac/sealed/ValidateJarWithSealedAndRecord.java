@@ -50,8 +50,9 @@ public class ValidateJarWithSealedAndRecord {
         s.close();
     }
 
+    private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar").orElseThrow(() -> new RuntimeException("jar tool not found"));
+
     void generateFilesNeeded() throws Exception {
-        ToolProvider jarTool = ToolProvider.findFirst("jar").orElseThrow(() -> new RuntimeException("jar tool not found"));
         writeFile("Foo.java",
                 """
                         public sealed interface Foo {
@@ -60,12 +61,11 @@ public class ValidateJarWithSealedAndRecord {
                         """
                         );
         com.sun.tools.javac.Main.compile(new String[]{"-d", "out", "Foo.java"});
-        jarTool.run(System.out, System.err, new String[] {"--create", "--file", "foo.jar", "-C", "out", "."});
+        JAR_TOOL.run(System.out, System.err, new String[] {"--create", "--file", "foo.jar", "-C", "out", "."});
         /* we need to create a fresh instance with clean options in other case the tool will
          * keep a copy of the options we just passed above
          */
-        jarTool = ToolProvider.findFirst("jar").orElseThrow(() -> new RuntimeException("jar tool not found"));
-        if (jarTool.run(System.out, System.err, new String[]{"--validate", "--file", "foo.jar"}) != 0) {
+        if (JAR_TOOL.run(System.out, System.err, new String[]{"--validate", "--file", "foo.jar"}) != 0) {
             throw new AssertionError("jar file couldn't be validated");
         }
     }

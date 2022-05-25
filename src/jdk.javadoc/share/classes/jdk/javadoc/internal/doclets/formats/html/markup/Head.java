@@ -43,11 +43,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  * An HTML {@code <head>} element.
  *
  * Many methods return the current object, to facilitate fluent builder-style usage.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class Head extends Content {
     private final Runtime.Version docletVersion;
@@ -73,7 +68,7 @@ public class Head extends Content {
     /**
      * Creates a {@code Head} object, for a given file and HTML version.
      * The file is used to help determine the relative paths to stylesheet and script files.
-     * The HTML version is used to determine the the appropriate form of a META element
+     * The HTML version is used to determine the appropriate form of a META element
      * recording the time the file was created.
      * The doclet version should also be provided for recording in the file.
      * @param path the path for the file that will include this HEAD element
