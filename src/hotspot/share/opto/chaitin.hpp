@@ -654,7 +654,8 @@ private:
   };
 
   void check_for_high_pressure_transition_at_fatproj(uint& block_reg_pressure, uint location, LRG& lrg, Pressure& pressure, const int op_regtype);
-  void add_input_to_liveout(Block* b, Node* n, IndexSet* liveout, double cost, Pressure& int_pressure, Pressure& float_pressure);
+  void add_input_to_liveout(Block *b, Node *n, IndexSet *liveout, double cost, Pressure &int_pressure,
+                            Pressure &float_pressure, IndexSet *pSet);
   void compute_initial_block_pressure(Block* b, IndexSet* liveout, Pressure& int_pressure, Pressure& float_pressure, double cost);
   bool remove_node_if_not_used(Block* b, uint location, Node* n, uint lid, IndexSet* liveout);
   void assign_high_score_to_immediate_copies(Block* b, Node* n, LRG& lrg, uint next_inst, uint last_inst);

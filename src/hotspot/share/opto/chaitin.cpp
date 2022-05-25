@@ -562,11 +562,11 @@ void PhaseChaitin::Register_Allocate() {
         for (j = 0; j < blocks.size() && blocks[j] != block; ++j) {
         }
         assert(j < blocks.size(), "");
-        if (block->_region != block->_loop->head()->_region) {
-          regions.at(block->_region).remove(j);
-          block->_region = 0;
-          regions.at(block->_region).push(block);
-        }
+//        if (block->_region != block->_loop->head()->_region) {
+//          regions.at(block->_region).remove(j);
+//          block->_region = 0;
+//          regions.at(block->_region).push(block);
+//        }
       }
 //        block->dump();
 //      if (block->_region == 0) {

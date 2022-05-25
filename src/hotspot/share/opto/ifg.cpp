@@ -793,7 +793,8 @@ void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG &lrg, 
  * dead.  This keeps the (useless) flag-setting behavior alive while also
  * keeping the (useful) memory update effect.
  */
-void PhaseChaitin::add_input_to_liveout(Block* b, Node* n, IndexSet* liveout, double cost, Pressure& int_pressure, Pressure& float_pressure) {
+void PhaseChaitin::add_input_to_liveout(Block *b, Node *n, IndexSet *liveout, double cost, Pressure &int_pressure,
+                                        Pressure &float_pressure, IndexSet *liveout2) {
   JVMState* jvms = n->jvms();
   uint debug_start = jvms ? jvms->debug_start() : 999999;
 
@@ -818,6 +819,9 @@ void PhaseChaitin::add_input_to_liveout(Block* b, Node* n, IndexSet* liveout, do
       raise_pressure(b, lrg, int_pressure, float_pressure);
       assert(int_pressure.current_pressure() == count_int_pressure(liveout), "the int pressure is incorrect");
       assert(float_pressure.current_pressure() == count_float_pressure(liveout), "the float pressure is incorrect");
+    }
+    if (!(n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit)) {
+      liveout2->insert(lid);
     }
     assert(lrg._area >= 0.0, "unexpected spill area value %g (rounding mode %x)", lrg._area, fegetround());
   }
@@ -885,6 +889,7 @@ uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List &blocks,
     // Clone (rather than smash in place) the liveout info, so it is alive
     // for the "collect_gc_info" phase later.
     IndexSet liveout(_live->live(block));
+    IndexSet liveout2(_live->live(block));
 
     uint first_inst = first_nonphi_index(block);
     uint last_inst = block->end_idx();
@@ -902,16 +907,20 @@ uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List &blocks,
 
     compute_initial_block_pressure(block, &liveout, int_pressure, float_pressure, cost);
 
+    bool exit = false;
+
     for (uint location = last_inst; location > 0; location--) {
       Node* n = block->get_node(location);
+      exit = exit || (n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit);
       uint lid = _lrg_map.live_range_id(n);
 
       if (lid) {
         LRG& lrg = lrgs(lid);
         if (lrg._region < region) {
           liveout.remove(lid);
+          liveout2.remove(lid);
           if (!n->is_Phi()) {
-            add_input_to_liveout(block, n, &liveout, cost, int_pressure, float_pressure);
+            add_input_to_liveout(block, n, &liveout, cost, int_pressure, float_pressure, &liveout2);
           }
           continue;
         }
@@ -944,10 +953,12 @@ uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List &blocks,
           if (liveout.remove(lid)) {
             lower_pressure(block, location, lrg, &liveout, int_pressure, float_pressure);
           }
+          liveout2.remove(lid);
           uint copy_idx = n->is_Copy();
           if (copy_idx) {
             uint lid_copy = _lrg_map.live_range_id(n->in(copy_idx));
             remove_interference_from_copy(block, location, lid_copy, &liveout, cost, int_pressure, float_pressure);
+            liveout2.remove(lid_copy);
           }
         }
 
@@ -965,7 +976,7 @@ uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List &blocks,
       cost = (inst_count <= 0) ? 0.0 : block->_freq * double(inst_count);
 
       if (!n->is_Phi()) {
-        add_input_to_liveout(block, n, &liveout, cost, int_pressure, float_pressure);
+        add_input_to_liveout(block, n, &liveout, cost, int_pressure, float_pressure, &liveout2);
       }
     }
 
@@ -1026,14 +1037,26 @@ uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List &blocks,
       }
     }
 
+
     IndexSetIterator elements(_live->live(block));
     uint datum;
     while ((datum = elements.next()) != 0) {
-      if (liveout.member(datum)) {
+      if (liveout2.member(datum)) {
         lrgs(datum)._region2 = MIN2(lrgs(datum)._region2, block->_region);
       }
     }
-
+#ifdef ASSERT
+    if (!exit) {
+      IndexSetIterator it1(&liveout);
+      while ((datum = it1.next()) != 0) {
+        assert(liveout2.member(datum), "");
+      }
+      IndexSetIterator it2(&liveout2);
+      while ((datum = it2.next()) != 0) {
+        assert(liveout.member(datum), "");
+      }
+    }
+#endif
 #ifndef PRODUCT
     // Gather Register Pressure Statistics
     if (PrintOptoStatistics) {
