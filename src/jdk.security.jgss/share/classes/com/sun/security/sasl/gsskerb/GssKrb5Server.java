@@ -135,7 +135,7 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
      *
      * The client sends response data to which the server must
      * process using GSS_accept_sec_context.
-     * As per RFC 2222, the GSS authenication completes (GSS_S_COMPLETE)
+     * As per RFC 2222, the GSS authentication completes (GSS_S_COMPLETE)
      * we do an extra hand shake to determine the negotiated security protection
      * and buffer sizes.
      *

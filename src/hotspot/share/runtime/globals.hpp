@@ -686,6 +686,14 @@ const intx ObjectAlignmentInBytes = 8;
                "Disable the use of stack guard pages if the JVM is loaded " \
                "on the primordial process thread")                          \
                                                                             \
+  product(bool, PostVirtualThreadCompatibleLifecycleEvents, true, EXPERIMENTAL, \
+               "Post virtual thread ThreadStart and ThreadEnd events for "  \
+               "virtual thread unaware agents")                             \
+                                                                            \
+  product(bool, DoJVMTIVirtualThreadTransitions, true, EXPERIMENTAL,        \
+               "Do JVMTI virtual thread mount/unmount transitions "         \
+               "(disabling this flag implies no JVMTI events are posted)")  \
+                                                                            \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
   product(intx, AsyncDeflationInterval, 250, DIAGNOSTIC,                    \
@@ -964,9 +972,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UsePopCountInstruction, false,                              \
           "Use population count instruction")                               \
-                                                                            \
-  develop(bool, EagerInitialization, false,                                 \
-          "Eagerly initialize classes if possible")                         \
                                                                             \
   product(bool, LogTouchedMethods, false, DIAGNOSTIC,                       \
           "Log methods which have been ever touched in runtime")            \
@@ -1286,10 +1291,11 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, DebugDeoptimization, false,                                 \
           "Tracing various information while debugging deoptimization")     \
                                                                             \
-  product(intx, SelfDestructTimer, 0,                                       \
-          "Will cause VM to terminate after a given time (in minutes) "     \
-          "(0 means off)")                                                  \
-          range(0, max_intx)                                                \
+  product(double, SelfDestructTimer, 0.0,                                   \
+          "Will cause VM to terminate after a given time "                  \
+          "(in fractional minutes) "                                        \
+          "(0.0 means off)")                                                \
+          range(0.0, (double)max_intx)                                      \
                                                                             \
   product(intx, MaxJavaStackTraceDepth, 1024,                               \
           "The maximum number of lines in the stack trace for Java "        \
@@ -1833,6 +1839,9 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, ShowHiddenFrames, false, DIAGNOSTIC,                        \
           "show method handle implementation frames (usually hidden)")      \
                                                                             \
+  product(bool, ShowCarrierFrames, false, DIAGNOSTIC,                       \
+          "show virtual threads' carrier frames in exceptions")             \
+                                                                            \
   product(bool, TrustFinalNonStaticFields, false, EXPERIMENTAL,             \
           "trust final non-static declarations for constant folding")       \
                                                                             \
@@ -1990,6 +1999,23 @@ const intx ObjectAlignmentInBytes = 8;
   product(ccstr, AllocateHeapAt, NULL,                                      \
           "Path to the directory where a temporary file will be created "   \
           "to use as the backing store for Java Heap.")                     \
+                                                                            \
+  develop(bool, LoomDeoptAfterThaw, false,                                  \
+          "Deopt stack after thaw")                                         \
+                                                                            \
+  develop(bool, LoomVerifyAfterThaw, false,                                 \
+          "Verify stack after thaw")                                        \
+                                                                            \
+  develop(bool, VerifyContinuations, false,                                 \
+          "Verify continuation consistency")                                \
+                                                                            \
+  develop(bool, UseContinuationFastPath, true,                              \
+          "Use fast-path frame walking in continuations")                   \
+                                                                            \
+  product(intx, ExtentLocalCacheSize, 16,                                   \
+          "Size of the cache for scoped values")                            \
+           range(0, max_intx)                                               \
+           constraint(ExtentLocalCacheSizeConstraintFunc, AtParse)          \
                                                                             \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
                "Run periodic metaspace verifications (0 - none, "           \

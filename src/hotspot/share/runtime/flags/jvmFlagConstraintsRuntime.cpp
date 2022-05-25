@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,18 @@ JVMFlag::Error VMPageSizeConstraintFunc(uintx value, bool verbose) {
                         JVMFlagLimit::last_checked_flag()->type_string(),
                         JVMFlagLimit::last_checked_flag()->name(),
                         value, min, max_uintx);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  return JVMFlag::SUCCESS;
+}
+
+JVMFlag::Error ExtentLocalCacheSizeConstraintFunc(intx value, bool verbose) {
+  if (!is_power_of_2(value)) {
+    JVMFlag::printError(verbose,
+                        "ExtentLocalCacheSize (" INTX_FORMAT ") must be "
+                        "power of 2\n",
+                        value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 

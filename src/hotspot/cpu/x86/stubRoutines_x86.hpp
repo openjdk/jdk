@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@
 static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
 
 enum platform_dependent_constants {
-  code_size1 = 20000 LP64_ONLY(+10000),         // simply increase if too small (assembler will crash if too small)
-  code_size2 = 35300 LP64_ONLY(+35000)          // simply increase if too small (assembler will crash if too small)
+  code_size1 = 20000 LP64_ONLY(+10000),                    // simply increase if too small (assembler will crash if too small)
+  code_size2 = 35300 LP64_ONLY(+35000) WINDOWS_ONLY(+2048) // simply increase if too small (assembler will crash if too small)
 };
 
 class x86 {

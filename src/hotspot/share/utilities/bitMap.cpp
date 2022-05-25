@@ -232,10 +232,10 @@ void BitMap::par_put_range_within_word(idx_t beg, idx_t end, bool value) {
   // With a valid range (beg <= end), this test ensures that end != 0, as
   // required by inverted_bit_mask_for_range.  Also avoids an unnecessary write.
   if (beg != end) {
-    bm_word_t* pw = word_addr(beg);
-    bm_word_t  w  = *pw;
-    bm_word_t  mr = inverted_bit_mask_for_range(beg, end);
-    bm_word_t  nw = value ? (w | ~mr) : (w & mr);
+    volatile bm_word_t* pw = word_addr(beg);
+    bm_word_t w = Atomic::load(pw);
+    bm_word_t mr = inverted_bit_mask_for_range(beg, end);
+    bm_word_t nw = value ? (w | ~mr) : (w & mr);
     while (true) {
       bm_word_t res = Atomic::cmpxchg(pw, w, nw);
       if (res == w) break;
@@ -343,7 +343,7 @@ void BitMap::at_put(idx_t offset, bool value) {
 // if no other thread is executing an action to
 // change the requested bit to a state other than
 // the one that this thread is trying to set it to,
-// then the the bit is in the expected state
+// then the bit is in the expected state
 // at exit from this method. However, rather than
 // make such a strong assertion here, based on
 // assuming such constrained use (which though true

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test id=default_gc
+ * @enablePreview
  * @bug 8277602
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @library /test/lib
@@ -39,18 +40,15 @@
  *   TestUpcallDeopt
  */
 
-import jdk.incubator.foreign.Addressable;
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.NativeSymbol;
-import jdk.incubator.foreign.SymbolLookup;
-import jdk.incubator.foreign.MemoryAddress;
+import java.lang.foreign.Addressable;
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemorySession;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.ref.Reference;
 
-import jdk.incubator.foreign.ResourceScope;
 import sun.hotspot.WhiteBox;
 
 import static java.lang.invoke.MethodHandles.lookup;
@@ -58,7 +56,7 @@ import static java.lang.invoke.MethodHandles.lookup;
 public class TestUpcallDeopt extends NativeTestHelper {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
 
-    static final CLinker linker = CLinker.systemCLinker();
+    static final Linker linker = Linker.nativeLinker();
 
     static final MethodHandle MH_foo;
     static final MethodHandle MH_m;
@@ -66,9 +64,8 @@ public class TestUpcallDeopt extends NativeTestHelper {
     static {
         try {
             System.loadLibrary("UpcallDeopt");
-            SymbolLookup lookup = SymbolLookup.loaderLookup();
             MH_foo = linker.downcallHandle(
-                    lookup.lookup("foo").orElseThrow(),
+                    findNativeOrThrow("foo"),
                     FunctionDescriptor.ofVoid(C_POINTER, C_INT, C_INT, C_INT, C_INT));
             MH_m = lookup().findStatic(TestUpcallDeopt.class, "m",
                     MethodType.methodType(void.class, int.class, int.class, int.class, int.class));
@@ -82,8 +79,8 @@ public class TestUpcallDeopt extends NativeTestHelper {
     // we need to deoptimize through an uncommon trap in the callee of the optimized upcall stub
     // that is created when calling upcallStub below
     public static void main(String[] args) throws Throwable {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            NativeSymbol stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(C_INT, C_INT, C_INT, C_INT), scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            Addressable stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(C_INT, C_INT, C_INT, C_INT), session);
             armed = false;
             for (int i = 0; i < 20_000; i++) {
                 payload(stub); // warmup
@@ -94,7 +91,7 @@ public class TestUpcallDeopt extends NativeTestHelper {
         }
     }
 
-    static void payload(NativeSymbol cb) throws Throwable {
+    static void payload(Addressable cb) throws Throwable {
         MH_foo.invokeExact((Addressable) cb, 0, 1, 2, 3);
         Reference.reachabilityFence(cb); // keep oop alive across call
     }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng TestLayouts
  */
 
-import jdk.incubator.foreign.*;
+import java.lang.foreign.*;
 
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
@@ -35,10 +36,10 @@ import java.util.stream.Stream;
 
 import org.testng.annotations.*;
 
-import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
-import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
-import static jdk.incubator.foreign.ValueLayout.JAVA_LONG;
-import static jdk.incubator.foreign.ValueLayout.JAVA_SHORT;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static org.testng.Assert.*;
 
 public class TestLayouts {
@@ -49,63 +50,10 @@ public class TestLayouts {
     }
 
     @Test
-    public void testVLAInStruct() {
-        MemoryLayout layout = MemoryLayout.structLayout(
-                ValueLayout.JAVA_INT.withName("size"),
-                MemoryLayout.paddingLayout(32),
-                MemoryLayout.sequenceLayout(ValueLayout.JAVA_DOUBLE).withName("arr"));
-        assertFalse(layout.hasSize());
-        VarHandle size_handle = layout.varHandle(MemoryLayout.PathElement.groupElement("size"));
-        VarHandle array_elem_handle = layout.varHandle(
-                MemoryLayout.PathElement.groupElement("arr"),
-                MemoryLayout.PathElement.sequenceElement());
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(
-                    layout.map(l -> ((SequenceLayout)l).withElementCount(4), MemoryLayout.PathElement.groupElement("arr")), scope);
-            size_handle.set(segment, 4);
-            for (int i = 0 ; i < 4 ; i++) {
-                array_elem_handle.set(segment, i, (double)i);
-            }
-            //check
-            assertEquals(4, (int)size_handle.get(segment));
-            for (int i = 0 ; i < 4 ; i++) {
-                assertEquals((double)i, (double)array_elem_handle.get(segment, i));
-            }
-        }
-    }
-
-    @Test
-    public void testVLAInSequence() {
-        MemoryLayout layout = MemoryLayout.structLayout(
-                ValueLayout.JAVA_INT.withName("size"),
-                MemoryLayout.paddingLayout(32),
-                MemoryLayout.sequenceLayout(1, MemoryLayout.sequenceLayout(ValueLayout.JAVA_DOUBLE)).withName("arr"));
-        assertFalse(layout.hasSize());
-        VarHandle size_handle = layout.varHandle(MemoryLayout.PathElement.groupElement("size"));
-        VarHandle array_elem_handle = layout.varHandle(
-                MemoryLayout.PathElement.groupElement("arr"),
-                MemoryLayout.PathElement.sequenceElement(0),
-                MemoryLayout.PathElement.sequenceElement());
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(
-                    layout.map(l -> ((SequenceLayout)l).withElementCount(4), MemoryLayout.PathElement.groupElement("arr"), MemoryLayout.PathElement.sequenceElement()), scope);
-            size_handle.set(segment, 4);
-            for (int i = 0 ; i < 4 ; i++) {
-                array_elem_handle.set(segment, i, (double)i);
-            }
-            //check
-            assertEquals(4, (int)size_handle.get(segment));
-            for (int i = 0 ; i < 4 ; i++) {
-                assertEquals((double)i, (double)array_elem_handle.get(segment, i));
-            }
-        }
-    }
-
-    @Test
     public void testIndexedSequencePath() {
         MemoryLayout seq = MemoryLayout.sequenceLayout(10, ValueLayout.JAVA_INT);
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(seq, scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(seq, session);
             VarHandle indexHandle = seq.varHandle(MemoryLayout.PathElement.sequenceElement());
             // init segment
             for (int i = 0 ; i < 10 ; i++) {
@@ -119,32 +67,6 @@ public class TestLayouts {
                 assertEquals(expected, found);
             }
         }
-    }
-
-    @Test(dataProvider = "unboundLayouts", expectedExceptions = UnsupportedOperationException.class)
-    public void testUnboundSize(MemoryLayout layout, long align) {
-        layout.bitSize();
-    }
-
-    @Test(dataProvider = "unboundLayouts")
-    public void testUnboundAlignment(MemoryLayout layout, long align) {
-        assertEquals(align, layout.bitAlignment());
-    }
-
-    @Test(dataProvider = "unboundLayouts")
-    public void testUnboundEquals(MemoryLayout layout, long align) {
-        assertTrue(layout.equals(layout));
-    }
-
-    @Test(dataProvider = "unboundLayouts")
-    public void testUnboundHash(MemoryLayout layout, long align) {
-        layout.hashCode();
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testBadUnboundSequenceLayoutResize() {
-        SequenceLayout seq = MemoryLayout.sequenceLayout(ValueLayout.JAVA_INT);
-        seq.withElementCount(-1);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -174,7 +96,7 @@ public class TestLayouts {
                 ValueLayout.JAVA_LONG
         );
         assertEquals(struct.byteSize(), 1 + 1 + 2 + 4 + 8);
-        assertEquals(struct.byteAlignment(), ValueLayout.ADDRESS.byteAlignment());
+        assertEquals(struct.byteAlignment(), 8);
     }
 
     @Test(dataProvider="basicLayouts")
@@ -205,7 +127,38 @@ public class TestLayouts {
                 ValueLayout.JAVA_LONG
         );
         assertEquals(struct.byteSize(), 8);
-        assertEquals(struct.byteAlignment(), ValueLayout.ADDRESS.byteAlignment());
+        assertEquals(struct.byteAlignment(), 8);
+    }
+
+    @Test
+    public void testSequenceBadCount() {
+        assertThrows(IllegalArgumentException.class, // negative
+                () -> MemoryLayout.sequenceLayout(-2, JAVA_SHORT));
+    }
+
+    @Test(dataProvider = "basicLayouts")
+    public void testSequenceInferredCount(MemoryLayout layout) {
+        assertEquals(MemoryLayout.sequenceLayout(-1, layout),
+                     MemoryLayout.sequenceLayout(Long.MAX_VALUE / layout.bitSize(), layout));
+    }
+
+    @Test
+    public void testSequenceOverflow() {
+        assertThrows(IllegalArgumentException.class, // negative
+                () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_SHORT));
+        assertThrows(IllegalArgumentException.class, // flip back to positive
+                () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE/3, JAVA_LONG));
+    }
+
+    @Test
+    public void testStructOverflow() {
+        assertThrows(IllegalArgumentException.class, // negative
+                () -> MemoryLayout.structLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE),
+                                                MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE)));
+        assertThrows(IllegalArgumentException.class, // flip back to positive
+                () -> MemoryLayout.structLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE),
+                                                MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE),
+                                                MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE)));
     }
 
     @Test(dataProvider = "layoutKinds")
@@ -222,22 +175,6 @@ public class TestLayouts {
                 assertEquals(layout.withBitAlignment(a).toString().contains("%"), a != bitAlign);
             }
         }
-    }
-
-    @DataProvider(name = "unboundLayouts")
-    public Object[][] unboundLayouts() {
-        ValueLayout alignedInt = JAVA_INT.withBitAlignment(32);
-        return new Object[][] {
-                { MemoryLayout.sequenceLayout(alignedInt), 32 },
-                { MemoryLayout.sequenceLayout(MemoryLayout.sequenceLayout(alignedInt)), 32 },
-                { MemoryLayout.sequenceLayout(4, MemoryLayout.sequenceLayout(alignedInt)), 32 },
-                { MemoryLayout.structLayout(MemoryLayout.sequenceLayout(alignedInt)), 32 },
-                { MemoryLayout.structLayout(MemoryLayout.sequenceLayout(MemoryLayout.sequenceLayout(alignedInt))), 32 },
-                { MemoryLayout.structLayout(MemoryLayout.sequenceLayout(4, MemoryLayout.sequenceLayout(alignedInt))), 32 },
-                { MemoryLayout.unionLayout(MemoryLayout.sequenceLayout(alignedInt)), 32 },
-                { MemoryLayout.unionLayout(MemoryLayout.sequenceLayout(MemoryLayout.sequenceLayout(alignedInt))), 32 },
-                { MemoryLayout.unionLayout(MemoryLayout.sequenceLayout(4, MemoryLayout.sequenceLayout(alignedInt))), 32 },
-        };
     }
 
     @DataProvider(name = "badAlignments")

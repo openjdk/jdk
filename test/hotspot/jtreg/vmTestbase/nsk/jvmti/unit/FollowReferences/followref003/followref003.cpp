@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -810,7 +810,7 @@ jint JNICALL heapReferenceCallback(
             }
             break;
 
-        case JVMTI_HEAP_REFERENCE_ARRAY_ELEMENT:
+        // case JVMTI_REFERENCE_ARRAY_ELEMENT:
         case JVMTI_HEAP_REFERENCE_JNI_GLOBAL:
         case JVMTI_HEAP_REFERENCE_SYSTEM_CLASS:
         case JVMTI_HEAP_REFERENCE_MONITOR:

@@ -48,12 +48,14 @@ import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.layout.LayoutFactory.SerialAlignment;
 import org.netbeans.api.visual.model.ObjectState;
+import org.netbeans.api.visual.widget.ImageWidget;
 import org.netbeans.api.visual.widget.LabelWidget;
 import org.netbeans.api.visual.widget.Widget;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.nodes.Sheet;
+import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 
 /**
@@ -73,6 +75,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
     private boolean boundary;
     private final Node node;
     private Widget dummyTop;
+    private static final Image warningSign = ImageUtilities.loadImage("com/sun/hotspot/igv/view/images/warning.png");
 
     public void setBoundary(boolean b) {
         boundary = b;
@@ -123,19 +126,36 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         dummyTop.setMinimumSize(new Dimension(Figure.INSET / 2, 1 + extraTopHeight));
         middleWidget.addChild(dummyTop);
 
+        // This widget includes the node text and possibly a warning sign to the right.
+        Widget nodeInfoWidget = new Widget(scene);
+        nodeInfoWidget.setLayout(LayoutFactory.createAbsoluteLayout());
+        middleWidget.addChild(nodeInfoWidget);
+
+        Widget textWidget = new Widget(scene);
+        textWidget.setLayout(LayoutFactory.createVerticalFlowLayout(textAlign, 0));
+        nodeInfoWidget.addChild(textWidget);
+
         String[] strings = figure.getLines();
         labelWidgets = new ArrayList<>(strings.length);
 
         for (String displayString : strings) {
             LabelWidget lw = new LabelWidget(scene);
             labelWidgets.add(lw);
-            middleWidget.addChild(lw);
+            textWidget.addChild(lw);
             lw.setLabel(displayString);
             lw.setFont(figure.getDiagram().getFont());
             lw.setForeground(getTextColor());
             lw.setAlignment(LabelWidget.Alignment.CENTER);
             lw.setVerticalAlignment(LabelWidget.VerticalAlignment.CENTER);
             lw.setBorder(BorderFactory.createEmptyBorder());
+        }
+
+        if (getFigure().getWarning() != null) {
+            ImageWidget warningWidget = new ImageWidget(scene, warningSign);
+            Point warningLocation = new Point(getFigure().getWidth() - Figure.WARNING_WIDTH - Figure.INSET / 2, 0);
+            warningWidget.setPreferredLocation(warningLocation);
+            warningWidget.setToolTipText(getFigure().getWarning());
+            nodeInfoWidget.addChild(warningWidget);
         }
 
         Widget dummyBottom = new Widget(scene);

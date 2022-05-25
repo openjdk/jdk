@@ -135,6 +135,9 @@ class CompilerOracle : AllStatic {
   // Tells whether we want to disallow inlining of this method
   static bool should_not_inline(const methodHandle& method);
 
+  // Tells whether this method changes Thread.currentThread()
+  static bool changes_current_thread(const methodHandle& method);
+
   // Tells whether we should print the assembly for this method
   static bool should_print(const methodHandle& method);
 

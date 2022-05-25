@@ -3125,7 +3125,7 @@ public final class Class<T> implements java.io.Serializable,
         }
         // check package access on the proxy interfaces
         if (checkProxyInterfaces && Proxy.isProxyClass(this)) {
-            ReflectUtil.checkProxyPackageAccess(ccl, this.getInterfaces());
+            ReflectUtil.checkProxyPackageAccess(ccl, this.getInterfaces(/* cloneArray */ false));
         }
     }
 
@@ -3373,7 +3373,7 @@ public final class Class<T> implements java.io.Serializable,
         addAll(fields, privateGetDeclaredFields(true));
 
         // Direct superinterfaces, recursively
-        for (Class<?> si : getInterfaces()) {
+        for (Class<?> si : getInterfaces(/* cloneArray */ false)) {
             addAll(fields, si.privateGetPublicFields());
         }
 

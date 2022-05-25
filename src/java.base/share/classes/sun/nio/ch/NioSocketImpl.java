@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.nio.ch;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.lang.ref.Cleaner.Cleanable;
@@ -50,6 +51,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
+import jdk.internal.access.JavaIOFileDescriptorAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
@@ -64,13 +67,11 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * NIO based SocketImpl.
  *
- * The underlying socket used by this SocketImpl is initially configured
- * blocking. If the connect method is used to establish a connection with a
- * timeout then the socket is configured non-blocking for the connect attempt,
- * and then restored to blocking mode when the connection is established.
- * If the accept or read methods are used with a timeout then the socket is
- * configured non-blocking and is never restored. When in non-blocking mode,
- * operations that don't complete immediately will poll the socket and preserve
+ * The underlying socket used by this SocketImpl is initially configured blocking.
+ * If a connect, accept or read is attempted with a timeout, or a virtual
+ * thread invokes a blocking operation, then the socket is changed to non-blocking
+ * When in non-blocking mode, operations that don't complete immediately will
+ * poll the socket (or park when invoked on a virtual thread) and preserve
  * the semantics of blocking operations.
  */
 
@@ -163,19 +164,27 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     }
 
     /**
-     * Disables the current thread for scheduling purposes until the socket is
-     * ready for I/O, or is asynchronously closed, for up to the specified
-     * waiting time.
+     * Disables the current thread for scheduling purposes until the
+     * socket is ready for I/O or is asynchronously closed, for up to the
+     * specified waiting time.
      * @throws IOException if an I/O error occurs
      */
     private void park(FileDescriptor fd, int event, long nanos) throws IOException {
-        long millis;
-        if (nanos == 0) {
-            millis = -1;
+        Thread t = Thread.currentThread();
+        if (t.isVirtual()) {
+            Poller.poll(fdVal(fd), event, nanos, this::isOpen);
+            if (t.isInterrupted()) {
+                throw new InterruptedIOException();
+            }
         } else {
-            millis = NANOSECONDS.toMillis(nanos);
+            long millis;
+            if (nanos == 0) {
+                millis = -1;
+            } else {
+                millis = NANOSECONDS.toMillis(nanos);
+            }
+            Net.poll(fd, event, millis);
         }
-        Net.poll(fd, event, millis);
     }
 
     /**
@@ -188,34 +197,18 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
     }
 
     /**
-     * Configures the socket to blocking mode. This method is a no-op if the
-     * socket is already in blocking mode.
-     * @throws IOException if closed or there is an I/O error changing the mode
+     * Ensures that the socket is configured non-blocking invoked on a virtual
+     * thread or the operation has a timeout
+     * @throws IOException if there is an I/O error changing the blocking mode
      */
-    private void configureBlocking(FileDescriptor fd) throws IOException {
-        assert readLock.isHeldByCurrentThread();
-        if (nonBlocking) {
-            synchronized (stateLock) {
-                ensureOpen();
-                IOUtil.configureBlocking(fd, true);
-                nonBlocking = false;
-            }
-        }
-    }
-
-    /**
-     * Configures the socket to non-blocking mode. This method is a no-op if the
-     * socket is already in non-blocking mode.
-     * @throws IOException if closed or there is an I/O error changing the mode
-     */
-    private void configureNonBlocking(FileDescriptor fd) throws IOException {
-        assert readLock.isHeldByCurrentThread();
-        if (!nonBlocking) {
-            synchronized (stateLock) {
-                ensureOpen();
-                IOUtil.configureBlocking(fd, false);
-                nonBlocking = true;
-            }
+    private void configureNonBlockingIfNeeded(FileDescriptor fd, boolean timed)
+        throws IOException
+    {
+        if (!nonBlocking
+            && (timed || Thread.currentThread().isVirtual())) {
+            assert readLock.isHeldByCurrentThread() || writeLock.isHeldByCurrentThread();
+            IOUtil.configureBlocking(fd, false);
+            nonBlocking = true;
         }
     }
 
@@ -300,9 +293,9 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             if (isInputClosed)
                 return -1;
             int timeout = this.timeout;
+            configureNonBlockingIfNeeded(fd, timeout > 0);
             if (timeout > 0) {
                 // read with timeout
-                configureNonBlocking(fd);
                 n = timedRead(fd, b, off, len, MILLISECONDS.toNanos(timeout));
             } else {
                 // read, no timeout
@@ -313,7 +306,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 }
             }
             return n;
-        } catch (SocketTimeoutException e) {
+        } catch (InterruptedIOException e) {
             throw e;
         } catch (ConnectionResetException e) {
             connectionReset = true;
@@ -407,12 +400,15 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         int n = 0;
         FileDescriptor fd = beginWrite();
         try {
+            configureNonBlockingIfNeeded(fd, false);
             n = tryWrite(fd, b, off, len);
             while (IOStatus.okayToRetry(n) && isOpen()) {
                 park(fd, Net.POLLOUT);
                 n = tryWrite(fd, b, off, len);
             }
             return n;
+        } catch (InterruptedIOException e) {
+            throw e;
         } catch (IOException ioe) {
             throw new SocketException(ioe.getMessage());
         } finally {
@@ -576,12 +572,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 boolean connected = false;
                 FileDescriptor fd = beginConnect(address, port);
                 try {
-
-                    // configure socket to non-blocking mode when there is a timeout
-                    if (millis > 0) {
-                        configureNonBlocking(fd);
-                    }
-
+                    configureNonBlockingIfNeeded(fd, millis > 0);
                     int n = Net.connect(fd, address, port);
                     if (n > 0) {
                         // connection established
@@ -602,12 +593,6 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                             connected = polled && isOpen();
                         }
                     }
-
-                    // restore socket to blocking mode
-                    if (connected && millis > 0) {
-                        configureBlocking(fd);
-                    }
-
                 } finally {
                     endConnect(fd, connected);
                 }
@@ -616,7 +601,11 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             }
         } catch (IOException ioe) {
             close();
-            throw SocketExceptions.of(ioe, isa);
+            if (ioe instanceof InterruptedIOException) {
+                throw ioe;
+            } else {
+                throw SocketExceptions.of(ioe, isa);
+            }
         }
     }
 
@@ -743,9 +732,9 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             int n = 0;
             FileDescriptor fd = beginAccept();
             try {
+                configureNonBlockingIfNeeded(fd, remainingNanos > 0);
                 if (remainingNanos > 0) {
                     // accept with timeout
-                    configureNonBlocking(fd);
                     n = timedAccept(fd, newfd, isaa, remainingNanos);
                 } else {
                     // accept, no timeout
@@ -887,27 +876,37 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 this.state = ST_CLOSED;
                 return;
             }
+            boolean connected = (state == ST_CONNECTED);
             this.state = ST_CLOSING;
 
             // shutdown output when linger interval not set to 0
-            try {
-                var SO_LINGER = StandardSocketOptions.SO_LINGER;
-                if ((int) Net.getSocketOption(fd, SO_LINGER) != 0) {
-                    Net.shutdown(fd, Net.SHUT_WR);
-                }
-            } catch (IOException ignore) { }
+            if (connected) {
+                try {
+                    var SO_LINGER = StandardSocketOptions.SO_LINGER;
+                    if ((int) Net.getSocketOption(fd, SO_LINGER) != 0) {
+                        Net.shutdown(fd, Net.SHUT_WR);
+                    }
+                } catch (IOException ignore) { }
+            }
 
             // attempt to close the socket. If there are I/O operations in progress
             // then the socket is pre-closed and the thread(s) signalled. The
             // last thread will close the file descriptor.
             if (!tryClose()) {
-                nd.preClose(fd);
                 long reader = readerThread;
-                if (reader != 0)
-                    NativeThread.signal(reader);
                 long writer = writerThread;
-                if (writer != 0)
-                    NativeThread.signal(writer);
+                if (NativeThread.isVirtualThread(reader)
+                        || NativeThread.isVirtualThread(writer)) {
+                    Poller.stopPoll(fdVal(fd));
+                }
+                if (NativeThread.isNativeThread(reader)
+                        || NativeThread.isNativeThread(writer)) {
+                    nd.preClose(fd);
+                    if (NativeThread.isNativeThread(reader))
+                        NativeThread.signal(reader);
+                    if (NativeThread.isNativeThread(writer))
+                        NativeThread.signal(writer);
+                }
             }
         }
     }
@@ -1148,6 +1147,9 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             ensureOpenAndConnected();
             if (!isInputClosed) {
                 Net.shutdown(fd, Net.SHUT_RD);
+                if (NativeThread.isVirtualThread(readerThread)) {
+                    Poller.stopPoll(fdVal(fd), Net.POLLIN);
+                }
                 isInputClosed = true;
             }
         }
@@ -1159,6 +1161,9 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             ensureOpenAndConnected();
             if (!isOutputClosed) {
                 Net.shutdown(fd, Net.SHUT_WR);
+                if (NativeThread.isVirtualThread(writerThread)) {
+                    Poller.stopPoll(fdVal(fd), Net.POLLOUT);
+                }
                 isOutputClosed = true;
             }
         }
@@ -1176,6 +1181,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             int n = 0;
             FileDescriptor fd = beginWrite();
             try {
+                configureNonBlockingIfNeeded(fd, false);
                 do {
                     n = Net.sendOOB(fd, (byte) data);
                 } while (n == IOStatus.INTERRUPTED && isOpen());
@@ -1253,4 +1259,13 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             return StandardProtocolFamily.INET;
         }
     }
+
+    /**
+     * Return the file descriptor value.
+     */
+    private static int fdVal(FileDescriptor fd) {
+        return JIOFDA.get(fd);
+    }
+
+    private static final JavaIOFileDescriptorAccess JIOFDA = SharedSecrets.getJavaIOFileDescriptorAccess();
 }

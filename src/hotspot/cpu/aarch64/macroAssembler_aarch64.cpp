@@ -30,6 +30,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "ci/ciEnv.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -46,6 +47,7 @@
 #include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -296,21 +298,66 @@ address MacroAssembler::target_addr_for_insn_or_null(address insn_addr, unsigned
   return MacroAssembler::target_addr_for_insn(insn_addr, insn);
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod) {
+void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp) {
   if (acquire) {
-    lea(rscratch1, Address(rthread, JavaThread::polling_word_offset()));
-    ldar(rscratch1, rscratch1);
+    lea(tmp, Address(rthread, JavaThread::polling_word_offset()));
+    ldar(tmp, tmp);
   } else {
-    ldr(rscratch1, Address(rthread, JavaThread::polling_word_offset()));
+    ldr(tmp, Address(rthread, JavaThread::polling_word_offset()));
   }
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
     // we may safely use the sp instead to perform the stack watermark check.
-    cmp(in_nmethod ? sp : rfp, rscratch1);
+    cmp(in_nmethod ? sp : rfp, tmp);
     br(Assembler::HI, slow_path);
   } else {
-    tbnz(rscratch1, log2i_exact(SafepointMechanism::poll_bit()), slow_path);
+    tbnz(tmp, log2i_exact(SafepointMechanism::poll_bit()), slow_path);
   }
+}
+
+void MacroAssembler::rt_call(address dest, Register tmp) {
+  CodeBlob *cb = CodeCache::find_blob(dest);
+  if (cb) {
+    far_call(RuntimeAddress(dest));
+  } else {
+    lea(tmp, RuntimeAddress(dest));
+    blr(tmp);
+  }
+}
+
+void MacroAssembler::push_cont_fastpath(Register java_thread) {
+  if (!Continuations::enabled()) return;
+  Label done;
+  ldr(rscratch1, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  cmp(sp, rscratch1);
+  br(Assembler::LS, done);
+  mov(rscratch1, sp); // we can't use sp as the source in str
+  str(rscratch1, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  bind(done);
+}
+
+void MacroAssembler::pop_cont_fastpath(Register java_thread) {
+  if (!Continuations::enabled()) return;
+  Label done;
+  ldr(rscratch1, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  cmp(sp, rscratch1);
+  br(Assembler::LO, done);
+  str(zr, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  bind(done);
+}
+
+void MacroAssembler::inc_held_monitor_count(Register java_thread) {
+  if (!Continuations::enabled()) return;
+  incrementw(Address(java_thread, JavaThread::held_monitor_count_offset()));
+}
+
+void MacroAssembler::dec_held_monitor_count(Register java_thread) {
+  if (!Continuations::enabled()) return;
+  decrementw(Address(java_thread, JavaThread::held_monitor_count_offset()));
+}
+
+void MacroAssembler::reset_held_monitor_count(Register java_thread) {
+  strw(zr, Address(java_thread, JavaThread::held_monitor_count_offset()));
 }
 
 void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
@@ -403,6 +450,9 @@ void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
+  assert(entry.rspec().type() == relocInfo::external_word_type
+         || entry.rspec().type() == relocInfo::runtime_call_type
+         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   if (target_needs_far_branch(entry.target())) {
     uint64_t offset;
     // We can use ADRP here because we know that the total size of
@@ -421,6 +471,9 @@ int MacroAssembler::far_jump(Address entry, CodeBuffer *cbuf, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
+  assert(entry.rspec().type() == relocInfo::external_word_type
+         || entry.rspec().type() == relocInfo::runtime_call_type
+         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   address start = pc();
   if (target_needs_far_branch(entry.target())) {
     uint64_t offset;
@@ -560,9 +613,7 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
 
 // Maybe emit a call via a trampoline.  If the code cache is small
 // trampolines won't be emitted.
-
-address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
-  assert(JavaThread::current()->is_Compiler_thread(), "just checking");
+address MacroAssembler::trampoline_call1(Address entry, CodeBuffer* cbuf, bool check_emit_size) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::opt_virtual_call_type
          || entry.rspec().type() == relocInfo::static_call_type
@@ -572,12 +623,14 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
   if (far_branches()) {
     bool in_scratch_emit_size = false;
 #ifdef COMPILER2
-    // We don't want to emit a trampoline if C2 is generating dummy
-    // code during its branch shortening phase.
-    CompileTask* task = ciEnv::current()->task();
-    in_scratch_emit_size =
-      (task != NULL && is_c2_compile(task->comp_level()) &&
-       Compile::current()->output()->in_scratch_emit_size());
+    if (check_emit_size) {
+      // We don't want to emit a trampoline if C2 is generating dummy
+      // code during its branch shortening phase.
+      CompileTask* task = ciEnv::current()->task();
+      in_scratch_emit_size =
+        (task != NULL && is_c2_compile(task->comp_level()) &&
+         Compile::current()->output()->in_scratch_emit_size());
+    }
 #endif
     if (!in_scratch_emit_size) {
       address stub = emit_trampoline_stub(offset(), entry.target());
@@ -782,6 +835,15 @@ void MacroAssembler::get_vm_result_2(Register metadata_result, Register java_thr
 
 void MacroAssembler::align(int modulus) {
   while (offset() % modulus != 0) nop();
+}
+
+void MacroAssembler::post_call_nop() {
+  if (!Continuations::enabled()) {
+    return;
+  }
+  InstructionMark im(this);
+  relocate(post_call_nop_Relocation::spec());
+  nop();
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler
@@ -2158,7 +2220,7 @@ void MacroAssembler::resolve_jobject(Register value, Register thread, Register t
   cbz(value, done);           // Use NULL as-is.
 
   STATIC_ASSERT(JNIHandles::weak_tag_mask == 1u);
-  tbz(r0, 0, not_weak);    // Test for jweak tag.
+  tbz(value, 0, not_weak);    // Test for jweak tag.
 
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, value,
@@ -2190,13 +2252,24 @@ void MacroAssembler::unimplemented(const char* what) {
   stop(buf);
 }
 
+void MacroAssembler::_assert_asm(Assembler::Condition cc, const char* msg) {
+#ifdef ASSERT
+  Label OK;
+  br(cc, OK);
+  stop(msg);
+  bind(OK);
+#endif
+}
+
 // If a constant does not fit in an immediate field, generate some
 // number of MOV instructions and then perform the operation.
-void MacroAssembler::wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned imm,
+void MacroAssembler::wrap_add_sub_imm_insn(Register Rd, Register Rn, uint64_t imm,
                                            add_sub_imm_insn insn1,
-                                           add_sub_reg_insn insn2) {
+                                           add_sub_reg_insn insn2,
+                                           bool is32) {
   assert(Rd != zr, "Rd = zr and not setting flags?");
-  if (operand_valid_for_add_sub_immediate((int)imm)) {
+  bool fits = operand_valid_for_add_sub_immediate(is32 ? (int32_t)imm : imm);
+  if (fits) {
     (this->*insn1)(Rd, Rn, imm);
   } else {
     if (uabs(imm) < (1 << 24)) {
@@ -2204,7 +2277,7 @@ void MacroAssembler::wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned im
        (this->*insn1)(Rd, Rd, imm & ((1 << 12)-1));
     } else {
        assert_different_registers(Rd, Rn);
-       mov(Rd, (uint64_t)imm);
+       mov(Rd, imm);
        (this->*insn2)(Rd, Rn, Rd, LSL, 0);
     }
   }
@@ -2212,15 +2285,17 @@ void MacroAssembler::wrap_add_sub_imm_insn(Register Rd, Register Rn, unsigned im
 
 // Separate vsn which sets the flags. Optimisations are more restricted
 // because we must set the flags correctly.
-void MacroAssembler::wrap_adds_subs_imm_insn(Register Rd, Register Rn, unsigned imm,
-                                           add_sub_imm_insn insn1,
-                                           add_sub_reg_insn insn2) {
-  if (operand_valid_for_add_sub_immediate((int)imm)) {
+void MacroAssembler::wrap_adds_subs_imm_insn(Register Rd, Register Rn, uint64_t imm,
+                                             add_sub_imm_insn insn1,
+                                             add_sub_reg_insn insn2,
+                                             bool is32) {
+  bool fits = operand_valid_for_add_sub_immediate(is32 ? (int32_t)imm : imm);
+  if (fits) {
     (this->*insn1)(Rd, Rn, imm);
   } else {
     assert_different_registers(Rd, Rn);
     assert(Rd != zr, "overflow in immediate operand");
-    mov(Rd, (uint64_t)imm);
+    mov(Rd, imm);
     (this->*insn2)(Rd, Rn, Rd, LSL, 0);
   }
 }
@@ -4142,7 +4217,8 @@ void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
   // nmethod entry barrier necessitate using the constant pool. They have to be
   // ordered with respected to oop accesses.
   // Using immediate literals would necessitate ISBs.
-  if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL || !immediate) {
+  BarrierSet* bs = BarrierSet::barrier_set();
+  if ((bs->barrier_set_nmethod() != NULL && !bs->barrier_set_assembler()->nmethod_code_patching()) || !immediate) {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ldr_constant(dst, Address(dummy, rspec));
   } else
@@ -4756,7 +4832,6 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
       address tpc = trampoline_call(zero_blocks);
       if (tpc == NULL) {
         DEBUG_ONLY(reset_labels(around));
-        assert(false, "failed to allocate space for trampoline");
         return NULL;
       }
     } else {
@@ -4790,10 +4865,11 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
 // cnt:          Immediate count in HeapWords.
 //
 // r10, r11, rscratch1, and rscratch2 are clobbered.
-void MacroAssembler::zero_words(Register base, uint64_t cnt)
+address MacroAssembler::zero_words(Register base, uint64_t cnt)
 {
-  guarantee(zero_words_block_size < BlockZeroingLowLimit,
+  assert(wordSize <= BlockZeroingLowLimit,
             "increase BlockZeroingLowLimit");
+  address result = nullptr;
   if (cnt <= (uint64_t)BlockZeroingLowLimit / BytesPerWord) {
 #ifndef PRODUCT
     {
@@ -4827,10 +4903,12 @@ void MacroAssembler::zero_words(Register base, uint64_t cnt)
       stp(zr, zr, Address(base, i * wordSize));
     }
     BLOCK_COMMENT("} zero_words");
+    result = pc();
   } else {
     mov(r10, base); mov(r11, cnt);
-    zero_words(r10, r11);
+    result = zero_words(r10, r11);
   }
+  return result;
 }
 
 // Zero blocks of memory by using DC ZVA.
@@ -5276,13 +5354,13 @@ void MacroAssembler::cache_wbsync(bool is_pre) {
   }
 }
 
-void MacroAssembler::verify_sve_vector_length() {
+void MacroAssembler::verify_sve_vector_length(Register tmp) {
   // Make sure that native code does not change SVE vector length.
   if (!UseSVE) return;
   Label verify_ok;
-  movw(rscratch1, zr);
-  sve_inc(rscratch1, B);
-  subsw(zr, rscratch1, VM_Version::get_initial_sve_vector_length());
+  movw(tmp, zr);
+  sve_inc(tmp, B);
+  subsw(zr, tmp, VM_Version::get_initial_sve_vector_length());
   br(EQ, verify_ok);
   stop("Error: SVE vector length has changed since jvm startup");
   bind(verify_ok);
@@ -5442,3 +5520,177 @@ void MacroAssembler::check_return_address(Register return_reg) {
   }
 }
 #endif
+
+// The java_calling_convention describes stack locations as ideal slots on
+// a frame with no abi restrictions. Since we must observe abi restrictions
+// (like the placement of the register window) the slots must be biased by
+// the following value.
+static int reg2offset_in(VMReg r) {
+  // Account for saved rfp and lr
+  // This should really be in_preserve_stack_slots
+  return (r->reg2stack() + 4) * VMRegImpl::stack_slot_size;
+}
+
+static int reg2offset_out(VMReg r) {
+  return (r->reg2stack() + SharedRuntime::out_preserve_stack_slots()) * VMRegImpl::stack_slot_size;
+}
+
+// On 64bit we will store integer like items to the stack as
+// 64bits items (AArch64 ABI) even though java would only store
+// 32bits for a parameter. On 32bit it will simply be 32bits
+// So this routine will do 32->32 on 32bit and 32->64 on 64bit
+void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst, Register tmp) {
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      // stack to stack
+      ldr(tmp, Address(rfp, reg2offset_in(src.first())));
+      str(tmp, Address(sp, reg2offset_out(dst.first())));
+    } else {
+      // stack to reg
+      ldrsw(dst.first()->as_Register(), Address(rfp, reg2offset_in(src.first())));
+    }
+  } else if (dst.first()->is_stack()) {
+    // reg to stack
+    str(src.first()->as_Register(), Address(sp, reg2offset_out(dst.first())));
+  } else {
+    if (dst.first() != src.first()) {
+      sxtw(dst.first()->as_Register(), src.first()->as_Register());
+    }
+  }
+}
+
+// An oop arg. Must pass a handle not the oop itself
+void MacroAssembler::object_move(
+                        OopMap* map,
+                        int oop_handle_offset,
+                        int framesize_in_slots,
+                        VMRegPair src,
+                        VMRegPair dst,
+                        bool is_receiver,
+                        int* receiver_offset) {
+
+  // must pass a handle. First figure out the location we use as a handle
+
+  Register rHandle = dst.first()->is_stack() ? rscratch2 : dst.first()->as_Register();
+
+  // See if oop is NULL if it is we need no handle
+
+  if (src.first()->is_stack()) {
+
+    // Oop is already on the stack as an argument
+    int offset_in_older_frame = src.first()->reg2stack() + SharedRuntime::out_preserve_stack_slots();
+    map->set_oop(VMRegImpl::stack2reg(offset_in_older_frame + framesize_in_slots));
+    if (is_receiver) {
+      *receiver_offset = (offset_in_older_frame + framesize_in_slots) * VMRegImpl::stack_slot_size;
+    }
+
+    ldr(rscratch1, Address(rfp, reg2offset_in(src.first())));
+    lea(rHandle, Address(rfp, reg2offset_in(src.first())));
+    // conditionally move a NULL
+    cmp(rscratch1, zr);
+    csel(rHandle, zr, rHandle, Assembler::EQ);
+  } else {
+
+    // Oop is in an a register we must store it to the space we reserve
+    // on the stack for oop_handles and pass a handle if oop is non-NULL
+
+    const Register rOop = src.first()->as_Register();
+    int oop_slot;
+    if (rOop == j_rarg0)
+      oop_slot = 0;
+    else if (rOop == j_rarg1)
+      oop_slot = 1;
+    else if (rOop == j_rarg2)
+      oop_slot = 2;
+    else if (rOop == j_rarg3)
+      oop_slot = 3;
+    else if (rOop == j_rarg4)
+      oop_slot = 4;
+    else if (rOop == j_rarg5)
+      oop_slot = 5;
+    else if (rOop == j_rarg6)
+      oop_slot = 6;
+    else {
+      assert(rOop == j_rarg7, "wrong register");
+      oop_slot = 7;
+    }
+
+    oop_slot = oop_slot * VMRegImpl::slots_per_word + oop_handle_offset;
+    int offset = oop_slot*VMRegImpl::stack_slot_size;
+
+    map->set_oop(VMRegImpl::stack2reg(oop_slot));
+    // Store oop in handle area, may be NULL
+    str(rOop, Address(sp, offset));
+    if (is_receiver) {
+      *receiver_offset = offset;
+    }
+
+    cmp(rOop, zr);
+    lea(rHandle, Address(sp, offset));
+    // conditionally move a NULL
+    csel(rHandle, zr, rHandle, Assembler::EQ);
+  }
+
+  // If arg is on the stack then place it otherwise it is already in correct reg.
+  if (dst.first()->is_stack()) {
+    str(rHandle, Address(sp, reg2offset_out(dst.first())));
+  }
+}
+
+// A float arg may have to do float reg int reg conversion
+void MacroAssembler::float_move(VMRegPair src, VMRegPair dst, Register tmp) {
+ if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      ldrw(tmp, Address(rfp, reg2offset_in(src.first())));
+      strw(tmp, Address(sp, reg2offset_out(dst.first())));
+    } else {
+      ldrs(dst.first()->as_FloatRegister(), Address(rfp, reg2offset_in(src.first())));
+    }
+  } else if (src.first() != dst.first()) {
+    if (src.is_single_phys_reg() && dst.is_single_phys_reg())
+      fmovs(dst.first()->as_FloatRegister(), src.first()->as_FloatRegister());
+    else
+      strs(src.first()->as_FloatRegister(), Address(sp, reg2offset_out(dst.first())));
+  }
+}
+
+// A long move
+void MacroAssembler::long_move(VMRegPair src, VMRegPair dst, Register tmp) {
+  if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      // stack to stack
+      ldr(tmp, Address(rfp, reg2offset_in(src.first())));
+      str(tmp, Address(sp, reg2offset_out(dst.first())));
+    } else {
+      // stack to reg
+      ldr(dst.first()->as_Register(), Address(rfp, reg2offset_in(src.first())));
+    }
+  } else if (dst.first()->is_stack()) {
+    // reg to stack
+    // Do we really have to sign extend???
+    // __ movslq(src.first()->as_Register(), src.first()->as_Register());
+    str(src.first()->as_Register(), Address(sp, reg2offset_out(dst.first())));
+  } else {
+    if (dst.first() != src.first()) {
+      mov(dst.first()->as_Register(), src.first()->as_Register());
+    }
+  }
+}
+
+
+// A double move
+void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
+ if (src.first()->is_stack()) {
+    if (dst.first()->is_stack()) {
+      ldr(tmp, Address(rfp, reg2offset_in(src.first())));
+      str(tmp, Address(sp, reg2offset_out(dst.first())));
+    } else {
+      ldrd(dst.first()->as_FloatRegister(), Address(rfp, reg2offset_in(src.first())));
+    }
+  } else if (src.first() != dst.first()) {
+    if (src.is_single_phys_reg() && dst.is_single_phys_reg())
+      fmovd(dst.first()->as_FloatRegister(), src.first()->as_FloatRegister());
+    else
+      strd(src.first()->as_FloatRegister(), Address(sp, reg2offset_out(dst.first())));
+  }
+}
