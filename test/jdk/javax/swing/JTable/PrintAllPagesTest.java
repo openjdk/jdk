@@ -112,7 +112,6 @@ public class PrintAllPagesTest {
         f = new JFrame("Table test");
         f.add(scrollpane);
         f.setSize(1000, 800);
-        f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         f.setVisible(true);
     }
 }
