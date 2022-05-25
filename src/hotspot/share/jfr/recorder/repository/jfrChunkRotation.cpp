@@ -39,7 +39,7 @@ static jobject install_chunk_monitor(JavaThread* thread) {
   HandleMark hm(thread);
   static const char klass[] = "jdk/jfr/internal/JVM";
   static const char field[] = "FILE_DELTA_CHANGE";
-  static const char signature[] = "Ljdk/jfr/internal/FileDeltaChangeLockObject;";
+  static const char signature[] = "Ljava/lang/Object;";
   JavaValue result(T_OBJECT);
   JfrJavaArguments field_args(&result, klass, field, signature, thread);
   JfrJavaSupport::get_field_global_ref(&field_args, thread);
