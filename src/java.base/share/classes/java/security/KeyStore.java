@@ -986,7 +986,7 @@ public class KeyStore {
      * if no such property exists.
      * @see java.security.Security security properties
      */
-    public static String getDefaultType() {
+    public static final String getDefaultType() {
         @SuppressWarnings("removal")
         String kstype = AccessController.doPrivileged((PrivilegedAction<String>) () ->
             Security.getProperty(KEYSTORE_TYPE));

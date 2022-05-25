@@ -338,14 +338,14 @@ public abstract class Signature extends SignatureSpi {
                     debug.println("Delayed provider selection may not be "
                         + "available for algorithm " + s.getAlgorithm());
                 }
-                result = r;
+                result = Boolean.valueOf(r);
                 signatureInfo.put(className, result);
             } catch (Exception e) {
                 // something is wrong, assume not an SPI
                 return false;
             }
         }
-        return result;
+        return result.booleanValue();
     }
 
     /**

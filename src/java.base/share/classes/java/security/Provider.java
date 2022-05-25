@@ -2092,7 +2092,7 @@ public abstract class Provider extends Properties {
                     }
                 }
             }
-            return b;
+            return b.booleanValue();
         }
 
         // get the key class object of the specified name
@@ -2149,9 +2149,9 @@ public abstract class Provider extends Properties {
          */
         public String toString() {
             String aString = aliases.isEmpty()
-                ? "" : "\r\n  aliases: " + aliases;
+                ? "" : "\r\n  aliases: " + aliases.toString();
             String attrs = attributes.isEmpty()
-                ? "" : "\r\n  attributes: " + attributes;
+                ? "" : "\r\n  attributes: " + attributes.toString();
             return provider.getName() + ": " + type + "." + algorithm
                 + " -> " + className + aString + attrs + "\r\n";
         }

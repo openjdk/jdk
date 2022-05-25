@@ -139,6 +139,6 @@ public final class URICertStoreParameters implements CertStoreParameters {
      */
     @Override
     public String toString() {
-        return "URICertStoreParameters: " + uri;
+        return "URICertStoreParameters: " + uri.toString();
     }
 }
