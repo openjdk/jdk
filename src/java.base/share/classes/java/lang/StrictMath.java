@@ -1287,7 +1287,7 @@ public final class StrictMath {
     /**
      * Returns the value of the {@code long} argument,
      * throwing an exception if the value overflows the range
-     * [0, 2<sup>{@link Integer#SIZE}</sup>) an unsigned int.
+     * [0, 2<sup>{@link Integer#SIZE}</sup>) of an unsigned int.
      *
      * @param value the {@code long} value
      * @return the argument as an unsigned int
@@ -1302,7 +1302,7 @@ public final class StrictMath {
     /**
      * Returns the value of the {@code long} argument,
      * throwing an exception if the value overflows the range
-     * [0, 2<sup>{@link Short#SIZE}</sup>) an unsigned int.
+     * [0, 2<sup>{@link Short#SIZE}</sup>) of an unsigned short.
      *
      * @param value the {@code long} value
      * @return the argument as an unsigned short
@@ -1317,7 +1317,7 @@ public final class StrictMath {
     /**
      * Returns the value of the {@code long} argument,
      * throwing an exception if the value overflows the range
-     * [0, 2<sup>{@link Byte#SIZE}</sup>) an unsigned int.
+     * [0, 2<sup>{@link Byte#SIZE}</sup>) of an unsigned byte.
      *
      * @param value the {@code long} value
      * @return the argument as an unsigned byte
