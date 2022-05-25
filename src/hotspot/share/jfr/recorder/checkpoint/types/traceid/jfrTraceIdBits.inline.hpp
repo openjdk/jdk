@@ -96,12 +96,7 @@ inline jbyte traceid_xor(jbyte bits, jbyte current) {
 template <jbyte op(jbyte, jbyte)>
 inline void set_form(jbyte bits, jbyte* dest) {
   assert(dest != NULL, "invariant");
-
-PRAGMA_DIAG_PUSH
-PRAGMA_STRINGOP_OVERFLOW_IGNORED
   *dest = op(bits, *dest);
-PRAGMA_DIAG_POP
-
   OrderAccess::storestore();
 }
 
@@ -137,7 +132,15 @@ inline void set(jbyte bits, jbyte* dest) {
 template <typename T>
 inline void JfrTraceIdBits::store(jbyte bits, const T* ptr) {
   assert(ptr != NULL, "invariant");
+  // gcc12 warns "writing 1 byte into a region of size 0" when T == Klass.
+  // The warning seems to be a false positive.  And there is no warning for
+  // other types that use the same mechanisms.  The warning also sometimes
+  // goes away with minor code perturbations, such as replacing function calls
+  // with equivalent code directly inlined.
+  PRAGMA_DIAG_PUSH
+  PRAGMA_DISABLE_GCC_WARNING("-Wstringop-overflow")
   set(bits, traceid_tag_byte(ptr));
+  PRAGMA_DIAG_POP
 }
 
 template <typename T>
