@@ -334,7 +334,7 @@ class LambdaFormEditor {
         @Override
         public int hashCode() {
             if (packedBytes != 0) {
-                return Long.hashCode(packedBytes) ^ (int)(packedBytes >> 8);
+                return Long.hashCode(packedBytes);
             }
             return Arrays.hashCode(fullBytes);
         }
