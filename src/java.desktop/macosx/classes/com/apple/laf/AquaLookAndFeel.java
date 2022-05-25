@@ -386,10 +386,10 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final Color desktopBackgroundColor = new ColorUIResource(new Color(65, 105, 170));//SystemColor.desktop
 
         final Color focusRingColor = AquaImageFactory.getFocusRingColorUIResource();
-        final Border focusCellHighlightBorder = new BorderUIResource.LineBorderUIResource(focusRingColor);
-
-        // for table cell highlighter
+        // for table and list cell highlighter
         final Color cellFocusRingColor = AquaImageFactory.getCellHighlightColorUIResource();
+        final Border focusCellHighlightBorder = new BorderUIResource.LineBorderUIResource(
+                deriveProminentFocusRing(cellFocusRingColor), 2);
 
         final Color windowBackgroundColor = AquaImageFactory.getWindowBackgroundColorUIResource();
         final Color panelBackgroundColor = windowBackgroundColor;
@@ -449,6 +449,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Button.focusInputMap", controlFocusInputMap,
             "Button.margin", new InsetsUIResource(0, 2, 0, 2),
             "Button.opaque", buttonShouldBeOpaque,
+
+            "CellFocus.color", cellFocusRingColor,
 
             "CheckBox.background", controlBackgroundColor,
             "CheckBox.foreground", black,
@@ -892,9 +894,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Table.gridColor", white, // grid line color
             "Table.focusCellBackground", textHighlightText,
             "Table.focusCellForeground", textHighlight,
-            "Table.cellFocusRing", cellFocusRingColor,
-            "Table.focusCellHighlightBorder", new BorderUIResource.LineBorderUIResource(
-                    deriveProminentFocusRing(cellFocusRingColor), 2),
+            "Table.focusCellHighlightBorder", focusCellHighlightBorder,
             "Table.scrollPaneBorder", scollListBorder,
 
             "Table.ancestorInputMap", aquaKeyBindings.getTableInputMap(),
@@ -1144,18 +1144,18 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     static Color deriveProminentFocusRing(Color cellFocusRingColor) {
 
         // define constants
-        float satLowerValue = 0.30f;
-        float satUpperValue = 1.0f;
+        final float satLowerValue = 0.30f;
+        final float satUpperValue = 1.0f;
 
         // saturation threshold for grayish colors
-        float satGrayScale = 0.10f;
+        final float satGrayScale = 0.10f;
 
         // used to compare with saturation value of original focus ring and
         // set it to either lower or upper saturation value
-        float saturationThreshold = 0.5f;
+        final float saturationThreshold = 0.5f;
 
         // brightness always set to 100%
-        float brightnessValue = 1.0f;
+        final float brightnessValue = 1.0f;
 
         float[] hsbValues = new float[3];
 

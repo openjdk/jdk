@@ -43,14 +43,18 @@ import javax.swing.plaf.BorderUIResource;
 import javax.swing.plaf.UIResource;
 
 /**
- * This class is used by the text components, AquaEditorPaneUI, AquaTextAreaUI, AquaTextFieldUI and AquaTextPaneUI to control painting of the
- * component's border.  NOTE: It is assumed that this handler is added to components that extend JComponent.
+ * This class is used by the text components, AquaEditorPaneUI, AquaTextAreaUI,
+ * AquaTextFieldUI and AquaTextPaneUI to control painting of the component's
+ * border. NOTE: It is assumed that this handler is added to components
+ * that extend JComponent.
  */
 public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
-    // Flag to help focusGained() determine whether the origin focus loss was due to a temporary focus loss or not.
+    // Flag to help focusGained() determine whether the origin focus loss was
+    // due to a temporary focus loss or not.
     private boolean wasTemporary = false;
 
-    // Flag to track when a border needs a repaint due to a window becoming activate/inactive.
+    // Flag to track when a border needs a repaint due to a window becoming
+    // activate/inactive.
     private boolean repaintBorder = false;
 
     protected static final String FRAME_ACTIVE_PROPERTY = "Frame.active";
@@ -67,8 +71,8 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
 
     public void focusLost(final FocusEvent ev) {
         wasTemporary = ev.isTemporary();
-
-        // If we lost focus due to a permanent focus loss then repaint the border on the component.
+        // If we lost focus due to a permanent focus loss then repaint the
+        // border on the component.
         if (!wasTemporary) {
             AquaBorder.repaintBorder((JComponent)ev.getSource());
         }
@@ -78,20 +82,26 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         if (!FRAME_ACTIVE_PROPERTY.equals(ev.getPropertyName())) return;
 
         if (Boolean.TRUE.equals(ev.getNewValue())) {
-            // The FRAME_ACTIVE_PROPERTY change event is sent before a component gains focus.
-            // We set a flag to help the focusGained() determine when they should be repainting
-            // the components focus.
+            // The FRAME_ACTIVE_PROPERTY change event is sent before a component
+            // gains focus.We set a flag to help the focusGained() determine when
+            // they should be repainting the components focus.
+
+            // this call added to change focus ring color (for
+            // table and list) according to accent color changes.
+            changeFocusRingColor();
             repaintBorder = true;
         } else if (wasTemporary) {
-            // The FRAME_ACTIVE_PROPERTY change event is sent after a component loses focus.
-            // We use the wasTemporary flag to determine if we need to repaint the border.
+            // The FRAME_ACTIVE_PROPERTY change event is sent after a component
+            // loses focus. We use the wasTemporary flag to determine if we need
+            // to repaint the border.
             AquaBorder.repaintBorder((JComponent)ev.getSource());
         }
     }
 
     protected static boolean isActive(final JComponent c) {
         if (c == null) return true;
-        final Object activeObj = c.getClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY);
+        final Object activeObj = c.getClientProperty(
+                AquaFocusHandler.FRAME_ACTIVE_PROPERTY);
         if (Boolean.FALSE.equals(activeObj)) return false;
         return true;
     }
@@ -113,12 +123,15 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         c.removePropertyChangeListener(FRAME_ACTIVE_PROPERTY, REPAINT_LISTENER);
     }
 
-    static void swapSelectionColors(final String prefix, final JTree c, final Object value) {
-        // <rdar://problem/8166173> JTree: selection color does not dim when window becomes inactive
+    static void swapSelectionColors(final String prefix, final JTree c,
+                                    final Object value) {
+        // <rdar://problem/8166173> JTree: selection color does not dim when
+        // window becomes inactive
         // TODO inject our colors into the DefaultTreeCellRenderer
     }
 
-    static void swapSelectionColors(final String prefix, final JTable c, final Object value) {
+    static void swapSelectionColors(final String prefix, final JTable c,
+                                    final Object value) {
         if (!isComponentValid(c)) return;
 
         final Color bg = c.getSelectionBackground();
@@ -139,22 +152,14 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         }
     }
 
-    static void setSelectionColors(final JTable c, final String fgName, final String bgName) {
-
+    static void setSelectionColors(final JTable c, final String fgName,
+                                   final String bgName) {
         c.setSelectionForeground(UIManager.getColor(fgName));
         c.setSelectionBackground(UIManager.getColor(bgName));
-
-        // focus ring changes for on-the-fly accent color changes
-        Color prominentFocusRing = AquaLookAndFeel.deriveProminentFocusRing(
-                UIManager.getColor("Table.cellFocusRing"));
-        BorderUIResource.LineBorderUIResource focusCellHighlightBorder =
-                new BorderUIResource.LineBorderUIResource(prominentFocusRing, 2);
-        UIManager.getDefaults().put("Table.focusCellHighlightBorder",
-                focusCellHighlightBorder);
-
     }
 
-    static void swapSelectionColors(final String prefix, final JList<?> c, final Object value) {
+    static void swapSelectionColors(final String prefix, final JList<?> c,
+                                    final Object value) {
         if (!isComponentValid(c)) return;
 
         final Color bg = c.getSelectionBackground();
@@ -174,7 +179,8 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         }
     }
 
-    static void setSelectionColors(final JList<?> c, final String fgName, final String bgName) {
+    static void setSelectionColors(final JList<?> c, final String fgName,
+                                   final String bgName) {
         c.setSelectionForeground(UIManager.getColor(fgName));
         c.setSelectionBackground(UIManager.getColor(bgName));
     }
@@ -184,5 +190,22 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         final Window window = SwingUtilities.getWindowAncestor(c);
         if (window == null) return false;
         return true;
+    }
+
+    // focus ring changes for tables and list for
+    // on-the-fly accent color changes
+    private static void changeFocusRingColor() {
+        Color focusRingColor = UIManager.getColor("CellFocus.color");
+
+        if (focusRingColor != null) {
+            Color prominentFocusRing = AquaLookAndFeel.deriveProminentFocusRing(
+                    focusRingColor);
+            BorderUIResource.LineBorderUIResource focusCellHighlightBorder =
+                    new BorderUIResource.LineBorderUIResource(prominentFocusRing, 2);
+            UIManager.getDefaults().put("Table.focusCellHighlightBorder",
+                    focusCellHighlightBorder);
+            UIManager.getDefaults().put("List.focusCellHighlightBorder",
+                    focusCellHighlightBorder);
+        }
     }
 }
