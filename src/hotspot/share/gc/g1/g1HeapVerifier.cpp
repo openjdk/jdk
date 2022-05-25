@@ -498,7 +498,7 @@ void G1HeapVerifier::verify(VerifyOption vo) {
     LogStream ls(log.error());
     _g1h->print_extended_on(&ls);
 
-    guarantee(false, "there should not have been any failures");
+    fatal("there should not have been any failures");
   }
 }
 
