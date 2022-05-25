@@ -204,7 +204,7 @@ class LambdaFormEditor {
             return new TransformKey(fullBytes);
         }
         static TransformKey of(byte kind, int b1, int... b234) {
-            long packedBytes = packedBytes(kind, b234);
+            long packedBytes = packedBytes(kind, b1, b234);
             if (packedBytes != 0) {
                 return new TransformKey(packedBytes);
             }
