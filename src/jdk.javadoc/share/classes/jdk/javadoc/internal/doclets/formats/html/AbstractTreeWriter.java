@@ -91,6 +91,13 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
         }
     }
 
+    /**
+     * Adds a class or interface hierarchy with a given heading to given content.
+     *
+     * @param hierarchy the hierarchy to add
+     * @param heading   the heading
+     * @param content   the content to which to add the hierarchy
+     */
     protected void addTree(Hierarchy hierarchy, String heading, Content content) {
         SortedSet<TypeElement> roots = hierarchy.roots();
         if (!roots.isEmpty()) {

@@ -90,13 +90,21 @@ public class ClassTree {
         }
 
         /**
-         * {@return the subtypes of the given type element, or an empty set if there are none}
+         * {@return the immediate subtypes of the given type element, or an empty set if there are none}
          * @param typeElement the type element
          */
         public SortedSet<TypeElement> subtypes(TypeElement typeElement) {
             return subtypes.getOrDefault(typeElement, Collections.emptySortedSet());
         }
 
+        /**
+         * {@return the set of all subtypes of the given type element, or an empty set if there are none}
+         *
+         * The set of all subtypes is the transitive closure of the {@linkplain #subtypes() immediate subtypes}
+         * of the given type element.
+         *
+         * @param typeElement the type element
+         */
         public SortedSet<TypeElement> allSubtypes(TypeElement typeElement) {
             // new entries added to the collection are searched as well;
             // this is really a work queue.
@@ -118,6 +126,8 @@ public class ClassTree {
     /**
      * A map giving the subtypes for each of a collection of type elements.
      * The subtypes may be subclasses or subinterfaces, depending on the context.
+     *
+     * The subtypes are recorded by calling {@link SubtypeMap#addSubtype(TypeElement, TypeElement) addSubtype}.
      */
     @SuppressWarnings("serial")
     private static class SubtypeMap extends HashMap<TypeElement, SortedSet<TypeElement>> {
