@@ -90,7 +90,7 @@ public interface Member {
      * @implSpec
      * The default implementation returns an empty set.
      * @see #getModifiers()
-     * @since 19
+     * @since 20
      */
     public default Set<AccessFlag> accessFlags() {
         return Set.of();

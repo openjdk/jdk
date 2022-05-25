@@ -217,7 +217,7 @@ public class ModuleDescriptor
          * requires flags, possibly empty}}
          * @see #modifiers()
          * @jvms 4.7.25 The Module Attribute
-         * @since 19
+         * @since 20
          */
         public Set<AccessFlag> accessFlags() {
             int mask = 0;
@@ -451,7 +451,7 @@ public class ModuleDescriptor
          * export flags} for this module descriptor, possibly empty}
          * @see #modifiers()
          * @jvms 4.7.25 The Module Attribute
-         * @since 19
+         * @since 20
          */
         public Set<AccessFlag> accessFlags() {
             int mask = 0;
@@ -673,7 +673,7 @@ public class ModuleDescriptor
          * opens flags}, possibly empty}
          * @see #modifiers()
          * @jvms 4.7.25 The Module Attribute
-         * @since 19
+         * @since 20
          */
         public Set<AccessFlag> accessFlags() {
             int mask = 0;
@@ -1358,7 +1358,7 @@ public class ModuleDescriptor
      * module flags}, possibly empty}
      * @see #modifiers()
      * @jvms 4.7.25 The Module Attribute
-     * @since 19
+     * @since 20
      */
     public Set<AccessFlag> accessFlags() {
         int mask = 0;

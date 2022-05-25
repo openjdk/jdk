@@ -1323,7 +1323,7 @@ public final class Class<T> implements java.io.Serializable,
      * @see #getModifiers()
      * @jvms 4.1 The ClassFile Structure
      * @jvms 4.7.6 The InnerClasses Attribute
-     * @since 19
+     * @since 20
      */
     public Set<AccessFlag> accessFlags() {
         // This likely needs some refinement. Exploration of hidden

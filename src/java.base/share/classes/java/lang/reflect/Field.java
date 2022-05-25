@@ -216,7 +216,7 @@ class Field extends AccessibleObject implements Member {
      * access flags} for this field, possibly empty}
      * @see #getModifiers()
      * @jvms 4.5 Fields
-     * @since 19
+     * @since 20
      */
     @Override
     public Set<AccessFlag> accessFlags() {

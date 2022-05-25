@@ -221,7 +221,7 @@ public abstract sealed class Executable extends AccessibleObject
      *
      * @see #getModifiers()
      * @jvms 4.6 Methods
-     * @since 19
+     * @since 20
      */
     @Override
     public Set<AccessFlag> accessFlags() {

@@ -74,7 +74,7 @@ import static java.util.Map.entry;
  * @see java.lang.module.ModuleDescriptor.Exports.Modifier
  * @see java.lang.module.ModuleDescriptor.Opens.Modifier
  * @see java.compiler/javax.lang.model.element.Modifier
- * @since 19
+ * @since 20
  */
 @SuppressWarnings("doclint:reference") // cross-module link
 public enum AccessFlag {
@@ -327,7 +327,7 @@ public enum AccessFlag {
      * Note that since these locations represent class file structures
      * rather than language structures many language structures, such
      * as constructors and interfaces, are <em>not</em> present.
-     * @since 19
+     * @since 20
      */
     public enum Location {
         /**
