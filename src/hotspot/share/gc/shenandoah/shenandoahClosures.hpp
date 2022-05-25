@@ -149,16 +149,6 @@ public:
   inline void do_code_blob(CodeBlob* cb);
 };
 
-class ShenandoahNMethodClosure : public NMethodClosure {
-private:
-  BarrierSetNMethod* const _bs;
-  OopClosure* const _cl;
-
-public:
-  inline ShenandoahNMethodClosure(OopClosure* cl);
-  inline void do_nmethod(nmethod* nm);
-};
-
 #ifdef ASSERT
 class ShenandoahAssertNotForwardedClosure : public OopClosure {
 private:

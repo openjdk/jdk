@@ -238,27 +238,6 @@ void ShenandoahCodeBlobAndDisarmClosure::do_code_blob(CodeBlob* cb) {
   }
 }
 
-ShenandoahNMethodClosure::ShenandoahNMethodClosure(OopClosure* cl) :
-  _bs(BarrierSet::barrier_set()->barrier_set_nmethod()), _cl(cl) {
-}
-
-void ShenandoahNMethodClosure::do_nmethod(nmethod* nm) {
-  ShenandoahReentrantLocker locker(ShenandoahNMethod::lock_for_nmethod(nm));
-  if (!nm->is_alive()) {
-    return;
-  }
-
-  if (_bs->is_armed(nm)) {
-    ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
-    data->oops_do(_cl, false /* fix_relocations */);
-
-    // CodeCache sweeper support
-    nm->mark_as_maybe_on_continuation();
-
-    _bs->disarm(nm);
-  }
-}
-
 #ifdef ASSERT
 template <class T>
 void ShenandoahAssertNotForwardedClosure::do_oop_work(T* p) {
