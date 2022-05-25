@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -93,6 +94,15 @@ public class SnippetUtils {
      */
     public static class ConfigurationException extends Exception {
         public ConfigurationException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Exception used to report that a snippet could not be found.
+     */
+    public static class SnippetNotFoundException extends Exception {
+        public SnippetNotFoundException(String message) {
             super(message);
         }
     }
@@ -218,9 +228,11 @@ public class SnippetUtils {
      *
      * @param tree the doc comment tree
      * @param id   the id
+     *
+     * @throws SnippetNotFoundException if the snippet cannot be found
      */
-    public SnippetTree getSnippetById(DocCommentTree tree, String id) {
-        return new SnippetFinder().scan(tree, id);
+    public SnippetTree getSnippetById(DocCommentTree tree, String id) throws SnippetNotFoundException {
+        return requireNonNull(new SnippetFinder().scan(tree, id), () -> new SnippetNotFoundException(id));
     }
 
     /**
@@ -228,10 +240,29 @@ public class SnippetUtils {
      *
      * @param element the element
      * @param id      the id
+     *
+     * @throws SnippetNotFoundException if the snippet cannot be found
      */
-    public SnippetTree getSnippetById(Element element, String id) {
+    public SnippetTree getSnippetById(Element element, String id) throws SnippetNotFoundException {
         DocCommentTree tree = getDocCommentTree(element);
-        return new SnippetFinder().scan(tree, id);
+        return requireNonNull(new SnippetFinder().scan(tree, id), () -> new SnippetNotFoundException(id));
+    }
+
+    /**
+     * {@return an item if it is not {@code null}, or else throw an exception}
+     *
+     * @param t the item
+     * @param e a supplier for the exception that will be thrown if the item is null
+     * @param <T> the type of the item
+     * @param <E> the type of the exception that may be thrown
+     *
+     * @throws E if the item is {@code null}
+     */
+    private <T, E extends Exception> T requireNonNull(T t, Supplier<E> e) throws E {
+        if (t == null) {
+            throw e.get();
+        }
+        return t;
     }
 
     /**
