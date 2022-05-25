@@ -143,16 +143,16 @@ public class CgroupSubsystemFactory {
             }
             CgroupInfo info = CgroupInfo.fromCgroupsLine(line);
             switch (info.getName()) {
+            // Only the following controllers are important to Java. All
+            // other controllers (such as freezer) are ignored and
+            // are not considered in the checks below for
+            // anyCgroupsV1Controller/anyCgroupsV1Controller.
             case CPU_CTRL:      infos.put(CPU_CTRL, info); break;
             case CPUACCT_CTRL:  infos.put(CPUACCT_CTRL, info); break;
             case CPUSET_CTRL:   infos.put(CPUSET_CTRL, info); break;
             case MEMORY_CTRL:   infos.put(MEMORY_CTRL, info); break;
             case BLKIO_CTRL:    infos.put(BLKIO_CTRL, info); break;
             case PIDS_CTRL:     infos.put(PIDS_CTRL, info); break;
-            default:
-                // There are some controllers (such as freezer) that Java doesn't
-                // care about. Just ignore them. These are not considered in the
-                // anyCgroupsV1Controller/anyCgroupsV1Controller checks.
             }
         }
 
