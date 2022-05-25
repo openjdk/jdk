@@ -113,8 +113,9 @@ public:
 
   // Return the address corresponding to the previous marked bit at or before
   // "addr", and after or at "limit". If there is no such bit, returns nullptr.
-  // Uses the back scan skip table to speed up the process, which must be
-  // properly initialized.
+  // Uses the back scan skip table to speed up the process in case of large areas
+  // without marked objects. The back scan skip table is expected to be properly
+  // initialized.
   inline HeapWord* get_prev_marked_addr(HeapWord* limit,
                                         const HeapWord* addr) const;
 

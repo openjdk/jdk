@@ -27,11 +27,11 @@
 
 #include "gc/g1/g1ConcurrentMarkBitMap.hpp"
 
+#include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
-#include "gc/g1/g1ConcurrentRefine.hpp"
 
 inline void G1CMBackScanSkipTable::mark(HeapWord* const addr) {
   if (!get_by_address(addr)) {
@@ -76,15 +76,16 @@ inline HeapWord* G1CMBitMap::get_prev_marked_addr(HeapWord* const limit,
   const size_t BackSkipGranularity = _back_scan_skip_table.mapping_granularity();
   assert((uintptr_t)addr >= BackSkipGranularity, "must be");
 
-  // Scan at least half of the backskip size immediately before trying to use it
-  // as setup is a bit expensive and it is extremely likely that there is a marked
-  // object in close vicinity.
+  // Scan at least half of the backskip size immediately before trying to use the
+  // back scan skip table. It is extremely likely that there is a marked object
+  // in "close" vicinity.
   HeapWord* scan_until_directly = MAX2(limit,
                                        (HeapWord*)align_down((uintptr_t)addr - BackSkipGranularity / 2, BackSkipGranularity));
   HeapWord* result = _bitmap.get_prev_marked_addr(scan_until_directly, addr);
   if (result == nullptr) {
-    // No previous marked object found when scanning until scan_until_directly. If scan_until_directly
-    // is limit, then we are done - we could not find any mark in this region.
+    // No previous marked object found when scanning until scan_until_directly.
+    // If scan_until_directly is limit, then we are done - we could not find any
+    // mark in this region.
     if (scan_until_directly == limit) {
       return nullptr;
     }

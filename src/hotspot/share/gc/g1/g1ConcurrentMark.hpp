@@ -452,7 +452,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // True when Remark pause selected regions for rebuilding.
   bool _needs_remembered_set_rebuild;
 public:
-  void add_to_liveness(uint worker_id, oop const obj, size_t size);
+  // To be called when an object is marked the first time, e.g. after a successful
+  // mark_in_bitmap call. Updates various statistics data.
+  void new_obj_marked(uint worker_id, oop const obj, size_t size);
   // Live words in the given region as determined by concurrent marking, i.e. the amount of
   // live words between bottom and TAMS.
   size_t live_words(uint region) const { return _region_mark_stats[region]._live_words; }

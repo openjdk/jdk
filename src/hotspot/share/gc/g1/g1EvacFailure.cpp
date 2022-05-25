@@ -79,9 +79,9 @@ public:
 
     assert(_cm->is_marked_in_bitmap(obj), "should be correctly marked");
     if (_during_concurrent_start) {
-      // If the evacuation failure occurs during concurrent start we should add
-      // the liveness, because these marks will be kept.
-      _cm->add_to_liveness(_worker_id, obj, obj_size);
+      // If the evacuation failure occurs during concurrent start we should do
+      // any additional necessary per-object actions.
+      _cm->new_obj_marked(_worker_id, obj, obj_size);
     }
 
     _marked_words += obj_size;

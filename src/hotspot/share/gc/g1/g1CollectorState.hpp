@@ -64,8 +64,7 @@ class G1CollectorState {
   // of the concurrent start pause to the end of the Cleanup pause.
   bool _mark_or_rebuild_in_progress;
 
-  // The marking bitmap is currently being cleared or about to be cleared. TAMS and bitmap
-  // may be out of sync.
+  // The marking bitmap is currently being cleared or about to be cleared.
   bool _clearing_bitmap;
 
   // Set during a full gc pause.

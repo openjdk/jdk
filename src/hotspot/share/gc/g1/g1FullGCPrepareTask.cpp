@@ -139,7 +139,8 @@ bool G1FullGCPrepareTask::G1ResetMetadataClosure::do_heap_region(HeapRegion* hr)
       hr->update_bot();
     }
 
-    if (_collector->is_skip_compacting(region_idx)) {
+    if (_collector->is_skip_compacting(region_idx) &&
+        hr->needs_scrubbing_during_full_gc()) {
       scrub_skip_compacting_region(hr);
     }
   }
@@ -167,9 +168,7 @@ void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_compaction(Hea
 }
 
 void G1FullGCPrepareTask::G1ResetMetadataClosure::scrub_skip_compacting_region(HeapRegion* hr) {
-  if (!hr->needs_scrubbing_during_full_gc()) {
-    return;
-  }
+  assert(hr->needs_scrubbing_during_full_gc(), "must be");
 
   HeapWord* limit = hr->top();
   HeapWord* current_obj = hr->bottom();

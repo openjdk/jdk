@@ -274,7 +274,8 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
 void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start,
                                                     bool during_conc_mark) {
   // We always scrub the region to make sure the entire region is
-  // parsable after the removal, and update _marked_bytes.
+  // parsable after the self-forwarding point removal, and update _marked_bytes
+  // at the end.
   _marked_bytes = 0;
 
   if (during_concurrent_start) {

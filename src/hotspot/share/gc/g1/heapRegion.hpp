@@ -190,8 +190,7 @@ public:
   bool obj_is_scrubbed(oop obj) const;
 
   // Returns whether the given object is dead based on TAMS and mark word.
-  // For an object to be considered dead it must be below TAMS and be
-  // marked in the header.
+  // For an object to be considered dead it must be below TAMS and scrubbed.
   bool is_obj_dead(oop obj, HeapWord* pb) const;
   bool is_obj_dead_size_below_pb(oop obj, HeapWord* pb, size_t& block_size) const;
 
@@ -240,12 +239,12 @@ private:
   // have been allocated in this part since the last mark phase.
   HeapWord* _top_at_mark_start;
 
-  // The area above this limit is parsable using obj->size(). This limit
+  // The area above this limit is fully parsable. This limit
   // is equal to bottom except from Remark and until the region has been
-  // scrubbed concurrently. The scrubbing ensures
-  // that all dead objects (with possibly unloaded classes) have been
-  // replaced with dummy objects that are parsable. Below this limit the
-  // marking bitmap must be used to determine size and liveness.
+  // scrubbed concurrently. The scrubbing ensures that all dead objects (with
+  // possibly unloaded classes) have beenreplaced with filler objects that
+  // are parsable. Below this limit the marking bitmap must be used to
+  // determine size and liveness.
   HeapWord* volatile _parsable_bottom;
 
   // Amount of dead data in the region.
@@ -292,7 +291,6 @@ private:
   inline HeapWord* do_oops_on_memregion_in_humongous(MemRegion mr,
                                                      Closure* cl);
 
-  inline bool is_marked_in_bitmap(oop obj) const;
   inline HeapWord* next_live_in_unparsable(G1CMBitMap* bitmap, const HeapWord* p, HeapWord* limit) const;
   inline HeapWord* next_live_in_unparsable(const HeapWord* p, HeapWord* limit) const;
 
@@ -388,7 +386,7 @@ public:
   inline void note_end_of_scrubbing();
 
   // During the concurrent scrubbing phase, can there be any areas with unloaded
-  // classes in that region?
+  // classes in this region?
   // This set only includes old and open archive regions - humongous regions only
   // contain a single object which is either dead or live, contents of closed archive
   // regions never die (so is always contiguous), and young regions are never even

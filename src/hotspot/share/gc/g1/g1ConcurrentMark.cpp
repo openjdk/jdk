@@ -1182,23 +1182,16 @@ public:
 
 class G1UpdateRegionsAfterRebuild : public HeapRegionClosure {
   G1CollectedHeap* _g1h;
-  bool _remsets_rebuilt;
 
 public:
-  G1UpdateRegionsAfterRebuild(G1CollectedHeap* g1h, bool remsets_rebuilt) :
-    _g1h(g1h),
-    _remsets_rebuilt(remsets_rebuilt) {
-    if (!_remsets_rebuilt) {
-      log_debug(gc, phases)("No Remembered Sets to update after rebuild");
-    }
+  G1UpdateRegionsAfterRebuild(G1CollectedHeap* g1h) :
+    _g1h(g1h) {
   }
 
   virtual bool do_heap_region(HeapRegion* r) {
     // Update the remset tracking state from updating to complete
     // if remembered sets have been rebuilt.
-    if (_remsets_rebuilt) {
-      _g1h->policy()->remset_tracker()->update_after_rebuild(r);
-    }
+    _g1h->policy()->remset_tracker()->update_after_rebuild(r);
     return false;
   }
 };
@@ -1432,12 +1425,14 @@ void G1ConcurrentMark::cleanup() {
 
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption::G1UseConcMarking, "Cleanup before");
 
-  {
+  if (needs_remembered_set_rebuild()) {
     // Update the remset tracking information as well as marking all regions
     // as fully parsable.
     GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking After Rebuild", _gc_timer_cm);
-    G1UpdateRegionsAfterRebuild cl(_g1h, needs_remembered_set_rebuild());
+    G1UpdateRegionsAfterRebuild cl(_g1h);
     _g1h->heap_region_iterate(&cl);
+  } else {
+    log_debug(gc, phases)("No Remembered Set Tracking Update After Rebuild");
   }
 
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption::G1UseConcMarking, "Cleanup after");
@@ -1705,7 +1700,6 @@ void G1ConcurrentMark::preclean() {
                                      _gc_timer_cm);
 }
 
-// When sampling object counts, we see all objects not scrubbed as live.
 class G1ObjectCountIsAliveClosure: public BoolObjectClosure {
   G1CollectedHeap* _g1h;
 public:
@@ -1884,8 +1878,8 @@ G1ConcurrentMark::claim_region(uint worker_id) {
     HeapWord* res = Atomic::cmpxchg(&_finger, finger, end);
     if (res == finger && curr_region != NULL) {
       // we succeeded
-      HeapWord*   bottom        = curr_region->bottom();
-      HeapWord*   limit         = curr_region->top_at_mark_start();
+      HeapWord* bottom = curr_region->bottom();
+      HeapWord* limit = curr_region->top_at_mark_start();
 
       // notice that _finger == end cannot be guaranteed here since,
       // someone else might have moved the finger even further
@@ -2109,9 +2103,9 @@ void G1CMTask::setup_for_region(HeapRegion* hr) {
 }
 
 void G1CMTask::update_region_limit() {
-  HeapRegion* hr            = _curr_region;
-  HeapWord* bottom          = hr->bottom();
-  HeapWord* limit           = hr->top_at_mark_start();
+  HeapRegion* hr = _curr_region;
+  HeapWord* bottom = hr->bottom();
+  HeapWord* limit = hr->top_at_mark_start();
 
   if (limit == bottom) {
     // The region was collected underneath our feet.

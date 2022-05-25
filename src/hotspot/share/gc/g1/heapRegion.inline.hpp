@@ -411,7 +411,7 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion m
     assert(cur <= start, "cur: " PTR_FORMAT ", start: " PTR_FORMAT, p2i(cur), p2i(start));
   } else {
     // We are during concurrent refinement, at this point the BOT is not stable from
-    // [bottom, pb) and we  need to get the object spanning into the memregion by searching
+    // [bottom, pb) and we need to get the object spanning into mr by searching
     // the bitmap.
     cur = block_start_using_bitmap(start, pb);
     // We may not find any live object spanning into or covering this region until pb. In
@@ -453,6 +453,11 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion m
   }
 }
 
+// Applies cl to all reference fields of live objects in mr in non-humongous regions.
+//
+// For performance, the strategy here is to divide the work into two parts: areas
+// below parsable_bottom (unparsable) and above parsable_bottom. The unparsable parts
+// use the bitmap to locate live objects.
 template <class Closure, bool is_gc_active>
 inline HeapWord* HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* cl) {
   // Cache the boundaries of the memory region in some const locals
@@ -519,8 +524,8 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
   assert(is_old() || is_archive(), "Wrongly trying to iterate over region %u type %s", _hrm_index, get_type_str());
 
   // Because mr has been trimmed to what's been allocated in this
-  // region, the parts of the heap that are examined here are always
-  // parsable; there's no need to use klass_or_null to detect
+  // region, the objects in these parts of the heap have non-NULL
+  // klass pointers. There's no need to use klass_or_null to detect
   // in-progress allocation.
   // We might be in the progress of scrubbing this region and in this
   // case there might be objects that have their classes unloaded and

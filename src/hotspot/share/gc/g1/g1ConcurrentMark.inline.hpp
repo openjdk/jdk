@@ -94,8 +94,7 @@ inline bool G1ConcurrentMark::mark_in_bitmap(uint const worker_id, HeapRegion* c
 
   bool success = _mark_bitmap.par_mark(obj);
   if (success) {
-    _mark_bitmap.update_back_skip_table(obj);
-    add_to_liveness(worker_id, obj, obj->size());
+    new_obj_marked(worker_id, obj, obj->size());
   }
   return success;
 }
@@ -224,8 +223,9 @@ inline void G1CMTask::update_liveness(oop const obj, const size_t obj_size) {
   _mark_stats_cache.add_live_words(_g1h->addr_to_region(cast_from_oop<HeapWord*>(obj)), obj_size);
 }
 
-inline void G1ConcurrentMark::add_to_liveness(uint worker_id, oop const obj, size_t size) {
+inline void G1ConcurrentMark::new_obj_marked(uint worker_id, oop const obj, size_t size) {
   task(worker_id)->update_liveness(obj, size);
+  _mark_bitmap.update_back_skip_table(obj);
 }
 
 inline void G1CMTask::abort_marking_if_regular_check_fail() {
