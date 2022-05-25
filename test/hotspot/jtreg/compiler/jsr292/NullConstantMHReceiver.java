@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8287223 
+ * @bug 8287223
  *
  * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*::test -XX:-TieredCompilation                         compiler.jsr292.NullConstantMHReceiver
  * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*::test -XX:+TieredCompilation -XX:TieredStopAtLevel=1 compiler.jsr292.NullConstantMHReceiver
