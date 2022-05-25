@@ -23,6 +23,8 @@
 /* @test
    @bug 4380543
    @requires (os.family == "windows")
+   @library /java/awt/regtesthelpers
+   @build PassFailJFrame
    @summary setMargin() does not work for AbstractButton
    @run main/manual bug4380543
 */
@@ -31,7 +33,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.FlowLayout;
 import java.awt.Insets;
 
 import javax.swing.BoxLayout;
@@ -40,110 +41,42 @@ import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class bug4380543 {
     static testFrame testObj;
-    static JFrame frame;
-    static final CountDownLatch latch = new CountDownLatch(1);
-    private static AtomicReference<Boolean> testResult = new AtomicReference<>(false);
+    static String instructions
+            = "INSTRUCTIONS:" +
+            "\n 1. This is a Windows specific test. If you are not on " +
+            "Windows, press Pass." +
+            "\n 2. Check if the Left insets(margins) is set visually " +
+            "similar to other three sides around Radio Button and CheckBox" +
+            "(insets set to 20 on all 4 sides)." +
+            "\n 3. If Left insets(margins) appear Empty, press Fail, " +
+            "else press Pass.";
+    static PassFailJFrame passFailJFrame;
 
     public static void main(String args[]) throws Exception {
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 try {
+                    passFailJFrame = new PassFailJFrame(instructions);
                     testObj = new testFrame();
-                    createUI();
+                    //Adding the Test Frame to handle dispose
+                    PassFailJFrame.addTestFrame(testObj);
+                    PassFailJFrame.positionTestFrame(testObj, PassFailJFrame.Position.HORIZONTAL);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         });
-
-        boolean status = latch.await(5, TimeUnit.MINUTES);
-
-        if (!status) {
-            System.out.println("Test timed out.");
-        }
-
-        onCompletion(testResult);
-
-    }
-
-    public static void createUI() throws Exception {
-        frame = new JFrame();
-        JPanel mainControlPanel = new JPanel(new BorderLayout());
-        JPanel resultButtonPanel = new JPanel(new FlowLayout());
-
-        JTextArea instructionTextArea = new JTextArea();
-
-        String instructions
-                = "INSTRUCTIONS:" +
-                "\n 1. This is a Windows specific test. If you are not on " +
-                "Windows, press Pass." +
-                "\n 2. Check if the Left insets(margins) is set visually " +
-                "similar to other three sides around Radio Button and CheckBox" +
-                "(insets set to 20 on all 4 sides)." +
-                "\n 3. If Left insets(margins) appear Empty, press Fail, " +
-                "else press Pass.";
-
-        instructionTextArea.setText(instructions);
-        instructionTextArea.setEnabled(false);
-        instructionTextArea.setDisabledTextColor(Color.black);
-        instructionTextArea.setBackground(Color.white);
-
-        mainControlPanel.add(instructionTextArea,BorderLayout.NORTH);
-        JButton passButton = new JButton("Pass");
-        passButton.setActionCommand("Pass");
-
-        passButton.addActionListener((ActionEvent e) -> {
-            testResult.set(true);
-            latch.countDown();
-        });
-
-        JButton failButton = new JButton("Fail");
-        failButton.setActionCommand("Fail");
-        failButton.addActionListener((ActionEvent e) -> {
-            testResult.set(false);
-            latch.countDown();
-        });
-
-        resultButtonPanel.add(passButton);
-        resultButtonPanel.add(failButton);
-        mainControlPanel.add(resultButtonPanel);
-        frame.getContentPane().add(mainControlPanel,BorderLayout.SOUTH);
-
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLocation(500,50);
-        frame.setSize(400, 150);
-        frame.pack();
-        frame.setVisible(true);
-
-        Thread.sleep(1000);
-    }
-
-    private static void disposeUI()
-    {
-        testObj.dispose();
-        frame.dispose();
-    }
-    private static void onCompletion(AtomicReference<Boolean> res)
-    {
-        disposeUI();
-        if (res.toString() == "false")
-        {
-            throw new RuntimeException("Test Failed");
-        }
+        passFailJFrame.awaitAndCheck();
     }
 }
 
@@ -154,9 +87,7 @@ class testFrame extends JFrame implements ActionListener {
     public testFrame() throws InterruptedException {
         initMap();
         initComponents();
-
     }
-
 
     public void initMap()
     {
@@ -171,10 +102,8 @@ class testFrame extends JFrame implements ActionListener {
             sMapKey = sMapKey.trim();
 
             lookAndFeelMaps.put(sMapKey, sLnF);
-
         }
     }
-
 
     public void initComponents() throws InterruptedException {
         JPanel p = new JPanel();
@@ -205,10 +134,8 @@ class testFrame extends JFrame implements ActionListener {
 
         getContentPane().add(p,BorderLayout.SOUTH);
 
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(500, 300);
         setVisible(true);
-        Thread.sleep(1000);
     }
 
     private static void setLookAndFeel(String laf) {
@@ -221,13 +148,12 @@ class testFrame extends JFrame implements ActionListener {
             throw new RuntimeException(e);
         }
     }
-
+    //Changing the Look and Feel on user selection
     public void actionPerformed(ActionEvent e) {
         String key = e.getActionCommand();
         String val = lookAndFeelMaps.get(key);
 
         setLookAndFeel(val);
         SwingUtilities.updateComponentTreeUI(this);
-
     }
 }
