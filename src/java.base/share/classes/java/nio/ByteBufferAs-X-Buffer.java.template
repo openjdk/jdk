@@ -27,8 +27,8 @@
 
 package java.nio;
 
+import java.lang.foreign.MemorySegment;
 import java.util.Objects;
-import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.misc.Unsafe;
 
 #if[rw]
@@ -49,7 +49,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
 #end[rw]
 
-    ByteBufferAs$Type$Buffer$RW$$BO$(ByteBuffer bb, MemorySegmentProxy segment) {   // package-private
+    ByteBufferAs$Type$Buffer$RW$$BO$(ByteBuffer bb, MemorySegment segment) {   // package-private
 #if[rw]
         super(-1, 0,
               bb.remaining() >> $LG_BYTES_PER_VALUE$,
@@ -68,7 +68,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
     ByteBufferAs$Type$Buffer$RW$$BO$(ByteBuffer bb,
                                      int mark, int pos, int lim, int cap,
-                                     long addr, MemorySegmentProxy segment)
+                                     long addr, MemorySegment segment)
     {
 #if[rw]
         super(mark, pos, lim, cap, segment);
@@ -138,13 +138,13 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     }
 
     public $type$ get() {
-        $memtype$ x = SCOPED_MEMORY_ACCESS.get$Memtype$Unaligned(scope(), bb.hb, byteOffset(nextGetIndex()),
+        $memtype$ x = SCOPED_MEMORY_ACCESS.get$Memtype$Unaligned(session(), bb.hb, byteOffset(nextGetIndex()),
             {#if[boB]?true:false});
         return $fromBits$(x);
     }
 
     public $type$ get(int i) {
-        $memtype$ x = SCOPED_MEMORY_ACCESS.get$Memtype$Unaligned(scope(), bb.hb, byteOffset(checkIndex(i)),
+        $memtype$ x = SCOPED_MEMORY_ACCESS.get$Memtype$Unaligned(session(), bb.hb, byteOffset(checkIndex(i)),
             {#if[boB]?true:false});
         return $fromBits$(x);
     }
@@ -162,7 +162,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     public $Type$Buffer put($type$ x) {
 #if[rw]
         $memtype$ y = $toBits$(x);
-        SCOPED_MEMORY_ACCESS.put$Memtype$Unaligned(scope(), bb.hb, byteOffset(nextPutIndex()), y,
+        SCOPED_MEMORY_ACCESS.put$Memtype$Unaligned(session(), bb.hb, byteOffset(nextPutIndex()), y,
             {#if[boB]?true:false});
         return this;
 #else[rw]
@@ -173,7 +173,7 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
     public $Type$Buffer put(int i, $type$ x) {
 #if[rw]
         $memtype$ y = $toBits$(x);
-        SCOPED_MEMORY_ACCESS.put$Memtype$Unaligned(scope(), bb.hb, byteOffset(checkIndex(i)), y,
+        SCOPED_MEMORY_ACCESS.put$Memtype$Unaligned(session(), bb.hb, byteOffset(checkIndex(i)), y,
             {#if[boB]?true:false});
         return this;
 #else[rw]

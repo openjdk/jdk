@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,9 +310,8 @@ public:
 // to prevent compiledVFrames from trying to add deferred updates
 // to the thread simultaneously.
 //
-class VM_GetOrSetLocal : public VM_Operation {
+class VM_BaseGetOrSetLocal : public VM_Operation {
  protected:
-  JavaThread* _thread;
   JavaThread* _calling_thread;
   jint        _depth;
   jint        _index;
@@ -321,7 +320,7 @@ class VM_GetOrSetLocal : public VM_Operation {
   javaVFrame* _jvf;
   bool        _set;
 
-  EscapeBarrier _eb;
+  static const jvalue _DEFAULT_VALUE;
 
   // It is possible to get the receiver out of a non-static native wrapper
   // frame.  Use VM_GetReceiver to do this.
@@ -329,10 +328,33 @@ class VM_GetOrSetLocal : public VM_Operation {
 
   jvmtiError  _result;
 
-  vframe* get_vframe();
-  javaVFrame* get_java_vframe();
+  virtual javaVFrame* get_java_vframe() = 0;
   bool check_slot_type_lvt(javaVFrame* vf);
   bool check_slot_type_no_lvt(javaVFrame* vf);
+
+public:
+  VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint depth, jint index,
+                       BasicType type, jvalue value, bool set);
+
+  jvalue value()         { return _value; }
+  jvmtiError result()    { return _result; }
+
+  void doit();
+  bool allow_nested_vm_operations() const;
+  virtual const char* name() const = 0;
+
+  // Check that the klass is assignable to a type with the given signature.
+  static bool is_assignable(const char* ty_sign, Klass* klass, Thread* thread);
+};
+
+
+class VM_GetOrSetLocal : public VM_BaseGetOrSetLocal {
+ protected:
+  JavaThread* _thread;
+  EscapeBarrier _eb;
+
+  vframe* get_vframe();
+  javaVFrame* get_java_vframe();
 
 public:
   // Constructor for non-object getter
@@ -346,16 +368,10 @@ public:
                    int index);
 
   VMOp_Type type() const { return VMOp_GetOrSetLocal; }
-  jvalue value()         { return _value; }
-  jvmtiError result()    { return _result; }
 
   bool doit_prologue();
-  void doit();
-  bool allow_nested_vm_operations() const;
-  const char* name() const                       { return "get/set locals"; }
 
-  // Check that the klass is assignable to a type with the given signature.
-  static bool is_assignable(const char* ty_sign, Klass* klass, Thread* thread);
+  const char* name() const                       { return "get/set locals"; }
 };
 
 class VM_GetReceiver : public VM_GetOrSetLocal {
@@ -365,6 +381,40 @@ class VM_GetReceiver : public VM_GetOrSetLocal {
  public:
   VM_GetReceiver(JavaThread* thread, JavaThread* calling_thread, jint depth);
   const char* name() const                       { return "get receiver"; }
+};
+
+// VM operation to get or set virtual thread local.
+class VM_VirtualThreadGetOrSetLocal : public VM_BaseGetOrSetLocal {
+ protected:
+  JvmtiEnv *_env;
+  Handle _vthread_h;
+
+  javaVFrame* get_java_vframe();
+
+public:
+  // Constructor for non-object getter.
+  VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth, jint index, BasicType type);
+
+  // Constructor for object or non-object setter.
+  VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth,
+                                jint index, BasicType type, jvalue value);
+
+  // Constructor for object getter.
+  VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, JavaThread* calling_thread,
+                                jint depth, int index);
+
+  VMOp_Type type() const { return VMOp_VirtualThreadGetOrSetLocal; }
+
+  const char* name() const                       { return "virtual thread get/set locals"; }
+};
+
+class VM_VirtualThreadGetReceiver : public VM_VirtualThreadGetOrSetLocal {
+ protected:
+  virtual bool getting_receiver() const { return true; }
+
+ public:
+  VM_VirtualThreadGetReceiver(JvmtiEnv* env, Handle vthread_h, JavaThread* calling_thread, jint depth);
+  const char* name() const                       { return "virtual thread get receiver"; }
 };
 
 

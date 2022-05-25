@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,18 @@
 
 /*
  * @test
+ * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestScopedOperations
  */
 
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.NativeSymbol;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SegmentAllocator;
-import jdk.incubator.foreign.VaList;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.VaList;
+import java.lang.foreign.ValueLayout;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -42,15 +42,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
-import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
-import static jdk.incubator.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
@@ -72,9 +73,9 @@ public class TestScopedOperations {
 
     @Test(dataProvider = "scopedOperations")
     public <Z> void testOpAfterClose(String name, ScopedOperation<Z> scopedOperation) {
-        ResourceScope scope = ResourceScope.newConfinedScope();
-        Z obj = scopedOperation.apply(scope);
-        scope.close();
+        MemorySession session = MemorySession.openConfined();
+        Z obj = scopedOperation.apply(session);
+        session.close();
         try {
             scopedOperation.accept(obj);
             fail();
@@ -85,8 +86,8 @@ public class TestScopedOperations {
 
     @Test(dataProvider = "scopedOperations")
     public <Z> void testOpOutsideConfinement(String name, ScopedOperation<Z> scopedOperation) {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            Z obj = scopedOperation.apply(scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            Z obj = scopedOperation.apply(session);
             AtomicReference<Throwable> failed = new AtomicReference<>();
             Thread t = new Thread(() -> {
                 try {
@@ -108,24 +109,19 @@ public class TestScopedOperations {
     static List<ScopedOperation> scopedOperations = new ArrayList<>();
 
     static {
-        // scope operations
-        ScopedOperation.ofScope(scope -> scope.addCloseAction(() -> {
-        }), "ResourceScope::addOnClose");
-        ScopedOperation.ofScope(scope -> {
-            ResourceScope scope2 = ResourceScope.newConfinedScope();
-            scope2.keepAlive(scope);
-            scope2.close();
-        }, "ResourceScope::keepAlive");
-        ScopedOperation.ofScope(scope -> MemorySegment.allocateNative(100, scope), "MemorySegment::allocateNative");
-        ScopedOperation.ofScope(scope -> {
-            try {
-                MemorySegment.mapFile(tempPath, 0, 10, FileChannel.MapMode.READ_WRITE, scope);
+        // session operations
+        ScopedOperation.ofScope(session -> session.addCloseAction(() -> {
+        }), "MemorySession::addCloseAction");
+        ScopedOperation.ofScope(session -> MemorySegment.allocateNative(100, session), "MemorySegment::allocateNative");
+        ScopedOperation.ofScope(session -> {
+            try (FileChannel fileChannel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+                fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 10L, session);
             } catch (IOException ex) {
                 fail();
             }
-        }, "MemorySegment::mapFromFile");
-        ScopedOperation.ofScope(scope -> VaList.make(b -> b.addVarg(JAVA_INT, 42), scope), "VaList::make");
-        ScopedOperation.ofScope(scope -> VaList.ofAddress(MemoryAddress.ofLong(42), scope), "VaList::make");
+        }, "FileChannel::map");
+        ScopedOperation.ofScope(session -> VaList.make(b -> b.addVarg(JAVA_INT, 42), session), "VaList::make");
+        ScopedOperation.ofScope(session -> VaList.ofAddress(MemoryAddress.ofLong(42), session), "VaList::make");
         ScopedOperation.ofScope(SegmentAllocator::newNativeArena, "SegmentAllocator::arenaAllocator");
         // segment operations
         ScopedOperation.ofSegment(s -> s.toArray(JAVA_BYTE), "MemorySegment::toArray(BYTE)");
@@ -162,8 +158,6 @@ public class TestScopedOperations {
         ScopedOperation.ofAllocator(a -> a.allocateArray(ValueLayout.JAVA_FLOAT, new float[]{0}), "NativeAllocator::allocateArray/float");
         ScopedOperation.ofAllocator(a -> a.allocateArray(ValueLayout.JAVA_LONG, new long[]{0}), "NativeAllocator::allocateArray/long");
         ScopedOperation.ofAllocator(a -> a.allocateArray(ValueLayout.JAVA_DOUBLE, new double[]{0}), "NativeAllocator::allocateArray/double");
-        // native symbol
-        ScopedOperation.of(scope -> NativeSymbol.ofAddress("", MemoryAddress.NULL, scope), NativeSymbol::address, "NativeSymbol::address");
     };
 
     @DataProvider(name = "scopedOperations")
@@ -171,13 +165,13 @@ public class TestScopedOperations {
         return scopedOperations.stream().map(op -> new Object[] { op.name, op }).toArray(Object[][]::new);
     }
 
-    static class ScopedOperation<X> implements Consumer<X>, Function<ResourceScope, X> {
+    static class ScopedOperation<X> implements Consumer<X>, Function<MemorySession, X> {
 
-        final Function<ResourceScope, X> factory;
+        final Function<MemorySession, X> factory;
         final Consumer<X> operation;
         final String name;
 
-        private ScopedOperation(Function<ResourceScope, X> factory, Consumer<X> operation, String name) {
+        private ScopedOperation(Function<MemorySession, X> factory, Consumer<X> operation, String name) {
             this.factory = factory;
             this.operation = operation;
             this.name = name;
@@ -189,20 +183,20 @@ public class TestScopedOperations {
         }
 
         @Override
-        public X apply(ResourceScope scope) {
-            return factory.apply(scope);
+        public X apply(MemorySession session) {
+            return factory.apply(session);
         }
 
-        static <Z> void of(Function<ResourceScope, Z> factory, Consumer<Z> consumer, String name) {
+        static <Z> void of(Function<MemorySession, Z> factory, Consumer<Z> consumer, String name) {
             scopedOperations.add(new ScopedOperation<>(factory, consumer, name));
         }
 
-        static void ofScope(Consumer<ResourceScope> scopeConsumer, String name) {
+        static void ofScope(Consumer<MemorySession> scopeConsumer, String name) {
             scopedOperations.add(new ScopedOperation<>(Function.identity(), scopeConsumer, name));
         }
 
         static void ofVaList(Consumer<VaList> vaListConsumer, String name) {
-            scopedOperations.add(new ScopedOperation<>(scope -> VaList.make(builder -> builder.addVarg(JAVA_LONG, 42), scope),
+            scopedOperations.add(new ScopedOperation<>(session -> VaList.make(builder -> builder.addVarg(JAVA_LONG, 42), session),
                     vaListConsumer, name));
         }
 
@@ -226,15 +220,15 @@ public class TestScopedOperations {
 
         enum SegmentFactory {
 
-            NATIVE(scope -> MemorySegment.allocateNative(10, scope)),
-            MAPPED(scope -> {
-                try {
-                    return MemorySegment.mapFile(Path.of("foo.txt"), 0, 10, FileChannel.MapMode.READ_WRITE, scope);
+            NATIVE(session -> MemorySegment.allocateNative(10, session)),
+            MAPPED(session -> {
+                try (FileChannel fileChannel = FileChannel.open(Path.of("foo.txt"), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+                    return fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 10L, session);
                 } catch (IOException ex) {
                     throw new AssertionError(ex);
                 }
             }),
-            UNSAFE(scope -> MemorySegment.ofAddress(MemoryAddress.NULL, 10, scope));
+            UNSAFE(session -> MemorySegment.ofAddress(MemoryAddress.NULL, 10, session));
 
             static {
                 try {
@@ -246,20 +240,20 @@ public class TestScopedOperations {
                 }
             }
 
-            final Function<ResourceScope, MemorySegment> segmentFactory;
+            final Function<MemorySession, MemorySegment> segmentFactory;
 
-            SegmentFactory(Function<ResourceScope, MemorySegment> segmentFactory) {
+            SegmentFactory(Function<MemorySession, MemorySegment> segmentFactory) {
                 this.segmentFactory = segmentFactory;
             }
         }
 
         enum AllocatorFactory {
-            ARENA_BOUNDED(scope -> SegmentAllocator.newNativeArena(1000, scope)),
+            ARENA_BOUNDED(session -> SegmentAllocator.newNativeArena(1000, session)),
             ARENA_UNBOUNDED(SegmentAllocator::newNativeArena);
 
-            final Function<ResourceScope, SegmentAllocator> allocatorFactory;
+            final Function<MemorySession, SegmentAllocator> allocatorFactory;
 
-            AllocatorFactory(Function<ResourceScope, SegmentAllocator> allocatorFactory) {
+            AllocatorFactory(Function<MemorySession, SegmentAllocator> allocatorFactory) {
                 this.allocatorFactory = allocatorFactory;
             }
         }
