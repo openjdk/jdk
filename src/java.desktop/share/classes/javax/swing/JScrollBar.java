@@ -155,7 +155,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * That way, when the user jumps the knob to an adjacent position,
      * one or two lines of the original contents remain in view.
      *
-     * @exception IllegalArgumentException if orientation is not one of VERTICAL, HORIZONTAL
+     * @throws IllegalArgumentException if orientation is not one of VERTICAL, HORIZONTAL
      *
      * @see #setOrientation
      * @see #setValue
@@ -279,7 +279,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * HORIZONTAL.
      *
      * @param orientation an orientation of the {@code JScrollBar}
-     * @exception IllegalArgumentException if orientation is not one of VERTICAL, HORIZONTAL
+     * @throws IllegalArgumentException if orientation is not one of VERTICAL, HORIZONTAL
      * @see #getOrientation
      */
     @BeanProperty(preferred = true, visualUpdate = true, enumerationValues = {

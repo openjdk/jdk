@@ -1466,10 +1466,10 @@ public class SwingUtilities implements SwingConstants
      * <code>java.awt.EventQueue.invokeAndWait()</code>.
      *
      * @param doRun the instance of {@code Runnable}
-     * @exception  InterruptedException if we're interrupted while waiting for
+     * @throws  InterruptedException if we're interrupted while waiting for
      *             the event dispatching thread to finish executing
      *             <code>doRun.run()</code>
-     * @exception  InvocationTargetException  if an exception is thrown
+     * @throws  InvocationTargetException  if an exception is thrown
      *             while running <code>doRun</code>
      *
      * @see #invokeLater
@@ -1984,7 +1984,7 @@ public class SwingUtilities implements SwingConstants
      * Returns a toolkit-private, shared, invisible Frame
      * to be the owner for JDialogs and JWindows created with
      * {@code null} owners.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -2002,7 +2002,7 @@ public class SwingUtilities implements SwingConstants
     /**
      * Returns a SharedOwnerFrame's shutdown listener to dispose the SharedOwnerFrame
      * if it has no more displayable children.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */

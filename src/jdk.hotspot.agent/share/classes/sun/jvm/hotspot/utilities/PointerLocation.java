@@ -107,22 +107,21 @@ public class PointerLocation {
   }
 
   public boolean isInHeap() {
-    return (heap != null || (gen != null));
+    return (heap != null);
   }
 
   public boolean isInNewGen() {
-    return ((gen != null) && (gen == ((GenCollectedHeap)heap).getGen(0)));
+    return ((gen != null) && (gen.equals(((GenCollectedHeap)heap).getGen(0))));
   }
 
   public boolean isInOldGen() {
-    return ((gen != null) && (gen == ((GenCollectedHeap)heap).getGen(1)));
+    return ((gen != null) && (gen.equals(((GenCollectedHeap)heap).getGen(1))));
   }
 
   public boolean inOtherGen() {
     return (!isInNewGen() && !isInOldGen());
   }
 
-  /** Only valid if isInHeap() */
   public Generation getGeneration() {
       return gen;
   }
@@ -308,7 +307,7 @@ public class PointerLocation {
       } else {
           tty.print(" in ");
           // Since we potentially have a random address in the codecache and therefore could
-          // be dealing with a freed or partialy intialized blob, exceptions are possible.
+          // be dealing with a freed or partially initialized blob, exceptions are possible.
           // One known case is an NMethod where the method is still null, resulting in an NPE.
           try {
               if (verbose) {

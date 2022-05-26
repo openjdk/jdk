@@ -174,17 +174,19 @@ import java.util.function.BiFunction;
  * @apiNote
  * When the connection is no longer needed, the client and server
  * applications should each close both sides of their respective connection.
- * For {@code SSLSocket} objects, for example, an application can call
- * {@link Socket#shutdownOutput()} or {@link java.io.OutputStream#close()}
- * for output stream close and call {@link Socket#shutdownInput()} or
- * {@link java.io.InputStream#close()} for input stream close.  Note that
- * in some cases, closing the input stream may depend on the peer's output
- * stream being closed first.  If the connection is not closed in an orderly
- * manner (for example {@link Socket#shutdownInput()} is called before the
- * peer's write closure notification has been received), exceptions may
- * be raised to indicate that an error has occurred.  Once an
- * {@code SSLSocket} is closed, it is not reusable: a new {@code SSLSocket}
- * must be created.
+ * This can be done either in one shot by calling {@link Socket#close()},
+ * or by closing each side individually using
+ * {@link Socket#shutdownOutput()} / {@link Socket#shutdownInput()} which is
+ * useful for protocol versions that can support half-closed connections.
+ *
+ * <P> Note that in some cases, closing the input stream may depend on the
+ * peer's output stream being closed first.  If the connection is not closed
+ * in an orderly manner (for example {@link Socket#shutdownInput()} is called
+ * before the peer's write closure notification has been received), exceptions
+ * may be raised to indicate that an error has occurred.
+ *
+ * <P> Once an {@code SSLSocket} is closed, it is not reusable: a new
+ * {@code SSLSocket} must be created.
  *
  * @see java.net.Socket
  * @see SSLServerSocket
@@ -390,7 +392,7 @@ public abstract class SSLSocket extends Socket
      * @see #getSupportedCipherSuites()
      * @see #getEnabledCipherSuites()
      */
-    public abstract void setEnabledCipherSuites(String suites []);
+    public abstract void setEnabledCipherSuites(String[] suites);
 
 
     /**
@@ -431,12 +433,12 @@ public abstract class SSLSocket extends Socket
      *            when the protocols parameter is null.
      * @see #getEnabledProtocols()
      */
-    public abstract void setEnabledProtocols(String protocols[]);
+    public abstract void setEnabledProtocols(String[] protocols);
 
 
     /**
      * Returns the SSL Session in use by this connection.  These can
-     * be long lived, and frequently correspond to an entire login session
+     * be long-lived, and frequently correspond to an entire login session
      * for some user.  The session specifies a particular cipher suite
      * which is being actively used by all connections in that session,
      * as well as the identities of the session's client and server.
@@ -742,10 +744,8 @@ public abstract class SSLSocket extends Socket
         }
         if (params.getNeedClientAuth()) {
             setNeedClientAuth(true);
-        } else if (params.getWantClientAuth()) {
-            setWantClientAuth(true);
         } else {
-            setWantClientAuth(false);
+            setWantClientAuth(params.getWantClientAuth());
         }
     }
 

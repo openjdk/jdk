@@ -102,7 +102,7 @@ inline T JfrBigEndian::read_unaligned(const address location) {
 inline bool JfrBigEndian::platform_supports_unaligned_reads(void) {
 #if defined(IA32) || defined(AMD64) || defined(PPC) || defined(S390)
   return true;
-#elif defined(ARM) || defined(AARCH64)
+#elif defined(ARM) || defined(AARCH64) || defined(RISCV)
   return false;
 #else
   #warning "Unconfigured platform"

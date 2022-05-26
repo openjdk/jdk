@@ -332,10 +332,11 @@ public abstract class AbstractDelegateHttpsURLConnection extends
         if (prop.startsWith("domain:")) {
             String[] domains = prop.substring(7).split(",");
             for (String domain : domains) {
-                if (target.equals(domain)) {
+                if (target.equalsIgnoreCase(domain)) {
                     return true;
                 }
-                if (domain.startsWith("*.") && target.endsWith(domain.substring(1))) {
+                if (domain.startsWith("*.") && target.regionMatches(
+                        true, target.length() - domain.length() + 1, domain, 1, domain.length() - 1)) {
                     return true;
                 }
             }

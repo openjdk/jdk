@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * The header contains a list of {@code <th>} cells, providing the column headers.
  * The attribute {@code scope="col"} is automatically added to each header cell.
  * In addition, a series of style class names can be specified, to be applied one per cell.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class TableHeader extends Content {
 
@@ -145,7 +140,7 @@ public class TableHeader extends Content {
                     : (i == 0) ? HtmlStyle.colFirst
                     : (i == (cellContents.size() - 1)) ? HtmlStyle.colLast
                     : (i == 1) ? HtmlStyle.colSecond : null;
-            HtmlTree cell = HtmlTree.DIV(HtmlStyle.tableHeader, cellContent);
+            var cell = HtmlTree.DIV(HtmlStyle.tableHeader, cellContent);
             if (style != null) {
                 cell.addStyle(style);
             }

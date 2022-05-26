@@ -503,7 +503,7 @@ public class AbstractMethodErrorTest {
 // -------------------------------------------------------------------------
 // This error should be detected interpreted.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //            C     // interface, defines aFunctionOfMyInterface()
 //            |
@@ -619,7 +619,7 @@ class AME1_E extends AME1_B implements AME1_C {
 // -------------------------------------------------------------------------
 // This error should be detected interpreted.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //      A   // an interface declaring aFunctionOfMyInterface()
 //      |
@@ -665,7 +665,7 @@ class AME2_C extends AME2_B {
 // -----------------------------------------------------------------------
 // Test AbstractMethod error shadowing existing implementation.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //           A           // a class implementing m()
 //           |
@@ -694,7 +694,7 @@ class AME3_C extends AME3_B {
 // Test AbstractMethod error shadowing existing implementation. In
 // this test there are several subclasses of the abstract class.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //           A           // A: a class implementing ma()
 //           |
@@ -734,7 +734,7 @@ class AME4_E extends AME4_B {
 // -------------------------------------------------------------------------
 // This error should be detected while processing the vtable stub.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //              A__     // abstract
 //             /|\ \
@@ -812,7 +812,7 @@ class AME5_E extends AME5_A {
 // Test AbstractMethod error detected while processing
 // the itable stub.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //           A__   (interface)
 //          /|\ \

@@ -573,7 +573,9 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
         address runtime_entry) {
   address entry = __ pc();
   __ push(state);
+  __ push_cont_fastpath(rthread);
   __ call_VM(noreg, runtime_entry);
+  __ pop_cont_fastpath(rthread);
   __ membar(Assembler::AnyAny);
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
@@ -786,6 +788,7 @@ void TemplateInterpreterGenerator::lock_method() {
   __ str(r0, Address(esp, BasicObjectLock::obj_offset_in_bytes()));
   __ mov(c_rarg1, esp); // object address
   __ lock_object(c_rarg1);
+  __ inc_held_monitor_count(rthread);
 }
 
 // Generate a fixed interpreter frame. This is identical setup for
@@ -851,6 +854,18 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 }
 
 // End of helpers
+
+address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
+  if (!Continuations::enabled()) return nullptr;
+
+  address entry = __ pc();
+  assert(StubRoutines::cont_doYield() != NULL, "stub not yet generated");
+
+  __ push_cont_fastpath(rthread);
+  __ far_jump(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::cont_doYield())));
+
+  return entry;
+}
 
 // Various method entries
 //------------------------------------------------------------------------------------------------------------------------
@@ -1064,18 +1079,47 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
 }
 
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
-  // Bang each page in the shadow zone. We can't assume it's been done for
-  // an interpreter frame with greater than a page of locals, so each page
-  // needs to be checked.  Only true for non-native.
-  const int n_shadow_pages = (int)(StackOverflow::stack_shadow_zone_size() / os::vm_page_size());
-  const int start_page = native_call ? n_shadow_pages : 1;
+  // See more discussion in stackOverflow.hpp.
+
+  const int shadow_zone_size = checked_cast<int>(StackOverflow::stack_shadow_zone_size());
   const int page_size = os::vm_page_size();
-  for (int pages = start_page; pages <= n_shadow_pages ; pages++) {
-    __ sub(rscratch2, sp, pages*page_size);
+  const int n_shadow_pages = shadow_zone_size / page_size;
+
+#ifdef ASSERT
+  Label L_good_limit;
+  __ ldr(rscratch1, Address(rthread, JavaThread::shadow_zone_safe_limit()));
+  __ cbnz(rscratch1, L_good_limit);
+  __ stop("shadow zone safe limit is not initialized");
+  __ bind(L_good_limit);
+
+  Label L_good_watermark;
+  __ ldr(rscratch1, Address(rthread, JavaThread::shadow_zone_growth_watermark()));
+  __ cbnz(rscratch1, L_good_watermark);
+  __ stop("shadow zone growth watermark is not initialized");
+  __ bind(L_good_watermark);
+#endif
+
+  Label L_done;
+
+  __ ldr(rscratch1, Address(rthread, JavaThread::shadow_zone_growth_watermark()));
+  __ cmp(sp, rscratch1);
+  __ br(Assembler::HI, L_done);
+
+  for (int p = 1; p <= n_shadow_pages; p++) {
+    __ sub(rscratch2, sp, p*page_size);
     __ str(zr, Address(rscratch2));
   }
-}
 
+  // Record the new watermark, but only if the update is above the safe limit.
+  // Otherwise, the next time around the check above would pass the safe limit.
+  __ ldr(rscratch1, Address(rthread, JavaThread::shadow_zone_safe_limit()));
+  __ cmp(sp, rscratch1);
+  __ br(Assembler::LS, L_done);
+  __ mov(rscratch1, sp);
+  __ str(rscratch1, Address(rthread, JavaThread::shadow_zone_growth_watermark()));
+
+  __ bind(L_done);
+}
 
 // Interpreter stub for calling a native method. (asm interpreter)
 // This sets up a somewhat different looking stack for calling the
@@ -1461,6 +1505,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
       __ bind(unlock);
       __ unlock_object(c_rarg1);
+      __ dec_held_monitor_count(rthread);
     }
     __ bind(L);
   }

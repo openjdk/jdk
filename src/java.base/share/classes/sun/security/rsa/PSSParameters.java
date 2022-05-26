@@ -34,7 +34,6 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
-import static java.security.spec.PSSParameterSpec.DEFAULT;
 
 /**
  * This class implements the PSS parameters used with the RSA
@@ -81,12 +80,12 @@ public final class PSSParameters extends AlgorithmParametersSpi {
 
     @Override
     protected void engineInit(byte[] encoded) throws IOException {
-        // first initialize with the DEFAULT values before
-        // retrieving from the encoding bytes
-        String mdName = DEFAULT.getDigestAlgorithm();
-        MGF1ParameterSpec mgfSpec = (MGF1ParameterSpec) DEFAULT.getMGFParameters();
-        int saltLength = DEFAULT.getSaltLength();
-        int trailerField = DEFAULT.getTrailerField();
+        // first initialize with the ASN.1 DEFAULT values defined in PKCS #1
+        // v2.2 since the encoding bytes may not define all fields
+        String mdName = "SHA-1";
+        MGF1ParameterSpec mgfSpec = MGF1ParameterSpec.SHA1;
+        int saltLength = 20;
+        int trailerField = PSSParameterSpec.TRAILER_FIELD_BC;
 
         DerInputStream der = new DerInputStream(encoded);
         DerValue[] datum = der.getSequence(4);

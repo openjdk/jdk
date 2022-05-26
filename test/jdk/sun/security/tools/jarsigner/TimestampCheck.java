@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.security.KeyStoreUtils;
 import jdk.test.lib.security.timestamp.*;
 import jdk.test.lib.util.JarUtils;
+import jdk.security.jarsigner.JarSigner;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs.SignerInfo;
@@ -55,13 +56,14 @@ import sun.security.timestamp.TimestampToken;
 /*
  * @test
  * @bug 6543842 6543440 6939248 8009636 8024302 8163304 8169911 8180289 8172404
- *      8247960 8242068 8269039 8275887
+ *      8247960 8242068 8269039 8275887 8267319
  * @summary checking response of timestamp
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.timestamp
  *          java.base/sun.security.x509
  *          java.base/sun.security.util
  *          java.base/sun.security.tools.keytool
+ *          jdk.jartool/jdk.security.jarsigner
  * @library /lib/testlibrary
  * @library /test/lib
  * @build jdk.test.lib.util.JarUtils
@@ -80,6 +82,18 @@ public class TimestampCheck {
     private static final String PASSWORD = "changeit";
     private static final String defaultPolicyId = "2.3.4";
     private static String host = null;
+    private static final String getDefaultSigAlg(String keyAlg) {
+        switch(keyAlg) {
+            case "DSA":
+                return "SHA256withDSA";
+            case "RSA":
+                return "SHA384withRSA";
+            case "EC":
+                return "SHA384withECDSA";
+            default:
+                throw new RuntimeException("Error: unsupported algo " + keyAlg);
+        }
+    }
 
     private static class Interceptor implements RespInterceptor {
 
@@ -291,7 +305,8 @@ public class TimestampCheck {
 
                 sign("policy", "-tsapolicyid",  "1.2.3")
                         .shouldHaveExitValue(0);
-                checkTimestamp("policy.jar", "1.2.3", "SHA-256");
+                checkTimestamp("policy.jar", "1.2.3",
+                        JarSigner.Builder.getDefaultDigestAlgorithm());
 
                 sign("diffpolicy", "-tsapolicyid", "1.2.3")
                         .shouldContain("TSAPolicyID changed in timestamp token")
@@ -378,9 +393,11 @@ public class TimestampCheck {
                         .shouldHaveExitValue(0)
                         .shouldContain("Signature algorithm: SHA3-256withRSA")
                         .shouldContain("Signature algorithm: RSASSA-PSS")
-                        .shouldContain("Signature algorithm: SHA256withECDSA")
+                        .shouldContain("Signature algorithm: " +
+                                getDefaultSigAlg("EC"))
                         .shouldContain("Signature algorithm: Ed25519")
-                        .shouldContain("Signature algorithm: SHA256withDSA");
+                        .shouldContain("Signature algorithm: " +
+                                getDefaultSigAlg("DSA"));
 
                 // Disabled algorithms
                 sign("tsweak", "-digestalg", "SHA1",

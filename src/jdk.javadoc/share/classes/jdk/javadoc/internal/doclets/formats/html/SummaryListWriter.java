@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder.SummaryEl
 /**
  * Base class for generating a summary page that lists elements with a common characteristic,
  * such as deprecated elements, preview elements, and so on.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWriterHolderWriter {
 
@@ -146,28 +141,28 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      *
      * @param id the id for the link
      * @param headingKey
-     * @param contentTree the content tree to which the index link will be added
+     * @param content the content to which the index link will be added
      */
-    protected void addIndexLink(HtmlId id, String headingKey, Content contentTree) {
-        Content li = HtmlTree.LI(links.createLink(id,
+    protected void addIndexLink(HtmlId id, String headingKey, Content content) {
+        var li = HtmlTree.LI(links.createLink(id,
                 contents.getContent(headingKey)));
-        contentTree.add(li);
+        content.add(li);
     }
 
     /**
      * Get the contents list.
      *
      * @param apiSummary the summary list builder
-     * @return a content tree for the contents list
+     * @return the contents list
      */
     public Content getContentsList(L apiSummary) {
-        Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+        var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
-        Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+        var div = HtmlTree.DIV(HtmlStyle.header, heading);
         Content headingContent = contents.contentsHeading;
         div.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
                 headingContent));
-        Content ul = new HtmlTree(TagName.UL);
+        var ul = new HtmlTree(TagName.UL);
         addExtraIndexLink(apiSummary, ul);
         for (SummaryElementKind kind : SummaryElementKind.values()) {
             if (apiSummary.hasDocumentation(kind)) {
@@ -179,29 +174,27 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
     }
 
     /**
-     * Get the header for the API Summary Listing.
-     *
-     * @return a content tree for the header
+     * {@return the header for the API Summary listing}
      */
     public HtmlTree getHeader() {
         String title = resources.getText(titleKey);
-        HtmlTree bodyTree = getBody(getWindowTitle(title));
+        HtmlTree body = getBody(getWindowTitle(title));
         bodyContents.setHeader(getHeader(pageMode));
-        return bodyTree;
+        return body;
     }
 
     /**
-     * Add summary information to the documentation tree
+     * Add summary information to the documentation
      *
      * @param apiList list of API summary elements
      * @param id the id attribute of the table
      * @param headingKey the caption for the summary table
      * @param headerKey table header key for the summary table
-     * @param contentTree the content tree to which the summary table will be added
+     * @param content the content to which the summary table will be added
      */
     protected void addSummaryAPI(SortedSet<Element> apiList, HtmlId id,
                                  String headingKey, String headerKey,
-                                 Content contentTree) {
+                                 Content content) {
         if (apiList.size() > 0) {
             TableHeader tableHeader = new TableHeader(
                     contents.getContent(headerKey), contents.descriptionLabel);
@@ -231,7 +224,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
                 table.addRow(e, link, desc);
             }
             // note: singleton list
-            contentTree.add(HtmlTree.UL(HtmlStyle.blockList, HtmlTree.LI(table)));
+            content.add(HtmlTree.UL(HtmlStyle.blockList, HtmlTree.LI(table)));
         }
     }
 
@@ -239,7 +232,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      * Add summary text for the given element.
      *
      * @param e the element for which the summary text should be added
-     * @param desc the target to which the text should be added
+     * @param desc the content to which the text should be added
      */
     protected void addComments(Element e, Content desc) {
     }
@@ -264,7 +257,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      * Add an extra optional section to the content.
      *
      * @param list the element list
-     * @param target the target content to which the section should be added
+     * @param target the content to which the section should be added
      */
     protected void addExtraSection(L list, Content target) {
     }
@@ -273,7 +266,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      * Add an extra optional index link.
      *
      * @param list the element list
-     * @param target the target content to which the link should be added
+     * @param target the content to which the link should be added
      */
     protected void addExtraIndexLink(L list, Content target) {
     }

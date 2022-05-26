@@ -57,15 +57,10 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import static jdk.javadoc.internal.tool.Main.Result.*;
 
 /**
- *  This class could be the main entry point for Javadoc when Javadoc is used as a
- *  component in a larger software system. It provides operations to
- *  construct a new javadoc processor, and to run it on a set of source
- *  files.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * This class could be the main entry point for Javadoc when Javadoc is used as a
+ * component in a larger software system. It provides operations to
+ * construct a new javadoc processor, and to run it on a set of source
+ * files.
  */
 public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     ToolEnvironment toolEnv;
@@ -98,7 +93,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     }
 
     /**
-     *  Construct a new javadoc tool.
+     * Construct a new javadoc tool.
      */
     public static JavadocTool make0(Context context) {
         JavadocLog log = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ class VM_EmptyOperation : public VM_Operation {
 public:
   virtual void doit() final {}
   virtual bool skip_thread_oop_barriers() const final {
-    // Neither the doit function nor the the safepoint
+    // Neither the doit function nor the safepoint
     // cleanup tasks read oops in the Java threads.
     return true;
   }
@@ -115,8 +115,6 @@ class VM_DeoptimizeFrame: public VM_Operation {
 
 #ifndef PRODUCT
 class VM_DeoptimizeAll: public VM_Operation {
- private:
-  Klass* _dependee;
  public:
   VM_DeoptimizeAll() {}
   VMOp_Type type() const                         { return VMOp_DeoptimizeAll; }

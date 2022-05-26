@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ import java.util.Arrays;
  * Other lane-wise operations, such as the {@code min} operator, are defined as a
  * partially serviced (not a full-service) named operation, where a corresponding
  * method on {@code Vector} and/or a subclass provide some but all possible
- * overloadings and overrides (commonly the unmasked varient with scalar-broadcast
+ * overloadings and overrides (commonly the unmasked variant with scalar-broadcast
  * overloadings).
  *
  * Finally, all lane-wise operations (those named as previously described,
@@ -686,7 +686,7 @@ import java.util.Arrays;
  * because it is relatively rare to find algorithms where, given two
  * adjacent vector lanes, one lane is somehow more arithmetically
  * significant than its neighbor, and even in those cases, there is no
- * general way to know which neighbor is the the more significant.
+ * general way to know which neighbor is the more significant.
  *
  * <p> Putting the terms together, we view the information structure
  * of a vector as a temporal sequence of lanes ("first", "next",
@@ -2252,7 +2252,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * <p> The scale must not be so large, and the element size must
      * not be so small, that that there would be an overflow when
      * computing any of the {@code N*scale} or {@code VLENGTH*scale},
-     * when the the result is represented using the vector
+     * when the result is represented using the vector
      * lane type {@code ETYPE}.
      *
      * <p>
@@ -2442,7 +2442,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * @param origin the first input lane to transfer into the slice
      * @return the last {@code VLENGTH-origin} input lanes,
-     *         placed starting in the first lane of the ouput,
+     *         placed starting in the first lane of the output,
      *         padded at the end with zeroes
      * @throws ArrayIndexOutOfBoundsException if {@code origin}
      *         is negative or greater than {@code VLENGTH}

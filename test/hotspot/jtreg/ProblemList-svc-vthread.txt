@@ -1,0 +1,185 @@
+#
+# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+####
+# Bugs
+
+serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java          8264699 generic-all
+
+####
+## Classes not unloaded as expected (TODO, need to check if FJ keep link)
+
+vmTestbase/nsk/jvmti/CompiledMethodUnload/compmethunload001/TestDescription.java
+
+####
+## NSK JVMTI tests failing with wrapper
+
+vmTestbase/nsk/jvmti/GetAllThreads/allthr001/TestDescription.java 8284027 generic-all
+
+####
+## Tests for functionality which currently is not supported for virtual threads
+
+vmTestbase/nsk/jvmti/GetCurrentThreadCpuTime/curthrcputime001/TestDescription.java
+vmTestbase/nsk/jvmti/GetThreadCpuTime/thrcputime001/TestDescription.java
+vmTestbase/nsk/jvmti/NotifyFramePop/nframepop002/TestDescription.java
+vmTestbase/nsk/jvmti/NotifyFramePop/nframepop003/TestDescription.java
+vmTestbase/nsk/jvmti/PopFrame/popframe004/TestDescription.java
+vmTestbase/nsk/jvmti/StopThread/stopthrd006/TestDescription.java
+vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t012/TestDescription.java
+vmTestbase/nsk/jvmti/SetLocalVariable/setlocal004/TestDescription.java
+vmTestbase/nsk/jvmti/SetLocalVariable/setlocal003/TestDescription.java
+vmTestbase/nsk/jvmti/SetLocalVariable/setlocal002/TestDescription.java
+vmTestbase/nsk/jvmti/SetLocalVariable/setlocal001/TestDescription.java
+vmTestbase/nsk/jvmti/unit/GetLocalVariable/getlocal003/TestDescription.java
+
+####
+## Test fails because expect to find vthread in GetAllThreads
+vmTestbase/nsk/jvmti/scenarios/allocation/AP11/ap11t001/TestDescription.java
+
+####
+## Breakpoint expects name of virtual thread which is set by test.
+
+vmTestbase/nsk/jvmti/Breakpoint/breakpoint001/TestDescription.java
+
+####
+## assert in /scratch/sspitsyn/loom2/open/src/hotspot/share/oops/instanceStackChunkKlass.cpp:1042
+vmTestbase/nsk/jvmti/GetObjectMonitorUsage/objmonusage006/TestDescription.java
+
+####
+## NSK JDWP Tests failing with wrapper
+
+
+##########
+## NSK JDB Tests failing with wrapper
+
+####
+## JVMTI PopFrame not supported for vthreads (JVMTI_ERROR_OPAQUE_FRAME)
+
+vmTestbase/nsk/jdb/pop_exception/pop_exception001/pop_exception001.java
+vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses002/TestDescription.java
+
+####
+## The tests expect an NPE to be uncaught, but nsk.share.MainWrapper
+## introduces exception handlers.
+
+vmTestbase/nsk/jdb/uncaught_exception/uncaught_exception002/uncaught_exception002.java 8278470 generic-all
+vmTestbase/nsk/jdb/where/where005/where005.java 8278470 generic-all
+
+###
+# Test expects that the "up" command should print "End of stack" because there are
+# normally no frames above the test's main method. However, nsk.share.MainWrapper
+# introduces more frames above the test's main method, so the test fails.
+
+vmTestbase/nsk/jdb/list/list003/list003.java
+vmTestbase/nsk/jdb/repeat/repeat001/repeat001.java
+
+####
+## NSK JDI tests failing with wrapper
+
+####
+## The test expects an NPE to be uncaught, but nsk.share.MainWrapper
+## introduces exception handlers.
+
+vmTestbase/nsk/jdi/ExceptionEvent/catchLocation/location002/TestDescription.java 8278470 generic-all
+
+
+####
+## JVMTI PopFrame() is returning OPAQUE_FRAME because vthreads are not supported.
+## Note: vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes001 was converted
+## to support vthreads and expect the OPAQUE_FRAME error. The others were
+## not because they don't add any additional value.
+
+vmTestbase/nsk/jdi/Scenarios/invokeMethod/popframes001/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc01x002/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc02x001/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc02x002/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc04x001/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc04x002/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc06x001/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc08x001/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc10x002/TestDescription.java 8285414 generic-all
+
+vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes002/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes003/TestDescription.java 8285414 generic-all
+vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes004/TestDescription.java 8285414 generic-all
+
+####
+## JVMTI ForceEarlyReturn not supported for vthreads (JVMTI_ERROR_OPAQUE_FRAME)
+## Note forceEarlyReturn002 was converted to support vthreads. The rest were not
+## since there is no added value (JVMTI_ERROR_OPAQUE_FRAME is expected).
+
+vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn014/forceEarlyReturn014.java 8285415 generic-all
+vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn001/TestDescription.java 8285415 generic-all
+vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn002/TestDescription.java 8285415 generic-all
+
+###
+# These 2 tests try to create 10 vthreads and have them all block on a synchronized
+# method call, but on some hosts there are not enough carrier threads to support pinning
+# all 10 vthreads, so the test deadlocks. -Djdk.defaultScheduler.parallelism=<n>
+# could be used with the debuggee to ensure there are enough carrier threads.
+
+vmTestbase/nsk/jdi/EventRequestManager/stepRequests/stepreq002/TestDescription.java 8285416 generic-all
+vmTestbase/nsk/jdi/EventRequestManager/deleteEventRequests/delevtreqs002/TestDescription.java 8285416 generic-all
+
+###
+# These tests all create 5 virtual threads that block on a synchronized block, which causes
+# them to pin the carrier therad. On some of the macOS hosts there are only 4 cores,
+# so by default you only get 4 carrier threads. When this happesn the test is unable to get all
+# of the virtual threads started, and ends up timing out. -Djdk.defaultScheduler.parallelism=<n>
+# could be used with the debuggee to ensure there are enough carrier threads.
+
+vmTestbase/nsk/jdb/kill/kill001/kill001.java 8282383 macosx-x64
+vmTestbase/nsk/jdi/LocatableEvent/thread/thread001/TestDescription.java 8282383 macosx-x64
+vmTestbase/nsk/jdi/Event/request/request001/TestDescription.java 8282383 macosx-x64
+vmTestbase/nsk/jdi/EventIterator/nextEvent/nextevent001/TestDescription.java 8282383 macosx-x64
+vmTestbase/nsk/jdi/EventRequestManager/stepRequests/stepreq001/TestDescription.java 8282383 macosx-x64
+vmTestbase/nsk/jdi/ObjectReference/waitingThreads/waitingthreads002/TestDescription.java 8282383 macosx-x64
+
+###
+# This test always times out on windows. This is due to the test forcing OOME in the
+# debuggee, which has the side affect of making the Read-Poller thread exit. Because
+# of this no vthreads can complete their reads, and the test times out as a result.
+
+vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java 8285417 windows-all
+
+####
+## NSK JMX Tests
+
+####
+## Unsupported functionality
+
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_server_default/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_server_custom/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_directly/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_proxy_custom/TestDescription.java 8285419 generic-all
+vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/baseBehaviorTest_proxy_default/TestDescription.java 8285419 generic-all
+
+
+####
+## No ThreadInfo for vthreads
+
+vmTestbase/nsk/monitoring/ThreadInfo/isInNative/isinnative001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/ThreadInfo/getLockOwnerName/getlockownername001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/ThreadInfo/getLockName/getlockname001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/ThreadInfo/from_c/from_c001/TestDescription.java 8285420 generic-all
+vmTestbase/nsk/monitoring/MemoryUsage/from/from001/TestDescription.java 8285420 generic-all

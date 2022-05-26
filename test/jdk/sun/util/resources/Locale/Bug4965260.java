@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,11 @@ public class Bug4965260  {
 
     // Define supported locales
     static Locale[] locales2Test = new Locale[] {
-        new Locale("de"),
-        new Locale("es"),
-        new Locale("fr"),
-        new Locale("it"),
-        new Locale("sv")
+        Locale.GERMAN,
+        Locale.of("es"),
+        Locale.FRENCH,
+        Locale.ITALIAN,
+        Locale.of("sv")
     };
 
     static String[] expectedNames = new String[] {
@@ -58,7 +58,7 @@ public class Bug4965260  {
             }
 
             StringBuffer message = new StringBuffer("");
-            Locale dutch = new Locale("nl", "BE");
+            Locale dutch = Locale.of("nl", "BE");
             String current;
             for (int i = 0; i < locales2Test.length; i++) {
                 Locale locale = locales2Test[i];

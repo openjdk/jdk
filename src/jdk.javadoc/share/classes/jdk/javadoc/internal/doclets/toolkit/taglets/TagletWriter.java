@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,13 +52,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * The interface for the taglet writer.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
-
 public abstract class TagletWriter {
 
     /**
@@ -332,15 +326,12 @@ public abstract class TagletWriter {
      *
      * @param holder        the element associated with the doc comment
      * @param tagletManager the taglet manager for the current doclet
-     * @param holderTag     the tag that holds this inline tag, or {@code null} if
-     *                      there is no tag that holds it
      * @param inlineTag     the inline tag to be documented
      *
      * @return the content, or {@code null}
      */
     public Content getInlineTagOutput(Element holder,
                                       TagletManager tagletManager,
-                                      DocTree holderTag,
                                       DocTree inlineTag) {
 
         Map<String, Taglet> inlineTags = tagletManager.getInlineTaglets();
@@ -352,9 +343,7 @@ public abstract class TagletWriter {
         }
 
         try {
-            Content tagletOutput = t.getInlineTagOutput(holder,
-                    holderTag != null && t.getName().equals("inheritDoc") ? holderTag : inlineTag,
-                    this);
+            Content tagletOutput = t.getInlineTagOutput(holder, inlineTag, this);
             tagletManager.seenTag(t.getName());
             return tagletOutput;
         } catch (UnsupportedTagletOperationException e) {

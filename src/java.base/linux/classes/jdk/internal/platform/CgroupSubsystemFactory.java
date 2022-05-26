@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2020, 2022, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,9 +82,7 @@ public class CgroupSubsystemFactory {
         Optional<CgroupTypeResult> optResult = null;
         try {
             optResult = determineType("/proc/self/mountinfo", "/proc/cgroups", "/proc/self/cgroup");
-        } catch (IOException e) {
-            return null;
-        } catch (UncheckedIOException e) {
+        } catch (IOException | UncheckedIOException e) {
             return null;
         }
 
@@ -145,6 +143,10 @@ public class CgroupSubsystemFactory {
             }
             CgroupInfo info = CgroupInfo.fromCgroupsLine(line);
             switch (info.getName()) {
+            // Only the following controllers are important to Java. All
+            // other controllers (such as freezer) are ignored and
+            // are not considered in the checks below for
+            // anyCgroupsV1Controller/anyCgroupsV2Controller.
             case CPU_CTRL:      infos.put(CPU_CTRL, info); break;
             case CPUACCT_CTRL:  infos.put(CPUACCT_CTRL, info); break;
             case CPUSET_CTRL:   infos.put(CPUSET_CTRL, info); break;
@@ -222,6 +224,12 @@ public class CgroupSubsystemFactory {
      */
     private static void setCgroupV2Path(Map<String, CgroupInfo> infos,
                                         String[] tokens) {
+        String name = tokens[1];
+        if (!name.equals("")) {
+            // This must be a v1 controller that we have ignored (e.g., freezer)
+            assert infos.get(name) == null;
+            return;
+        }
         int hierarchyId = Integer.parseInt(tokens[0]);
         String cgroupPath = tokens[2];
         for (CgroupInfo info: infos.values()) {

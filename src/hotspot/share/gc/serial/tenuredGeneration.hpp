@@ -26,36 +26,85 @@
 #define SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 
 #include "gc/serial/cSpaceCounters.hpp"
-#include "gc/shared/cardGeneration.hpp"
+#include "gc/shared/generation.hpp"
 #include "gc/shared/gcStats.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "utilities/macros.hpp"
 
+class BlockOffsetSharedArray;
+class CardTableRS;
+class CompactibleSpace;
+
 // TenuredGeneration models the heap containing old (promoted/tenured) objects
-// contained in a single contiguous space.
-//
+// contained in a single contiguous space. This generation is covered by a card
+// table, and uses a card-size block-offset array to implement block_start.
 // Garbage collection is performed using mark-compact.
 
-class TenuredGeneration: public CardGeneration {
+class TenuredGeneration: public Generation {
   friend class VMStructs;
   // Abstractly, this is a subtype that gets access to protected fields.
   friend class VM_PopulateDumpSharedSpace;
 
  protected:
+
+  // This is shared with other generations.
+  CardTableRS* _rs;
+  // This is local to this generation.
+  BlockOffsetSharedArray* _bts;
+
+  // Current shrinking effect: this damps shrinking when the heap gets empty.
+  size_t _shrink_factor;
+
+  size_t _min_heap_delta_bytes;   // Minimum amount to expand.
+
+  // Some statistics from before gc started.
+  // These are gathered in the gc_prologue (and should_collect)
+  // to control growing/shrinking policy in spite of promotions.
+  size_t _capacity_at_prologue;
+  size_t _used_at_prologue;
+
+  void assert_correct_size_change_locking();
+
   ContiguousSpace*    _the_space;       // Actual space holding objects
 
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
 
-  // Allocation failure
-  virtual bool expand(size_t bytes, size_t expand_bytes);
-
   // Accessing spaces
   ContiguousSpace* space() const { return _the_space; }
 
-  void assert_correct_size_change_locking();
+  // Attempt to expand the generation by "bytes".  Expand by at a
+  // minimum "expand_bytes".  Return true if some amount (not
+  // necessarily the full "bytes") was done.
+  bool expand(size_t bytes, size_t expand_bytes);
 
+  // Shrink generation with specified size
+  void shrink(size_t bytes);
+
+  void compute_new_size_inner();
  public:
+  virtual void compute_new_size();
+
+  virtual void invalidate_remembered_set();
+
+  // Grow generation with specified size (returns false if unable to grow)
+  bool grow_by(size_t bytes);
+  // Grow generation to reserved size.
+  bool grow_to_reserved();
+
+  size_t capacity() const;
+  size_t used() const;
+  size_t free() const;
+  MemRegion used_region() const;
+
+  void space_iterate(SpaceClosure* blk, bool usedOnly = false);
+
+  void younger_refs_iterate(OopIterateClosure* blk);
+
+  bool is_in(const void* p) const;
+
+  CompactibleSpace* first_compaction_space() const;
+
   TenuredGeneration(ReservedSpace rs,
                     size_t initial_byte_size,
                     size_t min_byte_size,
@@ -103,8 +152,6 @@ class TenuredGeneration: public CardGeneration {
   bool should_collect(bool   full,
                       size_t word_size,
                       bool   is_tlab);
-
-  virtual void compute_new_size();
 
   // Performance Counter support
   void update_counters();

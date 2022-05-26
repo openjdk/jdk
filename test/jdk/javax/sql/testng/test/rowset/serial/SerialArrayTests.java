@@ -230,7 +230,7 @@ public class SerialArrayTests extends BaseTest {
     @Test
     public void test18() throws Exception {
         SerialArray sa = new SerialArray(a);
-        SerialArray sa1 = serializeDeserializeObject(sa);;
+        SerialArray sa1 = serializeDeserializeObject(sa);
         assertTrue(sa.equals(sa1));
     }
 }

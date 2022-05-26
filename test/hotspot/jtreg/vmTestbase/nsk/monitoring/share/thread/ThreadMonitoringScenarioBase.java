@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public abstract class ThreadMonitoringScenarioBase implements LogAware, ThreadMo
         protected boolean checkStackTraceElement(StackTraceElement element, String[] expectedMethods) {
                 String name = element.getClassName() + "." + element.getMethodName();
                 for (String method : expectedMethods)
-                        if (method.equals(name))
+                        if (name.startsWith(method))
                                 return true;
                 return false;
         }

@@ -445,7 +445,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * allowing for tooltips to be provided by the cell renderers.
      *
      * @param dataModel the model for the list
-     * @exception IllegalArgumentException if the model is {@code null}
+     * @throws IllegalArgumentException if the model is {@code null}
      */
     public JList(ListModel<E> dataModel)
     {
@@ -1202,7 +1202,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * list's {@code TransferHandler}.
      *
      * @param b whether or not to enable automatic drag handling
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *            <code>b</code> is <code>true</code> and
      *            <code>GraphicsEnvironment.isHeadless()</code>
      *            returns <code>true</code>
@@ -1493,7 +1493,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * Position.Bias.Forward or Position.Bias.Backward.
      * @return the index of the next list element that
      * starts with the prefix; otherwise {@code -1}
-     * @exception IllegalArgumentException if prefix is {@code null}
+     * @throws IllegalArgumentException if prefix is {@code null}
      * or startIndex is out of bounds
      * @since 1.4
      */
@@ -1695,7 +1695,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      *
      * @param model  the <code>ListModel</code> that provides the
      *                                          list of items for display
-     * @exception IllegalArgumentException  if <code>model</code> is
+     * @throws IllegalArgumentException  if <code>model</code> is
      *                                          <code>null</code>
      * @see #getModel
      * @see #clearSelection
@@ -1910,7 +1910,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      *
      * @param selectionModel  the <code>ListSelectionModel</code> that
      *                          implements the selections
-     * @exception IllegalArgumentException   if <code>selectionModel</code>
+     * @throws IllegalArgumentException   if <code>selectionModel</code>
      *                                          is <code>null</code>
      * @see #getSelectionModel
      */

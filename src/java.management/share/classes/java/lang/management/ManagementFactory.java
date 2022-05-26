@@ -632,7 +632,7 @@ public class ManagementFactory {
     // using newPlatformMXBeanProxy(mbs, on, LoggingMXBean.class)
     // even though the underlying MXBean no longer implements
     // java.util.logging.LoggingMXBean.
-    // Altough java.util.logging.LoggingMXBean is deprecated, an application
+    // Although java.util.logging.LoggingMXBean is deprecated, an application
     // that uses newPlatformMXBeanProxy(mbs, on, LoggingMXBean.class) will
     // continue to work.
     //
@@ -936,8 +936,7 @@ public class ManagementFactory {
                         all.add(new DefaultPlatformMBeanProvider());
                         return all;
                     }
-                }, null, new FilePermission("<<ALL FILES>>", "read"),
-                new RuntimePermission("sun.management.spi.PlatformMBeanProvider.subclass"));
+                }, null, new FilePermission("<<ALL FILES>>", "read"));
 
             // load all platform components into a map
             var map = new HashMap<String, PlatformComponent<?>>();

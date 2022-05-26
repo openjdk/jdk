@@ -1,0 +1,615 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2022 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="ks"/>
+		<script type="Deva"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="de">जर्मन</language>
+			<language type="de_AT">आस्ट्रियन जर्मन</language>
+			<language type="de_CH">स्विस हाई जर्मन</language>
+			<language type="en">अंगरिज़ी</language>
+			<language type="en_AU">आसट्रेलवी अंगरिज़ी</language>
+			<language type="en_CA">कनाडियन अंगरिज़ी</language>
+			<language type="en_GB">बरतानवी अंगरिज़ी</language>
+			<language type="en_GB" alt="short">UK अंगरिज़ी</language>
+			<language type="en_US">अमरीकी अंगरिज़ी</language>
+			<language type="en_US" alt="short">US अंगरिज़ी</language>
+			<language type="es">हसपानवी</language>
+			<language type="es_419">लातिनी अमरीकी हसपानवी</language>
+			<language type="es_ES">यूरपी हसपानवी</language>
+			<language type="es_MX">मेकसिकी हसपानवी</language>
+			<language type="fr">फ्रांसीसी</language>
+			<language type="fr_CA">कनाडियन फ्रांसीसी</language>
+			<language type="fr_CH">स्विस फ्रांसीसी</language>
+			<language type="it">इतालवी</language>
+			<language type="ja">जापानी</language>
+			<language type="ks">कॉशुर</language>
+			<language type="pt">पुरतउगाली</language>
+			<language type="pt_BR">ब्राज़िली पुरतउगाली</language>
+			<language type="pt_PT">यूरपी पुरतउगाली</language>
+			<language type="ru">रूसी</language>
+			<language type="und">नामोलुम ज़बान</language>
+			<language type="zh">चीनी (तरजुम इशार: खास तोर, मैन्डरिन चीनी।)</language>
+			<language type="zh" alt="menu">चीनी, मैन्डरिन</language>
+			<language type="zh_Hans">आसान चीनी</language>
+			<language type="zh_Hans" alt="long">आसान मैन्डरिन चीनी</language>
+			<language type="zh_Hant">रिवायाती चीनी</language>
+			<language type="zh_Hant" alt="long">रिवायाती मैन्डरिन चीनी</language>
+		</languages>
+		<scripts>
+			<script type="Arab">अरबी</script>
+			<script type="Cyrl">सिरिलिक</script>
+			<script type="Deva">देवनागरी</script>
+			<script type="Hans">आसान (तरजुम इशार: स्क्रिप्ट नवुक यि वर्ज़न छु चीनी बापथ ज़बान नाव किस मुरकब कि इस्तिमल करान।)</script>
+			<script type="Hans" alt="stand-alone">आसान हान (तरजुम इशार: स्क्रिप्ट नवुक यि वर्ज़न छु अलग इस्तिमाल सपदन, यि छु नि चीनी ज़बान बापथ ज़बान नवास सीथ मुरकब।)</script>
+			<script type="Hant">रिवायाती (तरजुम इशार: स्क्रिप्ट नवुक यि वर्ज़न छु चीनी बापथ ज़बान नाव किस मुरकब कि इस्तिमल करान।)</script>
+			<script type="Hant" alt="stand-alone">रिवायाती हान (तरजुम इशार: स्क्रिप्ट नवुक यि वर्ज़न छु अलग इस्तिमाल सपदन, यि छु नि चीनी ज़बान बापथ ज़बान नवास सीथ मुरकब।)</script>
+			<script type="Latn">लातिनी</script>
+			<script type="Zxxx">गेर तहरीर</script>
+			<script type="Zzzz">गेर तहरीर स्क्रिप्ट</script>
+		</scripts>
+		<territories>
+			<territory type="BR">ब्राज़ील</territory>
+			<territory type="CN">चीन</territory>
+			<territory type="DE">जर्मन</territory>
+			<territory type="FR">फ्रांस</territory>
+			<territory type="GB">मुतहीद बादशाहत</territory>
+			<territory type="IN">भारत</territory>
+			<territory type="IT">इटली</territory>
+			<territory type="JP">जापान</territory>
+			<territory type="RU">रूस</territory>
+			<territory type="US">मूतहीद रियासत</territory>
+			<territory type="ZZ">नामोलुम अलाक़</territory>
+		</territories>
+		<types>
+			<type key="calendar" type="gregorian">ग्रिगोरियन कैलंडर</type>
+			<type key="collation" type="standard">मियारी तरतीब ऑर्डर</type>
+			<type key="numbers" type="arab">अरबी-इंडिक हिंदसी</type>
+			<type key="numbers" type="arabext">तोसी शुद अरबी-इंडिक हिंदसी</type>
+			<type key="numbers" type="deva">देवनागरी हिंदसि</type>
+			<type key="numbers" type="latn">यूरपी हिंदसी</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">मेट्रिक</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">ज़बान: {0}</codePattern>
+			<codePattern type="script">स्क्रिप्ट: {0}</codePattern>
+			<codePattern type="territory">अलाक़: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters draft="contributed">[\u093C \u0902 \u0901 अ आ इ ई उ ऊ ए ऑ ओ क ख ग च {च\u093C} छ {छ\u093C} ज ट ठ ड त थ द न प फ ब म य र ल व श स ह ा ि ी \u0941 \u0942 \u0943 \u0944 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
+		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶︓﹕：]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+		</parseLenients>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>G y MMMM d, EEEE</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>G y MMMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>G y MMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>GGGGG y-MM-dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{0} पेठ {1}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{0} पेठ {1}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">जनवरी</month>
+							<month type="2">फ़रवरी</month>
+							<month type="3">मार्च</month>
+							<month type="4">अप्रैल</month>
+							<month type="5">मे</month>
+							<month type="6">जून</month>
+							<month type="7">जुलाई</month>
+							<month type="8">अगस्त</month>
+							<month type="9">सतुंबर</month>
+							<month type="10">अकतुम्बर</month>
+							<month type="11">नवूमबर</month>
+							<month type="12">दसूमबर</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">ज</month>
+							<month type="2">फ़</month>
+							<month type="3">म</month>
+							<month type="4">अ</month>
+							<month type="5">म</month>
+							<month type="6">ज</month>
+							<month type="7">ज</month>
+							<month type="8">अ</month>
+							<month type="9">स</month>
+							<month type="10">ओ</month>
+							<month type="11">न</month>
+							<month type="12">द</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">जनवरी</month>
+							<month type="2">फ़रवरी</month>
+							<month type="3">मार्च</month>
+							<month type="4">अप्रैल</month>
+							<month type="5">मे</month>
+							<month type="6">जून</month>
+							<month type="7">जुलाई</month>
+							<month type="8">अगस्त</month>
+							<month type="9">सतुंबर</month>
+							<month type="10">अकतुम्बर</month>
+							<month type="11">नवूमबर</month>
+							<month type="12">दसूमबर</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1">ज</month>
+							<month type="2">फ़</month>
+							<month type="3">म</month>
+							<month type="4">अ</month>
+							<month type="5">म</month>
+							<month type="6">ज</month>
+							<month type="7">ज</month>
+							<month type="8">अ</month>
+							<month type="9">स</month>
+							<month type="10">ओ</month>
+							<month type="11">न</month>
+							<month type="12">द</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">जनवरी</month>
+							<month type="2">फ़रवरी</month>
+							<month type="3">मार्च</month>
+							<month type="4">अप्रैल</month>
+							<month type="5">मे</month>
+							<month type="6">जून</month>
+							<month type="7">जुलाई</month>
+							<month type="8">अगस्त</month>
+							<month type="9">सतुंबर</month>
+							<month type="10">अकतुम्बर</month>
+							<month type="11">नवूमबर</month>
+							<month type="12">दसूमबर</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="narrow">
+							<day type="sun">अ</day>
+							<day type="mon">च</day>
+							<day type="tue">ब</day>
+							<day type="wed">ब</day>
+							<day type="thu">ब</day>
+							<day type="fri">ज</day>
+							<day type="sat">ब</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">आथवार</day>
+							<day type="mon">चंदिरवार</day>
+							<day type="tue">बुवार</day>
+							<day type="wed">बोदवार</day>
+							<day type="thu">ब्रेसवार</day>
+							<day type="fri">जुम्मा</day>
+							<day type="sat">बटवार</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">अ</day>
+							<day type="mon">च</day>
+							<day type="tue">ब</day>
+							<day type="wed">ब</day>
+							<day type="thu">ब</day>
+							<day type="fri">ज</day>
+							<day type="sat">ब</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">आथवार</day>
+							<day type="mon">चंदिरवार</day>
+							<day type="tue">बुवार</day>
+							<day type="wed">बोदवार</day>
+							<day type="thu">ब्रेसवार</day>
+							<day type="fri">जुम्मा</day>
+							<day type="sat">बटवार</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">1st सह माह</quarter>
+							<quarter type="2">2nd सह माह</quarter>
+							<quarter type="3">3rd सह माह</quarter>
+							<quarter type="4">4th सह माह</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">1st सह माह</quarter>
+							<quarter type="2">2nd सह माह</quarter>
+							<quarter type="3">3rd सह माह</quarter>
+							<quarter type="4">4th सह माह</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<eras>
+					<eraAbbr>
+						<era type="0">BC</era>
+						<era type="1">AD</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yMMMMEEEEd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yMMMMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y</pattern>
+							<datetimeSkeleton draft="unconfirmed">yMMMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>d/M/yy</pattern>
+							<datetimeSkeleton draft="unconfirmed">yyMd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>a h:mm:ss zzzz</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>a h:mm:ss z</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>a h:mm:ss</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>a h:mm</pattern>
+							<datetimeSkeleton draft="unconfirmed">ahmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{0} पेठ {1}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{0} पेठ {1}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName>दोर</displayName>
+			</field>
+			<field type="year">
+				<displayName>वरीह</displayName>
+			</field>
+			<field type="year-short">
+				<displayName>वरीह</displayName>
+			</field>
+			<field type="year-narrow">
+				<displayName>वरीह</displayName>
+			</field>
+			<field type="quarter">
+				<displayName>चूरिम</displayName>
+			</field>
+			<field type="quarter-short">
+				<displayName>चूरिम</displayName>
+			</field>
+			<field type="quarter-narrow">
+				<displayName>चूरिम</displayName>
+			</field>
+			<field type="month">
+				<displayName>माह</displayName>
+			</field>
+			<field type="month-short">
+				<displayName>माह</displayName>
+			</field>
+			<field type="month-narrow">
+				<displayName>माह</displayName>
+			</field>
+			<field type="week">
+				<displayName>हफ़ति</displayName>
+			</field>
+			<field type="week-short">
+				<displayName>हफ़ति</displayName>
+			</field>
+			<field type="week-narrow">
+				<displayName>हफ़ति</displayName>
+			</field>
+			<field type="day">
+				<displayName>दोह</displayName>
+				<relative type="-1">राथ</relative>
+				<relative type="0">अज़</relative>
+				<relative type="1">पगाह</relative>
+			</field>
+			<field type="day-short">
+				<displayName>दोह</displayName>
+				<relative type="-1">राथ</relative>
+				<relative type="0">अज़</relative>
+				<relative type="1">पगाह</relative>
+			</field>
+			<field type="day-narrow">
+				<displayName>दोह</displayName>
+				<relative type="-1">राथ</relative>
+				<relative type="0">अज़</relative>
+				<relative type="1">पगाह</relative>
+			</field>
+			<field type="weekday">
+				<displayName>हफ़तूक दोह</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName>AM/PM</displayName>
+			</field>
+			<field type="hour">
+				<displayName>गनटि</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName>गनटि</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName>गनटि</displayName>
+			</field>
+			<field type="minute">
+				<displayName>मिनट</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName>मिनट</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName>मिनट</displayName>
+			</field>
+			<field type="second">
+				<displayName>सेकंड</displayName>
+			</field>
+			<field type="second-short">
+				<displayName>सेकंड</displayName>
+			</field>
+			<field type="second-narrow">
+				<displayName>सेकंड</displayName>
+			</field>
+			<field type="zone">
+				<displayName>वख ज़ून</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<regionFormat>{0} वख</regionFormat>
+			<regionFormat type="daylight">{0} डे लाइट वख</regionFormat>
+			<regionFormat type="standard">{0} स्टैन्डर्ड वख</regionFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>कोऑर्डनैटिड यूनवर्सल वख</standard>
+				</long>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity>नमोलुम शहर</exemplarCity>
+			</zone>
+			<metazone type="America_Central">
+				<long>
+					<generic>सेंट्रल वख</generic>
+					<standard>सेंट्रल स्टैन्डर्ड वख</standard>
+					<daylight>सेंट्रल डे लाइट वख</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic>मशरिकी वख</generic>
+					<standard>मशरिकी स्टैन्डर्ड वख</standard>
+					<daylight>मशरिकी डे लाइट वख</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic>माउंटेन वख</generic>
+					<standard>माउंटेन स्टैन्डर्ड वख</standard>
+					<daylight>माउंटेन डे लाइट वख</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic>पेसिफिक वख</generic>
+					<standard>पेसिफिक स्टैन्डर्ड वख</standard>
+					<daylight>पेसिफिक डे लाइट वख</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>अटलांटिक वख</generic>
+					<standard>अटलांटिक स्टैन्डर्ड वख</standard>
+					<daylight>अटलांटिक डे लाइट वख</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>मरकज़ी यूरपी वख</generic>
+					<standard>मरकज़ी यूरपी स्टैन्डर्ड वख</standard>
+					<daylight>मरकज़ी यूरपी समर वख</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>मशरिकी यूरपी वख</generic>
+					<standard>मशरिकी यूरपी स्टैन्डर्ड वख</standard>
+					<daylight>मशरिकी यूरपी समर वख</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>मगरीबी यूरपी वख</generic>
+					<standard>मगरीबी यूरपी स्टैन्डर्ड वख</standard>
+					<daylight>मगरीबी यूरपी समर वख</daylight>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>ग्रीनविच मीन वख</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="BRL">
+				<displayName>ब्राज़िली रील</displayName>
+				<displayName count="one">ब्राज़िली रील</displayName>
+				<displayName count="other">ब्राज़िली रीलज़</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName>चीनी युवान</displayName>
+				<displayName count="one">चीनी युवान</displayName>
+				<displayName count="other">चीनी युवान</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName>यूरो</displayName>
+				<displayName count="one">यूरो</displayName>
+				<displayName count="other">यूरोज़</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName>बरतानवी पूनड</displayName>
+				<displayName count="one">बरतानवी पूनड</displayName>
+				<displayName count="other">बरतानवी पूनड</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>इंडियन रूपी</displayName>
+				<displayName count="one">इंडियन रूपी</displayName>
+				<displayName count="other">इंडियन रुपीज़</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName>जापानी येन</displayName>
+				<displayName count="one">जापानी येन</displayName>
+				<displayName count="other">जापानी येन</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName>रूसी रूबल</displayName>
+				<displayName count="one">रूसी रूबल</displayName>
+				<displayName count="other">रूसी रूबल</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName>US डॉलर</displayName>
+				<displayName count="one">US डॉलर</displayName>
+				<displayName count="other">US डॉलर्ज़</displayName>
+				<symbol draft="contributed">$</symbol>
+			</currency>
+			<currency type="XXX">
+				<displayName>नामोलुम करन्सी</displayName>
+				<displayName count="one">(करन्सी हुंद नामोलुम यूनिट)</displayName>
+				<displayName count="other">(नामोलुम करन्सी)</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="end">{0}, ति {1}</listPatternPart>
+			<listPatternPart type="2">{0} ति {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr>आ:y</yesstr>
+			<nostr>न:n</nostr>
+		</messages>
+	</posix>
+</ldml>

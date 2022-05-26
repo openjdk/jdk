@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,6 +368,12 @@ final class Short64Vector extends ShortVector {
     @ForceInline
     public final Short64Mask test(Test op) {
         return super.testTemplate(Short64Mask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final Short64Mask test(Test op, VectorMask<Short> m) {
+        return super.testTemplate(Short64Mask.class, op, (Short64Mask) m);  // specialize
     }
 
     // Specialized comparisons

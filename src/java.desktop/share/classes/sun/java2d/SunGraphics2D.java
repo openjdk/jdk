@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,6 @@ import java.awt.image.renderable.RenderContext;
 import java.awt.image.renderable.RenderableImage;
 import java.lang.annotation.Native;
 import java.text.AttributedCharacterIterator;
-import java.util.Iterator;
 import java.util.Map;
 
 import sun.awt.ConstrainableGraphics;
@@ -102,7 +101,7 @@ import static java.awt.geom.AffineTransform.TYPE_MASK_SCALE;
 import static java.awt.geom.AffineTransform.TYPE_TRANSLATION;
 
 /**
- * This is a the master Graphics2D superclass for all of the Sun
+ * This is the master Graphics2D superclass for all of the Sun
  * Graphics implementations.  This class relies on subclasses to
  * manage the various device information, but provides an overall
  * general framework for performing all of the requests in the
@@ -409,7 +408,7 @@ public final class SunGraphics2D
      * drawback of the workaround is that the resulting
      * clip and device origin cannot be "enforced".
      *
-     * @exception IllegalStateException If the Graphics
+     * @throws IllegalStateException If the Graphics
      * to be constrained has a complex transform.
      */
     @Override

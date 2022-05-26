@@ -40,6 +40,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -365,8 +366,16 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
         TosState state,
         address runtime_entry) {
   address entry = __ pc();
+
+  const Register rthread = NOT_LP64(rcx) LP64_ONLY(r15_thread);
+
   __ push(state);
+  NOT_LP64(__ get_thread(rthread);)
+  __ push_cont_fastpath(rthread);
   __ call_VM(noreg, runtime_entry);
+  NOT_LP64(__ get_thread(rthread);)
+  __ pop_cont_fastpath(rthread);
+
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
 }
@@ -388,7 +397,6 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
 void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
   Label done;
   // Note: In tiered we increment either counters in Method* or in MDO depending if we're profiling or not.
-  int increment = InvocationCounter::count_increment;
   Label no_mdo;
   if (ProfileInterpreter) {
     // Are we profiling?
@@ -399,7 +407,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
     const Address mdo_invocation_counter(rax, in_bytes(MethodData::invocation_counter_offset()) +
         in_bytes(InvocationCounter::counter_offset()));
     const Address mask(rax, in_bytes(MethodData::invoke_mask_offset()));
-    __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, rcx, false, Assembler::zero, overflow);
+    __ increment_mask_and_jump(mdo_invocation_counter, mask, rcx, overflow);
     __ jmp(done);
   }
   __ bind(no_mdo);
@@ -409,8 +417,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
       InvocationCounter::counter_offset());
   __ get_method_counters(rbx, rax, done);
   const Address mask(rax, in_bytes(MethodCounters::invoke_mask_offset()));
-  __ increment_mask_and_jump(invocation_counter, increment, mask, rcx,
-      false, Assembler::zero, overflow);
+  __ increment_mask_and_jump(invocation_counter, mask, rcx, overflow);
   __ bind(done);
 }
 
@@ -601,6 +608,10 @@ void TemplateInterpreterGenerator::lock_method() {
   const Register lockreg = NOT_LP64(rdx) LP64_ONLY(c_rarg1);
   __ movptr(lockreg, rsp); // object address
   __ lock_object(lockreg);
+
+  Register rthread = NOT_LP64(rax) LP64_ONLY(r15_thread);
+  NOT_LP64(__ get_thread(rthread);)
+  __ inc_held_monitor_count(rthread);
 }
 
 // Generate a fixed interpreter frame. This is identical setup for
@@ -651,6 +662,29 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 }
 
 // End of helpers
+
+address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
+  if (!Continuations::enabled()) return nullptr;
+
+#ifdef _LP64
+  address entry = __ pc();
+  assert(StubRoutines::cont_doYield() != NULL, "stub not yet generated");
+
+  // __ movl(c_rarg1, Address(rsp, wordSize)); // scopes
+  const Register thread1 = NOT_LP64(rdi) LP64_ONLY(r15_thread);
+  NOT_LP64(__ get_thread(thread1));
+  __ push_cont_fastpath(thread1);
+
+  __ jump(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::cont_doYield())));
+  // return value is in rax
+
+  return entry;
+#else
+  // Not implemented. Allow startup of legacy Java code that does not touch
+  // Continuation.doYield yet. Throw AbstractMethodError on access.
+  return generate_abstract_entry();
+#endif
+}
 
 // Method entry for java.lang.ref.Reference.get.
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
@@ -755,8 +789,8 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
     __ bang_stack_with_offset(p*page_size);
   }
 
-  // Record a new watermark, unless the update is above the safe limit.
-  // Otherwise, the next time around a check above would pass the safe limit.
+  // Record the new watermark, but only if update is above the safe limit.
+  // Otherwise, the next time around the check above would pass the safe limit.
   __ cmpptr(rsp, Address(thread, JavaThread::shadow_zone_safe_limit()));
   __ jccb(Assembler::belowEqual, L_done);
   __ movptr(Address(thread, JavaThread::shadow_zone_growth_watermark()), rsp);
@@ -1049,7 +1083,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // It is safe to do this push because state is _thread_in_native and return address will be found
   // via _last_native_pc and not via _last_jave_sp
 
-  // NOTE: the order of theses push(es) is known to frame::interpreter_frame_result.
+  // NOTE: the order of these push(es) is known to frame::interpreter_frame_result.
   // If the order changes or anything else is added to the stack the code in
   // interpreter_frame_result will have to be changed.
 
@@ -1245,6 +1279,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
       __ bind(unlock);
       __ unlock_object(regmon);
+      NOT_LP64(__ get_thread(thread);)
+      __ dec_held_monitor_count(thread);
     }
     __ bind(L);
   }
@@ -1313,7 +1349,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
   // ebx: Method*
-  // rbcp: sender sp
+  // rbcp: sender sp (set in InterpreterMacroAssembler::prepare_to_jump_from_interpreted / generate_call_stub)
   address entry_point = __ pc();
 
   const Address constMethod(rbx, Method::const_offset());

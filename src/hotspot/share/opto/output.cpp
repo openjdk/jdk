@@ -324,6 +324,8 @@ void PhaseOutput::perform_mach_node_analysis() {
   bs->late_barrier_analysis();
 
   pd_perform_mach_node_analysis();
+
+  C->print_method(CompilerPhaseType::PHASE_MACHANALYSIS, 4);
 }
 
 // Convert Nodes to instruction bits and pass off to the VM
@@ -814,12 +816,11 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
 
     ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
     if (sv == NULL) {
-      ciKlass* cik = t->is_oopptr()->klass();
+      ciKlass* cik = t->is_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
-      ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
-      sv = spobj->is_auto_box() ? new AutoBoxObjectValue(spobj->_idx, klass_sv)
-                                    : new ObjectValue(spobj->_idx, klass_sv);
+      sv = new ObjectValue(spobj->_idx,
+                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
       set_sv_for_object_node(objs, sv);
 
       uint first_ind = spobj->first_index(sfpt->jvms());
@@ -859,7 +860,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       array->append(new ConstantIntValue((jint)0));
       array->append(new_loc_value( C->regalloc(), regnum, Location::lng ));
     } else if ( t->base() == Type::RawPtr ) {
-      // jsr/ret return address which must be restored into a the full
+      // jsr/ret return address which must be restored into the full
       // width 64-bit stack slot.
       array->append(new_loc_value( C->regalloc(), regnum, Location::lng ));
     }
@@ -995,7 +996,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
   int safepoint_pc_offset = current_offset;
   bool is_method_handle_invoke = false;
-  bool is_opt_native = false;
   bool return_oop = false;
   bool has_ea_local_in_scope = sfn->_has_ea_local_in_scope;
   bool arg_escape = false;
@@ -1014,8 +1014,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         is_method_handle_invoke = true;
       }
       arg_escape = mcall->as_MachCallJava()->_arg_escape;
-    } else if (mcall->is_MachCallNative()) {
-      is_opt_native = true;
     }
 
     // Check if a call returns an object.
@@ -1088,12 +1086,11 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         scval = PhaseOutput::sv_for_node_id(objs, spobj->_idx);
         if (scval == NULL) {
           const Type *t = spobj->bottom_type();
-          ciKlass* cik = t->is_oopptr()->klass();
+          ciKlass* cik = t->is_oopptr()->exact_klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
-          ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
-          ObjectValue* sv = spobj->is_auto_box() ? new AutoBoxObjectValue(spobj->_idx, klass_sv)
-                                        : new ObjectValue(spobj->_idx, klass_sv);
+          ObjectValue* sv = new ObjectValue(spobj->_idx,
+                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
           PhaseOutput::set_sv_for_object_node(objs, sv);
 
           uint first_ind = spobj->first_index(youngest_jvms);
@@ -1145,7 +1142,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       jvms->should_reexecute(),
       rethrow_exception,
       is_method_handle_invoke,
-      is_opt_native,
       return_oop,
       has_ea_local_in_scope,
       arg_escape,
@@ -1862,6 +1858,19 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   if (C->print_assembly()) {
     ttyLocker ttyl;  // keep the following output all in one block
     if (!VMThread::should_terminate()) {  // test this under the tty lock
+      // print_metadata and dump_asm may safepoint which makes us loose the ttylock.
+      // We call them first and write to a stringStream, then we retake the lock to
+      // make sure the end tag is coherent, and that xmlStream->pop_tag is done thread safe.
+      ResourceMark rm;
+      stringStream method_metadata_str;
+      if (C->method() != NULL) {
+        C->method()->print_metadata(&method_metadata_str);
+      }
+      stringStream dump_asm_str;
+      dump_asm_on(&dump_asm_str, node_offsets, node_offset_limit);
+
+      NoSafepointVerifier nsv;
+      ttyLocker ttyl2;
       // This output goes directly to the tty, not the compiler log.
       // To enable tools to match it up with the compilation activity,
       // be sure to tag this tty output with the compile ID.
@@ -1871,19 +1880,15 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       }
       if (C->method() != NULL) {
         tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", C->compile_id());
-        C->method()->print_metadata();
+        tty->print_raw(method_metadata_str.as_string());
       } else if (C->stub_name() != NULL) {
         tty->print_cr("----------------------------- RuntimeStub %s -------------------------------", C->stub_name());
       }
       tty->cr();
       tty->print_cr("------------------------ OptoAssembly for Compile_id = %d -----------------------", C->compile_id());
-      dump_asm(node_offsets, node_offset_limit);
+      tty->print_raw(dump_asm_str.as_string());
       tty->print_cr("--------------------------------------------------------------------------------");
       if (xtty != NULL) {
-        // print_metadata and dump_asm above may safepoint which makes us loose the ttylock.
-        // Retake lock too make sure the end tag is coherent, and that xmlStream->pop_tag is done
-        // thread safe
-        ttyLocker ttyl2;
         xtty->tail("opto_assembly");
       }
     }
@@ -2117,19 +2122,26 @@ void PhaseOutput::ScheduleAndBundle() {
 #ifndef PRODUCT
   if (C->trace_opto_output()) {
     tty->print("\n---- After ScheduleAndBundle ----\n");
-    for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
-      tty->print("\nBB#%03d:\n", i);
-      Block* block = C->cfg()->get_block(i);
-      for (uint j = 0; j < block->number_of_nodes(); j++) {
-        Node* n = block->get_node(j);
-        OptoReg::Name reg = C->regalloc()->get_reg_first(n);
-        tty->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
-        n->dump();
-      }
-    }
+    print_scheduling();
   }
 #endif
 }
+
+#ifndef PRODUCT
+// Separated out so that it can be called directly from debugger
+void PhaseOutput::print_scheduling() {
+  for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
+    tty->print("\nBB#%03d:\n", i);
+    Block* block = C->cfg()->get_block(i);
+    for (uint j = 0; j < block->number_of_nodes(); j++) {
+      Node* n = block->get_node(j);
+      OptoReg::Name reg = C->regalloc()->get_reg_first(n);
+      tty->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
+      n->dump();
+    }
+  }
+}
+#endif
 
 // See if this node fits into the present instruction bundle
 bool Scheduling::NodeFitsInBundle(Node *n) {
@@ -3346,8 +3358,9 @@ void PhaseOutput::install_code(ciMethod*         target,
                                      compiler,
                                      has_unsafe_access,
                                      SharedRuntime::is_wide_vector(C->max_vector_size()),
-                                     C->rtm_state(),
-                                     C->native_invokers());
+                                     C->has_monitors(),
+                                     0,
+                                     C->rtm_state());
 
     if (C->log() != NULL) { // Print code cache state into compiler log
       C->log()->code_cache_state();

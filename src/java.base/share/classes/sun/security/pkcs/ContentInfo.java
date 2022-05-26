@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class ContentInfo {
     public static ObjectIdentifier OLD_DATA_OID =
             ObjectIdentifier.of(KnownOIDs.JDK_OLD_Data);
 
-    // The ASN.1 systax for the Netscape Certificate Sequence data type is
+    // The ASN.1 syntax for the Netscape Certificate Sequence data type is
     // defined at:
     //      http://wp.netscape.com/eng/security/comm4-cert-download.html
     public static ObjectIdentifier NETSCAPE_CERT_SEQUENCE_OID =

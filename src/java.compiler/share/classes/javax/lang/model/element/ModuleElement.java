@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,25 @@ import javax.lang.model.type.TypeMirror;
 /**
  * Represents a module program element.  Provides access to
  * information about the module, its directives, and its members.
+ *
+ * @apiNote
+ * The represented module may have an explicit {@linkplain
+ * javax.lang.model.util.Elements#getFileObjectOf(Element) reference
+ * representation} (either source code or executable output) or may be
+ * created from implicit information. The explicit and standalone
+ * source code construct for a module is typically a {@code
+ * module-info.java} file (JLS {@jls 7.7}). {@linkplain
+ * javax.lang.model.util.Elements#isAutomaticModule(ModuleElement)
+ * Automatic modules} (JLS {@jls 7.7.1}) are named modules that do
+ * <em>not</em> have a {@code module-info} file. Implicit information
+ * is used to model {@linkplain #isUnnamed unnamed modules}.
+ * <p>In the context of annotation processing, a module element can
+ * be:
+ * <ul>
+ * <li>created from the initial inputs to a run of the tool
+ * <li>{@linkplain javax.lang.model.util.Elements#getModuleElement(CharSequence)
+ * queried for} in the configured environment
+ * </ul>
  *
  * @see javax.lang.model.util.Elements#getModuleOf
  * @since 9

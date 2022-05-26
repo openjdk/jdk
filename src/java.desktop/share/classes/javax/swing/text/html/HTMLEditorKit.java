@@ -298,10 +298,10 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * @param doc the destination for the insertion
      * @param pos the location in the document to place the
      *   content
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *   location within the document
-     * @exception RuntimeException (will eventually be a BadLocationException)
+     * @throws RuntimeException (will eventually be a BadLocationException)
      *            if pos is invalid
      */
     public void read(Reader in, Document doc, int pos) throws IOException, BadLocationException {
@@ -337,7 +337,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *
      * @throws BadLocationException if {@code offset} is invalid
      * @throws IOException on I/O error
-     * @exception RuntimeException (will eventually be a BadLocationException)
+     * @throws RuntimeException (will eventually be a BadLocationException)
      *            if pos is invalid
      */
     public void insertHTML(HTMLDocument doc, int offset, String html,
@@ -367,8 +367,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * @param pos the location in the document to fetch the
      *   content
      * @param len the amount to write out
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if {@code pos} represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if {@code pos} represents an invalid
      *   location within the document
      */
     public void write(Writer out, Document doc, int pos, int len)

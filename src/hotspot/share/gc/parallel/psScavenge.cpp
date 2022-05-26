@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
 
     case ParallelRootType::code_cache:
       {
-        MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations);
+        MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
         ScavengableNMethods::nmethods_do(&code_closure);
       }
       break;
@@ -162,13 +162,15 @@ public:
   }
 
   template <class T> void do_oop_work(T* p) {
-    assert (oopDesc::is_oop(RawAccess<IS_NOT_NULL>::oop_load(p)),
-            "expected an oop while scanning weak refs");
+#ifdef ASSERT
+    // Referent must be non-null and in from-space
+    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
+    assert(oopDesc::is_oop(obj), "referent must be an oop");
+    assert(PSScavenge::is_obj_in_young(obj), "must be in young-gen");
+    assert(!PSScavenge::is_obj_in_to_space(obj), "must be in from-space");
+#endif
 
-    // Weak refs may be visited more than once.
-    if (PSScavenge::should_scavenge(p, _to_space)) {
-      _promotion_manager->copy_and_push_safe_barrier</*promote_immediately=*/false>(p);
-    }
+    _promotion_manager->copy_and_push_safe_barrier</*promote_immediately=*/false>(p);
   }
   virtual void do_oop(oop* p)       { PSKeepAliveClosure::do_oop_work(p); }
   virtual void do_oop(narrowOop* p) { PSKeepAliveClosure::do_oop_work(p); }
@@ -267,7 +269,7 @@ public:
 
     PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(_worker_id);
     PSScavengeRootsClosure roots_closure(pm);
-    MarkingCodeBlobClosure roots_in_blobs(&roots_closure, CodeBlobToOopClosure::FixRelocations);
+    MarkingCodeBlobClosure roots_in_blobs(&roots_closure, CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
 
     thread->oops_do(&roots_closure, &roots_in_blobs);
 
@@ -758,7 +760,7 @@ void PSScavenge::initialize() {
                            ParallelGCThreads,          // mt processing degree
                            ParallelGCThreads,          // mt discovery degree
                            false,                      // concurrent_discovery
-                           NULL);                      // header provides liveness info
+                           &_is_alive_closure);        // header provides liveness info
 
   // Cache the cardtable
   _card_table = heap->card_table();

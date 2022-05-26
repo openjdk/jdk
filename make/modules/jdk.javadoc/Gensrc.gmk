@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,17 @@
 # questions.
 #
 
-include GensrcCommonLangtools.gmk
+include GensrcCommon.gmk
+include GensrcProperties.gmk
 
-$(eval $(call SetupVersionProperties,OLD_JAVADOC_VERSION,\
-    com/sun/tools/javadoc/resources/version.properties))
-
-$(eval $(call SetupVersionProperties,JAVADOC_VERSION,\
+$(eval $(call SetupVersionProperties, JAVADOC_VERSION,\
     jdk/javadoc/internal/tool/resources/version.properties))
 
-$(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, $(JAVADOC_VERSION)))
+$(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
+    SRC_DIRS := $(TOPDIR)/src/$(MODULE)/share/classes, \
+    EXTRA_FILES := $(JAVADOC_VERSION), \
+    CLASS := java.util.ListResourceBundle, \
+    TYPE := langtools, \
+))
 
 TARGETS += $(COMPILE_PROPERTIES)

@@ -31,6 +31,12 @@ import java.awt.Panel;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.image.BufferedImage;
+import javax.swing.UIManager;
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
+
 
 /**
  * @test
@@ -40,11 +46,7 @@ import java.awt.Robot;
  *           Gtk backends and presence of UI scaling
  * @requires os.family == "linux"
  * @run main/othervm -Djdk.gtk.version=2 -Dsun.java2d.uiScale=1 ScreenCaptureGtkTest
- * @run main/othervm -Djdk.gtk.version=2 -Dsun.java2d.uiScale=2 ScreenCaptureGtkTest
- * @run main/othervm -Djdk.gtk.version=2 -Dsun.java2d.uiScale=3 ScreenCaptureGtkTest
  * @run main/othervm -Djdk.gtk.version=3 -Dsun.java2d.uiScale=1 ScreenCaptureGtkTest
- * @run main/othervm -Djdk.gtk.version=3 -Dsun.java2d.uiScale=2 ScreenCaptureGtkTest
- * @run main/othervm -Djdk.gtk.version=3 -Dsun.java2d.uiScale=3 ScreenCaptureGtkTest
  */
 
 public class ScreenCaptureGtkTest {
@@ -52,15 +54,18 @@ public class ScreenCaptureGtkTest {
             Color.GREEN, Color.BLUE, Color.ORANGE, Color.RED};
 
     public static void main(String[] args) throws Exception {
+        final int topOffset = 50;
+        final int leftOffset = 50;
+
         Frame frame = new Frame();
-        // Position the frame on prime number coordinates to avoid
-        // them being multiple of the desktop scale; this tests Linux
-        // color picker better.
+        // Position the frame such that color picker will work with
+        // prime number coordinates (mind the offset) to avoid them being
+        // multiple of the desktop scale; this tests Linux color picker better.
         // Also, the position should be far enough from the top left
         // corner of the screen to reduce the chance of being repositioned
         // by the system because that area's occupied by the global
         // menu bar and such.
-        frame.setBounds(83, 97, 400, 300);
+        frame.setBounds(89, 99, 100, 100);
         frame.setUndecorated(true);
 
         Panel panel = new Panel(new BorderLayout());
@@ -74,9 +79,9 @@ public class ScreenCaptureGtkTest {
                 g.fillRect(0, 0, w, h);
                 // Paint several distinct pixels next to one another
                 // in order to test color picker's precision.
-                for (int i = 1; i < 4; i++) {
+                for (int i = 1; i < COLORS.length; i++) {
                     g.setColor(COLORS[i]);
-                    g.fillRect(i, 0, 1, 1);
+                    g.fillRect(leftOffset + i, topOffset, 1, 1);
                 }
             }
         };
@@ -88,24 +93,50 @@ public class ScreenCaptureGtkTest {
         robot.waitForIdle();
         robot.delay(500);
 
-        final Point screenLocation = frame.getLocationOnScreen();
-        checkPixelColors(robot, screenLocation.x, screenLocation.y);
+        captureImageOf(frame, robot);
 
-        robot.delay(100);
-        frame.dispose();
+        final Point screenLocation = frame.getLocationOnScreen();
+        try {
+            checkPixelColors(robot, screenLocation.x + leftOffset,
+                    screenLocation.y + topOffset);
+        } finally {
+            robot.delay(100);
+            frame.dispose();
+        }
     }
 
     static void checkPixelColors(Robot robot, int x, int y) {
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < COLORS.length; i++) {
             final Color actualColor = robot.getPixelColor(x + i, y);
             System.out.print("Checking color at " + (x + i) + ", " + y + " to be equal to " + COLORS[i]);
             if (!actualColor.equals(COLORS[i])) {
                 System.out.println("... Mismatch: found " + actualColor + " instead");
+                saveImage();
                 throw new RuntimeException("Wrong screen pixel color");
 
             } else {
                 System.out.println("... OK");
             }
+        }
+    }
+
+    private static BufferedImage image;
+
+    static void captureImageOf(Frame frame, Robot robot) {
+        Rectangle rect = frame.getBounds();
+        rect.setLocation(frame.getLocationOnScreen());
+
+        System.out.println("Creating screen capture of " + rect);
+        image = robot.createScreenCapture(rect);
+    }
+
+    static void saveImage() {
+        System.out.println("Check image.png");
+        try {
+            ImageIO.write(image, "png", new File("image.png"));
+        } catch(IOException e) {
+            System.out.println("failed to save image.png.");
+            e.printStackTrace();
         }
     }
 }

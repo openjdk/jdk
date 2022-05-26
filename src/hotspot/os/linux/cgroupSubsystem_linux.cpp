@@ -495,7 +495,12 @@ int CgroupSubsystem::active_processor_count() {
   cpu_count = limit_count = os::Linux::active_processor_count();
   int quota  = cpu_quota();
   int period = cpu_period();
-  int share  = cpu_shares();
+
+  // It's not a good idea to use cpu_shares() to limit the number
+  // of CPUs used by the JVM. See JDK-8281181.
+  // UseContainerCpuShares and PreferContainerQuotaForCPUCount are
+  // deprecated and will be removed in the next JDK release.
+  int share  = UseContainerCpuShares ? cpu_shares() : -1;
 
   if (quota > -1 && period > 0) {
     quota_count = ceilf((float)quota / (float)period);
