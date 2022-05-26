@@ -1281,7 +1281,7 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
 
   assert(chunk->parent() == nullptr || chunk->parent()->is_stackChunk(), "");
 
-  // Shenandoah: even _cont is good, there is no guarantee that it is deeply good.
+  // Shenandoah: even continuation is good, it does not mean it is deeply good.
   if (UseShenandoahGC && chunk->requires_barriers()) {
     fast_oop = nullptr;
   }
