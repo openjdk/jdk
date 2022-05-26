@@ -61,6 +61,7 @@ public class WhiteBoxResizeTest {
     final MethodHandle TABLE_SIZE_FOR;
     final VarHandle HM_TABLE;
     final VarHandle WHM_TABLE;
+    final VarHandle HS_MAP;
 
     public WhiteBoxResizeTest() throws ReflectiveOperationException {
         MethodHandles.Lookup hmlookup = MethodHandles.privateLookupIn(HashMap.class, MethodHandles.lookup());
@@ -70,6 +71,9 @@ public class WhiteBoxResizeTest {
 
         MethodHandles.Lookup whmlookup = MethodHandles.privateLookupIn(WeakHashMap.class, MethodHandles.lookup());
         WHM_TABLE = whmlookup.unreflectVarHandle(WeakHashMap.class.getDeclaredField("table"));
+
+        MethodHandles.Lookup hslookup = MethodHandles.privateLookupIn(HashSet.class, MethodHandles.lookup());
+        HS_MAP = hslookup.unreflectVarHandle(HashSet.class.getDeclaredField("map"));
     }
 
     /*
@@ -331,33 +335,17 @@ public class WhiteBoxResizeTest {
     Object[] rsc(String label,
                  int size,
                  int expectedCapacity,
-                 Supplier<Map<String, String>> supplier) {
+                 Supplier<Capacitiable> supplier) {
         return new Object[]{label, size, expectedCapacity, supplier};
     }
 
     List<Object[]> genRequestedSizeCases(int size, int cap) {
         return Arrays.asList(
-                rsc("rshm", size, cap, () -> HashMap.newHashMap(size)),
-                rsc("rslm", size, cap, () -> LinkedHashMap.newLinkedHashMap(size)),
-                rsc("rswm", size, cap, () -> WeakHashMap.newWeakHashMap(size)),
-                rsc("rshs", size, cap, () -> {
-                    try {
-                        Field mapField = HashSet.class.getDeclaredField("map");
-                        HashSet<String> set = HashSet.newHashSet(size);
-                        return (Map<String, String>) mapField.get(set);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }),
-                rsc("rsls", size, cap, () -> {
-                    try {
-                        Field mapField = HashSet.class.getDeclaredField("map");
-                        LinkedHashSet<String> set = LinkedHashSet.newLinkedHashSet(size);
-                        return (Map<String, String>) mapField.get(set);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                })
+                rsc("rshm", size, cap, () -> new MapCapacitiable(HashMap.newHashMap(size))),
+                rsc("rslm", size, cap, () -> new MapCapacitiable(LinkedHashMap.newLinkedHashMap(size))),
+                rsc("rswm", size, cap, () -> new MapCapacitiable(WeakHashMap.newWeakHashMap(size))),
+                rsc("rshs", size, cap, () -> new SetCapacitiable(HashSet.newHashSet(size))),
+                rsc("rsls", size, cap, () -> new SetCapacitiable(LinkedHashSet.newLinkedHashSet(size)))
         );
     }
 
@@ -385,9 +373,70 @@ public class WhiteBoxResizeTest {
     public void requestedSize(String label,  // unused, included for diagnostics
                               int size,      // unused, included for diagnostics
                               int expectedCapacity,
-                              Supplier<Map<String, String>> s) {
-        Map<String, String> map = s.get();
-        map.put("", "");
-        assertEquals(capacity(map), expectedCapacity);
+                              Supplier<Capacitiable> s) {
+        Capacitiable capacitiable = s.get();
+        capacitiable.init();
+        assertEquals(capacitiable.capacity(), expectedCapacity);
     }
+
+    interface Capacitiable {
+
+        void init();
+
+        int capacity();
+
+    }
+
+    class MapCapacitiable implements Capacitiable {
+
+        private final Map<String, String> content;
+
+        public MapCapacitiable(Map<String, String> content) {
+            this.content = content;
+        }
+
+        @Override
+        public void init() {
+            if (content != null) {
+                content.put("", "");
+            }
+        }
+
+        @Override
+        public int capacity() {
+            if (content == null) {
+                return -1;
+            }
+            return table(content).length;
+        }
+    }
+
+    class SetCapacitiable implements Capacitiable {
+
+        private final Set<String> content;
+
+        public SetCapacitiable(Set<String> content) {
+            this.content = content;
+        }
+
+        @Override
+        public void init() {
+            if (content != null) {
+                content.add("");
+            }
+        }
+
+        @Override
+        public int capacity() {
+            if (content == null) {
+                return -1;
+            }
+            HashMap<?, ?> hashMap = (HashMap<?, ?>) HS_MAP.get(content);
+            if (hashMap == null) {
+                return -1;
+            }
+            return table(hashMap).length;
+        }
+    }
+
 }
