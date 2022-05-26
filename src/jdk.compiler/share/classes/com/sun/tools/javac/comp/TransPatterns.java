@@ -398,14 +398,14 @@ public class TransPatterns extends TreeTranslator {
                                               .collect(List.collector());
                 }
                 if (clearedPatterns.size() == 1 && clearedPatterns.head.hasTag(Tag.PATTERNCASELABEL) && !previousCompletesNormally) {
-                    JCPatternCaseLabel p = (JCPatternCaseLabel) clearedPatterns.head;
+                    JCPatternCaseLabel label = (JCPatternCaseLabel) clearedPatterns.head;
                     bindingContext = new BasicBindingContext();
                     VarSymbol prevCurrentValue = currentValue;
                     try {
                         currentValue = temp;
-                        JCExpression test = (JCExpression) this.<JCTree>translate(p);
-                        if (p.guard != null) {
-                            test = makeBinary(Tag.AND, test, translate(p.guard));
+                        JCExpression test = (JCExpression) this.<JCTree>translate(label.pat);
+                        if (label.guard != null) {
+                            test = makeBinary(Tag.AND, test, translate(label.guard));
                         }
                         c.stats = translate(c.stats);
                         JCContinue continueSwitch = make.at(clearedPatterns.head.pos()).Continue(null);

@@ -2239,7 +2239,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     /**
      * Pattern matching forms.
      */
-    public abstract static class JCPattern extends JCCaseLabel
+    public abstract static class JCPattern extends JCTree
             implements PatternTree {
     }
 

@@ -1804,7 +1804,7 @@ public class Attr extends JCTree.Visitor {
                                 log.error(guard.pos(), Errors.GuardHasConstantExpressionFalse);
                             }
                         }
-                        boolean unguarded = TreeInfo.unguardedCaseLabel(pat);
+                        boolean unguarded = TreeInfo.unguardedCaseLabel(label);
                         boolean unconditional =
                                 unguarded &&
                                 !patternType.isErroneous() &&
