@@ -108,6 +108,22 @@ hotspot_vector_2 = \
 hotspot_compiler_arraycopy = \
   compiler/arraycopy/stress
 
+tier1_loom = \
+  :tier1_loom_runtime \
+  :tier1_loom_serviceability
+
+tier1_loom_runtime = \
+  runtime/vthread \
+  runtime/jni/IsVirtualThread
+
+tier1_loom_serviceability = \
+  serviceability/jvmti/vthread \
+  serviceability/jvmti/events \
+  serviceability/dcmd/thread
+
+hotspot_loom = \
+  :tier1_loom
+
 tier1_common = \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \

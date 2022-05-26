@@ -681,6 +681,105 @@ public class Exhaustiveness extends TestRunner {
     }
 
     @Test
+    public void testX(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public final class B implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record R(S a, S b) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(R r) {
+                       return switch (r) {
+                           case R(A a, A b) -> 0;
+                           case R(A a, B b) -> 0;
+                           case R(B a, A b) -> 0;
+                           case R(B a, B b) -> 0;
+                       };
+                   }
+               }
+               """);
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record B(Object o) implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record R(S a, S b) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(R r) {
+                       return switch (r) {
+                           case R(A a, A b) -> 0;
+                           case R(A a, B b) -> 0;
+                           case R(B a, A b) -> 0;
+                           case R(B a, B(String s)) -> 0;
+                       };
+                   }
+               }
+               """,
+               "Test.java:5:16: compiler.err.not.exhaustive",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "1 error");
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record B(Object o) implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record R(S a, S b) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private int test(R r) {
+                       return switch (r) {
+                           case R(A a, A b) -> 0;
+                           case R(A a, B b) -> 0;
+                           case R(B a, A b) -> 0;
+                           case R(B a, B(var o)) -> 0;
+                       };
+                   }
+               }
+               """);
+    }
     public void testTransitiveSealed(Path base) throws Exception {
         doTest(base,
                new String[0],
@@ -869,6 +968,48 @@ public class Exhaustiveness extends TestRunner {
     }
 
     @Test
+    public void testSuperTypesInPattern(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public final class B implements S {}
+                            """,
+                            """
+                            package lib;
+                            public record R(S a, S b) {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private void testStatement(R obj) {
+                       switch (obj) {
+                           case R(A a, A b): break;
+                           case R(A a, B b): break;
+                           case R(B a, A b): break;
+                           case R(B a, B b): break;
+                       }
+                       switch (obj) {
+                           case R(S a, A b): break;
+                           case R(S a, B b): break;
+                       }
+                       switch (obj) {
+                           case R(Object a, A b): break;
+                           case R(Object a, B b): break;
+                       }
+                   }
+               }
+               """);
+    }
+
     public void testNonPrimitiveBooleanGuard(Path base) throws Exception {
         doTest(base,
                new String[0],
