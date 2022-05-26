@@ -1858,7 +1858,9 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
 // only record well-formed if nodes.
 // we only process a node once,so it is fine with duplication.
 void Compile::record_unstable_if(UnstableIfTrap* trap) {
-  _unstable_ifs.append(trap);
+  if (AggressiveLivenessForUnstableIf) {
+    _unstable_ifs.append(trap);
+  }
 }
 
 void Compile::invalidate_unstable_if(CallStaticJavaNode* unc) {
@@ -1889,6 +1891,9 @@ void Compile::preprocess_unstable_ifs() {
 // It needs to be done after igvn because fold-compares may fuse uncommon_traps and
 // before renumbering.
 void Compile::process_for_unstable_ifs(PhaseIterGVN& igvn) {
+  if (!AggressiveLivenessForUnstableIf)
+    return;
+
   while (_unstable_ifs.length() > 0) {
     UnstableIfTrap* trap = _unstable_ifs.pop();
     CallStaticJavaNode* unc = trap->uncommon_trap();
