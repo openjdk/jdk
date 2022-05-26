@@ -453,19 +453,19 @@ Node* ConnectionGraph::come_from_allocate(Node* n) {
       case Op_CreateEx:
       case Op_AllocateArray:
       case Op_Phi:
-        return n;
-      case Op_Allocate:
         return NULL;
+      case Op_Allocate:
+        return n->in(AllocateNode::KlassNode);
       default:
         if (n->is_Call()) {
-          return n;
+          return NULL;
         }
         assert(false, "Should not reach here. Unmatched %d %s", n->_idx, n->Name());
     }
   }
 
   // should never reach here
-  return n;
+  return NULL;
 }
 
 bool ConnectionGraph::should_reduce_this_phi(Node* n) {
@@ -478,12 +478,23 @@ bool ConnectionGraph::should_reduce_this_phi(Node* n) {
   if (ptn->escape_state() != PointsToNode::EscapeState::NoEscape) return false;
 
   // Check whether this Phi node actually point to Allocate nodes
+  Node* prev_klass = NULL;
   for (uint in_idx=1; in_idx<n->req(); in_idx++) {
     Node* input = n->in(in_idx);
-    Node* src = come_from_allocate(input);
-    if (src != NULL) {
-      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input does not come from an Allocate -> %d %s", n->_idx, in_idx, src->_idx, src->Name());)
+    Node* klass = come_from_allocate(input);
+
+    if (klass == NULL) {
+      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input does not come from an Allocate.", n->_idx, in_idx);)
       return false;
+    }
+    else {
+      if (prev_klass != NULL && prev_klass != klass) {
+        NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The input Allocate klass nodes don't match.", n->_idx);)
+        NOT_PRODUCT(if (Verbose) prev_klass->dump();)
+        NOT_PRODUCT(if (Verbose) klass->dump();)
+        return false;
+      }
+      prev_klass = klass;
     }
   }
 
@@ -3436,72 +3447,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     }
     else if (n->is_ReducedAllocationMerge()) {
       continue; // there is no need for this kind of node to have an instance id
-      /////// // This is necessary because EA put ReducedAllocationMerge nodes
-      /////// // initially into the worklist and the processing of Allocate* nodes
-      /////// // might also add the same node to the worklist.
-      /////// if (visited.test_set(n->_idx)) {
-      ///////   continue;  // already processed
-      /////// }
-
-      /////// PointsToNode* ptn = ptnode_adr(n->_idx);
-      /////// PointsToNode::EscapeState es = ptn->escape_state();
-      /////// const TypeOopPtr *t = igvn->type(n)->isa_oopptr();
-
-      /////// assert(es == PointsToNode::EscapeState::NoEscape, "This should be NoEscape.");
-      /////// assert(t != NULL, "This should be an oopptr.");
-
-      /////// // Just to simplify some checks
-      /////// set_map(n, n);
-
-      /////// // ReducedAllocationMerge has it's own instance_id which is it's ID
-      /////// // I'm casting to exactness here because only exact nodes can have an
-      /////// // instance_id and this node will later disappear, in reality the merge
-      /////// // might not be exact.
-      /////// t = t->cast_to_exactness(true)->isa_oopptr();
-      /////// const TypeOopPtr* tinst = t->cast_to_instance_id(ni);
-
-      /////// igvn->hash_delete(n);
-      /////// igvn->set_type(n,  tinst);
-      /////// n->raise_bottom_type(tinst);
-      /////// igvn->hash_insert(n);
-
-      ///////   // TODO: should I keep the find second AddP part? I.e., for the case
-      ///////   // when the merge was for array allocations?
-
-      ///////   for (EdgeIterator e(ptn); e.has_next(); e.next()) {
-      ///////     PointsToNode* tgt = e.get();
-      ///////     if (tgt->is_Arraycopy()) {
-      ///////       continue;
-      ///////     }
-      ///////     Node* use = tgt->ideal_node();
-      ///////     assert(tgt->is_Field() && use->is_AddP(),
-      ///////             "only AddP nodes are Field edges in CG");
-      ///////     if (use->outcnt() > 0) { // Don't process dead nodes
-      ///////       Node* addp2 = find_second_addp(use, use->in(AddPNode::Base));
-      ///////       if (addp2 != NULL) {
-      ///////         alloc_worklist.append_if_missing(addp2);
-      ///////       }
-      ///////       alloc_worklist.append_if_missing(use);
-      ///////     }
-      ///////   }
-
-      ///////   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-      ///////     Node *use = n->fast_out(i);
-      ///////     if (use->is_AddP() && use->outcnt() > 0) { // Don't process dead nodes
-      ///////       Node* addp2 = find_second_addp(use, n);
-      ///////       if (addp2 != NULL) {
-      ///////         alloc_worklist.append_if_missing(addp2);
-      ///////       }
-      ///////       alloc_worklist.append_if_missing(use);
-      ///////     } else if (use->is_MemBar()) {
-      ///////       memnode_worklist.append_if_missing(use);
-      ///////     }
-      ///////   }
     } else if (n->is_AddP()) {
       JavaObjectNode* jobj = unique_java_object(get_addp_base(n));
       if (jobj == NULL || jobj == phantom_obj) {
 #ifdef ASSERT
-        //_compile->print_method(PHASE_AFTER_REDUCE_ALLOCATION, 2);
         ptnode_adr(get_addp_base(n)->_idx)->dump();
         ptnode_adr(n->_idx)->dump();
         assert(jobj != NULL && jobj != phantom_obj, "escaped allocation");
@@ -3509,7 +3458,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         _compile->record_failure(_invocation > 0 ? C2Compiler::retry_no_iterative_escape_analysis() : C2Compiler::retry_no_escape_analysis());
         return;
       }
-      Node *base = get_map(jobj->idx());
+      Node *base = get_map(jobj->idx());  // CheckCastPP node
       if (!split_AddP(n, base)) continue; // wrong type from dead path
     } else if (n->is_Phi() ||
                n->is_CheckCastPP() ||
@@ -3517,13 +3466,12 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                n->is_DecodeN() ||
                (n->is_ConstraintCast() && n->Opcode() == Op_CastPP)) {
       if (visited.test_set(n->_idx)) {
-        assert(n->is_Phi(), "loops only through Phi's. Actual node is %s", n->Name());
+        assert(n->is_Phi(), "loops only through Phi's");
         continue;  // already processed
       }
       JavaObjectNode* jobj = unique_java_object(n);
       if (jobj == NULL || jobj == phantom_obj) {
 #ifdef ASSERT
-        //_compile->print_method(PHASE_AFTER_REDUCE_ALLOCATION, 2);
         ptnode_adr(n->_idx)->dump();
         assert(jobj != NULL && jobj != phantom_obj, "escaped allocation");
 #endif
@@ -3971,32 +3919,44 @@ void PointsToNode::dump(bool print_state, outputStream* out, bool newline) const
   }
 }
 
-void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist, const char* title) {
+void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist) {
+  bool first = true;
   int ptnodes_length = ptnodes_worklist.length();
-
-  ttyLocker ttyl;
-  tty->cr();
-  tty->print("======== Connection Graph%sfor ", title != NULL ? title : "");
-  _compile->method()->print_short_name();
-  tty->print_cr(" vvvvvv");
-  tty->print_cr("invocation #%d: %d iterations and %f sec to build connection graph with %d nodes and worklist size %d",
-                _invocation, _build_iterations, _build_time, nodes_size(), ptnodes_worklist.length());
-  tty->cr();
   for (int i = 0; i < ptnodes_length; i++) {
     PointsToNode *ptn = ptnodes_worklist.at(i);
-    if (ptn == NULL) {
+    if (ptn == NULL || !ptn->is_JavaObject()) {
       continue;
     }
-    if (!Verbose) {
-      PointsToNode::EscapeState es = ptn->escape_state();
-
-      if (!ptn->is_JavaObject() || es != PointsToNode::NoEscape) {
-        continue;
-      }
+    PointsToNode::EscapeState es = ptn->escape_state();
+    if ((es != PointsToNode::NoEscape) && !Verbose) {
+      continue;
     }
-    ptn->dump();
+    Node* n = ptn->ideal_node();
+    if (n->is_Allocate() || (n->is_CallStaticJava() &&
+                             n->as_CallStaticJava()->is_boxing_method())) {
+      if (first) {
+        tty->cr();
+        tty->print("======== Connection graph for ");
+        _compile->method()->print_short_name();
+        tty->cr();
+        tty->print_cr("invocation #%d: %d iterations and %f sec to build connection graph with %d nodes and worklist size %d",
+                      _invocation, _build_iterations, _build_time, nodes_size(), ptnodes_worklist.length());
+        tty->cr();
+        first = false;
+      }
+      ptn->dump();
+      // Print all locals and fields which reference this allocation
+      for (UseIterator j(ptn); j.has_next(); j.next()) {
+        PointsToNode* use = j.get();
+        if (use->is_LocalVar()) {
+          use->dump(Verbose);
+        } else if (Verbose) {
+          use->dump();
+        }
+      }
+      tty->cr();
+    }
   }
-  tty->print_cr("======== End Connection graph ^^^^^^ ");
 }
 
 void ConnectionGraph::trace_es_update_helper(PointsToNode* ptn, PointsToNode::EscapeState es, bool fields, const char* reason) const {

@@ -1049,7 +1049,7 @@ public:
 };
 
 // This node is used during EA/SR to simplify allocation merges.
-// It's placed in this file just because it's closely related to allocation.
+// It's in this file just because it's closely related to allocation.
 class ReducedAllocationMergeNode : public TypeNode {
 private:
   ciKlass* _klass;                  // Which Klass is the merge for
@@ -1058,21 +1058,18 @@ private:
 
   Node_Array* _in_copy;             // I need a *copy* of the original Phi input node addresses
                                     // because these input nodes are going to go away as we scalar
-                                    // replace the allocations and remove the nodes. However, I
+                                    // replace the allocations and remove the nodes. However,
                                     // the order of the inputs in the original Phi is important
                                     // to several operations of RAM.
 
-  bool _needs_all_fields;           // This is set to true when there was an Safepoint or uncommon_trap
+  bool _needs_all_fields;           // This is set to true when there was a Safepoint or uncommon_trap
                                     // using the original Phi. In that situation we need information of
-                                    // all fields reaching the Safepoing/trap so that we can construct
+                                    // all fields reaching the Safepoint/trap so that we can construct
                                     // a SafepoingScalarObjectNode
 
   Dict* _fields_and_values;
 
-  bool _found_memory_phi;           // Set to true when we find a matching memory Phi from
-                                    // same Region as original phi.
-
-  uint _memories_indexes_start;
+  int _memories_indexes_start;
 
 public:
   ReducedAllocationMergeNode(Compile* C, PhaseIterGVN* igvn, const PhiNode* phi) : TypeNode(phi->type(), phi->req()) {
@@ -1084,7 +1081,6 @@ public:
     _in_copy                = new Node_Array(Thread::current()->resource_area(), phi->req());
     _memories_indexes_start = -1;
     _fields_and_values      = new (C->comp_arena()) Dict(cmpkey, hashkey);
-    _found_memory_phi       = false;
 
     const Type* ram_t = Type::TOP;
 
@@ -1105,14 +1101,12 @@ public:
     for (DUIterator_Fast imax, i = reg->fast_outs(imax); i < imax; i++) {
       Node* n = reg->fast_out(i);
       if (n->is_Phi() && n->bottom_type() == Type::MEMORY) {
-        // Safe the index where we are storing the memory edge
         _memories_indexes_start = req();
 
         for (uint j=1; j<n->req(); j++) {
           add_req(n->in(j));
         }
 
-        _found_memory_phi = true;
         break;
       }
     }
@@ -1143,7 +1137,7 @@ public:
 
       // If we didn't find memory edges to use so far then try to
       // figure out which Memory edge subsequent Loads of this field use
-      if (_found_memory_phi == false) {
+      if (_memories_indexes_start == -1) {
         for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
           Node* addp_use = n->fast_out(i);
 
@@ -1164,7 +1158,6 @@ public:
               }
             }
 
-            _found_memory_phi = true;
             break;
           }
           else {
@@ -1172,22 +1165,17 @@ public:
           }
         }
       }
-
-      tty->print_cr("Registering in %d RAM the use of field @ offset %ld.", this->_idx, field);
     }
     else if (n->Opcode() == Op_SafePoint || (n->is_CallStaticJava() && n->as_CallStaticJava()->is_uncommon_trap())) {
       _needs_all_fields = true;
-
-      tty->print_cr("Registering in %d RAM the use of all fields.", this->_idx);
     }
     else {
-      NOT_PRODUCT(tty->print_cr("Node: %d %s", n->_idx, n->Name());)
-      assert(false, "Trying to register unsupported use in RAM.");
+      assert(false, "Trying to register unsupported use in RAM -> %d : %s", n->_idx, n->Name());
     }
   }
 
   Node* memory_for(jlong field, Node* base) const {
-    assert(_found_memory_phi, "Didn't find memory edges yet?");
+    assert(_memories_indexes_start != -1, "Didn't find memory edges yet?");
 
     for (uint i=1; i<_num_orig_inputs; i++) {
       if (base == _in_copy->at(i)) {
@@ -1238,7 +1226,7 @@ public:
   Node* value_phi_for_field(jlong field, PhaseIterGVN* igvn) {
     PhiNode* phi       = new PhiNode(this->in(0), Type::BOTTOM);
     Node_Array* values = (Node_Array*) ((*_fields_and_values)[(void*)field]);
-    const Type *t      = Type::TOP;        // Merged type starting value
+    const Type *t      = Type::TOP;
 
     for (uint i=1; i<_num_orig_inputs; i++) {
       assert(values->at(i) != NULL, "shouldn't be null at this point");
