@@ -261,8 +261,8 @@ final class DigestMD5Client extends DigestMD5Base implements SaslClient {
     * Check directive values that are multi-valued and ensure that mandatory
     * directives not missing from the digest-challenge.
     *
-    * @throws SaslException if a sasl is a the mechanism cannot
-    * correctly handle a callbacks or if a violation in the
+    * @throws SaslException if a sasl mechanism cannot
+    * correctly handle callbacks or if a violation in the
     * digest challenge format is detected.
     */
     private void processChallenge(byte[][] challengeVal, List<byte[]> realmChoices)

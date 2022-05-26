@@ -85,7 +85,7 @@ public final class MetadataRepository {
                 // annotations, such as Period and Threshold.
                 if (pEventType.hasPeriod()) {
                     pEventType.setEventHook(true);
-                    if (!(Type.EVENT_NAME_PREFIX + "ExecutionSample").equals(type.getName())) {
+                    if (!pEventType.isMethodSampling()) {
                         requestHooks.add(new RequestHook(pEventType));
                     }
                 }
@@ -158,7 +158,7 @@ public final class MetadataRepository {
         configuration.getPlatformEventType().setRegistered(true);
         typeLibrary.addType(configuration.getPlatformEventType());
         if (jvm.isRecording()) {
-            settingsManager.setEventControl(configuration.getEventControl(), true);
+            settingsManager.setEventControl(configuration.getEventControl(), true, JVM.counterTime());
             settingsManager.updateRetransform(Collections.singletonList((eventClass)));
        }
        setStaleMetadata();

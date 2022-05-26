@@ -82,7 +82,7 @@ final class DesktopIntegration extends ShellCustomAction {
 
         // Need desktop and icon files if one of conditions is met:
         //  - there are file associations configured
-        //  - user explicitely requested to create a shortcut
+        //  - user explicitly requested to create a shortcut
         boolean withDesktopFile = !associations.isEmpty() || LINUX_SHORTCUT_HINT.fetchFrom(params);
 
         var curIconResource = LinuxAppImageBuilder.createIconResource(DEFAULT_ICON,
@@ -310,7 +310,7 @@ final class DesktopIntegration extends ShellCustomAction {
             // Add manual cleanup of system files to get rid of
             // the default mime type handlers.
             //
-            // Even after mime type is unregisterd with `xdg-mime uninstall`
+            // Even after mime type is unregistered with `xdg-mime uninstall`
             // command and desktop file deleted with `xdg-desktop-menu uninstall`
             // command, records in
             // `/usr/share/applications/defaults.list` (Ubuntu 16) or

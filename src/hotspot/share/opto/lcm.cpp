@@ -326,25 +326,27 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     Block *mb = get_block_for_node(mach);
     // Hoisting stores requires more checks for the anti-dependence case.
     // Give up hoisting if we have to move the store past any load.
-    if( was_store ) {
-      Block *b = mb;            // Start searching here for a local load
-      // mach use (faulting) trying to hoist
-      // n might be blocker to hoisting
-      while( b != block ) {
-        uint k;
-        for( k = 1; k < b->number_of_nodes(); k++ ) {
-          Node *n = b->get_node(k);
-          if( n->needs_anti_dependence_check() &&
-              n->in(LoadNode::Memory) == mach->in(StoreNode::Memory) )
-            break;              // Found anti-dependent load
-        }
-        if( k < b->number_of_nodes() )
-          break;                // Found anti-dependent load
-        // Make sure control does not do a merge (would have to check allpaths)
-        if( b->num_preds() != 2 ) break;
-        b = get_block_for_node(b->pred(1)); // Move up to predecessor block
-      }
-      if( b != block ) continue;
+    if (was_store) {
+       // Make sure control does not do a merge (would have to check allpaths)
+       if (mb->num_preds() != 2) {
+         continue;
+       }
+       // mach is a store, hence block is the immediate dominator of mb.
+       // Due to the null-check shape of block (where its successors cannot re-join),
+       // block must be the direct predecessor of mb.
+       assert(get_block_for_node(mb->pred(1)) == block, "Unexpected predecessor block");
+       uint k;
+       uint num_nodes = mb->number_of_nodes();
+       for (k = 1; k < num_nodes; k++) {
+         Node *n = mb->get_node(k);
+         if (n->needs_anti_dependence_check() &&
+             n->in(LoadNode::Memory) == mach->in(StoreNode::Memory)) {
+           break;              // Found anti-dependent load
+         }
+       }
+       if (k < num_nodes) {
+         continue;             // Found anti-dependent load
+       }
     }
 
     // Make sure this memory op is not already being used for a NullCheck
@@ -897,12 +899,6 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
       // Calling Java code so use Java calling convention
       save_policy = _matcher._register_save_policy;
       break;
-    case Op_CallNative:
-      // We use the c reg save policy here since Foreign Linker
-      // only supports the C ABI currently.
-      // TODO compute actual save policy based on nep->abi
-      save_policy = _matcher._c_reg_save_policy;
-      break;
 
     default:
       ShouldNotReachHere();
@@ -916,14 +912,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
   // done for oops since idealreg2debugmask takes care of debug info
   // references but there no way to handle oops differently than other
   // pointers as far as the kill mask goes.
-  //
-  // Also, native callees can not save oops, so we kill the SOE registers
-  // here in case a native call has a safepoint. This doesn't work for
-  // RBP though, which seems to be special-cased elsewhere to always be
-  // treated as alive, so we instead manually save the location of RBP
-  // before doing the native call (see NativeInvokerGenerator::generate).
-  bool exclude_soe = op == Op_CallRuntime
-    || (op == Op_CallNative && mcall->guaranteed_safepoint());
+  bool exclude_soe = op == Op_CallRuntime;
 
   // If the call is a MethodHandle invoke, we need to exclude the
   // register which is used to save the SP value over MH invokes from

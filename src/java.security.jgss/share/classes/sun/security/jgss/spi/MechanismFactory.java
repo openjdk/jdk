@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.security.Provider;
  * property "GssApiMechanism.x.y.z" to an implementation class that serves
  * as the factory for that mechanism.
  * <p>
- * e.g., If a provider master file contained the a mapping from the
+ * e.g., If a provider master file contained a mapping from the
  * property "GssApiMechanism.1.2.840.113554.1.2.2" to the class name
  * "com.foo.krb5.Krb5GssFactory", then the GSS-API framework would assume
  * that com.foo.krb5.Krb5GssFactory implements the MechanismFactory
@@ -53,13 +53,13 @@ public interface MechanismFactory {
      * Returns the Oid of the mechanism that this factory supports.
      * @return the Oid
      */
-    public Oid getMechanismOid();
+    Oid getMechanismOid();
 
     /**
      * Returns the provider that this factory came from.
      * @return the provider
      */
-    public Provider getProvider();
+    Provider getProvider();
 
     /**
      * Returns the GSS-API nametypes that this mechanism can
@@ -69,7 +69,7 @@ public interface MechanismFactory {
      * nametypes supported
      * @see org.ietf.jgss.GSSName
      */
-    public Oid[] getNameTypes() throws GSSException;
+    Oid[] getNameTypes() throws GSSException;
 
     /**
      * Creates a credential element for this mechanism to be included as
@@ -115,8 +115,8 @@ public interface MechanismFactory {
      * @throws GSSException if one of the error situations described in RFC
      * 2743 with the GSS_Acquire_Cred or GSS_Add_Cred calls occurs.
      */
-    public GSSCredentialSpi getCredentialElement(GSSNameSpi name,
-      int initLifetime, int acceptLifetime, int usage) throws GSSException;
+    GSSCredentialSpi getCredentialElement(GSSNameSpi name,
+        int initLifetime, int acceptLifetime, int usage) throws GSSException;
 
     /**
      * Creates a name element for this mechanism to be included as part of
@@ -134,7 +134,7 @@ public interface MechanismFactory {
      * @throws GSSException if any of the errors described in RFC 2743 for
      * the GSS_Import_Name or GSS_Canonicalize_Name calls occur.
      */
-    public GSSNameSpi getNameElement(String nameStr, Oid nameType)
+    GSSNameSpi getNameElement(String nameStr, Oid nameType)
         throws GSSException;
 
     /**
@@ -153,7 +153,7 @@ public interface MechanismFactory {
      * @throws GSSException if any of the errors described in RFC 2743 for
      * the GSS_Import_Name or GSS_Canonicalize_Name calls occur.
      */
-    public GSSNameSpi getNameElement(byte[] name, Oid nameType)
+    GSSNameSpi getNameElement(byte[] name, Oid nameType)
         throws GSSException;
 
     /**
@@ -174,12 +174,12 @@ public interface MechanismFactory {
      * @throws GSSException if any of the errors described in RFC 2743 in
      * the GSS_Init_Sec_Context call occur.
      */
-    public GSSContextSpi getMechanismContext(GSSNameSpi peer,
-                                             GSSCredentialSpi myInitiatorCred,
-                                             int lifetime) throws GSSException;
+    GSSContextSpi getMechanismContext(GSSNameSpi peer,
+                                      GSSCredentialSpi myInitiatorCred,
+                                      int lifetime) throws GSSException;
 
     /**
-     * Creates a security context for this mechanism so thatit can be used
+     * Creates a security context for this mechanism so that it can be used
      * on the context acceptor's side.
      *
      * @param myAcceptorCred a credential element for the context acceptor
@@ -192,7 +192,7 @@ public interface MechanismFactory {
      * @throws GSSException if any of the errors described in RFC 2743 in
      * the GSS_Accept_Sec_Context call occur.
      */
-    public GSSContextSpi getMechanismContext(GSSCredentialSpi myAcceptorCred)
+    GSSContextSpi getMechanismContext(GSSCredentialSpi myAcceptorCred)
         throws GSSException;
 
     /**
@@ -208,7 +208,7 @@ public interface MechanismFactory {
      * @throws GSSException is any of the errors described in RFC 2743 in
      * the GSS_Import_Sec_Context call occur.
      */
-    public GSSContextSpi getMechanismContext(byte[] exportedContext)
+    GSSContextSpi getMechanismContext(byte[] exportedContext)
         throws GSSException;
 
 }

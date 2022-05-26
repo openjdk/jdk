@@ -141,16 +141,6 @@
 bool WhiteBox::_used = false;
 volatile bool WhiteBox::compilation_locked = false;
 
-static CompiledMethod* get_compiled_method(methodHandle &mh, bool is_osr)
-{
-  if (is_osr) {
-    return mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false);
-  } else {
-    CodeBlob* blob = mh->code();
-    return (blob == nullptr) ? nullptr : blob->as_compiled_method_or_null();
-  }
-}
-
 class VM_WhiteBoxOperation : public VM_Operation {
  public:
   VM_WhiteBoxOperation()                         { }
@@ -816,7 +806,8 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
   MutexLocker mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompiledMethod* code = get_compiled_method(mh, is_osr);
+  CodeBlob* blob = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  CompiledMethod* code = (blob == nullptr) ? nullptr : blob->as_compiled_method_or_null();
   if (code == NULL) {
     return JNI_FALSE;
   }
@@ -916,8 +907,8 @@ WB_ENTRY(jint, WB_GetMethodCompilationLevel(JNIEnv* env, jobject o, jobject meth
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, CompLevel_none);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompiledMethod* code = get_compiled_method(mh, is_osr);
-  return (code != NULL ? code->comp_level() : CompLevel_none);
+  CodeBlob* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  return (code != NULL && code->is_compiled()) ? code->as_compiled_method()->comp_level() : CompLevel_none;
 WB_END
 
 WB_ENTRY(void, WB_MakeMethodNotCompilable(JNIEnv* env, jobject o, jobject method, jint comp_level, jboolean is_osr))
@@ -1535,7 +1526,8 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, NULL);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  CompiledMethod* code = get_compiled_method(mh, is_osr);
+  CodeBlob* blob = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  CompiledMethod* code = (blob == nullptr) ? nullptr : blob->as_compiled_method_or_null();
   jobjectArray result = NULL;
   if (code == NULL) {
     return result;
