@@ -630,15 +630,16 @@ public:
   }
 
   // This can only be determined in parse-time.
-  // if _path has only one predecessor, it's trivial if this block is smaller.
-  // if _path has more than one predecessor and itself has been parsed, unc does not mask out _path.
-  // It is trivial.
+  // if _path has only one predecessor, it is trivial if this block is small(1~2 bytecodes)
+  // or if _path has more than one predecessor and has been parsed, _unc does not mask out any real code.
   bool is_trivial() const {
     return _path->is_parsed();
   }
+
   Parse::Block* path() const {
     return _path;
   }
+
   CallStaticJavaNode* uncommon_trap() const {
     return _unc;
   }

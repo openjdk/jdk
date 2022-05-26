@@ -1861,9 +1861,8 @@ void Compile::record_unstable_if(UnstableIfTrap* trap) {
   _unstable_ifs.append(trap);
 }
 
-// TODO: hashmap, or Unique_Node_List
 void Compile::invalidate_unstable_if(CallStaticJavaNode* unc) {
-  for (int i=0; i < _unstable_ifs.length(); ++i) {
+  for (int i = 0; i < _unstable_ifs.length(); ++i) {
     UnstableIfTrap* trap = _unstable_ifs.at(i);
     if (trap->uncommon_trap() == unc) {
       trap->set_bci(-1);
@@ -1881,13 +1880,6 @@ void Compile::preprocess_unstable_ifs() {
   for (int i=0; i < _unstable_ifs.length(); i++) {
     UnstableIfTrap* trap = _unstable_ifs.at(i);
     if (trap->is_trivial()) {
-#ifndef PRODUCT
-      if (Verbose) {
-        tty->print("trivial unstable_if: ");
-        trap->uncommon_trap()->dump();
-        trap->path()->flow()->print_on(tty);
-      }
-#endif
       Atomic::inc(&trivial_unstable_ifs);
     }
   }
@@ -2249,8 +2241,6 @@ void Compile::Optimize() {
 
     if (failing())  return;
   }
-
-  //process_for_unstable_ifs(igvn);
 
   // Remove the speculative part of types and clean up the graph from
   // the extra CastPP nodes whose only purpose is to carry them. Do
