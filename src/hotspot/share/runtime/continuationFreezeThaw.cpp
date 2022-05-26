@@ -1281,12 +1281,10 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
 
   assert(chunk->parent() == nullptr || chunk->parent()->is_stackChunk(), "");
 
-#if  INCLUDE_SHENANDOAHGC
   // Even _cont is good, but there is no guarantee that it is deeply good.
   if (UseShenandoahGC && chunk->requires_barriers()) {
     fast_oop = nullptr;
   }
-#endif
 
   if (fast_oop != nullptr) {
     assert(!chunk->requires_barriers(), "Unfamiliar GC requires barriers on TLAB allocation");
