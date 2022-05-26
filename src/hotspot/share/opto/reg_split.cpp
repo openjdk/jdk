@@ -590,10 +590,12 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
 //        stringStream ss;
 //        C->method()->print_short_name(&ss);
 //        if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
+#ifdef ASSERT
       if (UseNewCode3) {
         tty->print("SPILL: region = %d - %d ", region, bidx);
         lrgs(bidx).dump();
       }
+#endif
 //        }
 //      }
     }

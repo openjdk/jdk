@@ -630,6 +630,15 @@ void PhaseChaitin::Register_Allocate() {
 //#endif
 //    }
 //    _cfg.dump();
+//    {
+//      ResourceMark rm;
+//      stringStream ss;
+//      C->method()->print_short_name(&ss);
+//      if (!strcmp(ss.as_string(), " spec.benchmarks.scimark.SparseCompRow::measureSparseMatmult")) {
+//        tty->print_cr("XXXX %d", C->compile_id());
+//        _cfg.dump();
+//      }
+//    }
   }
   if (regions.length() == 0) {
     regions.push(_cfg._blocks);
@@ -637,6 +646,7 @@ void PhaseChaitin::Register_Allocate() {
 
   for (int region = regions.length()-1; region >= 0; region--) {
     _trip_cnt = 0;
+#ifdef ASSERT
     if (UseNewCode3 ) {
       tty->print_cr("XXX region = %d - %d %d", region, sizeof(LRG), offset_of(LRG, _mask));
       for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
@@ -644,6 +654,7 @@ void PhaseChaitin::Register_Allocate() {
         block->dump();
       }
     }
+#endif
     Block_List all_blocks = _cfg._blocks;
     Block_List blocks = region == 1 ? regions.at(regions.length() - 1 - region) : all_blocks;
     // After aggressive coalesce, attempt a first cut at coloring.
@@ -698,6 +709,7 @@ void PhaseChaitin::Register_Allocate() {
         live.compute(_lrg_map.max_lrg_id()); // Compute LIVE
         _live = &live;
       }
+#ifdef ASSERT
       if (UseNewCode3) {
         _cfg.dump();
         for (uint i = 0; i < _lrg_map.max_lrg_id(); i++) {
@@ -706,6 +718,7 @@ void PhaseChaitin::Register_Allocate() {
           lrg.dump();
         }
       }
+#endif
       build_ifg_physical(&live_arena, all_blocks, region);
       _ifg->SquareUp();
       _ifg->Compute_Effective_Degree();
@@ -732,6 +745,7 @@ void PhaseChaitin::Register_Allocate() {
 #endif
     }
 
+#ifdef ASSERT
     if (UseNewCode3 && regions.length() > 1) {
       tty->print_cr("XXX IFG:");
       for (uint i = 0; i < _lrg_map.max_lrg_id(); i++) {
@@ -742,6 +756,7 @@ void PhaseChaitin::Register_Allocate() {
         }
       }
     }
+#endif
 
     // Prepare for Simplify & Select
     cache_lrg_info(region);           // Count degree of LRGs
@@ -750,6 +765,7 @@ void PhaseChaitin::Register_Allocate() {
     // LRGs of low degree are trivially colorable.
     Simplify(region);
 
+#ifdef ASSERT
     if (UseNewCode3) {
       tty->print_cr("XXXXXXXXXXXXXX simplified");
       for (uint i = _simplified; i; i = lrgs(i)._next) {
@@ -757,6 +773,7 @@ void PhaseChaitin::Register_Allocate() {
       }
       tty->print_cr("XXXXXXXXXXXXXX");
     }
+#endif
 
       // Select colors by re-inserting LRGs back into the IFG in reverse order.
     // Return whether or not something spills.
@@ -841,6 +858,7 @@ void PhaseChaitin::Register_Allocate() {
 
       _lrg_map.compress_uf_map_for_nodes();
 
+#ifdef ASSERT
       if (UseNewCode3 && regions.length() > 1) {
         tty->print_cr("XXX IFG:");
         for (uint i = 0; i < _lrg_map.max_lrg_id(); i++) {
@@ -851,6 +869,7 @@ void PhaseChaitin::Register_Allocate() {
           }
         }
       }
+#endif
 #ifdef ASSERT
       verify(&live_arena, true);
 #endif
@@ -866,17 +885,21 @@ void PhaseChaitin::Register_Allocate() {
     }
     if (regions.length() > 1) {
       _was_up_in_prev_region.clear();
+#ifdef ASSERT
       stringStream ss;
       C->method()->print_short_name(&ss);
       bool dump = /*!strcmp(ss.as_string(), " com.sun.crypto.provider.AESCrypt::<clinit>") ||*/ UseNewCode2 || UseNewCode3;
       if (dump) {
         tty->print_cr("XXXXX after region = %d - %d/%d", region, offset_of(LRG, _mask), sizeof(LRG));
       }
+#endif
       for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
         Block* block = _cfg.get_block(i);
+#ifdef ASSERT
         if (dump) {
           block->dump_head(NULL);
         }
+#endif
         for (uint i = 0; i < block->number_of_nodes(); i++) {
           Node* n = block->get_node(i);
           LRG &lrg = lrgs(_lrg_map.live_range_id(n));
@@ -884,6 +907,7 @@ void PhaseChaitin::Register_Allocate() {
             if (lrg.mask().is_UP()) {
               _was_up_in_prev_region.set(n->_idx);
             }
+#ifdef ASSERT
             if (dump) {
               tty->print(" - %d - ", _lrg_map.live_range_id(n));
               OptoReg::Name reg = lrg.reg();
@@ -896,14 +920,20 @@ void PhaseChaitin::Register_Allocate() {
                            reg2offset(reg));
               }
             }
+#endif
           }
-          if (dump)
+#ifdef ASSERT
+          if (dump) {
             n->dump();
+          }
+#endif
         }
       }
+#ifdef ASSERT
       if (dump) {
         tty->print("\n");
       }
+#endif
     }
 
     if (region > 0) {
@@ -2124,10 +2154,10 @@ OptoReg::Name PhaseChaitin::choose_color( LRG &lrg, int chunk ) {
   assert(!lrg._is_vector, "should be not vector here" );
   assert( lrg.num_regs() >= 2, "dead live ranges do not color" );
 
-  if (!(lrg.compute_mask_size() == lrg.num_regs() || lrg.num_regs() == 2)) {
-    tty->print_cr("XXX %d %d %d %d", lrg.compute_mask_size(), lrg.num_regs(), sizeof(LRG), offset_of(LRG, _mask));
-    lrg._def->dump(1);
-  }
+//  if (!(lrg.compute_mask_size() == lrg.num_regs() || lrg.num_regs() == 2)) {
+//    tty->print_cr("XXX %d %d %d %d", lrg.compute_mask_size(), lrg.num_regs(), sizeof(LRG), offset_of(LRG, _mask));
+//    lrg._def->dump(1);
+//  }
 
   // Fat-proj case or misaligned double argument.
   assert(lrg.compute_mask_size() == lrg.num_regs() ||
@@ -2193,10 +2223,10 @@ uint PhaseChaitin::Select(uint region) {
         // its chunk, a new chunk of color may be tried, in which case
         // examination of neighbors is started again, at retry_next_chunk.)
         LRG &nlrg = lrgs(neighbor);
-        if (!(nlrg._region >= region)) {
-          lrg->dump();
-          nlrg.dump();
-        }
+//        if (!(nlrg._region >= region)) {
+//          lrg->dump();
+//          nlrg.dump();
+//        }
         assert(nlrg._region >= region, "");
         OptoReg::Name nreg = nlrg.reg();
         // Only subtract masks in the same chunk
@@ -2261,9 +2291,11 @@ uint PhaseChaitin::Select(uint region) {
       RegMask avail_rm = lrg->mask();
 #endif
 
+#ifdef ASSERT
       if (UseNewCode3) {
         tty->print("YYY %d : ", lidx);  lrg->dump(); tty->print(" -> "); OptoReg::dump(reg); tty->cr();
       }
+#endif
 
       // Record selected register
       lrg->set_reg(reg);
@@ -2320,9 +2352,9 @@ uint PhaseChaitin::Select(uint region) {
       assert( !orig_mask.is_AllStack(), "All Stack does not spill" );
 
       assert(lrg->_region >= region, "");
-      if (!(lrg->_region2 <= region)) {
-        lrg->dump();
-      }
+//      if (!(lrg->_region2 <= region)) {
+//        lrg->dump();
+//      }
       assert(lrg->_region2 <= region, "");
       // Assign the special spillreg register
       lrg->set_reg(OptoReg::Name(spill_reg++));

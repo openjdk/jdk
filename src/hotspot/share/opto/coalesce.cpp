@@ -651,9 +651,11 @@ static void record_bias( const PhaseIFG *ifg, int lr1, int lr2 ) {
     ifg->lrgs(lr2)._copy_bias = lr1;
 }
 
+#ifdef ASSERT
 void roland_debug(PhaseChaitin* pc, uint lr) {
   pc->lrgs(lr).dump();
 }
+#endif
 
 // See if I can coalesce a series of multiple copies together.  I need the
 // final dest copy and the original src copy.  They can be the same Node.
@@ -787,11 +789,11 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
 //  src_copy->dump();
 //  src_def->dump();
 
-  if (!(lrgs(lr1).num_regs() == lrgs(lr2).num_regs())) {
-    tty->print_cr("XXX %d %d %d %d", lr1, lr2, lrgs(lr1).num_regs(), lrgs(lr2).num_regs());
-    lrgs(lr1).dump();
-    lrgs(lr2).dump();
-  }
+//  if (!(lrgs(lr1).num_regs() == lrgs(lr2).num_regs())) {
+//    tty->print_cr("XXX %d %d %d %d", lr1, lr2, lrgs(lr1).num_regs(), lrgs(lr2).num_regs());
+//    lrgs(lr1).dump();
+//    lrgs(lr2).dump();
+//  }
   // YEAH - Now coalesce this copy away
   assert( lrgs(lr1).num_regs() == lrgs(lr2).num_regs(),   "" );
 
