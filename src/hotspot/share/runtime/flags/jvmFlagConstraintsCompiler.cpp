@@ -329,40 +329,6 @@ JVMFlag::Error InitArrayShortSizeConstraintFunc(intx value, bool verbose) {
 }
 
 #ifdef COMPILER2
-JVMFlag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
-  if (InteriorEntryAlignment > CodeEntryAlignment) {
-    JVMFlag::printError(verbose,
-                       "InteriorEntryAlignment (" INTX_FORMAT ") must be "
-                       "less than or equal to CodeEntryAlignment (" INTX_FORMAT ")\n",
-                       InteriorEntryAlignment, CodeEntryAlignment);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  }
-
-  if (!is_power_of_2(value)) {
-     JVMFlag::printError(verbose,
-                         "InteriorEntryAlignment (" INTX_FORMAT ") must be "
-                         "a power of two\n", InteriorEntryAlignment);
-     return JVMFlag::VIOLATES_CONSTRAINT;
-   }
-
-  int minimum_alignment = 16;
-#if defined(X86) && !defined(AMD64)
-  minimum_alignment = 4;
-#elif defined(S390)
-  minimum_alignment = 2;
-#endif
-
-  if (InteriorEntryAlignment < minimum_alignment) {
-    JVMFlag::printError(verbose,
-                        "InteriorEntryAlignment (" INTX_FORMAT ") must be "
-                        "greater than or equal to %d\n",
-                        InteriorEntryAlignment, minimum_alignment);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  }
-
-  return JVMFlag::SUCCESS;
-}
-
 JVMFlag::Error NodeLimitFudgeFactorConstraintFunc(intx value, bool verbose) {
   if (value < MaxNodeLimit * 2 / 100 || value > MaxNodeLimit * 40 / 100) {
     JVMFlag::printError(verbose,

@@ -75,10 +75,8 @@ void Block_List::print() {
 #endif
 
 uint Block::code_alignment() const {
-  // Check for Root block
-  if (_pre_order == 0) return CodeEntryAlignment;
-  // Check for Start block
-  if (_pre_order == 1) return InteriorEntryAlignment;
+  // Start block alignment is provided by instructions CodeSection
+
   // Check for loop alignment
   if (has_loop_alignment()) return loop_alignment();
 

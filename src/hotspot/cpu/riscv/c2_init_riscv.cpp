@@ -33,6 +33,5 @@
 extern void reg_mask_init();
 
 void Compile::pd_compiler2_init() {
-  guarantee(CodeEntryAlignment >= InteriorEntryAlignment, "" );
   reg_mask_init();
 }

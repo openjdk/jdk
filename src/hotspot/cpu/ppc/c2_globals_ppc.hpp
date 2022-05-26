@@ -46,7 +46,6 @@ define_pd_global(intx, OnStackReplacePercentage,     140);
 define_pd_global(intx, ConditionalMoveLimit,         3);
 define_pd_global(intx, FreqInlineSize,               175);
 define_pd_global(intx, MinJumpTableSize,             10);
-define_pd_global(intx, InteriorEntryAlignment,       16);
 define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 define_pd_global(intx, RegisterCostAreaRatio,        16000);
 define_pd_global(intx, LoopUnrollLimit,              60);

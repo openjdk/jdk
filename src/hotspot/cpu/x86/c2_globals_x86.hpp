@@ -46,7 +46,6 @@ define_pd_global(intx, FreqInlineSize,               325);
 define_pd_global(intx, MinJumpTableSize,             10);
 define_pd_global(intx, LoopPercentProfileLimit,      10);
 #ifdef AMD64
-define_pd_global(intx,  InteriorEntryAlignment,      16);
 define_pd_global(size_t, NewSizeThreadIncrease,     ScaleForWordSize(4*K));
 define_pd_global(intx,  LoopUnrollLimit,             60);
 // InitialCodeCacheSize derived from specjbb2000 run.
@@ -56,7 +55,6 @@ define_pd_global(uintx, CodeCacheExpansionSize,      64*K);
 // Ergonomics related flags
 define_pd_global(uint64_t, MaxRAM,                   128ULL*G);
 #else
-define_pd_global(intx,  InteriorEntryAlignment,      4);
 define_pd_global(size_t, NewSizeThreadIncrease,      4*K);
 define_pd_global(intx,  LoopUnrollLimit,             50);     // Design center runs on 1.3.1
 // InitialCodeCacheSize derived from specjbb2000 run.

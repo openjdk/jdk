@@ -54,7 +54,6 @@
   f(ccstrlist, DisableIntrinsicConstraintFunc)          \
   f(ccstrlist, ControlIntrinsicConstraintFunc)          \
 COMPILER2_PRESENT(                                      \
-  f(intx,  InteriorEntryAlignmentConstraintFunc)        \
   f(intx,  NodeLimitFudgeFactorConstraintFunc)          \
   f(uintx, LoopStripMiningIterConstraintFunc)           \
 )

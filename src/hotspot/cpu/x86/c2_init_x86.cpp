@@ -33,7 +33,6 @@
 extern void reg_mask_init();
 
 void Compile::pd_compiler2_init() {
-  guarantee(CodeEntryAlignment >= InteriorEntryAlignment, "" );
   // QQQ presumably all 64bit cpu's support this. Seems like the ifdef could
   // simply be left out.
 #ifndef AMD64

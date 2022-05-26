@@ -67,11 +67,6 @@
           "in the prologue of every nmethod")                               \
           range(0, 128)                                                     \
                                                                             \
-  product_pd(intx, InteriorEntryAlignment,                                  \
-          "Code alignment for interior entry points "                       \
-          "in generated code (in bytes)")                                   \
-          constraint(InteriorEntryAlignmentConstraintFunc, AfterErgo)       \
-                                                                            \
   product(intx, MaxLoopPad, (OptoLoopAlignment-1),                          \
           "Align a loop if padding size in bytes is less or equal to this " \
           "value")                                                          \

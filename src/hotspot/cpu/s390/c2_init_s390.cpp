@@ -30,5 +30,4 @@
 // Processor dependent initialization for z/Architecture.
 
 void Compile::pd_compiler2_init() {
-  guarantee(CodeEntryAlignment >= InteriorEntryAlignment, "");
 }
