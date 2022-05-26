@@ -495,49 +495,50 @@ public class Proxy implements java.io.Serializable {
         private static final ClassLoaderValue<Boolean> reverseProxyCache =
             new ClassLoaderValue<>();
 
-        private record ProxyClassContext(Module module, String pkg, int accessFlags) { }
+        private record ProxyClassContext(Module module, String pkg, int accessFlags) {
+            private ProxyClassContext {
+                if (module.isNamed()) {
+                    if (pkg.isEmpty()) {
+                        // Per JLS 7.4.2, unnamed package can only exist in unnamed modules.
+                        // This means a package-private superinterface exist in the unnamed
+                        // package of a named module.
+                        throw new InternalError("Unnamed package cannot be added to " + module);
+                    }
 
-        private static Class<?> defineProxyClass(ProxyClassContext context, List<Class<?>> interfaces) {
-            String proxyPkg = context.pkg;
-            int accessFlags = context.accessFlags;
-            Module m = context.module;
+                    if (!module.getDescriptor().packages().contains(pkg)) {
+                        throw new InternalError(pkg + " not exist in " + module.getName());
+                    }
 
-            if (Modifier.isPublic(accessFlags)) {
-                // all proxy interfaces are public
-                if (!m.isNamed())
-                    throw new InternalError("unnamed module: " + m);
-            }
-
-            if (proxyPkg.isEmpty() && m.isNamed()) {
-                // Per JLS 7.4.2, unnamed package can only exist in unnamed modules.
-                // This means a package-private superinterface exist in the unnamed
-                // package of a named module.
-                throw new IllegalArgumentException(
-                        "Unnamed package cannot be added to " + m);
-            }
-
-            if (m.isNamed()) {
-                if (!m.getDescriptor().packages().contains(proxyPkg)) {
-                    throw new InternalError(proxyPkg + " not exist in " + m.getName());
+                    if (!module.isOpen(pkg, Proxy.class.getModule())) {
+                        // Required for default method invocation
+                        throw new InternalError(pkg + " not open to " + Proxy.class.getModule());
+                    }
+                } else {
+                    if (Modifier.isPublic(accessFlags)) {
+                        // All proxy superinterfaces are public, must be in named dynamic module
+                        throw new InternalError("proxy in unnamed module: " + module);
+                    }
                 }
             }
+        }
 
+        private static Class<?> defineProxyClass(ProxyClassContext context, List<Class<?>> interfaces) {
             /*
              * Choose a name for the proxy class to generate.
              */
             long num = nextUniqueNumber.getAndIncrement();
-            String proxyName = proxyPkg.isEmpty()
+            String proxyName = context.pkg().isEmpty()
                                     ? proxyClassNamePrefix + num
-                                    : proxyPkg + "." + proxyClassNamePrefix + num;
+                                    : context.pkg() + "." + proxyClassNamePrefix + num;
 
-            ClassLoader loader = getLoader(m);
-            trace(proxyName, m, loader, interfaces);
+            ClassLoader loader = getLoader(context.module());
+            trace(proxyName, context.module(), loader, interfaces);
 
             /*
              * Generate the specified proxy class.
              */
             byte[] proxyClassFile = ProxyGenerator.generateProxyClass(loader, proxyName, interfaces,
-                                                                      accessFlags | Modifier.FINAL);
+                                                                      context.accessFlags() | Modifier.FINAL);
             try {
                 Class<?> pc = JLA.defineClass(loader, proxyName, proxyClassFile,
                                               null, "__dynamic_proxy__");
@@ -631,7 +632,7 @@ public class Proxy implements java.io.Serializable {
 
             this.interfaces = interfaces;
             this.context = proxyClassContext(loader, interfaces, refTypes);
-            assert getLoader(context.module) == loader;
+            assert getLoader(context.module()) == loader;
         }
 
         ProxyBuilder(ClassLoader loader, Class<?> intf) {
@@ -650,8 +651,6 @@ public class Proxy implements java.io.Serializable {
         @SuppressWarnings("removal")
         Constructor<?> build() {
             Class<?> proxyClass = defineProxyClass(context, interfaces);
-            Module module = context.module;
-            assert !module.isNamed() || module.isOpen(proxyClass.getPackageName(), Proxy.class.getModule());
 
             final Constructor<?> cons;
             try {
