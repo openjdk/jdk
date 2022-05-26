@@ -11132,10 +11132,26 @@ instruct mulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2, rFlagsReg cr)
   match(Set dst (MulHiL src1 src2));
 
   ins_cost(INSN_COST * 7);
-  format %{ "smulh   $dst, $src1, $src2, \t# mulhi" %}
+  format %{ "smulh   $dst, $src1, $src2\t# mulhi" %}
 
   ins_encode %{
     __ smulh(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+
+  ins_pipe(lmul_reg_reg);
+%}
+
+instruct umulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2, rFlagsReg cr)
+%{
+  match(Set dst (UMulHiL src1 src2));
+
+  ins_cost(INSN_COST * 7);
+  format %{ "umulh   $dst, $src1, $src2\t# umulhi" %}
+
+  ins_encode %{
+    __ umulh(as_Register($dst$$reg),
              as_Register($src1$$reg),
              as_Register($src2$$reg));
   %}
@@ -15489,10 +15505,10 @@ instruct overflowAddL_reg_imm(rFlagsReg cr, iRegL op1, immLAddSub op2)
 %{
   match(Set cr (OverflowAddL op1 op2));
 
-  format %{ "cmn   $op1, $op2\t# overflow check long" %}
+  format %{ "adds  zr, $op1, $op2\t# overflow check long" %}
   ins_cost(INSN_COST);
   ins_encode %{
-    __ cmn($op1$$Register, $op2$$constant);
+    __ adds(zr, $op1$$Register, $op2$$constant);
   %}
 
   ins_pipe(icmp_reg_imm);
