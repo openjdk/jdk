@@ -425,7 +425,7 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
 
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
   if (get_lwp_regs(ph, lwp_id, &gregs) != true) {
-    // This is not considered fatal and does happen on occassion, usually with an
+    // This is not considered fatal and does happen on occasion, usually with an
     // ESRCH error. The root cause is not fully understood, but by ignoring this error
     // and returning NULL, stacking walking code will get null registers and fallback
     // to using the "last java frame" if setup.

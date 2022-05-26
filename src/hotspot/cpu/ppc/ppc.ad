@@ -1125,11 +1125,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   return 4;
 }
 
-int MachCallNativeNode::ret_addr_offset() {
-  Unimplemented();
-  return -1;
-}
-
 //=============================================================================
 
 // condition code conversions
@@ -2405,10 +2400,6 @@ RegMask Matcher::modL_proj_mask() {
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return RegMask();
-}
-
-bool Parse::do_one_bytecode_targeted() {
-  return false;
 }
 
 %}

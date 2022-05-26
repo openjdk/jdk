@@ -46,7 +46,7 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -56,9 +56,14 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 //------------------------------------------------------------------------------------------------------------------------
 // Implementation of CallInfo
@@ -592,6 +597,16 @@ void LinkResolver::check_method_accessability(Klass* ref_klass,
   }
 }
 
+void LinkResolver::resolve_continuation_enter(CallInfo& callinfo, TRAPS) {
+  Klass* resolved_klass = vmClasses::Continuation_klass();
+  Symbol* method_name = vmSymbols::enter_name();
+  Symbol* method_signature = vmSymbols::continuationEnter_signature();
+  Klass*  current_klass = resolved_klass;
+  LinkInfo link_info(resolved_klass, method_name, method_signature, current_klass);
+  Method* resolved_method = resolve_method(link_info, Bytecodes::_invokestatic, CHECK);
+  callinfo.set_static(resolved_klass, methodHandle(THREAD, resolved_method), CHECK);
+}
+
 Method* LinkResolver::resolve_method_statically(Bytecodes::Code code,
                                                 const constantPoolHandle& pool, int index, TRAPS) {
   // This method is used only
@@ -1071,8 +1086,17 @@ void LinkResolver::resolve_static_call(CallInfo& result,
     resolved_method = linktime_resolve_static_method(new_info, CHECK);
   }
 
+  if (resolved_method->is_continuation_enter_intrinsic()) {
+    if (!resolved_method->has_compiled_code()) {
+      methodHandle mh(THREAD, resolved_method);
+      // Generate a compiled form of the enterSpecial intrinsic.
+      AdapterHandlerLibrary::create_native_wrapper(mh);
+    }
+  }
+
   // setup result
   result.set_static(resolved_klass, methodHandle(THREAD, resolved_method), CHECK);
+  JFR_ONLY(Jfr::on_resolution(result, CHECK);)
 }
 
 // throws linktime exceptions
@@ -1278,6 +1302,7 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
 
   // setup result
   result.set_static(resolved_klass, sel_method, CHECK);
+  JFR_ONLY(Jfr::on_resolution(result, CHECK);)
 }
 
 void LinkResolver::resolve_virtual_call(CallInfo& result, Handle recv, Klass* receiver_klass,
@@ -1398,6 +1423,7 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
   }
   // setup result
   result.set_virtual(resolved_klass, resolved_method, selected_method, vtable_index, CHECK);
+  JFR_ONLY(Jfr::on_resolution(result, CHECK);)
 }
 
 void LinkResolver::resolve_interface_call(CallInfo& result, Handle recv, Klass* recv_klass,
@@ -1509,6 +1535,7 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result,
     // This sets up the nonvirtual form of "virtual" call (as needed for final and private methods)
     result.set_virtual(resolved_klass, resolved_method, resolved_method, index, CHECK);
   }
+  JFR_ONLY(Jfr::on_resolution(result, CHECK);)
 }
 
 
@@ -1680,6 +1707,7 @@ bool LinkResolver::resolve_previously_linked_invokehandle(CallInfo& result, cons
     methodHandle method(THREAD, cpce->f1_as_method());
     Handle     appendix(THREAD, cpce->appendix_if_resolved(pool));
     result.set_handle(resolved_klass, method, appendix, CHECK_false);
+    JFR_ONLY(Jfr::on_resolution(result, CHECK_false);)
     return true;
   } else {
     return false;
@@ -1711,6 +1739,7 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
   Handle resolved_appendix;
   Method* resolved_method = lookup_polymorphic_method(link_info, &resolved_appendix, CHECK);
   result.set_handle(resolved_klass, methodHandle(THREAD, resolved_method), resolved_appendix, CHECK);
+  JFR_ONLY(Jfr::on_resolution(result, CHECK);)
 }
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
@@ -1792,6 +1821,7 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
   bootstrap_specifier.resolve_newly_linked_invokedynamic(result, CHECK);
   // Exceptions::wrap_dynamic_exception not used because
   // set_handle doesn't throw linkage errors
+  JFR_ONLY(Jfr::on_resolution(result, CHECK);)
 }
 
 // Selected method is abstract.

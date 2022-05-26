@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.net.http;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
 import java.nio.channels.Selector;
 import java.net.Authenticator;
 import java.net.CookieHandler;
@@ -355,8 +356,48 @@ public abstract class HttpClient {
         public Builder authenticator(Authenticator authenticator);
 
         /**
+         * Binds the socket to this local address when creating
+         * connections for sending requests.
+         *
+         * <p> If no local address is set or {@code null} is passed
+         * to this method then sockets created by the
+         * HTTP client will be bound to an automatically
+         * assigned socket address.
+         *
+         * <p> Common usages of the {@code HttpClient} do not require
+         * this method to be called. Setting a local address, through this
+         * method, is only for advanced usages where users of the {@code HttpClient}
+         * require specific control on which network interface gets used
+         * for the HTTP communication. Callers of this method are expected to
+         * be aware of the networking configurations of the system where the
+         * {@code HttpClient} will be used and care should be taken to ensure the
+         * correct {@code localAddr} is passed. Failure to do so can result in
+         * requests sent through the {@code HttpClient} to fail.
+         *
+         * @implSpec The default implementation of this method throws
+         * {@code UnsupportedOperationException}. {@code Builder}s obtained
+         * through {@link HttpClient#newBuilder()} provide an implementation
+         * of this method that allows setting the local address.
+         *
+         * @param localAddr The local address of the socket. Can be null.
+         * @return this builder
+         * @throws UnsupportedOperationException if this builder doesn't support
+         *         configuring a local address or if the passed {@code localAddr}
+         *         is not supported by this {@code HttpClient} implementation.
+         * @since 19
+         */
+        default Builder localAddress(InetAddress localAddr) {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
          * Returns a new {@link HttpClient} built from the current state of this
          * builder.
+         *
+         * @implSpec If the {@link #localAddress(InetAddress) local address} is a non-null
+         * address and a security manager is installed, then
+         * this method calls {@link SecurityManager#checkListen checkListen} to check that
+         * the caller has necessary permission to bind to that local address.
          *
          * @return a new {@code HttpClient}
          *
@@ -364,6 +405,9 @@ public abstract class HttpClient {
          * by the implementation cannot be allocated. For instance,
          * if the implementation requires a {@link Selector}, and opening
          * one fails due to {@linkplain Selector#open() lack of necessary resources}.
+         * @throws SecurityException If a security manager has been installed and the
+         *         security manager's {@link SecurityManager#checkListen checkListen}
+         *         method disallows binding to the given address.
          */
         public HttpClient build();
     }

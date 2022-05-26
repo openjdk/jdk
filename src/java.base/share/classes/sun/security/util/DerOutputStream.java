@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -381,7 +381,7 @@ extends ByteArrayOutputStream implements DerEncoder {
     private static ByteArrayTagOrder tagOrder = new ByteArrayTagOrder();
 
     /**
-     * Marshals a the contents of a set on the output stream with the
+     * Marshals the contents of a set on the output stream with the
      * encodings of its sorted in increasing order.
      *
      * @param order the order to use when sorting encodings of components.

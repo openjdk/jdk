@@ -1983,12 +1983,12 @@ void C2_MacroAssembler::reduce8D(int opcode, XMMRegister dst, XMMRegister src, X
   reduce4D(opcode, dst, vtmp1, vtmp1, vtmp2);
 }
 
-void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, int vector_len) {
-  MacroAssembler::evmovdqu(type, kmask, dst, src, vector_len);
+void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, bool merge, int vector_len) {
+  MacroAssembler::evmovdqu(type, kmask, dst, src, merge, vector_len);
 }
 
-void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, int vector_len) {
-  MacroAssembler::evmovdqu(type, kmask, dst, src, vector_len);
+void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, bool merge, int vector_len) {
+  MacroAssembler::evmovdqu(type, kmask, dst, src, merge, vector_len);
 }
 
 
@@ -2271,6 +2271,84 @@ void C2_MacroAssembler::vectortest(int bt, int vlen, XMMRegister src1, XMMRegist
     default:
       assert(false,"Should not reach here.");
       break;
+  }
+}
+
+void C2_MacroAssembler::vpadd(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc) {
+  assert(UseAVX >= 2, "required");
+#ifdef ASSERT
+  bool is_bw = ((elem_bt == T_BYTE) || (elem_bt == T_SHORT));
+  bool is_bw_supported = VM_Version::supports_avx512bw();
+  if (is_bw && !is_bw_supported) {
+    assert(vlen_enc != Assembler::AVX_512bit, "required");
+    assert((dst->encoding() < 16) && (src1->encoding() < 16) && (src2->encoding() < 16),
+           "XMM register should be 0-15");
+  }
+#endif // ASSERT
+  switch (elem_bt) {
+    case T_BYTE: vpaddb(dst, src1, src2, vlen_enc); return;
+    case T_SHORT: vpaddw(dst, src1, src2, vlen_enc); return;
+    case T_INT: vpaddd(dst, src1, src2, vlen_enc); return;
+    case T_FLOAT: vaddps(dst, src1, src2, vlen_enc); return;
+    case T_LONG: vpaddq(dst, src1, src2, vlen_enc); return;
+    case T_DOUBLE: vaddpd(dst, src1, src2, vlen_enc); return;
+    default: assert(false, "%s", type2name(elem_bt));
+  }
+}
+
+#ifdef _LP64
+void C2_MacroAssembler::vpbroadcast(BasicType elem_bt, XMMRegister dst, Register src, int vlen_enc) {
+  assert(UseAVX >= 2, "required");
+  bool is_bw = ((elem_bt == T_BYTE) || (elem_bt == T_SHORT));
+  bool is_vl = vlen_enc != Assembler::AVX_512bit;
+  if ((UseAVX > 2) &&
+      (!is_bw || VM_Version::supports_avx512bw()) &&
+      (!is_vl || VM_Version::supports_avx512vl())) {
+    switch (elem_bt) {
+      case T_BYTE: evpbroadcastb(dst, src, vlen_enc); return;
+      case T_SHORT: evpbroadcastw(dst, src, vlen_enc); return;
+      case T_FLOAT: case T_INT: evpbroadcastd(dst, src, vlen_enc); return;
+      case T_DOUBLE: case T_LONG: evpbroadcastq(dst, src, vlen_enc); return;
+      default: assert(false, "%s", type2name(elem_bt));
+    }
+  } else {
+    assert(vlen_enc != Assembler::AVX_512bit, "required");
+    assert((dst->encoding() < 16),"XMM register should be 0-15");
+    switch (elem_bt) {
+      case T_BYTE: movdl(dst, src); vpbroadcastb(dst, dst, vlen_enc); return;
+      case T_SHORT: movdl(dst, src); vpbroadcastw(dst, dst, vlen_enc); return;
+      case T_INT: movdl(dst, src); vpbroadcastd(dst, dst, vlen_enc); return;
+      case T_FLOAT: movdl(dst, src); vbroadcastss(dst, dst, vlen_enc); return;
+      case T_LONG: movdq(dst, src); vpbroadcastq(dst, dst, vlen_enc); return;
+      case T_DOUBLE: movdq(dst, src); vbroadcastsd(dst, dst, vlen_enc); return;
+      default: assert(false, "%s", type2name(elem_bt));
+    }
+  }
+}
+#endif
+
+void C2_MacroAssembler::vconvert_b2x(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vlen_enc) {
+  switch (to_elem_bt) {
+    case T_SHORT:
+      vpmovsxbw(dst, src, vlen_enc);
+      break;
+    case T_INT:
+      vpmovsxbd(dst, src, vlen_enc);
+      break;
+    case T_FLOAT:
+      vpmovsxbd(dst, src, vlen_enc);
+      vcvtdq2ps(dst, dst, vlen_enc);
+      break;
+    case T_LONG:
+      vpmovsxbq(dst, src, vlen_enc);
+      break;
+    case T_DOUBLE: {
+      int mid_vlen_enc = (vlen_enc == Assembler::AVX_512bit) ? Assembler::AVX_256bit : Assembler::AVX_128bit;
+      vpmovsxbd(dst, src, mid_vlen_enc);
+      vcvtdq2pd(dst, dst, vlen_enc);
+      break;
+    }
+    default: assert(false, "%s", type2name(to_elem_bt));
   }
 }
 
@@ -4419,6 +4497,48 @@ void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister
   vector_mask_operation_helper(opc, dst, tmp, masklen);
 }
 #endif
+
+void C2_MacroAssembler::vector_signum_evex(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
+                                           KRegister ktmp1, int vec_enc) {
+  if (opcode == Op_SignumVD) {
+    vsubpd(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    evcmppd(ktmp1, k0, src, zero, Assembler::LT_OQ, vec_enc);
+    evblendmpd(dst, ktmp1, one, dst, true, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    evcmppd(ktmp1, k0, src, zero, Assembler::EQ_UQ, vec_enc);
+    evblendmpd(dst, ktmp1, dst, src, true, vec_enc);
+  } else {
+    assert(opcode == Op_SignumVF, "");
+    vsubps(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    evcmpps(ktmp1, k0, src, zero, Assembler::LT_OQ, vec_enc);
+    evblendmps(dst, ktmp1, one, dst, true, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    evcmpps(ktmp1, k0, src, zero, Assembler::EQ_UQ, vec_enc);
+    evblendmps(dst, ktmp1, dst, src, true, vec_enc);
+  }
+}
+
+void C2_MacroAssembler::vector_signum_avx(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
+                                          XMMRegister xtmp1, int vec_enc) {
+  if (opcode == Op_SignumVD) {
+    vsubpd(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    vblendvpd(dst, one, dst, src, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    vcmppd(xtmp1, src, zero, Assembler::EQ_UQ, vec_enc);
+    vblendvpd(dst, dst, src, xtmp1, vec_enc);
+  } else {
+    assert(opcode == Op_SignumVF, "");
+    vsubps(dst, zero, one, vec_enc);
+    // if src < 0 ? -1 : 1
+    vblendvps(dst, one, dst, src, vec_enc);
+    // if src == NaN, -0.0 or 0.0 return src.
+    vcmpps(xtmp1, src, zero, Assembler::EQ_UQ, vec_enc);
+    vblendvps(dst, dst, src, xtmp1, vec_enc);
+  }
+}
 
 void C2_MacroAssembler::vector_maskall_operation(KRegister dst, Register src, int mask_len) {
   if (VM_Version::supports_avx512bw()) {

@@ -317,7 +317,7 @@ handleFramePopEvent(JNIEnv *env, EventInfo *evinfo,
              *    native frame is popped (you can't get frame pop
              *    notifications on native frames). If the native caller
              *    calls another Java method before returning,
-             *    stepping will be diabled again and another frame pop
+             *    stepping will be disabled again and another frame pop
              *    will be awaited.
              *
              *    If it turns out that this is not case (2) with native

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,15 +162,15 @@ inline bool G1CollectedHeap::is_marked_next(oop obj) const {
   return _cm->next_mark_bitmap()->is_marked(obj);
 }
 
-inline bool G1CollectedHeap::is_in_cset(oop obj) {
+inline bool G1CollectedHeap::is_in_cset(oop obj) const {
   return is_in_cset(cast_from_oop<HeapWord*>(obj));
 }
 
-inline bool G1CollectedHeap::is_in_cset(HeapWord* addr) {
+inline bool G1CollectedHeap::is_in_cset(HeapWord* addr) const {
   return _region_attr.is_in_cset(addr);
 }
 
-bool G1CollectedHeap::is_in_cset(const HeapRegion* hr) {
+bool G1CollectedHeap::is_in_cset(const HeapRegion* hr) const {
   return _region_attr.is_in_cset(hr);
 }
 
@@ -212,6 +212,11 @@ inline bool G1CollectedHeap::is_in_young(const oop obj) const {
     return false;
   }
   return heap_region_containing(obj)->is_young();
+}
+
+inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
+  assert(obj != NULL, "");
+  return !heap_region_containing(obj)->is_young(); // is_in_young does an unnecessary NULL check
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
