@@ -110,10 +110,10 @@ public class CgroupSubsystemFactory {
             // For unified it doesn't matter which controller we pick.
             CgroupInfo anyController = infos.values().iterator().next();
             CgroupSubsystem subsystem = CgroupV2Subsystem.getInstance(anyController);
-            return subsystem != null ? new CgroupMetrics(subsystem) : null;
+            return new CgroupMetrics(subsystem);
         } else {
             CgroupV1Subsystem subsystem = CgroupV1Subsystem.getInstance(infos);
-            return subsystem != null ? new CgroupV1MetricsImpl(subsystem) : null;
+            return new CgroupV1MetricsImpl(subsystem);
         }
     }
 
