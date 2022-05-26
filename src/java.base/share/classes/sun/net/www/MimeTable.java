@@ -27,10 +27,15 @@ package sun.net.www;
 
 import jdk.internal.util.StaticProperty;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.IOException;
 import java.net.FileNameMap;
-import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
@@ -155,22 +160,41 @@ public class MimeTable implements FileNameMap {
      * with it. Parses general file names, and URLs.
      */
     public MimeEntry findByFileName(String fname) {
-        String ext = "";
+        // attempt to find the entry with the fragment component removed
+        MimeEntry entry = findByFileName(fname, true);
 
-        int i = fname.lastIndexOf('#');
+        // if entry not found, try again with the fragment intact
+        if (entry == null)
+            entry = findByFileName(fname, false);
 
-        if (i > 0) {
-            fname = fname.substring(0, i - 1);
+        return entry;
+    }
+
+    /**
+     * Locate a MimeEntry by its associated file extension.
+     *
+     * @param fname the file name
+     *
+     * @param removeFragment whether to remove the fragment, if any,
+     *        comprising the last hash ('#') and any subsequent characters
+     *
+     * @return the MIME entry associated with the file name
+     */
+    public MimeEntry findByFileName(String fname, boolean removeFragment) {
+        if (removeFragment) {
+            int hashIndex = fname.lastIndexOf('#');
+            if (hashIndex > 0)
+                fname = fname.substring(0, hashIndex - 1);
         }
 
-        i = fname.lastIndexOf('.');
+        int i = fname.lastIndexOf('.');
         // REMIND: OS specific delimiters appear here
         i = Math.max(i, fname.lastIndexOf('/'));
         i = Math.max(i, fname.lastIndexOf('?'));
 
-        if (i != -1 && fname.charAt(i) == '.') {
+        String ext = "";
+        if (i != -1 && fname.charAt(i) == '.')
             ext = fname.substring(i).toLowerCase();
-        }
 
         return findByExt(ext);
     }
