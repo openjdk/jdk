@@ -1836,13 +1836,13 @@ void PrintBFS::collect() {
   maybe_traverse(_start, _start);
   uint pos = 0;
   while (pos < _worklist.size()) {
-    Node* n = _worklist.at(pos++);
+    Node* n = _worklist.at(pos++); // next node to traverse
     Info* info = find_info(n);
     if (!filter_category(n, filter_visit) && n != _start) {
       continue; // we hit boundary, do not traverse further
     }
-    if (n->is_Con() || n->is_Root()) {
-      continue; // don't traverse through constant or root node
+    if (n != _start && (n->is_Root() || n->is_Con())) {
+      continue; // traversing through root / const node would lead to unrelated nodes
     }
     if (_traverse_inputs && _max_distance > info->distance()) {
       for (uint i = 0; i < n->req(); i++) {
@@ -2060,6 +2060,7 @@ void PrintBFS::print_node_block (Node* n) {
   }
 }
 
+// filter, and add to worklist, add info, note traversal edges
 void PrintBFS::maybe_traverse(Node* src, Node* dst) {
   if (dst != nullptr &&
      (filter_category(dst, filter_visit) ||
@@ -2075,7 +2076,7 @@ void PrintBFS::maybe_traverse(Node* src, Node* dst) {
       make_info(dst, d);
     }
     if (src != dst) {
-      // edges useful during pruning
+      // traversal edges useful during pruning
       find_info(src)->edge_fwd.push(dst);
       find_info(dst)->edge_bwd.push(src);
     }
@@ -2184,7 +2185,7 @@ void Node::dump_idx(bool align, outputStream *st, DumpConfig* dc) const {
   bool is_new = C->node_arena()->contains(this);
   if(align) { // print prefix empty spaces$
     // +1 for leading digit, +1 for "o"
-    uint max_width = log10(C->unique()) + 3;
+    uint max_width = log10(C->unique()) + 2;
     // +1 for leading digit, maybe +1 for "o"
     uint width = log10(_idx) + 1 + (is_new ? 0 : 1);
     while(max_width > width) {
