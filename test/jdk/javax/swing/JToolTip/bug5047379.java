@@ -1,0 +1,195 @@
+/*
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+/* @test
+   @key headful
+   @bug 5047379
+   @summary Checks that Tooltips are rendered properly for Metal Look and Feel
+   @library ../regtesthelpers
+   @build Util
+   @run main bug5047379
+*/
+
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JLayeredPane;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.JToolTip;
+import javax.swing.KeyStroke;
+import javax.swing.plaf.metal.MetalToolTipUI;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.event.ContainerAdapter;
+import java.awt.event.ContainerEvent;
+import java.awt.event.KeyEvent;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.awt.Robot;
+
+public class bug5047379 {
+    static Robot testRobot;
+    static toolTipTest testObj;
+
+    public static void main(String[] args) throws Exception {
+        testObj = new toolTipTest();
+        testRobot = new Robot();
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                try {
+                    testObj.runTest();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+        });
+        testRobot.delay(1000);
+        testRobot.waitForIdle();
+        Point movePoint = testObj.getButtonPoint(testObj.b);
+        testRobot.mouseMove(movePoint.x, movePoint.y);
+        testRobot.delay(1000);
+        testRobot.waitForIdle();
+        testObj.handleToolTip();
+    }
+};
+
+class toolTipTest {
+    volatile boolean isTooltipAdded;
+    JFrame frame;
+    JButton a;
+    JButton b;
+    JButton c;
+    JButton d;
+
+    void handleToolTip() throws Exception {
+        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");;
+        SwingUtilities.updateComponentTreeUI(frame);
+
+        SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    JToolTip tooltip = (JToolTip) Util.findSubComponent(
+                            JFrame.getFrames()[0], "JToolTip");
+
+                    MetalToolTipUI toolTipObj = (MetalToolTipUI) MetalToolTipUI.createUI(tooltip);
+
+                    if (tooltip == null) {
+                        throw new RuntimeException("Metal Tooltip not been found for : ");
+                    }
+                    checkAcclString(toolTipObj, tooltip);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    frame.dispose();
+                }
+            }
+        });
+    }
+
+    void checkAcclString(MetalToolTipUI toolTipObj, JToolTip tooltip) {
+        toolTipObj.installUI(tooltip);
+
+        if (!"Ctrl-B".equals(toolTipObj.getAcceleratorString())) {
+            throw new RuntimeException("MetalTooltip acceleration is not properly set");
+        }
+    }
+
+    Point getButtonPoint(JButton button) throws Exception {
+        final Point[] result = new Point[1];
+
+        SwingUtilities.invokeAndWait(new Runnable() {
+
+            @Override
+            public void run() {
+                Point p = button.getLocationOnScreen();
+                Dimension size = button.getSize();
+                result[0] = new Point(p.x + size.width / 2, p.y + size.height / 2);
+            }
+        });
+        return result[0];
+    }
+
+    void runTest() throws Exception {
+        frame = new JFrame();
+        JTextArea area = new JTextArea();
+        JPanel p = new JPanel();
+        JPanel resPanel = new JPanel(new FlowLayout());
+
+        String text = "Mouse is hover over button B for the \t\t\n";
+        text += "ToolTip to appear. Here is what should show\t\t\n";
+        text += "The word \\\"TEXT\\\" and then \\\"CTRL-B\\\"\\n\"\t\t";
+        text += "\n";
+
+        area.setText(text);
+        area.setEditable(false);
+        area.setFocusable(false);
+
+        frame.add(area, BorderLayout.CENTER);
+
+        p.setLayout(new GridLayout(1, 5));
+
+        a = new JButton("A");
+        a.setMnemonic(KeyEvent.VK_A);
+        a.setToolTipText("TEXT");
+        p.add(a);
+
+        b = new JButton("B");
+        b.setMnemonic(KeyEvent.VK_B);
+        b.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl B"), "foo");
+        b.setToolTipText("TEXT");
+        p.add(b);
+
+        c = new JButton("C");
+        c.setMnemonic(KeyEvent.VK_C);
+        c.setToolTipText("<html>TEXT");
+        p.add(c);
+
+        d = new JButton("D");
+        d.setMnemonic(KeyEvent.VK_D);
+        d.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("ctrl D"), "foo");
+        d.setToolTipText("<html>TEXT");
+        p.add(d);
+        frame.add(p, BorderLayout.NORTH);
+
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+
+        JLayeredPane layeredPane = (JLayeredPane) Util.findSubComponent(
+                frame, "JLayeredPane");
+        layeredPane.addContainerListener(new ContainerAdapter() {
+            @Override
+            public void componentAdded(ContainerEvent e) {
+                isTooltipAdded = true;
+            }
+        });
+        frame.setVisible(true);
+    }
+}
