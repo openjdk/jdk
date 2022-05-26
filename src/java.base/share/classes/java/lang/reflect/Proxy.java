@@ -495,29 +495,33 @@ public class Proxy implements java.io.Serializable {
         private static final ClassLoaderValue<Boolean> reverseProxyCache =
             new ClassLoaderValue<>();
 
-        private record ProxyClassContext(Module module, String pkg, int accessFlags) {
+        private record ProxyClassContext(Module module, String packageName, int accessFlags) {
             private ProxyClassContext {
                 if (module.isNamed()) {
-                    if (pkg.isEmpty()) {
+                    if (packageName.isEmpty()) {
                         // Per JLS 7.4.2, unnamed package can only exist in unnamed modules.
                         // This means a package-private superinterface exist in the unnamed
                         // package of a named module.
                         throw new InternalError("Unnamed package cannot be added to " + module);
                     }
 
-                    if (!module.getDescriptor().packages().contains(pkg)) {
-                        throw new InternalError(pkg + " not exist in " + module.getName());
+                    if (!module.getDescriptor().packages().contains(packageName)) {
+                        throw new InternalError(packageName + " not exist in " + module.getName());
                     }
 
-                    if (!module.isOpen(pkg, Proxy.class.getModule())) {
+                    if (!module.isOpen(packageName, Proxy.class.getModule())) {
                         // Required for default method invocation
-                        throw new InternalError(pkg + " not open to " + Proxy.class.getModule());
+                        throw new InternalError(packageName + " not open to " + Proxy.class.getModule());
                     }
                 } else {
                     if (Modifier.isPublic(accessFlags)) {
                         // All proxy superinterfaces are public, must be in named dynamic module
-                        throw new InternalError("proxy in unnamed module: " + module);
+                        throw new InternalError("public proxy in unnamed module: " + module);
                     }
+                }
+
+                if ((accessFlags & ~Modifier.PUBLIC) != 0) {
+                    throw new InternalError("proxy access flags must be Modifier.PUBLIC or 0");
                 }
             }
         }
@@ -527,9 +531,9 @@ public class Proxy implements java.io.Serializable {
              * Choose a name for the proxy class to generate.
              */
             long num = nextUniqueNumber.getAndIncrement();
-            String proxyName = context.pkg().isEmpty()
+            String proxyName = context.packageName().isEmpty()
                                     ? proxyClassNamePrefix + num
-                                    : context.pkg() + "." + proxyClassNamePrefix + num;
+                                    : context.packageName() + "." + proxyClassNamePrefix + num;
 
             ClassLoader loader = getLoader(context.module());
             trace(proxyName, context.module(), loader, interfaces);
