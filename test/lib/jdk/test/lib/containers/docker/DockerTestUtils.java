@@ -278,14 +278,19 @@ public class DockerTestUtils {
         long pid = p.pid();
         OutputAnalyzer output = new OutputAnalyzer(p);
 
-        String stdoutLogFile = String.format("docker-stdout-%d.log", pid);
+        int max = MAX_LINES_TO_COPY_FOR_CHILD_STDOUT;
+        String stdout = output.getStdout();
+        String stdoutTrimmed = trimLines(stdout, max);
         System.out.println("[ELAPSED: " + (System.currentTimeMillis() - started) + " ms]");
         System.out.println("[STDERR]\n" + output.getStderr());
-        System.out.println("[STDOUT]\n" +
-                           trimLines(output.getStdout(),MAX_LINES_TO_COPY_FOR_CHILD_STDOUT));
-        System.out.printf("Child process STDOUT is trimmed to %d lines \n",
-                           MAX_LINES_TO_COPY_FOR_CHILD_STDOUT);
-        writeOutputToFile(output.getStdout(), stdoutLogFile);
+        System.out.println("[STDOUT]\n" + stdoutTrimmed);
+        if (stdout != stdoutTrimmed) {
+            System.out.printf("Child process STDOUT is trimmed to %d lines\n",
+                              max);
+        }
+
+        String stdoutLogFile = String.format("docker-stdout-%d.log", pid);
+        writeOutputToFile(stdout, stdoutLogFile);
         System.out.println("Full child process STDOUT was saved to " + stdoutLogFile);
 
         return output;
