@@ -46,7 +46,6 @@ import java.awt.Dimension;
 import java.awt.event.ContainerAdapter;
 import java.awt.event.ContainerEvent;
 import java.awt.event.KeyEvent;
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.Robot;
@@ -140,7 +139,6 @@ class toolTipTest {
         frame = new JFrame();
         JTextArea area = new JTextArea();
         JPanel p = new JPanel();
-        JPanel resPanel = new JPanel(new FlowLayout());
 
         String text = "Mouse is hover over button B for the \t\t\n";
         text += "ToolTip to appear. Here is what should show\t\t\n";
@@ -178,7 +176,6 @@ class toolTipTest {
         p.add(d);
         frame.add(p, BorderLayout.NORTH);
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setLocationRelativeTo(null);
 
