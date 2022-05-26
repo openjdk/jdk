@@ -97,7 +97,7 @@ public class VirtualThreadDeadlocks {
     private static void awaitBlocked(Thread thread) throws InterruptedException {
         while (thread.getState() != Thread.State.BLOCKED) {
             Thread.sleep(10);
-            if (thread.getState() == Thread.State.TERMINATED) {
+            if (!thread.isAlive()) {
                 throw new RuntimeException("Thread " + thread + " is terminated.");
             }
         }
