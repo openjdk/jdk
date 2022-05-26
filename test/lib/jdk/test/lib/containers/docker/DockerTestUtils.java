@@ -269,7 +269,6 @@ public class DockerTestUtils {
      * @throws Exception
      */
     public static OutputAnalyzer execute(String... command) throws Exception {
-
         ProcessBuilder pb = new ProcessBuilder(command);
         System.out.println("[COMMAND]\n" + Utils.getCommandLine(pb));
 
@@ -280,12 +279,12 @@ public class DockerTestUtils {
 
         int max = MAX_LINES_TO_COPY_FOR_CHILD_STDOUT;
         String stdout = output.getStdout();
-        String stdoutTrimmed = trimLines(stdout, max);
+        String stdoutLimited = limitLines(stdout, max);
         System.out.println("[ELAPSED: " + (System.currentTimeMillis() - started) + " ms]");
         System.out.println("[STDERR]\n" + output.getStderr());
-        System.out.println("[STDOUT]\n" + stdoutTrimmed);
-        if (stdout != stdoutTrimmed) {
-            System.out.printf("Child process STDOUT is trimmed to %d lines\n",
+        System.out.println("[STDOUT]\n" + stdoutLimited);
+        if (stdout != stdoutLimited) {
+            System.out.printf("Child process STDOUT is limited to %d lines\n",
                               max);
         }
 
@@ -304,7 +303,7 @@ public class DockerTestUtils {
     }
 
 
-    private static String trimLines(String buffer, int nrOfLines) {
+    private static String limitLines(String buffer, int nrOfLines) {
         List<String> l = Arrays.asList(buffer.split("\\R"));
         if (l.size() < nrOfLines) {
             return buffer;
