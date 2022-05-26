@@ -1119,10 +1119,10 @@ public:
   //     +/-128MB for the release build, +/-2MB for the debug build.
   //
   //   - far call: adrp reg, pc_relative_offset; add; bl reg
-  //     This is longer and slower than a direct call. The offset has
+  //     This is longer than a direct call. The offset has
   //     the range +/-4GB. As the code cache size is limited to 4GB,
-  //     far calls can reach anywhere in the code cache. If the sematic of
-  //     the call is not needed, a far jump 'b reg' can be used instead.
+  //     far calls can reach anywhere in the code cache. If a jump is
+  //     needed rather than a call, a far jump 'b reg' can be used instead.
   //     All instructions are embedded at a call site.
   //
   //   - trampoline call:
@@ -1140,15 +1140,40 @@ public:
   //       br reg
   //       <64-bit destination address>
   //
-  //     A link-time optimization can be applied to a trampoline call when the generated
-  //     code is moved to the code cache. A trampoline call is replaced with by a direct call.
+  //     If the destination is in range when the generated code is moved to the code
+  //     cache, 'bl trampoline' is replaced with 'bl destination' and the trampoline
+  //     is not used.
   //     The optimization does not remove the trampoline from the stub section.
+  //     This is necessary because the trampoline may well be redirected later when
+  //     code is patched, and the new destination may not be reachable by a simple BR
+  //     instruction.
   //
   //   - indirect call: move reg, address; blr reg
   //     This too can reach anywhere in the address space, but it cannot be
-  //     patch while code is running, so it must be used at a safepoint.
+  //     patched while code is running, so it must only be modified at a safepoint.
+  //     This form of call is most suitable for targets at fixed addresses, which
+  //     will never be patched.
+  //
+  // The patching we do conforms to the "Concurrent modification and
+  // execution of instructions" section of the Arm Architectural
+  // Reference Manual, which only allows B, BL, BRK, HVC, ISB, NOP, SMC,
+  // or SVC instructions to be modified while another thread is
+  // executing them.
+  //
+  // To patch a trampoline call when the BL can't reach, we first modify
+  // the 64-bit destination address in the trampoline, then modify the
+  // BL to point to the trampoline, then flush the instruction cache to
+  // broadcast the change to all executing threads. See
+  // NativeCall::set_destination_mt_safe for the details.
+  //
+  // There is a benign race in that the other thread might observe the
+  // modified BL before it observes the modified 64-bit destination
+  // address. That does not matter because the destination method has been
+  // invalidated, so there will be a trap at its start.
+  // For this to work, the destination address in the trampoline is
+  // always updated, even if we're not using the trampoline.
 
-  // Emit a direct call if the entry address is always in range,
+  // Emit a direct call if the entry address will always be in range,
   // otherwise a trampoline call.
   // Supported entry.rspec():
   // - relocInfo::runtime_call_type
@@ -1156,8 +1181,9 @@ public:
   // - relocInfo::static_call_type
   // - relocInfo::virtual_call_type
   //
-  // Return: address of the generated call in the code section of CodeBuffer.
-  address trampoline_call(Address entry);
+  // Return: NULL if CodeCache is full.
+  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL) { return trampoline_call1(entry, cbuf, true); }
+  address trampoline_call1(Address entry, CodeBuffer* cbuf, bool check_emit_size = true);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
@@ -1168,7 +1194,7 @@ public:
     return CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
 
-  // Emit a direct call/jump if the entry address is always in range,
+  // Emit a direct call/jump if the entry address will always be in range,
   // otherwise a far call/jump.
   // The address must be inside the code cache.
   // Supported entry.rspec():
@@ -1179,8 +1205,8 @@ public:
   // The tmp register is invalidated.
   //
   // Far_jump returns the amount of the emitted code.
-  void far_call(Address entry, Register tmp = rscratch1);
-  int far_jump(Address entry, Register tmp = rscratch1);
+  void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
+  int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
 
   static int far_codestub_branch_size() {
     if (codestub_branch_needs_far_jump()) {
