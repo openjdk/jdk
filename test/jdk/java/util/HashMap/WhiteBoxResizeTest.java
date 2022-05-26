@@ -51,7 +51,7 @@ import static org.testng.Assert.assertNull;
 
 /*
  * @test
- * @bug 8186958 8210280 8281631
+ * @bug 8186958 8210280 8281631 8284780
  * @modules java.base/java.util:open
  * @summary White box tests for HashMap-related internals around table sizing
  * @run testng WhiteBoxResizeTest
