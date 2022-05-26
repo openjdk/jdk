@@ -625,6 +625,9 @@ class name javax/sound/midi/SysexMessage
 header extends javax/sound/midi/MidiMessage flags 21
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name javax/sound/midi/Track
+header extends java/lang/Object flags 31
+
 class name javax/sound/sampled/ReverbType
 header extends java/lang/Object flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I4)
 

@@ -176,6 +176,12 @@ header extends java/lang/Object implements com/sun/source/tree/ExpressionTree fl
 class name com/sun/source/tree/ContinueTree
 header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
 
+class name com/sun/source/tree/DeconstructionPatternTree
+header extends java/lang/Object implements com/sun/source/tree/PatternTree flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;RECORD_PATTERNS;,reflective=Ztrue)
+method name getDeconstructor descriptor ()Lcom/sun/source/tree/ExpressionTree; flags 401
+method name getNestedPatterns descriptor ()Ljava/util/List; flags 401 signature ()Ljava/util/List<+Lcom/sun/source/tree/PatternTree;>;
+method name getVariable descriptor ()Lcom/sun/source/tree/VariableTree; flags 401
+
 class name com/sun/source/tree/DirectiveTree
 header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
 
@@ -288,10 +294,12 @@ header extends java/lang/Object implements com/sun/source/tree/StatementTree fla
 
 class name com/sun/source/tree/Tree$Kind
 -field name GUARDED_PATTERN descriptor Lcom/sun/source/tree/Tree$Kind;
+field name DECONSTRUCTION_PATTERN descriptor Lcom/sun/source/tree/Tree$Kind; flags 4019 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;RECORD_PATTERNS;,reflective=Ztrue)
 
 class name com/sun/source/tree/TreeVisitor
 header extends java/lang/Object flags 601 signature <R:Ljava/lang/Object;P:Ljava/lang/Object;>Ljava/lang/Object;
 -method name visitGuardedPattern descriptor (Lcom/sun/source/tree/GuardedPatternTree;Ljava/lang/Object;)Ljava/lang/Object;
+method name visitDeconstructionPattern descriptor (Lcom/sun/source/tree/DeconstructionPatternTree;Ljava/lang/Object;)Ljava/lang/Object; flags 401 signature (Lcom/sun/source/tree/DeconstructionPatternTree;TP;)TR; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;RECORD_PATTERNS;,reflective=Ztrue)
 
 class name com/sun/source/tree/TryTree
 header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
@@ -351,6 +359,7 @@ header extends java/lang/Object implements com/sun/source/doctree/DocTreeVisitor
 class name com/sun/source/util/SimpleTreeVisitor
 header extends java/lang/Object implements com/sun/source/tree/TreeVisitor flags 21 signature <R:Ljava/lang/Object;P:Ljava/lang/Object;>Ljava/lang/Object;Lcom/sun/source/tree/TreeVisitor<TR;TP;>;
 -method name visitGuardedPattern descriptor (Lcom/sun/source/tree/GuardedPatternTree;Ljava/lang/Object;)Ljava/lang/Object;
+method name visitDeconstructionPattern descriptor (Lcom/sun/source/tree/DeconstructionPatternTree;Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (Lcom/sun/source/tree/DeconstructionPatternTree;TP;)TR; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;RECORD_PATTERNS;,reflective=Ztrue)
 
 class name com/sun/source/util/SourcePositions
 header extends java/lang/Object flags 601
@@ -363,6 +372,7 @@ header extends com/sun/source/util/TreeScanner flags 21 signature <R:Ljava/lang/
 
 class name com/sun/source/util/TreeScanner
 -method name visitGuardedPattern descriptor (Lcom/sun/source/tree/GuardedPatternTree;Ljava/lang/Object;)Ljava/lang/Object;
+method name visitDeconstructionPattern descriptor (Lcom/sun/source/tree/DeconstructionPatternTree;Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (Lcom/sun/source/tree/DeconstructionPatternTree;TP;)TR; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;RECORD_PATTERNS;,reflective=Ztrue)
 
 class name com/sun/source/util/Trees
 header extends java/lang/Object flags 421

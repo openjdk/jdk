@@ -503,7 +503,6 @@ method name toArray descriptor (Ljava/lang/foreign/ValueLayout$OfLong;)[J flags 
 method name toArray descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;)[D flags 401
 method name getUtf8String descriptor (J)Ljava/lang/String; flags 1
 method name setUtf8String descriptor (JLjava/lang/String;)V flags 1
-method name ofByteBuffer descriptor (Ljava/nio/ByteBuffer;)Ljava/lang/foreign/MemorySegment; flags 9
 method name ofArray descriptor ([B)Ljava/lang/foreign/MemorySegment; flags 9
 method name ofArray descriptor ([C)Ljava/lang/foreign/MemorySegment; flags 9
 method name ofArray descriptor ([S)Ljava/lang/foreign/MemorySegment; flags 9
@@ -553,6 +552,7 @@ method name equals descriptor (Ljava/lang/Object;)Z flags 401
 method name hashCode descriptor ()I flags 401
 method name copy descriptor (Ljava/lang/foreign/MemorySegment;Ljava/lang/foreign/ValueLayout;JLjava/lang/Object;II)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name copy descriptor (Ljava/lang/Object;ILjava/lang/foreign/MemorySegment;Ljava/lang/foreign/ValueLayout;JI)V flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name ofBuffer descriptor (Ljava/nio/Buffer;)Ljava/lang/foreign/MemorySegment; flags 9
 
 class name java/lang/foreign/MemorySession
 header extends java/lang/Object implements java/lang/AutoCloseable,java/lang/foreign/SegmentAllocator sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -1095,6 +1095,21 @@ class name java/time/chrono/ChronoLocalDateTime
 header extends java/lang/Object implements java/time/temporal/Temporal,java/time/temporal/TemporalAdjuster,java/lang/Comparable flags 601 signature <D::Ljava/time/chrono/ChronoLocalDate;>Ljava/lang/Object;Ljava/time/temporal/Temporal;Ljava/time/temporal/TemporalAdjuster;Ljava/lang/Comparable<Ljava/time/chrono/ChronoLocalDateTime<*>;>;
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name java/time/chrono/Chronology
+method name isIsoBased descriptor ()Z flags 1
+
+class name java/time/chrono/IsoChronology
+method name isIsoBased descriptor ()Z flags 1
+
+class name java/time/chrono/JapaneseChronology
+method name isIsoBased descriptor ()Z flags 1
+
+class name java/time/chrono/MinguoChronology
+method name isIsoBased descriptor ()Z flags 1
+
+class name java/time/chrono/ThaiBuddhistChronology
+method name isIsoBased descriptor ()Z flags 1
+
 class name java/time/format/DateTimeFormatter
 method name ofLocalizedPattern descriptor (Ljava/lang/String;)Ljava/time/format/DateTimeFormatter; flags 9
 
@@ -1398,6 +1413,7 @@ header extends java/lang/Object flags 601
 class name java/util/spi/ToolProvider
 header extends java/lang/Object flags 601
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name description descriptor ()Ljava/util/Optional; flags 1 signature ()Ljava/util/Optional<Ljava/lang/String;>;
 
 class name java/util/zip/CRC32C
 header extends java/lang/Object implements java/util/zip/Checksum flags 31
