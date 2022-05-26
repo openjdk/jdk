@@ -740,7 +740,7 @@ public class Binder extends DebugeeBinder {
         }
 
         // This flag is needed so VirtualThread.allThreads() includes known vthreads.
-        arg = (Connector.StringArgument) arguments.get("enumeratevthreads");
+        arg = (Connector.StringArgument) arguments.get("includevirtualthreads");
         arg.setValue("y");
 
         String vmArgs = "";
