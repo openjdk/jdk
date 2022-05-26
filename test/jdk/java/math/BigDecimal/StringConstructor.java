@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,6 @@ public class StringConstructor {
         constructWithError("10e"+Integer.MIN_VALUE);
         constructWithError("0.01e"+Integer.MIN_VALUE);
         constructWithError("1e"+((long)Integer.MIN_VALUE-1));
-        constructWithError("1e"+((long)Integer.MAX_VALUE + 1));
 
         leadingExponentZeroTest();
         nonAsciiZeroTest();
