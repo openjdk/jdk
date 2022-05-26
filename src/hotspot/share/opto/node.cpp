@@ -1700,7 +1700,7 @@ class PrintBFS {
 public:
   PrintBFS(Node* start, const int max_distance, Node* target, char const* options)
   : _start(start), _max_distance(max_distance), _target(target), _options(options),
-    _info_uid((CmpKey)&cmp, hashkey) {
+    _dcc(this), _info_uid((CmpKey)&cmp, hashkey) {
   };
   void run();
 private:
@@ -1735,9 +1735,19 @@ private:
   void parse_options_helper(bool &variable, const char* character);
   void parse_options();
 
-  // node category
+  // node category (filter / color)
   bool filter_category(Node* n, Filter& filter); // filter node category agains options
-  const char* category_string(Node* n); // (colored) category
+public:
+  class DumpConfigColored : public Node::DumpConfig {
+  public:
+    DumpConfigColored(PrintBFS* bfs) : _bfs(bfs) {};
+    virtual void pre_dump(outputStream *st, const Node* n);
+    virtual void post_dump(outputStream *st);
+  private:
+    PrintBFS* _bfs;
+  };
+private:
+  DumpConfigColored _dcc;
 
   // node info
   Node* old_node (Node* n); // mach node -> prior IR node
@@ -1768,7 +1778,7 @@ private:
   static int cmp(const Node* n1, const Node* n2) { return n1 != n2; }
   Dict _info_uid;             // Node -> uid
   GrowableArray <Info> _info; // uid  -> info
-  Info* find_info(Node* n) {
+  Info* find_info(const Node* n) {
     size_t uid = (size_t)_info_uid[n];
     if (uid == 0) {
       return nullptr;
@@ -1964,27 +1974,48 @@ bool PrintBFS::filter_category(Node* n, Filter& filter) {
   return false;
 }
 
-const char* PrintBFS::category_string(Node* n) {
+void PrintBFS::DumpConfigColored::pre_dump(outputStream *st, const Node* n) {
+  if(!_bfs->_use_color) {
+    return;
+  }
+  Info* info = _bfs->find_info(n);
+  if (info == nullptr || !info->is_marked()) {
+    return;
+  }
+
   const Type *t = n->bottom_type();
   switch (t->category()) {
     case Type::Category::Data:
-      return _use_color ? "\u001b[34md\u001b[0m" : "d";
+      st->print("\u001b[34m");
+      break;
     case Type::Category::Memory:
-      return _use_color ? "\u001b[32mm\u001b[0m" : "m";
+      st->print("\u001b[32m");
+      break;
     case Type::Category::Mixed:
-      return _use_color ? "\u001b[35mx\u001b[0m" : "x";
+      st->print("\u001b[35m");
+      break;
     case Type::Category::Control:
-      return _use_color ? "\u001b[31mc\u001b[0m" : "c";
+      st->print("\u001b[31m");
+      break;
     case Type::Category::Other:
-      return _use_color ? "\u001b[33mo\u001b[0m" : "o";
+      st->print("\u001b[33m");
+      break;
     case Type::Category::Undef:
       n->dump();
       assert(false, "category undef ??");
+      break;
     default:
       n->dump();
       assert(false, "not covered");
+      break;
   }
-  return "?";
+}
+
+void PrintBFS::DumpConfigColored::post_dump(outputStream *st) {
+  if(!_bfs->_use_color) {
+    return;
+  }
+  st->print("\u001b[0m"); // white
 }
 
 Node* PrintBFS::old_node (Node* n) {
@@ -2059,7 +2090,7 @@ void PrintBFS::print_header() {
   if(_print_old) {
     tty->print("   old");                     // old node
   }
-  tty->print(" c dump\n");                    // category and dump
+  tty->print(" dump\n");                      // node dump
   tty->print("---------------------------------------------\n");
 }
 
@@ -2071,8 +2102,8 @@ void PrintBFS::print_node(Node* n) {
   if (_print_old) {
     print_node_idx(old_node(n));              // old node
   }
-  tty->print(" %s ", category_string(n));     // category
-  n->dump();                                  // node dump
+  tty->print(" ");
+  n->dump("\n", false, tty, &_dcc);           // node dump
 }
 
 //------------------------------print_bfs--------------------------------------
@@ -2131,6 +2162,54 @@ void PrintBFS::print_node(Node* n) {
 void Node::print_bfs(const int max_distance, Node* target, char const* options) {
   PrintBFS bfs(this, max_distance, target, options);
   bfs.run();
+}
+
+// log10 rounded down
+uint log10(const uint i) {
+  uint v = 10;
+  uint e = 0;
+  while(v <= i) {
+    v *= 10;
+    e++;
+  }
+  return e;
+}
+
+// -----------------------------dump_idx---------------------------------------
+void Node::dump_idx(bool align, outputStream *st, DumpConfig* dc) const {
+  if (dc != nullptr) {
+    dc->pre_dump(st, this);
+  }
+  Compile* C = Compile::current();
+  bool is_new = C->node_arena()->contains(this);
+  if(align) { // print prefix empty spaces$
+    // +1 for leading digit, +1 for "o"
+    uint max_width = log10(C->unique()) + 3;
+    // +1 for leading digit, maybe +1 for "o"
+    uint width = log10(_idx) + 1 + (is_new ? 0 : 1);
+    while(max_width > width) {
+      st->print(" ");
+      width++;
+    }
+  }
+  if(!is_new) {
+    st->print("o");
+  }
+  st->print("%d", _idx);
+  if (dc != nullptr) {
+    dc->post_dump(st);
+  }
+}
+
+// -----------------------------dump_name--------------------------------------
+void Node::dump_name(outputStream *st, DumpConfig* dc) const {
+  if (dc != nullptr) {
+    dc->pre_dump(st, this);
+  }
+  st->print("%s", Name());
+  if (dc != nullptr) {
+    dc->post_dump(st);
+  }
 }
 
 // -----------------------------Name-------------------------------------------
@@ -2203,22 +2282,26 @@ void Node::set_debug_orig(Node* orig) {
 
 //------------------------------dump------------------------------------------
 // Dump a Node
-void Node::dump(const char* suffix, bool mark, outputStream *st) const {
+void Node::dump(const char* suffix, bool mark, outputStream *st, DumpConfig* dc) const {
   Compile* C = Compile::current();
   bool is_new = C->node_arena()->contains(this);
   C->_in_dump_cnt++;
 
-  if (_indent > 0) {
+  if (_indent > 0) {// TODO: remove?
     st->print("%*s", (_indent << 1), "  ");
   }
 
-  st->print("%c%d%s%s  === ", is_new ? ' ' : 'o', _idx, mark ? " >" : "  ", Name());
+  // idx mark name ===
+  dump_idx(true, st, dc);
+  st->print(mark ? " >" : "  ");
+  dump_name(st, dc);
+  st->print("  === ");
 
   // Dump the required and precedence inputs
-  dump_req(st);
-  dump_prec(st);
+  dump_req(st, dc);
+  dump_prec(st, dc);
   // Dump the outputs
-  dump_out(st);
+  dump_out(st, dc);
 
   if (is_disconnected(this)) {
 #ifdef ASSERT
@@ -2285,7 +2368,7 @@ void Node::dump(const char* suffix, bool mark, outputStream *st) const {
 }
 
 //------------------------------dump_req--------------------------------------
-void Node::dump_req(outputStream *st) const {
+void Node::dump_req(outputStream *st, DumpConfig* dc) const {
   // Dump the required input edges
   for (uint i = 0; i < req(); i++) {    // For all required inputs
     Node* d = in(i);
@@ -2294,14 +2377,15 @@ void Node::dump_req(outputStream *st) const {
     } else if (not_a_node(d)) {
       st->print("not_a_node ");  // uninitialized, sentinel, garbage, etc.
     } else {
-      st->print("%c%d ", Compile::current()->node_arena()->contains(d) ? ' ' : 'o', d->_idx);
+      d->dump_idx(false, st, dc);
+      st->print(" ");
     }
   }
 }
 
 
 //------------------------------dump_prec-------------------------------------
-void Node::dump_prec(outputStream *st) const {
+void Node::dump_prec(outputStream *st, DumpConfig* dc) const {
   // Dump the precedence edges
   int any_prec = 0;
   for (uint i = req(); i < len(); i++) {       // For all precedence inputs
@@ -2309,15 +2393,16 @@ void Node::dump_prec(outputStream *st) const {
     if (p != NULL) {
       if (!any_prec++) st->print(" |");
       if (not_a_node(p)) { st->print("not_a_node "); continue; }
-      st->print("%c%d ", Compile::current()->node_arena()->contains(in(i)) ? ' ' : 'o', in(i)->_idx);
+      p->dump_idx(false, st, dc);
+      st->print(" ");
     }
   }
 }
 
 //------------------------------dump_out--------------------------------------
-void Node::dump_out(outputStream *st) const {
+void Node::dump_out(outputStream *st, DumpConfig* dc) const {
   // Delimit the output edges
-  st->print(" [[");
+  st->print(" [[ ");
   // Dump the output edges
   for (uint i = 0; i < _outcnt; i++) {    // For all outputs
     Node* u = _out[i];
@@ -2326,7 +2411,8 @@ void Node::dump_out(outputStream *st) const {
     } else if (not_a_node(u)) {
       st->print("not_a_node ");
     } else {
-      st->print("%c%d ", Compile::current()->node_arena()->contains(u) ? ' ' : 'o', u->_idx);
+      u->dump_idx(false, st, dc);
+      st->print(" ");
     }
   }
   st->print("]] ");
