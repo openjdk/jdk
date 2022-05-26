@@ -358,10 +358,9 @@ public final class Class<T> implements java.io.Serializable,
      * {@code X} to be initialized.
      *
      * <p>
-     * This method is caller sensitive.  In cases where this method is called
-     * from a context where there is no caller frame on the stack (e.g. when
-     * called directly from a JNI attached thread), the system class loader
-     * is used.
+     * In cases where this method is called from a context where there is no
+     * caller frame on the stack (e.g. when called directly from a JNI
+     * attached thread), the system class loader is used.
      *
      * @param      className   the fully qualified name of the desired class.
      * @return     the {@code Class} object for the class with the
