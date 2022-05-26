@@ -382,19 +382,19 @@ public class HashSet<E>
     }
 
     /**
-     * Creates a new, empty HashSet suitable for the expected number of items.
+     * Creates a new, empty HashSet suitable for the expected number of elements.
      * The returned set uses the default load factor of 0.75, and its initial capacity is
-     * generally large enough so that the expected number of items can be added
+     * generally large enough so that the expected number of elements can be added
      * without resizing the set.
      *
-     * @param numItems    the expected number of items
+     * @param numElements    the expected number of elements
      * @param <E>         the type of keys maintained by this set
      * @return the newly created set
-     * @throws IllegalArgumentException if numItems is negative
+     * @throws IllegalArgumentException if numElements is negative
      * @since 19
      */
-    public static <E> HashSet<E> newHashSet(int numItems) {
-        return new HashSet<>(HashMap.calculateHashMapCapacity(numItems));
+    public static <E> HashSet<E> newHashSet(int numElements) {
+        return new HashSet<>(HashMap.calculateHashMapCapacity(numElements));
     }
 
 }
